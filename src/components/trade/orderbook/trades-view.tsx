@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { ExternalLink } from "lucide-react";
+import { ArrowRightLeft, ExternalLink } from "lucide-react";
 import { memo, useEffect, useMemo, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSelectedResolvedMarket } from "@/hooks/hyperliquid/use-resolved-market";
@@ -7,19 +7,23 @@ import { useRingBuffer } from "@/lib/circular-buffer";
 import { formatNumber } from "@/lib/format";
 import { useSubTrades } from "@/lib/hl-react";
 import { getExplorerTxUrl } from "@/lib/hyperliquid/explorer";
-import { getTradeKey, processTrades, type ProcessedTrade, type RawTrade } from "@/lib/trade/trades";
+import { getTradeKey, type ProcessedTrade, processTrades, type RawTrade } from "@/lib/trade/trades";
 import { cn } from "@/lib/utils";
+import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 
 const MAX_TRADES = 100;
 const getKey = (t: RawTrade) => getTradeKey(t.hash, t.tid);
 const compare = (a: RawTrade, b: RawTrade) => b.time - a.time;
 
-type TradeRowProps = {
+interface Props {
 	trade: ProcessedTrade;
 	szDecimals: number;
-};
+	showInUsd: boolean;
+}
 
-const TradeRow = memo(function TradeRow({ trade, szDecimals }: TradeRowProps) {
+const TradeRow = memo(function TradeRow({ trade, szDecimals, showInUsd }: Props) {
+	const sizeDisplay = showInUsd ? formatNumber(trade.price * trade.size, 2) : formatNumber(trade.size, szDecimals);
+
 	return (
 		<a
 			href={getExplorerTxUrl(trade.hash)}
@@ -37,7 +41,7 @@ const TradeRow = memo(function TradeRow({ trade, szDecimals }: TradeRowProps) {
 			<div className={cn("text-right", trade.side === "buy" ? "text-terminal-green" : "text-terminal-red")}>
 				{formatNumber(trade.price, 2)}
 			</div>
-			<div className="text-right text-muted-foreground">{formatNumber(trade.size, szDecimals)}</div>
+			<div className="text-right text-muted-foreground">{sizeDisplay}</div>
 		</a>
 	);
 });
@@ -45,6 +49,8 @@ const TradeRow = memo(function TradeRow({ trade, szDecimals }: TradeRowProps) {
 export function TradesView() {
 	const { data: selectedMarket } = useSelectedResolvedMarket({ ctxMode: "none" });
 	const { data: tradesBatch, status, error } = useSubTrades({ coin: selectedMarket.coin });
+	const { showOrderbookInUsd } = useGlobalSettings();
+	const { setShowOrderbookInUsd } = useGlobalSettingsActions();
 
 	const { items: trades, add } = useRingBuffer<RawTrade>({
 		maxSize: MAX_TRADES,
@@ -63,13 +69,22 @@ export function TradesView() {
 
 	const szDecimals = selectedMarket.szDecimals;
 	const processed = useMemo(() => processTrades(trades), [trades]);
+	const toggleUsdDisplay = () => setShowOrderbookInUsd(!showOrderbookInUsd);
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col">
 			<div className="grid grid-cols-3 gap-2 px-2 py-1 text-4xs uppercase tracking-wider text-muted-foreground/70 border-b border-border/40">
 				<div>{t`Time`}</div>
 				<div className="text-right">{t`Price`}</div>
-				<div className="text-right">{t`Size`}</div>
+				<button
+					type="button"
+					onClick={toggleUsdDisplay}
+					className="text-right hover:text-foreground transition-colors inline-flex items-center justify-end gap-0.5"
+				>
+					{t`Size`}
+					<span className="opacity-60">({showOrderbookInUsd ? "$" : selectedMarket.coin})</span>
+					<ArrowRightLeft className="size-2 opacity-40" />
+				</button>
 			</div>
 
 			{status === "error" ? (
@@ -84,7 +99,7 @@ export function TradesView() {
 				<ScrollArea className="flex-1 min-h-0">
 					<div className="px-2 py-1 space-y-px">
 						{processed.map((trade) => (
-							<TradeRow key={trade.id} trade={trade} szDecimals={szDecimals} />
+							<TradeRow key={trade.id} trade={trade} szDecimals={szDecimals} showInUsd={showOrderbookInUsd} />
 						))}
 					</div>
 				</ScrollArea>
