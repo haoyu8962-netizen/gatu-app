@@ -1,63 +1,35 @@
 import { t } from "@lingui/core/macro";
-import { ArrowLeftRight, Loader2 } from "lucide-react";
+import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { NumberInput } from "@/components/ui/number-input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-	DEFAULT_QUOTE_TOKEN,
-	FALLBACK_VALUE_PLACEHOLDER,
-	ORDER_MIN_NOTIONAL_USD,
-	ORDER_SIZE_PERCENT_STEPS,
-	SCALE_LEVELS_MAX,
-	SCALE_LEVELS_MIN,
-	TWAP_MINUTES_MAX,
-	TWAP_MINUTES_MIN,
-} from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/constants";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
-import { getSliderValue } from "@/domain/trade/order/size";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatToken, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useAgentRegistration, useAgentStatus, useSelectedMarketInfo, useUserPositions } from "@/lib/hyperliquid";
 import { useExchangeOrder } from "@/lib/hyperliquid/hooks/exchange/useExchangeOrder";
 import { useExchangeTwapOrder } from "@/lib/hyperliquid/hooks/exchange/useExchangeTwapOrder";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import {
-	clampInt,
-	formatDecimalFloor,
-	getValueColorClass,
-	isPositive,
-	toFixed,
-	toNumber,
-	toNumberOrZero,
-} from "@/lib/trade/numbers";
+import { clampInt, isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
-	getTabsOrderType,
 	isScaleOrderType,
 	isStopOrderType,
 	isTakeProfitOrderType,
 	isTriggerOrderType,
 	isTwapOrderType,
-	type LimitTif,
-	TIF_OPTIONS,
 	usesLimitPrice as usesLimitPriceForOrder,
-	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
 import type { ActiveDialog, ButtonContent } from "@/lib/trade/types";
 import { useButtonContent } from "@/lib/trade/use-button-content";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { useDepositModalActions, useSettingsDialogActions, useSwapModalActions } from "@/stores/use-global-modal-store";
-import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
+import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import {
 	useLimitPrice,
 	useOrderEntryActions,
@@ -80,14 +52,13 @@ import {
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { WalletDialog } from "../components/wallet-dialog";
-import { AdvancedOrderDropdown } from "./advanced-order-dropdown";
 import { LeverageControl } from "./leverage-control";
 import { MarginModeDialog } from "./margin-mode-dialog";
 import { MarginModeToggle } from "./margin-mode-toggle";
 import { OrderSummary } from "./order-summary";
 import { OrderToast } from "./order-toast";
-import { SideToggle } from "./side-toggle";
-import { TpSlSection } from "./tp-sl-section";
+import { TradeFormFields } from "./trade-form-fields";
+import { TradeHeader } from "./trade-header";
 
 function getActionButtonClass(variant: ButtonContent["variant"]): string {
 	if (variant === "cyan") {
@@ -99,7 +70,7 @@ function getActionButtonClass(variant: ButtonContent["variant"]): string {
 	return "bg-negative/20 border-negative text-negative hover:bg-negative/30";
 }
 
-export function OrderEntryPanel() {
+export function TradePanel() {
 	const reduceOnlyId = useId();
 	const tpSlId = useId();
 
@@ -118,6 +89,7 @@ export function OrderEntryPanel() {
 	const { mutateAsync: placeTwapOrder, isPending: isSubmittingTwap } = useExchangeTwapOrder();
 
 	const slippageBps = useMarketOrderSlippageBps();
+	const slippagePercent = useMarketOrderSlippagePercent();
 	const side = useOrderSide();
 	const markPx = market?.markPx ?? 0;
 	const sizeMode = useSizeMode();
@@ -130,12 +102,10 @@ export function OrderEntryPanel() {
 		spotBalance,
 		capabilities,
 		availableBalance,
-		availableBalanceToken,
 		maxSize,
 		sizeValue,
 		orderValue,
 		sideLabels,
-		sizeModeLabel,
 		getSizeForPercent,
 		convertSizeForModeToggle,
 		leverage,
@@ -144,7 +114,6 @@ export function OrderEntryPanel() {
 		switchMarginMode,
 		isSwitchingMode,
 		switchModeError,
-		szDecimals,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
 
 	const { addOrder, updateOrder } = useOrderQueueActions();
@@ -169,35 +138,10 @@ export function OrderEntryPanel() {
 	const twapOrder = isTwapOrderType(orderType);
 	const scaleOrder = isScaleOrderType(orderType);
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
-	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
-	const tabsOrderType = getTabsOrderType(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
-	const showTif = orderType === "limit" || orderType === "scale";
-	const availableTifOptions = orderType === "limit" ? (["Gtc", "Ioc", "Alo"] as const) : (["Gtc", "Alo"] as const);
 
-	const {
-		setSide,
-		setOrderType,
-		setSizeMode,
-		setReduceOnly,
-		setSize,
-		setLimitPrice,
-		setTriggerPrice,
-		setScaleStart,
-		setScaleEnd,
-		setScaleLevels,
-		setTwapMinutes,
-		setTwapRandomize,
-		setTpSlEnabled,
-		setTpPrice,
-		setSlPrice,
-		setTif,
-		resetForm,
-	} = useOrderEntryActions();
+	const { setSide, setOrderType, setSizeMode, setSize, setLimitPrice, resetForm } = useOrderEntryActions();
 
-	const [hasUserSized, setHasUserSized] = useState(false);
-	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-	const [dragSliderValue, setDragSliderValue] = useState(25);
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 	const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
 
@@ -289,7 +233,7 @@ export function OrderEntryPanel() {
 					orderType,
 					markPx,
 					maxSize,
-					usesTriggerPrice,
+					usesTriggerPrice: usesLimitPriceForOrder(orderType) ? false : isTriggerOrderType(orderType),
 					triggerPriceNum,
 					stopOrder,
 					takeProfitOrder,
@@ -306,23 +250,19 @@ export function OrderEntryPanel() {
 				}),
 	);
 
-	const sizeHasError = (sizeValue > maxSize && maxSize > 0) || (orderValue > 0 && orderValue < ORDER_MIN_NOTIONAL_USD);
-
-	function applySizePercent(pct: number) {
-		if (maxSize <= 0) return;
-		setHasUserSized(true);
-		const newSize = getSizeForPercent(pct);
-		if (newSize) setSize(newSize);
-	}
-
 	function handleSizeModeToggle() {
 		const newMode = sizeMode === "base" ? "quote" : "base";
 		const convertedSize = convertSizeForModeToggle();
 		if (convertedSize) {
-			setHasUserSized(true);
 			setSize(convertedSize);
 		}
 		setSizeMode(newMode);
+	}
+
+	function handleSizePercentApply(pct: number) {
+		if (maxSize <= 0) return;
+		const newSize = getSizeForPercent(pct);
+		if (newSize) setSize(newSize);
 	}
 
 	const isRegistering =
@@ -439,7 +379,6 @@ export function OrderEntryPanel() {
 			}
 
 			resetForm();
-			setHasUserSized(false);
 			return;
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : t`Order failed`;
@@ -467,7 +406,6 @@ export function OrderEntryPanel() {
 		sizeValue,
 		slippageBps,
 		slPriceNum,
-		stopOrder,
 		tif,
 		tpPriceNum,
 		tpSlEnabled,
@@ -477,15 +415,8 @@ export function OrderEntryPanel() {
 		twapOrder,
 		twapRandomize,
 		updateOrder,
-		usesLimitPrice,
 		validation.canSubmit,
 	]);
-
-	const sliderValue = useMemo(() => {
-		if (isDraggingSlider) return dragSliderValue;
-		if (!hasUserSized || sizeValue <= 0) return 25;
-		return getSliderValue(sizeValue, maxSize);
-	}, [isDraggingSlider, dragSliderValue, hasUserSized, sizeValue, maxSize]);
 
 	const buttonContent = useButtonContent({
 		isConnected,
@@ -505,20 +436,12 @@ export function OrderEntryPanel() {
 		onSubmit: handleSubmit,
 	});
 
-	const isFormDisabled = !isConnected || availableBalance <= 0;
 	const actionButtonClass = getActionButtonClass(buttonContent.variant);
-
-	function formatAvailableBalance(): string {
-		if (!isConnected) return FALLBACK_VALUE_PLACEHOLDER;
-		const isBaseToken = isSpotMarket && side === "sell";
-		const decimals = isBaseToken ? szDecimals : 2;
-		return formatToken(availableBalance, decimals);
-	}
 
 	return (
 		<div className="h-full flex flex-col overflow-hidden bg-surface/20">
 			{capabilities.isLeveraged && (
-				<div className="px-2 py-1.5 border-b border-border/40 flex items-center justify-between">
+				<div className="h-9 px-2 border-b border-border/60 flex items-center justify-between">
 					{capabilities.hasMarginMode ? (
 						<MarginModeToggle
 							mode={marginMode}
@@ -543,318 +466,26 @@ export function OrderEntryPanel() {
 			/>
 
 			<div className="p-2 space-y-4 overflow-y-auto flex-1">
-				<div className="space-y-2">
-					<div className="flex items-center justify-between gap-2">
-						<Tabs value={tabsOrderType} onValueChange={(v) => setOrderType(v as "market" | "limit")}>
-							<TabsList>
-								<TabsTrigger value="market" variant="underline">
-									{t`Market`}
-								</TabsTrigger>
-								<TabsTrigger value="limit" variant="underline">
-									{t`Limit`}
-								</TabsTrigger>
-							</TabsList>
-						</Tabs>
-						<AdvancedOrderDropdown orderType={orderType} onOrderTypeChange={setOrderType} marketKind={market?.kind} />
-					</div>
+				<TradeHeader
+					orderType={orderType}
+					side={side}
+					sideLabels={sideLabels}
+					marketKind={market?.kind}
+					onOrderTypeChange={setOrderType}
+					onSideChange={setSide}
+				/>
 
-					<SideToggle side={side} onSideChange={setSide} labels={sideLabels} />
-				</div>
-
-				<div className="space-y-0.5 text-3xs">
-					<div className="flex items-center justify-between text-muted-fg">
-						<span>{t`Available`}</span>
-						<div className="flex items-center gap-2">
-							<span className={cn("tabular-nums flex items-center gap-1", getValueColorClass(availableBalance))}>
-								{formatAvailableBalance()} {availableBalanceToken}
-							</span>
-							{isConnected && swapTargetToken && (
-								<Button
-									variant="link"
-									size="none"
-									onClick={() => openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken)}
-									className="text-info text-4xs uppercase"
-								>
-									{t`Swap`}
-								</Button>
-							)}
-							{isConnected && (
-								<Button
-									variant="link"
-									size="none"
-									onClick={() => openDepositModal("deposit")}
-									className="text-info text-4xs uppercase"
-								>
-									{t`Deposit`}
-								</Button>
-							)}
-						</div>
-					</div>
-					{!isSpotMarket && positionSize !== 0 && (
-						<div className="flex items-center justify-between text-muted-fg">
-							<span>{t`Position`}</span>
-							<span className={cn("tabular-nums", getValueColorClass(positionSize))}>
-								{positionSize > 0 ? "+" : ""}
-								{formatDecimalFloor(positionSize, szDecimals)} {baseToken}
-							</span>
-						</div>
-					)}
-				</div>
-
-				<div className="space-y-1.5">
-					<div className="text-4xs uppercase tracking-wider text-muted-fg">{t`Size`}</div>
-					<div className="flex items-center gap-1">
-						<Button
-							variant="ghost"
-							size="none"
-							onClick={handleSizeModeToggle}
-							className="px-2 py-1.5 text-3xs border border-border/60 hover:border-fg/30 hover:bg-transparent gap-1"
-							aria-label={t`Toggle size mode`}
-							disabled={isFormDisabled}
-						>
-							<span className="text-4xs">{sizeModeLabel}</span>
-							<ArrowLeftRight className="size-2.5" />
-						</Button>
-						<NumberInput
-							placeholder="0.00"
-							value={sizeInput}
-							onChange={(e) => {
-								setHasUserSized(true);
-								setSize(e.target.value);
-							}}
-							className={cn(
-								"flex-1 h-8 text-sm bg-bg/50 border-border/60 focus:border-info/60 tabular-nums",
-								sizeHasError && "border-negative focus:border-negative",
-							)}
-							disabled={isFormDisabled}
-						/>
-					</div>
-
-					<Slider
-						value={[sliderValue]}
-						onValueChange={(v) => {
-							setIsDraggingSlider(true);
-							setDragSliderValue(v[0]);
-						}}
-						onValueCommit={(v) => {
-							setIsDraggingSlider(false);
-							applySizePercent(v[0]);
-						}}
-						max={100}
-						step={0.1}
-						className="py-5"
-						disabled={isFormDisabled || maxSize <= 0}
-					/>
-
-					<div className="grid grid-cols-4 gap-1">
-						{ORDER_SIZE_PERCENT_STEPS.map((p) => (
-							<Button key={p} onClick={() => applySizePercent(p)} variant="outline" size="xs" aria-label={t`Set ${p}%`}>
-								{p === 100 ? t`Max` : `${p}%`}
-							</Button>
-						))}
-					</div>
-				</div>
-
-				{usesTriggerPrice && (
-					<div className="space-y-1.5">
-						<div className="flex items-center justify-between">
-							<div className="text-4xs uppercase tracking-wider text-muted-fg">{t`Trigger Price (USDC)`}</div>
-							{markPx > 0 && (
-								<Button
-									variant="ghost"
-									size="none"
-									onClick={() => setTriggerPrice(toFixed(markPx, szDecimalsToPriceDecimals(market?.szDecimals ?? 4)))}
-									className="text-4xs text-muted-fg hover:text-info hover:bg-transparent tabular-nums"
-								>
-									{t`Mark`}: {formatPrice(markPx, { szDecimals: market?.szDecimals })}
-								</Button>
-							)}
-						</div>
-						<NumberInput
-							placeholder="0.00"
-							value={triggerPriceInput}
-							onChange={(e) => setTriggerPrice(e.target.value)}
-							className={cn(
-								"w-full h-8 text-sm bg-bg/50 border-border/60 focus:border-info/60 tabular-nums",
-								usesTriggerPrice &&
-									!isPositive(triggerPriceNum) &&
-									sizeValue > 0 &&
-									"border-negative focus:border-negative",
-							)}
-							disabled={isFormDisabled}
-						/>
-					</div>
-				)}
-
-				{usesLimitPrice && (
-					<div className="space-y-1.5">
-						<div className="flex items-center justify-between">
-							<div className="text-4xs uppercase tracking-wider text-muted-fg">{t`Limit Price`}</div>
-							{markPx > 0 && (
-								<Button
-									variant="ghost"
-									size="none"
-									onClick={() => setLimitPrice(toFixed(markPx, szDecimalsToPriceDecimals(market?.szDecimals ?? 4)))}
-									className="text-4xs text-muted-fg hover:text-info hover:bg-transparent tabular-nums"
-								>
-									{t`Mark`}: {formatPrice(markPx, { szDecimals: market?.szDecimals })}
-								</Button>
-							)}
-						</div>
-						<NumberInput
-							placeholder="0.00"
-							value={limitPriceInput}
-							onChange={(e) => setLimitPrice(e.target.value)}
-							className={cn(
-								"w-full h-8 text-sm bg-bg/50 border-border/60 focus:border-info/60 tabular-nums",
-								usesLimitPrice && !price && sizeValue > 0 && "border-negative focus:border-negative",
-							)}
-							disabled={isFormDisabled}
-						/>
-					</div>
-				)}
-
-				{showTif && (
-					<div className="space-y-1.5">
-						<div className="text-4xs uppercase tracking-wider text-muted-fg">{t`Time in Force`}</div>
-						<Select value={tif} onValueChange={(value) => setTif(value as LimitTif)} disabled={isFormDisabled}>
-							<SelectTrigger className="w-full h-8 text-sm bg-bg/50 border-border/60">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{availableTifOptions.map((option) => (
-									<SelectItem key={option} value={option}>
-										{TIF_OPTIONS[option].label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
-				)}
-
-				{scaleOrder && (
-					<>
-						<div className="space-y-1.5">
-							<div className="text-4xs uppercase tracking-wider text-muted-fg">{t`Start Price (USDC)`}</div>
-							<NumberInput
-								placeholder="0.00"
-								value={scaleStartPriceInput}
-								onChange={(e) => setScaleStart(e.target.value)}
-								className="w-full h-8 text-sm bg-bg/50 border-border/60 focus:border-info/60 tabular-nums"
-								disabled={isFormDisabled}
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<div className="text-4xs uppercase tracking-wider text-muted-fg">{t`End Price (USDC)`}</div>
-							<NumberInput
-								placeholder="0.00"
-								value={scaleEndPriceInput}
-								onChange={(e) => setScaleEnd(e.target.value)}
-								className="w-full h-8 text-sm bg-bg/50 border-border/60 focus:border-info/60 tabular-nums"
-								disabled={isFormDisabled}
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<div className="flex items-center justify-between">
-								<div className="text-4xs uppercase tracking-wider text-muted-fg">{t`Number of Orders`}</div>
-								<span className="text-4xs text-muted-fg">{`${SCALE_LEVELS_MIN}-${SCALE_LEVELS_MAX}`}</span>
-							</div>
-							<NumberInput
-								placeholder="4"
-								value={String(scaleLevelsNum)}
-								onChange={(e) => setScaleLevels(Number(e.target.value) || 4)}
-								allowDecimals={false}
-								className="w-full h-8 text-sm bg-bg/50 border-border/60 focus:border-info/60 tabular-nums"
-								disabled={isFormDisabled}
-							/>
-						</div>
-					</>
-				)}
-
-				{twapOrder && (
-					<>
-						<div className="space-y-1.5">
-							<div className="flex items-center justify-between">
-								<div className="text-4xs uppercase tracking-wider text-muted-fg">{t`Duration (Minutes)`}</div>
-								<span className="text-4xs text-muted-fg">{`${TWAP_MINUTES_MIN}-${TWAP_MINUTES_MAX}`}</span>
-							</div>
-							<NumberInput
-								placeholder="30"
-								value={String(twapMinutesNum)}
-								onChange={(e) => setTwapMinutes(Number(e.target.value) || 30)}
-								allowDecimals={false}
-								className="w-full h-8 text-sm bg-bg/50 border-border/60 focus:border-info/60 tabular-nums"
-								disabled={isFormDisabled}
-							/>
-						</div>
-						<div className="flex items-center gap-2 text-3xs">
-							<Checkbox
-								checked={twapRandomize}
-								onCheckedChange={(checked) => setTwapRandomize(checked === true)}
-								disabled={isFormDisabled}
-							/>
-							<span className={cn(isFormDisabled && "text-muted-fg")}>{t`Randomize timing`}</span>
-						</div>
-					</>
-				)}
-
-				{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
-					<div className="space-y-4">
-						<div className="flex items-center gap-3 text-3xs">
-							{capabilities.hasReduceOnly && (
-								<div className="inline-flex items-center gap-2">
-									<Checkbox
-										id={reduceOnlyId}
-										aria-label={t`Reduce Only`}
-										checked={triggerOrder || reduceOnly}
-										onCheckedChange={(checked) => setReduceOnly(checked === true)}
-										disabled={isFormDisabled || triggerOrder}
-									/>
-									<label
-										htmlFor={reduceOnlyId}
-										className={cn(
-											"cursor-pointer",
-											(isFormDisabled || triggerOrder) && "cursor-not-allowed text-muted-fg",
-										)}
-									>
-										{t`Reduce Only`}
-									</label>
-								</div>
-							)}
-							{capabilities.hasTpSl && canUseTpSl && (
-								<div className="inline-flex items-center gap-2">
-									<Checkbox
-										id={tpSlId}
-										aria-label={t`Take Profit / Stop Loss`}
-										checked={tpSlEnabled}
-										onCheckedChange={(checked) => setTpSlEnabled(checked === true)}
-										disabled={isFormDisabled}
-									/>
-									<label
-										htmlFor={tpSlId}
-										className={cn("cursor-pointer", isFormDisabled && "cursor-not-allowed text-muted-fg")}
-									>
-										{t`TP/SL`}
-									</label>
-								</div>
-							)}
-						</div>
-
-						{capabilities.hasTpSl && tpSlEnabled && canUseTpSl && (
-							<TpSlSection
-								side={side}
-								referencePrice={price}
-								size={sizeValue}
-								szDecimals={market?.szDecimals}
-								tpPrice={tpPriceInput}
-								slPrice={slPriceInput}
-								onTpPriceChange={setTpPrice}
-								onSlPriceChange={setSlPrice}
-								disabled={isFormDisabled}
-							/>
-						)}
-					</div>
-				)}
+				<TradeFormFields
+					price={price}
+					positionSize={positionSize}
+					swapTargetToken={swapTargetToken}
+					reduceOnlyId={reduceOnlyId}
+					tpSlId={tpSlId}
+					onSizeModeToggle={handleSizeModeToggle}
+					onSizePercentApply={handleSizePercentApply}
+					onDepositClick={() => openDepositModal("deposit")}
+					onSwapClick={() => swapTargetToken && openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken)}
+				/>
 
 				<div className="space-y-2">
 					{validation.errors.length > 0 && isConnected && availableBalance > 0 && (
@@ -874,7 +505,7 @@ export function OrderEntryPanel() {
 						)}
 						aria-label={buttonContent.text}
 					>
-						{(isSubmitting || isRegistering) && <Loader2 className="size-3 animate-spin" />}
+						{(isSubmitting || isRegistering) && <SpinnerGapIcon className="size-3 animate-spin" />}
 						{buttonContent.text}
 					</Button>
 				</div>
@@ -885,7 +516,7 @@ export function OrderEntryPanel() {
 					orderValue={orderValue}
 					marginRequired={marginRequired}
 					estimatedFee={estimatedFee}
-					slippageBps={slippageBps}
+					slippagePercent={slippagePercent}
 					szDecimals={market?.szDecimals}
 					onSlippageClick={openSettingsDialog}
 					marketKind={market?.kind}

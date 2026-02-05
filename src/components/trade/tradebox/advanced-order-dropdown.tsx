@@ -1,15 +1,15 @@
 import { t } from "@lingui/core/macro";
 import {
-	AlignVerticalDistributeCenter,
-	Check,
-	ChevronDown,
-	Crosshair,
-	type LucideIcon,
-	Octagon,
-	OctagonX,
-	Target,
-	Timer,
-} from "lucide-react";
+	CaretDownIcon,
+	CheckIcon,
+	CrosshairIcon,
+	type Icon,
+	OctagonIcon,
+	RowsIcon,
+	TargetIcon,
+	TimerIcon,
+	XCircleIcon,
+} from "@phosphor-icons/react";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -39,17 +39,17 @@ interface Props {
 type AdvancedOrderOption = {
 	value: AdvancedOrderType;
 	label: string;
-	icon: LucideIcon;
+	icon: Icon;
 	group: "trigger" | "execution";
 };
 
-const ADVANCED_ORDER_ICONS: Record<AdvancedOrderType, LucideIcon> = {
-	stopMarket: Octagon,
-	stopLimit: OctagonX,
-	takeProfitMarket: Target,
-	takeProfitLimit: Crosshair,
-	twap: Timer,
-	scale: AlignVerticalDistributeCenter,
+const ADVANCED_ORDER_ICONS: Record<AdvancedOrderType, Icon> = {
+	stopMarket: OctagonIcon,
+	stopLimit: XCircleIcon,
+	takeProfitMarket: TargetIcon,
+	takeProfitLimit: CrosshairIcon,
+	twap: TimerIcon,
+	scale: RowsIcon,
 };
 
 const ADVANCED_ORDER_OPTIONS: AdvancedOrderOption[] = ADVANCED_ORDER_TYPES.map((value) => ({
@@ -94,7 +94,7 @@ export function AdvancedOrderDropdown({ orderType, onOrderTypeChange, marketKind
 				>
 					<span className="inline-flex items-center gap-1">
 						{isAdvanced ? label : t`Pro`}
-						<ChevronDown className={cn("size-3", isAdvanced ? "text-info" : "text-muted-fg")} />
+						<CaretDownIcon className={cn("size-3", isAdvanced ? "text-info" : "text-muted-fg")} />
 					</span>
 				</button>
 			</DropdownMenuTrigger>
@@ -150,7 +150,7 @@ function AdvancedOrderItem({ option, isSelected, onSelect }: AdvancedOrderItemPr
 				<Icon className="size-3" />
 			</span>
 			<span className={cn("flex-1 text-xs", isSelected ? "text-fg font-medium" : "text-muted-fg")}>{option.label}</span>
-			{isSelected && <Check className="size-3.5 text-info" />}
+			{isSelected && <CheckIcon className="size-3.5 text-info" />}
 		</DropdownMenuItem>
 	);
 }
