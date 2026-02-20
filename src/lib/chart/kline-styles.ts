@@ -1,6 +1,31 @@
-import type { DeepPartial, Styles } from "klinecharts";
+import type { CandleTooltipCustomCallbackData, DeepPartial, Styles } from "klinecharts";
 import { type CandleType, LineType, TooltipShowRule, TooltipShowType, YAxisPosition } from "klinecharts";
 import { colorToHex, colorToRgba, getChartColors } from "@/components/trade/chart/theme-colors";
+
+function formatTooltipTs(ts: number): string {
+	const d = new Date(ts);
+	return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function formatPrice(n: number): string {
+	if (n >= 1) return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+	const s = n.toString();
+	const dot = s.indexOf(".");
+	if (dot === -1) return n.toLocaleString("en-US", { minimumFractionDigits: 2 });
+	let zeros = 0;
+	for (let i = dot + 1; i < s.length; i++) {
+		if (s[i] === "0") zeros++;
+		else break;
+	}
+	const decimals = Math.max(2, zeros + 4);
+	return n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function formatVolume(n: number): string {
+	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+	return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
 
 export function buildKlineStyles(candleType: CandleType): DeepPartial<Styles> {
 	const colors = getChartColors();
@@ -94,14 +119,37 @@ export function buildKlineStyles(candleType: CandleType): DeepPartial<Styles> {
 			tooltip: {
 				showRule: TooltipShowRule.Always,
 				showType: TooltipShowType.Standard,
-				custom: [
-					{ title: { text: "T ", color: textTertiary }, value: "{time}" },
-					{ title: { text: "O ", color: textTertiary }, value: "{open}" },
-					{ title: { text: "H ", color: textTertiary }, value: "{high}" },
-					{ title: { text: "L ", color: textTertiary }, value: "{low}" },
-					{ title: { text: "C ", color: textTertiary }, value: "{close}" },
-					{ title: { text: "V ", color: textTertiary }, value: "{volume}" },
-				],
+				custom: (data: CandleTooltipCustomCallbackData) => {
+					const { current } = data;
+					const isUp = current.close >= current.open;
+					const candleColor = isUp ? green : red;
+					return [
+						{
+							title: { text: "", color: "transparent" },
+							value: { text: formatTooltipTs(current.timestamp), color: textTertiary },
+						},
+						{
+							title: { text: "O ", color: textTertiary },
+							value: { text: formatPrice(current.open), color: candleColor },
+						},
+						{
+							title: { text: "H ", color: textTertiary },
+							value: { text: formatPrice(current.high), color: candleColor },
+						},
+						{
+							title: { text: "L ", color: textTertiary },
+							value: { text: formatPrice(current.low), color: candleColor },
+						},
+						{
+							title: { text: "C ", color: textTertiary },
+							value: { text: formatPrice(current.close), color: candleColor },
+						},
+						{
+							title: { text: "Vol ", color: textTertiary },
+							value: { text: formatVolume(current.volume ?? 0), color: textSecondary },
+						},
+					];
+				},
 				text: tooltipText,
 			},
 		},

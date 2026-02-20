@@ -15,7 +15,7 @@ import { useMarketActions } from "@/stores/use-market-store";
 import { TokenSelector } from "../chart/token-selector";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
-const TradingViewChart = createLazyComponent(() => import("../chart/tradingview-chart"), "TradingViewChart");
+const KlineChart = createLazyComponent(() => import("../chart/kline-chart"), "KlineChart");
 
 const overviewText = UI_TEXT.MARKET_OVERVIEW;
 
@@ -111,9 +111,7 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 					}
 				>
 					<Suspense fallback={<ChartSkeleton />}>
-						{selectedMarket && (
-							<TradingViewChart symbol={selectedMarket.name} theme={theme === "dark" ? "dark" : "light"} />
-						)}
+						{selectedMarket && <KlineChart symbol={selectedMarket.name} theme={theme === "dark" ? "dark" : "light"} />}
 					</Suspense>
 				</ClientOnly>
 			</div>
