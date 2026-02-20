@@ -27,7 +27,11 @@ function formatVolume(n: number): string {
 	return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-export function buildKlineStyles(candleType: CandleType): DeepPartial<Styles> {
+interface KlineStyleOptions {
+	yAxisInside?: boolean;
+}
+
+export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOptions): DeepPartial<Styles> {
 	const colors = getChartColors();
 
 	const textSecondary = colorToHex(colors.textSecondary);
@@ -169,7 +173,14 @@ export function buildKlineStyles(candleType: CandleType): DeepPartial<Styles> {
 			},
 		},
 		xAxis: { show: true, axisLine, tickLine, tickText },
-		yAxis: { show: true, position: YAxisPosition.Right, axisLine, tickLine, tickText },
+		yAxis: {
+			show: true,
+			position: YAxisPosition.Right,
+			inside: options?.yAxisInside ?? false,
+			axisLine: options?.yAxisInside ? { show: false } : axisLine,
+			tickLine: options?.yAxisInside ? { show: false } : tickLine,
+			tickText: options?.yAxisInside ? { ...tickText, marginStart: 2, marginEnd: 2 } : tickText,
+		},
 		separator: { color: colorToRgba(colors.border, 0.4), size: 1 },
 		crosshair: {
 			show: true,

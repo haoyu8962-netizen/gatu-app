@@ -43,9 +43,10 @@ function formatTooltipDate(date: Date): string {
 interface Props {
 	symbol?: string;
 	theme?: "light" | "dark";
+	yAxisInside?: boolean;
 }
 
-export function KlineChart({ symbol = "", theme = "dark" }: Props) {
+export function KlineChart({ symbol = "", theme = "dark", yAxisInside = false }: Props) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const chartRef = useRef<Chart | null>(null);
 	const [activeInterval, setActiveInterval] = useState(DEFAULT_INTERVAL);
@@ -73,7 +74,7 @@ export function KlineChart({ symbol = "", theme = "dark" }: Props) {
 		if (!chart) return;
 		chartRef.current = chart;
 
-		chart.setStyles(buildKlineStyles(activeChartType.type));
+		chart.setStyles(buildKlineStyles(activeChartType.type, { yAxisInside }));
 		chart.createIndicator("VOL");
 
 		chart.setLoadDataCallback(({ type, data, callback }) => {
@@ -124,7 +125,7 @@ export function KlineChart({ symbol = "", theme = "dark" }: Props) {
 			chartRef.current = null;
 			dispose(container);
 		};
-	}, [symbol, theme, activeInterval, activeChartType]);
+	}, [symbol, theme, activeInterval, activeChartType, yAxisInside]);
 
 	const candleData = useSubCandle({ coin: symbol, interval: activeInterval.candleInterval }, { enabled: !!symbol });
 
