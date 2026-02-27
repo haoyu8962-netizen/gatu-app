@@ -1002,6 +1002,12 @@ msgstr "MAX"
 msgid "Maximum slippage tolerance for market orders"
 msgstr "Maximum slippage tolerance for market orders"
 
+#: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+msgid "Mid"
+msgstr "Mid"
+
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
 msgstr "Min order ${ORDER_MIN_NOTIONAL_USD}"

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
@@ -12,6 +13,7 @@ const MobileTerminal = createLazyComponent(() => import("./mobile/mobile-termina
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 
 export function TradeTerminalPage() {
+	useDocumentTitle();
 	const isMobile = useIsMobile();
 	const { showChartScanlines } = useGlobalSettings();
 

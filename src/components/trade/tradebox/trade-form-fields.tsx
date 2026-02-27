@@ -361,6 +361,8 @@ export function TradeFormFields({
 							onChange={(e) => setScaleStart(e.target.value)}
 							className="w-full text-2xs bg-surface-base/50 border-border-200/60 focus:border-primary-default/60 tabular-nums"
 							disabled={isFormDisabled}
+							maxLabel={t`Mid`}
+							onMaxClick={() => setScaleStart(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
 						/>
 					</div>
 					<div className="space-y-1.5">
@@ -371,6 +373,8 @@ export function TradeFormFields({
 							onChange={(e) => setScaleEnd(e.target.value)}
 							className="w-full text-2xs bg-surface-base/50 border-border-200/60 focus:border-primary-default/60 tabular-nums"
 							disabled={isFormDisabled}
+							maxLabel={t`Mid`}
+							onMaxClick={() => setScaleEnd(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
 						/>
 					</div>
 					<div className="space-y-1.5">

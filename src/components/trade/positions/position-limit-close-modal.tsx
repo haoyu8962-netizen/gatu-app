@@ -12,6 +12,7 @@ import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useExchangeOrder } from "@/lib/hyperliquid/hooks/exchange/useExchangeOrder";
+import { useSubActiveAssetCtx } from "@/lib/hyperliquid/hooks/subscription/useSubActiveAssetCtx";
 import { formatDecimalFloor, getValueColorClass, isPositive, toNumber } from "@/lib/trade/numbers";
 import { AssetDisplay } from "../components/asset-display";
 import { TradingActionButton } from "../components/trading-action-button";
@@ -39,6 +40,11 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 	const [sizeInput, setSizeInput] = useState("");
 
 	const { mutateAsync: placeOrder, isPending: isSubmitting, error, reset: resetError } = useExchangeOrder();
+	const { data: liveCtxEvent } = useSubActiveAssetCtx(
+		{ coin: position?.coin ?? "" },
+		{ enabled: open && !!position?.coin },
+	);
+	const liveMarkPx = toNumber(liveCtxEvent?.ctx?.markPx) ?? position?.markPx ?? 0;
 
 	useEffect(() => {
 		if (open && position) {
@@ -140,7 +146,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 						<InfoRow
 							className="p-0"
 							label={t`Mark Price`}
-							value={formatPrice(position.markPx, { szDecimals: position.szDecimals })}
+							value={formatPrice(liveMarkPx, { szDecimals: position.szDecimals })}
 							valueClassName="font-medium text-warning-700"
 						/>
 						<InfoRow
@@ -167,6 +173,8 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 							maxAllowedDecimals={priceDecimals}
 							inputSize="sm"
 							className="w-full"
+							maxLabel={t`Mid`}
+							onMaxClick={() => setPriceInput(liveMarkPx.toFixed(priceDecimals))}
 						/>
 					</div>
 
