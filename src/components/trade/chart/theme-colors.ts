@@ -75,10 +75,9 @@ export function buildChartOverrides(): Record<string, string | number | boolean>
 	const textSecondary = colorToHex(colors.textSecondary);
 	const green = colorToHex(colors.green);
 	const red = colorToHex(colors.red);
-	const accent = colorToHex(colors.accent);
 
 	const gridColor = colorToRgba(colors.border, 0.3);
-	const crosshairColor = accent;
+	const crosshairColor = textSecondary;
 
 	return {
 		"paneProperties.background": bg,
@@ -130,12 +129,12 @@ export function buildChartOverrides(): Record<string, string | number | boolean>
 		"mainSeriesProperties.barStyle.upColor": green,
 		"mainSeriesProperties.barStyle.downColor": red,
 
-		"mainSeriesProperties.lineStyle.color": accent,
+		"mainSeriesProperties.lineStyle.color": textSecondary,
 		"mainSeriesProperties.lineStyle.linewidth": 2,
 
-		"mainSeriesProperties.areaStyle.color1": colorToRgba(colors.accent, 0.28),
-		"mainSeriesProperties.areaStyle.color2": colorToRgba(colors.accent, 0.02),
-		"mainSeriesProperties.areaStyle.linecolor": accent,
+		"mainSeriesProperties.areaStyle.color1": colorToRgba(colors.textSecondary, 0.18),
+		"mainSeriesProperties.areaStyle.color2": colorToRgba(colors.textSecondary, 0.02),
+		"mainSeriesProperties.areaStyle.linecolor": textSecondary,
 		"mainSeriesProperties.areaStyle.linewidth": 2,
 
 		"mainSeriesProperties.baselineStyle.topFillColor1": colorToRgba(colors.green, 0.28),
@@ -145,7 +144,7 @@ export function buildChartOverrides(): Record<string, string | number | boolean>
 		"mainSeriesProperties.baselineStyle.topLineColor": green,
 		"mainSeriesProperties.baselineStyle.bottomLineColor": red,
 
-		"mainSeriesProperties.priceLineColor": accent,
+		"mainSeriesProperties.priceLineColor": textSecondary,
 		"mainSeriesProperties.priceLineWidth": 1,
 		"mainSeriesProperties.showPriceLine": true,
 		"mainSeriesProperties.showCountdown": true,

@@ -38,7 +38,6 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 	const textTertiary = colorToHex(colors.textTertiary);
 	const green = colorToHex(colors.green);
 	const red = colorToHex(colors.red);
-	const accent = colorToHex(colors.accent);
 	const gridColor = colorToRgba(colors.border, 0.3);
 	const scaleLineColor = colorToRgba(colors.border, 0.5);
 	const overlayTextColor = colorToHex(colors.foreground);
@@ -54,17 +53,17 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 
 	const crosshairAxis = {
 		show: true,
-		line: { show: true, style: LineType.Dashed, dashedValue: [4, 2], size: 1, color: accent },
+		line: { show: true, style: LineType.Dashed, dashedValue: [4, 2], size: 1, color: textSecondary },
 		text: {
 			show: true,
-			color: overlayTextColor,
+			color: colorToHex(colors.background),
 			size: 10,
 			paddingLeft: 4,
 			paddingRight: 4,
 			paddingTop: 2,
 			paddingBottom: 2,
 			borderRadius: 2,
-			backgroundColor: accent,
+			backgroundColor: overlayTextColor,
 			borderSize: 0,
 			borderColor: "transparent",
 		},
@@ -90,12 +89,12 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 				downWickColor: red,
 			},
 			area: {
-				lineColor: accent,
+				lineColor: textSecondary,
 				lineSize: 2,
 				smooth: true,
 				backgroundColor: [
-					{ offset: 0, color: colorToRgba(colors.accent, 0.28) },
-					{ offset: 1, color: colorToRgba(colors.accent, 0.02) },
+					{ offset: 0, color: colorToRgba(colors.textSecondary, 0.18) },
+					{ offset: 1, color: colorToRgba(colors.textSecondary, 0.02) },
 				],
 			},
 			priceMark: {
@@ -116,7 +115,7 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 						paddingTop: 2,
 						paddingBottom: 2,
 						borderRadius: 2,
-						color: overlayTextColor,
+						color: "#ffffff",
 					},
 				},
 			},
@@ -186,6 +185,10 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 			show: true,
 			horizontal: crosshairAxis,
 			vertical: crosshairAxis,
+		},
+		overlay: {
+			rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+			polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
 		},
 	};
 }

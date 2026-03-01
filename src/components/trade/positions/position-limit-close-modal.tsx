@@ -64,6 +64,13 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 	const sizeValid = isPositive(sizeNum) && sizeNum !== null && sizeNum <= (position?.size ?? 0);
 	const canSubmit = position && priceValid && sizeValid && !isSubmitting;
 
+	const estimatedPnl =
+		position && priceNum && sizeNum
+			? position.isLong
+				? (priceNum - position.entryPx) * sizeNum
+				: (position.entryPx - priceNum) * sizeNum
+			: null;
+
 	async function handleSubmit() {
 		if (!canSubmit || !position || priceNum === null || sizeNum === null) return;
 
@@ -194,6 +201,15 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 							<p className="text-3xs text-market-down-600">{t`Size exceeds position`}</p>
 						)}
 					</div>
+
+					{estimatedPnl !== null && (
+						<InfoRow
+							className="p-0 text-2xs"
+							label={t`Est. P&L at Limit`}
+							value={formatUSD(estimatedPnl, { signDisplay: "exceptZero" })}
+							valueClassName={cn("font-semibold", getValueColorClass(estimatedPnl))}
+						/>
+					)}
 
 					{error && (
 						<div className="px-2 py-1.5 rounded-xs bg-market-down-100 border border-market-down-600/20 text-3xs text-market-down-600">

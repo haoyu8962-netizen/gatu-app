@@ -580,6 +580,10 @@ msgstr "Frais est."
 #~ msgid "Est. P&L"
 #~ msgstr ""
 
+#: src/components/trade/positions/position-limit-close-modal.tsx
+msgid "Est. P&L at Limit"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Estimated time"
@@ -930,8 +934,6 @@ msgid "Margin Used"
 msgstr "Marge utilisée"
 
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Mark"
 msgstr "Mark"
 
@@ -999,6 +1001,8 @@ msgid "Maximum slippage tolerance for market orders"
 msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Mid"

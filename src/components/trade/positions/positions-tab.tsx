@@ -117,6 +117,10 @@ function PositionRow({
 	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
 	const displayName = market?.pairName ?? p.coin;
 
+	const liqPx = toBig(p.liquidationPx)?.toNumber();
+	const liqIsNear =
+		liqPx != null && Number.isFinite(markPx) && Number.isFinite(liqPx) && Math.abs(liqPx - markPx) / markPx <= 0.1;
+
 	const entryPx = toBig(p.entryPx)?.toNumber() ?? Number.NaN;
 	const unrealizedPnl = toBig(p.unrealizedPnl)?.toNumber() ?? Number.NaN;
 	const roe = toBig(p.returnOnEquity)?.toNumber() ?? Number.NaN;
@@ -214,7 +218,9 @@ function PositionRow({
 				{formatPrice(p.entryPx, { szDecimals })}
 			</TableCell>
 			<TableCell className="text-xs text-right tabular-nums py-1.5">{formatPrice(markPx, { szDecimals })}</TableCell>
-			<TableCell className="text-xs text-right tabular-nums text-market-down-600 py-1.5">
+			<TableCell
+				className={cn("text-xs text-right tabular-nums py-1.5", liqIsNear ? "text-market-down-600" : "text-text-600")}
+			>
 				{formatPrice(p.liquidationPx, { szDecimals })}
 			</TableCell>
 			<TableCell className={cn("text-xs text-right tabular-nums py-1.5", fundingClass)}>

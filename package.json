@@ -22,6 +22,7 @@
 	},
 	"dependencies": {
 		"@fontsource-variable/ibm-plex-sans": "5.2.8",
+		"@fontsource-variable/raleway": "^5.2.8",
 		"@lingui/core": "5.7.0",
 		"@lingui/react": "5.7.0",
 		"@nktkas/hyperliquid": "0.31.0",
