@@ -137,7 +137,7 @@ export function MobileHistoryTab({ className }: Props) {
 										href={explorerUrl}
 										target="_blank"
 										rel="noopener noreferrer"
-										className="flex items-center gap-1 text-3xs text-text-500 hover:text-text-950"
+										className="flex items-center gap-1 text-3xs text-text-500 hover:text-text-950 active:text-text-950 touch-manipulation"
 									>
 										{t`Explorer`}
 										<ArrowSquareOutIcon className="size-3" />

@@ -201,8 +201,9 @@ function MobilePositionCard({
 					onClick={handleOpenTpSl}
 					disabled={typeof assetId !== "number"}
 					className={cn(
-						"flex items-center gap-1 text-xs min-h-[36px] px-2 rounded-sm transition-colors",
+						"flex items-center gap-1 text-xs min-h-[36px] px-2 rounded-sm transition-all touch-manipulation",
 						"border border-border/40 hover:border-fg-400",
+						"active:scale-[0.97] active:bg-surface-analysis/50",
 						"disabled:opacity-50 disabled:cursor-not-allowed",
 					)}
 				>
@@ -233,9 +234,10 @@ function MobilePositionCard({
 					onClick={handleLimitClose}
 					disabled={!canClose || isClosing}
 					className={cn(
-						"flex items-center gap-1 text-xs min-h-[36px] px-2 rounded-sm transition-colors",
+						"flex items-center gap-1 text-xs min-h-[36px] px-2 rounded-sm transition-all touch-manipulation",
 						"border border-border/40 hover:border-fg-400",
 						"text-text-500 hover:text-text-950",
+						"active:scale-[0.97] active:bg-surface-analysis/50",
 						"disabled:opacity-50 disabled:cursor-not-allowed",
 					)}
 				>
