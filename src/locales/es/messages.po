@@ -255,6 +255,7 @@ msgstr "Comprar"
 #~ msgid "Buy Long"
 #~ msgstr "Comprar largo"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -269,6 +270,10 @@ msgstr "Cancelar"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Cancel all"
 msgstr "Cancelar todo"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "Cancel All"
+msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Cancel all orders"
@@ -290,6 +295,7 @@ msgstr "Cancelar órdenes seleccionadas"
 msgid "Cancel TWAP order"
 msgstr "Cancelar orden TWAP"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -400,6 +406,7 @@ msgstr "Conecta tu billetera para ver saldos."
 msgid "Connect your wallet to view funding payments."
 msgstr "Conecta tu billetera para ver pagos de financiamiento."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Connect your wallet to view open orders."
 msgstr "Conecta tu billetera para ver órdenes abiertas."
@@ -699,6 +706,7 @@ msgstr "Error al cargar saldos."
 msgid "Failed to load funding history."
 msgstr "Error al cargar historial de financiamiento."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Failed to load open orders."
 msgstr "Error al cargar órdenes abiertas."
@@ -1237,6 +1245,7 @@ msgstr "Sin mercado"
 msgid "No markets found."
 msgstr "No se encontraron mercados."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "No open orders."
 msgstr "Sin órdenes abiertas."
@@ -1325,6 +1334,7 @@ msgstr ""
 msgid "Open Interest"
 msgstr "Interés abierto"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Open Orders"
 msgstr "Órdenes abiertas"
@@ -1456,6 +1466,7 @@ msgstr ""
 #~ msgstr "Anterior"
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1543,6 +1554,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "RO"
 msgstr ""
 
 #: src/lib/trade/order-types.ts
@@ -1746,6 +1761,7 @@ msgstr "Firmante no listo"
 #~ msgid "Signing..."
 #~ msgstr "Firmando..."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
@@ -2133,6 +2149,7 @@ msgstr ""
 msgid "Transferring..."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 msgid "Trigger"

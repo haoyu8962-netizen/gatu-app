@@ -8,13 +8,13 @@ import { cn } from "@/lib/cn";
 import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
 import { createLazyComponent } from "@/lib/lazy";
 import { toNumber } from "@/lib/trade/numbers";
+import { MobileOrdersTab } from "./mobile-orders-tab";
 import { MobilePositionsTab } from "./mobile-positions-tab";
 
 const BalancesTab = createLazyComponent(() => import("../positions/balances-tab"), "BalancesTab");
 const FundingTab = createLazyComponent(() => import("../positions/funding-tab"), "FundingTab");
 const HistoryTab = createLazyComponent(() => import("../positions/history-tab"), "HistoryTab");
 const OrdersHistoryTab = createLazyComponent(() => import("../positions/orders-history-tab"), "OrdersHistoryTab");
-const OrdersTab = createLazyComponent(() => import("../positions/orders-tab"), "OrdersTab");
 const TwapTab = createLazyComponent(() => import("../positions/twap-tab"), "TwapTab");
 
 const MOBILE_TABS = [
@@ -105,9 +105,7 @@ export function MobilePositionsView({ className }: Props) {
 								<MobilePositionsTab />
 							</TabsContent>
 							<TabsContent value="orders" className={tabContentClass}>
-								<Suspense fallback={<TabLoadingFallback />}>
-									<OrdersTab />
-								</Suspense>
+								<MobileOrdersTab />
 							</TabsContent>
 							<TabsContent value="balances" className={tabContentClass}>
 								<Suspense fallback={<TabLoadingFallback />}>

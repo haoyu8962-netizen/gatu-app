@@ -255,6 +255,7 @@ msgstr "买入"
 #~ msgid "Buy Long"
 #~ msgstr "买入做多"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -269,6 +270,10 @@ msgstr "取消"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Cancel all"
 msgstr "全部取消"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "Cancel All"
+msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Cancel all orders"
@@ -290,6 +295,7 @@ msgstr "取消选中的订单"
 msgid "Cancel TWAP order"
 msgstr "取消 TWAP 订单"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -400,6 +406,7 @@ msgstr "连接钱包查看余额。"
 msgid "Connect your wallet to view funding payments."
 msgstr "连接钱包查看资金费用。"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Connect your wallet to view open orders."
 msgstr "连接钱包查看未成交订单。"
@@ -699,6 +706,7 @@ msgstr "加载余额失败。"
 msgid "Failed to load funding history."
 msgstr "加载资金费用历史失败。"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Failed to load open orders."
 msgstr "加载未成交订单失败。"
@@ -1237,6 +1245,7 @@ msgstr "无市场"
 msgid "No markets found."
 msgstr "未找到市场。"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "No open orders."
 msgstr "无未成交订单。"
@@ -1325,6 +1334,7 @@ msgstr ""
 msgid "Open Interest"
 msgstr "未平仓量"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Open Orders"
 msgstr "未成交订单"
@@ -1456,6 +1466,7 @@ msgstr ""
 #~ msgstr "上一页"
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1543,6 +1554,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "RO"
 msgstr ""
 
 #: src/lib/trade/order-types.ts
@@ -1746,6 +1761,7 @@ msgstr "签名器未就绪"
 #~ msgid "Signing..."
 #~ msgstr "签名中..."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
@@ -2133,6 +2149,7 @@ msgstr ""
 msgid "Transferring..."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 msgid "Trigger"

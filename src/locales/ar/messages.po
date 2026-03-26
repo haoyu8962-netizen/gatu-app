@@ -255,6 +255,7 @@ msgstr "شراء"
 #~ msgid "Buy Long"
 #~ msgstr "شراء طويل"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -269,6 +270,10 @@ msgstr "إلغاء"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Cancel all"
 msgstr "إلغاء الكل"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "Cancel All"
+msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Cancel all orders"
@@ -290,6 +295,7 @@ msgstr "إلغاء الأوامر المحددة"
 msgid "Cancel TWAP order"
 msgstr "إلغاء أمر TWAP"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -400,6 +406,7 @@ msgstr "اربط محفظتك لعرض الأرصدة."
 msgid "Connect your wallet to view funding payments."
 msgstr "اربط محفظتك لعرض مدفوعات التمويل."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Connect your wallet to view open orders."
 msgstr "اربط محفظتك لعرض الأوامر المفتوحة."
@@ -699,6 +706,7 @@ msgstr "فشل في تحميل الأرصدة."
 msgid "Failed to load funding history."
 msgstr "فشل في تحميل سجل التمويل."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Failed to load open orders."
 msgstr "فشل في تحميل الأوامر المفتوحة."
@@ -1237,6 +1245,7 @@ msgstr "لا يوجد سوق"
 msgid "No markets found."
 msgstr "لم يتم العثور على أسواق."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "No open orders."
 msgstr "لا توجد أوامر مفتوحة."
@@ -1325,6 +1334,7 @@ msgstr ""
 msgid "Open Interest"
 msgstr "العقود المفتوحة"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Open Orders"
 msgstr "الأوامر المفتوحة"
@@ -1456,6 +1466,7 @@ msgstr ""
 #~ msgstr "السابق"
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1543,6 +1554,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "RO"
 msgstr ""
 
 #: src/lib/trade/order-types.ts
@@ -1746,6 +1761,7 @@ msgstr "المُوقِّع غير جاهز"
 #~ msgid "Signing..."
 #~ msgstr "جاري التوقيع..."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
@@ -2133,6 +2149,7 @@ msgstr ""
 msgid "Transferring..."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 msgid "Trigger"
