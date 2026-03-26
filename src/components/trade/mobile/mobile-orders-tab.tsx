@@ -182,7 +182,10 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 
 	return (
 		<div
-			className={cn("rounded-sm border bg-surface-base/50", isLong ? "border-market-up/30" : "border-market-down/30")}
+			className={cn(
+				"rounded-sm border bg-surface-base/50",
+				isLong ? "border-market-up-600/30" : "border-market-down-600/30",
+			)}
 		>
 			<div className="flex items-center justify-between px-3 py-2.5 border-b border-border/40">
 				<Button variant="text" size="none" onClick={() => onSelectMarket(order.coin)} className="gap-2">
@@ -190,7 +193,9 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 						coin={order.coin}
 						nameClassName="text-sm font-semibold"
 						subtitle={
-							<span className={cn("text-3xs font-medium uppercase", isLong ? "text-market-up" : "text-market-down")}>
+							<span
+								className={cn("text-3xs font-medium uppercase", isLong ? "text-market-up-600" : "text-market-down-600")}
+							>
 								{sideLabel}
 							</span>
 						}
@@ -227,7 +232,10 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 					size="sm"
 					onClick={() => onCancel([order])}
 					disabled={isCancelling}
-					className={cn("min-h-[36px] text-xs gap-1", "border-market-down/60 text-market-down hover:bg-market-down/10")}
+					className={cn(
+						"min-h-[36px] text-xs gap-1",
+						"border-market-down-600/60 text-market-down-600 hover:bg-market-down-600/10",
+					)}
 				>
 					{isCancelling ? <Spinner className="size-3" /> : <XIcon className="size-3.5" />}
 					{t`Cancel`}

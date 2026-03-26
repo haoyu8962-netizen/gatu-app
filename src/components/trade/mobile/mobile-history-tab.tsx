@@ -84,7 +84,7 @@ export function MobileHistoryTab({ className }: Props) {
 							key={`${fill.hash}-${fill.tid}`}
 							className={cn(
 								"rounded-sm border bg-surface-base/50",
-								isBuy ? "border-market-up/30" : "border-market-down/30",
+								isBuy ? "border-market-up-600/30" : "border-market-down-600/30",
 							)}
 						>
 							<div className="flex items-center justify-between px-3 py-2.5 border-b border-border/40">
@@ -101,7 +101,11 @@ export function MobileHistoryTab({ className }: Props) {
 											<span
 												className={cn(
 													"text-3xs font-medium uppercase",
-													isLiquidation ? "text-market-down" : isBuy ? "text-market-up" : "text-market-down",
+													isLiquidation
+														? "text-market-down-600"
+														: isBuy
+															? "text-market-up-600"
+															: "text-market-down-600",
 												)}
 											>
 												{isLiquidation ? t`Liquidated` : fill.dir}

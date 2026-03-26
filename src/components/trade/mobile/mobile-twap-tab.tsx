@@ -86,7 +86,7 @@ export function MobileTwapTab({ className }: Props) {
 							key={twapId}
 							className={cn(
 								"rounded-sm border bg-surface-base/50",
-								isBuy ? "border-market-up/30" : "border-market-down/30",
+								isBuy ? "border-market-up-600/30" : "border-market-down-600/30",
 							)}
 						>
 							<div className="flex items-center justify-between px-3 py-2.5 border-b border-border/40">
@@ -101,7 +101,10 @@ export function MobileTwapTab({ className }: Props) {
 										nameClassName="text-sm font-semibold"
 										subtitle={
 											<span
-												className={cn("text-3xs font-medium uppercase", isBuy ? "text-market-up" : "text-market-down")}
+												className={cn(
+													"text-3xs font-medium uppercase",
+													isBuy ? "text-market-up-600" : "text-market-down-600",
+												)}
 											>
 												{isBuy ? t`Buy` : t`Sell`}
 											</span>
@@ -119,7 +122,7 @@ export function MobileTwapTab({ className }: Props) {
 										size="sm"
 										className={cn(
 											"min-h-[36px] text-xs",
-											"border-market-down/60 text-market-down hover:bg-market-down/10",
+											"border-market-down-600/60 text-market-down-600 hover:bg-market-down-600/10",
 										)}
 									>
 										{t`Cancel`}
@@ -132,7 +135,7 @@ export function MobileTwapTab({ className }: Props) {
 								<MetricCell
 									label={t`Executed`}
 									value={formatNumber(executedSize, szDecimals)}
-									valueClass={isBuy ? "text-market-up" : "text-market-down"}
+									valueClass={isBuy ? "text-market-up-600" : "text-market-down-600"}
 								/>
 								<MetricCell label={t`Avg Price`} value={formatPrice(avgPrice, { szDecimals })} />
 							</div>

@@ -85,7 +85,7 @@ export function MobileFundingTab({ className }: Props) {
 							key={`${update.coin}-${update.time}-${index}`}
 							className={cn(
 								"rounded-sm border bg-surface-base/50",
-								isPositivePayment ? "border-market-up/30" : "border-market-down/30",
+								isPositivePayment ? "border-market-up-600/30" : "border-market-down-600/30",
 							)}
 						>
 							<div className="flex items-center justify-between px-3 py-2.5 border-b border-border/40">

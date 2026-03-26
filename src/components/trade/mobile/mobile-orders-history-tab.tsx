@@ -87,7 +87,7 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 							key={`${order.oid}-${entry.statusTimestamp}`}
 							className={cn(
 								"rounded-sm border bg-surface-base/50",
-								isLong ? "border-market-up/30" : "border-market-down/30",
+								isLong ? "border-market-up-600/30" : "border-market-down-600/30",
 							)}
 						>
 							<div className="flex items-center justify-between px-3 py-2.5 border-b border-border/40">
@@ -111,9 +111,9 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 									className={cn(
 										"text-xs px-1.5 py-0.5 rounded-sm capitalize",
 										entry.status === "filled"
-											? "bg-market-up/10 text-market-up"
+											? "bg-market-up-100 text-market-up-600"
 											: entry.status === "canceled"
-												? "bg-market-down/10 text-market-down"
+												? "bg-market-down-100 text-market-down-600"
 												: "bg-surface-analysis text-text-500",
 									)}
 								>
