@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
 import { toNumber } from "@/lib/trade/numbers";
 import { MobileBalancesTab } from "./mobile-balances-tab";
+import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 import { MobileFundingTab } from "./mobile-funding-tab";
 import { MobileHistoryTab } from "./mobile-history-tab";
 import { MobileOrdersHistoryTab } from "./mobile-orders-history-tab";
@@ -94,7 +95,7 @@ export function MobilePositionsView({ className }: Props) {
 						})}
 					</TabsList>
 				</div>
-				<div className="flex-1 min-h-0 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+				<div className="flex-1 min-h-0 overflow-y-auto">
 					{!isConnected ? (
 						<EmptyState />
 					) : (
@@ -122,6 +123,7 @@ export function MobilePositionsView({ className }: Props) {
 							</TabsContent>
 						</>
 					)}
+					<MobileBottomNavSpacer />
 				</div>
 			</Tabs>
 		</div>
