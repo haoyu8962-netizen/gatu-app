@@ -1,7 +1,16 @@
+import { useState } from "react";
+import { useConnection } from "wagmi";
+import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
+import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
+import { toNumber } from "@/lib/trade/numbers";
+import { MobileAccountView } from "./mobile-account-view";
+import { MobileBookView } from "./mobile-book-view";
+import { MobileBottomNav, type MobileTab } from "./mobile-bottom-nav";
 import { MobileChartView } from "./mobile-chart-view";
 import { MobileHeader } from "./mobile-header";
 import { MobilePositionsView } from "./mobile-positions-view";
+import { MobileTradeView } from "./mobile-trade-view";
 import { OfflineBanner } from "./offline-banner";
 
 interface Props {
@@ -9,6 +18,18 @@ interface Props {
 }
 
 export function MobileTerminal({ className }: Props) {
+	const [activeTab, setActiveTab] = useState<MobileTab>("chart");
+	const { address, isConnected } = useConnection();
+	const { perpPositions } = useAccountBalances();
+
+	const { data: ordersEvent } = useSubOpenOrders({ user: address ?? "0x0" }, { enabled: isConnected && !!address });
+
+	const positionsCount = isConnected
+		? perpPositions.reduce((count, entry) => (toNumber(entry.position.szi) ? count + 1 : count), 0)
+		: 0;
+
+	const ordersCount = isConnected ? (ordersEvent?.orders?.length ?? 0) : 0;
+
 	return (
 		<div
 			className={cn("h-dvh w-full flex flex-col bg-surface-base text-text-950 font-mono", "overflow-hidden", className)}
@@ -16,9 +37,17 @@ export function MobileTerminal({ className }: Props) {
 			<MobileHeader />
 			<OfflineBanner />
 			<main className="flex-1 min-h-0 flex flex-col overflow-hidden">
-				<MobileChartView />
-				<MobilePositionsView />
+				{activeTab === "chart" && <MobileChartView />}
+				{activeTab === "book" && <MobileBookView />}
+				{activeTab === "trade" && <MobileTradeView />}
+				{activeTab === "positions" && <MobilePositionsView />}
+				{activeTab === "account" && <MobileAccountView />}
 			</main>
+			<MobileBottomNav
+				activeTab={activeTab}
+				onTabChange={setActiveTab}
+				badges={{ positions: positionsCount + ordersCount }}
+			/>
 		</div>
 	);
 }
