@@ -13,6 +13,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "{formatted} USDC deposited to Hyperliquid"
+msgstr "{formatted} USDC deposited to Hyperliquid"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "% filled"
 msgstr "% filled"
@@ -157,6 +161,7 @@ msgid "Avg Price"
 msgstr "Avg Price"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Back"
 msgstr "Back"
 
@@ -190,12 +195,24 @@ msgid "Bridge"
 msgstr "Bridge"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridge complete"
+msgstr "Bridge complete"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridge failed"
+msgstr "Bridge failed"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Bridge to Hyperliquid"
 #~ msgstr "Bridge to Hyperliquid"
 
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridging in progress"
+msgstr "Bridging in progress"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Builder Address"
@@ -540,6 +557,7 @@ msgstr "Displays the mobile sidebar."
 #~ msgid "Docs"
 #~ msgstr "Docs"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Done"
@@ -2092,6 +2110,7 @@ msgstr "Trigger"
 msgid "Trigger Price (USDC)"
 msgstr "Trigger Price (USDC)"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Try Again"
 msgstr "Try Again"

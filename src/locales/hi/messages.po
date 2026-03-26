@@ -13,6 +13,10 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "{formatted} USDC deposited to Hyperliquid"
+msgstr ""
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "% filled"
 msgstr "% पूर्ण"
@@ -157,6 +161,7 @@ msgid "Avg Price"
 msgstr "औसत मूल्य"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Back"
 msgstr ""
 
@@ -190,12 +195,24 @@ msgid "Bridge"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridge complete"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridge failed"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Bridge to Hyperliquid"
 #~ msgstr ""
 
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "Arbitrum या अन्य चेन से अपने Hyperliquid खाते में USDC ब्रिज करें।"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridging in progress"
+msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Builder Address"
@@ -540,6 +557,7 @@ msgstr "मोबाइल साइडबार दिखाता है।"
 #~ msgid "Docs"
 #~ msgstr "दस्तावेज़"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Done"
@@ -2084,6 +2102,7 @@ msgstr ""
 msgid "Trigger Price (USDC)"
 msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Try Again"
 msgstr ""

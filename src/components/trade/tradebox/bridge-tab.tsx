@@ -4,6 +4,7 @@ import {
 	ArrowLeftIcon,
 	CaretDownIcon,
 	CaretUpIcon,
+	CheckCircleIcon,
 	ClockIcon,
 	CoinIcon,
 	SpinnerGapIcon,
@@ -22,9 +23,10 @@ import { cn } from "@/lib/cn";
 import { formatDuration, formatUSD, shortenAddress } from "@/lib/format";
 import { initLiFi } from "@/lib/lifi/config";
 import { type BridgeToken, useBridgeBalances } from "@/lib/lifi/use-balances";
-import { useBridgeQuote } from "@/lib/lifi/use-quote";
+import { useBridgeExecutor } from "@/lib/lifi/use-bridge";
+import { type BridgeQuote, useBridgeQuote } from "@/lib/lifi/use-quote";
 
-type BridgeScreen = "select" | "confirm";
+type BridgeScreen = "select" | "confirm" | "executing" | "success";
 
 function BridgeWalletNotConnected() {
 	return (
@@ -221,9 +223,10 @@ interface ConfirmationScreenProps {
 	token: BridgeToken;
 	address: string;
 	onBack: () => void;
+	onConfirm: (quote: BridgeQuote) => void;
 }
 
-function ConfirmationScreen({ token, address, onBack }: ConfirmationScreenProps) {
+function ConfirmationScreen({ token, address, onBack, onConfirm }: ConfirmationScreenProps) {
 	const fullBalance = Big(token.amount).div(Big(10).pow(token.decimals)).toString();
 	const [amount, setAmount] = useState(fullBalance);
 	const debouncedAmount = useDebouncedValue(amount, 500);
@@ -377,9 +380,94 @@ function ConfirmationScreen({ token, address, onBack }: ConfirmationScreenProps)
 				</>
 			) : null}
 
-			<Button variant="contained" tone="accent" size="lg" className="w-full" disabled={!quote || quoteLoading}>
+			<Button
+				variant="contained"
+				tone="accent"
+				size="lg"
+				className="w-full"
+				disabled={!quote || quoteLoading}
+				onClick={() => quote && onConfirm(quote)}
+			>
 				<Trans>Confirm Bridge</Trans>
 			</Button>
+		</div>
+	);
+}
+
+interface ExecutingScreenProps {
+	statusText: string;
+}
+
+function ExecutingScreen({ statusText }: ExecutingScreenProps) {
+	return (
+		<div className="flex flex-col items-center gap-4 py-8">
+			<div className="flex size-12 items-center justify-center rounded-full bg-primary-default/10 border border-primary-default/30">
+				<SpinnerGapIcon className="size-6 animate-spin text-primary-default" />
+			</div>
+			<div className="text-center space-y-1">
+				<p className="text-sm font-medium text-text-950">
+					<Trans>Bridging in progress</Trans>
+				</p>
+				<p className="text-3xs text-text-500">{statusText}</p>
+			</div>
+		</div>
+	);
+}
+
+interface SuccessScreenProps {
+	receivedAmount: string;
+	onDone: () => void;
+}
+
+function SuccessScreen({ receivedAmount, onDone }: SuccessScreenProps) {
+	const formatted = formatTokenAmount(receivedAmount, 6);
+
+	return (
+		<div className="flex flex-col items-center gap-4 py-8">
+			<div className="flex size-12 items-center justify-center rounded-full bg-market-up-100 border border-market-up-600/30">
+				<CheckCircleIcon className="size-6 text-market-up-600" weight="fill" />
+			</div>
+			<div className="text-center space-y-1">
+				<p className="text-sm font-medium text-text-950">
+					<Trans>Bridge complete</Trans>
+				</p>
+				<p className="text-3xs text-text-500">
+					<Trans>{formatted} USDC deposited to Hyperliquid</Trans>
+				</p>
+			</div>
+			<Button variant="contained" tone="accent" size="lg" className="w-full" onClick={onDone}>
+				<Trans>Done</Trans>
+			</Button>
+		</div>
+	);
+}
+
+interface ErrorScreenProps {
+	error: string;
+	onRetry: () => void;
+	onBack: () => void;
+}
+
+function BridgeErrorScreen({ error, onRetry, onBack }: ErrorScreenProps) {
+	return (
+		<div className="flex flex-col items-center gap-4 py-8">
+			<div className="flex size-12 items-center justify-center rounded-full bg-market-down-100 border border-market-down-600/30">
+				<WarningCircleIcon className="size-6 text-market-down-600" />
+			</div>
+			<div className="text-center space-y-1">
+				<p className="text-sm font-medium text-text-950">
+					<Trans>Bridge failed</Trans>
+				</p>
+				<p className="text-3xs text-text-500 max-w-[280px]">{error}</p>
+			</div>
+			<div className="flex gap-2 w-full">
+				<Button variant="outlined" size="lg" className="flex-1" onClick={onBack}>
+					<Trans>Back</Trans>
+				</Button>
+				<Button variant="contained" tone="accent" size="lg" className="flex-1" onClick={onRetry}>
+					<Trans>Try Again</Trans>
+				</Button>
+			</div>
 		</div>
 	);
 }
@@ -389,6 +477,8 @@ export function BridgeTab() {
 	const lifiInitialized = useRef(false);
 	const [screen, setScreen] = useState<BridgeScreen>("select");
 	const [selectedToken, setSelectedToken] = useState<BridgeToken | null>(null);
+	const lastQuoteRef = useRef<BridgeQuote | null>(null);
+	const bridge = useBridgeExecutor();
 
 	useEffect(() => {
 		if (!lifiInitialized.current) {
@@ -409,10 +499,44 @@ export function BridgeTab() {
 	function handleBack() {
 		setScreen("select");
 		setSelectedToken(null);
+		bridge.reset();
+		lastQuoteRef.current = null;
+	}
+
+	function handleConfirm(quote: BridgeQuote) {
+		lastQuoteRef.current = quote;
+		setScreen("executing");
+		bridge.execute(quote);
+	}
+
+	function handleRetry() {
+		if (lastQuoteRef.current) {
+			setScreen("executing");
+			bridge.execute(lastQuoteRef.current);
+		}
+	}
+
+	function handleDone() {
+		setScreen("select");
+		setSelectedToken(null);
+		bridge.reset();
+		lastQuoteRef.current = null;
+	}
+
+	if (bridge.status === "error") {
+		return <BridgeErrorScreen error={bridge.error ?? "Unknown error"} onRetry={handleRetry} onBack={handleBack} />;
+	}
+
+	if (bridge.status === "success" && bridge.receivedAmount) {
+		return <SuccessScreen receivedAmount={bridge.receivedAmount} onDone={handleDone} />;
+	}
+
+	if (screen === "executing") {
+		return <ExecutingScreen statusText={bridge.statusText} />;
 	}
 
 	if (screen === "confirm" && selectedToken) {
-		return <ConfirmationScreen token={selectedToken} address={address} onBack={handleBack} />;
+		return <ConfirmationScreen token={selectedToken} address={address} onBack={handleBack} onConfirm={handleConfirm} />;
 	}
 
 	return <AssetSelectionScreen address={address} onSelect={handleTokenSelect} />;
