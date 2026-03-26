@@ -13,6 +13,7 @@ import { useExchangeScope } from "@/providers/exchange-scope";
 import { useTheme } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { TokenSelector } from "../chart/token-selector";
+import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
 const KlineChart = createLazyComponent(() => import("../chart/kline-chart"), "KlineChart");
 
@@ -38,7 +39,7 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 	const oiUsd = getOiUsd(selectedMarket?.openInterest, selectedMarket?.markPx);
 
 	return (
-		<div className={cn("flex flex-col shrink-0", className)}>
+		<div className={cn("flex flex-col flex-1 min-h-0", className)}>
 			<div className="shrink-0 px-3 py-2 border-b border-border-200/60 bg-surface-execution/30">
 				<div className="flex items-center justify-between gap-3">
 					<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
@@ -101,7 +102,7 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 				</div>
 			</div>
 
-			<div className="h-[300px]">
+			<div className="flex-1 min-h-0">
 				<ClientOnly
 					fallback={
 						<div className="h-full flex items-center justify-center">
@@ -116,6 +117,8 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 					</Suspense>
 				</ClientOnly>
 			</div>
+
+			<MobileBottomNavSpacer />
 		</div>
 	);
 }
