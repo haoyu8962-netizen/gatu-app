@@ -64,6 +64,7 @@ msgstr "Actions"
 msgid "Active"
 msgstr "Active"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Active Positions"
 msgstr "Active Positions"
@@ -311,6 +312,7 @@ msgstr "Change leverage"
 msgid "Chart"
 msgstr "Chart"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/ui/dialog.tsx
 #: src/components/ui/sheet.tsx
@@ -406,6 +408,7 @@ msgstr "Connect your wallet to view open orders."
 msgid "Connect your wallet to view order history."
 msgstr "Connect your wallet to view order history."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
 msgstr "Connect your wallet to view positions."
@@ -458,6 +461,7 @@ msgstr "Could not fetch your token balances"
 msgid "Created"
 msgstr "Created"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -614,6 +618,7 @@ msgstr "Enter TP or SL price"
 msgid "Enter trigger price"
 msgstr "Enter trigger price"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Entry"
 msgstr "Entry"
@@ -669,6 +674,7 @@ msgstr "Execution"
 msgid "failed"
 msgstr "failed"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to close position"
 msgstr "Failed to close position"
@@ -705,6 +711,7 @@ msgstr "Failed to load order book."
 msgid "Failed to load order history."
 msgstr "Failed to load order history."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to load positions."
 msgstr "Failed to load positions."
@@ -777,6 +784,7 @@ msgstr "From"
 #~ msgstr "Full Position"
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Funding"
 msgstr "Funding"
@@ -865,6 +873,7 @@ msgstr "Invalid amount"
 #~ msgid "Invalid Ethereum address"
 #~ msgstr "Invalid Ethereum address"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -904,6 +913,7 @@ msgstr "Leverage"
 msgid "Limit"
 msgstr "Limit"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Limit Close"
 msgstr "Limit Close"
@@ -925,6 +935,7 @@ msgstr "Limit Price"
 #~ msgid "limit ro"
 #~ msgstr "limit ro"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Liq"
 msgstr "Liq"
@@ -989,6 +1000,7 @@ msgstr "Loading wallet..."
 msgid "Loading..."
 msgstr "Loading..."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1003,6 +1015,7 @@ msgstr "Low Balance"
 msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
 msgstr "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Margin"
 msgstr "Margin"
@@ -1023,6 +1036,7 @@ msgstr "Margin Req."
 msgid "Margin Used"
 msgstr "Margin Used"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Mark"
 msgstr "Mark"
@@ -1182,6 +1196,7 @@ msgstr "New to wallets?"
 msgid "No"
 msgstr "No"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No active positions."
 msgstr "No active positions."
@@ -1431,6 +1446,7 @@ msgstr "Position"
 msgid "Position actions"
 msgstr "Position actions"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position closed"
 msgstr "Position closed"
@@ -1671,6 +1687,7 @@ msgstr "Set to {p}%"
 msgid "Settings"
 msgstr "Settings"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1733,6 +1750,7 @@ msgstr "Signer not ready"
 #~ msgid "Signing..."
 #~ msgstr "Signing..."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2061,6 +2079,7 @@ msgstr "TP Price"
 #~ msgid "TP trigger price"
 #~ msgstr "TP trigger price"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "TP/SL"

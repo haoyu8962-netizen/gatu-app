@@ -64,6 +64,7 @@ msgstr "操作"
 msgid "Active"
 msgstr "活跃"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Active Positions"
 msgstr "活跃仓位"
@@ -311,6 +312,7 @@ msgstr ""
 msgid "Chart"
 msgstr "图表"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/ui/dialog.tsx
 #: src/components/ui/sheet.tsx
@@ -406,6 +408,7 @@ msgstr "连接钱包查看未成交订单。"
 msgid "Connect your wallet to view order history."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
 msgstr "连接钱包查看仓位。"
@@ -458,6 +461,7 @@ msgstr ""
 msgid "Created"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -614,6 +618,7 @@ msgstr ""
 msgid "Enter trigger price"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Entry"
 msgstr "开仓价"
@@ -669,6 +674,7 @@ msgstr ""
 msgid "failed"
 msgstr "失败"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to close position"
 msgstr ""
@@ -705,6 +711,7 @@ msgstr "加载订单簿失败。"
 msgid "Failed to load order history."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to load positions."
 msgstr "加载仓位失败。"
@@ -777,6 +784,7 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Funding"
 msgstr "资金费率"
@@ -865,6 +873,7 @@ msgstr ""
 #~ msgid "Invalid Ethereum address"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -900,6 +909,7 @@ msgstr ""
 msgid "Limit"
 msgstr "限价"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Limit Close"
 msgstr ""
@@ -921,6 +931,7 @@ msgstr "限价"
 #~ msgid "limit ro"
 #~ msgstr "限价只减仓"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Liq"
 msgstr "清算"
@@ -985,6 +996,7 @@ msgstr "加载钱包中..."
 msgid "Loading..."
 msgstr "加载中..."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -999,6 +1011,7 @@ msgstr ""
 msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Margin"
 msgstr ""
@@ -1019,6 +1032,7 @@ msgstr "保证金要求"
 msgid "Margin Used"
 msgstr "已用保证金"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Mark"
 msgstr "标记价"
@@ -1178,6 +1192,7 @@ msgstr ""
 msgid "No"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No active positions."
 msgstr "无活跃仓位。"
@@ -1427,6 +1442,7 @@ msgstr "仓位"
 msgid "Position actions"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position closed"
 msgstr ""
@@ -1667,6 +1683,7 @@ msgstr ""
 msgid "Settings"
 msgstr "设置"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1729,6 +1746,7 @@ msgstr "签名器未就绪"
 #~ msgid "Signing..."
 #~ msgstr "签名中..."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2057,6 +2075,7 @@ msgstr ""
 #~ msgid "TP trigger price"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "TP/SL"

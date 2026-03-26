@@ -64,6 +64,7 @@ msgstr "कार्रवाई"
 msgid "Active"
 msgstr "सक्रिय"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Active Positions"
 msgstr "सक्रिय पोजीशन"
@@ -311,6 +312,7 @@ msgstr ""
 msgid "Chart"
 msgstr "चार्ट"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/ui/dialog.tsx
 #: src/components/ui/sheet.tsx
@@ -406,6 +408,7 @@ msgstr "खुले ऑर्डर देखने के लिए अपन�
 msgid "Connect your wallet to view order history."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
 msgstr "पोजीशन देखने के लिए अपना वॉलेट कनेक्ट करें।"
@@ -458,6 +461,7 @@ msgstr ""
 msgid "Created"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -614,6 +618,7 @@ msgstr ""
 msgid "Enter trigger price"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Entry"
 msgstr "प्रवेश"
@@ -669,6 +674,7 @@ msgstr ""
 msgid "failed"
 msgstr "विफल"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to close position"
 msgstr ""
@@ -705,6 +711,7 @@ msgstr "ऑर्डर बुक लोड करने में विफल�
 msgid "Failed to load order history."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to load positions."
 msgstr "पोजीशन लोड करने में विफल।"
@@ -777,6 +784,7 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Funding"
 msgstr "फंडिंग"
@@ -865,6 +873,7 @@ msgstr ""
 #~ msgid "Invalid Ethereum address"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -900,6 +909,7 @@ msgstr ""
 msgid "Limit"
 msgstr "लिमिट"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Limit Close"
 msgstr ""
@@ -921,6 +931,7 @@ msgstr "लिमिट प्राइस"
 #~ msgid "limit ro"
 #~ msgstr "लिमिट आरओ"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Liq"
 msgstr "लिक्विडेशन"
@@ -985,6 +996,7 @@ msgstr "वॉलेट लोड हो रहा है..."
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -999,6 +1011,7 @@ msgstr ""
 msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Margin"
 msgstr ""
@@ -1019,6 +1032,7 @@ msgstr "मार्जिन आवश्यक"
 msgid "Margin Used"
 msgstr "उपयोग किया गया मार्जिन"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Mark"
 msgstr "मार्क"
@@ -1178,6 +1192,7 @@ msgstr ""
 msgid "No"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No active positions."
 msgstr "कोई सक्रिय पोजीशन नहीं।"
@@ -1427,6 +1442,7 @@ msgstr "पोजीशन"
 msgid "Position actions"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position closed"
 msgstr ""
@@ -1667,6 +1683,7 @@ msgstr ""
 msgid "Settings"
 msgstr "सेटिंग्स"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1729,6 +1746,7 @@ msgstr "साइनर तैयार नहीं"
 #~ msgid "Signing..."
 #~ msgstr "साइन हो रहा है..."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2057,6 +2075,7 @@ msgstr ""
 #~ msgid "TP trigger price"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "TP/SL"
