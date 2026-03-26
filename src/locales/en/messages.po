@@ -558,6 +558,7 @@ msgstr "Displays the mobile sidebar."
 #~ msgstr "Docs"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Done"
@@ -1957,6 +1958,10 @@ msgstr "Take profit trigger must be above mark"
 msgid "Take profit trigger must be below mark"
 msgstr "Take profit trigger must be below mark"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Taking longer than expected"
+msgstr "Taking longer than expected"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
 #~ msgstr "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
@@ -2048,6 +2053,10 @@ msgstr "TP Price"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "TP/SL"
 msgstr "TP/SL"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Track on LI.FI Explorer"
+msgstr "Track on LI.FI Explorer"
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "Trade"
@@ -2281,3 +2290,7 @@ msgstr "You receive"
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "You send"
 msgstr "You send"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
+msgstr "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."

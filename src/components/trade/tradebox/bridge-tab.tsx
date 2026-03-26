@@ -28,6 +28,8 @@ import { type BridgeQuote, useBridgeQuote } from "@/lib/lifi/use-quote";
 
 type BridgeScreen = "select" | "confirm" | "executing" | "success";
 
+const BRIDGE_TIMEOUT_MS = 10 * 60 * 1000;
+
 function BridgeWalletNotConnected() {
 	return (
 		<div className="flex flex-col items-center gap-4 py-8">
@@ -396,9 +398,55 @@ function ConfirmationScreen({ token, address, onBack, onConfirm }: ConfirmationS
 
 interface ExecutingScreenProps {
 	statusText: string;
+	txHash: string | null;
+	onDone: () => void;
 }
 
-function ExecutingScreen({ statusText }: ExecutingScreenProps) {
+function ExecutingScreen({ statusText, txHash, onDone }: ExecutingScreenProps) {
+	const [isTimedOut, setIsTimedOut] = useState(false);
+	const startTimeRef = useRef(Date.now());
+
+	useEffect(() => {
+		const timer = setInterval(() => {
+			if (Date.now() - startTimeRef.current >= BRIDGE_TIMEOUT_MS) {
+				setIsTimedOut(true);
+				clearInterval(timer);
+			}
+		}, 30_000);
+		return () => clearInterval(timer);
+	}, []);
+
+	if (isTimedOut) {
+		return (
+			<div className="flex flex-col items-center gap-4 py-8">
+				<div className="flex size-12 items-center justify-center rounded-full bg-warning-100 border border-warning-700/30">
+					<ClockIcon className="size-6 text-warning-700" />
+				</div>
+				<div className="text-center space-y-1">
+					<p className="text-sm font-medium text-text-950">
+						<Trans>Taking longer than expected</Trans>
+					</p>
+					<p className="text-3xs text-text-500 max-w-[280px]">
+						<Trans>Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable.</Trans>
+					</p>
+				</div>
+				{txHash ? (
+					<a
+						href={`https://explorer.li.fi/tx/${txHash}`}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-3xs text-primary-default hover:text-primary-hover underline"
+					>
+						<Trans>Track on LI.FI Explorer</Trans>
+					</a>
+				) : null}
+				<Button variant="outlined" size="lg" className="w-full" onClick={onDone}>
+					<Trans>Done</Trans>
+				</Button>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex flex-col items-center gap-4 py-8">
 			<div className="flex size-12 items-center justify-center rounded-full bg-primary-default/10 border border-primary-default/30">
@@ -487,6 +535,12 @@ export function BridgeTab() {
 		}
 	}, []);
 
+	useEffect(() => {
+		if (bridge.status === "idle" && screen === "executing") {
+			setScreen("confirm");
+		}
+	}, [bridge.status, screen]);
+
 	if (!address) {
 		return <BridgeWalletNotConnected />;
 	}
@@ -532,7 +586,7 @@ export function BridgeTab() {
 	}
 
 	if (screen === "executing") {
-		return <ExecutingScreen statusText={bridge.statusText} />;
+		return <ExecutingScreen statusText={bridge.statusText} txHash={bridge.txHash} onDone={handleDone} />;
 	}
 
 	if (screen === "confirm" && selectedToken) {

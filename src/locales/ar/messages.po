@@ -558,6 +558,7 @@ msgstr "يعرض الشريط الجانبي للجوال."
 #~ msgstr "المستندات"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Done"
@@ -1953,6 +1954,10 @@ msgstr ""
 msgid "Take profit trigger must be below mark"
 msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Taking longer than expected"
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
 #~ msgstr ""
@@ -2044,6 +2049,10 @@ msgstr ""
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "TP/SL"
 msgstr "TP/SL"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Track on LI.FI Explorer"
+msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "Trade"
@@ -2272,4 +2281,8 @@ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "You send"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
 msgstr ""
