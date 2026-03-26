@@ -155,6 +155,10 @@ msgstr "उपलब्ध"
 msgid "Avg Price"
 msgstr "औसत मूल्य"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Back to asset selection"
+msgstr ""
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance"
@@ -181,8 +185,8 @@ msgid "Bridge"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Bridge to Hyperliquid"
-msgstr ""
+#~ msgid "Bridge to Hyperliquid"
+#~ msgstr ""
 
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
@@ -322,6 +326,10 @@ msgstr ""
 msgid "Confirm in wallet"
 msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Confirmation screen coming in next slice"
+msgstr ""
+
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "Connect"
 msgstr ""
@@ -416,6 +424,10 @@ msgstr "पता कॉपी करें"
 #~ msgid "Could not create wallet"
 #~ msgstr "वॉलेट नहीं बना सका"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Could not fetch your token balances"
+msgstr ""
+
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Created"
 msgstr ""
@@ -472,8 +484,8 @@ msgid "Deposit failed"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Deposit from any chain to your Hyperliquid account"
-msgstr ""
+#~ msgid "Deposit from any chain to your Hyperliquid account"
+#~ msgstr ""
 
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Deposit Funds"
@@ -636,6 +648,10 @@ msgstr ""
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Failed to enable trading"
 msgstr "ट्रेडिंग सक्षम करने में विफल"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Failed to load balances"
+msgstr ""
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Failed to load balances."
@@ -875,6 +891,10 @@ msgstr ""
 msgid "Loading"
 msgstr "लोड हो रहा है"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Loading balances across all chains..."
+msgstr ""
+
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Loading balances..."
 msgstr "शेष लोड हो रहा है..."
@@ -924,6 +944,10 @@ msgstr "लोड हो रहा है..."
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Long"
 msgstr "लॉन्ग"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Low Balance"
+msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
@@ -1120,6 +1144,10 @@ msgstr "कोई बैलेंस नहीं"
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "No balances found"
+msgstr ""
+
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "कोई शेष नहीं मिला। ट्रेडिंग शुरू करने के लिए धन जमा करें।"
@@ -1158,6 +1186,10 @@ msgstr ""
 
 #: src/components/trade/components/token-selector-dropdown.tsx
 msgid "No tokens available"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "No tokens with value found across supported chains"
 msgstr ""
 
 #: src/components/trade/order-entry/swap-asset-modal.tsx
@@ -1207,6 +1239,10 @@ msgstr ""
 #: src/components/trade/market-overview.tsx
 msgid "OI"
 msgstr "OI"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "on"
+msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "Only you control your funds. No email or password required."
@@ -1474,6 +1510,10 @@ msgstr ""
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Select all orders"
 msgstr "सभी ऑर्डर चुनें"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Select asset to bridge"
+msgstr ""
 
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select favorite markets"
@@ -2010,6 +2050,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price (USDC)"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Try Again"
 msgstr ""
 
 #: src/lib/trade/order-types.ts
