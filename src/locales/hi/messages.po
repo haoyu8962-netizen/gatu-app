@@ -176,6 +176,14 @@ msgstr "शेष"
 #~ msgid "Breadcrumb"
 #~ msgstr "ब्रेडक्रम्ब"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Bridge"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridge to Hyperliquid"
+msgstr ""
+
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "Arbitrum या अन्य चेन से अपने Hyperliquid खाते में USDC ब्रिज करें।"
@@ -336,6 +344,10 @@ msgstr "वॉलेट कनेक्ट करें"
 msgid "Connect wallet to view account"
 msgstr "खाता देखने के लिए वॉलेट कनेक्ट करें"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Connect your wallet to bridge funds"
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Connect your wallet to register a builder code"
 #~ msgstr ""
@@ -457,6 +469,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Deposit from any chain to your Hyperliquid account"
 msgstr ""
 
 #: src/components/trade/order-entry/deposit-modal.tsx
@@ -2104,6 +2120,7 @@ msgstr "ट्रेड की प्रतीक्षा..."
 #~ msgid "Wallet client not ready"
 #~ msgstr "वॉलेट क्लाइंट तैयार नहीं है"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Wallet not connected"
 msgstr "वॉलेट कनेक्ट नहीं है"

@@ -176,6 +176,14 @@ msgstr "Balance"
 #~ msgid "Breadcrumb"
 #~ msgstr "Breadcrumb"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Bridge"
+msgstr "Bridge"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridge to Hyperliquid"
+msgstr "Bridge to Hyperliquid"
+
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
@@ -336,6 +344,10 @@ msgstr "Connect Wallet"
 msgid "Connect wallet to view account"
 msgstr "Connect wallet to view account"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Connect your wallet to bridge funds"
+msgstr "Connect your wallet to bridge funds"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Connect your wallet to register a builder code"
 #~ msgstr "Connect your wallet to register a builder code"
@@ -458,6 +470,10 @@ msgstr "Deposit complete"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
 msgstr "Deposit failed"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Deposit from any chain to your Hyperliquid account"
+msgstr "Deposit from any chain to your Hyperliquid account"
 
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Deposit Funds"
@@ -2112,6 +2128,7 @@ msgstr "Waiting for trades..."
 #~ msgid "Wallet client not ready"
 #~ msgstr "Wallet client not ready"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Wallet not connected"
 msgstr "Wallet not connected"

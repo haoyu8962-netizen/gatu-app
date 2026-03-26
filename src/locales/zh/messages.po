@@ -176,6 +176,14 @@ msgstr "余额"
 #~ msgid "Breadcrumb"
 #~ msgstr "面包屑导航"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Bridge"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridge to Hyperliquid"
+msgstr ""
+
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "从 Arbitrum 或其他链桥接 USDC 到您的 Hyperliquid 账户。"
@@ -336,6 +344,10 @@ msgstr "连接钱包"
 msgid "Connect wallet to view account"
 msgstr "连接钱包查看账户"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Connect your wallet to bridge funds"
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Connect your wallet to register a builder code"
 #~ msgstr ""
@@ -457,6 +469,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Deposit from any chain to your Hyperliquid account"
 msgstr ""
 
 #: src/components/trade/order-entry/deposit-modal.tsx
@@ -2104,6 +2120,7 @@ msgstr "等待成交记录..."
 #~ msgid "Wallet client not ready"
 #~ msgstr "钱包客户端未就绪"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Wallet not connected"
 msgstr "钱包未连接"

@@ -176,6 +176,14 @@ msgstr "Solde"
 #~ msgid "Breadcrumb"
 #~ msgstr "Fil d'Ariane"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Bridge"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridge to Hyperliquid"
+msgstr ""
+
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "Transférez des USDC depuis Arbitrum ou d'autres chaînes vers votre compte Hyperliquid."
@@ -336,6 +344,10 @@ msgstr "Connecter le portefeuille"
 msgid "Connect wallet to view account"
 msgstr "Connectez le portefeuille pour voir le compte"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Connect your wallet to bridge funds"
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Connect your wallet to register a builder code"
 #~ msgstr ""
@@ -457,6 +469,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Deposit from any chain to your Hyperliquid account"
 msgstr ""
 
 #: src/components/trade/order-entry/deposit-modal.tsx
@@ -2104,6 +2120,7 @@ msgstr "En attente des transactions..."
 #~ msgid "Wallet client not ready"
 #~ msgstr "Client du portefeuille non prêt"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Wallet not connected"
 msgstr "Portefeuille non connecté"
