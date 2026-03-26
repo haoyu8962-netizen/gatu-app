@@ -1157,6 +1157,10 @@ msgstr "Move USDC between your Perp and Spot accounts."
 msgid "Net received"
 msgstr "Net received"
 
+#: src/components/trade/components/global-settings-dialog.tsx
+msgid "Network"
+msgstr "Network"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Network fee"
 msgstr "Network fee"
@@ -1893,6 +1897,10 @@ msgstr "Swap submitted"
 msgid "Swapping..."
 msgstr "Swapping..."
 
+#: src/components/trade/components/global-settings-dialog.tsx
+msgid "Switch between mainnet and testnet. Page will reload."
+msgstr "Switch between mainnet and testnet. Page will reload."
+
 #. placeholder {0}: fill.coin
 #. placeholder {0}: order.coin
 #. placeholder {0}: state.coin
@@ -1927,6 +1935,10 @@ msgstr "Switch to dark mode"
 #: src/components/trade/header/theme-toggle.tsx
 msgid "Switch to light mode"
 msgstr "Switch to light mode"
+
+#: src/components/trade/testnet-banner.tsx
+msgid "Switch to Mainnet"
+msgstr "Switch to Mainnet"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/trade/use-button-content.ts
@@ -2278,6 +2290,10 @@ msgstr "Wrong network"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Yes"
 msgstr "Yes"
+
+#: src/components/trade/testnet-banner.tsx
+msgid "You are on Testnet"
+msgstr "You are on Testnet"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."

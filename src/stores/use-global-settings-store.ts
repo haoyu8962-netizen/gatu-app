@@ -9,6 +9,7 @@ import {
 	STORAGE_KEYS,
 } from "@/config/constants";
 import { type NumberFormatLocale, resolveNumberFormatLocale } from "@/lib/i18n";
+import type { Network } from "@/lib/network";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { createValidatedStorage } from "@/stores/validated-storage";
 
@@ -24,6 +25,7 @@ const globalSettingsSchema = z.object({
 		marginMode: z.enum(["cross", "isolated"]).optional(),
 		positionsActiveTab: z.string().optional(),
 		theme: z.enum(["dark", "light"]).optional(),
+		network: z.enum(["mainnet", "testnet"]).optional(),
 	}),
 });
 
@@ -38,6 +40,7 @@ const DEFAULT_GLOBAL_SETTINGS = {
 	marginMode: "cross" as MarginMode,
 	positionsActiveTab: "positions",
 	theme: "dark" as Theme,
+	network: "mainnet" as Network,
 } as const;
 
 interface GlobalSettingsStore {
@@ -49,6 +52,7 @@ interface GlobalSettingsStore {
 	marginMode: MarginMode;
 	positionsActiveTab: string;
 	theme: Theme;
+	network: Network;
 	actions: {
 		setHideSmallBalances: (next: boolean) => void;
 		setShowOrderbookInQuote: (next: boolean) => void;
@@ -58,6 +62,7 @@ interface GlobalSettingsStore {
 		setMarginMode: (mode: MarginMode) => void;
 		setPositionsActiveTab: (tab: string) => void;
 		setTheme: (theme: Theme) => void;
+		setNetwork: (network: Network) => void;
 	};
 }
 
@@ -81,6 +86,10 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				setMarginMode: (mode) => set({ marginMode: mode }),
 				setPositionsActiveTab: (tab) => set({ positionsActiveTab: tab }),
 				setTheme: (theme) => set({ theme }),
+				setNetwork: (network) => {
+					set({ network });
+					if (typeof window !== "undefined") window.location.reload();
+				},
 			},
 		}),
 		{
@@ -96,6 +105,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				marginMode: state.marginMode,
 				positionsActiveTab: state.positionsActiveTab,
 				theme: state.theme,
+				network: state.network,
 			}),
 			merge: (persisted, current) => {
 				const p = persisted as Partial<GlobalSettingsStore>;
@@ -118,6 +128,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					marketOrderSlippagePercent: slippagePercent,
 					marginMode: p?.marginMode === "isolated" ? "isolated" : "cross",
 					theme: p?.theme === "light" ? "light" : "dark",
+					network: p?.network === "testnet" ? "testnet" : "mainnet",
 				};
 			},
 		},
@@ -186,4 +197,12 @@ export function useHideSmallBalances() {
 
 export function usePositionsActiveTab() {
 	return useGlobalSettingsStore((state) => state.positionsActiveTab);
+}
+
+export function useNetwork() {
+	return useGlobalSettingsStore((state) => state.network);
+}
+
+export function useIsTestnet() {
+	return useGlobalSettingsStore((state) => state.network === "testnet");
 }

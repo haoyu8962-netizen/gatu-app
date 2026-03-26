@@ -1,9 +1,13 @@
-const EXPLORER_BASE_URL = "https://app.hyperliquid.xyz/explorer";
+import { isTestnet } from "@/lib/network";
+
+function getExplorerBaseUrl(): string {
+	return isTestnet() ? "https://testnet.app.hyperliquid.xyz/explorer" : "https://app.hyperliquid.xyz/explorer";
+}
 
 export function getExplorerTxUrl(hash: string): string {
-	return `${EXPLORER_BASE_URL}/tx/${hash}`;
+	return `${getExplorerBaseUrl()}/tx/${hash}`;
 }
 
 export function getExplorerTokenUrl(tokenId: string): string {
-	return `${EXPLORER_BASE_URL}/token/${tokenId}`;
+	return `${getExplorerBaseUrl()}/token/${tokenId}`;
 }

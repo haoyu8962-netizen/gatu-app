@@ -20,6 +20,7 @@ import {
 	useGlobalSettings,
 	useGlobalSettingsActions,
 	useMarketOrderSlippagePercent,
+	useNetwork,
 } from "@/stores/use-global-settings-store";
 
 export function GlobalSettingsDialog() {
@@ -28,8 +29,14 @@ export function GlobalSettingsDialog() {
 	const { i18n } = useLingui();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const { showOrderbookInQuote, showChartScanlines, numberFormatLocale } = useGlobalSettings();
-	const { setShowOrderbookInQuote, setShowChartScanlines, setNumberFormatLocale, setMarketOrderSlippagePercent } =
-		useGlobalSettingsActions();
+	const {
+		setShowOrderbookInQuote,
+		setShowChartScanlines,
+		setNumberFormatLocale,
+		setMarketOrderSlippagePercent,
+		setNetwork,
+	} = useGlobalSettingsActions();
+	const network = useNetwork();
 
 	const [localSlippageInput, setLocalSlippageInput] = useState<string | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -159,6 +166,18 @@ export function GlobalSettingsDialog() {
 							checked={showOrderbookInQuote}
 							onCheckedChange={setShowOrderbookInQuote}
 						/>
+					</SettingsSection>
+
+					<SettingsSection title={t`Network`} description={t`Switch between mainnet and testnet. Page will reload.`}>
+						<Select value={network} onValueChange={(value) => setNetwork(value as "mainnet" | "testnet")}>
+							<SelectTrigger className="w-full h-9">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="mainnet">Mainnet</SelectItem>
+								<SelectItem value="testnet">Testnet</SelectItem>
+							</SelectContent>
+						</Select>
 					</SettingsSection>
 				</div>
 			</DialogContent>

@@ -10,6 +10,7 @@ import {
 	type WebSocketTransportOptions,
 } from "@nktkas/hyperliquid";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
+import { isTestnet as checkIsTestnet } from "@/lib/network";
 
 const cache = new Map<string, unknown>();
 
@@ -23,13 +24,11 @@ function getOrCreate<T>(key: string, create: () => T): T {
 }
 
 function getHttpOptions(): HttpTransportOptions {
-	const isTestnet = typeof import.meta !== "undefined" && import.meta.env?.VITE_HYPERLIQUID_TESTNET === "true";
-	return { isTestnet };
+	return { isTestnet: checkIsTestnet() };
 }
 
 function getWsOptions(): WebSocketTransportOptions {
-	const isTestnet = typeof import.meta !== "undefined" && import.meta.env?.VITE_HYPERLIQUID_TESTNET === "true";
-	return { isTestnet };
+	return { isTestnet: checkIsTestnet() };
 }
 
 export function getHttpTransport(): IRequestTransport {

@@ -1153,6 +1153,10 @@ msgstr ""
 msgid "Net received"
 msgstr ""
 
+#: src/components/trade/components/global-settings-dialog.tsx
+msgid "Network"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Network fee"
 msgstr ""
@@ -1889,6 +1893,10 @@ msgstr ""
 msgid "Swapping..."
 msgstr ""
 
+#: src/components/trade/components/global-settings-dialog.tsx
+msgid "Switch between mainnet and testnet. Page will reload."
+msgstr ""
+
 #. placeholder {0}: fill.coin
 #. placeholder {0}: order.coin
 #. placeholder {0}: state.coin
@@ -1923,6 +1931,10 @@ msgstr "डार्क मोड में बदलें"
 #: src/components/trade/header/theme-toggle.tsx
 msgid "Switch to light mode"
 msgstr "लाइट मोड में बदलें"
+
+#: src/components/trade/testnet-banner.tsx
+msgid "Switch to Mainnet"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/trade/use-button-content.ts
@@ -2269,6 +2281,10 @@ msgstr ""
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Yes"
+msgstr ""
+
+#: src/components/trade/testnet-banner.tsx
+msgid "You are on Testnet"
 msgstr ""
 
 #: src/components/pages/builder-page.tsx
