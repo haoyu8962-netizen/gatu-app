@@ -105,6 +105,7 @@ msgid "All cross positions share the same cross margin as collateral. In the eve
 msgstr ""
 
 #: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Amount"
@@ -156,8 +157,12 @@ msgid "Avg Price"
 msgstr "औसत मूल्य"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Back to asset selection"
+msgid "Back"
 msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Back to asset selection"
+#~ msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -322,13 +327,17 @@ msgstr "बंद हो रहा है..."
 msgid "Confirm"
 msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Confirm Bridge"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Confirmation screen coming in next slice"
-msgstr ""
+#~ msgid "Confirmation screen coming in next slice"
+#~ msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "Connect"
@@ -612,6 +621,10 @@ msgstr "अनु. शुल्क"
 msgid "Est. P&L at Limit"
 msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Est. time"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Estimated time"
@@ -713,6 +726,14 @@ msgstr "शुल्क"
 #~ msgid "Fee rate must be between 0.001% and 1%"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Fees"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Fetching quote..."
+msgstr ""
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Filled"
 #~ msgstr "पूर्ण"
@@ -727,6 +748,7 @@ msgid "Format for numbers and dates"
 msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "From"
 msgstr ""
@@ -747,6 +769,11 @@ msgstr ""
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding Payments"
 #~ msgstr "फंडिंग भुगतान"
+
+#. placeholder {0}: gas.token.symbol
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Gas ({0})"
+msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
@@ -1184,6 +1211,10 @@ msgstr ""
 msgid "No response from exchange"
 msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "No route available. Try a different amount or asset."
+msgstr ""
+
 #: src/components/trade/components/token-selector-dropdown.tsx
 msgid "No tokens available"
 msgstr ""
@@ -1241,8 +1272,8 @@ msgid "OI"
 msgstr "OI"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "on"
-msgstr ""
+#~ msgid "on"
+#~ msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "Only you control your funds. No email or password required."
@@ -1933,6 +1964,7 @@ msgid "Time in Force"
 msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "To"
 msgstr ""
@@ -2214,3 +2246,11 @@ msgstr ""
 #: src/components/pages/builder-page.tsx
 #~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."
 #~ msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "You receive"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "You send"
+msgstr ""

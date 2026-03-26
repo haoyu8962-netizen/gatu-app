@@ -1,14 +1,28 @@
 import { Trans } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon, CoinIcon, SpinnerGapIcon, WalletIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import {
+	ArrowDownIcon,
+	ArrowLeftIcon,
+	CaretDownIcon,
+	CaretUpIcon,
+	ClockIcon,
+	CoinIcon,
+	SpinnerGapIcon,
+	WalletIcon,
+	WarningCircleIcon,
+} from "@phosphor-icons/react";
 import Big from "big.js";
 import { useEffect, useRef, useState } from "react";
 import { useConnection } from "wagmi";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
+import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
-import { formatUSD } from "@/lib/format";
+import { formatDuration, formatUSD, shortenAddress } from "@/lib/format";
 import { initLiFi } from "@/lib/lifi/config";
 import { type BridgeToken, useBridgeBalances } from "@/lib/lifi/use-balances";
+import { useBridgeQuote } from "@/lib/lifi/use-quote";
 
 type BridgeScreen = "select" | "confirm";
 
@@ -186,34 +200,186 @@ function AssetSelectionScreen({ address, onSelect }: AssetSelectionScreenProps) 
 	);
 }
 
-interface ConfirmationPlaceholderProps {
+function useDebouncedValue<T>(value: T, delay: number): T {
+	const [debounced, setDebounced] = useState(value);
+	useEffect(() => {
+		const timer = setTimeout(() => setDebounced(value), delay);
+		return () => clearTimeout(timer);
+	}, [value, delay]);
+	return debounced;
+}
+
+function formatTokenAmount(amount: string, decimals: number): string {
+	const value = Big(amount).div(Big(10).pow(decimals));
+	if (value.lt(0.0001)) return "<0.0001";
+	if (value.lt(1)) return value.toFixed(6);
+	if (value.lt(1000)) return value.toFixed(4);
+	return value.toFixed(2);
+}
+
+interface ConfirmationScreenProps {
 	token: BridgeToken;
+	address: string;
 	onBack: () => void;
 }
 
-function ConfirmationPlaceholder({ token, onBack }: ConfirmationPlaceholderProps) {
+function ConfirmationScreen({ token, address, onBack }: ConfirmationScreenProps) {
+	const fullBalance = Big(token.amount).div(Big(10).pow(token.decimals)).toString();
+	const [amount, setAmount] = useState(fullBalance);
+	const debouncedAmount = useDebouncedValue(amount, 500);
+
+	const quoteParams = debouncedAmount
+		? {
+				fromChainId: token.chainId,
+				fromTokenAddress: token.address,
+				fromTokenDecimals: token.decimals,
+				fromAddress: address,
+				amount: debouncedAmount,
+			}
+		: null;
+
+	const { data: quote, isLoading: quoteLoading, isError: quoteError } = useBridgeQuote(quoteParams);
+
+	const receiveAmount = quote ? formatTokenAmount(quote.toAmount, 6) : "—";
+	const receiveAmountUSD = quote ? formatUSD(quote.toAmountUSD, 2) : "";
+
 	return (
-		<div className="flex flex-col gap-4">
+		<div className="flex flex-col gap-3">
 			<button
 				type="button"
 				onClick={onBack}
-				className="text-3xs text-primary-default hover:text-primary-hover self-start"
+				className="flex items-center gap-1 text-3xs text-primary-default hover:text-primary-hover self-start"
 			>
-				← <Trans>Back to asset selection</Trans>
+				<ArrowLeftIcon className="size-3" />
+				<Trans>Back</Trans>
 			</button>
-			<div className="flex flex-col items-center gap-4 py-4">
-				<div className="flex size-12 items-center justify-center rounded-full bg-surface-analysis border border-border-200/40">
-					<ArrowsLeftRightIcon className="size-6 text-text-950" />
-				</div>
-				<div className="text-center space-y-1">
-					<p className="text-sm font-medium">
-						{token.symbol} <Trans>on</Trans> {token.chainName}
-					</p>
-					<p className="text-3xs text-text-500">
-						<Trans>Confirmation screen coming in next slice</Trans>
-					</p>
+
+			<div className="flex flex-col gap-2 rounded-xs border border-border-200 p-3">
+				<p className="text-4xs uppercase tracking-wider text-text-500">
+					<Trans>From</Trans>
+				</p>
+				<div className="flex items-center gap-2.5">
+					<TokenIcon token={token} />
+					<div className="flex-1 min-w-0">
+						<span className="text-xs font-medium text-text-950">{token.symbol}</span>
+						<span className="text-3xs text-text-500 ml-1.5">{token.chainName}</span>
+					</div>
+					<span className="text-3xs text-text-500 tabular-nums">{shortenAddress(address)}</span>
 				</div>
 			</div>
+
+			<div className="flex justify-center -my-1">
+				<div className="flex size-6 items-center justify-center rounded-full border border-border-200 bg-surface-analysis">
+					<ArrowDownIcon className="size-3 text-text-500" />
+				</div>
+			</div>
+
+			<div className="flex flex-col gap-2 rounded-xs border border-border-200 p-3">
+				<p className="text-4xs uppercase tracking-wider text-text-500">
+					<Trans>To</Trans>
+				</p>
+				<div className="flex items-center gap-2.5">
+					<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-analysis">
+						<span className="text-3xs font-bold text-text-950">HL</span>
+					</div>
+					<div className="flex-1 min-w-0">
+						<span className="text-xs font-medium text-text-950">USDC</span>
+						<span className="text-3xs text-text-500 ml-1.5">Hyperliquid</span>
+					</div>
+					<span className="text-3xs text-text-500 tabular-nums">{shortenAddress(address)}</span>
+				</div>
+			</div>
+
+			<div className="flex flex-col gap-1.5 pt-1">
+				<span className="text-4xs uppercase tracking-wider text-text-500">
+					<Trans>Amount</Trans>
+				</span>
+				<NumberInput
+					value={amount}
+					onChange={(e) => setAmount(e.target.value)}
+					maxLabel={`MAX ${formatTokenBalance(token.amount, token.decimals)}`}
+					onMaxClick={() => setAmount(fullBalance)}
+					inputSize="default"
+					allowDecimals
+					maxAllowedDecimals={token.decimals}
+				/>
+			</div>
+
+			{quoteLoading ? (
+				<div className="flex items-center justify-center gap-2 py-3">
+					<SpinnerGapIcon className="size-4 animate-spin text-text-500" />
+					<span className="text-3xs text-text-500">
+						<Trans>Fetching quote...</Trans>
+					</span>
+				</div>
+			) : quoteError ? (
+				<div className="flex items-center gap-2 rounded-xs border border-market-down-600/30 bg-market-down-100 p-2.5">
+					<WarningCircleIcon className="size-4 text-market-down-600 shrink-0" />
+					<span className="text-3xs text-market-down-600">
+						<Trans>No route available. Try a different amount or asset.</Trans>
+					</span>
+				</div>
+			) : quote ? (
+				<>
+					<InfoRowGroup className="text-3xs">
+						<InfoRow
+							label={<Trans>You send</Trans>}
+							value={
+								<span>
+									{amount} {token.symbol}
+									<span className="text-text-500 ml-1">{formatUSD(quote.fromAmountUSD, 2)}</span>
+								</span>
+							}
+						/>
+						<InfoRow
+							label={<Trans>You receive</Trans>}
+							value={
+								<span>
+									{receiveAmount} USDC
+									<span className="text-text-500 ml-1">{receiveAmountUSD}</span>
+								</span>
+							}
+						/>
+						<InfoRow
+							label={
+								<span className="flex items-center gap-1">
+									<ClockIcon className="size-3" />
+									<Trans>Est. time</Trans>
+								</span>
+							}
+							value={`~${formatDuration(Math.ceil(quote.executionDuration / 60))}`}
+						/>
+					</InfoRowGroup>
+
+					<Collapsible>
+						<CollapsibleTrigger className="flex w-full items-center justify-between rounded-xs px-2 py-1.5 text-3xs text-text-500 hover:bg-surface-base/50 transition-colors group">
+							<span>
+								<Trans>Fees</Trans> ({formatUSD(quote.totalFeesUSD, 2)})
+							</span>
+							<CaretDownIcon className="size-3 group-data-[state=open]:hidden" />
+							<CaretUpIcon className="size-3 hidden group-data-[state=open]:block" />
+						</CollapsibleTrigger>
+						<CollapsibleContent>
+							<InfoRowGroup className="text-3xs">
+								{quote.gasCosts.map((gas) => (
+									<InfoRow
+										key={`gas-${gas.token.symbol}-${gas.amount}`}
+										label={<Trans>Gas ({gas.token.symbol})</Trans>}
+										value={formatUSD(gas.amountUSD, 2)}
+									/>
+								))}
+								{quote.feeCosts.map((fee) => (
+									<InfoRow key={`fee-${fee.name}-${fee.amount}`} label={fee.name} value={formatUSD(fee.amountUSD, 2)} />
+								))}
+							</InfoRowGroup>
+						</CollapsibleContent>
+					</Collapsible>
+				</>
+			) : null}
+
+			<Button variant="contained" tone="accent" size="lg" className="w-full" disabled={!quote || quoteLoading}>
+				<Trans>Confirm Bridge</Trans>
+			</Button>
 		</div>
 	);
 }
@@ -246,7 +412,7 @@ export function BridgeTab() {
 	}
 
 	if (screen === "confirm" && selectedToken) {
-		return <ConfirmationPlaceholder token={selectedToken} onBack={handleBack} />;
+		return <ConfirmationScreen token={selectedToken} address={address} onBack={handleBack} />;
 	}
 
 	return <AssetSelectionScreen address={address} onSelect={handleTokenSelect} />;

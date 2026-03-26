@@ -105,6 +105,7 @@ msgid "All cross positions share the same cross margin as collateral. In the eve
 msgstr "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 
 #: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Amount"
@@ -156,8 +157,12 @@ msgid "Avg Price"
 msgstr "Avg Price"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Back to asset selection"
-msgstr "Back to asset selection"
+msgid "Back"
+msgstr "Back"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Back to asset selection"
+#~ msgstr "Back to asset selection"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -322,13 +327,17 @@ msgstr "Closing..."
 msgid "Confirm"
 msgstr "Confirm"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Confirm Bridge"
+msgstr "Confirm Bridge"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "Confirm in wallet"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Confirmation screen coming in next slice"
-msgstr "Confirmation screen coming in next slice"
+#~ msgid "Confirmation screen coming in next slice"
+#~ msgstr "Confirmation screen coming in next slice"
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "Connect"
@@ -612,6 +621,10 @@ msgstr "Est. Fee"
 msgid "Est. P&L at Limit"
 msgstr "Est. P&L at Limit"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Est. time"
+msgstr "Est. time"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Estimated time"
@@ -713,6 +726,14 @@ msgstr "Fee"
 #~ msgid "Fee rate must be between 0.001% and 1%"
 #~ msgstr "Fee rate must be between 0.001% and 1%"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Fees"
+msgstr "Fees"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Fetching quote..."
+msgstr "Fetching quote..."
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Filled"
 #~ msgstr "Filled"
@@ -727,6 +748,7 @@ msgid "Format for numbers and dates"
 msgstr "Format for numbers and dates"
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "From"
 msgstr "From"
@@ -747,6 +769,11 @@ msgstr "Funding History"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding Payments"
 #~ msgstr "Funding Payments"
+
+#. placeholder {0}: gas.token.symbol
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Gas ({0})"
+msgstr "Gas ({0})"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
@@ -1188,6 +1215,10 @@ msgstr "No order history found."
 msgid "No response from exchange"
 msgstr "No response from exchange"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "No route available. Try a different amount or asset."
+msgstr "No route available. Try a different amount or asset."
+
 #: src/components/trade/components/token-selector-dropdown.tsx
 msgid "No tokens available"
 msgstr "No tokens available"
@@ -1245,8 +1276,8 @@ msgid "OI"
 msgstr "OI"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "on"
-msgstr "on"
+#~ msgid "on"
+#~ msgstr "on"
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "Only you control your funds. No email or password required."
@@ -1937,6 +1968,7 @@ msgid "Time in Force"
 msgstr "Time in Force"
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "To"
 msgstr "To"
@@ -2222,3 +2254,11 @@ msgstr "Yes"
 #: src/components/pages/builder-page.tsx
 #~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."
 #~ msgstr "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "You receive"
+msgstr "You receive"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "You send"
+msgstr "You send"
