@@ -45,6 +45,7 @@ msgstr ""
 msgid "Account"
 msgstr "الحساب"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Account Balances"
 msgstr "أرصدة الحساب"
@@ -146,6 +147,7 @@ msgstr "الأصل"
 msgid "Assets"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -157,6 +159,7 @@ msgstr "متاح"
 #~ msgid "Available:"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Avg Price"
 msgstr "متوسط السعر"
@@ -247,6 +250,7 @@ msgstr ""
 msgid "buy"
 msgstr "شراء"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Buy"
 msgstr "شراء"
@@ -256,6 +260,7 @@ msgstr "شراء"
 #~ msgstr "شراء طويل"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -398,10 +403,12 @@ msgstr ""
 msgid "Connect your wallet to start trading on Hyperliquid"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "اربط محفظتك لعرض الأرصدة."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Connect your wallet to view funding payments."
 msgstr "اربط محفظتك لعرض مدفوعات التمويل."
@@ -411,6 +418,7 @@ msgstr "اربط محفظتك لعرض مدفوعات التمويل."
 msgid "Connect your wallet to view open orders."
 msgstr "اربط محفظتك لعرض الأوامر المفتوحة."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Connect your wallet to view order history."
 msgstr ""
@@ -420,10 +428,12 @@ msgstr ""
 msgid "Connect your wallet to view positions."
 msgstr "قم بتوصيل محفظتك لعرض المراكز."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Connect your wallet to view trade history."
 msgstr "اربط محفظتك لعرض سجل التداول."
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Connect your wallet to view TWAP orders."
 msgstr "اربط محفظتك لعرض أوامر TWAP."
@@ -665,6 +675,7 @@ msgstr ""
 msgid "Exceeds max size"
 msgstr "يتجاوز الحد الأقصى"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Executed"
 msgstr "منفذ"
@@ -676,6 +687,10 @@ msgstr ""
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Expand account panel"
 #~ msgstr "توسيع لوحة الحساب"
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
+msgid "Explorer"
+msgstr ""
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "failed"
@@ -698,10 +713,12 @@ msgstr "فشل تفعيل التداول"
 msgid "Failed to load balances"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Failed to load balances."
 msgstr "فشل في تحميل الأرصدة."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Failed to load funding history."
 msgstr "فشل في تحميل سجل التمويل."
@@ -715,6 +732,7 @@ msgstr "فشل في تحميل الأوامر المفتوحة."
 msgid "Failed to load order book."
 msgstr "فشل في تحميل دفتر الأوامر."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Failed to load order history."
 msgstr ""
@@ -724,6 +742,7 @@ msgstr ""
 msgid "Failed to load positions."
 msgstr "فشل تحميل المراكز."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Failed to load trade history."
 msgstr "فشل في تحميل سجل التداول."
@@ -748,6 +767,7 @@ msgstr ""
 #~ msgid "Failed to switch margin mode"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Fee"
 msgstr "الرسوم"
@@ -797,6 +817,7 @@ msgstr ""
 msgid "Funding"
 msgstr "التمويل"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding History"
 msgstr ""
@@ -827,6 +848,7 @@ msgstr ""
 msgid "Go to trading terminal"
 msgstr "الذهاب إلى منصة التداول"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr ""
@@ -948,6 +970,7 @@ msgstr "التصفية"
 msgid "Liq. Price"
 msgstr "سعر التصفية"
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Liquidated"
 msgstr ""
@@ -1205,6 +1228,7 @@ msgstr ""
 msgid "No active positions."
 msgstr "لا توجد مراكز نشطة."
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No active TWAP orders."
 msgstr ""
@@ -1221,14 +1245,17 @@ msgstr ""
 msgid "No balances found"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "لم يتم العثور على أرصدة. أودع أموالاً لبدء التداول."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "No fills found."
 msgstr "لم يتم العثور على تنفيذات."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "No funding payments found."
 msgstr "لم يتم العثور على مدفوعات تمويل."
@@ -1250,6 +1277,7 @@ msgstr "لم يتم العثور على أسواق."
 msgid "No open orders."
 msgstr "لا توجد أوامر مفتوحة."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "No order history found."
 msgstr ""
@@ -1353,6 +1381,7 @@ msgstr "دفتر الأوامر"
 msgid "Order failed"
 msgstr "فشل الطلب"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Order History"
 msgstr ""
@@ -1408,6 +1437,7 @@ msgstr "قيد الانتظار"
 msgid "Perp"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Perpetuals"
 msgstr ""
@@ -1443,6 +1473,7 @@ msgstr ""
 msgid "Portfolio"
 msgstr "المحفظة"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Position"
@@ -1466,6 +1497,8 @@ msgstr ""
 #~ msgstr "السابق"
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
@@ -1503,6 +1536,7 @@ msgid "Randomize timing"
 msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "المعدل"
@@ -1557,6 +1591,7 @@ msgid "Risk/Reward"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "RO"
 msgstr ""
 
@@ -1636,6 +1671,7 @@ msgstr ""
 msgid "sell"
 msgstr "بيع"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Sell"
 msgstr "بيع"
@@ -1644,6 +1680,7 @@ msgstr "بيع"
 #~ msgid "Sell Short"
 #~ msgstr "بيع قصير"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-dialog.tsx
 msgid "Send"
@@ -1761,8 +1798,11 @@ msgstr "المُوقِّع غير جاهز"
 #~ msgid "Signing..."
 #~ msgstr "جاري التوقيع..."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1835,6 +1875,7 @@ msgstr "مرتب حسب {0}"
 #~ msgstr "فوري"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -1906,6 +1947,7 @@ msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
@@ -2016,6 +2058,7 @@ msgstr "الصفحة التي تبحث عنها غير موجودة."
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2038,10 +2081,12 @@ msgstr ""
 msgid "To"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr ""
@@ -2056,6 +2101,7 @@ msgstr "تبديل الشريط الجانبي"
 msgid "Toggle size mode"
 msgstr "تبديل وضع الحجم"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Total"
@@ -2109,6 +2155,7 @@ msgstr ""
 #~ msgid "Trade ClockCounterClockwise"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Trade History"
 msgstr "سجل التداول"
@@ -2172,10 +2219,12 @@ msgstr ""
 msgid "TWAP minutes must be {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "TWAP Orders"
 msgstr "أوامر TWAP"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2218,6 +2267,7 @@ msgstr "دقة غير مدعومة: {0}"
 msgid "Update failed"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx

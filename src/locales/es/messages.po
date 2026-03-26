@@ -45,6 +45,7 @@ msgstr ""
 msgid "Account"
 msgstr "Cuenta"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Account Balances"
 msgstr "Saldos de cuenta"
@@ -146,6 +147,7 @@ msgstr "Activo"
 msgid "Assets"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -157,6 +159,7 @@ msgstr "Disponible"
 #~ msgid "Available:"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Avg Price"
 msgstr "Precio prom."
@@ -247,6 +250,7 @@ msgstr ""
 msgid "buy"
 msgstr "compra"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Buy"
 msgstr "Comprar"
@@ -256,6 +260,7 @@ msgstr "Comprar"
 #~ msgstr "Comprar largo"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -398,10 +403,12 @@ msgstr ""
 msgid "Connect your wallet to start trading on Hyperliquid"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "Conecta tu billetera para ver saldos."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Connect your wallet to view funding payments."
 msgstr "Conecta tu billetera para ver pagos de financiamiento."
@@ -411,6 +418,7 @@ msgstr "Conecta tu billetera para ver pagos de financiamiento."
 msgid "Connect your wallet to view open orders."
 msgstr "Conecta tu billetera para ver órdenes abiertas."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Connect your wallet to view order history."
 msgstr ""
@@ -420,10 +428,12 @@ msgstr ""
 msgid "Connect your wallet to view positions."
 msgstr "Conecta tu billetera para ver posiciones."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Connect your wallet to view trade history."
 msgstr "Conecta tu billetera para ver historial de operaciones."
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Connect your wallet to view TWAP orders."
 msgstr "Conecta tu billetera para ver órdenes TWAP."
@@ -665,6 +675,7 @@ msgstr ""
 msgid "Exceeds max size"
 msgstr "Excede tamaño máximo"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Executed"
 msgstr "Ejecutado"
@@ -676,6 +687,10 @@ msgstr ""
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Expand account panel"
 #~ msgstr "Expandir panel de cuenta"
+
+#: src/components/trade/mobile/mobile-history-tab.tsx
+msgid "Explorer"
+msgstr ""
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "failed"
@@ -698,10 +713,12 @@ msgstr "Error al habilitar trading"
 msgid "Failed to load balances"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Failed to load balances."
 msgstr "Error al cargar saldos."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Failed to load funding history."
 msgstr "Error al cargar historial de financiamiento."
@@ -715,6 +732,7 @@ msgstr "Error al cargar órdenes abiertas."
 msgid "Failed to load order book."
 msgstr "Error al cargar libro de órdenes."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Failed to load order history."
 msgstr ""
@@ -724,6 +742,7 @@ msgstr ""
 msgid "Failed to load positions."
 msgstr "Error al cargar posiciones."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Failed to load trade history."
 msgstr "Error al cargar historial de operaciones."
@@ -748,6 +767,7 @@ msgstr ""
 #~ msgid "Failed to switch margin mode"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Fee"
 msgstr "Comisión"
@@ -797,6 +817,7 @@ msgstr ""
 msgid "Funding"
 msgstr "Financiamiento"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding History"
 msgstr ""
@@ -827,6 +848,7 @@ msgstr ""
 msgid "Go to trading terminal"
 msgstr "Ir al terminal de trading"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr ""
@@ -948,6 +970,7 @@ msgstr "Liq"
 msgid "Liq. Price"
 msgstr "Precio liq."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Liquidated"
 msgstr ""
@@ -1205,6 +1228,7 @@ msgstr ""
 msgid "No active positions."
 msgstr "Sin posiciones activas."
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No active TWAP orders."
 msgstr ""
@@ -1221,14 +1245,17 @@ msgstr ""
 msgid "No balances found"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "No se encontraron saldos. Deposita fondos para comenzar a operar."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "No fills found."
 msgstr "No se encontraron ejecuciones."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "No funding payments found."
 msgstr "No se encontraron pagos de financiamiento."
@@ -1250,6 +1277,7 @@ msgstr "No se encontraron mercados."
 msgid "No open orders."
 msgstr "Sin órdenes abiertas."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "No order history found."
 msgstr ""
@@ -1353,6 +1381,7 @@ msgstr "Libro de órdenes"
 msgid "Order failed"
 msgstr "Orden fallida"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Order History"
 msgstr ""
@@ -1408,6 +1437,7 @@ msgstr "pendiente"
 msgid "Perp"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Perpetuals"
 msgstr ""
@@ -1443,6 +1473,7 @@ msgstr ""
 msgid "Portfolio"
 msgstr "Portafolio"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Position"
@@ -1466,6 +1497,8 @@ msgstr ""
 #~ msgstr "Anterior"
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
@@ -1503,6 +1536,7 @@ msgid "Randomize timing"
 msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "Tasa"
@@ -1557,6 +1591,7 @@ msgid "Risk/Reward"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "RO"
 msgstr ""
 
@@ -1636,6 +1671,7 @@ msgstr ""
 msgid "sell"
 msgstr "venta"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Sell"
 msgstr "Vender"
@@ -1644,6 +1680,7 @@ msgstr "Vender"
 #~ msgid "Sell Short"
 #~ msgstr "Vender corto"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-dialog.tsx
 msgid "Send"
@@ -1761,8 +1798,11 @@ msgstr "Firmante no listo"
 #~ msgid "Signing..."
 #~ msgstr "Firmando..."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1835,6 +1875,7 @@ msgstr "Ordenado por {0}"
 #~ msgstr "spot"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -1906,6 +1947,7 @@ msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
@@ -2016,6 +2058,7 @@ msgstr "La página que buscas no existe."
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2038,10 +2081,12 @@ msgstr ""
 msgid "To"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr ""
@@ -2056,6 +2101,7 @@ msgstr "Alternar barra lateral"
 msgid "Toggle size mode"
 msgstr "Cambiar modo de tamaño"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Total"
@@ -2109,6 +2155,7 @@ msgstr ""
 #~ msgid "Trade ClockCounterClockwise"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Trade History"
 msgstr "Historial de operaciones"
@@ -2172,10 +2219,12 @@ msgstr ""
 msgid "TWAP minutes must be {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "TWAP Orders"
 msgstr "Órdenes TWAP"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2218,6 +2267,7 @@ msgstr "Resolución no soportada: {0}"
 msgid "Update failed"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx

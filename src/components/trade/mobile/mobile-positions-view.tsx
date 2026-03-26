@@ -1,21 +1,19 @@
 import { WalletIcon } from "@phosphor-icons/react";
-import { Suspense, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
-import { createLazyComponent } from "@/lib/lazy";
 import { toNumber } from "@/lib/trade/numbers";
+import { MobileBalancesTab } from "./mobile-balances-tab";
+import { MobileFundingTab } from "./mobile-funding-tab";
+import { MobileHistoryTab } from "./mobile-history-tab";
+import { MobileOrdersHistoryTab } from "./mobile-orders-history-tab";
 import { MobileOrdersTab } from "./mobile-orders-tab";
 import { MobilePositionsTab } from "./mobile-positions-tab";
-
-const BalancesTab = createLazyComponent(() => import("../positions/balances-tab"), "BalancesTab");
-const FundingTab = createLazyComponent(() => import("../positions/funding-tab"), "FundingTab");
-const HistoryTab = createLazyComponent(() => import("../positions/history-tab"), "HistoryTab");
-const OrdersHistoryTab = createLazyComponent(() => import("../positions/orders-history-tab"), "OrdersHistoryTab");
-const TwapTab = createLazyComponent(() => import("../positions/twap-tab"), "TwapTab");
+import { MobileTwapTab } from "./mobile-twap-tab";
 
 const MOBILE_TABS = [
 	{ value: "positions", label: "Positions" },
@@ -108,42 +106,24 @@ export function MobilePositionsView({ className }: Props) {
 								<MobileOrdersTab />
 							</TabsContent>
 							<TabsContent value="balances" className={tabContentClass}>
-								<Suspense fallback={<TabLoadingFallback />}>
-									<BalancesTab />
-								</Suspense>
+								<MobileBalancesTab />
 							</TabsContent>
 							<TabsContent value="twap" className={tabContentClass}>
-								<Suspense fallback={<TabLoadingFallback />}>
-									<TwapTab />
-								</Suspense>
+								<MobileTwapTab />
 							</TabsContent>
 							<TabsContent value="history" className={tabContentClass}>
-								<Suspense fallback={<TabLoadingFallback />}>
-									<HistoryTab />
-								</Suspense>
+								<MobileHistoryTab />
 							</TabsContent>
 							<TabsContent value="orders-history" className={tabContentClass}>
-								<Suspense fallback={<TabLoadingFallback />}>
-									<OrdersHistoryTab />
-								</Suspense>
+								<MobileOrdersHistoryTab />
 							</TabsContent>
 							<TabsContent value="funding" className={tabContentClass}>
-								<Suspense fallback={<TabLoadingFallback />}>
-									<FundingTab />
-								</Suspense>
+								<MobileFundingTab />
 							</TabsContent>
 						</>
 					)}
 				</div>
 			</Tabs>
-		</div>
-	);
-}
-
-function TabLoadingFallback() {
-	return (
-		<div className="flex-1 flex items-center justify-center">
-			<Spinner className="size-4 text-text-600" />
 		</div>
 	);
 }
