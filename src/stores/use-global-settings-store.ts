@@ -9,6 +9,7 @@ import {
 	STORAGE_KEYS,
 } from "@/config/constants";
 import { type NumberFormatLocale, resolveNumberFormatLocale } from "@/lib/i18n";
+import type { Network } from "@/lib/network";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { createValidatedStorage } from "@/stores/validated-storage";
 
@@ -23,7 +24,9 @@ const globalSettingsSchema = z.object({
 		marketOrderSlippagePercent: z.number().optional(),
 		marginMode: z.enum(["cross", "isolated"]).optional(),
 		positionsActiveTab: z.string().optional(),
+		mobileActiveTab: z.string().optional(),
 		theme: z.enum(["dark", "light"]).optional(),
+		network: z.enum(["mainnet", "testnet"]).optional(),
 	}),
 });
 
@@ -37,7 +40,9 @@ const DEFAULT_GLOBAL_SETTINGS = {
 	marketOrderSlippagePercent: DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	marginMode: "cross" as MarginMode,
 	positionsActiveTab: "positions",
+	mobileActiveTab: "chart",
 	theme: "dark" as Theme,
+	network: "mainnet" as Network,
 } as const;
 
 interface GlobalSettingsStore {
@@ -48,7 +53,9 @@ interface GlobalSettingsStore {
 	marketOrderSlippagePercent: number;
 	marginMode: MarginMode;
 	positionsActiveTab: string;
+	mobileActiveTab: string;
 	theme: Theme;
+	network: Network;
 	actions: {
 		setHideSmallBalances: (next: boolean) => void;
 		setShowOrderbookInQuote: (next: boolean) => void;
@@ -57,7 +64,9 @@ interface GlobalSettingsStore {
 		setMarketOrderSlippagePercent: (percent: number) => void;
 		setMarginMode: (mode: MarginMode) => void;
 		setPositionsActiveTab: (tab: string) => void;
+		setMobileActiveTab: (tab: string) => void;
 		setTheme: (theme: Theme) => void;
+		setNetwork: (network: Network) => void;
 	};
 }
 
@@ -80,7 +89,12 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				},
 				setMarginMode: (mode) => set({ marginMode: mode }),
 				setPositionsActiveTab: (tab) => set({ positionsActiveTab: tab }),
+				setMobileActiveTab: (tab) => set({ mobileActiveTab: tab }),
 				setTheme: (theme) => set({ theme }),
+				setNetwork: (network) => {
+					set({ network });
+					if (typeof window !== "undefined") window.location.reload();
+				},
 			},
 		}),
 		{
@@ -95,7 +109,9 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				marketOrderSlippagePercent: state.marketOrderSlippagePercent,
 				marginMode: state.marginMode,
 				positionsActiveTab: state.positionsActiveTab,
+				mobileActiveTab: state.mobileActiveTab,
 				theme: state.theme,
+				network: state.network,
 			}),
 			merge: (persisted, current) => {
 				const p = persisted as Partial<GlobalSettingsStore>;
@@ -118,6 +134,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					marketOrderSlippagePercent: slippagePercent,
 					marginMode: p?.marginMode === "isolated" ? "isolated" : "cross",
 					theme: p?.theme === "light" ? "light" : "dark",
+					network: p?.network === "testnet" ? "testnet" : "mainnet",
 				};
 			},
 		},
@@ -186,4 +203,16 @@ export function useHideSmallBalances() {
 
 export function usePositionsActiveTab() {
 	return useGlobalSettingsStore((state) => state.positionsActiveTab);
+}
+
+export function useMobileActiveTab() {
+	return useGlobalSettingsStore((state) => state.mobileActiveTab);
+}
+
+export function useNetwork() {
+	return useGlobalSettingsStore((state) => state.network);
+}
+
+export function useIsTestnet() {
+	return useGlobalSettingsStore((state) => state.network === "testnet");
 }

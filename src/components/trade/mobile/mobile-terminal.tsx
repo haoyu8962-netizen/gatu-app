@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
 import { useConnection } from "wagmi";
 import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
 import { toNumber } from "@/lib/trade/numbers";
+import { useGlobalSettingsActions, useMobileActiveTab } from "@/stores/use-global-settings-store";
 import { MobileAccountView } from "./mobile-account-view";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileBottomNav, type MobileTab } from "./mobile-bottom-nav";
@@ -18,47 +18,18 @@ interface Props {
 }
 
 export function MobileTerminal({ className }: Props) {
-	const [activeTab, setActiveTab] = useState<MobileTab>("chart");
-
+	const activeTab = useMobileActiveTab() as MobileTab;
+	const { setMobileActiveTab } = useGlobalSettingsActions();
 	const { address, isConnected } = useConnection();
 	const { perpPositions } = useAccountBalances();
+
 	const { data: ordersEvent } = useSubOpenOrders({ user: address ?? "0x0" }, { enabled: isConnected && !!address });
-	const openOrders = ordersEvent?.orders;
 
-	const positionsCount = useMemo(() => {
-		if (!isConnected) return 0;
-		return perpPositions.reduce((count, entry) => {
-			const size = toNumber(entry.position.szi);
-			if (!size) return count;
-			return count + 1;
-		}, 0);
-	}, [isConnected, perpPositions]);
+	const positionsCount = isConnected
+		? perpPositions.reduce((count, entry) => (toNumber(entry.position.szi) ? count + 1 : count), 0)
+		: 0;
 
-	const ordersCount = isConnected ? (openOrders?.length ?? 0) : 0;
-
-	const badges = useMemo(
-		() => ({
-			positions: positionsCount + ordersCount,
-		}),
-		[positionsCount, ordersCount],
-	);
-
-	const renderContent = () => {
-		switch (activeTab) {
-			case "chart":
-				return <MobileChartView />;
-			case "book":
-				return <MobileBookView />;
-			case "trade":
-				return <MobileTradeView />;
-			case "positions":
-				return <MobilePositionsView />;
-			case "account":
-				return <MobileAccountView />;
-			default:
-				return null;
-		}
-	};
+	const ordersCount = isConnected ? (ordersEvent?.orders?.length ?? 0) : 0;
 
 	return (
 		<div
@@ -66,8 +37,18 @@ export function MobileTerminal({ className }: Props) {
 		>
 			<MobileHeader />
 			<OfflineBanner />
-			<main className="flex-1 min-h-0 overflow-hidden">{renderContent()}</main>
-			<MobileBottomNav activeTab={activeTab} onTabChange={setActiveTab} badges={badges} />
+			<main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+				{activeTab === "chart" && <MobileChartView />}
+				{activeTab === "book" && <MobileBookView />}
+				{activeTab === "trade" && <MobileTradeView />}
+				{activeTab === "positions" && <MobilePositionsView />}
+				{activeTab === "account" && <MobileAccountView />}
+			</main>
+			<MobileBottomNav
+				activeTab={activeTab}
+				onTabChange={setMobileActiveTab}
+				badges={{ positions: positionsCount + ordersCount }}
+			/>
 		</div>
 	);
 }

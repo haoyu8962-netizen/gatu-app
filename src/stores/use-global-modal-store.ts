@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/constants";
 
-type DepositTab = "deposit" | "withdraw";
+type DepositTab = "deposit" | "withdraw" | "bridge";
 
 type GlobalModal =
 	| { type: "deposit"; tab: DepositTab }

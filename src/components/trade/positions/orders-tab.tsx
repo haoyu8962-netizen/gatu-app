@@ -8,7 +8,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { useExchangeCancel } from "@/lib/hyperliquid/hooks/exchange/useExchangeCancel";
 import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
@@ -317,7 +317,7 @@ function OrderRow({
 				<span className={cn("text-4xs px-1 py-0.5 rounded-sm uppercase", typeConfig.class)}>{typeConfig.label}</span>
 			</TableCell>
 			<TableCell className="text-xs text-right tabular-nums py-1.5">
-				{formatUSD(order.limitPx, { compact: false })}
+				{formatPrice(order.limitPx, { szDecimals })}
 			</TableCell>
 			<TableCell className="text-xs text-right tabular-nums py-1.5">
 				<div className="flex flex-col items-end">

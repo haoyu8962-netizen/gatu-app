@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
+import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
@@ -47,13 +48,15 @@ export function TopNav() {
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { isConnected } = useConnection();
 	const { scope } = useExchangeScope();
+	const isTestnet = useIsTestnet();
 
 	const accentClass = getScopeAccentClass(scope);
 
 	return (
 		<header
 			className={cn(
-				"fixed top-0 left-0 right-0 z-40 h-11 border-b px-3 flex items-center justify-between bg-surface-execution transition-colors duration-300 ease-in-out",
+				"fixed left-0 right-0 z-40 h-11 border-b px-3 flex items-center justify-between bg-surface-execution transition-colors duration-300 ease-in-out",
+				isTestnet ? "top-8" : "top-0",
 				accentClass,
 			)}
 		>

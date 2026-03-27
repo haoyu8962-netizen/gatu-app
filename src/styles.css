@@ -425,6 +425,10 @@
     );
   }
 
+  .testnet-bg {
+    background-color: oklch(from var(--warning-700) l c h / 0.06);
+  }
+
   .terminal-grid {
     background-image:
       linear-gradient(oklch(from var(--border-200) l c h / 0.08) 1px, transparent 1px),

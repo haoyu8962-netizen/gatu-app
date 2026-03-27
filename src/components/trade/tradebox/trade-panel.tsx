@@ -436,7 +436,7 @@ export function TradePanel() {
 	// const actionButtonClass = getActionButtonClass(buttonContent.variant);
 
 	return (
-		<div className="h-full flex flex-col overflow-hidden bg-surface-execution">
+		<div className="min-h-0 flex flex-col overflow-hidden bg-surface-execution">
 			{capabilities.isLeveraged && (
 				<div className="p-2 border-b border-border-200/60 flex items-center justify-between">
 					{capabilities.hasMarginMode ? (
@@ -462,7 +462,7 @@ export function TradePanel() {
 				onConfirm={handleMarginModeConfirm}
 			/>
 
-			<div className="p-2 space-y-4 overflow-y-auto flex-1">
+			<div className="p-2 space-y-4 overflow-y-auto flex-1 min-h-0">
 				<TradeHeader
 					orderType={orderType}
 					side={side}

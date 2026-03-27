@@ -1,33 +1,42 @@
-import { TrayIcon, WalletIcon } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { WalletIcon } from "@phosphor-icons/react";
+import { useTransition } from "react";
 import { useConnection } from "wagmi";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { POSITIONS_TABS, UI_TEXT } from "@/config/constants";
+import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
 import { toNumber } from "@/lib/trade/numbers";
-import { BalancesTab } from "../positions/balances-tab";
-import { FundingTab } from "../positions/funding-tab";
-import { HistoryTab } from "../positions/history-tab";
-import { OrdersTab } from "../positions/orders-tab";
-import { PositionsTab } from "../positions/positions-tab";
-import { TwapTab } from "../positions/twap-tab";
+import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
+import { MobileBalancesTab } from "./mobile-balances-tab";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
+import { MobileFundingTab } from "./mobile-funding-tab";
+import { MobileHistoryTab } from "./mobile-history-tab";
+import { MobileOrdersHistoryTab } from "./mobile-orders-history-tab";
+import { MobileOrdersTab } from "./mobile-orders-tab";
+import { MobilePositionsTab } from "./mobile-positions-tab";
+import { MobileTwapTab } from "./mobile-twap-tab";
 
-const TABS_TEXT = UI_TEXT.POSITIONS_TAB;
+const MOBILE_TABS = [
+	{ value: "positions", label: "Positions" },
+	{ value: "orders", label: "Open Orders" },
+	{ value: "balances", label: "Balances" },
+	{ value: "twap", label: "TWAP" },
+	{ value: "history", label: "Trade History" },
+	{ value: "orders-history", label: "Order History" },
+	{ value: "funding", label: "Funding History" },
+] as const;
 
-type TabValue = (typeof POSITIONS_TABS)[number]["value"];
+type TabValue = (typeof MOBILE_TABS)[number]["value"];
 
-interface MobilePositionsViewProps {
+interface Props {
 	className?: string;
 }
 
-export function MobilePositionsView({ className }: MobilePositionsViewProps) {
-	const [activeTab, setActiveTab] = useState<TabValue>("positions");
-
+export function MobilePositionsView({ className }: Props) {
+	const activeTab = usePositionsActiveTab() as TabValue;
+	const { setPositionsActiveTab } = useGlobalSettingsActions();
+	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useConnection();
 	const { perpPositions, isLoading: isLoadingState } = useAccountBalances();
 
@@ -38,112 +47,98 @@ export function MobilePositionsView({ className }: MobilePositionsViewProps) {
 	const openOrders = ordersEvent?.orders;
 	const isLoadingOrders = ordersStatus === "subscribing" || ordersStatus === "idle";
 
-	const positionsCount = useMemo(() => {
-		if (!isConnected) return 0;
-		return perpPositions.reduce((count, entry) => {
-			const size = toNumber(entry.position.szi);
-			if (!size) return count;
-			return count + 1;
-		}, 0);
-	}, [isConnected, perpPositions]);
+	const positionsCount = isConnected
+		? perpPositions.reduce((count, entry) => {
+				const size = toNumber(entry.position.szi);
+				return size ? count + 1 : count;
+			}, 0)
+		: 0;
 
 	const ordersCount = isConnected ? (openOrders?.length ?? 0) : 0;
 
-	const renderContent = () => {
-		if (!isConnected) {
-			return <EmptyState title={TABS_TEXT.CONNECT} icon="wallet" />;
-		}
+	function handleTabChange(value: string) {
+		startTransition(() => setPositionsActiveTab(value));
+	}
 
-		switch (activeTab) {
-			case "balances":
-				return <BalancesTab />;
-			case "positions":
-				return <PositionsTab />;
-			case "orders":
-				return <OrdersTab />;
-			case "twap":
-				return <TwapTab />;
-			case "history":
-				return <HistoryTab />;
-			case "funding":
-				return <FundingTab />;
-			default:
-				return null;
-		}
-	};
+	function getTabCount(tabValue: TabValue): number | null {
+		if (tabValue === "positions") return positionsCount;
+		if (tabValue === "orders") return ordersCount;
+		return null;
+	}
+
+	function isTabLoading(tabValue: TabValue): boolean {
+		if (!isConnected) return false;
+		if (tabValue === "positions") return isLoadingState;
+		if (tabValue === "orders") return isLoadingOrders;
+		return false;
+	}
+
+	const tabContentClass = cn("flex-1 min-h-0 flex flex-col mt-0", isPending && "opacity-70");
 
 	return (
-		<div className={cn("flex flex-col h-full min-h-0 bg-surface-execution/20", className)}>
-			{/* Scrollable tabs header */}
-			<div className="shrink-0 border-b border-border-200/60 bg-surface-execution/30">
-				<div className="px-3 py-2 overflow-x-auto">
-					<div className="flex items-center gap-1 min-w-max">
-						{POSITIONS_TABS.map((tab) => {
-							const isActive = activeTab === tab.value;
-							const count = tab.value === "positions" ? positionsCount : tab.value === "orders" ? ordersCount : null;
-							const showCount = typeof count === "number" && count > 0;
-							const isLoading =
-								(tab.value === "positions" && isLoadingState) || (tab.value === "orders" && isLoadingOrders);
+		<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
+			<Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 min-h-0 flex flex-col">
+				<div className="shrink-0 overflow-x-auto border-b border-border-200/60">
+					<TabsList variant="underline" className="px-3 min-w-max">
+						{MOBILE_TABS.map((tab) => {
+							const count = getTabCount(tab.value);
+							const loading = isTabLoading(tab.value);
 
 							return (
-								<Button
-									key={tab.value}
-									variant="text"
-									size="none"
-									onClick={() => setActiveTab(tab.value)}
-									className={cn(
-										"px-3 py-2.5 text-sm font-medium rounded-md transition-colors",
-										"min-h-[44px] flex items-center gap-2",
-										"active:scale-98",
-										"hover:bg-transparent",
-										isActive ? "bg-surface-base text-primary-default shadow-sm" : "text-text-600 hover:text-text-950",
-									)}
-								>
+								<TabsTrigger key={tab.value} value={tab.value} className="inline-flex items-center gap-1">
 									<span>{tab.label}</span>
-									{isLoading ? (
-										<Skeleton className="h-4 w-4 rounded-full" />
-									) : showCount ? (
-										<Badge
-											variant="outline"
-											className={cn(
-												"min-w-5 h-5 px-1.5 text-xs tabular-nums",
-												"border-primary-default/30 bg-primary-default/10 text-primary-default",
-											)}
-										>
-											{count}
-										</Badge>
+									{loading ? (
+										<Spinner className="size-3" />
+									) : typeof count === "number" && count > 0 ? (
+										<span>({count})</span>
 									) : null}
-								</Button>
+								</TabsTrigger>
 							);
 						})}
-					</div>
+					</TabsList>
 				</div>
-			</div>
-
-			{/* Content */}
-			<div className="flex-1 min-h-0 overflow-hidden">{renderContent()}</div>
-
-			<MobileBottomNavSpacer />
+				<div className="flex-1 min-h-0 overflow-y-auto">
+					{!isConnected ? (
+						<EmptyState />
+					) : (
+						<>
+							<TabsContent value="positions" className={tabContentClass}>
+								<MobilePositionsTab />
+							</TabsContent>
+							<TabsContent value="orders" className={tabContentClass}>
+								<MobileOrdersTab />
+							</TabsContent>
+							<TabsContent value="balances" className={tabContentClass}>
+								<MobileBalancesTab />
+							</TabsContent>
+							<TabsContent value="twap" className={tabContentClass}>
+								<MobileTwapTab />
+							</TabsContent>
+							<TabsContent value="history" className={tabContentClass}>
+								<MobileHistoryTab />
+							</TabsContent>
+							<TabsContent value="orders-history" className={tabContentClass}>
+								<MobileOrdersHistoryTab />
+							</TabsContent>
+							<TabsContent value="funding" className={tabContentClass}>
+								<MobileFundingTab />
+							</TabsContent>
+						</>
+					)}
+					<MobileBottomNavSpacer />
+				</div>
+			</Tabs>
 		</div>
 	);
 }
 
-interface EmptyStateProps {
-	title: string;
-	icon?: "wallet" | "empty";
-}
-
-function EmptyState({ title, icon = "empty" }: EmptyStateProps) {
+function EmptyState() {
 	return (
 		<div className="h-full flex flex-col items-center justify-center gap-4 p-6 text-center">
-			<div className={cn("size-16 rounded-full flex items-center justify-center", "bg-surface-analysis")}>
-				{icon === "wallet" ? (
-					<WalletIcon className="size-8 text-text-600" />
-				) : (
-					<TrayIcon className="size-8 text-text-600" />
-				)}
+			<div className="size-16 rounded-full flex items-center justify-center bg-surface-analysis">
+				<WalletIcon className="size-8 text-text-600" />
 			</div>
-			<p className="text-sm text-text-600 max-w-xs">{title}</p>
+			<p className="text-sm text-text-600 max-w-xs">Connect wallet to view positions</p>
 		</div>
 	);
 }

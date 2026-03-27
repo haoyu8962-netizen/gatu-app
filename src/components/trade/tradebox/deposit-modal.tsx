@@ -4,13 +4,14 @@ import {
 	ArrowLineDownIcon,
 	ArrowLineUpIcon,
 	ArrowSquareOutIcon,
+	ArrowsLeftRightIcon,
 	CheckCircleIcon,
 	ClockIcon,
 	SpinnerGapIcon,
 	WalletIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { formatUnits } from "viem";
 import { useConnection } from "wagmi";
 import { Button } from "@/components/ui/button";
@@ -25,8 +26,11 @@ import { formatTransferError } from "@/lib/errors/format";
 import { getExplorerTxUrl } from "@/lib/explorer";
 import { formatNumber } from "@/lib/format";
 import { useDeposit, useExchangeWithdraw3, useUserPositions } from "@/lib/hyperliquid";
+import { createLazyComponent } from "@/lib/lazy";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import { useDepositModalActions, useDepositModalOpen, useDepositModalTab } from "@/stores/use-global-modal-store";
+
+const LazyBridgeTab = createLazyComponent(() => import("./bridge-tab"), "BridgeTab");
 
 const NETWORKS = [{ id: "arbitrum", name: "Arbitrum", shortName: "ARB" }] as const;
 
@@ -628,8 +632,12 @@ export function DepositModal() {
 					</DialogTitle>
 				</DialogHeader>
 
-				<Tabs value={activeTab} onValueChange={(v) => setTab(v as "deposit" | "withdraw")} className="space-y-4">
-					<TabsList variant="pill" className="w-full grid grid-cols-2">
+				<Tabs
+					value={activeTab}
+					onValueChange={(v) => setTab(v as "deposit" | "withdraw" | "bridge")}
+					className="space-y-4"
+				>
+					<TabsList variant="pill" className="w-full grid grid-cols-3">
 						<TabsTrigger value="deposit">
 							<ArrowLineDownIcon className="size-3" />
 							<Trans>Deposit</Trans>
@@ -638,9 +646,13 @@ export function DepositModal() {
 							<ArrowLineUpIcon className="size-3" />
 							<Trans>Withdraw</Trans>
 						</TabsTrigger>
+						<TabsTrigger value="bridge">
+							<ArrowsLeftRightIcon className="size-3" />
+							<Trans>Bridge</Trans>
+						</TabsTrigger>
 					</TabsList>
 
-					<div className="grid [&>*]:col-start-1 [&>*]:row-start-1">
+					<div className="grid min-h-95 [&>*]:col-start-1 [&>*]:row-start-1">
 						<TabsContent value="deposit" forceMount className="flex flex-col data-[state=inactive]:invisible">
 							<DepositForm
 								amount={depositAmount}
@@ -666,6 +678,12 @@ export function DepositModal() {
 									onSubmit={handleWithdrawSubmit}
 								/>
 							)}
+						</TabsContent>
+
+						<TabsContent value="bridge" forceMount className="flex flex-col data-[state=inactive]:invisible">
+							<Suspense fallback={null}>
+								<LazyBridgeTab />
+							</Suspense>
 						</TabsContent>
 					</div>
 				</Tabs>

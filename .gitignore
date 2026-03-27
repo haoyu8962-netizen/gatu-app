@@ -31,3 +31,4 @@ src/locales/**/messages.js
 *.local
 count.txt
 todos.json
+.ralph/.env

@@ -1,8 +1,56 @@
-import { createConfig, http } from "wagmi";
-import { arbitrum } from "wagmi/chains";
+import { type Chain, createConfig, http } from "wagmi";
+import {
+	arbitrum,
+	aurora,
+	avalanche,
+	base,
+	blast,
+	bsc,
+	celo,
+	fantom,
+	gnosis,
+	linea,
+	mainnet,
+	mantle,
+	mode,
+	moonbeam,
+	optimism,
+	polygon,
+	polygonZkEvm,
+	scroll,
+	zkSync,
+} from "wagmi/chains";
 import { coinbaseWallet, injected, mock, walletConnect } from "wagmi/connectors";
 import type { MockWalletConfig } from "@/lib/wallet-utils";
 import { registerMockWallet } from "@/lib/wallet-utils";
+
+// All chains supported for LiFi bridging — wagmi requires these upfront
+const BRIDGE_CHAINS = [
+	arbitrum,
+	mainnet,
+	polygon,
+	optimism,
+	base,
+	bsc,
+	avalanche,
+	fantom,
+	gnosis,
+	zkSync,
+	scroll,
+	linea,
+	mode,
+	blast,
+	mantle,
+	celo,
+	moonbeam,
+	aurora,
+	polygonZkEvm,
+] as const satisfies readonly [Chain, ...Chain[]];
+
+const BRIDGE_TRANSPORTS = Object.fromEntries(BRIDGE_CHAINS.map((chain) => [chain.id, http()])) as Record<
+	(typeof BRIDGE_CHAINS)[number]["id"],
+	ReturnType<typeof http>
+>;
 
 function createMockConnectors(mockWallets: MockWalletConfig[]) {
 	return mockWallets.map((wallet) => {
@@ -23,16 +71,14 @@ export function createWagmiConfig(options: WagmiConfigOptions = {}) {
 	const mockConnectors = createMockConnectors(mockWallets);
 
 	return createConfig({
-		chains: [arbitrum],
+		chains: BRIDGE_CHAINS,
 		connectors: [
 			...mockConnectors,
 			injected(),
 			coinbaseWallet(),
 			walletConnect({ projectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID }),
 		],
-		transports: {
-			[arbitrum.id]: http(),
-		},
+		transports: BRIDGE_TRANSPORTS,
 		ssr: true,
 	});
 }

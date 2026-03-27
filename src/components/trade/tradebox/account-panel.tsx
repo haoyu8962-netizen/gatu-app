@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { useConnection } from "wagmi";
 import { Button } from "@/components/ui/button";
@@ -256,7 +256,7 @@ export function AccountPanel() {
 						</TabsContentGroup>
 
 						{(hasPerpData || hasSpotData) && (
-							<div className="grid grid-cols-2 gap-1 mt-4">
+							<div className="grid grid-cols-3 gap-1 mt-4">
 								<Button variant="outlined" onClick={() => openDepositModal("withdraw")} aria-label={t`Withdraw`}>
 									<UploadSimpleIcon className="size-4" />
 									{t`Withdraw`}
@@ -264,6 +264,10 @@ export function AccountPanel() {
 								<Button variant="outlined" onClick={() => openDepositModal("deposit")} aria-label={t`Deposit`}>
 									<DownloadSimpleIcon className="size-4" />
 									{t`Deposit`}
+								</Button>
+								<Button variant="outlined" onClick={() => openDepositModal("bridge")} aria-label={t`Bridge`}>
+									<ArrowsLeftRightIcon className="size-4" />
+									{t`Bridge`}
 								</Button>
 							</div>
 						)}

@@ -47,21 +47,6 @@ export function createMutationKey(action: string, clientKey?: string): readonly 
 }
 
 /**
- * Creates a standardized mutation options object.
- * Use this to build consistent mutation factories for all exchange hooks.
- *
- * @param mutationKey - The mutation key array
- * @param mutationFn - The async function that performs the mutation
- * @returns MutationOptions object with mutationKey and mutationFn
- */
-export function createMutationOptions<TData, TVariables>(
-	mutationKey: readonly unknown[],
-	mutationFn: (variables: TVariables) => Promise<TData>,
-): MutationOptions<TData, TVariables> {
-	return { mutationKey, mutationFn };
-}
-
-/**
  * Creates a guarded mutation function that asserts exchange is available.
  * Centralizes the exchange null check for all exchange mutation hooks.
  *

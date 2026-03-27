@@ -18,7 +18,7 @@ import {
 import { getSliderValue } from "@/domain/trade/order/size";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatToken, szDecimalsToPriceDecimals } from "@/lib/format";
+import { formatToken, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import {
 	formatDecimalFloor,
@@ -278,22 +278,13 @@ export function TradeFormFields({
 
 			{usesTriggerPrice && (
 				<div className="space-y-1.5">
-					<div className="flex items-center justify-between">
-						<div className="text-4xs uppercase tracking-wider text-text-950">{t`Trigger Price (USDC)`}</div>
-						{markPx > 0 && (
-							<Button
-								variant="text"
-								onClick={() => setTriggerPrice(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
-								className="text-4xs text-text-950 hover:text-primary-default hover:bg-transparent tabular-nums"
-							>
-								{t`Mark`}: {formatPrice(markPx, { szDecimals })}
-							</Button>
-						)}
-					</div>
+					<div className="text-4xs uppercase tracking-wider text-text-950">{t`Trigger Price (USDC)`}</div>
 					<NumberInput
 						placeholder="0.00"
 						value={triggerPriceInput}
 						onChange={(e) => setTriggerPrice(e.target.value)}
+						maxLabel={t`Mid`}
+						onMaxClick={() => setTriggerPrice(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
 						className={cn(
 							"w-full text-2xs bg-surface-base/50 border-border-200/60 focus:border-primary-default/60 tabular-nums",
 							usesTriggerPrice &&
@@ -308,22 +299,13 @@ export function TradeFormFields({
 
 			{usesLimitPrice && (
 				<div className="space-y-1.5">
-					<div className="flex items-center justify-between">
-						<div className="text-4xs uppercase tracking-wider text-text-950">{t`Limit Price`}</div>
-						{markPx > 0 && (
-							<Button
-								variant="text"
-								onClick={() => setLimitPrice(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
-								className="text-4xs text-text-950 hover:text-primary-default hover:bg-transparent tabular-nums"
-							>
-								{t`Mark`}: {formatPrice(markPx, { szDecimals })}
-							</Button>
-						)}
-					</div>
+					<div className="text-4xs uppercase tracking-wider text-text-950">{t`Limit Price`}</div>
 					<NumberInput
 						placeholder="0.00"
 						value={limitPriceInput}
 						onChange={(e) => setLimitPrice(e.target.value)}
+						maxLabel={t`Mid`}
+						onMaxClick={() => setLimitPrice(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
 						className={cn(
 							"w-full text-2xs bg-surface-base/50 border-border-200/60 focus:border-primary-default/60 tabular-nums",
 							usesLimitPrice && !price && sizeValue > 0 && "border-market-down-600 focus:border-market-down-600",
@@ -361,6 +343,8 @@ export function TradeFormFields({
 							onChange={(e) => setScaleStart(e.target.value)}
 							className="w-full text-2xs bg-surface-base/50 border-border-200/60 focus:border-primary-default/60 tabular-nums"
 							disabled={isFormDisabled}
+							maxLabel={t`Mid`}
+							onMaxClick={() => setScaleStart(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
 						/>
 					</div>
 					<div className="space-y-1.5">
@@ -371,6 +355,8 @@ export function TradeFormFields({
 							onChange={(e) => setScaleEnd(e.target.value)}
 							className="w-full text-2xs bg-surface-base/50 border-border-200/60 focus:border-primary-default/60 tabular-nums"
 							disabled={isFormDisabled}
+							maxLabel={t`Mid`}
+							onMaxClick={() => setScaleEnd(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
 						/>
 					</div>
 					<div className="space-y-1.5">

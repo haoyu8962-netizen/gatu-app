@@ -2,6 +2,7 @@ import { CaretDownIcon } from "@phosphor-icons/react";
 import type { Chart } from "klinecharts";
 import { dispose, FormatDateType, init, LoadDataType } from "klinecharts";
 import { useEffect, useRef, useState } from "react";
+import { useConnection } from "wagmi";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -19,9 +20,11 @@ import {
 	STARRED_INTERVALS,
 } from "@/lib/chart/kline-config";
 import { buildKlineStyles } from "@/lib/chart/kline-styles";
+import { ORDER_LINE_NAME, registerOrderLineOverlay } from "@/lib/chart/order-line-overlay";
 import { cn } from "@/lib/cn";
 import { getInfoClient } from "@/lib/hyperliquid/clients";
 import { useSubCandle } from "@/lib/hyperliquid/hooks/subscription/useSubCandle";
+import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription/useSubOpenOrders";
 
 const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -43,19 +46,23 @@ function formatTooltipDate(date: Date): string {
 interface Props {
 	symbol?: string;
 	theme?: "light" | "dark";
+	yAxisInside?: boolean;
 }
 
-export function KlineChart({ symbol = "", theme = "dark" }: Props) {
+export function KlineChart({ symbol = "", theme = "dark", yAxisInside = false }: Props) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const chartRef = useRef<Chart | null>(null);
 	const [activeInterval, setActiveInterval] = useState(DEFAULT_INTERVAL);
 	const [activeChartType, setActiveChartType] = useState<ChartTypeConfig>(DEFAULT_CHART_TYPE);
 	const intervalRef = useRef(activeInterval);
 	intervalRef.current = activeInterval;
+	const { address, isConnected } = useConnection();
 
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container || !symbol) return;
+
+		registerOrderLineOverlay();
 
 		const chart = init(container, {
 			customApi: {
@@ -73,7 +80,7 @@ export function KlineChart({ symbol = "", theme = "dark" }: Props) {
 		if (!chart) return;
 		chartRef.current = chart;
 
-		chart.setStyles(buildKlineStyles(activeChartType.type));
+		chart.setStyles(buildKlineStyles(activeChartType.type, { yAxisInside }));
 		chart.createIndicator("VOL");
 
 		chart.setLoadDataCallback(({ type, data, callback }) => {
@@ -124,7 +131,7 @@ export function KlineChart({ symbol = "", theme = "dark" }: Props) {
 			chartRef.current = null;
 			dispose(container);
 		};
-	}, [symbol, theme, activeInterval, activeChartType]);
+	}, [symbol, theme, activeInterval, activeChartType, yAxisInside]);
 
 	const candleData = useSubCandle({ coin: symbol, interval: activeInterval.candleInterval }, { enabled: !!symbol });
 
@@ -138,6 +145,41 @@ export function KlineChart({ symbol = "", theme = "dark" }: Props) {
 
 		chart.updateData(klineData);
 	}, [candleData.data]);
+
+	const { data: openOrdersEvent } = useSubOpenOrders({ user: address ?? "0x0" }, { enabled: isConnected && !!address });
+
+	useEffect(() => {
+		const chart = chartRef.current;
+		if (!chart) return;
+
+		chart.removeOverlay({ name: ORDER_LINE_NAME });
+
+		const orders = openOrdersEvent?.orders;
+		if (!orders) return;
+
+		const symbolOrders = orders.filter((o) => o.coin === symbol);
+
+		for (const order of symbolOrders) {
+			const price = Number(order.limitPx);
+			if (!Number.isFinite(price)) continue;
+
+			const label = order.side === "B" ? "Limit Buy" : "Limit Sell";
+
+			chart.createOverlay({
+				name: ORDER_LINE_NAME,
+				points: [{ value: price }],
+				modeSensitivity: 0,
+				styles: {
+					rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+					polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+				},
+				extendData: {
+					side: order.side,
+					label,
+				},
+			});
+		}
+	}, [openOrdersEvent, symbol]);
 
 	const isNonFavoriteActive = !FAVORITE_SET.has(activeInterval.resolution);
 

@@ -6,6 +6,7 @@ import { DEFAULT_BUILDER_CONFIG, PROJECT_NAME } from "@/config/hyperliquid";
 import { config } from "@/config/wagmi";
 import { HyperliquidProvider } from "@/lib/hyperliquid";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
+import { getNetwork } from "@/lib/network";
 import "@/lib/i18n";
 
 export function getRootProviderContext() {
@@ -15,7 +16,7 @@ export function getRootProviderContext() {
 	};
 }
 
-const env = import.meta.env.VITE_HYPERLIQUID_TESTNET === "true" ? "Testnet" : "Mainnet";
+const env = getNetwork() === "testnet" ? "Testnet" : "Mainnet";
 
 export function RootProvider({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
 	return (

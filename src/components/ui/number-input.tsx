@@ -193,7 +193,7 @@ export function NumberInput({
 				type="button"
 				onClick={onMaxClick}
 				disabled={disabled}
-				className="absolute right-2 top-1/2 -translate-y-1/2 text-3xs text-primary-default hover:text-primary-default/80 transition-colors whitespace-nowrap tabular-nums disabled:opacity-50 disabled:pointer-events-none"
+				className="absolute right-2 top-1/2 -translate-y-1/2 text-3xs text-primary-default hover:text-primary-default/80 active:scale-90 active:opacity-70 transition-all whitespace-nowrap tabular-nums disabled:opacity-50 disabled:pointer-events-none"
 			>
 				{maxLabel}
 			</button>

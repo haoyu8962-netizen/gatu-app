@@ -1,15 +1,43 @@
-import type { DeepPartial, Styles } from "klinecharts";
+import type { CandleTooltipCustomCallbackData, DeepPartial, Styles } from "klinecharts";
 import { type CandleType, LineType, TooltipShowRule, TooltipShowType, YAxisPosition } from "klinecharts";
 import { colorToHex, colorToRgba, getChartColors } from "@/components/trade/chart/theme-colors";
 
-export function buildKlineStyles(candleType: CandleType): DeepPartial<Styles> {
+function formatTooltipTs(ts: number): string {
+	const d = new Date(ts);
+	return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(2)} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function formatPrice(n: number): string {
+	if (n >= 1) return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+	const s = n.toString();
+	const dot = s.indexOf(".");
+	if (dot === -1) return n.toLocaleString("en-US", { minimumFractionDigits: 2 });
+	let zeros = 0;
+	for (let i = dot + 1; i < s.length; i++) {
+		if (s[i] === "0") zeros++;
+		else break;
+	}
+	const decimals = Math.max(2, zeros + 4);
+	return n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function formatVolume(n: number): string {
+	if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+	if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+	return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+
+interface KlineStyleOptions {
+	yAxisInside?: boolean;
+}
+
+export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOptions): DeepPartial<Styles> {
 	const colors = getChartColors();
 
 	const textSecondary = colorToHex(colors.textSecondary);
 	const textTertiary = colorToHex(colors.textTertiary);
 	const green = colorToHex(colors.green);
 	const red = colorToHex(colors.red);
-	const accent = colorToHex(colors.accent);
 	const gridColor = colorToRgba(colors.border, 0.3);
 	const scaleLineColor = colorToRgba(colors.border, 0.5);
 	const overlayTextColor = colorToHex(colors.foreground);
@@ -25,17 +53,17 @@ export function buildKlineStyles(candleType: CandleType): DeepPartial<Styles> {
 
 	const crosshairAxis = {
 		show: true,
-		line: { show: true, style: LineType.Dashed, dashedValue: [4, 2], size: 1, color: accent },
+		line: { show: true, style: LineType.Dashed, dashedValue: [4, 2], size: 1, color: textSecondary },
 		text: {
 			show: true,
-			color: overlayTextColor,
+			color: colorToHex(colors.background),
 			size: 10,
 			paddingLeft: 4,
 			paddingRight: 4,
 			paddingTop: 2,
 			paddingBottom: 2,
 			borderRadius: 2,
-			backgroundColor: accent,
+			backgroundColor: overlayTextColor,
 			borderSize: 0,
 			borderColor: "transparent",
 		},
@@ -61,12 +89,12 @@ export function buildKlineStyles(candleType: CandleType): DeepPartial<Styles> {
 				downWickColor: red,
 			},
 			area: {
-				lineColor: accent,
+				lineColor: textSecondary,
 				lineSize: 2,
 				smooth: true,
 				backgroundColor: [
-					{ offset: 0, color: colorToRgba(colors.accent, 0.28) },
-					{ offset: 1, color: colorToRgba(colors.accent, 0.02) },
+					{ offset: 0, color: colorToRgba(colors.textSecondary, 0.18) },
+					{ offset: 1, color: colorToRgba(colors.textSecondary, 0.02) },
 				],
 			},
 			priceMark: {
@@ -87,21 +115,44 @@ export function buildKlineStyles(candleType: CandleType): DeepPartial<Styles> {
 						paddingTop: 2,
 						paddingBottom: 2,
 						borderRadius: 2,
-						color: overlayTextColor,
+						color: "#ffffff",
 					},
 				},
 			},
 			tooltip: {
 				showRule: TooltipShowRule.Always,
 				showType: TooltipShowType.Standard,
-				custom: [
-					{ title: { text: "T ", color: textTertiary }, value: "{time}" },
-					{ title: { text: "O ", color: textTertiary }, value: "{open}" },
-					{ title: { text: "H ", color: textTertiary }, value: "{high}" },
-					{ title: { text: "L ", color: textTertiary }, value: "{low}" },
-					{ title: { text: "C ", color: textTertiary }, value: "{close}" },
-					{ title: { text: "V ", color: textTertiary }, value: "{volume}" },
-				],
+				custom: (data: CandleTooltipCustomCallbackData) => {
+					const { current } = data;
+					const isUp = current.close >= current.open;
+					const candleColor = isUp ? green : red;
+					return [
+						{
+							title: { text: "", color: "transparent" },
+							value: { text: formatTooltipTs(current.timestamp), color: textTertiary },
+						},
+						{
+							title: { text: "O ", color: textTertiary },
+							value: { text: formatPrice(current.open), color: candleColor },
+						},
+						{
+							title: { text: "H ", color: textTertiary },
+							value: { text: formatPrice(current.high), color: candleColor },
+						},
+						{
+							title: { text: "L ", color: textTertiary },
+							value: { text: formatPrice(current.low), color: candleColor },
+						},
+						{
+							title: { text: "C ", color: textTertiary },
+							value: { text: formatPrice(current.close), color: candleColor },
+						},
+						{
+							title: { text: "Vol ", color: textTertiary },
+							value: { text: formatVolume(current.volume ?? 0), color: textSecondary },
+						},
+					];
+				},
 				text: tooltipText,
 			},
 		},
@@ -121,12 +172,23 @@ export function buildKlineStyles(candleType: CandleType): DeepPartial<Styles> {
 			},
 		},
 		xAxis: { show: true, axisLine, tickLine, tickText },
-		yAxis: { show: true, position: YAxisPosition.Right, axisLine, tickLine, tickText },
+		yAxis: {
+			show: true,
+			position: YAxisPosition.Right,
+			inside: options?.yAxisInside ?? false,
+			axisLine: options?.yAxisInside ? { show: false } : axisLine,
+			tickLine: options?.yAxisInside ? { show: false } : tickLine,
+			tickText: options?.yAxisInside ? { ...tickText, marginStart: 2, marginEnd: 2 } : tickText,
+		},
 		separator: { color: colorToRgba(colors.border, 0.4), size: 1 },
 		crosshair: {
 			show: true,
 			horizontal: crosshairAxis,
 			vertical: crosshairAxis,
+		},
+		overlay: {
+			rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+			polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
 		},
 	};
 }

@@ -13,6 +13,18 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "{formatted} USDC deposited to Hyperliquid"
+#~ msgstr "{formatted} USDC deposited to Hyperliquid"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "{p}%"
+msgstr "{p}%"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "{totalSeconds} seconds"
+msgstr "{totalSeconds} seconds"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "% filled"
 msgstr "% filled"
@@ -41,6 +53,7 @@ msgstr "A crypto wallet lets you store and manage your digital assets securely."
 msgid "Account"
 msgstr "Account"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Account Balances"
 msgstr "Account Balances"
@@ -60,6 +73,7 @@ msgstr "Actions"
 msgid "Active"
 msgstr "Active"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Active Positions"
 msgstr "Active Positions"
@@ -140,6 +154,7 @@ msgstr "Asset"
 msgid "Assets"
 msgstr "Assets"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -151,9 +166,20 @@ msgstr "Available"
 #~ msgid "Available:"
 #~ msgstr "Available:"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Avg Price"
 msgstr "Avg Price"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Back"
+msgstr "Back"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Back to asset selection"
+#~ msgstr "Back to asset selection"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -176,9 +202,31 @@ msgstr "Balance"
 #~ msgid "Breadcrumb"
 #~ msgstr "Breadcrumb"
 
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Bridge"
+msgstr "Bridge"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Bridge complete"
+#~ msgstr "Bridge complete"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Bridge failed"
+msgstr "Bridge failed"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Bridge to Hyperliquid"
+#~ msgstr "Bridge to Hyperliquid"
+
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Bridging in progress"
+#~ msgstr "Bridging in progress"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Builder Address"
@@ -212,6 +260,7 @@ msgstr "Builders"
 msgid "buy"
 msgstr "buy"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Buy"
 msgstr "Buy"
@@ -220,6 +269,8 @@ msgstr "Buy"
 #~ msgid "Buy Long"
 #~ msgstr "Buy Long"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -234,6 +285,10 @@ msgstr "Cancel"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Cancel all"
 msgstr "Cancel all"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "Cancel All"
+msgstr "Cancel All"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Cancel all orders"
@@ -255,6 +310,7 @@ msgstr "Cancel selected orders"
 msgid "Cancel TWAP order"
 msgstr "Cancel TWAP order"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -277,7 +333,11 @@ msgstr "Change leverage"
 msgid "Chart"
 msgstr "Chart"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/ui/dialog.tsx
 #: src/components/ui/sheet.tsx
 msgid "Close"
@@ -304,15 +364,28 @@ msgstr "Closing..."
 #~ msgstr "completed"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 msgid "Confirm"
 msgstr "Confirm"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Confirm Bridge"
+#~ msgstr "Confirm Bridge"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "Confirm in wallet"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Confirm transaction in your wallet"
+msgstr "Confirm transaction in your wallet"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Confirmation screen coming in next slice"
+#~ msgstr "Confirmation screen coming in next slice"
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "Connect"
@@ -336,6 +409,10 @@ msgstr "Connect Wallet"
 msgid "Connect wallet to view account"
 msgstr "Connect wallet to view account"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Connect your wallet to bridge funds"
+msgstr "Connect your wallet to bridge funds"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Connect your wallet to register a builder code"
 #~ msgstr "Connect your wallet to register a builder code"
@@ -344,30 +421,37 @@ msgstr "Connect wallet to view account"
 msgid "Connect your wallet to start trading on Hyperliquid"
 msgstr "Connect your wallet to start trading on Hyperliquid"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "Connect your wallet to view balances."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Connect your wallet to view funding payments."
 msgstr "Connect your wallet to view funding payments."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Connect your wallet to view open orders."
 msgstr "Connect your wallet to view open orders."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Connect your wallet to view order history."
 msgstr "Connect your wallet to view order history."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
 msgstr "Connect your wallet to view positions."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Connect your wallet to view trade history."
 msgstr "Connect your wallet to view trade history."
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Connect your wallet to view TWAP orders."
 msgstr "Connect your wallet to view TWAP orders."
@@ -392,6 +476,10 @@ msgstr "Connecting"
 msgid "Connecting..."
 msgstr "Connecting..."
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Continue"
+msgstr "Continue"
+
 #: src/hooks/ui/use-copy-to-clipboard.ts
 msgid "Copied to clipboard"
 msgstr "Copied to clipboard"
@@ -404,10 +492,15 @@ msgstr "Copy Address"
 #~ msgid "Could not create wallet"
 #~ msgstr "Could not create wallet"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Could not fetch your token balances"
+msgstr "Could not fetch your token balances"
+
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Created"
 msgstr "Created"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -459,6 +552,10 @@ msgstr "Deposit complete"
 msgid "Deposit failed"
 msgstr "Deposit failed"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Deposit from any chain to your Hyperliquid account"
+#~ msgstr "Deposit from any chain to your Hyperliquid account"
+
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Deposit Funds"
 #~ msgstr "Deposit Funds"
@@ -467,7 +564,14 @@ msgstr "Deposit failed"
 #~ msgid "Deposit on Hyperliquid"
 #~ msgstr "Deposit on Hyperliquid"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Deposit successful"
+msgstr "Deposit successful"
+
 #: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Destination"
 msgstr "Destination"
 
@@ -558,6 +662,7 @@ msgstr "Enter TP or SL price"
 msgid "Enter trigger price"
 msgstr "Enter trigger price"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Entry"
 msgstr "Entry"
@@ -580,6 +685,15 @@ msgstr "Est. Fee"
 #~ msgid "Est. P&L"
 #~ msgstr "Est. P&L"
 
+#: src/components/trade/positions/position-limit-close-modal.tsx
+msgid "Est. P&L at Limit"
+msgstr "Est. P&L at Limit"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Est. time"
+#~ msgstr "Est. time"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Estimated time"
@@ -589,6 +703,7 @@ msgstr "Estimated time"
 msgid "Exceeds max size"
 msgstr "Exceeds max size"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Executed"
 msgstr "Executed"
@@ -601,10 +716,15 @@ msgstr "Execution"
 #~ msgid "Expand account panel"
 #~ msgstr "Expand account panel"
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
+msgid "Explorer"
+msgstr "Explorer"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "failed"
 msgstr "failed"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to close position"
 msgstr "Failed to close position"
@@ -617,14 +737,21 @@ msgstr "Failed to copy"
 msgid "Failed to enable trading"
 msgstr "Failed to enable trading"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Failed to load balances"
+msgstr "Failed to load balances"
+
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Failed to load balances."
 msgstr "Failed to load balances."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Failed to load funding history."
 msgstr "Failed to load funding history."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Failed to load open orders."
 msgstr "Failed to load open orders."
@@ -633,14 +760,17 @@ msgstr "Failed to load open orders."
 msgid "Failed to load order book."
 msgstr "Failed to load order book."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Failed to load order history."
 msgstr "Failed to load order history."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to load positions."
 msgstr "Failed to load positions."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Failed to load trade history."
 msgstr "Failed to load trade history."
@@ -665,6 +795,7 @@ msgstr "Failed to reverse position"
 #~ msgid "Failed to switch margin mode"
 #~ msgstr "Failed to switch margin mode"
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Fee"
 msgstr "Fee"
@@ -676,6 +807,19 @@ msgstr "Fee"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Fee rate must be between 0.001% and 1%"
 #~ msgstr "Fee rate must be between 0.001% and 1%"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Fees"
+#~ msgstr "Fees"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Fetching quote..."
+#~ msgstr "Fetching quote..."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Fill status"
+msgstr "Fill status"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Filled"
@@ -700,10 +844,12 @@ msgstr "From"
 #~ msgstr "Full Position"
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Funding"
 msgstr "Funding"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Funding History"
 msgstr "Funding History"
@@ -711,6 +857,11 @@ msgstr "Funding History"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding Payments"
 #~ msgstr "Funding Payments"
+
+#. placeholder {0}: gas.token.symbol
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Gas ({0})"
+msgstr "Gas ({0})"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
@@ -729,6 +880,7 @@ msgstr "Funding History"
 msgid "Go to trading terminal"
 msgstr "Go to trading terminal"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr "Hide small"
@@ -783,6 +935,7 @@ msgstr "Invalid amount"
 #~ msgid "Invalid Ethereum address"
 #~ msgstr "Invalid Ethereum address"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -822,6 +975,7 @@ msgstr "Leverage"
 msgid "Limit"
 msgstr "Limit"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Limit Close"
 msgstr "Limit Close"
@@ -843,6 +997,7 @@ msgstr "Limit Price"
 #~ msgid "limit ro"
 #~ msgstr "limit ro"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Liq"
 msgstr "Liq"
@@ -851,6 +1006,7 @@ msgstr "Liq"
 msgid "Liq. Price"
 msgstr "Liq. Price"
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Liquidated"
 msgstr "Liquidated"
@@ -858,6 +1014,10 @@ msgstr "Liquidated"
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "Loading"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Loading balances across all chains..."
+msgstr "Loading balances across all chains..."
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Loading balances..."
@@ -903,16 +1063,22 @@ msgstr "Loading wallet..."
 msgid "Loading..."
 msgstr "Loading..."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Long"
 msgstr "Long"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Low Balance"
+msgstr "Low Balance"
+
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
 msgstr "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Margin"
 msgstr "Margin"
@@ -933,9 +1099,8 @@ msgstr "Margin Req."
 msgid "Margin Used"
 msgstr "Margin Used"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Mark"
 msgstr "Mark"
 
@@ -975,6 +1140,7 @@ msgid "markets"
 msgstr "markets"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"
 msgstr "Max"
 
@@ -1001,6 +1167,14 @@ msgstr "MAX"
 #: src/components/trade/components/global-settings-dialog.tsx
 msgid "Maximum slippage tolerance for market orders"
 msgstr "Maximum slippage tolerance for market orders"
+
+#: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+msgid "Mid"
+msgstr "Mid"
 
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
@@ -1041,6 +1215,10 @@ msgstr "Mock Wallet (Testing)"
 #~ msgid "More"
 #~ msgstr "More"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "More details"
+msgstr "More details"
+
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More options"
 #~ msgstr "More options"
@@ -1061,6 +1239,10 @@ msgstr "Move USDC between your Perp and Spot accounts."
 msgid "Net received"
 msgstr "Net received"
 
+#: src/components/trade/components/global-settings-dialog.tsx
+msgid "Network"
+msgstr "Network"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Network fee"
 msgstr "Network fee"
@@ -1068,6 +1250,10 @@ msgstr "Network fee"
 #: src/components/trade/chart/token-selector.tsx
 msgid "NEW"
 msgstr "NEW"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "New deposit"
+msgstr "New deposit"
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "New to wallets?"
@@ -1082,10 +1268,12 @@ msgstr "New to wallets?"
 msgid "No"
 msgstr "No"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No active positions."
 msgstr "No active positions."
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No active TWAP orders."
 msgstr "No active TWAP orders."
@@ -1098,14 +1286,21 @@ msgstr "No balance"
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "No balance on Hyperliquid. Deposit first."
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "No balances found"
+msgstr "No balances found"
+
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "No balances found. Deposit funds to start trading."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "No fills found."
 msgstr "No fills found."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "No funding payments found."
 msgstr "No funding payments found."
@@ -1122,10 +1317,12 @@ msgstr "No market"
 msgid "No markets found."
 msgstr "No markets found."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "No open orders."
 msgstr "No open orders."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "No order history found."
 msgstr "No order history found."
@@ -1134,9 +1331,17 @@ msgstr "No order history found."
 msgid "No response from exchange"
 msgstr "No response from exchange"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "No route available. Try a different amount or asset."
+msgstr "No route available. Try a different amount or asset."
+
 #: src/components/trade/components/token-selector-dropdown.tsx
 msgid "No tokens available"
 msgstr "No tokens available"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "No tokens with value found across supported chains"
+msgstr "No tokens with value found across supported chains"
 
 #: src/components/trade/order-entry/swap-asset-modal.tsx
 #~ msgid "No trading pair available for {fromToken}/{toToken}"
@@ -1186,6 +1391,10 @@ msgstr "Offline"
 msgid "OI"
 msgstr "OI"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "on"
+#~ msgstr "on"
+
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "Only you control your funds. No email or password required."
 msgstr "Only you control your funds. No email or password required."
@@ -1198,6 +1407,7 @@ msgstr "Only you control your funds. No email or password required."
 msgid "Open Interest"
 msgstr "Open Interest"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Open Orders"
 msgstr "Open Orders"
@@ -1216,6 +1426,11 @@ msgstr "Order Book"
 msgid "Order failed"
 msgstr "Order failed"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Order filled"
+msgstr "Order filled"
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Order History"
 msgstr "Order History"
@@ -1223,6 +1438,10 @@ msgstr "Order History"
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Order Queue"
 msgstr "Order Queue"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Order submitted"
+msgstr "Order submitted"
 
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Order Value"
@@ -1271,6 +1490,7 @@ msgstr "pending"
 msgid "Perp"
 msgstr "Perp"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Perpetuals"
 msgstr "Perpetuals"
@@ -1306,6 +1526,7 @@ msgstr "Popular"
 msgid "Portfolio"
 msgstr "Portfolio"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Position"
@@ -1315,6 +1536,7 @@ msgstr "Position"
 msgid "Position actions"
 msgstr "Position actions"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position closed"
 msgstr "Position closed"
@@ -1323,11 +1545,18 @@ msgstr "Position closed"
 msgid "Position reversed"
 msgstr "Position reversed"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Preparing your quote..."
+msgstr "Preparing your quote..."
+
 #: src/components/ui/pagination.tsx
 #~ msgid "Previous"
 #~ msgstr "Previous"
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1345,6 +1574,10 @@ msgstr "PRICE"
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #~ msgid "Pro"
 #~ msgstr "Pro"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Processing"
+msgstr "Processing"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Processing deposit"
@@ -1364,6 +1597,7 @@ msgid "Randomize timing"
 msgstr "Randomize timing"
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "Rate"
@@ -1417,6 +1651,11 @@ msgstr "Reverse"
 msgid "Risk/Reward"
 msgstr "Risk/Reward"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
+msgid "RO"
+msgstr "RO"
+
 #: src/lib/trade/order-types.ts
 msgid "Scale"
 msgstr "Scale"
@@ -1452,6 +1691,10 @@ msgstr "Select {displayName} market"
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Select all orders"
 msgstr "Select all orders"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Select asset to bridge"
+#~ msgstr "Select asset to bridge"
 
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select favorite markets"
@@ -1489,6 +1732,7 @@ msgstr "Select tokens to swap"
 msgid "sell"
 msgstr "sell"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Sell"
 msgstr "Sell"
@@ -1497,6 +1741,7 @@ msgstr "Sell"
 #~ msgid "Sell Short"
 #~ msgstr "Sell Short"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-dialog.tsx
 msgid "Send"
@@ -1551,6 +1796,7 @@ msgstr "Set to {p}%"
 msgid "Settings"
 msgstr "Settings"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1613,6 +1859,11 @@ msgstr "Signer not ready"
 #~ msgid "Signing..."
 #~ msgstr "Signing..."
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1680,11 +1931,18 @@ msgstr "Sort by {headerLabel}"
 msgid "Sorted by {0}"
 msgstr "Sorted by {0}"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Source"
+msgstr "Source"
+
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "spot"
 #~ msgstr "spot"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -1750,12 +2008,17 @@ msgstr "Stop trigger must be below mark"
 msgid "Submitting..."
 msgstr "Submitting..."
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Successful"
+msgstr "Successful"
+
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "Support"
 #~ msgstr "Support"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
@@ -1776,6 +2039,10 @@ msgstr "Swap submitted"
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Swapping..."
 msgstr "Swapping..."
+
+#: src/components/trade/components/global-settings-dialog.tsx
+msgid "Switch between mainnet and testnet. Page will reload."
+msgstr "Switch between mainnet and testnet. Page will reload."
 
 #. placeholder {0}: fill.coin
 #. placeholder {0}: order.coin
@@ -1812,6 +2079,10 @@ msgstr "Switch to dark mode"
 msgid "Switch to light mode"
 msgstr "Switch to light mode"
 
+#: src/components/trade/testnet-banner.tsx
+msgid "Switch to Mainnet"
+msgstr "Switch to Mainnet"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Switching..."
@@ -1842,6 +2113,10 @@ msgstr "Take profit trigger must be above mark"
 msgid "Take profit trigger must be below mark"
 msgstr "Take profit trigger must be below mark"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Taking longer than expected"
+msgstr "Taking longer than expected"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
 #~ msgstr "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
@@ -1854,6 +2129,7 @@ msgstr "The page you are looking for does not exist."
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1875,10 +2151,12 @@ msgstr "Time in Force"
 msgid "To"
 msgstr "To"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr "To Perp"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr "To Spot"
@@ -1893,6 +2171,7 @@ msgstr "Toggle Sidebar"
 msgid "Toggle size mode"
 msgstr "Toggle size mode"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Total"
@@ -1901,6 +2180,10 @@ msgstr "Total"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
 #~ msgstr "Total Size"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Total time"
+msgstr "Total time"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Total Value"
@@ -1928,10 +2211,15 @@ msgstr "TP Price"
 #~ msgid "TP trigger price"
 #~ msgstr "TP trigger price"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "TP/SL"
 msgstr "TP/SL"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Track on LI.FI Explorer"
+msgstr "Track on LI.FI Explorer"
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "Trade"
@@ -1941,6 +2229,7 @@ msgstr "TP/SL"
 #~ msgid "Trade ClockCounterClockwise"
 #~ msgstr "Trade ClockCounterClockwise"
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Trade History"
 msgstr "Trade History"
@@ -1958,6 +2247,10 @@ msgstr "Trades"
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Trading"
 #~ msgstr "Trading"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Transaction breakdown"
+msgstr "Transaction breakdown"
 
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
@@ -1985,6 +2278,7 @@ msgstr "Transfer USDC"
 msgid "Transferring..."
 msgstr "Transferring..."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 msgid "Trigger"
@@ -1994,6 +2288,11 @@ msgstr "Trigger"
 msgid "Trigger Price (USDC)"
 msgstr "Trigger Price (USDC)"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Try Again"
+msgstr "Try Again"
+
 #: src/lib/trade/order-types.ts
 msgid "TWAP"
 msgstr "TWAP"
@@ -2002,10 +2301,12 @@ msgstr "TWAP"
 msgid "TWAP minutes must be {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 msgstr "TWAP minutes must be {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "TWAP Orders"
 msgstr "TWAP Orders"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2048,6 +2349,7 @@ msgstr "Unsupported resolution: {0}"
 msgid "Update failed"
 msgstr "Update failed"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -2061,6 +2363,10 @@ msgstr "Updated live"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "USD Value"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "USDC"
+msgstr "USDC"
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Value"
@@ -2098,10 +2404,16 @@ msgstr "Waiting for order book..."
 msgid "Waiting for trades..."
 msgstr "Waiting for trades..."
 
+#. placeholder {0}: shortenAddress(address)
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Wallet ({0})"
+msgstr "Wallet ({0})"
+
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Wallet client not ready"
 #~ msgstr "Wallet client not ready"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Wallet not connected"
 msgstr "Wallet not connected"
@@ -2148,6 +2460,38 @@ msgstr "Wrong network"
 msgid "Yes"
 msgstr "Yes"
 
+#: src/components/trade/testnet-banner.tsx
+msgid "You are on Testnet"
+msgstr "You are on Testnet"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."
 #~ msgstr "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "You receive"
+msgstr "You receive"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "You send"
+msgstr "You send"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
+#~ msgstr "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your bridge is still processing. Funds are safe."
+msgstr "Your bridge is still processing. Funds are safe."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your funds were successfully deposited."
+msgstr "Your funds were successfully deposited."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your transaction is being processed"
+msgstr "Your transaction is being processed"
