@@ -1,6 +1,6 @@
 import { createConfig, EVM } from "@lifi/sdk";
 import type { Config as WagmiConfig } from "@wagmi/core";
-import { getClient, getConnectorClient, switchChain } from "@wagmi/core";
+import { getAccount, getConnectorClient, switchChain } from "@wagmi/core";
 import type { Client } from "viem";
 import { config as wagmiConfig } from "@/config/wagmi";
 
@@ -11,10 +11,14 @@ export function initLiFi() {
 		integrator: "hypeterminal",
 		providers: [
 			EVM({
-				getWalletClient: () => getConnectorClient(wc) as Promise<Client>,
+				getWalletClient: async () => {
+					const account = getAccount(wc);
+					return getConnectorClient(wc, { account: account.address }) as Promise<Client>;
+				},
 				switchChain: async (chainId: number) => {
-					const result = await switchChain(wc, { chainId });
-					return getClient(wc, { chainId: result.id }) as Client;
+					await switchChain(wc, { chainId });
+					const account = getAccount(wc);
+					return getConnectorClient(wc, { account: account.address, chainId }) as Promise<Client>;
 				},
 			}),
 		],

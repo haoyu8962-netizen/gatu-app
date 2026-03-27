@@ -5,12 +5,23 @@ import type { BridgeQuote } from "./use-quote";
 
 type BridgeStatus = "idle" | "executing" | "success" | "error";
 
+export interface ProcessDetail {
+	type: string;
+	txHash: string;
+	txLink: string;
+	startedAt: number;
+	doneAt: number | null;
+}
+
 interface BridgeState {
 	status: BridgeStatus;
 	statusText: string;
 	error: string | null;
 	txHash: string | null;
 	receivedAmount: string | null;
+	startTime: number | null;
+	endTime: number | null;
+	processDetails: ProcessDetail[];
 }
 
 const INITIAL_STATE: BridgeState = {
@@ -19,6 +30,9 @@ const INITIAL_STATE: BridgeState = {
 	error: null,
 	txHash: null,
 	receivedAmount: null,
+	startTime: null,
+	endTime: null,
+	processDetails: [],
 };
 
 function getProcessStatusText(route: RouteExtended): string {
@@ -54,6 +68,24 @@ function getLastTxHash(route: RouteExtended): string | null {
 	return null;
 }
 
+function getAllProcessDetails(route: RouteExtended): ProcessDetail[] {
+	const details: ProcessDetail[] = [];
+	for (const step of route.steps) {
+		if (!step.execution) continue;
+		for (const process of step.execution.process) {
+			if (!process.txHash) continue;
+			details.push({
+				type: process.type,
+				txHash: process.txHash,
+				txLink: process.txLink ?? "",
+				startedAt: process.startedAt,
+				doneAt: process.doneAt ?? null,
+			});
+		}
+	}
+	return details;
+}
+
 export function useBridgeExecutor() {
 	const [state, setState] = useState<BridgeState>(INITIAL_STATE);
 	const executingRef = useRef(false);
@@ -68,6 +100,9 @@ export function useBridgeExecutor() {
 			error: null,
 			txHash: null,
 			receivedAmount: null,
+			startTime: Date.now(),
+			endTime: null,
+			processDetails: [],
 		});
 
 		try {
@@ -81,6 +116,7 @@ export function useBridgeExecutor() {
 						...prev,
 						statusText,
 						txHash: txHash ?? prev.txHash,
+						processDetails: getAllProcessDetails(updatedRoute),
 					}));
 				},
 			});
@@ -93,6 +129,9 @@ export function useBridgeExecutor() {
 				error: null,
 				txHash: getLastTxHash(result),
 				receivedAmount: toAmount,
+				startTime: state.startTime,
+				endTime: Date.now(),
+				processDetails: getAllProcessDetails(result),
 			});
 		} catch (err) {
 			const message = err instanceof Error ? err.message : "Bridge failed";
@@ -108,12 +147,14 @@ export function useBridgeExecutor() {
 					status: "idle",
 					statusText: "",
 					error: null,
+					endTime: Date.now(),
 				}));
 			} else {
 				setState((prev) => ({
 					...prev,
 					status: "error",
 					error: message,
+					endTime: Date.now(),
 				}));
 			}
 		} finally {

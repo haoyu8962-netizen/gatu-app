@@ -112,11 +112,13 @@ export function useBridgeQuote(params: QuoteParams | null) {
 				toChain: HYPERCORE_CHAIN_ID,
 				toToken: HYPERCORE_USDC_ADDRESS,
 				toAddress: p.fromAddress,
+				executionType: "all",
 			});
 			return transformQuote(step);
 		},
 		enabled,
 		staleTime: 30_000,
+		refetchInterval: 30_000,
 		retry: false,
 	});
 }

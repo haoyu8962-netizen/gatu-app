@@ -1,7 +1,8 @@
 import { Trans } from "@lingui/react/macro";
 import {
-	ArrowDownIcon,
 	ArrowLeftIcon,
+	ArrowRightIcon,
+	ArrowSquareOutIcon,
 	CaretDownIcon,
 	CaretUpIcon,
 	CheckCircleIcon,
@@ -18,17 +19,76 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
-import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
-import { formatDuration, formatUSD, shortenAddress } from "@/lib/format";
+import { formatDateTimeShort, formatDuration, formatUSD, shortenAddress } from "@/lib/format";
 import { initLiFi } from "@/lib/lifi/config";
 import { type BridgeToken, useBridgeBalances } from "@/lib/lifi/use-balances";
-import { useBridgeExecutor } from "@/lib/lifi/use-bridge";
+import { type ProcessDetail, useBridgeExecutor } from "@/lib/lifi/use-bridge";
 import { type BridgeQuote, useBridgeQuote } from "@/lib/lifi/use-quote";
 
-type BridgeScreen = "select" | "confirm" | "executing" | "success";
+type BridgeScreen = "select" | "amount" | "confirm" | "executing" | "success";
 
 const BRIDGE_TIMEOUT_MS = 10 * 60 * 1000;
+const PERCENT_OPTIONS = [25, 50, 75] as const;
+const USDC_ICON_URL = "https://app.hyperliquid.xyz/coins/USDC.svg";
+const HL_ICON_URL = "https://app.hyperliquid.xyz/coins/HYPE.svg";
+const LIFI_EXPLORER_URL = "https://explorer.li.fi/tx";
+function LiFiLogo({ className }: { className?: string }) {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 132 48"
+			fill="none"
+			className={className}
+			role="img"
+			aria-label="LI.FI"
+		>
+			<path
+				fill="currentColor"
+				d="m19.314 0 9.878 9.879a3 3 0 0 1 0 4.242L23.314 20l-4-4c-4.419-4.418-4.419-11.582 0-16Z"
+			/>
+			<path
+				fill="currentColor"
+				fillRule="evenodd"
+				d="m19.314 48-16-16c-4.419-4.418-4.419-11.582 0-16l13.878 13.879a3 3 0 0 0 4.243 0L35.314 16c4.418 4.418 4.418 11.582 0 16l-16 16Z"
+				clipRule="evenodd"
+			/>
+			<path
+				fill="currentColor"
+				d="M123.319 36s.034-21 0-22 .985-2 1.966-2h4.034v22c.035 1-.965 2-1.965 2h-4.035ZM99.32 14v22h6v-8h10c1 0 2-1 2-2v-4h-12v-4h12c1 0 2-1 2-2v-4h-18c-1 0-2 1-2 2Zm-9.998 18c0-1 1-2 2-2h2c1 0 2 1 2 2v2c0 1-1 2-2 2h-2c-1 0-2-1-2-2v-2Zm-10.001 4s.034-21 0-22 .985-2 1.966-2h4.034v22c.035 1-.965 2-1.965 2h-4.035ZM55.32 30V14c0-1 .87-2 2-2h4v18h14v4c0 1-1 2-2 2h-18v-6Z"
+			/>
+		</svg>
+	);
+}
+
+function PoweredByLiFi() {
+	return (
+		<a
+			href="https://li.fi"
+			target="_blank"
+			rel="noopener noreferrer"
+			className="flex items-center justify-center gap-1.5 py-2 text-text-400 opacity-60 hover:opacity-100 transition-opacity"
+		>
+			<span className="text-4xs">Powered by</span>
+			<LiFiLogo className="h-2.5" />
+		</a>
+	);
+}
+
+function HyperCoreUsdcIcon({ size = "md" }: { size?: "sm" | "md" }) {
+	const iconSize = size === "sm" ? "size-5" : "size-8";
+	const badgeSize = size === "sm" ? "size-2.5" : "size-3.5";
+	return (
+		<div className="relative shrink-0">
+			<img src={USDC_ICON_URL} alt="USDC" className={cn(iconSize, "rounded-full")} />
+			<img
+				src={HL_ICON_URL}
+				alt="Hyperliquid"
+				className={cn("absolute -bottom-0.5 -right-0.5 rounded-full border border-surface-execution", badgeSize)}
+			/>
+		</div>
+	);
+}
 
 function BridgeWalletNotConnected() {
 	return (
@@ -48,14 +108,17 @@ function BridgeWalletNotConnected() {
 	);
 }
 
-function TokenIcon({ token }: { token: BridgeToken }) {
+function TokenIcon({ token, size = "md" }: { token: BridgeToken; size?: "sm" | "md" }) {
+	const iconSize = size === "sm" ? "size-5" : "size-8";
+	const badgeSize = size === "sm" ? "size-2.5" : "size-3.5";
+	const fallbackIconSize = size === "sm" ? "size-3" : "size-4";
 	return (
 		<div className="relative shrink-0">
 			{token.logoURI ? (
 				<img
 					src={token.logoURI}
 					alt={token.symbol}
-					className="size-8 rounded-full"
+					className={cn(iconSize, "rounded-full")}
 					onError={(e) => {
 						e.currentTarget.style.display = "none";
 						e.currentTarget.nextElementSibling?.classList.remove("hidden");
@@ -64,17 +127,18 @@ function TokenIcon({ token }: { token: BridgeToken }) {
 			) : null}
 			<div
 				className={cn(
-					"size-8 rounded-full bg-surface-analysis flex items-center justify-center",
+					"rounded-full bg-surface-analysis flex items-center justify-center",
+					iconSize,
 					token.logoURI && "hidden",
 				)}
 			>
-				<CoinIcon className="size-4 text-text-600" />
+				<CoinIcon className={cn(fallbackIconSize, "text-text-600")} />
 			</div>
 			{token.chainLogoURI ? (
 				<img
 					src={token.chainLogoURI}
 					alt={token.chainName}
-					className="absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border border-surface-execution"
+					className={cn("absolute -bottom-0.5 -right-0.5 rounded-full border border-surface-execution", badgeSize)}
 				/>
 			) : null}
 		</div>
@@ -89,22 +153,142 @@ function formatTokenBalance(amount: string, decimals: number): string {
 	return value.toFixed(2);
 }
 
+function formatTokenAmount(amount: string, decimals: number): string {
+	const value = Big(amount).div(Big(10).pow(decimals));
+	if (value.lt(0.0001)) return "<0.0001";
+	if (value.lt(1)) return value.toFixed(6);
+	if (value.lt(1000)) return value.toFixed(4);
+	return value.toFixed(2);
+}
+
+function formatSendAmount(amount: string, maxSigFigs = 5): string {
+	try {
+		const value = Big(amount);
+		if (value.eq(0)) return "0";
+		if (value.gte(1)) return value.toPrecision(maxSigFigs);
+		const str = value.toFixed(18);
+		let sigCount = 0;
+		let endIdx = 0;
+		for (let i = 2; i < str.length; i++) {
+			if (str[i] !== "0" || sigCount > 0) sigCount++;
+			if (sigCount >= maxSigFigs) {
+				endIdx = i + 1;
+				break;
+			}
+		}
+		return endIdx > 0 ? str.slice(0, endIdx) : str;
+	} catch {
+		return amount;
+	}
+}
+
+function isValidUsdInput(value: string): boolean {
+	if (!value || value === "." || value === "0") return false;
+	try {
+		return Big(value).gt(0);
+	} catch {
+		return false;
+	}
+}
+
+function usdToTokenAmount(usd: string, priceUSD: string, decimals: number): string {
+	try {
+		const price = Big(priceUSD);
+		if (price.lte(0)) return "";
+		return Big(usd).div(price).toFixed(decimals);
+	} catch {
+		return "";
+	}
+}
+
+function processTypeLabel(type: string): string {
+	switch (type) {
+		case "TOKEN_ALLOWANCE":
+			return "Approval tx";
+		case "SWAP":
+			return "Swap tx";
+		case "CROSS_CHAIN":
+			return "Bridge tx";
+		case "RECEIVING_CHAIN":
+			return "Deposit tx";
+		default:
+			return "Transaction";
+	}
+}
+
+function ExplorerLink({ href, children }: { href: string; children: React.ReactNode }) {
+	return (
+		<a
+			href={href}
+			target="_blank"
+			rel="noopener noreferrer"
+			className="inline-flex items-center gap-1 text-primary-default hover:text-primary-hover"
+		>
+			{children}
+			<ArrowSquareOutIcon className="size-3" />
+		</a>
+	);
+}
+
+function QuoteCountdown({ dataUpdatedAt }: { dataUpdatedAt: number }) {
+	const [remaining, setRemaining] = useState(30);
+
+	useEffect(() => {
+		function tick() {
+			const elapsed = (Date.now() - dataUpdatedAt) / 1000;
+			setRemaining(Math.max(0, Math.ceil(30 - elapsed)));
+		}
+		tick();
+		const id = setInterval(tick, 1000);
+		return () => clearInterval(id);
+	}, [dataUpdatedAt]);
+
+	const circumference = 2 * Math.PI * 10;
+	const offset = circumference * (1 - remaining / 30);
+
+	return (
+		<div className="relative flex size-7 items-center justify-center shrink-0">
+			<svg className="size-7 -rotate-90" viewBox="0 0 24 24" role="img" aria-label="Quote countdown">
+				<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" className="text-border-200" />
+				<circle
+					cx="12"
+					cy="12"
+					r="10"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2"
+					className="text-primary-default transition-[stroke-dashoffset] duration-1000 ease-linear"
+					strokeDasharray={circumference}
+					strokeDashoffset={offset}
+					strokeLinecap="round"
+				/>
+			</svg>
+			<span className="absolute text-4xs tabular-nums font-medium text-text-950">{remaining}</span>
+		</div>
+	);
+}
+
 interface TokenRowProps {
 	token: BridgeToken;
+	isSelected: boolean;
 	onSelect: (token: BridgeToken) => void;
 }
 
-function TokenRow({ token, onSelect }: TokenRowProps) {
+function tokenRowStyle(isDust: boolean, isSelected: boolean): string {
+	if (isDust) return "opacity-50 cursor-not-allowed border-transparent";
+	if (isSelected) return "border-primary-default bg-primary-default/5 cursor-pointer";
+	return "border-transparent hover:bg-surface-base/50 active:bg-surface-base cursor-pointer";
+}
+
+function TokenRow({ token, isSelected, onSelect }: TokenRowProps) {
 	return (
 		<button
 			type="button"
 			disabled={token.isDust}
 			onClick={() => onSelect(token)}
 			className={cn(
-				"flex items-center gap-3 px-3 py-2.5 text-left transition-colors rounded-xs w-full",
-				token.isDust
-					? "opacity-50 cursor-not-allowed"
-					: "hover:bg-surface-base/50 active:bg-surface-base cursor-pointer",
+				"flex items-center gap-3 px-3 py-2.5 text-left transition-colors rounded-xs w-full border",
+				tokenRowStyle(token.isDust, isSelected),
 			)}
 		>
 			<TokenIcon token={token} />
@@ -191,65 +375,56 @@ function AssetSelectionScreen({ address, onSelect }: AssetSelectionScreenProps) 
 	if (!tokens || tokens.length === 0) return <AssetSelectionEmpty />;
 
 	return (
-		<div className="flex flex-col gap-1">
-			<p className="text-4xs uppercase tracking-wider text-text-950 px-3 pb-1">
-				<Trans>Select asset to bridge</Trans>
-			</p>
-			<div className="max-h-[320px] overflow-y-auto -mx-1">
+		<div className="flex flex-1 flex-col">
+			<div className="max-h-80 overflow-y-auto -mx-1">
 				{tokens.map((token) => (
-					<TokenRow key={`${token.chainId}-${token.address}`} token={token} onSelect={onSelect} />
+					<TokenRow key={`${token.chainId}-${token.address}`} token={token} isSelected={false} onSelect={onSelect} />
 				))}
 			</div>
+			<PoweredByLiFi />
 		</div>
 	);
 }
 
-function useDebouncedValue<T>(value: T, delay: number): T {
-	const [debounced, setDebounced] = useState(value);
-	useEffect(() => {
-		const timer = setTimeout(() => setDebounced(value), delay);
-		return () => clearTimeout(timer);
-	}, [value, delay]);
-	return debounced;
-}
-
-function formatTokenAmount(amount: string, decimals: number): string {
-	const value = Big(amount).div(Big(10).pow(decimals));
-	if (value.lt(0.0001)) return "<0.0001";
-	if (value.lt(1)) return value.toFixed(6);
-	if (value.lt(1000)) return value.toFixed(4);
-	return value.toFixed(2);
-}
-
-interface ConfirmationScreenProps {
+interface AmountEntryScreenProps {
 	token: BridgeToken;
-	address: string;
+	initialUsd: string;
 	onBack: () => void;
-	onConfirm: (quote: BridgeQuote) => void;
+	onContinue: (tokenAmount: string, usdInput: string) => void;
 }
 
-function ConfirmationScreen({ token, address, onBack, onConfirm }: ConfirmationScreenProps) {
-	const fullBalance = Big(token.amount).div(Big(10).pow(token.decimals)).toString();
-	const [amount, setAmount] = useState(fullBalance);
-	const debouncedAmount = useDebouncedValue(amount, 500);
+function AmountEntryScreen({ token, initialUsd, onBack, onContinue }: AmountEntryScreenProps) {
+	const [usdInput, setUsdInput] = useState(initialUsd);
 
-	const quoteParams = debouncedAmount
-		? {
-				fromChainId: token.chainId,
-				fromTokenAddress: token.address,
-				fromTokenDecimals: token.decimals,
-				fromAddress: address,
-				amount: debouncedAmount,
-			}
-		: null;
+	function handleUsdChange(e: React.ChangeEvent<HTMLInputElement>) {
+		const raw = e.target.value;
+		if (raw === "") {
+			setUsdInput("");
+			return;
+		}
+		if (!/^\d*\.?\d{0,2}$/.test(raw)) return;
+		setUsdInput(raw);
+	}
 
-	const { data: quote, isLoading: quoteLoading, isError: quoteError } = useBridgeQuote(quoteParams);
+	function handlePercent(percent: number) {
+		const usd = Big(token.amountUSD).times(percent).div(100).toFixed(2);
+		setUsdInput(usd);
+	}
 
-	const receiveAmount = quote ? formatTokenAmount(quote.toAmount, 6) : "—";
-	const receiveAmountUSD = quote ? formatUSD(quote.toAmountUSD, 2) : "";
+	function handleMax() {
+		setUsdInput(Big(token.amountUSD).toFixed(2));
+	}
+
+	const canContinue = isValidUsdInput(usdInput) && Big(usdInput).lte(token.amountUSD);
+
+	function handleSubmit() {
+		if (!canContinue) return;
+		const tokenAmount = usdToTokenAmount(usdInput, token.priceUSD, token.decimals);
+		if (tokenAmount) onContinue(tokenAmount, usdInput);
+	}
 
 	return (
-		<div className="flex flex-col gap-3">
+		<div className="flex flex-1 flex-col gap-6">
 			<button
 				type="button"
 				onClick={onBack}
@@ -259,150 +434,232 @@ function ConfirmationScreen({ token, address, onBack, onConfirm }: ConfirmationS
 				<Trans>Back</Trans>
 			</button>
 
-			<div className="flex flex-col gap-2 rounded-xs border border-border-200 p-3">
-				<p className="text-4xs uppercase tracking-wider text-text-500">
-					<Trans>From</Trans>
-				</p>
-				<div className="flex items-center gap-2.5">
+			<div className="flex flex-col items-center gap-4 py-4">
+				<div className="flex items-baseline justify-center">
+					<span className="text-4xl font-semibold text-text-950 tabular-nums">$</span>
+					<input
+						type="text"
+						inputMode="decimal"
+						value={usdInput}
+						onChange={handleUsdChange}
+						placeholder="0.00"
+						className="text-4xl font-semibold text-text-950 tabular-nums bg-transparent border-none outline-none text-center w-36 placeholder:text-text-400"
+					/>
+				</div>
+
+				<div className="flex items-center gap-2">
+					{PERCENT_OPTIONS.map((p) => (
+						<button
+							key={p}
+							type="button"
+							onClick={() => handlePercent(p)}
+							className="px-3 py-1.5 text-3xs font-medium text-text-950 bg-surface-analysis hover:bg-primary-default/20 rounded-xs transition-colors"
+						>
+							<Trans>{p}%</Trans>
+						</button>
+					))}
+					<button
+						type="button"
+						onClick={handleMax}
+						className="px-3 py-1.5 text-3xs font-medium text-text-950 bg-surface-analysis hover:bg-primary-default/20 rounded-xs transition-colors"
+					>
+						<Trans>Max</Trans>
+					</button>
+				</div>
+			</div>
+
+			<div className="flex items-center justify-center gap-3 rounded-xs border border-border-200 p-3">
+				<div className="flex items-center gap-2">
 					<TokenIcon token={token} />
-					<div className="flex-1 min-w-0">
-						<span className="text-xs font-medium text-text-950">{token.symbol}</span>
-						<span className="text-3xs text-text-500 ml-1.5">{token.chainName}</span>
+					<div className="text-left">
+						<p className="text-4xs text-text-500">
+							<Trans>You send</Trans>
+						</p>
+						<p className="text-xs font-medium text-text-950">{token.symbol}</p>
 					</div>
-					<span className="text-3xs text-text-500 tabular-nums">{shortenAddress(address)}</span>
 				</div>
-			</div>
-
-			<div className="flex justify-center -my-1">
-				<div className="flex size-6 items-center justify-center rounded-full border border-border-200 bg-surface-analysis">
-					<ArrowDownIcon className="size-3 text-text-500" />
-				</div>
-			</div>
-
-			<div className="flex flex-col gap-2 rounded-xs border border-border-200 p-3">
-				<p className="text-4xs uppercase tracking-wider text-text-500">
-					<Trans>To</Trans>
-				</p>
-				<div className="flex items-center gap-2.5">
-					<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-analysis">
-						<span className="text-3xs font-bold text-text-950">HL</span>
+				<ArrowRightIcon className="size-4 text-text-500 shrink-0" />
+				<div className="flex items-center gap-2">
+					<HyperCoreUsdcIcon />
+					<div className="text-left">
+						<p className="text-4xs text-text-500">
+							<Trans>You receive</Trans>
+						</p>
+						<p className="text-xs font-medium text-text-950">USDC</p>
 					</div>
-					<div className="flex-1 min-w-0">
-						<span className="text-xs font-medium text-text-950">USDC</span>
-						<span className="text-3xs text-text-500 ml-1.5">Hyperliquid</span>
-					</div>
-					<span className="text-3xs text-text-500 tabular-nums">{shortenAddress(address)}</span>
 				</div>
 			</div>
 
-			<div className="flex flex-col gap-1.5 pt-1">
-				<span className="text-4xs uppercase tracking-wider text-text-500">
-					<Trans>Amount</Trans>
-				</span>
-				<NumberInput
-					value={amount}
-					onChange={(e) => setAmount(e.target.value)}
-					maxLabel={`MAX ${formatTokenBalance(token.amount, token.decimals)}`}
-					onMaxClick={() => setAmount(fullBalance)}
-					inputSize="default"
-					allowDecimals
-					maxAllowedDecimals={token.decimals}
-				/>
+			<Button
+				variant="contained"
+				tone="accent"
+				size="lg"
+				className="w-full mt-auto"
+				disabled={!canContinue}
+				onClick={handleSubmit}
+			>
+				<Trans>Continue</Trans>
+			</Button>
+		</div>
+	);
+}
+
+interface ConfirmationScreenProps {
+	token: BridgeToken;
+	tokenAmount: string;
+	address: string;
+	onBack: () => void;
+	onConfirm: (quote: BridgeQuote) => void;
+}
+
+function ConfirmationScreen({ token, tokenAmount, address, onBack, onConfirm }: ConfirmationScreenProps) {
+	const quoteParams = {
+		fromChainId: token.chainId,
+		fromTokenAddress: token.address,
+		fromTokenDecimals: token.decimals,
+		fromAddress: address,
+		amount: tokenAmount,
+	};
+
+	const { data: quote, isLoading: quoteLoading, isError: quoteError, dataUpdatedAt } = useBridgeQuote(quoteParams);
+
+	const usdDisplay = (() => {
+		try {
+			return formatUSD(Big(tokenAmount).times(token.priceUSD).toNumber(), 2);
+		} catch {
+			return "$0.00";
+		}
+	})();
+
+	const receiveAmount = quote ? formatTokenAmount(quote.toAmount, 6) : "---";
+	const receiveAmountUSD = quote ? formatUSD(quote.toAmountUSD, 2) : "";
+
+	return (
+		<div className="flex flex-1 flex-col gap-3">
+			<div>
+				<div className="flex items-center justify-between">
+					<button
+						type="button"
+						onClick={onBack}
+						className="flex items-center gap-1 text-3xs text-primary-default hover:text-primary-hover"
+					>
+						<ArrowLeftIcon className="size-3" />
+						<Trans>Back</Trans>
+					</button>
+					{quote ? <QuoteCountdown dataUpdatedAt={dataUpdatedAt} /> : null}
+				</div>
+
+				<p className="text-4xl font-semibold text-text-950 tabular-nums text-center py-2">{usdDisplay}</p>
+
+				<InfoRowGroup className="text-3xs">
+					<InfoRow
+						label={<Trans>Source</Trans>}
+						value={
+							<span className="flex items-center gap-1.5">
+								<WalletIcon className="size-3" />
+								<Trans>Wallet ({shortenAddress(address)})</Trans>
+							</span>
+						}
+					/>
+					<InfoRow label={<Trans>Destination</Trans>} value="Hyperliquid" />
+					<InfoRow
+						label={
+							<span className="flex items-center gap-1">
+								<ClockIcon className="size-3" />
+								<Trans>Estimated time</Trans>
+							</span>
+						}
+						value={quote ? `~${formatDuration(Math.ceil(quote.executionDuration / 60))}` : "---"}
+					/>
+				</InfoRowGroup>
+
+				<InfoRowGroup className="text-3xs mt-3">
+					<InfoRow
+						label={<Trans>You send</Trans>}
+						value={
+							<span className="flex items-center gap-1.5">
+								<TokenIcon token={token} size="sm" />
+								{formatSendAmount(tokenAmount)} {token.symbol}
+							</span>
+						}
+					/>
+					<InfoRow
+						label={<Trans>You receive</Trans>}
+						value={
+							<span className="flex items-center gap-1.5">
+								<HyperCoreUsdcIcon size="sm" />
+								{receiveAmount} USDC
+								{receiveAmountUSD ? <span className="text-text-500 ml-1">{receiveAmountUSD}</span> : null}
+							</span>
+						}
+					/>
+				</InfoRowGroup>
 			</div>
 
-			{quoteLoading ? (
-				<div className="flex items-center justify-center gap-2 py-3">
-					<SpinnerGapIcon className="size-4 animate-spin text-text-500" />
-					<span className="text-3xs text-text-500">
-						<Trans>Fetching quote...</Trans>
-					</span>
-				</div>
-			) : quoteError ? (
+			{quote ? (
+				<Collapsible>
+					<CollapsibleTrigger className="flex w-full items-center justify-between rounded-xs px-2 py-1.5 text-3xs text-text-500 hover:bg-surface-base/50 transition-colors group">
+						<span>
+							<Trans>Transaction breakdown</Trans> ({formatUSD(quote.totalFeesUSD, 2)})
+						</span>
+						<CaretDownIcon className="size-3 group-data-[state=open]:hidden" />
+						<CaretUpIcon className="size-3 hidden group-data-[state=open]:block" />
+					</CollapsibleTrigger>
+					<CollapsibleContent>
+						<InfoRowGroup className="text-3xs">
+							{quote.gasCosts.map((gas) => (
+								<InfoRow
+									key={`gas-${gas.token.symbol}-${gas.amount}`}
+									label={<Trans>Gas ({gas.token.symbol})</Trans>}
+									value={formatUSD(gas.amountUSD, 2)}
+								/>
+							))}
+							{quote.feeCosts.map((fee) => (
+								<InfoRow key={`fee-${fee.name}-${fee.amount}`} label={fee.name} value={formatUSD(fee.amountUSD, 2)} />
+							))}
+						</InfoRowGroup>
+					</CollapsibleContent>
+				</Collapsible>
+			) : null}
+
+			{quoteError ? (
 				<div className="flex items-center gap-2 rounded-xs border border-market-down-600/30 bg-market-down-100 p-2.5">
 					<WarningCircleIcon className="size-4 text-market-down-600 shrink-0" />
 					<span className="text-3xs text-market-down-600">
 						<Trans>No route available. Try a different amount or asset.</Trans>
 					</span>
 				</div>
-			) : quote ? (
-				<>
-					<InfoRowGroup className="text-3xs">
-						<InfoRow
-							label={<Trans>You send</Trans>}
-							value={
-								<span>
-									{amount} {token.symbol}
-									<span className="text-text-500 ml-1">{formatUSD(quote.fromAmountUSD, 2)}</span>
-								</span>
-							}
-						/>
-						<InfoRow
-							label={<Trans>You receive</Trans>}
-							value={
-								<span>
-									{receiveAmount} USDC
-									<span className="text-text-500 ml-1">{receiveAmountUSD}</span>
-								</span>
-							}
-						/>
-						<InfoRow
-							label={
-								<span className="flex items-center gap-1">
-									<ClockIcon className="size-3" />
-									<Trans>Est. time</Trans>
-								</span>
-							}
-							value={`~${formatDuration(Math.ceil(quote.executionDuration / 60))}`}
-						/>
-					</InfoRowGroup>
-
-					<Collapsible>
-						<CollapsibleTrigger className="flex w-full items-center justify-between rounded-xs px-2 py-1.5 text-3xs text-text-500 hover:bg-surface-base/50 transition-colors group">
-							<span>
-								<Trans>Fees</Trans> ({formatUSD(quote.totalFeesUSD, 2)})
-							</span>
-							<CaretDownIcon className="size-3 group-data-[state=open]:hidden" />
-							<CaretUpIcon className="size-3 hidden group-data-[state=open]:block" />
-						</CollapsibleTrigger>
-						<CollapsibleContent>
-							<InfoRowGroup className="text-3xs">
-								{quote.gasCosts.map((gas) => (
-									<InfoRow
-										key={`gas-${gas.token.symbol}-${gas.amount}`}
-										label={<Trans>Gas ({gas.token.symbol})</Trans>}
-										value={formatUSD(gas.amountUSD, 2)}
-									/>
-								))}
-								{quote.feeCosts.map((fee) => (
-									<InfoRow key={`fee-${fee.name}-${fee.amount}`} label={fee.name} value={formatUSD(fee.amountUSD, 2)} />
-								))}
-							</InfoRowGroup>
-						</CollapsibleContent>
-					</Collapsible>
-				</>
 			) : null}
 
 			<Button
 				variant="contained"
 				tone="accent"
 				size="lg"
-				className="w-full"
+				className="w-full mt-auto"
 				disabled={!quote || quoteLoading}
 				onClick={() => quote && onConfirm(quote)}
 			>
-				<Trans>Confirm Bridge</Trans>
+				{quoteLoading ? (
+					<>
+						<SpinnerGapIcon className="size-4 animate-spin" />
+						<Trans>Preparing your quote...</Trans>
+					</>
+				) : (
+					<Trans>Confirm</Trans>
+				)}
 			</Button>
 		</div>
 	);
 }
 
 interface ExecutingScreenProps {
+	address: string;
 	statusText: string;
 	txHash: string | null;
 	onDone: () => void;
 }
 
-function ExecutingScreen({ statusText, txHash, onDone }: ExecutingScreenProps) {
+function ExecutingScreen({ address, statusText, txHash, onDone }: ExecutingScreenProps) {
 	const [isTimedOut, setIsTimedOut] = useState(false);
 	const startTimeRef = useRef(Date.now());
 
@@ -418,97 +675,249 @@ function ExecutingScreen({ statusText, txHash, onDone }: ExecutingScreenProps) {
 
 	if (isTimedOut) {
 		return (
-			<div className="flex flex-col items-center gap-4 py-8">
-				<div className="flex size-12 items-center justify-center rounded-full bg-warning-100 border border-warning-700/30">
-					<ClockIcon className="size-6 text-warning-700" />
+			<div className="flex flex-1 flex-col">
+				<div className="flex flex-1 flex-col items-center justify-center gap-4">
+					<div className="flex size-12 items-center justify-center rounded-full bg-warning-100 border border-warning-700/30">
+						<ClockIcon className="size-6 text-warning-700" />
+					</div>
+					<div className="text-center space-y-1">
+						<p className="text-sm font-medium text-text-950">
+							<Trans>Taking longer than expected</Trans>
+						</p>
+						<p className="text-3xs text-text-500 max-w-70">
+							<Trans>Your bridge is still processing. Funds are safe.</Trans>
+						</p>
+					</div>
+					{txHash ? (
+						<ExplorerLink href={`${LIFI_EXPLORER_URL}/${txHash}`}>
+							<Trans>Track on LI.FI Explorer</Trans>
+						</ExplorerLink>
+					) : null}
 				</div>
-				<div className="text-center space-y-1">
-					<p className="text-sm font-medium text-text-950">
-						<Trans>Taking longer than expected</Trans>
-					</p>
-					<p className="text-3xs text-text-500 max-w-[280px]">
-						<Trans>Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable.</Trans>
-					</p>
-				</div>
-				{txHash ? (
-					<a
-						href={`https://explorer.li.fi/tx/${txHash}`}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-3xs text-primary-default hover:text-primary-hover underline"
-					>
-						<Trans>Track on LI.FI Explorer</Trans>
-					</a>
-				) : null}
-				<Button variant="outlined" size="lg" className="w-full" onClick={onDone}>
-					<Trans>Done</Trans>
+				<Button variant="outlined" size="lg" className="w-full mt-auto" onClick={onDone}>
+					<Trans>Close</Trans>
 				</Button>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-col items-center gap-4 py-8">
-			<div className="flex size-12 items-center justify-center rounded-full bg-primary-default/10 border border-primary-default/30">
-				<SpinnerGapIcon className="size-6 animate-spin text-primary-default" />
+		<div className="flex flex-1 flex-col gap-4">
+			<div className="flex flex-1 flex-col items-center justify-center gap-4">
+				<div className="flex size-12 items-center justify-center rounded-full bg-primary-default/10 border border-primary-default/30">
+					<SpinnerGapIcon className="size-6 animate-spin text-primary-default" />
+				</div>
+				<div className="text-center space-y-1">
+					<p className="text-sm font-medium text-text-950">{statusText}</p>
+					<p className="text-3xs text-text-500">
+						{txHash ? (
+							<Trans>Your transaction is being processed</Trans>
+						) : (
+							<Trans>Confirm transaction in your wallet</Trans>
+						)}
+					</p>
+				</div>
 			</div>
-			<div className="text-center space-y-1">
-				<p className="text-sm font-medium text-text-950">
-					<Trans>Bridging in progress</Trans>
-				</p>
-				<p className="text-3xs text-text-500">{statusText}</p>
-			</div>
+
+			{txHash ? (
+				<div className="space-y-3">
+					<InfoRowGroup className="text-3xs">
+						<InfoRow
+							label={<Trans>Fill status</Trans>}
+							value={
+								<Badge variant="neutral" size="xs">
+									<Trans>Processing</Trans>
+								</Badge>
+							}
+						/>
+						<InfoRow
+							label={<Trans>Source</Trans>}
+							value={
+								<ExplorerLink href={`${LIFI_EXPLORER_URL}/${txHash}`}>
+									<WalletIcon className="size-3" />
+									{shortenAddress(address)}
+								</ExplorerLink>
+							}
+						/>
+						<InfoRow label={<Trans>Destination</Trans>} value="Hyperliquid" />
+					</InfoRowGroup>
+
+					<InfoRowGroup className="text-3xs">
+						<InfoRow
+							label={<Trans>You receive</Trans>}
+							value={
+								<span className="flex items-center gap-1.5">
+									<HyperCoreUsdcIcon size="sm" />
+									<Trans>USDC</Trans>
+								</span>
+							}
+						/>
+					</InfoRowGroup>
+				</div>
+			) : null}
+
+			<Button variant="outlined" size="lg" className="w-full mt-auto" onClick={onDone}>
+				<Trans>Close</Trans>
+			</Button>
 		</div>
 	);
 }
 
 interface SuccessScreenProps {
+	address: string;
 	receivedAmount: string;
+	txHash: string | null;
+	startTime: number | null;
+	endTime: number | null;
+	processDetails: ProcessDetail[];
 	onDone: () => void;
+	onNewDeposit: () => void;
 }
 
-function SuccessScreen({ receivedAmount, onDone }: SuccessScreenProps) {
+function SuccessScreen({
+	address,
+	receivedAmount,
+	txHash,
+	startTime,
+	endTime,
+	processDetails,
+	onDone,
+	onNewDeposit,
+}: SuccessScreenProps) {
 	const formatted = formatTokenAmount(receivedAmount, 6);
+	const totalSeconds = startTime && endTime ? Math.round((endTime - startTime) / 1000) : null;
 
 	return (
-		<div className="flex flex-col items-center gap-4 py-8">
-			<div className="flex size-12 items-center justify-center rounded-full bg-market-up-100 border border-market-up-600/30">
-				<CheckCircleIcon className="size-6 text-market-up-600" weight="fill" />
+		<div className="flex flex-1 flex-col gap-4">
+			<div className="flex flex-col items-center gap-3 pt-6 pb-2">
+				<div className="flex size-12 items-center justify-center rounded-full bg-market-up-100 border border-market-up-600/30">
+					<CheckCircleIcon className="size-6 text-market-up-600" weight="fill" />
+				</div>
+				<div className="text-center space-y-1">
+					<p className="text-sm font-medium text-text-950">
+						<Trans>Deposit successful</Trans>
+					</p>
+					<p className="text-3xs text-text-500">
+						<Trans>Your funds were successfully deposited.</Trans>
+					</p>
+				</div>
 			</div>
-			<div className="text-center space-y-1">
-				<p className="text-sm font-medium text-text-950">
-					<Trans>Bridge complete</Trans>
-				</p>
-				<p className="text-3xs text-text-500">
-					<Trans>{formatted} USDC deposited to Hyperliquid</Trans>
-				</p>
+
+			<InfoRowGroup className="text-3xs">
+				<InfoRow
+					label={<Trans>Fill status</Trans>}
+					value={
+						<span className="text-market-up-600 font-medium">
+							<Trans>Successful</Trans>
+						</span>
+					}
+				/>
+				{totalSeconds !== null ? (
+					<InfoRow label={<Trans>Total time</Trans>} value={<Trans>{totalSeconds} seconds</Trans>} />
+				) : null}
+			</InfoRowGroup>
+
+			<InfoRowGroup className="text-3xs">
+				<InfoRow
+					label={<Trans>Source</Trans>}
+					value={
+						txHash ? (
+							<ExplorerLink href={`${LIFI_EXPLORER_URL}/${txHash}`}>
+								<WalletIcon className="size-3" />
+								{shortenAddress(address)}
+							</ExplorerLink>
+						) : (
+							<span className="flex items-center gap-1.5">
+								<WalletIcon className="size-3" />
+								{shortenAddress(address)}
+							</span>
+						)
+					}
+				/>
+				<InfoRow label={<Trans>Destination</Trans>} value="Hyperliquid" />
+			</InfoRowGroup>
+
+			<InfoRowGroup className="text-3xs">
+				<InfoRow
+					label={<Trans>You receive</Trans>}
+					value={
+						<span className="flex items-center gap-1.5">
+							<HyperCoreUsdcIcon size="sm" />
+							{formatted} USDC
+						</span>
+					}
+				/>
+			</InfoRowGroup>
+
+			{processDetails.length > 0 ? (
+				<Collapsible>
+					<CollapsibleTrigger className="flex w-full items-center justify-between rounded-xs px-2 py-1.5 text-3xs text-text-500 hover:bg-surface-base/50 transition-colors group">
+						<Trans>More details</Trans>
+						<CaretDownIcon className="size-3 group-data-[state=open]:hidden" />
+						<CaretUpIcon className="size-3 hidden group-data-[state=open]:block" />
+					</CollapsibleTrigger>
+					<CollapsibleContent>
+						<InfoRowGroup className="text-3xs">
+							{processDetails.map((detail) => (
+								<InfoRow
+									key={detail.txHash}
+									label={processTypeLabel(detail.type)}
+									value={
+										<ExplorerLink href={detail.txLink || `${LIFI_EXPLORER_URL}/${detail.txHash}`}>
+											{shortenAddress(detail.txHash)}
+										</ExplorerLink>
+									}
+								/>
+							))}
+							{processDetails[0]?.startedAt ? (
+								<InfoRow
+									label={<Trans>Order submitted</Trans>}
+									value={formatDateTimeShort(processDetails[0].startedAt)}
+								/>
+							) : null}
+							{(() => {
+								const lastDetail = processDetails.at(-1);
+								if (!lastDetail?.doneAt) return null;
+								return <InfoRow label={<Trans>Order filled</Trans>} value={formatDateTimeShort(lastDetail.doneAt)} />;
+							})()}
+						</InfoRowGroup>
+					</CollapsibleContent>
+				</Collapsible>
+			) : null}
+
+			<div className="flex gap-2 w-full mt-auto">
+				<Button variant="outlined" size="lg" className="flex-1" onClick={onDone}>
+					<Trans>Close</Trans>
+				</Button>
+				<Button variant="contained" tone="accent" size="lg" className="flex-1" onClick={onNewDeposit}>
+					<Trans>New deposit</Trans>
+				</Button>
 			</div>
-			<Button variant="contained" tone="accent" size="lg" className="w-full" onClick={onDone}>
-				<Trans>Done</Trans>
-			</Button>
 		</div>
 	);
 }
 
 interface ErrorScreenProps {
 	error: string;
-	onRetry: () => void;
 	onBack: () => void;
+	onRetry: () => void;
 }
 
-function BridgeErrorScreen({ error, onRetry, onBack }: ErrorScreenProps) {
+function BridgeErrorScreen({ error, onBack, onRetry }: ErrorScreenProps) {
 	return (
-		<div className="flex flex-col items-center gap-4 py-8">
-			<div className="flex size-12 items-center justify-center rounded-full bg-market-down-100 border border-market-down-600/30">
-				<WarningCircleIcon className="size-6 text-market-down-600" />
+		<div className="flex flex-1 flex-col items-center">
+			<div className="flex flex-1 flex-col items-center justify-center gap-4">
+				<div className="flex size-12 items-center justify-center rounded-full bg-market-down-100 border border-market-down-600/30">
+					<WarningCircleIcon className="size-6 text-market-down-600" />
+				</div>
+				<div className="text-center space-y-1">
+					<p className="text-sm font-medium text-text-950">
+						<Trans>Bridge failed</Trans>
+					</p>
+					<p className="text-3xs text-text-500 max-w-70">{error}</p>
+				</div>
 			</div>
-			<div className="text-center space-y-1">
-				<p className="text-sm font-medium text-text-950">
-					<Trans>Bridge failed</Trans>
-				</p>
-				<p className="text-3xs text-text-500 max-w-[280px]">{error}</p>
-			</div>
-			<div className="flex gap-2 w-full">
+			<div className="flex gap-2 w-full mt-auto">
 				<Button variant="outlined" size="lg" className="flex-1" onClick={onBack}>
 					<Trans>Back</Trans>
 				</Button>
@@ -525,6 +934,8 @@ export function BridgeTab() {
 	const lifiInitialized = useRef(false);
 	const [screen, setScreen] = useState<BridgeScreen>("select");
 	const [selectedToken, setSelectedToken] = useState<BridgeToken | null>(null);
+	const [usdInput, setUsdInput] = useState("");
+	const [tokenAmount, setTokenAmount] = useState("");
 	const lastQuoteRef = useRef<BridgeQuote | null>(null);
 	const bridge = useBridgeExecutor();
 
@@ -547,14 +958,24 @@ export function BridgeTab() {
 
 	function handleTokenSelect(token: BridgeToken) {
 		setSelectedToken(token);
+		setScreen("amount");
+	}
+
+	function handleAmountContinue(amount: string, usd: string) {
+		setTokenAmount(amount);
+		setUsdInput(usd);
 		setScreen("confirm");
 	}
 
-	function handleBack() {
+	function handleBackFromAmount() {
 		setScreen("select");
 		setSelectedToken(null);
-		bridge.reset();
-		lastQuoteRef.current = null;
+		setUsdInput("");
+		setTokenAmount("");
+	}
+
+	function handleBackFromConfirm() {
+		setScreen("amount");
 	}
 
 	function handleConfirm(quote: BridgeQuote) {
@@ -570,27 +991,61 @@ export function BridgeTab() {
 		}
 	}
 
-	function handleDone() {
+	function resetToSelect() {
 		setScreen("select");
 		setSelectedToken(null);
+		setUsdInput("");
+		setTokenAmount("");
 		bridge.reset();
 		lastQuoteRef.current = null;
 	}
 
 	if (bridge.status === "error") {
-		return <BridgeErrorScreen error={bridge.error ?? "Unknown error"} onRetry={handleRetry} onBack={handleBack} />;
+		return <BridgeErrorScreen error={bridge.error ?? "Unknown error"} onRetry={handleRetry} onBack={resetToSelect} />;
 	}
 
 	if (bridge.status === "success" && bridge.receivedAmount) {
-		return <SuccessScreen receivedAmount={bridge.receivedAmount} onDone={handleDone} />;
+		return (
+			<SuccessScreen
+				address={address}
+				receivedAmount={bridge.receivedAmount}
+				txHash={bridge.txHash}
+				startTime={bridge.startTime}
+				endTime={bridge.endTime}
+				processDetails={bridge.processDetails}
+				onDone={resetToSelect}
+				onNewDeposit={resetToSelect}
+			/>
+		);
 	}
 
 	if (screen === "executing") {
-		return <ExecutingScreen statusText={bridge.statusText} txHash={bridge.txHash} onDone={handleDone} />;
+		return (
+			<ExecutingScreen address={address} statusText={bridge.statusText} txHash={bridge.txHash} onDone={resetToSelect} />
+		);
 	}
 
-	if (screen === "confirm" && selectedToken) {
-		return <ConfirmationScreen token={selectedToken} address={address} onBack={handleBack} onConfirm={handleConfirm} />;
+	if (screen === "confirm" && selectedToken && tokenAmount) {
+		return (
+			<ConfirmationScreen
+				token={selectedToken}
+				tokenAmount={tokenAmount}
+				address={address}
+				onBack={handleBackFromConfirm}
+				onConfirm={handleConfirm}
+			/>
+		);
+	}
+
+	if (screen === "amount" && selectedToken) {
+		return (
+			<AmountEntryScreen
+				token={selectedToken}
+				initialUsd={usdInput}
+				onBack={handleBackFromAmount}
+				onContinue={handleAmountContinue}
+			/>
+		);
 	}
 
 	return <AssetSelectionScreen address={address} onSelect={handleTokenSelect} />;

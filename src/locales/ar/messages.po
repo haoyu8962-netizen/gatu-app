@@ -14,7 +14,15 @@ msgstr ""
 "Plural-Forms: \n"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "{formatted} USDC deposited to Hyperliquid"
+#~ msgid "{formatted} USDC deposited to Hyperliquid"
+#~ msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "{p}%"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "{totalSeconds} seconds"
 msgstr ""
 
 #: src/components/trade/tradebox/order-toast.tsx
@@ -111,7 +119,6 @@ msgid "All cross positions share the same cross margin as collateral. In the eve
 msgstr ""
 
 #: src/components/trade/positions/send-dialog.tsx
-#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Amount"
@@ -166,6 +173,7 @@ msgstr "متوسط السعر"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Back"
 msgstr ""
 
@@ -194,13 +202,15 @@ msgstr "الرصيد"
 #~ msgid "Breadcrumb"
 #~ msgstr "مسار التنقل"
 
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Bridge"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Bridge complete"
-msgstr ""
+#~ msgid "Bridge complete"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Bridge failed"
@@ -215,8 +225,8 @@ msgstr ""
 #~ msgstr "قم بتحويل USDC من Arbitrum أو سلاسل أخرى إلى حساب Hyperliquid الخاص بك."
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Bridging in progress"
-msgstr ""
+#~ msgid "Bridging in progress"
+#~ msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Builder Address"
@@ -325,6 +335,9 @@ msgstr "الرسم البياني"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/ui/dialog.tsx
 #: src/components/ui/sheet.tsx
 msgid "Close"
@@ -351,6 +364,7 @@ msgstr "جاري الإغلاق..."
 #~ msgstr "مكتمل"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -358,11 +372,15 @@ msgid "Confirm"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Confirm Bridge"
-msgstr ""
+#~ msgid "Confirm Bridge"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Confirm transaction in your wallet"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
@@ -458,6 +476,10 @@ msgstr ""
 msgid "Connecting..."
 msgstr "جارٍ الاتصال..."
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Continue"
+msgstr ""
+
 #: src/hooks/ui/use-copy-to-clipboard.ts
 msgid "Copied to clipboard"
 msgstr ""
@@ -542,7 +564,14 @@ msgstr ""
 #~ msgid "Deposit on Hyperliquid"
 #~ msgstr "إيداع في Hyperliquid"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Deposit successful"
+msgstr ""
+
 #: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Destination"
 msgstr ""
 
@@ -578,8 +607,6 @@ msgstr "يعرض الشريط الجانبي للجوال."
 #~ msgid "Docs"
 #~ msgstr "المستندات"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Done"
@@ -663,9 +690,10 @@ msgid "Est. P&L at Limit"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Est. time"
-msgstr ""
+#~ msgid "Est. time"
+#~ msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Estimated time"
@@ -781,11 +809,16 @@ msgstr "الرسوم"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Fees"
-msgstr ""
+#~ msgid "Fees"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Fetching quote..."
+#~ msgid "Fetching quote..."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Fill status"
 msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx
@@ -802,7 +835,6 @@ msgid "Format for numbers and dates"
 msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "From"
 msgstr ""
@@ -1104,6 +1136,7 @@ msgid "markets"
 msgstr "أسواق"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"
 msgstr "الأقصى"
 
@@ -1178,6 +1211,10 @@ msgstr ""
 #~ msgid "More"
 #~ msgstr "المزيد"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "More details"
+msgstr ""
+
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More options"
 #~ msgstr "المزيد من الخيارات"
@@ -1209,6 +1246,10 @@ msgstr ""
 #: src/components/trade/chart/token-selector.tsx
 msgid "NEW"
 msgstr "جديد"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "New deposit"
+msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "New to wallets?"
@@ -1381,6 +1422,10 @@ msgstr "دفتر الأوامر"
 msgid "Order failed"
 msgstr "فشل الطلب"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Order filled"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Order History"
@@ -1389,6 +1434,10 @@ msgstr ""
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Order Queue"
 msgstr "قائمة الأوامر"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Order submitted"
+msgstr ""
 
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Order Value"
@@ -1492,6 +1541,10 @@ msgstr ""
 msgid "Position reversed"
 msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Preparing your quote..."
+msgstr ""
+
 #: src/components/ui/pagination.tsx
 #~ msgid "Previous"
 #~ msgstr "السابق"
@@ -1517,6 +1570,10 @@ msgstr ""
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #~ msgid "Pro"
 #~ msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Processing"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Processing deposit"
@@ -1632,8 +1689,8 @@ msgid "Select all orders"
 msgstr "تحديد جميع الأوامر"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Select asset to bridge"
-msgstr ""
+#~ msgid "Select asset to bridge"
+#~ msgstr ""
 
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select favorite markets"
@@ -1870,6 +1927,12 @@ msgstr "ترتيب حسب {headerLabel}"
 msgid "Sorted by {0}"
 msgstr "مرتب حسب {0}"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Source"
+msgstr ""
+
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "spot"
 #~ msgstr "فوري"
@@ -1939,6 +2002,10 @@ msgstr ""
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Submitting..."
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Successful"
 msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
@@ -2076,7 +2143,6 @@ msgid "Time in Force"
 msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "To"
 msgstr ""
@@ -2110,6 +2176,10 @@ msgstr "الإجمالي"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
 #~ msgstr "الحجم الإجمالي"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Total time"
+msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Total Value"
@@ -2169,6 +2239,10 @@ msgstr ""
 #: src/components/trade/positions/history-tab.tsx
 msgid "Trades"
 msgstr "الصفقات"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Transaction breakdown"
+msgstr ""
 
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
@@ -2282,6 +2356,10 @@ msgstr "تحديث مباشر"
 msgid "USD Value"
 msgstr "القيمة بالدولار"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "USDC"
+msgstr ""
+
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Value"
 #~ msgstr "القيمة"
@@ -2317,6 +2395,11 @@ msgstr "في انتظار دفتر الأوامر..."
 #: src/components/trade/orderbook/trades-panel.tsx
 msgid "Waiting for trades..."
 msgstr "في انتظار الصفقات..."
+
+#. placeholder {0}: shortenAddress(address)
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Wallet ({0})"
+msgstr ""
 
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Wallet client not ready"
@@ -2378,13 +2461,29 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "You receive"
 msgstr ""
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "You send"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
+#~ msgid "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your bridge is still processing. Funds are safe."
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your funds were successfully deposited."
+msgstr ""
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your transaction is being processed"
 msgstr ""

@@ -14,8 +14,16 @@ msgstr ""
 "Plural-Forms: \n"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "{formatted} USDC deposited to Hyperliquid"
-msgstr "{formatted} USDC deposited to Hyperliquid"
+#~ msgid "{formatted} USDC deposited to Hyperliquid"
+#~ msgstr "{formatted} USDC deposited to Hyperliquid"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "{p}%"
+msgstr "{p}%"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "{totalSeconds} seconds"
+msgstr "{totalSeconds} seconds"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "% filled"
@@ -111,7 +119,6 @@ msgid "All cross positions share the same cross margin as collateral. In the eve
 msgstr "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 
 #: src/components/trade/positions/send-dialog.tsx
-#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Amount"
@@ -166,6 +173,7 @@ msgstr "Avg Price"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Back"
 msgstr "Back"
 
@@ -194,13 +202,15 @@ msgstr "Balance"
 #~ msgid "Breadcrumb"
 #~ msgstr "Breadcrumb"
 
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Bridge"
 msgstr "Bridge"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Bridge complete"
-msgstr "Bridge complete"
+#~ msgid "Bridge complete"
+#~ msgstr "Bridge complete"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Bridge failed"
@@ -215,8 +225,8 @@ msgstr "Bridge failed"
 #~ msgstr "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Bridging in progress"
-msgstr "Bridging in progress"
+#~ msgid "Bridging in progress"
+#~ msgstr "Bridging in progress"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Builder Address"
@@ -325,6 +335,9 @@ msgstr "Chart"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/ui/dialog.tsx
 #: src/components/ui/sheet.tsx
 msgid "Close"
@@ -351,6 +364,7 @@ msgstr "Closing..."
 #~ msgstr "completed"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -358,12 +372,16 @@ msgid "Confirm"
 msgstr "Confirm"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Confirm Bridge"
-msgstr "Confirm Bridge"
+#~ msgid "Confirm Bridge"
+#~ msgstr "Confirm Bridge"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "Confirm in wallet"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Confirm transaction in your wallet"
+msgstr "Confirm transaction in your wallet"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Confirmation screen coming in next slice"
@@ -458,6 +476,10 @@ msgstr "Connecting"
 msgid "Connecting..."
 msgstr "Connecting..."
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Continue"
+msgstr "Continue"
+
 #: src/hooks/ui/use-copy-to-clipboard.ts
 msgid "Copied to clipboard"
 msgstr "Copied to clipboard"
@@ -542,7 +564,14 @@ msgstr "Deposit failed"
 #~ msgid "Deposit on Hyperliquid"
 #~ msgstr "Deposit on Hyperliquid"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Deposit successful"
+msgstr "Deposit successful"
+
 #: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Destination"
 msgstr "Destination"
 
@@ -578,8 +607,6 @@ msgstr "Displays the mobile sidebar."
 #~ msgid "Docs"
 #~ msgstr "Docs"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Done"
@@ -663,9 +690,10 @@ msgid "Est. P&L at Limit"
 msgstr "Est. P&L at Limit"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Est. time"
-msgstr "Est. time"
+#~ msgid "Est. time"
+#~ msgstr "Est. time"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Estimated time"
@@ -781,12 +809,17 @@ msgstr "Fee"
 #~ msgstr "Fee rate must be between 0.001% and 1%"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Fees"
-msgstr "Fees"
+#~ msgid "Fees"
+#~ msgstr "Fees"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Fetching quote..."
-msgstr "Fetching quote..."
+#~ msgid "Fetching quote..."
+#~ msgstr "Fetching quote..."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Fill status"
+msgstr "Fill status"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Filled"
@@ -802,7 +835,6 @@ msgid "Format for numbers and dates"
 msgstr "Format for numbers and dates"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "From"
 msgstr "From"
@@ -1108,6 +1140,7 @@ msgid "markets"
 msgstr "markets"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"
 msgstr "Max"
 
@@ -1182,6 +1215,10 @@ msgstr "Mock Wallet (Testing)"
 #~ msgid "More"
 #~ msgstr "More"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "More details"
+msgstr "More details"
+
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More options"
 #~ msgstr "More options"
@@ -1213,6 +1250,10 @@ msgstr "Network fee"
 #: src/components/trade/chart/token-selector.tsx
 msgid "NEW"
 msgstr "NEW"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "New deposit"
+msgstr "New deposit"
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "New to wallets?"
@@ -1385,6 +1426,10 @@ msgstr "Order Book"
 msgid "Order failed"
 msgstr "Order failed"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Order filled"
+msgstr "Order filled"
+
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Order History"
@@ -1393,6 +1438,10 @@ msgstr "Order History"
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Order Queue"
 msgstr "Order Queue"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Order submitted"
+msgstr "Order submitted"
 
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Order Value"
@@ -1496,6 +1545,10 @@ msgstr "Position closed"
 msgid "Position reversed"
 msgstr "Position reversed"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Preparing your quote..."
+msgstr "Preparing your quote..."
+
 #: src/components/ui/pagination.tsx
 #~ msgid "Previous"
 #~ msgstr "Previous"
@@ -1521,6 +1574,10 @@ msgstr "PRICE"
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #~ msgid "Pro"
 #~ msgstr "Pro"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Processing"
+msgstr "Processing"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Processing deposit"
@@ -1636,8 +1693,8 @@ msgid "Select all orders"
 msgstr "Select all orders"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Select asset to bridge"
-msgstr "Select asset to bridge"
+#~ msgid "Select asset to bridge"
+#~ msgstr "Select asset to bridge"
 
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select favorite markets"
@@ -1874,6 +1931,12 @@ msgstr "Sort by {headerLabel}"
 msgid "Sorted by {0}"
 msgstr "Sorted by {0}"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Source"
+msgstr "Source"
+
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "spot"
 #~ msgstr "spot"
@@ -1944,6 +2007,10 @@ msgstr "Stop trigger must be below mark"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Submitting..."
 msgstr "Submitting..."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Successful"
+msgstr "Successful"
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "Support"
@@ -2080,7 +2147,6 @@ msgid "Time in Force"
 msgstr "Time in Force"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "To"
 msgstr "To"
@@ -2114,6 +2180,10 @@ msgstr "Total"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
 #~ msgstr "Total Size"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Total time"
+msgstr "Total time"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Total Value"
@@ -2177,6 +2247,10 @@ msgstr "Trades"
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Trading"
 #~ msgstr "Trading"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Transaction breakdown"
+msgstr "Transaction breakdown"
 
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
@@ -2290,6 +2364,10 @@ msgstr "Updated live"
 msgid "USD Value"
 msgstr "USD Value"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "USDC"
+msgstr "USDC"
+
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Value"
 #~ msgstr "Value"
@@ -2325,6 +2403,11 @@ msgstr "Waiting for order book..."
 #: src/components/trade/orderbook/trades-panel.tsx
 msgid "Waiting for trades..."
 msgstr "Waiting for trades..."
+
+#. placeholder {0}: shortenAddress(address)
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Wallet ({0})"
+msgstr "Wallet ({0})"
 
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Wallet client not ready"
@@ -2386,13 +2469,29 @@ msgstr "You are on Testnet"
 #~ msgstr "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."
 
 #: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
+#: src/components/trade/tradebox/bridge-tab.tsx
 msgid "You receive"
 msgstr "You receive"
 
+#: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "You send"
 msgstr "You send"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
-msgstr "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
+#~ msgid "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
+#~ msgstr "Your bridge is still processing. Funds are safe — LI.FI routes are always recoverable."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your bridge is still processing. Funds are safe."
+msgstr "Your bridge is still processing. Funds are safe."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your funds were successfully deposited."
+msgstr "Your funds were successfully deposited."
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+msgid "Your transaction is being processed"
+msgstr "Your transaction is being processed"

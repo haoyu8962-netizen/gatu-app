@@ -652,7 +652,7 @@ export function DepositModal() {
 						</TabsTrigger>
 					</TabsList>
 
-					<div className="grid [&>*]:col-start-1 [&>*]:row-start-1">
+					<div className="grid min-h-95 [&>*]:col-start-1 [&>*]:row-start-1">
 						<TabsContent value="deposit" forceMount className="flex flex-col data-[state=inactive]:invisible">
 							<DepositForm
 								amount={depositAmount}

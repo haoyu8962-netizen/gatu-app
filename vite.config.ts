@@ -23,6 +23,9 @@ const config = defineConfig({
   server: {
     strictPort: false,
   },
+  optimizeDeps: {
+    include: ['@lifi/sdk', '@lifi/types'],
+  },
   build: {
     sourcemap: isAnalyze,
   },
