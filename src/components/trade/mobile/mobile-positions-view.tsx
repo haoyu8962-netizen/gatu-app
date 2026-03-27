@@ -1,5 +1,5 @@
 import { WalletIcon } from "@phosphor-icons/react";
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +7,7 @@ import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
 import { toNumber } from "@/lib/trade/numbers";
+import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
 import { MobileBalancesTab } from "./mobile-balances-tab";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 import { MobileFundingTab } from "./mobile-funding-tab";
@@ -33,7 +34,8 @@ interface Props {
 }
 
 export function MobilePositionsView({ className }: Props) {
-	const [activeTab, setActiveTab] = useState<TabValue>("positions");
+	const activeTab = usePositionsActiveTab() as TabValue;
+	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useConnection();
 	const { perpPositions, isLoading: isLoadingState } = useAccountBalances();
@@ -55,7 +57,7 @@ export function MobilePositionsView({ className }: Props) {
 	const ordersCount = isConnected ? (openOrders?.length ?? 0) : 0;
 
 	function handleTabChange(value: string) {
-		startTransition(() => setActiveTab(value as TabValue));
+		startTransition(() => setPositionsActiveTab(value));
 	}
 
 	function getTabCount(tabValue: TabValue): number | null {

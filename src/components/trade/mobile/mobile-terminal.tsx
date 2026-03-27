@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { useConnection } from "wagmi";
 import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
 import { toNumber } from "@/lib/trade/numbers";
+import { useGlobalSettingsActions, useMobileActiveTab } from "@/stores/use-global-settings-store";
 import { MobileAccountView } from "./mobile-account-view";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileBottomNav, type MobileTab } from "./mobile-bottom-nav";
@@ -18,7 +18,8 @@ interface Props {
 }
 
 export function MobileTerminal({ className }: Props) {
-	const [activeTab, setActiveTab] = useState<MobileTab>("chart");
+	const activeTab = useMobileActiveTab() as MobileTab;
+	const { setMobileActiveTab } = useGlobalSettingsActions();
 	const { address, isConnected } = useConnection();
 	const { perpPositions } = useAccountBalances();
 
@@ -45,7 +46,7 @@ export function MobileTerminal({ className }: Props) {
 			</main>
 			<MobileBottomNav
 				activeTab={activeTab}
-				onTabChange={setActiveTab}
+				onTabChange={setMobileActiveTab}
 				badges={{ positions: positionsCount + ordersCount }}
 			/>
 		</div>
