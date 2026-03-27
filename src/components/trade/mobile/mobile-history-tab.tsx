@@ -2,7 +2,6 @@ import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useConnection } from "wagmi";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";
@@ -13,6 +12,7 @@ import { getValueColorClass, toNumber } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
+import { HistoryTabSkeleton } from "./mobile-card-skeleton";
 
 interface Props {
 	className?: string;
@@ -41,11 +41,7 @@ export function MobileHistoryTab({ className }: Props) {
 	}
 
 	if (status === "subscribing" || status === "idle") {
-		return (
-			<div className="flex-1 flex items-center justify-center">
-				<Spinner className="size-4 text-text-500" />
-			</div>
-		);
+		return <HistoryTabSkeleton />;
 	}
 
 	if (status === "error") {

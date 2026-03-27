@@ -2,7 +2,6 @@ import { t } from "@lingui/core/macro";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useConnection } from "wagmi";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
@@ -12,6 +11,7 @@ import { getSideClass, getSideLabel } from "@/lib/trade/open-orders";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
+import { HistoryTabSkeleton } from "./mobile-card-skeleton";
 
 interface Props {
 	className?: string;
@@ -45,11 +45,7 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 	}
 
 	if (status === "subscribing" || status === "idle") {
-		return (
-			<div className="flex-1 flex items-center justify-center">
-				<Spinner className="size-4 text-text-500" />
-			</div>
-		);
+		return <HistoryTabSkeleton />;
 	}
 
 	if (status === "error") {

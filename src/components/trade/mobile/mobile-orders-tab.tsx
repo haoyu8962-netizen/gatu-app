@@ -15,6 +15,7 @@ import { getOrderTypeConfig, getOrderValue, getSideLabel, type OpenOrder } from 
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
+import { OrdersTabSkeleton } from "./mobile-card-skeleton";
 
 interface Props {
 	className?: string;
@@ -109,11 +110,7 @@ export function MobileOrdersTab({ className }: Props) {
 	}
 
 	if (status === "subscribing" || status === "idle") {
-		return (
-			<div className="flex-1 flex items-center justify-center">
-				<Spinner className="size-4 text-text-500" />
-			</div>
-		);
+		return <OrdersTabSkeleton />;
 	}
 
 	if (status === "error") {

@@ -22,6 +22,7 @@ import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
 import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
+import { PositionsTabSkeleton } from "./mobile-card-skeleton";
 
 interface TpSlOrderInfo {
 	tpPrice?: number;
@@ -381,11 +382,7 @@ export function MobilePositionsTab() {
 	}
 
 	if (positionsLoading) {
-		return (
-			<div className="flex-1 flex items-center justify-center">
-				<Spinner className="size-4 text-text-500" />
-			</div>
-		);
+		return <PositionsTabSkeleton />;
 	}
 
 	if (positionsError) {

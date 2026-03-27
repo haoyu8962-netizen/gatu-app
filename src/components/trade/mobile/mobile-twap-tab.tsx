@@ -3,7 +3,6 @@ import { TimerIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { useConnection } from "wagmi";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
 import { getAvgPrice } from "@/domain/market";
@@ -15,6 +14,7 @@ import { toBig } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
+import { OrdersTabSkeleton } from "./mobile-card-skeleton";
 
 interface Props {
 	className?: string;
@@ -49,11 +49,7 @@ export function MobileTwapTab({ className }: Props) {
 	}
 
 	if (twapStatesStatus === "loading") {
-		return (
-			<div className="flex-1 flex items-center justify-center">
-				<Spinner className="size-4 text-text-500" />
-			</div>
-		);
+		return <OrdersTabSkeleton />;
 	}
 
 	if (activeOrders.length === 0) {

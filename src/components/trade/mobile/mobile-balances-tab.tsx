@@ -4,7 +4,6 @@ import { useId, useMemo, useState } from "react";
 import { useConnection } from "wagmi";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Spinner } from "@/components/ui/spinner";
 import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/constants";
 import {
 	type BalanceRow,
@@ -23,6 +22,7 @@ import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-glo
 import { AssetDisplay } from "../components/asset-display";
 import { SendDialog } from "../positions/send-dialog";
 import { TransferDialog } from "../positions/transfer-dialog";
+import { BalancesTabSkeleton } from "./mobile-card-skeleton";
 
 type TransferDirection = "toSpot" | "toPerp";
 const SMALL_BALANCE_THRESHOLD = 1;
@@ -93,11 +93,7 @@ export function MobileBalancesTab({ className }: Props) {
 	}
 
 	if (isLoading) {
-		return (
-			<div className="flex-1 flex items-center justify-center">
-				<Spinner className="size-4 text-text-500" />
-			</div>
-		);
+		return <BalancesTabSkeleton />;
 	}
 
 	if (hasError) {

@@ -1,7 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { PercentIcon } from "@phosphor-icons/react";
 import { useConnection } from "wagmi";
-import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
@@ -9,6 +8,7 @@ import { useMarkets } from "@/lib/hyperliquid";
 import { useSubUserFundings } from "@/lib/hyperliquid/hooks/subscription";
 import { getValueColorClass, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import { AssetDisplay } from "../components/asset-display";
+import { FundingTabSkeleton } from "./mobile-card-skeleton";
 
 interface Props {
 	className?: string;
@@ -40,11 +40,7 @@ export function MobileFundingTab({ className }: Props) {
 	}
 
 	if (status === "subscribing" || status === "idle") {
-		return (
-			<div className="flex-1 flex items-center justify-center">
-				<Spinner className="size-4 text-text-500" />
-			</div>
-		);
+		return <FundingTabSkeleton />;
 	}
 
 	if (status === "error") {
