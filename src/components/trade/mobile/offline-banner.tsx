@@ -1,6 +1,5 @@
-import { WifiSlashIcon, XIcon } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, WifiHighIcon, WifiSlashIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useOnlineStatus } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 
@@ -40,45 +39,48 @@ export function OfflineBanner({ className }: Props) {
 			role="alert"
 			aria-live="polite"
 			className={cn(
-				"fixed top-[calc(48px+env(safe-area-inset-top))] inset-x-0 z-50",
-				"px-3 py-2",
+				"shrink-0 px-3 py-2.5",
 				"flex items-center justify-between gap-2",
-				"text-sm font-medium",
-				"animate-in slide-in-from-top-2 duration-300",
+				"text-xs font-medium",
 				isOnline
-					? "bg-market-up-100 text-market-up-600 border-b border-market-up-600/30"
-					: "bg-warning-700/20 text-warning-700 border-b border-warning-700/30",
+					? "bg-market-up-100 text-market-up-600 border-b border-market-up-600/20"
+					: "bg-warning-100 text-warning-700 border-b border-warning-700/20",
 				className,
 			)}
 		>
 			<div className="flex items-center gap-2">
 				{isOnline ? (
 					<>
-						<span className="size-2 rounded-full bg-market-up-600 animate-pulse" />
-						<span>Back online - syncing data...</span>
+						<WifiHighIcon className="size-4" />
+						<span>Back online</span>
 					</>
 				) : (
 					<>
 						<WifiSlashIcon className="size-4" />
-						<span>You're offline. Some features may be limited.</span>
+						<span>You're offline</span>
 					</>
 				)}
 			</div>
 
 			{!isOnline && (
-				<Button
-					variant="text"
-					size="none"
-					onClick={() => setDismissed(true)}
-					className={cn(
-						"size-8 flex items-center justify-center",
-						"rounded-md hover:bg-warning-700/20",
-						"transition-colors",
-					)}
-					aria-label="Dismiss offline notification"
-				>
-					<XIcon className="size-4" />
-				</Button>
+				<div className="flex items-center gap-1">
+					<button
+						type="button"
+						onClick={() => window.location.reload()}
+						className="flex items-center gap-1 rounded-xs px-2 py-1 text-2xs font-medium bg-warning-700/10 hover:bg-warning-700/20 active:scale-[0.97] transition touch-manipulation"
+					>
+						<ArrowClockwiseIcon className="size-3" />
+						Retry
+					</button>
+					<button
+						type="button"
+						onClick={() => setDismissed(true)}
+						className="flex items-center justify-center size-7 rounded-xs hover:bg-warning-700/10 active:scale-[0.97] transition touch-manipulation"
+						aria-label="Dismiss"
+					>
+						<XIcon className="size-3.5" />
+					</button>
+				</div>
 			)}
 		</div>
 	);
