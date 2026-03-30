@@ -1,0 +1,12 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"include": ["**/*.ts", "**/*.tsx"],
+	"compilerOptions": {
+		"types": ["vite/client"],
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"],
+			"@/types/charting_library": ["./public/charting_library/charting_library.d.ts"]
+		}
+	}
+}
