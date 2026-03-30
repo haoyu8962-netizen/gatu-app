@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConnection } from "wagmi";
 import { DEFAULT_MAX_LEVERAGE } from "@/config/constants";
-import { getMarketCapabilities, useSelectedMarketInfo, useUserPositions } from "@/lib/hyperliquid";
-import { useExchangeUpdateLeverage } from "@/lib/hyperliquid/hooks/exchange/useExchangeUpdateLeverage";
-import { useSubActiveAssetData } from "@/lib/hyperliquid/hooks/subscription";
+import {
+	getMarketCapabilities,
+	useExchange,
+	useSelectedMarketInfo,
+	useSubscription,
+	useUserPositions,
+} from "@/lib/hyperliquid";
 import { getMarginModeFromLeverage, type MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, useMarginMode } from "@/stores/use-global-settings-store";
@@ -54,14 +58,15 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const baseToken = market ? market.name : undefined;
 	const assetId = market?.assetId;
 
-	const { data: activeAssetData, status: subscriptionStatus } = useSubActiveAssetData(
+	const { data: activeAssetData, status: subscriptionStatus } = useSubscription(
+		"activeAssetData",
 		{ coin: baseToken ?? "", user: address ?? "" },
 		{ enabled: isConnected && !!address && !!baseToken },
 	);
 
 	const userPositions = useUserPositions();
 
-	const { mutateAsync: updateLeverage, isPending, error, reset: resetMutation } = useExchangeUpdateLeverage();
+	const { mutateAsync: updateLeverage, isPending, error, reset: resetMutation } = useExchange("updateLeverage");
 
 	const operationTypeRef = useRef<OperationType>(null);
 	const [pendingLeverage, setPendingLeverageState] = useState<number | null>(null);

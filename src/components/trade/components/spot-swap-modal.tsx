@@ -13,7 +13,7 @@ import { findSpotPair, getAvailablePairTokens, getSwapSide } from "@/domain/trad
 import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
-import { useExchangeOrder } from "@/lib/hyperliquid/hooks/exchange/useExchangeOrder";
+import { useExchange } from "@/lib/hyperliquid";
 import { useMarketsInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
@@ -48,7 +48,7 @@ interface Props {
 function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Props) {
 	const { spotMarkets } = useMarketsInfo();
 	const { spotBalances } = useAccountBalances();
-	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchangeOrder();
+	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
 
 	const defaultToToken = useMemo(() => {
 		if (initialToToken) return initialToToken;

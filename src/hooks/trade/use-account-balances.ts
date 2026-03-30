@@ -1,6 +1,6 @@
 import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent } from "@nktkas/hyperliquid";
 import { useConnection } from "wagmi";
-import { useSubAllDexsClearinghouseState, useSubSpotState } from "@/lib/hyperliquid/hooks/subscription";
+import { useSubscription } from "@/lib/hyperliquid";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
 
@@ -23,12 +23,13 @@ export function useAccountBalances(): AccountBalances {
 	const { address, isConnected } = useConnection();
 	const enabled = isConnected && !!address;
 
-	const { data: clearinghouseEvent, status: perpStatus } = useSubAllDexsClearinghouseState(
+	const { data: clearinghouseEvent, status: perpStatus } = useSubscription(
+		"allDexsClearinghouseState",
 		{ user: address ?? "" },
 		{ enabled },
 	);
 
-	const { data: spotEvent, status: spotStatus } = useSubSpotState({ user: address ?? "0x0" }, { enabled });
+	const { data: spotEvent, status: spotStatus } = useSubscription("spotState", { user: address ?? "0x0" }, { enabled });
 
 	const mainDex = clearinghouseEvent?.clearinghouseStates?.find(([dex]) => dex === "")?.[1];
 	const perpSummary = mainDex?.crossMarginSummary ?? null;

@@ -25,7 +25,7 @@ import { cn } from "@/lib/cn";
 import { formatTransferError } from "@/lib/errors/format";
 import { getExplorerTxUrl } from "@/lib/explorer";
 import { formatNumber } from "@/lib/format";
-import { useDeposit, useExchangeWithdraw3, useUserPositions } from "@/lib/hyperliquid";
+import { useDeposit, useExchange, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import { useDepositModalActions, useDepositModalOpen, useDepositModalTab } from "@/stores/use-global-modal-store";
@@ -473,7 +473,7 @@ export function DepositModal() {
 		isSuccess: isWithdrawSuccess,
 		error: withdrawError,
 		reset: resetWithdraw,
-	} = useExchangeWithdraw3();
+	} = useExchange("withdraw3");
 
 	const depositValidation = validateDeposit(depositAmount);
 

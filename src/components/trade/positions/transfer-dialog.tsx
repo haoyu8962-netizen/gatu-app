@@ -11,7 +11,7 @@ import { getAvailableFromTotals, getPerpAvailable, getSpotBalance } from "@/doma
 import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
-import { useExchangeSendAsset } from "@/lib/hyperliquid/hooks/exchange";
+import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 
@@ -30,7 +30,7 @@ export function TransferDialog({ open, onOpenChange, initialDirection = "toSpot"
 
 	const { address } = useConnection();
 	const { getToken } = useSpotTokens();
-	const { mutateAsync: sendAsset, isPending } = useExchangeSendAsset();
+	const { mutateAsync: sendAsset, isPending } = useExchange("sendAsset");
 	const { perpSummary, spotBalances } = useAccountBalances();
 
 	useEffect(() => {

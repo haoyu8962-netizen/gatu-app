@@ -1,9 +1,7 @@
 import { useEffect } from "react";
 import { SEO_DEFAULTS } from "@/config/constants";
 import { formatPrice } from "@/lib/format";
-import { type SpotMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { useSubActiveAssetCtx } from "@/lib/hyperliquid/hooks/subscription/useSubActiveAssetCtx";
-import { useSubActiveSpotAssetCtx } from "@/lib/hyperliquid/hooks/subscription/useSubActiveSpotAssetCtx";
+import { type SpotMarketInfo, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 
 function getSpotSubscriptionCoin(market: ReturnType<typeof useSelectedMarketInfo>["data"]): string {
 	if (market?.kind !== "spot") return "";
@@ -17,8 +15,16 @@ export function useDocumentTitle() {
 	const perpCoin = market?.name ?? "";
 	const spotCoin = getSpotSubscriptionCoin(market);
 
-	const { data: perpCtxEvent } = useSubActiveAssetCtx({ coin: perpCoin }, { enabled: !!perpCoin && !isSpot });
-	const { data: spotCtxEvent } = useSubActiveSpotAssetCtx({ coin: spotCoin }, { enabled: !!spotCoin && isSpot });
+	const { data: perpCtxEvent } = useSubscription(
+		"activeAssetCtx",
+		{ coin: perpCoin },
+		{ enabled: !!perpCoin && !isSpot },
+	);
+	const { data: spotCtxEvent } = useSubscription(
+		"activeSpotAssetCtx",
+		{ coin: spotCoin },
+		{ enabled: !!spotCoin && isSpot },
+	);
 
 	const markPx = isSpot ? spotCtxEvent?.ctx?.markPx : perpCtxEvent?.ctx?.markPx;
 	const pairName = market?.pairName;

@@ -1,8 +1,7 @@
 import type { ExtraAgentsResponse, MaxBuilderFeeResponse } from "@nktkas/hyperliquid";
 import { type Address, zeroAddress } from "viem";
 import { useConnection } from "wagmi";
-import { useInfoExtraAgents } from "@/lib/hyperliquid/hooks/info/useInfoExtraAgents";
-import { useInfoMaxBuilderFee } from "@/lib/hyperliquid/hooks/info/useInfoMaxBuilderFee";
+import { useInfo } from "@/lib/hyperliquid/hooks/useInfo";
 import { useHyperliquid } from "@/lib/hyperliquid/provider";
 import { useAgentWalletStorage } from "./agent-storage";
 import { isAgentApproved, isBuilderFeeApproved } from "./agent-utils";
@@ -48,12 +47,13 @@ export function useAgentStatus(): UseAgentStatusResult {
 	const hasBuilderConfig = !!builderConfig?.b;
 	const userAddress = address ?? zeroAddress;
 
-	const builderFeeQuery = useInfoMaxBuilderFee(
+	const builderFeeQuery = useInfo(
+		"maxBuilderFee",
 		{ user: userAddress, builder: builderConfig?.b ?? zeroAddress },
 		{ enabled: !!address && hasBuilderConfig },
 	);
 
-	const extraAgentsQuery = useInfoExtraAgents({ user: userAddress }, { enabled: !!address });
+	const extraAgentsQuery = useInfo("extraAgents", { user: userAddress }, { enabled: !!address });
 
 	const isLoading = builderFeeQuery.isLoading || extraAgentsQuery.isLoading;
 	const requirements = deriveRequirements(

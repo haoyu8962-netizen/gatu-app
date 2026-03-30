@@ -10,8 +10,7 @@ import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
 import { getAvgPrice } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration, formatNumber, formatPrice } from "@/lib/format";
-import { useMarkets } from "@/lib/hyperliquid";
-import { useSubTwapStates } from "@/lib/hyperliquid/hooks/subscription";
+import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
@@ -39,7 +38,8 @@ export function TwapTab() {
 	const { address, isConnected } = useConnection();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
-	const { data: twapStatesEvent } = useSubTwapStates(
+	const { data: twapStatesEvent } = useSubscription(
+		"twapStates",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);

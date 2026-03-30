@@ -14,7 +14,7 @@ import {
 import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
-import { useSubAllMids } from "@/lib/hyperliquid/hooks/subscription";
+import { useSubscription } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useSwapModalActions } from "@/stores/use-global-modal-store";
@@ -49,7 +49,7 @@ export function MobileBalancesTab({ className }: Props) {
 	});
 
 	const { perpSummary, spotBalances, isLoading, hasError } = useAccountBalances();
-	const { data: allMidsEvent } = useSubAllMids({ dex: HL_ALL_DEXS }, { enabled: isConnected });
+	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const mids = allMidsEvent?.mids;
 
 	const balances = useMemo(() => getBalanceRows(perpSummary, spotBalances), [perpSummary, spotBalances]);

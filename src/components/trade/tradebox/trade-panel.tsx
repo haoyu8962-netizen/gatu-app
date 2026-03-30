@@ -13,9 +13,13 @@ import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { cn } from "@/lib/cn";
-import { useAgentRegistration, useAgentStatus, useSelectedMarketInfo, useUserPositions } from "@/lib/hyperliquid";
-import { useExchangeOrder } from "@/lib/hyperliquid/hooks/exchange/useExchangeOrder";
-import { useExchangeTwapOrder } from "@/lib/hyperliquid/hooks/exchange/useExchangeTwapOrder";
+import {
+	useAgentRegistration,
+	useAgentStatus,
+	useExchange,
+	useSelectedMarketInfo,
+	useUserPositions,
+} from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { clampInt, isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
@@ -77,8 +81,8 @@ export function TradePanel() {
 
 	const { isReady: isAgentReady, isLoading: isAgentLoading } = useAgentStatus();
 	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
-	const { mutateAsync: placeOrder, isPending: isSubmittingOrder } = useExchangeOrder();
-	const { mutateAsync: placeTwapOrder, isPending: isSubmittingTwap } = useExchangeTwapOrder();
+	const { mutateAsync: placeOrder, isPending: isSubmittingOrder } = useExchange("order");
+	const { mutateAsync: placeTwapOrder, isPending: isSubmittingTwap } = useExchange("twapOrder");
 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();

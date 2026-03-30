@@ -17,8 +17,7 @@ import { FALLBACK_VALUE_PLACEHOLDER, UI_TEXT } from "@/config/constants";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
-import { useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { useSubL2Book } from "@/lib/hyperliquid/hooks/subscription";
+import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { processLevels } from "@/lib/trade/orderbook";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { OrderbookRow } from "../orderbook/orderbook-row";
@@ -84,7 +83,8 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 	const name = selectedMarket?.name ?? "";
 	const szDecimals = selectedMarket?.szDecimals ?? 4;
 
-	const { data: book, status: bookStatus } = useSubL2Book(
+	const { data: book, status: bookStatus } = useSubscription(
+		"l2Book",
 		{
 			coin: name,
 			nSigFigs: selectedOption?.nSigFigs,

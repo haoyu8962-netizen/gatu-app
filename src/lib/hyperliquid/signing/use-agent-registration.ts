@@ -4,8 +4,7 @@ import type { Address } from "viem";
 import { zeroAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { useConnection } from "wagmi";
-import { useExchangeApproveAgent } from "@/lib/hyperliquid/hooks/exchange/useExchangeApproveAgent";
-import { useExchangeApproveBuilderFee } from "@/lib/hyperliquid/hooks/exchange/useExchangeApproveBuilderFee";
+import { useExchange } from "@/lib/hyperliquid/hooks/useExchange";
 import { useHyperliquid } from "@/lib/hyperliquid/provider";
 import { useAgentWalletActions } from "./agent-storage";
 import { convertFeeToPercentageString } from "./agent-utils";
@@ -41,8 +40,8 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	const { setAgent, clearAgent } = useAgentWalletActions();
 
 	const agentStatus = useAgentStatus();
-	const approveBuilderFee = useExchangeApproveBuilderFee();
-	const approveAgent = useExchangeApproveAgent();
+	const approveBuilderFee = useExchange("approveBuilderFee");
+	const approveAgent = useExchange("approveAgent");
 
 	const registration = useMutation({
 		mutationKey: ["hl", "registration", address],

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
-import { useSelectedMarketInfo, useSubTrades } from "@/lib/hyperliquid";
+import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { getExplorerTxUrl } from "@/lib/hyperliquid/explorer";
 import { type ProcessedTrade, processTrades } from "@/lib/trade/trades";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
@@ -51,7 +51,7 @@ export function TradesPanel() {
 		data: trades,
 		status,
 		error,
-	} = useSubTrades(params, {
+	} = useSubscription("trades", params, {
 		enabled: !!selectedMarket && !!subscriptionCoin,
 	});
 	const { showOrderbookInQuote } = useGlobalSettings();

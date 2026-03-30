@@ -5,8 +5,7 @@ import {
 	ORDER_FEE_RATE_SPOT_TAKER,
 	ORDER_FEE_RATE_TAKER,
 } from "@/config/constants";
-import type { MarketKind } from "@/lib/hyperliquid";
-import { useInfoUserFees } from "@/lib/hyperliquid/hooks/info/useInfoUserFees";
+import { type MarketKind, useInfo } from "@/lib/hyperliquid";
 
 interface FeeRates {
 	takerRate: number;
@@ -25,7 +24,7 @@ export function useFeeRates(marketKind?: MarketKind): FeeRates {
 	const defaults = getDefaults(marketKind);
 	const user = address ?? "";
 
-	const { data } = useInfoUserFees({ user }, { enabled: isConnected && Boolean(address) });
+	const { data } = useInfo("userFees", { user }, { enabled: isConnected && Boolean(address) });
 
 	if (!data) return defaults;
 

@@ -14,8 +14,7 @@ import { useAssetLeverage } from "@/hooks/trade/use-asset-leverage";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
-import { useAgentRegistration, useAgentStatus, useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { useExchangeOrder } from "@/lib/hyperliquid/hooks/exchange/useExchangeOrder";
+import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { floorToDecimals, formatDecimalFloor, getValueColorClass, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	getTabsOrderType,
@@ -88,7 +87,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 	const [walletDialogOpen, setWalletDialogOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 
-	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchangeOrder();
+	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
 
 	const tabsOrderType = getTabsOrderType(orderType);
 	const isAdvancedTab = tabsOrderType === "advanced";

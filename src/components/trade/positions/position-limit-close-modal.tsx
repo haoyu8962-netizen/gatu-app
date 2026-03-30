@@ -11,8 +11,7 @@ import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
-import { useExchangeOrder } from "@/lib/hyperliquid/hooks/exchange/useExchangeOrder";
-import { useSubActiveAssetCtx } from "@/lib/hyperliquid/hooks/subscription/useSubActiveAssetCtx";
+import { useExchange, useSubscription } from "@/lib/hyperliquid";
 import { formatDecimalFloor, getValueColorClass, isPositive, toNumber } from "@/lib/trade/numbers";
 import { AssetDisplay } from "../components/asset-display";
 import { TradingActionButton } from "../components/trading-action-button";
@@ -39,8 +38,9 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 	const [priceInput, setPriceInput] = useState("");
 	const [sizeInput, setSizeInput] = useState("");
 
-	const { mutateAsync: placeOrder, isPending: isSubmitting, error, reset: resetError } = useExchangeOrder();
-	const { data: liveCtxEvent } = useSubActiveAssetCtx(
+	const { mutateAsync: placeOrder, isPending: isSubmitting, error, reset: resetError } = useExchange("order");
+	const { data: liveCtxEvent } = useSubscription(
+		"activeAssetCtx",
 		{ coin: position?.coin ?? "" },
 		{ enabled: open && !!position?.coin },
 	);

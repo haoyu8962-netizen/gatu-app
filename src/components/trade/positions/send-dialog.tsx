@@ -13,8 +13,7 @@ import { type BalanceRow, getAvailableFromTotals, getPerpAvailable } from "@/dom
 import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
-import { useExchangeSendAsset } from "@/lib/hyperliquid/hooks/exchange";
-import { useExchangeSpotSend } from "@/lib/hyperliquid/hooks/exchange/useExchangeSpotSend";
+import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { AssetDisplay } from "../components/asset-display";
@@ -41,8 +40,8 @@ export function SendDialog({
 	const [error, setError] = useState<string | null>(null);
 
 	const { getToken } = useSpotTokens();
-	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchangeSendAsset();
-	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchangeSpotSend();
+	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset");
+	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend");
 	const { perpSummary, spotBalances } = useAccountBalances();
 
 	const isPending = isSendAssetPending || isSpotSendPending;

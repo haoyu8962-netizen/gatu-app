@@ -1,7 +1,7 @@
 import { useConnection } from "wagmi";
 import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
-import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
+import { useSubscription } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, useMobileActiveTab } from "@/stores/use-global-settings-store";
 import { MobileAccountView } from "./mobile-account-view";
@@ -23,7 +23,11 @@ export function MobileTerminal({ className }: Props) {
 	const { address, isConnected } = useConnection();
 	const { perpPositions } = useAccountBalances();
 
-	const { data: ordersEvent } = useSubOpenOrders({ user: address ?? "0x0" }, { enabled: isConnected && !!address });
+	const { data: ordersEvent } = useSubscription(
+		"openOrders",
+		{ user: address ?? "0x0" },
+		{ enabled: isConnected && !!address },
+	);
 
 	const positionsCount = isConnected
 		? perpPositions.reduce((count, entry) => (toNumber(entry.position.szi) ? count + 1 : count), 0)

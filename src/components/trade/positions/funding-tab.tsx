@@ -6,8 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets } from "@/lib/hyperliquid";
-import { useSubUserFundings } from "@/lib/hyperliquid/hooks/subscription";
+import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { getValueColorClass, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import { AssetDisplay } from "../components/asset-display";
 
@@ -35,7 +34,7 @@ export function FundingTab() {
 		data: fundingEvent,
 		status,
 		error,
-	} = useSubUserFundings({ user: address ?? "0x0" }, { enabled: isConnected && !!address });
+	} = useSubscription("userFundings", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
 	const markets = useMarkets();
 
 	const updates = fundingEvent?.fundings?.slice(0, 200).sort((a, b) => b.time - a.time) ?? [];

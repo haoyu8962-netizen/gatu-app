@@ -6,8 +6,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets } from "@/lib/hyperliquid";
-import { useSubUserFills } from "@/lib/hyperliquid/hooks/subscription";
+import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { getValueColorClass, toNumber } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
@@ -27,7 +26,11 @@ export function MobileHistoryTab({ className }: Props) {
 		data: fillsEvent,
 		status,
 		error,
-	} = useSubUserFills({ user: address ?? "0x0", aggregateByTime: true }, { enabled: isConnected && !!address });
+	} = useSubscription(
+		"userFills",
+		{ user: address ?? "0x0", aggregateByTime: true },
+		{ enabled: isConnected && !!address },
+	);
 
 	const fills = fillsEvent?.fills?.slice(0, 200).sort((a, b) => b.time - a.time) ?? [];
 	const headerCount = isConnected ? `${fills.length}` : FALLBACK_VALUE_PLACEHOLDER;

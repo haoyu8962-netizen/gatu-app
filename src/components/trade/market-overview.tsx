@@ -3,10 +3,8 @@ import { ArrowSquareOutIcon, FireIcon } from "@phosphor-icons/react";
 import { get24hChange, getOiUsd } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD, shortenAddress } from "@/lib/format";
-import { type SpotMarketInfo, type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { type SpotMarketInfo, type UnifiedMarketInfo, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { getExplorerTokenUrl } from "@/lib/hyperliquid/explorer";
-import { useSubActiveAssetCtx } from "@/lib/hyperliquid/hooks/subscription/useSubActiveAssetCtx";
-import { useSubActiveSpotAssetCtx } from "@/lib/hyperliquid/hooks/subscription/useSubActiveSpotAssetCtx";
 import { getValueColorClass, toBig } from "@/lib/trade/numbers";
 import { Badge } from "../ui/badge";
 import { StatBlock } from "./chart/stat-block";
@@ -39,8 +37,16 @@ export function MarketOverview() {
 	const perpCoin = selectedMarketInfo?.name ?? "";
 	const spotCoin = getSpotSubscriptionCoin(selectedMarketInfo);
 
-	const { data: perpCtxEvent } = useSubActiveAssetCtx({ coin: perpCoin }, { enabled: !!perpCoin && !isSpot });
-	const { data: spotCtxEvent } = useSubActiveSpotAssetCtx({ coin: spotCoin }, { enabled: !!spotCoin && isSpot });
+	const { data: perpCtxEvent } = useSubscription(
+		"activeAssetCtx",
+		{ coin: perpCoin },
+		{ enabled: !!perpCoin && !isSpot },
+	);
+	const { data: spotCtxEvent } = useSubscription(
+		"activeSpotAssetCtx",
+		{ coin: spotCoin },
+		{ enabled: !!spotCoin && isSpot },
+	);
 
 	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
 	const perpCtx = perpCtxEvent?.ctx;

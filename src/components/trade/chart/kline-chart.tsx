@@ -22,9 +22,8 @@ import {
 import { buildKlineStyles } from "@/lib/chart/kline-styles";
 import { ORDER_LINE_NAME, registerOrderLineOverlay } from "@/lib/chart/order-line-overlay";
 import { cn } from "@/lib/cn";
+import { useSubscription } from "@/lib/hyperliquid";
 import { getInfoClient } from "@/lib/hyperliquid/clients";
-import { useSubCandle } from "@/lib/hyperliquid/hooks/subscription/useSubCandle";
-import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription/useSubOpenOrders";
 
 const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -133,7 +132,11 @@ export function KlineChart({ symbol = "", theme = "dark", yAxisInside = false }:
 		};
 	}, [symbol, theme, activeInterval, activeChartType, yAxisInside]);
 
-	const candleData = useSubCandle({ coin: symbol, interval: activeInterval.candleInterval }, { enabled: !!symbol });
+	const candleData = useSubscription(
+		"candle",
+		{ coin: symbol, interval: activeInterval.candleInterval },
+		{ enabled: !!symbol },
+	);
 
 	useEffect(() => {
 		const chart = chartRef.current;
@@ -146,7 +149,11 @@ export function KlineChart({ symbol = "", theme = "dark", yAxisInside = false }:
 		chart.updateData(klineData);
 	}, [candleData.data]);
 
-	const { data: openOrdersEvent } = useSubOpenOrders({ user: address ?? "0x0" }, { enabled: isConnected && !!address });
+	const { data: openOrdersEvent } = useSubscription(
+		"openOrders",
+		{ user: address ?? "0x0" },
+		{ enabled: isConnected && !!address },
+	);
 
 	useEffect(() => {
 		const chart = chartRef.current;

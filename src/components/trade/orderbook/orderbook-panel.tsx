@@ -10,7 +10,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getBaseQuoteFromPairName, getPercent } from "@/domain/market";
 import { formatNumber } from "@/lib/format";
-import { useSelectedMarketInfo, useSubL2Book } from "@/lib/hyperliquid";
+import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import {
 	getMaxTotal,
@@ -39,7 +39,7 @@ export function OrderbookPanel() {
 		[selectedMarket?.name, selectedOption?.mantissa, selectedOption?.nSigFigs],
 	);
 
-	const { data: orderbook, status: orderbookStatus } = useSubL2Book(subscriptionParams, {
+	const { data: orderbook, status: orderbookStatus } = useSubscription("l2Book", subscriptionParams, {
 		enabled: !!selectedMarket?.name,
 	});
 

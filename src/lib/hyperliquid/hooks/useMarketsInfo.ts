@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useSelectedMarket } from "@/stores/use-market-store";
+import type { AllDexsAssetCtxs, DexAssetCtx, SpotAssetCtx } from "@/types/hyperliquid";
 import type { BuilderPerpMarket, PerpMarket, SpotMarket } from "../markets/types";
 import { useMarkets } from "../markets/use-markets";
 import { useMarketsInfoContext } from "./MarketsInfoProvider";
-import type { AllDexsAssetCtxs, DexAssetCtx } from "./subscription/useSubAllDexsAssetCtxs";
-import { useSubAllDexsAssetCtxs } from "./subscription/useSubAllDexsAssetCtxs";
-import type { SpotAssetCtx } from "./subscription/useSubSpotAssetCtxs";
-import { useSubSpotAssetCtxs } from "./subscription/useSubSpotAssetCtxs";
+import { useSubscription } from "./useSubscription";
 
 export type PerpMarketInfo = PerpMarket & Partial<DexAssetCtx>;
 export type SpotMarketInfo = SpotMarket & Partial<SpotAssetCtx> & Partial<DexAssetCtx>;
@@ -72,11 +70,11 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 	const spotSubscriptionEnabled = useSubscriptionWarmWindow(needsSpot, subscriptionKeepAliveMs);
 
 	const markets = useMarkets();
-	const { data: allDexsCtxsEvent } = useSubAllDexsAssetCtxs({
+	const { data: allDexsCtxsEvent } = useSubscription("allDexsAssetCtxs", undefined, {
 		enabled: perpSubscriptionEnabled,
 		throttleMs: updateInterval,
 	});
-	const { data: spotCtxsEvent } = useSubSpotAssetCtxs({
+	const { data: spotCtxsEvent } = useSubscription("spotAssetCtxs", undefined, {
 		enabled: spotSubscriptionEnabled,
 		throttleMs: updateInterval,
 	});

@@ -2,7 +2,7 @@ import type { AllDexsClearinghouseStateWsEvent } from "@nktkas/hyperliquid";
 import { useMemo } from "react";
 import { useConnection } from "wagmi";
 import { toNumber } from "@/lib/trade/numbers";
-import { useSubAllDexsClearinghouseState } from "../hooks/subscription";
+import { useSubscription } from "../hooks/useSubscription";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
 type RawPosition = RawClearinghouseState["assetPositions"][number];
@@ -87,10 +87,7 @@ export function useUserPositions(): UserPositions {
 	const { address, isConnected } = useConnection();
 	const enabled = isConnected && !!address;
 
-	const { data, status } = useSubAllDexsClearinghouseState(
-		{ user: address ?? "" },
-		{ enabled },
-	);
+	const { data, status } = useSubscription("allDexsClearinghouseState", { user: address ?? "" }, { enabled });
 
 	const isLoading = enabled && (status === "subscribing" || status === "idle");
 	const hasError = status === "error";

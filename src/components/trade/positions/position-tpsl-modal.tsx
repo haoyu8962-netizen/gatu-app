@@ -9,7 +9,7 @@ import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
-import { useExchangeOrder } from "@/lib/hyperliquid/hooks/exchange/useExchangeOrder";
+import { useExchange } from "@/lib/hyperliquid";
 import { getValueColorClass, isPositive, toNumber } from "@/lib/trade/numbers";
 import { validateSlPrice, validateTpPrice } from "@/lib/trade/tpsl";
 import { AssetDisplay } from "../components/asset-display";
@@ -42,7 +42,7 @@ export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
 	const [tpPriceInput, setTpPriceInput] = useState("");
 	const [slPriceInput, setSlPriceInput] = useState("");
 
-	const { mutateAsync: placeOrder, isPending: isSubmitting, error, reset: resetError } = useExchangeOrder();
+	const { mutateAsync: placeOrder, isPending: isSubmitting, error, reset: resetError } = useExchange("order");
 
 	useEffect(() => {
 		if (open && position) {

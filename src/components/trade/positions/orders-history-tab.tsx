@@ -7,8 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets } from "@/lib/hyperliquid";
-import { useSubUserHistoricalOrders } from "@/lib/hyperliquid/hooks/subscription";
+import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { getSideClass, getSideLabel } from "@/lib/trade/open-orders";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
@@ -41,7 +40,7 @@ export function OrdersHistoryTab() {
 		data: historicalOrdersEvent,
 		status,
 		error,
-	} = useSubUserHistoricalOrders({ user: address ?? "0x0" }, { enabled: isConnected && !!address });
+	} = useSubscription("userHistoricalOrders", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
 
 	const orders =
 		historicalOrdersEvent?.orderHistory

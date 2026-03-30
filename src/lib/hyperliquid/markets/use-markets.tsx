@@ -1,10 +1,7 @@
 import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { getIconUrlFromMarketName, getTokenDisplayName, getUnderlyingAsset } from "@/domain/market/tokens";
-import { useInfoAllPerpMetas } from "../hooks/info/useInfoAllPerpMetas";
-import { useInfoMeta } from "../hooks/info/useInfoMeta";
-import { useInfoPerpDexs } from "../hooks/info/useInfoPerpDexs";
-import { useInfoSpotMeta } from "../hooks/info/useInfoSpotMeta";
+import { useInfo } from "../hooks/useInfo";
 import {
 	getBuilderPerpAssetId,
 	getBuilderPerpDisplayName,
@@ -170,17 +167,29 @@ interface Props {
 }
 
 export function MarketsProvider({ children }: Props) {
-	const { data: perpMeta, isLoading: perpLoading, error: perpError } = useInfoMeta({}, { refetchInterval: Infinity });
+	const {
+		data: perpMeta,
+		isLoading: perpLoading,
+		error: perpError,
+	} = useInfo("meta", {}, { refetchInterval: Infinity });
 
-	const { data: spotMeta, isLoading: spotLoading, error: spotError } = useInfoSpotMeta({ refetchInterval: Infinity });
+	const {
+		data: spotMeta,
+		isLoading: spotLoading,
+		error: spotError,
+	} = useInfo("spotMeta", undefined, { refetchInterval: Infinity });
 
-	const { data: perpDexs, isLoading: dexsLoading, error: dexsError } = useInfoPerpDexs({ refetchInterval: Infinity });
+	const {
+		data: perpDexs,
+		isLoading: dexsLoading,
+		error: dexsError,
+	} = useInfo("perpDexs", undefined, { refetchInterval: Infinity });
 
 	const {
 		data: allPerpMetas,
 		isLoading: allMetasLoading,
 		error: allMetasError,
-	} = useInfoAllPerpMetas({ refetchInterval: Infinity });
+	} = useInfo("allPerpMetas", undefined, { refetchInterval: Infinity });
 
 	const isLoading = perpLoading || spotLoading || dexsLoading || allMetasLoading;
 	const error = perpError ?? spotError ?? dexsError ?? allMetasError ?? null;

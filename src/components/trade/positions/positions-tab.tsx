@@ -11,10 +11,8 @@ import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets, useUserPositions } from "@/lib/hyperliquid";
+import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import type { Position } from "@/lib/hyperliquid/account/use-user-positions";
-import { useExchangeOrder } from "@/lib/hyperliquid/hooks/exchange/useExchangeOrder";
-import { useSubAllMids, useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
 import type { Markets } from "@/lib/hyperliquid/markets";
 import { getValueColorClass, isPositive, toBig } from "@/lib/trade/numbers";
 import { isStopOrder, isTakeProfitOrder } from "@/lib/trade/open-orders";
@@ -302,16 +300,17 @@ export function PositionsTab() {
 	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
 	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
 
-	const { mutate: placeOrder, isPending: isClosing, error: closeError, reset: resetCloseError } = useExchangeOrder();
+	const { mutate: placeOrder, isPending: isClosing, error: closeError, reset: resetCloseError } = useExchange("order");
 
 	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
 
 	const markets = useMarkets();
 	const allMidsEnabled = isConnected && positions.length > 0;
-	const { data: allMidsEvent } = useSubAllMids({ dex: HL_ALL_DEXS }, { enabled: allMidsEnabled });
+	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: allMidsEnabled });
 	const mids = allMidsEvent?.mids;
 
-	const { data: openOrdersEvent } = useSubOpenOrders(
+	const { data: openOrdersEvent } = useSubscription(
+		"openOrders",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);

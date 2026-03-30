@@ -9,9 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets } from "@/lib/hyperliquid";
-import { useExchangeCancel } from "@/lib/hyperliquid/hooks/exchange/useExchangeCancel";
-import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
+import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import type { MarketKind } from "@/lib/hyperliquid/markets/types";
 import { getOrderTypeConfig, getOrderValue, getSideClass, getSideLabel, type OpenOrder } from "@/lib/trade/open-orders";
 import { useExchangeScope } from "@/providers/exchange-scope";
@@ -44,7 +42,7 @@ export function OrdersTab() {
 		data: openOrdersEvent,
 		status,
 		error,
-	} = useSubOpenOrders({ user: address ?? "0x0" }, { enabled: isConnected && !!address });
+	} = useSubscription("openOrders", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
 	const markets = useMarkets();
 	const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(() => new Set());
 
@@ -53,7 +51,7 @@ export function OrdersTab() {
 		isPending: isCancelling,
 		error: cancelError,
 		reset: resetCancelError,
-	} = useExchangeCancel();
+	} = useExchange("cancel");
 
 	const openOrders = openOrdersEvent?.orders ?? [];
 	const headerCount = isConnected ? selectedOrderIds.size : FALLBACK_VALUE_PLACEHOLDER;

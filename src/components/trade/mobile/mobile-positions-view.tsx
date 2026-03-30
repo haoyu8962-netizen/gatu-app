@@ -5,7 +5,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAccountBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
-import { useSubOpenOrders } from "@/lib/hyperliquid/hooks/subscription";
+import { useSubscription } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
 import { MobileBalancesTab } from "./mobile-balances-tab";
@@ -40,7 +40,8 @@ export function MobilePositionsView({ className }: Props) {
 	const { address, isConnected } = useConnection();
 	const { perpPositions, isLoading: isLoadingState } = useAccountBalances();
 
-	const { data: ordersEvent, status: ordersStatus } = useSubOpenOrders(
+	const { data: ordersEvent, status: ordersStatus } = useSubscription(
+		"openOrders",
 		{ user: address ?? "0x0" },
 		{ enabled: isConnected && !!address },
 	);
