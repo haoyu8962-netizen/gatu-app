@@ -1,5 +1,6 @@
 export type {
 	BuilderPerpMarket,
+	MarketKind,
 	Markets,
 	PerpAsset,
 	PerpMarket,

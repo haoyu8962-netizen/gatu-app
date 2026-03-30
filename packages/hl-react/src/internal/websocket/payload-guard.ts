@@ -22,7 +22,7 @@ export function estimatePayloadSizeBytes(value: unknown, stopAtBytes: number = N
 		if (value === null) {
 			size += 4;
 		} else if (valueType === "string") {
-			size += value.length * 2;
+			size += (value as string).length * 2;
 		} else if (valueType === "number" || valueType === "bigint") {
 			size += 8;
 		} else if (valueType === "boolean") {

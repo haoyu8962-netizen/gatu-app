@@ -36,7 +36,7 @@ export function toNumberOrZero(value: Numeric): number {
 	return toNumber(value) ?? 0;
 }
 
-export function isPositive(value: Numeric): boolean {
+export function isPositive(value: Numeric): value is number {
 	const num = toNumber(value);
 	return num !== null && num > 0;
 }

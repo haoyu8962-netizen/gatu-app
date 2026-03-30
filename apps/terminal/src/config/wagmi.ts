@@ -1,4 +1,5 @@
-import { type Chain, createConfig, http } from "wagmi";
+import type { Chain } from "viem";
+import { createConfig, http } from "wagmi";
 import {
 	arbitrum,
 	aurora,

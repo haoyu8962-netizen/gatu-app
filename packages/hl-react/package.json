@@ -8,9 +8,13 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./store": "./src/store.ts",
+		"./markets/types": "./src/markets/types.ts",
 		"./registries/*": "./src/registries/*.ts",
 		"./internal/websocket/*": "./src/internal/websocket/*.ts",
 		"./internal/circular-buffer": "./src/internal/circular-buffer/index.ts"
+	},
+	"devDependencies": {
+		"@types/react": "^19.2.0"
 	},
 	"peerDependencies": {
 		"@nktkas/hyperliquid": "^0.31.0",
