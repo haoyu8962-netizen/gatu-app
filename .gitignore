@@ -27,12 +27,6 @@ src/locales/**/messages.js
 # OS files
 .DS_Store
 
-# Vercel
-.vercel
-
-# Claude Code worktrees (local temp dirs)
-.claude/worktrees/
-
 # Local/personal files
 *.local
 count.txt
