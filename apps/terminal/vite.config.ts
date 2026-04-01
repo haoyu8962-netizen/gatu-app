@@ -45,10 +45,6 @@ const config = defineConfig({
   },
   plugins: [
     nitro({
-      preset: 'vercel',
-      output: {
-        dir: '../../.vercel/output',
-      },
       compressPublicAssets: true,
       routeRules: {
         '/assets/**': {

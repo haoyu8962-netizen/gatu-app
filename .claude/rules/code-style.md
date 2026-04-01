@@ -10,10 +10,7 @@ description: Code style rules
 - **No index.ts barrel files** - Import directly from files
 - **Name props interface `Props`** - Always use `interface Props`, not `type`
 - **Prefer function declarations** - `function handleClick()` over arrows
-- **Import UI from `@/anvil`** - Not `@/components/ui/`
-- **Use `cn()` for classes** - From `@/anvil/utils` (or `@/lib/cn`) for conditional classes
-- **Default size `sm`** - All Anvil components default to `sm` size
-- **Icon size 16** - Use `<Icon size={16} />` for `sm`-sized components
+- **Use `cn()` for classes** - From `@/lib/cn` for conditional classes
 - **Keep components clean** - Move calculations to `lib/` utilities
 - **Organize utils by domain** - `lib/trade/`, `lib/chart/`, etc.
 - **Minimize useEffect** - Only for true side effects

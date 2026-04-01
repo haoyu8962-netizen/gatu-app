@@ -12,6 +12,8 @@ import "@/lib/i18n";
 const network = getNetwork();
 const env = network === "testnet" ? "Testnet" : "Mainnet";
 
+const isServer = typeof document === "undefined";
+
 export function getRootProviderContext() {
 	const queryClient = new QueryClient();
 	return {
@@ -20,6 +22,14 @@ export function getRootProviderContext() {
 }
 
 export function RootProvider({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
+	if (isServer) {
+		return (
+			<QueryClientProvider client={queryClient}>
+				<I18nProvider i18n={i18n}>{children}</I18nProvider>
+			</QueryClientProvider>
+		);
+	}
+
 	return (
 		<WagmiProvider config={config}>
 			<QueryClientProvider client={queryClient}>

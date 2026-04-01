@@ -1,3 +1,4 @@
+import { Badge } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, FireIcon } from "@phosphor-icons/react";
 import { get24hChange, getOiUsd } from "@/domain/market";
@@ -11,7 +12,6 @@ import {
 	useSubscription,
 } from "@/lib/hyperliquid";
 import { getValueColorClass, toBig } from "@/lib/trade/numbers";
-import { Badge } from "../ui/badge";
 import { StatBlock } from "./chart/stat-block";
 
 function getLabelForMarketKind(market: UnifiedMarketInfo | undefined): string {
@@ -67,17 +67,18 @@ export function MarketOverview() {
 	const spotTokenAddress = getSpotTokenAddress(selectedMarketInfo);
 
 	return (
-		<div className="hidden md:flex items-center gap-4 text-3xs">
+		<div className="hidden md:flex items-center gap-4 text-xs">
 			{getLabelForMarketKind(selectedMarketInfo) ? (
-				<Badge className="uppercase text-4xs" variant="neutral">
+				<Badge className="uppercase" tone="neutral">
 					{getLabelForMarketKind(selectedMarketInfo)}
 				</Badge>
 			) : null}
-			<StatBlock
-				label={isSpot ? t`PRICE` : t`MARK`}
-				value={formatUSD(markPx, { compact: false })}
-				valueClass={getValueColorClass(change24h)}
-			/>
+			<div className="flex items-center gap-1">
+				<span className="text-2xs text-text-weak uppercase tracking-tight">{isSpot ? t`PRICE` : t`MARK`}</span>
+				<span className={cn("text-sm tabular-nums font-semibold", getValueColorClass(change24h))}>
+					{formatUSD(markPx, { compact: false })}
+				</span>
+			</div>
 			<StatBlock
 				label={t`24H`}
 				value={change24h !== null ? formatPercent(change24h / 100, { signDisplay: "exceptZero" }) : "—"}
@@ -95,7 +96,7 @@ export function MarketOverview() {
 					/>
 					<div className="flex items-center gap-1">
 						<FireIcon className={cn("size-3", getValueColorClass(fundingNum))} />
-						<span className={cn("tabular-nums", getValueColorClass(fundingNum))}>
+						<span className={cn("tabular-nums font-medium", getValueColorClass(fundingNum))}>
 							{formatPercent(fundingNum, {
 								minimumFractionDigits: 4,
 								signDisplay: "exceptZero",
@@ -116,9 +117,9 @@ export function MarketOverview() {
 					href={getExplorerTokenUrl(spotTokenAddress)}
 					target="_blank"
 					rel="noopener noreferrer"
-					className="flex items-center gap-1 text-text-950 hover:text-text-950 transition-colors"
+					className="flex items-center gap-1 text-text-strong hover:text-text-strong transition-colors"
 				>
-					<span className="font-mono">{shortenAddress(spotTokenAddress, 4, 4)}</span>
+					<span className="font-sans">{shortenAddress(spotTokenAddress, 4, 4)}</span>
 					<ArrowSquareOutIcon className="size-3" />
 				</a>
 			)}

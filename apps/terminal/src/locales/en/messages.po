@@ -95,8 +95,8 @@ msgid "Add TP/SL"
 msgstr "Add TP/SL"
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
-msgid "Advanced order types"
-msgstr "Advanced order types"
+#~ msgid "Advanced order types"
+#~ msgstr "Advanced order types"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -338,8 +338,6 @@ msgstr "Chart"
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
-#: src/components/ui/dialog.tsx
-#: src/components/ui/sheet.tsx
 msgid "Close"
 msgstr "Close"
 
@@ -485,6 +483,10 @@ msgid "Copied to clipboard"
 msgstr "Copied to clipboard"
 
 #: src/components/trade/header/user-menu.tsx
+msgid "Copied!"
+msgstr "Copied!"
+
+#: src/components/trade/header/user-menu.tsx
 msgid "Copy Address"
 msgstr "Copy Address"
 
@@ -600,8 +602,8 @@ msgid "Display Language"
 msgstr "Display Language"
 
 #: src/components/ui/sidebar.tsx
-msgid "Displays the mobile sidebar."
-msgstr "Displays the mobile sidebar."
+#~ msgid "Displays the mobile sidebar."
+#~ msgstr "Displays the mobile sidebar."
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "Docs"
@@ -1336,8 +1338,8 @@ msgid "No route available. Try a different amount or asset."
 msgstr "No route available. Try a different amount or asset."
 
 #: src/components/trade/components/token-selector-dropdown.tsx
-msgid "No tokens available"
-msgstr "No tokens available"
+#~ msgid "No tokens available"
+#~ msgstr "No tokens available"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "No tokens with value found across supported chains"
@@ -1533,8 +1535,8 @@ msgid "Position"
 msgstr "Position"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Position actions"
-msgstr "Position actions"
+#~ msgid "Position actions"
+#~ msgstr "Position actions"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1713,8 +1715,8 @@ msgid "Select order"
 msgstr "Select order"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
-msgid "Select order book aggregation"
-msgstr "Select order book aggregation"
+#~ msgid "Select order book aggregation"
+#~ msgstr "Select order book aggregation"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Select signing mode"
@@ -1844,8 +1846,8 @@ msgstr "Show Values in Quote Asset"
 #~ msgstr "Side"
 
 #: src/components/ui/sidebar.tsx
-msgid "Sidebar"
-msgstr "Sidebar"
+#~ msgid "Sidebar"
+#~ msgstr "Sidebar"
 
 #: src/lib/trade/use-button-content.ts
 msgid "Sign in wallet..."
@@ -1923,8 +1925,8 @@ msgid "Sort by {0}"
 msgstr "Sort by {0}"
 
 #: src/components/ui/virtual-table.tsx
-msgid "Sort by {headerLabel}"
-msgstr "Sort by {headerLabel}"
+#~ msgid "Sort by {headerLabel}"
+#~ msgstr "Sort by {headerLabel}"
 
 #. placeholder {0}: sorting[0].id
 #: src/components/trade/chart/token-selector.tsx
@@ -2164,8 +2166,8 @@ msgstr "To Spot"
 #: src/components/ui/sidebar.tsx
 #: src/components/ui/sidebar.tsx
 #: src/components/ui/sidebar.tsx
-msgid "Toggle Sidebar"
-msgstr "Toggle Sidebar"
+#~ msgid "Toggle Sidebar"
+#~ msgstr "Toggle Sidebar"
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Toggle size mode"

@@ -1,35 +1,36 @@
-import type * as React from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-interface InfoRowProps extends Omit<React.ComponentProps<"div">, "children"> {
+interface InfoRowProps {
 	label: ReactNode;
 	value: ReactNode;
 	valueClassName?: string;
 	labelClassName?: string;
+	className?: string;
 }
 
-function InfoRow({ label, value, valueClassName, labelClassName, className, ...props }: InfoRowProps) {
+export function InfoRow({ label, value, valueClassName, labelClassName, className }: InfoRowProps) {
 	return (
-		<div data-slot="info-row" className={cn("flex items-center justify-between px-2 py-1.5", className)} {...props}>
-			<span data-slot="info-row-label" className={cn("text-text-600", labelClassName)}>
+		<div className={cn("flex items-center justify-between px-2 py-1.5", className)} data-slot="info-row">
+			<span className={cn("text-text-weak", labelClassName)} data-slot="info-row-label">
 				{label}
 			</span>
-			<span data-slot="info-row-value" className={cn("tabular-nums text-text-950", valueClassName)}>
+			<span className={cn("text-text-strong tabular-nums", valueClassName)} data-slot="info-row-value">
 				{value}
 			</span>
 		</div>
 	);
 }
 
-function InfoRowGroup({ className, ...props }: React.ComponentProps<"div">) {
-	return (
-		<div
-			data-slot="info-row-group"
-			className={cn("divide-y divide-border-200 text-2xs tracking-[0.5px]", className)}
-			{...props}
-		/>
-	);
+interface InfoRowGroupProps {
+	children: ReactNode;
+	className?: string;
 }
 
-export { InfoRow, InfoRowGroup };
+export function InfoRowGroup({ children, className }: InfoRowGroupProps) {
+	return (
+		<div className={cn("divide-y divide-stroke-weak text-xs tracking-[0.5px]", className)} data-slot="info-row-group">
+			{children}
+		</div>
+	);
+}

@@ -1,8 +1,8 @@
+import { Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
-import { Button } from "@/components/ui/button";
 import { DEFAULT_QUOTE_TOKEN, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/constants";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
@@ -440,9 +440,9 @@ export function TradePanel() {
 	// const actionButtonClass = getActionButtonClass(buttonContent.variant);
 
 	return (
-		<div className="min-h-0 flex flex-col overflow-hidden bg-surface-execution">
+		<div className="min-h-0 flex flex-col overflow-hidden bg-bg-overlay">
 			{capabilities.isLeveraged && (
-				<div className="p-2 border-b border-border-200/60 flex items-center justify-between">
+				<div className="p-2 border-b border-stroke-weak/60 flex items-center justify-between gap-2 min-w-0">
 					{capabilities.hasMarginMode ? (
 						<MarginModeToggle
 							mode={marginMode}
@@ -490,21 +490,23 @@ export function TradePanel() {
 
 				<div className="space-y-2">
 					{validation.errors.length > 0 && isConnected && availableBalance > 0 && (
-						<div className="text-4xs text-market-down-600">{validation.errors.join(" • ")}</div>
+						<div className="text-xs text-text-error">{validation.errors.join(" • ")}</div>
 					)}
 
-					{approvalError && <div className="text-4xs text-market-down-600">{approvalError}</div>}
+					{approvalError && <div className="text-xs text-text-error">{approvalError}</div>}
 
 					<Button
-						variant="contained"
-						tone="accent"
-						size="lg"
+						variant="filled"
+						intent={buttonContent.variant === "buy" ? "brand" : buttonContent.variant === "sell" ? "error" : "brand"}
 						onClick={buttonContent.action}
 						disabled={buttonContent.disabled}
-						className={cn("w-full")}
+						className={cn(
+							"w-full",
+							buttonContent.variant === "buy" && "bg-fill-success-strong hover:bg-fill-success-strong/90",
+						)}
 						aria-label={buttonContent.text}
+						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
 					>
-						{(isSubmitting || isRegistering) && <SpinnerGapIcon className="size-3 animate-spin" />}
 						{buttonContent.text}
 					</Button>
 				</div>
