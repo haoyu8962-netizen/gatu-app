@@ -6,8 +6,8 @@ Fully replace HyperTerminal's current UI component library and design token syst
 
 ## Source
 
-- **Anvil repo:** `/Users/ankit/Documents/make/practical-ui-design-system/src/components/ui/` (+ `index.ts`, `config.ts`, `types.ts`, `utils.ts`)
-- **Anvil tokens:** `/Users/ankit/Documents/make/practical-ui-design-system/src/styles/globals.css`
+- **UI package:** `packages/ui/src/` (`@hypeterminal/ui`)
+- **UI tokens:** `packages/ui/src/globals.css`
 - **Target:** `/Users/ankit/Documents/make/hypeterminal/apps/terminal/src/`
 
 ---
