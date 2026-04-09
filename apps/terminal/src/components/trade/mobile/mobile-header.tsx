@@ -19,7 +19,7 @@ export function MobileHeader({ className }: Props) {
 		<header
 			className={cn(
 				"pt-[env(safe-area-inset-top)]",
-				"sticky top-0 z-40 bg-bg-sunken/95 backdrop-blur-sm",
+				"sticky top-0 z-40 bg-bg-raised/95 backdrop-blur-sm",
 				"border-b border-stroke-weak/60",
 				className,
 			)}

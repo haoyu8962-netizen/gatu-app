@@ -17,7 +17,7 @@ function SkeletonHeader() {
 
 function SkeletonMetricCell() {
 	return (
-		<div className="px-3 py-2 bg-bg-sunken/50">
+		<div className="px-3 py-2 bg-bg-base">
 			<Skeleton className="h-2.5 w-8 mb-1.5" />
 			<Skeleton className="h-3.5 w-14" />
 		</div>
@@ -35,7 +35,7 @@ function SkeletonFooter() {
 
 function PositionCardSkeleton() {
 	return (
-		<div className="rounded-8 border border-stroke-weak/30 bg-bg-sunken/50 animate-pulse">
+		<div className="rounded-8 border border-stroke-weak/30 bg-bg-base animate-pulse">
 			<SkeletonHeader />
 			<div className="grid grid-cols-3 gap-px bg-stroke-weak/20">
 				<SkeletonMetricCell />
@@ -57,7 +57,7 @@ function PositionCardSkeleton() {
 
 function StandardCardSkeleton() {
 	return (
-		<div className="rounded-8 border border-stroke-weak/30 bg-bg-sunken/50 animate-pulse">
+		<div className="rounded-8 border border-stroke-weak/30 bg-bg-base animate-pulse">
 			<SkeletonHeader />
 			<div className="grid grid-cols-3 gap-px bg-stroke-weak/20">
 				<SkeletonMetricCell />
@@ -71,7 +71,7 @@ function StandardCardSkeleton() {
 
 function BalanceCardSkeleton() {
 	return (
-		<div className="rounded-8 border border-stroke-weak/30 bg-bg-sunken/50 animate-pulse">
+		<div className="rounded-8 border border-stroke-weak/30 bg-bg-base animate-pulse">
 			<SkeletonHeader />
 			<div className="grid grid-cols-2 gap-px bg-stroke-weak/20">
 				<SkeletonMetricCell />
@@ -83,7 +83,7 @@ function BalanceCardSkeleton() {
 
 function CompactCardSkeleton() {
 	return (
-		<div className="rounded-8 border border-stroke-weak/30 bg-bg-sunken/50 animate-pulse">
+		<div className="rounded-8 border border-stroke-weak/30 bg-bg-base animate-pulse">
 			<SkeletonHeader />
 			<div className="grid grid-cols-3 gap-px bg-stroke-weak/20">
 				<SkeletonMetricCell />

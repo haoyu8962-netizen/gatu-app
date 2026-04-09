@@ -10,7 +10,7 @@ import {
 	getBalanceRows,
 	getTotalUsdValue,
 } from "@/domain/trade/balances";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSubscription } from "@/lib/hyperliquid";
@@ -46,7 +46,7 @@ export function MobileBalancesTab({ className }: Props) {
 		accountType: "spot",
 	});
 
-	const { perpSummary, spotBalances, isLoading, hasError } = useAccountBalances();
+	const { perpSummary, spotBalances, isLoading, hasError } = useDefaultDexBalances();
 	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const mids = allMidsEvent?.mids;
 
@@ -120,7 +120,7 @@ export function MobileBalancesTab({ className }: Props) {
 		const pnlData = getPnl(row);
 
 		return (
-			<div key={`${row.type}-${row.asset}`} className="rounded-8 border border-stroke-weak/40 bg-bg-sunken/50">
+			<div key={`${row.type}-${row.asset}`} className="rounded-8 border border-stroke-weak/40 bg-bg-base">
 				<div className="flex items-center justify-between px-3 py-2.5 border-b border-stroke-weak/40">
 					<AssetDisplay coin={row.asset} nameClassName="text-sm font-semibold" />
 					<div className="text-right">
@@ -194,7 +194,7 @@ export function MobileBalancesTab({ className }: Props) {
 				<span className="ml-auto normal-case tracking-normal">
 					<Checkbox
 						checked={hideSmallBalances}
-						onCheckedChange={(checked) => setHideSmallBalances(Boolean(checked))}
+						onCheckedChange={(checked: boolean | "indeterminate") => setHideSmallBalances(Boolean(checked))}
 						size="sm"
 						label={t`Hide small`}
 					/>
@@ -240,7 +240,7 @@ interface MetricCellProps {
 
 function MetricCell({ label, value }: MetricCellProps) {
 	return (
-		<div className="px-3 py-2 bg-bg-sunken/50">
+		<div className="px-3 py-2 bg-bg-base">
 			<div className="text-xs text-text-weak mb-0.5">{label}</div>
 			<div className="text-xs tabular-nums font-medium">{value}</div>
 		</div>

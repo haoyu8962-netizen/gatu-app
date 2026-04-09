@@ -81,7 +81,7 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 						<div
 							key={`${order.oid}-${entry.statusTimestamp}`}
 							className={cn(
-								"rounded-8 border bg-bg-sunken/50",
+								"rounded-8 border bg-bg-base",
 								isLong ? "border-stroke-success-strong/30" : "border-stroke-error-strong/30",
 							)}
 						>
@@ -140,7 +140,7 @@ interface MetricCellProps {
 
 function MetricCell({ label, value }: MetricCellProps) {
 	return (
-		<div className="px-3 py-2 bg-bg-sunken/50">
+		<div className="px-3 py-2 bg-bg-base">
 			<div className="text-xs text-text-weak mb-0.5">{label}</div>
 			<div className="text-xs tabular-nums font-medium">{value}</div>
 		</div>

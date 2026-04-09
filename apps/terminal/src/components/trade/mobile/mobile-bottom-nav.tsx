@@ -29,7 +29,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 	return (
 		<nav
 			className={cn(
-				"fixed inset-x-0 bottom-0 z-50 bg-bg-sunken/95 backdrop-blur-sm border-t border-stroke-weak/60",
+				"fixed inset-x-0 bottom-0 z-50 bg-bg-raised/95 backdrop-blur-sm border-t border-stroke-weak/60",
 				"pb-[env(safe-area-inset-bottom)]",
 				className,
 			)}

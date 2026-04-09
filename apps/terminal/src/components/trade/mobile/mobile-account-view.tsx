@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useConnection, useDisconnect } from "wagmi";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UI_TEXT } from "@/config/constants";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
@@ -24,7 +24,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const disconnect = useDisconnect();
 
 	const { marginSummary, perpSummary, perpPositions, withdrawable, crossMaintenanceMarginUsed, isLoading } =
-		useAccountBalances();
+		useDefaultDexBalances();
 
 	const [walletDialogOpen, setWalletDialogOpen] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
@@ -52,7 +52,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 
 	if (!isConnected) {
 		return (
-			<div className={cn("flex flex-col h-full min-h-0 bg-bg-overlay/20", className)}>
+			<div className={cn("flex flex-col h-full min-h-0 bg-bg-base", className)}>
 				<div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
 					<div className="size-20 rounded-full bg-bg-raised flex items-center justify-center">
 						<WalletIcon className="size-10 text-text-weak" />
@@ -80,8 +80,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	}
 
 	return (
-		<div className={cn("flex flex-col h-full min-h-0 bg-bg-overlay/20", className)}>
-			<div className="shrink-0 px-4 py-4 border-b border-stroke-weak/60 bg-bg-overlay/30">
+		<div className={cn("flex flex-col h-full min-h-0 bg-bg-base", className)}>
+			<div className="shrink-0 px-4 py-4 border-b border-stroke-weak/60 bg-bg-raised">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<div className="size-10 rounded-full bg-fill-brand-weak flex items-center justify-center">
@@ -121,7 +121,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 
 			<div className="flex-1 min-h-0 overflow-y-auto">
 				<div className="p-2 space-y-4">
-					<div className="p-4 rounded-8 border border-stroke-weak/60 bg-bg-overlay/30">
+					<div className="p-4 rounded-8 border border-stroke-weak/60 bg-bg-raised">
 						{isLoading ? (
 							<div className="space-y-3">
 								<Skeleton className="h-4 w-20" />
@@ -203,7 +203,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, valueClass, isLoading }: StatCardProps) {
 	return (
-		<div className="p-3 rounded-8 border border-stroke-weak/40 bg-bg-overlay/20">
+		<div className="p-3 rounded-8 border border-stroke-weak/40 bg-fill-weak">
 			<div className="text-xs text-text-weak mb-1">{label}</div>
 			{isLoading ? (
 				<Skeleton className="h-6 w-20" />

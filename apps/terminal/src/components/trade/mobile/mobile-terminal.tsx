@@ -30,14 +30,14 @@ export function MobileTerminal({ className }: Props) {
 	);
 
 	const positionsCount = isConnected
-		? perpPositions.reduce((count, entry) => (toNumber(entry.position.szi) ? count + 1 : count), 0)
+		? positions.reduce((count, entry) => (toNumber(entry.szi) ? count + 1 : count), 0)
 		: 0;
 
 	const ordersCount = isConnected ? (ordersEvent?.orders?.length ?? 0) : 0;
 
 	return (
 		<div
-			className={cn("h-dvh w-full flex flex-col bg-bg-sunken text-text-strong font-sans", "overflow-hidden", className)}
+			className={cn("h-dvh w-full flex flex-col bg-bg-base text-text-strong font-sans", "overflow-hidden", className)}
 		>
 			<MobileHeader />
 			<OfflineBanner />

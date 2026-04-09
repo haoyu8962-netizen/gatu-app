@@ -40,7 +40,7 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 
 	return (
 		<div className={cn("flex flex-col flex-1 min-h-0", className)}>
-			<div className="shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-bg-overlay/30">
+			<div className="shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-bg-raised">
 				<div className="flex items-center justify-between gap-3">
 					<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
 
@@ -62,7 +62,7 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 				</div>
 			</div>
 
-			<div className="shrink-0 px-3 py-1.5 border-b border-stroke-weak/40 bg-bg-overlay/20 overflow-x-auto">
+			<div className="shrink-0 px-3 py-1.5 border-b border-stroke-weak/40 bg-bg-base overflow-x-auto">
 				<div className="flex items-center gap-4 text-xs min-w-max">
 					{isLoading ? (
 						<>

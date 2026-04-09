@@ -29,7 +29,11 @@ export function MobileOrdersTab({ className }: Props) {
 		data: openOrdersEvent,
 		status,
 		error,
-	} = useSubscription("openOrders", { user: address ?? "0x0", dex: HL_ALL_DEXS }, { enabled: isConnected && !!address });
+	} = useSubscription(
+		"openOrders",
+		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
+		{ enabled: isConnected && !!address },
+	);
 
 	const {
 		mutate: cancelOrders,
@@ -179,7 +183,7 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 	return (
 		<div
 			className={cn(
-				"rounded-8 border bg-bg-sunken/50",
+				"rounded-8 border bg-bg-base",
 				isLong ? "border-stroke-success-strong/30" : "border-stroke-error-strong/30",
 			)}
 		>
@@ -243,7 +247,7 @@ interface MetricCellProps {
 
 function MetricCell({ label, value, sub }: MetricCellProps) {
 	return (
-		<div className="px-3 py-2 bg-bg-sunken/50">
+		<div className="px-3 py-2 bg-bg-base">
 			<div className="text-xs text-text-weak mb-0.5">{label}</div>
 			<div className="text-xs tabular-nums font-medium">{value}</div>
 			{sub && <div className="text-xs text-text-weak tabular-nums">{sub}</div>}

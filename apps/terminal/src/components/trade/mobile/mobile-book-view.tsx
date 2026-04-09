@@ -104,7 +104,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 
 	return (
 		<div className={cn("flex flex-col h-full min-h-0", className)}>
-			<div className="shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-bg-overlay/30">
+			<div className="shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-bg-raised">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-1 bg-bg-raised rounded-8 p-0.5">
 						<Button
@@ -197,7 +197,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 							</div>
 						)}
 
-						<div className="shrink-0 py-2 px-3 flex items-center justify-center gap-3 border-y border-stroke-weak/40 bg-bg-overlay/30">
+						<div className="shrink-0 py-2 px-3 flex items-center justify-center gap-3 border-y border-stroke-weak/40 bg-bg-raised">
 							<span className="text-xl font-bold tabular-nums text-text-warning">
 								{typeof mid === "number" && Number.isFinite(mid) ? formatNumber(mid, 2) : FALLBACK_VALUE_PLACEHOLDER}
 							</span>

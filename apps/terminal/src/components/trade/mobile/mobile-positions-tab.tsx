@@ -85,6 +85,7 @@ function MobilePositionCard({
 	const isLong = size > 0;
 	const absSize = Math.abs(size);
 	const market = markets.getMarket(p.coin);
+	const displayName = market?.pairName ?? p.coin;
 	const assetId = market?.assetId;
 	const szDecimals = market?.szDecimals ?? 4;
 	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
@@ -140,21 +141,23 @@ function MobilePositionCard({
 	return (
 		<div
 			className={cn(
-				"rounded-8 border bg-bg-sunken/50",
+				"rounded-8 border bg-bg-base",
 				isLong ? "border-stroke-success-strong/30" : "border-stroke-error-strong/30",
 			)}
 		>
 			<div className="flex items-center justify-between px-3 py-2.5 border-b border-stroke-weak/40">
-				<Button variant="ghost" intent="neutral" size="sm" onClick={() => onSelectMarket(p.coin)}>
-					<AssetDisplay
-						coin={p.coin}
-						nameClassName="text-sm font-semibold"
-						subtitle={
-							<span className={cn("text-xs font-medium uppercase", isLong ? "text-text-success" : "text-text-error")}>
-								{isLong ? t`Long` : t`Short`}
-							</span>
-						}
-					/>
+				<Button
+					variant="ghost"
+					intent="neutral"
+					size="sm"
+					onClick={() => onSelectMarket(p.coin)}
+					aria-label={
+						isLong
+							? t`Switch to ${displayName} market, long position`
+							: t`Switch to ${displayName} market, short position`
+					}
+				>
+					<AssetDisplay coin={p.coin} nameClassName="text-sm font-semibold" />
 				</Button>
 				<div className="text-right">
 					<div className={cn("text-sm font-semibold tabular-nums", pnlClass)}>
@@ -198,7 +201,7 @@ function MobilePositionCard({
 					disabled={typeof assetId !== "number"}
 					className={cn(
 						"flex items-center gap-1 text-xs min-h-[36px] px-2 rounded-8 transition-all touch-manipulation",
-						"border border-stroke-weak/40 hover:border-fg-400",
+						"border border-stroke-weak/40 hover:border-stroke-strong",
 						"active:scale-[0.97] active:bg-bg-raised/50",
 						"disabled:opacity-50 disabled:cursor-not-allowed",
 					)}
@@ -231,7 +234,7 @@ function MobilePositionCard({
 					disabled={!canClose || isClosing}
 					className={cn(
 						"flex items-center gap-1 text-xs min-h-[36px] px-2 rounded-8 transition-all touch-manipulation",
-						"border border-stroke-weak/40 hover:border-fg-400",
+						"border border-stroke-weak/40 hover:border-stroke-strong",
 						"text-text-weak hover:text-text-strong",
 						"active:scale-[0.97] active:bg-bg-raised/50",
 						"disabled:opacity-50 disabled:cursor-not-allowed",
@@ -267,7 +270,7 @@ interface MetricCellProps {
 
 function MetricCell({ label, value, sub, valueClass }: MetricCellProps) {
 	return (
-		<div className="px-3 py-2 bg-bg-sunken/50">
+		<div className="px-3 py-2 bg-bg-base">
 			<div className="text-xs text-text-weak mb-0.5">{label}</div>
 			<div className={cn("text-xs tabular-nums font-medium", valueClass)}>{value}</div>
 			{sub && <div className="text-xs text-text-weak tabular-nums">{sub}</div>}
