@@ -11,15 +11,14 @@ import {
 } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useCallback, useMemo, useState } from "react";
+import { type ChangeEvent, useCallback, useMemo, useState } from "react";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/constants";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
 import { type BalanceRow, getAvailableFromTotals, getPerpAvailable } from "@/domain/trade/balances";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
-import { formatToken } from "@/lib/format";
 import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
@@ -48,7 +47,7 @@ export function SendDialog({
 	const { getToken } = useSpotTokens();
 	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset");
 	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend");
-	const { perpSummary, spotBalances } = useAccountBalances();
+	const { perpSummary, spotBalances } = useDefaultDexBalances();
 
 	const isPending = isSendAssetPending || isSpotSendPending;
 
@@ -92,8 +91,6 @@ export function SendDialog({
 		const balance = spotBalances?.find((b) => b.coin === selectedToken);
 		return getAvailableFromTotals(balance?.total, balance?.hold);
 	}, [accountType, perpSummary, spotBalances, selectedToken]);
-
-	const availableBalanceStr = useMemo(() => floorToString(availableBalance, decimals), [availableBalance, decimals]);
 
 	const isValidDestination = isAddress(destination);
 	const isValidAmount = isAmountWithinBalance(amount, availableBalance);
@@ -187,7 +184,7 @@ export function SendDialog({
 							<TextInput
 								placeholder={t`Destination`}
 								value={destination}
-								onChange={(e) => setDestination(e.target.value)}
+								onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
 								size="lg"
 								className={cn(
 									destination &&
@@ -216,15 +213,11 @@ export function SendDialog({
 						<NumberInput
 							placeholder={t`Amount`}
 							value={amount}
-							onChange={(e) => handleAmountChange(e.target.value)}
-							maxLabel={
-								<>
-									{t`MAX`}: {formatToken(availableBalanceStr, 2)}
-								</>
-							}
+							onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
+							maxLabel={t`MAX`}
 							onMaxClick={handleMaxClick}
 							className={cn(
-								"w-full h-10 text-sm bg-bg-sunken/50 border-stroke-weak/60 tabular-nums",
+								"w-full tabular-nums",
 								exceedsBalance(amount, availableBalance) &&
 									"border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
@@ -237,7 +230,7 @@ export function SendDialog({
 							</div>
 						)}
 
-						<Button onClick={handleSend} disabled={!canSend} size="lg" className="w-full">
+						<Button variant="filled" intent="neutral" onClick={handleSend} disabled={!canSend} className="w-full">
 							{isPending && <SpinnerGapIcon className="size-3.5 animate-spin mr-2" />}
 							<PaperPlaneTiltIcon className="size-3.5 mr-2" />
 							{isPending ? t`Sending...` : t`Send`}

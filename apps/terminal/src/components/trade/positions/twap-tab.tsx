@@ -1,11 +1,10 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { TimerIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { TimeTicker } from "@/components/ui/time-ticker";
-import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
+import { HL_ALL_DEXS } from "@/config/constants";
 import { getAvgPrice } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration, formatNumber, formatPrice } from "@/lib/format";
@@ -14,6 +13,18 @@ import { toBig } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
+import {
+	positionsPanelRowHoverClass,
+	positionsPanelRowStripeClass,
+	positionsPanelTableBodyClass,
+	positionsPanelTableCaptionRowClass,
+	positionsPanelTableCellClass,
+	positionsPanelTableHeadClass,
+	positionsPanelTableHeaderClass,
+	positionsPanelTableHeaderRowClass,
+	positionsPanelTableShellClass,
+	positionsPanelTabRootClass,
+} from "./positions-panel-table-styles";
 
 interface PlaceholderProps {
 	children: React.ReactNode;
@@ -54,7 +65,7 @@ export function TwapTab() {
 
 	const activeCount = activeOrders.length;
 
-	const headerCount = isConnected ? `${activeCount} ${t`Active`}` : FALLBACK_VALUE_PLACEHOLDER;
+	const headerCount = isConnected ? `${activeCount} ${t`active`}` : null;
 
 	const twapStatesStatus = twapStatesEvent ? "active" : "loading";
 
@@ -68,41 +79,43 @@ export function TwapTab() {
 	const placeholder = renderPlaceholder();
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col p-2">
-			<div className="text-xs uppercase tracking-wider text-text-weak mb-1.5 flex items-center gap-2">
-				<TimerIcon className="size-3" />
-				{t`TWAP Orders`}
-				<span className="text-text-brand ml-auto tabular-nums">{headerCount}</span>
+		<div className={positionsPanelTabRootClass}>
+			<div className={positionsPanelTableCaptionRowClass}>
+				{headerCount ? <span className="tabular-nums text-3xs text-text-weak">{headerCount}</span> : null}
 			</div>
-			<div className="flex-1 min-h-0 overflow-hidden border border-stroke-weak/40 rounded-8 bg-bg-sunken/50">
+			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table>
-							<TableHeader>
-								<TableRow className="border-stroke-weak/40 bg-bg-raised hover:bg-bg-raised">
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak h-7">{t`Asset`}</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+						<Table className="table-fixed min-w-[58rem] w-full">
+							<TableHeader className={positionsPanelTableHeaderClass}>
+								<TableRow className={positionsPanelTableHeaderRowClass}>
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[18%] text-left")}>
+										{t`Asset`}
+									</TableHead>
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}>
 										{t`Size`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}>
 										{t`Executed`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
 										{t`Avg Price`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
 										{t`Time / Total`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-left")}>
 										{t`Reduce Only`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak h-7">{t`Created`}</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
+										{t`Created`}
+									</TableHead>
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}>
 										{t`Actions`}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
-							<TableBody>
+							<TableBody className={positionsPanelTableBodyClass}>
 								{activeOrders.map(({ twapId, state }, i) => {
 									const isBuy = state.side === "B";
 									const sideClass = isBuy
@@ -118,9 +131,9 @@ export function TwapTab() {
 									return (
 										<TableRow
 											key={twapId}
-											className={cn("border-stroke-weak/40 hover:bg-bg-raised/30", i % 2 === 1 && "bg-bg-raised")}
+											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
 										>
-											<TableCell className="text-xs font-medium py-1.5">
+											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-text-strong")}>
 												<div className="flex items-center gap-1.5">
 													<span className={cn("text-xs px-1 py-0.5 rounded-8 uppercase", sideClass)}>
 														{isBuy ? t`buy` : t`sell`}
@@ -135,23 +148,29 @@ export function TwapTab() {
 													</Button>
 												</div>
 											</TableCell>
-											<TableCell className="text-xs text-right tabular-nums py-1.5">
+											<TableCell
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
+											>
 												{formatNumber(totalSize, szDecimals)}
 											</TableCell>
-											<TableCell className="text-xs text-right tabular-nums py-1.5">
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
 												<span className={cn(isBuy ? "text-text-success" : "text-text-error")}>
 													{formatNumber(executedSize, szDecimals)}
 												</span>
 											</TableCell>
-											<TableCell className="text-xs text-right tabular-nums py-1.5">
+											<TableCell
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
+											>
 												{formatPrice(avgPrice, { szDecimals })}
 											</TableCell>
-											<TableCell className="text-xs tabular-nums py-1.5">
+											<TableCell className={cn(positionsPanelTableCellClass, "tabular-nums text-text-strong")}>
 												<TimeTicker startTime={creationTime} durationMs={totalMinutes * 60 * 1000} isActive={true} /> /{" "}
 												{formatDuration(totalMinutes)}
 											</TableCell>
-											<TableCell className="text-xs py-1.5">{state.reduceOnly ? t`Yes` : t`No`}</TableCell>
-											<TableCell className="text-xs tabular-nums py-1.5">
+											<TableCell className={cn(positionsPanelTableCellClass, "text-text-strong")}>
+												{state.reduceOnly ? t`Yes` : t`No`}
+											</TableCell>
+											<TableCell className={cn(positionsPanelTableCellClass, "tabular-nums text-text-strong")}>
 												{formatDateTime(creationTime, {
 													day: "2-digit",
 													month: "2-digit",
@@ -162,7 +181,7 @@ export function TwapTab() {
 													hour12: false,
 												})}
 											</TableCell>
-											<TableCell className="text-right py-1.5">
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
 												<Button variant="outline" intent="error" size="sm" aria-label={t`Cancel TWAP order`}>
 													{t`Cancel`}
 												</Button>

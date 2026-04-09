@@ -1,6 +1,6 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowSquareOutIcon, ClockCounterClockwiseIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
@@ -12,6 +12,18 @@ import { getValueColorClass, toNumber } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
+import {
+	positionsPanelRowHoverClass,
+	positionsPanelRowStripeClass,
+	positionsPanelTableBodyClass,
+	positionsPanelTableCaptionRowClass,
+	positionsPanelTableCellClass,
+	positionsPanelTableHeadClass,
+	positionsPanelTableHeaderClass,
+	positionsPanelTableHeaderRowClass,
+	positionsPanelTableShellClass,
+	positionsPanelTabRootClass,
+} from "./positions-panel-table-styles";
 
 interface PlaceholderProps {
 	children: React.ReactNode;
@@ -48,7 +60,7 @@ export function HistoryTab() {
 
 	const fills = fillsEvent?.fills?.slice(0, 200).sort((a, b) => b.time - a.time) ?? [];
 
-	const headerCount = isConnected ? `${fills.length} ${t`Trades`}` : FALLBACK_VALUE_PLACEHOLDER;
+	const headerCount = isConnected ? `${fills.length} ${t`trades`}` : null;
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view trade history.`}</Placeholder>;
@@ -68,38 +80,40 @@ export function HistoryTab() {
 	const placeholder = renderPlaceholder();
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col p-2">
-			<div className="text-xs uppercase tracking-wider text-text-weak mb-1.5 flex items-center gap-2">
-				<ClockCounterClockwiseIcon className="size-3" />
-				{t`Trade History`}
-				<span className="text-text-brand ml-auto tabular-nums">{headerCount}</span>
+		<div className={positionsPanelTabRootClass}>
+			<div className={positionsPanelTableCaptionRowClass}>
+				{headerCount ? <span className="tabular-nums text-3xs text-text-weak">{headerCount}</span> : null}
 			</div>
-			<div className="flex-1 min-h-0 overflow-hidden border border-stroke-weak/40 rounded-8 bg-bg-sunken/50">
+			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table>
-							<TableHeader>
-								<TableRow className="border-stroke-weak/40 bg-bg-raised hover:bg-bg-raised">
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak h-7">{t`Asset`}</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak h-7">{t`Type`}</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+						<Table className="table-fixed min-w-[50rem] w-full">
+							<TableHeader className={positionsPanelTableHeaderClass}>
+								<TableRow className={positionsPanelTableHeaderRowClass}>
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
+										{t`Asset`}
+									</TableHead>
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
+										{t`Type`}
+									</TableHead>
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
 										{t`Price`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
 										{t`Size`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
 										{t`Fee`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
 										{t`PNL`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[18%] text-right")}>
 										{t`Time`}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
-							<TableBody>
+							<TableBody className={positionsPanelTableBodyClass}>
 								{fills.map((fill, i) => {
 									const fee = toNumber(fill.fee);
 									const feeClass = getValueColorClass(fee);
@@ -109,9 +123,9 @@ export function HistoryTab() {
 									return (
 										<TableRow
 											key={`${fill.hash}-${fill.tid}`}
-											className={cn("border-stroke-weak/40 hover:bg-bg-raised/30", i % 2 === 1 && "bg-bg-raised")}
+											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
 										>
-											<TableCell className="text-xs font-medium py-1.5">
+											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-text-strong")}>
 												<Button
 													variant="link"
 													onClick={() => setSelectedMarket(scope, fill.coin)}
@@ -121,7 +135,7 @@ export function HistoryTab() {
 													<AssetDisplay coin={fill.coin} />
 												</Button>
 											</TableCell>
-											<TableCell className="text-xs py-1.5">
+											<TableCell className={cn(positionsPanelTableCellClass, "text-text-strong")}>
 												<span
 													className={cn(
 														"text-xs px-1 py-0.5 rounded-8 uppercase",
@@ -131,18 +145,24 @@ export function HistoryTab() {
 													{fill.liquidation ? t`Liquidated` : fill.dir}
 												</span>
 											</TableCell>
-											<TableCell className="text-xs text-right tabular-nums py-1.5">{formatUSD(fill.px)}</TableCell>
-											<TableCell className="text-xs text-right tabular-nums py-1.5">
+											<TableCell
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
+											>
+												{formatUSD(fill.px)}
+											</TableCell>
+											<TableCell
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
+											>
 												{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}
 											</TableCell>
-											<TableCell className="text-xs text-right tabular-nums py-1.5">
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
 												<span className={feeClass}>
 													{formatToken(fill.fee, {
 														symbol: fill.feeToken,
 													})}
 												</span>
 											</TableCell>
-											<TableCell className="text-xs text-right tabular-nums py-1.5">
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
 												{showPnl ? (
 													<span className={getValueColorClass(closedPnl)}>
 														{formatUSD(closedPnl, {
@@ -153,7 +173,7 @@ export function HistoryTab() {
 													<span className="text-text-weak">{FALLBACK_VALUE_PLACEHOLDER}</span>
 												)}
 											</TableCell>
-											<TableCell className="text-xs text-right tabular-nums text-text-weak py-1.5">
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-weak")}>
 												<div className="flex flex-col items-end underline decoration-dashed decoration-muted-fg/30">
 													<a
 														className="flex items-center gap-1"

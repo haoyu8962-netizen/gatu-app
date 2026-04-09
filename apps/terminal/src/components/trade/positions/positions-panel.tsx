@@ -36,18 +36,18 @@ export function PositionsPanel() {
 		{ enabled: isConnected && !!address },
 	);
 	const openOrders = ordersEvent?.orders;
-	const twapCount = isConnected ? (twapStatesEvent?.states?.length ?? 0) : 0;
+	const twapCount = isConnected ? (twapStatesEvent?.states?.length ?? 0) : null;
 
 	function handleTabChange(value: string) {
 		startTransition(() => setPositionsActiveTab(value));
 	}
 
-	const positionsCount = isConnected ? positions.length : 0;
+	const positionsCount = isConnected ? positions.length : null;
 
-	const ordersCount = isConnected ? (openOrders?.length ?? 0) : 0;
+	const ordersCount = isConnected ? (openOrders?.length ?? 0) : null;
 
 	const balancesCount = useMemo(() => {
-		if (!isConnected) return 0;
+		if (!isConnected) return null;
 		let count = 0;
 		const perpAccountValue = toNumberOrZero(perpSummary?.accountValue);
 		if (perpAccountValue > 0) count++;
@@ -68,17 +68,27 @@ export function PositionsPanel() {
 	}
 
 	return (
-		<div className="h-full flex flex-col overflow-hidden bg-bg-overlay">
-			<Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 min-h-0 flex flex-col" fullWidth>
-				<div className="p-2">
-					<TabsList>
+		<div className="h-full flex flex-col overflow-hidden bg-bg-raised">
+			<Tabs
+				value={activeTab}
+				onValueChange={handleTabChange}
+				className="flex-1 min-h-0 flex flex-col"
+				size="sm"
+				variant="underline"
+			>
+				<div className="overflow-x-auto scrollbar-none px-2 pt-1.5 pb-1">
+					<TabsList className="min-w-max gap-1">
 						{POSITIONS_TABS.map((tab) => {
 							const count = getTabCount(tab.value);
 
 							return (
-								<TabsTrigger key={tab.value} value={tab.value} className="inline-flex items-center gap-1">
+								<TabsTrigger
+									key={tab.value}
+									value={tab.value}
+									className="inline-flex items-center gap-1 whitespace-nowrap"
+								>
 									<span>{tab.label}</span>
-									{typeof count === "number" ? <span>({count})</span> : null}
+									{typeof count === "number" ? <span className="text-text-weak">({count})</span> : null}
 								</TabsTrigger>
 							);
 						})}

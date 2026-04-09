@@ -1,14 +1,14 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { ListChecksIcon, PencilIcon, PlusIcon } from "@phosphor-icons/react";
-import { useMemo, useRef, useState } from "react";
+import { PencilIcon, PlusIcon } from "@phosphor-icons/react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
+import { HL_ALL_DEXS } from "@/config/constants";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
+import { formatLiquidationPrice, formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { type Position, useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
 import { getValueColorClass, isPositive, toBig } from "@/lib/trade/numbers";
@@ -20,9 +20,21 @@ import { AssetDisplay } from "../components/asset-display";
 import { PositionActionsDropdown } from "./position-actions-dropdown";
 import { PositionLimitCloseModal } from "./position-limit-close-modal";
 import { PositionTpSlModal } from "./position-tpsl-modal";
+import {
+	positionsPanelRowHoverClass,
+	positionsPanelRowStripeClass,
+	positionsPanelTableBodyClass,
+	positionsPanelTableCaptionRowClass,
+	positionsPanelTableCellClass,
+	positionsPanelTableHeadClass,
+	positionsPanelTableHeaderClass,
+	positionsPanelTableHeaderRowClass,
+	positionsPanelTableShellClass,
+	positionsPanelTabRootClass,
+} from "./positions-panel-table-styles";
 
 interface PlaceholderProps {
-	children: React.ReactNode;
+	children: ReactNode;
 	variant?: "error";
 }
 
@@ -171,62 +183,92 @@ function PositionRow({
 	}
 
 	return (
-		<TableRow className={cn("border-stroke-weak/40 hover:bg-bg-raised/30", isEven && "bg-bg-raised")}>
+		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
 			<TableCell
 				className={cn(
-					"text-xs font-medium py-1.5 border-l-2",
+					positionsPanelTableCellClass,
+					"min-w-0 border-l-2 text-text-strong",
 					isLong ? "border-l-text-success" : "border-l-text-error",
 				)}
 			>
 				<Button
-					variant="link"
+					variant="ghost"
+					intent="neutral"
 					onClick={() => onSelectMarket(p.coin)}
-					className="gap-1.5"
-					aria-label={t`Switch to ${displayName} market`}
+					className="h-auto min-h-0 min-w-0 max-w-full gap-1.5 justify-start p-0.5 -m-0.5 font-normal rounded-6 hover:bg-fill-hover/60"
+					aria-label={
+						isLong
+							? t`Switch to ${displayName} market, long position`
+							: t`Switch to ${displayName} market, short position`
+					}
 				>
 					<AssetDisplay
 						coin={p.coin}
-						nameClassName="text-xs"
-						subtitle={<span className="text-xs text-text-weak uppercase">{isLong ? t`Long` : t`Short`}</span>}
+						iconClassName="size-4"
+						nameClassName="text-xs font-semibold text-text-strong leading-none"
 					/>
 				</Button>
 			</TableCell>
-			<TableCell className="text-xs text-right tabular-nums py-1.5">
-				<div className="flex flex-col items-end">
-					<span className="tabular-nums">
+			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}>
+				<div className="flex flex-col items-end gap-px">
+					<span className="text-xs font-semibold tabular-nums leading-tight">
 						{formatToken(absSize, {
 							decimals: szDecimals,
 							symbol: p.coin,
 						})}
 					</span>
-					<span className="text-text-weak text-xs">({formatUSD(p.positionValue, { compact: true })})</span>
+					<span className="text-2xs text-text-weak tabular-nums leading-tight">
+						({formatUSD(p.positionValue, { compact: true })})
+					</span>
 				</div>
 			</TableCell>
-			<TableCell className="text-xs text-right py-1.5">
-				<div className="flex flex-col items-end">
-					<span className="tabular-nums">{formatUSD(p.marginUsed)}</span>
-					<span className="text-text-weak text-xs">{p.leverage.type === "isolated" ? t`Isolated` : t`Cross`}</span>
+			<TableCell className={cn(positionsPanelTableCellClass, "text-right text-text-strong")}>
+				<div className="flex flex-col items-end gap-px">
+					<span className="text-xs font-semibold tabular-nums leading-tight">{formatUSD(p.marginUsed)}</span>
+					<span className="text-2xs font-medium text-text-weak leading-tight">
+						{p.leverage.type === "isolated" ? t`Isolated` : t`Cross`}
+					</span>
 				</div>
 			</TableCell>
-			<TableCell className="text-xs text-right tabular-nums text-text-weak py-1.5">
-				{formatPrice(p.entryPx, { szDecimals })}
-			</TableCell>
-			<TableCell className="text-xs text-right tabular-nums py-1.5">{formatPrice(markPx, { szDecimals })}</TableCell>
 			<TableCell
-				className={cn("text-xs text-right tabular-nums py-1.5", liqIsNear ? "text-text-error" : "text-text-weak")}
+				className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-weak whitespace-nowrap")}
 			>
-				{formatPrice(p.liquidationPx, { szDecimals })}
+				<span className="tabular-nums">{formatPrice(p.entryPx, { szDecimals })}</span>
 			</TableCell>
-			<TableCell className={cn("text-xs text-right tabular-nums py-1.5", fundingClass)}>
-				{formatUSD(cumFunding ? -cumFunding : null, { signDisplay: "exceptZero" })}
+			<TableCell
+				className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong whitespace-nowrap")}
+			>
+				<span className="text-xs font-semibold tabular-nums">{formatPrice(markPx, { szDecimals })}</span>
 			</TableCell>
-			<TableCell className="text-right py-1.5">
-				<div className={cn("text-xs tabular-nums flex flex-col items-end", pnlClass)}>
-					<span className="tabular-nums">{formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })}</span>
-					<span className="text-text-weak text-xs">({formatPercent(p.returnOnEquity, 1)})</span>
+			<TableCell
+				className={cn(
+					positionsPanelTableCellClass,
+					"text-right tabular-nums min-w-0",
+					liqIsNear ? "text-text-error font-medium" : "text-text-weak",
+				)}
+			>
+				<span className="block truncate" title={formatPrice(p.liquidationPx, { szDecimals })}>
+					{formatLiquidationPrice(p.liquidationPx, szDecimals)}
+				</span>
+			</TableCell>
+			<TableCell
+				className={cn(positionsPanelTableCellClass, "text-right tabular-nums whitespace-nowrap", fundingClass)}
+			>
+				<span className="font-medium tabular-nums">
+					{formatUSD(cumFunding ? -cumFunding : null, { signDisplay: "exceptZero" })}
+				</span>
+			</TableCell>
+			<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
+				<div className={cn("flex flex-col items-end gap-px tabular-nums", pnlClass)}>
+					<span className="text-xs font-semibold leading-tight">
+						{formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })}
+					</span>
+					<span className={cn("text-2xs leading-tight opacity-90", pnlClass)}>
+						({formatPercent(p.returnOnEquity, 1)})
+					</span>
 				</div>
 			</TableCell>
-			<TableCell className="text-right py-1.5">
+			<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
 				<Tooltip content={tpSlInfo?.tpPrice && tpSlInfo?.slPrice ? t`Edit TP/SL` : t`Add TP/SL`} side="left">
 					<button
 						type="button"
@@ -239,34 +281,34 @@ function PositionRow({
 					>
 						{tpSlInfo?.tpPrice && tpSlInfo?.slPrice ? (
 							<>
-								<div className="flex items-center gap-1 text-xs tabular-nums">
+								<div className="flex items-center gap-1 text-2xs tabular-nums">
 									<span className="text-text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
 									<span className="text-text-weak">/</span>
 									<span className="text-text-error">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
 								</div>
-								<PencilIcon className="size-3 text-text-disabled group-hover:text-text-weak transition-colors" />
+								<PencilIcon className="size-2.5 text-text-disabled group-hover:text-text-weak transition-colors" />
 							</>
 						) : hasTpSl ? (
 							<>
-								<div className="flex items-center gap-1 text-xs tabular-nums">
+								<div className="flex items-center gap-1 text-2xs tabular-nums">
 									{tpSlInfo?.tpPrice ? (
 										<span className="text-text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
 									) : (
 										<span className="text-text-error">{formatPrice(tpSlInfo?.slPrice, { szDecimals })}</span>
 									)}
 								</div>
-								<PlusIcon className="size-3 text-text-disabled group-hover:text-text-weak transition-colors" />
+								<PlusIcon className="size-2.5 text-text-disabled group-hover:text-text-weak transition-colors" />
 							</>
 						) : (
-							<div className="flex items-center gap-0.5 text-xs font-medium text-text-weak">
-								<PlusIcon className="size-3 group-hover:text-text-weak transition-colors" />
+							<div className="flex items-center gap-0.5 text-2xs font-medium text-text-weak">
+								<PlusIcon className="size-2.5 group-hover:text-text-weak transition-colors" />
 								<span>{t`Add`}</span>
 							</div>
 						)}
 					</button>
 				</Tooltip>
 			</TableCell>
-			<TableCell className="text-right py-1.5">
+			<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
 				<PositionActionsDropdown
 					canClose={canClose}
 					isClosing={isClosing}
@@ -328,7 +370,6 @@ export function PositionsTab() {
 		return map;
 	}, [openOrders]);
 
-	const headerCount = isConnected ? positions.length : FALLBACK_VALUE_PLACEHOLDER;
 	const actionError = closeError?.message;
 
 	function handleClosePosition(
@@ -436,50 +477,56 @@ export function PositionsTab() {
 	const placeholder = renderPlaceholder();
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col p-2">
-			<div className="text-xs uppercase tracking-wider text-text-weak mb-1.5 flex items-center gap-2">
-				<ListChecksIcon className="size-3" />
-				{t`Active Positions`}
-				<span className="font-semibold text-text-success ml-auto tabular-nums">{headerCount}</span>
+		<div className={positionsPanelTabRootClass}>
+			<div className={positionsPanelTableCaptionRowClass}>
+				{isConnected ? (
+					<span className="tabular-nums text-3xs text-text-weak">
+						{positions.length} {t`positions`}
+					</span>
+				) : null}
 			</div>
-			{actionError ? <div className="mb-1 text-xs text-text-error">{actionError}</div> : null}
-			<div className="flex-1 min-h-0 overflow-hidden border border-stroke-weak/40 rounded-8 bg-bg-sunken/50">
-				{placeholder ?? (
-					<ScrollArea className="h-full w-full">
-						<Table>
-							<TableHeader>
-								<TableRow className="border-stroke-weak/40 bg-bg-raised hover:bg-bg-raised">
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak h-7">{t`Asset`}</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+			{actionError ? <div className="px-2.5 py-1 text-2xs text-text-error">{actionError}</div> : null}
+			<div className={positionsPanelTableShellClass}>
+				{placeholder ? (
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{placeholder}</div>
+				) : (
+					<ScrollArea className="min-h-0 w-full flex-1">
+						<Table className="table-fixed min-w-[64rem] w-full">
+							<TableHeader className={positionsPanelTableHeaderClass}>
+								<TableRow className={positionsPanelTableHeaderRowClass}>
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[8%] min-w-0 text-left")}>
+										{t`Asset`}
+									</TableHead>
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
 										{t`Size`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[12%] text-right")}>
 										{t`Margin`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[8%] text-right")}>
 										{t`Entry`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[9%] text-right")}>
 										{t`Mark`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[9%] text-right")}>
 										{t`Liq`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[8%] text-right")}>
 										{t`Funding`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[12%] text-right")}>
 										{t`PNL`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}>
 										{t`TP/SL`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}>
 										{t`Actions`}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
-							<TableBody>
+							<TableBody className={positionsPanelTableBodyClass}>
 								{positions.map((p, i) => (
 									<PositionRow
 										key={`${p.coin}-${p.entryPx}-${p.szi}`}

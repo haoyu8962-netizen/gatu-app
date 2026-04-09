@@ -178,6 +178,18 @@ export function formatPrice(value: string | number | null | undefined, opts?: Fo
 	return getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
 }
 
+export function formatLiquidationPrice(value: string | number | null | undefined, szDecimals: number): string {
+	const parsed = parseNumberInput(value);
+	if (!isValidNumber(parsed.value)) return FALLBACK_VALUE_PLACEHOLDER;
+	const abs = Math.abs(parsed.value);
+	if (abs >= 1_000_000) return formatPrice(value, { szDecimals, compact: true });
+	if (abs >= 100_000) {
+		const cap = Math.min(4, szDecimalsToPriceDecimals(szDecimals));
+		return formatPrice(value, { decimals: cap });
+	}
+	return formatPrice(value, { szDecimals });
+}
+
 /**
  * Format token amount
  * @example formatToken(1.234567) -> "1.23457"

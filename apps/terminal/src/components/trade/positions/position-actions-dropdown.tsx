@@ -21,6 +21,10 @@ export function PositionActionsDropdown({
 }: Props) {
 	return (
 		<Dropdown
+			className="flex justify-end text-xs text-text-weak"
+			triggerVariant="minimal"
+			triggerClassName="font-medium"
+			triggerAriaLabel={t`Position close actions`}
 			trigger={isRowClosing ? t`Closing...` : t`Close`}
 			disabled={!canClose || isClosing}
 			align="end"

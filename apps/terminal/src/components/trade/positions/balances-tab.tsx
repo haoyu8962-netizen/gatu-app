@@ -1,17 +1,17 @@
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon, WalletIcon } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon } from "@phosphor-icons/react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { DEFAULT_QUOTE_TOKEN, FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/constants";
 import {
 	type BalanceRow,
 	filterBalanceRowsByUsdValue,
 	getBalanceRows,
 	getTotalUsdValue,
 } from "@/domain/trade/balances";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSubscription } from "@/lib/hyperliquid";
@@ -20,11 +20,23 @@ import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useSwapModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-global-settings-store";
 import { AssetDisplay } from "../components/asset-display";
+import {
+	positionsPanelRowHoverClass,
+	positionsPanelRowStripeClass,
+	positionsPanelTableBodyClass,
+	positionsPanelTableCaptionRowClass,
+	positionsPanelTableCellClass,
+	positionsPanelTableHeadClass,
+	positionsPanelTableHeaderClass,
+	positionsPanelTableHeaderRowClass,
+	positionsPanelTableShellClass,
+	positionsPanelTabRootClass,
+} from "./positions-panel-table-styles";
 import { SendDialog } from "./send-dialog";
 import { TransferDialog } from "./transfer-dialog";
 
 interface PlaceholderProps {
-	children: React.ReactNode;
+	children: ReactNode;
 	variant?: "error";
 }
 
@@ -68,7 +80,7 @@ export function BalancesTab() {
 		accountType: "spot",
 	});
 
-	const { perpSummary, spotBalances, isLoading, hasError } = useAccountBalances();
+	const { perpSummary, spotBalances, isLoading, hasError } = useDefaultDexBalances();
 	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const mids = allMidsEvent?.mids;
 
@@ -126,17 +138,21 @@ export function BalancesTab() {
 		return (
 			<TableRow
 				key={`${row.type}-${row.asset}`}
-				className={cn("border-stroke-weak/40 hover:bg-bg-raised/30", index % 2 === 1 && "bg-bg-raised")}
+				className={cn(positionsPanelRowHoverClass, index % 2 === 1 && positionsPanelRowStripeClass)}
 			>
-				<TableCell className="text-xs font-medium py-1.5">
+				<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-text-strong")}>
 					<AssetDisplay coin={row.asset} />
 				</TableCell>
-				<TableCell className="text-xs text-right tabular-nums py-1.5">{formatToken(row.available, decimals)}</TableCell>
-				<TableCell className="text-xs text-right tabular-nums py-1.5">{formatToken(row.total, decimals)}</TableCell>
-				<TableCell className="text-xs text-right tabular-nums text-text-success py-1.5">
+				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}>
+					{formatToken(row.available, decimals)}
+				</TableCell>
+				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}>
+					{formatToken(row.total, decimals)}
+				</TableCell>
+				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-success")}>
 					{formatUSD(row.usdValue, { compact: true })}
 				</TableCell>
-				<TableCell className="text-xs text-right tabular-nums py-1.5">
+				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}>
 					{pnlData ? (
 						<span className={pnlData.pnl >= 0 ? "text-text-success" : "text-text-error"}>
 							{pnlData.pnl >= 0 ? "+" : ""}
@@ -147,13 +163,13 @@ export function BalancesTab() {
 						<span className="text-text-weak">—</span>
 					)}
 				</TableCell>
-				<TableCell className="text-right py-1.5">
-					<div className="flex items-center justify-end gap-1">
+				<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
+					<div className="flex flex-nowrap items-center justify-end gap-1 whitespace-nowrap">
 						{canTransfer && (
 							<Button
 								variant="link"
 								onClick={() => handleTransferClick(row)}
-								className="text-xs text-text-brand hover:text-text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className="shrink-0 text-xs text-text-brand hover:text-text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
 							>
 								<ArrowsLeftRightIcon className="size-2.5" />
 								{transferLabel}
@@ -163,7 +179,7 @@ export function BalancesTab() {
 							<Button
 								variant="link"
 								onClick={() => openSwapModal(row.asset)}
-								className="text-xs text-text-brand hover:text-text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className="shrink-0 text-xs text-text-brand hover:text-text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
 							>
 								<ArrowsDownUpIcon className="size-2.5" />
 								{t`Swap`}
@@ -173,7 +189,7 @@ export function BalancesTab() {
 							<Button
 								variant="link"
 								onClick={() => handleSendClick(row)}
-								className="text-xs text-text-brand hover:text-text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className="shrink-0 text-xs text-text-brand hover:text-text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
 							>
 								<PaperPlaneTiltIcon className="size-2.5" />
 								{t`Send`}
@@ -197,58 +213,56 @@ export function BalancesTab() {
 	const placeholder = renderPlaceholder();
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col p-2">
-			<div className="text-xs uppercase tracking-wider text-text-weak mb-1.5 flex items-center gap-2">
-				<WalletIcon className="size-3" />
-				{t`Account Balances`}
-				<label
-					htmlFor="hideSmallBalances"
-					className="ml-auto flex items-center gap-1.5 cursor-pointer text-xs normal-case tracking-normal"
-				>
-					<Checkbox
-						checked={hideSmallBalances}
-						onCheckedChange={(checked) => setHideSmallBalances(Boolean(checked))}
-						className="size-3"
-					/>
-					{t`Hide small`}
-				</label>
-				<span className="text-text-success tabular-nums">
-					{isConnected && !isLoading ? formatUSD(totalValue, { compact: true }) : FALLBACK_VALUE_PLACEHOLDER}
-				</span>
+		<div className={positionsPanelTabRootClass}>
+			<div className={positionsPanelTableCaptionRowClass}>
+				<Checkbox
+					size="xxs"
+					checked={hideSmallBalances}
+					onCheckedChange={(checked: boolean | "indeterminate") => setHideSmallBalances(Boolean(checked))}
+					label={
+						<span className="text-3xs font-normal normal-case tracking-normal text-text-weak">{t`Hide small`}</span>
+					}
+					className="gap-1.5 items-center"
+				/>
+				{isConnected && !isLoading ? (
+					<span className="tabular-nums text-3xs font-medium text-text-success">
+						{formatUSD(totalValue, { compact: true })}
+					</span>
+				) : null}
 			</div>
-			<div className="flex-1 min-h-0 overflow-hidden border border-stroke-weak/40 rounded-8 bg-bg-sunken/50">
+			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table className="w-auto min-w-full">
-							<TableHeader>
-								<TableRow className="border-stroke-weak/40 bg-bg-raised hover:bg-bg-raised">
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak h-7 w-35">
+						<Table className="table-fixed min-w-[44rem] w-full">
+							<TableHeader className={positionsPanelTableHeaderClass}>
+								<TableRow className={positionsPanelTableHeaderRowClass}>
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[20%] text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7 w-22.5">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
 										{t`Available`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7 w-22.5">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
 										{t`Total`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7 w-22.5">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}>
 										{t`USD Value`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7 w-25">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}>
 										{t`PNL`}
 									</TableHead>
-									<TableHead className="text-xs font-medium uppercase tracking-wider text-text-weak text-right h-7 w-20">
+									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[20%] text-right")}>
 										{t`Actions`}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
-							<TableBody>
+							<TableBody className={positionsPanelTableBodyClass}>
 								{perpBalances.length > 0 && (
 									<>
 										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
 											<TableCell
 												colSpan={6}
-												className="text-xs uppercase tracking-wider text-text-brand bg-fill-brand-strong/5 py-1 font-medium"
+												className="!h-auto !min-h-0 border-stroke-weak/40 bg-fill-brand-strong/8 px-2.5 py-1.5 text-3xs font-semibold uppercase tracking-widest text-text-brand"
 											>
 												{t`Perpetuals`}
 											</TableCell>
@@ -261,7 +275,7 @@ export function BalancesTab() {
 										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
 											<TableCell
 												colSpan={6}
-												className="text-xs uppercase tracking-wider text-text-warning bg-fill-warning-strong/5 py-1 font-medium"
+												className="!h-auto !min-h-0 border-stroke-weak/40 bg-fill-warning-strong/8 px-2.5 py-1.5 text-3xs font-semibold uppercase tracking-widest text-text-warning"
 											>
 												{t`Spot`}
 											</TableCell>

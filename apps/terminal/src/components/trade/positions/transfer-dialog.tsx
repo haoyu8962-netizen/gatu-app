@@ -7,9 +7,8 @@ import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/constants";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
 import { getAvailableFromTotals, getPerpAvailable, getSpotBalance } from "@/domain/trade/balances";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
-import { formatToken } from "@/lib/format";
 import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
@@ -30,7 +29,7 @@ export function TransferDialog({ open, onOpenChange, initialDirection = "toSpot"
 	const { address } = useConnection();
 	const { getToken } = useSpotTokens();
 	const { mutateAsync: sendAsset, isPending } = useExchange("sendAsset");
-	const { perpSummary, spotBalances } = useAccountBalances();
+	const { perpSummary, spotBalances } = useDefaultDexBalances();
 
 	useEffect(() => {
 		if (open) {
@@ -55,11 +54,6 @@ export function TransferDialog({ open, onOpenChange, initialDirection = "toSpot"
 
 		return getAvailableFromTotals(spotUsdcBal?.total, spotUsdcBal?.hold);
 	}, [direction, perpSummary, spotUsdcBal]);
-
-	const availableBalance = useMemo(
-		() => floorToString(availableBalanceValue, usdcDecimals),
-		[availableBalanceValue, usdcDecimals],
-	);
 
 	const isValidAmount = isAmountWithinBalance(amount, availableBalanceValue) && !!address && !!usdcTokenId;
 
@@ -157,14 +151,10 @@ export function TransferDialog({ open, onOpenChange, initialDirection = "toSpot"
 								placeholder="0.00"
 								value={amount}
 								onChange={(e) => handleAmountChange(e.target.value)}
-								maxLabel={
-									<>
-										{t`MAX`}: {formatToken(availableBalance, 2)}
-									</>
-								}
+								maxLabel={t`MAX`}
 								onMaxClick={handleMaxClick}
 								className={cn(
-									"w-full h-9 text-sm bg-bg-sunken/50 border-stroke-weak/60 focus:border-stroke-brand-strong/60 tabular-nums",
+									"w-full tabular-nums",
 									exceedsBalance(amount, availableBalanceValue) &&
 										"border-stroke-error-strong focus:border-stroke-error-strong",
 								)}
@@ -178,7 +168,13 @@ export function TransferDialog({ open, onOpenChange, initialDirection = "toSpot"
 							</div>
 						)}
 
-						<Button onClick={handleTransfer} disabled={!isValidAmount || isPending} size="lg" className="w-full">
+						<Button
+							variant="filled"
+							intent="neutral"
+							onClick={handleTransfer}
+							disabled={!isValidAmount || isPending}
+							className="w-full"
+						>
 							{isPending && <SpinnerGapIcon className="size-3.5 animate-spin mr-2" />}
 							{isPending ? t`Transferring...` : t`Transfer`}
 						</Button>
