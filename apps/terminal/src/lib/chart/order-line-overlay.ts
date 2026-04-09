@@ -1,5 +1,5 @@
 import { registerOverlay } from "klinecharts";
-import { colorToHex, getChartColors } from "@/components/trade/chart/theme-colors";
+import { colorToHex, colorToRgba, getChartColors } from "@/components/trade/chart/theme-colors";
 
 const ORDER_LINE_NAME = "orderLine";
 
@@ -25,9 +25,13 @@ export function registerOrderLineOverlay() {
 			const label = (overlay.extendData?.label as string | undefined) ?? "";
 
 			const colors = getChartColors();
-			const color = side === "B" ? colorToHex(colors.green) : colorToHex(colors.red);
+			const marketColor = side === "B" ? colors.green : colors.red;
+			const color = colorToHex(marketColor);
+			const lineColor = colorToRgba(marketColor, 0.35);
+			const bgColor = colorToHex(colors.background);
+			const borderColor = colorToRgba(marketColor, 0.7);
 
-			const textX = bounding.width - 80;
+			const textX = bounding.width - 52;
 
 			return [
 				{
@@ -38,7 +42,7 @@ export function registerOrderLineOverlay() {
 							{ x: bounding.width, y },
 						],
 					},
-					styles: { style: "dashed" as const, color, size: 1, dashedValue: [4, 3] },
+					styles: { style: "dashed" as const, color: lineColor, size: 1, dashedValue: [4, 3] },
 					ignoreEvent: true,
 				},
 				{
@@ -50,7 +54,19 @@ export function registerOrderLineOverlay() {
 						align: "center",
 						baseline: "middle",
 					},
-					styles: { color, size: 9 },
+					styles: {
+						color,
+						size: 10,
+						paddingLeft: 6,
+						paddingRight: 6,
+						paddingTop: 3,
+						paddingBottom: 3,
+						backgroundColor: bgColor,
+						borderColor,
+						borderSize: 1,
+						borderRadius: 3,
+						style: "stroke_fill" as const,
+					},
 					ignoreEvent: true,
 				},
 			];

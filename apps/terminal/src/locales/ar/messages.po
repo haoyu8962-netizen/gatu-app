@@ -1705,8 +1705,8 @@ msgstr "السعر"
 #~ msgstr ""
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#~ msgid "Price grouping"
-#~ msgstr ""
+msgid "Price grouping"
+msgstr ""
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx

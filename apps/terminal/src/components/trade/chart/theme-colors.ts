@@ -22,6 +22,47 @@ function getCssVar(name: string): string {
 	return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
+function parseHexColor(cssColor: string): { r: number; g: number; b: number; a: number } | null {
+	const raw = cssColor.trim();
+	if (!raw.startsWith("#")) return null;
+	const hex = raw.slice(1);
+	if (hex.length === 6) {
+		return {
+			r: Number.parseInt(hex.slice(0, 2), 16),
+			g: Number.parseInt(hex.slice(2, 4), 16),
+			b: Number.parseInt(hex.slice(4, 6), 16),
+			a: 1,
+		};
+	}
+	if (hex.length === 8) {
+		return {
+			r: Number.parseInt(hex.slice(0, 2), 16),
+			g: Number.parseInt(hex.slice(2, 4), 16),
+			b: Number.parseInt(hex.slice(4, 6), 16),
+			a: Number.parseInt(hex.slice(6, 8), 16) / 255,
+		};
+	}
+	return null;
+}
+
+export function strokeWeakBorderRgba(cssColor: string, opacityFactor: number): string {
+	const parsed = parseHexColor(cssColor);
+	if (!parsed) return colorToRgba(cssColor, opacityFactor);
+	const a = Math.min(1, parsed.a * opacityFactor);
+	return `rgba(${parsed.r}, ${parsed.g}, ${parsed.b}, ${a})`;
+}
+
+export function strokeWeakLayerRgba(cssColor: string, alpha: number): string {
+	const parsed = parseHexColor(cssColor);
+	if (!parsed) return colorToRgba(cssColor, alpha);
+	return `rgba(${parsed.r}, ${parsed.g}, ${parsed.b}, ${alpha})`;
+}
+
+export const chartGridAlpha = 0.1;
+export const chartCrosshairAlpha = 0.35;
+export const chartScaleLineAlpha = 0.2;
+export const chartPaneSeparatorAlpha = 0.14;
+
 export function colorToHex(cssColor: string): string {
 	if (!cssColor || typeof document === "undefined") return "#000000";
 
@@ -64,7 +105,7 @@ export function getChartColors(): ChartColors {
 		green: getCssVar("--market-up"),
 		red: getCssVar("--market-down"),
 		accent: getCssVar("--fill-brand-strong"),
-		surface: getCssVar("--bg-overlay"),
+		surface: getCssVar("--bg-raised"),
 	};
 }
 
@@ -76,14 +117,16 @@ export function buildChartOverrides(): Record<string, string | number | boolean>
 	const green = colorToHex(colors.green);
 	const red = colorToHex(colors.red);
 
-	const gridColor = colorToRgba(colors.border, 0.3);
-	const crosshairColor = textSecondary;
+	const gridColor = strokeWeakLayerRgba(colors.border, chartGridAlpha);
+	const crosshairColor = strokeWeakLayerRgba(colors.border, chartCrosshairAlpha);
 
 	return {
 		"paneProperties.background": bg,
 		"paneProperties.backgroundType": "solid",
 		"paneProperties.vertGridProperties.color": gridColor,
+		"paneProperties.vertGridProperties.style": 1,
 		"paneProperties.horzGridProperties.color": gridColor,
+		"paneProperties.horzGridProperties.style": 1,
 		"paneProperties.crossHairProperties.color": crosshairColor,
 		"paneProperties.crossHairProperties.style": 2,
 		"paneProperties.crossHairProperties.width": 1,
@@ -98,7 +141,7 @@ export function buildChartOverrides(): Record<string, string | number | boolean>
 		"paneProperties.legendProperties.showVolume": false,
 
 		"scalesProperties.backgroundColor": bg,
-		"scalesProperties.lineColor": colorToRgba(colors.border, 0.5),
+		"scalesProperties.lineColor": strokeWeakLayerRgba(colors.border, chartScaleLineAlpha),
 		"scalesProperties.textColor": textSecondary,
 		"scalesProperties.fontSize": 10,
 		"scalesProperties.scaleSeriesOnly": false,
@@ -257,7 +300,16 @@ export async function generateChartCssUrl(): Promise<string> {
 	const fg = colorToHex(colors.foreground);
 	const surface = colorToHex(colors.surface);
 	const textSecondary = colorToHex(colors.textSecondary);
-	const border = colorToRgba(colors.border, 0.4);
+	const strokeWeak = colors.border;
+	const border =
+		strokeWeak.length > 0
+			? `color-mix(in srgb, ${strokeWeak} 60%, transparent)`
+			: strokeWeakBorderRgba(colors.border, 0.6);
+	const toolbarBorder = border;
+	const toolbarDivider =
+		strokeWeak.length > 0
+			? `color-mix(in srgb, ${strokeWeak} 50%, transparent)`
+			: strokeWeakBorderRgba(colors.border, 0.5);
 	const accent = colorToHex(colors.accent);
 
 	const hoverBg = colorToRgba(colors.foreground, 0.06);
@@ -274,6 +326,7 @@ ${staticCss}
 	--tv-fg: ${fg};
 	--tv-muted-fg: ${textSecondary};
 	--tv-border: ${border};
+	--tv-toolbar-border: ${toolbarBorder};
 	--tv-accent: ${accent};
 
 	--tv-color-platform-background: ${bg};
@@ -294,7 +347,7 @@ ${staticCss}
 	--tv-color-toolbar-toggle-button-background-active: ${accentSoft};
 	--tv-color-toolbar-toggle-button-background-active-hover: ${colorToRgba(colors.accent, 0.2)};
 
-	--tv-color-toolbar-divider-background: ${colorToRgba(colors.border, 0.6)};
+	--tv-color-toolbar-divider-background: ${toolbarDivider};
 	--tv-color-toolbar-save-layout-loader: ${accent};
 	--tv-color-bar-mark-background-color: ${surface};
 
@@ -378,7 +431,7 @@ ${staticCss}
 	--themed-color-input-placeholder-text: ${textSecondary};
 	--themed-color-input-border-hover: ${textSecondary};
 	--themed-color-input-disabled-bg: ${bg};
-	--themed-color-input-disabled-border: ${colorToRgba(colors.border, 0.5)};
+	--themed-color-input-disabled-border: ${strokeWeakBorderRgba(colors.border, 0.5)};
 	--themed-color-input-disabled-text: ${textSecondary};
 
 	--themed-color-hovered-background: ${hoverBg};

@@ -12,7 +12,7 @@ const columnHelper = createColumnHelper<MarketRow>();
 export const TOKEN_SELECTOR_COLUMNS = [
 	columnHelper.accessor("pairName", {
 		header: t`Market`,
-		size: 160,
+		size: 220,
 		enableSorting: false,
 	}),
 	columnHelper.accessor("markPx", {
@@ -24,13 +24,13 @@ export const TOKEN_SELECTOR_COLUMNS = [
 	columnHelper.accessor((row: MarketRow) => get24hChange(row.prevDayPx, row.markPx) ?? 0, {
 		id: "24h-change",
 		header: t`24h Change`,
-		size: 80,
+		size: 112,
 		enableSorting: true,
 	}),
 	columnHelper.accessor((row: MarketRow) => getOiUsd(row.openInterest, row.markPx) ?? 0, {
 		id: "oi",
 		header: t`Open Interest`,
-		size: 80,
+		size: 128,
 		enableSorting: true,
 	}),
 	columnHelper.accessor("dayNtlVlm", {

@@ -1,7 +1,19 @@
-import { Badge, Button, Drawer, DrawerContent, DrawerTrigger, SearchInput } from "@hypeterminal/ui";
+import {
+	Badge,
+	Button,
+	Drawer,
+	DrawerContent,
+	DrawerTrigger,
+	SearchInput,
+	TableHead,
+	TableHeader,
+	TableRow,
+	tableVariants,
+} from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowDownIcon, ArrowsDownUpIcon, ArrowUpIcon, CaretDownIcon, FireIcon, StarIcon } from "@phosphor-icons/react";
 import { flexRender } from "@tanstack/react-table";
+import { useId } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { get24hChange, getOiUsd, isTokenInCategory } from "@/domain/market";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -25,6 +37,49 @@ const marketScopes: { value: MarketScope; label: string }[] = [
 	{ value: "hip3", label: "HIP-3" },
 ];
 
+function getColumnSortLabel(columnId: string): string {
+	switch (columnId) {
+		case "price":
+			return t`Price`;
+		case "24h-change":
+			return t`24h Change`;
+		case "oi":
+			return t`Open Interest`;
+		case "volume":
+			return t`Volume`;
+		case "funding":
+			return t`Funding`;
+		default:
+			return columnId;
+	}
+}
+
+function getMarketTableColumnClass(columnId: string, mobile: boolean): string {
+	if (mobile) {
+		switch (columnId) {
+			case "24h-change":
+				return "w-[7.25rem]";
+			case "price":
+				return "w-[4.75rem]";
+			default:
+				return "w-20";
+		}
+	}
+	switch (columnId) {
+		case "price":
+			return "w-16 sm:w-20";
+		case "24h-change":
+			return "w-28 shrink-0";
+		case "oi":
+			return "w-32 shrink-0";
+		case "volume":
+		case "funding":
+			return "w-20 sm:w-24 shrink-0";
+		default:
+			return "w-16 sm:w-20";
+	}
+}
+
 function getSzDecimals(market: MarketRow): number {
 	if (market.kind === "spot") return market.tokensInfo[0]?.szDecimals ?? 4;
 	return market.szDecimals;
@@ -38,6 +93,13 @@ function getMaxLeverage(market: MarketRow): number | null {
 function getDex(market: MarketRow): string | undefined {
 	if (market.kind === "builderPerp") return market.dex;
 	return undefined;
+}
+
+function getMarketKindBadgeLabel(market: UnifiedMarketInfo | undefined): string {
+	if (!market) return "";
+	if (market.kind === "spot") return "Spot";
+	if (market.kind === "builderPerp") return market.dex;
+	return "Perp";
 }
 
 function SortIcon({ columnId, sorting }: { columnId: string; sorting: { id: string; desc: boolean }[] }) {
@@ -70,6 +132,7 @@ interface TokenSelectorContentProps {
 	containerRef: React.RefObject<HTMLDivElement | null>;
 	filteredMarkets: ReturnType<typeof useTokenSelector>["filteredMarkets"];
 	highlightedIndex: number;
+	headingId: string;
 	mobile?: boolean;
 }
 
@@ -96,6 +159,7 @@ function TokenSelectorContent({
 	containerRef,
 	filteredMarkets,
 	highlightedIndex,
+	headingId,
 	mobile,
 }: TokenSelectorContentProps) {
 	const virtualItems = virtualizer.getVirtualItems();
@@ -105,21 +169,23 @@ function TokenSelectorContent({
 	const showSelectorFilters = showScopeTabs || showSubcategoryTabs;
 
 	return (
-		<div className="flex flex-col">
-			<div className="border-b border-stroke-weak/40">
-				<div className="p-2">
-					<SearchInput
-						placeholder={t`Search markets...`}
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						onClear={() => setSearch("")}
-						size={mobile ? "md" : "sm"}
-					/>
-				</div>
+		<div className={cn("flex flex-col", mobile ? "h-full" : "max-h-144")}>
+			<div className="border-b border-stroke-weak shrink-0 px-2 pt-3 pb-2 space-y-2">
+				<h2 id={headingId} className="text-sm font-semibold text-text-strong tracking-tight">
+					{t`Select market`}
+				</h2>
+				<SearchInput
+					placeholder={t`Search markets...`}
+					value={search}
+					onChange={(e) => setSearch(e.target.value)}
+					onClear={() => setSearch("")}
+					size={mobile ? "md" : "sm"}
+					aria-labelledby={headingId}
+				/>
 			</div>
 
 			{showSelectorFilters ? (
-				<div className="p-2 border-b border-stroke-weak/40 bg-bg-sunken/50">
+				<div className="p-2 border-b border-stroke-weak bg-bg-base shrink-0">
 					{showScopeTabs ? (
 						<div className="flex items-center gap-0.5 flex-wrap">
 							{marketScopes.map((s) => {
@@ -170,42 +236,61 @@ function TokenSelectorContent({
 					) : null}
 				</div>
 			) : null}
-			<div
-				className={cn(
-					"flex items-center px-3 py-1.5 uppercase tracking-wider text-text-strong border-b border-stroke-weak/40 bg-bg-sunken/30",
-					mobile ? "text-xs" : "text-xs",
-				)}
-			>
-				<div className="flex-1 min-w-0">{t`Market`}</div>
-				{headerGroup?.headers
-					.filter((h) => h.id !== "pairName")
-					.map((header) => {
-						const hiddenOnMobile = ["oi", "volume", "funding"].includes(header.id);
-						const hideForSpot = scope === "spot" && ["oi", "funding"].includes(header.id);
-
-						if (hideForSpot) return null;
-
-						return (
-							<Button
-								key={header.id}
-								variant="link"
-								intent="neutral"
-								onClick={() => handleSort(header.id)}
-								className={cn(
-									"justify-end gap-1 hover:text-text-strong hover:bg-transparent no-underline text-xs",
-									mobile ? "w-20" : "w-16 sm:w-20",
-									hiddenOnMobile && (mobile ? "hidden" : "hidden sm:flex"),
-								)}
-								aria-label={t`Sort by ${String(header.column.columnDef.header ?? "")}`}
+			<div className="shrink-0 border-b border-stroke-weak bg-bg-base px-0">
+				<table className={cn(tableVariants(), "table-fixed w-full border-0")}>
+					<TableHeader className="[&_tr]:border-t-0 [&_tr]:border-b [&_tr]:border-stroke-weak">
+						<TableRow className="border-0 hover:bg-transparent">
+							<TableHead
+								scope="col"
+								className="h-9 px-2 py-2 text-left align-middle text-3xs font-semibold uppercase tracking-widest text-text-weak"
 							>
-								<span className="truncate">{flexRender(header.column.columnDef.header, header.getContext())}</span>
-								<SortIcon columnId={header.id} sorting={sorting} />
-							</Button>
-						);
-					})}
+								{t`Market`}
+							</TableHead>
+							{headerGroup?.headers
+								.filter((h) => h.id !== "pairName")
+								.map((header) => {
+									const hiddenOnMobile = ["oi", "volume", "funding"].includes(header.id);
+									const hideForSpot = scope === "spot" && ["oi", "funding"].includes(header.id);
+
+									if (hideForSpot) return null;
+
+									const sortLabel = getColumnSortLabel(header.id);
+									return (
+										<TableHead
+											key={header.id}
+											scope="col"
+											className={cn(
+												"h-9 px-2 py-2 text-right align-middle text-3xs font-semibold uppercase tracking-widest text-text-weak",
+												getMarketTableColumnClass(header.id, mobile),
+												hiddenOnMobile && (mobile ? "hidden" : "hidden sm:table-cell"),
+											)}
+										>
+											<button
+												type="button"
+												onClick={() => handleSort(header.id)}
+												title={sortLabel}
+												className={cn(
+													"inline-flex w-full min-w-0 cursor-pointer items-center justify-end gap-1 rounded-4 px-0.5 py-0.5 text-inherit transition-colors",
+													"hover:bg-fill-hover hover:text-text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stroke-strong focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base",
+												)}
+												aria-label={t`Sort by ${sortLabel}`}
+											>
+												<span className="min-w-0 whitespace-normal text-right leading-tight text-balance">
+													{flexRender(header.column.columnDef.header, header.getContext())}
+												</span>
+												<span className="inline-flex shrink-0 text-text-weak">
+													<SortIcon columnId={header.id} sorting={sorting} />
+												</span>
+											</button>
+										</TableHead>
+									);
+								})}
+						</TableRow>
+					</TableHeader>
+				</table>
 			</div>
 
-			<div ref={containerRef} className={cn("overflow-auto", mobile ? "h-[60vh]" : "h-72")}>
+			<div ref={containerRef} className="flex-1 min-h-0 overflow-auto">
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
 						<span className={cn("text-text-strong", mobile ? "text-xs" : "text-xs")}>{t`Loading markets...`}</span>
@@ -257,7 +342,7 @@ function TokenSelectorContent({
 									aria-selected={isSelected}
 									tabIndex={0}
 									className={cn(
-										"flex items-center px-3 cursor-pointer border-b border-stroke-weak/20",
+										"flex items-center px-2 cursor-pointer border-b border-stroke-weak",
 										"hover:bg-fill-hover transition-colors",
 										"absolute top-0 left-0 w-full",
 										mobile ? "py-2.5" : "py-1.5",
@@ -275,59 +360,73 @@ function TokenSelectorContent({
 											hideName
 											iconClassName={cn("shrink-0", mobile ? "size-6" : "size-5")}
 										/>
-										<div className="min-w-0">
-											<div className="flex items-center gap-1">
-												<span className={cn("font-semibold", mobile ? "text-xs" : "text-xs")}>{market.pairName}</span>
-												<button
-													type="button"
-													onClick={(e) => {
-														e.stopPropagation();
-														toggleFavorite(market.name);
-													}}
-													className="hover:scale-110 cursor-pointer"
-													aria-label={isFav ? t`Remove from favorites` : t`Add to favorites`}
-												>
-													<StarIcon
+										<div className="min-w-0 flex-1">
+											<div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
+												<span className="inline-flex max-w-full min-w-0 items-center gap-1">
+													<span
+														title={market.pairName}
 														className={cn(
-															"transition-colors",
-															mobile ? "size-3" : "size-2.5",
-															isFav ? "fill-text-warning text-text-warning" : "text-text-weak hover:text-text-warning",
+															"min-w-0 truncate font-semibold tracking-tight",
+															mobile ? "text-xs" : "text-2xs leading-snug",
 														)}
-													/>
-												</button>
+													>
+														{market.pairName}
+													</span>
+													<button
+														type="button"
+														onClick={(e) => {
+															e.stopPropagation();
+															toggleFavorite(market.name);
+														}}
+														className="shrink-0 rounded-4 p-0.5 hover:scale-110 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stroke-strong focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
+														aria-label={isFav ? t`Remove from favorites` : t`Add to favorites`}
+														aria-pressed={isFav}
+													>
+														<StarIcon
+															weight={isFav ? "fill" : "regular"}
+															className={cn(
+																"transition-colors",
+																mobile ? "size-3" : "size-2.5",
+																isFav ? "text-[#FACC15]" : "text-text-weak hover:text-[#FACC15]/90",
+															)}
+														/>
+													</button>
+												</span>
 												{isTokenInCategory(market.shortName, "new") && (
-													<Badge tone="neutral" size="sm" className="px-1 py-0 text-xs">
+													<Badge tone="neutral" size="sm" className="shrink-0 px-1 py-0 text-xs">
 														{t`NEW`}
 													</Badge>
 												)}
 											</div>
-											<div className={cn("flex items-center gap-1.5 text-text-strong", mobile ? "text-xs" : "text-xs")}>
+											<div
+												className={cn("flex items-center gap-1.5 text-text-strong", mobile ? "text-xs" : "text-2xs")}
+											>
 												{getMaxLeverage(market) && <span>{getMaxLeverage(market)}x</span>}
 												{isSpot && <span className="text-text-brand">Spot</span>}
 												{isHip3 && <span className="text-text-warning">{getDex(market)}</span>}
 											</div>
 										</div>
 									</div>
-									<div className={cn("text-right", mobile ? "w-20" : "w-16 sm:w-20")}>
+									<div className={cn("text-right", getMarketTableColumnClass("price", mobile))}>
 										<span className={cn("font-medium tabular-nums", mobile ? "text-xs" : "text-xs")}>
 											{formatPrice(market.markPx, {
 												szDecimals: getSzDecimals(market),
 											})}
 										</span>
 									</div>
-									<div className={cn("text-right", mobile ? "w-20" : "w-16 sm:w-20")}>
+									<div className={cn("text-right", getMarketTableColumnClass("24h-change", mobile))}>
 										<span className={changeClass}>{changeText}</span>
 									</div>
 									{scope !== "spot" && (
-										<div className="w-16 sm:w-20 text-right hidden sm:block">
+										<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("oi", mobile))}>
 											<span className="text-xs font-medium tabular-nums">{formatUSD(oiValue)}</span>
 										</div>
 									)}
-									<div className="w-16 sm:w-20 text-right hidden sm:block">
+									<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("volume", mobile))}>
 										<span className="text-xs font-medium tabular-nums">{formatUSD(market.dayNtlVlm)}</span>
 									</div>
 									{scope !== "spot" && (
-										<div className="w-16 sm:w-20 text-right hidden sm:block">
+										<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("funding", mobile))}>
 											<div className="flex items-center justify-end gap-1">
 												{market.funding && <FireIcon className={cn("size-2.5", getValueColorClass(market.funding))} />}
 												<span
@@ -353,14 +452,16 @@ function TokenSelectorContent({
 
 			<div
 				className={cn(
-					"px-3 py-1.5 bg-bg-sunken/30 flex items-center justify-between text-text-strong",
+					"px-2 py-1.5 bg-fill-weak flex items-center justify-between text-text-strong shrink-0",
 					mobile ? "text-xs" : "text-xs",
 				)}
 			>
 				<span>
 					{filteredMarkets.length} {t`markets`}
 				</span>
-				<span className="tabular-nums">{sorting.length > 0 ? t`Sorted by ${sorting[0].id}` : t`Updated live`}</span>
+				<span className="tabular-nums text-right min-w-0">
+					{sorting.length > 0 ? t`Sorted by ${getColumnSortLabel(sorting[0].id)}` : t`Updated live`}
+				</span>
 			</div>
 		</div>
 	);
@@ -368,6 +469,7 @@ function TokenSelectorContent({
 
 export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorProps) {
 	const isMobile = useIsMobile();
+	const headingId = useId();
 	const {
 		open,
 		setOpen,
@@ -418,7 +520,10 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 		containerRef,
 		filteredMarkets,
 		highlightedIndex,
+		headingId,
 	};
+
+	const kindBadge = getMarketKindBadgeLabel(selectedMarket);
 
 	const trigger = (
 		<button
@@ -426,17 +531,26 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 			role="combobox"
 			aria-expanded={open}
 			aria-label={t`Select token`}
-			className="inline-flex items-center gap-2 px-2 py-1.5 bg-bg-overlay border border-stroke-weak/40 rounded-8 text-xs font-bold uppercase tracking-wider hover:bg-bg-overlay cursor-pointer"
+			className="inline-flex items-center gap-1.5 max-w-full min-w-0 px-2 py-2 rounded-8 border border-stroke-weak/50 bg-bg-raised/80 hover:bg-fill-hover transition-colors cursor-pointer leading-none"
 		>
 			{selectedMarket && (
-				<AssetDisplay
-					coin={selectedMarket.name}
-					variant="full"
-					iconClassName="size-4 shrink-0"
-					nameClassName="inline-flex min-w-[13ch]"
-				/>
+				<>
+					<AssetDisplay coin={selectedMarket.name} iconUrl={selectedMarket.iconUrl} hideName iconClassName="size-3.5" />
+					<span className="min-w-0 truncate text-xs font-medium text-text-strong tracking-tight leading-none">
+						{selectedMarket.pairName ?? selectedMarket.name}
+					</span>
+					{kindBadge ? (
+						<Badge
+							tone="neutral"
+							size="xxs"
+							className="uppercase shrink-0 self-center font-normal leading-none text-text-weak border-stroke-weak/40 bg-fill-weaker"
+						>
+							{kindBadge}
+						</Badge>
+					) : null}
+				</>
 			)}
-			<CaretDownIcon className="size-4 text-text-weak" />
+			<CaretDownIcon className="size-3.5 shrink-0 self-center text-text-weak" />
 		</button>
 	);
 
@@ -444,7 +558,7 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 		return (
 			<Drawer side="bottom" open={open} onOpenChange={setOpen}>
 				<DrawerTrigger>{trigger}</DrawerTrigger>
-				<DrawerContent className="max-h-[90vh] overflow-hidden">
+				<DrawerContent>
 					<TokenSelectorContent {...contentProps} mobile />
 				</DrawerContent>
 			</Drawer>
@@ -455,9 +569,12 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>{trigger}</PopoverTrigger>
 			<PopoverContent
-				className="w-[calc(100vw-1rem)] sm:w-2xl max-w-2xl p-0 border-stroke-weak/60 bg-bg-overlay"
+				className="w-[min(48rem,calc(100vw-1rem))] p-0 border-stroke-weak bg-bg-raised"
 				align="start"
-				sideOffset={8}
+				sideOffset={4}
+				alignOffset={-2}
+				collisionPadding={8}
+				aria-labelledby={headingId}
 				onKeyDown={handleKeyDown}
 			>
 				<TokenSelectorContent {...contentProps} />

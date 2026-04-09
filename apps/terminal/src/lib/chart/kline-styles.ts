@@ -1,6 +1,15 @@
 import type { CandleTooltipCustomCallbackData, DeepPartial, Styles } from "klinecharts";
 import { type CandleType, LineType, TooltipShowRule, TooltipShowType, YAxisPosition } from "klinecharts";
-import { colorToHex, colorToRgba, getChartColors } from "@/components/trade/chart/theme-colors";
+import {
+	chartCrosshairAlpha,
+	chartGridAlpha,
+	chartPaneSeparatorAlpha,
+	chartScaleLineAlpha,
+	colorToHex,
+	colorToRgba,
+	getChartColors,
+	strokeWeakLayerRgba,
+} from "@/components/trade/chart/theme-colors";
 
 function formatTooltipTs(ts: number): string {
 	const d = new Date(ts);
@@ -38,8 +47,8 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 	const textTertiary = colorToHex(colors.textTertiary);
 	const green = colorToHex(colors.green);
 	const red = colorToHex(colors.red);
-	const gridColor = colorToRgba(colors.border, 0.3);
-	const scaleLineColor = colorToRgba(colors.border, 0.5);
+	const gridColor = strokeWeakLayerRgba(colors.border, chartGridAlpha);
+	const scaleLineColor = strokeWeakLayerRgba(colors.border, chartScaleLineAlpha);
 	const overlayTextColor = colorToHex(colors.foreground);
 
 	const tooltipText = {
@@ -53,7 +62,13 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 
 	const crosshairAxis = {
 		show: true,
-		line: { show: true, style: LineType.Dashed, dashedValue: [4, 2], size: 1, color: textSecondary },
+		line: {
+			show: true,
+			style: LineType.Dashed,
+			dashedValue: [4, 2],
+			size: 1,
+			color: strokeWeakLayerRgba(colors.border, chartCrosshairAlpha),
+		},
 		text: {
 			show: true,
 			color: colorToHex(colors.background),
@@ -103,9 +118,9 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 				low: { show: true, color: textSecondary, textSize: 10 },
 				last: {
 					show: true,
-					upColor: green,
-					downColor: red,
-					noChangeColor: textSecondary,
+					upColor: overlayTextColor,
+					downColor: overlayTextColor,
+					noChangeColor: overlayTextColor,
 					line: { show: true, style: LineType.Dashed, size: 1, dashedValue: [4, 4] },
 					text: {
 						show: true,
@@ -115,7 +130,7 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 						paddingTop: 2,
 						paddingBottom: 2,
 						borderRadius: 2,
-						color: "#ffffff",
+						color: colorToHex(colors.background),
 					},
 				},
 			},
@@ -180,7 +195,7 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 			tickLine: options?.yAxisInside ? { show: false } : tickLine,
 			tickText: options?.yAxisInside ? { ...tickText, marginStart: 2, marginEnd: 2 } : tickText,
 		},
-		separator: { color: colorToRgba(colors.border, 0.4), size: 1 },
+		separator: { color: strokeWeakLayerRgba(colors.border, chartPaneSeparatorAlpha), size: 1 },
 		crosshair: {
 			show: true,
 			horizontal: crosshairAxis,
@@ -189,6 +204,7 @@ export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOpt
 		overlay: {
 			rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
 			polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+			text: { backgroundColor: "transparent", borderSize: 0, borderColor: "transparent" },
 		},
 	};
 }

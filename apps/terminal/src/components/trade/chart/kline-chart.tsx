@@ -1,4 +1,5 @@
 import { Dropdown } from "@hypeterminal/ui";
+import { t } from "@lingui/core/macro";
 import type { Chart } from "klinecharts";
 import { dispose, FormatDateType, init, LoadDataType } from "klinecharts";
 import { useEffect, useRef, useState } from "react";
@@ -18,6 +19,7 @@ import { buildKlineStyles } from "@/lib/chart/kline-styles";
 import { ORDER_LINE_NAME, registerOrderLineOverlay } from "@/lib/chart/order-line-overlay";
 import { cn } from "@/lib/cn";
 import { getInfoClient, useSubscription } from "@/lib/hyperliquid";
+import { type ChartSource, ChartSourceToggle, type ChartSourceToggleIntentHandlers } from "./chart-source-toggle";
 
 const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -40,9 +42,17 @@ interface Props {
 	symbol?: string;
 	theme?: "light" | "dark";
 	yAxisInside?: boolean;
+	onChartSourceChange?: (source: ChartSource) => void;
+	tradingViewIntentHandlers?: ChartSourceToggleIntentHandlers;
 }
 
-export function KlineChart({ symbol = "", yAxisInside = false }: Props) {
+export function KlineChart({
+	symbol = "",
+	theme,
+	yAxisInside = false,
+	onChartSourceChange,
+	tradingViewIntentHandlers,
+}: Props) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const chartRef = useRef<Chart | null>(null);
 	const [activeInterval, setActiveInterval] = useState(DEFAULT_INTERVAL);
@@ -124,7 +134,7 @@ export function KlineChart({ symbol = "", yAxisInside = false }: Props) {
 			chartRef.current = null;
 			dispose(container);
 		};
-	}, [symbol, activeInterval, activeChartType, yAxisInside]);
+	}, [symbol, activeInterval, activeChartType, yAxisInside, theme]);
 
 	const candleData = useSubscription(
 		"candle",
@@ -184,58 +194,76 @@ export function KlineChart({ symbol = "", yAxisInside = false }: Props) {
 
 	const isNonFavoriteActive = !FAVORITE_SET.has(activeInterval.resolution);
 
+	const showChartSourceToggle = Boolean(onChartSourceChange && tradingViewIntentHandlers);
+
 	return (
 		<div className="flex flex-col h-full">
-			<div className="flex items-center gap-0.5 p-2 py-1.5 border-b border-stroke-weak/60 bg-bg-raised">
-				{STARRED_INTERVALS.map((interval) => (
-					<button
-						key={interval.resolution}
-						type="button"
-						onClick={() => setActiveInterval(interval)}
-						className={cn(
-							"px-1.5 py-0.5 text-xs rounded-8 transition-colors",
-							activeInterval.resolution === interval.resolution
-								? "text-text-strong font-semibold"
-								: "text-text-weak hover:text-text-strong",
-						)}
-					>
-						{interval.label}
-					</button>
-				))}
-				<Dropdown
-					trigger={
-						<span
+			<div className="flex min-w-0 items-center justify-between gap-2 border-b border-stroke-weak/60 bg-bg-raised">
+				<div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5 p-2 py-1.5">
+					{STARRED_INTERVALS.map((interval) => (
+						<button
+							key={interval.resolution}
+							type="button"
+							onClick={() => setActiveInterval(interval)}
 							className={cn(
-								"flex items-center gap-0.5 text-xs",
-								isNonFavoriteActive ? "text-text-strong font-semibold" : "text-text-weak",
+								"px-1.5 py-0.5 text-xs rounded-8 transition-colors",
+								activeInterval.resolution === interval.resolution
+									? "text-text-strong font-semibold"
+									: "text-text-weak hover:text-text-strong",
 							)}
 						>
-							{isNonFavoriteActive && activeInterval.label}
-						</span>
-					}
-					items={MORE_INTERVALS.map((interval) => ({
-						label: interval.label,
-						onSelect: () => setActiveInterval(interval),
-					}))}
-					align="start"
-					size="sm"
-					className="inline-flex"
-				/>
-				<div className="w-px h-3.5 bg-stroke-weak" />
-				<Dropdown
-					trigger={
-						<span className="flex items-center gap-0.5 text-xs text-text-strong font-semibold">
-							{activeChartType.label}
-						</span>
-					}
-					items={CHART_TYPES.map((ct) => ({
-						label: ct.label,
-						onSelect: () => setActiveChartType(ct),
-					}))}
-					align="start"
-					size="sm"
-					className="inline-flex"
-				/>
+							{interval.label}
+						</button>
+					))}
+					<Dropdown
+						trigger={
+							<span
+								className={cn(
+									"flex items-center gap-0.5",
+									isNonFavoriteActive ? "text-text-strong font-semibold" : "text-text-weak font-normal",
+								)}
+							>
+								{isNonFavoriteActive ? activeInterval.label : null}
+							</span>
+						}
+						items={MORE_INTERVALS.map((interval) => ({
+							label: interval.label,
+							active: activeInterval.resolution === interval.resolution,
+							onSelect: () => setActiveInterval(interval),
+						}))}
+						align="start"
+						size="sm"
+						triggerVariant="minimal"
+						triggerAriaLabel={isNonFavoriteActive ? undefined : t`More intervals`}
+						className="inline-flex"
+						popupClassName="min-w-0 w-max"
+					/>
+					<div className="h-3 w-px shrink-0 self-center bg-stroke-weak/50" aria-hidden />
+					<Dropdown
+						trigger={
+							<span className="flex items-center gap-0.5 font-semibold text-text-strong">{activeChartType.label}</span>
+						}
+						items={CHART_TYPES.map((ct) => ({
+							label: ct.label,
+							active: activeChartType.type === ct.type,
+							onSelect: () => setActiveChartType(ct),
+						}))}
+						align="start"
+						size="sm"
+						triggerVariant="minimal"
+						className="inline-flex"
+						popupClassName="min-w-0 w-max"
+					/>
+				</div>
+				{showChartSourceToggle ? (
+					<div className="shrink-0 pr-2">
+						<ChartSourceToggle
+							value="default"
+							onValueChange={onChartSourceChange}
+							tradingViewIntentHandlers={tradingViewIntentHandlers}
+						/>
+					</div>
+				) : null}
 			</div>
 			<div ref={containerRef} className="flex-1 min-h-0" />
 		</div>

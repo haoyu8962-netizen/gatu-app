@@ -49,9 +49,37 @@ body,
 	background-color: var(--tv-bg) !important;
 }
 
-/* ========== TOP TOOLBAR ========== */
+/* ========== TOP TOOLBAR & CHROME ========== */
 .layout__area--top {
-	border-bottom: 1px solid var(--tv-border) !important;
+	border-bottom: 1px solid var(--tv-toolbar-border, var(--tv-border)) !important;
+	height: 36px !important;
+	min-height: 36px !important;
+}
+
+/* Compact buttons to reduce hover area */
+.layout__area--top button {
+	min-width: unset !important;
+	padding-left: 5px !important;
+	padding-right: 5px !important;
+	border-radius: 4px !important;
+}
+
+/* Smaller icons throughout toolbar */
+.layout__area--top svg {
+	width: 14px !important;
+	height: 14px !important;
+}
+
+[data-ht-active="true"] {
+	font-weight: 600 !important;
+}
+
+.layout__area--left {
+	border-right: 1px solid var(--tv-toolbar-border, var(--tv-border)) !important;
+}
+
+.chart-controls-bar {
+	border-top-color: var(--tv-toolbar-border, var(--tv-border)) !important;
 }
 
 /* ========== DIALOGS & POPUPS ========== */

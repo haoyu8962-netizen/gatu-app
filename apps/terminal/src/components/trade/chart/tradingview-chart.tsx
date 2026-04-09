@@ -22,17 +22,21 @@ interface Props {
 	symbol?: string;
 	interval?: string;
 	theme?: "light" | "dark";
+	onSwitchToDefault?: () => void;
 }
 
 export function TradingViewChart({
 	symbol = DEFAULT_CHART_SYMBOL,
 	interval = DEFAULT_CHART_INTERVAL,
 	theme = DEFAULT_CHART_THEME,
+	onSwitchToDefault,
 }: Props) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const cssUrlRef = useRef<string | null>(null);
 	const chartReadyRef = useRef(false);
+	const onSwitchToDefaultRef = useRef(onSwitchToDefault);
+	onSwitchToDefaultRef.current = onSwitchToDefault;
 
 	useEffect(() => {
 		if (!containerRef.current) return;
@@ -87,6 +91,44 @@ export function TradingViewChart({
 				widgetRef.current.onChartReady(() => {
 					chartReadyRef.current = true;
 				});
+
+				if (onSwitchToDefaultRef.current) {
+					widgetRef.current.headerReady().then(() => {
+						const widget = widgetRef.current;
+						if (!widget) return;
+
+						const btn = widget.createButton({ align: "right", useTradingViewStyle: false });
+						btn.style.cssText =
+							"display:inline-flex;align-items:center;gap:6px;padding:0 4px;cursor:default;height:100%;";
+
+						const tvLabel = document.createElement("span");
+						tvLabel.textContent = "TradingView";
+						tvLabel.dataset.htActive = "true";
+						tvLabel.style.cssText = "font-size:12px;color:var(--tv-fg,inherit);";
+
+						const sep = document.createElement("span");
+						sep.style.cssText =
+							"display:inline-block;width:1px;height:12px;background:var(--tv-color-toolbar-divider-background,rgba(128,128,128,0.3));align-self:center;flex-shrink:0;";
+
+						const defaultLabel = document.createElement("span");
+						defaultLabel.textContent = "Default";
+						defaultLabel.style.cssText =
+							"font-size:12px;font-weight:400;color:var(--tv-muted-fg,rgba(128,128,128,0.8));cursor:pointer;";
+						defaultLabel.addEventListener("pointerover", () => {
+							defaultLabel.style.color = "var(--tv-fg,inherit)";
+						});
+						defaultLabel.addEventListener("pointerout", () => {
+							defaultLabel.style.color = "var(--tv-muted-fg,rgba(128,128,128,0.8))";
+						});
+						defaultLabel.addEventListener("click", () => {
+							onSwitchToDefaultRef.current?.();
+						});
+
+						btn.appendChild(defaultLabel);
+						btn.appendChild(sep);
+						btn.appendChild(tvLabel);
+					});
+				}
 			} catch (error) {
 				console.error("Error initializing TradingView widget:", error);
 			}
