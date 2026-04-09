@@ -25,14 +25,9 @@ export function GlobalSettingsDialog() {
 	const { close } = useSettingsDialogActions();
 	const { i18n } = useLingui();
 	const slippagePercent = useMarketOrderSlippagePercent();
-	const { showOrderbookInQuote, showChartScanlines, numberFormatLocale } = useGlobalSettings();
-	const {
-		setShowOrderbookInQuote,
-		setShowChartScanlines,
-		setNumberFormatLocale,
-		setMarketOrderSlippagePercent,
-		setNetwork,
-	} = useGlobalSettingsActions();
+	const { showOrderbookInQuote, numberFormatLocale } = useGlobalSettings();
+	const { setShowOrderbookInQuote, setNumberFormatLocale, setMarketOrderSlippagePercent, setNetwork } =
+		useGlobalSettingsActions();
 	const network = useNetwork();
 
 	const [localSlippageInput, setLocalSlippageInput] = useState<string | null>(null);
@@ -124,10 +119,6 @@ export function GlobalSettingsDialog() {
 								<span>{MARKET_ORDER_SLIPPAGE_MAX_PERCENT}%</span>
 							</div>
 						</div>
-					</SettingsSection>
-
-					<SettingsSection title={t`Chart`}>
-						<Toggle label={t`Show Scanlines`} checked={showChartScanlines} onCheckedChange={setShowChartScanlines} />
 					</SettingsSection>
 
 					<SettingsSection title={t`Order Book`}>

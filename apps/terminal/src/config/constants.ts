@@ -184,7 +184,7 @@ export const CHART_DISABLED_FEATURES = [
 	"display_market_status",
 	"popup_hints",
 	"header_saveload",
-	"create_volume_indicator_by_default",
+	"header_screenshot",
 	"volume_force_overlay",
 	"show_logo_on_all_charts",
 	"caption_buttons_text_if_possible",

@@ -9,7 +9,7 @@ import { SWAP_SUCCESS_DURATION_MS } from "@/config/time";
 import { getAvailableFromTotals, getSpotBalance } from "@/domain/trade/balances";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { findSpotPair, getAvailablePairTokens, getSwapSide } from "@/domain/trade/swap";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import { useExchange } from "@/lib/hyperliquid";
@@ -46,7 +46,7 @@ interface Props {
 
 function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Props) {
 	const { spotMarkets } = useMarketsInfo();
-	const { spotBalances } = useAccountBalances();
+	const { spotBalances } = useDefaultDexBalances();
 	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
 
 	const defaultToToken = useMemo(() => {
@@ -222,6 +222,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 							<TokenPanel
 								label={t`From`}
 								balance={fromBalance}
+								balanceToken={fromToken}
 								amount={amount}
 								onAmountChange={setAmount}
 								onMaxClick={handleMaxClick}
@@ -256,6 +257,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 							<TokenPanel
 								label={t`To`}
 								balance={toBalance}
+								balanceToken={toToken}
 								amount={estimatedReceive > 0 ? `~${formatToken(estimatedReceive, 6)}` : ""}
 								disabled
 								editable={false}
@@ -272,27 +274,29 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 						</div>
 					</div>
 
-					<div className="flex items-center justify-between text-xs text-text-strong px-1">
-						<span>
-							<Trans>Rate</Trans>
-						</span>
-						<span className="tabular-nums">
-							{rate > 0 ? (
-								<>
-									1 <AssetDisplay coin={fromToken} hideIcon /> ≈ {formatToken(rate, 6)}{" "}
-									<AssetDisplay coin={toToken} hideIcon />
-								</>
-							) : (
-								"-"
-							)}
-						</span>
-					</div>
-
-					<div className="flex items-center justify-between text-xs text-text-strong px-1">
-						<span>
-							<Trans>Slippage tolerance</Trans>
-						</span>
-						<span className="tabular-nums">{DEFAULT_SLIPPAGE_BPS / 100}%</span>
+					<div className="rounded-8 border border-stroke-weak/35 bg-fill-weak/40 px-3 py-2.5 space-y-2">
+						<div className="flex items-center justify-between text-xs text-text-weak">
+							<span>
+								<Trans>Rate</Trans>
+							</span>
+							<span className="tabular-nums text-text-strong">
+								{rate > 0 ? (
+									<>
+										1 <AssetDisplay coin={fromToken} hideIcon /> ≈ {formatToken(rate, 6)}{" "}
+										<AssetDisplay coin={toToken} hideIcon />
+									</>
+								) : (
+									"-"
+								)}
+							</span>
+						</div>
+						<div className="h-px bg-stroke-weak/30" />
+						<div className="flex items-center justify-between text-xs text-text-weak">
+							<span>
+								<Trans>Slippage tolerance</Trans>
+							</span>
+							<span className="tabular-nums text-text-strong">{DEFAULT_SLIPPAGE_BPS / 100}%</span>
+						</div>
 					</div>
 
 					{insufficientBalance && !showSuccess && (
@@ -338,14 +342,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 						</div>
 					)}
 
-					<TradingActionButton
-						variant="filled"
-						intent="brand"
-						size="lg"
-						onClick={handleSubmit}
-						disabled={!canSubmit || isSubmitting}
-						className="w-full"
-					>
+					<TradingActionButton onClick={handleSubmit} disabled={!canSubmit || isSubmitting} className="w-full">
 						{isSubmitting ? (
 							<>
 								<SpinnerGapIcon className="size-3.5 animate-spin" />
@@ -364,6 +361,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 interface TokenPanelProps {
 	label: string;
 	balance: number;
+	balanceToken: string;
 	amount: string;
 	onAmountChange?: (value: string) => void;
 	onMaxClick?: () => void;
@@ -376,6 +374,7 @@ interface TokenPanelProps {
 function TokenPanel({
 	label,
 	balance,
+	balanceToken,
 	amount,
 	onAmountChange,
 	onMaxClick,
@@ -387,40 +386,35 @@ function TokenPanel({
 	return (
 		<div
 			className={cn(
-				"p-3 rounded-8 border transition-colors",
-				hasError ? "border-stroke-warning-strong/40 bg-fill-warning-weak/50" : "border-stroke-weak/40 bg-bg-overlay/30",
+				"rounded-10 border p-3 space-y-2 transition-colors",
+				hasError ? "border-stroke-warning-strong/40 bg-fill-warning-weak/50" : "border-stroke-weak/40 bg-fill-weak",
 			)}
 		>
-			<div className="flex items-center justify-between mb-2">
-				<span className="text-xs text-text-strong uppercase tracking-wider">{label}</span>
-				<span className="text-xs text-text-strong tabular-nums">
-					<Trans>Balance</Trans>: {formatToken(balance, 4)}
+			<div className="flex items-center justify-between">
+				<span className="text-3xs font-medium uppercase tracking-[0.12em] text-text-weak">{label}</span>
+				<span className="text-xs tabular-nums text-text-weak">
+					<Trans>Balance</Trans>: {formatToken(balance, { decimals: 4, symbol: balanceToken })}
 				</span>
 			</div>
 
-			<div className="flex items-center gap-3">
-				{tokenSelector}
-
-				<div className="flex-1">
+			<div className="flex items-center gap-2">
+				<div className="shrink-0">{tokenSelector}</div>
+				<div className="flex-1 min-w-0">
 					{editable ? (
 						<NumberInput
 							placeholder="0.00"
 							value={amount}
 							onChange={(e) => onAmountChange?.(e.target.value)}
-							maxLabel={
-								<>
-									{t`MAX`}: {formatToken(balance, 4)}
-								</>
-							}
+							maxLabel={t`MAX`}
 							onMaxClick={onMaxClick}
 							className={cn(
-								"w-full h-9 text-base font-medium bg-transparent border-stroke-weak/40 focus:border-stroke-brand-strong/60 tabular-nums text-right",
-								hasError && "text-text-warning border-stroke-warning-strong/40 focus:border-stroke-warning-strong",
+								"w-full tabular-nums",
+								hasError && "border-stroke-warning-strong/40 text-text-warning focus:border-stroke-warning-strong",
 							)}
 							disabled={disabled}
 						/>
 					) : (
-						<div className="h-9 flex items-center justify-end text-base font-medium text-text-weak tabular-nums pr-2">
+						<div className="flex h-7 items-center justify-end text-xs tabular-nums text-text-weak">
 							{amount || "0.00"}
 						</div>
 					)}

@@ -35,7 +35,7 @@ const validatedStorage = createValidatedStorage(globalSettingsSchema, "global se
 const DEFAULT_GLOBAL_SETTINGS = {
 	hideSmallBalances: true,
 	showOrderbookInQuote: false,
-	showChartScanlines: true,
+	showChartScanlines: false,
 	numberFormatLocale: "auto" as NumberFormatLocale,
 	marketOrderSlippagePercent: DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	marginMode: "cross" as MarginMode,
