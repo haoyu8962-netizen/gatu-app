@@ -65,7 +65,7 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(({ className, c
 		<Tabs.List ref={ref} className={cn(tabsListVariants({ variant }), fullWidth && "w-full", className)} {...props}>
 			{variant === "underline" ? (
 				<Tabs.Indicator
-					className="absolute bottom-0 h-0.5 bg-fill-brand-strong transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
+					className="absolute -bottom-px h-0.5 bg-fill-brand-strong transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
 					style={{
 						left: "var(--active-tab-left)",
 						width: "var(--active-tab-width)",
