@@ -3,7 +3,7 @@ import { t } from "@lingui/core/macro";
 import { StarIcon, XIcon } from "@phosphor-icons/react";
 import { get24hChange } from "@/domain/market";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatPrice } from "@/lib/format";
+import { formatPercent } from "@/lib/format";
 import { useMarketsInfo } from "@/lib/hyperliquid";
 import { getValueColorClass } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
@@ -24,7 +24,7 @@ export function FavoritesStrip() {
 
 	return (
 		<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-			<StarIcon weight="fill" className="size-3 shrink-0 text-highlight" />
+			<StarIcon weight="fill" className="size-3 shrink-0 text-fill-yellow" />
 			{favorites.map((name) => (
 				<FavoriteChip key={name} name={name} isActive={name === selectedMarket} />
 			))}
@@ -45,7 +45,6 @@ function FavoriteChip({ name, isActive }: FavoriteChipProps) {
 	const market = getMarketInfo(name);
 	const displayName = market?.pairName ?? name;
 	const changePct = get24hChange(market?.prevDayPx, market?.markPx);
-	const szDecimals = market?.szDecimals ?? 4;
 
 	function handleClick() {
 		setSelectedMarket(scope, name);
@@ -71,29 +70,37 @@ function FavoriteChip({ name, isActive }: FavoriteChipProps) {
 				onClick={handleClick}
 				onKeyDown={handleKeyDown}
 				tabIndex={0}
+				aria-pressed={isActive}
 				aria-label={t`Select ${displayName} market`}
 				className={cn(
-					"flex items-center gap-1 shrink-0 px-2 py-1.5 text-xs rounded-8 bg-bg-overlay border no-underline transition-colors",
-					isActive ? "border-stroke-strong" : "border-transparent hover:border-stroke-weak",
+					"flex items-center gap-1.5 shrink-0 px-2 py-1 text-xs rounded-8 border no-underline transition-[color,background-color,border-color,opacity] duration-150 hover:opacity-100 focus-visible:outline-stroke-weak",
+					isActive
+						? "border-stroke-weak/90 bg-fill-weak"
+						: "border-stroke-weak/35 bg-fill-weaker hover:border-stroke-weak/55 hover:bg-fill-weak/80",
 				)}
 			>
-				<span className="font-medium text-text-strong uppercase">{displayName}</span>
-				{market?.markPx != null && (
-					<>
-						<span className="tabular-nums text-text-strong">{formatPrice(market.markPx, { szDecimals })}</span>
-						{changePct != null && (
-							<span className={cn("tabular-nums", getValueColorClass(changePct))}>
-								{formatPercent(changePct / 100)}
-							</span>
+				<span
+					className={cn("font-semibold uppercase transition-colors", isActive ? "text-text-strong" : "text-text-weak")}
+				>
+					{displayName}
+				</span>
+				{changePct != null && (
+					<span
+						className={cn(
+							"tabular-nums font-medium transition-opacity",
+							getValueColorClass(changePct),
+							!isActive && "opacity-85",
 						)}
-					</>
+					>
+						{formatPercent(changePct / 100)}
+					</span>
 				)}
 			</Button>
 			<button
 				type="button"
 				onClick={handleRemove}
 				aria-label={t`Remove ${displayName} from favorites`}
-				className="absolute -top-0.5 -right-0.5 hidden size-3 cursor-pointer items-center justify-center bg-bg-overlay text-text-weak hover:text-text-strong group-hover/fav:flex"
+				className="absolute -top-0.5 -right-0.5 hidden size-3 cursor-pointer items-center justify-center bg-bg-sunken text-text-weak hover:text-text-strong group-hover/fav:flex"
 			>
 				<XIcon className="size-2.5" weight="bold" />
 			</button>

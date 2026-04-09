@@ -6,6 +6,7 @@ import { useMarkets } from "@/lib/hyperliquid/markets/use-markets";
 
 interface Props {
 	coin: string;
+	iconUrl?: string;
 	variant?: "short" | "full";
 	subtitle?: ReactNode;
 	hideIcon?: boolean;
@@ -41,6 +42,7 @@ function getFallbackText(name: string): string {
 
 export function AssetDisplay({
 	coin,
+	iconUrl: iconUrlOverride,
 	variant,
 	subtitle,
 	hideIcon = false,
@@ -57,7 +59,7 @@ export function AssetDisplay({
 	const showIcon = !hideIcon;
 	const showName = !hideName;
 	const name = resolveName(market, token, coin, variant);
-	const iconUrl = resolveIconUrl(market, token);
+	const iconUrl = iconUrlOverride ?? resolveIconUrl(market, token);
 	const fallbackText = getFallbackText(name);
 
 	const icon = (
@@ -65,7 +67,9 @@ export function AssetDisplay({
 	);
 
 	if (showIcon && !showName) {
-		return <span className={className}>{icon}</span>;
+		return (
+			<span className={cn("inline-flex shrink-0 items-center justify-center leading-none", className)}>{icon}</span>
+		);
 	}
 
 	if (!showIcon && showName) {

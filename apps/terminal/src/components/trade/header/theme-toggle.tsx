@@ -24,7 +24,7 @@ function ThemeToggleButton() {
 			variant="ghost"
 			intent="neutral"
 			className={cn(
-				"size-7",
+				"size-8 shrink-0",
 				isDark ? "text-text-warning hover:text-text-warning/80" : "text-text-brand hover:text-text-brand/80",
 			)}
 			onClick={() => setTheme(isDark ? "light" : "dark")}

@@ -1,5 +1,4 @@
 import { Dropdown, type DropdownItem } from "@hypeterminal/ui";
-import { CaretDownIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import type { SpotToken } from "@/lib/hyperliquid/markets";
@@ -38,7 +37,6 @@ export function TokenSelectorDropdown({ tokens, selectedToken, onSelect, getBala
 					) : (
 						<span className="text-sm font-medium">{selectedToken}</span>
 					)}
-					<CaretDownIcon className="size-3.5 text-text-weak ml-1" />
 				</span>
 			}
 			className={cn(disabled && "opacity-50 cursor-not-allowed")}

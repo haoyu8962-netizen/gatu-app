@@ -6,6 +6,7 @@ import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { TokenSelector } from "../chart/token-selector";
 import { FavoritesStrip } from "../header/favorites-strip";
+import { MarketOverview } from "../market-overview";
 import { AnalysisSection } from "./analysis-section";
 import { TradeSidebar } from "./trade-sidebar";
 
@@ -22,13 +23,18 @@ export function MainWorkspace() {
 	}
 
 	return (
-		<div className="flex-1 min-h-0">
-			<div className="flex items-center gap-2.5 border-b border-stroke-weak/60 px-2 py-1.5">
-				<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
-				<div className="h-4 w-px bg-stroke-weak/60 shrink-0" />
-				<FavoritesStrip />
+		<div className="flex-1 min-h-0 flex flex-col bg-bg-base">
+			<div className="shrink-0 border-b border-stroke-weak">
+				<div className="flex items-center gap-2.5 min-w-0 px-2 py-1.5">
+					<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
+					<div className="h-4 w-px bg-stroke-weak/50 shrink-0" aria-hidden />
+					<FavoritesStrip />
+				</div>
+				<div className="border-t border-stroke-weak/35 px-2 py-1.5 min-w-0 overflow-x-auto scrollbar-none">
+					<MarketOverview />
+				</div>
 			</div>
-			<ResizablePanelGroup className="h-full min-h-0" defaultLayout={defaultLayout} onLayoutChanged={onLayoutChanged}>
+			<ResizablePanelGroup className="min-h-0 flex-1" defaultLayout={defaultLayout} onLayoutChanged={onLayoutChanged}>
 				<ResizablePanel defaultSize={analysis.defaultSize} minSize={analysis.minSize}>
 					<div className="h-full flex flex-col bg-bg-raised">
 						<div className="flex-1 min-h-0">
@@ -36,10 +42,7 @@ export function MainWorkspace() {
 						</div>
 					</div>
 				</ResizablePanel>
-				<ResizableHandle
-					withHandle
-					className="bg-stroke-weak/40 data-[resize-handle-state=hover]:bg-fill-brand-strong/30 data-[resize-handle-state=drag]:bg-fill-brand-strong/50"
-				/>
+				<ResizableHandle withHandle />
 				<ResizablePanel defaultSize={sidebar.defaultSize} minSize={sidebar.minSize}>
 					<TradeSidebar />
 				</ResizablePanel>

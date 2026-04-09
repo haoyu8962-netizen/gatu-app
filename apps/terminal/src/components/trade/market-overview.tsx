@@ -1,4 +1,3 @@
-import { Badge } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, FireIcon } from "@phosphor-icons/react";
 import { get24hChange, getOiUsd } from "@/domain/market";
@@ -14,11 +13,8 @@ import {
 import { getValueColorClass, toBig } from "@/lib/trade/numbers";
 import { StatBlock } from "./chart/stat-block";
 
-function getLabelForMarketKind(market: UnifiedMarketInfo | undefined): string {
-	if (!market) return "";
-	if (market.kind === "spot") return "Spot";
-	if (market.kind === "builderPerp") return `${market.dex}`;
-	return "";
+function StatDivider() {
+	return <div className="h-3 w-px shrink-0 self-center bg-stroke-weak/30" aria-hidden />;
 }
 
 function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | null {
@@ -56,72 +52,106 @@ export function MarketOverview() {
 	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
 	const perpCtx = perpCtxEvent?.ctx;
 
-	const markPx = liveCtx?.markPx;
+	const markPxLive = liveCtx?.markPx;
 	const dayNtlVlm = liveCtx?.dayNtlVlm;
 	const oraclePx = perpCtx?.oraclePx;
 	const funding = perpCtx?.funding;
 
+	const markPxForDisplay = markPxLive ?? selectedMarketInfo?.markPx;
+	const prevDayForChange = liveCtx?.prevDayPx ?? selectedMarketInfo?.prevDayPx;
+	const markForChange = markPxLive ?? selectedMarketInfo?.markPx;
+
 	const fundingNum = toBig(funding)?.toNumber() ?? 0;
-	const change24h = get24hChange(liveCtx?.prevDayPx, liveCtx?.markPx);
+	const change24h = get24hChange(prevDayForChange, markForChange);
 	const oiUsd = getOiUsd(perpCtx?.openInterest, perpCtx?.markPx);
 	const spotTokenAddress = getSpotTokenAddress(selectedMarketInfo);
 
+	const heroPrice = markPxForDisplay != null ? formatUSD(markPxForDisplay, { compact: false }) : "—";
+	const changePct = change24h !== null ? formatPercent(change24h / 100, { signDisplay: "exceptZero" }) : "—";
+
 	return (
-		<div className="hidden md:flex items-center gap-4 text-xs">
-			{getLabelForMarketKind(selectedMarketInfo) ? (
-				<Badge className="uppercase" tone="neutral">
-					{getLabelForMarketKind(selectedMarketInfo)}
-				</Badge>
-			) : null}
-			<div className="flex items-center gap-1">
-				<span className="text-2xs text-text-weak uppercase tracking-tight">{isSpot ? t`PRICE` : t`MARK`}</span>
-				<span className={cn("text-sm tabular-nums font-semibold", getValueColorClass(change24h))}>
-					{formatUSD(markPx, { compact: false })}
+		<div className="flex min-h-0 w-max min-w-0 flex-nowrap items-center gap-0 text-xs">
+			<div className="flex shrink-0 items-center gap-2 border-r border-stroke-weak/35 pr-2.5">
+				<span className="font-sans text-sm font-semibold tabular-nums tracking-tight text-text-strong">
+					{heroPrice}
 				</span>
+				<div className="flex min-w-0 items-baseline gap-1">
+					<span className="shrink-0 text-2xs font-medium uppercase tracking-wide text-text-weak">{t`24h`}</span>
+					<span
+						className={cn(
+							"min-w-0 font-sans text-xs font-medium tabular-nums leading-none",
+							change24h === null ? "text-text-weak" : getValueColorClass(change24h),
+						)}
+					>
+						{changePct}
+					</span>
+				</div>
 			</div>
-			<StatBlock
-				label={t`24H`}
-				value={change24h !== null ? formatPercent(change24h / 100, { signDisplay: "exceptZero" }) : "—"}
-				valueClass={getValueColorClass(change24h)}
-			/>
+
 			{!isSpot && (
 				<>
-					<StatBlock label={t`ORACLE`} value={formatUSD(oraclePx)} />
+					<StatDivider />
+					<StatBlock layout="inline" label={t`ORACLE`} value={formatUSD(oraclePx)} />
+					<StatDivider />
 					<StatBlock
-						label={t`OI`}
+						layout="inline"
+						label={t`24H VOL`}
+						value={formatUSD(dayNtlVlm, {
+							notation: "compact",
+							compactDisplay: "short",
+						})}
+					/>
+					<StatDivider />
+					<StatBlock
+						layout="inline"
+						label={t`OPEN INT`}
 						value={formatUSD(oiUsd, {
 							notation: "compact",
 							compactDisplay: "short",
 						})}
 					/>
-					<div className="flex items-center gap-1">
-						<FireIcon className={cn("size-3", getValueColorClass(fundingNum))} />
-						<span className={cn("tabular-nums font-medium", getValueColorClass(fundingNum))}>
-							{formatPercent(fundingNum, {
-								minimumFractionDigits: 4,
-								signDisplay: "exceptZero",
-							})}
-						</span>
-					</div>
+					<StatDivider />
+					<StatBlock
+						layout="inline"
+						label={t`FUNDING`}
+						value={formatPercent(fundingNum, {
+							minimumFractionDigits: 4,
+							signDisplay: "exceptZero",
+						})}
+						valueClass={getValueColorClass(fundingNum)}
+						icon={<FireIcon className={cn("size-2.5 shrink-0", getValueColorClass(fundingNum))} />}
+					/>
 				</>
 			)}
-			<StatBlock
-				label={t`VOL`}
-				value={formatUSD(dayNtlVlm, {
-					notation: "compact",
-					compactDisplay: "short",
-				})}
-			/>
+			{isSpot && (
+				<>
+					<StatDivider />
+					<StatBlock
+						layout="inline"
+						label={t`24H VOL`}
+						value={formatUSD(dayNtlVlm, {
+							notation: "compact",
+							compactDisplay: "short",
+						})}
+					/>
+				</>
+			)}
 			{spotTokenAddress && (
-				<a
-					href={getExplorerTokenUrl(spotTokenAddress)}
-					target="_blank"
-					rel="noopener noreferrer"
-					className="flex items-center gap-1 text-text-strong hover:text-text-strong transition-colors"
-				>
-					<span className="font-sans">{shortenAddress(spotTokenAddress, 4, 4)}</span>
-					<ArrowSquareOutIcon className="size-3" />
-				</a>
+				<>
+					<StatDivider />
+					<div className="flex items-center gap-1.5 whitespace-nowrap px-1.5 py-px">
+						<span className="text-2xs text-text-weak/80 uppercase tracking-wide">{t`TOKEN`}</span>
+						<a
+							href={getExplorerTokenUrl(spotTokenAddress)}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="inline-flex items-center gap-0.5 font-sans text-xs font-medium tabular-nums text-text-strong hover:text-text-brand transition-colors"
+						>
+							{shortenAddress(spotTokenAddress, 4, 4)}
+							<ArrowSquareOutIcon className="size-2.5 shrink-0 text-icon-neutral" />
+						</a>
+					</div>
+				</>
 			)}
 		</div>
 	);

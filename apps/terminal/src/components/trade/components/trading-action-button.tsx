@@ -12,7 +12,15 @@ interface Props extends Omit<ButtonProps, "onClick"> {
 	children: ReactNode;
 }
 
-export function TradingActionButton({ onClick, children, disabled, className, ...buttonProps }: Props) {
+export function TradingActionButton({
+	onClick,
+	children,
+	disabled,
+	className,
+	variant = "filled",
+	intent = "neutral",
+	...buttonProps
+}: Props) {
 	const { isReady, isEnabling, needsTrading, guardAction } = useTradingGuard();
 
 	const handleClick = useCallback(() => {
@@ -25,6 +33,8 @@ export function TradingActionButton({ onClick, children, disabled, className, ..
 		<div className="flex flex-col gap-1 items-end">
 			<Button
 				{...buttonProps}
+				variant={variant}
+				intent={intent}
 				onClick={handleClick}
 				disabled={disabled || isEnabling || (!isReady && !needsTrading)}
 				className={cn(showEnableTrading && className)}

@@ -4,7 +4,7 @@ import { Trans } from "@lingui/react/macro";
 
 export function NotFoundPage() {
 	return (
-		<div className="min-h-screen bg-bg-sunken text-text-strong flex items-center justify-center p-6">
+		<div className="min-h-screen bg-bg-base text-text-strong flex items-center justify-center p-6">
 			<div className="text-center space-y-3">
 				<div className="space-y-1">
 					<p className="text-xs uppercase tracking-wider text-text-strong">404</p>

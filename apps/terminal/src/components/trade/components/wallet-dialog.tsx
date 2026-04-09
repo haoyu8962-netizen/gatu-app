@@ -11,6 +11,7 @@ import {
 import { Trans } from "@lingui/react/macro";
 import {
 	ArrowSquareOutIcon,
+	CaretDownIcon,
 	FlaskIcon,
 	QuestionIcon,
 	ShieldIcon,
@@ -18,7 +19,7 @@ import {
 	WalletIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { type ChangeEvent, type ReactNode, useMemo, useState } from "react";
 import type { Address } from "viem";
 import { isAddress } from "viem";
 import { type Connector, useConnect, useConnectors } from "wagmi";
@@ -26,6 +27,86 @@ import { mock } from "wagmi/connectors";
 import { MOCK_WALLETS } from "@/config/wagmi";
 import { cn } from "@/lib/cn";
 import { getLastUsedWallet, getWalletInfo, isMockConnector, setLastUsedWallet } from "@/lib/wallet-utils";
+
+function WalletSection({
+	label,
+	tone,
+	children,
+}: {
+	label: ReactNode;
+	tone?: "default" | "warning";
+	children: ReactNode;
+}) {
+	return (
+		<div
+			className={cn(
+				"rounded-12 border p-3 space-y-3",
+				tone === "warning"
+					? "border-stroke-warning-strong/25 bg-fill-warning-weak/20"
+					: "border-stroke-weak/60 bg-bg-raised/40",
+			)}
+		>
+			<p
+				className={cn(
+					"text-xs font-semibold uppercase tracking-wider px-0.5",
+					tone === "warning" ? "text-text-warning" : "text-text-weak",
+				)}
+			>
+				{label}
+			</p>
+			{children}
+		</div>
+	);
+}
+
+function ConnectorRow({
+	connector,
+	isPending,
+	connectingId,
+	onConnect,
+}: {
+	connector: Connector;
+	isPending: boolean;
+	connectingId: string | null;
+	onConnect: (connector: Connector) => void;
+}) {
+	const walletInfo = getWalletInfo(connector);
+	const Icon = walletInfo.icon;
+	const isConnecting = connectingId === connector.uid;
+
+	return (
+		<button
+			type="button"
+			onClick={() => onConnect(connector)}
+			disabled={isPending}
+			className={cn(
+				"w-full flex items-center gap-3 p-3 rounded-10 border cursor-pointer text-left",
+				"bg-bg-base hover:bg-bg-raised/60 border-stroke-weak/80",
+				"hover:border-stroke-brand-strong/35 hover:shadow-sm",
+				"group focus-visible:outline-2 focus-visible:outline-stroke-focus",
+				"disabled:opacity-50 disabled:cursor-not-allowed",
+			)}
+		>
+			<div
+				className={cn(
+					"size-10 rounded-10 overflow-hidden flex-shrink-0 shadow-raised",
+					"ring-1 ring-stroke-weak/40 group-hover:ring-stroke-brand-strong/25 transition-[box-shadow,ring-color]",
+				)}
+			>
+				<Icon className="size-full" />
+			</div>
+			<div className="flex-1 text-left min-w-0">
+				<p className="font-medium text-sm group-hover:text-text-brand transition-colors">{connector.name}</p>
+				<p className="text-xs text-text-weak truncate">{walletInfo.description}</p>
+			</div>
+			{isConnecting ? (
+				<SpinnerGapIcon className="size-4 animate-spin text-text-brand flex-shrink-0" />
+			) : (
+				<div className="size-4 rounded-full border border-stroke-weak group-hover:border-stroke-brand-strong/50 flex-shrink-0 transition-colors" />
+			)}
+		</button>
+	);
+}
 
 interface Props {
 	open: boolean;
@@ -120,113 +201,62 @@ export function WalletDialog({ open, onOpenChange }: Props) {
 
 	return (
 		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm" showClose>
+			<ModalPopup size="lg" showClose>
 				<ModalHeader>
-					<ModalTitle className="flex items-center gap-2 text-lg">
-						<WalletIcon className="size-5 text-text-brand" />
-						<Trans>Connect Wallet</Trans>
+					<ModalTitle className="flex items-center gap-3 text-lg">
+						<span
+							className={cn(
+								"flex size-10 shrink-0 items-center justify-center rounded-10",
+								"border border-stroke-weak/70 bg-fill-brand-strong/12",
+								"shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]",
+							)}
+						>
+							<WalletIcon className="size-5 text-text-brand" weight="duotone" />
+						</span>
+						<span className="leading-tight">
+							<Trans>Connect Wallet</Trans>
+						</span>
 					</ModalTitle>
 					<ModalDescription>
 						<Trans>Connect your wallet to start trading on Hyperliquid</Trans>
 					</ModalDescription>
 				</ModalHeader>
 
-				<ModalContent className="space-y-4 max-h-[60vh] overflow-y-auto">
+				<ModalContent className="space-y-4 max-h-[min(60vh,28rem)] overflow-y-auto">
 					{availableConnectors.popular.length > 0 && (
-						<div className="space-y-2">
-							<p className="text-xs font-medium text-text-weak uppercase tracking-wider px-1">
-								<Trans>Popular</Trans>
-							</p>
-							<div className="space-y-2">
-								{availableConnectors.popular.map((connector) => {
-									const walletInfo = getWalletInfo(connector);
-									const Icon = walletInfo.icon;
-									const isConnecting = connectingId === connector.uid;
-
-									return (
-										<button
-											key={connector.uid}
-											type="button"
-											onClick={() => handleConnect(connector)}
-											disabled={isPending}
-											className={cn(
-												"w-full flex items-center gap-3 p-3 rounded-12 border cursor-pointer",
-												"bg-bg-base hover:bg-bg-raised/50 hover:border-stroke-brand-strong/30",
-												"group focus-visible:outline-2 focus-visible:outline-stroke-focus",
-												"disabled:opacity-50 disabled:cursor-not-allowed",
-											)}
-										>
-											<div className="size-10 rounded-12 overflow-hidden flex-shrink-0 shadow-raised">
-												<Icon className="size-full" />
-											</div>
-											<div className="flex-1 text-left min-w-0">
-												<p className="font-medium text-sm group-hover:text-text-brand transition-colors">
-													{connector.name}
-												</p>
-												<p className="text-xs text-text-weak truncate">{walletInfo.description}</p>
-											</div>
-											{isConnecting ? (
-												<SpinnerGapIcon className="size-4 animate-spin text-text-brand flex-shrink-0" />
-											) : (
-												<div className="size-4 rounded-full border border-stroke-weak group-hover:border-stroke-brand-strong/50 flex-shrink-0 transition-colors" />
-											)}
-										</button>
-									);
-								})}
+						<WalletSection label={<Trans>Popular</Trans>}>
+							<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+								{availableConnectors.popular.map((connector) => (
+									<ConnectorRow
+										key={connector.uid}
+										connector={connector}
+										isPending={isPending}
+										connectingId={connectingId}
+										onConnect={handleConnect}
+									/>
+								))}
 							</div>
-						</div>
+						</WalletSection>
 					)}
 
 					{availableConnectors.other.length > 0 && (
-						<div className="space-y-2">
-							<p className="text-xs font-medium text-text-weak uppercase tracking-wider px-1">
-								<Trans>Other Options</Trans>
-							</p>
+						<WalletSection label={<Trans>Other Options</Trans>}>
 							<div className="space-y-2">
-								{availableConnectors.other.map((connector) => {
-									const walletInfo = getWalletInfo(connector);
-									const Icon = walletInfo.icon;
-									const isConnecting = connectingId === connector.uid;
-
-									return (
-										<button
-											key={connector.uid}
-											type="button"
-											onClick={() => handleConnect(connector)}
-											disabled={isPending}
-											className={cn(
-												"w-full flex items-center gap-3 p-3 rounded-12 border cursor-pointer",
-												"bg-bg-base hover:bg-bg-raised/50 hover:border-stroke-brand-strong/30",
-												"group focus-visible:outline-2 focus-visible:outline-stroke-focus",
-												"disabled:opacity-50 disabled:cursor-not-allowed",
-											)}
-										>
-											<div className="size-10 rounded-12 overflow-hidden flex-shrink-0 shadow-raised">
-												<Icon className="size-full" />
-											</div>
-											<div className="flex-1 text-left min-w-0">
-												<p className="font-medium text-sm group-hover:text-text-brand transition-colors">
-													{connector.name}
-												</p>
-												<p className="text-xs text-text-weak truncate">{walletInfo.description}</p>
-											</div>
-											{isConnecting ? (
-												<SpinnerGapIcon className="size-4 animate-spin text-text-brand flex-shrink-0" />
-											) : (
-												<div className="size-4 rounded-full border border-stroke-weak group-hover:border-stroke-brand-strong/50 flex-shrink-0 transition-colors" />
-											)}
-										</button>
-									);
-								})}
+								{availableConnectors.other.map((connector) => (
+									<ConnectorRow
+										key={connector.uid}
+										connector={connector}
+										isPending={isPending}
+										connectingId={connectingId}
+										onConnect={handleConnect}
+									/>
+								))}
 							</div>
-						</div>
+						</WalletSection>
 					)}
 
 					{mockConnectors.length > 0 && (
-						<div className="space-y-2">
-							<p className="text-xs font-medium text-text-warning uppercase tracking-wider px-1">
-								<Trans>Mock Wallet (Testing)</Trans>
-							</p>
+						<WalletSection tone="warning" label={<Trans>Mock Wallet (Testing)</Trans>}>
 							<div className="space-y-2">
 								{mockConnectors.map((connector, index) => {
 									const config = MOCK_WALLETS[index];
@@ -239,13 +269,13 @@ export function WalletDialog({ open, onOpenChange }: Props) {
 											onClick={() => handleConnect(connector)}
 											disabled={isPending}
 											className={cn(
-												"w-full flex items-center gap-3 p-3 rounded-12 border border-stroke-warning-strong/30 cursor-pointer",
+												"w-full flex items-center gap-3 p-3 rounded-10 border border-stroke-warning-strong/30 cursor-pointer",
 												"bg-fill-warning-weak/50 hover:bg-fill-warning-weak hover:border-stroke-warning-strong/50",
 												"group focus-visible:outline-2 focus-visible:outline-stroke-focus",
 												"disabled:opacity-50 disabled:cursor-not-allowed",
 											)}
 										>
-											<div className="size-10 rounded-12 overflow-hidden flex-shrink-0 shadow-raised bg-fill-warning-weak flex items-center justify-center">
+											<div className="size-10 rounded-10 overflow-hidden flex-shrink-0 shadow-raised bg-fill-warning-weak flex items-center justify-center">
 												<FlaskIcon className="size-5 text-text-warning" />
 											</div>
 											<div className="flex-1 text-left min-w-0">
@@ -268,7 +298,7 @@ export function WalletDialog({ open, onOpenChange }: Props) {
 									<TextInput
 										placeholder="0x..."
 										value={customAddress}
-										onChange={(e) => {
+										onChange={(e: ChangeEvent<HTMLInputElement>) => {
 											setCustomAddress(e.target.value);
 											setCustomAddressError(null);
 										}}
@@ -287,7 +317,7 @@ export function WalletDialog({ open, onOpenChange }: Props) {
 								</div>
 								{customAddressError && <p className="text-xs text-text-error px-1">{customAddressError}</p>}
 							</div>
-						</div>
+						</WalletSection>
 					)}
 
 					{!hasConnectors && (
@@ -314,27 +344,24 @@ export function WalletDialog({ open, onOpenChange }: Props) {
 					)}
 				</ModalContent>
 
-				<div className="border-t border-stroke-weak bg-bg-raised">
+				<div className="border-t border-stroke-weak/80 bg-bg-raised/80">
 					<button
 						type="button"
 						onClick={() => setShowHelp(!showHelp)}
-						className="w-full flex items-center justify-between p-4 text-sm text-text-weak hover:text-text-strong cursor-pointer"
+						className="w-full flex items-center justify-between gap-3 p-4 text-sm text-text-weak hover:text-text-strong hover:bg-fill-hover/40 cursor-pointer rounded-b-12"
+						aria-expanded={showHelp}
 					>
-						<span className="flex items-center gap-2">
-							<QuestionIcon className="size-4" />
+						<span className="flex items-center gap-2 min-w-0">
+							<QuestionIcon className="size-4 shrink-0" aria-hidden />
 							<Trans>New to wallets?</Trans>
 						</span>
-						<span className={cn("transition-transform", showHelp && "rotate-180")}>
-							<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-								<path
-									d="M2.5 4.5L6 8L9.5 4.5"
-									stroke="currentColor"
-									strokeWidth="1.5"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-								/>
-							</svg>
-						</span>
+						<CaretDownIcon
+							className={cn(
+								"size-4 shrink-0 text-icon-neutral transition-transform duration-200",
+								showHelp && "rotate-180",
+							)}
+							aria-hidden
+						/>
 					</button>
 
 					{showHelp && (

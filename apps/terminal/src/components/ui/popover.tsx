@@ -14,18 +14,28 @@ function PopoverContent({
 	className,
 	align = "center",
 	sideOffset = 4,
+	alignOffset = 0,
+	collisionPadding = 8,
 	...props
 }: React.ComponentProps<typeof PopoverPrimitive.Popup> & {
 	align?: "start" | "center" | "end";
 	sideOffset?: number;
+	alignOffset?: number;
+	collisionPadding?: number;
 }) {
 	return (
 		<PopoverPrimitive.Portal>
-			<PopoverPrimitive.Positioner align={align} sideOffset={sideOffset}>
+			<PopoverPrimitive.Positioner
+				align={align}
+				sideOffset={sideOffset}
+				alignOffset={alignOffset}
+				collisionPadding={collisionPadding}
+				className="z-[1000]"
+			>
 				<PopoverPrimitive.Popup
 					data-slot="popover-content"
 					className={cn(
-						"font-sans bg-bg-overlay text-text-strong z-50 w-72 rounded-12 border border-stroke-weak p-4 shadow-overlay outline-hidden",
+						"font-sans bg-bg-raised text-text-strong z-50 w-72 rounded-12 border border-stroke-weak p-4 shadow-overlay outline-hidden",
 						"transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin)",
 						"data-starting-style:opacity-0 data-starting-style:scale-95",
 						"data-ending-style:opacity-0 data-ending-style:scale-95",

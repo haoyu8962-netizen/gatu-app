@@ -70,7 +70,7 @@ export function TopNav() {
 	return (
 		<header
 			className={cn(
-				"fixed left-0 right-0 z-40 h-11 border-b px-3 flex items-center justify-between bg-bg-overlay transition-colors duration-300 ease-in-out",
+				"fixed left-0 right-0 z-40 h-11 border-b border-stroke-weak px-3 flex items-center justify-between bg-bg-base transition-colors duration-300 ease-in-out",
 				isTestnet ? "top-8" : "top-0",
 				accentClass,
 			)}
@@ -85,7 +85,7 @@ export function TopNav() {
 						<span className="text-text-strong">TERMINAL</span>
 					</span>
 				</div>
-				<div className="h-4 w-px bg-stroke-weak hidden md:block" />
+				<div className="h-4 w-px bg-stroke-weak hidden lg:block" aria-hidden />
 				<nav className="hidden lg:flex items-center text-xs tracking-wide">
 					{SCOPE_NAV_ITEMS.map((item) => (
 						<Link
@@ -105,7 +105,7 @@ export function TopNav() {
 							key={item.key}
 							type="button"
 							disabled
-							className="px-2.5 py-1.5 text-text-strong/40 cursor-not-allowed"
+							className="px-2.5 py-1.5 text-text-disabled cursor-not-allowed"
 							tabIndex={-1}
 						>
 							{item.label}
@@ -114,31 +114,30 @@ export function TopNav() {
 				</nav>
 			</div>
 
-			<div className="flex items-center gap-2">
+			<div className="flex items-center gap-2 min-h-8">
 				{isConnected && (
 					<Button
-						variant="outline"
-						intent="neutral"
+						variant="filled"
+						intent="brand"
+						size="sm"
 						onClick={() => openDepositModal("deposit")}
-						iconLeft={<DownloadSimpleIcon className="size-4" />}
-						className="h-6 px-2 text-xs font-medium"
+						iconLeft={<DownloadSimpleIcon className="size-3.5" />}
+						className="h-8 min-h-8 shrink-0 px-3"
 					>
 						<Trans>Deposit</Trans>
 					</Button>
 				)}
 				<UserMenu />
-				<div className="flex items-center gap-1">
-					<ThemeToggle />
-					<ButtonIcon
-						variant="ghost"
-						intent="neutral"
-						className="size-7"
-						onClick={openSettingsDialog}
-						aria-label={t`Settings`}
-					>
-						<GearIcon className="size-4" />
-					</ButtonIcon>
-				</div>
+				<ThemeToggle />
+				<ButtonIcon
+					variant="ghost"
+					intent="neutral"
+					className="size-8 shrink-0"
+					onClick={openSettingsDialog}
+					aria-label={t`Settings`}
+				>
+					<GearIcon className="size-4" />
+				</ButtonIcon>
 			</div>
 		</header>
 	);
