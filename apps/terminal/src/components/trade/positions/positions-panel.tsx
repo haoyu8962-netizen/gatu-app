@@ -3,7 +3,7 @@ import { Suspense, useMemo, useTransition } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
 import { HL_ALL_DEXS, POSITIONS_TABS } from "@/config/constants";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
@@ -23,11 +23,11 @@ export function PositionsPanel() {
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useConnection();
-	const { perpSummary, spotBalances } = useAccountBalances();
+	const { perpSummary, spotBalances } = useDefaultDexBalances();
 	const { positions } = useUserPositions();
 	const { data: ordersEvent } = useSubscription(
 		"openOrders",
-		{ user: address ?? "0x0" },
+		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
 	const { data: twapStatesEvent } = useSubscription(

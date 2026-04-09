@@ -1,7 +1,7 @@
 import { useConnection } from "wagmi";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
+import { HL_ALL_DEXS } from "@/config/constants";
 import { cn } from "@/lib/cn";
-import { useSubscription } from "@/lib/hyperliquid";
+import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, useMobileActiveTab } from "@/stores/use-global-settings-store";
 import { MobileAccountView } from "./mobile-account-view";
@@ -21,11 +21,11 @@ export function MobileTerminal({ className }: Props) {
 	const activeTab = useMobileActiveTab() as MobileTab;
 	const { setMobileActiveTab } = useGlobalSettingsActions();
 	const { address, isConnected } = useConnection();
-	const { perpPositions } = useAccountBalances();
+	const { positions } = useUserPositions();
 
 	const { data: ordersEvent } = useSubscription(
 		"openOrders",
-		{ user: address ?? "0x0" },
+		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
 

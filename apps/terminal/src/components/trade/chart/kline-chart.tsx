@@ -3,6 +3,7 @@ import type { Chart } from "klinecharts";
 import { dispose, FormatDateType, init, LoadDataType } from "klinecharts";
 import { useEffect, useRef, useState } from "react";
 import { useConnection } from "wagmi";
+import { HL_ALL_DEXS } from "@/config/constants";
 import { candleEventToKLineData, candlesToKLineData } from "@/lib/chart/candle";
 import {
 	CHART_TYPES,
@@ -144,7 +145,7 @@ export function KlineChart({ symbol = "", yAxisInside = false }: Props) {
 
 	const { data: openOrdersEvent } = useSubscription(
 		"openOrders",
-		{ user: address ?? "0x0" },
+		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
 

@@ -4,7 +4,7 @@ import { ListNumbersIcon, XIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
@@ -29,7 +29,7 @@ export function MobileOrdersTab({ className }: Props) {
 		data: openOrdersEvent,
 		status,
 		error,
-	} = useSubscription("openOrders", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
+	} = useSubscription("openOrders", { user: address ?? "0x0", dex: HL_ALL_DEXS }, { enabled: isConnected && !!address });
 
 	const {
 		mutate: cancelOrders,

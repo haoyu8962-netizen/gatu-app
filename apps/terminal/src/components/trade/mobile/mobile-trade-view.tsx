@@ -1,18 +1,16 @@
 import { Button, Slider, Tabs, TabsList, TabsTrigger, TextInput } from "@hypeterminal/ui";
 import { CaretDownIcon, SpinnerGapIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
-import { FALLBACK_VALUE_PLACEHOLDER, ORDER_MIN_NOTIONAL_USD, UI_TEXT } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER, UI_TEXT } from "@/config/constants";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
-import { getBaseQuoteFromPairName } from "@/domain/market";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
-import { useAssetLeverage } from "@/hooks/trade/use-asset-leverage";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
+import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
+import { formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { floorToDecimals, formatDecimalFloor, getValueColorClass, toNumberOrZero } from "@/lib/trade/numbers";
+import { getValueColorClass, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	getTabsOrderType,
 	isTakerOrderType,
@@ -20,6 +18,7 @@ import {
 	usesLimitPrice as usesLimitPriceForOrder,
 } from "@/lib/trade/order-types";
 import type { Side, SizeMode } from "@/lib/trade/types";
+import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
@@ -49,15 +48,10 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 	const { data: market } = useSelectedMarketInfo();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
-	const { baseToken, quoteToken } = market
-		? getBaseQuoteFromPairName(market.pairName, market.kind)
-		: { baseToken: undefined, quoteToken: undefined };
 
 	function handleMarketChange(marketName: string) {
 		setSelectedMarket(scope, marketName);
 	}
-
-	const { perpSummary, perpPositions } = useAccountBalances();
 
 	const { isReady: isAgentApproved } = useAgentStatus();
 	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
@@ -67,8 +61,6 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
 
 	const slippageBps = useMarketOrderSlippageBps();
-
-	const { displayLeverage: leverage, maxTradeSzs } = useAssetLeverage();
 
 	const { addOrder, updateOrder } = useOrderQueueActions();
 	const selectedPrice = useSelectedPrice();
@@ -89,6 +81,25 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 	const isAdvancedTab = tabsOrderType === "advanced";
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const isMarketExecution = orderType === "market" || isTakerOrderType(orderType);
+	const markPx = toNumberOrZero(market?.markPx);
+
+	const {
+		isSpotMarket,
+		baseToken,
+		quoteToken,
+		capabilities,
+		szDecimals,
+		availableBalance,
+		availableBalanceToken,
+		spotBalance,
+		maxSize,
+		sizeValue,
+		orderValue,
+		sideLabels,
+		getSizeForPercent,
+		convertSizeForModeToggle,
+		leverage,
+	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
 
 	useEffect(() => {
 		if (selectedPrice !== null) {
@@ -97,99 +108,65 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 			getOrderbookActionsStore().actions.clearSelectedPrice();
 		}
 	}, [selectedPrice]);
-
-	const accountValue = toNumberOrZero(perpSummary?.accountValue);
-	const marginUsed = toNumberOrZero(perpSummary?.totalMarginUsed);
-	const availableBalance = Math.max(0, accountValue - marginUsed);
-
-	const position =
-		!perpPositions.length || !baseToken ? null : (perpPositions.find((p) => p.position.coin === baseToken) ?? null);
-	const positionSize = toNumberOrZero(position?.position?.szi);
-
-	const markPx = toNumberOrZero(market?.markPx);
 	const price = isMarketExecution ? markPx : toNumberOrZero(limitPriceInput);
-
-	const maxSize = useMemo(() => {
-		if (!price || price <= 0) return 0;
-
-		const isBuy = side === "buy";
-		const maxTradeSize = maxTradeSzs?.[isBuy ? 0 : 1] ?? 0;
-		if (maxTradeSize > 0) {
-			return floorToDecimals(maxTradeSize, market?.szDecimals ?? 0);
-		}
-
-		if (!leverage || availableBalance <= 0) return 0;
-		const maxNotional = availableBalance * leverage;
-		let maxSizeRaw = maxNotional / price;
-		if (!isBuy && positionSize > 0) maxSizeRaw += positionSize;
-		else if (isBuy && positionSize < 0) maxSizeRaw += Math.abs(positionSize);
-		return floorToDecimals(maxSizeRaw, market?.szDecimals ?? 0);
-	}, [price, side, maxTradeSzs, leverage, availableBalance, positionSize, market?.szDecimals]);
-
-	const sizeInputValue = toNumberOrZero(sizeInput);
-	const sizeValue = sizeMode === "quote" && price > 0 ? sizeInputValue / price : sizeInputValue;
-	const orderValue = sizeValue * price;
-	const marginRequired = leverage ? orderValue / leverage : 0;
 	const { takerRate, makerRate } = useFeeRates(market?.kind);
 	const feeRate = isMarketExecution ? takerRate : makerRate;
 	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
 	const estimatedFee = orderValue * feeRate;
+	const marginRequired = capabilities.isLeveraged && leverage > 0 ? orderValue / leverage : 0;
 
 	const liqPrice = (() => {
-		if (!price || !sizeValue || !leverage) return null;
+		if (!capabilities.isLeveraged || !price || !sizeValue || !leverage) return null;
 		const buffer = price * (1 / leverage) * 0.9;
 		return side === "buy" ? price - buffer : price + buffer;
 	})();
 
-	const canSign = isAgentApproved || !!walletClient;
-
-	const validation = useMemo(() => {
-		const errors: string[] = [];
-		if (!isConnected)
-			return { valid: false, errors: [ORDER_TEXT.ERROR_NOT_CONNECTED], canSubmit: false, needsApproval: false };
-		if (isWalletLoading)
-			return { valid: false, errors: [ORDER_TEXT.ERROR_LOADING_WALLET], canSubmit: false, needsApproval: false };
-		if (availableBalance <= 0)
-			return { valid: false, errors: [ORDER_TEXT.ERROR_NO_BALANCE], canSubmit: false, needsApproval: false };
-		if (!market) return { valid: false, errors: [ORDER_TEXT.ERROR_NO_MARKET], canSubmit: false, needsApproval: false };
-		if (typeof market.assetId !== "number")
-			return { valid: false, errors: [ORDER_TEXT.ERROR_MARKET_NOT_READY], canSubmit: false, needsApproval: false };
-		if (!isAgentApproved) return { valid: false, errors: [], canSubmit: false, needsApproval: true };
-		if (!canSign)
-			return { valid: false, errors: [ORDER_TEXT.ERROR_SIGNER_NOT_READY], canSubmit: false, needsApproval: false };
-		if (isMarketExecution && !markPx)
-			return { valid: false, errors: [ORDER_TEXT.ERROR_NO_MARK_PRICE], canSubmit: false, needsApproval: false };
-		if (usesLimitPrice && !price) errors.push(ORDER_TEXT.ERROR_LIMIT_PRICE);
-		if (!sizeValue || sizeValue <= 0) errors.push(ORDER_TEXT.ERROR_SIZE);
-		if (orderValue > 0 && orderValue < ORDER_MIN_NOTIONAL_USD) errors.push(ORDER_TEXT.ERROR_MIN_NOTIONAL);
-		if (sizeValue > maxSize && maxSize > 0) errors.push(ORDER_TEXT.ERROR_EXCEEDS_MAX);
-		return { valid: errors.length === 0, errors, canSubmit: errors.length === 0, needsApproval: false };
-	}, [
+	const baseInput = {
 		isConnected,
 		isWalletLoading,
 		availableBalance,
-		market,
-		isMarketExecution,
-		usesLimitPrice,
-		markPx,
+		hasMarket: !!market,
+		hasAssetIndex: typeof market?.assetId === "number",
+		needsAgentApproval: !isAgentApproved,
+		isReadyToTrade: isAgentApproved,
 		price,
 		sizeValue,
 		orderValue,
-		maxSize,
-		isAgentApproved,
-		canSign,
-	]);
+		side,
+		usesLimitPrice,
+	};
+
+	const validation = useOrderValidation(
+		isSpotMarket
+			? spotInput(baseInput, {
+					baseAvailable: spotBalance.baseAvailable,
+					quoteAvailable: spotBalance.quoteAvailable,
+					baseToken,
+					quoteToken,
+				})
+			: perpInput(baseInput, {
+					orderType,
+					markPx,
+					maxSize,
+					usesTriggerPrice: false,
+					triggerPriceNum: null,
+					stopOrder: false,
+					takeProfitOrder: false,
+					scaleOrder: false,
+					twapOrder: false,
+					scaleStartPriceNum: null,
+					scaleEndPriceNum: null,
+					scaleLevelsNum: null,
+					twapMinutesNum: null,
+					tpSlEnabled: false,
+					canUseTpSl: false,
+					tpPriceNum: null,
+					slPriceNum: null,
+				}),
+	);
 
 	const applySizeFromPercent = (pct: number) => {
-		if (maxSize <= 0) return;
-		const newSize = maxSize * (pct / 100);
-		if (sizeMode === "quote" && price > 0) {
-			const quoteValue = newSize * price;
-			setSizeInput(quoteValue > 0 ? quoteValue.toFixed(2) : "");
-		} else {
-			const formatted = formatDecimalFloor(newSize, market?.szDecimals ?? 0);
-			setSizeInput(formatted || "");
-		}
+		setSizeInput(getSizeForPercent(pct));
 	};
 
 	const handleSliderChange = (value: number | readonly number[]) => {
@@ -198,15 +175,10 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 	};
 
 	const handleSizeModeToggle = () => {
-		if (sizeMode === "base" && price > 0 && sizeValue > 0) {
-			setSizeInput((sizeValue * price).toFixed(2));
-			setSizeMode("quote");
-		} else if (sizeMode === "quote" && price > 0 && sizeValue > 0) {
-			setSizeInput(formatDecimalFloor(sizeValue, market?.szDecimals ?? 0) || "");
-			setSizeMode("base");
-		} else {
-			setSizeMode(sizeMode === "base" ? "quote" : "base");
-		}
+		const newMode = sizeMode === "base" ? "quote" : "base";
+		const convertedSize = convertSizeForModeToggle();
+		setSizeMode(newMode);
+		if (convertedSize) setSizeInput(convertedSize);
 	};
 
 	const handleMarkPriceClick = () => {
@@ -311,7 +283,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 				variant: "cyan" as const,
 			};
 		return {
-			text: side === "buy" ? ORDER_TEXT.BUTTON_BUY : ORDER_TEXT.BUTTON_SELL,
+			text: sideLabels[side],
 			action: handleSubmit,
 			disabled: !validation.canSubmit || isSubmitting,
 			variant: side as "buy" | "sell",
@@ -320,9 +292,15 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 
 	const isFormDisabled = !isConnected || availableBalance <= 0;
 
+	function formatAvailableBalance(): string {
+		if (!isConnected) return FALLBACK_VALUE_PLACEHOLDER;
+		const decimals = isSpotMarket && side === "sell" ? szDecimals : 2;
+		return formatToken(availableBalance, decimals);
+	}
+
 	return (
-		<div className={cn("flex flex-col h-full min-h-0 bg-bg-overlay/20", className)}>
-			<div className="shrink-0 px-4 py-2 border-b border-stroke-weak/60 bg-bg-overlay/30">
+		<div className={cn("flex flex-col h-full min-h-0 bg-bg-base", className)}>
+			<div className="shrink-0 px-4 py-2 border-b border-stroke-weak/60 bg-bg-raised">
 				<div className="flex items-center justify-between">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					<div className="text-right">
@@ -336,7 +314,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 				<div className="p-2 space-y-3">
 					<Tabs
 						value={tabsOrderType}
-						onValueChange={(v) => {
+						onValueChange={(v: string) => {
 							if (v === "market") setOrderType("market");
 							else if (v === "limit") setOrderType("limit");
 						}}
@@ -365,36 +343,41 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 							</div>
 						</TabsList>
 					</Tabs>
-					<Tabs value={side} onValueChange={(v) => setSide(v as Side)} variant="pills" fullWidth>
+					<Tabs value={side} onValueChange={(v: string) => setSide(v as Side)} variant="pills" fullWidth>
 						<TabsList className="w-full">
 							<TabsTrigger
 								value="buy"
 								className="flex-1 text-sm data-active:text-text-success"
-								aria-label="Buy Long"
+								aria-label={sideLabels.buyAria}
 								icon={<TrendUpIcon className="size-4" />}
 							>
-								Long
+								{sideLabels.buy}
 							</TabsTrigger>
 							<TabsTrigger
 								value="sell"
 								className="flex-1 text-sm data-active:text-text-error"
-								aria-label="Sell Short"
+								aria-label={sideLabels.sellAria}
 								icon={<TrendDownIcon className="size-4" />}
 							>
-								Short
+								{sideLabels.sell}
 							</TabsTrigger>
 						</TabsList>
 					</Tabs>
 					<div className="flex items-center justify-between text-xs">
-						<div className="flex items-center gap-2">
-							<span className="text-text-weak">Leverage</span>
-							<LeverageControl key={market?.name} />
-						</div>
+						{capabilities.isLeveraged ? (
+							<div className="flex items-center gap-2">
+								<span className="text-text-weak">Leverage</span>
+								<LeverageControl key={market?.name} />
+							</div>
+						) : (
+							<div />
+						)}
 						<div className="text-right">
 							<span className="text-text-weak">{ORDER_TEXT.AVAILABLE_LABEL}: </span>
 							<span className={cn("tabular-nums font-medium", getValueColorClass(availableBalance))}>
-								{isConnected ? formatUSD(availableBalance) : FALLBACK_VALUE_PLACEHOLDER}
+								{formatAvailableBalance()}
 							</span>
+							<span className="ml-1 font-medium tabular-nums text-text-weak">{availableBalanceToken}</span>
 						</div>
 					</div>
 					<div className="space-y-1.5">
@@ -415,7 +398,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 								inputMode="decimal"
 								placeholder={ORDER_TEXT.INPUT_PLACEHOLDER}
 								value={sizeInput}
-								onChange={(e) => setSizeInput(e.target.value)}
+								onChange={(e: ChangeEvent<HTMLInputElement>) => setSizeInput(e.target.value)}
 								className="flex-1 tabular-nums"
 								size="md"
 								disabled={isFormDisabled}
@@ -445,7 +428,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 								inputMode="decimal"
 								placeholder={ORDER_TEXT.INPUT_PLACEHOLDER}
 								value={limitPriceInput}
-								onChange={(e) => setLimitPriceInput(e.target.value)}
+								onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
 								className="tabular-nums"
 								size="md"
 								disabled={isFormDisabled}
@@ -463,7 +446,9 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 						/>
 						<SummaryRow
 							label={ORDER_TEXT.SUMMARY_MARGIN_REQ}
-							value={marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
+							value={
+								capabilities.isLeveraged && marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER
+							}
 						/>
 						<SummaryRow
 							label={ORDER_TEXT.SUMMARY_LIQ}
@@ -478,7 +463,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 					</div>
 				</div>
 			</div>
-			<div className="shrink-0 p-4 border-t border-stroke-weak/60 bg-bg-sunken/95 backdrop-blur-sm">
+			<div className="shrink-0 p-4 border-t border-stroke-weak/60 bg-bg-raised/95 backdrop-blur-sm">
 				<Button
 					variant="outline"
 					size="lg"

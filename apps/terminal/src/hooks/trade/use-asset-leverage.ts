@@ -34,6 +34,7 @@ interface UseAssetLeverageReturn {
 	marginMode: MarginMode;
 	hasPosition: boolean;
 	switchMarginMode: (mode: MarginMode) => Promise<void>;
+	applyMarginAndLeverage: (mode: MarginMode, leverageValue: number) => Promise<void>;
 	isSwitchingMode: boolean;
 	switchModeError: Error | null;
 	isOnlyIsolated: boolean;
@@ -53,6 +54,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 
 	const capabilities = getMarketCapabilities(market);
 	const { isOnlyIsolated, allowsCrossMargin } = capabilities;
+	const isPerpMarket = market?.kind === "perp" || market?.kind === "builderPerp";
 
 	const maxLeverage = market?.kind === "spot" ? 1 : (market?.maxLeverage ?? DEFAULT_MAX_LEVERAGE);
 	const baseToken = market ? market.name : undefined;
@@ -61,7 +63,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const { data: activeAssetData, status: subscriptionStatus } = useSubscription(
 		"activeAssetData",
 		{ coin: baseToken ?? "", user: address ?? "" },
-		{ enabled: isConnected && !!address && !!baseToken },
+		{ enabled: isConnected && !!address && !!baseToken && isPerpMarket },
 	);
 
 	const userPositions = useUserPositions();
@@ -134,7 +136,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	}, [resetMutation]);
 
 	const confirmLeverage = useCallback(async () => {
-		if (pendingLeverage === null || typeof assetId !== "number") {
+		if (!isPerpMarket || pendingLeverage === null || typeof assetId !== "number") {
 			return;
 		}
 
@@ -146,11 +148,11 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		});
 
 		setPendingLeverageState(null);
-	}, [pendingLeverage, assetId, updateLeverage, marginMode]);
+	}, [pendingLeverage, assetId, isPerpMarket, updateLeverage, marginMode]);
 
 	const switchMarginMode = useCallback(
 		async (mode: MarginMode) => {
-			if (typeof assetId !== "number") return;
+			if (!isPerpMarket || typeof assetId !== "number") return;
 
 			if (isOnlyIsolated && mode === "cross") {
 				throw new Error("This market only supports isolated margin mode");
@@ -183,6 +185,51 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 			hasPosition,
 			updateLeverage,
 			setStoredMarginMode,
+			isPerpMarket,
+		],
+	);
+
+	const applyMarginAndLeverage = useCallback(
+		async (mode: MarginMode, leverageValue: number) => {
+			if (!isPerpMarket || typeof assetId !== "number") return;
+
+			const clamped = Math.max(1, Math.min(Math.round(leverageValue), maxLeverage));
+
+			if (isOnlyIsolated && mode === "cross") {
+				throw new Error("This market only supports isolated margin mode");
+			}
+
+			if (!isConnected) {
+				setStoredMarginMode(mode);
+				setDisconnectedLeverage(clamped);
+				setPendingLeverageState(null);
+				return;
+			}
+
+			if (mode === "isolated" && marginMode === "cross" && hasPosition) {
+				throw new Error("Cannot switch to isolated mode with an open position");
+			}
+
+			operationTypeRef.current = "mode";
+			await updateLeverage({
+				asset: assetId,
+				isCross: mode === "cross",
+				leverage: clamped,
+			});
+
+			setStoredMarginMode(mode);
+			setPendingLeverageState(null);
+		},
+		[
+			assetId,
+			maxLeverage,
+			isOnlyIsolated,
+			isConnected,
+			marginMode,
+			hasPosition,
+			updateLeverage,
+			setStoredMarginMode,
+			isPerpMarket,
 		],
 	);
 
@@ -233,6 +280,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		marginMode,
 		hasPosition,
 		switchMarginMode,
+		applyMarginAndLeverage,
 		isSwitchingMode,
 		switchModeError,
 		isOnlyIsolated,

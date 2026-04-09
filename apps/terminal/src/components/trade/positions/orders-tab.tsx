@@ -4,7 +4,7 @@ import { ListNumbersIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
@@ -40,7 +40,7 @@ export function OrdersTab() {
 		data: openOrdersEvent,
 		status,
 		error,
-	} = useSubscription("openOrders", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
+	} = useSubscription("openOrders", { user: address ?? "0x0", dex: HL_ALL_DEXS }, { enabled: isConnected && !!address });
 	const markets = useMarkets();
 	const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(() => new Set());
 

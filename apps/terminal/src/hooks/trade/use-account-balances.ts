@@ -23,7 +23,14 @@ export interface AccountBalances {
 const EMPTY_SPOT_BALANCES: SpotBalance[] = [];
 const EMPTY_PERP_POSITIONS: PerpPosition[] = [];
 
-export function useAccountBalances(): AccountBalances {
+export interface AllDexsAccountState {
+	clearinghouseStates: AllDexsClearinghouseStateWsEvent["clearinghouseStates"];
+	spotBalances: SpotBalance[];
+	isLoading: boolean;
+	hasError: boolean;
+}
+
+export function useAllDexsAccountState(): AllDexsAccountState {
 	const { address, isConnected } = useConnection();
 	const enabled = isConnected && !!address;
 
@@ -35,17 +42,30 @@ export function useAccountBalances(): AccountBalances {
 
 	const { data: spotEvent, status: spotStatus } = useSubscription("spotState", { user: address ?? "0x0" }, { enabled });
 
-	const mainDex = clearinghouseEvent?.clearinghouseStates?.find(([dex]) => dex === "")?.[1];
-	const marginSummary = mainDex?.marginSummary ?? null;
-	const perpSummary = mainDex?.crossMarginSummary ?? null;
-	const perpPositions = mainDex?.assetPositions ?? EMPTY_PERP_POSITIONS;
+	const clearinghouseStates = clearinghouseEvent?.clearinghouseStates ?? [];
 	const spotBalances = spotEvent?.spotState?.balances ?? EMPTY_SPOT_BALANCES;
-	const withdrawable = mainDex?.withdrawable ?? "0";
-	const crossMaintenanceMarginUsed = mainDex?.crossMaintenanceMarginUsed ?? "0";
 
 	const isLoading =
 		perpStatus === "subscribing" || perpStatus === "idle" || spotStatus === "subscribing" || spotStatus === "idle";
 	const hasError = perpStatus === "error" || spotStatus === "error";
+
+	return {
+		clearinghouseStates,
+		spotBalances,
+		isLoading,
+		hasError,
+	};
+}
+
+export function useDefaultDexBalances(): AccountBalances {
+	const { clearinghouseStates, spotBalances, isLoading, hasError } = useAllDexsAccountState();
+
+	const mainDex = clearinghouseStates.find(([dex]) => dex === "")?.[1];
+	const marginSummary = mainDex?.marginSummary ?? null;
+	const perpSummary = mainDex?.crossMarginSummary ?? null;
+	const perpPositions = mainDex?.assetPositions ?? EMPTY_PERP_POSITIONS;
+	const withdrawable = mainDex?.withdrawable ?? "0";
+	const crossMaintenanceMarginUsed = mainDex?.crossMaintenanceMarginUsed ?? "0";
 
 	return {
 		marginSummary,
@@ -58,3 +78,5 @@ export function useAccountBalances(): AccountBalances {
 		hasError,
 	};
 }
+
+export const useAccountBalances = useDefaultDexBalances;

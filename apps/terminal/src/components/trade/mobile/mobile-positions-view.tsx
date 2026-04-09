@@ -3,9 +3,9 @@ import { WalletIcon } from "@phosphor-icons/react";
 import { useTransition } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
+import { HL_ALL_DEXS } from "@/config/constants";
 import { cn } from "@/lib/cn";
-import { useSubscription } from "@/lib/hyperliquid";
+import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
 import { MobileBalancesTab } from "./mobile-balances-tab";
@@ -38,19 +38,19 @@ export function MobilePositionsView({ className }: Props) {
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useConnection();
-	const { perpPositions, isLoading: isLoadingState } = useAccountBalances();
+	const { positions, isLoading: isLoadingState } = useUserPositions();
 
 	const { data: ordersEvent, status: ordersStatus } = useSubscription(
 		"openOrders",
-		{ user: address ?? "0x0" },
+		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
 	const openOrders = ordersEvent?.orders;
 	const isLoadingOrders = ordersStatus === "subscribing" || ordersStatus === "idle";
 
 	const positionsCount = isConnected
-		? perpPositions.reduce((count, entry) => {
-				const size = toNumber(entry.position.szi);
+		? positions.reduce((count, entry) => {
+				const size = toNumber(entry.szi);
 				return size ? count + 1 : count;
 			}, 0)
 		: 0;

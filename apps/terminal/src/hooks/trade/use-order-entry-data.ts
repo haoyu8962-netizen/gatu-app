@@ -4,7 +4,7 @@ import { deriveOrderEntry, type OrderEntryDerived } from "@/domain/trade/order/d
 import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle } from "@/domain/trade/order/size";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
-import { useAccountBalances } from "./use-account-balances";
+import { useDefaultDexBalances } from "./use-account-balances";
 import { useAssetLeverage } from "./use-asset-leverage";
 
 interface OrderEntryData extends OrderEntryDerived {
@@ -14,9 +14,15 @@ interface OrderEntryData extends OrderEntryDerived {
 	convertSizeForModeToggle: () => string;
 
 	leverage: number;
+	currentLeverage: number;
+	pendingLeverage: number | null;
+	maxLeverage: number;
+	setPendingLeverage: (value: number) => void;
+	resetPendingLeverage: () => void;
 	marginMode: "cross" | "isolated";
 	hasPosition: boolean;
 	switchMarginMode: (mode: "cross" | "isolated") => Promise<void>;
+	applyMarginAndLeverage: (mode: "cross" | "isolated", leverageValue: number) => Promise<void>;
 	isSwitchingMode: boolean;
 	switchModeError: Error | null;
 	isOnlyIsolated: boolean;
@@ -40,14 +46,20 @@ export function useOrderEntryData({
 	sizeInput,
 }: UseOrderEntryDataOptions): OrderEntryData {
 	const { isConnected } = useConnection();
-	const { spotBalances } = useAccountBalances();
+	const { spotBalances } = useDefaultDexBalances();
 	const {
 		displayLeverage: leverage,
+		currentLeverage,
+		pendingLeverage,
+		maxLeverage,
+		setPendingLeverage,
+		resetPending: resetPendingLeverage,
 		maxTradeSzs,
 		availableToTrade,
 		marginMode,
 		hasPosition,
 		switchMarginMode,
+		applyMarginAndLeverage,
 		isSwitchingMode,
 		switchModeError,
 		isOnlyIsolated,
@@ -104,9 +116,15 @@ export function useOrderEntryData({
 		getSizeForPercent,
 		convertSizeForModeToggle,
 		leverage,
+		currentLeverage,
+		pendingLeverage,
+		maxLeverage,
+		setPendingLeverage,
+		resetPendingLeverage,
 		marginMode,
 		hasPosition,
 		switchMarginMode,
+		applyMarginAndLeverage,
 		isSwitchingMode,
 		switchModeError,
 		isOnlyIsolated,

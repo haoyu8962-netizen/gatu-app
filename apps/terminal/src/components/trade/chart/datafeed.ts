@@ -49,25 +49,36 @@ async function getMeta(): Promise<MetaResponse> {
 	return metaPromise;
 }
 
-let allMidsCache: { value: AllMidsResponse; fetchedAt: number } | undefined;
-let allMidsPromise: Promise<AllMidsResponse> | undefined;
+const allMidsCache = new Map<string, { value: AllMidsResponse; fetchedAt: number }>();
+const allMidsPromise = new Map<string, Promise<AllMidsResponse>>();
 
-async function getAllMids(): Promise<AllMidsResponse> {
+function getDexForCoin(coin: string): string | undefined {
+	const separatorIdx = coin.indexOf(":");
+	if (separatorIdx <= 0) return undefined;
+	return coin.slice(0, separatorIdx);
+}
+
+async function getAllMids(dex?: string): Promise<AllMidsResponse> {
+	const cacheKey = dex ?? "";
 	const now = Date.now();
-	if (allMidsCache && now - allMidsCache.fetchedAt < ALL_MIDS_TTL_MS) return allMidsCache.value;
-	if (allMidsPromise) return allMidsPromise;
+	const cached = allMidsCache.get(cacheKey);
+	if (cached && now - cached.fetchedAt < ALL_MIDS_TTL_MS) return cached.value;
 
-	allMidsPromise = getInfoClient()
-		.allMids()
+	const pending = allMidsPromise.get(cacheKey);
+	if (pending) return pending;
+
+	const request = getInfoClient()
+		.allMids(dex ? { dex } : undefined)
 		.then((mids) => {
-			allMidsCache = { value: mids, fetchedAt: Date.now() };
+			allMidsCache.set(cacheKey, { value: mids, fetchedAt: Date.now() });
 			return mids;
 		})
 		.finally(() => {
-			allMidsPromise = undefined;
+			allMidsPromise.delete(cacheKey);
 		});
 
-	return allMidsPromise;
+	allMidsPromise.set(cacheKey, request);
+	return request;
 }
 
 async function isKnownCoin(coin: string): Promise<boolean> {
@@ -88,7 +99,7 @@ async function isKnownCoin(coin: string): Promise<boolean> {
 
 async function inferPriceScale(coin: string): Promise<number> {
 	try {
-		const mids = await getAllMids();
+		const mids = await getAllMids(getDexForCoin(coin));
 		return inferPriceScaleFromMids(coin, mids);
 	} catch {
 		return DEFAULT_PRICESCALE;
