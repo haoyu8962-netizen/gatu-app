@@ -1,4 +1,4 @@
-import { Dropdown, SegmentedControlItem, SegmentedControls } from "@hypeterminal/ui";
+import { Dropdown, Tabs, TabsContent, TabsList, TabsTrigger } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { BookBookmarkIcon, ListDashesIcon } from "@phosphor-icons/react";
 import { useDeferredValue, useMemo, useState } from "react";
@@ -80,108 +80,111 @@ export function OrderbookPanel() {
 	}));
 
 	return (
-		<div className="h-full min-h-0 flex flex-col overflow-hidden bg-bg-raised">
-			<div className="flex items-center justify-between px-1.5 py-1.5">
-				<SegmentedControls value={tab} onValueChange={setTab}>
-					<SegmentedControlItem value="book" aria-label={t`Order Book`}>
-						<BookBookmarkIcon className="size-3.5" />
+		<Tabs
+			value={tab}
+			onValueChange={setTab}
+			className="h-full min-h-0 flex flex-col overflow-hidden bg-bg-raised"
+			size="sm"
+			variant="underline"
+		>
+			<div className="flex items-center justify-between px-1.5 pt-1 pb-0">
+				<TabsList className="w-full min-w-0">
+					<TabsTrigger value="book" aria-label={t`Order Book`} icon={<BookBookmarkIcon className="size-3.5" />}>
 						{t`Order Book`}
-					</SegmentedControlItem>
-					<SegmentedControlItem value="trades" aria-label={t`Recent Trades`}>
-						<ListDashesIcon className="size-3.5" />
+					</TabsTrigger>
+					<TabsTrigger value="trades" aria-label={t`Recent Trades`} icon={<ListDashesIcon className="size-3.5" />}>
 						{t`Trades`}
-					</SegmentedControlItem>
-				</SegmentedControls>
+					</TabsTrigger>
+				</TabsList>
 			</div>
 
-			{tab === "book" && (
-				<div className="flex-1 min-h-0 flex flex-col">
-					<div className="grid grid-cols-3 gap-1 px-2 py-1.5 items-center text-2xs text-text-strong uppercase tracking-wider border-b border-stroke-weak/40 shrink-0">
-						<div className="min-w-0 flex items-center gap-1">
-							{t`Price`}
-							<Dropdown
-								trigger={
-									<span className="text-2xs tabular-nums">
-										{selectedOption?.label ?? priceGroupingOptions[0]?.label ?? "—"}
-									</span>
-								}
-								items={dropdownItems}
-								size="sm"
-								align="start"
-							/>
-						</div>
-						<button
-							className="min-w-0 inline-flex items-center justify-end gap-0.5 hover:text-text-strong truncate"
-							type="button"
-							onClick={toggleAssetDisplay}
-						>
-							{t`Size`}
-							<span className="text-text-strong truncate">({displayAsset})</span>
-						</button>
-						<button
-							className="min-w-0 inline-flex items-center justify-end gap-0.5 hover:text-text-strong truncate"
-							type="button"
-							onClick={toggleAssetDisplay}
-						>
-							{t`Total`}
-							<span className="text-text-strong truncate">({displayAsset})</span>
-						</button>
+			<TabsContent value="book" className="flex-1 min-h-0 mt-0 pt-0 flex flex-col">
+				<div className="grid grid-cols-3 gap-1 px-2 py-1.5 items-center text-2xs text-text-weak uppercase tracking-wider border-b border-stroke-weak shrink-0">
+					<div className="min-w-0 flex items-center gap-1">
+						{t`Price`}
+						<Dropdown
+							trigger={
+								<span className="text-2xs tabular-nums uppercase tracking-wider">
+									{selectedOption?.label ?? priceGroupingOptions[0]?.label ?? "—"}
+								</span>
+							}
+							items={dropdownItems}
+							size="xxs"
+							align="start"
+							triggerVariant="minimal"
+							triggerAriaLabel={t`Price grouping`}
+							popupClassName="min-w-0 w-max"
+						/>
+					</div>
+					<button
+						className="min-w-0 inline-flex items-center justify-end gap-0.5 hover:text-text-strong truncate"
+						type="button"
+						onClick={toggleAssetDisplay}
+					>
+						{t`Size`}
+						<span className="text-text-strong truncate">({displayAsset})</span>
+					</button>
+					<button
+						className="min-w-0 inline-flex items-center justify-end gap-0.5 hover:text-text-strong truncate"
+						type="button"
+						onClick={toggleAssetDisplay}
+					>
+						{t`Total`}
+						<span className="text-text-strong truncate">({displayAsset})</span>
+					</button>
+				</div>
+
+				<div ref={orderbookContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+					<div className="flex-1 min-h-0 flex flex-col justify-end">
+						{hasData && asks.length > 0 ? (
+							asksReversed.map((level) => (
+								<OrderbookRow
+									key={`ask-${level.price}`}
+									level={level}
+									side="ask"
+									maxTotal={maxTotal}
+									priceDecimals={priceDecimals}
+									showInQuote={showOrderbookInQuote}
+									szDecimals={szDecimals}
+								/>
+							))
+						) : (
+							<div className="flex items-center justify-center px-2 py-6 text-xs text-text-strong">
+								{orderbookStatus === "error" ? t`Failed to load order book.` : t`Waiting for order book...`}
+							</div>
+						)}
 					</div>
 
-					<div ref={orderbookContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
-						<div className="flex-1 min-h-0 flex flex-col justify-end">
-							{hasData && asks.length > 0 ? (
-								asksReversed.map((level) => (
-									<OrderbookRow
-										key={`ask-${level.price}`}
-										level={level}
-										side="ask"
-										maxTotal={maxTotal}
-										priceDecimals={priceDecimals}
-										showInQuote={showOrderbookInQuote}
-										szDecimals={szDecimals}
-									/>
-								))
-							) : (
-								<div className="flex items-center justify-center px-2 py-6 text-xs text-text-strong">
-									{orderbookStatus === "error" ? t`Failed to load order book.` : t`Waiting for order book...`}
-								</div>
-							)}
-						</div>
+					<div
+						data-slot="orderbook-spread"
+						className="shrink-0 px-2 py-1.5 border-y border-stroke-weak flex items-center justify-between text-xs text-text-strong"
+					>
+						<span>{t`Spread`}</span>
+						<span className="tabular-nums font-medium text-text-weak">
+							{`${formatNumber(spread, 2)} (${formatNumber(spreadPct, 3)}%)`}
+						</span>
+					</div>
 
-						<div
-							data-slot="orderbook-spread"
-							className="shrink-0 px-2 py-1.5 border-y border-stroke-weak/40 flex items-center justify-between text-xs text-text-strong"
-						>
-							<span>{t`Spread`}</span>
-							<span className="tabular-nums font-medium text-text-weak">
-								{`${formatNumber(spread, 2)} (${formatNumber(spreadPct, 3)}%)`}
-							</span>
-						</div>
-
-						<div className="flex-1 min-h-0 flex flex-col">
-							{hasData &&
-								bids.map((level) => (
-									<OrderbookRow
-										key={`bid-${level.price}`}
-										level={level}
-										side="bid"
-										maxTotal={maxTotal}
-										priceDecimals={priceDecimals}
-										showInQuote={showOrderbookInQuote}
-										szDecimals={szDecimals}
-									/>
-								))}
-						</div>
+					<div className="flex-1 min-h-0 flex flex-col">
+						{hasData &&
+							bids.map((level) => (
+								<OrderbookRow
+									key={`bid-${level.price}`}
+									level={level}
+									side="bid"
+									maxTotal={maxTotal}
+									priceDecimals={priceDecimals}
+									showInQuote={showOrderbookInQuote}
+									szDecimals={szDecimals}
+								/>
+							))}
 					</div>
 				</div>
-			)}
+			</TabsContent>
 
-			{tab === "trades" && (
-				<div className="flex-1 min-h-0 flex flex-col">
-					<TradesPanel key={selectedMarket?.name} />
-				</div>
-			)}
-		</div>
+			<TabsContent value="trades" className="flex-1 min-h-0 mt-0 pt-0 flex flex-col">
+				<TradesPanel key={selectedMarket?.name} />
+			</TabsContent>
+		</Tabs>
 	);
 }
