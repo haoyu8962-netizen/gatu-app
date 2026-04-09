@@ -7,10 +7,15 @@ export type BookLevel = {
 };
 
 export type L2BookPriceGroupOption = {
+	key: string;
 	nSigFigs: 2 | 3 | 4 | 5;
 	mantissa?: 2 | 5;
+	tickSize: number;
+	decimals: number;
 	label: string;
 };
+
+export type L2BookPriceGroupSelection = Pick<L2BookPriceGroupOption, "nSigFigs" | "mantissa">;
 
 export function processLevels(raw: RawBookLevel[] | undefined, limit?: number): BookLevel[] {
 	if (!raw?.length) return [];
@@ -69,18 +74,43 @@ export function getMaxTotal(bids: BookLevel[], asks: BookLevel[]): number {
 }
 
 export function getPriceGroupingOptions(mid: number | undefined): L2BookPriceGroupOption[] {
-	if (!mid || mid <= 0) {
-		return [{ nSigFigs: 5, label: "0.01" }];
+	if (!mid || !Number.isFinite(mid) || mid <= 0) {
+		return [];
 	}
 
-	const magnitude = Math.floor(Math.log10(mid));
+	const integerDigits = Math.floor(Math.log10(mid)) + 1;
 
 	return [
-		{ nSigFigs: 5, mantissa: 5, label: String(10 ** (magnitude - 4) * 5) },
-		{ nSigFigs: 5, mantissa: 2, label: String(10 ** (magnitude - 4) * 2) },
-		{ nSigFigs: 5, label: String(10 ** (magnitude - 4)) },
-		{ nSigFigs: 4, label: String(10 ** (magnitude - 3)) },
-		{ nSigFigs: 3, label: String(10 ** (magnitude - 2)) },
-		{ nSigFigs: 2, label: String(10 ** (magnitude - 1)) },
-	].sort((a, b) => Number(a.label) - Number(b.label)) as L2BookPriceGroupOption[];
+		buildPriceGroupingOption({ nSigFigs: 5 }, 10 ** (integerDigits - 5)),
+		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 2 }, 2 * 10 ** (integerDigits - 5)),
+		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 5 }, 5 * 10 ** (integerDigits - 5)),
+		buildPriceGroupingOption({ nSigFigs: 4 }, 10 ** (integerDigits - 4)),
+		buildPriceGroupingOption({ nSigFigs: 3 }, 10 ** (integerDigits - 3)),
+		buildPriceGroupingOption({ nSigFigs: 2 }, 10 ** (integerDigits - 2)),
+	].sort((a, b) => a.tickSize - b.tickSize);
+}
+
+export function getPriceGroupingKey(selection: L2BookPriceGroupSelection | null | undefined): string {
+	return `${selection?.nSigFigs ?? "default"}:${selection?.mantissa ?? "default"}`;
+}
+
+function buildPriceGroupingOption(selection: L2BookPriceGroupSelection, tickSize: number): L2BookPriceGroupOption {
+	const decimals = getTickSizeDecimals(tickSize);
+	return {
+		...selection,
+		key: getPriceGroupingKey(selection),
+		tickSize,
+		decimals,
+		label: formatTickSize(tickSize, decimals),
+	};
+}
+
+function getTickSizeDecimals(tickSize: number): number {
+	if (tickSize >= 1) return 0;
+	return Math.max(0, -Math.floor(Math.log10(tickSize)));
+}
+
+function formatTickSize(tickSize: number, decimals: number): string {
+	if (decimals === 0) return String(Math.trunc(tickSize));
+	return tickSize.toFixed(decimals).replace(/0+$/, "").replace(/\.$/, "");
 }

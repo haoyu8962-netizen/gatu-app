@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { aggregateLevels, getMaxTotal, getSpreadInfo, getTickSizes, processLevels } from "@/lib/trade/orderbook";
+import {
+	aggregateLevels,
+	getMaxTotal,
+	getPriceGroupingKey,
+	getPriceGroupingOptions,
+	getSpreadInfo,
+	getTickSizes,
+	processLevels,
+} from "@/lib/trade/orderbook";
 
 describe("processLevels", () => {
 	it("builds levels and accumulates totals", () => {
@@ -89,5 +97,32 @@ describe("getMaxTotal", () => {
 
 	it("returns 0 for empty arrays", () => {
 		expect(getMaxTotal([], [])).toBe(0);
+	});
+});
+
+describe("getPriceGroupingOptions", () => {
+	it("matches Hyperliquid l2Book groupings for four-digit prices", () => {
+		const options = getPriceGroupingOptions(2178.8);
+
+		expect(options.map((option) => option.label)).toEqual(["0.1", "0.2", "0.5", "1", "10", "100"]);
+		expect(options.map((option) => option.tickSize)).toEqual([0.1, 0.2, 0.5, 1, 10, 100]);
+		expect(options.map((option) => option.decimals)).toEqual([1, 1, 1, 0, 0, 0]);
+	});
+
+	it("formats low-price groupings without scientific notation", () => {
+		const options = getPriceGroupingOptions(0.95);
+
+		expect(options.map((option) => option.label)).toEqual(["0.00001", "0.00002", "0.00005", "0.0001", "0.001", "0.01"]);
+	});
+
+	it("keeps the same grouping key while labels retarget to the current market price", () => {
+		const btcWide = getPriceGroupingOptions(70910).at(-1);
+		const ethWide = getPriceGroupingOptions(2178.8).at(-1);
+
+		expect(btcWide).toBeDefined();
+		expect(ethWide).toBeDefined();
+		expect(getPriceGroupingKey(btcWide)).toBe(getPriceGroupingKey(ethWide));
+		expect(btcWide?.label).toBe("1000");
+		expect(ethWide?.label).toBe("100");
 	});
 });

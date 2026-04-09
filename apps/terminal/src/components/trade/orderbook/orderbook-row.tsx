@@ -8,11 +8,12 @@ interface Props {
 	level: BookLevel;
 	side: "ask" | "bid";
 	maxTotal: number;
+	priceDecimals: number;
 	showInQuote?: boolean;
 	szDecimals: number;
 }
 
-function OrderbookRowComponent({ level, side, maxTotal, showInQuote = false, szDecimals }: Props) {
+function OrderbookRowComponent({ level, side, maxTotal, priceDecimals, showInQuote = false, szDecimals }: Props) {
 	const { setSelectedPrice } = useOrderbookActions();
 	const depthPct = maxTotal > 0 ? (level.total / maxTotal) * 100 : 0;
 	const isAsk = side === "ask";
@@ -39,7 +40,7 @@ function OrderbookRowComponent({ level, side, maxTotal, showInQuote = false, szD
 						isAsk ? "text-text-error hover:text-text-error" : "text-text-success hover:text-text-success",
 					)}
 				>
-					{formatNumber(level.price)}
+					{formatNumber(level.price, priceDecimals)}
 				</button>
 				<div className="text-right text-text-strong group-hover:text-text-strong">{sizeText}</div>
 				<div className="text-right text-text-strong group-hover:text-text-strong">{totalText}</div>
@@ -52,6 +53,7 @@ function areEqual(prev: Props, next: Props): boolean {
 	return (
 		prev.side === next.side &&
 		prev.maxTotal === next.maxTotal &&
+		prev.priceDecimals === next.priceDecimals &&
 		prev.showInQuote === next.showInQuote &&
 		prev.szDecimals === next.szDecimals &&
 		prev.level.price === next.level.price &&

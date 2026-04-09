@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER, UI_TEXT } from "@/config/constants";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { cn } from "@/lib/cn";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
-import { processLevels } from "@/lib/trade/orderbook";
+import { toNumber } from "@/lib/trade/numbers";
+import { getPriceGroupingKey, getPriceGroupingOptions, processLevels } from "@/lib/trade/orderbook";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { OrderbookRow } from "../orderbook/orderbook-row";
 import { TradesPanel } from "../orderbook/trades-panel";
@@ -16,66 +17,32 @@ const ORDERBOOK_TEXT = UI_TEXT.ORDERBOOK;
 
 type View = "book" | "trades";
 
-interface PriceGroupOption {
-	tickSize: number;
-	nSigFigs: 2 | 3 | 4 | 5;
-	mantissa?: 2 | 5;
-	label: string;
-}
-
-function generatePriceGroupingOptions(midPrice: number | undefined): PriceGroupOption[] {
-	if (!midPrice || !Number.isFinite(midPrice) || midPrice <= 0) {
-		return [
-			{ tickSize: 1, nSigFigs: 5, label: "1" },
-			{ tickSize: 2, nSigFigs: 5, mantissa: 2, label: "2" },
-			{ tickSize: 5, nSigFigs: 5, mantissa: 5, label: "5" },
-			{ tickSize: 10, nSigFigs: 4, label: "10" },
-		];
-	}
-
-	const integerDigits = Math.floor(Math.log10(midPrice)) + 1;
-	const options: PriceGroupOption[] = [];
-	const base5 = 10 ** (integerDigits - 5);
-
-	options.push({ tickSize: base5, nSigFigs: 5, label: formatTickLabel(base5) });
-	options.push({ tickSize: base5 * 2, nSigFigs: 5, mantissa: 2, label: formatTickLabel(base5 * 2) });
-	options.push({ tickSize: base5 * 5, nSigFigs: 5, mantissa: 5, label: formatTickLabel(base5 * 5) });
-
-	for (let nSigFigs = 4; nSigFigs >= 2; nSigFigs--) {
-		const tickSize = 10 ** (integerDigits - nSigFigs);
-		options.push({ tickSize, nSigFigs: nSigFigs as 2 | 3 | 4, label: formatTickLabel(tickSize) });
-	}
-
-	options.sort((a, b) => a.tickSize - b.tickSize);
-	return options.filter((opt) => opt.tickSize > 0 && opt.tickSize <= midPrice / 10).slice(0, 6);
-}
-
-function formatTickLabel(tickSize: number): string {
-	if (tickSize >= 1) {
-		return tickSize >= 1000 ? `${tickSize / 1000}K` : String(tickSize);
-	}
-	return String(Number(tickSize.toPrecision(4)));
-}
-
 interface MobileBookViewProps {
 	className?: string;
 }
 
 export function MobileBookView({ className }: MobileBookViewProps) {
 	const [view, setView] = useState<View>("book");
-	const [selectedOption, setSelectedOption] = useState<PriceGroupOption | null>(null);
+	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const { setShowOrderbookInQuote } = useGlobalSettingsActions();
 
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const name = selectedMarket?.name ?? "";
 	const szDecimals = selectedMarket?.szDecimals ?? 4;
+	const referencePrice = toNumber(selectedMarket?.markPx) ?? undefined;
+	const priceGroupingOptions = useMemo(() => getPriceGroupingOptions(referencePrice), [referencePrice]);
+	const selectedOption = useMemo(
+		() => priceGroupingOptions.find((option) => option.key === selectedOptionKey) ?? priceGroupingOptions[0] ?? null,
+		[priceGroupingOptions, selectedOptionKey],
+	);
+	const priceDecimals = selectedOption?.decimals ?? szDecimalsToPriceDecimals(szDecimals);
 
 	const { data: book, status: bookStatus } = useSubscription(
 		"l2Book",
 		{
 			coin: name,
-			nSigFigs: selectedOption?.nSigFigs,
+			nSigFigs: selectedOption?.nSigFigs ?? 5,
 			mantissa: selectedOption?.mantissa,
 		},
 		{
@@ -130,18 +97,10 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 		return (spread / mid) * 100;
 	}, [spread, mid]);
 
-	const priceGroupingOptions = useMemo(() => generatePriceGroupingOptions(mid), [mid]);
-
 	const { baseToken, quoteToken } = useMemo(() => {
 		if (!selectedMarket) return { baseToken: "", quoteToken: "" };
 		return getBaseQuoteFromPairName(selectedMarket.pairName, selectedMarket.kind);
 	}, [selectedMarket]);
-
-	useEffect(() => {
-		if (selectedOption === null && priceGroupingOptions.length > 0) {
-			setSelectedOption(priceGroupingOptions[0]);
-		}
-	}, [priceGroupingOptions, selectedOption]);
 
 	return (
 		<div className={cn("flex flex-col h-full min-h-0", className)}>
@@ -190,7 +149,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 								items={priceGroupingOptions.map(
 									(option): DropdownItem => ({
 										label: option.label,
-										onSelect: () => setSelectedOption(option),
+										onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
 									}),
 								)}
 							/>
@@ -219,6 +178,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 											level={level}
 											side="ask"
 											maxTotal={maxTotal}
+											priceDecimals={priceDecimals}
 											showInQuote={showOrderbookInQuote}
 											szDecimals={szDecimals}
 										/>
@@ -256,6 +216,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 										level={level}
 										side="bid"
 										maxTotal={maxTotal}
+										priceDecimals={priceDecimals}
 										showInQuote={showOrderbookInQuote}
 										szDecimals={szDecimals}
 									/>

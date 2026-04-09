@@ -30,16 +30,34 @@ msgid "% filled"
 msgstr "% पूर्ण"
 
 #: src/components/trade/market-overview.tsx
-msgid "24H"
+msgid "24h"
 msgstr ""
 
+#: src/components/trade/market-overview.tsx
+#~ msgid "24H"
+#~ msgstr ""
+
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/chart/token-selector.tsx
 msgid "24h Change"
 msgstr ""
 
 #: src/components/trade/chart/constants.ts
 #~ msgid "24h Price"
 #~ msgstr "24घंटे मूल्य"
+
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+msgid "24h vol"
+msgstr ""
+
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
+msgid "24H VOL"
+msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "A crypto wallet lets you store and manage your digital assets securely."
@@ -53,10 +71,17 @@ msgstr ""
 msgid "Account"
 msgstr "खाता"
 
+#: src/components/trade/header/user-menu.tsx
+msgid "Account and wallet"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-#: src/components/trade/positions/balances-tab.tsx
 msgid "Account Balances"
 msgstr "खाता शेष"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Account Equity"
+msgstr ""
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -66,15 +91,14 @@ msgid "Actions"
 msgstr "कार्रवाई"
 
 #: src/components/trade/positions/twap-tab.tsx
-#~ msgid "active"
-#~ msgstr "सक्रिय"
-
-#: src/components/trade/positions/twap-tab.tsx
-msgid "Active"
+msgid "active"
 msgstr "सक्रिय"
 
+#: src/components/trade/positions/twap-tab.tsx
+#~ msgid "Active"
+#~ msgstr "सक्रिय"
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/positions/positions-tab.tsx
 msgid "Active Positions"
 msgstr "सक्रिय पोजीशन"
 
@@ -115,8 +139,12 @@ msgid "All"
 msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
-msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
+msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions may be forfeited."
 msgstr ""
+
+#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
+#~ msgstr ""
 
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -151,13 +179,11 @@ msgid "Asset"
 msgstr "संपत्ति"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Assets"
-msgstr ""
+#~ msgid "Assets"
+#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Available"
 msgstr "उपलब्ध"
@@ -185,6 +211,10 @@ msgstr ""
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance"
 msgstr "शेष"
+
+#: src/components/trade/tradebox/trade-form-fields.tsx
+msgid "Balance available to trade"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Balance:"
@@ -261,7 +291,6 @@ msgid "buy"
 msgstr "खरीदें"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
-#: src/lib/trade/use-button-content.ts
 msgid "Buy"
 msgstr "खरीदें"
 
@@ -330,8 +359,8 @@ msgid "Change leverage"
 msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
-msgid "Chart"
-msgstr "चार्ट"
+#~ msgid "Chart"
+#~ msgstr "चार्ट"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
@@ -506,12 +535,21 @@ msgstr ""
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Cross"
 msgstr "क्रॉस"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Cross Leverage"
-msgstr "क्रॉस लीवरेज"
+msgid "Cross Account Leverage"
+msgstr ""
+
+#: src/components/trade/tradebox/account-panel.tsx
+#~ msgid "Cross Leverage"
+#~ msgstr "क्रॉस लीवरेज"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Cross Margin Ratio"
+msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 msgid "Current"
@@ -532,6 +570,10 @@ msgstr ""
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Dark"
 #~ msgstr ""
+
+#: src/components/trade/chart/chart-source-toggle.tsx
+msgid "Default"
+msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -618,6 +660,10 @@ msgstr ""
 msgid "Duration (Minutes)"
 msgstr ""
 
+#: src/components/trade/tradebox/margin-mode-dialog.tsx
+msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
+msgstr ""
+
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Edit TP/SL"
 msgstr ""
@@ -639,8 +685,12 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
-msgid "End Price (USDC)"
+msgid "End Price"
 msgstr ""
+
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#~ msgid "End Price (USDC)"
+#~ msgstr ""
 
 #: src/lib/errors/definitions/order-input.ts
 #: src/lib/errors/definitions/spot-input.ts
@@ -675,8 +725,8 @@ msgid "Entry Price"
 msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Equity"
-msgstr "इक्विटी"
+#~ msgid "Equity"
+#~ msgstr "इक्विटी"
 
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Est. Fee"
@@ -846,13 +896,22 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/chart/token-selector.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Funding"
 msgstr "फंडिंग"
 
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/market-overview.tsx
+msgid "FUNDING"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
-#: src/components/trade/positions/funding-tab.tsx
 msgid "Funding History"
 msgstr ""
 
@@ -888,8 +947,8 @@ msgid "Hide small"
 msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "In Orders"
-msgstr ""
+#~ msgid "In Orders"
+#~ msgstr ""
 
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "In Use"
@@ -914,6 +973,7 @@ msgstr ""
 msgid "Insufficient <0/> balance"
 msgstr ""
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/definitions/deposit.ts
 #: src/lib/errors/definitions/deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -921,8 +981,8 @@ msgid "Insufficient balance"
 msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Insufficient balance (includes ${WITHDRAWAL_FEE_USD} fee)"
-msgstr ""
+#~ msgid "Insufficient balance (includes ${WITHDRAWAL_FEE_USD} fee)"
+#~ msgstr ""
 
 #: src/lib/errors/format.ts
 msgid "Insufficient funds for gas"
@@ -941,6 +1001,7 @@ msgstr ""
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Isolated"
 msgstr "आइसोलेटेड"
 
@@ -958,6 +1019,7 @@ msgstr ""
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/tradebox/margin-mode-dialog.tsx
 msgid "Leverage"
 msgstr ""
 
@@ -969,6 +1031,7 @@ msgstr ""
 #~ msgid "limit"
 #~ msgstr "लिमिट"
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
 msgstr "लिमिट"
@@ -1053,18 +1116,13 @@ msgstr "TWAP ऑर्डर लोड हो रहे हैं..."
 msgid "Loading wallet..."
 msgstr "वॉलेट लोड हो रहा है..."
 
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/positions-tab.tsx
 msgid "Long"
 msgstr "लॉन्ग"
 
@@ -1072,9 +1130,13 @@ msgstr "लॉन्ग"
 msgid "Low Balance"
 msgstr ""
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
-msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Maintenance Margin"
 msgstr ""
+
+#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#~ msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
+#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1082,37 +1144,58 @@ msgid "Margin"
 msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
-msgid "Margin Mode"
+msgid "Margin & leverage"
 msgstr ""
 
+#: src/components/trade/tradebox/margin-mode-dialog.tsx
+msgid "Margin mode"
+msgstr ""
+
+#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#~ msgid "Margin Mode"
+#~ msgstr ""
+
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Margin Ratio"
-msgstr "मार्जिन अनुपात"
+#~ msgid "Margin Ratio"
+#~ msgstr "मार्जिन अनुपात"
 
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Margin Req."
 msgstr "मार्जिन आवश्यक"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Margin Used"
-msgstr "उपयोग किया गया मार्जिन"
+#~ msgid "Margin Used"
+#~ msgstr "उपयोग किया गया मार्जिन"
 
+#: src/components/trade/layout/market-overview-variants-demo.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Mark"
 msgstr "मार्क"
 
 #: src/components/trade/market-overview.tsx
-msgid "MARK"
-msgstr "मार्क"
+#~ msgid "MARK"
+#~ msgstr "मार्क"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Mark Price"
 msgstr ""
 
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#~ msgid "Mark:"
+#~ msgstr ""
+
 #: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
 msgstr "बाज़ार"
@@ -1132,6 +1215,10 @@ msgstr "मार्केट तैयार नहीं"
 #: src/components/trade/components/global-settings-dialog.tsx
 msgid "Market Order Slippage"
 msgstr "मार्केट ऑर्डर स्लिपेज"
+
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+msgid "Market stats row — layout options"
+msgstr ""
 
 #: src/components/trade/chart/token-selector.tsx
 msgid "markets"
@@ -1215,6 +1302,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "More details"
+msgstr ""
+
+#: src/components/trade/chart/kline-chart.tsx
+msgid "More intervals"
 msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
@@ -1385,7 +1476,7 @@ msgstr ""
 msgid "Offline"
 msgstr ""
 
-#: src/components/trade/market-overview.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
 msgid "OI"
 msgstr "OI"
 
@@ -1401,15 +1492,39 @@ msgstr ""
 #~ msgid "open"
 #~ msgstr "खुला"
 
+#: src/components/trade/footer/footer-bar.tsx
+msgid "Open command menu"
+msgstr ""
+
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/market-overview.tsx
+msgid "OPEN INT"
+msgstr ""
+
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/chart/token-selector.tsx
 msgid "Open Interest"
 msgstr "ओपन इंटरेस्ट"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "Open Orders"
 msgstr "खुले ऑर्डर"
 
+#: src/components/trade/positions/positions-tab.tsx
+#~ msgid "Open positions count"
+#~ msgstr ""
+
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+msgid "Oracle"
+msgstr ""
+
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+#: src/components/trade/layout/market-overview-variants-demo.tsx
 #: src/components/trade/market-overview.tsx
 msgid "ORACLE"
 msgstr "ऑरेकल"
@@ -1429,7 +1544,6 @@ msgid "Order filled"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
 msgid "Order History"
 msgstr ""
 
@@ -1446,11 +1560,16 @@ msgid "Order Value"
 msgstr "ऑर्डर वैल्यू"
 
 #: src/components/trade/positions/orders-history-tab.tsx
-msgid "Orders"
+msgid "orders"
 msgstr ""
+
+#: src/components/trade/positions/orders-history-tab.tsx
+#~ msgid "Orders"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Other"
 msgstr ""
 
@@ -1501,9 +1620,18 @@ msgstr "परप्स"
 msgid "Perps Account"
 msgstr ""
 
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Perps Overview"
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
 #~ msgstr ""
+
+#. placeholder {0}: input.sideLabel
+#: src/lib/trade/use-button-content.ts
+msgid "Place {0} Order"
+msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Place Limit Close"
@@ -1512,7 +1640,6 @@ msgstr ""
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "PNL"
 msgstr "PNL"
 
@@ -1534,6 +1661,10 @@ msgstr "पोजीशन"
 #~ msgid "Position actions"
 #~ msgstr ""
 
+#: src/components/trade/positions/position-actions-dropdown.tsx
+msgid "Position close actions"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position closed"
@@ -1541,6 +1672,10 @@ msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position reversed"
+msgstr ""
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "positions"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
@@ -1552,6 +1687,7 @@ msgstr ""
 #~ msgstr "पिछला"
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/chart/token-selector.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -1565,8 +1701,12 @@ msgid "Price"
 msgstr "मूल्य"
 
 #: src/components/trade/market-overview.tsx
-msgid "PRICE"
-msgstr ""
+#~ msgid "PRICE"
+#~ msgstr ""
+
+#: src/components/trade/orderbook/orderbook-panel.tsx
+#~ msgid "Price grouping"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -1654,6 +1794,7 @@ msgstr ""
 msgid "RO"
 msgstr ""
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Scale"
 msgstr ""
@@ -1699,12 +1840,16 @@ msgid "Select favorite markets"
 msgstr "पसंदीदा बाज़ार चुनें"
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
-msgid "Select how margin is allocated for your positions"
-msgstr ""
+#~ msgid "Select how margin is allocated for your positions"
+#~ msgstr ""
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Select leverage"
 #~ msgstr "लीवरेज चुनें"
+
+#: src/components/trade/chart/token-selector.tsx
+msgid "Select market"
+msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Select order"
@@ -1726,12 +1871,15 @@ msgstr "टोकन चुनें"
 msgid "Select tokens to swap"
 msgstr ""
 
+#: src/components/trade/positions/orders-tab.tsx
+msgid "selected"
+msgstr ""
+
 #: src/components/trade/positions/twap-tab.tsx
 msgid "sell"
 msgstr "बेचें"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
-#: src/lib/trade/use-button-content.ts
 msgid "Sell"
 msgstr "बेचें"
 
@@ -1794,10 +1942,8 @@ msgstr ""
 msgid "Settings"
 msgstr "सेटिंग्स"
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/positions-tab.tsx
 msgid "Short"
 msgstr "शॉर्ट"
 
@@ -1826,8 +1972,8 @@ msgstr "शॉर्ट"
 #~ msgstr "चार्ट पर पोजीशन दिखाएं"
 
 #: src/components/trade/components/global-settings-dialog.tsx
-msgid "Show Scanlines"
-msgstr "स्कैनलाइन दिखाएं"
+#~ msgid "Show Scanlines"
+#~ msgstr "स्कैनलाइन दिखाएं"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 msgid "Show Values in Quote Asset"
@@ -1915,16 +2061,19 @@ msgstr ""
 msgid "Something went wrong"
 msgstr "कुछ गलत हो गया"
 
-#. placeholder {0}: String(header.column.columnDef.header ?? "")
 #: src/components/trade/chart/token-selector.tsx
-msgid "Sort by {0}"
-msgstr "{0} से क्रमबद्ध करें"
+#~ msgid "Sort by {0}"
+#~ msgstr "{0} से क्रमबद्ध करें"
 
 #: src/components/ui/virtual-table.tsx
 #~ msgid "Sort by {headerLabel}"
 #~ msgstr "{headerLabel} से क्रमबद्ध करें"
 
-#. placeholder {0}: sorting[0].id
+#: src/components/trade/chart/token-selector.tsx
+msgid "Sort by {sortLabel}"
+msgstr ""
+
+#. placeholder {0}: getColumnSortLabel(sorting[0].id)
 #: src/components/trade/chart/token-selector.tsx
 msgid "Sorted by {0}"
 msgstr "{0} से क्रमबद्ध"
@@ -1969,8 +2118,12 @@ msgid "Start and end must differ"
 msgstr ""
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
-msgid "Start Price (USDC)"
+msgid "Start Price"
 msgstr ""
+
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#~ msgid "Start Price (USDC)"
+#~ msgstr ""
 
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Status"
@@ -1980,6 +2133,7 @@ msgstr "स्थिति"
 #~ msgid "Stop"
 #~ msgstr "स्टॉप"
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Limit"
 msgstr ""
@@ -1989,6 +2143,7 @@ msgstr ""
 msgid "Stop Loss"
 msgstr ""
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Market"
 msgstr ""
@@ -2057,7 +2212,17 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Switch to {displayName} market"
+#~ msgid "Switch to {displayName} market"
+#~ msgstr ""
+
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Switch to {displayName} market, long position"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Switch to {displayName} market, short position"
 msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2127,6 +2292,14 @@ msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह �
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/components/trade/layout/market-overview-variants-demo.tsx
+msgid "This row answers: “What is the selected market doing right now?” — mark price, 24h move, oracle, volume, open interest, and funding. Pick a layout that balances scan speed, density, and calm."
+msgstr ""
+
+#: src/components/trade/tradebox/trade-form-fields.tsx
+msgid "TIF"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2141,8 +2314,8 @@ msgid "Time / Total"
 msgstr ""
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
-msgid "Time in Force"
-msgstr ""
+#~ msgid "Time in Force"
+#~ msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2169,6 +2342,10 @@ msgstr ""
 msgid "Toggle size mode"
 msgstr "साइज मोड टॉगल करें"
 
+#: src/components/trade/market-overview.tsx
+msgid "TOKEN"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -2184,8 +2361,8 @@ msgid "Total time"
 msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Total Value"
-msgstr ""
+#~ msgid "Total Value"
+#~ msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "TP"
@@ -2228,7 +2405,6 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 msgid "Trade History"
 msgstr "ट्रेड इतिहास"
 
@@ -2237,10 +2413,17 @@ msgstr "ट्रेड इतिहास"
 msgid "Trade via {0} spot market"
 msgstr ""
 
-#: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
+msgid "trades"
+msgstr ""
+
+#: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Trades"
 msgstr "ट्रेड्स"
+
+#: src/components/trade/chart/chart-source-toggle.tsx
+msgid "TradingView"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Transaction breakdown"
@@ -2279,14 +2462,19 @@ msgid "Trigger"
 msgstr ""
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
-msgid "Trigger Price (USDC)"
+msgid "Trigger Price"
 msgstr ""
+
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#~ msgid "Trigger Price (USDC)"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Try Again"
 msgstr ""
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "TWAP"
 msgstr ""
@@ -2296,7 +2484,6 @@ msgid "TWAP minutes must be {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
-#: src/components/trade/positions/twap-tab.tsx
 msgid "TWAP Orders"
 msgstr "TWAP ऑर्डर"
 
@@ -2379,10 +2566,11 @@ msgid "View on explorer"
 msgstr ""
 
 #: src/components/trade/market-overview.tsx
-msgid "VOL"
-msgstr "वॉल्यूम"
+#~ msgid "VOL"
+#~ msgstr "वॉल्यूम"
 
 #: src/components/trade/chart/token-selector-columns.ts
+#: src/components/trade/chart/token-selector.tsx
 msgid "Volume"
 msgstr "वॉल्यूम"
 
@@ -2480,6 +2668,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Your bridge is still processing. Funds are safe."
+msgstr ""
+
+#: src/components/trade/tradebox/trade-form-fields.tsx
+msgid "Your current open position on this market"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx

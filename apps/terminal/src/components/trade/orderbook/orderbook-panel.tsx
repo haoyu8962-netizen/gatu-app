@@ -3,28 +3,29 @@ import { t } from "@lingui/core/macro";
 import { BookBookmarkIcon, ListDashesIcon } from "@phosphor-icons/react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { getBaseQuoteFromPairName, getPercent } from "@/domain/market";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
-import {
-	getMaxTotal,
-	getPriceGroupingOptions,
-	type L2BookPriceGroupOption,
-	processLevels,
-} from "@/lib/trade/orderbook";
+import { getMaxTotal, getPriceGroupingKey, getPriceGroupingOptions, processLevels } from "@/lib/trade/orderbook";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { OrderbookRow } from "./orderbook-row";
 import { TradesPanel } from "./trades-panel";
 import { useOrderbookRows } from "./use-orderbook-rows";
 
 export function OrderbookPanel() {
-	const [selectedOption, setSelectedOption] = useState<L2BookPriceGroupOption | null>(null);
+	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const { setShowOrderbookInQuote } = useGlobalSettingsActions();
 	const [visibleRows, orderbookContainerRef] = useOrderbookRows();
 	const [tab, setTab] = useState("book");
 
 	const { data: selectedMarket } = useSelectedMarketInfo();
+	const markPx = toNumber(selectedMarket?.markPx);
+	const priceGroupingOptions = useMemo(() => getPriceGroupingOptions(markPx ?? undefined), [markPx]);
+	const selectedOption = useMemo(
+		() => priceGroupingOptions.find((option) => option.key === selectedOptionKey) ?? priceGroupingOptions[0] ?? null,
+		[priceGroupingOptions, selectedOptionKey],
+	);
 	const subscriptionParams = useMemo(
 		() => ({
 			coin: selectedMarket?.name ?? "",
@@ -63,10 +64,9 @@ export function OrderbookPanel() {
 	const maxTotal = useMemo(() => getMaxTotal(bids, asks), [asks, bids]);
 	const spread = deferredOrderbook?.spread;
 	const spreadPct = getPercent(spread, selectedMarket?.markPx);
-	const markPx = toNumber(selectedMarket?.markPx);
-	const priceGroupingOptions = useMemo(() => getPriceGroupingOptions(markPx ?? undefined), [markPx]);
 
 	const szDecimals = selectedMarket?.szDecimals ?? 4;
+	const priceDecimals = selectedOption?.decimals ?? szDecimalsToPriceDecimals(szDecimals);
 
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
 	const toggleAssetDisplay = () => setShowOrderbookInQuote(!showOrderbookInQuote);
@@ -75,7 +75,8 @@ export function OrderbookPanel() {
 
 	const dropdownItems = priceGroupingOptions.map((option) => ({
 		label: option.label,
-		onSelect: () => setSelectedOption(option),
+		active: option.key === selectedOption?.key,
+		onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
 	}));
 
 	return (
@@ -136,6 +137,7 @@ export function OrderbookPanel() {
 										level={level}
 										side="ask"
 										maxTotal={maxTotal}
+										priceDecimals={priceDecimals}
 										showInQuote={showOrderbookInQuote}
 										szDecimals={szDecimals}
 									/>
@@ -165,6 +167,7 @@ export function OrderbookPanel() {
 										level={level}
 										side="bid"
 										maxTotal={maxTotal}
+										priceDecimals={priceDecimals}
 										showInQuote={showOrderbookInQuote}
 										szDecimals={szDecimals}
 									/>
