@@ -1,11 +1,11 @@
-import { Tabs, TabsList, TabsTrigger } from "@hypeterminal/ui";
+import { Dropdown } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
+import { PencilSimpleIcon } from "@phosphor-icons/react";
 import type { SideLabels } from "@/domain/trade/order/labels";
-import { cn } from "@/lib/cn";
 import type { MarketKind } from "@/lib/hyperliquid";
-import { getTabsOrderType, type OrderType } from "@/lib/trade/order-types";
+import type { MarginMode } from "@/lib/trade/margin-mode";
+import { getAdvancedOrderLabel, getTabsOrderType, type OrderType } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
-import { AdvancedOrderDropdown } from "./advanced-order-dropdown";
 import { SideToggle } from "./side-toggle";
 
 interface Props {
@@ -15,36 +15,73 @@ interface Props {
 	marketKind: MarketKind | undefined;
 	onOrderTypeChange: (type: OrderType) => void;
 	onSideChange: (side: Side) => void;
+	marginMode?: MarginMode;
+	leverage?: number;
+	onMarginLeverageClick?: () => void;
+	isLeveraged?: boolean;
 }
 
-export function TradeHeader({ orderType, side, sideLabels, marketKind, onOrderTypeChange, onSideChange }: Props) {
+export function TradeHeader({
+	orderType,
+	side,
+	sideLabels,
+	marketKind,
+	onOrderTypeChange,
+	onSideChange,
+	marginMode,
+	leverage,
+	onMarginLeverageClick,
+	isLeveraged,
+}: Props) {
 	const tabsOrderType = getTabsOrderType(orderType);
-	const isAdvancedTab = tabsOrderType === "advanced";
+
+	const orderTypeLabel =
+		tabsOrderType === "advanced"
+			? getAdvancedOrderLabel(orderType, t`Other`)
+			: tabsOrderType === "market"
+				? t`Market`
+				: t`Limit`;
+
+	const isSpot = marketKind === "spot";
+	const orderTypeItems = [
+		{ label: t`Market`, onSelect: () => onOrderTypeChange("market") },
+		{ label: t`Limit`, onSelect: () => onOrderTypeChange("limit") },
+		...(!isSpot
+			? [
+					{ label: t`Stop Market`, onSelect: () => onOrderTypeChange("stopMarket" as OrderType) },
+					{ label: t`Stop Limit`, onSelect: () => onOrderTypeChange("stopLimit" as OrderType) },
+				]
+			: []),
+		{ label: t`TWAP`, onSelect: () => onOrderTypeChange("twap" as OrderType) },
+		{ label: t`Scale`, onSelect: () => onOrderTypeChange("scale" as OrderType) },
+	];
+
+	const marginLabel = marginMode === "isolated" ? t`Isolated` : t`Cross`;
 
 	return (
-		<div className="space-y-4 min-w-0">
-			<Tabs
-				value={tabsOrderType}
-				onValueChange={(v) => {
-					if (v === "market") onOrderTypeChange("market");
-					else if (v === "limit") onOrderTypeChange("limit");
-				}}
-				fullWidth
-			>
-				<TabsList>
-					<TabsTrigger value="market" className="flex-1 normal-case">{t`Market`}</TabsTrigger>
-					<TabsTrigger value="limit" className="flex-1 normal-case">{t`Limit`}</TabsTrigger>
-					<div className="relative inline-flex flex-1 items-center justify-center pb-2">
-						<AdvancedOrderDropdown
-							orderType={orderType}
-							onOrderTypeChange={onOrderTypeChange}
-							marketKind={marketKind}
-							className={cn("text-xs normal-case", isAdvancedTab ? "font-semibold text-text-strong" : "text-text-weak")}
-						/>
-						{isAdvancedTab && <span aria-hidden className="absolute bottom-0 inset-x-0 h-0.5 bg-fill-brand-strong" />}
-					</div>
-				</TabsList>
-			</Tabs>
+		<div className="min-w-0 space-y-4">
+			<div className="flex items-center justify-between">
+				<Dropdown
+					trigger={<span className="flex items-center gap-0.5 font-semibold text-text-strong">{orderTypeLabel}</span>}
+					items={orderTypeItems}
+					size="sm"
+					align="start"
+					triggerVariant="minimal"
+					className="inline-flex"
+				/>
+				{isLeveraged && (
+					<button
+						type="button"
+						onClick={onMarginLeverageClick}
+						className="inline-flex items-center gap-1 text-xs text-text-weak hover:text-text-strong transition-colors cursor-pointer"
+					>
+						<span>
+							{marginLabel} · {leverage ?? 1}x
+						</span>
+						<PencilSimpleIcon className="size-3" />
+					</button>
+				)}
+			</div>
 
 			<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} />
 		</div>

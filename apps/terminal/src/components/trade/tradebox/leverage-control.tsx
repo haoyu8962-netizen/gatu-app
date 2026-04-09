@@ -166,7 +166,7 @@ function LeverageEditor({
 			{showSuccess && (
 				<div
 					className={cn(
-						"flex items-center justify-center bg-fill-success-weak border border-fill-success-weak/20 rounded-8 text-text-success",
+						"flex items-center justify-center bg-fill-success-weak border border-stroke-success-strong/20 rounded-8 text-text-success",
 						compact ? "gap-1.5 p-1.5 text-xs" : "gap-2 p-2.5 text-sm",
 					)}
 				>

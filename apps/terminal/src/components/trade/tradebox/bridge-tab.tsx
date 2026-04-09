@@ -66,9 +66,9 @@ function PoweredByLiFi() {
 			href="https://li.fi"
 			target="_blank"
 			rel="noopener noreferrer"
-			className="flex items-center justify-center gap-1.5 py-2 text-text-disabled opacity-60 hover:opacity-100 transition-opacity"
+			className="flex items-center justify-center gap-1.5 text-text-weak"
 		>
-			<span className="text-xs">Powered by</span>
+			<span className="text-3xs">Powered by</span>
 			<LiFiLogo className="h-2.5" />
 		</a>
 	);
@@ -276,7 +276,7 @@ interface TokenRowProps {
 function tokenRowStyle(isDust: boolean, isSelected: boolean): string {
 	if (isDust) return "opacity-50 cursor-not-allowed border-transparent";
 	if (isSelected) return "border-stroke-brand-strong bg-fill-brand-strong/5 cursor-pointer";
-	return "border-transparent hover:bg-bg-sunken/50 active:bg-bg-sunken cursor-pointer";
+	return "border-transparent hover:bg-fill-hover active:bg-fill-weak cursor-pointer";
 }
 
 function TokenRow({ token, isSelected, onSelect }: TokenRowProps) {
@@ -597,7 +597,7 @@ function ConfirmationScreen({ token, tokenAmount, address, onBack, onConfirm }: 
 
 			{quote ? (
 				<Collapsible>
-					<CollapsibleTrigger className="flex w-full items-center justify-between rounded-8 px-2 py-1.5 text-xs text-text-weak hover:bg-bg-sunken/50 transition-colors group">
+					<CollapsibleTrigger className="flex w-full items-center justify-between rounded-8 px-2 py-1.5 text-xs text-text-weak hover:bg-fill-hover transition-colors group">
 						<span>
 							<Trans>Transaction breakdown</Trans> ({formatUSD(quote.totalFeesUSD, 2)})
 						</span>
@@ -676,7 +676,7 @@ function ExecutingScreen({ address, statusText, txHash, onDone }: ExecutingScree
 		return (
 			<div className="flex flex-1 flex-col">
 				<div className="flex flex-1 flex-col items-center justify-center gap-4">
-					<div className="flex size-12 items-center justify-center rounded-full bg-fill-warning-weak border border-fill-warning-weak/30">
+					<div className="flex size-12 items-center justify-center rounded-full bg-fill-warning-weak border border-stroke-warning-strong/30">
 						<ClockIcon className="size-6 text-text-warning" />
 					</div>
 					<div className="text-center space-y-1">
@@ -789,7 +789,7 @@ function SuccessScreen({
 	return (
 		<div className="flex flex-1 flex-col gap-4">
 			<div className="flex flex-col items-center gap-3 pt-6 pb-2">
-				<div className="flex size-12 items-center justify-center rounded-full bg-fill-success-weak border border-fill-success-weak/30">
+				<div className="flex size-12 items-center justify-center rounded-full bg-fill-success-weak border border-stroke-success-strong/30">
 					<CheckCircleIcon className="size-6 text-text-success" weight="fill" />
 				</div>
 				<div className="text-center space-y-1">
@@ -850,7 +850,7 @@ function SuccessScreen({
 
 			{processDetails.length > 0 ? (
 				<Collapsible>
-					<CollapsibleTrigger className="flex w-full items-center justify-between rounded-8 px-2 py-1.5 text-xs text-text-weak hover:bg-bg-sunken/50 transition-colors group">
+					<CollapsibleTrigger className="flex w-full items-center justify-between rounded-8 px-2 py-1.5 text-xs text-text-weak hover:bg-fill-hover transition-colors group">
 						<Trans>More details</Trans>
 						<CaretDownIcon className="size-3 group-data-[state=open]:hidden" />
 						<CaretUpIcon className="size-3 hidden group-data-[state=open]:block" />

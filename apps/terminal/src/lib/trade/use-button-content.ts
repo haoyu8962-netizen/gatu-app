@@ -15,6 +15,7 @@ interface ButtonContentInput {
 	registerStatus: RegistrationStatus;
 	canApprove: boolean;
 	side: Side;
+	sideLabel: string;
 	isSubmitting: boolean;
 	onConnectWallet: () => void;
 	onDeposit: () => void;
@@ -75,7 +76,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 			};
 		}
 		return {
-			text: input.side === "buy" ? t`Buy` : t`Sell`,
+			text: t`Place ${input.sideLabel} Order`,
 			action: input.onSubmit,
 			disabled: !input.validation.canSubmit || input.isSubmitting,
 			variant: input.side as "buy" | "sell",
@@ -97,6 +98,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.onRegister,
 		input.onSubmit,
 		input.side,
+		input.sideLabel,
 		input.isSubmitting,
 	]);
 }

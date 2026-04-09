@@ -59,8 +59,7 @@ import {
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { WalletDialog } from "../components/wallet-dialog";
-import { LeverageControl } from "./leverage-control";
-import { MarginModeDialog, MarginModeToggle } from "./margin-mode-dialog";
+import { MarginModeDialog } from "./margin-mode-dialog";
 import { OrderSummary } from "./order-summary";
 import { OrderToast } from "./order-toast";
 import { TradeFormFields } from "./trade-form-fields";
@@ -107,7 +106,12 @@ export function TradePanel() {
 		leverage,
 		marginMode,
 		hasPosition,
-		switchMarginMode,
+		currentLeverage,
+		pendingLeverage,
+		maxLeverage,
+		setPendingLeverage,
+		resetPendingLeverage,
+		applyMarginAndLeverage,
 		isSwitchingMode,
 		switchModeError,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
@@ -268,11 +272,11 @@ export function TradePanel() {
 	const isRegistering =
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
 
-	const handleMarginModeConfirm = useCallback(
-		async (mode: MarginMode) => {
-			await switchMarginMode(mode);
+	const handleMarginApply = useCallback(
+		async (mode: MarginMode, leverageValue: number) => {
+			await applyMarginAndLeverage(mode, leverageValue);
 		},
-		[switchMarginMode],
+		[applyMarginAndLeverage],
 	);
 
 	const handleRegister = useCallback(() => {
@@ -430,6 +434,7 @@ export function TradePanel() {
 		registerStatus,
 		canApprove,
 		side,
+		sideLabel: sideLabels[side],
 		isSubmitting,
 		onConnectWallet: () => setActiveDialog("wallet"),
 		onDeposit: () => openDepositModal("deposit"),
@@ -440,33 +445,25 @@ export function TradePanel() {
 	// const actionButtonClass = getActionButtonClass(buttonContent.variant);
 
 	return (
-		<div className="min-h-0 flex flex-col overflow-hidden bg-bg-overlay">
-			{capabilities.isLeveraged && (
-				<div className="p-2 border-b border-stroke-weak/60 flex items-center justify-between gap-2 min-w-0">
-					{capabilities.hasMarginMode ? (
-						<MarginModeToggle
-							mode={marginMode}
-							disabled={isSwitchingMode}
-							onClick={() => setActiveDialog("marginMode")}
-						/>
-					) : (
-						<MarginModeToggle mode="isolated" disabled onClick={() => {}} />
-					)}
-					<LeverageControl key={market?.name} />
-				</div>
-			)}
-
+		<div className="min-h-0 flex flex-col overflow-hidden bg-bg-raised">
 			<MarginModeDialog
 				open={activeDialog === "marginMode"}
 				onOpenChange={(open) => setActiveDialog(open ? "marginMode" : null)}
 				currentMode={marginMode}
+				currentLeverage={currentLeverage}
+				pendingLeverage={pendingLeverage}
+				maxLeverage={maxLeverage}
+				onPendingLeverageChange={setPendingLeverage}
+				resetPendingLeverage={resetPendingLeverage}
 				hasPosition={hasPosition}
+				isOnlyIsolated={capabilities.isOnlyIsolated}
 				isUpdating={isSwitchingMode}
 				updateError={switchModeError}
-				onConfirm={handleMarginModeConfirm}
+				showLeverage={capabilities.isLeveraged}
+				onApply={handleMarginApply}
 			/>
 
-			<div className="p-2 space-y-4 overflow-y-auto flex-1 min-h-0">
+			<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-3 py-3">
 				<TradeHeader
 					orderType={orderType}
 					side={side}
@@ -474,6 +471,10 @@ export function TradePanel() {
 					marketKind={market?.kind}
 					onOrderTypeChange={setOrderType}
 					onSideChange={setSide}
+					marginMode={marginMode}
+					leverage={leverage}
+					onMarginLeverageClick={() => setActiveDialog("marginMode")}
+					isLeveraged={capabilities.isLeveraged}
 				/>
 
 				<TradeFormFields
@@ -488,7 +489,7 @@ export function TradePanel() {
 					onSwapClick={() => swapTargetToken && openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken)}
 				/>
 
-				<div className="space-y-2">
+				<div className="flex flex-col gap-3 pb-1">
 					{validation.errors.length > 0 && isConnected && availableBalance > 0 && (
 						<div className="text-xs text-text-error">{validation.errors.join(" • ")}</div>
 					)}
@@ -497,12 +498,14 @@ export function TradePanel() {
 
 					<Button
 						variant="filled"
+						size="xs"
 						intent={buttonContent.variant === "buy" ? "brand" : buttonContent.variant === "sell" ? "error" : "brand"}
 						onClick={buttonContent.action}
 						disabled={buttonContent.disabled}
 						className={cn(
-							"w-full",
-							buttonContent.variant === "buy" && "bg-fill-success-strong hover:bg-fill-success-strong/90",
+							"h-auto min-h-0 w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
+							buttonContent.variant === "buy" && "bg-fill-success-strong hover:bg-fill-success-strong/90 text-bg-base",
+							buttonContent.variant === "sell" && "text-bg-base",
 						)}
 						aria-label={buttonContent.text}
 						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}

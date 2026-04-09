@@ -1,5 +1,5 @@
 import { SegmentedControlItem, SegmentedControls } from "@hypeterminal/ui";
-import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { cn } from "@/lib/cn";
 import type { Side } from "@/lib/trade/types";
 
 interface SideLabels {
@@ -16,21 +16,32 @@ interface Props {
 }
 
 export function SideToggle({ side, onSideChange, labels }: Props) {
+	const indicatorClassName = cn(
+		"shadow-none",
+		side === "buy"
+			? "border-stroke-success-strong bg-fill-success-weak"
+			: "border-stroke-error-strong bg-fill-error-weak",
+	);
+
 	return (
-		<SegmentedControls value={side} onValueChange={(v) => onSideChange(v as Side)} fullWidth className="mb-2">
+		<SegmentedControls
+			value={side}
+			onValueChange={(v) => onSideChange(v as Side)}
+			fullWidth
+			className="mb-2"
+			indicatorClassName={indicatorClassName}
+		>
 			<SegmentedControlItem
 				value="buy"
-				className="flex-1 text-sm data-[active]:text-text-success"
 				aria-label={labels.buyAria}
-				icon={<TrendUpIcon className="size-4" />}
+				className="flex-1 py-2 text-sm data-[active]:text-text-success"
 			>
 				{labels.buy}
 			</SegmentedControlItem>
 			<SegmentedControlItem
 				value="sell"
-				className="flex-1 text-sm data-[active]:text-text-error"
 				aria-label={labels.sellAria}
-				icon={<TrendDownIcon className="size-4" />}
+				className="flex-1 py-2 text-sm data-[active]:text-text-error"
 			>
 				{labels.sell}
 			</SegmentedControlItem>

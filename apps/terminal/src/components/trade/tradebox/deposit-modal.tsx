@@ -105,7 +105,7 @@ function StatusScreen({
 								className={cn(
 									"flex size-14 items-center justify-center rounded-full border",
 									icon === "success"
-										? "bg-fill-success-weak border-fill-success-weak/30"
+										? "bg-fill-success-weak border-stroke-success-strong/30"
 										: "bg-fill-error-weak border-stroke-error-strong/30",
 								)}
 							>
@@ -150,29 +150,25 @@ interface DepositFormProps {
 
 function DepositForm({ amount, onAmountChange, balance, validation, isPending, onSubmit }: DepositFormProps) {
 	return (
-		<div className="flex flex-1 flex-col gap-4">
+		<div className="flex flex-1 flex-col gap-2">
 			<NetworkSelect label={<Trans>From</Trans>} value="arbitrum" onChange={() => {}} disabled />
 
-			<div className="space-y-1.5">
-				<span className="text-xs uppercase tracking-wider text-text-strong">
+			<div className="space-y-1">
+				<span className="text-xs font-semibold text-text-strong">
 					<Trans>Amount</Trans>
 				</span>
 				<NumberInput
 					placeholder="0.00"
 					value={amount}
 					onChange={(e) => onAmountChange(e.target.value)}
-					maxLabel={
-						<>
-							{t`MAX`}: {formatNumber(balance, 2)}
-						</>
-					}
+					maxLabel={t`MAX`}
 					onMaxClick={() => onAmountChange(balance)}
 					className={cn(
-						"w-full h-10 text-base bg-bg-sunken/50 border-stroke-weak/60 focus:border-stroke-brand-strong/60 tabular-nums font-medium",
+						"w-full tabular-nums",
 						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",
 					)}
 				/>
-				<p className={cn("text-xs flex items-center gap-1", validation.error ? "text-text-error" : "invisible")}>
+				<p className={cn("h-4 text-xs flex items-center gap-1", validation.error ? "text-text-error" : "invisible")}>
 					<WarningCircleIcon className="size-3" />
 					{validation.error || "\u00A0"}
 				</p>
@@ -231,32 +227,22 @@ interface WithdrawFormProps {
 	amount: string;
 	onAmountChange: (value: string) => void;
 	available: string;
-	balanceStatus: string;
 	validation: { valid: boolean; error: string | null };
 	isPending: boolean;
 	onSubmit: () => void;
 }
 
-function WithdrawForm({
-	amount,
-	onAmountChange,
-	available,
-	balanceStatus,
-	validation,
-	isPending,
-	onSubmit,
-}: WithdrawFormProps) {
+function WithdrawForm({ amount, onAmountChange, available, validation, isPending, onSubmit }: WithdrawFormProps) {
 	const availableNum = toNumberOrZero(available);
-	const maxWithdraw = formatNumber(Math.max(availableNum - WITHDRAWAL_FEE_USD, 0), 2);
 	const amountNum = toNumber(amount);
 	const netReceived = amountNum !== null && amountNum > 0 ? Math.max(amountNum - WITHDRAWAL_FEE_USD, 0) : null;
 
 	return (
-		<div className="flex flex-1 flex-col gap-4">
+		<div className="flex flex-1 flex-col gap-2">
 			<NetworkSelect label={<Trans>To</Trans>} value="arbitrum" onChange={() => {}} disabled />
 
-			<div className="space-y-1.5">
-				<span className="text-xs uppercase tracking-wider text-text-strong">
+			<div className="space-y-1">
+				<span className="text-xs font-semibold text-text-strong">
 					<Trans>Amount</Trans>
 				</span>
 				<NumberInput
@@ -264,22 +250,14 @@ function WithdrawForm({
 					value={amount}
 					onChange={(e) => onAmountChange(e.target.value)}
 					disabled={isPending}
-					maxLabel={
-						balanceStatus === "subscribing" ? (
-							<Trans>Loading...</Trans>
-						) : (
-							<>
-								{t`MAX`}: ${maxWithdraw}
-							</>
-						)
-					}
-					onMaxClick={() => !isPending && onAmountChange(maxWithdraw)}
+					maxLabel={t`MAX`}
+					onMaxClick={() => !isPending && onAmountChange(availableNum.toString())}
 					className={cn(
-						"w-full h-10 text-base bg-bg-sunken/50 border-stroke-weak/60 focus:border-stroke-brand-strong/60 tabular-nums font-medium",
+						"w-full tabular-nums",
 						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",
 					)}
 				/>
-				<p className={cn("text-xs flex items-center gap-1", validation.error ? "text-text-error" : "invisible")}>
+				<p className={cn("h-4 text-xs flex items-center gap-1", validation.error ? "text-text-error" : "invisible")}>
 					<WarningCircleIcon className="size-3" />
 					{validation.error || "\u00A0"}
 				</p>
@@ -392,7 +370,7 @@ function WrongNetworkScreen({ open, onClose, onSwitch, isSwitching, error }: Wro
 					</ModalTitle>
 				</ModalHeader>
 				<ModalContent className="space-y-4">
-					<div className="flex items-start gap-3 rounded-8 border border-fill-warning-weak/40 bg-fill-warning-weak/5 p-4">
+					<div className="flex items-start gap-3 rounded-8 border border-stroke-warning-strong/20 bg-fill-warning-weak/10 p-4">
 						<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-fill-warning-weak/20">
 							<WarningCircleIcon className="size-4 text-text-warning" />
 						</div>
@@ -447,8 +425,6 @@ export function DepositModal() {
 	const { address } = useConnection();
 
 	const userPositions = useUserPositions();
-	const balanceStatus = userPositions.isLoading ? "subscribing" : "active";
-
 	const withdrawable = userPositions.withdrawable;
 	const withdrawableNum = toNumberOrZero(withdrawable);
 
@@ -467,8 +443,7 @@ export function DepositModal() {
 		const amountNum = toNumber(amount);
 		if (amountNum === null || amountNum <= 0) return { valid: false, error: t`Invalid amount` };
 		if (amountNum < MIN_WITHDRAW_USD) return { valid: false, error: t`Minimum withdrawal is $${MIN_WITHDRAW_USD}` };
-		if (amountNum + WITHDRAWAL_FEE_USD > withdrawableNum)
-			return { valid: false, error: t`Insufficient balance (includes $${WITHDRAWAL_FEE_USD} fee)` };
+		if (amountNum > withdrawableNum) return { valid: false, error: t`Insufficient balance` };
 		return { valid: true, error: null };
 	}
 
@@ -634,44 +609,36 @@ export function DepositModal() {
 						</SegmentedControlItem>
 					</SegmentedControls>
 
-					<div className="min-h-95">
+					<div className="min-h-72">
 						{activeTab === "deposit" && (
-							<div className="flex flex-col">
-								<DepositForm
-									amount={depositAmount}
-									onAmountChange={setDepositAmount}
-									balance={depositBalance}
-									validation={depositValidation}
-									isPending={false}
-									onSubmit={handleDepositSubmit}
-								/>
-							</div>
+							<DepositForm
+								amount={depositAmount}
+								onAmountChange={setDepositAmount}
+								balance={depositBalance}
+								validation={depositValidation}
+								isPending={false}
+								onSubmit={handleDepositSubmit}
+							/>
 						)}
 
-						{activeTab === "withdraw" && (
-							<div className="flex flex-col">
-								{!address ? (
-									<WalletNotConnected />
-								) : (
-									<WithdrawForm
-										amount={withdrawAmount}
-										onAmountChange={setWithdrawAmount}
-										available={withdrawable}
-										balanceStatus={balanceStatus}
-										validation={withdrawValidation}
-										isPending={isWithdrawPending}
-										onSubmit={handleWithdrawSubmit}
-									/>
-								)}
-							</div>
-						)}
+						{activeTab === "withdraw" &&
+							(!address ? (
+								<WalletNotConnected />
+							) : (
+								<WithdrawForm
+									amount={withdrawAmount}
+									onAmountChange={setWithdrawAmount}
+									available={withdrawable}
+									validation={withdrawValidation}
+									isPending={isWithdrawPending}
+									onSubmit={handleWithdrawSubmit}
+								/>
+							))}
 
 						{activeTab === "bridge" && (
-							<div className="flex flex-col">
-								<Suspense fallback={null}>
-									<LazyBridgeTab />
-								</Suspense>
-							</div>
+							<Suspense fallback={null}>
+								<LazyBridgeTab />
+							</Suspense>
 						)}
 					</div>
 				</ModalContent>

@@ -84,7 +84,7 @@ export function TpSlSection({
 							value={tpPrice}
 							onChange={(e) => onTpPriceChange(e.target.value)}
 							className={cn(
-								"text-xs bg-bg-sunken tabular-nums",
+								"text-xs bg-bg-base tabular-nums",
 								tpError && "border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 							disabled={disabled}
@@ -98,7 +98,7 @@ export function TpSlSection({
 							value={slPrice}
 							onChange={(e) => onSlPriceChange(e.target.value)}
 							className={cn(
-								"text-xs bg-bg-sunken tabular-nums",
+								"text-xs bg-bg-base tabular-nums",
 								slError && "border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 							disabled={disabled}

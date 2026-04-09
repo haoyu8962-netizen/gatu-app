@@ -1,13 +1,13 @@
-import { Button, SegmentedControlItem, SegmentedControls } from "@hypeterminal/ui";
+import { Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useConnection } from "wagmi";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { DEFAULT_QUOTE_TOKEN, FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
-import { useAccountBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatToken, formatUSD } from "@/lib/format";
+import { formatPercent, formatUSD } from "@/lib/format";
 import { getValueColorClass, toNumberOrZero } from "@/lib/trade/numbers";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
 
@@ -18,23 +18,18 @@ type SummaryRow = {
 };
 
 export function AccountPanel() {
-	const [activeTab, setActiveTab] = useState("perps");
 	const { open: openDepositModal } = useDepositModalActions();
-
 	const { isConnected } = useConnection();
-	const { marginSummary, perpSummary, perpPositions, spotBalances, withdrawable, crossMaintenanceMarginUsed } =
-		useAccountBalances();
+	const { marginSummary, perpSummary, perpPositions, spotBalances, crossMaintenanceMarginUsed } =
+		useDefaultDexBalances();
 
 	const perpMetrics = useMemo(() => {
 		if (!marginSummary || !perpSummary) {
 			return null;
 		}
 
-		const accountValue = toNumberOrZero(marginSummary.accountValue);
-		const totalNtlPos = toNumberOrZero(perpSummary.totalNtlPos);
-		const totalMarginUsed = toNumberOrZero(marginSummary.totalMarginUsed);
-		const totalRawUsd = toNumberOrZero(marginSummary.totalRawUsd);
 		const crossAccountValue = toNumberOrZero(perpSummary.accountValue);
+		const crossTotalNtlPos = toNumberOrZero(perpSummary.totalNtlPos);
 		const maintenanceMargin = toNumberOrZero(crossMaintenanceMarginUsed);
 
 		let unrealizedPnl = 0;
@@ -42,20 +37,19 @@ export function AccountPanel() {
 			unrealizedPnl += toNumberOrZero(pos.position.unrealizedPnl);
 		}
 
+		const balance = crossAccountValue - unrealizedPnl;
 		const marginRatio = crossAccountValue > 0 ? maintenanceMargin / crossAccountValue : 0;
-		const crossLeverage = crossAccountValue > 0 ? Math.abs(totalNtlPos) / crossAccountValue : 0;
-		const availableBalance = toNumberOrZero(withdrawable);
+		const crossLeverage = crossAccountValue > 0 ? Math.abs(crossTotalNtlPos) / crossAccountValue : 0;
 
 		return {
-			accountValue,
-			totalRawUsd,
+			accountValue: crossAccountValue,
+			balance,
 			unrealizedPnl,
 			marginRatio,
 			crossLeverage,
-			availableBalance,
-			totalMarginUsed,
+			maintenanceMargin,
 		};
-	}, [perpPositions, marginSummary, perpSummary, withdrawable, crossMaintenanceMarginUsed]);
+	}, [perpPositions, marginSummary, perpSummary, crossMaintenanceMarginUsed]);
 
 	const spotMetrics = useMemo(() => {
 		if (!isConnected) {
@@ -63,8 +57,6 @@ export function AccountPanel() {
 		}
 
 		let totalValue = 0;
-		let availableValue = 0;
-		let inOrderValue = 0;
 		const tokens: Array<{ coin: string; total: number; available: number; usdValue: number }> = [];
 
 		for (const b of spotBalances) {
@@ -78,53 +70,24 @@ export function AccountPanel() {
 			const usdValue = b.coin === DEFAULT_QUOTE_TOKEN ? total : entryNtl;
 
 			totalValue += usdValue;
-			availableValue += b.coin === DEFAULT_QUOTE_TOKEN ? available : (available / total) * usdValue;
-			inOrderValue += b.coin === DEFAULT_QUOTE_TOKEN ? hold : (hold / total) * usdValue;
-
 			tokens.push({ coin: b.coin, total, available, usdValue });
 		}
 
 		tokens.sort((a, b) => b.usdValue - a.usdValue);
 
-		return {
-			totalValue,
-			availableValue,
-			inOrderValue,
-			tokenCount: tokens.length,
-			topTokens: tokens.slice(0, 3),
-		};
+		return { totalValue, topTokens: tokens.slice(0, 3) };
 	}, [isConnected, spotBalances]);
 
 	const hasPerpData = isConnected && perpMetrics !== null;
 	const hasSpotData = isConnected && spotMetrics !== null;
-
-	function getHeaderEquity() {
-		if (activeTab === "perps") {
-			return hasPerpData ? formatUSD(perpMetrics.accountValue) : FALLBACK_VALUE_PLACEHOLDER;
-		}
-		return hasSpotData ? formatUSD(spotMetrics.totalValue) : FALLBACK_VALUE_PLACEHOLDER;
-	}
-
-	function getHeaderPnl() {
-		if (activeTab === "perps" && hasPerpData) {
-			return formatUSD(perpMetrics.unrealizedPnl, { signDisplay: "exceptZero" });
-		}
-		return FALLBACK_VALUE_PLACEHOLDER;
-	}
-
-	const headerEquity = getHeaderEquity();
-	const headerPnl = getHeaderPnl();
-
-	const headerPnlClass =
-		activeTab === "perps" && hasPerpData ? getValueColorClass(perpMetrics.unrealizedPnl) : "text-text-strong";
 
 	const perpRows = useMemo((): SummaryRow[] => {
 		if (!perpMetrics) return [];
 		return [
 			{
 				label: t`Balance`,
-				value: formatUSD(perpMetrics.totalRawUsd),
-				valueClassName: "tabular-nums text-text-success",
+				value: formatUSD(perpMetrics.balance),
+				valueClassName: "tabular-nums",
 			},
 			{
 				label: t`Unrealized PNL`,
@@ -132,113 +95,57 @@ export function AccountPanel() {
 				valueClassName: cn("tabular-nums", getValueColorClass(perpMetrics.unrealizedPnl)),
 			},
 			{
-				label: t`Available`,
-				value: formatUSD(perpMetrics.availableBalance),
+				label: t`Cross Margin Ratio`,
+				value: formatPercent(perpMetrics.marginRatio, { maximumFractionDigits: 2 }),
 				valueClassName: "tabular-nums",
 			},
 			{
-				label: t`Margin Used`,
-				value: formatUSD(perpMetrics.totalMarginUsed),
+				label: t`Maintenance Margin`,
+				value: formatUSD(perpMetrics.maintenanceMargin),
 				valueClassName: "tabular-nums",
 			},
 			{
-				label: t`Margin Ratio`,
-				value: formatPercent(perpMetrics.marginRatio, { maximumFractionDigits: 1 }),
-				valueClassName: "tabular-nums",
-			},
-			{
-				label: t`Cross Leverage`,
+				label: t`Cross Account Leverage`,
 				value: `${perpMetrics.crossLeverage.toFixed(2)}x`,
 				valueClassName: "tabular-nums",
 			},
 		];
 	}, [perpMetrics]);
 
-	const spotRows = useMemo((): SummaryRow[] => {
-		if (!spotMetrics) return [];
-		return [
-			{
-				label: t`Total Value`,
-				value: formatUSD(spotMetrics.totalValue),
-				valueClassName: "tabular-nums",
-			},
-			{
-				label: t`Available`,
-				value: formatUSD(spotMetrics.availableValue),
-				valueClassName: "tabular-nums",
-			},
-			{
-				label: t`In Orders`,
-				value: formatUSD(spotMetrics.inOrderValue),
-				valueClassName: "tabular-nums text-text-warning",
-			},
-			{
-				label: t`Assets`,
-				value: `${spotMetrics.tokenCount}`,
-				valueClassName: "tabular-nums",
-			},
-			...spotMetrics.topTokens.map((token) => ({
-				label: token.coin,
-				value: formatToken(token.total, token.coin === DEFAULT_QUOTE_TOKEN ? 2 : 4),
-				valueClassName: "tabular-nums",
-			})),
-		];
-	}, [spotMetrics]);
-
 	return (
-		<div className="shrink-0 flex flex-col bg-bg-overlay border-t border-stroke-weak mb-10 overflow-hidden">
-			<div className="px-2 py-2 border-b border-stroke-weak flex items-center justify-between">
-				<span className="text-xs text-text-strong">{t`Account`}</span>
-				<div className="flex items-center gap-2">
-					<div className="flex items-center gap-1">
-						<span className="text-xs text-text-strong">{t`Equity`}</span>
-						<span
-							className={cn(
-								"text-xs font-medium tabular-nums",
-								(activeTab === "perps" ? hasPerpData : hasSpotData) ? "text-text-success" : "text-text-strong",
-							)}
-						>
-							{headerEquity}
-						</span>
-					</div>
-					{activeTab === "perps" && (
-						<div className="flex items-center gap-1">
-							<span className="text-xs text-text-strong">{t`PNL`}</span>
-							<span className={cn("text-xs font-medium tabular-nums", headerPnlClass)}>{headerPnl}</span>
-						</div>
-					)}
-				</div>
+		<div className="shrink-0 flex flex-col bg-bg-raised border-t border-stroke-weak pb-6 overflow-hidden">
+			<div className="px-2 py-2 border-b border-stroke-weak">
+				<span className="text-xs font-medium text-text-weak uppercase tracking-wide">{t`Account`}</span>
 			</div>
-
-			<SegmentedControls value={activeTab} onValueChange={setActiveTab} fullWidth className="mx-2 mt-2">
-				<SegmentedControlItem value="perps">{t`Perps`}</SegmentedControlItem>
-				<SegmentedControlItem value="spot">{t`Spot`}</SegmentedControlItem>
-			</SegmentedControls>
 
 			{!isConnected ? (
 				<div className="text-xs text-text-weak text-center py-4">{t`Connect wallet to view account`}</div>
 			) : (
 				<div className="p-2 overflow-y-auto">
-					{activeTab === "perps" &&
-						(hasPerpData ? (
-							<InfoRowGroup className="divide-stroke-weak/30">
+					<p className="text-xs font-medium text-text-strong mb-1">{t`Account Equity`}</p>
+					<InfoRowGroup className="divide-y-0">
+						<InfoRow
+							label={t`Spot`}
+							value={hasSpotData ? formatUSD(spotMetrics.totalValue) : FALLBACK_VALUE_PLACEHOLDER}
+							valueClassName="tabular-nums"
+						/>
+						<InfoRow
+							label={t`Perps`}
+							value={hasPerpData ? formatUSD(perpMetrics.accountValue) : FALLBACK_VALUE_PLACEHOLDER}
+							valueClassName="tabular-nums"
+						/>
+					</InfoRowGroup>
+
+					{hasPerpData && (
+						<>
+							<p className="text-xs font-medium text-text-strong mt-3 mb-1">{t`Perps Overview`}</p>
+							<InfoRowGroup className="divide-y-0">
 								{perpRows.map((row) => (
 									<InfoRow key={row.label} label={row.label} value={row.value} valueClassName={row.valueClassName} />
 								))}
 							</InfoRowGroup>
-						) : (
-							<div className="text-xs text-text-weak text-center py-4">{t`Loading...`}</div>
-						))}
-					{activeTab === "spot" &&
-						(hasSpotData ? (
-							<InfoRowGroup className="divide-stroke-weak/30">
-								{spotRows.map((row) => (
-									<InfoRow key={row.label} label={row.label} value={row.value} valueClassName={row.valueClassName} />
-								))}
-							</InfoRowGroup>
-						) : (
-							<div className="text-xs text-text-weak text-center py-4">{t`Loading...`}</div>
-						))}
+						</>
+					)}
 
 					{(hasPerpData || hasSpotData) && (
 						<div className="grid grid-cols-3 gap-1 mt-4">

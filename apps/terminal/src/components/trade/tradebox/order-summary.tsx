@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { PencilIcon } from "@phosphor-icons/react";
-import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
+import { cn } from "@/lib/cn";
 import { bpsToPercentage, formatPrice, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
+
+const SUMMARY_EMPTY = "\u2014";
 
 interface Props {
 	liqPrice: number | null;
@@ -19,9 +20,18 @@ interface Props {
 	marketKind?: MarketKind;
 }
 
+function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
+	return (
+		<div className="flex items-center justify-between py-1.5">
+			<span className="text-xs tracking-[0.5px] text-text-weak">{label}</span>
+			<span className="text-xs tabular-nums text-text-strong">{children}</span>
+		</div>
+	);
+}
+
 export function OrderSummary({
 	liqPrice,
-	liqWarning: _liqWarning,
+	liqWarning,
 	orderValue,
 	marginRequired,
 	estimatedFee,
@@ -34,51 +44,46 @@ export function OrderSummary({
 	const isLeveraged = marketKind !== "spot";
 
 	return (
-		<InfoRowGroup className="divide-stroke-weak/30">
+		<div className="flex flex-col">
 			{isLeveraged && (
-				<InfoRow
-					label={t`Liq. Price`}
-					value={liqPrice ? formatPrice(liqPrice, { szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
-					valueClassName="text-text-error"
-				/>
+				<SummaryRow label={t`Liq. Price`}>
+					<span className={cn(liqPrice ? (liqWarning ? "text-text-error" : "text-text-strong") : "text-text-weak")}>
+						{liqPrice ? formatPrice(liqPrice, { szDecimals }) : SUMMARY_EMPTY}
+					</span>
+				</SummaryRow>
 			)}
-			<InfoRow
-				label={t`Order Value`}
-				value={orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
-				valueClassName="text-text-weak"
-			/>
+			<SummaryRow label={t`Order Value`}>
+				<span className={orderValue > 0 ? "text-text-strong" : "text-text-weak"}>
+					{orderValue > 0 ? formatUSD(orderValue) : SUMMARY_EMPTY}
+				</span>
+			</SummaryRow>
 			{isLeveraged && (
-				<InfoRow
-					label={t`Margin Req.`}
-					value={marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
-					valueClassName="text-text-weak"
-				/>
+				<SummaryRow label={t`Margin Req.`}>
+					<span className={marginRequired > 0 ? "text-text-strong" : "text-text-weak"}>
+						{marginRequired > 0 ? formatUSD(marginRequired) : SUMMARY_EMPTY}
+					</span>
+				</SummaryRow>
 			)}
-			<InfoRow
-				label={t`Slippage`}
-				value={
-					<button
-						type="button"
-						onClick={onSlippageClick}
-						className="flex items-center gap-1 hover:text-text-strong transition-colors"
-					>
-						<span className="tabular-nums text-text-error">{slippagePercent}%</span>
-						<PencilIcon className="size-2 text-text-weak" />
-					</button>
-				}
-			/>
-			<InfoRow
-				label={t`Est. Fee`}
-				value={orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
-				valueClassName="text-text-weak"
-			/>
+			<SummaryRow label={t`Slippage`}>
+				<button
+					type="button"
+					onClick={onSlippageClick}
+					className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
+				>
+					<span className="tabular-nums text-text-error">{slippagePercent}%</span>
+					<PencilIcon className="size-2.5 text-text-weak" />
+				</button>
+			</SummaryRow>
+			<SummaryRow label={t`Est. Fee`}>
+				<span className="text-text-weak">
+					{orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
+				</span>
+			</SummaryRow>
 			{DEFAULT_BUILDER_CONFIG?.f && (
-				<InfoRow
-					label={t`Builder Fee`}
-					value={`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}
-					valueClassName="text-text-weak"
-				/>
+				<SummaryRow label={t`Builder Fee`}>
+					<span className="text-text-weak">{`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}</span>
+				</SummaryRow>
 			)}
-		</InfoRowGroup>
+		</div>
 	);
 }

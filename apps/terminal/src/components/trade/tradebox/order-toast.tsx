@@ -4,7 +4,6 @@ import { CheckIcon, LightningIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons
 import { useEffect } from "react";
 import { ORDER_TOAST_SUCCESS_DURATION_MS } from "@/config/time";
 import { cn } from "@/lib/cn";
-import { useGlobalSettings } from "@/stores/use-global-settings-store";
 import { type OrderQueueItem, useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
 
 function useAutoRemove(order: OrderQueueItem, onRemove: () => void) {
@@ -141,8 +140,6 @@ function CountdownBar({ order }: { order: OrderQueueItem }) {
 export function OrderToast() {
 	const orders = useOrderQueue();
 	const { removeOrder } = useOrderQueueActions();
-	const { showChartScanlines } = useGlobalSettings();
-
 	if (orders.length === 0) return null;
 
 	const pendingCount = orders.filter((o) => o.status === "pending").length;
@@ -153,7 +150,7 @@ export function OrderToast() {
 		<div
 			className={cn(
 				"fixed bottom-6 right-6 z-50 w-80",
-				"bg-bg-overlay/95 backdrop-blur-sm",
+				"bg-bg-raised/95 backdrop-blur-sm",
 				"border border-stroke-weak/60 rounded-8 overflow-hidden",
 				"shadow-overlay shadow-black/20 dark:shadow-black/50",
 				"font-sans",
@@ -190,8 +187,6 @@ export function OrderToast() {
 					</div>
 				))}
 			</div>
-
-			{showChartScanlines && <div className="absolute inset-0 pointer-events-none terminal-scanlines opacity-30" />}
 		</div>
 	);
 }

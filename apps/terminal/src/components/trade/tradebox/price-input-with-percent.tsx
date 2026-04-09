@@ -45,7 +45,7 @@ export function PriceInputWithPercent({
 			</div>
 			<div
 				className={cn(
-					"flex items-center rounded-12 border bg-bg-sunken overflow-hidden",
+					"flex items-center rounded-12 border bg-bg-base overflow-hidden",
 					error ? "border-stroke-error-strong" : "border-stroke-weak/60 focus-within:border-stroke-strong",
 				)}
 			>
