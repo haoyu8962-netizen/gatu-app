@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource-variable/inter";
+@import "@hypeterminal/ui/globals.css";
+@source "../../../packages/ui/src";
 
 /* ============================================
    HyperTerminal UI — Design Tokens
@@ -58,17 +60,6 @@
 
   /* ---- Spacing Base (4px grid) ---- */
   --spacing: 4px;
-
-  /* ---- Border Radius ---- */
-  --radius-none: 0px;
-  --radius-4: 4px;
-  --radius-8: 8px;
-  --radius-12: 12px;
-  --radius-16: 16px;
-  --radius-20: 20px;
-  --radius-24: 24px;
-  --radius-32: 32px;
-  --radius-full: 9999px;
 
   /* ---- Shadows ---- */
   --shadow-raised: 0 4px 8px -2px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
@@ -235,7 +226,7 @@
     --fill-press: #ffffff1f;
     --fill-selected: #b2bcf1;
     --fill-disabled: #ffffff1f;
-    --fill-overlay: #000626e5;
+    --fill-overlay: #000626a8;
     --fill-brand-strong: #b2bcf1;
     --fill-brand-weak: #b2bcf10f;
     --fill-error-strong: #ff9c9c;
