@@ -65,12 +65,24 @@ interface SegmentedControlsProps extends VariantProps<typeof segmentedControlsVa
 	size?: SegmentedControlSize;
 	disabled?: boolean;
 	className?: string;
+	indicatorClassName?: string;
 	children: React.ReactNode;
 }
 
 const SegmentedControls = React.forwardRef<HTMLDivElement, SegmentedControlsProps>(
 	(
-		{ className, value, defaultValue, onValueChange, size: sizeProp, fullWidth, disabled = false, children, ...props },
+		{
+			className,
+			indicatorClassName,
+			value,
+			defaultValue,
+			onValueChange,
+			size: sizeProp,
+			fullWidth,
+			disabled = false,
+			children,
+			...props
+		},
 		ref,
 	) => {
 		const size = (sizeProp ?? DEFAULT_SIZE) as SegmentedControlSize;
@@ -80,11 +92,14 @@ const SegmentedControls = React.forwardRef<HTMLDivElement, SegmentedControlsProp
 				<Tabs.Root value={value} defaultValue={defaultValue} onValueChange={onValueChange}>
 					<Tabs.List
 						ref={ref}
-						className={cn("relative", segmentedControlsVariants({ fullWidth, className }))}
+						className={cn("relative overflow-hidden", segmentedControlsVariants({ fullWidth, className }))}
 						{...props}
 					>
 						<Tabs.Indicator
-							className="absolute inset-y-0  rounded-8 bg-bg-overlay border border-stroke-strong shadow-raised transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none"
+							className={cn(
+								"absolute inset-y-0 rounded-8 bg-bg-overlay border border-stroke-strong shadow-raised transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none",
+								indicatorClassName,
+							)}
 							style={{
 								left: "var(--active-tab-left)",
 								width: "var(--active-tab-width)",

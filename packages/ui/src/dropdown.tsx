@@ -30,6 +30,30 @@ const dropdownTriggerVariants = cva(
 	},
 );
 
+const dropdownMinimalTriggerVariants = cva(
+	[
+		"group inline-flex items-center justify-center cursor-pointer select-none rounded-8",
+		"border-0 bg-transparent shadow-none appearance-none font-normal",
+		"transition-colors hover:text-text-strong data-[popup-open]:text-text-strong",
+		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+		"data-disabled:opacity-40 data-disabled:cursor-not-allowed",
+	],
+	{
+		variants: {
+			size: {
+				xxs: "gap-0.5 px-1 py-0.5 text-2xs",
+				xs: "gap-0.5 px-1.5 py-0.5 text-xs",
+				sm: "gap-0.5 px-1.5 py-0.5 text-xs",
+				md: "gap-1 px-2 py-1 text-sm",
+				lg: "gap-1 px-2.5 py-1.5 text-sm",
+			},
+		},
+		defaultVariants: {
+			size: "sm",
+		},
+	},
+);
+
 const dropdownItemVariants = cva(
 	[
 		"flex items-center gap-2 rounded-8 cursor-pointer select-none",
@@ -63,6 +87,7 @@ interface DropdownItem {
 	icon?: React.ReactNode;
 	disabled?: boolean;
 	danger?: boolean;
+	active?: boolean;
 	onSelect?: () => void;
 }
 
@@ -78,12 +103,33 @@ interface DropdownProps extends VariantProps<typeof dropdownTriggerVariants> {
 	disabled?: boolean;
 	className?: string;
 	align?: "start" | "center" | "end";
+	triggerVariant?: "default" | "minimal";
+	triggerAriaLabel?: string;
+	triggerClassName?: string;
+	popupClassName?: string;
 }
 
 const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
-	({ className, size: sizeProp, trigger, items, groups, disabled = false, align = "start" }, ref) => {
+	(
+		{
+			className,
+			size: sizeProp,
+			trigger,
+			items,
+			groups,
+			disabled = false,
+			align = "start",
+			triggerVariant = "default",
+			triggerAriaLabel,
+			triggerClassName,
+			popupClassName,
+		},
+		ref,
+	) => {
 		const size = sizeProp ?? DEFAULT_SIZE;
 		const itemSize = size;
+		const isMinimalTrigger = triggerVariant === "minimal";
+		const caretSize = isMinimalTrigger ? 12 : itemSize === "sm" ? 14 : 16;
 
 		const renderItem = (item: DropdownItem, index: number) => (
 			<Menu.Item
@@ -95,38 +141,59 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 						size: itemSize,
 						intent: item.danger ? "danger" : "neutral",
 					}),
+					"justify-between",
 				)}
 			>
-				{item.icon && (
-					<span
-						className={cn(
-							"shrink-0",
-							item.danger ? "text-icon-error" : "text-icon-neutral",
-							item.disabled && "text-icon-disabled",
-						)}
-					>
-						{item.icon}
-					</span>
-				)}
-				{item.label}
+				<span className="flex items-center gap-2">
+					{item.icon && (
+						<span
+							className={cn(
+								"shrink-0",
+								item.danger ? "text-icon-error" : "text-icon-neutral",
+								item.disabled && "text-icon-disabled",
+							)}
+						>
+							{item.icon}
+						</span>
+					)}
+					{item.label}
+				</span>
+				{item.active && <span className="ml-3 size-1.5 shrink-0 rounded-full bg-text-brand" />}
 			</Menu.Item>
 		);
 
 		return (
 			<div className={className} ref={ref}>
 				<Menu.Root disabled={disabled}>
-					<Menu.Trigger className={cn(dropdownTriggerVariants({ size }), "text-text-strong")}>
+					<Menu.Trigger
+						aria-label={triggerAriaLabel}
+						className={cn(
+							isMinimalTrigger ? dropdownMinimalTriggerVariants({ size }) : dropdownTriggerVariants({ size }),
+							!isMinimalTrigger && "text-text-strong",
+							triggerClassName,
+						)}
+					>
 						{trigger ?? "Menu"}
 						<CaretDown
-							size={itemSize === "sm" ? 14 : 16}
-							weight="bold"
-							className="shrink-0 text-icon-neutral transition-transform [[data-popup-open]>&]:rotate-180"
+							size={caretSize}
+							weight={isMinimalTrigger ? "regular" : "bold"}
+							className={cn(
+								"shrink-0 transition-transform [[data-popup-open]>&]:rotate-180",
+								isMinimalTrigger
+									? "text-text-weak group-hover:text-text-strong group-data-[popup-open]:text-text-strong"
+									: "text-icon-neutral",
+							)}
 						/>
 					</Menu.Trigger>
 
 					<Menu.Portal>
-						<Menu.Positioner sideOffset={4} align={align}>
-							<Menu.Popup className="z-50 bg-bg-overlay shadow-overlay rounded-12 border border-stroke-weak p-1 min-w-40 transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+						<Menu.Positioner sideOffset={4} align={align} className="z-[1000]">
+							<Menu.Popup
+								className={cn(
+									"z-50 max-h-64 min-w-40 overflow-y-auto bg-bg-raised p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
+									popupClassName,
+								)}
+							>
 								{items?.map((item, i) => renderItem(item, i))}
 
 								{groups?.map((group, groupIndex) => (
@@ -152,5 +219,5 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 );
 Dropdown.displayName = "Dropdown";
 
-export { Dropdown, dropdownTriggerVariants, dropdownItemVariants };
+export { Dropdown, dropdownMinimalTriggerVariants, dropdownTriggerVariants, dropdownItemVariants };
 export type { DropdownProps, DropdownItem, DropdownGroup };

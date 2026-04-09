@@ -56,6 +56,9 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
 	({ className, size: sizeProp, src, alt, initials, status, ...props }, ref) => {
 		const size = sizeProp ?? DEFAULT_SIZE;
 		const [imgError, setImgError] = React.useState(false);
+		React.useEffect(() => {
+			setImgError(false);
+		}, [src]);
 		const showImage = src && !imgError;
 		const showInitials = !showImage && initials;
 		const showIcon = !showImage && !initials;
@@ -64,12 +67,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
 			<div className={cn(avatarVariants({ size, className }))} ref={ref} {...props}>
 				<div className="size-full rounded-full overflow-hidden flex items-center justify-center">
 					{showImage && (
-						<img
-							src={src}
-							alt={alt || ""}
-							className="size-full object-cover outline outline-1 -outline-offset-1 outline-stroke-weak"
-							onError={() => setImgError(true)}
-						/>
+						<img src={src} alt={alt || ""} className="size-full object-cover" onError={() => setImgError(true)} />
 					)}
 					{showInitials && (
 						<div

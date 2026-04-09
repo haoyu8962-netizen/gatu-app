@@ -36,6 +36,7 @@ interface TextInputProps
 	hint?: string;
 	error?: string;
 	optional?: boolean;
+	prefix?: React.ReactNode;
 	iconLeft?: React.ReactNode;
 	iconRight?: React.ReactNode;
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
@@ -52,6 +53,7 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 			required,
 			optional,
 			disabled,
+			prefix,
 			iconLeft,
 			iconRight,
 			name,
@@ -90,8 +92,11 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 						className,
 					)}
 				>
+					{prefix && <span className="shrink-0 text-text-weak group-data-disabled:text-text-disabled">{prefix}</span>}
 					{iconLeft && (
-						<span className="shrink-0 text-icon-neutral group-data-disabled:text-icon-disabled">{iconLeft}</span>
+						<span className="shrink-0 text-icon-neutral opacity-80 group-data-disabled:text-icon-disabled">
+							{iconLeft}
+						</span>
 					)}
 					<Input
 						ref={ref}

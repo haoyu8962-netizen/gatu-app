@@ -54,6 +54,7 @@ interface SelectProps extends VariantProps<typeof selectTriggerVariants> {
 	required?: boolean;
 	disabled?: boolean;
 	className?: string;
+	triggerClassName?: string;
 	name?: string;
 	value?: string | null;
 	defaultValue?: string | null;
@@ -68,6 +69,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 	(
 		{
 			className,
+			triggerClassName,
 			size: sizeProp,
 			error,
 			label,
@@ -131,6 +133,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 						className={cn(
 							selectTriggerVariants({ size, error }),
 							"data-disabled:border-stroke-disabled data-disabled:cursor-not-allowed data-disabled:opacity-40",
+							triggerClassName,
 						)}
 					>
 						<BaseSelect.Value
@@ -143,13 +146,16 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 							)}
 						/>
 						<BaseSelect.Icon className="shrink-0 text-icon-neutral">
-							<CaretDownIcon size={size === "sm" ? 16 : 20} weight="bold" />
+							<CaretDownIcon
+								size={size === "lg" ? 20 : size === "md" ? 18 : size === "sm" ? 16 : size === "xs" ? 14 : 12}
+								weight={size === "xxs" || size === "xs" ? "regular" : "bold"}
+							/>
 						</BaseSelect.Icon>
 					</BaseSelect.Trigger>
 
 					<BaseSelect.Portal>
-						<BaseSelect.Positioner sideOffset={4}>
-							<BaseSelect.Popup className="z-50 bg-bg-overlay shadow-overlay rounded-12 border border-stroke-weak p-1 overflow-auto max-h-64 transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+						<BaseSelect.Positioner sideOffset={4} className="z-[1000]">
+							<BaseSelect.Popup className="z-50 max-h-64 overflow-auto bg-bg-raised p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
 								{options.map((option) =>
 									isGroupOption(option) ? (
 										<BaseSelect.Group key={option.label}>

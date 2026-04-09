@@ -57,7 +57,7 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 			<BaseTooltip.Root open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
 				<BaseTooltip.Trigger delay={delay} closeDelay={closeDelay} render={children} />
 				<BaseTooltip.Portal>
-					<BaseTooltip.Positioner side={side} align={align} sideOffset={sideOffset}>
+					<BaseTooltip.Positioner side={side} align={align} sideOffset={sideOffset} className="z-[1000]">
 						<BaseTooltip.Popup ref={ref} className={cn(tooltipPopupVariants(), className)}>
 							{content}
 							{arrow && (

@@ -32,7 +32,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(({ className, label
 					{showValue && <BaseSlider.Value className="text-sm font-normal text-text-weak tabular-nums" />}
 				</div>
 			)}
-			<BaseSlider.Control className="relative flex w-full items-center h-6">
+			<BaseSlider.Control className="relative flex w-full items-center h-5">
 				<BaseSlider.Track
 					className={cn(
 						"relative w-full h-2 overflow-hidden rounded-32",
@@ -47,7 +47,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(({ className, label
 						key={i}
 						index={i}
 						className={cn(
-							"relative size-6 rounded-full bg-fill-white",
+							"relative size-4 rounded-full bg-fill-white",
 							"border border-stroke-strong shadow-raised",
 							"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 							"before:absolute before:-inset-2.5 before:content-['']",

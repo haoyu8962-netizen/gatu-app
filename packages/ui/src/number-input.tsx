@@ -64,6 +64,7 @@ interface NumberInputProps extends Omit<VariantProps<typeof numberInputVariants>
 	autoFocus?: boolean;
 	selectOnFocus?: boolean;
 	showStepper?: boolean;
+	prefix?: React.ReactNode;
 	iconLeft?: React.ReactNode;
 	className?: string;
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
@@ -102,6 +103,7 @@ const NumberInput = React.forwardRef<HTMLDivElement, NumberInputProps>(
 			autoFocus,
 			selectOnFocus,
 			showStepper = false,
+			prefix,
 			iconLeft,
 			onBlur,
 			onFocus,
@@ -176,8 +178,11 @@ const NumberInput = React.forwardRef<HTMLDivElement, NumberInputProps>(
 								<MinusIcon size={stepperSize} weight="bold" />
 							</NumberField.Decrement>
 						)}
+						{prefix && <span className="shrink-0 text-text-weak group-data-disabled:text-text-disabled">{prefix}</span>}
 						{iconLeft && (
-							<span className="shrink-0 text-icon-neutral group-data-disabled:text-icon-disabled">{iconLeft}</span>
+							<span className="shrink-0 text-icon-neutral opacity-80 group-data-disabled:text-icon-disabled">
+								{iconLeft}
+							</span>
 						)}
 						<NumberField.Input
 							placeholder={placeholder ?? "0"}

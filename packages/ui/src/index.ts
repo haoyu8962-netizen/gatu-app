@@ -80,6 +80,7 @@ export {
 	type DropdownItem,
 	type DropdownProps,
 	dropdownItemVariants,
+	dropdownMinimalTriggerVariants,
 	dropdownTriggerVariants,
 } from "./dropdown";
 export {

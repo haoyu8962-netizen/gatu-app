@@ -14,7 +14,6 @@ const checkboxVariants = cva(
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"data-checked:bg-fill-brand-strong data-checked:border-transparent",
 		"data-indeterminate:bg-fill-brand-strong data-indeterminate:border-transparent",
-		"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10",
 	],
 	{
 		variants: {
