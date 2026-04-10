@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { Icon } from "@phosphor-icons/react";
+import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import { formatUSD } from "@/lib/format";
@@ -33,9 +34,9 @@ export function PriceInputWithPercent({
 	return (
 		<div className="space-y-1.5">
 			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-1.5 text-text-strong">
-					<span className="text-xs font-medium uppercase tracking-wide">{label}</span>
-					<Icon className="size-3" />
+				<div className="flex items-center gap-1.5">
+					<FieldLabel>{label}</FieldLabel>
+					<Icon className="size-3 text-text-weak" />
 				</div>
 				{pnlValue !== null && (
 					<span className={cn("text-xs tabular-nums", getValueColorClass(pnlValue))}>
@@ -45,15 +46,17 @@ export function PriceInputWithPercent({
 			</div>
 			<div
 				className={cn(
-					"flex items-center rounded-12 border bg-bg-base overflow-hidden",
-					error ? "border-stroke-error-strong" : "border-stroke-weak/60 focus-within:border-stroke-strong",
+					"flex items-center rounded-8 border bg-bg-base overflow-hidden transition-[border-color,box-shadow]",
+					error
+						? "border-stroke-error-strong ring-[2px] ring-stroke-error-strong/20"
+						: "border-stroke-weak focus-within:border-stroke-focus focus-within:ring-[2px] focus-within:ring-stroke-focus/20",
 				)}
 			>
 				<Input
 					placeholder={t`Price`}
 					value={value}
 					onChange={(e) => onChange(e.target.value)}
-					className="h-8 flex-1 text-xs border-0 focus-visible:ring-0 tabular-nums"
+					className="flex-1 border-0 focus-visible:ring-0 focus-visible:border-transparent tabular-nums bg-transparent"
 					disabled={disabled}
 				/>
 				<div className="flex items-center gap-0.5 px-1.5 border-l border-stroke-weak/40">
@@ -63,7 +66,7 @@ export function PriceInputWithPercent({
 							type="button"
 							onClick={() => onPercentClick(p)}
 							disabled={disabled || !isPositive(referencePrice)}
-							className="px-1.5 py-1 text-xs font-medium text-text-strong bg-bg-raised hover:bg-fill-brand-weak/20 rounded-8 transition-colors disabled:opacity-50"
+							className="px-1.5 py-1 text-xs font-medium text-text-weak hover:text-text-strong hover:bg-fill-weak rounded-xs transition-colors disabled:opacity-50"
 							aria-label={t`Set to ${p}%`}
 						>
 							{p}%

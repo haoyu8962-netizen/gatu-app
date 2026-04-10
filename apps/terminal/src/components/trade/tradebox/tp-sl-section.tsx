@@ -83,10 +83,8 @@ export function TpSlSection({
 							placeholder={t`TP Price`}
 							value={tpPrice}
 							onChange={(e) => onTpPriceChange(e.target.value)}
-							className={cn(
-								"text-xs bg-bg-base tabular-nums",
-								tpError && "border-stroke-error-strong focus:border-stroke-error-strong",
-							)}
+							className="text-xs bg-bg-base tabular-nums"
+							aria-invalid={!!tpError}
 							disabled={disabled}
 						/>
 						{tpError && <div className="text-xs text-text-error">{tpError}</div>}
@@ -97,10 +95,8 @@ export function TpSlSection({
 							placeholder={t`SL Price`}
 							value={slPrice}
 							onChange={(e) => onSlPriceChange(e.target.value)}
-							className={cn(
-								"text-xs bg-bg-base tabular-nums",
-								slError && "border-stroke-error-strong focus:border-stroke-error-strong",
-							)}
+							className="text-xs bg-bg-base tabular-nums"
+							aria-invalid={!!slError}
 							disabled={disabled}
 						/>
 						{slError && <div className="text-xs text-text-error">{slError}</div>}
@@ -111,7 +107,7 @@ export function TpSlSection({
 	}
 
 	return (
-		<div className="space-y-3">
+		<div className="space-y-4 py-1">
 			<PriceInputWithPercent
 				label={t`Take Profit`}
 				icon={TrendUpIcon}
