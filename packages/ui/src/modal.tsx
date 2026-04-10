@@ -93,7 +93,7 @@ interface ModalDescriptionProps extends React.ComponentPropsWithoutRef<typeof Di
 
 const ModalDescription = React.forwardRef<HTMLParagraphElement, ModalDescriptionProps>(
 	({ className, ...props }, ref) => (
-		<Dialog.Description className={cn("text-sm text-text-weak text-pretty", className)} ref={ref} {...props} />
+		<Dialog.Description className={cn("text-xs text-text-weak text-pretty", className)} ref={ref} {...props} />
 	),
 );
 ModalDescription.displayName = "ModalDescription";
