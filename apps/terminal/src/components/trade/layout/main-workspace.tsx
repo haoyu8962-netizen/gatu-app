@@ -1,3 +1,4 @@
+import { Divider } from "@hypeterminal/ui";
 import { useDefaultLayout } from "react-resizable-panels";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { PANEL_LAYOUT } from "@/config/constants";
@@ -25,9 +26,9 @@ export function MainWorkspace() {
 	return (
 		<div className="flex-1 min-h-0 flex flex-col bg-bg-base">
 			<div className="shrink-0 border-b border-stroke-weak">
-				<div className="flex items-center gap-2.5 min-w-0 px-2 py-1.5">
+				<div className="flex items-center min-w-0 px-2 py-1.5">
 					<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
-					<div className="flex-1" />
+					<Divider orientation="vertical" className="mx-2.5 my-1" />
 					<FavoritesStrip />
 				</div>
 				<div className="border-t border-stroke-weak/35 px-2 py-1.5 min-w-0 overflow-x-auto scrollbar-none">
