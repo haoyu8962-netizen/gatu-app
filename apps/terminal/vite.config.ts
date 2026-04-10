@@ -24,7 +24,7 @@ const config = defineConfig({
     strictPort: false,
   },
   resolve: {
-    dedupe: ['react', 'react-dom'],
+    dedupe: ['react', 'react-dom', '@tanstack/react-query'],
   },
   optimizeDeps: {
     include: ['@lifi/sdk', '@lifi/types'],
