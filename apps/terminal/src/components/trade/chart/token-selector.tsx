@@ -569,7 +569,7 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 		<Popover open={open} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>{trigger}</PopoverTrigger>
 			<PopoverContent
-				className="w-[min(48rem,calc(100vw-1rem))] p-0 border-stroke-weak bg-bg-raised"
+				className="w-[min(44rem,calc(100vw-1rem))] p-0 border-stroke-weak bg-bg-raised"
 				align="start"
 				sideOffset={4}
 				alignOffset={-2}

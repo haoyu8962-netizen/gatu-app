@@ -87,7 +87,7 @@ export function OrderbookPanel() {
 			size="sm"
 			variant="underline"
 		>
-			<div className="flex items-center justify-between px-1.5 pt-1 pb-0">
+			<div className="flex items-center justify-between">
 				<TabsList className="w-full min-w-0">
 					<TabsTrigger value="book" aria-label={t`Order Book`} icon={<BookBookmarkIcon className="size-3.5" />}>
 						{t`Order Book`}

@@ -76,7 +76,7 @@ function FavoriteChip({ name, isActive }: FavoriteChipProps) {
 					"flex items-center gap-1.5 shrink-0 px-2 py-1 text-xs rounded-8 border no-underline transition-[color,background-color,border-color,opacity] duration-150 hover:opacity-100 focus-visible:outline-stroke-weak",
 					isActive
 						? "border-stroke-weak/90 bg-fill-weak"
-						: "border-stroke-weak/35 bg-fill-weaker hover:border-stroke-weak/55 hover:bg-fill-weak/80",
+						: "border-stroke-weak/35 bg-fill-weaker/50 hover:border-stroke-weak/55 hover:bg-fill-weak/80 opacity-60",
 				)}
 			>
 				<span
@@ -100,7 +100,7 @@ function FavoriteChip({ name, isActive }: FavoriteChipProps) {
 				type="button"
 				onClick={handleRemove}
 				aria-label={t`Remove ${displayName} from favorites`}
-				className="absolute -top-0.5 -right-0.5 hidden size-3 cursor-pointer items-center justify-center bg-bg-sunken text-text-weak hover:text-text-strong group-hover/fav:flex"
+				className="absolute -top-0.5 -right-0.5 hidden size-3 cursor-pointer items-center justify-center text-text-weak hover:text-text-strong group-hover/fav:flex"
 			>
 				<XIcon className="size-2.5" weight="bold" />
 			</button>
