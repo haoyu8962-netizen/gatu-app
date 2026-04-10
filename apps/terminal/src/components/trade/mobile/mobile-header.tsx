@@ -1,10 +1,11 @@
 import { ButtonIcon } from "@hypeterminal/ui";
-import { BellIcon, GearIcon, TerminalIcon } from "@phosphor-icons/react";
+import { BellIcon, GearIcon } from "@phosphor-icons/react";
 import { UI_TEXT } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { ThemeToggle } from "../header/theme-toggle";
 import { UserMenu } from "../header/user-menu";
+import { MobileNavDrawer } from "./mobile-nav-drawer";
 
 const TOP_NAV_TEXT = UI_TEXT.TOP_NAV;
 
@@ -25,15 +26,7 @@ export function MobileHeader({ className }: Props) {
 			)}
 		>
 			<div className="h-12 px-3 flex items-center justify-between">
-				<div className="flex items-center gap-1.5">
-					<div className="size-6 rounded bg-fill-success-weak border border-stroke-success-strong/40 flex items-center justify-center">
-						<TerminalIcon className="size-3.5 text-text-success" />
-					</div>
-					<span className="text-xs font-semibold tracking-tight text-text-brand">
-						{TOP_NAV_TEXT.BRAND_PREFIX}
-						<span className="text-text-strong">{TOP_NAV_TEXT.BRAND_SUFFIX}</span>
-					</span>
-				</div>
+				<MobileNavDrawer />
 
 				<div className="flex items-center gap-1">
 					<UserMenu />
