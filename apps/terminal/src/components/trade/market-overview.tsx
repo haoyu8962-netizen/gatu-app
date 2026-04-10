@@ -159,7 +159,10 @@ export function MarketOverview() {
 									minimumFractionDigits: 4,
 									signDisplay: "exceptZero",
 								})}
-								valueClass={getValueColorClass(fundingNum)}
+								valueClass={cn(
+									"underline decoration-dashed underline-offset-2 cursor-pointer",
+									getValueColorClass(fundingNum),
+								)}
 								icon={<FireIcon className={cn("size-2.5 shrink-0", getValueColorClass(fundingNum))} />}
 							/>
 						</span>
