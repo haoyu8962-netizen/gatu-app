@@ -146,7 +146,12 @@ export function TransferDialog({ open, onOpenChange, initialDirection = "toSpot"
 						</div>
 
 						<div className="space-y-1.5">
-							<span className="text-xs uppercase tracking-wider text-text-strong">{t`Amount (USDC)`}</span>
+							<div className="flex items-center justify-between">
+								<span className="text-xs uppercase tracking-wider text-text-strong">{t`Amount (USDC)`}</span>
+								<span className="text-xs text-text-weak tabular-nums">
+									{t`Available:`} {floorToString(availableBalanceValue, usdcDecimals)} USDC
+								</span>
+							</div>
 							<NumberInput
 								placeholder="0.00"
 								value={amount}

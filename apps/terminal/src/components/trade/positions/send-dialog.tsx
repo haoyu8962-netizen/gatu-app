@@ -180,19 +180,16 @@ export function SendDialog({
 
 				<ModalContent>
 					<div className="space-y-4">
-						<div className="space-y-1.5">
-							<TextInput
-								placeholder={t`Destination`}
-								value={destination}
-								onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
-								size="lg"
-								className={cn(
-									destination &&
-										!isValidDestination &&
-										"border-stroke-error-strong focus-visible:border-stroke-error-strong",
-								)}
-							/>
-						</div>
+						<TextInput
+							placeholder={t`Destination address`}
+							value={destination}
+							onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
+							className={cn(
+								destination &&
+									!isValidDestination &&
+									"border-stroke-error-strong focus-visible:border-stroke-error-strong",
+							)}
+						/>
 
 						<div className="flex gap-2">
 							<Select
@@ -210,18 +207,26 @@ export function SendDialog({
 							/>
 						</div>
 
-						<NumberInput
-							placeholder={t`Amount`}
-							value={amount}
-							onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
-							maxLabel={t`MAX`}
-							onMaxClick={handleMaxClick}
-							className={cn(
-								"w-full tabular-nums",
-								exceedsBalance(amount, availableBalance) &&
-									"border-stroke-error-strong focus:border-stroke-error-strong",
-							)}
-						/>
+						<div className="space-y-1.5">
+							<div className="flex items-center justify-between">
+								<span className="text-xs uppercase tracking-wider text-text-strong">{t`Amount`}</span>
+								<span className="text-xs text-text-weak tabular-nums">
+									{t`Available:`} {floorToString(availableBalance, decimals)} {selectedToken}
+								</span>
+							</div>
+							<NumberInput
+								placeholder="0.00"
+								value={amount}
+								onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
+								maxLabel={t`MAX`}
+								onMaxClick={handleMaxClick}
+								className={cn(
+									"w-full tabular-nums",
+									exceedsBalance(amount, availableBalance) &&
+										"border-stroke-error-strong focus:border-stroke-error-strong",
+								)}
+							/>
+						</div>
 
 						{error && (
 							<div className="flex items-center gap-2 p-2.5 rounded-8 bg-fill-error-weak border border-stroke-error-strong/20 text-xs text-text-error">

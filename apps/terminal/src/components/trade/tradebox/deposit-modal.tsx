@@ -154,9 +154,14 @@ function DepositForm({ amount, onAmountChange, balance, validation, isPending, o
 			<NetworkSelect label={<Trans>From</Trans>} value="arbitrum" onChange={() => {}} disabled />
 
 			<div className="space-y-1">
-				<span className="text-xs font-semibold text-text-strong">
-					<Trans>Amount</Trans>
-				</span>
+				<div className="flex items-center justify-between">
+					<span className="text-xs font-semibold text-text-strong">
+						<Trans>Amount</Trans>
+					</span>
+					<span className="text-xs text-text-weak tabular-nums">
+						<Trans>Available:</Trans> {balance} USDC
+					</span>
+				</div>
 				<NumberInput
 					placeholder="0.00"
 					value={amount}
@@ -242,9 +247,14 @@ function WithdrawForm({ amount, onAmountChange, available, validation, isPending
 			<NetworkSelect label={<Trans>To</Trans>} value="arbitrum" onChange={() => {}} disabled />
 
 			<div className="space-y-1">
-				<span className="text-xs font-semibold text-text-strong">
-					<Trans>Amount</Trans>
-				</span>
+				<div className="flex items-center justify-between">
+					<span className="text-xs font-semibold text-text-strong">
+						<Trans>Amount</Trans>
+					</span>
+					<span className="text-xs text-text-weak tabular-nums">
+						<Trans>Available:</Trans> {formatNumber(availableNum, 2)} USDC
+					</span>
+				</div>
 				<NumberInput
 					placeholder="0.00"
 					value={amount}
