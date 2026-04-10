@@ -65,6 +65,22 @@ function isGroupOption(option: SelectOption | SelectGroupOption): option is Sele
 	return "options" in option;
 }
 
+function findSelectedLabel(
+	options: (SelectOption | SelectGroupOption)[],
+	value: string | null | undefined,
+): string | undefined {
+	if (!value) return undefined;
+	for (const opt of options) {
+		if (isGroupOption(opt)) {
+			const found = opt.options.find((o) => o.value === value);
+			if (found) return found.label;
+		} else if (opt.value === value) {
+			return opt.label;
+		}
+	}
+	return undefined;
+}
+
 const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 	(
 		{
@@ -87,6 +103,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 		ref,
 	) => {
 		const size = sizeProp ?? DEFAULT_SIZE;
+		const selectedLabel = findSelectedLabel(options, value ?? defaultValue);
 		const renderItem = (option: SelectOption) => (
 			<BaseSelect.Item
 				key={option.value}
@@ -141,10 +158,11 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 							className={cn(
 								"flex-1 text-left truncate",
 								size === "lg" ? "text-sm" : "text-xs",
-								"text-text-strong",
-								"data-placeholder:text-text-weak",
+								selectedLabel ? "text-text-strong" : "text-text-weak",
 							)}
-						/>
+						>
+							{selectedLabel}
+						</BaseSelect.Value>
 						<BaseSelect.Icon className="shrink-0 text-icon-neutral">
 							<CaretDownIcon
 								size={size === "lg" ? 20 : size === "md" ? 18 : size === "sm" ? 16 : size === "xs" ? 14 : 12}
