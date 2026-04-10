@@ -30,6 +30,10 @@ msgid "% filled"
 msgstr "% filled"
 
 #: src/components/trade/market-overview.tsx
+msgid "1 year"
+msgstr "1 year"
+
+#: src/components/trade/market-overview.tsx
 msgid "24h"
 msgstr "24h"
 
@@ -47,17 +51,21 @@ msgstr "24h Change"
 #~ msgstr "24h Price"
 
 #: src/components/trade/layout/market-overview-variants-demo.tsx
-msgid "24h vol"
-msgstr "24h vol"
+#~ msgid "24h vol"
+#~ msgstr "24h vol"
 
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 msgid "24H VOL"
 msgstr "24H VOL"
+
+#: src/components/trade/market-overview.tsx
+msgid "30 days"
+msgstr "30 days"
+
+#: src/components/trade/market-overview.tsx
+msgid "7 days"
+msgstr "7 days"
 
 #: src/components/trade/components/wallet-dialog.tsx
 msgid "A crypto wallet lets you store and manage your digital assets securely."
@@ -135,6 +143,7 @@ msgstr "Add TP/SL"
 #~ msgstr "Agent verification failed"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "All"
 msgstr "All"
 
@@ -188,9 +197,12 @@ msgstr "Asset"
 msgid "Available"
 msgstr "Available"
 
+#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#~ msgid "Available:"
-#~ msgstr "Available:"
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Available:"
+msgstr "Available:"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -283,6 +295,7 @@ msgstr "Builder Fee"
 #~ msgstr "Builder must have at least 100 USDC in perps account value"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Builders"
 msgstr "Builders"
 
@@ -428,6 +441,7 @@ msgstr "Connect"
 
 #: src/components/trade/components/wallet-dialog.tsx
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "Connect Wallet"
@@ -576,6 +590,7 @@ msgid "Default"
 msgstr "Default"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -612,12 +627,15 @@ msgstr "Deposit failed"
 msgid "Deposit successful"
 msgstr "Deposit successful"
 
-#: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Destination"
 msgstr "Destination"
+
+#: src/components/trade/positions/send-dialog.tsx
+msgid "Destination address"
+msgstr "Destination address"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Direct"
@@ -897,16 +915,11 @@ msgstr "From"
 
 #: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Funding"
 msgstr "Funding"
 
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
 #: src/components/trade/market-overview.tsx
 msgid "FUNDING"
 msgstr "FUNDING"
@@ -1014,6 +1027,7 @@ msgstr "Isolated"
 #~ msgstr "Latency:"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Leaderboard"
 msgstr "Leaderboard"
 
@@ -1171,7 +1185,6 @@ msgstr "Margin Req."
 #~ msgid "Margin Used"
 #~ msgstr "Margin Used"
 
-#: src/components/trade/layout/market-overview-variants-demo.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -1219,10 +1232,6 @@ msgstr "Market not ready"
 #: src/components/trade/components/global-settings-dialog.tsx
 msgid "Market Order Slippage"
 msgstr "Market Order Slippage"
-
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-msgid "Market stats row — layout options"
-msgstr "Market stats row — layout options"
 
 #: src/components/trade/chart/token-selector.tsx
 msgid "markets"
@@ -1481,8 +1490,8 @@ msgid "Offline"
 msgstr "Offline"
 
 #: src/components/trade/layout/market-overview-variants-demo.tsx
-msgid "OI"
-msgstr "OI"
+#~ msgid "OI"
+#~ msgstr "OI"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "on"
@@ -1500,10 +1509,6 @@ msgstr "Only you control your funds. No email or password required."
 msgid "Open command menu"
 msgstr "Open command menu"
 
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
 #: src/components/trade/market-overview.tsx
 msgid "OPEN INT"
 msgstr "OPEN INT"
@@ -1522,13 +1527,9 @@ msgstr "Open Orders"
 #~ msgstr "Open positions count"
 
 #: src/components/trade/layout/market-overview-variants-demo.tsx
-msgid "Oracle"
-msgstr "Oracle"
+#~ msgid "Oracle"
+#~ msgstr "Oracle"
 
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#: src/components/trade/layout/market-overview-variants-demo.tsx
 #: src/components/trade/market-overview.tsx
 msgid "ORACLE"
 msgstr "ORACLE"
@@ -1606,6 +1607,7 @@ msgstr "pending"
 #~ msgstr "perp"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
 msgid "Perp"
@@ -1652,6 +1654,7 @@ msgid "Popular"
 msgstr "Popular"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Portfolio"
 msgstr "Portfolio"
 
@@ -1778,6 +1781,10 @@ msgstr "Remove from favorites"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Requirements:"
 #~ msgstr "Requirements:"
+
+#: src/components/trade/market-overview.tsx
+msgid "Resets in"
+msgstr "Resets in"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2094,6 +2101,7 @@ msgstr "Source"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -2114,6 +2122,7 @@ msgid "Spread"
 msgstr "Spread"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Staking"
 msgstr "Staking"
 
@@ -2295,10 +2304,6 @@ msgstr "The page you are looking for does not exist."
 #: src/components/pages/builder-page.tsx
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
-
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-msgid "This row answers: “What is the selected market doing right now?” — mark price, 24h move, oracle, volume, open interest, and funding. Pick a layout that balances scan speed, density, and calm."
-msgstr "This row answers: “What is the selected market doing right now?” — mark price, 24h move, oracle, volume, open interest, and funding. Pick a layout that balances scan speed, density, and calm."
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "TIF"
@@ -2562,6 +2567,7 @@ msgstr "USDC"
 #~ msgstr "Value"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Vaults"
 msgstr "Vaults"
 

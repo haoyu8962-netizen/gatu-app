@@ -1,5 +1,8 @@
+import { Tooltip } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, FireIcon } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { formatDuration } from "@/components/ui/time-ticker";
 import { get24hChange, getOiUsd } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD, shortenAddress } from "@/lib/format";
@@ -12,6 +15,42 @@ import {
 } from "@/lib/hyperliquid";
 import { getValueColorClass, toBig } from "@/lib/trade/numbers";
 import { StatBlock } from "./chart/stat-block";
+
+const HOUR_MS = 3_600_000;
+
+function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
+	const [remaining, setRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
+
+	useEffect(() => {
+		const id = setInterval(() => setRemaining(HOUR_MS - (Date.now() % HOUR_MS)), 1000);
+		return () => clearInterval(id);
+	}, []);
+
+	const rows = [
+		{ label: t`7 days`, rate: fundingNum * 24 * 7 },
+		{ label: t`30 days`, rate: fundingNum * 24 * 30 },
+		{ label: t`1 year`, rate: fundingNum * 24 * 365 },
+	];
+
+	return (
+		<div className="min-w-[9rem] space-y-2">
+			<div className="flex items-center justify-between gap-4">
+				<span className="text-2xs uppercase tracking-wide text-text-inverse-weak">{t`Resets in`}</span>
+				<span className="font-mono text-xs tabular-nums text-text-inverse-strong">{formatDuration(remaining)}</span>
+			</div>
+			<div className="border-t border-white/10 pt-2 space-y-1.5">
+				{rows.map(({ label, rate }) => (
+					<div key={label} className="flex items-center justify-between gap-4">
+						<span className="text-2xs text-text-inverse-weak">{label}</span>
+						<span className={cn("text-xs font-medium tabular-nums", getValueColorClass(rate))}>
+							{formatPercent(rate, { signDisplay: "exceptZero" })}
+						</span>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
 
 function StatDivider() {
 	return <div className="h-3 w-px shrink-0 self-center bg-stroke-weak/30" aria-hidden />;
@@ -111,16 +150,20 @@ export function MarketOverview() {
 						})}
 					/>
 					<StatDivider />
-					<StatBlock
-						layout="inline"
-						label={t`FUNDING`}
-						value={formatPercent(fundingNum, {
-							minimumFractionDigits: 4,
-							signDisplay: "exceptZero",
-						})}
-						valueClass={getValueColorClass(fundingNum)}
-						icon={<FireIcon className={cn("size-2.5 shrink-0", getValueColorClass(fundingNum))} />}
-					/>
+					<Tooltip content={<FundingTooltipContent fundingNum={fundingNum} />} side="bottom">
+						<span>
+							<StatBlock
+								layout="inline"
+								label={t`FUNDING`}
+								value={formatPercent(fundingNum, {
+									minimumFractionDigits: 4,
+									signDisplay: "exceptZero",
+								})}
+								valueClass={getValueColorClass(fundingNum)}
+								icon={<FireIcon className={cn("size-2.5 shrink-0", getValueColorClass(fundingNum))} />}
+							/>
+						</span>
+					</Tooltip>
 				</>
 			)}
 			{isSpot && (
