@@ -1,4 +1,4 @@
-import { Button, ButtonIcon, Drawer, DrawerContent } from "@hypeterminal/ui";
+import { Badge, Button, ButtonIcon, Divider, Drawer, DrawerContent } from "@hypeterminal/ui";
 import { Trans } from "@lingui/react/macro";
 import {
 	DownloadSimpleIcon,
@@ -98,7 +98,7 @@ export function MobileNavDrawer() {
 						</ButtonIcon>
 					</div>
 
-					<div className="flex-1 flex flex-col overflow-y-auto">
+					<div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
 						<nav className="p-2 flex flex-col" aria-label="Markets">
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-text-weak">Markets</p>
 							{SCOPE_NAV_ITEMS.map((item) => (
@@ -119,7 +119,7 @@ export function MobileNavDrawer() {
 							))}
 						</nav>
 
-						<div className="h-px bg-stroke-weak mx-3" />
+						<Divider className="mx-3" />
 
 						<nav className="p-2 flex flex-col" aria-label="Platform">
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-text-weak">Platform</p>
@@ -129,9 +129,9 @@ export function MobileNavDrawer() {
 									className="flex items-center justify-between px-3 py-2.5 rounded-xs text-sm text-text-disabled"
 								>
 									<span>{item.label}</span>
-									<span className="text-2xs bg-fill-weak rounded-full px-1.5 py-0.5 text-text-disabled leading-4">
+									<Badge tone="neutral" size="xxs" className="text-text-disabled">
 										Soon
-									</span>
+									</Badge>
 								</div>
 							))}
 						</nav>

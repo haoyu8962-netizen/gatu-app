@@ -1052,6 +1052,7 @@ msgstr "محدد"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
 msgstr ""
 

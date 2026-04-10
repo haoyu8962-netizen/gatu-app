@@ -1,5 +1,5 @@
 import { ButtonIcon } from "@hypeterminal/ui";
-import { BellIcon, GearIcon } from "@phosphor-icons/react";
+import { BellIcon, GearIcon, TerminalIcon } from "@phosphor-icons/react";
 import { UI_TEXT } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { useSettingsDialogActions } from "@/stores/use-global-modal-store";
@@ -25,10 +25,15 @@ export function MobileHeader({ className }: Props) {
 				className,
 			)}
 		>
-			<div className="h-12 px-3 flex items-center justify-between">
-				<MobileNavDrawer />
-
+			<div className="h-11 px-2 flex items-center justify-between">
 				<div className="flex items-center gap-1">
+					<MobileNavDrawer />
+					<div className="size-6 rounded-8 bg-fill-brand-strong/10 border border-fill-brand-strong/30 flex items-center justify-center">
+						<TerminalIcon className="size-3.5 text-text-brand" />
+					</div>
+				</div>
+
+				<div className="flex items-center gap-0.5">
 					<UserMenu />
 					<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label={TOP_NAV_TEXT.NOTIFICATIONS_ARIA}>
 						<BellIcon className="size-4" />
