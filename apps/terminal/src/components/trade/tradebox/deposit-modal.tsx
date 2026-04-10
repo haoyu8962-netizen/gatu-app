@@ -153,21 +153,21 @@ function DepositForm({ amount, onAmountChange, balance, validation, isPending, o
 		<div className="flex flex-1 flex-col gap-2">
 			<NetworkSelect label={<Trans>From</Trans>} value="arbitrum" onChange={() => {}} disabled />
 
-			<div className="space-y-1">
-				<div className="flex items-center justify-between">
-					<span className="text-xs font-semibold text-text-strong">
-						<Trans>Amount</Trans>
-					</span>
-					<span className="text-xs text-text-weak tabular-nums">
-						<Trans>Available:</Trans> {balance} USDC
-					</span>
-				</div>
+			<div>
 				<NumberInput
+					label={t`Amount`}
+					labelValue={
+						<>
+							Available:{" "}
+							<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+								{balance} USDC
+							</span>
+						</>
+					}
+					onLabelValueClick={() => onAmountChange(balance)}
 					placeholder="0.00"
 					value={amount}
 					onChange={(e) => onAmountChange(e.target.value)}
-					maxLabel={t`MAX`}
-					onMaxClick={() => onAmountChange(balance)}
 					className={cn(
 						"w-full tabular-nums",
 						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",
@@ -246,22 +246,22 @@ function WithdrawForm({ amount, onAmountChange, available, validation, isPending
 		<div className="flex flex-1 flex-col gap-2">
 			<NetworkSelect label={<Trans>To</Trans>} value="arbitrum" onChange={() => {}} disabled />
 
-			<div className="space-y-1">
-				<div className="flex items-center justify-between">
-					<span className="text-xs font-semibold text-text-strong">
-						<Trans>Amount</Trans>
-					</span>
-					<span className="text-xs text-text-weak tabular-nums">
-						<Trans>Available:</Trans> {formatNumber(availableNum, 2)} USDC
-					</span>
-				</div>
+			<div>
 				<NumberInput
+					label={t`Amount`}
+					labelValue={
+						<>
+							Available:{" "}
+							<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+								{formatNumber(availableNum, 2)} USDC
+							</span>
+						</>
+					}
+					onLabelValueClick={() => !isPending && onAmountChange(availableNum.toString())}
 					placeholder="0.00"
 					value={amount}
 					onChange={(e) => onAmountChange(e.target.value)}
 					disabled={isPending}
-					maxLabel={t`MAX`}
-					onMaxClick={() => !isPending && onAmountChange(availableNum.toString())}
 					className={cn(
 						"w-full tabular-nums",
 						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",

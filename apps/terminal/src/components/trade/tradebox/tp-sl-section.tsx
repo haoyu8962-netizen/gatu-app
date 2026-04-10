@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { SL_QUICK_PERCENT_OPTIONS, TP_QUICK_PERCENT_OPTIONS } from "@/config/constants";
 import { getRiskRewardRatio } from "@/domain/market";
 import { cn } from "@/lib/cn";
@@ -77,29 +77,33 @@ export function TpSlSection({
 		return (
 			<div className="rounded-8 border border-stroke-weak/50 bg-bg-raised p-2.5">
 				<div className="grid grid-cols-2 gap-2">
-					<div className="space-y-1">
-						<span className="text-xs text-text-strong">{t`Take Profit`}</span>
-						<Input
+					<div>
+						<NumberInput
+							label={t`Take Profit`}
 							placeholder={t`TP Price`}
 							value={tpPrice}
 							onChange={(e) => onTpPriceChange(e.target.value)}
-							className="text-xs bg-bg-base tabular-nums"
-							aria-invalid={!!tpError}
+							className={cn(
+								"text-xs bg-bg-base tabular-nums",
+								!!tpError && "border-stroke-error-strong focus:border-stroke-error-strong",
+							)}
 							disabled={disabled}
 						/>
-						{tpError && <div className="text-xs text-text-error">{tpError}</div>}
+						{tpError && <div className="text-xs text-text-error mt-1">{tpError}</div>}
 					</div>
-					<div className="space-y-1">
-						<span className="text-xs text-text-strong">{t`Stop Loss`}</span>
-						<Input
+					<div>
+						<NumberInput
+							label={t`Stop Loss`}
 							placeholder={t`SL Price`}
 							value={slPrice}
 							onChange={(e) => onSlPriceChange(e.target.value)}
-							className="text-xs bg-bg-base tabular-nums"
-							aria-invalid={!!slError}
+							className={cn(
+								"text-xs bg-bg-base tabular-nums",
+								!!slError && "border-stroke-error-strong focus:border-stroke-error-strong",
+							)}
 							disabled={disabled}
 						/>
-						{slError && <div className="text-xs text-text-error">{slError}</div>}
+						{slError && <div className="text-xs text-text-error mt-1">{slError}</div>}
 					</div>
 				</div>
 			</div>

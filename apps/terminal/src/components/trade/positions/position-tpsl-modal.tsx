@@ -184,7 +184,7 @@ export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
 					)}
 				</div>
 
-				<ModalFooter className="border-t border-stroke-weak/50">
+				<ModalFooter>
 					<Button size="sm" variant="link" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
 						{t`Cancel`}
 					</Button>

@@ -1,6 +1,6 @@
-import { Badge, Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
+import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { SpinnerGapIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { InfoRow } from "@/components/ui/info-row";
@@ -11,7 +11,6 @@ import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useExchange, useSubscription } from "@/lib/hyperliquid";
 import { formatDecimalFloor, getValueColorClass, isPositive, toNumber } from "@/lib/trade/numbers";
-import { AssetDisplay } from "../components/asset-display";
 import { TradingActionButton } from "../components/trading-action-button";
 
 interface PositionData {
@@ -116,22 +115,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm" showClose={false}>
 				<ModalHeader>
-					<ModalTitle className="flex items-center gap-1">
-						<AssetDisplay coin={position.coin} />
-						<Badge tone={position.isLong ? "success" : "error"} size="sm">
-							{position.isLong ? (
-								<>
-									<TrendUpIcon className="size-3" />
-									{t`Long`}
-								</>
-							) : (
-								<>
-									<TrendDownIcon className="size-3" />
-									{t`Short`}
-								</>
-							)}
-						</Badge>
-					</ModalTitle>
+					<ModalTitle>{t`Limit Close`}</ModalTitle>
 				</ModalHeader>
 
 				<ModalContent>
@@ -140,19 +124,19 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 							className="p-0"
 							label={t`Size`}
 							value={`${formatToken(position.size, position.szDecimals)} ${position.coin}`}
-							valueClassName="font-medium"
+							valueClassName="font-medium tabular-nums"
 						/>
 						<InfoRow
 							className="p-0"
 							label={t`Entry Price`}
 							value={formatPrice(position.entryPx, { szDecimals: position.szDecimals })}
-							valueClassName="font-medium"
+							valueClassName="font-medium tabular-nums"
 						/>
 						<InfoRow
 							className="p-0"
 							label={t`Mark Price`}
 							value={formatPrice(liveMarkPx, { szDecimals: position.szDecimals })}
-							valueClassName="font-medium text-text-warning"
+							valueClassName="font-medium tabular-nums text-text-warning"
 						/>
 						<InfoRow
 							className="p-0 border-t border-stroke-weak/50 pt-3"
@@ -163,40 +147,46 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 									<span className="font-normal text-text-weak ml-1">({formatPercent(position.roe, 1)})</span>
 								</>
 							}
-							valueClassName={cn("font-semibold", getValueColorClass(position.unrealizedPnl))}
+							valueClassName={cn("font-semibold tabular-nums", getValueColorClass(position.unrealizedPnl))}
 						/>
 					</div>
 				</ModalContent>
 
-				<div className="px-6 pb-4 space-y-3">
-					<div className="space-y-1">
-						<label htmlFor="limit-price" className="text-xs text-text-weak">{t`Limit Price`}</label>
-						<NumberInput
-							value={priceInput}
-							onChange={(e) => setPriceInput(e.target.value)}
-							placeholder="0.00"
-							maxAllowedDecimals={priceDecimals}
-							inputSize="sm"
-							className="w-full"
-							maxLabel={t`Mid`}
-							onMaxClick={() => setPriceInput(liveMarkPx.toFixed(priceDecimals))}
-						/>
-					</div>
+				<div className="px-6 pb-4 space-y-4">
+					<NumberInput
+						label={t`Limit Price`}
+						labelValue={liveMarkPx.toFixed(priceDecimals)}
+						value={priceInput}
+						onChange={(e) => setPriceInput(e.target.value)}
+						placeholder="0.00"
+						maxAllowedDecimals={priceDecimals}
+						inputSize="sm"
+						className="w-full"
+						maxLabel={t`Mid`}
+						onMaxClick={() => setPriceInput(liveMarkPx.toFixed(priceDecimals))}
+					/>
 
-					<div className="space-y-1">
-						<label htmlFor="size" className="text-xs text-text-weak">{t`Size`}</label>
+					<div>
 						<NumberInput
+							label={t`Size`}
+							labelValue={
+								<>
+									Available:{" "}
+									<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+										{formatToken(position.size, position.szDecimals)} {position.coin}
+									</span>
+								</>
+							}
+							onLabelValueClick={handleMaxSize}
 							value={sizeInput}
 							onChange={(e) => setSizeInput(e.target.value)}
 							placeholder="0.00"
 							maxAllowedDecimals={position.szDecimals}
 							inputSize="sm"
 							className="w-full"
-							maxLabel={t`Max`}
-							onMaxClick={handleMaxSize}
 						/>
 						{sizeNum !== null && sizeNum > position.size && (
-							<p className="text-xs text-text-error">{t`Size exceeds position`}</p>
+							<p className="text-xs text-text-error mt-1">{t`Size exceeds position`}</p>
 						)}
 					</div>
 
@@ -205,18 +195,18 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 							className="p-0 text-xs"
 							label={t`Est. P&L at Limit`}
 							value={formatUSD(estimatedPnl, { signDisplay: "exceptZero" })}
-							valueClassName={cn("font-semibold", getValueColorClass(estimatedPnl))}
+							valueClassName={cn("font-semibold tabular-nums", getValueColorClass(estimatedPnl))}
 						/>
 					)}
 
 					{error && (
-						<div className="px-2 py-1.5 rounded-8 bg-fill-error-weak border border-stroke-error-strong/20 text-xs text-text-error">
+						<div className="mt-3 px-2 py-1.5 rounded-8 bg-fill-error-weak border border-stroke-error-strong/20 text-xs text-text-error">
 							{error.message}
 						</div>
 					)}
 				</div>
 
-				<ModalFooter className="border-t border-stroke-weak/50">
+				<ModalFooter>
 					<Button size="sm" variant="link" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
 						{t`Cancel`}
 					</Button>

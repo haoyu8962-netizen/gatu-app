@@ -222,14 +222,10 @@ export function TradeFormFields({
 				</div>
 
 				{usesTriggerPrice && (
-					<div className="space-y-2 border-t border-stroke-weak/25 pt-3">
-						<div className="flex items-center justify-between">
-							<span className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">{t`Trigger Price`}</span>
-							<span className="text-3xs text-text-weak/60 tabular-nums leading-none">
-								{t`Mark`} {toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
-							</span>
-						</div>
+					<div className="border-t border-stroke-weak/25 pt-3">
 						<NumberInput
+							label={t`Trigger Price`}
+							labelValue={toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
 							placeholder="0.00"
 							value={triggerPriceInput}
 							onChange={(e) => setTriggerPrice(e.target.value)}
@@ -253,14 +249,10 @@ export function TradeFormFields({
 				)}
 
 				{usesLimitPrice && (
-					<div className="space-y-2 border-t border-stroke-weak/25 pt-3">
-						<div className="flex items-center justify-between">
-							<span className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">{t`Limit Price`}</span>
-							<span className="text-3xs text-text-weak/60 tabular-nums leading-none">
-								{t`Mark`} {toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
-							</span>
-						</div>
+					<div className="border-t border-stroke-weak/25 pt-3">
 						<NumberInput
+							label={t`Limit Price`}
+							labelValue={toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
 							placeholder="0.00"
 							value={limitPriceInput}
 							onChange={(e) => setLimitPrice(e.target.value)}
@@ -284,7 +276,7 @@ export function TradeFormFields({
 				)}
 
 				<div className="flex flex-col gap-0.5 border-t border-stroke-weak/25 pt-3">
-					<div className="mb-1.5 flex items-center justify-between gap-2">
+					<div className="mb-1 flex items-center justify-between gap-2">
 						<label
 							htmlFor={sizeFieldId}
 							className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none"
@@ -359,83 +351,63 @@ export function TradeFormFields({
 
 			{scaleOrder && (
 				<>
-					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<span className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">{t`Start Price`}</span>
-							<span className="text-3xs text-text-weak/60 tabular-nums leading-none">
-								{t`Mark`} {toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
+					<NumberInput
+						label={t`Start Price`}
+						labelValue={toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
+						placeholder="0.00"
+						value={scaleStartPriceInput}
+						onChange={(e) => setScaleStart(e.target.value)}
+						className="w-full text-xs tabular-nums"
+						disabled={isFormDisabled}
+						maxLabel={
+							<span className="flex items-center gap-1">
+								<CrosshairIcon className="size-3" />
+								{t`Mid`}
 							</span>
-						</div>
-						<NumberInput
-							placeholder="0.00"
-							value={scaleStartPriceInput}
-							onChange={(e) => setScaleStart(e.target.value)}
-							className="w-full text-xs tabular-nums"
-							disabled={isFormDisabled}
-							maxLabel={
-								<span className="flex items-center gap-1">
-									<CrosshairIcon className="size-3" />
-									{t`Mid`}
-								</span>
-							}
-							onMaxClick={() => setScaleStart(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
-						/>
-					</div>
-					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<span className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">{t`End Price`}</span>
-							<span className="text-3xs text-text-weak/60 tabular-nums leading-none">
-								{t`Mark`} {toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
+						}
+						onMaxClick={() => setScaleStart(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
+					/>
+					<NumberInput
+						label={t`End Price`}
+						labelValue={toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
+						placeholder="0.00"
+						value={scaleEndPriceInput}
+						onChange={(e) => setScaleEnd(e.target.value)}
+						className="w-full text-xs tabular-nums"
+						disabled={isFormDisabled}
+						maxLabel={
+							<span className="flex items-center gap-1">
+								<CrosshairIcon className="size-3" />
+								{t`Mid`}
 							</span>
-						</div>
-						<NumberInput
-							placeholder="0.00"
-							value={scaleEndPriceInput}
-							onChange={(e) => setScaleEnd(e.target.value)}
-							className="w-full text-xs tabular-nums"
-							disabled={isFormDisabled}
-							maxLabel={
-								<span className="flex items-center gap-1">
-									<CrosshairIcon className="size-3" />
-									{t`Mid`}
-								</span>
-							}
-							onMaxClick={() => setScaleEnd(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
-						/>
-					</div>
-					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<span className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">{t`Number of Orders`}</span>
-							<span className="text-3xs text-text-weak/60 leading-none">{`${SCALE_LEVELS_MIN}–${SCALE_LEVELS_MAX}`}</span>
-						</div>
-						<NumberInput
-							placeholder="4"
-							value={String(scaleLevelsNum)}
-							onChange={(e) => setScaleLevels(Number(e.target.value) || 4)}
-							allowDecimals={false}
-							className="w-full text-xs tabular-nums"
-							disabled={isFormDisabled}
-						/>
-					</div>
+						}
+						onMaxClick={() => setScaleEnd(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
+					/>
+					<NumberInput
+						label={t`Number of Orders`}
+						labelValue={`${SCALE_LEVELS_MIN}–${SCALE_LEVELS_MAX}`}
+						placeholder="4"
+						value={String(scaleLevelsNum)}
+						onChange={(e) => setScaleLevels(Number(e.target.value) || 4)}
+						allowDecimals={false}
+						className="w-full text-xs tabular-nums"
+						disabled={isFormDisabled}
+					/>
 				</>
 			)}
 
 			{twapOrder && (
 				<>
-					<div className="space-y-2">
-						<div className="flex items-center justify-between">
-							<span className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">{t`Duration (Minutes)`}</span>
-							<span className="text-3xs text-text-weak/60 leading-none">{`${TWAP_MINUTES_MIN}–${TWAP_MINUTES_MAX}`}</span>
-						</div>
-						<NumberInput
-							placeholder="30"
-							value={String(twapMinutesNum)}
-							onChange={(e) => setTwapMinutes(Number(e.target.value) || 30)}
-							allowDecimals={false}
-							className="w-full text-xs tabular-nums"
-							disabled={isFormDisabled}
-						/>
-					</div>
+					<NumberInput
+						label={t`Duration (Minutes)`}
+						labelValue={`${TWAP_MINUTES_MIN}–${TWAP_MINUTES_MAX}`}
+						placeholder="30"
+						value={String(twapMinutesNum)}
+						onChange={(e) => setTwapMinutes(Number(e.target.value) || 30)}
+						allowDecimals={false}
+						className="w-full text-xs tabular-nums"
+						disabled={isFormDisabled}
+					/>
 					<div className="flex items-center text-xs">
 						<Checkbox
 							checked={twapRandomize}

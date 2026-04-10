@@ -1,7 +1,7 @@
-import { getCoreRowModel, type Row, type SortingState, useReactTable } from "@tanstack/react-table";
+import { getCoreRowModel, getSortedRowModel, type Row, type SortingState, useReactTable } from "@tanstack/react-table";
 import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { type ExchangeScope, get24hChange, getOiUsd, isTokenInCategory, type MarketCategory } from "@/domain/market";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { type ExchangeScope, isTokenInCategory, type MarketCategory } from "@/domain/market";
 import { useMarketsInfo } from "@/lib/hyperliquid";
 import { createSearcher } from "@/lib/search";
 import { marketSearchConfig } from "@/lib/search/presets/market";
@@ -46,23 +46,6 @@ export interface UseTokenSelectorReturn {
 	handleKeyDown: (e: React.KeyboardEvent) => void;
 }
 
-function getSortValue(market: MarketRow, columnId: string): string {
-	switch (columnId) {
-		case "price":
-			return market.markPx?.toString() ?? "0";
-		case "24h-change":
-			return (get24hChange(market.prevDayPx, market.markPx) ?? 0).toString();
-		case "oi":
-			return (getOiUsd(market.openInterest, market.markPx) ?? 0).toString();
-		case "volume":
-			return market.dayNtlVlm?.toString() ?? "0";
-		case "funding":
-			return market.funding?.toString() ?? "0";
-		default:
-			return "0";
-	}
-}
-
 const PERP_CATEGORIES: Subcategory[] = [
 	{ value: "all", label: "All" },
 	{ value: "trending", label: "Trending" },
@@ -87,7 +70,6 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 	const [deferredSearch, setDeferredSearch] = useState("");
 	const [isPending, startTransition] = useTransition();
 	const [sorting, setSorting] = useState<SortingState>([{ id: "volume", desc: true }]);
-	const deferredSorting = useDeferredValue(sorting);
 	const [highlightedIndex, setHighlightedIndex] = useState(-1);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const hasInitializedRef = useRef(false);
@@ -175,25 +157,6 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 		return searcher.search(deferredSearch).map((result) => result.item);
 	}, [scopeFilteredMarkets, searcher, deferredSearch]);
 
-	const sortedMarkets = useMemo(() => {
-		const favoriteMarkets = filteredMarkets.filter((m) => isFavorite(m.name));
-		const nonFavoriteMarkets = filteredMarkets.filter((m) => !isFavorite(m.name));
-
-		function sortSection(section: MarketRow[]): MarketRow[] {
-			if (deferredSearch) return section;
-			if (deferredSorting.length === 0) return section;
-
-			const { id, desc } = deferredSorting[0];
-			return [...section].sort((a, b) => {
-				const av = Number(getSortValue(a, id));
-				const bv = Number(getSortValue(b, id));
-				return desc ? bv - av : av - bv;
-			});
-		}
-
-		return [...sortSection(favoriteMarkets), ...sortSection(nonFavoriteMarkets)];
-	}, [filteredMarkets, isFavorite, deferredSorting, deferredSearch]);
-
 	function handleSort(columnId: string) {
 		setSorting((prev) => {
 			const current = prev[0];
@@ -203,14 +166,21 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 	}
 
 	const table = useReactTable({
-		data: sortedMarkets,
+		data: filteredMarkets,
 		columns: TOKEN_SELECTOR_COLUMNS,
 		getCoreRowModel: getCoreRowModel(),
-		manualSorting: true,
-		enableSorting: false,
+		getSortedRowModel: getSortedRowModel(),
+		state: { sorting },
+		onSortingChange: setSorting,
+		enableSortingRemoval: false,
 	});
 
-	const { rows } = table.getRowModel();
+	const sortedRows = table.getRowModel().rows;
+	const rows = useMemo(() => {
+		const favoriteRows = sortedRows.filter((r) => isFavorite(r.original.name));
+		const nonFavoriteRows = sortedRows.filter((r) => !isFavorite(r.original.name));
+		return [...favoriteRows, ...nonFavoriteRows];
+	}, [sortedRows, isFavorite]);
 
 	const virtualizer = useVirtualizer({
 		count: rows.length,

@@ -361,36 +361,34 @@ function TokenSelectorContent({
 											iconClassName={cn("shrink-0", mobile ? "size-6" : "size-5")}
 										/>
 										<div className="min-w-0 flex-1">
-											<div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
-												<span className="inline-flex max-w-full min-w-0 items-center gap-1">
-													<span
-														title={market.pairName}
+											<div className="flex min-w-0 items-center gap-1">
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														toggleFavorite(market.name);
+													}}
+													className="shrink-0 rounded-4 p-0.5 hover:scale-110 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+													aria-label={isFav ? t`Remove from favorites` : t`Add to favorites`}
+													aria-pressed={isFav}
+												>
+													<StarIcon
+														weight={isFav ? "fill" : "regular"}
 														className={cn(
-															"min-w-0 truncate font-semibold tracking-tight",
-															mobile ? "text-xs" : "text-2xs leading-snug",
+															"transition-colors",
+															mobile ? "size-3" : "size-2.5",
+															isFav ? "text-fill-yellow" : "text-text-weak hover:text-fill-yellow",
 														)}
-													>
-														{market.pairName}
-													</span>
-													<button
-														type="button"
-														onClick={(e) => {
-															e.stopPropagation();
-															toggleFavorite(market.name);
-														}}
-														className="shrink-0 rounded-4 p-0.5 hover:scale-110 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-														aria-label={isFav ? t`Remove from favorites` : t`Add to favorites`}
-														aria-pressed={isFav}
-													>
-														<StarIcon
-															weight={isFav ? "fill" : "regular"}
-															className={cn(
-																"transition-colors",
-																mobile ? "size-3" : "size-2.5",
-																isFav ? "text-fill-yellow" : "text-text-weak hover:text-fill-yellow",
-															)}
-														/>
-													</button>
+													/>
+												</button>
+												<span
+													title={market.pairName}
+													className={cn(
+														"min-w-0 truncate font-semibold tracking-tight",
+														mobile ? "text-xs" : "text-2xs leading-snug",
+													)}
+												>
+													{market.pairName}
 												</span>
 												{isTokenInCategory(market.shortName, "new") && (
 													<Badge tone="neutral" size="sm" className="shrink-0 px-1 py-0 text-xs">

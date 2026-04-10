@@ -391,10 +391,24 @@ function TokenPanel({
 			)}
 		>
 			<div className="flex items-center justify-between">
-				<span className="text-3xs font-medium uppercase tracking-[0.12em] text-text-weak">{label}</span>
-				<span className="text-xs tabular-nums text-text-weak">
-					<Trans>Balance</Trans>: {formatToken(balance, { decimals: 4, symbol: balanceToken })}
-				</span>
+				<span className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">{label}</span>
+				{editable ? (
+					<button
+						type="button"
+						onClick={onMaxClick}
+						disabled={disabled}
+						className="text-3xs text-text-weak tabular-nums leading-none hover:text-text-strong transition-colors disabled:pointer-events-none"
+					>
+						Available:{" "}
+						<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+							{formatToken(balance, { decimals: 4, symbol: balanceToken })}
+						</span>
+					</button>
+				) : (
+					<span className="text-3xs text-text-weak tabular-nums leading-none">
+						{`Available: ${formatToken(balance, { decimals: 4, symbol: balanceToken })}`}
+					</span>
+				)}
 			</div>
 
 			<div className="flex items-center gap-2">
@@ -405,8 +419,6 @@ function TokenPanel({
 							placeholder="0.00"
 							value={amount}
 							onChange={(e) => onAmountChange?.(e.target.value)}
-							maxLabel={t`MAX`}
-							onMaxClick={onMaxClick}
 							className={cn(
 								"w-full tabular-nums",
 								hasError && "border-stroke-warning-strong/40 text-text-warning focus:border-stroke-warning-strong",

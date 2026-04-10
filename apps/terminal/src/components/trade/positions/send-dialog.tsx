@@ -207,26 +207,26 @@ export function SendDialog({
 							/>
 						</div>
 
-						<div className="space-y-1.5">
-							<div className="flex items-center justify-between">
-								<span className="text-xs uppercase tracking-wider text-text-strong">{t`Amount`}</span>
-								<span className="text-xs text-text-weak tabular-nums">
-									{t`Available:`} {floorToString(availableBalance, decimals)} {selectedToken}
-								</span>
-							</div>
-							<NumberInput
-								placeholder="0.00"
-								value={amount}
-								onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
-								maxLabel={t`MAX`}
-								onMaxClick={handleMaxClick}
-								className={cn(
-									"w-full tabular-nums",
-									exceedsBalance(amount, availableBalance) &&
-										"border-stroke-error-strong focus:border-stroke-error-strong",
-								)}
-							/>
-						</div>
+						<NumberInput
+							label={t`Amount`}
+							labelValue={
+								<>
+									Available:{" "}
+									<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+										{floorToString(availableBalance, decimals)} {selectedToken}
+									</span>
+								</>
+							}
+							onLabelValueClick={handleMaxClick}
+							placeholder="0.00"
+							value={amount}
+							onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
+							className={cn(
+								"w-full tabular-nums",
+								exceedsBalance(amount, availableBalance) &&
+									"border-stroke-error-strong focus:border-stroke-error-strong",
+							)}
+						/>
 
 						{error && (
 							<div className="flex items-center gap-2 p-2.5 rounded-8 bg-fill-error-weak border border-stroke-error-strong/20 text-xs text-text-error">

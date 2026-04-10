@@ -27,7 +27,7 @@ export function MainWorkspace() {
 			<div className="shrink-0 border-b border-stroke-weak">
 				<div className="flex items-center gap-2.5 min-w-0 px-2 py-1.5">
 					<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
-					<div className="h-4 w-px bg-stroke-weak/50 shrink-0" aria-hidden />
+					<div className="flex-1" />
 					<FavoritesStrip />
 				</div>
 				<div className="border-t border-stroke-weak/35 px-2 py-1.5 min-w-0 overflow-x-auto scrollbar-none">

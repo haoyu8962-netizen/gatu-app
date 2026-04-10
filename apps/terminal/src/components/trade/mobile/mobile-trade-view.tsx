@@ -1,7 +1,8 @@
-import { Button, Slider, Tabs, TabsList, TabsTrigger, TextInput } from "@hypeterminal/ui";
+import { Button, Slider, Tabs, TabsList, TabsTrigger } from "@hypeterminal/ui";
 import { CaretDownIcon, SpinnerGapIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useEffect, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
+import { NumberInput } from "@/components/ui/number-input";
 import { FALLBACK_VALUE_PLACEHOLDER, UI_TEXT } from "@/config/constants";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
@@ -381,7 +382,9 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 						</div>
 					</div>
 					<div className="space-y-1.5">
-						<p className="text-xs text-text-weak">{ORDER_TEXT.SIZE_LABEL}</p>
+						<p className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">
+							{ORDER_TEXT.SIZE_LABEL}
+						</p>
 						<div className="flex items-center gap-2">
 							<Button
 								variant="outline"
@@ -393,14 +396,12 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 							>
 								{sizeMode === "base" ? baseToken || "\u2014" : quoteToken || "\u2014"}
 							</Button>
-							<TextInput
-								type="text"
+							<NumberInput
 								inputMode="decimal"
 								placeholder={ORDER_TEXT.INPUT_PLACEHOLDER}
 								value={sizeInput}
 								onChange={(e: ChangeEvent<HTMLInputElement>) => setSizeInput(e.target.value)}
 								className="flex-1 tabular-nums"
-								size="md"
 								disabled={isFormDisabled}
 							/>
 						</div>
@@ -414,26 +415,23 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 						/>
 					</div>
 					{usesLimitPrice && (
-						<div className="space-y-1.5">
-							<div className="flex items-center justify-between">
-								<p className="text-xs text-text-weak">{ORDER_TEXT.LIMIT_PRICE_LABEL}</p>
-								{markPx > 0 && (
-									<Button variant="link" intent="brand" size="sm" onClick={handleMarkPriceClick} className="text-xs">
-										{ORDER_TEXT.MARK_PRICE_LABEL}: {formatPrice(markPx, { szDecimals: market?.szDecimals })}
-									</Button>
-								)}
-							</div>
-							<TextInput
-								type="text"
-								inputMode="decimal"
-								placeholder={ORDER_TEXT.INPUT_PLACEHOLDER}
-								value={limitPriceInput}
-								onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
-								className="tabular-nums"
-								size="md"
-								disabled={isFormDisabled}
-							/>
-						</div>
+						<NumberInput
+							label={ORDER_TEXT.LIMIT_PRICE_LABEL}
+							labelValue={
+								markPx > 0 ? (
+									<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+										{formatPrice(markPx, { szDecimals: market?.szDecimals })}
+									</span>
+								) : undefined
+							}
+							onLabelValueClick={markPx > 0 ? handleMarkPriceClick : undefined}
+							inputMode="decimal"
+							placeholder={ORDER_TEXT.INPUT_PLACEHOLDER}
+							value={limitPriceInput}
+							onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
+							className="tabular-nums"
+							disabled={isFormDisabled}
+						/>
 					)}
 					{validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval && (
 						<div className="text-xs text-text-error">{validation.errors.join(" \u2022 ")}</div>
