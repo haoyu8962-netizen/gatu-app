@@ -1229,7 +1229,6 @@ msgstr "Deslizamiento de orden de mercado"
 msgid "markets"
 msgstr "mercados"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"
 msgstr "Máx"

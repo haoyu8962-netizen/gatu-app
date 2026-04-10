@@ -1229,7 +1229,6 @@ msgstr "市价单滑点"
 msgid "markets"
 msgstr "个市场"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"
 msgstr "最大"

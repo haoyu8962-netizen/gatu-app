@@ -1229,7 +1229,6 @@ msgstr "मार्केट ऑर्डर स्लिपेज"
 msgid "markets"
 msgstr "बाज़ार"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"
 msgstr "अधिकतम"

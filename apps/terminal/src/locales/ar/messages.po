@@ -1229,7 +1229,6 @@ msgstr "انزلاق أمر السوق"
 msgid "markets"
 msgstr "أسواق"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"
 msgstr "الأقصى"

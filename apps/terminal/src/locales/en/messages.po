@@ -1233,7 +1233,6 @@ msgstr "Market Order Slippage"
 msgid "markets"
 msgstr "markets"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"
 msgstr "Max"

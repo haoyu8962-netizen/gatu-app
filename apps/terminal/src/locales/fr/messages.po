@@ -1229,7 +1229,6 @@ msgstr "Glissement des ordres au marché"
 msgid "markets"
 msgstr "marchés"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"
 msgstr "Max"

@@ -42,6 +42,9 @@ interface Props extends Omit<React.ComponentProps<"input">, "type" | "onChange" 
 	maxLabel?: React.ReactNode;
 	onMaxClick?: () => void;
 	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	label?: string;
+	labelValue?: React.ReactNode;
+	onLabelValueClick?: () => void;
 }
 
 export function NumberInput({
@@ -59,6 +62,9 @@ export function NumberInput({
 	onChange,
 	onKeyDown,
 	disabled,
+	label,
+	labelValue,
+	onLabelValueClick,
 	...props
 }: Props) {
 	const effectiveAllowDecimals = allowDecimals && (maxAllowedDecimals === undefined || maxAllowedDecimals > 0);
@@ -177,9 +183,7 @@ export function NumberInput({
 		/>
 	);
 
-	if (!hasMax) return inputEl;
-
-	return (
+	const inputWithAction = hasMax ? (
 		<div className="relative">
 			{inputEl}
 			<button
@@ -190,6 +194,31 @@ export function NumberInput({
 			>
 				{maxLabel}
 			</button>
+		</div>
+	) : (
+		inputEl
+	);
+
+	if (!label) return inputWithAction;
+
+	return (
+		<div>
+			<div className="mb-1.5 flex items-center justify-between">
+				<span className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">{label}</span>
+				{labelValue != null && onLabelValueClick ? (
+					<button
+						type="button"
+						onClick={onLabelValueClick}
+						disabled={disabled}
+						className="text-3xs text-text-weak tabular-nums leading-none hover:text-text-strong transition-colors cursor-pointer disabled:pointer-events-none"
+					>
+						{labelValue}
+					</button>
+				) : labelValue != null ? (
+					<span className="text-3xs text-text-weak tabular-nums leading-none">{labelValue}</span>
+				) : null}
+			</div>
+			{inputWithAction}
 		</div>
 	);
 }
