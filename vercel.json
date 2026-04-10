@@ -1,6 +1,5 @@
 {
-	"buildCommand": "pnpm build",
+	"buildCommand": "NITRO_PRESET=vercel pnpm build",
 	"installCommand": "pnpm install",
-	"outputDirectory": "apps/terminal/.output/public",
 	"framework": null
 }
