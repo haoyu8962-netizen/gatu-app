@@ -271,7 +271,7 @@ function TokenSelectorContent({
 												title={sortLabel}
 												className={cn(
 													"inline-flex w-full min-w-0 cursor-pointer items-center justify-end gap-1 rounded-4 px-0.5 py-0.5 text-inherit transition-colors",
-													"hover:bg-fill-hover hover:text-text-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stroke-strong focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base",
+													"hover:bg-fill-hover hover:text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 												)}
 												aria-label={t`Sort by ${sortLabel}`}
 											>
@@ -378,7 +378,7 @@ function TokenSelectorContent({
 															e.stopPropagation();
 															toggleFavorite(market.name);
 														}}
-														className="shrink-0 rounded-4 p-0.5 hover:scale-110 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stroke-strong focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
+														className="shrink-0 rounded-4 p-0.5 hover:scale-110 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 														aria-label={isFav ? t`Remove from favorites` : t`Add to favorites`}
 														aria-pressed={isFav}
 													>
@@ -387,7 +387,7 @@ function TokenSelectorContent({
 															className={cn(
 																"transition-colors",
 																mobile ? "size-3" : "size-2.5",
-																isFav ? "text-[#FACC15]" : "text-text-weak hover:text-[#FACC15]/90",
+																isFav ? "text-fill-yellow" : "text-text-weak hover:text-fill-yellow",
 															)}
 														/>
 													</button>

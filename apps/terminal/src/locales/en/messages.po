@@ -156,14 +156,15 @@ msgstr "All cross positions share the same cross margin as collateral. In the ev
 #~ msgstr "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 
 #: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Amount"
 msgstr "Amount"
 
 #: src/components/trade/positions/transfer-dialog.tsx
-msgid "Amount (USDC)"
-msgstr "Amount (USDC)"
+#~ msgid "Amount (USDC)"
+#~ msgstr "Amount (USDC)"
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "API"
@@ -201,8 +202,8 @@ msgstr "Available"
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Available:"
-msgstr "Available:"
+#~ msgid "Available:"
+#~ msgstr "Available:"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -219,7 +220,6 @@ msgstr "Back"
 #~ msgid "Back to asset selection"
 #~ msgstr "Back to asset selection"
 
-#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance"
 msgstr "Balance"
@@ -1140,7 +1140,6 @@ msgstr "Loading wallet..."
 msgid "Loading..."
 msgstr "Loading..."
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long"
 msgstr "Long"
@@ -1188,10 +1187,6 @@ msgstr "Margin Req."
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Mark"
 msgstr "Mark"
 
@@ -1248,8 +1243,8 @@ msgstr "Max"
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "MAX"
-msgstr "MAX"
+#~ msgid "MAX"
+#~ msgstr "MAX"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max 0.1% (10 bps) for perps, 1% (100 bps) for spot. Enter as decimal (e.g., 0.01 for 1 basis point)."
@@ -1954,7 +1949,6 @@ msgstr "Set to {p}%"
 msgid "Settings"
 msgstr "Settings"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short"
 msgstr "Short"

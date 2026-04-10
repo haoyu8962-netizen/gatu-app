@@ -156,14 +156,15 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Amount"
 msgstr ""
 
 #: src/components/trade/positions/transfer-dialog.tsx
-msgid "Amount (USDC)"
-msgstr ""
+#~ msgid "Amount (USDC)"
+#~ msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "API"
@@ -201,8 +202,8 @@ msgstr "可用"
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Available:"
-msgstr ""
+#~ msgid "Available:"
+#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -219,7 +220,6 @@ msgstr ""
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
-#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance"
 msgstr "余额"
@@ -1136,7 +1136,6 @@ msgstr "加载钱包中..."
 msgid "Loading..."
 msgstr "加载中..."
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long"
 msgstr "多"
@@ -1184,10 +1183,6 @@ msgstr "保证金要求"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Mark"
 msgstr "标记价"
 
@@ -1244,8 +1239,8 @@ msgstr "最大"
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "MAX"
-msgstr ""
+#~ msgid "MAX"
+#~ msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max 0.1% (10 bps) for perps, 1% (100 bps) for spot. Enter as decimal (e.g., 0.01 for 1 basis point)."
@@ -1950,7 +1945,6 @@ msgstr ""
 msgid "Settings"
 msgstr "设置"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short"
 msgstr "空"

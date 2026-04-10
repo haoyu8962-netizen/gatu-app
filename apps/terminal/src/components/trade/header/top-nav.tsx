@@ -1,4 +1,4 @@
-import { Button, ButtonIcon } from "@hypeterminal/ui";
+import { Button, ButtonIcon, Divider } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, TerminalIcon } from "@phosphor-icons/react";
@@ -85,7 +85,7 @@ export function TopNav() {
 						<span className="text-text-strong">TERMINAL</span>
 					</span>
 				</div>
-				<div className="h-4 w-px bg-stroke-weak hidden lg:block" aria-hidden />
+				<Divider orientation="vertical" className="my-2 hidden lg:block" />
 				<nav className="hidden lg:flex items-center text-xs tracking-wide">
 					{SCOPE_NAV_ITEMS.map((item) => (
 						<Link
@@ -99,7 +99,7 @@ export function TopNav() {
 							{item.label}
 						</Link>
 					))}
-					<div className="h-4 w-px bg-stroke-weak mx-1" />
+					<Divider orientation="vertical" className="my-2 mx-1" />
 					{STATIC_NAV_ITEMS.map((item) => (
 						<button
 							key={item.key}

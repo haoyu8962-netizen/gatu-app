@@ -1,3 +1,4 @@
+import { Divider } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { GithubLogoIcon, SpinnerGapIcon, WifiHighIcon, WifiSlashIcon } from "@phosphor-icons/react";
 import { ClientOnly } from "@tanstack/react-router";
@@ -51,7 +52,7 @@ export function FooterBar() {
 			<button
 				type="button"
 				onClick={open}
-				className="absolute left-1/2 flex min-h-8 min-w-8 -translate-x-1/2 items-center justify-center rounded-8 text-text-weak outline-none transition-colors hover:bg-fill-hover hover:text-text-strong focus-visible:ring-2 focus-visible:ring-stroke-strong focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
+				className="absolute left-1/2 flex min-h-8 min-w-8 -translate-x-1/2 items-center justify-center rounded-8 text-text-weak transition-colors hover:bg-fill-hover hover:text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 				aria-label={t`Open command menu`}
 			>
 				<kbd className="pointer-events-none rounded-6 border border-stroke-weak bg-bg-sunken px-1 py-px font-sans text-3xs leading-none text-text-weak">
@@ -63,16 +64,16 @@ export function FooterBar() {
 					href={GITHUB_URL}
 					target="_blank"
 					rel="noopener noreferrer"
-					className="flex items-center rounded-6 p-0.5 text-text-weak transition-colors hover:text-text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stroke-strong focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
+					className="flex items-center rounded-6 p-0.5 text-text-weak transition-colors hover:text-text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 					aria-label="GitHub"
 				>
 					<GithubLogoIcon className="size-2.5" />
 				</a>
-				<div className="h-2.5 w-px shrink-0 bg-stroke-weak" aria-hidden />
+				<Divider orientation="vertical" className="my-1.5" />
 				<ClientOnly>
 					<span className="tabular-nums text-text-strong">{formatTime(new Date())}</span>
 				</ClientOnly>
-				<div className="h-2.5 w-px shrink-0 bg-stroke-weak" aria-hidden />
+				<Divider orientation="vertical" className="my-1.5" />
 				<span className="text-text-strong">{APP_VERSION}</span>
 			</div>
 		</footer>

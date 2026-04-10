@@ -156,14 +156,15 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Amount"
 msgstr ""
 
 #: src/components/trade/positions/transfer-dialog.tsx
-msgid "Amount (USDC)"
-msgstr ""
+#~ msgid "Amount (USDC)"
+#~ msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "API"
@@ -201,8 +202,8 @@ msgstr "उपलब्ध"
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Available:"
-msgstr ""
+#~ msgid "Available:"
+#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -219,7 +220,6 @@ msgstr ""
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
-#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Balance"
 msgstr "शेष"
@@ -1136,7 +1136,6 @@ msgstr "वॉलेट लोड हो रहा है..."
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long"
 msgstr "लॉन्ग"
@@ -1184,10 +1183,6 @@ msgstr "मार्जिन आवश्यक"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Mark"
 msgstr "मार्क"
 
@@ -1244,8 +1239,8 @@ msgstr "अधिकतम"
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "MAX"
-msgstr ""
+#~ msgid "MAX"
+#~ msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max 0.1% (10 bps) for perps, 1% (100 bps) for spot. Enter as decimal (e.g., 0.01 for 1 basis point)."
@@ -1950,7 +1945,6 @@ msgstr ""
 msgid "Settings"
 msgstr "सेटिंग्स"
 
-#: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short"
 msgstr "शॉर्ट"
