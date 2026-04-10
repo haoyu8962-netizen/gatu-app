@@ -1,0 +1,157 @@
+import { useEffect, useRef } from "react";
+import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
+import type { IChartingLibraryWidget, ResolutionString } from "@/types/charting_library";
+import {
+	CHART_CUSTOM_FONT_FAMILY,
+	CHART_DISABLED_FEATURES,
+	CHART_ENABLED_FEATURES,
+	CHART_FAVORITE_INTERVALS,
+	CHART_LIBRARY_PATH,
+	CHART_LOCALE,
+	CHART_TIME_FRAMES,
+	CHART_WIDGET_DEFAULTS,
+	DEFAULT_CHART_INTERVAL,
+	DEFAULT_CHART_SYMBOL,
+	DEFAULT_CHART_THEME,
+	TIMEZONE,
+} from "./constants";
+import { createDatafeed } from "./datafeed";
+import { buildChartOverrides, generateChartCssUrl, getLoadingScreenColors, getToolbarBgColor } from "./theme-colors";
+
+interface Props {
+	symbol?: string;
+	interval?: string;
+	theme?: "light" | "dark";
+	onSwitchToDefault?: () => void;
+}
+
+export function TradingViewChart({
+	symbol = DEFAULT_CHART_SYMBOL,
+	interval = DEFAULT_CHART_INTERVAL,
+	theme = DEFAULT_CHART_THEME,
+	onSwitchToDefault,
+}: Props) {
+	const containerRef = useRef<HTMLDivElement>(null);
+	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
+	const cssUrlRef = useRef<string | null>(null);
+	const chartReadyRef = useRef(false);
+	const onSwitchToDefaultRef = useRef(onSwitchToDefault);
+	onSwitchToDefaultRef.current = onSwitchToDefault;
+
+	useEffect(() => {
+		if (!containerRef.current) return;
+		chartReadyRef.current = false;
+
+		const initWidget = async () => {
+			try {
+				await loadTradingViewScript();
+
+				if (!containerRef.current || !window.TradingView) return;
+
+				if (widgetRef.current) {
+					widgetRef.current.remove();
+				}
+
+				if (cssUrlRef.current) {
+					URL.revokeObjectURL(cssUrlRef.current);
+				}
+
+				const overrides = buildChartOverrides();
+				const loadingColors = getLoadingScreenColors();
+				const toolbarBg = getToolbarBgColor();
+				const customCssUrl = await generateChartCssUrl();
+				cssUrlRef.current = customCssUrl;
+
+				widgetRef.current = new window.TradingView.widget({
+					container: containerRef.current,
+					library_path: CHART_LIBRARY_PATH,
+					datafeed: createDatafeed(),
+					symbol: symbol,
+					interval: interval as ResolutionString,
+					locale: CHART_LOCALE,
+					fullscreen: CHART_WIDGET_DEFAULTS.FULLSCREEN,
+					autosize: CHART_WIDGET_DEFAULTS.AUTOSIZE,
+					theme: theme,
+					timezone: TIMEZONE,
+					debug: CHART_WIDGET_DEFAULTS.DEBUG,
+					custom_font_family: CHART_CUSTOM_FONT_FAMILY,
+					time_frames: CHART_TIME_FRAMES,
+					enabled_features: CHART_ENABLED_FEATURES,
+					disabled_features: CHART_DISABLED_FEATURES,
+					overrides: overrides,
+					loading_screen: loadingColors,
+					toolbar_bg: toolbarBg,
+					custom_css_url: customCssUrl,
+					studies_overrides: {},
+					favorites: {
+						intervals: CHART_FAVORITE_INTERVALS,
+					},
+				});
+
+				widgetRef.current.onChartReady(() => {
+					chartReadyRef.current = true;
+				});
+
+				if (onSwitchToDefaultRef.current) {
+					widgetRef.current.headerReady().then(() => {
+						const widget = widgetRef.current;
+						if (!widget) return;
+
+						const btn = widget.createButton({ align: "right", useTradingViewStyle: false });
+						btn.style.cssText =
+							"display:inline-flex;align-items:center;gap:6px;padding:0 4px;cursor:default;height:100%;";
+
+						const tvLabel = document.createElement("span");
+						tvLabel.textContent = "TradingView";
+						tvLabel.dataset.htActive = "true";
+						tvLabel.style.cssText = "font-size:12px;color:var(--tv-fg,inherit);";
+
+						const sep = document.createElement("span");
+						sep.style.cssText =
+							"display:inline-block;width:1px;height:12px;background:var(--tv-color-toolbar-divider-background,rgba(128,128,128,0.3));align-self:center;flex-shrink:0;";
+
+						const defaultLabel = document.createElement("span");
+						defaultLabel.textContent = "Default";
+						defaultLabel.style.cssText =
+							"font-size:12px;font-weight:400;color:var(--tv-muted-fg,rgba(128,128,128,0.8));cursor:pointer;";
+						defaultLabel.addEventListener("pointerover", () => {
+							defaultLabel.style.color = "var(--tv-fg,inherit)";
+						});
+						defaultLabel.addEventListener("pointerout", () => {
+							defaultLabel.style.color = "var(--tv-muted-fg,rgba(128,128,128,0.8))";
+						});
+						defaultLabel.addEventListener("click", () => {
+							onSwitchToDefaultRef.current?.();
+						});
+
+						btn.appendChild(defaultLabel);
+						btn.appendChild(sep);
+						btn.appendChild(tvLabel);
+					});
+				}
+			} catch (error) {
+				console.error("Error initializing TradingView widget:", error);
+			}
+		};
+
+		initWidget();
+
+		return () => {
+			if (widgetRef.current) {
+				widgetRef.current.remove();
+				widgetRef.current = null;
+			}
+			chartReadyRef.current = false;
+			if (cssUrlRef.current) {
+				URL.revokeObjectURL(cssUrlRef.current);
+				cssUrlRef.current = null;
+			}
+		};
+	}, [symbol, interval, theme]);
+
+	return (
+		<div className="relative w-full h-full" style={{ minHeight: "300px" }}>
+			<div ref={containerRef} className="w-full h-full" />
+		</div>
+	);
+}

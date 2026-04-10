@@ -1,0 +1,91 @@
+import { useEffect, useRef, useState } from "react";
+import { useAgentRegistration } from "../signing/use-agent-registration";
+import { useAgentStatus } from "../signing/use-agent-status";
+
+type PendingAction = () => void | Promise<void>;
+
+interface UseTradingGuardResult {
+	isReady: boolean;
+	isEnabling: boolean;
+	needsTrading: boolean;
+	enableTrading: () => void;
+	guardAction: (action: PendingAction) => void;
+	error: Error | null;
+	clearError: () => void;
+}
+
+export function useTradingGuard(): UseTradingGuardResult {
+	const { isReady, isLoading, signaturesRequired } = useAgentStatus();
+	const { register: registerAgent, status: registerStatus, error: agentError } = useAgentRegistration();
+	const pendingActionRef = useRef<PendingAction | null>(null);
+	const prevIsReadyRef = useRef(isReady);
+	const mountedRef = useRef(true);
+	const [localError, setLocalError] = useState<Error | null>(null);
+
+	const isEnabling =
+		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
+	const needsTrading = !isLoading && signaturesRequired > 0;
+
+	useEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
+
+	useEffect(() => {
+		const wasReady = prevIsReadyRef.current;
+
+		if (!wasReady && isReady && pendingActionRef.current && mountedRef.current) {
+			const action = pendingActionRef.current;
+			pendingActionRef.current = null;
+			Promise.resolve(action()).catch((err) => {
+				if (!mountedRef.current) return;
+				setLocalError(err instanceof Error ? err : new Error(String(err)));
+			});
+		}
+
+		if (wasReady && !isReady) {
+			pendingActionRef.current = null;
+		}
+
+		prevIsReadyRef.current = isReady;
+	}, [isReady]);
+
+	function enableTrading() {
+		if (isEnabling) return;
+		setLocalError(null);
+		registerAgent().catch((err) => {
+			pendingActionRef.current = null;
+			if (!mountedRef.current) return;
+			const error = err instanceof Error ? err : new Error(String(err));
+			setLocalError(error);
+		});
+	}
+
+	function guardAction(action: PendingAction) {
+		if (isReady) {
+			Promise.resolve(action()).catch((err) => {
+				if (!mountedRef.current) return;
+				setLocalError(err instanceof Error ? err : new Error(String(err)));
+			});
+			return;
+		}
+		pendingActionRef.current = action;
+		enableTrading();
+	}
+
+	function clearError() {
+		setLocalError(null);
+	}
+
+	return {
+		isReady,
+		isEnabling,
+		needsTrading,
+		enableTrading,
+		guardAction,
+		error: localError ?? agentError,
+		clearError,
+	};
+}

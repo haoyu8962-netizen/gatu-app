@@ -1,0 +1,5 @@
+{
+	"buildCommand": "NITRO_PRESET=vercel pnpm build && cp -r apps/terminal/.vercel/output .vercel/",
+	"installCommand": "pnpm install",
+	"framework": null
+}

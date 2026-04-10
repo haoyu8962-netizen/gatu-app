@@ -1,0 +1,110 @@
+
+/* ========== TYPOGRAPHY ========== */
+html, body,
+.layout__area--top,
+.layout__area--top *,
+.chart-controls-bar,
+.chart-controls-bar *,
+[class*="item-"],
+[class*="menu-"],
+[class*="legend-"],
+[class*="value-"],
+.apply-common-tooltip {
+	font-family: 'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif !important;
+	font-size: 12px !important;
+	font-weight: 400 !important;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* ========== SCROLLBARS ========== */
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--tv-bg);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--tv-border);
+	border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--tv-muted-fg);
+}
+
+
+/* ========== BACKGROUNDS ========== */
+html,
+body,
+.chart-page,
+.chart-container,
+.layout__area--center,
+.chart-controls-bar,
+.layout__area--top {
+	background: var(--tv-bg) !important;
+	background-color: var(--tv-bg) !important;
+}
+
+/* ========== TOP TOOLBAR & CHROME ========== */
+.layout__area--top {
+	border-bottom: 1px solid var(--tv-toolbar-border, var(--tv-border)) !important;
+	height: 36px !important;
+	min-height: 36px !important;
+}
+
+/* Compact buttons to reduce hover area */
+.layout__area--top button {
+	min-width: unset !important;
+	padding-left: 5px !important;
+	padding-right: 5px !important;
+	border-radius: 4px !important;
+}
+
+/* Smaller icons throughout toolbar */
+.layout__area--top svg {
+	width: 14px !important;
+	height: 14px !important;
+}
+
+[data-ht-active="true"] {
+	font-weight: 600 !important;
+}
+
+.layout__area--left {
+	border-right: 1px solid var(--tv-toolbar-border, var(--tv-border)) !important;
+}
+
+.chart-controls-bar {
+	border-top-color: var(--tv-toolbar-border, var(--tv-border)) !important;
+}
+
+/* ========== DIALOGS & POPUPS ========== */
+[class*="dialog-"],
+[class*="popup-"],
+[class*="modal-"] {
+	background-color: var(--themed-color-dialog-background, var(--tv-bg)) !important;
+	color: var(--tv-fg) !important;
+}
+
+/* ========== SEARCH INPUT ========== */
+[class*="search"] input,
+[class*="Search"] input {
+	background-color: var(--tv-bg) !important;
+	color: var(--tv-fg) !important;
+	border-color: var(--tv-border) !important;
+	caret-color: var(--tv-fg) !important;
+}
+
+[class*="search"] input::placeholder,
+[class*="Search"] input::placeholder {
+	color: var(--tv-muted-fg) !important;
+}
+
+[class*="search"] input:focus,
+[class*="Search"] input:focus {
+	border-color: var(--tv-accent) !important;
+}

@@ -7,6 +7,7 @@ dist-ssr
 .output
 .nitro
 .vinxi
+.vercel
 
 # Compiled translation catalogs (generated at build time)
 src/locales/**/messages.js

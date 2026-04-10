@@ -1,0 +1,89 @@
+import { Dropdown } from "@hypeterminal/ui";
+import { t } from "@lingui/core/macro";
+import { PencilSimpleIcon } from "@phosphor-icons/react";
+import type { SideLabels } from "@/domain/trade/order/labels";
+import type { MarketKind } from "@/lib/hyperliquid";
+import type { MarginMode } from "@/lib/trade/margin-mode";
+import { getAdvancedOrderLabel, getTabsOrderType, type OrderType } from "@/lib/trade/order-types";
+import type { Side } from "@/lib/trade/types";
+import { SideToggle } from "./side-toggle";
+
+interface Props {
+	orderType: OrderType;
+	side: Side;
+	sideLabels: SideLabels;
+	marketKind: MarketKind | undefined;
+	onOrderTypeChange: (type: OrderType) => void;
+	onSideChange: (side: Side) => void;
+	marginMode?: MarginMode;
+	leverage?: number;
+	onMarginLeverageClick?: () => void;
+	isLeveraged?: boolean;
+}
+
+export function TradeHeader({
+	orderType,
+	side,
+	sideLabels,
+	marketKind,
+	onOrderTypeChange,
+	onSideChange,
+	marginMode,
+	leverage,
+	onMarginLeverageClick,
+	isLeveraged,
+}: Props) {
+	const tabsOrderType = getTabsOrderType(orderType);
+
+	const orderTypeLabel =
+		tabsOrderType === "advanced"
+			? getAdvancedOrderLabel(orderType, t`Other`)
+			: tabsOrderType === "market"
+				? t`Market`
+				: t`Limit`;
+
+	const isSpot = marketKind === "spot";
+	const orderTypeItems = [
+		{ label: t`Market`, onSelect: () => onOrderTypeChange("market") },
+		{ label: t`Limit`, onSelect: () => onOrderTypeChange("limit") },
+		...(!isSpot
+			? [
+					{ label: t`Stop Market`, onSelect: () => onOrderTypeChange("stopMarket" as OrderType) },
+					{ label: t`Stop Limit`, onSelect: () => onOrderTypeChange("stopLimit" as OrderType) },
+				]
+			: []),
+		{ label: t`TWAP`, onSelect: () => onOrderTypeChange("twap" as OrderType) },
+		{ label: t`Scale`, onSelect: () => onOrderTypeChange("scale" as OrderType) },
+	];
+
+	const marginLabel = marginMode === "isolated" ? t`Isolated` : t`Cross`;
+
+	return (
+		<div className="min-w-0 space-y-4">
+			<div className="flex items-center justify-between">
+				<Dropdown
+					trigger={<span className="flex items-center gap-0.5 font-semibold text-text-strong">{orderTypeLabel}</span>}
+					items={orderTypeItems}
+					size="sm"
+					align="start"
+					triggerVariant="minimal"
+					className="inline-flex"
+				/>
+				{isLeveraged && (
+					<button
+						type="button"
+						onClick={onMarginLeverageClick}
+						className="inline-flex items-center gap-1 text-xs text-text-weak hover:text-text-strong transition-colors cursor-pointer"
+					>
+						<span>
+							{marginLabel} · {leverage ?? 1}x
+						</span>
+						<PencilSimpleIcon className="size-3" />
+					</button>
+				)}
+			</div>
+
+			<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} />
+		</div>
+	);
+}

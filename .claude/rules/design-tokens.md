@@ -1,43 +1,72 @@
 ## Design Tokens
 
 - **No hardcoded colors** - Never use hex values like `text-[#2b2e48]` or `bg-[#f1f3f4]`. Always use token utilities from `src/styles.css`.
-- **No arbitrary font sizes** - Never use `text-[10px]` etc. Use the named scale: `text-5xs` (8px), `text-4xs` (9px), `text-3xs` (10px), `text-2xs` (11px), `text-xs` (12px), `text-nav` (13px), `text-sm` (14px), `text-base`+.
+- **No arbitrary font sizes** - Never use `text-[10px]` etc. Use the named scale: `text-3xs` (10px), `text-2xs` (11px), `text-xs` (12px), `text-sm` (14px), `text-base` (16px)+.
 
-### Text — ink intensity, higher number = more prominent
-- `text-text-950` primary text (max contrast)
-- `text-text-600` secondary text
-- `text-text-500` tertiary text
-- `text-text-400` placeholder text
-- `text-text-10` inverse/white text
-- **Small text rule**: 8-10px use `text-text-950`, 11-13px use `text-text-600`+, 14px+ use `text-text-500`+
+### Background — elevation levels (sunken → base → raised → overlay)
+- `bg-bg-sunken` page/recessed background (light: `#f5f6fa`, dark: `#000000`)
+- `bg-bg-base` default page background (light: `#ffffff`, dark: `#12131a`)
+- `bg-bg-raised` elevated surfaces, cards (light: `#ffffff`, dark: `#1d1e26`)
+- `bg-bg-overlay` overlays, modals (light: `#ffffff`, dark: `#292b33`)
+- `bg-bg-alternate` alternating rows (light: `#f5f6fa`, dark: `#1d1e26`)
+- `bg-bg-brand` brand-colored background
+- `bg-bg-inverse` inverse background
 
-### Surface — named elevation levels
-- `bg-surface-base` page background
-- `bg-surface-analysis` panels
-- `bg-surface-execution` cards/elevated
-- `bg-surface-monitoring-row-a` table row A
-- `bg-surface-monitoring-row-b` table row B (alternating)
+> **Light mode gotcha**: `bg-bg-base` and `bg-bg-raised` are both `#ffffff` in light mode — they only differ in dark. Use `bg-bg-sunken` as the container whenever you need a visually distinct inset (e.g. tab switchers, pill groups) so that `bg-bg-raised` children appear elevated in both modes.
 
-### Border — structural borders, higher number = stronger
-- `border-border-200` default border (set in base layer)
-- `border-border-100` subtle border
-- `border-border-300` medium border
-- `border-border-500` strong border
-- `border-border-50` very faint border
+### Text — semantic intensity
+- `text-text-strong` primary text (max contrast)
+- `text-text-weak` secondary/muted text
+- `text-text-brand` brand-accented text (blue/periwinkle)
+- `text-text-disabled` disabled state
+- `text-text-error` error state
+- `text-text-warning` warning state
+- `text-text-success` success state
+- `text-text-info` informational state
+- `text-text-inverse-strong` / `text-text-inverse-weak` inverted text on dark/brand surfaces
 
-### Primary — interactive accent (blue)
-- `primary-default` default, `primary-hover` hover, `primary-active` pressed, `primary-muted` disabled/muted
-- Works with all prefixes: `bg-primary-default`, `text-primary-default`, `border-primary-default`
+### Fill — for backgrounds that aren't elevation-based
+- `bg-fill-strong` opaque strong fill
+- `bg-fill-weak` / `bg-fill-weaker` subtle tinted fills (for hover states, chips)
+- `bg-fill-hover` / `bg-fill-press` interactive state fills
+- `bg-fill-selected` selected state fill (brand color)
+- `bg-fill-disabled` disabled fill
+- `bg-fill-overlay` scrim/backdrop fill
+- `bg-fill-brand-strong` / `bg-fill-brand-weak` brand fills
+- `bg-fill-error-strong` / `bg-fill-error-weak` error fills
+- `bg-fill-warning-strong` / `bg-fill-warning-weak` warning fills
+- `bg-fill-success-strong` / `bg-fill-success-weak` success fills
+- `bg-fill-info-strong` / `bg-fill-info-weak` info fills
+- `bg-fill-inverse-strong` / `bg-fill-inverse-weak` inverse fills
+- `bg-fill-yellow` yellow accent (star icons, highlights)
 
-### Other token groups
-- **Market** — Trading data: PnL, prices, %. `market-up-600` (primary green), `market-up-500` (muted), `market-up-100`/`market-up-50` (subtle bg). Same pattern for `market-down-*`. `market-neutral` for unchanged.
-- **Success** — `success-700` text, `success-100` subtle background
-- **Warning** — `warning-700` text, `warning-100` subtle background
-- **Error** — `error-700` text, `error-100` subtle background
-- **Fill** — `fill-900` (black), `fill-300` (muted), `fill-100`/`fill-50` (light)
-- **Highlight** — `highlight` (orange accent, #F7931A)
-- **Structural** — `sel` (selection highlight)
+### Stroke — borders and dividers
+- `border-stroke-weak` default border (set globally on `*` in base layer)
+- `border-stroke-strong` prominent border
+- `border-stroke-selected` selected/active border (brand)
+- `border-stroke-focus` focus ring
+- `border-stroke-disabled` disabled border
+- `border-stroke-brand-strong` / `border-stroke-brand-weak` brand borders
+- `border-stroke-error-strong` / `border-stroke-error-weak` error borders
+- `border-stroke-warning-strong` / `border-stroke-warning-weak` warning borders
+- `border-stroke-success-strong` / `border-stroke-success-weak` success borders
+- `border-stroke-info-strong` / `border-stroke-info-weak` info borders
+- `border-stroke-inverse-strong` / `border-stroke-inverse-weak` inverse borders
+
+### Icon — for coloring icon elements
+- `text-icon-neutral` default icon color
+- `text-icon-brand` brand icon
+- `text-icon-error` / `text-icon-warning` / `text-icon-success` / `text-icon-info` semantic icons
+- `text-icon-inverse` / `text-icon-inverse-strong` inverse icons
+
+### Market / Trading Extensions
+- `text-market-up` / `bg-market-up` positive PnL, price up (green)
+- `text-market-down` / `bg-market-down` negative PnL, price down (red)
+- `text-market-neutral` / `bg-market-neutral` unchanged
+- `bg-scope-perp` / `bg-scope-spot` / `bg-scope-builders` DEX category colors
+- `bg-sel` selection highlight
 
 ### Border Radius
 - **Always use `rounded-xs`** as the default radius for buttons, inputs, cards, badges, and all interactive elements.
+- `rounded-4`, `rounded-6`, `rounded-8` etc. map to the radius scale (multiplied by `--radius-factor`).
 - Only deviate for pills/tags (`rounded-full`) or specific design exceptions.
