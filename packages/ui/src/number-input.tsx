@@ -114,15 +114,12 @@ const NumberInput = React.forwardRef<HTMLDivElement, NumberInputProps>(
 		const isInvalid = !!error;
 		const stepperSize = size === "lg" ? 20 : size === "md" ? 18 : size === "sm" ? 16 : size === "xs" ? 14 : 12;
 
-		const handleFocus = React.useCallback(
-			(e: React.FocusEvent<HTMLInputElement>) => {
-				if (selectOnFocus) {
-					e.target.select();
-				}
-				onFocus?.(e);
-			},
-			[selectOnFocus, onFocus],
-		);
+		function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
+			if (selectOnFocus) {
+				e.target.select();
+			}
+			onFocus?.(e);
+		}
 
 		return (
 			<Field.Root className="group flex flex-col gap-1 w-full" disabled={disabled} invalid={isInvalid} name={name}>

@@ -441,6 +441,8 @@ msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
@@ -497,6 +499,10 @@ msgstr "连接钱包查看交易历史。"
 msgid "Connect your wallet to view TWAP orders."
 msgstr "连接钱包查看 TWAP 订单。"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Connect your wallet to view your account, positions, and start trading."
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Connect your wallet to withdraw funds"
 msgstr ""
@@ -527,6 +533,10 @@ msgstr ""
 
 #: src/components/trade/header/user-menu.tsx
 msgid "Copied!"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Copy address"
 msgstr ""
 
 #: src/components/trade/header/user-menu.tsx
@@ -560,6 +570,10 @@ msgstr ""
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Cross Leverage"
 #~ msgstr "全仓杠杆"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Cross Margin"
+msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Margin Ratio"
@@ -648,6 +662,10 @@ msgstr ""
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "断开连接"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Disconnect wallet"
+msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Disconnected"
@@ -1144,6 +1162,7 @@ msgstr "多"
 msgid "Low Balance"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Maintenance Margin"
 msgstr ""

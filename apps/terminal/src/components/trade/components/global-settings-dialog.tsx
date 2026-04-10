@@ -1,8 +1,8 @@
 import { Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle, Select, Slider, Toggle } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
-import type { ChangeEvent } from "react";
-import { useRef, useState } from "react";
+import type { ChangeEvent, ReactNode } from "react";
+import { useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/constants";
 import {
@@ -31,7 +31,6 @@ export function GlobalSettingsDialog() {
 	const network = useNetwork();
 
 	const [localSlippageInput, setLocalSlippageInput] = useState<string | null>(null);
-	const inputRef = useRef<HTMLInputElement>(null);
 
 	const slippageInputValue = localSlippageInput ?? String(slippagePercent);
 
@@ -95,7 +94,6 @@ export function GlobalSettingsDialog() {
 						<div className="space-y-3">
 							<div className="flex items-center gap-2">
 								<NumberInput
-									ref={inputRef}
 									value={slippageInputValue}
 									onChange={handleSlippageInputChange}
 									onBlur={handleSlippageInputBlur}
@@ -147,7 +145,7 @@ export function GlobalSettingsDialog() {
 interface SettingsSectionProps {
 	title: string;
 	description?: string;
-	children: React.ReactNode;
+	children: ReactNode;
 }
 
 function SettingsSection({ title, description, children }: SettingsSectionProps) {

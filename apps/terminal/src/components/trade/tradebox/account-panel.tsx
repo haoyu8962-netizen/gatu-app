@@ -1,7 +1,6 @@
 import { Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
-import { useMemo } from "react";
 import { useConnection } from "wagmi";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { DEFAULT_QUOTE_TOKEN, FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
@@ -23,11 +22,8 @@ export function AccountPanel() {
 	const { marginSummary, perpSummary, perpPositions, spotBalances, crossMaintenanceMarginUsed } =
 		useDefaultDexBalances();
 
-	const perpMetrics = useMemo(() => {
-		if (!marginSummary || !perpSummary) {
-			return null;
-		}
-
+	let perpMetrics = null;
+	if (marginSummary && perpSummary) {
 		const crossAccountValue = toNumberOrZero(perpSummary.accountValue);
 		const crossTotalNtlPos = toNumberOrZero(perpSummary.totalNtlPos);
 		const maintenanceMargin = toNumberOrZero(crossMaintenanceMarginUsed);
@@ -41,7 +37,7 @@ export function AccountPanel() {
 		const marginRatio = crossAccountValue > 0 ? maintenanceMargin / crossAccountValue : 0;
 		const crossLeverage = crossAccountValue > 0 ? Math.abs(crossTotalNtlPos) / crossAccountValue : 0;
 
-		return {
+		perpMetrics = {
 			accountValue: crossAccountValue,
 			balance,
 			unrealizedPnl,
@@ -49,13 +45,10 @@ export function AccountPanel() {
 			crossLeverage,
 			maintenanceMargin,
 		};
-	}, [perpPositions, marginSummary, perpSummary, crossMaintenanceMarginUsed]);
+	}
 
-	const spotMetrics = useMemo(() => {
-		if (!isConnected) {
-			return null;
-		}
-
+	let spotMetrics = null;
+	if (isConnected) {
 		let totalValue = 0;
 		const tokens: Array<{ coin: string; total: number; available: number; usdValue: number }> = [];
 
@@ -74,43 +67,41 @@ export function AccountPanel() {
 		}
 
 		tokens.sort((a, b) => b.usdValue - a.usdValue);
-
-		return { totalValue, topTokens: tokens.slice(0, 3) };
-	}, [isConnected, spotBalances]);
+		spotMetrics = { totalValue, topTokens: tokens.slice(0, 3) };
+	}
 
 	const hasPerpData = isConnected && perpMetrics !== null;
 	const hasSpotData = isConnected && spotMetrics !== null;
 
-	const perpRows = useMemo((): SummaryRow[] => {
-		if (!perpMetrics) return [];
-		return [
-			{
-				label: t`Balance`,
-				value: formatUSD(perpMetrics.balance),
-				valueClassName: "tabular-nums",
-			},
-			{
-				label: t`Unrealized PNL`,
-				value: formatUSD(perpMetrics.unrealizedPnl, { signDisplay: "exceptZero" }),
-				valueClassName: cn("tabular-nums", getValueColorClass(perpMetrics.unrealizedPnl)),
-			},
-			{
-				label: t`Cross Margin Ratio`,
-				value: formatPercent(perpMetrics.marginRatio, { maximumFractionDigits: 2 }),
-				valueClassName: "tabular-nums",
-			},
-			{
-				label: t`Maintenance Margin`,
-				value: formatUSD(perpMetrics.maintenanceMargin),
-				valueClassName: "tabular-nums",
-			},
-			{
-				label: t`Cross Account Leverage`,
-				value: `${perpMetrics.crossLeverage.toFixed(2)}x`,
-				valueClassName: "tabular-nums",
-			},
-		];
-	}, [perpMetrics]);
+	const perpRows: SummaryRow[] = perpMetrics
+		? [
+				{
+					label: t`Balance`,
+					value: formatUSD(perpMetrics.balance),
+					valueClassName: "tabular-nums",
+				},
+				{
+					label: t`Unrealized PNL`,
+					value: formatUSD(perpMetrics.unrealizedPnl, { signDisplay: "exceptZero" }),
+					valueClassName: cn("tabular-nums", getValueColorClass(perpMetrics.unrealizedPnl)),
+				},
+				{
+					label: t`Cross Margin Ratio`,
+					value: formatPercent(perpMetrics.marginRatio, { maximumFractionDigits: 2 }),
+					valueClassName: "tabular-nums",
+				},
+				{
+					label: t`Maintenance Margin`,
+					value: formatUSD(perpMetrics.maintenanceMargin),
+					valueClassName: "tabular-nums",
+				},
+				{
+					label: t`Cross Account Leverage`,
+					value: `${perpMetrics.crossLeverage.toFixed(2)}x`,
+					valueClassName: "tabular-nums",
+				},
+			]
+		: [];
 
 	return (
 		<div className="shrink-0 flex flex-col bg-bg-raised border-t border-stroke-weak pb-6 overflow-hidden">

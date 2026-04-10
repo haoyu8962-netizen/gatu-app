@@ -19,7 +19,7 @@ import {
 	WalletIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
-import { type ChangeEvent, type ReactNode, useMemo, useState } from "react";
+import { type ChangeEvent, type ReactNode, useState } from "react";
 import type { Address } from "viem";
 import { isAddress } from "viem";
 import { type Connector, useConnect, useConnectors } from "wagmi";
@@ -122,36 +122,29 @@ export function WalletDialog({ open, onOpenChange }: Props) {
 	const [customAddress, setCustomAddress] = useState("");
 	const [customAddressError, setCustomAddressError] = useState<string | null>(null);
 
-	const { mockConnectors, regularConnectors } = useMemo(() => {
-		const mocks: Connector[] = [];
-		const regular: Connector[] = [];
-
-		for (const connector of connectors) {
-			if (isMockConnector(connector)) {
-				mocks.push(connector);
-			} else {
-				regular.push(connector);
-			}
+	const mockConnectors: Connector[] = [];
+	const regularConnectors: Connector[] = [];
+	for (const connector of connectors) {
+		if (isMockConnector(connector)) {
+			mockConnectors.push(connector);
+		} else {
+			regularConnectors.push(connector);
 		}
+	}
 
-		return { mockConnectors: mocks, regularConnectors: regular };
-	}, [connectors]);
+	function sortByPriority(a: Connector, b: Connector) {
+		if (lastUsedWallet) {
+			if (a.id === lastUsedWallet) return -1;
+			if (b.id === lastUsedWallet) return 1;
+		}
+		const priorityA = getWalletInfo(a).priority ?? 50;
+		const priorityB = getWalletInfo(b).priority ?? 50;
+		return priorityA - priorityB;
+	}
 
-	const availableConnectors = useMemo(() => {
-		const sortByPriority = (a: Connector, b: Connector) => {
-			if (lastUsedWallet) {
-				if (a.id === lastUsedWallet) return -1;
-				if (b.id === lastUsedWallet) return 1;
-			}
-			const priorityA = getWalletInfo(a).priority ?? 50;
-			const priorityB = getWalletInfo(b).priority ?? 50;
-			return priorityA - priorityB;
-		};
-
-		const popular = regularConnectors.filter((c) => getWalletInfo(c).popular).sort(sortByPriority);
-		const other = regularConnectors.filter((c) => !getWalletInfo(c).popular).sort(sortByPriority);
-		return { popular, other, all: regularConnectors };
-	}, [regularConnectors, lastUsedWallet]);
+	const popular = regularConnectors.filter((c) => getWalletInfo(c).popular).sort(sortByPriority);
+	const other = regularConnectors.filter((c) => !getWalletInfo(c).popular).sort(sortByPriority);
+	const availableConnectors = { popular, other, all: regularConnectors };
 
 	const handleConnect = async (connector: Connector) => {
 		setConnectingId(connector.uid);
@@ -179,7 +172,7 @@ export function WalletDialog({ open, onOpenChange }: Props) {
 		const mockWalletIndex = MOCK_WALLETS.findIndex((w) => w.address.toLowerCase() === trimmed.toLowerCase());
 
 		if (mockWalletIndex !== -1 && mockConnectors[mockWalletIndex]) {
-			handleConnect(mockConnectors[mockWalletIndex]);
+			await handleConnect(mockConnectors[mockWalletIndex]);
 		} else {
 			const customMockConnector = mock({
 				accounts: [trimmed as Address],

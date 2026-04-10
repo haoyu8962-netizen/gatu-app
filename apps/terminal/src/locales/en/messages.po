@@ -441,6 +441,8 @@ msgstr "Connect"
 
 #: src/components/trade/components/wallet-dialog.tsx
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
@@ -497,6 +499,10 @@ msgstr "Connect your wallet to view trade history."
 msgid "Connect your wallet to view TWAP orders."
 msgstr "Connect your wallet to view TWAP orders."
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Connect your wallet to view your account, positions, and start trading."
+msgstr "Connect your wallet to view your account, positions, and start trading."
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Connect your wallet to withdraw funds"
 msgstr "Connect your wallet to withdraw funds"
@@ -529,6 +535,10 @@ msgstr "Copied to clipboard"
 msgid "Copied!"
 msgstr "Copied!"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Copy address"
+msgstr "Copy address"
+
 #: src/components/trade/header/user-menu.tsx
 msgid "Copy Address"
 msgstr "Copy Address"
@@ -560,6 +570,10 @@ msgstr "Cross Account Leverage"
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Cross Leverage"
 #~ msgstr "Cross Leverage"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Cross Margin"
+msgstr "Cross Margin"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Margin Ratio"
@@ -648,6 +662,10 @@ msgstr "Destination address"
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "Disconnect"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Disconnect wallet"
+msgstr "Disconnect wallet"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Disconnected"
@@ -1148,6 +1166,7 @@ msgstr "Long"
 msgid "Low Balance"
 msgstr "Low Balance"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Maintenance Margin"
 msgstr "Maintenance Margin"

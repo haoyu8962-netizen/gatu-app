@@ -1,4 +1,5 @@
 import { Badge, Button, ButtonIcon } from "@hypeterminal/ui";
+import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, CopyIcon, LightningIcon, SignOutIcon, WalletIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useConnection, useDisconnect } from "wagmi";
@@ -58,9 +59,9 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						<WalletIcon className="size-10 text-text-weak" />
 					</div>
 					<div className="text-center space-y-2">
-						<h2 className="text-lg font-semibold">Connect Wallet</h2>
+						<h2 className="text-lg font-semibold">{t`Connect Wallet`}</h2>
 						<p className="text-sm text-text-weak max-w-xs">
-							Connect your wallet to view your account, positions, and start trading.
+							{t`Connect your wallet to view your account, positions, and start trading.`}
 						</p>
 					</div>
 					<Button
@@ -70,7 +71,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						onClick={() => setWalletDialogOpen(true)}
 						className="min-h-[48px]"
 					>
-						Connect Wallet
+						{t`Connect Wallet`}
 					</Button>
 				</div>
 				<MobileBottomNavSpacer />
@@ -97,13 +98,13 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									intent="neutral"
 									size="sm"
 									onClick={handleCopyAddress}
-									aria-label="Copy address"
+									aria-label={t`Copy address`}
 								>
 									<CopyIcon className={cn("size-3.5", copied && "text-text-success")} />
 								</ButtonIcon>
 							</div>
 							<Badge tone="neutral" size="sm" className="mt-0.5">
-								Cross Margin
+								{t`Cross Margin`}
 							</Badge>
 						</div>
 					</div>
@@ -112,7 +113,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						intent="error"
 						size="md"
 						onClick={() => disconnect.mutate()}
-						aria-label="Disconnect wallet"
+						aria-label={t`Disconnect wallet`}
 					>
 						<SignOutIcon className="size-5" />
 					</ButtonIcon>
@@ -156,7 +157,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							valueClass={marginRatio > 0.8 ? "text-text-error" : marginRatio > 0.5 ? "text-text-warning" : ""}
 							isLoading={isLoading}
 						/>
-						<StatCard label="Maintenance Margin" value={formatUSD(maintenanceMargin)} isLoading={isLoading} />
+						<StatCard label={t`Maintenance Margin`} value={formatUSD(maintenanceMargin)} isLoading={isLoading} />
 						<StatCard
 							label={ACCOUNT_TEXT.CROSS_LEVERAGE_LABEL}
 							value={`${crossLeverage.toFixed(2)}x`}
