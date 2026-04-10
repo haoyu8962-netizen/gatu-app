@@ -362,6 +362,20 @@ function TokenSelectorContent({
 										/>
 										<div className="min-w-0 flex-1">
 											<div className="flex min-w-0 items-center gap-1">
+												<span
+													title={market.pairName}
+													className={cn(
+														"min-w-0 truncate font-semibold tracking-tight",
+														mobile ? "text-xs" : "text-2xs leading-snug",
+													)}
+												>
+													{market.pairName}
+												</span>
+												{isTokenInCategory(market.shortName, "new") && (
+													<Badge tone="neutral" size="sm" className="shrink-0 px-1 py-0 text-xs">
+														{t`NEW`}
+													</Badge>
+												)}
 												<button
 													type="button"
 													onClick={(e) => {
@@ -381,20 +395,6 @@ function TokenSelectorContent({
 														)}
 													/>
 												</button>
-												<span
-													title={market.pairName}
-													className={cn(
-														"min-w-0 truncate font-semibold tracking-tight",
-														mobile ? "text-xs" : "text-2xs leading-snug",
-													)}
-												>
-													{market.pairName}
-												</span>
-												{isTokenInCategory(market.shortName, "new") && (
-													<Badge tone="neutral" size="sm" className="shrink-0 px-1 py-0 text-xs">
-														{t`NEW`}
-													</Badge>
-												)}
 											</div>
 											<div
 												className={cn("flex items-center gap-1.5 text-text-strong", mobile ? "text-xs" : "text-2xs")}
