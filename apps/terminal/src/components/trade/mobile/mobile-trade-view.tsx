@@ -398,7 +398,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 								disabled={isFormDisabled}
 							/>
 							<Button
-								variant="ghost"
+								variant="outline"
 								intent="neutral"
 								size="sm"
 								onClick={handleSizeModeToggle}
