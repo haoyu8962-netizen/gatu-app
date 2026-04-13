@@ -16,7 +16,7 @@
    ============================================= */
 @theme {
 	/* ---- Font Families ---- */
-	--font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+	--font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
 	--font-mono: ui-monospace, "SF Mono", monospace;
 
 	/* ---- Typography Scale (Desktop) ----
@@ -169,7 +169,7 @@
 		--stroke-inverse-disabled: #ffffff1f;
 
 		/* Icon */
-		--icon-neutral: #000d4d73;
+		--icon-neutral: #000d4d99;
 		--icon-brand: #4c64d9cc;
 		--icon-disabled: #0011661a;
 		--icon-error: #c73a3acc;

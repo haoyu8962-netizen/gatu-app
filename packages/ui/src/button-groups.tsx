@@ -5,7 +5,7 @@ import { DEFAULT_SIZE } from "./config";
 import { cn } from "./utils";
 
 type ButtonGroupSize = "xxs" | "xs" | "sm" | "md" | "lg";
-type ButtonGroupVariant = "outline" | "filled" | "ghost";
+type ButtonGroupVariant = "outline" | "filled" | "ghost" | "link";
 type ButtonGroupIntent = "brand" | "neutral" | "error";
 
 const ButtonGroupContext = React.createContext<{
@@ -32,6 +32,7 @@ const buttonGroupVariants = cva(
 				outline: "shadow-raised [&>*+*]:-ml-px",
 				filled: "shadow-raised",
 				ghost: "",
+				link: "",
 			},
 		},
 		defaultVariants: {
@@ -55,6 +56,7 @@ const buttonGroupItemVariants = cva(
 				outline: "border bg-transparent",
 				filled: "",
 				ghost: "bg-transparent",
+				link: "bg-transparent",
 			},
 			intent: {
 				brand: "",
@@ -114,6 +116,21 @@ const buttonGroupItemVariants = cva(
 				variant: "ghost",
 				intent: "error",
 				className: "text-text-error hover:bg-fill-hover active:bg-fill-press",
+			},
+			{
+				variant: "link",
+				intent: "brand",
+				className: "text-text-brand underline underline-offset-4 hover:opacity-80",
+			},
+			{
+				variant: "link",
+				intent: "neutral",
+				className: "text-text-strong underline underline-offset-4 hover:opacity-80",
+			},
+			{
+				variant: "link",
+				intent: "error",
+				className: "text-text-error underline underline-offset-4 hover:opacity-80",
 			},
 		],
 		defaultVariants: {

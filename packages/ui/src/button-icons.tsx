@@ -30,8 +30,8 @@ const buttonIconVariants = cva(
 			size: {
 				xxs: "size-5 relative before:absolute before:-inset-2.5 before:content-['']",
 				xs: "size-6 relative before:absolute before:-inset-2 before:content-['']",
-				sm: "size-8 relative before:absolute before:-inset-1.5 before:content-['']",
-				md: "size-10",
+				sm: "size-8 relative before:absolute before:-inset-2 before:content-['']",
+				md: "size-10 relative before:absolute before:-inset-1 before:content-['']",
 				lg: "size-12",
 			},
 		},

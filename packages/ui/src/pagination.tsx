@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
+import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { DEFAULT_SIZE } from "./config";
@@ -31,6 +31,7 @@ const arrowIconSizes: Record<string, number> = {
 const pageButtonVariants = cva(
 	[
 		"inline-flex items-center justify-center rounded-8",
+		"relative before:absolute before:-inset-2 before:content-['']",
 		"text-xs font-normal text-text-weak tabular-nums",
 		"cursor-pointer select-none",
 		"transition-colors duration-150",
@@ -53,6 +54,7 @@ const pageButtonVariants = cva(
 const navButtonVariants = cva(
 	[
 		"inline-flex items-center",
+		"relative before:absolute before:-inset-y-2 before:inset-x-0 before:content-['']",
 		"cursor-pointer select-none",
 		"transition-opacity duration-150",
 		"rounded-4",
@@ -151,7 +153,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 						aria-label="Previous page"
 						className={cn(navButtonVariants({ variant: "mobile" }), navBtnH)}
 					>
-						<ArrowLeft size={iconSize} className="shrink-0" />
+						<ArrowLeftIcon size={iconSize} className="shrink-0" />
 					</button>
 					<span className="flex-1 text-center text-xs font-normal text-text-weak tabular-nums min-w-0">
 						{currentPage} of {totalPages}
@@ -163,7 +165,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 						aria-label="Next page"
 						className={cn(navButtonVariants({ variant: "mobile" }), navBtnH)}
 					>
-						<ArrowRight size={iconSize} className="shrink-0" />
+						<ArrowRightIcon size={iconSize} className="shrink-0" />
 					</button>
 				</nav>
 			);

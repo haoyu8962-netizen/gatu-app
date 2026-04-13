@@ -82,20 +82,14 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
 
 		const multiValue = multiple && value !== undefined ? (value as string[]) : internalMultiValue;
 
-		const filteredOptions = React.useMemo(
-			() => (query ? options.filter((opt) => filter.contains(opt, query)) : options),
-			[options, query, filter],
-		);
+		const filteredOptions = query ? options.filter((opt) => filter.contains(opt, query)) : options;
 
-		const handleValueChange = React.useCallback(
-			(newValue: string | string[] | null) => {
-				if (multiple && Array.isArray(newValue)) {
-					setInternalMultiValue(newValue);
-				}
-				onValueChange?.(newValue);
-			},
-			[multiple, onValueChange],
-		);
+		function handleValueChange(newValue: string | string[] | null) {
+			if (multiple && Array.isArray(newValue)) {
+				setInternalMultiValue(newValue);
+			}
+			onValueChange?.(newValue);
+		}
 
 		const comboboxProps = {
 			disabled,

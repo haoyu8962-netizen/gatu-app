@@ -1,5 +1,5 @@
 import { Menu } from "@base-ui/react/menu";
-import { CaretDown } from "@phosphor-icons/react";
+import { CaretDownIcon, CheckIcon } from "@phosphor-icons/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { DEFAULT_SIZE } from "./config";
@@ -158,7 +158,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 					)}
 					{item.label}
 				</span>
-				{item.active && <span className="ml-3 size-1.5 shrink-0 rounded-full bg-text-brand" />}
+				{item.active && <CheckIcon size={14} weight="bold" className="ml-2 shrink-0 text-icon-brand" />}
 			</Menu.Item>
 		);
 
@@ -174,7 +174,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 						)}
 					>
 						{trigger ?? "Menu"}
-						<CaretDown
+						<CaretDownIcon
 							size={caretSize}
 							weight={isMinimalTrigger ? "regular" : "bold"}
 							className={cn(
