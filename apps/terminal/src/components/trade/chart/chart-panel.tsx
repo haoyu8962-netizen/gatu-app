@@ -1,6 +1,5 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useIntentScriptLoader } from "@/hooks/ui/use-intent-script-loader";
 import { TRADINGVIEW_SCRIPT_SRC } from "@/lib/chart/load-tradingview";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
@@ -53,9 +52,5 @@ export function ChartPanel() {
 }
 
 function ChartLoadingFallback() {
-	return (
-		<div className="h-full w-full flex items-center justify-center bg-bg-base/50">
-			<Skeleton className="h-full w-full" />
-		</div>
-	);
+	return <div className="h-full w-full animate-pulse bg-bg-raised" />;
 }

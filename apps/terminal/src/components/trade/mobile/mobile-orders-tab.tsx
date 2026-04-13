@@ -1,19 +1,19 @@
-import { Button } from "@hypeterminal/ui";
+import { Badge, Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { ListNumbersIcon, XIcon } from "@phosphor-icons/react";
+import { ListIcon, ListNumbersIcon, XIcon } from "@phosphor-icons/react";
+import { Skeleton } from "boneyard-js/react";
 import { useCallback, useEffect, useState } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import type { MarketKind } from "@/lib/hyperliquid/markets";
-import { getOrderTypeConfig, getOrderValue, getSideLabel, type OpenOrder } from "@/lib/trade/open-orders";
+import { getOrderTypeConfig, getSideLabel, type OpenOrder } from "@/lib/trade/open-orders";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
-import { OrdersTabSkeleton } from "./mobile-card-skeleton";
 
 interface Props {
 	className?: string;
@@ -111,10 +111,6 @@ export function MobileOrdersTab({ className }: Props) {
 		);
 	}
 
-	if (status === "subscribing" || status === "idle") {
-		return <OrdersTabSkeleton />;
-	}
-
 	if (status === "error") {
 		return (
 			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-error">
@@ -124,44 +120,51 @@ export function MobileOrdersTab({ className }: Props) {
 		);
 	}
 
-	if (openOrders.length === 0) {
+	if (status === "active" && openOrders.length === 0) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">{t`No open orders.`}</div>
+			<div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
+				<div className="size-12 rounded-full flex items-center justify-center bg-bg-raised">
+					<ListIcon className="size-6 text-text-weak" />
+				</div>
+				<p className="text-sm text-text-weak">{t`No open orders.`}</p>
+			</div>
 		);
 	}
 
 	return (
-		<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
-			<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-text-weak">
-				<ListNumbersIcon className="size-3" />
-				{t`Open Orders`}
-				<span className="font-semibold text-text-brand tabular-nums">{headerCount}</span>
-				<Button
-					variant="ghost"
-					intent="error"
-					size="sm"
-					className="ml-auto"
-					onClick={handleCancelAll}
-					disabled={isCancelling || openOrders.length === 0}
-				>
-					{isCancelling ? t`Canceling...` : t`Cancel All`}
-				</Button>
+		<Skeleton name="orders-tab" loading={status === "subscribing" || status === "idle"}>
+			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
+				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-text-weak">
+					<ListNumbersIcon className="size-3" />
+					{t`Open Orders`}
+					<span className="font-semibold text-text-brand tabular-nums">{headerCount}</span>
+					<Button
+						variant="ghost"
+						intent="error"
+						size="sm"
+						className="ml-auto"
+						onClick={handleCancelAll}
+						disabled={isCancelling || openOrders.length === 0}
+					>
+						{isCancelling ? t`Canceling...` : t`Cancel All`}
+					</Button>
+				</div>
+				{actionError && <div className="px-3 pb-1 text-xs text-text-error">{actionError}</div>}
+				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
+					{openOrders.map((order) => (
+						<MobileOrderCard
+							key={order.oid}
+							order={order}
+							szDecimals={markets.getSzDecimals(order.coin)}
+							kind={markets.getMarket(order.coin)?.kind}
+							isCancelling={isCancelling}
+							onCancel={handleCancelOrders}
+							onSelectMarket={(name) => setSelectedMarket(scope, name)}
+						/>
+					))}
+				</div>
 			</div>
-			{actionError && <div className="px-3 pb-1 text-xs text-text-error">{actionError}</div>}
-			<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
-				{openOrders.map((order) => (
-					<MobileOrderCard
-						key={order.oid}
-						order={order}
-						szDecimals={markets.getSzDecimals(order.coin)}
-						kind={markets.getMarket(order.coin)?.kind}
-						isCancelling={isCancelling}
-						onCancel={handleCancelOrders}
-						onSelectMarket={(name) => setSelectedMarket(scope, name)}
-					/>
-				))}
-			</div>
-		</div>
+		</Skeleton>
 	);
 }
 
@@ -178,48 +181,36 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 	const typeConfig = getOrderTypeConfig(order);
 	const sideLabel = getSideLabel(order.side, kind);
 	const isLong = order.side === "B";
-	const orderValue = getOrderValue(order);
 
 	return (
-		<div
-			className={cn(
-				"rounded-8 border bg-bg-base",
-				isLong ? "border-stroke-success-strong/30" : "border-stroke-error-strong/30",
-			)}
-		>
-			<div className="flex items-center justify-between px-3 py-2.5 border-b border-stroke-weak/40">
-				<Button variant="ghost" intent="neutral" size="sm" onClick={() => onSelectMarket(order.coin)}>
-					<AssetDisplay
-						coin={order.coin}
-						nameClassName="text-sm font-semibold"
-						subtitle={
-							<span className={cn("text-xs font-medium uppercase", isLong ? "text-text-success" : "text-text-error")}>
-								{sideLabel}
-							</span>
-						}
-					/>
-				</Button>
+		<div className="rounded-xs border border-stroke-weak/40 bg-bg-raised overflow-hidden">
+			<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
+				<div className={cn("absolute left-0 top-0 bottom-0 w-px", isLong ? "bg-market-up" : "bg-market-down")} />
 				<div className="flex items-center gap-2">
-					<span className={cn("text-xs px-1.5 py-0.5 rounded-8 uppercase", typeConfig.class)}>{typeConfig.label}</span>
+					<Button variant="ghost" intent="neutral" size="sm" onClick={() => onSelectMarket(order.coin)}>
+						<AssetDisplay coin={order.coin} nameClassName="text-sm font-semibold" />
+					</Button>
+					<Badge tone={isLong ? "success" : "error"} size="xs">
+						{sideLabel}
+					</Badge>
+				</div>
+				<div className="flex items-center gap-2">
+					<span className={cn("text-xs px-1.5 py-0.5 rounded-xs uppercase", typeConfig.class)}>{typeConfig.label}</span>
 					{order.reduceOnly && (
-						<span className="text-xs px-1.5 py-0.5 rounded-8 bg-fill-brand-weak text-text-brand uppercase">
+						<span className="text-xs px-1.5 py-0.5 rounded-xs bg-fill-brand-weak text-text-brand uppercase">
 							{t`RO`}
 						</span>
 					)}
 				</div>
 			</div>
 
-			<div className="grid grid-cols-3 gap-px bg-stroke-weak/20">
+			<div className="grid grid-cols-3 divide-x divide-stroke-weak/40">
 				<MetricCell label={t`Price`} value={formatPrice(order.limitPx, { szDecimals })} />
-				<MetricCell
-					label={t`Size`}
-					value={formatToken(order.origSz, { decimals: szDecimals, symbol: order.coin })}
-					sub={orderValue != null ? formatUSD(orderValue, { compact: true }) : undefined}
-				/>
+				<MetricCell label={t`Size`} value={formatToken(order.origSz, { decimals: szDecimals, symbol: order.coin })} />
 				<MetricCell label={t`Trigger`} value={order.triggerCondition || FALLBACK_VALUE_PLACEHOLDER} />
 			</div>
 
-			<div className="flex items-center justify-between px-3 py-2.5">
+			<div className="flex items-center justify-between px-3 py-1.5">
 				<span className="text-xs text-text-weak tabular-nums">
 					{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 				</span>
@@ -229,7 +220,6 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 					size="sm"
 					onClick={() => onCancel([order])}
 					disabled={isCancelling}
-					className="min-h-[36px]"
 					iconLeft={isCancelling ? <Spinner className="size-3" /> : <XIcon className="size-3.5" />}
 				>
 					{t`Cancel`}
@@ -242,15 +232,13 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 interface MetricCellProps {
 	label: string;
 	value: string;
-	sub?: string;
 }
 
-function MetricCell({ label, value, sub }: MetricCellProps) {
+function MetricCell({ label, value }: MetricCellProps) {
 	return (
-		<div className="px-3 py-2 bg-bg-base">
-			<div className="text-xs text-text-weak mb-0.5">{label}</div>
+		<div className="px-2.5 py-1.5">
+			<div className="text-xs text-text-weak">{label}</div>
 			<div className="text-xs tabular-nums font-medium">{value}</div>
-			{sub && <div className="text-xs text-text-weak tabular-nums">{sub}</div>}
 		</div>
 	);
 }
