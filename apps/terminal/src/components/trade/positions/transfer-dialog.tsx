@@ -127,6 +127,7 @@ export function TransferDialog({ open, onOpenChange, initialDirection = "toSpot"
 							<button
 								type="button"
 								onClick={handleFlip}
+								aria-label={t`Flip transfer direction`}
 								className="p-1.5 rounded-8 hover:bg-bg-raised/50 transition-colors text-text-weak hover:text-text-brand"
 							>
 								<ArrowsLeftRightIcon className="size-4" />

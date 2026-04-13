@@ -73,7 +73,7 @@ function FavoriteChip({ name, isActive }: FavoriteChipProps) {
 				aria-pressed={isActive}
 				aria-label={t`Select ${displayName} market`}
 				className={cn(
-					"flex items-center gap-1.5 shrink-0 px-2 py-1 text-xs rounded-8 border no-underline transition-[color,background-color,border-color,opacity] duration-150 hover:opacity-100 focus-visible:outline-stroke-weak",
+					"flex items-center gap-1.5 shrink-0 px-2 py-1 text-xs rounded-8 border no-underline transition-[color,background-color,border-color,opacity] duration-150 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 					isActive
 						? "border-stroke-weak/90 bg-fill-weak"
 						: "border-stroke-weak/35 bg-fill-weaker/50 hover:border-stroke-weak/55 hover:bg-fill-weak/80 opacity-60",

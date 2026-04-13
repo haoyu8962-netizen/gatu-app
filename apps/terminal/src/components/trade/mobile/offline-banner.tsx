@@ -67,7 +67,7 @@ export function OfflineBanner({ className }: Props) {
 					<button
 						type="button"
 						onClick={() => window.location.reload()}
-						className="flex items-center gap-1 rounded-8 px-2 py-1 text-xs font-medium bg-fill-warning-weak hover:bg-fill-warning-weak/80 active:scale-[0.97] transition touch-manipulation"
+						className="flex items-center gap-1 rounded-8 px-2 py-1 text-xs font-medium bg-fill-warning-weak hover:bg-fill-warning-weak/80 active:scale-[0.97] motion-reduce:active:scale-100 transition touch-manipulation"
 					>
 						<ArrowClockwiseIcon className="size-3" />
 						Retry
@@ -75,7 +75,7 @@ export function OfflineBanner({ className }: Props) {
 					<button
 						type="button"
 						onClick={() => setDismissed(true)}
-						className="flex items-center justify-center size-7 rounded-8 hover:bg-fill-warning-weak active:scale-[0.97] transition touch-manipulation"
+						className="flex items-center justify-center size-7 rounded-8 hover:bg-fill-warning-weak active:scale-[0.97] motion-reduce:active:scale-100 transition touch-manipulation"
 						aria-label="Dismiss"
 					>
 						<XIcon className="size-3.5" />

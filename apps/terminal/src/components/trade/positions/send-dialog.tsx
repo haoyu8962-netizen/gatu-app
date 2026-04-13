@@ -184,6 +184,8 @@ export function SendDialog({
 							placeholder={t`Destination address`}
 							value={destination}
 							onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
+							autoComplete="off"
+							spellCheck={false}
 							className={cn(
 								destination &&
 									!isValidDestination &&

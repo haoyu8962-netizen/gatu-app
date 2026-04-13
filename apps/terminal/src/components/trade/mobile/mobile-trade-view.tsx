@@ -1,19 +1,23 @@
-import { Button, Slider, Tabs, TabsList, TabsTrigger } from "@hypeterminal/ui";
-import { CaretDownIcon, SpinnerGapIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { Button, Checkbox, Slider } from "@hypeterminal/ui";
+import { t } from "@lingui/core/macro";
+import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useEffect, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
 import { FALLBACK_VALUE_PLACEHOLDER, UI_TEXT } from "@/config/constants";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
+import { get24hChange } from "@/domain/market";
+import { getSliderValue } from "@/domain/trade/order/size";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import type { MarginMode } from "@/lib/trade/margin-mode";
 import { getValueColorClass, toNumberOrZero } from "@/lib/trade/numbers";
 import {
-	getTabsOrderType,
+	canUseTpSl as canUseTpSlForOrder,
 	isTakerOrderType,
 	type OrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
@@ -21,16 +25,16 @@ import {
 import type { Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { useExchangeScope } from "@/providers/exchange-scope";
-import { useDepositModalActions } from "@/stores/use-global-modal-store";
-import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
+import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
+import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { WalletDialog } from "../components/wallet-dialog";
-import { AdvancedOrderDropdown } from "../tradebox/advanced-order-dropdown";
-import { LeverageControl } from "../tradebox/leverage-control";
+import { MarginModeDialog } from "../tradebox/margin-mode-dialog";
 import { OrderToast } from "../tradebox/order-toast";
+import { TradeHeader } from "../tradebox/trade-header";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
 const ORDER_TEXT = UI_TEXT.ORDER_ENTRY;
@@ -62,6 +66,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
 
 	const slippageBps = useMarketOrderSlippageBps();
+	const slippagePercent = useMarketOrderSlippagePercent();
 
 	const { addOrder, updateOrder } = useOrderQueueActions();
 	const selectedPrice = useSelectedPrice();
@@ -71,15 +76,22 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 	const [sizeInput, setSizeInput] = useState("");
 	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
 	const [limitPriceInput, setLimitPriceInput] = useState("");
+	const [reduceOnly, setReduceOnly] = useState(false);
+	const [tpSlEnabled, setTpSlEnabled] = useState(false);
+	const [hasUserSized, setHasUserSized] = useState(false);
+	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+	const [dragSliderValue, setDragSliderValue] = useState(25);
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 
+	const canUseTpSl = canUseTpSlForOrder(orderType);
+
 	const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+	const [showMarginDialog, setShowMarginDialog] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
+	const { open: openSettingsDialog } = useSettingsDialogActions();
 
 	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
 
-	const tabsOrderType = getTabsOrderType(orderType);
-	const isAdvancedTab = tabsOrderType === "advanced";
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const isMarketExecution = orderType === "market" || isTakerOrderType(orderType);
 	const markPx = toNumberOrZero(market?.markPx);
@@ -100,6 +112,16 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 		getSizeForPercent,
 		convertSizeForModeToggle,
 		leverage,
+		marginMode,
+		hasPosition,
+		currentLeverage,
+		pendingLeverage,
+		maxLeverage,
+		setPendingLeverage,
+		resetPendingLeverage,
+		applyMarginAndLeverage,
+		isSwitchingMode,
+		switchModeError,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
 
 	useEffect(() => {
@@ -166,14 +188,11 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 				}),
 	);
 
-	const applySizeFromPercent = (pct: number) => {
+	function applySizeFromPercent(pct: number) {
+		if (maxSize <= 0) return;
+		setHasUserSized(true);
 		setSizeInput(getSizeForPercent(pct));
-	};
-
-	const handleSliderChange = (value: number | readonly number[]) => {
-		const v = Array.isArray(value) ? value[0] : value;
-		applySizeFromPercent(v);
-	};
+	}
 
 	const handleSizeModeToggle = () => {
 		const newMode = sizeMode === "base" ? "quote" : "base";
@@ -228,7 +247,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 						b: side === "buy",
 						p: formattedPrice,
 						s: formattedSize,
-						r: false,
+						r: reduceOnly,
 						t: isMarketExecution ? { limit: { tif: "FrontendMarket" as const } } : { limit: { tif: "Gtc" as const } },
 					},
 				],
@@ -248,7 +267,11 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 		}
 	};
 
-	const sliderValue = !maxSize || maxSize <= 0 ? 0 : Math.min(100, (sizeValue / maxSize) * 100);
+	const sliderValue = (() => {
+		if (isDraggingSlider) return dragSliderValue;
+		if (!hasUserSized || sizeValue <= 0) return 25;
+		return getSliderValue(sizeValue, maxSize);
+	})();
 
 	const buttonContent = (() => {
 		if (!isConnected)
@@ -299,160 +322,207 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 		return formatToken(availableBalance, decimals);
 	}
 
+	const change24h = get24hChange(market?.prevDayPx, market?.markPx);
+	const priceColorClass = change24h !== null ? getValueColorClass(change24h) : "text-text-strong";
+
 	return (
 		<div className={cn("flex flex-col h-full min-h-0 bg-bg-base", className)}>
+			<MarginModeDialog
+				open={showMarginDialog}
+				onOpenChange={setShowMarginDialog}
+				currentMode={marginMode}
+				currentLeverage={currentLeverage}
+				pendingLeverage={pendingLeverage}
+				maxLeverage={maxLeverage}
+				onPendingLeverageChange={setPendingLeverage}
+				resetPendingLeverage={resetPendingLeverage}
+				hasPosition={hasPosition}
+				isOnlyIsolated={capabilities.isOnlyIsolated}
+				isUpdating={isSwitchingMode}
+				updateError={switchModeError}
+				showLeverage={capabilities.isLeveraged}
+				onApply={async (mode: MarginMode, lev: number) => applyMarginAndLeverage(mode, lev)}
+			/>
 			<div className="shrink-0 px-4 py-2 border-b border-stroke-weak/60 bg-bg-raised">
 				<div className="flex items-center justify-between">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					<div className="text-right">
-						<div className="text-lg font-semibold tabular-nums text-text-warning">
-							{formatPrice(markPx || null, { szDecimals: market?.szDecimals })}
+						<div className={cn("text-sm font-semibold tabular-nums", priceColorClass)}>
+							${formatPrice(markPx || null, { szDecimals: market?.szDecimals })}
 						</div>
+						{typeof change24h === "number" && (
+							<div className={cn("text-xs tabular-nums", getValueColorClass(change24h))}>
+								{change24h >= 0 ? "+" : ""}
+								{change24h.toFixed(2)}%
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
 			<div className="flex-1 min-h-0 overflow-y-auto">
-				<div className="p-2 space-y-3">
-					<Tabs
-						value={tabsOrderType}
-						onValueChange={(v: string) => {
-							if (v === "market") setOrderType("market");
-							else if (v === "limit") setOrderType("limit");
-						}}
-						fullWidth
-					>
-						<TabsList className="w-full">
-							<TabsTrigger value="market" className="flex-1 normal-case">
-								Market
-							</TabsTrigger>
-							<TabsTrigger value="limit" className="flex-1 normal-case">
-								Limit
-							</TabsTrigger>
-							<div className="relative inline-flex flex-1 items-center justify-center pb-2">
-								<AdvancedOrderDropdown
-									orderType={orderType}
-									onOrderTypeChange={setOrderType}
-									marketKind={market?.kind}
-									className={cn(
-										"text-xs normal-case",
-										isAdvancedTab ? "font-semibold text-text-strong" : "text-text-weak",
-									)}
-								/>
-								{isAdvancedTab && (
-									<span aria-hidden className="absolute bottom-0 inset-x-0 h-0.5 bg-fill-brand-strong" />
-								)}
-							</div>
-						</TabsList>
-					</Tabs>
-					<Tabs value={side} onValueChange={(v: string) => setSide(v as Side)} variant="pills" fullWidth>
-						<TabsList className="w-full">
-							<TabsTrigger
-								value="buy"
-								className="flex-1 text-sm data-active:text-text-success"
-								aria-label={sideLabels.buyAria}
-								icon={<TrendUpIcon className="size-4" />}
-							>
-								{sideLabels.buy}
-							</TabsTrigger>
-							<TabsTrigger
-								value="sell"
-								className="flex-1 text-sm data-active:text-text-error"
-								aria-label={sideLabels.sellAria}
-								icon={<TrendDownIcon className="size-4" />}
-							>
-								{sideLabels.sell}
-							</TabsTrigger>
-						</TabsList>
-					</Tabs>
-					<div className="flex items-center justify-between text-xs">
-						{capabilities.isLeveraged ? (
-							<div className="flex items-center gap-2">
-								<span className="text-text-weak">Leverage</span>
-								<LeverageControl key={market?.name} />
-							</div>
-						) : (
-							<div />
-						)}
-						<div className="text-right">
-							<span className="text-text-weak">{ORDER_TEXT.AVAILABLE_LABEL}: </span>
-							<span className={cn("tabular-nums font-medium", getValueColorClass(availableBalance))}>
-								{formatAvailableBalance()}
-							</span>
-							<span className="ml-1 font-medium tabular-nums text-text-weak">{availableBalanceToken}</span>
-						</div>
+				<div className="px-3 py-4 space-y-4">
+					<TradeHeader
+						orderType={orderType}
+						side={side}
+						sideLabels={sideLabels}
+						marketKind={market?.kind}
+						onOrderTypeChange={setOrderType}
+						onSideChange={setSide}
+						marginMode={marginMode}
+						leverage={leverage}
+						onMarginLeverageClick={() => setShowMarginDialog(true)}
+						isLeveraged={capabilities.isLeveraged}
+					/>
+
+					<div className="flex items-center justify-end text-xs">
+						<span className="text-text-weak uppercase text-2xs font-medium">{ORDER_TEXT.AVAILABLE_LABEL} </span>
+						<span className={cn("tabular-nums font-semibold text-xs ml-1", getValueColorClass(availableBalance))}>
+							{formatAvailableBalance()}
+						</span>
+						<span className="ml-1 text-2xs tabular-nums text-text-weak">{availableBalanceToken}</span>
 					</div>
-					<div className="space-y-1.5">
-						<p className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">
-							{ORDER_TEXT.SIZE_LABEL}
-						</p>
-						<div className="flex items-center gap-2">
+
+					<div className="space-y-3">
+						<p className="text-2xs font-medium uppercase text-text-weak">{ORDER_TEXT.SIZE_LABEL}</p>
+						<div className="flex items-stretch gap-2">
+							<NumberInput
+								inputMode="decimal"
+								inputSize="xl"
+								placeholder="0.00"
+								value={sizeInput}
+								onChange={(e: ChangeEvent<HTMLInputElement>) => {
+									setHasUserSized(true);
+									setSizeInput(e.target.value);
+								}}
+								className="flex-1 tabular-nums font-semibold"
+								disabled={isFormDisabled}
+							/>
 							<Button
 								variant="outline"
 								intent="neutral"
 								size="sm"
 								onClick={handleSizeModeToggle}
 								disabled={isFormDisabled}
-								iconRight={<CaretDownIcon className="size-3" />}
+								iconRight={<CaretDownIcon className="size-3.5" />}
+								className="shrink-0 self-stretch"
 							>
 								{sizeMode === "base" ? baseToken || "\u2014" : quoteToken || "\u2014"}
 							</Button>
+						</div>
+						<div className="space-y-2">
+							<Slider
+								thumbSize="lg"
+								value={[sliderValue]}
+								onValueChange={(v) => {
+									const val = Array.isArray(v) ? v[0] : v;
+									setIsDraggingSlider(true);
+									setDragSliderValue(val);
+								}}
+								onValueCommitted={(v) => {
+									const val = Array.isArray(v) ? v[0] : v;
+									setIsDraggingSlider(false);
+									applySizeFromPercent(val);
+								}}
+								max={100}
+								step={0.1}
+								disabled={isFormDisabled || maxSize <= 0}
+							/>
+							<div className="flex items-center justify-between text-2xs text-text-weak tabular-nums leading-none">
+								{[0, 25, 50, 75, 100].map((pct) => (
+									<button
+										key={pct}
+										type="button"
+										onClick={() => applySizeFromPercent(pct)}
+										disabled={isFormDisabled || maxSize <= 0}
+										className="hover:text-text-strong transition-colors disabled:cursor-not-allowed"
+									>
+										{pct}%
+									</button>
+								))}
+							</div>
+						</div>
+					</div>
+
+					{usesLimitPrice && (
+						<div className="space-y-3">
+							<div className="flex items-center justify-between">
+								<p className="text-2xs font-medium uppercase text-text-weak">{ORDER_TEXT.LIMIT_PRICE_LABEL}</p>
+								{markPx > 0 && (
+									<button
+										type="button"
+										onClick={handleMarkPriceClick}
+										disabled={isFormDisabled}
+										aria-label={t`Fill limit price with mark price ${formatPrice(markPx, { szDecimals: market?.szDecimals })}`}
+										className="text-2xs text-text-weak tabular-nums hover:text-text-strong transition-colors underline decoration-dashed underline-offset-2 decoration-text-weak/50 disabled:pointer-events-none"
+									>
+										{formatPrice(markPx, { szDecimals: market?.szDecimals })}
+									</button>
+								)}
+							</div>
 							<NumberInput
 								inputMode="decimal"
-								placeholder={ORDER_TEXT.INPUT_PLACEHOLDER}
-								value={sizeInput}
-								onChange={(e: ChangeEvent<HTMLInputElement>) => setSizeInput(e.target.value)}
-								className="flex-1 tabular-nums"
+								inputSize="xl"
+								placeholder="0.00"
+								value={limitPriceInput}
+								onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
+								className="tabular-nums font-semibold"
 								disabled={isFormDisabled}
 							/>
 						</div>
-						<Slider
-							value={[sliderValue]}
-							onValueChange={handleSliderChange}
-							max={100}
-							step={1}
-							className="py-3"
-							disabled={isFormDisabled || maxSize <= 0}
-						/>
-					</div>
-					{usesLimitPrice && (
-						<NumberInput
-							label={ORDER_TEXT.LIMIT_PRICE_LABEL}
-							labelValue={
-								markPx > 0 ? (
-									<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
-										{formatPrice(markPx, { szDecimals: market?.szDecimals })}
-									</span>
-								) : undefined
-							}
-							onLabelValueClick={markPx > 0 ? handleMarkPriceClick : undefined}
-							inputMode="decimal"
-							placeholder={ORDER_TEXT.INPUT_PLACEHOLDER}
-							value={limitPriceInput}
-							onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
-							className="tabular-nums"
-							disabled={isFormDisabled}
-						/>
 					)}
-					{validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval && (
-						<div className="text-xs text-text-error">{validation.errors.join(" \u2022 ")}</div>
+
+					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
+						<div className="flex items-center gap-4">
+							{capabilities.hasReduceOnly && (
+								<Checkbox
+									checked={reduceOnly}
+									onCheckedChange={(checked: boolean | "indeterminate") => setReduceOnly(checked === true)}
+									disabled={isFormDisabled}
+									label={ORDER_TEXT.REDUCE_ONLY_LABEL}
+								/>
+							)}
+							{capabilities.hasTpSl && canUseTpSl && (
+								<Checkbox
+									checked={tpSlEnabled}
+									onCheckedChange={(checked: boolean | "indeterminate") => setTpSlEnabled(checked === true)}
+									disabled={isFormDisabled}
+									label={ORDER_TEXT.TPSL_LABEL}
+								/>
+							)}
+						</div>
 					)}
-					{approvalError && <div className="text-xs text-text-error">{approvalError}</div>}
-					<div className="border border-stroke-weak/40 rounded-8 divide-y divide-stroke-weak/40 text-xs">
+
+					<div className="divide-y divide-stroke-weak/40 text-xs">
+						{capabilities.isLeveraged && (
+							<SummaryRow
+								label={ORDER_TEXT.SUMMARY_LIQ}
+								value={
+									liqPrice ? formatPrice(liqPrice, { szDecimals: market?.szDecimals }) : FALLBACK_VALUE_PLACEHOLDER
+								}
+								valueClass="text-text-error"
+							/>
+						)}
 						<SummaryRow
 							label={ORDER_TEXT.SUMMARY_ORDER_VALUE}
 							value={orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
 						/>
-						<SummaryRow
-							label={ORDER_TEXT.SUMMARY_MARGIN_REQ}
-							value={
-								capabilities.isLeveraged && marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER
-							}
-						/>
-						<SummaryRow
-							label={ORDER_TEXT.SUMMARY_LIQ}
-							value={liqPrice ? formatPrice(liqPrice, { szDecimals: market?.szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
-							valueClass="text-text-error"
-						/>
+						{capabilities.isLeveraged && (
+							<SummaryRow
+								label={ORDER_TEXT.SUMMARY_MARGIN_REQ}
+								value={marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
+							/>
+						)}
+						<div className="flex items-center justify-between py-2.5">
+							<span className="text-text-weak">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
+							<button
+								type="button"
+								onClick={openSettingsDialog}
+								className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
+							>
+								<span className="tabular-nums text-text-error">{slippagePercent}%</span>
+								<PencilIcon className="size-2.5 text-text-weak" />
+							</button>
+						</div>
 						<SummaryRow
 							label={ORDER_TEXT.SUMMARY_FEE}
 							value={orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
@@ -461,7 +531,12 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 					</div>
 				</div>
 			</div>
-			<div className="shrink-0 p-4 border-t border-stroke-weak/60 bg-bg-raised/95 backdrop-blur-sm">
+
+			<div className="shrink-0 px-3 py-3 border-t border-stroke-weak/40 bg-bg-base">
+				{validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval && (
+					<p className="text-xs text-text-error mb-2">{validation.errors.join(" \u2022 ")}</p>
+				)}
+				{approvalError && <p className="text-xs text-text-error mb-2">{approvalError}</p>}
 				<Button
 					variant="outline"
 					size="lg"
@@ -469,7 +544,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 					disabled={buttonContent.disabled}
 					intent={buttonContent.variant === "cyan" ? "brand" : buttonContent.variant === "buy" ? "neutral" : "error"}
 					className={cn(
-						"w-full py-2",
+						"w-full",
 						buttonContent.variant === "cyan"
 							? "bg-fill-brand-weak border-stroke-brand-strong text-text-brand hover:bg-fill-brand-weak/30"
 							: buttonContent.variant === "buy"
@@ -480,9 +555,8 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 				>
 					{buttonContent.text}
 				</Button>
+				<MobileBottomNavSpacer />
 			</div>
-
-			<MobileBottomNavSpacer />
 
 			<WalletDialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen} />
 			<OrderToast />
@@ -492,9 +566,9 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 
 function SummaryRow({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
 	return (
-		<div className="flex items-center justify-between px-3 py-2">
+		<div className="flex items-center justify-between py-2.5">
 			<span className="text-text-weak">{label}</span>
-			<span className={cn("tabular-nums", valueClass)}>{value}</span>
+			<span className={cn("tabular-nums", valueClass ?? "text-text-strong")}>{value}</span>
 		</div>
 	);
 }

@@ -7,7 +7,7 @@ const ScrollArea = forwardRef<HTMLDivElement, ComponentPropsWithoutRef<typeof Sc
 		<ScrollAreaPrimitive.Root ref={ref} data-slot="scroll-area" className={cn("relative", className)} {...props}>
 			<ScrollAreaPrimitive.Viewport
 				data-slot="scroll-area-viewport"
-				className="size-full rounded-[inherit] outline-none"
+				className="size-full rounded-[inherit] outline-none focus-visible:ring-[2px] focus-visible:ring-stroke-focus/40"
 			>
 				{children}
 			</ScrollAreaPrimitive.Viewport>

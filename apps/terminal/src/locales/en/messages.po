@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: other.length
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "{0} more wallets"
+msgstr "{0} more wallets"
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
 #~ msgstr "{formatted} USDC deposited to Hyperliquid"
@@ -68,8 +73,8 @@ msgid "7 days"
 msgstr "7 days"
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "A crypto wallet lets you store and manage your digital assets securely."
-msgstr "A crypto wallet lets you store and manage your digital assets securely."
+#~ msgid "A crypto wallet lets you store and manage your digital assets securely."
+#~ msgstr "A crypto wallet lets you store and manage your digital assets securely."
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "About Builder Codes"
@@ -244,6 +249,7 @@ msgstr "Balance available to trade"
 #~ msgid "Breadcrumb"
 #~ msgstr "Breadcrumb"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -312,6 +318,7 @@ msgstr "Buy"
 #~ msgstr "Buy Long"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
@@ -375,6 +382,7 @@ msgstr "Change leverage"
 #~ msgid "Chart"
 #~ msgstr "Chart"
 
+#: src/components/trade/components/wallet-dialog.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
@@ -414,6 +422,10 @@ msgstr "Confirm"
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Confirm Bridge"
 #~ msgstr "Confirm Bridge"
+
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+msgid "Confirm Close"
+msgstr "Confirm Close"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
@@ -461,8 +473,8 @@ msgstr "Connect your wallet to bridge funds"
 #~ msgstr "Connect your wallet to register a builder code"
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Connect your wallet to start trading on Hyperliquid"
-msgstr "Connect your wallet to start trading on Hyperliquid"
+#~ msgid "Connect your wallet to start trading on Hyperliquid"
+#~ msgstr "Connect your wallet to start trading on Hyperliquid"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -555,7 +567,6 @@ msgstr "Could not fetch your token balances"
 msgid "Created"
 msgstr "Created"
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -590,6 +601,10 @@ msgstr "Current"
 #: src/components/trade/order-entry/tp-sl-section.tsx
 #~ msgid "Custom TP percentage"
 #~ msgstr "Custom TP percentage"
+
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "Custom wallet address"
+msgstr "Custom wallet address"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Customize your trading experience."
@@ -817,6 +832,10 @@ msgstr "failed"
 msgid "Failed to close position"
 msgstr "Failed to close position"
 
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "Failed to connect with custom address"
+msgstr "Failed to connect with custom address"
+
 #: src/hooks/ui/use-copy-to-clipboard.ts
 msgid "Failed to copy"
 msgstr "Failed to copy"
@@ -904,6 +923,11 @@ msgstr "Fee"
 #~ msgid "Fetching quote..."
 #~ msgstr "Fetching quote..."
 
+#. placeholder {0}: formatPrice(markPx, { szDecimals: market?.szDecimals })
+#: src/components/trade/mobile/mobile-trade-view.tsx
+msgid "Fill limit price with mark price {0}"
+msgstr "Fill limit price with mark price {0}"
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Fill status"
@@ -917,6 +941,10 @@ msgstr "Fill status"
 #: src/components/trade/chart/token-selector.tsx
 msgid "Filter by {0}"
 msgstr "Filter by {0}"
+
+#: src/components/trade/positions/transfer-dialog.tsx
+msgid "Flip transfer direction"
+msgstr "Flip transfer direction"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 msgid "Format for numbers and dates"
@@ -966,6 +994,10 @@ msgstr "Gas ({0})"
 #: src/components/ui/pagination.tsx
 #~ msgid "Go to previous page"
 #~ msgstr "Go to previous page"
+
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+msgid "Go to Trade"
+msgstr "Go to Trade"
 
 #: src/components/pages/not-found-page.tsx
 #: src/components/pages/not-found-page.tsx
@@ -1024,11 +1056,10 @@ msgstr "Insufficient funds for gas"
 msgid "Invalid amount"
 msgstr "Invalid amount"
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "Invalid Ethereum address"
-#~ msgstr "Invalid Ethereum address"
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "Invalid Ethereum address"
+msgstr "Invalid Ethereum address"
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -1158,6 +1189,7 @@ msgstr "Loading wallet..."
 msgid "Loading..."
 msgstr "Loading..."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long"
 msgstr "Long"
@@ -1179,6 +1211,10 @@ msgstr "Maintenance Margin"
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Margin"
 msgstr "Margin"
+
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+msgid "Margin · Iso"
+msgstr "Margin · Iso"
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 msgid "Margin & leverage"
@@ -1512,8 +1548,8 @@ msgstr "Offline"
 #~ msgstr "on"
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Only you control your funds. No email or password required."
-msgstr "Only you control your funds. No email or password required."
+#~ msgid "Only you control your funds. No email or password required."
+#~ msgstr "Only you control your funds. No email or password required."
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "open"
@@ -1593,8 +1629,8 @@ msgid "Other"
 msgstr "Other"
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Other Options"
-msgstr "Other Options"
+#~ msgid "Other Options"
+#~ msgstr "Other Options"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "P&L"
@@ -1657,6 +1693,10 @@ msgstr "Place {0} Order"
 msgid "Place Limit Close"
 msgstr "Place Limit Close"
 
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "Please enter an address"
+msgstr "Please enter an address"
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1664,8 +1704,8 @@ msgid "PNL"
 msgstr "PNL"
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Popular"
-msgstr "Popular"
+#~ msgid "Popular"
+#~ msgstr "Popular"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -1841,8 +1881,8 @@ msgid "Search markets..."
 msgstr "Search markets..."
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Secure & Private"
-msgstr "Secure & Private"
+#~ msgid "Secure & Private"
+#~ msgstr "Secure & Private"
 
 #: src/components/trade/header/favorites-strip.tsx
 #~ msgid "Select {coin} market"
@@ -1888,6 +1928,7 @@ msgstr "Select order"
 #~ msgid "Select signing mode"
 #~ msgstr "Select signing mode"
 
+#: src/components/trade/chart/token-selector.tsx
 #: src/components/trade/chart/token-selector.tsx
 msgid "Select token"
 msgstr "Select token"
@@ -1967,6 +2008,7 @@ msgstr "Set to {p}%"
 msgid "Settings"
 msgstr "Settings"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short"
 msgstr "Short"
@@ -1978,6 +2020,10 @@ msgstr "Short"
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Executions on Chart"
 #~ msgstr "Show Executions on Chart"
+
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "Show fewer wallets"
+msgstr "Show fewer wallets"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Orders"
@@ -2632,8 +2678,8 @@ msgstr "Wallet not connected"
 #~ msgstr "WebSocket error"
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "What is a wallet?"
-msgstr "What is a wallet?"
+#~ msgid "What is a wallet?"
+#~ msgstr "What is a wallet?"
 
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "will arrive in ~3 min"

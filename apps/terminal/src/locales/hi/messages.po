@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: other.length
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "{0} more wallets"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
 #~ msgstr ""
@@ -68,8 +73,8 @@ msgid "7 days"
 msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "A crypto wallet lets you store and manage your digital assets securely."
-msgstr ""
+#~ msgid "A crypto wallet lets you store and manage your digital assets securely."
+#~ msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "About Builder Codes"
@@ -244,6 +249,7 @@ msgstr ""
 #~ msgid "Breadcrumb"
 #~ msgstr "ब्रेडक्रम्ब"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -312,6 +318,7 @@ msgstr "खरीदें"
 #~ msgstr "लॉन्ग खरीदें"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
@@ -375,6 +382,7 @@ msgstr ""
 #~ msgid "Chart"
 #~ msgstr "चार्ट"
 
+#: src/components/trade/components/wallet-dialog.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
@@ -414,6 +422,10 @@ msgstr ""
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Confirm Bridge"
 #~ msgstr ""
+
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+msgid "Confirm Close"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
@@ -461,8 +473,8 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Connect your wallet to start trading on Hyperliquid"
-msgstr ""
+#~ msgid "Connect your wallet to start trading on Hyperliquid"
+#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -555,7 +567,6 @@ msgstr ""
 msgid "Created"
 msgstr ""
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -590,6 +601,10 @@ msgstr ""
 #: src/components/trade/order-entry/tp-sl-section.tsx
 #~ msgid "Custom TP percentage"
 #~ msgstr ""
+
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "Custom wallet address"
+msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Customize your trading experience."
@@ -817,6 +832,10 @@ msgstr "विफल"
 msgid "Failed to close position"
 msgstr ""
 
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "Failed to connect with custom address"
+msgstr ""
+
 #: src/hooks/ui/use-copy-to-clipboard.ts
 msgid "Failed to copy"
 msgstr ""
@@ -904,6 +923,11 @@ msgstr "शुल्क"
 #~ msgid "Fetching quote..."
 #~ msgstr ""
 
+#. placeholder {0}: formatPrice(markPx, { szDecimals: market?.szDecimals })
+#: src/components/trade/mobile/mobile-trade-view.tsx
+msgid "Fill limit price with mark price {0}"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Fill status"
@@ -917,6 +941,10 @@ msgstr ""
 #: src/components/trade/chart/token-selector.tsx
 msgid "Filter by {0}"
 msgstr "{0} से फ़िल्टर करें"
+
+#: src/components/trade/positions/transfer-dialog.tsx
+msgid "Flip transfer direction"
+msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 msgid "Format for numbers and dates"
@@ -966,6 +994,10 @@ msgstr ""
 #: src/components/ui/pagination.tsx
 #~ msgid "Go to previous page"
 #~ msgstr "पिछले पृष्ठ पर जाएं"
+
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+msgid "Go to Trade"
+msgstr ""
 
 #: src/components/pages/not-found-page.tsx
 #: src/components/pages/not-found-page.tsx
@@ -1024,11 +1056,10 @@ msgstr ""
 msgid "Invalid amount"
 msgstr ""
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "Invalid Ethereum address"
-#~ msgstr ""
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "Invalid Ethereum address"
+msgstr ""
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -1154,6 +1185,7 @@ msgstr "वॉलेट लोड हो रहा है..."
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long"
 msgstr "लॉन्ग"
@@ -1174,6 +1206,10 @@ msgstr ""
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Margin"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+msgid "Margin · Iso"
 msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -1508,8 +1544,8 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Only you control your funds. No email or password required."
-msgstr ""
+#~ msgid "Only you control your funds. No email or password required."
+#~ msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "open"
@@ -1589,8 +1625,8 @@ msgid "Other"
 msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Other Options"
-msgstr ""
+#~ msgid "Other Options"
+#~ msgstr ""
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "P&L"
@@ -1653,6 +1689,10 @@ msgstr ""
 msgid "Place Limit Close"
 msgstr ""
 
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "Please enter an address"
+msgstr ""
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1660,8 +1700,8 @@ msgid "PNL"
 msgstr "PNL"
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Popular"
-msgstr ""
+#~ msgid "Popular"
+#~ msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -1837,8 +1877,8 @@ msgid "Search markets..."
 msgstr "बाज़ार खोजें..."
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Secure & Private"
-msgstr ""
+#~ msgid "Secure & Private"
+#~ msgstr ""
 
 #: src/components/trade/header/favorites-strip.tsx
 #~ msgid "Select {coin} market"
@@ -1884,6 +1924,7 @@ msgstr "ऑर्डर चुनें"
 #~ msgid "Select signing mode"
 #~ msgstr ""
 
+#: src/components/trade/chart/token-selector.tsx
 #: src/components/trade/chart/token-selector.tsx
 msgid "Select token"
 msgstr "टोकन चुनें"
@@ -1963,6 +2004,7 @@ msgstr ""
 msgid "Settings"
 msgstr "सेटिंग्स"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short"
 msgstr "शॉर्ट"
@@ -1974,6 +2016,10 @@ msgstr "शॉर्ट"
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Executions on Chart"
 #~ msgstr "चार्ट पर निष्पादन दिखाएं"
+
+#: src/components/trade/components/wallet-dialog.tsx
+msgid "Show fewer wallets"
+msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Orders"
@@ -2624,8 +2670,8 @@ msgstr "वॉलेट कनेक्ट नहीं है"
 #~ msgstr "WebSocket त्रुटि"
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "What is a wallet?"
-msgstr ""
+#~ msgid "What is a wallet?"
+#~ msgstr ""
 
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "will arrive in ~3 min"
