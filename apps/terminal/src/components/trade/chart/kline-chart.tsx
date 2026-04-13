@@ -1,5 +1,6 @@
 import { Dropdown } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
+import Big from "big.js";
 import type { Chart, KLineData } from "klinecharts";
 import { dispose, FormatDateType, init, LoadDataType } from "klinecharts";
 import { useEffect, useRef, useState } from "react";
@@ -129,7 +130,7 @@ export function KlineChart({
 					chart.applyNewData(candlesToKLineData(candles), true);
 				}
 			})
-			.catch(() => {});
+			.catch((err) => console.error("[kline-chart] initial candle fetch failed", err));
 
 		const ro = new ResizeObserver(() => chart.resize());
 		ro.observe(container);
@@ -178,7 +179,7 @@ export function KlineChart({
 							chart.applyNewData(candlesToKLineData(candles), true);
 						}
 					})
-					.catch(() => {});
+					.catch((err) => console.error("[kline-chart] tab-restore candle fetch failed", err));
 			}
 		}
 
@@ -228,7 +229,7 @@ export function KlineChart({
 		const symbolOrders = orders.filter((o) => o.coin === symbol);
 
 		for (const order of symbolOrders) {
-			const price = Number(order.limitPx);
+			const price = Big(order.limitPx).toNumber();
 			if (!Number.isFinite(price)) continue;
 
 			const label = order.side === "B" ? "Limit Buy" : "Limit Sell";
@@ -270,9 +271,10 @@ export function KlineChart({
 		const position = mainDex.assetPositions.find((p) => p.position.coin === symbol);
 		if (!position) return;
 
-		const entryPx = Number(position.position.entryPx);
-		const szi = Number(position.position.szi);
-		if (!Number.isFinite(entryPx) || !Number.isFinite(szi) || szi === 0) return;
+		const entryPxBig = Big(position.position.entryPx);
+		const sziBig = Big(position.position.szi);
+		if (sziBig.eq(0)) return;
+		const entryPx = entryPxBig.toNumber();
 
 		chart.createOverlay({
 			name: POSITION_LINE_NAME,

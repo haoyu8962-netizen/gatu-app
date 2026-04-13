@@ -33,7 +33,7 @@
 		"@tanstack/react-virtual": "3.13.13",
 		"@wagmi/core": "3.4.1",
 		"big.js": "7.0.1",
-		"boneyard-js": "^1.7.5",
+		"boneyard-js": "1.7.5",
 		"class-variance-authority": "0.7.1",
 		"clsx": "2.1.1",
 		"cmdk": "1.1.1",

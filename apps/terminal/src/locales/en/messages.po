@@ -923,9 +923,10 @@ msgstr "Fee"
 #~ msgid "Fetching quote..."
 #~ msgstr "Fetching quote..."
 
+#. placeholder {0}: formatPrice(markPx, { szDecimals: market?.szDecimals })
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#~ msgid "Fill limit price with mark price {0}"
-#~ msgstr "Fill limit price with mark price {0}"
+msgid "Fill limit price with mark price {0}"
+msgstr "Fill limit price with mark price {0}"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx

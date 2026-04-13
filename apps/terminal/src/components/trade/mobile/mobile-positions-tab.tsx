@@ -108,8 +108,8 @@ function MobilePositionCard({
 		liqPx != null && Number.isFinite(markPx) && Number.isFinite(liqPx) && Math.abs(liqPx - markPx) / markPx <= 0.1;
 
 	const fundingRaw = toBig(p.cumFunding.sinceOpen)?.toNumber();
-	const fundingValue = formatUSD(fundingRaw ? -fundingRaw : null, { signDisplay: "exceptZero" });
-	const fundingClass = getValueColorClass(fundingRaw ? -fundingRaw : 0);
+	const fundingValue = formatUSD(fundingRaw != null ? -fundingRaw : null, { signDisplay: "exceptZero" });
+	const fundingClass = getValueColorClass(fundingRaw != null ? -fundingRaw : 0);
 
 	const canClose = isPositive(absSize) && typeof assetId === "number" && isPositive(markPx);
 	const pnlClass = getValueColorClass(unrealizedPnl);

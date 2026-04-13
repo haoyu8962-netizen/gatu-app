@@ -923,9 +923,10 @@ msgstr "शुल्क"
 #~ msgid "Fetching quote..."
 #~ msgstr ""
 
+#. placeholder {0}: formatPrice(markPx, { szDecimals: market?.szDecimals })
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#~ msgid "Fill limit price with mark price {0}"
-#~ msgstr ""
+msgid "Fill limit price with mark price {0}"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx

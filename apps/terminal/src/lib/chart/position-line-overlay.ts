@@ -1,3 +1,4 @@
+import Big from "big.js";
 import { registerOverlay } from "klinecharts";
 import { colorToHex, colorToRgba, getChartColors } from "@/components/trade/chart/theme-colors";
 
@@ -32,7 +33,7 @@ export function registerPositionLineOverlay() {
 
 			const label = isLong ? "Long" : "Short";
 			const rawPrice = overlay.points[0]?.value;
-			const priceText = rawPrice != null ? Number(rawPrice).toFixed(precision.price) : "";
+			const priceText = rawPrice != null ? Big(rawPrice).toFixed(precision.price) : "";
 
 			const badgeX = bounding.width - 110;
 			const priceX = bounding.width - 4;
