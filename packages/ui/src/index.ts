@@ -84,6 +84,8 @@ export {
 	dropdownTriggerVariants,
 } from "./dropdown";
 export {
+	AdaptiveModal,
+	type AdaptiveModalProps,
 	Modal,
 	ModalClose,
 	ModalContent,
@@ -121,7 +123,7 @@ export {
 	segmentedControlsVariants,
 } from "./segmented-controls";
 export { Select, type SelectGroupOption, type SelectOption, type SelectProps, selectTriggerVariants } from "./select";
-export { Slider, type SliderProps, sliderVariants } from "./slider";
+export { Slider, type SliderProps, type SliderThumbSize, sliderVariants } from "./slider";
 export { Slot, type SlotProps, slotVariants } from "./slot";
 export {
 	Table,

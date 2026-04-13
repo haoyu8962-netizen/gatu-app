@@ -2,7 +2,30 @@ import { Dialog } from "@base-ui/react/dialog";
 import { XIcon } from "@phosphor-icons/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
+import { Drawer, DrawerClose, DrawerContent } from "./drawer";
 import { cn } from "./utils";
+
+// ─── Mobile detection ────────────────────────────────────────────────────────
+
+const MOBILE_BREAKPOINT = 768;
+
+function subscribeToMobileQuery(callback: () => void): () => void {
+	if (typeof window === "undefined") return () => {};
+	const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+	mql.addEventListener("change", callback);
+	return () => mql.removeEventListener("change", callback);
+}
+
+function getIsMobile(): boolean {
+	if (typeof window === "undefined") return false;
+	return window.innerWidth < MOBILE_BREAKPOINT;
+}
+
+function useMobile(): boolean {
+	return React.useSyncExternalStore(subscribeToMobileQuery, getIsMobile, () => false);
+}
+
+// ─── Modal (centered overlay) ─────────────────────────────────────────────────
 
 const modalPopupVariants = cva(
 	["relative w-full bg-bg-overlay shadow-overlay rounded-12", "flex flex-col outline-none"],
@@ -112,6 +135,62 @@ const ModalFooter = React.forwardRef<HTMLDivElement, ModalFooterProps>(({ classN
 ));
 ModalFooter.displayName = "ModalFooter";
 
+// ─── AdaptiveModal ────────────────────────────────────────────────────────────
+// On mobile (< 768px): renders as a bottom drawer with swipe-to-close.
+// On desktop: renders as a centered modal.
+// Children are shared between both — use ModalHeader / ModalContent / ModalFooter as usual.
+
+interface AdaptiveModalProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	size?: VariantProps<typeof modalPopupVariants>["size"];
+	showClose?: boolean;
+	children: React.ReactNode;
+	className?: string;
+}
+
+function AdaptiveModal({ open, onOpenChange, size, showClose = true, children, className }: AdaptiveModalProps) {
+	const isMobile = useMobile();
+
+	if (isMobile) {
+		return (
+			<Drawer side="bottom" open={open} onOpenChange={onOpenChange}>
+				<DrawerContent className={cn("relative pb-[env(safe-area-inset-bottom)]", className)}>
+					<div
+						className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill-strong/20"
+						aria-hidden="true"
+					/>
+					{showClose && (
+						<DrawerClose
+							className={cn(
+								"absolute top-4 right-4 z-10",
+								"flex items-center justify-center size-8 rounded-8",
+								"text-icon-neutral cursor-pointer",
+								"hover:bg-fill-hover active:bg-fill-press",
+								"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+								"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10",
+							)}
+							aria-label="Close"
+						>
+							<XIcon size={16} weight="bold" />
+						</DrawerClose>
+					)}
+					{children}
+				</DrawerContent>
+			</Drawer>
+		);
+	}
+
+	return (
+		<Modal open={open} onOpenChange={onOpenChange}>
+			<ModalPopup size={size} showClose={showClose} className={className}>
+				{children}
+			</ModalPopup>
+		</Modal>
+	);
+}
+AdaptiveModal.displayName = "AdaptiveModal";
+
 export {
 	Modal,
 	ModalTrigger,
@@ -122,6 +201,7 @@ export {
 	ModalDescription,
 	ModalContent,
 	ModalFooter,
+	AdaptiveModal,
 	modalPopupVariants,
 };
 export type {
@@ -131,4 +211,5 @@ export type {
 	ModalDescriptionProps,
 	ModalContentProps,
 	ModalFooterProps,
+	AdaptiveModalProps,
 };

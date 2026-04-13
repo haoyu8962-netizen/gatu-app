@@ -16,6 +16,9 @@ const sideToSwipeDirection: Record<DrawerSide, "up" | "down" | "left" | "right">
 
 interface DrawerProps extends React.ComponentPropsWithoutRef<typeof BaseDrawer.Root> {
 	side?: DrawerSide;
+	children?: React.ReactNode;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
 function Drawer({ side = "right", swipeDirection, children, ...props }: DrawerProps) {
@@ -49,7 +52,7 @@ const DrawerOverlay = React.forwardRef<HTMLDivElement, DrawerOverlayProps>(({ cl
 	<BaseDrawer.Backdrop
 		ref={ref}
 		className={cn(
-			"fixed inset-0 z-50 bg-fill-overlay backdrop-blur transition-opacity duration-300 motion-reduce:transition-none",
+			"fixed inset-0 z-50 bg-fill-overlay transition-opacity duration-200 motion-reduce:transition-none",
 			"data-starting-style:opacity-0 data-ending-style:opacity-0",
 			className,
 		)}
@@ -61,7 +64,7 @@ DrawerOverlay.displayName = "DrawerOverlay";
 const drawerContentVariants = cva(
 	[
 		"fixed z-50 flex flex-col bg-bg-overlay border border-stroke-weak shadow-overlay",
-		"transition-transform duration-300 ease-out motion-reduce:transition-none",
+		"transition-transform duration-200 ease-out motion-reduce:transition-none",
 	],
 	{
 		variants: {
@@ -105,13 +108,14 @@ interface DrawerContentProps
 	extends React.ComponentPropsWithoutRef<typeof BaseDrawer.Popup>,
 		Omit<VariantProps<typeof drawerContentVariants>, "side"> {
 	overlay?: boolean;
+	keepMounted?: boolean;
 }
 
 const DrawerContent = React.forwardRef<HTMLDivElement, DrawerContentProps>(
-	({ className, overlay = true, size, children, ...props }, ref) => {
+	({ className, overlay = true, size, keepMounted, children, ...props }, ref) => {
 		const side = React.useContext(DrawerSideContext);
 		return (
-			<BaseDrawer.Portal>
+			<BaseDrawer.Portal keepMounted={keepMounted}>
 				{overlay && <DrawerOverlay />}
 				<BaseDrawer.Popup ref={ref} className={cn(drawerContentVariants({ side, size }), className)} {...props}>
 					{children}
