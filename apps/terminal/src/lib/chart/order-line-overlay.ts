@@ -17,7 +17,7 @@ export function registerOrderLineOverlay() {
 		totalStep: 1,
 		lock: true,
 		zLevel: -1,
-		createPointFigures: ({ overlay, coordinates, bounding }) => {
+		createPointFigures: ({ overlay, coordinates, bounding, precision }) => {
 			const y = coordinates[0]?.y;
 			if (y === undefined) return [];
 
@@ -31,7 +31,11 @@ export function registerOrderLineOverlay() {
 			const bgColor = colorToHex(colors.background);
 			const borderColor = colorToRgba(marketColor, 0.7);
 
-			const textX = bounding.width - 52;
+			const rawPrice = overlay.points[0]?.value;
+			const priceText = rawPrice != null ? Number(rawPrice).toFixed(precision.price) : "";
+
+			const badgeX = bounding.width - 110;
+			const priceX = bounding.width - 4;
 
 			return [
 				{
@@ -48,7 +52,7 @@ export function registerOrderLineOverlay() {
 				{
 					type: "text",
 					attrs: {
-						x: textX,
+						x: badgeX,
 						y,
 						text: label,
 						align: "center",
@@ -65,6 +69,30 @@ export function registerOrderLineOverlay() {
 						borderColor,
 						borderSize: 1,
 						borderRadius: 3,
+						style: "stroke_fill" as const,
+					},
+					ignoreEvent: true,
+				},
+				{
+					type: "text",
+					attrs: {
+						x: priceX,
+						y,
+						text: priceText,
+						align: "right",
+						baseline: "middle",
+					},
+					styles: {
+						color,
+						size: 10,
+						paddingLeft: 4,
+						paddingRight: 4,
+						paddingTop: 2,
+						paddingBottom: 2,
+						backgroundColor: bgColor,
+						borderColor,
+						borderSize: 1,
+						borderRadius: 2,
 						style: "stroke_fill" as const,
 					},
 					ignoreEvent: true,

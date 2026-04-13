@@ -1,6 +1,6 @@
 import { Dropdown } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import type { Chart } from "klinecharts";
+import type { Chart, KLineData } from "klinecharts";
 import { dispose, FormatDateType, init, LoadDataType } from "klinecharts";
 import { useEffect, useRef, useState } from "react";
 import { useConnection } from "wagmi";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/chart/kline-config";
 import { buildKlineStyles } from "@/lib/chart/kline-styles";
 import { ORDER_LINE_NAME, registerOrderLineOverlay } from "@/lib/chart/order-line-overlay";
+import { POSITION_LINE_NAME, registerPositionLineOverlay } from "@/lib/chart/position-line-overlay";
 import { cn } from "@/lib/cn";
 import { getInfoClient, useSubscription } from "@/lib/hyperliquid";
 import { type ChartSource, ChartSourceToggle, type ChartSourceToggleIntentHandlers } from "./chart-source-toggle";
@@ -59,6 +60,9 @@ export function KlineChart({
 	const [activeChartType, setActiveChartType] = useState<ChartTypeConfig>(DEFAULT_CHART_TYPE);
 	const intervalRef = useRef(activeInterval);
 	intervalRef.current = activeInterval;
+	const isHiddenRef = useRef(false);
+	const hiddenAtRef = useRef<number | null>(null);
+	const candleBufferRef = useRef<KLineData[]>([]);
 	const { address, isConnected } = useConnection();
 
 	useEffect(() => {
@@ -66,6 +70,7 @@ export function KlineChart({
 		if (!container || !symbol) return;
 
 		registerOrderLineOverlay();
+		registerPositionLineOverlay();
 
 		const chart = init(container, {
 			customApi: {
@@ -132,9 +137,57 @@ export function KlineChart({
 		return () => {
 			ro.disconnect();
 			chartRef.current = null;
+			candleBufferRef.current = [];
 			dispose(container);
 		};
 	}, [symbol, activeInterval, activeChartType, yAxisInside, theme]);
+
+	useEffect(() => {
+		isHiddenRef.current = document.visibilityState === "hidden";
+		candleBufferRef.current = [];
+
+		function handleVisibility() {
+			if (document.visibilityState === "hidden") {
+				isHiddenRef.current = true;
+				hiddenAtRef.current = Date.now();
+				return;
+			}
+
+			const gapMs = hiddenAtRef.current !== null ? Date.now() - hiddenAtRef.current : 0;
+			isHiddenRef.current = false;
+			hiddenAtRef.current = null;
+
+			const chart = chartRef.current;
+			if (!chart) return;
+
+			for (const kline of candleBufferRef.current) {
+				chart.updateData(kline);
+			}
+			candleBufferRef.current = [];
+
+			chart.resize();
+
+			if (gapMs >= 30_000 && symbol) {
+				const interval = intervalRef.current;
+				const endTime = Date.now();
+				const startTime = endTime - 500 * interval.barMs;
+				getInfoClient()
+					.candleSnapshot({ coin: symbol, interval: interval.candleInterval, startTime, endTime })
+					.then((candles) => {
+						if (chartRef.current === chart) {
+							chart.applyNewData(candlesToKLineData(candles), true);
+						}
+					})
+					.catch(() => {});
+			}
+		}
+
+		document.addEventListener("visibilitychange", handleVisibility);
+		return () => {
+			document.removeEventListener("visibilitychange", handleVisibility);
+			candleBufferRef.current = [];
+		};
+	}, [symbol]);
 
 	const candleData = useSubscription(
 		"candle",
@@ -150,7 +203,11 @@ export function KlineChart({
 		const klineData = candleEventToKLineData(event);
 		if (!klineData) return;
 
-		chart.updateData(klineData);
+		if (isHiddenRef.current) {
+			candleBufferRef.current.push(klineData);
+		} else {
+			chart.updateData(klineData);
+		}
 	}, [candleData.data]);
 
 	const { data: openOrdersEvent } = useSubscription(
@@ -191,6 +248,45 @@ export function KlineChart({
 			});
 		}
 	}, [openOrdersEvent, symbol]);
+
+	const { data: clearinghouseEvent } = useSubscription(
+		"allDexsClearinghouseState",
+		{ user: address ?? "" },
+		{ enabled: isConnected && !!address },
+	);
+
+	useEffect(() => {
+		const chart = chartRef.current;
+		if (!chart) return;
+
+		chart.removeOverlay({ name: POSITION_LINE_NAME });
+
+		const states = clearinghouseEvent?.clearinghouseStates;
+		if (!states) return;
+
+		const mainDex = states.find(([dex]) => dex === "")?.[1];
+		if (!mainDex) return;
+
+		const position = mainDex.assetPositions.find((p) => p.position.coin === symbol);
+		if (!position) return;
+
+		const entryPx = Number(position.position.entryPx);
+		const szi = Number(position.position.szi);
+		if (!Number.isFinite(entryPx) || !Number.isFinite(szi) || szi === 0) return;
+
+		chart.createOverlay({
+			name: POSITION_LINE_NAME,
+			points: [{ value: entryPx }],
+			modeSensitivity: 0,
+			styles: {
+				rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+				polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+			},
+			extendData: {
+				isLong: szi > 0,
+			},
+		});
+	}, [clearinghouseEvent, symbol]);
 
 	const isNonFavoriteActive = !FAVORITE_SET.has(activeInterval.resolution);
 

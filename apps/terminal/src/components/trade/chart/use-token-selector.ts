@@ -150,7 +150,9 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 		});
 	}, [markets, scope, subcategory]);
 
-	const searcher = useMemo(() => createSearcher(scopeFilteredMarkets, marketSearchConfig), [scopeFilteredMarkets]);
+	const marketListKey = useMemo(() => scopeFilteredMarkets.map((m) => m.name).join(","), [scopeFilteredMarkets]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	const searcher = useMemo(() => createSearcher(scopeFilteredMarkets, marketSearchConfig), [marketListKey]);
 
 	const filteredMarkets = useMemo(() => {
 		if (!deferredSearch) return scopeFilteredMarkets;
@@ -192,9 +194,6 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 	useEffect(() => {
 		if (open) {
 			virtualizer.measure();
-			queueMicrotask(() => virtualizer.measure());
-			const rafId = requestAnimationFrame(() => virtualizer.measure());
-			return () => cancelAnimationFrame(rafId);
 		}
 	}, [open, virtualizer]);
 
@@ -212,7 +211,6 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 	useEffect(() => {
 		if (!open) {
 			hasInitializedRef.current = false;
-			setHighlightedIndex(-1);
 			return;
 		}
 
@@ -223,7 +221,9 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 			const index = value ? rows.findIndex((row) => row.original.name === value) : -1;
 			setHighlightedIndex(index >= 0 ? index : 0);
 			if (index > 0) {
-				virtualizer.scrollToIndex(index, { align: "center" });
+				requestAnimationFrame(() => {
+					virtualizer.scrollToIndex(index, { align: "center" });
+				});
 			}
 		}
 	}, [open, rows, value, virtualizer]);

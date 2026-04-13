@@ -555,8 +555,37 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 	if (isMobile) {
 		return (
 			<Drawer side="bottom" open={open} onOpenChange={setOpen}>
-				<DrawerTrigger>{trigger}</DrawerTrigger>
-				<DrawerContent>
+				<DrawerTrigger
+					role="combobox"
+					aria-expanded={open}
+					aria-label={t`Select token`}
+					className="inline-flex items-center gap-1 max-w-full min-w-0 px-1.5 py-1.5 rounded-8 border border-stroke-weak/50 bg-bg-raised/80 hover:bg-fill-hover transition-colors cursor-pointer leading-none"
+				>
+					{selectedMarket && (
+						<>
+							<AssetDisplay
+								coin={selectedMarket.name}
+								iconUrl={selectedMarket.iconUrl}
+								hideName
+								iconClassName="size-3.5"
+							/>
+							<span className="min-w-0 truncate text-xs font-medium text-text-strong tracking-tight leading-none">
+								{selectedMarket.pairName ?? selectedMarket.name}
+							</span>
+							{kindBadge ? (
+								<Badge
+									tone="neutral"
+									size="xxs"
+									className="uppercase shrink-0 self-center font-normal leading-none text-text-weak border-stroke-weak/40 bg-fill-weaker"
+								>
+									{kindBadge}
+								</Badge>
+							) : null}
+						</>
+					)}
+					<CaretDownIcon className="size-3.5 shrink-0 self-center text-text-weak" />
+				</DrawerTrigger>
+				<DrawerContent keepMounted>
 					<TokenSelectorContent {...contentProps} mobile />
 				</DrawerContent>
 			</Drawer>
