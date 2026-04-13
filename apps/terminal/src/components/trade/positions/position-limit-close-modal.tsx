@@ -114,7 +114,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm" showClose={false}>
-				<ModalHeader>
+				<ModalHeader className="border-b border-stroke-weak/40">
 					<ModalTitle>{t`Limit Close`}</ModalTitle>
 				</ModalHeader>
 
@@ -207,7 +207,13 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 				</div>
 
 				<ModalFooter>
-					<Button size="sm" variant="link" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
+					<Button
+						size="sm"
+						variant="ghost"
+						intent="neutral"
+						onClick={() => handleOpenChange(false)}
+						disabled={isSubmitting}
+					>
 						{t`Cancel`}
 					</Button>
 					<TradingActionButton onClick={handleSubmit} disabled={!canSubmit} className="min-w-24">

@@ -1,7 +1,7 @@
 import { FireIcon } from "@phosphor-icons/react";
 import { ClientOnly } from "@tanstack/react-router";
+import { Skeleton } from "boneyard-js/react";
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { UI_TEXT } from "@/config/constants";
 import { get24hChange, getOiUsd } from "@/domain/market";
 import { cn } from "@/lib/cn";
@@ -44,62 +44,56 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 				<div className="flex items-center justify-between gap-3">
 					<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
 
-					<div className="flex items-center gap-3 text-right">
-						{isLoading ? (
-							<Skeleton className="h-6 w-24" />
-						) : (
-							<>
-								<div className="text-lg font-semibold tabular-nums text-text-warning">{formatUSD(markPx ?? null)}</div>
-								{typeof change24h === "number" && (
-									<span className={cn("text-sm tabular-nums font-medium", getValueColorClass(change24h))}>
-										{change24h >= 0 ? "+" : ""}
-										{change24h.toFixed(2)}%
-									</span>
+					<Skeleton name="market-price" loading={isLoading}>
+						<div className="text-right">
+							<div
+								className={cn(
+									"text-sm font-semibold tabular-nums",
+									change24h !== null ? getValueColorClass(change24h) : "text-text-strong",
 								)}
-							</>
-						)}
-					</div>
+							>
+								{formatUSD(markPx ?? null)}
+							</div>
+							{typeof change24h === "number" && (
+								<div className={cn("text-xs tabular-nums", getValueColorClass(change24h))}>
+									{change24h >= 0 ? "+" : ""}
+									{change24h.toFixed(2)}%
+								</div>
+							)}
+						</div>
+					</Skeleton>
 				</div>
 			</div>
 
 			<div className="shrink-0 px-3 py-1.5 border-b border-stroke-weak/40 bg-bg-base overflow-x-auto">
-				<div className="flex items-center gap-4 text-xs min-w-max">
-					{isLoading ? (
-						<>
-							<Skeleton className="h-4 w-20" />
-							<Skeleton className="h-4 w-16" />
-							<Skeleton className="h-4 w-16" />
-							<Skeleton className="h-4 w-16" />
-						</>
-					) : (
-						<>
-							<StatPill label={overviewText.LABEL_ORACLE} value={formatUSD(selectedMarket?.oraclePx)} />
-							<StatPill
-								label={overviewText.LABEL_VOLUME}
-								value={formatUSD(selectedMarket?.dayNtlVlm, {
-									notation: "compact",
-									compactDisplay: "short",
+				<Skeleton name="market-stats" loading={isLoading}>
+					<div className="flex items-center gap-4 text-xs min-w-max">
+						<StatPill label={overviewText.LABEL_ORACLE} value={formatUSD(selectedMarket?.oraclePx)} />
+						<StatPill
+							label={overviewText.LABEL_VOLUME}
+							value={formatUSD(selectedMarket?.dayNtlVlm, {
+								notation: "compact",
+								compactDisplay: "short",
+							})}
+						/>
+						<StatPill
+							label={overviewText.LABEL_OPEN_INTEREST}
+							value={formatUSD(oiUsd, {
+								notation: "compact",
+								compactDisplay: "short",
+							})}
+						/>
+						<div className="flex items-center gap-1">
+							<FireIcon className={cn("size-3", getValueColorClass(fundingNum))} />
+							<span className={cn("tabular-nums font-medium", getValueColorClass(fundingNum))}>
+								{formatPercent(fundingNum, {
+									minimumFractionDigits: 4,
+									signDisplay: "exceptZero",
 								})}
-							/>
-							<StatPill
-								label={overviewText.LABEL_OPEN_INTEREST}
-								value={formatUSD(oiUsd, {
-									notation: "compact",
-									compactDisplay: "short",
-								})}
-							/>
-							<div className="flex items-center gap-1">
-								<FireIcon className={cn("size-3", getValueColorClass(fundingNum))} />
-								<span className={cn("tabular-nums font-medium", getValueColorClass(fundingNum))}>
-									{formatPercent(fundingNum, {
-										minimumFractionDigits: 4,
-										signDisplay: "exceptZero",
-									})}
-								</span>
-							</div>
-						</>
-					)}
-				</div>
+							</span>
+						</div>
+					</div>
+				</Skeleton>
 			</div>
 
 			<div className="flex-1 min-h-0">
@@ -126,20 +120,12 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 function StatPill({ label, value }: { label: string; value: string }) {
 	return (
 		<div className="flex items-center gap-1.5">
-			<span className="text-text-strong uppercase tracking-wider text-xs">{label}</span>
-			<span className="tabular-nums text-text-strong">{value}</span>
+			<span className="text-text-weak text-xs">{label}</span>
+			<span className="tabular-nums text-text-strong text-xs">{value}</span>
 		</div>
 	);
 }
 
 function ChartSkeleton() {
-	return (
-		<div className="w-full h-full p-4 space-y-4">
-			<div className="flex justify-between items-center">
-				<Skeleton className="h-4 w-32" />
-				<Skeleton className="h-4 w-24" />
-			</div>
-			<Skeleton className="h-[calc(100%-4rem)] w-full" />
-		</div>
-	);
+	return <div className="w-full h-full animate-pulse bg-bg-raised" />;
 }

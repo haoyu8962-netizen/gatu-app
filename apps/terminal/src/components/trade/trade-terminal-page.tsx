@@ -13,6 +13,12 @@ const MobileTerminal = createLazyComponent(() => import("./mobile/mobile-termina
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 
+// Eagerly kick off the mobile chunk if we're on a mobile viewport so it's
+// ready (or in-flight) before useIsMobile() flips to true and Suspense fires.
+if (typeof window !== "undefined" && window.innerWidth < 768) {
+	MobileTerminal.preload();
+}
+
 export function TradeTerminalPage() {
 	useDocumentTitle();
 	const isMobile = useIsMobile();

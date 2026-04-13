@@ -56,34 +56,39 @@ const tabsListVariants = cva("relative flex items-center", {
 	},
 });
 
-interface TabsListProps extends React.ComponentPropsWithoutRef<typeof Tabs.List> {}
+interface TabsListProps extends React.ComponentPropsWithoutRef<typeof Tabs.List> {
+	hideIndicator?: boolean;
+}
 
-const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(({ className, children, ...props }, ref) => {
-	const { variant, fullWidth } = React.useContext(TabsContext);
+const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
+	({ className, children, hideIndicator, ...props }, ref) => {
+		const { variant, fullWidth } = React.useContext(TabsContext);
 
-	return (
-		<Tabs.List ref={ref} className={cn(tabsListVariants({ variant }), fullWidth && "w-full", className)} {...props}>
-			{variant === "underline" ? (
-				<Tabs.Indicator
-					className="absolute -bottom-px h-0.5 bg-fill-brand-strong transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
-					style={{
-						left: "var(--active-tab-left)",
-						width: "var(--active-tab-width)",
-					}}
-				/>
-			) : (
-				<Tabs.Indicator
-					className="absolute inset-y-0 rounded-8 bg-bg-overlay border border-stroke-strong shadow-raised transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none"
-					style={{
-						left: "var(--active-tab-left)",
-						width: "var(--active-tab-width)",
-					}}
-				/>
-			)}
-			{children}
-		</Tabs.List>
-	);
-});
+		return (
+			<Tabs.List ref={ref} className={cn(tabsListVariants({ variant }), fullWidth && "w-full", className)} {...props}>
+				{!hideIndicator &&
+					(variant === "underline" ? (
+						<Tabs.Indicator
+							className="absolute -bottom-px h-0.5 bg-fill-brand-strong transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
+							style={{
+								left: "var(--active-tab-left)",
+								width: "var(--active-tab-width)",
+							}}
+						/>
+					) : (
+						<Tabs.Indicator
+							className="absolute inset-y-0 rounded-8 bg-bg-overlay border border-stroke-strong shadow-raised transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none"
+							style={{
+								left: "var(--active-tab-left)",
+								width: "var(--active-tab-width)",
+							}}
+						/>
+					))}
+				{children}
+			</Tabs.List>
+		);
+	},
+);
 TabsList.displayName = "TabsList";
 
 const tabsTriggerVariants = cva(

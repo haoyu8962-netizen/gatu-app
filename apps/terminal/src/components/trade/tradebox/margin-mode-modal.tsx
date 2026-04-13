@@ -111,7 +111,7 @@ function ModeOption({ option, isSelected, isCurrent, isDisabled, isUpdating, onS
 	);
 }
 
-export function MarginModeDialog({
+export function MarginModeModal({
 	open,
 	onOpenChange,
 	currentMode,
@@ -179,7 +179,7 @@ export function MarginModeDialog({
 	return (
 		<Modal open={open} onOpenChange={onOpenChange}>
 			<ModalPopup size="sm">
-				<ModalHeader>
+				<ModalHeader className="border-b border-stroke-weak/40">
 					<ModalTitle>
 						<Trans>Margin & leverage</Trans>
 					</ModalTitle>

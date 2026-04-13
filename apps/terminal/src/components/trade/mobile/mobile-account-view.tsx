@@ -1,9 +1,16 @@
 import { Badge, Button, ButtonIcon } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowSquareOutIcon, CopyIcon, LightningIcon, SignOutIcon, WalletIcon } from "@phosphor-icons/react";
+import {
+	ArrowsLeftRightIcon,
+	CopyIcon,
+	DownloadSimpleIcon,
+	SignOutIcon,
+	UploadSimpleIcon,
+	WalletIcon,
+} from "@phosphor-icons/react";
+import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { useConnection, useDisconnect } from "wagmi";
-import { Skeleton } from "@/components/ui/skeleton";
 import { UI_TEXT } from "@/config/constants";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
@@ -11,7 +18,7 @@ import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
-import { WalletDialog } from "../components/wallet-dialog";
+import { WalletModal } from "../components/wallet-modal";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
 const ACCOUNT_TEXT = UI_TEXT.ACCOUNT_PANEL;
@@ -27,7 +34,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const { marginSummary, perpSummary, perpPositions, withdrawable, crossMaintenanceMarginUsed, isLoading } =
 		useDefaultDexBalances();
 
-	const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
 	const { open: openDepositModal } = useDepositModalActions();
 
@@ -64,18 +71,12 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							{t`Connect your wallet to view your account, positions, and start trading.`}
 						</p>
 					</div>
-					<Button
-						variant="outline"
-						intent="brand"
-						size="lg"
-						onClick={() => setWalletDialogOpen(true)}
-						className="min-h-[48px]"
-					>
+					<Button variant="outline" intent="brand" size="md" onClick={() => setWalletModalOpen(true)}>
 						{t`Connect Wallet`}
 					</Button>
 				</div>
 				<MobileBottomNavSpacer />
-				<WalletDialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen} />
+				<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
 			</div>
 		);
 	}
@@ -122,20 +123,14 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 
 			<div className="flex-1 min-h-0 overflow-y-auto">
 				<div className="p-2 space-y-4">
-					<div className="p-4 rounded-8 border border-stroke-weak/60 bg-bg-raised">
-						{isLoading ? (
-							<div className="space-y-3">
-								<Skeleton className="h-4 w-20" />
-								<Skeleton className="h-10 w-32" />
-								<Skeleton className="h-4 w-24" />
-							</div>
-						) : (
+					<div className="p-4 rounded-xs border border-stroke-weak/60 bg-bg-raised">
+						<Skeleton name="account-equity" loading={isLoading}>
 							<>
-								<div className="text-sm text-text-weak mb-1">{ACCOUNT_TEXT.EQUITY_LABEL}</div>
-								<div className="text-3xl font-bold tabular-nums">{formatUSD(accountValue)}</div>
+								<div className="text-2xs uppercase font-medium text-text-weak mb-1.5">{ACCOUNT_TEXT.EQUITY_LABEL}</div>
+								<div className="text-3xl font-bold tabular-nums text-text-strong">{formatUSD(accountValue)}</div>
 								<div
 									className={cn(
-										"text-sm tabular-nums mt-1",
+										"text-sm tabular-nums mt-1.5 font-medium",
 										unrealizedPnl >= 0 ? "text-text-success" : "text-text-error",
 									)}
 								>
@@ -143,10 +138,9 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									{formatUSD(unrealizedPnl)} {ACCOUNT_TEXT.UNREALIZED_LABEL}
 								</div>
 							</>
-						)}
+						</Skeleton>
 					</div>
 
-					{/* Stats grid */}
 					<div className="grid grid-cols-2 gap-3">
 						<StatCard label={ACCOUNT_TEXT.BALANCE_LABEL} value={formatUSD(totalRawUsd)} isLoading={isLoading} />
 						<StatCard label={ACCOUNT_TEXT.AVAILABLE_LABEL} value={formatUSD(availableBalance)} isLoading={isLoading} />
@@ -165,26 +159,33 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						/>
 					</div>
 
-					<div className="grid grid-cols-2 gap-3 pt-2">
+					<div className="grid grid-cols-3 gap-2 pt-2">
 						<Button
 							variant="outline"
 							intent="neutral"
-							size="lg"
+							size="md"
+							onClick={() => openDepositModal("withdraw")}
+							iconLeft={<UploadSimpleIcon className="size-4" />}
+						>
+							{ACCOUNT_TEXT.WITHDRAW_LABEL}
+						</Button>
+						<Button
+							variant="outline"
+							intent="neutral"
+							size="md"
 							onClick={() => openDepositModal("deposit")}
-							className="min-h-[56px] bg-fill-success-weak border-stroke-success-strong text-text-success"
-							iconLeft={<LightningIcon className="size-5" />}
+							iconLeft={<DownloadSimpleIcon className="size-4" />}
 						>
 							{ACCOUNT_TEXT.DEPOSIT_LABEL}
 						</Button>
 						<Button
 							variant="outline"
 							intent="neutral"
-							size="lg"
-							className="min-h-[56px]"
-							disabled
-							iconLeft={<ArrowSquareOutIcon className="size-5" />}
+							size="md"
+							onClick={() => openDepositModal("bridge")}
+							iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 						>
-							{ACCOUNT_TEXT.WITHDRAW_LABEL}
+							{t`Bridge`}
 						</Button>
 					</div>
 				</div>
@@ -204,13 +205,11 @@ interface StatCardProps {
 
 function StatCard({ label, value, valueClass, isLoading }: StatCardProps) {
 	return (
-		<div className="p-3 rounded-8 border border-stroke-weak/40 bg-fill-weak">
-			<div className="text-xs text-text-weak mb-1">{label}</div>
-			{isLoading ? (
-				<Skeleton className="h-6 w-20" />
-			) : (
-				<div className={cn("text-lg font-semibold tabular-nums", valueClass)}>{value}</div>
-			)}
+		<div className="p-3 rounded-xs border border-stroke-weak/40 bg-bg-raised">
+			<div className="text-2xs text-text-weak mb-1">{label}</div>
+			<Skeleton name="stat-card-value" loading={isLoading ?? false}>
+				<div className={cn("text-base font-semibold tabular-nums", valueClass)}>{value}</div>
+			</Skeleton>
 		</div>
 	);
 }

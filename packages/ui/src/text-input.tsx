@@ -68,7 +68,7 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 			<Field.Root className="group flex flex-col gap-1 w-full" disabled={disabled} invalid={isInvalid} name={name}>
 				{label && (
 					<div className="flex flex-col">
-						<Field.Label className="flex gap-1 items-baseline text-sm font-normal cursor-default">
+						<Field.Label className="flex gap-1 items-baseline text-xs font-semibold cursor-default">
 							<span className="text-text-strong group-data-disabled:text-text-disabled">{label}</span>
 							{required && <span className="text-text-weak group-data-disabled:text-text-disabled">*</span>}
 							{optional && (
@@ -77,12 +77,6 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 						</Field.Label>
 						{hint && <Field.Description className="text-xs text-text-weak">{hint}</Field.Description>}
 					</div>
-				)}
-				{error && (
-					<Field.Error match className="flex items-center gap-2 py-1">
-						<XCircleIcon size={24} weight="fill" className="shrink-0 text-icon-error" />
-						<span className="text-xs font-semibold text-text-error">{error}</span>
-					</Field.Error>
 				)}
 				<div
 					className={cn(
@@ -119,6 +113,12 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 						<span className="shrink-0 text-icon-neutral group-data-disabled:text-icon-disabled">{iconRight}</span>
 					)}
 				</div>
+				{error && (
+					<Field.Error match className="flex items-center gap-2 py-1">
+						<XCircleIcon size={24} weight="fill" className="shrink-0 text-icon-error" />
+						<span className="text-xs font-semibold text-text-error">{error}</span>
+					</Field.Error>
+				)}
 			</Field.Root>
 		);
 	},

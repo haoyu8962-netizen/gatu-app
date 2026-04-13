@@ -21,7 +21,7 @@ interface Props {
 	initialDirection?: TransferDirection;
 }
 
-export function TransferDialog({ open, onOpenChange, initialDirection = "toSpot" }: Props) {
+export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" }: Props) {
 	const [direction, setDirection] = useState<TransferDirection>(initialDirection);
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -104,7 +104,7 @@ export function TransferDialog({ open, onOpenChange, initialDirection = "toSpot"
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm">
-				<ModalHeader>
+				<ModalHeader className="border-b border-stroke-weak/40">
 					<ModalTitle>{t`Transfer USDC`}</ModalTitle>
 					<ModalDescription>{t`Move USDC between your Perp and Spot accounts.`}</ModalDescription>
 				</ModalHeader>
@@ -127,6 +127,7 @@ export function TransferDialog({ open, onOpenChange, initialDirection = "toSpot"
 							<button
 								type="button"
 								onClick={handleFlip}
+								aria-label={t`Flip transfer direction`}
 								className="p-1.5 rounded-8 hover:bg-bg-raised/50 transition-colors text-text-weak hover:text-text-brand"
 							>
 								<ArrowsLeftRightIcon className="size-4" />

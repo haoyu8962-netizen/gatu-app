@@ -2,6 +2,7 @@ import { Badge, Button, ButtonIcon, Divider, Drawer, DrawerContent } from "@hype
 import { Trans } from "@lingui/react/macro";
 import {
 	DownloadSimpleIcon,
+	GearIcon,
 	HammerIcon,
 	ListIcon,
 	TerminalIcon,
@@ -14,8 +15,9 @@ import { useState } from "react";
 import { useConnection } from "wagmi";
 import { cn } from "@/lib/cn";
 import { useExchangeScope } from "@/providers/exchange-scope";
-import { useDepositModalActions } from "@/stores/use-global-modal-store";
-import { WalletDialog } from "../components/wallet-dialog";
+import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
+import { WalletModal } from "../components/wallet-modal";
+import { ThemeToggle } from "../header/theme-toggle";
 
 const SCOPE_NAV_ITEMS = [
 	{
@@ -70,6 +72,7 @@ export function MobileNavDrawer() {
 	const { scope } = useExchangeScope();
 	const { isConnected } = useConnection();
 	const { open: openDepositModal } = useDepositModalActions();
+	const { open: openSettingsDialog } = useSettingsDialogActions();
 
 	function close() {
 		setOpen(false);
@@ -164,11 +167,26 @@ export function MobileNavDrawer() {
 								<Trans>Connect Wallet</Trans>
 							</Button>
 						)}
+						<div className="flex items-center justify-between pt-1">
+							<ButtonIcon
+								variant="ghost"
+								intent="neutral"
+								size="md"
+								aria-label="Settings"
+								onClick={() => {
+									openSettingsDialog();
+									close();
+								}}
+							>
+								<GearIcon className="size-4" />
+							</ButtonIcon>
+							<ThemeToggle />
+						</div>
 					</div>
 				</DrawerContent>
 			</Drawer>
 
-			<WalletDialog open={walletOpen} onOpenChange={setWalletOpen} />
+			<WalletModal open={walletOpen} onOpenChange={setWalletOpen} />
 		</>
 	);
 }

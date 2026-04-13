@@ -1,6 +1,7 @@
-import { ArrowLeft } from "@phosphor-icons/react";
+import { ArrowLeftIcon } from "@phosphor-icons/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
+import { Button } from "./button";
 import { cn } from "./utils";
 
 const progressIndicatorVariants = cva([
@@ -52,23 +53,16 @@ const ProgressIndicator = React.forwardRef<HTMLDivElement, ProgressIndicatorProp
 				</div>
 			</div>
 			{onBack && (
-				<button
-					type="button"
+				<Button
+					variant="ghost"
+					intent="brand"
+					size="sm"
+					disabled={disabled}
 					onClick={disabled ? undefined : onBack}
-					aria-disabled={disabled || undefined}
-					data-disabled={disabled ? "" : undefined}
-					className={cn(
-						"inline-flex items-center gap-2 text-sm font-semibold text-text-brand",
-						"cursor-pointer bg-transparent border-none p-0",
-						"rounded-4 transition-opacity duration-150",
-						"hover:opacity-80",
-						"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-						"data-disabled:cursor-not-allowed data-disabled:opacity-40 data-disabled:pointer-events-none",
-					)}
+					iconLeft={<ArrowLeftIcon size={20} className="shrink-0" />}
 				>
-					<ArrowLeft size={20} className="shrink-0" />
 					{backLabel}
-				</button>
+				</Button>
 			)}
 		</div>
 	),

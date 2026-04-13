@@ -47,7 +47,7 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 	return (
 		<div
 			className={cn(
-				"flex gap-3 py-2.5 px-3 transition-all duration-300",
+				"flex gap-3 py-2.5 px-3 transition-[opacity,transform] duration-300",
 				order.status === "pending" && "animate-pulse",
 			)}
 		>

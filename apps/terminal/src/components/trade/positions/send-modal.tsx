@@ -32,7 +32,7 @@ interface Props {
 	initialAccountType?: AccountType;
 }
 
-export function SendDialog({
+export function SendModal({
 	open,
 	onOpenChange,
 	initialAsset = DEFAULT_QUOTE_TOKEN,
@@ -173,7 +173,7 @@ export function SendDialog({
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm">
-				<ModalHeader>
+				<ModalHeader className="border-b border-stroke-weak/40">
 					<ModalTitle>{t`Send Tokens`}</ModalTitle>
 					<ModalDescription>{t`Send tokens to another account on the Hyperliquid L1.`}</ModalDescription>
 				</ModalHeader>
@@ -184,6 +184,8 @@ export function SendDialog({
 							placeholder={t`Destination address`}
 							value={destination}
 							onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
+							autoComplete="off"
+							spellCheck={false}
 							className={cn(
 								destination &&
 									!isValidDestination &&

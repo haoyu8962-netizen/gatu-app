@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: other.length
+#: src/components/trade/components/wallet-modal.tsx
+msgid "{0} more wallets"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
 #~ msgstr ""
@@ -68,8 +73,8 @@ msgid "7 days"
 msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "A crypto wallet lets you store and manage your digital assets securely."
-msgstr ""
+#~ msgid "A crypto wallet lets you store and manage your digital assets securely."
+#~ msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "About Builder Codes"
@@ -147,7 +152,7 @@ msgstr ""
 msgid "All"
 msgstr ""
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions may be forfeited."
 msgstr ""
 
@@ -155,8 +160,8 @@ msgstr ""
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr ""
 
-#: src/components/trade/positions/send-dialog.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Amount"
@@ -244,6 +249,7 @@ msgstr ""
 #~ msgid "Breadcrumb"
 #~ msgstr "面包屑导航"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -312,6 +318,7 @@ msgstr "买入"
 #~ msgstr "买入做多"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
@@ -320,7 +327,7 @@ msgstr "买入"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cancel"
 msgstr "取消"
 
@@ -363,7 +370,7 @@ msgstr "取消中..."
 #~ msgid "cancelled"
 #~ msgstr "已取消"
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr ""
 
@@ -375,6 +382,7 @@ msgstr ""
 #~ msgid "Chart"
 #~ msgstr "图表"
 
+#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
@@ -407,13 +415,17 @@ msgstr "平仓中..."
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Confirm"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Confirm Bridge"
 #~ msgstr ""
+
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+msgid "Confirm Close"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
@@ -427,7 +439,7 @@ msgstr ""
 #~ msgid "Confirmation screen coming in next slice"
 #~ msgstr ""
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Connect"
 msgstr ""
 
@@ -439,7 +451,7 @@ msgstr ""
 #~ msgid "Connect a wallet to manage positions."
 #~ msgstr "连接钱包以管理仓位。"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -461,8 +473,8 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Connect your wallet to start trading on Hyperliquid"
-msgstr ""
+#~ msgid "Connect your wallet to start trading on Hyperliquid"
+#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -555,10 +567,9 @@ msgstr ""
 msgid "Created"
 msgstr ""
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Cross"
 msgstr "全仓"
@@ -579,7 +590,7 @@ msgstr ""
 msgid "Cross Margin Ratio"
 msgstr ""
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Current"
 msgstr ""
 
@@ -590,6 +601,10 @@ msgstr ""
 #: src/components/trade/order-entry/tp-sl-section.tsx
 #~ msgid "Custom TP percentage"
 #~ msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Custom wallet address"
+msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Customize your trading experience."
@@ -647,7 +662,7 @@ msgstr ""
 msgid "Destination"
 msgstr ""
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Destination address"
 msgstr ""
 
@@ -675,7 +690,7 @@ msgstr ""
 msgid "Dismiss"
 msgstr "关闭"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Display Language"
 msgstr "显示语言"
 
@@ -696,7 +711,7 @@ msgstr ""
 msgid "Duration (Minutes)"
 msgstr ""
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
 msgstr ""
 
@@ -817,6 +832,10 @@ msgstr "失败"
 msgid "Failed to close position"
 msgstr ""
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Failed to connect with custom address"
+msgstr ""
+
 #: src/hooks/ui/use-copy-to-clipboard.ts
 msgid "Failed to copy"
 msgstr ""
@@ -904,6 +923,11 @@ msgstr "手续费"
 #~ msgid "Fetching quote..."
 #~ msgstr ""
 
+#. placeholder {0}: formatPrice(markPx, { szDecimals: market?.szDecimals })
+#: src/components/trade/mobile/mobile-trade-view.tsx
+msgid "Fill limit price with mark price {0}"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Fill status"
@@ -918,7 +942,11 @@ msgstr ""
 msgid "Filter by {0}"
 msgstr "按 {0} 筛选"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Flip transfer direction"
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Format for numbers and dates"
 msgstr ""
 
@@ -967,6 +995,10 @@ msgstr ""
 #~ msgid "Go to previous page"
 #~ msgstr "上一页"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+msgid "Go to Trade"
+msgstr ""
+
 #: src/components/pages/not-found-page.tsx
 #: src/components/pages/not-found-page.tsx
 msgid "Go to trading terminal"
@@ -985,7 +1017,7 @@ msgstr ""
 #~ msgid "In Use"
 #~ msgstr "使用中"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Install a wallet extension to continue"
 msgstr ""
 
@@ -1024,14 +1056,13 @@ msgstr ""
 msgid "Invalid amount"
 msgstr ""
 
-#: src/components/pages/builder-page.tsx
-#~ msgid "Invalid Ethereum address"
-#~ msgstr ""
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Invalid Ethereum address"
+msgstr ""
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Isolated"
 msgstr "逐仓"
@@ -1045,13 +1076,13 @@ msgstr "逐仓"
 msgid "Leaderboard"
 msgstr "排行榜"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Learn more"
 msgstr ""
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage"
 msgstr ""
 
@@ -1154,6 +1185,7 @@ msgstr "加载钱包中..."
 msgid "Loading..."
 msgstr "加载中..."
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long"
 msgstr "多"
@@ -1176,11 +1208,15 @@ msgstr ""
 msgid "Margin"
 msgstr ""
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+msgid "Margin · Iso"
+msgstr ""
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin & leverage"
 msgstr ""
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode"
 msgstr ""
 
@@ -1240,7 +1276,7 @@ msgstr ""
 msgid "Market not ready"
 msgstr "市场未就绪"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Market Order Slippage"
 msgstr "市价单滑点"
 
@@ -1272,7 +1308,7 @@ msgstr "最大"
 #~ msgid "Max slippage allowed for market orders."
 #~ msgstr "市价单允许的最大滑点。"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Maximum slippage tolerance for market orders"
 msgstr ""
 
@@ -1315,7 +1351,7 @@ msgstr ""
 msgid "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
 msgstr ""
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Mock Wallet (Testing)"
 msgstr ""
 
@@ -1339,7 +1375,7 @@ msgstr ""
 #~ msgid "More pages"
 #~ msgstr "更多页面"
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Move USDC between your Perp and Spot accounts."
 msgstr ""
 
@@ -1351,7 +1387,7 @@ msgstr ""
 msgid "Net received"
 msgstr ""
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Network"
 msgstr ""
 
@@ -1367,7 +1403,7 @@ msgstr "新"
 msgid "New deposit"
 msgstr ""
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "New to wallets?"
 msgstr ""
 
@@ -1475,7 +1511,7 @@ msgstr ""
 #~ msgid "No user address"
 #~ msgstr ""
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "No wallets found"
 msgstr "未找到钱包"
 
@@ -1487,7 +1523,7 @@ msgstr "未连接"
 #~ msgid "Notifications"
 #~ msgstr "通知"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Number Format"
 msgstr ""
 
@@ -1508,8 +1544,8 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Only you control your funds. No email or password required."
-msgstr ""
+#~ msgid "Only you control your funds. No email or password required."
+#~ msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "open"
@@ -1544,7 +1580,7 @@ msgstr "未成交订单"
 msgid "ORACLE"
 msgstr "预言机"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Order Book"
@@ -1589,8 +1625,8 @@ msgid "Other"
 msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Other Options"
-msgstr ""
+#~ msgid "Other Options"
+#~ msgstr ""
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "P&L"
@@ -1618,8 +1654,8 @@ msgstr "待处理"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
 msgstr ""
 
@@ -1632,7 +1668,7 @@ msgstr ""
 msgid "Perps"
 msgstr "永续合约"
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
 msgstr ""
 
@@ -1653,6 +1689,10 @@ msgstr ""
 msgid "Place Limit Close"
 msgstr ""
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Please enter an address"
+msgstr ""
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1660,8 +1700,8 @@ msgid "PNL"
 msgstr "盈亏"
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Popular"
-msgstr ""
+#~ msgid "Popular"
+#~ msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -1837,8 +1877,8 @@ msgid "Search markets..."
 msgstr "搜索市场..."
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "Secure & Private"
-msgstr ""
+#~ msgid "Secure & Private"
+#~ msgstr ""
 
 #: src/components/trade/header/favorites-strip.tsx
 #~ msgid "Select {coin} market"
@@ -1885,6 +1925,7 @@ msgstr "选择订单"
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector.tsx
+#: src/components/trade/chart/token-selector.tsx
 msgid "Select token"
 msgstr "选择代币"
 
@@ -1910,23 +1951,23 @@ msgstr "卖出"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send"
 msgstr ""
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send failed"
 msgstr ""
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr ""
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send tokens to another account on the Hyperliquid L1."
 msgstr ""
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
 msgstr ""
 
@@ -1958,11 +1999,12 @@ msgstr ""
 #~ msgid "Set TP/SL for {0}"
 #~ msgstr ""
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
 msgid "Settings"
 msgstr "设置"
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short"
 msgstr "空"
@@ -1974,6 +2016,10 @@ msgstr "空"
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Executions on Chart"
 #~ msgstr "在图表上显示成交"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Show fewer wallets"
+msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Orders"
@@ -1995,7 +2041,7 @@ msgstr "空"
 #~ msgid "Show Scanlines"
 #~ msgstr "显示扫描线"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Show Values in Quote Asset"
 msgstr ""
 
@@ -2112,13 +2158,13 @@ msgstr ""
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Spot"
 msgstr "现货"
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Spot Account"
 msgstr ""
 
@@ -2215,7 +2261,7 @@ msgstr ""
 msgid "Swapping..."
 msgstr ""
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Switch between mainnet and testnet. Page will reload."
 msgstr ""
 
@@ -2451,17 +2497,17 @@ msgstr ""
 msgid "Transaction was rejected"
 msgstr ""
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Transfer"
 msgstr ""
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
 msgstr ""
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer USDC"
 msgstr ""
 
@@ -2469,7 +2515,7 @@ msgstr ""
 #~ msgid "Transfer USDC to your Hyperliquid account to start trading."
 #~ msgstr "将 USDC 转入您的 Hyperliquid 账户以开始交易。"
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Transferring..."
 msgstr ""
 
@@ -2544,14 +2590,14 @@ msgid "Unsupported resolution: {0}"
 msgstr "不支持的分辨率: {0}"
 
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Update failed"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr ""
 
@@ -2624,8 +2670,8 @@ msgstr "钱包未连接"
 #~ msgstr "WebSocket 错误"
 
 #: src/components/trade/components/wallet-dialog.tsx
-msgid "What is a wallet?"
-msgstr ""
+#~ msgid "What is a wallet?"
+#~ msgstr ""
 
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "will arrive in ~3 min"

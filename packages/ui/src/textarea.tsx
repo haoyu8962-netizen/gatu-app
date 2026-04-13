@@ -42,6 +42,7 @@ interface TextareaProps
 	label?: string;
 	helperText?: string;
 	errorMessage?: string;
+	optional?: boolean;
 	resize?: "none" | "vertical" | "horizontal" | "both";
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
 }
@@ -56,6 +57,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 			error,
 			errorMessage,
 			required,
+			optional,
 			disabled,
 			resize = "vertical",
 			rows = 3,
@@ -79,6 +81,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 					<Field.Label className="text-xs font-semibold text-text-strong">
 						{label}
 						{required && <span className="text-text-error"> *</span>}
+						{optional && <span className="text-xs font-normal text-text-weak"> (optional)</span>}
 					</Field.Label>
 				)}
 				{helperText && <Field.Description className="text-xs text-text-weak">{helperText}</Field.Description>}

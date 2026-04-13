@@ -20,7 +20,7 @@ import {
 	useNetwork,
 } from "@/stores/use-global-settings-store";
 
-export function GlobalSettingsDialog() {
+export function GlobalSettingsModal() {
 	const open = useSettingsDialogOpen();
 	const { close } = useSettingsDialogActions();
 	const { i18n } = useLingui();
@@ -74,7 +74,7 @@ export function GlobalSettingsDialog() {
 	return (
 		<Modal open={open} onOpenChange={close}>
 			<ModalPopup size="sm">
-				<ModalHeader className="border-b border-stroke-weak/50">
+				<ModalHeader className="border-b border-stroke-weak/40">
 					<ModalTitle>{t`Settings`}</ModalTitle>
 				</ModalHeader>
 

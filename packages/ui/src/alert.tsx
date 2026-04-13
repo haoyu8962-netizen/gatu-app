@@ -1,6 +1,7 @@
 import { XIcon } from "@phosphor-icons/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
+import { DEFAULT_ALERT_SIZE } from "./config";
 import { cn } from "./utils";
 
 type AlertTone =
@@ -129,7 +130,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
 		},
 		ref,
 	) => {
-		const size = sizeProp ?? "lg";
+		const size = sizeProp ?? DEFAULT_ALERT_SIZE;
 		const colors = toneColors[tone];
 		const isVertical = layout === "vertical";
 

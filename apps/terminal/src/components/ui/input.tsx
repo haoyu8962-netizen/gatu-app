@@ -2,7 +2,7 @@ import { Input as BaseInput } from "@base-ui/react/input";
 import type * as React from "react";
 import { cn } from "@/lib/cn";
 
-type InputSize = "sm" | "default" | "lg";
+type InputSize = "sm" | "default" | "lg" | "xl";
 
 const inputBaseStyles = [
 	"placeholder:text-text-weak selection:bg-fill-brand-strong selection:text-white",
@@ -17,6 +17,7 @@ const inputSizeStyles: Record<InputSize, string> = {
 	sm: "h-6 text-xs px-1.5",
 	default: "h-7 text-xs",
 	lg: "h-9 text-sm px-3",
+	xl: "h-12 text-base px-3",
 };
 
 function getInputClassName(inputSize: InputSize, className?: string) {
