@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. placeholder {0}: other.length
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "{0} more wallets"
 msgstr "{0} more wallets"
 
@@ -152,7 +152,7 @@ msgstr "Add TP/SL"
 msgid "All"
 msgstr "All"
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions may be forfeited."
 msgstr "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions may be forfeited."
 
@@ -160,8 +160,8 @@ msgstr "All cross positions share the same cross margin as collateral. In the ev
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 
-#: src/components/trade/positions/send-dialog.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Amount"
@@ -327,7 +327,7 @@ msgstr "Buy"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -370,7 +370,7 @@ msgstr "Canceling..."
 #~ msgid "cancelled"
 #~ msgstr "cancelled"
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "Cannot switch to Isolated mode with an open position. Close your position first."
 
@@ -382,7 +382,7 @@ msgstr "Change leverage"
 #~ msgid "Chart"
 #~ msgstr "Chart"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
@@ -415,7 +415,7 @@ msgstr "Closing..."
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Confirm"
 msgstr "Confirm"
 
@@ -439,7 +439,7 @@ msgstr "Confirm transaction in your wallet"
 #~ msgid "Confirmation screen coming in next slice"
 #~ msgstr "Confirmation screen coming in next slice"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Connect"
 msgstr "Connect"
 
@@ -451,7 +451,7 @@ msgstr "Connect"
 #~ msgid "Connect a wallet to manage positions."
 #~ msgstr "Connect a wallet to manage positions."
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -568,8 +568,8 @@ msgid "Created"
 msgstr "Created"
 
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Cross"
 msgstr "Cross"
@@ -590,7 +590,7 @@ msgstr "Cross Margin"
 msgid "Cross Margin Ratio"
 msgstr "Cross Margin Ratio"
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Current"
 msgstr "Current"
 
@@ -602,7 +602,7 @@ msgstr "Current"
 #~ msgid "Custom TP percentage"
 #~ msgstr "Custom TP percentage"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Custom wallet address"
 msgstr "Custom wallet address"
 
@@ -662,7 +662,7 @@ msgstr "Deposit successful"
 msgid "Destination"
 msgstr "Destination"
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Destination address"
 msgstr "Destination address"
 
@@ -690,7 +690,7 @@ msgstr "Disconnected"
 msgid "Dismiss"
 msgstr "Dismiss"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Display Language"
 msgstr "Display Language"
 
@@ -711,7 +711,7 @@ msgstr "Done"
 msgid "Duration (Minutes)"
 msgstr "Duration (Minutes)"
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
 msgstr "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
 
@@ -832,7 +832,7 @@ msgstr "failed"
 msgid "Failed to close position"
 msgstr "Failed to close position"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Failed to connect with custom address"
 msgstr "Failed to connect with custom address"
 
@@ -942,11 +942,11 @@ msgstr "Fill status"
 msgid "Filter by {0}"
 msgstr "Filter by {0}"
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Flip transfer direction"
 msgstr "Flip transfer direction"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Format for numbers and dates"
 msgstr "Format for numbers and dates"
 
@@ -1017,7 +1017,7 @@ msgstr "Hide small"
 #~ msgid "In Use"
 #~ msgstr "In Use"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Install a wallet extension to continue"
 msgstr "Install a wallet extension to continue"
 
@@ -1056,13 +1056,13 @@ msgstr "Insufficient funds for gas"
 msgid "Invalid amount"
 msgstr "Invalid amount"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Invalid Ethereum address"
 msgstr "Invalid Ethereum address"
 
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Isolated"
 msgstr "Isolated"
@@ -1080,13 +1080,13 @@ msgstr "Isolated"
 msgid "Leaderboard"
 msgstr "Leaderboard"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Learn more"
 msgstr "Learn more"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage"
 msgstr "Leverage"
 
@@ -1216,11 +1216,11 @@ msgstr "Margin"
 msgid "Margin · Iso"
 msgstr "Margin · Iso"
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin & leverage"
 msgstr "Margin & leverage"
 
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode"
 msgstr "Margin mode"
 
@@ -1280,7 +1280,7 @@ msgstr "Market Close"
 msgid "Market not ready"
 msgstr "Market not ready"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Market Order Slippage"
 msgstr "Market Order Slippage"
 
@@ -1312,7 +1312,7 @@ msgstr "Max"
 #~ msgid "Max slippage allowed for market orders."
 #~ msgstr "Max slippage allowed for market orders."
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Maximum slippage tolerance for market orders"
 msgstr "Maximum slippage tolerance for market orders"
 
@@ -1355,7 +1355,7 @@ msgstr "Minimum withdrawal is ${0}"
 msgid "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
 msgstr "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Mock Wallet (Testing)"
 msgstr "Mock Wallet (Testing)"
 
@@ -1379,7 +1379,7 @@ msgstr "More intervals"
 #~ msgid "More pages"
 #~ msgstr "More pages"
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Move USDC between your Perp and Spot accounts."
 msgstr "Move USDC between your Perp and Spot accounts."
 
@@ -1391,7 +1391,7 @@ msgstr "Move USDC between your Perp and Spot accounts."
 msgid "Net received"
 msgstr "Net received"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Network"
 msgstr "Network"
 
@@ -1407,7 +1407,7 @@ msgstr "NEW"
 msgid "New deposit"
 msgstr "New deposit"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "New to wallets?"
 msgstr "New to wallets?"
 
@@ -1515,7 +1515,7 @@ msgstr "No trading pair available for <0/>/<1/>"
 #~ msgid "No user address"
 #~ msgstr "No user address"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "No wallets found"
 msgstr "No wallets found"
 
@@ -1527,7 +1527,7 @@ msgstr "Not connected"
 #~ msgid "Notifications"
 #~ msgstr "Notifications"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Number Format"
 msgstr "Number Format"
 
@@ -1584,7 +1584,7 @@ msgstr "Open Orders"
 msgid "ORACLE"
 msgstr "ORACLE"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Order Book"
@@ -1658,8 +1658,8 @@ msgstr "pending"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
 msgstr "Perp"
 
@@ -1672,7 +1672,7 @@ msgstr "Perpetuals"
 msgid "Perps"
 msgstr "Perps"
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
 msgstr "Perps Account"
 
@@ -1693,7 +1693,7 @@ msgstr "Place {0} Order"
 msgid "Place Limit Close"
 msgstr "Place Limit Close"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Please enter an address"
 msgstr "Please enter an address"
 
@@ -1955,23 +1955,23 @@ msgstr "Sell"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send"
 msgstr "Send"
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send failed"
 msgstr "Send failed"
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "Send Tokens"
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Send tokens to another account on the Hyperliquid L1."
 msgstr "Send tokens to another account on the Hyperliquid L1."
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
 msgstr "Sending..."
 
@@ -2003,7 +2003,7 @@ msgstr "Set to {p}%"
 #~ msgid "Set TP/SL for {0}"
 #~ msgstr "Set TP/SL for {0}"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
 msgid "Settings"
 msgstr "Settings"
@@ -2021,7 +2021,7 @@ msgstr "Short"
 #~ msgid "Show Executions on Chart"
 #~ msgstr "Show Executions on Chart"
 
-#: src/components/trade/components/wallet-dialog.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Show fewer wallets"
 msgstr "Show fewer wallets"
 
@@ -2045,7 +2045,7 @@ msgstr "Show fewer wallets"
 #~ msgid "Show Scanlines"
 #~ msgstr "Show Scanlines"
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Show Values in Quote Asset"
 msgstr "Show Values in Quote Asset"
 
@@ -2162,13 +2162,13 @@ msgstr "Source"
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Spot"
 msgstr "Spot"
 
-#: src/components/trade/positions/send-dialog.tsx
+#: src/components/trade/positions/send-modal.tsx
 msgid "Spot Account"
 msgstr "Spot Account"
 
@@ -2265,7 +2265,7 @@ msgstr "Swap submitted"
 msgid "Swapping..."
 msgstr "Swapping..."
 
-#: src/components/trade/components/global-settings-dialog.tsx
+#: src/components/trade/components/global-settings-modal.tsx
 msgid "Switch between mainnet and testnet. Page will reload."
 msgstr "Switch between mainnet and testnet. Page will reload."
 
@@ -2505,17 +2505,17 @@ msgstr "Transaction breakdown"
 msgid "Transaction was rejected"
 msgstr "Transaction was rejected"
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Transfer"
 msgstr "Transfer"
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
 msgstr "Transfer failed"
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer USDC"
 msgstr "Transfer USDC"
 
@@ -2523,7 +2523,7 @@ msgstr "Transfer USDC"
 #~ msgid "Transfer USDC to your Hyperliquid account to start trading."
 #~ msgstr "Transfer USDC to your Hyperliquid account to start trading."
 
-#: src/components/trade/positions/transfer-dialog.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 msgid "Transferring..."
 msgstr "Transferring..."
 
@@ -2598,14 +2598,14 @@ msgid "Unsupported resolution: {0}"
 msgstr "Unsupported resolution: {0}"
 
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Update failed"
 msgstr "Update failed"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/margin-mode-dialog.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "Updated"
 

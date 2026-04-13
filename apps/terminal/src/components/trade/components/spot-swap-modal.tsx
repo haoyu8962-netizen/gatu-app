@@ -203,7 +203,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 	return (
 		<Modal open onOpenChange={handleClose}>
 			<ModalPopup size="sm">
-				<ModalHeader>
+				<ModalHeader className="border-b border-stroke-weak/40">
 					<ModalTitle>
 						<Trans>Swap</Trans>
 					</ModalTitle>

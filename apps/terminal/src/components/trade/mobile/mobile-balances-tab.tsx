@@ -1,6 +1,7 @@
 import { Button, Checkbox } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon, WalletIcon } from "@phosphor-icons/react";
+import { Skeleton } from "boneyard-js/react";
 import { useMemo, useState } from "react";
 import { useConnection } from "wagmi";
 import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/constants";
@@ -19,9 +20,8 @@ import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useSwapModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-global-settings-store";
 import { AssetDisplay } from "../components/asset-display";
-import { SendDialog } from "../positions/send-dialog";
-import { TransferDialog } from "../positions/transfer-dialog";
-import { BalancesTabSkeleton } from "./mobile-card-skeleton";
+import { SendModal } from "../positions/send-modal";
+import { TransferModal } from "../positions/transfer-modal";
 
 type TransferDirection = "toSpot" | "toPerp";
 const SMALL_BALANCE_THRESHOLD = 1;
@@ -90,10 +90,6 @@ export function MobileBalancesTab({ className }: Props) {
 		);
 	}
 
-	if (isLoading) {
-		return <BalancesTabSkeleton />;
-	}
-
 	if (hasError) {
 		return (
 			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-error">
@@ -102,7 +98,7 @@ export function MobileBalancesTab({ className }: Props) {
 		);
 	}
 
-	if (balances.length === 0) {
+	if (!isLoading && balances.length === 0) {
 		return (
 			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">
 				{t`No balances found. Deposit funds to start trading.`}
@@ -120,11 +116,14 @@ export function MobileBalancesTab({ className }: Props) {
 		const pnlData = getPnl(row);
 
 		return (
-			<div key={`${row.type}-${row.asset}`} className="rounded-8 border border-stroke-weak/40 bg-bg-base">
-				<div className="flex items-center justify-between px-3 py-2.5 border-b border-stroke-weak/40">
+			<div
+				key={`${row.type}-${row.asset}`}
+				className="rounded-xs border border-stroke-weak/40 bg-bg-raised overflow-hidden"
+			>
+				<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
 					<AssetDisplay coin={row.asset} nameClassName="text-sm font-semibold" />
 					<div className="text-right">
-						<div className="text-sm font-semibold tabular-nums text-text-success">
+						<div className="text-sm font-semibold tabular-nums text-text-strong">
 							{formatUSD(row.usdValue, { compact: true })}
 						</div>
 						{pnlData && (
@@ -137,20 +136,19 @@ export function MobileBalancesTab({ className }: Props) {
 					</div>
 				</div>
 
-				<div className="grid grid-cols-2 gap-px bg-stroke-weak/20">
+				<div className="grid grid-cols-2 divide-x divide-stroke-weak/40">
 					<MetricCell label={t`Available`} value={formatToken(row.available, decimals)} />
 					<MetricCell label={t`Total`} value={formatToken(row.total, decimals)} />
 				</div>
 
 				{(canTransfer || canSwap || canSend) && (
-					<div className="flex items-center gap-2 px-3 py-2.5">
+					<div className="flex items-center gap-2 px-3 py-1.5">
 						{canTransfer && (
 							<Button
 								variant="outline"
 								intent="neutral"
 								size="sm"
 								onClick={() => handleTransferClick(row)}
-								className="min-h-[36px]"
 								iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
 							>
 								{transferLabel}
@@ -162,7 +160,6 @@ export function MobileBalancesTab({ className }: Props) {
 								intent="neutral"
 								size="sm"
 								onClick={() => openSwapModal(row.asset)}
-								className="min-h-[36px]"
 								iconLeft={<ArrowsDownUpIcon className="size-3.5" />}
 							>
 								{t`Swap`}
@@ -174,7 +171,7 @@ export function MobileBalancesTab({ className }: Props) {
 								intent="neutral"
 								size="sm"
 								onClick={() => handleSendClick(row)}
-								className="min-h-[36px] ml-auto"
+								className="ml-auto"
 								iconLeft={<PaperPlaneTiltIcon className="size-3.5" />}
 							>
 								{t`Send`}
@@ -187,49 +184,53 @@ export function MobileBalancesTab({ className }: Props) {
 	}
 
 	return (
-		<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
-			<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-text-weak">
-				<WalletIcon className="size-3" />
-				{t`Account Balances`}
-				<span className="ml-auto normal-case tracking-normal">
-					<Checkbox
-						checked={hideSmallBalances}
-						onCheckedChange={(checked: boolean | "indeterminate") => setHideSmallBalances(Boolean(checked))}
-						size="sm"
-						label={t`Hide small`}
-					/>
-				</span>
-				<span className="text-text-success font-semibold tabular-nums">{formatUSD(totalValue, { compact: true })}</span>
-			</div>
-			<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
-				{perpBalances.length > 0 && (
-					<>
-						<div className="text-xs uppercase tracking-wider text-text-brand font-medium px-1 pt-1">
-							{t`Perpetuals`}
-						</div>
-						{perpBalances.map(renderBalanceCard)}
-					</>
-				)}
-				{spotBalancesFiltered.length > 0 && (
-					<>
-						<div className="text-xs uppercase tracking-wider text-text-warning font-medium px-1 pt-1">{t`Spot`}</div>
-						{spotBalancesFiltered.map(renderBalanceCard)}
-					</>
-				)}
-			</div>
+		<Skeleton name="balances-tab" loading={isLoading}>
+			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
+				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-text-weak">
+					<WalletIcon className="size-3" />
+					{t`Account Balances`}
+					<span className="ml-auto normal-case tracking-normal">
+						<Checkbox
+							checked={hideSmallBalances}
+							onCheckedChange={(checked: boolean | "indeterminate") => setHideSmallBalances(Boolean(checked))}
+							size="sm"
+							label={t`Hide small`}
+						/>
+					</span>
+					<span className="text-text-success font-semibold tabular-nums">
+						{formatUSD(totalValue, { compact: true })}
+					</span>
+				</div>
+				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
+					{perpBalances.length > 0 && (
+						<>
+							<div className="text-xs uppercase tracking-wider text-text-brand font-medium px-1 pt-1">
+								{t`Perpetuals`}
+							</div>
+							{perpBalances.map(renderBalanceCard)}
+						</>
+					)}
+					{spotBalancesFiltered.length > 0 && (
+						<>
+							<div className="text-xs uppercase tracking-wider text-text-warning font-medium px-1 pt-1">{t`Spot`}</div>
+							{spotBalancesFiltered.map(renderBalanceCard)}
+						</>
+					)}
+				</div>
 
-			<TransferDialog
-				open={transferState.open}
-				onOpenChange={(open) => setTransferState((prev) => ({ ...prev, open }))}
-				initialDirection={transferState.direction}
-			/>
-			<SendDialog
-				open={sendState.open}
-				onOpenChange={(open) => setSendState((prev) => ({ ...prev, open }))}
-				initialAsset={sendState.asset}
-				initialAccountType={sendState.accountType}
-			/>
-		</div>
+				<TransferModal
+					open={transferState.open}
+					onOpenChange={(open) => setTransferState((prev) => ({ ...prev, open }))}
+					initialDirection={transferState.direction}
+				/>
+				<SendModal
+					open={sendState.open}
+					onOpenChange={(open) => setSendState((prev) => ({ ...prev, open }))}
+					initialAsset={sendState.asset}
+					initialAccountType={sendState.accountType}
+				/>
+			</div>
+		</Skeleton>
 	);
 }
 
@@ -240,8 +241,8 @@ interface MetricCellProps {
 
 function MetricCell({ label, value }: MetricCellProps) {
 	return (
-		<div className="px-3 py-2 bg-bg-base">
-			<div className="text-xs text-text-weak mb-0.5">{label}</div>
+		<div className="px-2.5 py-1.5">
+			<div className="text-xs text-text-weak">{label}</div>
 			<div className="text-xs tabular-nums font-medium">{value}</div>
 		</div>
 	);

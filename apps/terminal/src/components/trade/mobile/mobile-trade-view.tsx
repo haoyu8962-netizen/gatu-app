@@ -31,8 +31,8 @@ import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
-import { WalletDialog } from "../components/wallet-dialog";
-import { MarginModeDialog } from "../tradebox/margin-mode-dialog";
+import { WalletModal } from "../components/wallet-modal";
+import { MarginModeModal } from "../tradebox/margin-mode-modal";
 import { OrderToast } from "../tradebox/order-toast";
 import { TradeHeader } from "../tradebox/trade-header";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
@@ -85,7 +85,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 
-	const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [showMarginDialog, setShowMarginDialog] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
@@ -277,7 +277,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 		if (!isConnected)
 			return {
 				text: ORDER_TEXT.BUTTON_CONNECT,
-				action: () => setWalletDialogOpen(true),
+				action: () => setWalletModalOpen(true),
 				disabled: false,
 				variant: "cyan" as const,
 			};
@@ -327,7 +327,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 
 	return (
 		<div className={cn("flex flex-col h-full min-h-0 bg-bg-base", className)}>
-			<MarginModeDialog
+			<MarginModeModal
 				open={showMarginDialog}
 				onOpenChange={setShowMarginDialog}
 				currentMode={marginMode}
@@ -398,7 +398,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 								disabled={isFormDisabled}
 							/>
 							<Button
-								variant="outline"
+								variant="ghost"
 								intent="neutral"
 								size="sm"
 								onClick={handleSizeModeToggle}
@@ -558,7 +558,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 				<MobileBottomNavSpacer />
 			</div>
 
-			<WalletDialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen} />
+			<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
 			<OrderToast />
 		</div>
 	);

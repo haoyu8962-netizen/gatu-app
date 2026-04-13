@@ -32,8 +32,8 @@ import {
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
-import { SendDialog } from "./send-dialog";
-import { TransferDialog } from "./transfer-dialog";
+import { SendModal } from "./send-modal";
+import { TransferModal } from "./transfer-modal";
 
 interface PlaceholderProps {
 	children: ReactNode;
@@ -290,13 +290,13 @@ export function BalancesTab() {
 				)}
 			</div>
 
-			<TransferDialog
+			<TransferModal
 				open={transferState.open}
 				onOpenChange={(open) => setTransferState((prev) => ({ ...prev, open }))}
 				initialDirection={transferState.direction}
 			/>
 
-			<SendDialog
+			<SendModal
 				open={sendState.open}
 				onOpenChange={(open) => setSendState((prev) => ({ ...prev, open }))}
 				initialAsset={sendState.asset}

@@ -1,6 +1,6 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@hypeterminal/ui";
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@hypeterminal/ui";
 import { WalletIcon } from "@phosphor-icons/react";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
 import { HL_ALL_DEXS } from "@/config/constants";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
+import { WalletModal } from "../components/wallet-modal";
 import { MobileBalancesTab } from "./mobile-balances-tab";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 import { MobileFundingTab } from "./mobile-funding-tab";
@@ -19,12 +20,12 @@ import { MobileTwapTab } from "./mobile-twap-tab";
 
 const MOBILE_TABS = [
 	{ value: "positions", label: "Positions" },
-	{ value: "orders", label: "Open Orders" },
+	{ value: "orders", label: "Orders" },
 	{ value: "balances", label: "Balances" },
 	{ value: "twap", label: "TWAP" },
-	{ value: "history", label: "Trade History" },
-	{ value: "orders-history", label: "Order History" },
-	{ value: "funding", label: "Funding History" },
+	{ value: "history", label: "Trades" },
+	{ value: "orders-history", label: "Order Hist." },
+	{ value: "funding", label: "Funding" },
 ] as const;
 
 type TabValue = (typeof MOBILE_TABS)[number]["value"];
@@ -79,7 +80,7 @@ export function MobilePositionsView({ className }: Props) {
 	return (
 		<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
 			<Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 min-h-0 flex flex-col">
-				<div className="shrink-0 overflow-x-auto border-b border-stroke-weak/60">
+				<div className="shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 					<TabsList className="px-3 min-w-max">
 						{MOBILE_TABS.map((tab) => {
 							const count = getTabCount(tab.value);
@@ -134,12 +135,20 @@ export function MobilePositionsView({ className }: Props) {
 }
 
 function EmptyState() {
+	const [walletModalOpen, setWalletModalOpen] = useState(false);
+
 	return (
-		<div className="h-full flex flex-col items-center justify-center gap-4 p-6 text-center">
-			<div className="size-16 rounded-full flex items-center justify-center bg-bg-raised">
-				<WalletIcon className="size-8 text-text-weak" />
+		<>
+			<div className="h-full flex flex-col items-center justify-center gap-4 p-6 text-center">
+				<div className="size-16 rounded-full flex items-center justify-center bg-bg-raised">
+					<WalletIcon className="size-8 text-text-weak" />
+				</div>
+				<p className="text-sm text-text-weak max-w-xs text-pretty">Connect wallet to view positions</p>
+				<Button variant="outline" intent="brand" size="sm" onClick={() => setWalletModalOpen(true)}>
+					Connect Wallet
+				</Button>
 			</div>
-			<p className="text-sm text-text-weak max-w-xs">Connect wallet to view positions</p>
-		</div>
+			<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
+		</>
 	);
 }

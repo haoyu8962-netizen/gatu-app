@@ -32,7 +32,7 @@ import {
 	isTwapOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
 } from "@/lib/trade/order-types";
-import type { ActiveDialog } from "@/lib/trade/types";
+import type { ActiveModal } from "@/lib/trade/types";
 import { useButtonContent } from "@/lib/trade/use-button-content";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { useDepositModalActions, useSettingsDialogActions, useSwapModalActions } from "@/stores/use-global-modal-store";
@@ -58,8 +58,8 @@ import {
 } from "@/stores/use-order-entry-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
-import { WalletDialog } from "../components/wallet-dialog";
-import { MarginModeDialog } from "./margin-mode-dialog";
+import { WalletModal } from "../components/wallet-modal";
+import { MarginModeModal } from "./margin-mode-modal";
 import { OrderSummary } from "./order-summary";
 import { OrderToast } from "./order-toast";
 import { TradeFormFields } from "./trade-form-fields";
@@ -144,7 +144,7 @@ export function TradePanel() {
 	const { setSide, setOrderType, setSizeMode, setSize, setLimitPrice, resetForm } = useOrderEntryActions();
 
 	const [approvalError, setApprovalError] = useState<string | null>(null);
-	const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
+	const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
@@ -436,7 +436,7 @@ export function TradePanel() {
 		side,
 		sideLabel: sideLabels[side],
 		isSubmitting,
-		onConnectWallet: () => setActiveDialog("wallet"),
+		onConnectWallet: () => setActiveModal("wallet"),
 		onDeposit: () => openDepositModal("deposit"),
 		onRegister: handleRegister,
 		onSubmit: handleSubmit,
@@ -446,9 +446,9 @@ export function TradePanel() {
 
 	return (
 		<div className="min-h-0 flex flex-col overflow-hidden bg-bg-raised">
-			<MarginModeDialog
-				open={activeDialog === "marginMode"}
-				onOpenChange={(open) => setActiveDialog(open ? "marginMode" : null)}
+			<MarginModeModal
+				open={activeModal === "marginMode"}
+				onOpenChange={(open) => setActiveModal(open ? "marginMode" : null)}
 				currentMode={marginMode}
 				currentLeverage={currentLeverage}
 				pendingLeverage={pendingLeverage}
@@ -473,7 +473,7 @@ export function TradePanel() {
 					onSideChange={setSide}
 					marginMode={marginMode}
 					leverage={leverage}
-					onMarginLeverageClick={() => setActiveDialog("marginMode")}
+					onMarginLeverageClick={() => setActiveModal("marginMode")}
 					isLeveraged={capabilities.isLeveraged}
 				/>
 
@@ -528,7 +528,7 @@ export function TradePanel() {
 				/>
 			</div>
 
-			<WalletDialog open={activeDialog === "wallet"} onOpenChange={(open) => setActiveDialog(open ? "wallet" : null)} />
+			<WalletModal open={activeModal === "wallet"} onOpenChange={(open) => setActiveModal(open ? "wallet" : null)} />
 
 			<OrderToast />
 		</div>

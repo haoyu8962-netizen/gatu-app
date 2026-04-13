@@ -88,7 +88,7 @@ function StatusScreen({
 	return (
 		<Modal open onOpenChange={closable ? onClose : undefined}>
 			<ModalPopup size="sm" showClose={closable}>
-				<ModalHeader>
+				<ModalHeader className="border-b border-stroke-weak/40">
 					<ModalTitle>{title}</ModalTitle>
 				</ModalHeader>
 				<ModalContent>

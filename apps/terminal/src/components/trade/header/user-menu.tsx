@@ -8,7 +8,7 @@ import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
-import { WalletDialog } from "../components/wallet-dialog";
+import { WalletModal } from "../components/wallet-modal";
 
 export function UserMenu() {
 	const { address, isConnected, isConnecting } = useConnection();
@@ -51,7 +51,7 @@ export function UserMenu() {
 				>
 					<Trans>Connect Wallet</Trans>
 				</Button>
-				<WalletDialog open={isOpen} onOpenChange={setIsOpen} />
+				<WalletModal open={isOpen} onOpenChange={setIsOpen} />
 			</>
 		);
 	}
