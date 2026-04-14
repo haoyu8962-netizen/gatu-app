@@ -1,9 +1,10 @@
 import { Button, Checkbox, Select, Slider, Tooltip } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { CaretDownIcon, CrosshairIcon } from "@phosphor-icons/react";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import { useConnection } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
+import { PriceInput } from "@/components/ui/price-input";
 import {
 	FALLBACK_VALUE_PLACEHOLDER,
 	ORDER_MIN_NOTIONAL_USD,
@@ -15,16 +16,9 @@ import {
 import { getSliderValue } from "@/domain/trade/order/size";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { cn } from "@/lib/cn";
-import { formatToken, szDecimalsToPriceDecimals } from "@/lib/format";
+import { formatToken } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
-import {
-	formatDecimalFloor,
-	getValueColorClass,
-	isPositive,
-	toFixed,
-	toNumber,
-	toNumberOrZero,
-} from "@/lib/trade/numbers";
+import { formatDecimalFloor, getValueColorClass, isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isScaleOrderType,
@@ -223,19 +217,14 @@ export function TradeFormFields({
 
 				{usesTriggerPrice && (
 					<div className="border-t border-stroke-weak/25 pt-3">
-						<NumberInput
+						<PriceInput
 							label={t`Trigger Price`}
-							labelValue={toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
 							placeholder="0.00"
 							value={triggerPriceInput}
 							onChange={(e) => setTriggerPrice(e.target.value)}
-							maxLabel={
-								<span className="flex items-center gap-1">
-									<CrosshairIcon className="size-3" />
-									{t`Mid`}
-								</span>
-							}
-							onMaxClick={() => setTriggerPrice(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
+							onMidClick={setTriggerPrice}
+							midPrice={markPx}
+							szDecimals={szDecimals}
 							className={cn(
 								"w-full text-xs tabular-nums",
 								usesTriggerPrice &&
@@ -250,19 +239,14 @@ export function TradeFormFields({
 
 				{usesLimitPrice && (
 					<div className="border-t border-stroke-weak/25 pt-3">
-						<NumberInput
+						<PriceInput
 							label={t`Limit Price`}
-							labelValue={toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
 							placeholder="0.00"
 							value={limitPriceInput}
 							onChange={(e) => setLimitPrice(e.target.value)}
-							maxLabel={
-								<span className="flex items-center gap-1">
-									<CrosshairIcon className="size-3" />
-									{t`Mid`}
-								</span>
-							}
-							onMaxClick={() => setLimitPrice(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
+							onMidClick={setLimitPrice}
+							midPrice={markPx}
+							szDecimals={szDecimals}
 							className={cn(
 								"w-full text-xs tabular-nums",
 								usesLimitPrice &&
@@ -351,37 +335,27 @@ export function TradeFormFields({
 
 			{scaleOrder && (
 				<>
-					<NumberInput
+					<PriceInput
 						label={t`Start Price`}
-						labelValue={toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
 						placeholder="0.00"
 						value={scaleStartPriceInput}
 						onChange={(e) => setScaleStart(e.target.value)}
+						onMidClick={setScaleStart}
+						midPrice={markPx}
+						szDecimals={szDecimals}
 						className="w-full text-xs tabular-nums"
 						disabled={isFormDisabled}
-						maxLabel={
-							<span className="flex items-center gap-1">
-								<CrosshairIcon className="size-3" />
-								{t`Mid`}
-							</span>
-						}
-						onMaxClick={() => setScaleStart(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
 					/>
-					<NumberInput
+					<PriceInput
 						label={t`End Price`}
-						labelValue={toFixed(markPx, szDecimalsToPriceDecimals(szDecimals))}
 						placeholder="0.00"
 						value={scaleEndPriceInput}
 						onChange={(e) => setScaleEnd(e.target.value)}
+						onMidClick={setScaleEnd}
+						midPrice={markPx}
+						szDecimals={szDecimals}
 						className="w-full text-xs tabular-nums"
 						disabled={isFormDisabled}
-						maxLabel={
-							<span className="flex items-center gap-1">
-								<CrosshairIcon className="size-3" />
-								{t`Mid`}
-							</span>
-						}
-						onMaxClick={() => setScaleEnd(toFixed(markPx, szDecimalsToPriceDecimals(szDecimals)))}
 					/>
 					<NumberInput
 						label={t`Number of Orders`}

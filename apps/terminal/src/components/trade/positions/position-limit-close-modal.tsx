@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
+import { PriceInput } from "@/components/ui/price-input";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { cn } from "@/lib/cn";
@@ -153,17 +154,17 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 				</ModalContent>
 
 				<div className="px-6 pb-4 space-y-4">
-					<NumberInput
+					<PriceInput
 						label={t`Limit Price`}
-						labelValue={liveMarkPx.toFixed(priceDecimals)}
 						value={priceInput}
 						onChange={(e) => setPriceInput(e.target.value)}
+						onMidClick={setPriceInput}
 						placeholder="0.00"
 						maxAllowedDecimals={priceDecimals}
+						midPrice={liveMarkPx}
+						szDecimals={position.szDecimals}
 						inputSize="sm"
 						className="w-full"
-						maxLabel={t`Mid`}
-						onMaxClick={() => setPriceInput(liveMarkPx.toFixed(priceDecimals))}
 					/>
 
 					<div>

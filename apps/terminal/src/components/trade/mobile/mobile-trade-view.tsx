@@ -1,9 +1,9 @@
 import { Button, Checkbox, Slider } from "@hypeterminal/ui";
-import { t } from "@lingui/core/macro";
 import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useEffect, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
+import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER, UI_TEXT } from "@/config/constants";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { get24hChange } from "@/domain/market";
@@ -12,22 +12,22 @@ import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
+import { formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { getValueColorClass, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isTakerOrderType,
-	type OrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
 } from "@/lib/trade/order-types";
-import type { Side, SizeMode } from "@/lib/trade/types";
+import type { SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
+import { useOrderEntryActions, useOrderSide, useOrderType } from "@/stores/use-order-entry-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
@@ -71,8 +71,9 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 	const { addOrder, updateOrder } = useOrderQueueActions();
 	const selectedPrice = useSelectedPrice();
 
-	const [orderType, setOrderType] = useState<OrderType>("market");
-	const [side, setSide] = useState<Side>("buy");
+	const orderType = useOrderType();
+	const side = useOrderSide();
+	const { setOrderType, setSide } = useOrderEntryActions();
 	const [sizeInput, setSizeInput] = useState("");
 	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
 	const [limitPriceInput, setLimitPriceInput] = useState("");
@@ -199,10 +200,6 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 		const convertedSize = convertSizeForModeToggle();
 		setSizeMode(newMode);
 		if (convertedSize) setSizeInput(convertedSize);
-	};
-
-	const handleMarkPriceClick = () => {
-		if (markPx > 0) setLimitPriceInput(markPx.toFixed(szDecimalsToPriceDecimals(market?.szDecimals ?? 4)));
 	};
 
 	const handleSwitchChain = () => switchChain({ chainId: ARBITRUM_CHAIN_ID });
@@ -444,31 +441,19 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 					</div>
 
 					{usesLimitPrice && (
-						<div className="space-y-3">
-							<div className="flex items-center justify-between">
-								<p className="text-2xs font-medium uppercase text-text-weak">{ORDER_TEXT.LIMIT_PRICE_LABEL}</p>
-								{markPx > 0 && (
-									<button
-										type="button"
-										onClick={handleMarkPriceClick}
-										disabled={isFormDisabled}
-										aria-label={t`Fill limit price with mark price ${formatPrice(markPx, { szDecimals: market?.szDecimals })}`}
-										className="text-2xs text-text-weak tabular-nums hover:text-text-strong transition-colors underline decoration-dashed underline-offset-2 decoration-text-weak/50 disabled:pointer-events-none"
-									>
-										{formatPrice(markPx, { szDecimals: market?.szDecimals })}
-									</button>
-								)}
-							</div>
-							<NumberInput
-								inputMode="decimal"
-								inputSize="xl"
-								placeholder="0.00"
-								value={limitPriceInput}
-								onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
-								className="tabular-nums font-semibold"
-								disabled={isFormDisabled}
-							/>
-						</div>
+						<PriceInput
+							label={ORDER_TEXT.LIMIT_PRICE_LABEL}
+							inputMode="decimal"
+							inputSize="xl"
+							placeholder="0.00"
+							value={limitPriceInput}
+							onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
+							onMidClick={setLimitPriceInput}
+							midPrice={markPx}
+							szDecimals={market?.szDecimals}
+							className="tabular-nums font-semibold"
+							disabled={isFormDisabled}
+						/>
 					)}
 
 					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
