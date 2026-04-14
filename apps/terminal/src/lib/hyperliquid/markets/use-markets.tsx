@@ -8,9 +8,8 @@ import type {
 	UnifiedMarket,
 } from "@hypeterminal/hl-react/markets/types";
 import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
-import { createContext, type ReactNode, useContext, useEffect, useMemo } from "react";
+import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { getIconUrlFromMarketName, getTokenDisplayName, getUnderlyingAsset } from "@/domain/market/tokens";
-import { saveMarketsMetaCache } from "@/providers/root";
 import {
 	getBuilderPerpAssetId,
 	getBuilderPerpDisplayName,
@@ -175,39 +174,31 @@ interface Props {
 }
 
 export function MarketsProvider({ children }: Props) {
-	const STALE_TIME = 30 * 60 * 1000;
-
-	const {
-		data: perpMeta,
-		isLoading: perpLoading,
-		error: perpError,
-	} = useInfo("meta", {}, { refetchInterval: Infinity, staleTime: STALE_TIME });
+	const META_STALE_TIME = 30 * 60 * 1000;
+	const DEXS_STALE_TIME = 5 * 60 * 1000;
 
 	const {
 		data: spotMeta,
 		isLoading: spotLoading,
 		error: spotError,
-	} = useInfo("spotMeta", undefined, { refetchInterval: Infinity, staleTime: STALE_TIME });
+	} = useInfo("spotMeta", undefined, { refetchInterval: Infinity, staleTime: META_STALE_TIME, persist: true });
 
 	const {
 		data: perpDexs,
 		isLoading: dexsLoading,
 		error: dexsError,
-	} = useInfo("perpDexs", undefined, { refetchInterval: Infinity, staleTime: STALE_TIME });
+	} = useInfo("perpDexs", undefined, { refetchInterval: Infinity, staleTime: DEXS_STALE_TIME, persist: true });
 
 	const {
 		data: allPerpMetas,
 		isLoading: allMetasLoading,
 		error: allMetasError,
-	} = useInfo("allPerpMetas", undefined, { refetchInterval: Infinity, staleTime: STALE_TIME });
+	} = useInfo("allPerpMetas", undefined, { refetchInterval: Infinity, staleTime: META_STALE_TIME, persist: true });
 
-	const isLoading = perpLoading || spotLoading || dexsLoading || allMetasLoading;
-	const error = perpError ?? spotError ?? dexsError ?? allMetasError ?? null;
+	const perpMeta = allPerpMetas?.[0];
 
-	useEffect(() => {
-		if (!perpMeta || !spotMeta || !perpDexs || !allPerpMetas) return;
-		saveMarketsMetaCache({ perpMeta, spotMeta, perpDexs, allPerpMetas });
-	}, [perpMeta, spotMeta, perpDexs, allPerpMetas]);
+	const isLoading = spotLoading || dexsLoading || allMetasLoading;
+	const error = spotError ?? dexsError ?? allMetasError ?? null;
 
 	const markets = useMemo(
 		() =>

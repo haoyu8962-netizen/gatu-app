@@ -24,7 +24,11 @@ export function useFeeRates(marketKind?: MarketKind): FeeRates {
 	const defaults = getDefaults(marketKind);
 	const user = address ?? "";
 
-	const { data } = useInfo("userFees", { user }, { enabled: isConnected && Boolean(address) });
+	const { data } = useInfo(
+		"userFees",
+		{ user },
+		{ enabled: isConnected && Boolean(address), staleTime: 5 * 60 * 1000, persist: true },
+	);
 
 	if (!data) return defaults;
 

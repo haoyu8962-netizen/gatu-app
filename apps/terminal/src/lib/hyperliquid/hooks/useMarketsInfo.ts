@@ -1,6 +1,7 @@
 import { useSubscription } from "@hypeterminal/hl-react";
 import type { BuilderPerpMarket, PerpMarket, SpotMarket } from "@hypeterminal/hl-react/markets/types";
 import { useEffect, useMemo, useState } from "react";
+import { loadLastMark, saveLastMark } from "@/lib/last-mark-cache";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useSelectedMarket } from "@/stores/use-market-store";
 import type { AllDexsAssetCtxs, DexAssetCtx, SpotAssetCtx, SpotAssetCtxs } from "@/types/hyperliquid";
@@ -199,8 +200,23 @@ export function useSelectedMarketInfo() {
 
 	const market = getMarketInfo(selectedMarketName);
 
+	useEffect(() => {
+		if (!selectedMarketName || !market || market.name !== selectedMarketName) return;
+		const liveMark = market.markPx;
+		if (!liveMark) return;
+		saveLastMark(selectedMarketName, liveMark, market.oraclePx);
+	}, [selectedMarketName, market]);
+
+	const data = useMemo(() => {
+		if (!market) return undefined;
+		if (market.markPx) return market;
+		const cached = selectedMarketName ? loadLastMark(selectedMarketName) : null;
+		if (!cached) return market;
+		return { ...market, markPx: cached.markPx, oraclePx: market.oraclePx ?? cached.oraclePx };
+	}, [market, selectedMarketName]);
+
 	return {
-		data: market ?? undefined,
+		data,
 		isLoading,
 		error,
 		isResolved: !!market,

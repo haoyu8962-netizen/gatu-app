@@ -83,6 +83,16 @@ Thin wrapper around `InfoClient` methods (`meta`, `userFills`, `clearinghouseSta
 const { data } = useInfo("userFills", { user: address });
 ```
 
+#### `persist: true` — cross-reload caching
+
+Pass `persist: true` to route the query through a `["persisted", ...]` key prefix. Consuming apps wire up `@tanstack/react-query-persist-client` with `shouldDehydrateQuery: (q) => q.queryKey[0] === "persisted"` so only explicitly opted-in queries survive a reload. Low-churn metadata (`spotMeta`, `allPerpMetas`, `userFees`) benefits; volatile streams (order books, fills) never should.
+
+```ts
+const { data } = useInfo("spotMeta", undefined, { persist: true, staleTime: 30 * 60_000 });
+```
+
+Key helpers: `infoKey(method, params)` (default) and `infoPersistedKey(method, params)` (prefixed). Constant: `PERSISTED_QUERY_PREFIX`.
+
 ### `useSubscription` — WebSocket streams
 
 Wraps `SubscriptionClient` methods. The `registries/subscription.ts` config decides whether a stream accumulates into a ring buffer (e.g. `trades`, `userFills`, `userFundings`, `orderUpdates`) or replaces state (`l2Book`, `allMids`).

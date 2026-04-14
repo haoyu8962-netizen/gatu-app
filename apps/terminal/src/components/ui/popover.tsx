@@ -16,15 +16,17 @@ function PopoverContent({
 	sideOffset = 4,
 	alignOffset = 0,
 	collisionPadding = 8,
+	keepMounted = false,
 	...props
 }: React.ComponentProps<typeof PopoverPrimitive.Popup> & {
 	align?: "start" | "center" | "end";
 	sideOffset?: number;
 	alignOffset?: number;
 	collisionPadding?: number;
+	keepMounted?: boolean;
 }) {
 	return (
-		<PopoverPrimitive.Portal>
+		<PopoverPrimitive.Portal keepMounted={keepMounted}>
 			<PopoverPrimitive.Positioner
 				align={align}
 				sideOffset={sideOffset}

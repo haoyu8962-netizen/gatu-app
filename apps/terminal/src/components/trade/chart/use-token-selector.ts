@@ -125,8 +125,9 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 		setLocalSubcategory("all");
 	}, []);
 
+	const stableScopeFilteredRef = useRef<{ key: string; value: MarketRow[] }>({ key: "", value: [] });
 	const scopeFilteredMarkets = useMemo(() => {
-		return markets.filter((market) => {
+		const filtered = markets.filter((market) => {
 			if (scope === "perp" && market.kind !== "perp") return false;
 			if (scope === "spot" && market.kind !== "spot") return false;
 			if (scope === "hip3" && market.kind !== "builderPerp") return false;
@@ -148,11 +149,25 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 
 			return true;
 		});
-	}, [markets, scope, subcategory]);
+		// When closed: freeze the list by names-key so hidden rows don't re-render on each WS tick.
+		// When open: always return the fresh reference so prices update live every ~5s.
+		if (open) {
+			stableScopeFilteredRef.current = {
+				key: `${scope}|${subcategory}|${filtered.length}|${filtered.map((m) => m.name).join(",")}`,
+				value: filtered,
+			};
+			return filtered;
+		}
+		const key = `${scope}|${subcategory}|${filtered.length}|${filtered.map((m) => m.name).join(",")}`;
+		if (stableScopeFilteredRef.current.key === key) {
+			return stableScopeFilteredRef.current.value;
+		}
+		stableScopeFilteredRef.current = { key, value: filtered };
+		return filtered;
+	}, [markets, scope, subcategory, open]);
 
-	const marketListKey = useMemo(() => scopeFilteredMarkets.map((m) => m.name).join(","), [scopeFilteredMarkets]);
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	const searcher = useMemo(() => createSearcher(scopeFilteredMarkets, marketSearchConfig), [marketListKey]);
+	const searcher = useMemo(() => createSearcher(scopeFilteredMarkets, marketSearchConfig), [scopeFilteredMarkets]);
 
 	const filteredMarkets = useMemo(() => {
 		if (!deferredSearch) return scopeFilteredMarkets;
@@ -270,11 +285,14 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 		}
 	}
 
-	function handleSelect(name: string) {
-		onValueChange(name);
-		setOpen(false);
-		setSearch("");
-	}
+	const handleSelect = useCallback(
+		(name: string) => {
+			onValueChange(name);
+			setOpen(false);
+			setSearch("");
+		},
+		[onValueChange],
+	);
 
 	return {
 		open,

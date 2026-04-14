@@ -23,7 +23,14 @@ export { getExplorerTokenUrl, getExplorerTxUrl } from "./explorer";
 export { type ApiStatus, type ApiStatusResult, useApiStatus } from "./hooks/useApiStatus";
 export { type HyperliquidClients, useHyperliquidClients } from "./hooks/useClients";
 export { useExchange } from "./hooks/useExchange";
-export { infoKey, infoQueryOptions, useInfo } from "./hooks/useInfo";
+export {
+	infoKey,
+	infoPersistedKey,
+	infoQueryOptions,
+	PERSISTED_QUERY_PREFIX,
+	type UseInfoOptions,
+	useInfo,
+} from "./hooks/useInfo";
 export { useSubscription } from "./hooks/useSubscription";
 export { useTradingGuard } from "./hooks/useTradingGuard";
 export { useHttpTransport, useSubscriptionTransport } from "./hooks/useTransport";
