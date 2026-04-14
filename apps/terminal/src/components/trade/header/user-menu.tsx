@@ -1,13 +1,23 @@
 import { Button, Dropdown } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { CheckIcon, CopyIcon, PlusCircleIcon, SignOutIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
+import {
+	CheckIcon,
+	CopyIcon,
+	PlusCircleIcon,
+	SignOutIcon,
+	SpinnerGapIcon,
+	UserCircleIcon,
+	WalletIcon,
+} from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useConnection, useDisconnect, useEnsName } from "wagmi";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useSubAccounts } from "@/hooks/use-sub-accounts";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
+import { useSelectedSubAddress, useSubAccountActions } from "@/stores/use-sub-account-store";
 import { WalletModal } from "../components/wallet-modal";
 
 export function UserMenu() {
@@ -19,9 +29,17 @@ export function UserMenu() {
 	const [mounted, setMounted] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
 
+	const { data: subAccounts } = useSubAccounts();
+	const selectedSubAddress = useSelectedSubAddress();
+	const { setSelectedAddress } = useSubAccountActions();
+
 	useEffect(() => {
 		setMounted(true);
 	}, []);
+
+	useEffect(() => {
+		setSelectedAddress(null);
+	}, [address, setSelectedAddress]);
 
 	if (!mounted || isConnecting) {
 		return (
@@ -56,7 +74,48 @@ export function UserMenu() {
 		);
 	}
 
-	const displayLabel = ensName ?? (address ? shortenAddress(address) : "");
+	const activeAddress = selectedSubAddress ?? address;
+	const activeSubAccount = subAccounts?.find((s) => s.subAccountUser === selectedSubAddress);
+	const displayLabel = activeSubAccount?.name ?? ensName ?? (address ? shortenAddress(address) : "");
+	const hasSubAccounts = subAccounts && subAccounts.length > 0;
+
+	const accountItems = hasSubAccounts
+		? [
+				{
+					label: t`Master`,
+					icon: <UserCircleIcon className="size-3.5" />,
+					active: selectedSubAddress === null,
+					onSelect: () => setSelectedAddress(null),
+				},
+				...subAccounts.map((sub) => ({
+					label: sub.name,
+					icon: <UserCircleIcon className="size-3.5" />,
+					active: selectedSubAddress === sub.subAccountUser,
+					onSelect: () => setSelectedAddress(sub.subAccountUser),
+				})),
+			]
+		: [];
+
+	const actionItems = [
+		...(activeAddress
+			? [
+					{
+						label: copied ? t`Copied!` : t`Copy Address`,
+						icon: copied ? (
+							<CheckIcon className="size-3.5 animate-in zoom-in-50 fade-in-0 duration-150 ease-out" />
+						) : (
+							<CopyIcon className="size-3.5" />
+						),
+						onSelect: () => copy(activeAddress),
+					},
+				]
+			: []),
+		{
+			label: t`Add funds`,
+			icon: <PlusCircleIcon className="size-3.5" />,
+			onSelect: () => openDepositModal("deposit"),
+		},
+	];
 
 	return (
 		<Dropdown
@@ -80,27 +139,16 @@ export function UserMenu() {
 				</>
 			}
 			groups={[
+				...(hasSubAccounts
+					? [
+							{
+								label: t`Accounts`,
+								items: accountItems,
+							},
+						]
+					: []),
 				{
-					items: [
-						...(address
-							? [
-									{
-										label: copied ? t`Copied!` : t`Copy Address`,
-										icon: copied ? (
-											<CheckIcon className="size-3.5 animate-in zoom-in-50 fade-in-0 duration-150 ease-out" />
-										) : (
-											<CopyIcon className="size-3.5" />
-										),
-										onSelect: () => copy(address),
-									},
-								]
-							: []),
-						{
-							label: t`Add funds`,
-							icon: <PlusCircleIcon className="size-3.5" />,
-							onSelect: () => openDepositModal("deposit"),
-						},
-					],
+					items: actionItems,
 				},
 				{
 					items: [

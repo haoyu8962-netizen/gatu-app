@@ -1,5 +1,5 @@
 import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent } from "@nktkas/hyperliquid";
-import { useConnection } from "wagmi";
+import { useActiveAddress } from "@/hooks/use-active-address";
 import { useSubscription } from "@/lib/hyperliquid";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
@@ -31,7 +31,7 @@ export interface AllDexsAccountState {
 }
 
 export function useAllDexsAccountState(): AllDexsAccountState {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useActiveAddress();
 	const enabled = isConnected && !!address;
 
 	const { data: clearinghouseEvent, status: perpStatus } = useSubscription(
