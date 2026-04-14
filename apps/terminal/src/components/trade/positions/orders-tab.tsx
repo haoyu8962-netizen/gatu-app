@@ -9,8 +9,10 @@ import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/forma
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import type { MarketKind } from "@/lib/hyperliquid/markets";
 import { getOrderTypeConfig, getOrderValue, getSideClass, getSideLabel, type OpenOrder } from "@/lib/trade/open-orders";
+import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
+import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetDisplay } from "../components/asset-display";
 import {
 	positionsPanelRowHoverClass,
@@ -47,6 +49,12 @@ export function OrdersTab() {
 	const { address, isConnected } = useConnection();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
+	const { setSide } = useOrderEntryActions();
+
+	function handleSelectMarket(name: string, side: Side) {
+		setSelectedMarket(scope, name);
+		setSide(side);
+	}
 	const {
 		data: openOrdersEvent,
 		status,
@@ -265,7 +273,7 @@ export function OrdersTab() {
 											isEven={i % 2 === 1}
 											onToggle={handleToggleOrder}
 											onCancel={handleCancelOrders}
-											onSelectMarket={(name) => setSelectedMarket(scope, name)}
+											onSelectMarket={handleSelectMarket}
 										/>
 									);
 								})}
@@ -289,7 +297,7 @@ interface OrderRowProps {
 	isEven: boolean;
 	onToggle: (orderId: number, value: boolean | "indeterminate") => void;
 	onCancel: (orders: OpenOrder[]) => void;
-	onSelectMarket: (marketName: string) => void;
+	onSelectMarket: (marketName: string, side: Side) => void;
 }
 
 function OrderRow({
@@ -323,7 +331,7 @@ function OrderRow({
 				<div className="flex items-center gap-1.5">
 					<Button
 						variant="link"
-						onClick={() => onSelectMarket(order.coin)}
+						onClick={() => onSelectMarket(order.coin, order.side === "B" ? "buy" : "sell")}
 						className="gap-1.5"
 						aria-label={t`Switch to ${order.coin} market`}
 					>

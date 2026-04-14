@@ -11,8 +11,11 @@ import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import type { MarketKind } from "@/lib/hyperliquid/markets";
 import { getOrderTypeConfig, getSideLabel, type OpenOrder } from "@/lib/trade/open-orders";
+import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
+import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
+import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetDisplay } from "../components/asset-display";
 
 interface Props {
@@ -23,7 +26,15 @@ export function MobileOrdersTab({ className }: Props) {
 	const { address, isConnected } = useConnection();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
+	const { setMobileActiveTab } = useGlobalSettingsActions();
+	const { setSide } = useOrderEntryActions();
 	const markets = useMarkets();
+
+	function handleSelectMarket(name: string, side: Side) {
+		setSelectedMarket(scope, name);
+		setSide(side);
+		setMobileActiveTab("trade");
+	}
 
 	const {
 		data: openOrdersEvent,
@@ -134,7 +145,7 @@ export function MobileOrdersTab({ className }: Props) {
 	return (
 		<Skeleton name="orders-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-text-weak">
+				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-text-weak">
 					<ListNumbersIcon className="size-3" />
 					{t`Open Orders`}
 					<span className="font-semibold text-text-brand tabular-nums">{headerCount}</span>
@@ -159,7 +170,7 @@ export function MobileOrdersTab({ className }: Props) {
 							kind={markets.getMarket(order.coin)?.kind}
 							isCancelling={isCancelling}
 							onCancel={handleCancelOrders}
-							onSelectMarket={(name) => setSelectedMarket(scope, name)}
+							onSelectMarket={handleSelectMarket}
 						/>
 					))}
 				</div>
@@ -174,20 +185,21 @@ interface MobileOrderCardProps {
 	kind: MarketKind | undefined;
 	isCancelling: boolean;
 	onCancel: (orders: OpenOrder[]) => void;
-	onSelectMarket: (marketName: string) => void;
+	onSelectMarket: (marketName: string, side: Side) => void;
 }
 
 function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSelectMarket }: MobileOrderCardProps) {
 	const typeConfig = getOrderTypeConfig(order);
 	const sideLabel = getSideLabel(order.side, kind);
 	const isLong = order.side === "B";
+	const side: Side = isLong ? "buy" : "sell";
 
 	return (
 		<div className="rounded-xs border border-stroke-weak/40 bg-bg-raised overflow-hidden">
 			<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
 				<div className={cn("absolute left-0 top-0 bottom-0 w-px", isLong ? "bg-market-up" : "bg-market-down")} />
 				<div className="flex items-center gap-2">
-					<Button variant="ghost" intent="neutral" size="sm" onClick={() => onSelectMarket(order.coin)}>
+					<Button variant="ghost" intent="neutral" size="sm" onClick={() => onSelectMarket(order.coin, side)}>
 						<AssetDisplay coin={order.coin} nameClassName="text-sm font-semibold" />
 					</Button>
 					<Badge tone={isLong ? "success" : "error"} size="xs">
@@ -215,7 +227,7 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 					{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 				</span>
 				<Button
-					variant="outline"
+					variant="ghost"
 					intent="error"
 					size="sm"
 					onClick={() => onCancel([order])}

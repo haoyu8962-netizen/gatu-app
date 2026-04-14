@@ -13,9 +13,11 @@ import { type Position, useExchange, useMarkets, useSubscription, useUserPositio
 import type { Markets } from "@/lib/hyperliquid/markets";
 import { getValueColorClass, isPositive, toBig } from "@/lib/trade/numbers";
 import { isStopOrder, isTakeProfitOrder } from "@/lib/trade/open-orders";
+import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
+import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetDisplay } from "../components/asset-display";
 import { PositionActionsDropdown } from "./position-actions-dropdown";
 import { PositionLimitCloseModal } from "./position-limit-close-modal";
@@ -98,7 +100,7 @@ interface PositionRowProps {
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onReverse: (assetId: number, size: number, markPx: number, szDecimals: number, isLong: boolean, coin: string) => void;
 	onOpenTpSl: (data: TpSlPositionData) => void;
-	onSelectMarket: (coin: string) => void;
+	onSelectMarket: (coin: string, side: Side) => void;
 }
 
 function PositionRow({
@@ -194,7 +196,7 @@ function PositionRow({
 				<Button
 					variant="ghost"
 					intent="neutral"
-					onClick={() => onSelectMarket(p.coin)}
+					onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
 					className="h-auto min-h-0 min-w-0 max-w-full gap-1.5 justify-start p-0.5 -m-0.5 font-normal rounded-6 hover:bg-fill-hover/60"
 					aria-label={
 						isLong
@@ -328,6 +330,12 @@ export function PositionsTab() {
 	const closingKeyRef = useRef<string | null>(null);
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
+	const { setSide } = useOrderEntryActions();
+
+	function handleSelectMarket(name: string, side: Side) {
+		setSelectedMarket(scope, name);
+		setSide(side);
+	}
 	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
 	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionData | null>(null);
 	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
@@ -541,7 +549,7 @@ export function PositionsTab() {
 										onLimitClose={handleOpenLimitCloseModal}
 										onReverse={handleReverse}
 										onOpenTpSl={handleOpenTpSlModal}
-										onSelectMarket={(name) => setSelectedMarket(scope, name)}
+										onSelectMarket={handleSelectMarket}
 									/>
 								))}
 							</TableBody>
