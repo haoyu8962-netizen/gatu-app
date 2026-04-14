@@ -10,6 +10,8 @@ import {
 	type WebSocketTransportOptions,
 } from "@nktkas/hyperliquid";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
+import type { PrivateKeyAccount } from "viem/accounts";
+import { createL1AgentWallet } from "./signing/l1-agent-wallet";
 
 const cache = new Map<string, unknown>();
 
@@ -53,11 +55,15 @@ export function createExchangeClient(wallet: AbstractWallet, isTestnet: boolean)
 	return new ExchangeClient({ transport: getHttpTransport(isTestnet), wallet });
 }
 
+function isPrivateKeyAccount(wallet: AbstractWallet): wallet is PrivateKeyAccount {
+	return "sign" in wallet && typeof (wallet as Record<string, unknown>).sign === "function";
+}
+
 export function getTradingClient(wallet: AbstractWallet & { address: string }, isTestnet: boolean): ExchangeClient {
-	return getOrCreate(
-		`trading:${wallet.address.toLowerCase()}:${isTestnet}`,
-		() => new ExchangeClient({ transport: getHttpTransport(isTestnet), wallet }),
-	);
+	return getOrCreate(`trading:${wallet.address.toLowerCase()}:${isTestnet}`, () => {
+		const signingWallet = isPrivateKeyAccount(wallet) ? createL1AgentWallet(wallet) : wallet;
+		return new ExchangeClient({ transport: getHttpTransport(isTestnet), wallet: signingWallet });
+	});
 }
 
 export function initializeClients(isTestnet: boolean): void {

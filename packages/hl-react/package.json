@@ -10,6 +10,7 @@
 		"./store": "./src/store.ts",
 		"./markets/types": "./src/markets/types.ts",
 		"./registries/*": "./src/registries/*.ts",
+		"./signing/l1-agent-wallet": "./src/signing/l1-agent-wallet.ts",
 		"./internal/websocket/*": "./src/internal/websocket/*.ts",
 		"./internal/circular-buffer/ring-buffer": "./src/internal/circular-buffer/ring-buffer.ts",
 		"./internal/circular-buffer/use-ring-buffer": "./src/internal/circular-buffer/use-ring-buffer.ts"

@@ -44,7 +44,7 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 			open,
 			defaultOpen,
 			onOpenChange,
-			delay,
+			delay = 100,
 			closeDelay,
 			arrow = true,
 			className,
