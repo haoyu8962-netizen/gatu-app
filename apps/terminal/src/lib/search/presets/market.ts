@@ -59,5 +59,5 @@ export const marketSearchConfig: SearchConfig<UnifiedMarketInfo> = {
 		},
 	},
 	fuzzyMinLength: 3,
-	fuzzyMaxDistance: 2,
+	fuzzyMaxDistance: 1,
 };

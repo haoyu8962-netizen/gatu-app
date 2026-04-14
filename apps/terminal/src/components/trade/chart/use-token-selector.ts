@@ -156,7 +156,11 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 
 	const filteredMarkets = useMemo(() => {
 		if (!deferredSearch) return scopeFilteredMarkets;
-		return searcher.search(deferredSearch).map((result) => result.item);
+		const marketByName = new Map(scopeFilteredMarkets.map((m) => [m.name, m]));
+		return searcher
+			.search(deferredSearch)
+			.map((result) => marketByName.get(result.item.name))
+			.filter((m): m is MarketRow => m != null);
 	}, [scopeFilteredMarkets, searcher, deferredSearch]);
 
 	function handleSort(columnId: string) {
@@ -282,7 +286,7 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 		subcategories,
 		search,
 		setSearch: handleSearchChange,
-		isLoading: open && (isLoading || isPending),
+		isLoading: open && ((isLoading && markets.length === 0) || isPending),
 		isFavorite,
 		sorting,
 		handleSort,
