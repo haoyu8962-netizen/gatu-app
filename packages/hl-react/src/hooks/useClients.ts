@@ -1,6 +1,6 @@
 import type { ExchangeClient, InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
 import { useConnection, useWalletClient } from "wagmi";
-import { createExchangeClient } from "../clients";
+import { createExchangeClient, getTradingClient } from "../clients";
 import { useHyperliquid } from "../provider";
 import { useAgentWallet } from "../signing/use-agent-wallet";
 import { toHyperliquidWallet } from "../wallet";
@@ -22,7 +22,7 @@ export function useHyperliquidClients(): HyperliquidClients {
 
 	const trading = (() => {
 		if (!signer || !agentReady) return null;
-		return createExchangeClient(signer, isTestnet);
+		return getTradingClient(signer, isTestnet);
 	})();
 
 	const user = (() => {

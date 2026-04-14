@@ -1,10 +1,21 @@
-import type { Address } from "viem";
+import type { Address, Hex } from "viem";
 import { type PrivateKeyAccount, privateKeyToAccount } from "viem/accounts";
 import { useConnection } from "wagmi";
 import { useHyperliquid } from "../provider";
 import { useAgentWalletStorage } from "./agent-storage";
 import type { AgentWallet } from "./types";
 import { useAgentStatus } from "./use-agent-status";
+
+const signerCache = new Map<Hex, PrivateKeyAccount>();
+
+function getCachedSigner(privateKey: Hex): PrivateKeyAccount {
+	let signer = signerCache.get(privateKey);
+	if (!signer) {
+		signer = privateKeyToAccount(privateKey);
+		signerCache.set(privateKey, signer);
+	}
+	return signer;
+}
 
 export interface UseAgentWalletResult {
 	data: AgentWallet | null;
@@ -23,7 +34,7 @@ export function useAgentWallet(): UseAgentWalletResult {
 	const signer = (() => {
 		if (!isReady || !agentWallet?.privateKey) return null;
 		try {
-			return privateKeyToAccount(agentWallet.privateKey);
+			return getCachedSigner(agentWallet.privateKey);
 		} catch {
 			return null;
 		}

@@ -53,6 +53,13 @@ export function createExchangeClient(wallet: AbstractWallet, isTestnet: boolean)
 	return new ExchangeClient({ transport: getHttpTransport(isTestnet), wallet });
 }
 
+export function getTradingClient(wallet: AbstractWallet & { address: string }, isTestnet: boolean): ExchangeClient {
+	return getOrCreate(
+		`trading:${wallet.address.toLowerCase()}:${isTestnet}`,
+		() => new ExchangeClient({ transport: getHttpTransport(isTestnet), wallet }),
+	);
+}
+
 export function initializeClients(isTestnet: boolean): void {
 	getInfoClient(isTestnet);
 	getSubscriptionClient(isTestnet);
