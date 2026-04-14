@@ -96,6 +96,10 @@ msgstr "账户余额"
 msgid "Account Equity"
 msgstr ""
 
+#: src/components/trade/header/user-menu.tsx
+msgid "Accounts"
+msgstr ""
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1282,6 +1286,10 @@ msgstr "市价单滑点"
 #: src/components/trade/chart/token-selector.tsx
 msgid "markets"
 msgstr "个市场"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Master"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"

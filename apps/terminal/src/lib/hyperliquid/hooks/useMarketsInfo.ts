@@ -3,7 +3,7 @@ import type { BuilderPerpMarket, PerpMarket, SpotMarket } from "@hypeterminal/hl
 import { useEffect, useMemo, useState } from "react";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useSelectedMarket } from "@/stores/use-market-store";
-import type { AllDexsAssetCtxs, DexAssetCtx, SpotAssetCtx } from "@/types/hyperliquid";
+import type { AllDexsAssetCtxs, DexAssetCtx, SpotAssetCtx, SpotAssetCtxs } from "@/types/hyperliquid";
 import { useMarkets } from "../markets/use-markets";
 import { useMarketsInfoContext } from "./MarketsInfoProvider";
 
@@ -21,6 +21,7 @@ export interface BuilderPerpMarketsInfo {
 export interface UseMarketsInfoOptions {
 	updateInterval?: number;
 	subscriptionKeepAliveMs?: number;
+	alwaysSubscribeAll?: boolean;
 }
 
 interface MarketsInfoResult {
@@ -28,6 +29,40 @@ interface MarketsInfoResult {
 	spotMarkets: SpotMarketInfo[];
 	builderPerpMarkets: BuilderPerpMarketsInfo;
 	markets: UnifiedMarketInfo[];
+}
+
+interface StatsCache {
+	allDexsCtxs: AllDexsAssetCtxs | undefined;
+	spotCtxs: SpotAssetCtxs | undefined;
+	savedAt: number;
+}
+
+const STATS_CACHE_KEY = "hl-mkt-stats-v1";
+const STATS_CACHE_TTL = 5 * 60 * 1000;
+
+function loadStatsCache(): StatsCache | null {
+	if (typeof window === "undefined") return null;
+	try {
+		const json = sessionStorage.getItem(STATS_CACHE_KEY);
+		if (!json) return null;
+		const data = JSON.parse(json) as StatsCache;
+		if (Date.now() - data.savedAt > STATS_CACHE_TTL) {
+			sessionStorage.removeItem(STATS_CACHE_KEY);
+			return null;
+		}
+		return data;
+	} catch {
+		return null;
+	}
+}
+
+function saveStatsCache(allDexsCtxs: AllDexsAssetCtxs | undefined, spotCtxs: SpotAssetCtxs | undefined) {
+	if (typeof window === "undefined") return;
+	if (!allDexsCtxs && !spotCtxs) return;
+	try {
+		const data: StatsCache = { allDexsCtxs, spotCtxs, savedAt: Date.now() };
+		sessionStorage.setItem(STATS_CACHE_KEY, JSON.stringify(data));
+	} catch {}
 }
 
 function useSubscriptionWarmWindow(enabled: boolean, keepAliveMs: number) {
@@ -61,11 +96,11 @@ function getDexCtxs(allDexsCtxs: AllDexsAssetCtxs | undefined, dexName: string) 
 }
 
 export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
-	const { updateInterval = 5000, subscriptionKeepAliveMs = 10_000 } = options;
+	const { updateInterval = 5000, subscriptionKeepAliveMs = 10_000, alwaysSubscribeAll = false } = options;
 	const { scope } = useExchangeScope();
 
-	const needsPerp = scope === "all" || scope === "perp" || scope === "builders-perp";
-	const needsSpot = scope === "all" || scope === "spot";
+	const needsPerp = alwaysSubscribeAll || scope === "all" || scope === "perp" || scope === "builders-perp";
+	const needsSpot = alwaysSubscribeAll || scope === "all" || scope === "spot";
 	const perpSubscriptionEnabled = useSubscriptionWarmWindow(needsPerp, subscriptionKeepAliveMs);
 	const spotSubscriptionEnabled = useSubscriptionWarmWindow(needsSpot, subscriptionKeepAliveMs);
 
@@ -79,8 +114,16 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		throttleMs: updateInterval,
 	});
 
+	const [cachedStats] = useState(() => loadStatsCache());
+
+	useEffect(() => {
+		saveStatsCache(allDexsCtxsEvent?.ctxs, spotCtxsEvent);
+	}, [allDexsCtxsEvent, spotCtxsEvent]);
+
+	const allDexsCtxs = allDexsCtxsEvent?.ctxs ?? cachedStats?.allDexsCtxs;
+	const spotCtxs = spotCtxsEvent ?? cachedStats?.spotCtxs;
+
 	const result = useMemo((): MarketsInfoResult => {
-		const allDexsCtxs = allDexsCtxsEvent?.ctxs;
 		const perpCtxs = getDexCtxs(allDexsCtxs, "");
 
 		const perpMarketsInfo: PerpMarketInfo[] = markets.perp.map((market) => ({
@@ -90,7 +133,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 
 		const spotMarketsInfo: SpotMarketInfo[] = markets.spot.map((market) => ({
 			...market,
-			...spotCtxsEvent?.[market.ctxIndex],
+			...spotCtxs?.[market.ctxIndex],
 		}));
 
 		const builderPerpMarketsInfo: BuilderPerpMarketsInfo = { all: [] };
@@ -116,7 +159,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 			builderPerpMarkets: builderPerpMarketsInfo,
 			markets: [...perpMarketsInfo, ...spotMarketsInfo, ...builderPerpMarketsInfo.all],
 		};
-	}, [markets.perp, markets.spot, markets.builderPerp, allDexsCtxsEvent, spotCtxsEvent]);
+	}, [markets.perp, markets.spot, markets.builderPerp, allDexsCtxs, spotCtxs]);
 
 	const marketLookup = useMemo(() => {
 		const byName = new Map<string, UnifiedMarketInfo>();

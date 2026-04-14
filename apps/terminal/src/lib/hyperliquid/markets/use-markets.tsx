@@ -8,8 +8,9 @@ import type {
 	UnifiedMarket,
 } from "@hypeterminal/hl-react/markets/types";
 import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
-import { createContext, type ReactNode, useContext, useMemo } from "react";
+import { createContext, type ReactNode, useContext, useEffect, useMemo } from "react";
 import { getIconUrlFromMarketName, getTokenDisplayName, getUnderlyingAsset } from "@/domain/market/tokens";
+import { saveMarketsMetaCache } from "@/providers/root";
 import {
 	getBuilderPerpAssetId,
 	getBuilderPerpDisplayName,
@@ -174,32 +175,39 @@ interface Props {
 }
 
 export function MarketsProvider({ children }: Props) {
+	const STALE_TIME = 30 * 60 * 1000;
+
 	const {
 		data: perpMeta,
 		isLoading: perpLoading,
 		error: perpError,
-	} = useInfo("meta", {}, { refetchInterval: Infinity });
+	} = useInfo("meta", {}, { refetchInterval: Infinity, staleTime: STALE_TIME });
 
 	const {
 		data: spotMeta,
 		isLoading: spotLoading,
 		error: spotError,
-	} = useInfo("spotMeta", undefined, { refetchInterval: Infinity });
+	} = useInfo("spotMeta", undefined, { refetchInterval: Infinity, staleTime: STALE_TIME });
 
 	const {
 		data: perpDexs,
 		isLoading: dexsLoading,
 		error: dexsError,
-	} = useInfo("perpDexs", undefined, { refetchInterval: Infinity });
+	} = useInfo("perpDexs", undefined, { refetchInterval: Infinity, staleTime: STALE_TIME });
 
 	const {
 		data: allPerpMetas,
 		isLoading: allMetasLoading,
 		error: allMetasError,
-	} = useInfo("allPerpMetas", undefined, { refetchInterval: Infinity });
+	} = useInfo("allPerpMetas", undefined, { refetchInterval: Infinity, staleTime: STALE_TIME });
 
 	const isLoading = perpLoading || spotLoading || dexsLoading || allMetasLoading;
 	const error = perpError ?? spotError ?? dexsError ?? allMetasError ?? null;
+
+	useEffect(() => {
+		if (!perpMeta || !spotMeta || !perpDexs || !allPerpMetas) return;
+		saveMarketsMetaCache({ perpMeta, spotMeta, perpDexs, allPerpMetas });
+	}, [perpMeta, spotMeta, perpDexs, allPerpMetas]);
 
 	const markets = useMemo(
 		() =>

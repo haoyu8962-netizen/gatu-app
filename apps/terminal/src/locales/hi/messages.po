@@ -96,6 +96,10 @@ msgstr "खाता शेष"
 msgid "Account Equity"
 msgstr ""
 
+#: src/components/trade/header/user-menu.tsx
+msgid "Accounts"
+msgstr ""
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1282,6 +1286,10 @@ msgstr "मार्केट ऑर्डर स्लिपेज"
 #: src/components/trade/chart/token-selector.tsx
 msgid "markets"
 msgstr "बाज़ार"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Master"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"

@@ -96,6 +96,10 @@ msgstr "أرصدة الحساب"
 msgid "Account Equity"
 msgstr ""
 
+#: src/components/trade/header/user-menu.tsx
+msgid "Accounts"
+msgstr ""
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1282,6 +1286,10 @@ msgstr "انزلاق أمر السوق"
 #: src/components/trade/chart/token-selector.tsx
 msgid "markets"
 msgstr "أسواق"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Master"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"

@@ -10,6 +10,7 @@ interface MarketsInfoProviderProps {
 export function MarketsInfoProvider({ children }: MarketsInfoProviderProps) {
 	const marketsInfo = useMarketsInfoInternal({
 		updateInterval: 5000,
+		alwaysSubscribeAll: true,
 	});
 
 	return <MarketsInfoContext.Provider value={marketsInfo}>{children}</MarketsInfoContext.Provider>;
