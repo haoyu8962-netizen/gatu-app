@@ -285,7 +285,7 @@ export function KlineChart({
 				polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
 			},
 			extendData: {
-				isLong: szi > 0,
+				isLong: sziBig.gt(0),
 			},
 		});
 	}, [clearinghouseEvent, symbol]);
