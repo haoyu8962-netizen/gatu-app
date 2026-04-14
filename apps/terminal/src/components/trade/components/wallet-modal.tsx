@@ -48,10 +48,7 @@ function ConnectorRow({
 				"group",
 			)}
 		>
-			<div
-				className="size-8 rounded-xs overflow-hidden flex-shrink-0 ring-1 ring-stroke-weak/50 bg-bg-raised"
-				aria-hidden="true"
-			>
+			<div className="size-8 rounded-xs overflow-hidden flex-shrink-0" aria-hidden="true">
 				<Icon className="size-full" />
 			</div>
 			<span className="flex-1 text-sm font-medium group-hover:text-text-brand transition-colors min-w-0 truncate">
