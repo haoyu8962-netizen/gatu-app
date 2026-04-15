@@ -164,6 +164,10 @@ msgstr ""
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr ""
 
+#: src/config/tooltips.ts
+msgid "ALO (Add Liquidity Only)"
+msgstr ""
+
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -174,6 +178,10 @@ msgstr ""
 #: src/components/trade/positions/transfer-dialog.tsx
 #~ msgid "Amount (USDC)"
 #~ msgstr ""
+
+#: src/config/tooltips.ts
+msgid "Any portion that is not immediately filled will be canceled."
+msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "API"
@@ -1012,6 +1020,10 @@ msgstr ""
 msgid "Go to trading terminal"
 msgstr "Ir al terminal de trading"
 
+#: src/config/tooltips.ts
+msgid "GTC (Good Til Cancel)"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
@@ -1066,6 +1078,10 @@ msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Invalid Ethereum address"
+msgstr ""
+
+#: src/config/tooltips.ts
+msgid "IOC (Immediate Or Cancel)"
 msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
@@ -1619,6 +1635,14 @@ msgstr ""
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Order Value"
 msgstr "Valor orden"
+
+#: src/config/tooltips.ts
+msgid "Order will exist only as a limit order on the book. Also known as post-only."
+msgstr ""
+
+#: src/config/tooltips.ts
+msgid "Order will rest until filled or canceled."
+msgstr ""
 
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2391,6 +2415,10 @@ msgstr ""
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #~ msgid "Time in Force"
 #~ msgstr ""
+
+#: src/config/tooltips.ts
+msgid "Time In Force"
+msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx

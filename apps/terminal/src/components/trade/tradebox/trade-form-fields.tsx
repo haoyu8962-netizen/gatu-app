@@ -3,6 +3,7 @@ import { t } from "@lingui/core/macro";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import { useConnection } from "wagmi";
+import { DefinitionTooltip } from "@/components/ui/definition-tooltip";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
 import {
@@ -179,7 +180,7 @@ export function TradeFormFields({
 					<div className="flex min-w-0 items-baseline justify-between gap-2">
 						<p className="inline-flex justify-between w-full min-w-0 items-baseline gap-x-1.5 text-3xs leading-snug">
 							<Tooltip content={t`Balance available to trade`} side="top">
-								<span className="font-medium uppercase tracking-wider text-text-weak cursor-default">{t`Available`}</span>
+								<span className="font-medium uppercase tracking-wider text-fg-muted cursor-default">{t`Available`}</span>
 							</Tooltip>
 							<div>
 								{isConnected ? (
@@ -205,7 +206,7 @@ export function TradeFormFields({
 					{!isSpotMarket && positionSize !== 0 ? (
 						<div className="flex min-w-0 items-baseline justify-between gap-2 text-3xs leading-snug">
 							<Tooltip content={t`Your current open position on this market`} side="top">
-								<span className="font-medium uppercase tracking-wider text-text-weak cursor-default">{t`Position`}</span>
+								<span className="font-medium uppercase tracking-wider text-fg-muted cursor-default">{t`Position`}</span>
 							</Tooltip>
 							<span className={cn("tabular-nums", getValueColorClass(positionSize))}>
 								{positionSize > 0 ? "+" : ""}
@@ -216,7 +217,7 @@ export function TradeFormFields({
 				</div>
 
 				{usesTriggerPrice && (
-					<div className="border-t border-stroke-weak/25 pt-3">
+					<div className="border-t border-weak/25 pt-3">
 						<PriceInput
 							label={t`Trigger Price`}
 							placeholder="0.00"
@@ -227,10 +228,7 @@ export function TradeFormFields({
 							szDecimals={szDecimals}
 							className={cn(
 								"w-full text-xs tabular-nums",
-								usesTriggerPrice &&
-									!isPositive(triggerPriceNum) &&
-									sizeValue > 0 &&
-									"border-stroke-error-strong focus:border-stroke-error-strong",
+								usesTriggerPrice && !isPositive(triggerPriceNum) && sizeValue > 0 && "border-error focus:border-error",
 							)}
 							disabled={isFormDisabled}
 						/>
@@ -238,7 +236,7 @@ export function TradeFormFields({
 				)}
 
 				{usesLimitPrice && (
-					<div className="border-t border-stroke-weak/25 pt-3">
+					<div className="border-t border-weak/25 pt-3">
 						<PriceInput
 							label={t`Limit Price`}
 							placeholder="0.00"
@@ -249,26 +247,23 @@ export function TradeFormFields({
 							szDecimals={szDecimals}
 							className={cn(
 								"w-full text-xs tabular-nums",
-								usesLimitPrice &&
-									!price &&
-									sizeValue > 0 &&
-									"border-stroke-error-strong focus:border-stroke-error-strong",
+								usesLimitPrice && !price && sizeValue > 0 && "border-error focus:border-error",
 							)}
 							disabled={isFormDisabled}
 						/>
 					</div>
 				)}
 
-				<div className="flex flex-col gap-0.5 border-t border-stroke-weak/25 pt-3">
+				<div className="flex flex-col gap-0.5 border-t border-weak/25 pt-3">
 					<div className="mb-1 flex items-center justify-between gap-2">
 						<label
 							htmlFor={sizeFieldId}
-							className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none"
+							className="text-3xs font-medium uppercase tracking-wide text-fg-muted leading-none"
 						>
 							{t`Size`}
 						</label>
 						{sizeValue > 0 ? (
-							<span className="text-3xs text-text-weak tabular-nums leading-none">
+							<span className="text-3xs text-fg-muted tabular-nums leading-none">
 								≈{" "}
 								{sizeMode === "base"
 									? `${formatToken(orderValue, 2)} USD`
@@ -283,10 +278,7 @@ export function TradeFormFields({
 							value={sizeInput}
 							onChange={(e) => handleSizeChange(e.target.value)}
 							maxAllowedDecimals={szDecimals}
-							className={cn(
-								"flex-1 text-xs tabular-nums",
-								sizeHasError && "border-stroke-error-strong focus:border-stroke-error-strong",
-							)}
+							className={cn("flex-1 text-xs tabular-nums", sizeHasError && "border-error focus:border-error")}
 							disabled={isFormDisabled}
 						/>
 						<Button
@@ -317,14 +309,14 @@ export function TradeFormFields({
 						step={0.1}
 						disabled={isFormDisabled || maxSize <= 0}
 					/>
-					<div className="flex items-center justify-between pt-1 text-3xs text-text-weak tabular-nums leading-none">
+					<div className="flex items-center justify-between pt-1 text-3xs text-fg-muted tabular-nums leading-none">
 						{[0, 25, 50, 75, 100].map((pct) => (
 							<button
 								key={pct}
 								type="button"
 								onClick={() => handleSizePercentApply(pct)}
 								disabled={isFormDisabled || maxSize <= 0}
-								className="hover:text-text-strong transition-colors disabled:cursor-not-allowed"
+								className="hover:text-fg transition-colors disabled:cursor-not-allowed"
 							>
 								{pct}%
 							</button>
@@ -416,7 +408,9 @@ export function TradeFormFields({
 						)}
 						{showTif && (
 							<div className="ml-auto flex items-center gap-1.5">
-								<span className="text-3xs font-medium text-text-weak/60 uppercase tracking-wide select-none">{t`TIF`}</span>
+								<DefinitionTooltip topic="tif" only={availableTifOptions}>
+									<span className="text-3xs font-medium text-fg-muted/60 uppercase tracking-wide select-none cursor-default">{t`TIF`}</span>
+								</DefinitionTooltip>
 								<Select
 									size="xs"
 									value={tif}

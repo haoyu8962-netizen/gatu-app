@@ -164,6 +164,10 @@ msgstr "All cross positions share the same cross margin as collateral. In the ev
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 
+#: src/config/tooltips.ts
+msgid "ALO (Add Liquidity Only)"
+msgstr "ALO (Add Liquidity Only)"
+
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -174,6 +178,10 @@ msgstr "Amount"
 #: src/components/trade/positions/transfer-dialog.tsx
 #~ msgid "Amount (USDC)"
 #~ msgstr "Amount (USDC)"
+
+#: src/config/tooltips.ts
+msgid "Any portion that is not immediately filled will be canceled."
+msgstr "Any portion that is not immediately filled will be canceled."
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "API"
@@ -1012,6 +1020,10 @@ msgstr "Go to Trade"
 msgid "Go to trading terminal"
 msgstr "Go to trading terminal"
 
+#: src/config/tooltips.ts
+msgid "GTC (Good Til Cancel)"
+msgstr "GTC (Good Til Cancel)"
+
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
@@ -1067,6 +1079,10 @@ msgstr "Invalid amount"
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Invalid Ethereum address"
 msgstr "Invalid Ethereum address"
+
+#: src/config/tooltips.ts
+msgid "IOC (Immediate Or Cancel)"
+msgstr "IOC (Immediate Or Cancel)"
 
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -1623,6 +1639,14 @@ msgstr "Order submitted"
 #: src/components/trade/tradebox/order-summary.tsx
 msgid "Order Value"
 msgstr "Order Value"
+
+#: src/config/tooltips.ts
+msgid "Order will exist only as a limit order on the book. Also known as post-only."
+msgstr "Order will exist only as a limit order on the book. Also known as post-only."
+
+#: src/config/tooltips.ts
+msgid "Order will rest until filled or canceled."
+msgstr "Order will rest until filled or canceled."
 
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2395,6 +2419,10 @@ msgstr "Time / Total"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #~ msgid "Time in Force"
 #~ msgstr "Time in Force"
+
+#: src/config/tooltips.ts
+msgid "Time In Force"
+msgstr "Time In Force"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
