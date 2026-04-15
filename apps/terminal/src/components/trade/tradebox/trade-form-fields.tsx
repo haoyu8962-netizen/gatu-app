@@ -217,7 +217,7 @@ export function TradeFormFields({
 				</div>
 
 				{usesTriggerPrice && (
-					<div className="border-t border-weak/25 pt-3">
+					<div className="border-t border-stroke-weak/25 pt-3">
 						<PriceInput
 							label={t`Trigger Price`}
 							placeholder="0.00"
@@ -228,7 +228,10 @@ export function TradeFormFields({
 							szDecimals={szDecimals}
 							className={cn(
 								"w-full text-xs tabular-nums",
-								usesTriggerPrice && !isPositive(triggerPriceNum) && sizeValue > 0 && "border-error focus:border-error",
+								usesTriggerPrice &&
+									!isPositive(triggerPriceNum) &&
+									sizeValue > 0 &&
+									"border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 							disabled={isFormDisabled}
 						/>
@@ -236,7 +239,7 @@ export function TradeFormFields({
 				)}
 
 				{usesLimitPrice && (
-					<div className="border-t border-weak/25 pt-3">
+					<div className="border-t border-stroke-weak/25 pt-3">
 						<PriceInput
 							label={t`Limit Price`}
 							placeholder="0.00"
@@ -247,14 +250,17 @@ export function TradeFormFields({
 							szDecimals={szDecimals}
 							className={cn(
 								"w-full text-xs tabular-nums",
-								usesLimitPrice && !price && sizeValue > 0 && "border-error focus:border-error",
+								usesLimitPrice &&
+									!price &&
+									sizeValue > 0 &&
+									"border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 							disabled={isFormDisabled}
 						/>
 					</div>
 				)}
 
-				<div className="flex flex-col gap-0.5 border-t border-weak/25 pt-3">
+				<div className="flex flex-col gap-0.5 border-t border-stroke-weak/25 pt-3">
 					<div className="mb-1 flex items-center justify-between gap-2">
 						<label
 							htmlFor={sizeFieldId}
@@ -278,7 +284,10 @@ export function TradeFormFields({
 							value={sizeInput}
 							onChange={(e) => handleSizeChange(e.target.value)}
 							maxAllowedDecimals={szDecimals}
-							className={cn("flex-1 text-xs tabular-nums", sizeHasError && "border-error focus:border-error")}
+							className={cn(
+								"flex-1 text-xs tabular-nums",
+								sizeHasError && "border-stroke-error-strong focus:border-stroke-error-strong",
+							)}
 							disabled={isFormDisabled}
 						/>
 						<Button

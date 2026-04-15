@@ -16,14 +16,14 @@ type AlertGlobalTone =
 const alertGlobalVariants = cva(["flex items-start rounded-8 shadow-raised overflow-clip"], {
 	variants: {
 		tone: {
-			error: "bg-fill-error-weak border border-stroke-error-weak",
-			warning: "bg-fill-warning-weak border border-stroke-warning-weak",
-			success: "bg-fill-success-weak border border-stroke-success-weak",
-			information: "bg-fill-info-weak border border-stroke-info-weak",
+			error: "bg-error-soft border border-stroke-error-weak",
+			warning: "bg-warning-soft border border-stroke-warning-weak",
+			success: "bg-success-soft border border-stroke-success-weak",
+			information: "bg-info-soft border border-stroke-info-weak",
 			neutral: "bg-fill-weaker border border-stroke-weak",
-			brand: "bg-fill-brand-weak border border-stroke-brand-weak",
-			"inverse-neutral": "bg-bg-inverse",
-			"inverse-brand": "bg-bg-brand",
+			brand: "bg-brand-soft border border-stroke-brand-weak",
+			"inverse-neutral": "bg-inverse-surface",
+			"inverse-brand": "bg-brand",
 		},
 	},
 	defaultVariants: {
@@ -32,14 +32,14 @@ const alertGlobalVariants = cva(["flex items-start rounded-8 shadow-raised overf
 });
 
 const toneColors: Record<AlertGlobalTone, { icon: string; text: string; close: string }> = {
-	error: { icon: "text-icon-error", text: "text-text-weak", close: "text-icon-neutral" },
-	warning: { icon: "text-icon-warning", text: "text-text-weak", close: "text-icon-neutral" },
-	success: { icon: "text-icon-success", text: "text-text-weak", close: "text-icon-neutral" },
-	information: { icon: "text-icon-info", text: "text-text-weak", close: "text-icon-neutral" },
-	neutral: { icon: "text-icon-neutral", text: "text-text-weak", close: "text-icon-neutral" },
-	brand: { icon: "text-icon-brand", text: "text-text-weak", close: "text-icon-neutral" },
-	"inverse-neutral": { icon: "text-icon-inverse", text: "text-text-inverse-strong", close: "text-icon-inverse" },
-	"inverse-brand": { icon: "text-icon-inverse", text: "text-text-inverse-strong", close: "text-icon-inverse" },
+	error: { icon: "text-icon-error", text: "text-fg-muted", close: "text-icon" },
+	warning: { icon: "text-icon-warning", text: "text-fg-muted", close: "text-icon" },
+	success: { icon: "text-icon-success", text: "text-fg-muted", close: "text-icon" },
+	information: { icon: "text-icon-info", text: "text-fg-muted", close: "text-icon" },
+	neutral: { icon: "text-icon", text: "text-fg-muted", close: "text-icon" },
+	brand: { icon: "text-icon-brand", text: "text-fg-muted", close: "text-icon" },
+	"inverse-neutral": { icon: "text-icon-inverse", text: "text-fg-inverse", close: "text-icon-inverse" },
+	"inverse-brand": { icon: "text-icon-inverse", text: "text-fg-inverse", close: "text-icon-inverse" },
 };
 
 interface AlertGlobalProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof alertGlobalVariants> {

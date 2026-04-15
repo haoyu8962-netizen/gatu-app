@@ -36,9 +36,7 @@ export function MobileTerminal({ className }: Props) {
 	const ordersCount = isConnected ? (ordersEvent?.orders?.length ?? 0) : 0;
 
 	return (
-		<div
-			className={cn("h-dvh w-full flex flex-col bg-bg-base text-text-strong font-sans", "overflow-hidden", className)}
-		>
+		<div className={cn("h-dvh w-full flex flex-col bg-background text-fg font-sans", "overflow-hidden", className)}>
 			<MobileHeader />
 			<OfflineBanner />
 			<main className="flex-1 min-h-0 flex flex-col overflow-hidden">

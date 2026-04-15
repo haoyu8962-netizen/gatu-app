@@ -35,7 +35,7 @@ function Placeholder({ children, variant }: PlaceholderProps) {
 		<div
 			className={cn(
 				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-text-error" : "text-text-weak",
+				variant === "error" ? "text-error" : "text-fg-muted",
 			)}
 		>
 			{children}
@@ -69,7 +69,7 @@ export function HistoryTab() {
 			return (
 				<Placeholder variant="error">
 					<span>{t`Failed to load trade history.`}</span>
-					{error instanceof Error && <span className="mt-1 text-xs text-text-weak">{error.message}</span>}
+					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
 				</Placeholder>
 			);
 		}
@@ -82,7 +82,7 @@ export function HistoryTab() {
 	return (
 		<div className={positionsPanelTabRootClass}>
 			<div className={positionsPanelTableCaptionRowClass}>
-				{headerCount ? <span className="tabular-nums text-3xs text-text-weak">{headerCount}</span> : null}
+				{headerCount ? <span className="tabular-nums text-3xs text-fg-muted">{headerCount}</span> : null}
 			</div>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
@@ -125,7 +125,7 @@ export function HistoryTab() {
 											key={`${fill.hash}-${fill.tid}`}
 											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
 										>
-											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-text-strong")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 												<Button
 													variant="link"
 													onClick={() => setSelectedMarket(scope, fill.coin)}
@@ -135,24 +135,20 @@ export function HistoryTab() {
 													<AssetDisplay coin={fill.coin} />
 												</Button>
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-text-strong")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-fg")}>
 												<span
 													className={cn(
 														"text-xs px-1 py-0.5 rounded-8 uppercase",
-														fill.liquidation ? "bg-fill-error-weak text-text-error" : "bg-bg-raised/50",
+														fill.liquidation ? "bg-error-soft text-error" : "bg-surface/50",
 													)}
 												>
 													{fill.liquidation ? t`Liquidated` : fill.dir}
 												</span>
 											</TableCell>
-											<TableCell
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
-											>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 												{formatUSD(fill.px)}
 											</TableCell>
-											<TableCell
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
-											>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 												{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}
 											</TableCell>
 											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
@@ -170,10 +166,10 @@ export function HistoryTab() {
 														})}
 													</span>
 												) : (
-													<span className="text-text-weak">{FALLBACK_VALUE_PLACEHOLDER}</span>
+													<span className="text-fg-muted">{FALLBACK_VALUE_PLACEHOLDER}</span>
 												)}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-weak")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted")}>
 												<div className="flex flex-col items-end underline decoration-dashed decoration-muted-fg/30">
 													<a
 														className="flex items-center gap-1"

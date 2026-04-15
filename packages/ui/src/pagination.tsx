@@ -32,7 +32,7 @@ const pageButtonVariants = cva(
 	[
 		"inline-flex items-center justify-center rounded-8",
 		"relative before:absolute before:-inset-2 before:content-['']",
-		"text-xs font-normal text-text-weak tabular-nums",
+		"text-xs font-normal text-fg-muted tabular-nums",
 		"cursor-pointer select-none",
 		"transition-colors duration-150",
 		"hover:bg-fill-hover",
@@ -65,8 +65,8 @@ const navButtonVariants = cva(
 	{
 		variants: {
 			variant: {
-				desktop: "gap-2 text-xs font-normal text-text-weak",
-				mobile: "text-icon-neutral",
+				desktop: "gap-2 text-xs font-normal text-fg-muted",
+				mobile: "text-icon",
 			},
 		},
 		defaultVariants: {
@@ -155,7 +155,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 					>
 						<ArrowLeftIcon size={iconSize} className="shrink-0" />
 					</button>
-					<span className="flex-1 text-center text-xs font-normal text-text-weak tabular-nums min-w-0">
+					<span className="flex-1 text-center text-xs font-normal text-fg-muted tabular-nums min-w-0">
 						{currentPage} of {totalPages}
 					</span>
 					<button
@@ -186,7 +186,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 						aria-label="Previous page"
 						className={cn(navButtonVariants({ variant: "desktop" }), navBtnH, "pr-4")}
 					>
-						<ArrowLeft size={iconSize} className="shrink-0 text-icon-neutral" />
+						<ArrowLeft size={iconSize} className="shrink-0 text-icon" />
 						Previous
 					</button>
 
@@ -195,7 +195,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 							<span
 								key={`ellipsis-${index}`}
 								className={cn(
-									"inline-flex items-center justify-center text-xs font-normal text-text-weak select-none",
+									"inline-flex items-center justify-center text-xs font-normal text-fg-muted select-none",
 									pageBtnSize,
 								)}
 							>
@@ -222,12 +222,12 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 						className={cn(navButtonVariants({ variant: "desktop" }), navBtnH, "pl-4")}
 					>
 						Next
-						<ArrowRight size={iconSize} className="shrink-0 text-icon-neutral" />
+						<ArrowRight size={iconSize} className="shrink-0 text-icon" />
 					</button>
 				</div>
 
 				{showResultCount && (
-					<span className="text-xs font-normal text-text-weak tabular-nums">
+					<span className="text-xs font-normal text-fg-muted tabular-nums">
 						Showing {startItem} – {endItem} of {totalItems}
 					</span>
 				)}

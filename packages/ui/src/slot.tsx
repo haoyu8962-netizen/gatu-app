@@ -7,8 +7,8 @@ const slotVariants = cva(
 		"flex items-center justify-center",
 		"border border-dashed border-stroke-weak",
 		"rounded-8",
-		"bg-bg-sunken",
-		"text-xs text-text-weak",
+		"bg-sunken",
+		"text-xs text-fg-muted",
 	],
 	{
 		variants: {

@@ -8,11 +8,11 @@ import { cn } from "./utils";
 const textareaVariants = cva(
 	[
 		"w-full rounded-8 border font-normal",
-		"text-text-strong bg-bg-base placeholder:text-text-weak",
+		"text-fg bg-background placeholder:text-fg-muted",
 		"transition-colors outline-none resize-y",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		"disabled:border-stroke-disabled disabled:text-text-disabled",
-		"disabled:placeholder:text-text-disabled disabled:cursor-not-allowed",
+		"disabled:border-stroke-disabled disabled:text-fg-disabled",
+		"disabled:placeholder:text-fg-disabled disabled:cursor-not-allowed",
 		"disabled:bg-fill-disabled",
 	],
 	{
@@ -25,7 +25,7 @@ const textareaVariants = cva(
 				lg: "px-4 py-3 text-sm",
 			},
 			error: {
-				true: "border-stroke-error-strong bg-fill-error-weak",
+				true: "border-stroke-error-strong bg-error-soft",
 				false: "border-stroke-strong",
 			},
 		},
@@ -78,13 +78,13 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 		return (
 			<Field.Root disabled={disabled} invalid={error === true} className="flex flex-col gap-1">
 				{label && (
-					<Field.Label className="text-xs font-semibold text-text-strong">
+					<Field.Label className="text-xs font-semibold text-fg">
 						{label}
-						{required && <span className="text-text-error"> *</span>}
-						{optional && <span className="text-xs font-normal text-text-weak"> (optional)</span>}
+						{required && <span className="text-error"> *</span>}
+						{optional && <span className="text-xs font-normal text-fg-muted"> (optional)</span>}
 					</Field.Label>
 				)}
-				{helperText && <Field.Description className="text-xs text-text-weak">{helperText}</Field.Description>}
+				{helperText && <Field.Description className="text-xs text-fg-muted">{helperText}</Field.Description>}
 				<textarea
 					ref={ref}
 					rows={rows}
@@ -97,7 +97,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 				{error && errorMessage && (
 					<div className="flex items-center gap-1">
 						<WarningCircleIcon size={16} weight="fill" className="shrink-0 text-icon-error" />
-						<span className="text-xs text-text-error">{errorMessage}</span>
+						<span className="text-xs text-error">{errorMessage}</span>
 					</div>
 				)}
 			</Field.Root>

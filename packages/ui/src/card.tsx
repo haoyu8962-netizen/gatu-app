@@ -10,8 +10,8 @@ const CardSizeContext = React.createContext<CardSize | undefined>(undefined);
 const cardVariants = cva(["flex overflow-hidden rounded-12"], {
 	variants: {
 		variant: {
-			elevated: "bg-bg-raised shadow-raised",
-			outlined: "bg-bg-raised border border-stroke-weak",
+			elevated: "bg-surface shadow-raised",
+			outlined: "bg-surface border border-stroke-weak",
 			filled: "bg-fill-weaker",
 		},
 		orientation: {
@@ -55,14 +55,14 @@ CardHeader.displayName = "CardHeader";
 interface CardTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {}
 
 const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(({ className, ...props }, ref) => (
-	<h3 className={cn("text-base font-semibold text-text-strong text-balance", className)} ref={ref} {...props} />
+	<h3 className={cn("text-base font-semibold text-fg text-balance", className)} ref={ref} {...props} />
 ));
 CardTitle.displayName = "CardTitle";
 
 interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {}
 
 const CardDescription = React.forwardRef<HTMLParagraphElement, CardDescriptionProps>(({ className, ...props }, ref) => (
-	<p className={cn("text-sm text-text-weak text-pretty", className)} ref={ref} {...props} />
+	<p className={cn("text-sm text-fg-muted text-pretty", className)} ref={ref} {...props} />
 ));
 CardDescription.displayName = "CardDescription";
 

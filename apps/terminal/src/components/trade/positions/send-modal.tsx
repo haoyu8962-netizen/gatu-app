@@ -214,7 +214,7 @@ export function SendModal({
 							labelValue={
 								<>
 									Available:{" "}
-									<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+									<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 										{floorToString(availableBalance, decimals)} {selectedToken}
 									</span>
 								</>
@@ -231,7 +231,7 @@ export function SendModal({
 						/>
 
 						{error && (
-							<div className="flex items-center gap-2 p-2.5 rounded-8 bg-fill-error-weak border border-stroke-error-strong/20 text-xs text-text-error">
+							<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error">
 								<WarningCircleIcon className="size-3.5 shrink-0" />
 								<span className="flex-1">{error}</span>
 							</div>

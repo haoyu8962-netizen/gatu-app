@@ -62,7 +62,7 @@ export function TradeHeader({
 		<div className="min-w-0 space-y-4">
 			<div className="flex items-center justify-between">
 				<Dropdown
-					trigger={<span className="flex items-center gap-0.5 font-semibold text-text-strong">{orderTypeLabel}</span>}
+					trigger={<span className="flex items-center gap-0.5 font-semibold text-fg">{orderTypeLabel}</span>}
 					items={orderTypeItems}
 					size="sm"
 					align="start"
@@ -73,7 +73,7 @@ export function TradeHeader({
 					<button
 						type="button"
 						onClick={onMarginLeverageClick}
-						className="inline-flex items-center gap-1 text-xs text-text-weak hover:text-text-strong transition-colors cursor-pointer"
+						className="inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition-colors cursor-pointer"
 					>
 						<span>
 							{marginLabel} · {leverage ?? 1}x

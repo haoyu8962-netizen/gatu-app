@@ -21,8 +21,8 @@ const autocompleteVariants = cva(
 				lg: "py-3 px-4",
 			},
 			error: {
-				true: "border-stroke-error-strong bg-fill-error-weak",
-				false: "border-stroke-strong bg-bg-base",
+				true: "border-stroke-error-strong bg-error-soft",
+				false: "border-stroke-strong bg-background",
 			},
 			type: {
 				single: "gap-2",
@@ -119,17 +119,17 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 				<MagnifyingGlassIcon
 					size={size === "sm" ? 16 : 20}
 					weight="bold"
-					className="shrink-0 text-icon-neutral group-data-disabled:text-icon-disabled"
+					className="shrink-0 text-icon group-data-disabled:text-icon-disabled"
 				/>
 				{multiple && multiValue.length > 0 && (
 					<Combobox.Chips className="contents">
 						{multiValue.map((val) => (
 							<Combobox.Chip
 								key={val}
-								className="inline-flex items-center gap-1 rounded-4 bg-fill-brand-weak px-2 py-0.5 text-xs text-text-strong"
+								className="inline-flex items-center gap-1 rounded-4 bg-brand-soft px-2 py-0.5 text-xs text-fg"
 							>
 								{val}
-								<Combobox.ChipRemove className="shrink-0 cursor-pointer text-icon-neutral hover:text-text-strong">
+								<Combobox.ChipRemove className="shrink-0 cursor-pointer text-icon hover:text-fg">
 									<XIcon size={12} weight="bold" />
 								</Combobox.ChipRemove>
 							</Combobox.Chip>
@@ -142,12 +142,12 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 						"flex-1 min-w-0 bg-transparent outline-none",
 						size === "lg" ? "text-sm" : "text-xs",
 						multiple && "min-w-16",
-						"text-text-strong placeholder:text-text-weak",
-						"data-disabled:text-text-disabled data-disabled:placeholder:text-text-disabled",
+						"text-fg placeholder:text-fg-muted",
+						"data-disabled:text-fg-disabled data-disabled:placeholder:text-fg-disabled",
 					)}
 				/>
 				{multiple && multiValue.length > 0 && (
-					<Combobox.Clear className="shrink-0 cursor-pointer text-icon-neutral hover:text-text-strong">
+					<Combobox.Clear className="shrink-0 cursor-pointer text-icon hover:text-fg">
 						<XIcon size={16} weight="bold" />
 					</Combobox.Clear>
 				)}
@@ -157,33 +157,33 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 		const renderPopup = (
 			<Combobox.Portal>
 				<Combobox.Positioner sideOffset={4} className="z-[1000]">
-					<Combobox.Popup className="z-50 max-h-64 overflow-auto bg-bg-raised p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+					<Combobox.Popup className="z-50 max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
 						<Combobox.List>
 							{filteredOptions.map((option) => (
 								<Combobox.Item
 									key={option}
 									value={option}
 									className={cn(
-										"group/item flex items-center gap-2 px-3 py-2 text-text-strong rounded-8 cursor-pointer select-none data-highlighted:bg-fill-hover",
+										"group/item flex items-center gap-2 px-3 py-2 text-fg rounded-8 cursor-pointer select-none data-highlighted:bg-fill-hover",
 										size === "lg" ? "text-sm" : "text-xs",
 									)}
 								>
 									{multiple && (
 										<span className="inline-flex items-center justify-center size-4 rounded-4 border shrink-0 transition-colors border-stroke-strong group-data-selected/item:bg-fill-selected group-data-selected/item:border-stroke-selected">
 											<Combobox.ItemIndicator>
-												<CheckIcon size={10} weight="bold" className="text-text-inverse-strong" />
+												<CheckIcon size={10} weight="bold" className="text-fg-inverse" />
 											</Combobox.ItemIndicator>
 										</span>
 									)}
 									<span className="flex-1">{option}</span>
 									{!multiple && (
 										<Combobox.ItemIndicator>
-											<CheckIcon size={16} weight="bold" className="text-text-brand" />
+											<CheckIcon size={16} weight="bold" className="text-brand" />
 										</Combobox.ItemIndicator>
 									)}
 								</Combobox.Item>
 							))}
-							<Combobox.Empty className="px-3 py-2 text-xs text-text-weak">No results found</Combobox.Empty>
+							<Combobox.Empty className="px-3 py-2 text-xs text-fg-muted">No results found</Combobox.Empty>
 						</Combobox.List>
 					</Combobox.Popup>
 				</Combobox.Positioner>
@@ -193,12 +193,12 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 		return (
 			<div className={cn("flex flex-col gap-1", className)} ref={ref}>
 				{label && (
-					<span className="text-xs font-semibold text-text-strong">
+					<span className="text-xs font-semibold text-fg">
 						{label}
-						{required && <span className="text-text-error"> *</span>}
+						{required && <span className="text-error"> *</span>}
 					</span>
 				)}
-				{helperText && <span className="text-xs text-text-weak">{helperText}</span>}
+				{helperText && <span className="text-xs text-fg-muted">{helperText}</span>}
 
 				{multiple ? (
 					<Combobox.Root
@@ -228,7 +228,7 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 				{error && errorMessage && (
 					<div className="flex items-center gap-1">
 						<WarningCircleIcon size={16} weight="fill" className="shrink-0 text-icon-error" />
-						<span className="text-xs text-text-error">{errorMessage}</span>
+						<span className="text-xs text-error">{errorMessage}</span>
 					</div>
 				)}
 			</div>

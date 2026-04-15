@@ -4,15 +4,13 @@
 
 | State | Token | Notes |
 |-------|-------|-------|
-| Default | `border-border` | Structural neutral border |
-| Subtle default | `border-border/60` | Lighter variant for inputs, small buttons |
-| Hover emphasis | `hover:border-fg-400` | Neutral hover — slightly stronger than structural |
-| Focus | `focus:border-ring` or `focus:border-status-info/60` | Inputs use `focus:border-status-info/60` |
-| Focus-within | `focus-within:border-fg-400` | Wrapper containers |
-| Active tab/selected | `border-fg-900` | Matches active text weight |
-| Disabled | `border-fg-300` | Faded structural |
-| Error | `border-market-down-primary` or `border-status-error` | Semantic error |
-| Semantic | `border-status-*`, `border-market-*`, `border-action-*` | Use matching semantic token |
+| Default | `border-stroke-weak` | Structural neutral border (also applied globally via `*`) |
+| Prominent | `border-stroke-strong` | Stronger structural border |
+| Focus | `focus-visible:border-stroke-focus` | Inputs, interactive elements |
+| Active/selected | `border-stroke-selected` | Brand-tinted selection |
+| Disabled | `border-stroke-disabled` | Faded structural |
+| Semantic | `border-stroke-brand-strong`, `border-stroke-error-strong`, `border-stroke-warning-strong`, `border-stroke-success-strong`, `border-stroke-info-strong` | 80% alpha |
+| Semantic soft | `border-stroke-*-weak` | 20% alpha for subtle outlined alerts |
 
-- Never use opacity-based fg borders for hover (e.g. `hover:border-fg-900/30`). Use solid `hover:border-fg-400` instead.
-- Never use `border-fg-500` for default borders. Use `border-border` or `border-border/60`.
+- Use the `stroke-*` tokens for all of `border-*`, `ring-*`, `outline-*`, and `divide-*` utilities — they share the alpha-tuned values.
+- Avoid opacity modifiers on `border-stroke-weak` for hover emphasis — switch to `border-stroke-strong` instead.

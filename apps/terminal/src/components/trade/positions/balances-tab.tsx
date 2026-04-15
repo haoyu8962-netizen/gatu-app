@@ -45,7 +45,7 @@ function Placeholder({ children, variant }: PlaceholderProps) {
 		<div
 			className={cn(
 				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-text-error" : "text-text-strong",
+				variant === "error" ? "text-error" : "text-fg",
 			)}
 		>
 			{children}
@@ -140,27 +140,27 @@ export function BalancesTab() {
 				key={`${row.type}-${row.asset}`}
 				className={cn(positionsPanelRowHoverClass, index % 2 === 1 && positionsPanelRowStripeClass)}
 			>
-				<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-text-strong")}>
+				<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 					<AssetDisplay coin={row.asset} />
 				</TableCell>
-				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}>
+				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 					{formatToken(row.available, decimals)}
 				</TableCell>
-				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}>
+				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 					{formatToken(row.total, decimals)}
 				</TableCell>
-				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-success")}>
+				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-success")}>
 					{formatUSD(row.usdValue, { compact: true })}
 				</TableCell>
-				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}>
+				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 					{pnlData ? (
-						<span className={pnlData.pnl >= 0 ? "text-text-success" : "text-text-error"}>
+						<span className={pnlData.pnl >= 0 ? "text-success" : "text-error"}>
 							{pnlData.pnl >= 0 ? "+" : ""}
 							{formatUSD(pnlData.pnl, { compact: true })} ({pnlData.pnlPercent >= 0 ? "+" : ""}
 							{pnlData.pnlPercent.toFixed(1)}%)
 						</span>
 					) : (
-						<span className="text-text-weak">—</span>
+						<span className="text-fg-muted">—</span>
 					)}
 				</TableCell>
 				<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
@@ -169,7 +169,7 @@ export function BalancesTab() {
 							<Button
 								variant="link"
 								onClick={() => handleTransferClick(row)}
-								className="shrink-0 text-xs text-text-brand hover:text-text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className="shrink-0 text-xs text-brand hover:text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
 							>
 								<ArrowsLeftRightIcon className="size-2.5" />
 								{transferLabel}
@@ -179,7 +179,7 @@ export function BalancesTab() {
 							<Button
 								variant="link"
 								onClick={() => openSwapModal(row.asset)}
-								className="shrink-0 text-xs text-text-brand hover:text-text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className="shrink-0 text-xs text-brand hover:text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
 							>
 								<ArrowsDownUpIcon className="size-2.5" />
 								{t`Swap`}
@@ -189,7 +189,7 @@ export function BalancesTab() {
 							<Button
 								variant="link"
 								onClick={() => handleSendClick(row)}
-								className="shrink-0 text-xs text-text-brand hover:text-text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className="shrink-0 text-xs text-brand hover:text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
 							>
 								<PaperPlaneTiltIcon className="size-2.5" />
 								{t`Send`}
@@ -220,12 +220,12 @@ export function BalancesTab() {
 					checked={hideSmallBalances}
 					onCheckedChange={(checked: boolean | "indeterminate") => setHideSmallBalances(Boolean(checked))}
 					label={
-						<span className="text-3xs font-normal normal-case tracking-normal text-text-weak">{t`Hide small`}</span>
+						<span className="text-3xs font-normal normal-case tracking-normal text-fg-muted">{t`Hide small`}</span>
 					}
 					className="gap-1.5 items-center"
 				/>
 				{isConnected && !isLoading ? (
-					<span className="tabular-nums text-3xs font-medium text-text-success">
+					<span className="tabular-nums text-3xs font-medium text-success">
 						{formatUSD(totalValue, { compact: true })}
 					</span>
 				) : null}
@@ -262,7 +262,7 @@ export function BalancesTab() {
 										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
 											<TableCell
 												colSpan={6}
-												className="!h-auto !min-h-0 border-stroke-weak/40 bg-fill-brand-strong/8 px-2.5 py-1.5 text-3xs font-semibold uppercase tracking-widest text-text-brand"
+												className="!h-auto !min-h-0 border-stroke-weak/40 bg-brand/8 px-2.5 py-1.5 text-3xs font-semibold uppercase tracking-widest text-brand"
 											>
 												{t`Perpetuals`}
 											</TableCell>
@@ -275,7 +275,7 @@ export function BalancesTab() {
 										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
 											<TableCell
 												colSpan={6}
-												className="!h-auto !min-h-0 border-stroke-weak/40 bg-fill-warning-strong/8 px-2.5 py-1.5 text-3xs font-semibold uppercase tracking-widest text-text-warning"
+												className="!h-auto !min-h-0 border-stroke-weak/40 bg-warning/8 px-2.5 py-1.5 text-3xs font-semibold uppercase tracking-widest text-warning"
 											>
 												{t`Spot`}
 											</TableCell>

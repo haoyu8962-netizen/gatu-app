@@ -28,9 +28,9 @@ const LeverageBadge = forwardRef<HTMLButtonElement, BadgeProps>(({ leverage, onC
 			className={cn("shrink-0", isLoading && "opacity-70", className)}
 			aria-label={t`Change leverage`}
 		>
-			<span className="text-text-weak">{t`Leverage`}</span>
-			<span className="tabular-nums font-medium text-text-strong">{leverage}x</span>
-			<CaretDownIcon className="size-2.5 text-text-weak" />
+			<span className="text-fg-muted">{t`Leverage`}</span>
+			<span className="tabular-nums font-medium text-fg">{leverage}x</span>
+			<CaretDownIcon className="size-2.5 text-fg-muted" />
 		</Button>
 	);
 });
@@ -127,7 +127,7 @@ function LeverageEditor({
 			<div className="flex items-center justify-between">
 				<span
 					className={cn(
-						"uppercase tracking-wide text-text-weak",
+						"uppercase tracking-wide text-fg-muted",
 						compact ? "text-xs font-normal" : "text-xs font-medium",
 					)}
 				>
@@ -145,7 +145,7 @@ function LeverageEditor({
 						inputSize={compact ? "sm" : "lg"}
 						className={cn("text-center font-medium tabular-nums", compact ? "w-12" : "w-16")}
 					/>
-					<span className={cn("text-text-weak", compact ? "text-xs" : "text-base")}>x</span>
+					<span className={cn("text-fg-muted", compact ? "text-xs" : "text-base")}>x</span>
 				</div>
 			</div>
 
@@ -154,7 +154,7 @@ function LeverageEditor({
 			{updateError && (
 				<div
 					className={cn(
-						"flex items-center bg-fill-error-weak border border-stroke-error-strong/20 rounded-8 text-text-error",
+						"flex items-center bg-error-soft border border-stroke-error-strong/20 rounded-8 text-error",
 						compact ? "gap-1.5 p-1.5 text-xs" : "gap-2 p-2.5 text-sm",
 					)}
 				>
@@ -166,7 +166,7 @@ function LeverageEditor({
 			{showSuccess && (
 				<div
 					className={cn(
-						"flex items-center justify-center bg-fill-success-weak border border-stroke-success-strong/20 rounded-8 text-text-success",
+						"flex items-center justify-center bg-success-soft border border-stroke-success-strong/20 rounded-8 text-success",
 						compact ? "gap-1.5 p-1.5 text-xs" : "gap-2 p-2.5 text-sm",
 					)}
 				>

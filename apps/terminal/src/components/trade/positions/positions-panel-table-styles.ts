@@ -1,5 +1,5 @@
 export const positionsPanelTableHeadClass =
-	"!h-8 !min-h-0 !px-2.5 !py-2 text-2xs font-medium uppercase tracking-wide text-text-weak";
+	"!h-8 !min-h-0 !px-2.5 !py-2 text-2xs font-medium uppercase tracking-wide text-fg-muted";
 
 export const positionsPanelTableCellClass = "!h-auto !min-h-0 !px-2.5 py-2 align-middle text-2xs leading-normal";
 

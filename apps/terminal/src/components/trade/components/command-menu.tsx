@@ -84,15 +84,15 @@ export function CommandMenu() {
 					>
 						<AssetDisplay coin={market.name} iconClassName="size-5" />
 						<div className="ml-auto flex items-center gap-2">
-							<span className="text-text-weak text-xs">
+							<span className="text-fg-muted text-xs">
 								{formatPrice(market.markPx, { szDecimals: market.szDecimals })}
 							</span>
 							<span
 								className={cn(
 									"rounded-8 px-1.5 py-0.5 text-xs",
-									market.kind === "perp" && "bg-fill-brand-weak text-text-brand",
-									market.kind === "spot" && "bg-fill-success-weak text-text-success",
-									market.kind === "builderPerp" && "bg-fill-warning-weak text-text-warning",
+									market.kind === "perp" && "bg-brand-soft text-brand",
+									market.kind === "spot" && "bg-success-soft text-success",
+									market.kind === "builderPerp" && "bg-warning-soft text-warning",
 								)}
 							>
 								{KIND_LABELS[market.kind]}

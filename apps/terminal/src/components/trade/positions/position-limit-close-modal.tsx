@@ -120,7 +120,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 				</ModalHeader>
 
 				<ModalContent>
-					<div className="rounded-8 border border-stroke-weak/50 bg-bg-raised p-3 space-y-1 text-xs">
+					<div className="rounded-8 border border-stroke-weak/50 bg-surface p-3 space-y-1 text-xs">
 						<InfoRow
 							className="p-0"
 							label={t`Size`}
@@ -137,7 +137,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 							className="p-0"
 							label={t`Mark Price`}
 							value={formatPrice(liveMarkPx, { szDecimals: position.szDecimals })}
-							valueClassName="font-medium tabular-nums text-text-warning"
+							valueClassName="font-medium tabular-nums text-warning"
 						/>
 						<InfoRow
 							className="p-0 border-t border-stroke-weak/50 pt-3"
@@ -145,7 +145,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 							value={
 								<>
 									{formatUSD(position.unrealizedPnl, { signDisplay: "exceptZero" })}
-									<span className="font-normal text-text-weak ml-1">({formatPercent(position.roe, 1)})</span>
+									<span className="font-normal text-fg-muted ml-1">({formatPercent(position.roe, 1)})</span>
 								</>
 							}
 							valueClassName={cn("font-semibold tabular-nums", getValueColorClass(position.unrealizedPnl))}
@@ -173,7 +173,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 							labelValue={
 								<>
 									Available:{" "}
-									<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+									<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 										{formatToken(position.size, position.szDecimals)} {position.coin}
 									</span>
 								</>
@@ -187,7 +187,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 							className="w-full"
 						/>
 						{sizeNum !== null && sizeNum > position.size && (
-							<p className="text-xs text-text-error mt-1">{t`Size exceeds position`}</p>
+							<p className="text-xs text-error mt-1">{t`Size exceeds position`}</p>
 						)}
 					</div>
 
@@ -201,7 +201,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 					)}
 
 					{error && (
-						<div className="mt-3 px-2 py-1.5 rounded-8 bg-fill-error-weak border border-stroke-error-strong/20 text-xs text-text-error">
+						<div className="mt-3 px-2 py-1.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error">
 							{error.message}
 						</div>
 					)}

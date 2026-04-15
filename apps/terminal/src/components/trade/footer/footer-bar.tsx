@@ -11,27 +11,27 @@ function getStatusDisplay(status: ApiStatus) {
 	switch (status) {
 		case "connected":
 			return {
-				icon: <WifiHighIcon className="size-2.5 text-text-success" aria-hidden />,
+				icon: <WifiHighIcon className="size-2.5 text-success" aria-hidden />,
 				text: t`Connected`,
-				className: "text-text-success",
+				className: "text-success",
 			};
 		case "connecting":
 			return {
-				icon: <SpinnerGapIcon className="size-2.5 text-text-warning animate-spin" aria-hidden />,
+				icon: <SpinnerGapIcon className="size-2.5 text-warning animate-spin" aria-hidden />,
 				text: t`Connecting`,
-				className: "text-text-warning",
+				className: "text-warning",
 			};
 		case "error":
 			return {
-				icon: <WifiSlashIcon className="size-2.5 text-text-error" aria-hidden />,
+				icon: <WifiSlashIcon className="size-2.5 text-error" aria-hidden />,
 				text: t`Disconnected`,
-				className: "text-text-error",
+				className: "text-error",
 			};
 		default:
 			return {
-				icon: <WifiHighIcon className="size-2.5 text-text-strong" aria-hidden />,
+				icon: <WifiHighIcon className="size-2.5 text-fg" aria-hidden />,
 				text: t`Offline`,
-				className: "text-text-strong",
+				className: "text-fg",
 			};
 	}
 }
@@ -42,7 +42,7 @@ export function FooterBar() {
 	const { open } = useCommandMenuActions();
 
 	return (
-		<footer className="fixed bottom-0 left-0 right-0 z-40 h-8 border-t border-stroke-weak px-4 text-3xs font-medium uppercase tracking-wide leading-none flex items-center justify-between bg-bg-base">
+		<footer className="fixed bottom-0 left-0 right-0 z-40 h-8 border-t border-stroke-weak px-4 text-3xs font-medium uppercase tracking-wide leading-none flex items-center justify-between bg-background">
 			<div className="flex min-w-0 items-center gap-2">
 				<div className="flex min-w-0 items-center gap-1.5">
 					{icon}
@@ -52,29 +52,29 @@ export function FooterBar() {
 			<button
 				type="button"
 				onClick={open}
-				className="absolute left-1/2 flex min-h-8 min-w-8 -translate-x-1/2 items-center justify-center rounded-8 text-text-weak transition-colors hover:bg-fill-hover hover:text-text-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+				className="absolute left-1/2 flex min-h-8 min-w-8 -translate-x-1/2 items-center justify-center rounded-8 text-fg-muted transition-colors hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 				aria-label={t`Open command menu`}
 			>
-				<kbd className="pointer-events-none rounded-6 border border-stroke-weak bg-bg-sunken px-1 py-px font-sans text-3xs leading-none text-text-weak">
+				<kbd className="pointer-events-none rounded-6 border border-stroke-weak bg-sunken px-1 py-px font-sans text-3xs leading-none text-fg-muted">
 					{"\u2318K"}
 				</kbd>
 			</button>
-			<div className="flex shrink-0 items-center gap-2.5 text-text-weak">
+			<div className="flex shrink-0 items-center gap-2.5 text-fg-muted">
 				<a
 					href={GITHUB_URL}
 					target="_blank"
 					rel="noopener noreferrer"
-					className="flex items-center rounded-6 p-0.5 text-text-weak transition-colors hover:text-text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+					className="flex items-center rounded-6 p-0.5 text-fg-muted transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 					aria-label="GitHub"
 				>
 					<GithubLogoIcon className="size-2.5" />
 				</a>
 				<Divider orientation="vertical" className="my-1.5" />
 				<ClientOnly>
-					<span className="tabular-nums text-text-strong">{formatTime(new Date())}</span>
+					<span className="tabular-nums text-fg">{formatTime(new Date())}</span>
 				</ClientOnly>
 				<Divider orientation="vertical" className="my-1.5" />
-				<span className="text-text-strong">{APP_VERSION}</span>
+				<span className="text-fg">{APP_VERSION}</span>
 			</div>
 		</footer>
 	);

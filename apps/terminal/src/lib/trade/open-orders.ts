@@ -7,14 +7,14 @@ export type OpenOrder = FrontendOpenOrdersResponse[number];
 export type OrderSide = OpenOrder["side"];
 
 const SIDE_CLASS = {
-	B: "bg-fill-success-weak text-text-success",
-	A: "bg-fill-error-weak text-text-error",
+	B: "bg-success-soft text-success",
+	A: "bg-error-soft text-error",
 } as const satisfies Record<OrderSide, string>;
 
 export const ORDER_TYPE_CONFIG = {
-	takeProfit: { prefix: "Take Profit", class: "bg-fill-success-weak text-text-success" },
-	stop: { prefix: "Stop", class: "bg-fill-warning-weak text-text-warning" },
-	default: { class: "bg-bg-raised/50" },
+	takeProfit: { prefix: "Take Profit", class: "bg-success-soft text-success" },
+	stop: { prefix: "Stop", class: "bg-warning-soft text-warning" },
+	default: { class: "bg-surface/50" },
 } as const;
 
 export function isLongOrder(order: OpenOrder): boolean {
@@ -27,6 +27,16 @@ export function isTakeProfitOrder(order: OpenOrder): boolean {
 
 export function isStopOrder(order: OpenOrder): boolean {
 	return order.orderType.startsWith(ORDER_TYPE_CONFIG.stop.prefix);
+}
+
+export function isMarketTriggerOrder(order: OpenOrder): boolean {
+	return order.isTrigger && order.orderType.endsWith("Market");
+}
+
+export function isClosePositionOrder(order: OpenOrder): boolean {
+	if (!order.isPositionTpsl) return false;
+	const origSz = toBig(order.origSz);
+	return !!origSz && origSz.eq(0);
 }
 
 export function getFilledSize(order: OpenOrder): number {
@@ -59,9 +69,18 @@ export function getSideClass(side: OrderSide): string {
 	return SIDE_CLASS[side];
 }
 
+const ORDER_TYPE_SHORT_LABEL: Record<string, string> = {
+	"Take Profit Market": "TP Market",
+	"Take Profit Limit": "TP Limit",
+	"Stop Market": "SL Market",
+	"Stop Limit": "SL Limit",
+};
+
 export function getOrderTypeConfig(order: OpenOrder) {
 	let typeClass: string = ORDER_TYPE_CONFIG.default.class;
-	const label = order.reduceOnly && !order.isTrigger ? `${order.orderType} RO` : order.orderType;
+	const suffix = order.reduceOnly && !order.isTrigger ? " RO" : "";
+	const fullLabel = `${order.orderType}${suffix}`;
+	const shortLabel = `${ORDER_TYPE_SHORT_LABEL[order.orderType] ?? order.orderType}${suffix}`;
 
 	if (isTakeProfitOrder(order)) {
 		typeClass = ORDER_TYPE_CONFIG.takeProfit.class;
@@ -71,5 +90,5 @@ export function getOrderTypeConfig(order: OpenOrder) {
 		typeClass = ORDER_TYPE_CONFIG.stop.class;
 	}
 
-	return { label, class: typeClass };
+	return { fullLabel, shortLabel, class: typeClass };
 }

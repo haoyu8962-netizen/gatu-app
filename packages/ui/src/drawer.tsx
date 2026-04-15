@@ -52,7 +52,7 @@ const DrawerOverlay = React.forwardRef<HTMLDivElement, DrawerOverlayProps>(({ cl
 	<BaseDrawer.Backdrop
 		ref={ref}
 		className={cn(
-			"fixed inset-0 z-50 bg-fill-overlay transition-opacity duration-200 motion-reduce:transition-none",
+			"fixed inset-0 z-50 bg-scrim transition-opacity duration-200 motion-reduce:transition-none",
 			"data-starting-style:opacity-0 data-ending-style:opacity-0",
 			className,
 		)}
@@ -63,7 +63,7 @@ DrawerOverlay.displayName = "DrawerOverlay";
 
 const drawerContentVariants = cva(
 	[
-		"fixed z-50 flex flex-col bg-bg-overlay border border-stroke-weak shadow-overlay",
+		"fixed z-50 flex flex-col bg-overlay border border-stroke-weak shadow-overlay",
 		"transition-transform duration-200 ease-out motion-reduce:transition-none",
 	],
 	{
@@ -142,7 +142,7 @@ type DrawerTitleProps = React.ComponentPropsWithoutRef<typeof BaseDrawer.Title>;
 const DrawerTitle = React.forwardRef<HTMLHeadingElement, DrawerTitleProps>(({ className, ...props }, ref) => (
 	<BaseDrawer.Title
 		ref={ref}
-		className={cn("flex-1 text-lg font-semibold text-text-strong text-balance", className)}
+		className={cn("flex-1 text-lg font-semibold text-fg text-balance", className)}
 		{...props}
 	/>
 ));
@@ -152,7 +152,7 @@ type DrawerDescriptionProps = React.ComponentPropsWithoutRef<typeof BaseDrawer.D
 
 const DrawerDescription = React.forwardRef<HTMLParagraphElement, DrawerDescriptionProps>(
 	({ className, ...props }, ref) => (
-		<BaseDrawer.Description ref={ref} className={cn("text-sm text-text-weak text-pretty", className)} {...props} />
+		<BaseDrawer.Description ref={ref} className={cn("text-sm text-fg-muted text-pretty", className)} {...props} />
 	),
 );
 DrawerDescription.displayName = "DrawerDescription";

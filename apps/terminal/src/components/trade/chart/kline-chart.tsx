@@ -21,6 +21,7 @@ import { ORDER_LINE_NAME, registerOrderLineOverlay } from "@/lib/chart/order-lin
 import { POSITION_LINE_NAME, registerPositionLineOverlay } from "@/lib/chart/position-line-overlay";
 import { cn } from "@/lib/cn";
 import { getInfoClient, useSubscription } from "@/lib/hyperliquid";
+import { isStopOrder, isTakeProfitOrder, type OpenOrder } from "@/lib/trade/open-orders";
 import { type ChartSource, ChartSourceToggle, type ChartSourceToggleIntentHandlers } from "./chart-source-toggle";
 
 const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -38,6 +39,12 @@ function formatTooltipDate(date: Date): string {
 	const d = date.getDate();
 	const y = String(date.getFullYear()).slice(2);
 	return `${m}/${d}/${y} ${formatTime(date)}`;
+}
+
+function getOrderLineLabel(order: OpenOrder): string {
+	if (isTakeProfitOrder(order)) return "TP";
+	if (isStopOrder(order)) return "SL";
+	return order.side === "B" ? "Limit Buy" : "Limit Sell";
 }
 
 interface Props {
@@ -229,10 +236,11 @@ export function KlineChart({
 		const symbolOrders = orders.filter((o) => o.coin === symbol);
 
 		for (const order of symbolOrders) {
-			const price = Big(order.limitPx).toNumber();
+			const rawPrice = order.isTrigger ? order.triggerPx : order.limitPx;
+			const price = Big(rawPrice).toNumber();
 			if (!Number.isFinite(price)) continue;
 
-			const label = order.side === "B" ? "Limit Buy" : "Limit Sell";
+			const label = getOrderLineLabel(order);
 
 			chart.createOverlay({
 				name: ORDER_LINE_NAME,
@@ -296,7 +304,7 @@ export function KlineChart({
 
 	return (
 		<div className="flex flex-col h-full">
-			<div className="flex min-w-0 items-center justify-between gap-2 border-b border-stroke-weak/60 bg-bg-raised">
+			<div className="flex min-w-0 items-center justify-between gap-2 border-b border-stroke-weak/60 bg-surface">
 				<div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5 p-2 py-1.5">
 					{STARRED_INTERVALS.map((interval) => (
 						<button
@@ -306,8 +314,8 @@ export function KlineChart({
 							className={cn(
 								"px-1.5 py-0.5 text-xs rounded-8 transition-colors",
 								activeInterval.resolution === interval.resolution
-									? "text-text-strong font-semibold"
-									: "text-text-weak hover:text-text-strong",
+									? "text-fg font-semibold"
+									: "text-fg-muted hover:text-fg",
 							)}
 						>
 							{interval.label}
@@ -318,7 +326,7 @@ export function KlineChart({
 							<span
 								className={cn(
 									"flex items-center gap-0.5",
-									isNonFavoriteActive ? "text-text-strong font-semibold" : "text-text-weak font-normal",
+									isNonFavoriteActive ? "text-fg font-semibold" : "text-fg-muted font-normal",
 								)}
 							>
 								{isNonFavoriteActive ? activeInterval.label : null}
@@ -338,9 +346,7 @@ export function KlineChart({
 					/>
 					<div className="h-3 w-px shrink-0 self-center bg-stroke-weak/50" aria-hidden />
 					<Dropdown
-						trigger={
-							<span className="flex items-center gap-0.5 font-semibold text-text-strong">{activeChartType.label}</span>
-						}
+						trigger={<span className="flex items-center gap-0.5 font-semibold text-fg">{activeChartType.label}</span>}
 						items={CHART_TYPES.map((ct) => ({
 							label: ct.label,
 							active: activeChartType.type === ct.type,

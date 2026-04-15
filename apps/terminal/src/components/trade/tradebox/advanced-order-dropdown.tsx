@@ -87,9 +87,7 @@ export function AdvancedOrderDropdown({ orderType, onOrderTypeChange, marketKind
 	return (
 		<Dropdown
 			trigger={
-				<span
-					className={cn("inline-flex items-center outline-none hover:text-text-strong transition-colors", className)}
-				>
+				<span className={cn("inline-flex items-center outline-none hover:text-fg transition-colors", className)}>
 					{isAdvanced ? label : t`Other`}
 				</span>
 			}

@@ -102,7 +102,7 @@ export function GlobalSettingsModal() {
 									inputSize="sm"
 									className="flex-1 text-right tabular-nums"
 								/>
-								<span className="text-xs text-text-weak min-w-8">%</span>
+								<span className="text-xs text-fg-muted min-w-8">%</span>
 							</div>
 							<Slider
 								value={[slippagePercent]}
@@ -111,9 +111,9 @@ export function GlobalSettingsModal() {
 								max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
 								step={0.1}
 							/>
-							<div className="flex items-center justify-between text-xs text-text-strong">
+							<div className="flex items-center justify-between text-xs text-fg">
 								<span>{MARKET_ORDER_SLIPPAGE_MIN_PERCENT}%</span>
-								<span className="font-medium text-text-strong tabular-nums">{slippagePercent}%</span>
+								<span className="font-medium text-fg tabular-nums">{slippagePercent}%</span>
 								<span>{MARKET_ORDER_SLIPPAGE_MAX_PERCENT}%</span>
 							</div>
 						</div>
@@ -152,8 +152,8 @@ function SettingsSection({ title, description, children }: SettingsSectionProps)
 	return (
 		<div className="space-y-2">
 			<div>
-				<h3 className="text-sm font-medium text-text-strong">{title}</h3>
-				{description && <p className="text-xs text-text-weak mt-0.5">{description}</p>}
+				<h3 className="text-sm font-medium text-fg">{title}</h3>
+				{description && <p className="text-xs text-fg-muted mt-0.5">{description}</p>}
 			</div>
 			{children}
 		</div>

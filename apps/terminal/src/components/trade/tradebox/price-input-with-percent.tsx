@@ -36,7 +36,7 @@ export function PriceInputWithPercent({
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-1.5">
 					<FieldLabel>{label}</FieldLabel>
-					<Icon className="size-3 text-text-weak" />
+					<Icon className="size-3 text-fg-muted" />
 				</div>
 				{pnlValue !== null && (
 					<span className={cn("text-xs tabular-nums", getValueColorClass(pnlValue))}>
@@ -46,7 +46,7 @@ export function PriceInputWithPercent({
 			</div>
 			<div
 				className={cn(
-					"flex items-center rounded-8 border bg-bg-base overflow-hidden transition-[border-color,box-shadow]",
+					"flex items-center rounded-8 border bg-background overflow-hidden transition-[border-color,box-shadow]",
 					error
 						? "border-stroke-error-strong ring-[2px] ring-stroke-error-strong/20"
 						: "border-stroke-weak focus-within:border-stroke-focus focus-within:ring-[2px] focus-within:ring-stroke-focus/20",
@@ -66,7 +66,7 @@ export function PriceInputWithPercent({
 							type="button"
 							onClick={() => onPercentClick(p)}
 							disabled={disabled || !isPositive(referencePrice)}
-							className="px-1.5 py-1 text-xs font-medium text-text-weak hover:text-text-strong hover:bg-fill-weak rounded-xs transition-colors disabled:opacity-50"
+							className="px-1.5 py-1 text-xs font-medium text-fg-muted hover:text-fg hover:bg-fill-weak rounded-xs transition-colors disabled:opacity-50"
 							aria-label={t`Set to ${p}%`}
 						>
 							{p}%
@@ -74,7 +74,7 @@ export function PriceInputWithPercent({
 					))}
 				</div>
 			</div>
-			{error && <div className="text-xs text-text-error">{error}</div>}
+			{error && <div className="text-xs text-error">{error}</div>}
 		</div>
 	);
 }

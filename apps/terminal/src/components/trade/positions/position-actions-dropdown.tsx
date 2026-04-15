@@ -21,7 +21,7 @@ export function PositionActionsDropdown({
 }: Props) {
 	return (
 		<Dropdown
-			className="flex justify-end text-xs text-text-weak"
+			className="flex justify-end text-xs text-fg-muted"
 			triggerVariant="minimal"
 			triggerClassName="font-medium"
 			triggerAriaLabel={t`Position close actions`}

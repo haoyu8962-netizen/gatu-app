@@ -48,7 +48,7 @@ const Breadcrumbs = React.forwardRef<HTMLElement, BreadcrumbsProps>(
 							<React.Fragment key={i}>
 								{child}
 								{i < items.length - 1 && (
-									<li role="presentation" aria-hidden="true" className="flex items-center text-icon-neutral">
+									<li role="presentation" aria-hidden="true" className="flex items-center text-icon">
 										{sep}
 									</li>
 								)}
@@ -83,10 +83,10 @@ const BreadcrumbItem = React.forwardRef<HTMLLIElement, BreadcrumbItemProps>(
 					<a
 						href={href}
 						className={cn(
-							"inline-flex items-center rounded-4 text-text-weak",
+							"inline-flex items-center rounded-4 text-fg-muted",
 							gapClass,
 							"transition-colors duration-150",
-							"hover:text-text-strong",
+							"hover:text-fg",
 							"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 						)}
 					>
@@ -94,11 +94,7 @@ const BreadcrumbItem = React.forwardRef<HTMLLIElement, BreadcrumbItemProps>(
 					</a>
 				) : (
 					<span
-						className={cn(
-							"inline-flex items-center",
-							gapClass,
-							current ? "text-text-strong font-semibold" : "text-text-weak",
-						)}
+						className={cn("inline-flex items-center", gapClass, current ? "text-fg font-semibold" : "text-fg-muted")}
 					>
 						{children}
 					</span>

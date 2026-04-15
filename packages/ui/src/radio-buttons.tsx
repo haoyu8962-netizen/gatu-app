@@ -32,7 +32,7 @@ const radioIndicatorVariants = cva(
 
 const radioDotVariants = cva(
 	[
-		"rounded-full bg-fill-white",
+		"rounded-full bg-white",
 		"transition-transform duration-150 motion-reduce:transition-none",
 		"data-unchecked:scale-0 data-checked:scale-100",
 	],
@@ -115,7 +115,7 @@ const RadioGroupItem = React.forwardRef<HTMLSpanElement, RadioGroupItemProps>(
 						{label && (
 							<span
 								className={cn(
-									"text-text-strong font-normal select-none",
+									"text-fg font-normal select-none",
 									size === "xxs" || size === "xs" || size === "sm"
 										? "text-xs"
 										: size === "lg"
@@ -126,7 +126,7 @@ const RadioGroupItem = React.forwardRef<HTMLSpanElement, RadioGroupItemProps>(
 								{label}
 							</span>
 						)}
-						{description && <span className="text-xs text-text-weak mt-0.5 select-none">{description}</span>}
+						{description && <span className="text-xs text-fg-muted mt-0.5 select-none">{description}</span>}
 					</div>
 				)}
 			</label>

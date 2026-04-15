@@ -12,7 +12,7 @@ export function FieldLabel({ htmlFor, className, children }: Props) {
 	return (
 		<Tag
 			htmlFor={htmlFor}
-			className={cn("text-3xs font-medium uppercase tracking-wide text-text-weak leading-none", className)}
+			className={cn("text-3xs font-medium uppercase tracking-wide text-fg-muted leading-none", className)}
 		>
 			{children}
 		</Tag>

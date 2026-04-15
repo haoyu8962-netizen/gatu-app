@@ -9,11 +9,11 @@ import { cn } from "./utils";
 const checkboxVariants = cva(
 	[
 		"relative inline-flex items-center justify-center shrink-0",
-		"border rounded-4 bg-bg-base",
+		"border rounded-4 bg-background",
 		"transition-colors duration-150",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		"data-checked:bg-fill-brand-strong data-checked:border-transparent",
-		"data-indeterminate:bg-fill-brand-strong data-indeterminate:border-transparent",
+		"data-checked:bg-brand data-checked:border-transparent",
+		"data-indeterminate:bg-brand data-indeterminate:border-transparent",
 	],
 	{
 		variants: {
@@ -79,12 +79,12 @@ const Checkbox = React.forwardRef<HTMLElement, CheckboxProps>(
 				</BaseCheckbox.Root>
 				{(label || description || (error && errorMessage)) && (
 					<span className="flex flex-col gap-1">
-						{label && <span className="text-xs text-text-strong">{label}</span>}
-						{description && <span className="text-xs text-text-weak">{description}</span>}
+						{label && <span className="text-xs text-fg">{label}</span>}
+						{description && <span className="text-xs text-fg-muted">{description}</span>}
 						{error && errorMessage && (
 							<span className="flex items-center gap-1">
 								<WarningCircleIcon size={16} weight="fill" className="shrink-0 text-icon-error" />
-								<span className="text-xs text-text-error">{errorMessage}</span>
+								<span className="text-xs text-error">{errorMessage}</span>
 							</span>
 						)}
 					</span>
@@ -102,7 +102,7 @@ interface CheckboxGroupProps extends React.ComponentPropsWithoutRef<typeof BaseC
 const CheckboxGroup = React.forwardRef<HTMLDivElement, CheckboxGroupProps>(
 	({ className, label, children, ...props }, ref) => (
 		<BaseCheckboxGroup ref={ref} className={cn("flex flex-col gap-3", className)} {...props}>
-			{label && <span className="text-xs font-semibold text-text-strong">{label}</span>}
+			{label && <span className="text-xs font-semibold text-fg">{label}</span>}
 			{children}
 		</BaseCheckboxGroup>
 	),

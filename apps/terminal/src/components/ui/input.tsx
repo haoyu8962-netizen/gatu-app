@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 type InputSize = "sm" | "default" | "lg" | "xl";
 
 const inputBaseStyles = [
-	"placeholder:text-text-weak selection:bg-fill-brand-strong selection:text-white",
+	"placeholder:text-fg-muted selection:bg-brand selection:text-white",
 	"border-stroke-weak min-w-0 rounded-8 border bg-transparent px-2 py-1",
 	"transition-[color,box-shadow,border-color] outline-none",
 	"disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",

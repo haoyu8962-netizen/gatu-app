@@ -20,8 +20,8 @@ const searchInputVariants = cva(
 				lg: "p-3 gap-2",
 			},
 			error: {
-				true: "border-stroke-error-strong bg-fill-error-weak",
-				false: "border-stroke-strong bg-bg-base",
+				true: "border-stroke-error-strong bg-error-soft",
+				false: "border-stroke-strong bg-background",
 			},
 		},
 		defaultVariants: {
@@ -83,17 +83,17 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 		return (
 			<div className={cn("flex flex-col gap-1", className)}>
 				{label && (
-					<span className="text-xs font-semibold text-text-strong">
+					<span className="text-xs font-semibold text-fg">
 						{label}
-						{required && <span className="text-text-error"> *</span>}
+						{required && <span className="text-error"> *</span>}
 					</span>
 				)}
-				{helperText && <span className="text-xs text-text-weak">{helperText}</span>}
+				{helperText && <span className="text-xs text-fg-muted">{helperText}</span>}
 				<div data-disabled={disabled || undefined} className={cn(searchInputVariants({ size, error }))}>
 					<MagnifyingGlassIcon
 						size={iconSize}
 						weight="bold"
-						className="shrink-0 text-icon-neutral group-data-disabled:text-icon-disabled"
+						className="shrink-0 text-icon group-data-disabled:text-icon-disabled"
 					/>
 					<input
 						ref={ref}
@@ -106,8 +106,8 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 							"flex-1 min-w-0 bg-transparent outline-none",
 							"[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden",
 							size === "md" || size === "lg" ? "text-sm" : size === "xxs" ? "text-2xs" : "text-xs",
-							"text-text-strong placeholder:text-text-weak",
-							"disabled:text-text-disabled disabled:placeholder:text-text-disabled disabled:cursor-not-allowed",
+							"text-fg placeholder:text-fg-muted",
+							"disabled:text-fg-disabled disabled:placeholder:text-fg-disabled disabled:cursor-not-allowed",
 						)}
 						{...props}
 					/>
@@ -117,7 +117,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 							onClick={handleClear}
 							tabIndex={-1}
 							aria-label="Clear search"
-							className="relative shrink-0 cursor-pointer text-icon-neutral hover:text-text-strong transition-colors after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10"
+							className="relative shrink-0 cursor-pointer text-icon hover:text-fg transition-colors after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10"
 						>
 							<XIcon size={iconSize} weight="bold" />
 						</button>
@@ -126,7 +126,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 				{error && errorMessage && (
 					<div className="flex items-center gap-1">
 						<WarningCircleIcon size={16} weight="fill" className="shrink-0 text-icon-error" />
-						<span className="text-xs text-text-error">{errorMessage}</span>
+						<span className="text-xs text-error">{errorMessage}</span>
 					</div>
 				)}
 			</div>

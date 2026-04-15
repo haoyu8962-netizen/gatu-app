@@ -15,10 +15,10 @@ const tableVariants = cva(["w-full caption-bottom border-collapse"], {
 });
 
 const tableHeadVariants = cva([
-	"h-12 px-6 text-left align-middle text-xs font-semibold text-text-weak whitespace-nowrap",
+	"h-12 px-6 text-left align-middle text-xs font-semibold text-fg-muted whitespace-nowrap",
 ]);
 
-const tableCellVariants = cva(["h-20 px-6 align-middle text-sm text-text-weak"]);
+const tableCellVariants = cva(["h-20 px-6 align-middle text-sm text-fg-muted"]);
 
 interface TableProps extends React.HTMLAttributes<HTMLTableElement>, VariantProps<typeof tableVariants> {}
 
@@ -46,7 +46,7 @@ TableBody.displayName = "TableBody";
 interface TableFooterProps extends React.HTMLAttributes<HTMLTableSectionElement> {}
 
 const TableFooter = React.forwardRef<HTMLTableSectionElement, TableFooterProps>(({ className, ...props }, ref) => (
-	<tfoot className={cn("border-t border-stroke-weak font-semibold text-text-strong", className)} ref={ref} {...props} />
+	<tfoot className={cn("border-t border-stroke-weak font-semibold text-fg", className)} ref={ref} {...props} />
 ));
 TableFooter.displayName = "TableFooter";
 
@@ -74,7 +74,7 @@ TableCell.displayName = "TableCell";
 interface TableCaptionProps extends React.HTMLAttributes<HTMLTableCaptionElement> {}
 
 const TableCaption = React.forwardRef<HTMLTableCaptionElement, TableCaptionProps>(({ className, ...props }, ref) => (
-	<caption className={cn("mt-4 text-xs text-text-weak", className)} ref={ref} {...props} />
+	<caption className={cn("mt-4 text-xs text-fg-muted", className)} ref={ref} {...props} />
 ));
 TableCaption.displayName = "TableCaption";
 

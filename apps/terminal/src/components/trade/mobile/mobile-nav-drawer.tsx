@@ -24,7 +24,7 @@ const SCOPE_NAV_ITEMS = [
 		scope: "all" as const,
 		label: <Trans>All</Trans>,
 		to: "/",
-		activeClass: "text-text-strong font-medium bg-fill-hover",
+		activeClass: "text-fg font-medium bg-fill-hover",
 	},
 	{
 		scope: "perp" as const,
@@ -88,12 +88,12 @@ export function MobileNavDrawer() {
 				<DrawerContent className="w-72 flex flex-col p-0">
 					<div className="h-12 px-3 flex items-center justify-between border-b border-stroke-weak/60 shrink-0">
 						<div className="flex items-center gap-1.5">
-							<div className="size-5 rounded-8 bg-fill-brand-strong/10 border border-fill-brand-strong/30 flex items-center justify-center">
-								<TerminalIcon className="size-3 text-text-brand" />
+							<div className="size-5 rounded-8 bg-brand/10 border border-stroke-brand-strong/30 flex items-center justify-center">
+								<TerminalIcon className="size-3 text-brand" />
 							</div>
 							<span className="text-xs font-bold tracking-tight">
-								<span className="text-text-brand">HYPE</span>
-								<span className="text-text-strong">TERMINAL</span>
+								<span className="text-brand">HYPE</span>
+								<span className="text-fg">TERMINAL</span>
 							</span>
 						</div>
 						<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label="Close navigation" onClick={close}>
@@ -103,7 +103,7 @@ export function MobileNavDrawer() {
 
 					<div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
 						<nav className="p-2 flex flex-col" aria-label="Markets">
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-text-weak">Markets</p>
+							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">Markets</p>
 							{SCOPE_NAV_ITEMS.map((item) => (
 								<Link
 									key={item.scope}
@@ -111,9 +111,7 @@ export function MobileNavDrawer() {
 									onClick={close}
 									className={cn(
 										"flex items-center gap-3 px-3 py-2.5 rounded-xs text-sm transition-colors duration-150",
-										scope === item.scope
-											? item.activeClass
-											: "text-text-weak hover:text-text-strong hover:bg-fill-hover",
+										scope === item.scope ? item.activeClass : "text-fg-muted hover:text-fg hover:bg-fill-hover",
 									)}
 								>
 									<ScopeIcon scope={item.scope} />
@@ -125,14 +123,14 @@ export function MobileNavDrawer() {
 						<Divider className="mx-3" />
 
 						<nav className="p-2 flex flex-col" aria-label="Platform">
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-text-weak">Platform</p>
+							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">Platform</p>
 							{STATIC_NAV_ITEMS.map((item) => (
 								<div
 									key={item.key}
-									className="flex items-center justify-between px-3 py-2.5 rounded-xs text-sm text-text-disabled"
+									className="flex items-center justify-between px-3 py-2.5 rounded-xs text-sm text-fg-disabled"
 								>
 									<span>{item.label}</span>
-									<Badge tone="neutral" size="xxs" className="text-text-disabled">
+									<Badge tone="neutral" size="xxs" className="text-fg-disabled">
 										Soon
 									</Badge>
 								</div>

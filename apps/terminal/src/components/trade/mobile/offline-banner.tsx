@@ -43,8 +43,8 @@ export function OfflineBanner({ className }: Props) {
 				"flex items-center justify-between gap-2",
 				"text-xs font-medium",
 				isOnline
-					? "bg-fill-success-weak text-text-success border-b border-stroke-success-strong/20"
-					: "bg-fill-warning-weak text-text-warning border-b border-stroke-warning-weak/20",
+					? "bg-success-soft text-success border-b border-stroke-success-strong/20"
+					: "bg-warning-soft text-warning border-b border-stroke-warning-weak/20",
 				className,
 			)}
 		>
@@ -67,7 +67,7 @@ export function OfflineBanner({ className }: Props) {
 					<button
 						type="button"
 						onClick={() => window.location.reload()}
-						className="flex items-center gap-1 rounded-8 px-2 py-1 text-xs font-medium bg-fill-warning-weak hover:bg-fill-warning-weak/80 active:scale-[0.97] motion-reduce:active:scale-100 transition touch-manipulation"
+						className="flex items-center gap-1 rounded-8 px-2 py-1 text-xs font-medium bg-warning-soft hover:bg-warning-soft/80 active:scale-[0.97] motion-reduce:active:scale-100 transition touch-manipulation"
 					>
 						<ArrowClockwiseIcon className="size-3" />
 						Retry
@@ -75,7 +75,7 @@ export function OfflineBanner({ className }: Props) {
 					<button
 						type="button"
 						onClick={() => setDismissed(true)}
-						className="flex items-center justify-center size-7 rounded-8 hover:bg-fill-warning-weak active:scale-[0.97] motion-reduce:active:scale-100 transition touch-manipulation"
+						className="flex items-center justify-center size-7 rounded-8 hover:bg-warning-soft active:scale-[0.97] motion-reduce:active:scale-100 transition touch-manipulation"
 						aria-label="Dismiss"
 					>
 						<XIcon className="size-3.5" />

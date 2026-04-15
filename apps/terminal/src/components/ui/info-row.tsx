@@ -12,10 +12,10 @@ interface InfoRowProps {
 export function InfoRow({ label, value, valueClassName, labelClassName, className }: InfoRowProps) {
 	return (
 		<div className={cn("flex items-center justify-between px-2 py-1.5", className)} data-slot="info-row">
-			<span className={cn("text-text-weak", labelClassName)} data-slot="info-row-label">
+			<span className={cn("text-fg-muted", labelClassName)} data-slot="info-row-label">
 				{label}
 			</span>
-			<span className={cn("text-text-strong tabular-nums", valueClassName)} data-slot="info-row-value">
+			<span className={cn("text-fg tabular-nums", valueClassName)} data-slot="info-row-value">
 				{value}
 			</span>
 		</div>

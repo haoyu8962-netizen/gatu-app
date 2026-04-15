@@ -84,7 +84,7 @@ export function MobileBalancesTab({ className }: Props) {
 
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
 				{t`Connect your wallet to view balances.`}
 			</div>
 		);
@@ -92,7 +92,7 @@ export function MobileBalancesTab({ className }: Props) {
 
 	if (hasError) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-error">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
 				{t`Failed to load balances.`}
 			</div>
 		);
@@ -100,7 +100,7 @@ export function MobileBalancesTab({ className }: Props) {
 
 	if (!isLoading && balances.length === 0) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
 				{t`No balances found. Deposit funds to start trading.`}
 			</div>
 		);
@@ -118,16 +118,16 @@ export function MobileBalancesTab({ className }: Props) {
 		return (
 			<div
 				key={`${row.type}-${row.asset}`}
-				className="rounded-xs border border-stroke-weak/40 bg-bg-raised overflow-hidden"
+				className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden"
 			>
 				<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
 					<AssetDisplay coin={row.asset} nameClassName="text-sm font-semibold" />
 					<div className="text-right">
-						<div className="text-sm font-semibold tabular-nums text-text-strong">
+						<div className="text-sm font-semibold tabular-nums text-fg">
 							{formatUSD(row.usdValue, { compact: true })}
 						</div>
 						{pnlData && (
-							<div className={cn("text-xs tabular-nums", pnlData.pnl >= 0 ? "text-text-success" : "text-text-error")}>
+							<div className={cn("text-xs tabular-nums", pnlData.pnl >= 0 ? "text-success" : "text-error")}>
 								{pnlData.pnl >= 0 ? "+" : ""}
 								{formatUSD(pnlData.pnl, { compact: true })} ({pnlData.pnlPercent >= 0 ? "+" : ""}
 								{pnlData.pnlPercent.toFixed(1)}%)
@@ -186,7 +186,7 @@ export function MobileBalancesTab({ className }: Props) {
 	return (
 		<Skeleton name="balances-tab" loading={isLoading}>
 			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-text-weak">
+				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
 					<WalletIcon className="size-3" />
 					{t`Account Balances`}
 					<span className="ml-auto normal-case tracking-normal">
@@ -197,22 +197,18 @@ export function MobileBalancesTab({ className }: Props) {
 							label={t`Hide small`}
 						/>
 					</span>
-					<span className="text-text-success font-semibold tabular-nums">
-						{formatUSD(totalValue, { compact: true })}
-					</span>
+					<span className="text-success font-semibold tabular-nums">{formatUSD(totalValue, { compact: true })}</span>
 				</div>
 				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
 					{perpBalances.length > 0 && (
 						<>
-							<div className="text-xs uppercase tracking-wider text-text-brand font-medium px-1 pt-1">
-								{t`Perpetuals`}
-							</div>
+							<div className="text-xs uppercase tracking-wider text-brand font-medium px-1 pt-1">{t`Perpetuals`}</div>
 							{perpBalances.map(renderBalanceCard)}
 						</>
 					)}
 					{spotBalancesFiltered.length > 0 && (
 						<>
-							<div className="text-xs uppercase tracking-wider text-text-warning font-medium px-1 pt-1">{t`Spot`}</div>
+							<div className="text-xs uppercase tracking-wider text-warning font-medium px-1 pt-1">{t`Spot`}</div>
 							{spotBalancesFiltered.map(renderBalanceCard)}
 						</>
 					)}
@@ -242,7 +238,7 @@ interface MetricCellProps {
 function MetricCell({ label, value }: MetricCellProps) {
 	return (
 		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-text-weak">{label}</div>
+			<div className="text-xs text-fg-muted">{label}</div>
 			<div className="text-xs tabular-nums font-medium">{value}</div>
 		</div>
 	);

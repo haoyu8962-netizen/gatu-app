@@ -37,7 +37,7 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
 				{t`Connect your wallet to view order history.`}
 			</div>
 		);
@@ -45,16 +45,16 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 
 	if (status === "error") {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-error">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
 				<span>{t`Failed to load order history.`}</span>
-				{error instanceof Error && <span className="mt-1 text-xs text-text-weak">{error.message}</span>}
+				{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
 			</div>
 		);
 	}
 
 	if (status === "active" && orders.length === 0) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
 				{t`No order history found.`}
 			</div>
 		);
@@ -63,10 +63,10 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 	return (
 		<Skeleton name="orders-history-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-text-weak">
+				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
 					<ClockCounterClockwiseIcon className="size-3" />
 					{t`Order History`}
-					<span className="font-semibold text-text-brand ml-auto tabular-nums">{headerCount}</span>
+					<span className="font-semibold text-brand ml-auto tabular-nums">{headerCount}</span>
 				</div>
 				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
 					{orders.map((entry) => {
@@ -77,7 +77,7 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 						return (
 							<div
 								key={`${order.oid}-${entry.statusTimestamp}`}
-								className="rounded-xs border border-stroke-weak/40 bg-bg-raised overflow-hidden"
+								className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden"
 							>
 								<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
 									<div
@@ -103,10 +103,10 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 										className={cn(
 											"text-xs px-1.5 py-0.5 rounded-8 capitalize",
 											entry.status === "filled"
-												? "bg-fill-success-weak text-text-success"
+												? "bg-success-soft text-success"
 												: entry.status === "canceled"
-													? "bg-fill-error-weak text-text-error"
-													: "bg-bg-raised text-text-weak",
+													? "bg-error-soft text-error"
+													: "bg-surface text-fg-muted",
 										)}
 									>
 										{entry.status}
@@ -120,10 +120,10 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 								</div>
 
 								<div className="flex items-center justify-between px-3 py-1.5">
-									<span className="text-xs text-text-weak tabular-nums">
+									<span className="text-xs text-fg-muted tabular-nums">
 										{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 									</span>
-									<span className="text-xs text-text-weak tabular-nums">
+									<span className="text-xs text-fg-muted tabular-nums">
 										{t`Updated`} {formatDateTime(entry.statusTimestamp, { dateStyle: "short", timeStyle: "short" })}
 									</span>
 								</div>
@@ -144,7 +144,7 @@ interface MetricCellProps {
 function MetricCell({ label, value }: MetricCellProps) {
 	return (
 		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-text-weak">{label}</div>
+			<div className="text-xs text-fg-muted">{label}</div>
 			<div className="text-xs tabular-nums font-medium">{value}</div>
 		</div>
 	);

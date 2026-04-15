@@ -8,12 +8,12 @@ type BadgeDotTone = "error" | "warning" | "success" | "information" | "neutral" 
 const badgeDotVariants = cva(["inline-block shrink-0 rounded-full"], {
 	variants: {
 		tone: {
-			error: "bg-fill-error-strong",
-			warning: "bg-fill-warning-strong",
-			success: "bg-fill-success-strong",
-			information: "bg-fill-info-strong",
-			neutral: "bg-fill-strong",
-			brand: "bg-fill-brand-strong",
+			error: "bg-error",
+			warning: "bg-warning",
+			success: "bg-success",
+			information: "bg-info",
+			neutral: "bg-fill",
+			brand: "bg-brand",
 		},
 		size: {
 			xxs: "size-1",
@@ -40,7 +40,7 @@ const BadgeDot = React.forwardRef<HTMLSpanElement, BadgeDotProps>(
 
 		return (
 			<span
-				className={cn(badgeDotVariants({ tone, size }), outline && "ring-2 ring-bg-base", className)}
+				className={cn(badgeDotVariants({ tone, size }), outline && "ring-2 ring-background", className)}
 				ref={ref}
 				{...props}
 			/>

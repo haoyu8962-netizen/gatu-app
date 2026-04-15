@@ -51,17 +51,17 @@ function ConnectorRow({
 			<div className="size-8 rounded-xs overflow-hidden flex-shrink-0" aria-hidden="true">
 				<Icon className="size-full" />
 			</div>
-			<span className="flex-1 text-sm font-medium group-hover:text-text-brand transition-colors min-w-0 truncate">
+			<span className="flex-1 text-sm font-medium group-hover:text-brand transition-colors min-w-0 truncate">
 				{connector.name}
 			</span>
 			{isConnecting ? (
 				<SpinnerGapIcon
-					className="size-3.5 animate-spin motion-reduce:animate-none text-text-brand flex-shrink-0"
+					className="size-3.5 animate-spin motion-reduce:animate-none text-brand flex-shrink-0"
 					aria-hidden="true"
 				/>
 			) : (
 				<CaretDownIcon
-					className="size-3 -rotate-90 text-icon-neutral flex-shrink-0 opacity-30 group-hover:opacity-60 transition-opacity"
+					className="size-3 -rotate-90 text-icon flex-shrink-0 opacity-30 group-hover:opacity-60 transition-opacity"
 					aria-hidden="true"
 				/>
 			)}
@@ -154,13 +154,13 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 			<div className="flex items-center justify-between px-4 pt-4 pb-3">
 				{isMobile && (
 					<div
-						className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill-strong/20"
+						className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20"
 						aria-hidden="true"
 					/>
 				)}
 				<div className="flex items-center gap-2">
-					<WalletIcon className="size-4 text-text-brand" weight="duotone" aria-hidden="true" />
-					<h2 className="text-sm font-semibold text-text-strong">
+					<WalletIcon className="size-4 text-brand" weight="duotone" aria-hidden="true" />
+					<h2 className="text-sm font-semibold text-fg">
 						<Trans>Connect Wallet</Trans>
 					</h2>
 				</div>
@@ -168,7 +168,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 					type="button"
 					onClick={onClose}
 					aria-label={t`Close`}
-					className="flex items-center justify-center size-8 rounded-8 text-icon-neutral hover:bg-fill-hover active:bg-fill-press cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-stroke-focus focus-visible:outline-offset-2"
+					className="flex items-center justify-center size-8 rounded-8 text-icon hover:bg-fill-hover active:bg-fill-press cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-stroke-focus focus-visible:outline-offset-2"
 				>
 					<XIcon size={16} weight="bold" aria-hidden="true" />
 				</button>
@@ -194,7 +194,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 								type="button"
 								onClick={() => setShowAll((v) => !v)}
 								aria-expanded={showAll}
-								className="w-full flex items-center justify-center gap-1.5 px-4 py-2 text-xs text-text-weak hover:text-text-strong hover:bg-fill-hover transition-colors cursor-pointer border-t border-stroke-weak/20 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus"
+								className="w-full flex items-center justify-center gap-1.5 px-4 py-2 text-xs text-fg-muted hover:text-fg hover:bg-fill-hover transition-colors cursor-pointer border-t border-stroke-weak/20 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus"
 							>
 								<span>{showAll ? <Trans>Show fewer wallets</Trans> : <Trans>{other.length} more wallets</Trans>}</span>
 								<CaretDownIcon
@@ -206,11 +206,11 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 					</>
 				) : (
 					<div className="px-4 py-8 text-center space-y-1.5">
-						<WarningCircleIcon className="size-8 text-text-weak mx-auto" aria-hidden="true" />
+						<WarningCircleIcon className="size-8 text-fg-muted mx-auto" aria-hidden="true" />
 						<p className="text-sm font-medium">
 							<Trans>No wallets found</Trans>
 						</p>
-						<p className="text-xs text-text-weak">
+						<p className="text-xs text-fg-muted">
 							<Trans>Install a wallet extension to continue</Trans>
 						</p>
 					</div>
@@ -219,21 +219,21 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 				{error && (
 					<div
 						role="alert"
-						className="mx-4 mb-3 flex items-start gap-2 p-2.5 rounded-xs bg-fill-error-weak border border-stroke-error-strong/20"
+						className="mx-4 mb-3 flex items-start gap-2 p-2.5 rounded-xs bg-error-soft border border-stroke-error-strong/20"
 					>
-						<WarningCircleIcon className="size-3.5 text-text-error shrink-0 mt-0.5" aria-hidden="true" />
-						<p className="text-xs text-text-error">{error.message}</p>
+						<WarningCircleIcon className="size-3.5 text-error shrink-0 mt-0.5" aria-hidden="true" />
+						<p className="text-xs text-error">{error.message}</p>
 					</div>
 				)}
 			</div>
 
 			{mockConnectors.length > 0 && (
-				<div className="border-t border-stroke-warning-strong/20 bg-fill-warning-weak/10">
+				<div className="border-t border-stroke-warning-strong/20 bg-warning-soft/10">
 					<button
 						type="button"
 						onClick={() => setShowMock((v) => !v)}
 						aria-expanded={showMock}
-						className="w-full flex items-center justify-between px-4 py-2.5 text-2xs font-medium uppercase tracking-wider text-text-warning hover:bg-fill-warning-weak/20 cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus"
+						className="w-full flex items-center justify-between px-4 py-2.5 text-2xs font-medium uppercase tracking-wider text-warning hover:bg-warning-soft/20 cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus"
 					>
 						<span>
 							<Trans>Mock Wallet (Testing)</Trans>
@@ -258,26 +258,26 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 											disabled={isPending}
 											className={cn(
 												"w-full flex items-center gap-3 px-3 py-2.5 text-left",
-												"bg-fill-warning-weak/30 hover:bg-fill-warning-weak/60 transition-colors cursor-pointer",
+												"bg-warning-soft/30 hover:bg-warning-soft/60 transition-colors cursor-pointer",
 												"focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus",
 												"disabled:opacity-50 disabled:cursor-not-allowed group",
 											)}
 										>
 											<div
-												className="size-7 rounded-xs bg-fill-warning-weak flex items-center justify-center flex-shrink-0"
+												className="size-7 rounded-xs bg-warning-soft flex items-center justify-center flex-shrink-0"
 												aria-hidden="true"
 											>
-												<FlaskIcon className="size-3.5 text-text-warning" />
+												<FlaskIcon className="size-3.5 text-warning" />
 											</div>
 											<div className="flex-1 min-w-0">
-												<p className="text-sm font-medium group-hover:text-text-warning transition-colors truncate">
+												<p className="text-sm font-medium group-hover:text-warning transition-colors truncate">
 													{config?.name ?? connector.name}
 												</p>
-												<p className="text-2xs text-text-weak font-mono truncate">{config?.address ?? "Mock wallet"}</p>
+												<p className="text-2xs text-fg-muted font-mono truncate">{config?.address ?? "Mock wallet"}</p>
 											</div>
 											{isConnecting && (
 												<SpinnerGapIcon
-													className="size-3.5 animate-spin motion-reduce:animate-none text-text-warning flex-shrink-0"
+													className="size-3.5 animate-spin motion-reduce:animate-none text-warning flex-shrink-0"
 													aria-hidden="true"
 												/>
 											)}
@@ -312,7 +312,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 									</Button>
 								</div>
 								{customAddressError && (
-									<p role="alert" className="text-xs text-text-error px-1">
+									<p role="alert" className="text-xs text-error px-1">
 										{customAddressError}
 									</p>
 								)}
@@ -323,14 +323,14 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 			)}
 
 			<div className="border-t border-stroke-weak/40 px-4 py-2.5 flex items-center justify-center gap-1.5">
-				<span className="text-xs text-text-weak">
+				<span className="text-xs text-fg-muted">
 					<Trans>New to wallets?</Trans>
 				</span>
 				<a
 					href="https://ethereum.org/en/wallets/"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="inline-flex items-center gap-1 text-xs text-text-brand hover:underline focus-visible:outline-2 focus-visible:outline-stroke-focus focus-visible:rounded-xs"
+					className="inline-flex items-center gap-1 text-xs text-brand hover:underline focus-visible:outline-2 focus-visible:outline-stroke-focus focus-visible:rounded-xs"
 				>
 					<Trans>Learn more</Trans>
 					<ArrowSquareOutIcon className="size-3" aria-hidden="true" />

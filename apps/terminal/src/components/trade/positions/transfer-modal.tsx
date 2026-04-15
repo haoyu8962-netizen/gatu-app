@@ -116,9 +116,7 @@ export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" 
 								<span
 									className={cn(
 										"text-xs px-2 py-1 uppercase font-medium",
-										direction === "toSpot"
-											? "bg-fill-brand-strong/20 text-text-brand"
-											: "bg-fill-warning-strong/20 text-text-warning",
+										direction === "toSpot" ? "bg-brand/20 text-brand" : "bg-warning/20 text-warning",
 									)}
 								>
 									{fromLabel}
@@ -128,7 +126,7 @@ export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" 
 								type="button"
 								onClick={handleFlip}
 								aria-label={t`Flip transfer direction`}
-								className="p-1.5 rounded-8 hover:bg-bg-raised/50 transition-colors text-text-weak hover:text-text-brand"
+								className="p-1.5 rounded-8 hover:bg-surface/50 transition-colors text-fg-muted hover:text-brand"
 							>
 								<ArrowsLeftRightIcon className="size-4" />
 							</button>
@@ -136,9 +134,7 @@ export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" 
 								<span
 									className={cn(
 										"text-xs px-2 py-1 uppercase font-medium",
-										direction === "toPerp"
-											? "bg-fill-brand-strong/20 text-text-brand"
-											: "bg-fill-warning-strong/20 text-text-warning",
+										direction === "toPerp" ? "bg-brand/20 text-brand" : "bg-warning/20 text-warning",
 									)}
 								>
 									{toLabel}
@@ -151,7 +147,7 @@ export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" 
 							labelValue={
 								<>
 									Available:{" "}
-									<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+									<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 										{floorToString(availableBalanceValue, usdcDecimals)} USDC
 									</span>
 								</>
@@ -168,7 +164,7 @@ export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" 
 						/>
 
 						{error && (
-							<div className="flex items-center gap-2 p-2.5 rounded-8 bg-fill-error-weak border border-stroke-error-strong/20 text-xs text-text-error">
+							<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error">
 								<WarningCircleIcon className="size-3.5 shrink-0" />
 								<span className="flex-1">{error}</span>
 							</div>

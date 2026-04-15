@@ -269,62 +269,72 @@
 }
 
 /* =============================================
-   Layer 3: Wire semantic tokens → Tailwind
-   These create utility classes like bg-fill-brand-strong
+   Layer 3: Wire semantic tokens → Tailwind utilities.
+   Flat names (shadcn-style) so you get `bg-surface`, `text-fg`,
+   `border-stroke-weak` — not `bg-surface`, `text-fg`.
+
+   Naming rules when adding a color:
+   - Surfaces (backgrounds of containers): no prefix → used as `bg-*`
+   - Foregrounds (text on surfaces): `fg` or `fg-*` → used as `text-*`
+   - Semantic (shared bg/text/border): `brand`, `error`, `warning`,
+     `success`, `info` (+ `-soft` for subtle bg tints)
+   - Interactive fills (state bgs): `fill`, `fill-*` → `bg-fill-*`
+   - Borders: `border-*` (e.g. `border-stroke-weak`, `border-stroke-strong`)
+   - Icons: `icon`, `icon-*` → `text-icon-*`
+   - NEVER put the property prefix in the token name.
+     Wrong: --color-bg-sunken. Right: --color-sunken.
    ============================================= */
 @theme inline {
-	/* Background */
-	--color-bg-base: var(--bg-base);
-	--color-bg-raised: var(--bg-raised);
-	--color-bg-overlay: var(--bg-overlay);
-	--color-bg-sunken: var(--bg-sunken);
-	--color-bg-alternate: var(--bg-alternate);
-	--color-bg-brand: var(--bg-brand);
-	--color-bg-inverse: var(--bg-inverse);
+	/* Surfaces */
+	--color-background: var(--bg-base);
+	--color-surface: var(--bg-raised);
+	--color-overlay: var(--bg-overlay);
+	--color-sunken: var(--bg-sunken);
+	--color-alternate: var(--bg-alternate);
+	--color-inverse-surface: var(--bg-inverse);
 
-	/* Text */
-	--color-text-strong: var(--text-strong);
-	--color-text-weak: var(--text-weak);
-	--color-text-brand: var(--text-brand);
-	--color-text-disabled: var(--text-disabled);
-	--color-text-error: var(--text-error);
-	--color-text-warning: var(--text-warning);
-	--color-text-success: var(--text-success);
-	--color-text-info: var(--text-info);
-	--color-text-inverse-strong: var(--text-inverse-strong);
-	--color-text-inverse-weak: var(--text-inverse-weak);
-	--color-text-inverse-disabled: var(--text-inverse-disabled);
+	/* Foregrounds */
+	--color-fg: var(--text-strong);
+	--color-fg-muted: var(--text-weak);
+	--color-fg-disabled: var(--text-disabled);
+	--color-fg-inverse: var(--text-inverse-strong);
+	--color-fg-inverse-muted: var(--text-inverse-weak);
+	--color-fg-inverse-disabled: var(--text-inverse-disabled);
 
-	/* Fill */
-	--color-fill-strong: var(--fill-strong);
+	/* Semantic (shared: bg-*, text-*, border-*) */
+	--color-brand: var(--text-brand);
+	--color-brand-soft: var(--fill-brand-weak);
+	--color-error: var(--text-error);
+	--color-error-soft: var(--fill-error-weak);
+	--color-warning: var(--text-warning);
+	--color-warning-soft: var(--fill-warning-weak);
+	--color-success: var(--text-success);
+	--color-success-soft: var(--fill-success-weak);
+	--color-info: var(--text-info);
+	--color-info-soft: var(--fill-info-weak);
+
+	/* Interactive fills */
+	--color-fill: var(--fill-strong);
 	--color-fill-weak: var(--fill-weak);
 	--color-fill-weaker: var(--fill-weaker);
 	--color-fill-hover: var(--fill-hover);
 	--color-fill-press: var(--fill-press);
 	--color-fill-selected: var(--fill-selected);
 	--color-fill-disabled: var(--fill-disabled);
-	--color-fill-overlay: var(--fill-overlay);
-	--color-fill-brand-strong: var(--fill-brand-strong);
-	--color-fill-brand-weak: var(--fill-brand-weak);
-	--color-fill-error-strong: var(--fill-error-strong);
-	--color-fill-error-weak: var(--fill-error-weak);
-	--color-fill-warning-strong: var(--fill-warning-strong);
-	--color-fill-warning-weak: var(--fill-warning-weak);
-	--color-fill-success-strong: var(--fill-success-strong);
-	--color-fill-success-weak: var(--fill-success-weak);
-	--color-fill-info-strong: var(--fill-info-strong);
-	--color-fill-info-weak: var(--fill-info-weak);
-	--color-fill-inverse-strong: var(--fill-inverse-strong);
+	--color-scrim: var(--fill-overlay);
+	--color-fill-inverse: var(--fill-inverse-strong);
 	--color-fill-inverse-weak: var(--fill-inverse-weak);
 	--color-fill-inverse-hover: var(--fill-inverse-hover);
 	--color-fill-inverse-press: var(--fill-inverse-press);
 	--color-fill-inverse-disabled: var(--fill-inverse-disabled);
-	--color-fill-white: var(--fill-white);
-	--color-fill-yellow: var(--fill-yellow);
+	--color-white: var(--fill-white);
+	--color-yellow: var(--fill-yellow);
 
-	/* Stroke */
-	--color-stroke-strong: var(--stroke-strong);
+	/* Strokes (used as border-stroke-*, ring-stroke-*, outline-stroke-*, divide-stroke-*).
+	   Kept as `stroke-` rather than `border-` so class names never stutter
+	   (e.g. `border-stroke-weak` vs `border-border-weak`). */
 	--color-stroke-weak: var(--stroke-weak);
+	--color-stroke-strong: var(--stroke-strong);
 	--color-stroke-selected: var(--stroke-selected);
 	--color-stroke-focus: var(--stroke-focus);
 	--color-stroke-disabled: var(--stroke-disabled);
@@ -342,8 +352,8 @@
 	--color-stroke-inverse-weak: var(--stroke-inverse-weak);
 	--color-stroke-inverse-disabled: var(--stroke-inverse-disabled);
 
-	/* Icon */
-	--color-icon-neutral: var(--icon-neutral);
+	/* Icons */
+	--color-icon: var(--icon-neutral);
 	--color-icon-brand: var(--icon-brand);
 	--color-icon-disabled: var(--icon-disabled);
 	--color-icon-error: var(--icon-error);

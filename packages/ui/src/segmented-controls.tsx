@@ -33,12 +33,12 @@ const segmentedControlsVariants = cva(
 const segmentedControlItemVariants = cva(
 	[
 		"relative inline-flex items-center justify-center",
-		"rounded-8 font-normal text-text-weak",
+		"rounded-8 font-normal text-fg-muted",
 		"border border-transparent",
 		"cursor-pointer select-none whitespace-nowrap",
 		"transition-colors duration-150 motion-reduce:transition-none",
-		"data-active:text-text-strong",
-		"hover:text-text-strong",
+		"data-active:text-fg",
+		"hover:text-fg",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"data-disabled:opacity-40 data-disabled:cursor-not-allowed",
 	],
@@ -97,7 +97,7 @@ const SegmentedControls = React.forwardRef<HTMLDivElement, SegmentedControlsProp
 					>
 						<Tabs.Indicator
 							className={cn(
-								"absolute inset-y-0 rounded-8 bg-bg-overlay border border-stroke-strong shadow-raised transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none",
+								"absolute inset-y-0 rounded-8 bg-overlay border border-stroke-strong shadow-raised transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none",
 								indicatorClassName,
 							)}
 							style={{

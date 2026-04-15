@@ -36,7 +36,7 @@ function Placeholder({ children, variant }: PlaceholderProps) {
 		<div
 			className={cn(
 				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-text-error" : "text-text-weak",
+				variant === "error" ? "text-error" : "text-fg-muted",
 			)}
 		>
 			{children}
@@ -81,7 +81,7 @@ export function TwapTab() {
 	return (
 		<div className={positionsPanelTabRootClass}>
 			<div className={positionsPanelTableCaptionRowClass}>
-				{headerCount ? <span className="tabular-nums text-3xs text-text-weak">{headerCount}</span> : null}
+				{headerCount ? <span className="tabular-nums text-3xs text-fg-muted">{headerCount}</span> : null}
 			</div>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
@@ -118,9 +118,7 @@ export function TwapTab() {
 							<TableBody className={positionsPanelTableBodyClass}>
 								{activeOrders.map(({ twapId, state }, i) => {
 									const isBuy = state.side === "B";
-									const sideClass = isBuy
-										? "bg-fill-success-weak text-text-success"
-										: "bg-fill-error-weak text-text-error";
+									const sideClass = isBuy ? "bg-success-soft text-success" : "bg-error-soft text-error";
 									const totalSize = toBig(state.sz)?.toNumber() ?? Number.NaN;
 									const executedSize = toBig(state.executedSz)?.toNumber() ?? 0;
 									const avgPrice = getAvgPrice(state.executedNtl, state.executedSz);
@@ -133,7 +131,7 @@ export function TwapTab() {
 											key={twapId}
 											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
 										>
-											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-text-strong")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 												<div className="flex items-center gap-1.5">
 													<span className={cn("text-xs px-1 py-0.5 rounded-8 uppercase", sideClass)}>
 														{isBuy ? t`buy` : t`sell`}
@@ -148,29 +146,25 @@ export function TwapTab() {
 													</Button>
 												</div>
 											</TableCell>
-											<TableCell
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
-											>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 												{formatNumber(totalSize, szDecimals)}
 											</TableCell>
 											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
-												<span className={cn(isBuy ? "text-text-success" : "text-text-error")}>
+												<span className={cn(isBuy ? "text-success" : "text-error")}>
 													{formatNumber(executedSize, szDecimals)}
 												</span>
 											</TableCell>
-											<TableCell
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
-											>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 												{formatPrice(avgPrice, { szDecimals })}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "tabular-nums text-text-strong")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "tabular-nums text-fg")}>
 												<TimeTicker startTime={creationTime} durationMs={totalMinutes * 60 * 1000} isActive={true} /> /{" "}
 												{formatDuration(totalMinutes)}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-text-strong")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-fg")}>
 												{state.reduceOnly ? t`Yes` : t`No`}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "tabular-nums text-text-strong")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "tabular-nums text-fg")}>
 												{formatDateTime(creationTime, {
 													day: "2-digit",
 													month: "2-digit",

@@ -52,10 +52,8 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 			<BaseSlider.Root ref={ref} className={cn(sliderVariants({ className }))} {...props}>
 				{(label || showValue) && (
 					<div className="flex items-center gap-4">
-						{label && (
-							<BaseSlider.Label className="flex-1 text-sm font-normal text-text-strong">{label}</BaseSlider.Label>
-						)}
-						{showValue && <BaseSlider.Value className="text-sm font-normal text-text-weak tabular-nums" />}
+						{label && <BaseSlider.Label className="flex-1 text-sm font-normal text-fg">{label}</BaseSlider.Label>}
+						{showValue && <BaseSlider.Value className="text-sm font-normal text-fg-muted tabular-nums" />}
 					</div>
 				)}
 				<BaseSlider.Control className={cn("relative flex w-full items-center", controlHeightClasses[thumbSize])}>
@@ -74,7 +72,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 							key={i}
 							index={i}
 							className={cn(
-								"relative rounded-full bg-fill-white",
+								"relative rounded-full bg-white",
 								"border-2 border-stroke-focus shadow-md",
 								"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 								"before:absolute before:content-['']",

@@ -52,5 +52,5 @@ export function ChartPanel() {
 }
 
 function ChartLoadingFallback() {
-	return <div className="h-full w-full animate-pulse bg-bg-raised" />;
+	return <div className="h-full w-full animate-pulse bg-surface" />;
 }

@@ -39,94 +39,89 @@ const buttonVariants = cva(
 			{
 				variant: "filled",
 				intent: "brand",
-				className:
-					"bg-fill-brand-strong text-text-inverse-strong hover:opacity-90 active:opacity-80 data-disabled:opacity-40",
+				className: "bg-brand text-fg-inverse hover:opacity-90 active:opacity-80 data-disabled:opacity-40",
 			},
 			{
 				variant: "filled",
 				intent: "neutral",
-				className:
-					"bg-fill-strong text-text-inverse-strong hover:opacity-90 active:opacity-80 data-disabled:opacity-40",
+				className: "bg-fill text-fg-inverse hover:opacity-90 active:opacity-80 data-disabled:opacity-40",
 			},
 			{
 				variant: "filled",
 				intent: "error",
-				className:
-					"bg-fill-error-strong text-text-inverse-strong hover:opacity-90 active:opacity-80 data-disabled:opacity-40",
+				className: "bg-error text-fg-inverse hover:opacity-90 active:opacity-80 data-disabled:opacity-40",
 			},
 			{
 				variant: "filled",
 				intent: "inverse",
-				className:
-					"bg-fill-inverse-strong text-text-strong hover:opacity-90 active:opacity-80 data-disabled:opacity-40",
+				className: "bg-fill-inverse text-fg hover:opacity-90 active:opacity-80 data-disabled:opacity-40",
 			},
 
 			{
 				variant: "outline",
 				intent: "brand",
 				className:
-					"border-stroke-brand-strong text-text-brand hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40 data-disabled:border-stroke-disabled",
+					"border-stroke-brand-strong text-brand hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40 data-disabled:border-stroke-disabled",
 			},
 			{
 				variant: "outline",
 				intent: "neutral",
 				className:
-					"border-stroke-weak text-text-strong hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40 data-disabled:border-stroke-disabled",
+					"border-stroke-weak text-fg hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40 data-disabled:border-stroke-disabled",
 			},
 			{
 				variant: "outline",
 				intent: "error",
 				className:
-					"border-stroke-error-strong text-text-error hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40 data-disabled:border-stroke-disabled",
+					"border-stroke-error-strong text-error hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40 data-disabled:border-stroke-disabled",
 			},
 			{
 				variant: "outline",
 				intent: "inverse",
 				className:
-					"border-stroke-inverse-strong text-text-inverse-strong hover:bg-fill-inverse-hover active:bg-fill-inverse-press data-disabled:opacity-40 data-disabled:border-stroke-inverse-disabled",
+					"border-stroke-inverse-strong text-fg-inverse hover:bg-fill-inverse-hover active:bg-fill-inverse-press data-disabled:opacity-40 data-disabled:border-stroke-inverse-disabled",
 			},
 
 			{
 				variant: "ghost",
 				intent: "brand",
-				className: "text-text-brand hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40",
+				className: "text-brand hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40",
 			},
 			{
 				variant: "ghost",
 				intent: "neutral",
-				className: "text-text-strong hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40",
+				className: "text-fg hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40",
 			},
 			{
 				variant: "ghost",
 				intent: "error",
-				className: "text-text-error hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40",
+				className: "text-error hover:bg-fill-hover active:bg-fill-press data-disabled:opacity-40",
 			},
 			{
 				variant: "ghost",
 				intent: "inverse",
-				className:
-					"text-text-inverse-strong hover:bg-fill-inverse-hover active:bg-fill-inverse-press data-disabled:opacity-40",
+				className: "text-fg-inverse hover:bg-fill-inverse-hover active:bg-fill-inverse-press data-disabled:opacity-40",
 			},
 
 			{
 				variant: "link",
 				intent: "brand",
-				className: "text-text-brand hover:opacity-80 data-disabled:opacity-40",
+				className: "text-brand hover:opacity-80 data-disabled:opacity-40",
 			},
 			{
 				variant: "link",
 				intent: "neutral",
-				className: "text-text-strong hover:opacity-80 data-disabled:opacity-40",
+				className: "text-fg hover:opacity-80 data-disabled:opacity-40",
 			},
 			{
 				variant: "link",
 				intent: "error",
-				className: "text-text-error hover:opacity-80 data-disabled:opacity-40",
+				className: "text-error hover:opacity-80 data-disabled:opacity-40",
 			},
 			{
 				variant: "link",
 				intent: "inverse",
-				className: "text-text-inverse-strong hover:opacity-80 data-disabled:opacity-40",
+				className: "text-fg-inverse hover:opacity-80 data-disabled:opacity-40",
 			},
 		],
 		defaultVariants: {

@@ -68,7 +68,7 @@ export function PositionsPanel() {
 	}
 
 	return (
-		<div className="h-full flex flex-col overflow-hidden bg-bg-raised">
+		<div className="h-full flex flex-col overflow-hidden bg-surface">
 			<Tabs
 				value={activeTab}
 				onValueChange={handleTabChange}
@@ -88,7 +88,7 @@ export function PositionsPanel() {
 									className="inline-flex items-center gap-1 whitespace-nowrap"
 								>
 									<span>{tab.label}</span>
-									{typeof count === "number" ? <span className="text-text-weak">({count})</span> : null}
+									{typeof count === "number" ? <span className="text-fg-muted">({count})</span> : null}
 								</TabsTrigger>
 							);
 						})}
@@ -140,7 +140,7 @@ export function PositionsPanel() {
 function TabLoadingFallback() {
 	return (
 		<div className="flex-1 flex items-center justify-center">
-			<Spinner className="size-4 text-text-weak" />
+			<Spinner className="size-4 text-fg-muted" />
 		</div>
 	);
 }

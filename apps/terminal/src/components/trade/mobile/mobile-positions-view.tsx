@@ -140,10 +140,10 @@ function EmptyState() {
 	return (
 		<>
 			<div className="h-full flex flex-col items-center justify-center gap-4 p-6 text-center">
-				<div className="size-16 rounded-full flex items-center justify-center bg-bg-raised">
-					<WalletIcon className="size-8 text-text-weak" />
+				<div className="size-16 rounded-full flex items-center justify-center bg-surface">
+					<WalletIcon className="size-8 text-fg-muted" />
 				</div>
-				<p className="text-sm text-text-weak max-w-xs text-pretty">Connect wallet to view positions</p>
+				<p className="text-sm text-fg-muted max-w-xs text-pretty">Connect wallet to view positions</p>
 				<Button variant="outline" intent="brand" size="sm" onClick={() => setWalletModalOpen(true)}>
 					Connect Wallet
 				</Button>

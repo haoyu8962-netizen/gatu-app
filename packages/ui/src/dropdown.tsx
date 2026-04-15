@@ -8,7 +8,7 @@ import { cn } from "./utils";
 const dropdownTriggerVariants = cva(
 	[
 		"inline-flex items-center justify-center gap-2 cursor-pointer select-none",
-		"rounded-8 border border-stroke-strong bg-bg-base",
+		"rounded-8 border border-stroke-strong bg-background",
 		"font-semibold transition-colors",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"data-popup-open:border-stroke-focus",
@@ -34,7 +34,7 @@ const dropdownMinimalTriggerVariants = cva(
 	[
 		"group inline-flex items-center justify-center cursor-pointer select-none rounded-8",
 		"border-0 bg-transparent shadow-none appearance-none font-normal",
-		"transition-colors hover:text-text-strong data-[popup-open]:text-text-strong",
+		"transition-colors hover:text-fg data-[popup-open]:text-fg",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"data-disabled:opacity-40 data-disabled:cursor-not-allowed",
 	],
@@ -59,7 +59,7 @@ const dropdownItemVariants = cva(
 		"flex items-center gap-2 rounded-8 cursor-pointer select-none",
 		"transition-colors",
 		"data-highlighted:bg-fill-hover",
-		"data-disabled:text-text-disabled data-disabled:cursor-not-allowed",
+		"data-disabled:text-fg-disabled data-disabled:cursor-not-allowed",
 	],
 	{
 		variants: {
@@ -71,8 +71,8 @@ const dropdownItemVariants = cva(
 				lg: "px-3 py-2 text-sm",
 			},
 			intent: {
-				neutral: "text-text-strong",
-				danger: "text-text-error",
+				neutral: "text-fg",
+				danger: "text-error",
 			},
 		},
 		defaultVariants: {
@@ -149,7 +149,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 						<span
 							className={cn(
 								"shrink-0",
-								item.danger ? "text-icon-error" : "text-icon-neutral",
+								item.danger ? "text-icon-error" : "text-icon",
 								item.disabled && "text-icon-disabled",
 							)}
 						>
@@ -169,7 +169,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 						aria-label={triggerAriaLabel}
 						className={cn(
 							isMinimalTrigger ? dropdownMinimalTriggerVariants({ size }) : dropdownTriggerVariants({ size }),
-							!isMinimalTrigger && "text-text-strong",
+							!isMinimalTrigger && "text-fg",
 							triggerClassName,
 						)}
 					>
@@ -179,9 +179,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 							weight={isMinimalTrigger ? "regular" : "bold"}
 							className={cn(
 								"shrink-0 transition-transform [[data-popup-open]>&]:rotate-180",
-								isMinimalTrigger
-									? "text-text-weak group-hover:text-text-strong group-data-[popup-open]:text-text-strong"
-									: "text-icon-neutral",
+								isMinimalTrigger ? "text-fg-muted group-hover:text-fg group-data-[popup-open]:text-fg" : "text-icon",
 							)}
 						/>
 					</Menu.Trigger>
@@ -190,7 +188,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 						<Menu.Positioner sideOffset={4} align={align} className="z-[1000]">
 							<Menu.Popup
 								className={cn(
-									"z-50 max-h-64 min-w-40 overflow-y-auto bg-bg-raised p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
+									"z-50 max-h-64 min-w-40 overflow-y-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
 									popupClassName,
 								)}
 							>
@@ -201,7 +199,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 										{groupIndex > 0 && <Menu.Separator className="my-1 h-px bg-stroke-weak" />}
 										<Menu.Group>
 											{group.label && (
-												<Menu.GroupLabel className="px-3 py-1.5 text-xs font-semibold text-text-weak select-none">
+												<Menu.GroupLabel className="px-3 py-1.5 text-xs font-semibold text-fg-muted select-none">
 													{group.label}
 												</Menu.GroupLabel>
 											)}

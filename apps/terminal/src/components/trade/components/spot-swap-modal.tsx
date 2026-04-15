@@ -247,7 +247,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 									size="sm"
 									onClick={handleFlip}
 									disabled={isDisabled}
-									className="size-8 rounded-full bg-bg-base border-stroke-weak hover:border-stroke-brand-strong hover:bg-fill-hover transition-colors"
+									className="size-8 rounded-full bg-background border-stroke-weak hover:border-stroke-brand-strong hover:bg-fill-hover transition-colors"
 									aria-label={t`Swap direction`}
 								>
 									<ArrowsDownUpIcon className="size-3.5" />
@@ -275,11 +275,11 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 					</div>
 
 					<div className="rounded-8 border border-stroke-weak/35 bg-fill-weak/40 px-3 py-2.5 space-y-2">
-						<div className="flex items-center justify-between text-xs text-text-weak">
+						<div className="flex items-center justify-between text-xs text-fg-muted">
 							<span>
 								<Trans>Rate</Trans>
 							</span>
-							<span className="tabular-nums text-text-strong">
+							<span className="tabular-nums text-fg">
 								{rate > 0 ? (
 									<>
 										1 <AssetDisplay coin={fromToken} hideIcon /> ≈ {formatToken(rate, 6)}{" "}
@@ -291,18 +291,18 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 							</span>
 						</div>
 						<div className="h-px bg-stroke-weak/30" />
-						<div className="flex items-center justify-between text-xs text-text-weak">
+						<div className="flex items-center justify-between text-xs text-fg-muted">
 							<span>
 								<Trans>Slippage tolerance</Trans>
 							</span>
-							<span className="tabular-nums text-text-strong">{DEFAULT_SLIPPAGE_BPS / 100}%</span>
+							<span className="tabular-nums text-fg">{DEFAULT_SLIPPAGE_BPS / 100}%</span>
 						</div>
 					</div>
 
 					{insufficientBalance && !showSuccess && (
-						<div className="flex items-start gap-2 p-2.5 bg-fill-warning-weak border border-stroke-warning-strong/20 rounded-8">
-							<WarningIcon className="size-3.5 text-text-warning shrink-0 mt-0.5" />
-							<p className="text-xs text-text-warning">
+						<div className="flex items-start gap-2 p-2.5 bg-warning-soft border border-stroke-warning-strong/20 rounded-8">
+							<WarningIcon className="size-3.5 text-warning shrink-0 mt-0.5" />
+							<p className="text-xs text-warning">
 								<Trans>
 									Insufficient <AssetDisplay coin={fromToken} hideIcon /> balance
 								</Trans>
@@ -311,9 +311,9 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 					)}
 
 					{noPairAvailable && !showSuccess && (
-						<div className="flex items-start gap-2 p-2.5 bg-fill-warning-weak border border-stroke-warning-strong/20 rounded-8">
-							<WarningIcon className="size-3.5 text-text-warning shrink-0 mt-0.5" />
-							<p className="text-xs text-text-warning">
+						<div className="flex items-start gap-2 p-2.5 bg-warning-soft border border-stroke-warning-strong/20 rounded-8">
+							<WarningIcon className="size-3.5 text-warning shrink-0 mt-0.5" />
+							<p className="text-xs text-warning">
 								<Trans>
 									No trading pair available for <AssetDisplay coin={fromToken} hideIcon />/
 									<AssetDisplay coin={toToken} hideIcon />
@@ -323,14 +323,14 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 					)}
 
 					{error && !showSuccess && (
-						<div className="flex items-center gap-2 p-2.5 bg-fill-error-weak border border-stroke-error-strong/20 rounded-8 text-xs text-text-error">
+						<div className="flex items-center gap-2 p-2.5 bg-error-soft border border-stroke-error-strong/20 rounded-8 text-xs text-error">
 							<WarningIcon className="size-3.5 shrink-0" />
 							<span className="flex-1">{error}</span>
 						</div>
 					)}
 
 					{showSuccess && (
-						<div className="flex flex-col items-center gap-1.5 p-3 bg-fill-success-weak border border-stroke-success-strong/20 rounded-8 text-text-success">
+						<div className="flex flex-col items-center gap-1.5 p-3 bg-success-soft border border-stroke-success-strong/20 rounded-8 text-success">
 							<div className="flex items-center gap-2 text-xs">
 								<CheckIcon className="size-3.5" />
 								<Trans>Swap submitted</Trans>
@@ -387,25 +387,25 @@ function TokenPanel({
 		<div
 			className={cn(
 				"rounded-10 border p-3 space-y-2 transition-colors",
-				hasError ? "border-stroke-warning-strong/40 bg-fill-warning-weak/50" : "border-stroke-weak/40 bg-fill-weak",
+				hasError ? "border-stroke-warning-strong/40 bg-warning-soft/50" : "border-stroke-weak/40 bg-fill-weak",
 			)}
 		>
 			<div className="flex items-center justify-between">
-				<span className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">{label}</span>
+				<span className="text-3xs font-medium uppercase tracking-wide text-fg-muted leading-none">{label}</span>
 				{editable ? (
 					<button
 						type="button"
 						onClick={onMaxClick}
 						disabled={disabled}
-						className="text-3xs text-text-weak tabular-nums leading-none hover:text-text-strong transition-colors disabled:pointer-events-none"
+						className="text-3xs text-fg-muted tabular-nums leading-none hover:text-fg transition-colors disabled:pointer-events-none"
 					>
 						Available:{" "}
-						<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+						<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 							{formatToken(balance, { decimals: 4, symbol: balanceToken })}
 						</span>
 					</button>
 				) : (
-					<span className="text-3xs text-text-weak tabular-nums leading-none">
+					<span className="text-3xs text-fg-muted tabular-nums leading-none">
 						{`Available: ${formatToken(balance, { decimals: 4, symbol: balanceToken })}`}
 					</span>
 				)}
@@ -421,12 +421,12 @@ function TokenPanel({
 							onChange={(e) => onAmountChange?.(e.target.value)}
 							className={cn(
 								"w-full tabular-nums",
-								hasError && "border-stroke-warning-strong/40 text-text-warning focus:border-stroke-warning-strong",
+								hasError && "border-stroke-warning-strong/40 text-warning focus:border-stroke-warning-strong",
 							)}
 							disabled={disabled}
 						/>
 					) : (
-						<div className="flex h-7 items-center justify-end text-xs tabular-nums text-text-weak">
+						<div className="flex h-7 items-center justify-end text-xs tabular-nums text-fg-muted">
 							{amount || "0.00"}
 						</div>
 					)}

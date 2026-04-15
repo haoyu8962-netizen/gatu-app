@@ -34,7 +34,7 @@ const toggleVariants = cva(
 
 const thumbVariants = cva(
 	[
-		"pointer-events-none block rounded-full bg-bg-raised shadow-raised",
+		"pointer-events-none block rounded-full bg-surface shadow-raised",
 		"border-2 data-unchecked:border-stroke-strong data-checked:border-stroke-selected",
 		"transition-transform duration-150 motion-reduce:transition-none",
 	],
@@ -91,7 +91,7 @@ const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
 					className={cn(
 						"font-normal",
 						size === "xxs" || size === "xs" || size === "sm" ? "text-xs" : size === "lg" ? "text-base" : "text-sm",
-						disabled ? "text-text-disabled" : "text-text-strong",
+						disabled ? "text-fg-disabled" : "text-fg",
 					)}
 				>
 					{label}

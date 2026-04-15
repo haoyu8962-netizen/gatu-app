@@ -7,7 +7,7 @@ import { DEFAULT_SIZE } from "./config";
 import { cn } from "./utils";
 
 const textInputVariants = cva(
-	["flex items-center w-full rounded-8", "bg-fill-inverse-strong transition-colors duration-150"],
+	["flex items-center w-full rounded-8", "bg-fill-inverse transition-colors duration-150"],
 	{
 		variants: {
 			size: {
@@ -18,7 +18,7 @@ const textInputVariants = cva(
 				lg: "py-3 px-4 gap-2",
 			},
 			invalid: {
-				true: "border-2 border-stroke-error-strong bg-fill-error-weak",
+				true: "border-2 border-stroke-error-strong bg-error-soft",
 				false: "border border-stroke-strong hover:bg-fill-hover active:bg-fill-press",
 			},
 		},
@@ -69,13 +69,13 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 				{label && (
 					<div className="flex flex-col">
 						<Field.Label className="flex gap-1 items-baseline text-xs font-semibold cursor-default">
-							<span className="text-text-strong group-data-disabled:text-text-disabled">{label}</span>
-							{required && <span className="text-text-weak group-data-disabled:text-text-disabled">*</span>}
+							<span className="text-fg group-data-disabled:text-fg-disabled">{label}</span>
+							{required && <span className="text-fg-muted group-data-disabled:text-fg-disabled">*</span>}
 							{optional && (
-								<span className="text-xs text-text-weak group-data-disabled:text-text-disabled">(optional)</span>
+								<span className="text-xs text-fg-muted group-data-disabled:text-fg-disabled">(optional)</span>
 							)}
 						</Field.Label>
-						{hint && <Field.Description className="text-xs text-text-weak">{hint}</Field.Description>}
+						{hint && <Field.Description className="text-xs text-fg-muted">{hint}</Field.Description>}
 					</div>
 				)}
 				<div
@@ -86,11 +86,9 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 						className,
 					)}
 				>
-					{prefix && <span className="shrink-0 text-text-weak group-data-disabled:text-text-disabled">{prefix}</span>}
+					{prefix && <span className="shrink-0 text-fg-muted group-data-disabled:text-fg-disabled">{prefix}</span>}
 					{iconLeft && (
-						<span className="shrink-0 text-icon-neutral opacity-80 group-data-disabled:text-icon-disabled">
-							{iconLeft}
-						</span>
+						<span className="shrink-0 text-icon opacity-80 group-data-disabled:text-icon-disabled">{iconLeft}</span>
 					)}
 					<Input
 						ref={ref}
@@ -104,19 +102,17 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 									: size === "lg"
 										? "text-base"
 										: "text-sm",
-							"font-normal text-text-strong placeholder:text-text-weak",
-							"data-disabled:text-text-disabled data-disabled:placeholder:text-text-disabled data-disabled:cursor-not-allowed",
+							"font-normal text-fg placeholder:text-fg-muted",
+							"data-disabled:text-fg-disabled data-disabled:placeholder:text-fg-disabled data-disabled:cursor-not-allowed",
 						)}
 						{...props}
 					/>
-					{iconRight && (
-						<span className="shrink-0 text-icon-neutral group-data-disabled:text-icon-disabled">{iconRight}</span>
-					)}
+					{iconRight && <span className="shrink-0 text-icon group-data-disabled:text-icon-disabled">{iconRight}</span>}
 				</div>
 				{error && (
 					<Field.Error match className="flex items-center gap-2 py-1">
 						<XCircleIcon size={24} weight="fill" className="shrink-0 text-icon-error" />
-						<span className="text-xs font-semibold text-text-error">{error}</span>
+						<span className="text-xs font-semibold text-error">{error}</span>
 					</Field.Error>
 				)}
 			</Field.Root>

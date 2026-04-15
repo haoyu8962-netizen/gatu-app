@@ -27,21 +27,18 @@ function useMobile(): boolean {
 
 // ─── Modal (centered overlay) ─────────────────────────────────────────────────
 
-const modalPopupVariants = cva(
-	["relative w-full bg-bg-overlay shadow-overlay rounded-12", "flex flex-col outline-none"],
-	{
-		variants: {
-			size: {
-				sm: "max-w-sm",
-				md: "max-w-md",
-				lg: "max-w-lg",
-			},
-		},
-		defaultVariants: {
-			size: "md",
+const modalPopupVariants = cva(["relative w-full bg-overlay shadow-overlay rounded-12", "flex flex-col outline-none"], {
+	variants: {
+		size: {
+			sm: "max-w-sm",
+			md: "max-w-md",
+			lg: "max-w-lg",
 		},
 	},
-);
+	defaultVariants: {
+		size: "md",
+	},
+});
 
 const Modal = Dialog.Root;
 
@@ -58,7 +55,7 @@ interface ModalPopupProps
 const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 	({ className, size, showClose = true, children, ...props }, ref) => (
 		<Dialog.Portal>
-			<Dialog.Backdrop className="fixed inset-0 z-40 bg-fill-overlay backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0" />
+			<Dialog.Backdrop className="fixed inset-0 z-40 bg-scrim backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0" />
 			<div className="fixed inset-0 z-50 overflow-y-auto p-6">
 				<div className="flex min-h-full items-center justify-center">
 					<Dialog.Popup
@@ -76,7 +73,7 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 								className={cn(
 									"absolute top-4 right-4 z-10",
 									"flex items-center justify-center size-8 rounded-8",
-									"text-icon-neutral cursor-pointer",
+									"text-icon cursor-pointer",
 									"hover:bg-fill-hover active:bg-fill-press",
 									"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 									"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10",
@@ -104,11 +101,7 @@ ModalHeader.displayName = "ModalHeader";
 interface ModalTitleProps extends React.ComponentPropsWithoutRef<typeof Dialog.Title> {}
 
 const ModalTitle = React.forwardRef<HTMLHeadingElement, ModalTitleProps>(({ className, ...props }, ref) => (
-	<Dialog.Title
-		className={cn("text-base font-semibold text-text-strong text-balance", className)}
-		ref={ref}
-		{...props}
-	/>
+	<Dialog.Title className={cn("text-base font-semibold text-fg text-balance", className)} ref={ref} {...props} />
 ));
 ModalTitle.displayName = "ModalTitle";
 
@@ -116,7 +109,7 @@ interface ModalDescriptionProps extends React.ComponentPropsWithoutRef<typeof Di
 
 const ModalDescription = React.forwardRef<HTMLParagraphElement, ModalDescriptionProps>(
 	({ className, ...props }, ref) => (
-		<Dialog.Description className={cn("text-xs text-text-weak text-pretty", className)} ref={ref} {...props} />
+		<Dialog.Description className={cn("text-xs text-fg-muted text-pretty", className)} ref={ref} {...props} />
 	),
 );
 ModalDescription.displayName = "ModalDescription";
@@ -157,7 +150,7 @@ function AdaptiveModal({ open, onOpenChange, size, showClose = true, children, c
 			<Drawer side="bottom" open={open} onOpenChange={onOpenChange}>
 				<DrawerContent className={cn("relative pb-[env(safe-area-inset-bottom)]", className)}>
 					<div
-						className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill-strong/20"
+						className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20"
 						aria-hidden="true"
 					/>
 					{showClose && (
@@ -165,7 +158,7 @@ function AdaptiveModal({ open, onOpenChange, size, showClose = true, children, c
 							className={cn(
 								"absolute top-4 right-4 z-10",
 								"flex items-center justify-center size-8 rounded-8",
-								"text-icon-neutral cursor-pointer",
+								"text-icon cursor-pointer",
 								"hover:bg-fill-hover active:bg-fill-press",
 								"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 								"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10",

@@ -35,13 +35,13 @@ function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
 	return (
 		<div className="min-w-[9rem] space-y-2">
 			<div className="flex items-center justify-between gap-4">
-				<span className="text-2xs uppercase tracking-wide text-text-weak">{t`Resets in`}</span>
-				<span className="font-mono text-xs tabular-nums text-text-strong">{formatDuration(remaining)}</span>
+				<span className="text-2xs uppercase tracking-wide text-fg-muted">{t`Resets in`}</span>
+				<span className="font-mono text-xs tabular-nums text-fg">{formatDuration(remaining)}</span>
 			</div>
 			<div className="border-t border-stroke-weak pt-2 space-y-1.5">
 				{rows.map(({ label, rate }) => (
 					<div key={label} className="flex items-center justify-between gap-4">
-						<span className="text-2xs text-text-weak">{label}</span>
+						<span className="text-2xs text-fg-muted">{label}</span>
 						<span className={cn("text-xs font-medium tabular-nums", getValueColorClass(rate))}>
 							{formatPercent(rate, { signDisplay: "exceptZero" })}
 						</span>
@@ -111,15 +111,13 @@ export function MarketOverview() {
 	return (
 		<div className="flex min-h-0 w-max min-w-0 flex-nowrap items-center gap-0 text-xs">
 			<div className="flex shrink-0 items-center gap-2 border-r border-stroke-weak/35 pr-2.5">
-				<span className="font-sans text-sm font-semibold tabular-nums tracking-tight text-text-strong">
-					{heroPrice}
-				</span>
+				<span className="font-sans text-sm font-semibold tabular-nums tracking-tight text-fg">{heroPrice}</span>
 				<div className="flex min-w-0 items-baseline gap-1">
-					<span className="shrink-0 text-2xs font-medium uppercase tracking-wide text-text-weak">{t`24h`}</span>
+					<span className="shrink-0 text-2xs font-medium uppercase tracking-wide text-fg-muted">{t`24h`}</span>
 					<span
 						className={cn(
 							"min-w-0 font-sans text-xs font-medium tabular-nums leading-none",
-							change24h === null ? "text-text-weak" : getValueColorClass(change24h),
+							change24h === null ? "text-fg-muted" : getValueColorClass(change24h),
 						)}
 					>
 						{changePct}
@@ -186,15 +184,15 @@ export function MarketOverview() {
 				<>
 					<StatDivider />
 					<div className="flex items-center gap-1.5 whitespace-nowrap px-1.5 py-px">
-						<span className="text-2xs text-text-weak/80 uppercase tracking-wide">{t`TOKEN`}</span>
+						<span className="text-2xs text-fg-muted/80 uppercase tracking-wide">{t`TOKEN`}</span>
 						<a
 							href={getExplorerTokenUrl(spotTokenAddress)}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="inline-flex items-center gap-0.5 font-sans text-xs font-medium tabular-nums text-text-strong hover:text-text-brand transition-colors"
+							className="inline-flex items-center gap-0.5 font-sans text-xs font-medium tabular-nums text-fg hover:text-brand transition-colors"
 						>
 							{shortenAddress(spotTokenAddress, 4, 4)}
-							<ArrowSquareOutIcon className="size-2.5 shrink-0 text-icon-neutral" />
+							<ArrowSquareOutIcon className="size-2.5 shrink-0 text-icon" />
 						</a>
 					</div>
 				</>

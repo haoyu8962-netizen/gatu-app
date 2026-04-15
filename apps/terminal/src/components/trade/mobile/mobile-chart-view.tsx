@@ -40,7 +40,7 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 
 	return (
 		<div className={cn("flex flex-col flex-1 min-h-0", className)}>
-			<div className="shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-bg-raised">
+			<div className="shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-surface">
 				<div className="flex items-center justify-between gap-3">
 					<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
 
@@ -49,7 +49,7 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 							<div
 								className={cn(
 									"text-sm font-semibold tabular-nums",
-									change24h !== null ? getValueColorClass(change24h) : "text-text-strong",
+									change24h !== null ? getValueColorClass(change24h) : "text-fg",
 								)}
 							>
 								{formatUSD(markPx ?? null)}
@@ -65,7 +65,7 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 				</div>
 			</div>
 
-			<div className="shrink-0 px-3 py-1.5 border-b border-stroke-weak/40 bg-bg-base overflow-x-auto">
+			<div className="shrink-0 px-3 py-1.5 border-b border-stroke-weak/40 bg-background overflow-x-auto">
 				<Skeleton name="market-stats" loading={isLoading}>
 					<div className="flex items-center gap-4 text-xs min-w-max">
 						<StatPill label={overviewText.LABEL_ORACLE} value={formatUSD(selectedMarket?.oraclePx)} />
@@ -120,12 +120,12 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 function StatPill({ label, value }: { label: string; value: string }) {
 	return (
 		<div className="flex items-center gap-1.5">
-			<span className="text-text-weak text-xs">{label}</span>
-			<span className="tabular-nums text-text-strong text-xs">{value}</span>
+			<span className="text-fg-muted text-xs">{label}</span>
+			<span className="tabular-nums text-fg text-xs">{value}</span>
 		</div>
 	);
 }
 
 function ChartSkeleton() {
-	return <div className="w-full h-full animate-pulse bg-bg-raised" />;
+	return <div className="w-full h-full animate-pulse bg-surface" />;
 }

@@ -69,7 +69,7 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
 				{!hideIndicator &&
 					(variant === "underline" ? (
 						<Tabs.Indicator
-							className="absolute -bottom-px h-0.5 bg-fill-brand-strong transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
+							className="absolute -bottom-px h-0.5 bg-brand transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
 							style={{
 								left: "var(--active-tab-left)",
 								width: "var(--active-tab-width)",
@@ -77,7 +77,7 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
 						/>
 					) : (
 						<Tabs.Indicator
-							className="absolute inset-y-0 rounded-8 bg-bg-overlay border border-stroke-strong shadow-raised transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none"
+							className="absolute inset-y-0 rounded-8 bg-overlay border border-stroke-strong shadow-raised transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none"
 							style={{
 								left: "var(--active-tab-left)",
 								width: "var(--active-tab-width)",
@@ -94,11 +94,11 @@ TabsList.displayName = "TabsList";
 const tabsTriggerVariants = cva(
 	[
 		"inline-flex items-center justify-center",
-		"font-normal text-text-weak",
+		"font-normal text-fg-muted",
 		"cursor-pointer select-none whitespace-nowrap",
 		"transition-colors duration-150",
-		"data-active:text-text-strong",
-		"hover:text-text-strong",
+		"data-active:text-fg",
+		"hover:text-fg",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"data-disabled:opacity-40 data-disabled:cursor-not-allowed",
 	],

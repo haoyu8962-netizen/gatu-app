@@ -60,14 +60,14 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 
 	if (!isConnected) {
 		return (
-			<div className={cn("flex flex-col h-full min-h-0 bg-bg-base", className)}>
+			<div className={cn("flex flex-col h-full min-h-0 bg-background", className)}>
 				<div className="flex-1 flex flex-col items-center justify-center gap-6 p-6">
-					<div className="size-20 rounded-full bg-bg-raised flex items-center justify-center">
-						<WalletIcon className="size-10 text-text-weak" />
+					<div className="size-20 rounded-full bg-surface flex items-center justify-center">
+						<WalletIcon className="size-10 text-fg-muted" />
 					</div>
 					<div className="text-center space-y-2">
 						<h2 className="text-lg font-semibold">{t`Connect Wallet`}</h2>
-						<p className="text-sm text-text-weak max-w-xs">
+						<p className="text-sm text-fg-muted max-w-xs">
 							{t`Connect your wallet to view your account, positions, and start trading.`}
 						</p>
 					</div>
@@ -82,12 +82,12 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	}
 
 	return (
-		<div className={cn("flex flex-col h-full min-h-0 bg-bg-base", className)}>
-			<div className="shrink-0 px-4 py-4 border-b border-stroke-weak/60 bg-bg-raised">
+		<div className={cn("flex flex-col h-full min-h-0 bg-background", className)}>
+			<div className="shrink-0 px-4 py-4 border-b border-stroke-weak/60 bg-surface">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-3">
-						<div className="size-10 rounded-full bg-fill-brand-weak flex items-center justify-center">
-							<span className="text-text-brand font-bold">{address?.slice(2, 4).toUpperCase()}</span>
+						<div className="size-10 rounded-full bg-brand-soft flex items-center justify-center">
+							<span className="text-brand font-bold">{address?.slice(2, 4).toUpperCase()}</span>
 						</div>
 						<div>
 							<div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									onClick={handleCopyAddress}
 									aria-label={t`Copy address`}
 								>
-									<CopyIcon className={cn("size-3.5", copied && "text-text-success")} />
+									<CopyIcon className={cn("size-3.5", copied && "text-success")} />
 								</ButtonIcon>
 							</div>
 							<Badge tone="neutral" size="sm" className="mt-0.5">
@@ -123,15 +123,15 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 
 			<div className="flex-1 min-h-0 overflow-y-auto">
 				<div className="p-2 space-y-4">
-					<div className="p-4 rounded-xs border border-stroke-weak/60 bg-bg-raised">
+					<div className="p-4 rounded-xs border border-stroke-weak/60 bg-surface">
 						<Skeleton name="account-equity" loading={isLoading}>
 							<>
-								<div className="text-2xs uppercase font-medium text-text-weak mb-1.5">{ACCOUNT_TEXT.EQUITY_LABEL}</div>
-								<div className="text-3xl font-bold tabular-nums text-text-strong">{formatUSD(accountValue)}</div>
+								<div className="text-2xs uppercase font-medium text-fg-muted mb-1.5">{ACCOUNT_TEXT.EQUITY_LABEL}</div>
+								<div className="text-3xl font-bold tabular-nums text-fg">{formatUSD(accountValue)}</div>
 								<div
 									className={cn(
 										"text-sm tabular-nums mt-1.5 font-medium",
-										unrealizedPnl >= 0 ? "text-text-success" : "text-text-error",
+										unrealizedPnl >= 0 ? "text-success" : "text-error",
 									)}
 								>
 									{unrealizedPnl >= 0 ? "+" : ""}
@@ -148,7 +148,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						<StatCard
 							label={ACCOUNT_TEXT.MARGIN_RATIO_LABEL}
 							value={formatPercent(marginRatio)}
-							valueClass={marginRatio > 0.8 ? "text-text-error" : marginRatio > 0.5 ? "text-text-warning" : ""}
+							valueClass={marginRatio > 0.8 ? "text-error" : marginRatio > 0.5 ? "text-warning" : ""}
 							isLoading={isLoading}
 						/>
 						<StatCard label={t`Maintenance Margin`} value={formatUSD(maintenanceMargin)} isLoading={isLoading} />
@@ -205,8 +205,8 @@ interface StatCardProps {
 
 function StatCard({ label, value, valueClass, isLoading }: StatCardProps) {
 	return (
-		<div className="p-3 rounded-xs border border-stroke-weak/40 bg-bg-raised">
-			<div className="text-2xs text-text-weak mb-1">{label}</div>
+		<div className="p-3 rounded-xs border border-stroke-weak/40 bg-surface">
+			<div className="text-2xs text-fg-muted mb-1">{label}</div>
 			<Skeleton name="stat-card-value" loading={isLoading ?? false}>
 				<div className={cn("text-base font-semibold tabular-nums", valueClass)}>{value}</div>
 			</Skeleton>

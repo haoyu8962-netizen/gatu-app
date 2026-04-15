@@ -16,7 +16,7 @@ const SCOPE_NAV_ITEMS = [
 		scope: "all" as const,
 		label: <Trans>All</Trans>,
 		to: "/",
-		activeClass: "text-text-strong font-medium bg-fill-hover",
+		activeClass: "text-fg font-medium bg-fill-hover",
 	},
 	{
 		scope: "perp" as const,
@@ -70,19 +70,19 @@ export function TopNav() {
 	return (
 		<header
 			className={cn(
-				"fixed left-0 right-0 z-40 h-11 border-b border-stroke-weak px-3 flex items-center justify-between bg-bg-base transition-colors duration-300 ease-in-out",
+				"fixed left-0 right-0 z-40 h-11 border-b border-stroke-weak px-3 flex items-center justify-between bg-background transition-colors duration-300 ease-in-out",
 				isTestnet ? "top-8" : "top-0",
 				accentClass,
 			)}
 		>
 			<div className="flex items-center gap-3 min-w-0">
 				<div className="flex items-center gap-1.5">
-					<div className="size-5 rounded-8 bg-fill-brand-strong/10 border border-fill-brand-strong/30 flex items-center justify-center">
-						<TerminalIcon className="size-3 text-text-brand" />
+					<div className="size-5 rounded-8 bg-brand/10 border border-stroke-brand-strong/30 flex items-center justify-center">
+						<TerminalIcon className="size-3 text-brand" />
 					</div>
 					<span className="text-xs font-bold tracking-tight">
-						<span className="text-text-brand">HYPE</span>
-						<span className="text-text-strong">TERMINAL</span>
+						<span className="text-brand">HYPE</span>
+						<span className="text-fg">TERMINAL</span>
 					</span>
 				</div>
 				<Divider orientation="vertical" className="my-2 hidden lg:block" />
@@ -93,7 +93,7 @@ export function TopNav() {
 							to={item.to}
 							className={cn(
 								"px-2.5 py-1 rounded-8 transition-colors duration-150",
-								scope === item.scope ? item.activeClass : "text-text-weak hover:text-text-strong",
+								scope === item.scope ? item.activeClass : "text-fg-muted hover:text-fg",
 							)}
 						>
 							{item.label}
@@ -105,7 +105,7 @@ export function TopNav() {
 							key={item.key}
 							type="button"
 							disabled
-							className="px-2.5 py-1.5 text-text-disabled cursor-not-allowed"
+							className="px-2.5 py-1.5 text-fg-disabled cursor-not-allowed"
 							tabIndex={-1}
 						>
 							{item.label}

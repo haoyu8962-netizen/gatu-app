@@ -42,7 +42,7 @@ export function ChartSourceToggle({
 				onClick={handleDefaultClick}
 				className={cn(
 					textButtonClass,
-					value === "default" ? "font-semibold text-text-strong" : "font-normal text-text-weak hover:text-text-strong",
+					value === "default" ? "font-semibold text-fg" : "font-normal text-fg-muted hover:text-fg",
 				)}
 			>
 				{t`Default`}
@@ -54,9 +54,7 @@ export function ChartSourceToggle({
 				{...tradingViewIntentHandlers}
 				className={cn(
 					textButtonClass,
-					value === "tradingview"
-						? "font-semibold text-text-strong"
-						: "font-normal text-text-weak hover:text-text-strong",
+					value === "tradingview" ? "font-semibold text-fg" : "font-normal text-fg-muted hover:text-fg",
 				)}
 			>
 				{t`TradingView`}

@@ -30,7 +30,7 @@ function Placeholder({ children, variant }: PlaceholderProps) {
 		<div
 			className={cn(
 				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-text-error" : "text-text-weak",
+				variant === "error" ? "text-error" : "text-fg-muted",
 			)}
 		>
 			{children}
@@ -61,7 +61,7 @@ export function FundingTab() {
 			return (
 				<Placeholder variant="error">
 					<span>{t`Failed to load funding history.`}</span>
-					{error instanceof Error && <span className="mt-1 text-xs text-text-weak">{error.message}</span>}
+					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
 				</Placeholder>
 			);
 		}
@@ -114,12 +114,10 @@ export function FundingTab() {
 											key={`${update.coin}-${update.time}-${index}`}
 											className={cn(positionsPanelRowHoverClass, index % 2 === 1 && positionsPanelRowStripeClass)}
 										>
-											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-text-strong")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 												<AssetDisplay coin={update.coin} />
 											</TableCell>
-											<TableCell
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
-											>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 												{formatToken(positionSize, { decimals: market?.szDecimals, symbol: market?.shortName })}
 											</TableCell>
 											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
@@ -131,7 +129,7 @@ export function FundingTab() {
 												<span className={getValueColorClass(usdc)}>{formatToken(usdc, { symbol: "USDC" })}</span>
 											</TableCell>
 
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-weak")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted")}>
 												<div className="flex flex-col items-end">
 													<span>{formatDateTimeShort(update.time)}</span>
 												</div>

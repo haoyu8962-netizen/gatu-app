@@ -24,7 +24,7 @@ export function MainWorkspace() {
 	}
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col bg-bg-base">
+		<div className="flex-1 min-h-0 flex flex-col bg-background">
 			<div className="shrink-0 border-b border-stroke-weak">
 				<div className="flex items-center min-w-0 px-2 py-1.5">
 					<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
@@ -37,7 +37,7 @@ export function MainWorkspace() {
 			</div>
 			<ResizablePanelGroup className="min-h-0 flex-1" defaultLayout={defaultLayout} onLayoutChanged={onLayoutChanged}>
 				<ResizablePanel defaultSize={analysis.defaultSize} minSize={analysis.minSize}>
-					<div className="h-full flex flex-col bg-bg-raised">
+					<div className="h-full flex flex-col bg-surface">
 						<div className="flex-1 min-h-0">
 							<AnalysisSection />
 						</div>

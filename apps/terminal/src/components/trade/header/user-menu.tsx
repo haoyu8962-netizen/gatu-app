@@ -126,7 +126,7 @@ export function UserMenu() {
 			triggerClassName={cn(
 				"h-8 min-h-8 max-h-8 shrink-0 !rounded-8 border border-stroke-weak bg-transparent px-3 shadow-raised",
 				"!py-0 text-xs gap-1.5",
-				"items-center justify-start font-semibold text-text-strong",
+				"items-center justify-start font-semibold text-fg",
 				"hover:bg-fill-hover active:bg-fill-press",
 				"data-[popup-open]:border-stroke-brand-strong/40 data-[popup-open]:bg-fill-hover",
 				"transition-[color,background-color,border-color] duration-150 ease-out",
@@ -134,8 +134,8 @@ export function UserMenu() {
 			triggerAriaLabel={t`Account and wallet`}
 			trigger={
 				<>
-					<span className="size-1.5 shrink-0 rounded-full bg-fill-success-strong" aria-hidden />
-					<span className="min-w-0 max-w-[11rem] truncate font-mono text-xs text-text-strong">{displayLabel}</span>
+					<span className="size-1.5 shrink-0 rounded-full bg-success" aria-hidden />
+					<span className="min-w-0 max-w-[11rem] truncate font-mono text-xs text-fg">{displayLabel}</span>
 				</>
 			}
 			groups={[

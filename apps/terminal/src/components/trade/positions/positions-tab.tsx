@@ -45,7 +45,7 @@ function Placeholder({ children, variant }: PlaceholderProps) {
 		<div
 			className={cn(
 				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-text-error" : "text-text-weak",
+				variant === "error" ? "text-error" : "text-fg-muted",
 			)}
 		>
 			{children}
@@ -189,8 +189,8 @@ function PositionRow({
 			<TableCell
 				className={cn(
 					positionsPanelTableCellClass,
-					"min-w-0 border-l-2 text-text-strong",
-					isLong ? "border-l-text-success" : "border-l-text-error",
+					"min-w-0 border-l-2 text-fg",
+					isLong ? "border-l-success" : "border-l-error",
 				)}
 			>
 				<Button
@@ -207,11 +207,11 @@ function PositionRow({
 					<AssetDisplay
 						coin={p.coin}
 						iconClassName="size-4"
-						nameClassName="text-xs font-semibold text-text-strong leading-none"
+						nameClassName="text-xs font-semibold text-fg leading-none"
 					/>
 				</Button>
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}>
+			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 				<div className="flex flex-col items-end gap-px">
 					<span className="text-xs font-semibold tabular-nums leading-tight">
 						{formatToken(absSize, {
@@ -219,34 +219,32 @@ function PositionRow({
 							symbol: p.coin,
 						})}
 					</span>
-					<span className="text-2xs text-text-weak tabular-nums leading-tight">
+					<span className="text-2xs text-fg-muted tabular-nums leading-tight">
 						({formatUSD(p.positionValue, { compact: true })})
 					</span>
 				</div>
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right text-text-strong")}>
+			<TableCell className={cn(positionsPanelTableCellClass, "text-right text-fg")}>
 				<div className="flex flex-col items-end gap-px">
 					<span className="text-xs font-semibold tabular-nums leading-tight">{formatUSD(p.marginUsed)}</span>
-					<span className="text-2xs font-medium text-text-weak leading-tight">
+					<span className="text-2xs font-medium text-fg-muted leading-tight">
 						{p.leverage.type === "isolated" ? t`Isolated` : t`Cross`}
 					</span>
 				</div>
 			</TableCell>
 			<TableCell
-				className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-weak whitespace-nowrap")}
+				className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted whitespace-nowrap")}
 			>
 				<span className="tabular-nums">{formatPrice(p.entryPx, { szDecimals })}</span>
 			</TableCell>
-			<TableCell
-				className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong whitespace-nowrap")}
-			>
+			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg whitespace-nowrap")}>
 				<span className="text-xs font-semibold tabular-nums">{formatPrice(markPx, { szDecimals })}</span>
 			</TableCell>
 			<TableCell
 				className={cn(
 					positionsPanelTableCellClass,
 					"text-right tabular-nums min-w-0",
-					liqIsNear ? "text-text-error font-medium" : "text-text-weak",
+					liqIsNear ? "text-error font-medium" : "text-fg-muted",
 				)}
 			>
 				<span className="block truncate" title={formatPrice(p.liquidationPx, { szDecimals })}>
@@ -278,32 +276,32 @@ function PositionRow({
 						disabled={typeof assetId !== "number"}
 						className={cn(
 							"group inline-flex items-center gap-1.5 cursor-pointer transition-opacity disabled:cursor-not-allowed disabled:opacity-50",
-							!hasTpSl && "text-text-disabled hover:text-text-weak",
+							!hasTpSl && "text-fg-disabled hover:text-fg-muted",
 						)}
 					>
 						{tpSlInfo?.tpPrice && tpSlInfo?.slPrice ? (
 							<>
 								<div className="flex items-center gap-1 text-2xs tabular-nums">
-									<span className="text-text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
-									<span className="text-text-weak">/</span>
-									<span className="text-text-error">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
+									<span className="text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
+									<span className="text-fg-muted">/</span>
+									<span className="text-error">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
 								</div>
-								<PencilIcon className="size-2.5 text-text-disabled group-hover:text-text-weak transition-colors" />
+								<PencilIcon className="size-2.5 text-fg-disabled group-hover:text-fg-muted transition-colors" />
 							</>
 						) : hasTpSl ? (
 							<>
 								<div className="flex items-center gap-1 text-2xs tabular-nums">
 									{tpSlInfo?.tpPrice ? (
-										<span className="text-text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
+										<span className="text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
 									) : (
-										<span className="text-text-error">{formatPrice(tpSlInfo?.slPrice, { szDecimals })}</span>
+										<span className="text-error">{formatPrice(tpSlInfo?.slPrice, { szDecimals })}</span>
 									)}
 								</div>
-								<PlusIcon className="size-2.5 text-text-disabled group-hover:text-text-weak transition-colors" />
+								<PlusIcon className="size-2.5 text-fg-disabled group-hover:text-fg-muted transition-colors" />
 							</>
 						) : (
-							<div className="flex items-center gap-0.5 text-2xs font-medium text-text-weak">
-								<PlusIcon className="size-2.5 group-hover:text-text-weak transition-colors" />
+							<div className="flex items-center gap-0.5 text-2xs font-medium text-fg-muted">
+								<PlusIcon className="size-2.5 group-hover:text-fg-muted transition-colors" />
 								<span>{t`Add`}</span>
 							</div>
 						)}
@@ -488,12 +486,12 @@ export function PositionsTab() {
 		<div className={positionsPanelTabRootClass}>
 			<div className={positionsPanelTableCaptionRowClass}>
 				{isConnected ? (
-					<span className="tabular-nums text-3xs text-text-weak">
+					<span className="tabular-nums text-3xs text-fg-muted">
 						{positions.length} {t`positions`}
 					</span>
 				) : null}
 			</div>
-			{actionError ? <div className="px-2.5 py-1 text-2xs text-text-error">{actionError}</div> : null}
+			{actionError ? <div className="px-2.5 py-1 text-2xs text-error">{actionError}</div> : null}
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ? (
 					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{placeholder}</div>

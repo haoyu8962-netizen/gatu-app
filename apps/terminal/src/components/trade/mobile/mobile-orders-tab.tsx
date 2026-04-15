@@ -10,7 +10,13 @@ import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import type { MarketKind } from "@/lib/hyperliquid/markets";
-import { getOrderTypeConfig, getSideLabel, type OpenOrder } from "@/lib/trade/open-orders";
+import {
+	getOrderTypeConfig,
+	getSideLabel,
+	isClosePositionOrder,
+	isMarketTriggerOrder,
+	type OpenOrder,
+} from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
@@ -116,7 +122,7 @@ export function MobileOrdersTab({ className }: Props) {
 
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
 				{t`Connect your wallet to view open orders.`}
 			</div>
 		);
@@ -124,9 +130,9 @@ export function MobileOrdersTab({ className }: Props) {
 
 	if (status === "error") {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-error">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
 				<span>{t`Failed to load open orders.`}</span>
-				{error instanceof Error && <span className="mt-1 text-xs text-text-weak">{error.message}</span>}
+				{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
 			</div>
 		);
 	}
@@ -134,10 +140,10 @@ export function MobileOrdersTab({ className }: Props) {
 	if (status === "active" && openOrders.length === 0) {
 		return (
 			<div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-				<div className="size-12 rounded-full flex items-center justify-center bg-bg-raised">
-					<ListIcon className="size-6 text-text-weak" />
+				<div className="size-12 rounded-full flex items-center justify-center bg-surface">
+					<ListIcon className="size-6 text-fg-muted" />
 				</div>
-				<p className="text-sm text-text-weak">{t`No open orders.`}</p>
+				<p className="text-sm text-fg-muted">{t`No open orders.`}</p>
 			</div>
 		);
 	}
@@ -145,10 +151,10 @@ export function MobileOrdersTab({ className }: Props) {
 	return (
 		<Skeleton name="orders-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-text-weak">
+				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-fg-muted">
 					<ListNumbersIcon className="size-3" />
 					{t`Open Orders`}
-					<span className="font-semibold text-text-brand tabular-nums">{headerCount}</span>
+					<span className="font-semibold text-brand tabular-nums">{headerCount}</span>
 					<Button
 						variant="ghost"
 						intent="error"
@@ -160,7 +166,7 @@ export function MobileOrdersTab({ className }: Props) {
 						{isCancelling ? t`Canceling...` : t`Cancel All`}
 					</Button>
 				</div>
-				{actionError && <div className="px-3 pb-1 text-xs text-text-error">{actionError}</div>}
+				{actionError && <div className="px-3 pb-1 text-xs text-error">{actionError}</div>}
 				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
 					{openOrders.map((order) => (
 						<MobileOrderCard
@@ -195,7 +201,7 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 	const side: Side = isLong ? "buy" : "sell";
 
 	return (
-		<div className="rounded-xs border border-stroke-weak/40 bg-bg-raised overflow-hidden">
+		<div className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden">
 			<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
 				<div className={cn("absolute left-0 top-0 bottom-0 w-px", isLong ? "bg-market-up" : "bg-market-down")} />
 				<div className="flex items-center gap-2">
@@ -207,23 +213,36 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 					</Badge>
 				</div>
 				<div className="flex items-center gap-2">
-					<span className={cn("text-xs px-1.5 py-0.5 rounded-xs uppercase", typeConfig.class)}>{typeConfig.label}</span>
+					<span
+						className={cn("text-2xs px-1.5 py-0.5 rounded-xs uppercase whitespace-nowrap", typeConfig.class)}
+						title={typeConfig.fullLabel}
+					>
+						{typeConfig.shortLabel}
+					</span>
 					{order.reduceOnly && (
-						<span className="text-xs px-1.5 py-0.5 rounded-xs bg-fill-brand-weak text-text-brand uppercase">
-							{t`RO`}
-						</span>
+						<span className="text-xs px-1.5 py-0.5 rounded-xs bg-brand-soft text-brand uppercase">{t`RO`}</span>
 					)}
 				</div>
 			</div>
 
 			<div className="grid grid-cols-3 divide-x divide-stroke-weak/40">
-				<MetricCell label={t`Price`} value={formatPrice(order.limitPx, { szDecimals })} />
-				<MetricCell label={t`Size`} value={formatToken(order.origSz, { decimals: szDecimals, symbol: order.coin })} />
+				<MetricCell
+					label={t`Price`}
+					value={isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals })}
+				/>
+				<MetricCell
+					label={t`Size`}
+					value={
+						isClosePositionOrder(order)
+							? t`Close Position`
+							: formatToken(order.origSz, { decimals: szDecimals, symbol: order.coin })
+					}
+				/>
 				<MetricCell label={t`Trigger`} value={order.triggerCondition || FALLBACK_VALUE_PLACEHOLDER} />
 			</div>
 
 			<div className="flex items-center justify-between px-3 py-1.5">
-				<span className="text-xs text-text-weak tabular-nums">
+				<span className="text-xs text-fg-muted tabular-nums">
 					{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 				</span>
 				<Button
@@ -249,7 +268,7 @@ interface MetricCellProps {
 function MetricCell({ label, value }: MetricCellProps) {
 	return (
 		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-text-weak">{label}</div>
+			<div className="text-xs text-fg-muted">{label}</div>
 			<div className="text-xs tabular-nums font-medium">{value}</div>
 		</div>
 	);

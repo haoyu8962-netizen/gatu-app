@@ -29,9 +29,7 @@ const ProgressIndicator = React.forwardRef<HTMLDivElement, ProgressIndicatorProp
 			{...props}
 		>
 			<div className="flex flex-col gap-2">
-				<p className="text-sm font-semibold text-text-strong tabular-nums">
-					{label ?? `Step ${currentStep} of ${totalSteps}`}
-				</p>
+				<p className="text-sm font-semibold text-fg tabular-nums">{label ?? `Step ${currentStep} of ${totalSteps}`}</p>
 				<div
 					className="flex gap-1"
 					role="progressbar"

@@ -32,7 +32,7 @@ export function MobileFundingTab({ className }: Props) {
 
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
 				{t`Connect your wallet to view funding payments.`}
 			</div>
 		);
@@ -40,16 +40,16 @@ export function MobileFundingTab({ className }: Props) {
 
 	if (status === "error") {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-error">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
 				<span>{t`Failed to load funding history.`}</span>
-				{error instanceof Error && <span className="mt-1 text-xs text-text-weak">{error.message}</span>}
+				{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
 			</div>
 		);
 	}
 
 	if (status === "active" && updates.length === 0) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
 				{t`No funding payments found.`}
 			</div>
 		);
@@ -58,7 +58,7 @@ export function MobileFundingTab({ className }: Props) {
 	return (
 		<Skeleton name="funding-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-text-weak">
+				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
 					<PercentIcon className="size-3" />
 					{t`Funding History`}
 					<span className={cn("font-semibold ml-auto tabular-nums", headerClass)}>{headerTotal}</span>
@@ -75,7 +75,7 @@ export function MobileFundingTab({ className }: Props) {
 						return (
 							<div
 								key={`${update.coin}-${update.time}-${index}`}
-								className="rounded-xs border border-stroke-weak/40 bg-bg-raised overflow-hidden"
+								className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden"
 							>
 								<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
 									<div
@@ -120,7 +120,7 @@ interface MetricCellProps {
 function MetricCell({ label, value, valueClass }: MetricCellProps) {
 	return (
 		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-text-weak">{label}</div>
+			<div className="text-xs text-fg-muted">{label}</div>
 			<div className={cn("text-xs tabular-nums font-medium", valueClass)}>{value}</div>
 		</div>
 	);

@@ -8,12 +8,12 @@ type BadgeTone = "error" | "warning" | "success" | "information" | "neutral" | "
 const badgeVariants = cva(["inline-flex items-center font-semibold rounded-full border"], {
 	variants: {
 		tone: {
-			error: "bg-fill-error-weak border-stroke-error-weak text-text-error",
-			warning: "bg-fill-warning-weak border-stroke-warning-weak text-text-warning",
-			success: "bg-fill-success-weak border-stroke-success-weak text-text-success",
-			information: "bg-fill-info-weak border-stroke-info-weak text-text-info",
-			neutral: "bg-fill-weak border-stroke-weak text-text-strong",
-			brand: "bg-fill-brand-weak border-stroke-brand-weak text-text-brand",
+			error: "bg-error-soft border-stroke-error-weak text-error",
+			warning: "bg-warning-soft border-stroke-warning-weak text-warning",
+			success: "bg-success-soft border-stroke-success-weak text-success",
+			information: "bg-info-soft border-stroke-info-weak text-info",
+			neutral: "bg-fill-weak border-stroke-weak text-fg",
+			brand: "bg-brand-soft border-stroke-brand-weak text-brand",
 		},
 		size: {
 			xxs: "px-1 py-0 text-2xs gap-0.5",
@@ -30,12 +30,12 @@ const badgeVariants = cva(["inline-flex items-center font-semibold rounded-full 
 });
 
 const dotColors: Record<BadgeTone, string> = {
-	error: "bg-fill-error-strong",
-	warning: "bg-fill-warning-strong",
-	success: "bg-fill-success-strong",
-	information: "bg-fill-info-strong",
-	neutral: "bg-fill-strong",
-	brand: "bg-fill-brand-strong",
+	error: "bg-error",
+	warning: "bg-warning",
+	success: "bg-success",
+	information: "bg-info",
+	neutral: "bg-fill",
+	brand: "bg-brand",
 };
 
 const iconColors: Record<BadgeTone, string> = {
@@ -43,7 +43,7 @@ const iconColors: Record<BadgeTone, string> = {
 	warning: "text-icon-warning",
 	success: "text-icon-success",
 	information: "text-icon-info",
-	neutral: "text-icon-neutral",
+	neutral: "text-icon",
 	brand: "text-icon-brand",
 };
 

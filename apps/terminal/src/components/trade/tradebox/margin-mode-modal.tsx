@@ -95,18 +95,18 @@ function ModeOption({ option, isSelected, isCurrent, isDisabled, isUpdating, onS
 			disabled={isUpdating || isDisabled}
 			className={cn(
 				"flex w-full items-center gap-2 rounded-xs px-3 py-2.5 text-left transition-colors",
-				isSelected ? "bg-bg-raised text-text-strong" : "text-text-weak hover:text-text-strong",
+				isSelected ? "bg-surface text-fg" : "text-fg-muted hover:text-fg",
 				isDisabled && "opacity-40 cursor-not-allowed",
 			)}
 		>
-			<Icon className={cn("size-3.5 shrink-0", isSelected ? "text-text-brand" : "text-text-weak")} />
+			<Icon className={cn("size-3.5 shrink-0", isSelected ? "text-brand" : "text-fg-muted")} />
 			<span className="text-xs font-semibold">{option.label()}</span>
 			{isCurrent && (
-				<span className="ml-auto text-2xs font-medium uppercase text-text-weak">
+				<span className="ml-auto text-2xs font-medium uppercase text-fg-muted">
 					<Trans>Current</Trans>
 				</span>
 			)}
-			{isSelected && !isCurrent && <CheckIcon className="ml-auto size-3 text-text-brand" />}
+			{isSelected && !isCurrent && <CheckIcon className="ml-auto size-3 text-brand" />}
 		</button>
 	);
 }
@@ -187,10 +187,10 @@ export function MarginModeModal({
 
 				<ModalContent className="space-y-5">
 					<div className="space-y-2.5">
-						<p className="text-2xs font-semibold uppercase text-text-weak">
+						<p className="text-2xs font-semibold uppercase text-fg-muted">
 							<Trans>Margin mode</Trans>
 						</p>
-						<div className="grid grid-cols-2 gap-0.5 rounded-xs bg-bg-sunken p-1">
+						<div className="grid grid-cols-2 gap-0.5 rounded-xs bg-sunken p-1">
 							{MODE_OPTIONS.map((option) => (
 								<ModeOption
 									key={option.id}
@@ -204,24 +204,24 @@ export function MarginModeModal({
 							))}
 						</div>
 						{selectedModeDescription && (
-							<p className="text-2xs leading-relaxed text-pretty text-text-weak">{selectedModeDescription}</p>
+							<p className="text-2xs leading-relaxed text-pretty text-fg-muted">{selectedModeDescription}</p>
 						)}
 					</div>
 
 					{showLeverage && maxLeverage > 1 && (
 						<div className="space-y-3 border-t border-stroke-weak/60 pt-4">
 							<div className="flex items-center justify-between">
-								<p className="text-2xs font-semibold uppercase text-text-weak">
+								<p className="text-2xs font-semibold uppercase text-fg-muted">
 									<Trans>Leverage</Trans>
 								</p>
 								<div className="flex items-center gap-1.5 tabular-nums">
 									{leverageDirty && (
 										<>
-											<span className="text-xs text-text-weak">{currentLeverage}×</span>
-											<span className="text-xs text-text-weak">→</span>
+											<span className="text-xs text-fg-muted">{currentLeverage}×</span>
+											<span className="text-xs text-fg-muted">→</span>
 										</>
 									)}
-									<span className="text-sm font-semibold text-text-strong">{displayLeverage}×</span>
+									<span className="text-sm font-semibold text-fg">{displayLeverage}×</span>
 								</div>
 							</div>
 							<LeverageSlider
@@ -234,23 +234,23 @@ export function MarginModeModal({
 					)}
 
 					{cannotSwitch && (
-						<div className="flex items-start gap-2 rounded-xs border border-stroke-warning-strong/20 bg-fill-warning-weak/10 p-2.5">
-							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-text-warning" />
-							<p className="text-xs leading-relaxed text-text-warning">
+						<div className="flex items-start gap-2 rounded-xs border border-stroke-warning-strong/20 bg-warning-soft/10 p-2.5">
+							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
+							<p className="text-xs leading-relaxed text-warning">
 								<Trans>Cannot switch to Isolated mode with an open position. Close your position first.</Trans>
 							</p>
 						</div>
 					)}
 
 					{updateError && (
-						<div className="flex items-center gap-2 rounded-xs border border-stroke-error-strong/20 bg-fill-error-weak p-2.5 text-xs text-text-error">
+						<div className="flex items-center gap-2 rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error">
 							<WarningIcon className="size-3.5 shrink-0" />
 							<span className="min-w-0 flex-1">{updateError.message || t`Update failed`}</span>
 						</div>
 					)}
 
 					{showSuccess && (
-						<div className="flex items-center justify-center gap-2 rounded-xs border border-stroke-success-strong/20 bg-fill-success-weak p-2.5 text-xs text-text-success">
+						<div className="flex items-center justify-center gap-2 rounded-xs border border-stroke-success-strong/20 bg-success-soft p-2.5 text-xs text-success">
 							<CheckIcon className="size-3.5" />
 							<Trans>Updated</Trans>
 						</div>

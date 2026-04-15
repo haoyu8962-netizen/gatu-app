@@ -14,8 +14,8 @@ const tagVariants = cva(
 	{
 		variants: {
 			variant: {
-				filled: "bg-fill-weak border-stroke-weak text-text-strong",
-				outline: "bg-transparent border-stroke-weak text-text-strong",
+				filled: "bg-fill-weak border-stroke-weak text-fg",
+				outline: "bg-transparent border-stroke-weak text-fg",
 			},
 			size: {
 				xxs: "py-0 px-1.5 gap-1 text-2xs",
@@ -55,7 +55,7 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(
 			<span
 				className={cn(
 					tagVariants({ variant, size }),
-					selected && "bg-fill-selected border-transparent text-text-inverse-strong",
+					selected && "bg-fill-selected border-transparent text-fg-inverse",
 					className,
 				)}
 				ref={ref}

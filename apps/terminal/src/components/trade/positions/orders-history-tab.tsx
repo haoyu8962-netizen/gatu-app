@@ -32,7 +32,7 @@ function Placeholder({ children, variant }: PlaceholderProps) {
 		<div
 			className={cn(
 				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-text-error" : "text-text-weak",
+				variant === "error" ? "text-error" : "text-fg-muted",
 			)}
 		>
 			{children}
@@ -66,7 +66,7 @@ export function OrdersHistoryTab() {
 			return (
 				<Placeholder variant="error">
 					<span>{t`Failed to load order history.`}</span>
-					{error instanceof Error && <span className="mt-1 text-xs text-text-weak">{error.message}</span>}
+					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
 				</Placeholder>
 			);
 		}
@@ -79,7 +79,7 @@ export function OrdersHistoryTab() {
 	return (
 		<div className={positionsPanelTabRootClass}>
 			<div className={positionsPanelTableCaptionRowClass}>
-				{headerCount ? <span className="tabular-nums text-3xs text-text-weak">{headerCount}</span> : null}
+				{headerCount ? <span className="tabular-nums text-3xs text-fg-muted">{headerCount}</span> : null}
 			</div>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
@@ -120,10 +120,10 @@ export function OrdersHistoryTab() {
 											key={`${order.oid}-${entry.statusTimestamp}`}
 											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
 										>
-											<TableCell className={cn(positionsPanelTableCellClass, "whitespace-nowrap text-text-weak")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "whitespace-nowrap text-fg-muted")}>
 												{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-text-strong")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 												<div className="flex items-center gap-1.5">
 													<Button
 														variant="link"
@@ -138,26 +138,22 @@ export function OrdersHistoryTab() {
 													</span>
 												</div>
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "capitalize text-text-strong")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
 												{order.orderType}
 											</TableCell>
-											<TableCell
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
-											>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 												{formatUSD(order.limitPx, { compact: false })}
 											</TableCell>
-											<TableCell
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}
-											>
+											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 												{formatToken(order.origSz, market?.szDecimals)}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "capitalize text-text-strong")}>
+											<TableCell className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
 												{entry.status}
 											</TableCell>
 											<TableCell
 												className={cn(
 													positionsPanelTableCellClass,
-													"whitespace-nowrap text-right tabular-nums text-text-weak",
+													"whitespace-nowrap text-right tabular-nums text-fg-muted",
 												)}
 											>
 												{formatDateTime(entry.statusTimestamp, { dateStyle: "short", timeStyle: "short" })}

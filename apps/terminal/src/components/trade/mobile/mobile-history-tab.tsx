@@ -37,7 +37,7 @@ export function MobileHistoryTab({ className }: Props) {
 
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
 				{t`Connect your wallet to view trade history.`}
 			</div>
 		);
@@ -45,26 +45,26 @@ export function MobileHistoryTab({ className }: Props) {
 
 	if (status === "error") {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-error">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
 				<span>{t`Failed to load trade history.`}</span>
-				{error instanceof Error && <span className="mt-1 text-xs text-text-weak">{error.message}</span>}
+				{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
 			</div>
 		);
 	}
 
 	if (status === "active" && fills.length === 0) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">{t`No fills found.`}</div>
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">{t`No fills found.`}</div>
 		);
 	}
 
 	return (
 		<Skeleton name="history-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-text-weak">
+				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
 					<ClockCounterClockwiseIcon className="size-3" />
 					{t`Trade History`}
-					<span className="font-semibold text-text-brand ml-auto tabular-nums">{headerCount}</span>
+					<span className="font-semibold text-brand ml-auto tabular-nums">{headerCount}</span>
 				</div>
 				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
 					{fills.map((fill) => {
@@ -78,7 +78,7 @@ export function MobileHistoryTab({ className }: Props) {
 						return (
 							<div
 								key={`${fill.hash}-${fill.tid}`}
-								className="rounded-xs border border-stroke-weak/40 bg-bg-raised overflow-hidden"
+								className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden"
 							>
 								<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
 									<div
@@ -97,7 +97,7 @@ export function MobileHistoryTab({ className }: Props) {
 												<span
 													className={cn(
 														"text-xs font-medium uppercase",
-														isLiquidation ? "text-text-error" : isBuy ? "text-text-success" : "text-text-error",
+														isLiquidation ? "text-error" : isBuy ? "text-success" : "text-error",
 													)}
 												>
 													{isLiquidation ? t`Liquidated` : fill.dir}
@@ -123,13 +123,13 @@ export function MobileHistoryTab({ className }: Props) {
 								</div>
 
 								<div className="flex items-center justify-between px-3 py-1.5">
-									<span className="text-xs text-text-weak tabular-nums">{formatDateTimeShort(fill.time)}</span>
+									<span className="text-xs text-fg-muted tabular-nums">{formatDateTimeShort(fill.time)}</span>
 									{explorerUrl && (
 										<a
 											href={explorerUrl}
 											target="_blank"
 											rel="noopener noreferrer"
-											className="flex items-center gap-1 text-xs text-text-weak hover:text-text-strong active:text-text-strong touch-manipulation"
+											className="flex items-center gap-1 text-xs text-fg-muted hover:text-fg active:text-fg touch-manipulation"
 										>
 											{t`Explorer`}
 											<ArrowSquareOutIcon className="size-3" />
@@ -154,7 +154,7 @@ interface MetricCellProps {
 function MetricCell({ label, value, valueClass }: MetricCellProps) {
 	return (
 		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-text-weak">{label}</div>
+			<div className="text-xs text-fg-muted">{label}</div>
 			<div className={cn("text-xs tabular-nums font-medium", valueClass)}>{value}</div>
 		</div>
 	);

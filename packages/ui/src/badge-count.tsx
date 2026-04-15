@@ -12,9 +12,9 @@ const badgeCountVariants = cva(
 	{
 		variants: {
 			emphasis: {
-				strong: "bg-fill-error-strong text-text-inverse-strong",
-				moderate: "bg-fill-error-weak border border-stroke-error-weak text-text-error",
-				weak: "bg-fill-weak border border-stroke-weak text-text-weak",
+				strong: "bg-error text-fg-inverse",
+				moderate: "bg-error-soft border border-stroke-error-weak text-error",
+				weak: "bg-fill-weak border border-stroke-weak text-fg-muted",
 			},
 		},
 		defaultVariants: {

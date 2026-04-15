@@ -157,7 +157,7 @@ function MobilePositionCard({
 	}
 
 	return (
-		<div className="rounded-xs border border-stroke-weak/40 bg-bg-raised overflow-hidden">
+		<div className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden">
 			<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
 				<div className={cn("absolute left-0 top-0 bottom-0 w-px", isLong ? "bg-market-up" : "bg-market-down")} />
 				<Button
@@ -172,13 +172,13 @@ function MobilePositionCard({
 					}
 				>
 					<AssetDisplay coin={p.coin} nameClassName="text-sm font-semibold" />
-					<span className={cn("text-2xs font-medium uppercase", isLong ? "text-text-success" : "text-text-error")}>
+					<span className={cn("text-2xs font-medium uppercase", isLong ? "text-success" : "text-error")}>
 						{isLong ? t`Long` : t`Short`}
 					</span>
 				</Button>
 				<div className={cn("text-xs tabular-nums font-medium", pnlClass)}>
 					{formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })}
-					<span className="text-2xs ml-1 font-normal text-text-weak">{formatPercent(p.returnOnEquity, 1)}</span>
+					<span className="text-2xs ml-1 font-normal text-fg-muted">{formatPercent(p.returnOnEquity, 1)}</span>
 				</div>
 			</div>
 
@@ -190,7 +190,7 @@ function MobilePositionCard({
 							<span className="whitespace-nowrap">
 								{formatToken(absSize, { decimals: szDecimals, symbol: p.coin })}
 							</span>
-							<div className="text-2xs text-text-weak font-normal tabular-nums mt-0.5">
+							<div className="text-2xs text-fg-muted font-normal tabular-nums mt-0.5">
 								{formatUSD(p.positionValue, { compact: true })}
 							</div>
 						</>
@@ -207,7 +207,7 @@ function MobilePositionCard({
 				<MetricCell
 					label={t`Liq`}
 					value={formatPrice(p.liquidationPx, { szDecimals })}
-					valueClass={liqIsNear ? "text-text-error" : undefined}
+					valueClass={liqIsNear ? "text-error" : undefined}
 				/>
 				<MetricCell label={t`Funding`} value={fundingValue} valueClass={fundingClass} />
 			</div>
@@ -250,13 +250,13 @@ function MobilePositionCard({
 							{hasTpSl ? (
 								<span className="inline-flex items-center gap-1 tabular-nums truncate">
 									{tpSlInfo?.tpPrice && (
-										<span className="text-text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
+										<span className="text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
 									)}
-									{tpSlInfo?.tpPrice && tpSlInfo?.slPrice && <span className="text-text-weak"> / </span>}
+									{tpSlInfo?.tpPrice && tpSlInfo?.slPrice && <span className="text-fg-muted"> / </span>}
 									{tpSlInfo?.slPrice && (
-										<span className="text-text-error">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
+										<span className="text-error">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
 									)}
-									<PencilIcon className="size-3 text-text-disabled" />
+									<PencilIcon className="size-3 text-fg-disabled" />
 								</span>
 							) : (
 								t`TP/SL`
@@ -287,7 +287,7 @@ function MobilePositionCard({
 				)}
 			</div>
 			{closeErrorMessage && (
-				<div className="px-3 py-1.5 text-xs text-text-error border-t border-stroke-weak/40">{closeErrorMessage}</div>
+				<div className="px-3 py-1.5 text-xs text-error border-t border-stroke-weak/40">{closeErrorMessage}</div>
 			)}
 		</div>
 	);
@@ -302,7 +302,7 @@ interface MetricCellProps {
 function MetricCell({ label, value, valueClass }: MetricCellProps) {
 	return (
 		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-text-weak">{label}</div>
+			<div className="text-xs text-fg-muted">{label}</div>
 			<div className={cn("text-xs tabular-nums font-medium", valueClass)}>{value}</div>
 		</div>
 	);
@@ -411,7 +411,7 @@ export function MobilePositionsTab() {
 
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-weak">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
 				{t`Connect your wallet to view positions.`}
 			</div>
 		);
@@ -419,7 +419,7 @@ export function MobilePositionsTab() {
 
 	if (positionsError) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-text-error">
+			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
 				{t`Failed to load positions.`}
 			</div>
 		);
@@ -428,10 +428,10 @@ export function MobilePositionsTab() {
 	if (!positionsLoading && positions.length === 0) {
 		return (
 			<div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-				<div className="size-12 rounded-full flex items-center justify-center bg-bg-raised">
-					<ChartLineIcon className="size-6 text-text-weak" />
+				<div className="size-12 rounded-full flex items-center justify-center bg-surface">
+					<ChartLineIcon className="size-6 text-fg-muted" />
 				</div>
-				<p className="text-sm text-text-weak text-pretty">{t`No active positions.`}</p>
+				<p className="text-sm text-fg-muted text-pretty">{t`No active positions.`}</p>
 				<Button
 					variant="outline"
 					intent="neutral"
@@ -448,10 +448,10 @@ export function MobilePositionsTab() {
 	return (
 		<Skeleton name="positions-tab" loading={positionsLoading}>
 			<div className="flex-1 min-h-0 flex flex-col">
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-text-weak">
+				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-fg-muted">
 					<ListChecksIcon className="size-3" />
 					{t`Active Positions`}
-					<span className="font-semibold text-text-success ml-auto tabular-nums">{headerCount}</span>
+					<span className="font-semibold text-success ml-auto tabular-nums">{headerCount}</span>
 				</div>
 				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
 					{positions.map((p) => {

@@ -22,11 +22,11 @@ const avatarVariants = cva(["relative inline-flex shrink-0"], {
 });
 
 const statusColors: Record<AvatarStatus, string> = {
-	online: "bg-fill-success-strong",
-	busy: "bg-fill-error-strong",
-	away: "bg-fill-yellow",
+	online: "bg-success",
+	busy: "bg-error",
+	away: "bg-yellow",
 	offline: "bg-fill-disabled",
-	notification: "bg-fill-error-strong",
+	notification: "bg-error",
 };
 
 const statusSizes: Record<string, string> = {
@@ -72,7 +72,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
 					{showInitials && (
 						<div
 							className={cn(
-								"size-full flex items-center justify-center bg-fill-weak font-semibold text-text-strong",
+								"size-full flex items-center justify-center bg-fill-weak font-semibold text-fg",
 								size === "lg" ? "text-sm" : "text-xs",
 							)}
 						>
@@ -80,7 +80,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
 						</div>
 					)}
 					{showIcon && (
-						<div className="size-full flex items-center justify-center bg-fill-weak text-icon-neutral">
+						<div className="size-full flex items-center justify-center bg-fill-weak text-icon">
 							<UserIcon size={iconSizes[size ?? "md"]} weight="bold" />
 						</div>
 					)}
@@ -88,7 +88,7 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
 				{status && (
 					<span
 						className={cn(
-							"absolute bottom-0 right-0 rounded-full border-bg-base",
+							"absolute bottom-0 right-0 rounded-full border-background",
 							statusSizes[size ?? "md"],
 							statusColors[status],
 						)}
@@ -123,14 +123,14 @@ const AvatarGroup = React.forwardRef<HTMLDivElement, AvatarGroupProps>(
 		return (
 			<div className={cn("flex items-center -space-x-2", className)} ref={ref} {...props}>
 				{visible.map((child, i) => (
-					<div key={i} className="ring-2 ring-bg-base rounded-full">
+					<div key={i} className="ring-2 ring-background rounded-full">
 						{child}
 					</div>
 				))}
 				{overflow > 0 && (
 					<div
 						className={cn(
-							"flex items-center justify-center rounded-full bg-fill-weak font-semibold text-text-strong ring-2 ring-bg-base",
+							"flex items-center justify-center rounded-full bg-fill-weak font-semibold text-fg ring-2 ring-background",
 							overflowSizes[size],
 						)}
 					>

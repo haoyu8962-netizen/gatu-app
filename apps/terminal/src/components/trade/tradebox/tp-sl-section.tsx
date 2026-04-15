@@ -75,7 +75,7 @@ export function TpSlSection({
 
 	if (compact) {
 		return (
-			<div className="rounded-8 border border-stroke-weak/50 bg-bg-raised p-2.5">
+			<div className="rounded-8 border border-stroke-weak/50 bg-surface p-2.5">
 				<div className="grid grid-cols-2 gap-2">
 					<div>
 						<NumberInput
@@ -84,12 +84,12 @@ export function TpSlSection({
 							value={tpPrice}
 							onChange={(e) => onTpPriceChange(e.target.value)}
 							className={cn(
-								"text-xs bg-bg-base tabular-nums",
+								"text-xs bg-background tabular-nums",
 								!!tpError && "border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 							disabled={disabled}
 						/>
-						{tpError && <div className="text-xs text-text-error mt-1">{tpError}</div>}
+						{tpError && <div className="text-xs text-error mt-1">{tpError}</div>}
 					</div>
 					<div>
 						<NumberInput
@@ -98,12 +98,12 @@ export function TpSlSection({
 							value={slPrice}
 							onChange={(e) => onSlPriceChange(e.target.value)}
 							className={cn(
-								"text-xs bg-bg-base tabular-nums",
+								"text-xs bg-background tabular-nums",
 								!!slError && "border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 							disabled={disabled}
 						/>
-						{slError && <div className="text-xs text-text-error mt-1">{slError}</div>}
+						{slError && <div className="text-xs text-error mt-1">{slError}</div>}
 					</div>
 				</div>
 			</div>
@@ -139,37 +139,37 @@ export function TpSlSection({
 			/>
 
 			{riskRewardDisplay && (
-				<div className="rounded-8 border border-stroke-weak/40 bg-bg-raised p-2.5 space-y-2">
+				<div className="rounded-8 border border-stroke-weak/40 bg-surface p-2.5 space-y-2">
 					<div className="flex items-center justify-between">
-						<span className="text-xs text-text-strong">{t`Risk/Reward`}</span>
+						<span className="text-xs text-fg">{t`Risk/Reward`}</span>
 						<span
 							className={cn(
 								"text-xs font-semibold tabular-nums",
-								riskRewardDisplay.rrDisplay.isFavorable ? "text-text-success" : "text-text-warning",
+								riskRewardDisplay.rrDisplay.isFavorable ? "text-success" : "text-warning",
 							)}
 						>
 							{riskRewardDisplay.rrDisplay.label}
 						</span>
 					</div>
-					<div className="flex h-1.5 rounded-full overflow-hidden bg-bg-raised">
+					<div className="flex h-1.5 rounded-full overflow-hidden bg-surface">
 						<div
-							className="bg-fill-error-strong"
+							className="bg-error"
 							style={{
 								width: `${(riskRewardDisplay.rrDisplay.risk / (riskRewardDisplay.rrDisplay.risk + riskRewardDisplay.rrDisplay.reward)) * 100}%`,
 							}}
 						/>
 						<div
-							className="bg-fill-success-weak"
+							className="bg-success-soft"
 							style={{
 								width: `${(riskRewardDisplay.rrDisplay.reward / (riskRewardDisplay.rrDisplay.risk + riskRewardDisplay.rrDisplay.reward)) * 100}%`,
 							}}
 						/>
 					</div>
 					<div className="flex items-center justify-between text-xs">
-						<span className="tabular-nums text-text-error">
+						<span className="tabular-nums text-error">
 							{formatUSD(riskRewardDisplay.slPnl, { signDisplay: "exceptZero" })}
 						</span>
-						<span className="tabular-nums text-text-success">
+						<span className="tabular-nums text-success">
 							{formatUSD(riskRewardDisplay.tpPnl, { signDisplay: "exceptZero" })}
 						</span>
 					</div>

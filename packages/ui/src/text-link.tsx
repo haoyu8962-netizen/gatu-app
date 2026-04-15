@@ -26,9 +26,9 @@ const textLinkVariants = cva(
 				strong: "font-semibold",
 			},
 			intent: {
-				brand: "text-text-brand",
-				neutral: "text-text-strong",
-				error: "text-text-error",
+				brand: "text-brand",
+				neutral: "text-fg",
+				error: "text-error",
 			},
 			underline: {
 				true: "underline underline-offset-4",

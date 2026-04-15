@@ -190,7 +190,7 @@ export function NumberInput({
 				type="button"
 				onClick={onMaxClick}
 				disabled={disabled}
-				className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-text-brand hover:text-text-brand/80 active:scale-90 active:opacity-70 transition-[color,opacity,transform] whitespace-nowrap tabular-nums disabled:opacity-50 disabled:pointer-events-none"
+				className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-brand hover:text-brand/80 active:scale-90 active:opacity-70 transition-[color,opacity,transform] whitespace-nowrap tabular-nums disabled:opacity-50 disabled:pointer-events-none"
 			>
 				{maxLabel}
 			</button>
@@ -204,18 +204,18 @@ export function NumberInput({
 	return (
 		<div>
 			<div className="mb-1.5 flex items-center justify-between">
-				<span className="text-3xs font-medium uppercase tracking-wide text-text-weak leading-none">{label}</span>
+				<span className="text-3xs font-medium uppercase tracking-wide text-fg-muted leading-none">{label}</span>
 				{labelValue != null && onLabelValueClick ? (
 					<button
 						type="button"
 						onClick={onLabelValueClick}
 						disabled={disabled}
-						className="text-3xs text-text-weak tabular-nums leading-none hover:text-text-strong transition-colors cursor-pointer disabled:pointer-events-none"
+						className="text-3xs text-fg-muted tabular-nums leading-none hover:text-fg transition-colors cursor-pointer disabled:pointer-events-none"
 					>
 						{labelValue}
 					</button>
 				) : labelValue != null ? (
-					<span className="text-3xs text-text-weak tabular-nums leading-none">{labelValue}</span>
+					<span className="text-3xs text-fg-muted tabular-nums leading-none">{labelValue}</span>
 				) : null}
 			</div>
 			{inputWithAction}

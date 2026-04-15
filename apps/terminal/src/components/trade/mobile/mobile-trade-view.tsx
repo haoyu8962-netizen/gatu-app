@@ -320,10 +320,10 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 	}
 
 	const change24h = get24hChange(market?.prevDayPx, market?.markPx);
-	const priceColorClass = change24h !== null ? getValueColorClass(change24h) : "text-text-strong";
+	const priceColorClass = change24h !== null ? getValueColorClass(change24h) : "text-fg";
 
 	return (
-		<div className={cn("flex flex-col h-full min-h-0 bg-bg-base", className)}>
+		<div className={cn("flex flex-col h-full min-h-0 bg-background", className)}>
 			<MarginModeModal
 				open={showMarginDialog}
 				onOpenChange={setShowMarginDialog}
@@ -340,7 +340,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 				showLeverage={capabilities.isLeveraged}
 				onApply={async (mode: MarginMode, lev: number) => applyMarginAndLeverage(mode, lev)}
 			/>
-			<div className="shrink-0 px-4 py-2 border-b border-stroke-weak/60 bg-bg-raised">
+			<div className="shrink-0 px-4 py-2 border-b border-stroke-weak/60 bg-surface">
 				<div className="flex items-center justify-between">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					<div className="text-right">
@@ -372,15 +372,15 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 					/>
 
 					<div className="flex items-center justify-end text-xs">
-						<span className="text-text-weak uppercase text-2xs font-medium">{ORDER_TEXT.AVAILABLE_LABEL} </span>
+						<span className="text-fg-muted uppercase text-2xs font-medium">{ORDER_TEXT.AVAILABLE_LABEL} </span>
 						<span className={cn("tabular-nums font-semibold text-xs ml-1", getValueColorClass(availableBalance))}>
 							{formatAvailableBalance()}
 						</span>
-						<span className="ml-1 text-2xs tabular-nums text-text-weak">{availableBalanceToken}</span>
+						<span className="ml-1 text-2xs tabular-nums text-fg-muted">{availableBalanceToken}</span>
 					</div>
 
 					<div className="space-y-3">
-						<p className="text-2xs font-medium uppercase text-text-weak">{ORDER_TEXT.SIZE_LABEL}</p>
+						<p className="text-2xs font-medium uppercase text-fg-muted">{ORDER_TEXT.SIZE_LABEL}</p>
 						<div className="flex items-stretch gap-2">
 							<NumberInput
 								inputMode="decimal"
@@ -424,14 +424,14 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 								step={0.1}
 								disabled={isFormDisabled || maxSize <= 0}
 							/>
-							<div className="flex items-center justify-between text-2xs text-text-weak tabular-nums leading-none">
+							<div className="flex items-center justify-between text-2xs text-fg-muted tabular-nums leading-none">
 								{[0, 25, 50, 75, 100].map((pct) => (
 									<button
 										key={pct}
 										type="button"
 										onClick={() => applySizeFromPercent(pct)}
 										disabled={isFormDisabled || maxSize <= 0}
-										className="hover:text-text-strong transition-colors disabled:cursor-not-allowed"
+										className="hover:text-fg transition-colors disabled:cursor-not-allowed"
 									>
 										{pct}%
 									</button>
@@ -484,7 +484,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 								value={
 									liqPrice ? formatPrice(liqPrice, { szDecimals: market?.szDecimals }) : FALLBACK_VALUE_PLACEHOLDER
 								}
-								valueClass="text-text-error"
+								valueClass="text-error"
 							/>
 						)}
 						<SummaryRow
@@ -498,30 +498,30 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 							/>
 						)}
 						<div className="flex items-center justify-between py-2.5">
-							<span className="text-text-weak">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
+							<span className="text-fg-muted">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
 							<button
 								type="button"
 								onClick={openSettingsDialog}
 								className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
 							>
-								<span className="tabular-nums text-text-error">{slippagePercent}%</span>
-								<PencilIcon className="size-2.5 text-text-weak" />
+								<span className="tabular-nums text-error">{slippagePercent}%</span>
+								<PencilIcon className="size-2.5 text-fg-muted" />
 							</button>
 						</div>
 						<SummaryRow
 							label={ORDER_TEXT.SUMMARY_FEE}
 							value={orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
-							valueClass="text-text-weak"
+							valueClass="text-fg-muted"
 						/>
 					</div>
 				</div>
 			</div>
 
-			<div className="shrink-0 px-3 py-3 border-t border-stroke-weak/40 bg-bg-base">
+			<div className="shrink-0 px-3 py-3 border-t border-stroke-weak/40 bg-background">
 				{validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval && (
-					<p className="text-xs text-text-error mb-2">{validation.errors.join(" \u2022 ")}</p>
+					<p className="text-xs text-error mb-2">{validation.errors.join(" \u2022 ")}</p>
 				)}
-				{approvalError && <p className="text-xs text-text-error mb-2">{approvalError}</p>}
+				{approvalError && <p className="text-xs text-error mb-2">{approvalError}</p>}
 				<Button
 					variant="outline"
 					size="lg"
@@ -531,10 +531,10 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 					className={cn(
 						"w-full",
 						buttonContent.variant === "cyan"
-							? "bg-fill-brand-weak border-stroke-brand-strong text-text-brand hover:bg-fill-brand-weak/30"
+							? "bg-brand-soft border-stroke-brand-strong text-brand hover:bg-brand-soft/30"
 							: buttonContent.variant === "buy"
-								? "bg-fill-success-weak border-stroke-success-strong text-text-success hover:bg-fill-success-weak/30"
-								: "bg-fill-error-weak border-stroke-error-strong text-text-error hover:bg-fill-error-weak/30",
+								? "bg-success-soft border-stroke-success-strong text-success hover:bg-success-soft/30"
+								: "bg-error-soft border-stroke-error-strong text-error hover:bg-error-soft/30",
 					)}
 					iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
 				>
@@ -552,8 +552,8 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 function SummaryRow({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
 	return (
 		<div className="flex items-center justify-between py-2.5">
-			<span className="text-text-weak">{label}</span>
-			<span className={cn("tabular-nums", valueClass ?? "text-text-strong")}>{value}</span>
+			<span className="text-fg-muted">{label}</span>
+			<span className={cn("tabular-nums", valueClass ?? "text-fg")}>{value}</span>
 		</div>
 	);
 }

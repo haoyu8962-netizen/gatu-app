@@ -1,63 +1,83 @@
 ## Design Tokens
 
-- **No hardcoded colors** - Never use hex values like `text-[#2b2e48]` or `bg-[#f1f3f4]`. Always use token utilities from `src/styles.css`.
+- **No hardcoded colors** - Never use hex values like `text-[#2b2e48]` or `bg-[#f1f3f4]`. Always use token utilities from `packages/ui/src/globals.css` + `apps/terminal/src/styles.css`.
 - **No arbitrary font sizes** - Never use `text-[10px]` etc. Use the named scale: `text-3xs` (10px), `text-2xs` (11px), `text-xs` (12px), `text-sm` (14px), `text-base` (16px)+.
 
-### Background — elevation levels (sunken → base → raised → overlay)
-- `bg-bg-sunken` page/recessed background (light: `#f5f6fa`, dark: `#000000`)
-- `bg-bg-base` default page background (light: `#ffffff`, dark: `#12131a`)
-- `bg-bg-raised` elevated surfaces, cards (light: `#ffffff`, dark: `#1d1e26`)
-- `bg-bg-overlay` overlays, modals (light: `#ffffff`, dark: `#292b33`)
-- `bg-bg-alternate` alternating rows (light: `#f5f6fa`, dark: `#1d1e26`)
-- `bg-bg-brand` brand-colored background
-- `bg-bg-inverse` inverse background
+### Naming rule for NEW tokens
 
-> **Light mode gotcha**: `bg-bg-base` and `bg-bg-raised` are both `#ffffff` in light mode — they only differ in dark. Use `bg-bg-sunken` as the container whenever you need a visually distinct inset (e.g. tab switchers, pill groups) so that `bg-bg-raised` children appear elevated in both modes.
+Never cause **literal doubling** of the Tailwind property prefix. If a token is used as `bg-*`, don't name it with `bg-` prefix (that produces `bg-bg-foo`). If it's used as `text-*`, don't prefix with `text-`. Use a different word or drop the prefix.
 
-### Text — semantic intensity
-- `text-text-strong` primary text (max contrast)
-- `text-text-weak` secondary/muted text
-- `text-text-brand` brand-accented text (blue/periwinkle)
-- `text-text-disabled` disabled state
-- `text-text-error` error state
-- `text-text-warning` warning state
-- `text-text-success` success state
-- `text-text-info` informational state
-- `text-text-inverse-strong` / `text-text-inverse-weak` inverted text on dark/brand surfaces
+| Category | Token pattern | Used as |
+|---|---|---|
+| Surfaces | `--color-<name>` (no `bg-` prefix) | `bg-<name>` |
+| Foregrounds | `--color-fg` / `--color-fg-<variant>` | `text-fg-*` |
+| Semantic (shared) | `--color-<brand\|error\|warning\|success\|info>[-soft]` | `bg-*`, `text-*` |
+| Fills (interactive state bgs) | `--color-fill-<state>` | `bg-fill-<state>` — NOT stutter, `bg` ≠ `fill` |
+| Strokes (borders / rings / outlines / dividers) | `--color-stroke-<variant>` | `border-stroke-*`, `ring-stroke-*`, `outline-stroke-*`, `divide-stroke-*` — NOT stutter, `border` ≠ `stroke` |
+| Icons | `--color-icon[-<variant>]` | `text-icon-*` — NOT stutter, `text` ≠ `icon` |
 
-### Fill — for backgrounds that aren't elevation-based
-- `bg-fill-strong` opaque strong fill
-- `bg-fill-weak` / `bg-fill-weaker` subtle tinted fills (for hover states, chips)
+**Rule of thumb:** the only stutter to avoid is a literal repeat of the same word (`bg-bg-*`, `text-text-*`). Having different words like `border-stroke-*` or `bg-fill-*` is fine and actually helps: `bg-fill-hover` clearly means "interactive fill used as background," distinct from `bg-surface` (a surface color).
+
+**Checklist when adding a color:**
+1. Put the raw value in Layer 2 (`:root` + `.dark`) of `packages/ui/src/globals.css`.
+2. Wire it into Layer 3 `@theme inline` with `--color-<name>: var(--<layer2-name>);`.
+3. Pick the `<name>` so that when Tailwind adds its property prefix, there's no literal doubling.
+4. If it's used across multiple properties (bg/text), use a single semantic token and let Tailwind generate all three utilities.
+5. Update this doc.
+
+### Surfaces — elevation (sunken → background → surface → overlay)
+- `bg-sunken` page/recessed background (light: `#f5f6fa`, dark: `#000000`)
+- `bg-background` default page background (light: `#ffffff`, dark: `#12131a`)
+- `bg-surface` elevated surfaces, cards (light: `#ffffff`, dark: `#1d1e26`)
+- `bg-overlay` overlays, modals (light: `#ffffff`, dark: `#292b33`)
+- `bg-alternate` alternating rows (light: `#f5f6fa`, dark: `#1d1e26`)
+- `bg-inverse-surface` inverse background
+
+> **Light mode gotcha**: `bg-background` and `bg-surface` are both `#ffffff` in light mode — they only differ in dark. Use `bg-sunken` as the container whenever you need a visually distinct inset (e.g. tab switchers, pill groups) so that `bg-surface` children appear elevated in both modes.
+
+### Foreground — text intensity
+- `text-fg` primary text (max contrast)
+- `text-fg-muted` secondary/muted text
+- `text-fg-disabled` disabled state
+- `text-fg-inverse` / `text-fg-inverse-muted` / `text-fg-inverse-disabled` inverted text on dark/brand surfaces
+
+### Semantic — shared bg/text
+Each works as `bg-*` and `text-*`:
+- `brand` (`text-brand`, `bg-brand`)
+- `error` / `warning` / `success` / `info`
+- `-soft` variants for subtle tinted backgrounds: `bg-brand-soft`, `bg-error-soft`, etc.
+
+For **borders / rings / outlines / dividers** using these semantic colors, use the stroke variants (see Strokes section) to preserve the intended alpha values.
+
+### Fills — interactive state backgrounds
+- `bg-fill-weak` / `bg-fill-weaker` subtle tinted fills (for hover, chips)
 - `bg-fill-hover` / `bg-fill-press` interactive state fills
 - `bg-fill-selected` selected state fill (brand color)
 - `bg-fill-disabled` disabled fill
-- `bg-fill-overlay` scrim/backdrop fill
-- `bg-fill-brand-strong` / `bg-fill-brand-weak` brand fills
-- `bg-fill-error-strong` / `bg-fill-error-weak` error fills
-- `bg-fill-warning-strong` / `bg-fill-warning-weak` warning fills
-- `bg-fill-success-strong` / `bg-fill-success-weak` success fills
-- `bg-fill-info-strong` / `bg-fill-info-weak` info fills
-- `bg-fill-inverse-strong` / `bg-fill-inverse-weak` inverse fills
-- `bg-fill-yellow` yellow accent (star icons, highlights)
+- `bg-scrim` scrim/backdrop
+- `bg-fill-inverse` / `bg-fill-inverse-weak` / `bg-fill-inverse-hover` / `bg-fill-inverse-press` / `bg-fill-inverse-disabled` inverse fills
+- `bg-fill` opaque strong fill
+- `bg-white` / `bg-yellow` accent fills
 
-### Stroke — borders and dividers
-- `border-stroke-weak` default border (set globally on `*` in base layer)
+### Strokes — borders, rings, outlines, dividers
+Use these with `border-*`, `ring-*`, `outline-*`, `divide-*` prefixes. The stroke tokens carry alpha variants (e.g. brand borders are 80% alpha; semantic soft borders are 20% alpha). Collapsing them into flat semantic tokens would lose those alphas, so they stay as `stroke-*`.
+
+- `border-stroke-weak` default structural border (also applied globally via `*`)
 - `border-stroke-strong` prominent border
 - `border-stroke-selected` selected/active border (brand)
-- `border-stroke-focus` focus ring
+- `border-stroke-focus` focus ring / border
 - `border-stroke-disabled` disabled border
-- `border-stroke-brand-strong` / `border-stroke-brand-weak` brand borders
-- `border-stroke-error-strong` / `border-stroke-error-weak` error borders
-- `border-stroke-warning-strong` / `border-stroke-warning-weak` warning borders
-- `border-stroke-success-strong` / `border-stroke-success-weak` success borders
-- `border-stroke-info-strong` / `border-stroke-info-weak` info borders
-- `border-stroke-inverse-strong` / `border-stroke-inverse-weak` inverse borders
+- Semantic (each at 80% alpha): `border-stroke-brand-strong`, `border-stroke-error-strong`, `border-stroke-warning-strong`, `border-stroke-success-strong`, `border-stroke-info-strong`
+- Semantic soft (20% alpha): `border-stroke-brand-weak`, `border-stroke-error-weak`, etc.
+- Inverse: `border-stroke-inverse-strong` / `border-stroke-inverse-weak` / `border-stroke-inverse-disabled`
 
-### Icon — for coloring icon elements
-- `text-icon-neutral` default icon color
+All the above also work as `ring-stroke-*`, `outline-stroke-*`, `divide-stroke-*`.
+
+### Icons — for coloring icon elements
+- `text-icon` default icon color
 - `text-icon-brand` brand icon
 - `text-icon-error` / `text-icon-warning` / `text-icon-success` / `text-icon-info` semantic icons
-- `text-icon-inverse` / `text-icon-inverse-strong` inverse icons
+- `text-icon-inverse` / `text-icon-inverse-strong` / `text-icon-inverse-disabled` inverse icons
 
 ### Market / Trading Extensions
 - `text-market-up` / `bg-market-up` positive PnL, price up (green)

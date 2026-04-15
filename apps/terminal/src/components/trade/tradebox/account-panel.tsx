@@ -104,16 +104,16 @@ export function AccountPanel() {
 		: [];
 
 	return (
-		<div className="shrink-0 flex flex-col bg-bg-raised border-t border-stroke-weak pb-6 overflow-hidden">
+		<div className="shrink-0 flex flex-col bg-surface border-t border-stroke-weak pb-6 overflow-hidden">
 			<div className="px-2 py-2 border-b border-stroke-weak">
-				<span className="text-xs font-medium text-text-weak uppercase tracking-wide">{t`Account`}</span>
+				<span className="text-xs font-medium text-fg-muted uppercase tracking-wide">{t`Account`}</span>
 			</div>
 
 			{!isConnected ? (
-				<div className="text-xs text-text-weak text-center py-4">{t`Connect wallet to view account`}</div>
+				<div className="text-xs text-fg-muted text-center py-4">{t`Connect wallet to view account`}</div>
 			) : (
 				<div className="p-2 overflow-y-auto">
-					<p className="text-xs font-medium text-text-strong mb-1">{t`Account Equity`}</p>
+					<p className="text-xs font-medium text-fg mb-1">{t`Account Equity`}</p>
 					<InfoRowGroup className="divide-y-0">
 						<InfoRow
 							label={t`Spot`}
@@ -129,7 +129,7 @@ export function AccountPanel() {
 
 					{hasPerpData && (
 						<>
-							<p className="text-xs font-medium text-text-strong mt-3 mb-1">{t`Perps Overview`}</p>
+							<p className="text-xs font-medium text-fg mt-3 mb-1">{t`Perps Overview`}</p>
 							<InfoRowGroup className="divide-y-0">
 								{perpRows.map((row) => (
 									<InfoRow key={row.label} label={row.label} value={row.value} valueClassName={row.valueClassName} />

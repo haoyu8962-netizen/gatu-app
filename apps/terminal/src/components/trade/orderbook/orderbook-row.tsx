@@ -37,13 +37,13 @@ function OrderbookRowComponent({ level, side, maxTotal, priceDecimals, showInQuo
 					onClick={() => setSelectedPrice(level.price)}
 					className={cn(
 						"text-left justify-start font-medium",
-						isAsk ? "text-text-error hover:text-text-error" : "text-text-success hover:text-text-success",
+						isAsk ? "text-error hover:text-error" : "text-success hover:text-success",
 					)}
 				>
 					{formatNumber(level.price, priceDecimals)}
 				</button>
-				<div className="text-right text-text-strong group-hover:text-text-strong">{sizeText}</div>
-				<div className="text-right text-text-strong group-hover:text-text-strong">{totalText}</div>
+				<div className="text-right text-fg group-hover:text-fg">{sizeText}</div>
+				<div className="text-right text-fg group-hover:text-fg">{totalText}</div>
 			</div>
 		</div>
 	);

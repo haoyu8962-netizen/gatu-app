@@ -20,7 +20,7 @@ export function MobileHeader({ className }: Props) {
 		<header
 			className={cn(
 				"pt-[env(safe-area-inset-top)]",
-				"sticky top-0 z-40 bg-bg-raised/95 backdrop-blur-sm",
+				"sticky top-0 z-40 bg-surface/95 backdrop-blur-sm",
 				"border-b border-stroke-weak/60",
 				className,
 			)}
@@ -28,8 +28,8 @@ export function MobileHeader({ className }: Props) {
 			<div className="h-11 px-2 flex items-center justify-between">
 				<div className="flex items-center gap-1">
 					<MobileNavDrawer />
-					<div className="size-6 rounded-8 bg-fill-brand-strong/10 border border-fill-brand-strong/30 flex items-center justify-center">
-						<TerminalIcon className="size-3.5 text-text-brand" />
+					<div className="size-6 rounded-8 bg-brand/10 border border-stroke-brand-strong/30 flex items-center justify-center">
+						<TerminalIcon className="size-3.5 text-brand" />
 					</div>
 				</div>
 

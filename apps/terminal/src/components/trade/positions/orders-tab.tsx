@@ -1,4 +1,14 @@
-import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
+import {
+	Button,
+	Checkbox,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+	Tooltip,
+} from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useConnection } from "wagmi";
@@ -8,7 +18,15 @@ import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import type { MarketKind } from "@/lib/hyperliquid/markets";
-import { getOrderTypeConfig, getOrderValue, getSideClass, getSideLabel, type OpenOrder } from "@/lib/trade/open-orders";
+import {
+	getOrderTypeConfig,
+	getOrderValue,
+	getSideClass,
+	getSideLabel,
+	isClosePositionOrder,
+	isMarketTriggerOrder,
+	type OpenOrder,
+} from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
@@ -37,7 +55,7 @@ function Placeholder({ children, variant }: PlaceholderProps) {
 		<div
 			className={cn(
 				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-text-error" : "text-text-weak",
+				variant === "error" ? "text-error" : "text-fg-muted",
 			)}
 		>
 			{children}
@@ -179,7 +197,7 @@ export function OrdersTab() {
 			return (
 				<Placeholder variant="error">
 					<span>{t`Failed to load open orders.`}</span>
-					{error instanceof Error && <span className="mt-1 text-xs text-text-weak">{error.message}</span>}
+					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
 				</Placeholder>
 			);
 		}
@@ -192,9 +210,13 @@ export function OrdersTab() {
 	return (
 		<div className={positionsPanelTabRootClass}>
 			<div className={positionsPanelTableCaptionRowClass}>
-				{isConnected ? <span className="tabular-nums text-3xs text-text-weak">{openOrders.length}</span> : null}
+				{isConnected ? (
+					<span className="tabular-nums text-3xs text-fg-muted">
+						{openOrders.length} {t`orders`}
+					</span>
+				) : null}
 				{isConnected && selectedCount > 0 ? (
-					<span className="tabular-nums text-3xs text-text-weak">
+					<span className="tabular-nums text-3xs text-fg-muted">
 						{selectedCount} {t`selected`}
 					</span>
 				) : null}
@@ -217,7 +239,7 @@ export function OrdersTab() {
 					{isCancelling ? t`Canceling...` : t`Cancel all`}
 				</Button>
 			</div>
-			{actionError ? <div className="px-2.5 py-1 text-2xs text-text-error">{actionError}</div> : null}
+			{actionError ? <div className="px-2.5 py-1 text-2xs text-error">{actionError}</div> : null}
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
@@ -324,10 +346,10 @@ function OrderRow({
 					disabled={isCancelling}
 				/>
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "whitespace-nowrap text-text-weak")}>
+			<TableCell className={cn(positionsPanelTableCellClass, "whitespace-nowrap text-fg-muted")}>
 				{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-text-strong")}>
+			<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 				<div className="flex items-center gap-1.5">
 					<Button
 						variant="link"
@@ -342,28 +364,40 @@ function OrderRow({
 					</span>
 				</div>
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-text-strong")}>
-				<span className={cn("text-xs px-1 py-0.5 rounded-8 uppercase", typeConfig.class)}>{typeConfig.label}</span>
-			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}>
-				{formatPrice(order.limitPx, { szDecimals })}
-			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-text-strong")}>
-				<div className="flex flex-col items-end">
-					<span className="tabular-nums">
-						{formatToken(order.origSz, { decimals: szDecimals, symbol: order.coin })}
+			<TableCell className={cn(positionsPanelTableCellClass, "text-fg")}>
+				<Tooltip content={typeConfig.fullLabel}>
+					<span className={cn("text-2xs px-1.5 py-0.5 rounded-8 uppercase whitespace-nowrap", typeConfig.class)}>
+						{typeConfig.shortLabel}
 					</span>
-					<span className="text-xs text-text-weak">({formatUSD(getOrderValue(order), { compact: false })})</span>
-				</div>
+				</Tooltip>
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-text-weak")}>
+			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+				<span className="text-xs font-semibold tabular-nums leading-tight">
+					{isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals })}
+				</span>
+			</TableCell>
+			<TableCell className={cn(positionsPanelTableCellClass, "text-right text-fg")}>
+				{isClosePositionOrder(order) ? (
+					<span className="text-xs font-semibold text-fg-muted">{t`Close Position`}</span>
+				) : (
+					<div className="flex flex-col items-end gap-px">
+						<span className="text-xs font-semibold tabular-nums leading-tight">
+							{formatToken(order.origSz, { decimals: szDecimals, symbol: order.coin })}
+						</span>
+						<span className="text-2xs text-fg-muted tabular-nums leading-tight">
+							({formatUSD(getOrderValue(order), { compact: true })})
+						</span>
+					</div>
+				)}
+			</TableCell>
+			<TableCell className={cn(positionsPanelTableCellClass, "text-fg-muted")}>
 				{order.triggerCondition || FALLBACK_VALUE_PLACEHOLDER}
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-text-strong")}>
+			<TableCell className={cn(positionsPanelTableCellClass, "text-fg")}>
 				{order.reduceOnly ? (
-					<span className="text-text-brand">{t`Yes`}</span>
+					<span className="text-brand">{t`Yes`}</span>
 				) : (
-					<span className="text-text-weak">{t`No`}</span>
+					<span className="text-fg-muted">{t`No`}</span>
 				)}
 			</TableCell>
 			<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>

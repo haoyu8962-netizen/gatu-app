@@ -15,7 +15,7 @@ export function FavoritesStrip() {
 
 	if (favorites.length === 0) {
 		return (
-			<div className="flex items-center gap-2 text-xs text-text-strong">
+			<div className="flex items-center gap-2 text-xs text-fg">
 				<StarIcon className="size-3" />
 				<span>{t`Select favorite markets`}</span>
 			</div>
@@ -24,7 +24,7 @@ export function FavoritesStrip() {
 
 	return (
 		<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-			<StarIcon weight="fill" className="size-3 shrink-0 text-fill-yellow" />
+			<StarIcon weight="fill" className="size-3 shrink-0 text-yellow" />
 			{favorites.map((name) => (
 				<FavoriteChip key={name} name={name} isActive={name === selectedMarket} />
 			))}
@@ -79,9 +79,7 @@ function FavoriteChip({ name, isActive }: FavoriteChipProps) {
 						: "border-stroke-weak/35 bg-fill-weaker/50 hover:border-stroke-weak/55 hover:bg-fill-weak/80 opacity-60",
 				)}
 			>
-				<span
-					className={cn("font-semibold uppercase transition-colors", isActive ? "text-text-strong" : "text-text-weak")}
-				>
+				<span className={cn("font-semibold uppercase transition-colors", isActive ? "text-fg" : "text-fg-muted")}>
 					{displayName}
 				</span>
 				{changePct != null && (
@@ -100,7 +98,7 @@ function FavoriteChip({ name, isActive }: FavoriteChipProps) {
 				type="button"
 				onClick={handleRemove}
 				aria-label={t`Remove ${displayName} from favorites`}
-				className="absolute -top-0.5 -right-0.5 hidden size-3 cursor-pointer items-center justify-center text-text-weak hover:text-text-strong group-hover/fav:flex"
+				className="absolute -top-0.5 -right-0.5 hidden size-3 cursor-pointer items-center justify-center text-fg-muted hover:text-fg group-hover/fav:flex"
 			>
 				<XIcon className="size-2.5" weight="bold" />
 			</button>

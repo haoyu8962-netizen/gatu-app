@@ -29,7 +29,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 	return (
 		<nav
 			className={cn(
-				"fixed inset-x-0 bottom-0 z-50 bg-bg-raised/95 backdrop-blur-sm border-t border-stroke-weak/60",
+				"fixed inset-x-0 bottom-0 z-50 bg-surface/95 backdrop-blur-sm border-t border-stroke-weak/60",
 				"pb-[env(safe-area-inset-bottom)]",
 				className,
 			)}
@@ -51,23 +51,21 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 								"min-h-[56px] py-2 px-1",
 								"transition-colors duration-150 ease-out",
 								"active:bg-fill-press active:scale-95",
-								isActive ? "text-text-brand" : "text-text-strong",
+								isActive ? "text-brand" : "text-fg",
 							)}
 							aria-current={isActive ? "page" : undefined}
 							aria-label={item.label}
 						>
 							<span className="relative">
 								{item.icon}
-								{isActive && (
-									<span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-fill-brand-strong" />
-								)}
+								{isActive && <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-brand" />}
 								{showBadge && (
 									<span
 										className={cn(
 											"absolute -top-1 -right-2 min-w-4 h-4 px-1",
 											"flex items-center justify-center",
 											"rounded-full text-xs font-medium tabular-nums",
-											"bg-fill-brand-strong text-white",
+											"bg-brand text-white",
 										)}
 									>
 										{badgeCount > 99 ? "99+" : badgeCount}

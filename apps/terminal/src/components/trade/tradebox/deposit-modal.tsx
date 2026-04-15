@@ -95,9 +95,9 @@ function StatusScreen({
 					<div className="flex flex-col items-center gap-4 py-6">
 						{icon === "loading" ? (
 							<div className="relative">
-								<div className="absolute inset-0 animate-ping rounded-full bg-fill-brand-weak/20" />
-								<div className="relative flex size-14 items-center justify-center rounded-full bg-fill-brand-weak/10 border border-stroke-brand-strong/30">
-									<SpinnerGapIcon className="size-7 animate-spin text-text-brand" />
+								<div className="absolute inset-0 animate-ping rounded-full bg-brand-soft/20" />
+								<div className="relative flex size-14 items-center justify-center rounded-full bg-brand-soft/10 border border-stroke-brand-strong/30">
+									<SpinnerGapIcon className="size-7 animate-spin text-brand" />
 								</div>
 							</div>
 						) : (
@@ -105,27 +105,27 @@ function StatusScreen({
 								className={cn(
 									"flex size-14 items-center justify-center rounded-full border",
 									icon === "success"
-										? "bg-fill-success-weak border-stroke-success-strong/30"
-										: "bg-fill-error-weak border-stroke-error-strong/30",
+										? "bg-success-soft border-stroke-success-strong/30"
+										: "bg-error-soft border-stroke-error-strong/30",
 								)}
 							>
 								{icon === "success" ? (
-									<CheckCircleIcon className="size-7 text-text-success" />
+									<CheckCircleIcon className="size-7 text-success" />
 								) : (
-									<WarningCircleIcon className="size-7 text-text-error" />
+									<WarningCircleIcon className="size-7 text-error" />
 								)}
 							</div>
 						)}
 						<div className="text-center space-y-1.5">
 							<p className="text-sm font-medium">{heading}</p>
-							{description && <p className="text-xs text-text-weak">{description}</p>}
+							{description && <p className="text-xs text-fg-muted">{description}</p>}
 						</div>
 						{explorerUrl && (
 							<a
 								href={explorerUrl}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1.5 text-xs text-text-brand hover:underline"
+								className="inline-flex items-center gap-1.5 text-xs text-brand hover:underline"
 							>
 								<Trans>View on explorer</Trans>
 								<ArrowSquareOutIcon className="size-3" />
@@ -159,7 +159,7 @@ function DepositForm({ amount, onAmountChange, balance, validation, isPending, o
 					labelValue={
 						<>
 							Available:{" "}
-							<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+							<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 								{balance} USDC
 							</span>
 						</>
@@ -173,16 +173,16 @@ function DepositForm({ amount, onAmountChange, balance, validation, isPending, o
 						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",
 					)}
 				/>
-				<p className={cn("h-4 text-xs flex items-center gap-1", validation.error ? "text-text-error" : "invisible")}>
+				<p className={cn("h-4 text-xs flex items-center gap-1", validation.error ? "text-error" : "invisible")}>
 					<WarningCircleIcon className="size-3" />
 					{validation.error || "\u00A0"}
 				</p>
 			</div>
 
-			<div className="rounded-8 border border-stroke-weak/40 bg-bg-raised p-3 space-y-2 text-xs">
+			<div className="rounded-8 border border-stroke-weak/40 bg-surface p-3 space-y-2 text-xs">
 				<InfoRow
 					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-text-strong"
+					labelClassName="flex items-center gap-1.5 text-fg"
 					label={
 						<>
 							<WalletIcon className="size-3" />
@@ -193,7 +193,7 @@ function DepositForm({ amount, onAmountChange, balance, validation, isPending, o
 				/>
 				<InfoRow
 					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-text-strong"
+					labelClassName="flex items-center gap-1.5 text-fg"
 					label={
 						<>
 							<ClockIcon className="size-3" />
@@ -252,7 +252,7 @@ function WithdrawForm({ amount, onAmountChange, available, validation, isPending
 					labelValue={
 						<>
 							Available:{" "}
-							<span className="underline decoration-dashed underline-offset-2 decoration-text-weak/50">
+							<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 								{formatNumber(availableNum, 2)} USDC
 							</span>
 						</>
@@ -267,16 +267,16 @@ function WithdrawForm({ amount, onAmountChange, available, validation, isPending
 						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",
 					)}
 				/>
-				<p className={cn("h-4 text-xs flex items-center gap-1", validation.error ? "text-text-error" : "invisible")}>
+				<p className={cn("h-4 text-xs flex items-center gap-1", validation.error ? "text-error" : "invisible")}>
 					<WarningCircleIcon className="size-3" />
 					{validation.error || "\u00A0"}
 				</p>
 			</div>
 
-			<div className="rounded-8 border border-stroke-weak/40 bg-bg-raised p-3 space-y-2 text-xs">
+			<div className="rounded-8 border border-stroke-weak/40 bg-surface p-3 space-y-2 text-xs">
 				<InfoRow
 					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-text-strong"
+					labelClassName="flex items-center gap-1.5 text-fg"
 					label={
 						<>
 							<WalletIcon className="size-3" />
@@ -287,7 +287,7 @@ function WithdrawForm({ amount, onAmountChange, available, validation, isPending
 				/>
 				<InfoRow
 					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-text-strong"
+					labelClassName="flex items-center gap-1.5 text-fg"
 					label={
 						<>
 							<ArrowLineDownIcon className="size-3" />
@@ -298,7 +298,7 @@ function WithdrawForm({ amount, onAmountChange, available, validation, isPending
 				/>
 				<InfoRow
 					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-text-strong"
+					labelClassName="flex items-center gap-1.5 text-fg"
 					label={
 						<>
 							<ArrowLineUpIcon className="size-3" />
@@ -309,7 +309,7 @@ function WithdrawForm({ amount, onAmountChange, available, validation, isPending
 				/>
 				<InfoRow
 					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-text-strong"
+					labelClassName="flex items-center gap-1.5 text-fg"
 					label={
 						<>
 							<ClockIcon className="size-3" />
@@ -347,14 +347,14 @@ function WithdrawForm({ amount, onAmountChange, available, validation, isPending
 function WalletNotConnected() {
 	return (
 		<div className="flex flex-col items-center gap-4 py-8">
-			<div className="flex size-12 items-center justify-center rounded-full bg-bg-raised border border-stroke-weak/40">
-				<WalletIcon className="size-6 text-text-strong" />
+			<div className="flex size-12 items-center justify-center rounded-full bg-surface border border-stroke-weak/40">
+				<WalletIcon className="size-6 text-fg" />
 			</div>
 			<div className="text-center space-y-1">
 				<p className="text-sm font-medium">
 					<Trans>Wallet not connected</Trans>
 				</p>
-				<p className="text-xs text-text-strong">
+				<p className="text-xs text-fg">
 					<Trans>Connect your wallet to withdraw funds</Trans>
 				</p>
 			</div>
@@ -380,20 +380,20 @@ function WrongNetworkScreen({ open, onClose, onSwitch, isSwitching, error }: Wro
 					</ModalTitle>
 				</ModalHeader>
 				<ModalContent className="space-y-4">
-					<div className="flex items-start gap-3 rounded-8 border border-stroke-warning-strong/20 bg-fill-warning-weak/10 p-4">
-						<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-fill-warning-weak/20">
-							<WarningCircleIcon className="size-4 text-text-warning" />
+					<div className="flex items-start gap-3 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft/10 p-4">
+						<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-warning-soft/20">
+							<WarningCircleIcon className="size-4 text-warning" />
 						</div>
 						<div className="space-y-1">
 							<p className="text-sm font-medium">
 								<Trans>Wrong network</Trans>
 							</p>
-							<p className="text-xs text-text-strong">
+							<p className="text-xs text-fg">
 								<Trans>Switch to Arbitrum to deposit USDC to Hyperliquid</Trans>
 							</p>
 						</div>
 					</div>
-					{error && <p className="text-xs text-text-error px-1">{error.message}</p>}
+					{error && <p className="text-xs text-error px-1">{error.message}</p>}
 					<Button variant="filled" intent="neutral" onClick={onSwitch} disabled={isSwitching} className="w-full">
 						{isSwitching ? (
 							<>
@@ -501,7 +501,7 @@ export function DepositModal() {
 				heading={<Trans>Deposit complete</Trans>}
 				description={
 					<>
-						<span className="tabular-nums font-medium text-text-success">{depositAmount} USDC</span>{" "}
+						<span className="tabular-nums font-medium text-success">{depositAmount} USDC</span>{" "}
 						<Trans>sent to Hyperliquid</Trans>
 					</>
 				}
@@ -558,7 +558,7 @@ export function DepositModal() {
 				heading={<Trans>Withdrawal submitted</Trans>}
 				description={
 					<>
-						<span className="tabular-nums font-medium text-text-success">${withdrawAmount}</span>{" "}
+						<span className="tabular-nums font-medium text-success">${withdrawAmount}</span>{" "}
 						<Trans>will arrive in ~5 min</Trans>
 					</>
 				}

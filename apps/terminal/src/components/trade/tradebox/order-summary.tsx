@@ -23,8 +23,8 @@ interface Props {
 function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
 	return (
 		<div className="flex items-center justify-between py-1.5">
-			<span className="text-xs tracking-[0.5px] text-text-weak">{label}</span>
-			<span className="text-xs tabular-nums text-text-strong">{children}</span>
+			<span className="text-xs tracking-[0.5px] text-fg-muted">{label}</span>
+			<span className="text-xs tabular-nums text-fg">{children}</span>
 		</div>
 	);
 }
@@ -47,19 +47,19 @@ export function OrderSummary({
 		<div className="flex flex-col">
 			{isLeveraged && (
 				<SummaryRow label={t`Liq. Price`}>
-					<span className={cn(liqPrice ? (liqWarning ? "text-text-error" : "text-text-strong") : "text-text-weak")}>
+					<span className={cn(liqPrice ? (liqWarning ? "text-error" : "text-fg") : "text-fg-muted")}>
 						{liqPrice ? formatPrice(liqPrice, { szDecimals }) : SUMMARY_EMPTY}
 					</span>
 				</SummaryRow>
 			)}
 			<SummaryRow label={t`Order Value`}>
-				<span className={orderValue > 0 ? "text-text-strong" : "text-text-weak"}>
+				<span className={orderValue > 0 ? "text-fg" : "text-fg-muted"}>
 					{orderValue > 0 ? formatUSD(orderValue) : SUMMARY_EMPTY}
 				</span>
 			</SummaryRow>
 			{isLeveraged && (
 				<SummaryRow label={t`Margin Req.`}>
-					<span className={marginRequired > 0 ? "text-text-strong" : "text-text-weak"}>
+					<span className={marginRequired > 0 ? "text-fg" : "text-fg-muted"}>
 						{marginRequired > 0 ? formatUSD(marginRequired) : SUMMARY_EMPTY}
 					</span>
 				</SummaryRow>
@@ -70,18 +70,18 @@ export function OrderSummary({
 					onClick={onSlippageClick}
 					className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
 				>
-					<span className="tabular-nums text-text-error">{slippagePercent}%</span>
-					<PencilIcon className="size-2.5 text-text-weak" />
+					<span className="tabular-nums text-error">{slippagePercent}%</span>
+					<PencilIcon className="size-2.5 text-fg-muted" />
 				</button>
 			</SummaryRow>
 			<SummaryRow label={t`Est. Fee`}>
-				<span className="text-text-weak">
+				<span className="text-fg-muted">
 					{orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
 				</span>
 			</SummaryRow>
 			{DEFAULT_BUILDER_CONFIG?.f && (
 				<SummaryRow label={t`Builder Fee`}>
-					<span className="text-text-weak">{`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}</span>
+					<span className="text-fg-muted">{`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}</span>
 				</SummaryRow>
 			)}
 		</div>

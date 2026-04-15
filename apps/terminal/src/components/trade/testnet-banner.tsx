@@ -10,7 +10,7 @@ export function TestnetBanner() {
 	if (!isTestnet) return null;
 
 	return (
-		<div className="fixed top-0 left-0 right-0 z-50 h-8 bg-fill-warning-strong text-text-inverse-strong flex items-center justify-center gap-2 text-xs font-medium">
+		<div className="fixed top-0 left-0 right-0 z-50 h-8 bg-warning text-fg-inverse flex items-center justify-center gap-2 text-xs font-medium">
 			<WarningIcon className="size-3.5" />
 			<span>{t`You are on Testnet`}</span>
 			<Button

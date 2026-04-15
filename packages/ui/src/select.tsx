@@ -23,8 +23,8 @@ const selectTriggerVariants = cva(
 				lg: "py-3 px-4 gap-2",
 			},
 			error: {
-				true: "border-stroke-error-strong bg-fill-error-weak",
-				false: "border-stroke-strong bg-bg-base",
+				true: "border-stroke-error-strong bg-error-soft",
+				false: "border-stroke-strong bg-background",
 			},
 		},
 		defaultVariants: {
@@ -112,9 +112,9 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 				className={cn(
 					"flex items-center justify-between gap-2 px-3 py-2 rounded-8 cursor-pointer select-none",
 					size === "lg" ? "text-sm" : "text-xs",
-					"text-text-strong",
+					"text-fg",
 					"data-highlighted:bg-fill-hover",
-					"data-disabled:text-text-disabled data-disabled:cursor-not-allowed",
+					"data-disabled:text-fg-disabled data-disabled:cursor-not-allowed",
 				)}
 			>
 				<BaseSelect.ItemText>{option.label}</BaseSelect.ItemText>
@@ -127,13 +127,13 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 		return (
 			<Field.Root className={cn("flex flex-col gap-1", className)} disabled={disabled} name={name} ref={ref}>
 				{label && (
-					<Field.Label className="text-xs font-semibold text-text-strong data-disabled:text-text-disabled">
+					<Field.Label className="text-xs font-semibold text-fg data-disabled:text-fg-disabled">
 						{label}
-						{required && <span className="text-text-error"> *</span>}
+						{required && <span className="text-error"> *</span>}
 					</Field.Label>
 				)}
 				{helperText && (
-					<Field.Description className="text-xs text-text-weak data-disabled:text-text-disabled">
+					<Field.Description className="text-xs text-fg-muted data-disabled:text-fg-disabled">
 						{helperText}
 					</Field.Description>
 				)}
@@ -158,12 +158,12 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 							className={cn(
 								"flex-1 text-left truncate",
 								size === "lg" ? "text-sm" : "text-xs",
-								selectedLabel ? "text-text-strong" : "text-text-weak",
+								selectedLabel ? "text-fg" : "text-fg-muted",
 							)}
 						>
 							{selectedLabel}
 						</BaseSelect.Value>
-						<BaseSelect.Icon className="shrink-0 text-icon-neutral">
+						<BaseSelect.Icon className="shrink-0 text-icon">
 							<CaretDownIcon
 								size={size === "lg" ? 20 : size === "md" ? 18 : size === "sm" ? 16 : size === "xs" ? 14 : 12}
 								weight={size === "xxs" || size === "xs" ? "regular" : "bold"}
@@ -173,11 +173,11 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 
 					<BaseSelect.Portal>
 						<BaseSelect.Positioner sideOffset={4} className="z-[1000]">
-							<BaseSelect.Popup className="z-50 max-h-64 overflow-auto bg-bg-raised p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+							<BaseSelect.Popup className="z-50 max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
 								{options.map((option) =>
 									isGroupOption(option) ? (
 										<BaseSelect.Group key={option.label}>
-											<BaseSelect.GroupLabel className="px-3 py-1.5 text-xs font-semibold text-text-weak select-none">
+											<BaseSelect.GroupLabel className="px-3 py-1.5 text-xs font-semibold text-fg-muted select-none">
 												{option.label}
 											</BaseSelect.GroupLabel>
 											{option.options.map(renderItem)}
@@ -194,7 +194,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 				{error && errorMessage && (
 					<div className="flex items-center gap-1">
 						<WarningCircleIcon size={16} weight="fill" className="shrink-0 text-icon-error" />
-						<span className="text-xs text-text-error">{errorMessage}</span>
+						<span className="text-xs text-error">{errorMessage}</span>
 					</div>
 				)}
 			</Field.Root>
