@@ -6,14 +6,17 @@ require_env
 load_env
 
 # Parse args: start.sh [local|docker] [iterations] [branch]
-# To scope to a parent PRD, set the RALPH_SCOPE env var (e.g. `RALPH_SCOPE=84 .ralph/start.sh local`)
-# or pass --scope N anywhere in the args.
+# Scoping:
+#   - `RALPH_SCOPE=84 .ralph/start.sh local` or `--scope 84` scopes to PRD #84's sub-issues
+#   - `--all` runs against all open issues without prompting
+#   - Otherwise, an interactive PRD picker is shown (TTY only)
 MODE="local"
 args=()
 for a in "$@"; do
   case "$a" in
     --scope=*) export RALPH_SCOPE="${a#--scope=}" ;;
     --scope)   _next_is_scope=1 ;;
+    --all)     export RALPH_ALL=1 ;;
     *)
       if [ "${_next_is_scope:-0}" = "1" ]; then
         export RALPH_SCOPE="$a"
@@ -29,6 +32,8 @@ if [ "${_next_is_scope:-0}" = "1" ]; then
 fi
 unset _next_is_scope
 set -- "${args[@]}"
+
+pick_prd_scope
 if [[ "$1" == "local" || "$1" == "docker" ]]; then
   MODE="$1"; shift
 fi
