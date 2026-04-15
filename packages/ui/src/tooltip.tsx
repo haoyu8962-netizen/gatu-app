@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "./utils";
 
 const tooltipPopupVariants = cva([
-	"bg-bg-inverse text-text-inverse-strong",
+	"bg-bg-overlay text-text-strong border border-stroke-weak",
 	"text-xs font-normal",
 	"rounded-8 px-3 py-2",
 	"shadow-overlay",
@@ -16,7 +16,7 @@ const tooltipPopupVariants = cva([
 	"motion-reduce:transition-none",
 ]);
 
-const tooltipArrowVariants = cva(["size-2 rotate-45 bg-bg-inverse"]);
+const tooltipArrowVariants = cva(["size-2 rotate-45 bg-bg-overlay border border-stroke-weak"]);
 
 interface TooltipProps extends VariantProps<typeof tooltipPopupVariants> {
 	children: React.ReactElement;

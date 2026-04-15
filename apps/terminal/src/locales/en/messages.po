@@ -399,6 +399,11 @@ msgstr "Close"
 #~ msgid "Close position"
 #~ msgstr "Close position"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Close Position"
+msgstr "Close Position"
+
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Closing..."
 msgstr "Closing..."
@@ -1266,6 +1271,8 @@ msgstr "Mark Price"
 
 #: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
@@ -1618,6 +1625,7 @@ msgid "Order Value"
 msgstr "Order Value"
 
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "orders"
 msgstr "orders"
 

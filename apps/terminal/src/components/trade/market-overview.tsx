@@ -35,13 +35,13 @@ function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
 	return (
 		<div className="min-w-[9rem] space-y-2">
 			<div className="flex items-center justify-between gap-4">
-				<span className="text-2xs uppercase tracking-wide text-text-inverse-weak">{t`Resets in`}</span>
-				<span className="font-mono text-xs tabular-nums text-text-inverse-strong">{formatDuration(remaining)}</span>
+				<span className="text-2xs uppercase tracking-wide text-text-weak">{t`Resets in`}</span>
+				<span className="font-mono text-xs tabular-nums text-text-strong">{formatDuration(remaining)}</span>
 			</div>
-			<div className="border-t border-white/10 pt-2 space-y-1.5">
+			<div className="border-t border-stroke-weak pt-2 space-y-1.5">
 				{rows.map(({ label, rate }) => (
 					<div key={label} className="flex items-center justify-between gap-4">
-						<span className="text-2xs text-text-inverse-weak">{label}</span>
+						<span className="text-2xs text-text-weak">{label}</span>
 						<span className={cn("text-xs font-medium tabular-nums", getValueColorClass(rate))}>
 							{formatPercent(rate, { signDisplay: "exceptZero" })}
 						</span>

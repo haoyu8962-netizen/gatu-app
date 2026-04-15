@@ -399,6 +399,11 @@ msgstr "Fermer"
 #~ msgid "Close position"
 #~ msgstr "Fermer la position"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Close Position"
+msgstr ""
+
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Closing..."
 msgstr "Fermeture..."
@@ -1262,6 +1267,8 @@ msgstr ""
 
 #: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
@@ -1614,6 +1621,7 @@ msgid "Order Value"
 msgstr "Valeur de l'ordre"
 
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "orders"
 msgstr ""
 
