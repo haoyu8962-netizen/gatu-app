@@ -99,8 +99,10 @@ run_local() {
   pnpm install --frozen-lockfile 2>/dev/null || pnpm install 2>/dev/null || npm install 2>/dev/null || true
   echo ""
 
-  # Run the RALPH loop (uses native Seatbelt sandbox via sandbox.json)
-  .ralph/run.sh "$ITERATIONS"
+  # Run the RALPH loop using the main checkout's runner ($RALPH_DIR), not the
+  # worktree's potentially stale copy. The worktree's ralph/auto branch can be
+  # behind main and ship an older .ralph/run.sh that doesn't honor RALPH_SCOPE.
+  "$RALPH_DIR/run.sh" "$ITERATIONS"
 
   # Push results
   push_results
