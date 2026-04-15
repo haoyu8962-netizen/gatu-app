@@ -18,6 +18,10 @@ TL;DR - build a tiny, end-to-end slice of the feature first, then expand it out.
 3. Polish and quick wins
 4. Refactors
 
+## Respect blockers
+
+Each issue body may include a "Blocked by #N" section. If an issue is blocked by another issue that is still in the issues JSON (still open), skip it and pick an unblocked task instead. Only work on an issue once all its blockers are closed (absent from the issues JSON). If every open issue is blocked by another open issue in the list, treat it as a cycle and pick the topologically earliest one.
+
 Do NOT output <promise>COMPLETE</promise> unless there are ZERO open issues remaining. After completing your single task, just commit and close the issue — the loop will call you again for the next one. Only output <promise>COMPLETE</promise> when every issue is closed.
 
 # EXPLORATION

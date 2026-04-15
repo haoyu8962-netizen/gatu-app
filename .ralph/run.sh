@@ -22,15 +22,23 @@ for ((i=1; i<=ITERATIONS; i++)); do
 
   tmpfile=$(mktemp)
 
-  issues=$(gh issue list --state open --json number,title,body,comments)
-  issue_count=$(echo "$issues" | jq 'length')
+  issues=$(get_scoped_issues)
+  issue_count=$(printf '%s' "$issues" | jq 'length')
 
   if [ "$issue_count" -eq 0 ]; then
-    echo "No open issues. Nothing to do."
+    if [ -n "$RALPH_SCOPE" ]; then
+      echo "No open issues under scope #${RALPH_SCOPE#\#}. Nothing to do."
+    else
+      echo "No open issues. Nothing to do."
+    fi
     exit 0
   fi
 
-  echo "Open issues: $issue_count"
+  if [ -n "$RALPH_SCOPE" ]; then
+    echo "Open issues (scope #${RALPH_SCOPE#\#}): $issue_count"
+  else
+    echo "Open issues: $issue_count"
+  fi
 
   ralph_commits=$(git log --grep="RALPH" -n 10 --format="%H%n%ad%n%B---" --date=short 2>/dev/null || echo "No RALPH commits found")
 
