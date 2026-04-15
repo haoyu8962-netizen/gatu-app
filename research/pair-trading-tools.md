@@ -767,6 +767,279 @@ Every tick (real-time):
 
 ---
 
+## HypeTerminal Architecture Decision (April 2025)
+
+This section documents the architectural research and final decisions made for implementing pair trading in HypeTerminal. It supersedes the earlier "Technical Implementation" section above where the two conflict.
+
+---
+
+### What Pear Protocol Actually Does
+
+Deep research into Pear Protocol's documentation (`docs.pearprotocol.io/llms-full.txt`) revealed their actual technical architecture — significantly different from what their marketing implies.
+
+**Position isolation: none at the protocol level.** Pear does not use sub-accounts, smart contracts, or vaults for Hyperliquid integration. Hyperliquid merges all exposures to the same coin into one position with a weighted-average entry price. Pear's own docs acknowledge this:
+
+> "Hyperliquid aggregates all exposures of the same asset across all pairs and maintains a global average entry price."
+> "PnL discrepancy between Pear UI and Hyperliquid UI [will exist] until all related positions are closed."
+
+Their solution: an off-chain database that records entry price per asset per pair trade (using a UUID `positionId`). P&L is calculated synthetically against live mark prices, not read from the exchange.
+
+**Their explicit workaround for contamination:**
+> "It is highly recommended that you trade on Pear using a wallet that has not or is not currently placing trades on Hyperliquid directly."
+
+They cannot solve position isolation at the protocol level, so they tell users to use a dedicated separate wallet.
+
+**Pear is server-side, not client-side.** The agent wallet private key is held on Pear's servers. Limit orders on ratios, TWAP pair orders, and TP/SL monitoring are all executed by their backend infrastructure — not the browser. When the user approves an agent, they are authorizing Pear's server key, not a local browser key.
+
+**Closing with shared coin exposure:** When two pair trades both hold SOL and one is closed, Pear's backend issues a reduce-only order for exactly the dollar value of SOL in that specific pair's record. Example from their docs:
+
+> "If you hold a BTC/ETH position worth $100 in BTC and a BTC/HYPE position worth $200 in BTC, and you choose to close the BTC/ETH position, we will reduce your BTC holdings by $100—not the total $300."
+
+---
+
+### Why Sub-Account-Per-Pair Doesn't Work
+
+The initial architecture proposal was one sub-account per pair trade. This fails for two reasons:
+
+1. **Sub-accounts are permanent.** There is no `deleteSubAccount` in the Hyperliquid SDK or protocol. They appear in the HL UI dropdown forever. With 500 markets and potentially hundreds of pair combinations traded over time, this creates an unusable account state.
+
+2. **Sub-accounts are not needed per-trade anyway.** Isolation is an app-layer concern, not a per-trade protocol concern. Trying to solve attribution at the sub-account level is the wrong abstraction.
+
+---
+
+### HypeTerminal's Architecture: One Shared Sub-Account + App-Layer Records
+
+HypeTerminal improves on Pear's approach by combining their app-layer record keeping with one permanent shared sub-account — solving the "dedicated wallet" problem at the protocol level without managing a second wallet.
+
+**Account structure:**
+
+```
+Your Main Wallet (0xYou)
+│
+├── Main Account                 ← existing terminal, untouched
+│   ├── ETH long (manual trade)
+│   └── BTC short (manual trade)
+│
+└── Sub-account: "HT Pairs"      ← created once, reused forever
+    ├── SOL long  (pair #1: SOL/ETH)
+    ├── ETH short (pair #1: SOL/ETH)
+    ├── ARB long  (pair #2: ARB/OP)
+    └── OP short  (pair #2: ARB/OP)
+```
+
+One sub-account per user. Created on first use. Never created again. This gives protocol-level isolation between pair trades and regular trades — something Pear cannot offer.
+
+---
+
+### Data Model
+
+Pair trade records live in Zustand + localStorage. This is the canonical attribution layer.
+
+```typescript
+interface PairTradeLeg {
+  coin: string
+  size: string      // exact size placed — authoritative for closing
+  entryPx: string   // recorded from order fill response
+  isBuy: boolean
+  leverage: number
+}
+
+interface PairTrade {
+  id: string           // uuid, local only
+  legA: PairTradeLeg
+  legB: PairTradeLeg
+  hedgeRatio: string   // OLS β at entry time
+  entryZScore: number
+  tpZScore: number | null
+  slZScore: number | null
+  openedAt: number
+  status: "open" | "closing" | "closed"
+}
+
+interface PairTradingStore {
+  subAccountAddress: `0x${string}` | null
+  trades: PairTrade[]
+  lockedCoins(): Set<string>  // derived: all coins in open trades
+}
+```
+
+---
+
+### Signing Flow
+
+```
+User wallet (MetaMask) — one-time only
+  ├── approveAgent(agentAddress)           ← existing, already done
+  └── createSubAccount({ name: "HT Pairs" })
+        └── returns 0xPairsAcct → stored in localStorage
+
+Agent wallet (browser session) — all pair operations
+  ├── subAccountTransfer({ subAccountUser: 0xPairsAcct, isDeposit: true, usd: N })
+  ├── order({ orders: [legA, legB], vaultAddress: 0xPairsAcct })
+  └── order({ orders: [closeA, closeB], reduce_only: true, vaultAddress: 0xPairsAcct })
+```
+
+No MetaMask popups after initial setup. No gas. The existing agent wallet is reused.
+
+---
+
+### Opening a Pair Trade
+
+Both legs in one API request, same block. Atomic by construction.
+
+```typescript
+await placeOrder({
+  orders: [
+    { a: solAssetId, b: true,  p: solMarkPx, s: legA.size, r: false, t: { limit: { tif: "FrontendMarket" } } },
+    { a: ethAssetId, b: false, p: ethMarkPx, s: legB.size, r: false, t: { limit: { tif: "FrontendMarket" } } },
+  ],
+  grouping: "na",
+  vaultAddress: subAccountAddress
+})
+// Record fill prices from order response statuses → persist PairTrade to store
+```
+
+---
+
+### Closing a Pair Trade
+
+`reduce_only: true` is load-bearing, not optional. Without it, a size mismatch caused by funding adjustments can accidentally open a new opposite position. With it, the protocol guarantees the order can only reduce the existing position.
+
+```typescript
+await placeOrder({
+  orders: [
+    { a: solAssetId, b: false, p: solMarkPx, s: trade.legA.size, r: true, t: { limit: { tif: "FrontendMarket" } } },
+    { a: ethAssetId, b: true,  p: ethMarkPx, s: trade.legB.size, r: true, t: { limit: { tif: "FrontendMarket" } } },
+  ],
+  grouping: "na",
+  vaultAddress: subAccountAddress
+})
+```
+
+---
+
+### P&L Calculation
+
+Synthetic. Uses local entry records against live `allMids` WebSocket prices. No exchange reads needed for display.
+
+```
+spreadPnL = (currentPxA - entryPxA) × sizeA   [long leg]
+          + (entryPxB - currentPxB) × sizeB   [short leg]
+
+fundingPnL = cumFunding.sinceOpen from clearinghouseState
+             (read via useInfo("clearinghouseState", { user: subAccountAddress }))
+
+totalPnL = spreadPnL + fundingPnL
+```
+
+---
+
+### Coin Collision Within the Sub-Account
+
+Two pair trades sharing a coin produce one merged position in the sub-account. Attribution is handled by the local records.
+
+Example: SOL/ETH pair has legA.size = "35.0", SOL/BTC pair has legA.size = "40.0". Sub-account shows SOL +75.0.
+
+Closing SOL/ETH: place reduce-only sell for "35.0". Closing SOL/BTC: place reduce-only sell for "40.0". Because both are reduce-only, neither can create an unintended short even if executed in any order.
+
+---
+
+### localStorage Persistence Risk and Mitigation
+
+If the user clears browser data, the local `PairTrade` records are gone. The sub-account still holds the open positions on-chain, but the app no longer knows what size belongs to which pair trade.
+
+Mitigation: encode pair ID into the `cloid` (client order ID) field on each open order. Hyperliquid stores `cloid` on every fill and returns it in fill history. If local records are lost, pair trades can be reconstructed by scanning `userFills` for the sub-account address and decoding the embedded pair IDs.
+
+```typescript
+// cloid = 0x + first 8 bytes of uuid + 1 byte leg flag (00 = legA, 01 = legB)
+const cloid = encodePairCloid(trade.id, "legA")
+```
+
+---
+
+### TP/SL Limitation
+
+Pear monitors ratios server-side 24/7. HypeTerminal's monitoring is client-side — it only fires while the tab is open. This must be disclosed in the UI at the feature level, not just in docs:
+
+```
+TP @ Z=0.0   SL @ Z=-3.5   [● Active while app is open]
+```
+
+Server-side monitoring (Nitro endpoint or Cloudflare Worker) can be added as an opt-in in a later phase.
+
+---
+
+### Main Terminal Integration
+
+Since pair trades live in the sub-account, main account positions are physically isolated — no protocol-level contamination is possible. The coin lock in the main terminal is informational only, warning the user not to work against their own pair thesis.
+
+```typescript
+const locked = usePairTradingStore(s => s.lockedCoins())
+if (locked.has(selectedCoin)) {
+  // "SOL has active pair trade exposure (SOL/ETH #1). Manage via Pairs tab."
+  // Show warning — do not hard-block, user can override
+}
+```
+
+---
+
+### Comparison with Pear Protocol
+
+| Concern | Pear Protocol | HypeTerminal |
+|---------|--------------|--------------|
+| Position isolation from manual trades | None — tells users to use a separate wallet | Protocol-level via shared sub-account |
+| Agent key custody | Pear's servers hold it | User's browser (same as existing terminal) |
+| Off-chain state | Pear's database | User's localStorage + Zustand |
+| State recovery if data lost | Server has it | Reconstruct from cloid-encoded fill history |
+| Limit / TWAP pair orders | Pear's backend 24/7 | Client-side for MVP |
+| TP/SL on ratio | Server-side monitoring 24/7 | Client-side while tab is open |
+| Failure mode | Pear server down → no automation | Tab closed → no automation (disclosed) |
+
+---
+
+### SDK Capabilities Confirmed (v0.31.0)
+
+The `@nktkas/hyperliquid` SDK already supports everything needed:
+
+| Operation | SDK Method | Client |
+|-----------|-----------|--------|
+| Create sub-account | `exchange.createSubAccount({ name })` | Agent (trading) |
+| Fund sub-account | `exchange.subAccountTransfer({ subAccountUser, isDeposit, usd })` | Agent (trading) |
+| Rename sub-account | `exchange.subAccountModify({ subAccountUser, name })` | Agent (trading) |
+| Place orders on sub-account | `exchange.order({ orders, vaultAddress })` | Agent (trading) |
+| Read sub-account list | `info.subAccounts({ user })` | Info (read-only) |
+| Read sub-account positions | `info.clearinghouseState({ user: subAccountAddress })` | Info (read-only) |
+
+`vaultAddress` is an optional top-level field on `order`, `cancel`, `batchModify`, `twapOrder`, `updateLeverage`, and `updateIsolatedMargin`. The existing `useExchange` hook passes params through as-is — no changes to `useExchange` itself are needed.
+
+---
+
+### Implementation Phases
+
+**Phase 1 — Core Execution**
+
+| File | Purpose |
+|------|---------|
+| `stores/use-pair-trading-store.ts` | Zustand + localStorage: `PairTrade[]`, `subAccountAddress`, `lockedCoins()` |
+| `domain/pairs/pair-order-intent.ts` | `buildPairOpenPlan`, `buildPairClosePlan` — extends order intent with `vaultAddress` and `reduce_only` |
+| `domain/pairs/cloid.ts` | Encode/decode pair ID into `cloid` for record recovery |
+| `hooks/pairs/use-pair-setup.ts` | `createSubAccount` + `subAccountTransfer` flow |
+| `components/pairs/pair-setup-modal.tsx` | One-time setup: create sub-account, fund it |
+| `components/pairs/pair-execution-panel.tsx` | Coin selector, size, direction, preview, confirm |
+| `components/pairs/pair-positions.tsx` | Open pairs list with live synthetic P&L |
+| `components/pairs/pair-position-card.tsx` | Per-pair card: legs, P&L, z-score progress, close button |
+| `routes/pairs.tsx` | New top-level route |
+
+**Phase 2 — Spread Analytics**
+
+Historical candle fetch → rolling z-score, correlation, OLS hedge ratio via Web Worker. Spread chart and z-score chart reusing existing charting infrastructure. Entry signal display.
+
+**Phase 3 — Automated Monitoring (opt-in)**
+
+Client-side Web Worker watcher (fires while tab is open). Optional Nitro server endpoint for 24/7 ratio monitoring and TP/SL triggers.
+
+---
+
 ## Sources
 
 - [Pear Protocol — Why Pair Trading Matters](https://docs.pearprotocol.io/introduction/why-pair-trading-matters)
