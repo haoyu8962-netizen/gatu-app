@@ -44,18 +44,37 @@ export const WS_RELIABILITY_LIMITS = {
 
 const USER_STREAM_METHODS = new Set(["orderUpdates", "webData2", "webData3", "allDexsClearinghouseState"]);
 
-export function isUserStreamKey(key: string): boolean {
+// Subscription keys are stringified JSON arrays. `useSub` passes the same key
+// to multiple helpers per render; cache the parse so we parse each key once.
+// Keys are bounded by the number of live subscriptions (typically ~10) so a
+// plain Map is fine — no LRU needed.
+type ParsedKey = { method: string | undefined; params: unknown } | null;
+const parsedKeyCache = new Map<string, ParsedKey>();
+
+function parseKey(key: string): ParsedKey {
+	const cached = parsedKeyCache.get(key);
+	if (cached !== undefined) return cached;
+	let value: ParsedKey = null;
 	try {
 		const parsed = JSON.parse(key) as unknown;
-		if (!Array.isArray(parsed)) return false;
-		const method = parsed[2];
-		if (typeof method === "string" && USER_STREAM_METHODS.has(method)) return true;
-		const params = parsed[3];
-		if (params && typeof params === "object" && !Array.isArray(params) && "user" in params) return true;
-		return false;
+		if (Array.isArray(parsed)) {
+			const method = typeof parsed[2] === "string" ? (parsed[2] as string) : undefined;
+			value = { method, params: parsed[3] };
+		}
 	} catch {
-		return false;
+		// leave value as null
 	}
+	parsedKeyCache.set(key, value);
+	return value;
+}
+
+export function isUserStreamKey(key: string): boolean {
+	const parsed = parseKey(key);
+	if (!parsed) return false;
+	if (parsed.method !== undefined && USER_STREAM_METHODS.has(parsed.method)) return true;
+	const params = parsed.params;
+	if (params && typeof params === "object" && !Array.isArray(params) && "user" in params) return true;
+	return false;
 }
 
 export function getReconnectDelayMs(attempt: number): number {
@@ -69,39 +88,17 @@ export function getReconnectDelayMs(attempt: number): number {
 }
 
 export function getStalenessThresholdForKey(key: string): number {
-	try {
-		const parsed = JSON.parse(key) as unknown;
-		if (!Array.isArray(parsed)) return WS_RELIABILITY_LIMITS.staleness.defaultThresholdMs;
-		const method = parsed[2];
-		if (typeof method !== "string") return WS_RELIABILITY_LIMITS.staleness.defaultThresholdMs;
-		return (
-			WS_RELIABILITY_LIMITS.staleness.perMethodThresholdMs[
-				method as keyof typeof WS_RELIABILITY_LIMITS.staleness.perMethodThresholdMs
-			] ?? WS_RELIABILITY_LIMITS.staleness.defaultThresholdMs
-		);
-	} catch {
-		return WS_RELIABILITY_LIMITS.staleness.defaultThresholdMs;
-	}
+	const parsed = parseKey(key);
+	const fallback = WS_RELIABILITY_LIMITS.staleness.defaultThresholdMs;
+	if (!parsed || parsed.method === undefined) return fallback;
+	const table = WS_RELIABILITY_LIMITS.staleness.perMethodThresholdMs;
+	return table[parsed.method as keyof typeof table] ?? fallback;
 }
 
 export function getPayloadLimitBytesForSubscriptionKey(key: string): number {
-	try {
-		const parsed = JSON.parse(key) as unknown;
-		if (!Array.isArray(parsed)) {
-			return WS_RELIABILITY_LIMITS.payload.defaultMaxBytes;
-		}
-
-		const method = parsed[2];
-		if (typeof method !== "string") {
-			return WS_RELIABILITY_LIMITS.payload.defaultMaxBytes;
-		}
-
-		return (
-			WS_RELIABILITY_LIMITS.payload.perMethodMaxBytes[
-				method as keyof typeof WS_RELIABILITY_LIMITS.payload.perMethodMaxBytes
-			] ?? WS_RELIABILITY_LIMITS.payload.defaultMaxBytes
-		);
-	} catch {
-		return WS_RELIABILITY_LIMITS.payload.defaultMaxBytes;
-	}
+	const parsed = parseKey(key);
+	const fallback = WS_RELIABILITY_LIMITS.payload.defaultMaxBytes;
+	if (!parsed || parsed.method === undefined) return fallback;
+	const table = WS_RELIABILITY_LIMITS.payload.perMethodMaxBytes;
+	return table[parsed.method as keyof typeof table] ?? fallback;
 }

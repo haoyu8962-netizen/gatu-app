@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createFakeSubscription } from "./harness/subscription";
 
 let createHyperliquidStore: typeof import("@hypeterminal/hl-react/store").createHyperliquidStore;
 
@@ -17,21 +18,10 @@ describe("store staleness integration", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 	});
 
-	function createSubscription() {
-		const failureController = new AbortController();
-		return {
-			subscribe: async () => ({
-				unsubscribe: async () => {},
-				failureSignal: failureController.signal,
-			}),
-			failureController,
-		};
-	}
-
 	it("marks subscription as stale when no data arrives within threshold", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
 		store.getState().acquireSubscription(key, subscribe);
@@ -53,7 +43,7 @@ describe("store staleness integration", () => {
 	it("clears isStale when fresh data arrives", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
 		store.getState().acquireSubscription(key, subscribe);
@@ -73,7 +63,7 @@ describe("store staleness integration", () => {
 	it("uses user stream threshold (60s) for orderUpdates", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		const key = JSON.stringify(["hl", "subscription", "orderUpdates", {}]);
 		store.getState().acquireSubscription(key, subscribe);
@@ -94,7 +84,7 @@ describe("store staleness integration", () => {
 	it("respects per-call maxStaleMs override", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
 		store.getState().acquireSubscription(key, subscribe, 3_000);
@@ -121,7 +111,7 @@ describe("store staleness integration", () => {
 		];
 
 		for (const key of keys) {
-			const { subscribe } = createSubscription();
+			const { subscribe } = createFakeSubscription();
 			store.getState().acquireSubscription(key, subscribe);
 		}
 		await vi.advanceTimersByTimeAsync(0);
@@ -133,7 +123,10 @@ describe("store staleness integration", () => {
 		triggerReconnect.mockClear();
 		await vi.advanceTimersByTimeAsync(25_000);
 
-		expect(triggerReconnect.mock.calls.length).toBeGreaterThanOrEqual(3);
+		// Under fake timers the staleness transition is deterministic: each key
+		// emits isStale=true once on the first tick past threshold, and each
+		// emission fires a single triggerReconnect.
+		expect(triggerReconnect).toHaveBeenCalledTimes(3);
 
 		for (const key of keys) {
 			store.getState().releaseSubscription(key);
@@ -142,7 +135,7 @@ describe("store staleness integration", () => {
 
 	it("cleans up watchdog on release", async () => {
 		const store = createHyperliquidStore({ ssr: false });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
 		store.getState().acquireSubscription(key, subscribe);

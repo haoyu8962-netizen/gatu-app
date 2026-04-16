@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createFakeSubscription } from "./harness/subscription";
 
 let createHyperliquidStore: typeof import("@hypeterminal/hl-react/store").createHyperliquidStore;
 
@@ -23,22 +24,11 @@ describe("visibility-pause for market streams", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 	});
 
-	function createSubscription() {
-		const failureController = new AbortController();
-		return {
-			subscribe: async () => ({
-				unsubscribe: async () => {},
-				failureSignal: failureController.signal,
-			}),
-			failureController,
-		};
-	}
-
 	it("buffers market-stream writes when hidden", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const key = marketKey("l2Book", { coin: "ETH" });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -56,7 +46,7 @@ describe("visibility-pause for market streams", () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const key = userKey("orderUpdates");
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -75,7 +65,7 @@ describe("visibility-pause for market streams", () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const key = marketKey("webData2", { coin: "ETH" });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -94,7 +84,7 @@ describe("visibility-pause for market streams", () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const key = marketKey("l2Book", { coin: "ETH" });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -120,7 +110,7 @@ describe("visibility-pause for market streams", () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const key = marketKey("allMids");
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -142,7 +132,7 @@ describe("visibility-pause for market streams", () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const key = marketKey("l2Book", { coin: "BTC" });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe, undefined, false);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -161,7 +151,7 @@ describe("visibility-pause for market streams", () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const key = userKey("clearinghouseState");
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe, undefined, true);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -184,7 +174,7 @@ describe("visibility-pause for market streams", () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const key = marketKey("trades", { coin: "ETH" });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -206,7 +196,7 @@ describe("visibility-pause for market streams", () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const key = marketKey("candle", { coin: "ETH", interval: "1h" });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));

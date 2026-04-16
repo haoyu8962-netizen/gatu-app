@@ -46,6 +46,11 @@ export function createStalenessWatchdog(checkIntervalMs: number): StalenessWatch
 		}
 	}
 
+	// Register tracks the key but does NOT start the interval — that happens
+	// lazily on the first markFresh. A subscription that registers but never
+	// receives data is therefore never staleness-checked. This is intentional:
+	// "never had data" is distinct from "had data, then stopped" and only the
+	// latter should trigger reconnect.
 	function register(key: string, thresholdMs: number) {
 		if (keys.has(key)) return;
 		keys.set(key, {

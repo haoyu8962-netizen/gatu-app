@@ -18,7 +18,11 @@ declare global {
 	}
 }
 
-let activeStore: HyperliquidStore | null = null;
+// Module-level reference to the most recently provider-mounted store. Used only
+// as a fallback for `enableHyperliquidDebug()` when called without an explicit
+// store argument (the common single-app case). Multi-store apps should pass
+// their store explicitly.
+let lastMountedStore: HyperliquidStore | null = null;
 
 function createDebugSnapshot(store: HyperliquidStore): DebugSnapshot {
 	const state = store.getState();
@@ -58,7 +62,7 @@ function createDebugSnapshot(store: HyperliquidStore): DebugSnapshot {
 }
 
 export function setDebugStore(store: HyperliquidStore): void {
-	activeStore = store;
+	lastMountedStore = store;
 }
 
 export function registerDebugSnapshot(store: HyperliquidStore): void {
@@ -66,8 +70,12 @@ export function registerDebugSnapshot(store: HyperliquidStore): void {
 	window.__hl_debug = () => createDebugSnapshot(store);
 }
 
-export function enableHyperliquidDebug(): void {
-	if (typeof window === "undefined" || !activeStore) return;
-	const store = activeStore;
-	window.__hl_debug = () => createDebugSnapshot(store);
+// Opt-in prod activation. Pass the store you want introspected. When omitted,
+// falls back to the last store registered via setDebugStore — sufficient for
+// single-store apps, but multi-store callers must pass their store explicitly.
+export function enableHyperliquidDebug(store?: HyperliquidStore): void {
+	if (typeof window === "undefined") return;
+	const target = store ?? lastMountedStore;
+	if (!target) return;
+	window.__hl_debug = () => createDebugSnapshot(target);
 }

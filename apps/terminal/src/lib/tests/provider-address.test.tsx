@@ -28,8 +28,8 @@ vi.mock("@hypeterminal/hl-react/create-config", () => ({
 		ssr: false,
 	}),
 }));
-vi.mock("@hypeterminal/hl-react/store", () => {
-	const { createStore } = require("zustand");
+vi.mock("@hypeterminal/hl-react/store", async () => {
+	const { createStore } = await vi.importActual<typeof import("zustand")>("zustand");
 	return {
 		createHyperliquidStore: () => createStore(() => ({ config: {} })),
 	};

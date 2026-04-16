@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createFakeSubscription } from "./harness/subscription";
 
 let createHyperliquidStore: typeof import("@hypeterminal/hl-react/store").createHyperliquidStore;
 let registerDebugSnapshot: typeof import("@hypeterminal/hl-react/internal/websocket/debug").registerDebugSnapshot;
@@ -25,25 +26,14 @@ describe("debug snapshot", () => {
 		delete window.__hl_chaos;
 	});
 
-	function createSubscription() {
-		const failureController = new AbortController();
-		return {
-			subscribe: async () => ({
-				unsubscribe: async () => {},
-				failureSignal: failureController.signal,
-			}),
-			failureController,
-		};
-	}
-
 	it("returns snapshot with expected keys given 2 fake subscriptions", async () => {
 		const store = createHyperliquidStore({ ssr: false });
 		registerDebugSnapshot(store);
 
 		const key1 = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
 		const key2 = JSON.stringify(["hl", "subscription", "trades", { coin: "BTC" }]);
-		const sub1 = createSubscription();
-		const sub2 = createSubscription();
+		const sub1 = createFakeSubscription();
+		const sub2 = createFakeSubscription();
 
 		store.getState().acquireSubscription(key1, sub1.subscribe);
 		store.getState().acquireSubscription(key2, sub2.subscribe);
@@ -90,7 +80,7 @@ describe("debug snapshot", () => {
 		registerDebugSnapshot(store);
 
 		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(0);
 
@@ -121,23 +111,12 @@ describe("chaos harness", () => {
 		delete window.__hl_chaos;
 	});
 
-	function createSubscription() {
-		const failureController = new AbortController();
-		return {
-			subscribe: async () => ({
-				unsubscribe: async () => {},
-				failureSignal: failureController.signal,
-			}),
-			failureController,
-		};
-	}
-
 	it("freezeMessages swallows data for the specified duration", async () => {
 		const store = createHyperliquidStore({ ssr: false });
 		registerChaosHarness(store);
 
 		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(0);
 
@@ -173,7 +152,7 @@ describe("chaos harness", () => {
 		window.__hl_chaos?.dropReconnects(2);
 
 		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(0);
 
@@ -189,7 +168,7 @@ describe("chaos harness", () => {
 		registerChaosHarness(store);
 
 		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(0);
 
@@ -208,7 +187,7 @@ describe("chaos harness", () => {
 		registerChaosHarness(store);
 
 		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(0);
 

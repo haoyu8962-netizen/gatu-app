@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createFakeSubscription } from "./harness/subscription";
 
 let createHyperliquidStore: typeof import("@hypeterminal/hl-react/store").createHyperliquidStore;
 
@@ -15,21 +16,10 @@ describe("store-driven resume via singletons", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 	});
 
-	function createSubscription() {
-		const failureController = new AbortController();
-		return {
-			subscribe: async () => ({
-				unsubscribe: async () => {},
-				failureSignal: failureController.signal,
-			}),
-			failureController,
-		};
-	}
-
 	it("calls triggerReconnect when visibility goes hidden→visible", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription("test:vis", subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -48,7 +38,7 @@ describe("store-driven resume via singletons", () => {
 	it("calls triggerReconnect when network goes offline→online", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription("test:net", subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -64,7 +54,7 @@ describe("store-driven resume via singletons", () => {
 	it("does not call triggerReconnect on visible without prior hidden", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription("test:noop", subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -80,7 +70,7 @@ describe("store-driven resume via singletons", () => {
 	it("detaches singletons when last subscription is released", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription("test:detach", subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -96,7 +86,7 @@ describe("store-driven resume via singletons", () => {
 
 	it("does not attach singletons when triggerReconnect is undefined", async () => {
 		const store = createHyperliquidStore({ ssr: false });
-		const { subscribe } = createSubscription();
+		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription("test:noreconnect", subscribe);
 		await new Promise<void>((r) => setTimeout(r, 0));

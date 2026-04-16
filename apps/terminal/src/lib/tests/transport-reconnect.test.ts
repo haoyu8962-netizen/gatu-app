@@ -49,6 +49,22 @@ describe("transport reconnect configuration", () => {
 	});
 });
 
+describe("createWsReconnectTrigger SDK coupling", () => {
+	// Regression guard: if @nktkas/hyperliquid ever hides or renames
+	// WebSocketTransport.socket, the guard in clients.ts silently returns a
+	// no-op. This test asserts the returned function is non-trivial against a
+	// real transport so breakage surfaces on SDK upgrade rather than in prod.
+	it("returns a non-noop function against a real WebSocketTransport", async () => {
+		const { createWsReconnectTrigger } = await import("@hypeterminal/hl-react/clients");
+		const trigger = createWsReconnectTrigger(true);
+		// The noop fallback is a literal `() => {}` with length 0 and empty body.
+		// A properly wired trigger is `() => socket.close(...)`.
+		const body = trigger.toString();
+		expect(body).not.toBe("() => {\n        }");
+		expect(body).toMatch(/socket|close/);
+	});
+});
+
 describe("store reconnect with fake subscriptions", () => {
 	it("store acquires and releases subscriptions correctly", async () => {
 		const { createHyperliquidStore } = await import("@hypeterminal/hl-react/store");
