@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
-import { createElement } from "react";
+import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { act } from "react-dom/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
 const TEST_BUILDER_CONFIG = { b: "0x0" as `0x${string}`, f: 0 };

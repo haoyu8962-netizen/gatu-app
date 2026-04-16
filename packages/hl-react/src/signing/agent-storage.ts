@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import type { Address, Hex } from "viem";
 import { z } from "zod";
+import { LRU } from "../lru";
 import type { AgentWallet, HyperliquidEnv } from "./types";
 
 const privateKeySchema = z
@@ -66,7 +67,12 @@ export function removeAgentFromStorage(env: HyperliquidEnv, userAddress: string)
 	window.dispatchEvent(new StorageEvent("storage", { key }));
 }
 
-const snapshotCache = new Map<string, { value: AgentWallet | null; version: number }>();
+// Bounded cache: entries are (env, address) pairs, keyed so useSyncExternalStore
+// returns a stable reference across renders. Cap matches the signer/trading
+// caches in clients.ts — a user switching between more wallets simply evicts
+// older entries. `StorageEvent` bumps cacheVersion so stale reads are visible
+// across tabs without invalidating the bound.
+const snapshotCache = new LRU<string, { value: AgentWallet | null; version: number }>(4);
 let cacheVersion = 0;
 
 function invalidateSnapshotCache() {

@@ -2,6 +2,7 @@ import type { ISubscription } from "@nktkas/hyperliquid";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import { subscribeNetworkStatus } from "./internal/websocket/network-status";
 import {
+	forgetParsedKey,
 	getReconnectDelayMs,
 	getStalenessThresholdForKey,
 	isUserStreamKey,
@@ -444,6 +445,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 
 			visibilityBuffer.delete(key);
 			subscriptionRuntime.delete(key);
+			forgetParsedKey(key);
 			if (subscriptionRuntime.size === 0) {
 				detachSingletons();
 			}

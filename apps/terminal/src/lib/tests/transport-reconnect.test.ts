@@ -1,5 +1,5 @@
 import type { WebSocketTransportOptions } from "@nktkas/hyperliquid";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 function createTransportWithReconnectOptions(): WebSocketTransportOptions {
 	return {
@@ -52,16 +52,31 @@ describe("transport reconnect configuration", () => {
 describe("createWsReconnectTrigger SDK coupling", () => {
 	// Regression guard: if @nktkas/hyperliquid ever hides or renames
 	// WebSocketTransport.socket, the guard in clients.ts silently returns a
-	// no-op. This test asserts the returned function is non-trivial against a
-	// real transport so breakage surfaces on SDK upgrade rather than in prod.
-	it("returns a non-noop function against a real WebSocketTransport", async () => {
-		const { createWsReconnectTrigger } = await import("@hypeterminal/hl-react/clients");
-		const trigger = createWsReconnectTrigger(true);
-		// The noop fallback is a literal `() => {}` with length 0 and empty body.
-		// A properly wired trigger is `() => socket.close(...)`.
-		const body = trigger.toString();
-		expect(body).not.toBe("() => {\n        }");
-		expect(body).toMatch(/socket|close/);
+	// no-op. Observable-behavior check: construct a real transport, spy on the
+	// underlying socket's close method, invoke the trigger, and assert close
+	// was called non-permanently. Surfaces any SDK breakage in tests rather
+	// than silently in production.
+	it("invokes socket.close(undefined, undefined, false) against a real WebSocketTransport", async () => {
+		const { WebSocketTransport } = await import("@nktkas/hyperliquid");
+		const { createWsReconnectTrigger, getWsTransport } = await import("@hypeterminal/hl-react/clients");
+
+		// Retrieve the module-cached transport the trigger will target.
+		const transport = getWsTransport(true);
+		expect(transport).toBeInstanceOf(WebSocketTransport);
+		const socket = (transport as WebSocketTransport).socket as {
+			close: (code?: number, reason?: string, permanent?: boolean) => void;
+		};
+		expect(typeof socket?.close).toBe("function");
+		const spy = vi.spyOn(socket, "close").mockImplementation(() => {});
+
+		try {
+			const trigger = createWsReconnectTrigger(true);
+			trigger();
+			expect(spy).toHaveBeenCalledTimes(1);
+			expect(spy).toHaveBeenCalledWith(undefined, undefined, false);
+		} finally {
+			spy.mockRestore();
+		}
 	});
 });
 

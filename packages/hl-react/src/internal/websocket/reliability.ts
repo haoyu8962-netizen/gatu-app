@@ -46,8 +46,8 @@ const USER_STREAM_METHODS = new Set(["orderUpdates", "webData2", "webData3", "al
 
 // Subscription keys are stringified JSON arrays. `useSub` passes the same key
 // to multiple helpers per render; cache the parse so we parse each key once.
-// Keys are bounded by the number of live subscriptions (typically ~10) so a
-// plain Map is fine — no LRU needed.
+// The store calls `forgetParsedKey` from `releaseSubscription` so the cache
+// stays bounded by the number of live subscriptions across long sessions.
 type ParsedKey = { method: string | undefined; params: unknown } | null;
 const parsedKeyCache = new Map<string, ParsedKey>();
 
@@ -66,6 +66,10 @@ function parseKey(key: string): ParsedKey {
 	}
 	parsedKeyCache.set(key, value);
 	return value;
+}
+
+export function forgetParsedKey(key: string): void {
+	parsedKeyCache.delete(key);
 }
 
 export function isUserStreamKey(key: string): boolean {

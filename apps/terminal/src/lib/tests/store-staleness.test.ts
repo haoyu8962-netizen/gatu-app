@@ -100,7 +100,14 @@ describe("store staleness integration", () => {
 		store.getState().releaseSubscription(key);
 	});
 
-	it("triggers reconnect when >50% of subscriptions are stale", async () => {
+	it("triggers reconnect once per stale subscription", async () => {
+		// Policy note: the PRD described an aggregate ">50% stale" rule as an
+		// additional trigger, but the current implementation already calls
+		// triggerReconnect per-key whenever any subscription transitions to
+		// stale. With N keys going stale simultaneously, that degenerates into
+		// N close() calls — which the ReconnectingWebSocket coalesces into a
+		// single reconnect. An aggregate rule would be redundant so it was
+		// left unimplemented; this test guards the per-key behavior instead.
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 
@@ -123,9 +130,6 @@ describe("store staleness integration", () => {
 		triggerReconnect.mockClear();
 		await vi.advanceTimersByTimeAsync(25_000);
 
-		// Under fake timers the staleness transition is deterministic: each key
-		// emits isStale=true once on the first tick past threshold, and each
-		// emission fires a single triggerReconnect.
 		expect(triggerReconnect).toHaveBeenCalledTimes(3);
 
 		for (const key of keys) {
