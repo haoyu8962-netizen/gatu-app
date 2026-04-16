@@ -97,8 +97,8 @@ msgid "Account Equity"
 msgstr ""
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Accounts"
-msgstr ""
+#~ msgid "Accounts"
+#~ msgstr ""
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1311,8 +1311,8 @@ msgid "markets"
 msgstr "बाज़ार"
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Master"
-msgstr ""
+#~ msgid "Master"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Max"

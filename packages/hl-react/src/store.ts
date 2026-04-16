@@ -1,6 +1,15 @@
 import type { ISubscription } from "@nktkas/hyperliquid";
 import { createStore, type StoreApi } from "zustand/vanilla";
-import { getReconnectDelayMs, WS_RELIABILITY_LIMITS } from "./internal/websocket/reliability";
+import { subscribeNetworkStatus } from "./internal/websocket/network-status";
+import {
+	forgetParsedKey,
+	getReconnectDelayMs,
+	getStalenessThresholdForKey,
+	isUserStreamKey,
+	WS_RELIABILITY_LIMITS,
+} from "./internal/websocket/reliability";
+import { createStalenessWatchdog, type StalenessWatchdog } from "./internal/websocket/staleness";
+import { getVisibilityState, subscribeVisibility } from "./internal/websocket/visibility";
 import type { HyperliquidConfig, SubscriptionStatus, WebSocketStatus } from "./types";
 
 export type HyperliquidStoreState = {
@@ -9,7 +18,12 @@ export type HyperliquidStoreState = {
 	wsError: unknown;
 	subscriptions: SubscriptionMap;
 	setConfig: (config: HyperliquidConfig) => void;
-	acquireSubscription: (key: string, subscribe: () => Promise<ISubscription>) => void;
+	acquireSubscription: (
+		key: string,
+		subscribe: () => Promise<ISubscription>,
+		stalenessThresholdMs?: number,
+		pauseWhenHidden?: boolean,
+	) => void;
 	releaseSubscription: (key: string) => void;
 	setSubscriptionData: (key: string, data: unknown) => void;
 	setSubscriptionError: (key: string, error: unknown) => void;
@@ -22,9 +36,10 @@ type SubscriptionEntry = {
 	data?: unknown;
 	error?: unknown;
 	failureSignal?: AbortSignal;
+	isStale?: boolean;
 };
 
-type SubscriptionRuntime = {
+export type SubscriptionRuntime = {
 	refCount: number;
 	subscription?: ISubscription;
 	promise?: Promise<ISubscription | undefined>;
@@ -32,6 +47,8 @@ type SubscriptionRuntime = {
 	cooldownTimer?: ReturnType<typeof setTimeout>;
 	reconnectAttempts: number;
 	detachFailureListener?: () => void;
+	detachStaleness?: () => void;
+	pauseWhenHidden?: boolean;
 };
 
 type SubscriptionMap = Record<string, SubscriptionEntry>;
@@ -84,16 +101,109 @@ function detachFailureListener(runtime: SubscriptionRuntime): void {
 	runtime.detachFailureListener = undefined;
 }
 
+export type ChaosState = {
+	messageFrozenUntil: number;
+	reconnectDropCount: number;
+};
+
+export type StoreInternals = {
+	subscriptionRuntime: Map<string, SubscriptionRuntime>;
+	watchdog: StalenessWatchdog;
+	visibilityBuffer: Map<string, unknown>;
+	chaos: ChaosState;
+};
+
+const internalsByStore = new WeakMap<HyperliquidStore, StoreInternals>();
+
+export function getStoreInternals(store: HyperliquidStore): StoreInternals {
+	const internals = internalsByStore.get(store);
+	if (!internals) {
+		throw new Error("Store internals not found — store was not created by createHyperliquidStore");
+	}
+	return internals;
+}
+
 export function createHyperliquidStore(initialConfig: HyperliquidConfig): HyperliquidStore {
 	const subscriptionRuntime = new Map<string, SubscriptionRuntime>();
+	const watchdog: StalenessWatchdog = createStalenessWatchdog(WS_RELIABILITY_LIMITS.staleness.checkIntervalMs);
+	const visibilityBuffer = new Map<string, unknown>();
+	const chaos: ChaosState = { messageFrozenUntil: 0, reconnectDropCount: 0 };
+	let singletonsAttached = false;
+	let detachVisibility: (() => void) | undefined;
+	let detachNetwork: (() => void) | undefined;
+	let wasHidden = false;
+	let wasOffline = false;
 
-	return createStore<HyperliquidStoreState>((set) => ({
+	function shouldPauseKey(key: string): boolean {
+		const runtime = subscriptionRuntime.get(key);
+		if (runtime?.pauseWhenHidden !== undefined) return runtime.pauseWhenHidden;
+		return !isUserStreamKey(key);
+	}
+
+	function flushVisibilityBuffer(store: StoreApi<HyperliquidStoreState>) {
+		if (visibilityBuffer.size === 0) return;
+		const state = store.getState();
+		for (const [key, data] of visibilityBuffer) {
+			state.setSubscriptionData(key, data);
+		}
+		visibilityBuffer.clear();
+	}
+
+	function attachSingletons(triggerReconnect: (() => void) | undefined, store: StoreApi<HyperliquidStoreState>) {
+		if (singletonsAttached) return;
+		if (!triggerReconnect) return;
+		singletonsAttached = true;
+
+		detachVisibility = subscribeVisibility((state) => {
+			if (state === "hidden") {
+				wasHidden = true;
+			} else if (wasHidden) {
+				wasHidden = false;
+				flushVisibilityBuffer(store);
+				triggerReconnect();
+			}
+		});
+
+		detachNetwork = subscribeNetworkStatus((state) => {
+			if (state === "offline") {
+				wasOffline = true;
+			} else if (wasOffline) {
+				wasOffline = false;
+				triggerReconnect();
+			}
+		});
+	}
+
+	function detachSingletons() {
+		if (!singletonsAttached) return;
+		singletonsAttached = false;
+		detachVisibility?.();
+		detachVisibility = undefined;
+		detachNetwork?.();
+		detachNetwork = undefined;
+		wasHidden = false;
+		wasOffline = false;
+		visibilityBuffer.clear();
+	}
+
+	const store = createStore<HyperliquidStoreState>((set, get) => ({
 		config: initialConfig,
 		wsStatus: "idle",
 		wsError: undefined,
 		subscriptions: {},
 		setConfig: (config) => set({ config }),
-		acquireSubscription: (key, subscribe) => {
+		acquireSubscription: (key, subscribe, stalenessThresholdMs?, pauseWhenHidden?) => {
+			// `store` below is a deferred (TDZ-safe) reference: zustand calls
+			// this factory synchronously but acquireSubscription only runs after
+			// createStore returns, so `store` is already assigned by then.
+			if (import.meta.env?.DEV && pauseWhenHidden && !get().config.triggerReconnect) {
+				console.warn(
+					"[hl-react] acquireSubscription: pauseWhenHidden has no effect without config.triggerReconnect. " +
+						"Visibility-buffered values will never be flushed because no reconnect can happen on resume.",
+				);
+			}
+			attachSingletons(get().config.triggerReconnect, store);
+
 			let runtime = subscriptionRuntime.get(key);
 			if (!runtime) {
 				if (subscriptionRuntime.size >= WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys) {
@@ -106,8 +216,20 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					});
 					return;
 				}
-				runtime = { refCount: 0, reconnectAttempts: 0 };
+				runtime = { refCount: 0, reconnectAttempts: 0, pauseWhenHidden };
 				subscriptionRuntime.set(key, runtime);
+
+				const threshold = stalenessThresholdMs ?? getStalenessThresholdForKey(key);
+				watchdog.register(key, threshold);
+				runtime.detachStaleness = watchdog.subscribe(key, (stale) => {
+					if (!stale) return;
+					set((state) => {
+						const current = state.subscriptions[key];
+						if (!current || current.isStale) return state;
+						return setSubscriptionEntry(state, key, { ...current, isStale: true });
+					});
+					get().config.triggerReconnect?.();
+				});
 			}
 			runtime.refCount += 1;
 			clearReconnectTimer(runtime);
@@ -198,6 +320,21 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			const startSubscription = () => {
 				const runtime = subscriptionRuntime.get(key);
 				if (!runtime || runtime.refCount <= 0 || runtime.promise || runtime.subscription) return;
+
+				if (chaos.reconnectDropCount > 0) {
+					chaos.reconnectDropCount--;
+					set((state) => {
+						const current = state.subscriptions[key];
+						if (!current) return state;
+						return setSubscriptionEntry(state, key, {
+							...current,
+							status: "error",
+							error: new Error("Chaos: reconnect dropped"),
+						});
+					});
+					scheduleReconnect();
+					return;
+				}
 
 				runtime.promise = subscribe()
 					.then((subscription) => {
@@ -309,6 +446,8 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			clearReconnectTimer(runtime);
 			clearCooldownTimer(runtime);
 			detachFailureListener(runtime);
+			runtime.detachStaleness?.();
+			watchdog.unregister(key);
 
 			set((state) => {
 				if (!state.subscriptions[key]) return state;
@@ -317,7 +456,13 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 				return { subscriptions: nextSubscriptions, ...deriveWsState(nextSubscriptions) };
 			});
 
+			visibilityBuffer.delete(key);
 			subscriptionRuntime.delete(key);
+			forgetParsedKey(key);
+			if (subscriptionRuntime.size === 0) {
+				detachSingletons();
+			}
+
 			const subscription = runtime.subscription;
 			const pending = runtime.promise;
 			runtime.subscription = undefined;
@@ -335,10 +480,21 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			}
 		},
 		setSubscriptionData: (key, data) => {
+			if (chaos.messageFrozenUntil > Date.now()) return;
+			watchdog.markFresh(key);
+			if (getVisibilityState() === "hidden" && shouldPauseKey(key)) {
+				visibilityBuffer.set(key, data);
+				return;
+			}
 			set((state) => {
 				const current = state.subscriptions[key];
 				if (!current) return state;
-				if (current.status === "active" && current.error === undefined && Object.is(current.data, data)) {
+				if (
+					current.status === "active" &&
+					current.error === undefined &&
+					!current.isStale &&
+					Object.is(current.data, data)
+				) {
 					return state;
 				}
 				const nextEntry: SubscriptionEntry = {
@@ -346,6 +502,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					data,
 					status: "active",
 					error: undefined,
+					isStale: false,
 				};
 				return setSubscriptionEntry(state, key, nextEntry);
 			});
@@ -359,4 +516,9 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			});
 		},
 	}));
+
+	const internals: StoreInternals = { subscriptionRuntime, watchdog, visibilityBuffer, chaos };
+	internalsByStore.set(store, internals);
+
+	return store;
 }

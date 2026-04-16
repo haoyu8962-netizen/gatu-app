@@ -1,20 +1,25 @@
 import type { Address, Hex } from "viem";
 import { type PrivateKeyAccount, privateKeyToAccount } from "viem/accounts";
 import { useConnection } from "wagmi";
+import { LRU } from "../lru";
 import { useHyperliquid } from "../provider";
 import { useAgentWalletStorage } from "./agent-storage";
 import type { AgentWallet } from "./types";
 import { useAgentStatus } from "./use-agent-status";
 
-const signerCache = new Map<Hex, PrivateKeyAccount>();
+/** @internal — exported only for tests; do not consume from outside this package. */
+export const signerCache = new LRU<Hex, PrivateKeyAccount>(4);
 
-function getCachedSigner(privateKey: Hex): PrivateKeyAccount {
-	let signer = signerCache.get(privateKey);
-	if (!signer) {
-		signer = privateKeyToAccount(privateKey);
-		signerCache.set(privateKey, signer);
+function getCachedSigner(privateKey: Hex): PrivateKeyAccount | null {
+	const cached = signerCache.get(privateKey);
+	if (cached) return cached;
+	try {
+		const account = privateKeyToAccount(privateKey);
+		signerCache.set(privateKey, account);
+		return account;
+	} catch {
+		return null;
 	}
-	return signer;
 }
 
 export interface UseAgentWalletResult {
@@ -31,14 +36,7 @@ export function useAgentWallet(): UseAgentWalletResult {
 
 	const agentWallet = useAgentWalletStorage(env, userAddress);
 
-	const signer = (() => {
-		if (!isReady || !agentWallet?.privateKey) return null;
-		try {
-			return getCachedSigner(agentWallet.privateKey);
-		} catch {
-			return null;
-		}
-	})();
+	const signer = isReady && agentWallet?.privateKey ? getCachedSigner(agentWallet.privateKey) : null;
 
 	return {
 		data: isReady ? agentWallet : null,

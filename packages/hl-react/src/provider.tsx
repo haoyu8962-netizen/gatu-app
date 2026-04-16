@@ -1,11 +1,19 @@
 import type { InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
 import type { ReactNode } from "react";
 import { createContext, useContext, useRef } from "react";
-import { useConnection } from "wagmi";
 import { useStore } from "zustand";
-import { getHttpTransport, getInfoClient, getSubscriptionClient, getWsTransport, initializeClients } from "./clients";
+import {
+	createWsReconnectTrigger,
+	getHttpTransport,
+	getInfoClient,
+	getSubscriptionClient,
+	getWsTransport,
+	initializeClients,
+} from "./clients";
 import { createHyperliquidConfig } from "./create-config";
 import { ProviderNotFoundError } from "./errors";
+import { registerChaosHarness } from "./internal/websocket/chaos";
+import { registerDebugSnapshot, setDebugStore } from "./internal/websocket/debug";
 import type { BuilderConfig, HyperliquidEnv } from "./signing/types";
 import { createHyperliquidStore, type HyperliquidStore, type HyperliquidStoreState } from "./store";
 
@@ -25,21 +33,18 @@ export const HyperliquidStoreContext = createContext<HyperliquidStore | null>(nu
 export interface HyperliquidProviderProps {
 	children: ReactNode;
 	env: HyperliquidEnv;
+	userAddress: `0x${string}` | undefined;
 	builderConfig: BuilderConfig;
 	agentName?: string;
 }
 
-function useConnectionSafe() {
-	try {
-		// biome-ignore lint/correctness/useHookAtTopLevel: safe — useConnection is always called, catch handles missing provider
-		return useConnection();
-	} catch {
-		return { address: undefined } as ReturnType<typeof useConnection>;
-	}
-}
-
-export function HyperliquidProvider({ children, env, builderConfig, agentName = "app" }: HyperliquidProviderProps) {
-	const { address } = useConnectionSafe();
+export function HyperliquidProvider({
+	children,
+	env,
+	userAddress,
+	builderConfig,
+	agentName = "app",
+}: HyperliquidProviderProps) {
 	const isTestnet = env === "Testnet";
 
 	const initRef = useRef(false);
@@ -55,11 +60,17 @@ export function HyperliquidProvider({ children, env, builderConfig, agentName = 
 				httpTransport: getHttpTransport(isTestnet),
 				wsTransport: getWsTransport(isTestnet),
 				ssr: false,
+				triggerReconnect: createWsReconnectTrigger(isTestnet),
 			}),
 		);
+		setDebugStore(storeRef.current);
+		if (import.meta.env.DEV) {
+			registerChaosHarness(storeRef.current);
+			registerDebugSnapshot(storeRef.current);
+		}
 	}
 
-	const clientKey = address ?? "disconnected";
+	const clientKey = userAddress ?? "disconnected";
 
 	const value = {
 		info: getInfoClient(isTestnet),

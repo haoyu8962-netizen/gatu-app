@@ -4,7 +4,7 @@ import { I18nProvider } from "@lingui/react";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { WagmiProvider } from "wagmi";
+import { useConnection, WagmiProvider } from "wagmi";
 import { DEFAULT_BUILDER_CONFIG, PROJECT_NAME } from "@/config/hyperliquid";
 import { config } from "@/config/wagmi";
 import { HyperliquidProvider } from "@/lib/hyperliquid";
@@ -42,6 +42,21 @@ export function getRootProviderContext() {
 	return { queryClient };
 }
 
+function HyperliquidBridge({ children }: { children: React.ReactNode }) {
+	const { address } = useConnection();
+
+	return (
+		<HyperliquidProvider
+			env={env}
+			userAddress={address}
+			builderConfig={DEFAULT_BUILDER_CONFIG}
+			agentName={PROJECT_NAME}
+		>
+			<MarketsProvider>{children}</MarketsProvider>
+		</HyperliquidProvider>
+	);
+}
+
 export function RootProvider({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
 	if (isServer || !persister) {
 		return (
@@ -65,9 +80,7 @@ export function RootProvider({ children, queryClient }: { children: React.ReactN
 				}}
 			>
 				<I18nProvider i18n={i18n}>
-					<HyperliquidProvider env={env} builderConfig={DEFAULT_BUILDER_CONFIG} agentName={PROJECT_NAME}>
-						<MarketsProvider>{children}</MarketsProvider>
-					</HyperliquidProvider>
+					<HyperliquidBridge>{children}</HyperliquidBridge>
 				</I18nProvider>
 			</PersistQueryClientProvider>
 		</WagmiProvider>
