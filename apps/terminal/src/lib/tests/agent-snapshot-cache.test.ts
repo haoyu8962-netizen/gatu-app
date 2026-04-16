@@ -52,4 +52,25 @@ describe("agent snapshot cache", () => {
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
 	});
+
+	it("LRU cap (4) evicts the oldest (env,address) pair on the 5th unique read", async () => {
+		vi.mocked(localStorage.getItem).mockReturnValue(null);
+
+		const { getCachedAgentSnapshot, snapshotCache } = await import("@hypeterminal/hl-react/signing/agent-storage");
+
+		getCachedAgentSnapshot("Mainnet", "0xaaaa");
+		getCachedAgentSnapshot("Mainnet", "0xbbbb");
+		getCachedAgentSnapshot("Mainnet", "0xcccc");
+		getCachedAgentSnapshot("Mainnet", "0xdddd");
+
+		expect(snapshotCache.size).toBe(4);
+		expect(snapshotCache.has("Mainnet:0xaaaa")).toBe(true);
+
+		// 5th distinct pair should evict the oldest entry (aaaa).
+		getCachedAgentSnapshot("Mainnet", "0xeeee");
+
+		expect(snapshotCache.size).toBe(4);
+		expect(snapshotCache.has("Mainnet:0xaaaa")).toBe(false);
+		expect(snapshotCache.has("Mainnet:0xeeee")).toBe(true);
+	});
 });

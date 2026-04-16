@@ -7,6 +7,7 @@ import { useAgentWalletStorage } from "./agent-storage";
 import type { AgentWallet } from "./types";
 import { useAgentStatus } from "./use-agent-status";
 
+/** @internal — exported only for tests; do not consume from outside this package. */
 export const signerCache = new LRU<Hex, PrivateKeyAccount>(4);
 
 function getCachedSigner(privateKey: Hex): PrivateKeyAccount | null {

@@ -5,6 +5,13 @@ export const WS_RELIABILITY_LIMITS = {
 		maxAttemptsBeforeCooldown: 20,
 		cooldownMs: 30_000,
 	},
+	sdkReconnect: {
+		// The SDK's ReconnectingWebSocket handles its own backoff once the
+		// store triggers a reconnect. These constants are the single source of
+		// truth for that inner loop — imported by clients.ts and the test.
+		baseDelayMs: 500,
+		maxDelayMs: 30_000,
+	},
 	subscriptions: {
 		maxTrackedKeys: 800,
 	},
@@ -89,6 +96,13 @@ export function getReconnectDelayMs(attempt: number): number {
 	);
 	const jitter = baseDelay * 0.2 * Math.random();
 	return Math.round(baseDelay + jitter);
+}
+
+// Exponential backoff fed into the SDK's reconnect loop. Declared here so the
+// formula has one source of truth across clients.ts and tests.
+export function getSdkReconnectionDelayMs(attempt: number): number {
+	const { baseDelayMs, maxDelayMs } = WS_RELIABILITY_LIMITS.sdkReconnect;
+	return Math.min(baseDelayMs * 2 ** attempt, maxDelayMs);
 }
 
 export function getStalenessThresholdForKey(key: string): number {

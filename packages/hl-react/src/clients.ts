@@ -11,6 +11,7 @@ import {
 } from "@nktkas/hyperliquid";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import type { PrivateKeyAccount } from "viem/accounts";
+import { getSdkReconnectionDelayMs } from "./internal/websocket/reliability";
 import { LRU } from "./lru";
 import { createL1AgentWallet } from "./signing/l1-agent-wallet";
 
@@ -25,6 +26,7 @@ function getOrCreate<T>(key: string, create: () => T): T {
 	return value;
 }
 
+/** @internal — exported only for tests; do not consume from outside this package. */
 export const tradingClientCache = new LRU<string, ExchangeClient>(4);
 
 function getHttpOptions(isTestnet: boolean): HttpTransportOptions {
@@ -37,7 +39,7 @@ function getWsOptions(isTestnet: boolean): WebSocketTransportOptions {
 		reconnect: {
 			maxRetries: Infinity,
 			connectionTimeout: 10_000,
-			reconnectionDelay: (n: number) => Math.min(500 * 2 ** n, 30_000),
+			reconnectionDelay: getSdkReconnectionDelayMs,
 		},
 	};
 }

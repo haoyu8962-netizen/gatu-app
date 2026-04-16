@@ -72,14 +72,16 @@ export function removeAgentFromStorage(env: HyperliquidEnv, userAddress: string)
 // caches in clients.ts — a user switching between more wallets simply evicts
 // older entries. `StorageEvent` bumps cacheVersion so stale reads are visible
 // across tabs without invalidating the bound.
-const snapshotCache = new LRU<string, { value: AgentWallet | null; version: number }>(4);
+/** @internal — exported only for tests; do not consume from outside this package. */
+export const snapshotCache = new LRU<string, { value: AgentWallet | null; version: number }>(4);
 let cacheVersion = 0;
 
 function invalidateSnapshotCache() {
 	cacheVersion++;
 }
 
-function getCachedSnapshot(env: HyperliquidEnv, userAddress: string): AgentWallet | null {
+/** @internal — exported only for tests; do not consume from outside this package. */
+export function getCachedAgentSnapshot(env: HyperliquidEnv, userAddress: string): AgentWallet | null {
 	const key = `${env}:${userAddress}`;
 	const entry = snapshotCache.get(key);
 	if (entry && entry.version === cacheVersion) return entry.value;
@@ -103,7 +105,7 @@ export function useAgentWalletStorage(env: HyperliquidEnv, userAddress: string |
 		subscribeToStorage,
 		() => {
 			if (!userAddress) return null;
-			return getCachedSnapshot(env, userAddress);
+			return getCachedAgentSnapshot(env, userAddress);
 		},
 		() => null,
 	);

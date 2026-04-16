@@ -1,51 +1,17 @@
-import type { WebSocketTransportOptions } from "@nktkas/hyperliquid";
+import { getSdkReconnectionDelayMs } from "@hypeterminal/hl-react/internal/websocket/reliability";
 import { describe, expect, it, vi } from "vitest";
 
-function createTransportWithReconnectOptions(): WebSocketTransportOptions {
-	return {
-		reconnect: {
-			maxRetries: Infinity,
-			connectionTimeout: 10_000,
-			reconnectionDelay: (n: number) => Math.min(500 * 2 ** n, 30_000),
-		},
-	};
-}
-
-describe("transport reconnect configuration", () => {
-	it("passes explicit reconnect options to the SDK transport", () => {
-		const options = createTransportWithReconnectOptions();
-		const reconnect = options.reconnect;
-
-		expect(reconnect).toBeDefined();
-		expect(reconnect?.maxRetries).toBe(Infinity);
-		expect(reconnect?.connectionTimeout).toBe(10_000);
-		expect(typeof reconnect?.reconnectionDelay).toBe("function");
-	});
-
-	it("reconnectionDelay follows exponential backoff capped at 30s", () => {
-		const reconnect = createTransportWithReconnectOptions().reconnect;
-		const delay = reconnect?.reconnectionDelay as (n: number) => number;
-
-		expect(delay(0)).toBe(500);
-		expect(delay(1)).toBe(1_000);
-		expect(delay(2)).toBe(2_000);
-		expect(delay(3)).toBe(4_000);
-		expect(delay(4)).toBe(8_000);
-		expect(delay(5)).toBe(16_000);
-		expect(delay(6)).toBe(30_000);
-		expect(delay(7)).toBe(30_000);
-		expect(delay(100)).toBe(30_000);
-	});
-
-	it("matches the configuration used in clients.ts getWsOptions", () => {
-		const reconnect = createTransportWithReconnectOptions().reconnect;
-
-		expect(reconnect?.maxRetries).toBe(Infinity);
-		expect(reconnect?.connectionTimeout).toBe(10_000);
-
-		const delay = reconnect?.reconnectionDelay as (n: number) => number;
-		expect(delay(0)).toBe(500);
-		expect(delay(6)).toBe(30_000);
+describe("SDK reconnect backoff constant", () => {
+	it("doubles up to a 30s cap", () => {
+		expect(getSdkReconnectionDelayMs(0)).toBe(500);
+		expect(getSdkReconnectionDelayMs(1)).toBe(1_000);
+		expect(getSdkReconnectionDelayMs(2)).toBe(2_000);
+		expect(getSdkReconnectionDelayMs(3)).toBe(4_000);
+		expect(getSdkReconnectionDelayMs(4)).toBe(8_000);
+		expect(getSdkReconnectionDelayMs(5)).toBe(16_000);
+		expect(getSdkReconnectionDelayMs(6)).toBe(30_000);
+		expect(getSdkReconnectionDelayMs(7)).toBe(30_000);
+		expect(getSdkReconnectionDelayMs(100)).toBe(30_000);
 	});
 });
 
@@ -122,5 +88,44 @@ describe("store reconnect with fake subscriptions", () => {
 		expect(store.getState().subscriptions["test:reconnect"].status).toBe("error");
 
 		store.getState().releaseSubscription("test:reconnect");
+	});
+
+	it("recovers after repeated failures: cycles through errors then lands active", async () => {
+		const { createHyperliquidStore } = await import("@hypeterminal/hl-react/store");
+		const store = createHyperliquidStore({ ssr: false });
+
+		const key = "test:retry-then-success";
+		let attempt = 0;
+		let currentController = new AbortController();
+
+		const subscribe = async () => {
+			attempt += 1;
+			if (attempt <= 2) {
+				const err = new Error(`attempt ${attempt} failed`);
+				// Fire the failure signal on next tick so the store transitions
+				// active -> error -> schedules reconnect, just like a real
+				// post-open disconnect.
+				const controller = new AbortController();
+				setTimeout(() => controller.abort(err), 0);
+				return { unsubscribe: async () => {}, failureSignal: controller.signal };
+			}
+			currentController = new AbortController();
+			return { unsubscribe: async () => {}, failureSignal: currentController.signal };
+		};
+
+		store.getState().acquireSubscription(key, subscribe);
+
+		// Let the store work through: active -> error -> reconnect -> error -> reconnect -> active.
+		// Poll the status rather than over-specifying wait durations.
+		const deadline = Date.now() + 5_000;
+		while (Date.now() < deadline) {
+			if (store.getState().subscriptions[key]?.status === "active" && attempt >= 3) break;
+			await new Promise<void>((r) => setTimeout(r, 50));
+		}
+
+		expect(attempt).toBeGreaterThanOrEqual(3);
+		expect(store.getState().subscriptions[key]?.status).toBe("active");
+
+		store.getState().releaseSubscription(key);
 	});
 });

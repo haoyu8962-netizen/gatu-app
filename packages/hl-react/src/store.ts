@@ -128,6 +128,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 	const watchdog: StalenessWatchdog = createStalenessWatchdog(WS_RELIABILITY_LIMITS.staleness.checkIntervalMs);
 	const visibilityBuffer = new Map<string, unknown>();
 	const chaos: ChaosState = { messageFrozenUntil: 0, reconnectDropCount: 0 };
+	let singletonsAttached = false;
 	let detachVisibility: (() => void) | undefined;
 	let detachNetwork: (() => void) | undefined;
 	let wasHidden = false;
@@ -149,8 +150,9 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 	}
 
 	function attachSingletons(triggerReconnect: (() => void) | undefined, store: StoreApi<HyperliquidStoreState>) {
-		if (detachVisibility) return;
+		if (singletonsAttached) return;
 		if (!triggerReconnect) return;
+		singletonsAttached = true;
 
 		detachVisibility = subscribeVisibility((state) => {
 			if (state === "hidden") {
@@ -173,6 +175,8 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 	}
 
 	function detachSingletons() {
+		if (!singletonsAttached) return;
+		singletonsAttached = false;
 		detachVisibility?.();
 		detachVisibility = undefined;
 		detachNetwork?.();
@@ -189,6 +193,9 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 		subscriptions: {},
 		setConfig: (config) => set({ config }),
 		acquireSubscription: (key, subscribe, stalenessThresholdMs?, pauseWhenHidden?) => {
+			// `store` below is a deferred (TDZ-safe) reference: zustand calls
+			// this factory synchronously but acquireSubscription only runs after
+			// createStore returns, so `store` is already assigned by then.
 			attachSingletons(get().config.triggerReconnect, store);
 
 			let runtime = subscriptionRuntime.get(key);
