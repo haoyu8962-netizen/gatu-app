@@ -114,7 +114,6 @@ All in `src/stores/`. `validated-storage.ts` wraps `localStorage` with Zod valid
 | `use-order-queue-store` | pending orders |
 | `use-orderbook-actions-store` | orderbook UI interactions |
 | `use-global-modal-store` | global modal visibility |
-| `use-sub-account-store` | active sub-account |
 
 ### `lib/` — utilities
 
