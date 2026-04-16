@@ -2,14 +2,10 @@
 
 import { useSub } from "@hypeterminal/hl-react/hooks/utils/useSub";
 import { HyperliquidStoreContext } from "@hypeterminal/hl-react/provider";
-import { createHyperliquidStore, type HyperliquidStore, type StoreInternals } from "@hypeterminal/hl-react/store";
+import { createHyperliquidStore, getStoreInternals, type HyperliquidStore } from "@hypeterminal/hl-react/store";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-function getInternals(store: HyperliquidStore): StoreInternals {
-	return (store as unknown as { __internals: StoreInternals }).__internals;
-}
 
 function createFakeSubscription() {
 	const failureController = new AbortController();
@@ -60,7 +56,7 @@ describe("useSub hook surface", () => {
 		});
 		await act(() => vi.advanceTimersByTimeAsync(0));
 
-		const runtime = getInternals(store).subscriptionRuntime;
+		const runtime = getStoreInternals(store).subscriptionRuntime;
 		expect(runtime.has(key)).toBe(true);
 		expect(runtime.get(key)?.refCount).toBe(1);
 
@@ -154,7 +150,7 @@ describe("useSub hook surface", () => {
 		});
 		await act(() => vi.advanceTimersByTimeAsync(0));
 
-		const runtime = getInternals(store).subscriptionRuntime;
+		const runtime = getStoreInternals(store).subscriptionRuntime;
 		expect(runtime.has(key)).toBe(false);
 		expect(store.getState().subscriptions[key]).toBeUndefined();
 

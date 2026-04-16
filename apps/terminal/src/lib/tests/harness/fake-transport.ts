@@ -46,7 +46,7 @@ export function createFakeTransport(): {
 		}
 	}
 
-	function failSubscription(_key: string) {
+	function failSubscription(key: string) {
 		for (const sub of subscriptions) {
 			if (!sub.unsubscribed) {
 				sub.failureController.abort(new Error(`Fake failure: ${key}`));

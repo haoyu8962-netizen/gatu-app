@@ -50,6 +50,11 @@ export function getWsTransport(isTestnet: boolean): ISubscriptionTransport {
 	return getOrCreate(`ws:${isTestnet}`, () => new WebSocketTransport(getWsOptions(isTestnet)));
 }
 
+export function createWsReconnectTrigger(isTestnet: boolean): () => void {
+	const transport = getWsTransport(isTestnet) as WebSocketTransport;
+	return () => transport.socket.close(undefined, undefined, false);
+}
+
 export function getInfoClient(isTestnet: boolean): InfoClient {
 	return getOrCreate(`info:${isTestnet}`, () => new InfoClient({ transport: getHttpTransport(isTestnet) }));
 }

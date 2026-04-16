@@ -1,6 +1,4 @@
-import type { HyperliquidStore, StoreInternals } from "../../store";
-import { __setNetworkState } from "./network-status";
-import { __setVisibilityState } from "./visibility";
+import { getStoreInternals, type HyperliquidStore } from "../../store";
 
 type ChaosHarness = {
 	closeSocket(): void;
@@ -18,10 +16,19 @@ declare global {
 	}
 }
 
+function setDocumentHidden(hidden: boolean) {
+	Object.defineProperty(document, "hidden", { value: hidden, configurable: true });
+	document.dispatchEvent(new Event("visibilitychange"));
+}
+
+function dispatchNetworkEvent(type: "online" | "offline") {
+	window.dispatchEvent(new Event(type));
+}
+
 export function registerChaosHarness(store: HyperliquidStore): void {
 	if (typeof window === "undefined") return;
 
-	const internals = (store as unknown as { __internals: StoreInternals }).__internals;
+	const internals = getStoreInternals(store);
 
 	window.__hl_chaos = {
 		closeSocket() {
@@ -31,22 +38,22 @@ export function registerChaosHarness(store: HyperliquidStore): void {
 			internals.chaos.messageFrozenUntil = Date.now() + ms;
 		},
 		simulateHidden(ms?: number) {
-			__setVisibilityState("hidden");
+			setDocumentHidden(true);
 			if (ms !== undefined) {
-				setTimeout(() => __setVisibilityState("visible"), ms);
+				setTimeout(() => setDocumentHidden(false), ms);
 			}
 		},
 		simulateVisible() {
-			__setVisibilityState("visible");
+			setDocumentHidden(false);
 		},
 		simulateOffline(ms?: number) {
-			__setNetworkState("offline");
+			dispatchNetworkEvent("offline");
 			if (ms !== undefined) {
-				setTimeout(() => __setNetworkState("online"), ms);
+				setTimeout(() => dispatchNetworkEvent("online"), ms);
 			}
 		},
 		simulateOnline() {
-			__setNetworkState("online");
+			dispatchNetworkEvent("online");
 		},
 		dropReconnects(n: number) {
 			internals.chaos.reconnectDropCount = n;

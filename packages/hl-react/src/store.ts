@@ -112,6 +112,16 @@ export type StoreInternals = {
 	chaos: ChaosState;
 };
 
+const internalsByStore = new WeakMap<HyperliquidStore, StoreInternals>();
+
+export function getStoreInternals(store: HyperliquidStore): StoreInternals {
+	const internals = internalsByStore.get(store);
+	if (!internals) {
+		throw new Error("Store internals not found — store was not created by createHyperliquidStore");
+	}
+	return internals;
+}
+
 export function createHyperliquidStore(initialConfig: HyperliquidConfig): HyperliquidStore {
 	const subscriptionRuntime = new Map<string, SubscriptionRuntime>();
 	const watchdog: StalenessWatchdog = createStalenessWatchdog(WS_RELIABILITY_LIMITS.staleness.checkIntervalMs);
@@ -204,16 +214,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 						if (!current || current.isStale) return state;
 						return setSubscriptionEntry(state, key, { ...current, isStale: true });
 					});
-					const triggerReconnect = get().config.triggerReconnect;
-					if (!triggerReconnect) return;
-					triggerReconnect();
-					const subs = get().subscriptions;
-					const entries = Object.values(subs);
-					if (entries.length === 0) return;
-					const staleCount = entries.filter((e) => e.isStale).length;
-					if (staleCount / entries.length > WS_RELIABILITY_LIMITS.staleness.aggregateStaleRatio) {
-						triggerReconnect();
-					}
+					get().config.triggerReconnect?.();
 				});
 			}
 			runtime.refCount += 1;
@@ -502,7 +503,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 	}));
 
 	const internals: StoreInternals = { subscriptionRuntime, watchdog, visibilityBuffer, chaos };
-	Object.defineProperty(store, "__internals", { value: internals, enumerable: false });
+	internalsByStore.set(store, internals);
 
 	return store;
 }

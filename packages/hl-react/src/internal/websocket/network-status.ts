@@ -59,10 +59,4 @@ export function getNetworkState(): NetworkState {
 	return currentState;
 }
 
-export function __setNetworkState(state: NetworkState): void {
-	if (state === currentState) return;
-	currentState = state;
-	notify();
-}
-
 export type { NetworkState, NetworkListener };

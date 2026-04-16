@@ -1,8 +1,15 @@
-import { type InfoClient, type SubscriptionClient, WebSocketTransport } from "@nktkas/hyperliquid";
+import type { InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
 import type { ReactNode } from "react";
 import { createContext, useContext, useRef } from "react";
 import { useStore } from "zustand";
-import { getHttpTransport, getInfoClient, getSubscriptionClient, getWsTransport, initializeClients } from "./clients";
+import {
+	createWsReconnectTrigger,
+	getHttpTransport,
+	getInfoClient,
+	getSubscriptionClient,
+	getWsTransport,
+	initializeClients,
+} from "./clients";
 import { createHyperliquidConfig } from "./create-config";
 import { ProviderNotFoundError } from "./errors";
 import { registerChaosHarness } from "./internal/websocket/chaos";
@@ -48,16 +55,12 @@ export function HyperliquidProvider({
 
 	const storeRef = useRef<HyperliquidStore | null>(null);
 	if (!storeRef.current) {
-		const wsTransport = getWsTransport(isTestnet);
 		storeRef.current = createHyperliquidStore(
 			createHyperliquidConfig({
 				httpTransport: getHttpTransport(isTestnet),
-				wsTransport,
+				wsTransport: getWsTransport(isTestnet),
 				ssr: false,
-				triggerReconnect:
-					wsTransport instanceof WebSocketTransport
-						? () => wsTransport.socket.close(undefined, undefined, false)
-						: undefined,
+				triggerReconnect: createWsReconnectTrigger(isTestnet),
 			}),
 		);
 		setDebugStore(storeRef.current);

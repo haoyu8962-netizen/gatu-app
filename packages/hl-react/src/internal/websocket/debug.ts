@@ -1,4 +1,4 @@
-import type { HyperliquidStore, StoreInternals } from "../../store";
+import { getStoreInternals, type HyperliquidStore } from "../../store";
 
 type DebugSnapshot = {
 	subscriptions: Record<string, { status: string; hasData: boolean; isStale: boolean }>;
@@ -21,13 +21,9 @@ declare global {
 
 let activeStore: HyperliquidStore | null = null;
 
-function getInternals(store: HyperliquidStore): StoreInternals {
-	return (store as unknown as { __internals: StoreInternals }).__internals;
-}
-
 function createDebugSnapshot(store: HyperliquidStore): DebugSnapshot {
 	const state = store.getState();
-	const internals = getInternals(store);
+	const internals = getStoreInternals(store);
 
 	const subscriptions: DebugSnapshot["subscriptions"] = {};
 	const counters: DebugSnapshot["counters"] = {};

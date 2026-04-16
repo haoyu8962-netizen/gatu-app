@@ -83,6 +83,7 @@ function getCachedSnapshot(env: HyperliquidEnv, userAddress: string): AgentWalle
 }
 
 function subscribeToStorage(callback: () => void): () => void {
+	if (typeof window === "undefined") return () => {};
 	function handleStorage() {
 		invalidateSnapshotCache();
 		callback();

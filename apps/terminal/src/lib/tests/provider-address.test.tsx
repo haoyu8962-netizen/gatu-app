@@ -14,6 +14,7 @@ vi.mock("@hypeterminal/hl-react/internal/websocket/debug", () => ({
 	setDebugStore: vi.fn(),
 }));
 vi.mock("@hypeterminal/hl-react/clients", () => ({
+	createWsReconnectTrigger: () => () => {},
 	getHttpTransport: () => ({}),
 	getInfoClient: () => ({}),
 	getSubscriptionClient: () => ({}),

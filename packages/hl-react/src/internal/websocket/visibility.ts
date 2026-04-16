@@ -74,10 +74,4 @@ export function getVisibilityState(): VisibilityState {
 	return currentState;
 }
 
-export function __setVisibilityState(state: VisibilityState): void {
-	if (state === currentState) return;
-	currentState = state;
-	notify();
-}
-
 export type { VisibilityState, VisibilityListener };
