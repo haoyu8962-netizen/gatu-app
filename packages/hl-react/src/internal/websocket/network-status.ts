@@ -56,6 +56,10 @@ export function subscribeNetworkStatus(listener: NetworkListener): () => void {
 
 export function getNetworkState(): NetworkState {
 	if (typeof document === "undefined") return "online";
+	// Before any subscriber attaches, currentState still holds its module-default.
+	// Read navigator.onLine directly so callers don't see a stale "online" on a
+	// device that actually came up offline.
+	if (!listeners) return navigator.onLine ? "online" : "offline";
 	return currentState;
 }
 

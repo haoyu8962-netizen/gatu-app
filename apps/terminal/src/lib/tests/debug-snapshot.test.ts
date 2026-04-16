@@ -57,7 +57,6 @@ describe("debug snapshot", () => {
 		expect(snapshot).toHaveProperty("subscriptions");
 		expect(snapshot).toHaveProperty("counters");
 		expect(snapshot).toHaveProperty("lastMessageAt");
-		expect(snapshot).toHaveProperty("ringBufferSizes");
 		expect(snapshot).toHaveProperty("transportState");
 
 		expect(Object.keys(snapshot.subscriptions)).toHaveLength(2);

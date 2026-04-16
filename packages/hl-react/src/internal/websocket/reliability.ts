@@ -39,7 +39,6 @@ export const WS_RELIABILITY_LIMITS = {
 			webData3: 60_000,
 			allDexsClearinghouseState: 60_000,
 		},
-		aggregateStaleRatio: 0.5,
 	},
 } as const;
 

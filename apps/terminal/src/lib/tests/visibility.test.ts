@@ -40,7 +40,7 @@ describe("visibility singleton", () => {
 		unsub();
 	});
 
-	it("emits visible on pageshow with persisted=true", () => {
+	it("ignores pageshow when persisted is false (non-bfcache navigation)", () => {
 		const listener = vi.fn();
 		const unsub = subscribeVisibility(listener);
 
@@ -50,6 +50,24 @@ describe("visibility singleton", () => {
 
 		window.dispatchEvent(new Event("pageshow"));
 		expect(listener).not.toHaveBeenCalled();
+
+		unsub();
+	});
+
+	it("emits visible on pageshow with persisted=true (bfcache restore)", () => {
+		const listener = vi.fn();
+		const unsub = subscribeVisibility(listener);
+
+		Object.defineProperty(document, "hidden", { value: true, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+		expect(listener).toHaveBeenLastCalledWith("hidden");
+		listener.mockClear();
+
+		const event = new Event("pageshow") as PageTransitionEvent;
+		Object.defineProperty(event, "persisted", { value: true });
+		window.dispatchEvent(event);
+
+		expect(listener).toHaveBeenCalledWith("visible");
 
 		unsub();
 	});

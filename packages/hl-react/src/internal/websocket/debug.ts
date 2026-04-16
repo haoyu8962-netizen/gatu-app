@@ -4,7 +4,6 @@ type DebugSnapshot = {
 	subscriptions: Record<string, { status: string; hasData: boolean; isStale: boolean }>;
 	counters: Record<string, { refCount: number; reconnectAttempts: number }>;
 	lastMessageAt: Record<string, number | undefined>;
-	ringBufferSizes: Record<string, number>;
 	transportState: {
 		wsStatus: string;
 		wsError: string | undefined;
@@ -49,7 +48,6 @@ function createDebugSnapshot(store: HyperliquidStore): DebugSnapshot {
 		subscriptions,
 		counters,
 		lastMessageAt,
-		ringBufferSizes: {},
 		transportState: {
 			wsStatus: state.wsStatus,
 			wsError: state.wsError !== undefined ? String(state.wsError) : undefined,
