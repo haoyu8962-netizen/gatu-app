@@ -318,8 +318,8 @@ msgid "Builders"
 msgstr "Builders"
 
 #: src/components/trade/positions/twap-tab.tsx
-msgid "buy"
-msgstr "buy"
+#~ msgid "buy"
+#~ msgstr "buy"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "Buy"
@@ -1214,9 +1214,13 @@ msgid "Loading..."
 msgstr "Loading..."
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long"
 msgstr "Long"
+
+#. placeholder {0}: position.coin
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Long {0} position"
+msgstr "Long {0} position"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Low Balance"
@@ -1226,6 +1230,10 @@ msgstr "Low Balance"
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Maintenance Margin"
 msgstr "Maintenance Margin"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Manage TP/SL"
+msgstr "Manage TP/SL"
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #~ msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
@@ -1977,8 +1985,8 @@ msgid "selected"
 msgstr "selected"
 
 #: src/components/trade/positions/twap-tab.tsx
-msgid "sell"
-msgstr "sell"
+#~ msgid "sell"
+#~ msgstr "sell"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "Sell"
@@ -2044,9 +2052,13 @@ msgid "Settings"
 msgstr "Settings"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short"
 msgstr "Short"
+
+#. placeholder {0}: position.coin
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Short {0} position"
+msgstr "Short {0} position"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Executions"
@@ -2305,14 +2317,31 @@ msgid "Switch between mainnet and testnet. Page will reload."
 msgstr "Switch between mainnet and testnet. Page will reload."
 
 #. placeholder {0}: fill.coin
-#. placeholder {0}: order.coin
-#. placeholder {0}: state.coin
 #: src/components/trade/positions/history-tab.tsx
-#: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/twap-tab.tsx
 msgid "Switch to {0} market"
 msgstr "Switch to {0} market"
+
+#. placeholder {0}: state.coin
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Switch to {0} market, buy TWAP"
+msgstr "Switch to {0} market, buy TWAP"
+
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Switch to {0} market, long order"
+msgstr "Switch to {0} market, long order"
+
+#. placeholder {0}: state.coin
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Switch to {0} market, sell TWAP"
+msgstr "Switch to {0} market, sell TWAP"
+
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Switch to {0} market, short order"
+msgstr "Switch to {0} market, short order"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Switch to {displayCoin} market"

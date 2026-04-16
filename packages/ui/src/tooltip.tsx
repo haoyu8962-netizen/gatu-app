@@ -16,7 +16,13 @@ const tooltipPopupVariants = cva([
 	"motion-reduce:transition-none",
 ]);
 
-const tooltipArrowVariants = cva(["size-2 rotate-45 bg-overlay border border-stroke-weak"]);
+const tooltipArrowVariants = cva([
+	"size-2 rotate-45 bg-overlay border border-stroke-weak",
+	"data-[side=top]:-bottom-1",
+	"data-[side=bottom]:-top-1",
+	"data-[side=left]:-right-1",
+	"data-[side=right]:-left-1",
+]);
 
 interface TooltipProps extends VariantProps<typeof tooltipPopupVariants> {
 	children: React.ReactElement;
@@ -60,11 +66,7 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 					<BaseTooltip.Positioner side={side} align={align} sideOffset={sideOffset} className="z-[1000]">
 						<BaseTooltip.Popup ref={ref} className={cn(tooltipPopupVariants(), className)}>
 							{content}
-							{arrow && (
-								<BaseTooltip.Arrow>
-									<div className={cn(tooltipArrowVariants())} />
-								</BaseTooltip.Arrow>
-							)}
+							{arrow && <BaseTooltip.Arrow className={cn(tooltipArrowVariants())} />}
 						</BaseTooltip.Popup>
 					</BaseTooltip.Positioner>
 				</BaseTooltip.Portal>

@@ -173,7 +173,7 @@ export function SendModal({
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm">
-				<ModalHeader className="border-b border-stroke-weak/40">
+				<ModalHeader>
 					<ModalTitle>{t`Send Tokens`}</ModalTitle>
 					<ModalDescription>{t`Send tokens to another account on the Hyperliquid L1.`}</ModalDescription>
 				</ModalHeader>

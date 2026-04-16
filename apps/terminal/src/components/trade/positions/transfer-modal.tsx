@@ -104,7 +104,7 @@ export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" 
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm">
-				<ModalHeader className="border-b border-stroke-weak/40">
+				<ModalHeader>
 					<ModalTitle>{t`Transfer USDC`}</ModalTitle>
 					<ModalDescription>{t`Move USDC between your Perp and Spot accounts.`}</ModalDescription>
 				</ModalHeader>

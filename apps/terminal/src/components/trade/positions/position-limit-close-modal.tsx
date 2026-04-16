@@ -115,7 +115,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm" showClose={false}>
-				<ModalHeader className="border-b border-stroke-weak/40">
+				<ModalHeader>
 					<ModalTitle>{t`Limit Close`}</ModalTitle>
 				</ModalHeader>
 
@@ -153,7 +153,7 @@ export function PositionLimitCloseModal({ open, onOpenChange, position }: Props)
 					</div>
 				</ModalContent>
 
-				<div className="px-6 pb-4 space-y-4">
+				<div className="px-4 pb-4 space-y-4">
 					<PriceInput
 						label={t`Limit Price`}
 						value={priceInput}

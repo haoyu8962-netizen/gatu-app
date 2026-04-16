@@ -318,8 +318,8 @@ msgid "Builders"
 msgstr ""
 
 #: src/components/trade/positions/twap-tab.tsx
-msgid "buy"
-msgstr "खरीदें"
+#~ msgid "buy"
+#~ msgstr "खरीदें"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "Buy"
@@ -1210,9 +1210,13 @@ msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Long"
 msgstr "लॉन्ग"
+
+#. placeholder {0}: position.coin
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Long {0} position"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Low Balance"
@@ -1221,6 +1225,10 @@ msgstr ""
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Maintenance Margin"
+msgstr ""
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Manage TP/SL"
 msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -1973,8 +1981,8 @@ msgid "selected"
 msgstr ""
 
 #: src/components/trade/positions/twap-tab.tsx
-msgid "sell"
-msgstr "बेचें"
+#~ msgid "sell"
+#~ msgstr "बेचें"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "Sell"
@@ -2040,9 +2048,13 @@ msgid "Settings"
 msgstr "सेटिंग्स"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short"
 msgstr "शॉर्ट"
+
+#. placeholder {0}: position.coin
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Short {0} position"
+msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Executions"
@@ -2301,13 +2313,30 @@ msgid "Switch between mainnet and testnet. Page will reload."
 msgstr ""
 
 #. placeholder {0}: fill.coin
-#. placeholder {0}: order.coin
-#. placeholder {0}: state.coin
 #: src/components/trade/positions/history-tab.tsx
+msgid "Switch to {0} market"
+msgstr ""
+
+#. placeholder {0}: state.coin
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Switch to {0} market, buy TWAP"
+msgstr ""
+
+#. placeholder {0}: order.coin
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+msgid "Switch to {0} market, long order"
+msgstr ""
+
+#. placeholder {0}: state.coin
 #: src/components/trade/positions/twap-tab.tsx
-msgid "Switch to {0} market"
+msgid "Switch to {0} market, sell TWAP"
+msgstr ""
+
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Switch to {0} market, short order"
 msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx

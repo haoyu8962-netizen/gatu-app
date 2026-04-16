@@ -1,6 +1,15 @@
-import { Badge, Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
+import {
+	Button,
+	Modal,
+	ModalContent,
+	ModalDescription,
+	ModalFooter,
+	ModalHeader,
+	ModalPopup,
+	ModalTitle,
+} from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { SpinnerGapIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
 import { InfoRow } from "@/components/ui/info-row";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
@@ -10,7 +19,6 @@ import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDe
 import { useExchange } from "@/lib/hyperliquid";
 import { getValueColorClass, isPositive, toNumber } from "@/lib/trade/numbers";
 import { validateSlPrice, validateTpPrice } from "@/lib/trade/tpsl";
-import { AssetDisplay } from "../components/asset-display";
 import { TradingActionButton } from "../components/trading-action-button";
 import { TpSlSection } from "../tradebox/tp-sl-section";
 
@@ -110,23 +118,11 @@ export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm" showClose={false}>
-				<ModalHeader className="border-b border-stroke-weak/40">
-					<ModalTitle className="flex items-center gap-1">
-						<AssetDisplay coin={position.coin} />
-						<Badge tone={position.isLong ? "success" : "error"} size="sm">
-							{position.isLong ? (
-								<>
-									<TrendUpIcon className="size-3" />
-									{t`Long`}
-								</>
-							) : (
-								<>
-									<TrendDownIcon className="size-3" />
-									{t`Short`}
-								</>
-							)}
-						</Badge>
-					</ModalTitle>
+				<ModalHeader>
+					<ModalTitle>{t`Manage TP/SL`}</ModalTitle>
+					<ModalDescription>
+						{position.isLong ? t`Long ${position.coin} position` : t`Short ${position.coin} position`}
+					</ModalDescription>
 				</ModalHeader>
 
 				<ModalContent>
@@ -163,7 +159,7 @@ export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
 					</div>
 				</ModalContent>
 
-				<div className="px-6 pb-4">
+				<div className="px-4 pb-4">
 					<TpSlSection
 						side={side}
 						referencePrice={referencePrice}

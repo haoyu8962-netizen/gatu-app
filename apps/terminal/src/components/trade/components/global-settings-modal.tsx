@@ -74,7 +74,7 @@ export function GlobalSettingsModal() {
 	return (
 		<Modal open={open} onOpenChange={close}>
 			<ModalPopup size="sm">
-				<ModalHeader className="border-b border-stroke-weak/40">
+				<ModalHeader>
 					<ModalTitle>{t`Settings`}</ModalTitle>
 				</ModalHeader>
 

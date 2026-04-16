@@ -179,7 +179,7 @@ export function MarginModeModal({
 	return (
 		<Modal open={open} onOpenChange={onOpenChange}>
 			<ModalPopup size="sm">
-				<ModalHeader className="border-b border-stroke-weak/40">
+				<ModalHeader>
 					<ModalTitle>
 						<Trans>Margin & leverage</Trans>
 					</ModalTitle>
