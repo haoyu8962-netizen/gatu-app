@@ -5,7 +5,6 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { getSideClass, getSideLabel } from "@/lib/trade/open-orders";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
@@ -114,6 +113,7 @@ export function OrdersHistoryTab() {
 								{orders.map((entry, i) => {
 									const { order } = entry;
 									const market = markets.getMarket(order.coin);
+									const isLong = order.side === "B";
 
 									return (
 										<TableRow
@@ -125,17 +125,22 @@ export function OrdersHistoryTab() {
 											</TableCell>
 											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 												<div className="flex items-center gap-1.5">
+													<span
+														className={cn("h-4 w-0.5 shrink-0 rounded-full", isLong ? "bg-success" : "bg-error")}
+														aria-hidden="true"
+													/>
 													<Button
 														variant="link"
 														onClick={() => setSelectedMarket(scope, order.coin)}
 														className="gap-1.5"
-														aria-label={t`Switch to ${order.coin} market`}
+														aria-label={
+															isLong
+																? t`Switch to ${order.coin} market, long order`
+																: t`Switch to ${order.coin} market, short order`
+														}
 													>
 														<AssetDisplay coin={order.coin} />
 													</Button>
-													<span className={cn("text-xs px-1 py-0.5 rounded-8 uppercase", getSideClass(order.side))}>
-														{getSideLabel(order.side, market?.kind)}
-													</span>
 												</div>
 											</TableCell>
 											<TableCell className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>

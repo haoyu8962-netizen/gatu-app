@@ -6,15 +6,10 @@ export type OpenOrder = FrontendOpenOrdersResponse[number];
 
 export type OrderSide = OpenOrder["side"];
 
-const SIDE_CLASS = {
-	B: "bg-success-soft text-success",
-	A: "bg-error-soft text-error",
-} as const satisfies Record<OrderSide, string>;
-
 export const ORDER_TYPE_CONFIG = {
-	takeProfit: { prefix: "Take Profit", class: "bg-success-soft text-success" },
-	stop: { prefix: "Stop", class: "bg-warning-soft text-warning" },
-	default: { class: "bg-surface/50" },
+	takeProfit: { prefix: "Take Profit", class: "text-success" },
+	stop: { prefix: "Stop", class: "text-warning" },
+	default: { class: "text-fg-muted" },
 } as const;
 
 export function isLongOrder(order: OpenOrder): boolean {
@@ -63,10 +58,6 @@ export function getOrderValue(order: OpenOrder): number | null {
 export function getSideLabel(side: OrderSide, kind?: MarketKind): string {
 	if (kind === "spot") return side === "B" ? "buy" : "sell";
 	return side === "B" ? "long" : "short";
-}
-
-export function getSideClass(side: OrderSide): string {
-	return SIDE_CLASS[side];
 }
 
 const ORDER_TYPE_SHORT_LABEL: Record<string, string> = {

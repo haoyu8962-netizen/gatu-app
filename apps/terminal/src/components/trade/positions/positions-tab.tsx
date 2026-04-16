@@ -282,26 +282,26 @@ function PositionRow({
 						{tpSlInfo?.tpPrice && tpSlInfo?.slPrice ? (
 							<>
 								<div className="flex items-center gap-1 text-2xs tabular-nums">
-									<span className="text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
+									<span className="text-success/70">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
 									<span className="text-fg-muted">/</span>
-									<span className="text-error">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
+									<span className="text-error/70">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
 								</div>
-								<PencilIcon className="size-2.5 text-fg-disabled group-hover:text-fg-muted transition-colors" />
+								<PencilIcon className="size-3 text-fg-muted group-hover:text-fg transition-colors" />
 							</>
 						) : hasTpSl ? (
 							<>
 								<div className="flex items-center gap-1 text-2xs tabular-nums">
 									{tpSlInfo?.tpPrice ? (
-										<span className="text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
+										<span className="text-success/70">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
 									) : (
-										<span className="text-error">{formatPrice(tpSlInfo?.slPrice, { szDecimals })}</span>
+										<span className="text-error/70">{formatPrice(tpSlInfo?.slPrice, { szDecimals })}</span>
 									)}
 								</div>
-								<PlusIcon className="size-2.5 text-fg-disabled group-hover:text-fg-muted transition-colors" />
+								<PlusIcon className="size-3 text-fg-muted group-hover:text-fg transition-colors" />
 							</>
 						) : (
-							<div className="flex items-center gap-0.5 text-2xs font-medium text-fg-muted">
-								<PlusIcon className="size-2.5 group-hover:text-fg-muted transition-colors" />
+							<div className="flex items-center gap-0.5 text-2xs font-medium text-fg-muted group-hover:text-fg transition-colors">
+								<PlusIcon className="size-3" />
 								<span>{t`Add`}</span>
 							</div>
 						)}

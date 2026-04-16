@@ -7,7 +7,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { getSideClass, getSideLabel } from "@/lib/trade/open-orders";
+import { getSideLabel } from "@/lib/trade/open-orders";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
@@ -93,7 +93,12 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 											coin={order.coin}
 											nameClassName="text-sm font-semibold"
 											subtitle={
-												<span className={cn("text-xs font-medium uppercase", getSideClass(order.side))}>
+												<span
+													className={cn(
+														"text-xs font-medium uppercase",
+														order.side === "B" ? "text-success" : "text-error",
+													)}
+												>
 													{getSideLabel(order.side, market?.kind)}
 												</span>
 											}

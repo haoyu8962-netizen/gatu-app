@@ -118,7 +118,6 @@ export function TwapTab() {
 							<TableBody className={positionsPanelTableBodyClass}>
 								{activeOrders.map(({ twapId, state }, i) => {
 									const isBuy = state.side === "B";
-									const sideClass = isBuy ? "bg-success-soft text-success" : "bg-error-soft text-error";
 									const totalSize = toBig(state.sz)?.toNumber() ?? Number.NaN;
 									const executedSize = toBig(state.executedSz)?.toNumber() ?? 0;
 									const avgPrice = getAvgPrice(state.executedNtl, state.executedSz);
@@ -133,14 +132,19 @@ export function TwapTab() {
 										>
 											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 												<div className="flex items-center gap-1.5">
-													<span className={cn("text-xs px-1 py-0.5 rounded-8 uppercase", sideClass)}>
-														{isBuy ? t`buy` : t`sell`}
-													</span>
+													<span
+														className={cn("h-4 w-0.5 shrink-0 rounded-full", isBuy ? "bg-success" : "bg-error")}
+														aria-hidden="true"
+													/>
 													<Button
 														variant="link"
 														onClick={() => setSelectedMarket(scope, state.coin)}
 														className="gap-1.5"
-														aria-label={t`Switch to ${state.coin} market`}
+														aria-label={
+															isBuy
+																? t`Switch to ${state.coin} market, buy TWAP`
+																: t`Switch to ${state.coin} market, sell TWAP`
+														}
 													>
 														<AssetDisplay coin={state.coin} />
 													</Button>

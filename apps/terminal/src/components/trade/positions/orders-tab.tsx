@@ -17,12 +17,9 @@ import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
-import type { MarketKind } from "@/lib/hyperliquid/markets";
 import {
 	getOrderTypeConfig,
 	getOrderValue,
-	getSideClass,
-	getSideLabel,
 	isClosePositionOrder,
 	isMarketTriggerOrder,
 	type OpenOrder,
@@ -287,7 +284,6 @@ export function OrdersTab() {
 										<OrderRow
 											key={order.oid}
 											order={order}
-											kind={markets.getMarket(order.coin)?.kind}
 											szDecimals={markets.getSzDecimals(order.coin)}
 											isSelected={selectedOrderIds.has(order.oid)}
 											isCancelling={isCancelling}
@@ -311,7 +307,6 @@ export function OrdersTab() {
 
 interface OrderRowProps {
 	order: OpenOrder;
-	kind: MarketKind | undefined;
 	szDecimals: number;
 	isSelected: boolean;
 	isCancelling: boolean;
@@ -324,7 +319,6 @@ interface OrderRowProps {
 
 function OrderRow({
 	order,
-	kind,
 	szDecimals,
 	isSelected,
 	isCancelling,
@@ -335,6 +329,7 @@ function OrderRow({
 	onSelectMarket,
 }: OrderRowProps) {
 	const typeConfig = getOrderTypeConfig(order);
+	const isLong = order.side === "B";
 
 	return (
 		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
@@ -351,24 +346,25 @@ function OrderRow({
 			</TableCell>
 			<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 				<div className="flex items-center gap-1.5">
+					<span
+						className={cn("h-4 w-0.5 shrink-0 rounded-full", isLong ? "bg-success" : "bg-error")}
+						aria-hidden="true"
+					/>
 					<Button
 						variant="link"
-						onClick={() => onSelectMarket(order.coin, order.side === "B" ? "buy" : "sell")}
+						onClick={() => onSelectMarket(order.coin, isLong ? "buy" : "sell")}
 						className="gap-1.5"
-						aria-label={t`Switch to ${order.coin} market`}
+						aria-label={
+							isLong ? t`Switch to ${order.coin} market, long order` : t`Switch to ${order.coin} market, short order`
+						}
 					>
 						<AssetDisplay coin={order.coin} />
 					</Button>
-					<span className={cn("text-xs px-1 py-0.5 rounded-8 uppercase", getSideClass(order.side))}>
-						{getSideLabel(order.side, kind)}
-					</span>
 				</div>
 			</TableCell>
 			<TableCell className={cn(positionsPanelTableCellClass, "text-fg")}>
 				<Tooltip content={typeConfig.fullLabel}>
-					<span className={cn("text-2xs px-1.5 py-0.5 rounded-8 uppercase whitespace-nowrap", typeConfig.class)}>
-						{typeConfig.shortLabel}
-					</span>
+					<span className={cn("text-2xs uppercase whitespace-nowrap", typeConfig.class)}>{typeConfig.shortLabel}</span>
 				</Tooltip>
 			</TableCell>
 			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
