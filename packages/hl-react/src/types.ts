@@ -1,8 +1,6 @@
 import type { HyperliquidError, IRequestTransport, ISubscriptionTransport } from "@nktkas/hyperliquid";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import type { QueryKey, UseMutationOptions, UseQueryOptions } from "@tanstack/react-query";
-import type { ReactNode } from "react";
-import type { BuilderConfig, HyperliquidEnv } from "./signing/types";
 
 export type HyperliquidQueryError = HyperliquidError;
 
@@ -32,14 +30,17 @@ export type WebSocketStatus = "idle" | "connecting" | "open" | "error";
 export interface SubscriptionOptions {
 	enabled?: boolean;
 	throttleMs?: number;
+	maxStaleMs?: number;
 	maxPayloadBytes?: number;
 	dropOversizedPayload?: boolean;
+	pauseWhenHidden?: boolean;
 }
 
 export type SubscriptionResult<TData> = {
 	data: TData | undefined;
 	status: SubscriptionStatus;
 	error: unknown;
+	isStale: boolean;
 	unsubscribe: (() => Promise<void>) | undefined;
 	failureSignal: AbortSignal | undefined;
 };
@@ -49,15 +50,5 @@ export type HyperliquidConfig = {
 	wsTransport?: ISubscriptionTransport;
 	wallet?: AbstractWallet;
 	ssr?: boolean;
-};
-
-export type HyperliquidProviderProps = {
-	children: ReactNode;
-	env: HyperliquidEnv;
-	userAddress: `0x${string}` | undefined;
-	wallet: AbstractWallet | undefined;
-	agentName?: string;
-	builderConfig?: BuilderConfig;
-	httpTransport?: IRequestTransport;
-	wsTransport?: ISubscriptionTransport;
+	triggerReconnect?: () => void;
 };

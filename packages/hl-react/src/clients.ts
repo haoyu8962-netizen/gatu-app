@@ -11,6 +11,7 @@ import {
 } from "@nktkas/hyperliquid";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import type { PrivateKeyAccount } from "viem/accounts";
+import { LRU } from "./lru";
 import { createL1AgentWallet } from "./signing/l1-agent-wallet";
 
 const cache = new Map<string, unknown>();
@@ -24,12 +25,21 @@ function getOrCreate<T>(key: string, create: () => T): T {
 	return value;
 }
 
+export const tradingClientCache = new LRU<string, ExchangeClient>(4);
+
 function getHttpOptions(isTestnet: boolean): HttpTransportOptions {
 	return { isTestnet };
 }
 
 function getWsOptions(isTestnet: boolean): WebSocketTransportOptions {
-	return { isTestnet };
+	return {
+		isTestnet,
+		reconnect: {
+			maxRetries: Infinity,
+			connectionTimeout: 10_000,
+			reconnectionDelay: (n: number) => Math.min(500 * 2 ** n, 30_000),
+		},
+	};
 }
 
 export function getHttpTransport(isTestnet: boolean): IRequestTransport {
@@ -51,8 +61,16 @@ export function getSubscriptionClient(isTestnet: boolean): SubscriptionClient {
 	);
 }
 
-export function createExchangeClient(wallet: AbstractWallet, isTestnet: boolean): ExchangeClient {
-	return new ExchangeClient({ transport: getHttpTransport(isTestnet), wallet });
+export function createExchangeClient(wallet: AbstractWallet, isTestnet: boolean, cacheKey?: string): ExchangeClient {
+	if (cacheKey) {
+		const cached = tradingClientCache.get(cacheKey);
+		if (cached) return cached;
+	}
+	const client = new ExchangeClient({ transport: getHttpTransport(isTestnet), wallet });
+	if (cacheKey) {
+		tradingClientCache.set(cacheKey, client);
+	}
+	return client;
 }
 
 function isPrivateKeyAccount(wallet: AbstractWallet): wallet is PrivateKeyAccount {

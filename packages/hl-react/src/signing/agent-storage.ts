@@ -1,4 +1,4 @@
-import { useRef, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import type { Address, Hex } from "viem";
 import { z } from "zod";
 import type { AgentWallet, HyperliquidEnv } from "./types";
@@ -66,29 +66,40 @@ export function removeAgentFromStorage(env: HyperliquidEnv, userAddress: string)
 	window.dispatchEvent(new StorageEvent("storage", { key }));
 }
 
+const snapshotCache = new Map<string, { value: AgentWallet | null; version: number }>();
+let cacheVersion = 0;
+
+function invalidateSnapshotCache() {
+	cacheVersion++;
+}
+
+function getCachedSnapshot(env: HyperliquidEnv, userAddress: string): AgentWallet | null {
+	const key = `${env}:${userAddress}`;
+	const entry = snapshotCache.get(key);
+	if (entry && entry.version === cacheVersion) return entry.value;
+	const value = readAgentFromStorage(env, userAddress);
+	snapshotCache.set(key, { value, version: cacheVersion });
+	return value;
+}
+
 function subscribeToStorage(callback: () => void): () => void {
-	if (typeof window === "undefined") return () => {};
-	const handleStorage = () => callback();
+	function handleStorage() {
+		invalidateSnapshotCache();
+		callback();
+	}
 	window.addEventListener("storage", handleStorage);
 	return () => window.removeEventListener("storage", handleStorage);
 }
 
 export function useAgentWalletStorage(env: HyperliquidEnv, userAddress: string | undefined): AgentWallet | null {
-	const cacheRef = useRef<{ raw: string | null; parsed: AgentWallet | null }>({ raw: null, parsed: null });
-
-	function getSnapshot(): string | null {
-		if (!userAddress) return null;
-		const data = readAgentFromStorage(env, userAddress);
-		return data ? JSON.stringify(data) : null;
-	}
-
-	const raw = useSyncExternalStore(subscribeToStorage, getSnapshot, () => null);
-
-	if (raw !== cacheRef.current.raw) {
-		cacheRef.current = { raw, parsed: raw ? (JSON.parse(raw) as AgentWallet) : null };
-	}
-
-	return cacheRef.current.parsed;
+	return useSyncExternalStore(
+		subscribeToStorage,
+		() => {
+			if (!userAddress) return null;
+			return getCachedSnapshot(env, userAddress);
+		},
+		() => null,
+	);
 }
 
 export function useAgentWalletActions() {

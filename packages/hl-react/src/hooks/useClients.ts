@@ -29,7 +29,7 @@ export function useHyperliquidClients(): HyperliquidClients {
 		if (!walletClient || !address) return null;
 		const wallet = toHyperliquidWallet(walletClient, address);
 		if (!wallet) return null;
-		return createExchangeClient(wallet, isTestnet);
+		return createExchangeClient(wallet, isTestnet, `user:${isTestnet}:${address.toLowerCase()}`);
 	})();
 
 	return {
