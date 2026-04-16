@@ -70,14 +70,41 @@ export function removeAgentFromStorage(env: HyperliquidEnv, userAddress: string)
 // Bounded cache: entries are (env, address) pairs, keyed so useSyncExternalStore
 // returns a stable reference across renders. Cap matches the signer/trading
 // caches in clients.ts — a user switching between more wallets simply evicts
-// older entries. `StorageEvent` bumps cacheVersion so stale reads are visible
-// across tabs without invalidating the bound.
+// older entries.
+//
+// Security note: entries contain the agent's private key material in memory.
+// That's acceptable for session-length use (the keys also live in localStorage
+// for persistence) but callers in high-security contexts should consider a
+// shorter-lived store and a forced eviction on address change.
 /** @internal — exported only for tests; do not consume from outside this package. */
 export const snapshotCache = new LRU<string, { value: AgentWallet | null; version: number }>(4);
 let cacheVersion = 0;
 
+const STORAGE_KEY_PREFIX = "hyperliquid_agent_";
+
 function invalidateSnapshotCache() {
 	cacheVersion++;
+}
+
+function invalidateSnapshotKey(storageKey: string | null) {
+	// storageKey is null when localStorage.clear() fires the event; fall back
+	// to a global bump in that case.
+	if (storageKey === null || !storageKey.startsWith(STORAGE_KEY_PREFIX)) {
+		invalidateSnapshotCache();
+		return;
+	}
+	// Storage key format: `hyperliquid_agent_<env>_<address>`. Map to the
+	// internal cache key `${env}:${address}`. LRU.delete removes just this
+	// entry — other cached pairs keep their stable reads.
+	const rest = storageKey.slice(STORAGE_KEY_PREFIX.length);
+	const underscore = rest.indexOf("_");
+	if (underscore === -1) {
+		invalidateSnapshotCache();
+		return;
+	}
+	const env = rest.slice(0, underscore);
+	const address = rest.slice(underscore + 1);
+	snapshotCache.delete(`${env}:${address}`);
 }
 
 /** @internal — exported only for tests; do not consume from outside this package. */
@@ -92,8 +119,12 @@ export function getCachedAgentSnapshot(env: HyperliquidEnv, userAddress: string)
 
 function subscribeToStorage(callback: () => void): () => void {
 	if (typeof window === "undefined") return () => {};
-	function handleStorage() {
-		invalidateSnapshotCache();
+	function handleStorage(event: StorageEvent) {
+		// Cross-tab StorageEvents carry the affected key; same-tab synthetic
+		// events from writeAgentToStorage/removeAgentFromStorage carry it too.
+		// Only invalidate the matching cache entry so other (env, address)
+		// pairs keep their cached reads.
+		invalidateSnapshotKey(event.key);
 		callback();
 	}
 	window.addEventListener("storage", handleStorage);

@@ -196,6 +196,12 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			// `store` below is a deferred (TDZ-safe) reference: zustand calls
 			// this factory synchronously but acquireSubscription only runs after
 			// createStore returns, so `store` is already assigned by then.
+			if (import.meta.env?.DEV && pauseWhenHidden && !get().config.triggerReconnect) {
+				console.warn(
+					"[hl-react] acquireSubscription: pauseWhenHidden has no effect without config.triggerReconnect. " +
+						"Visibility-buffered values will never be flushed because no reconnect can happen on resume.",
+				);
+			}
 			attachSingletons(get().config.triggerReconnect, store);
 
 			let runtime = subscriptionRuntime.get(key);

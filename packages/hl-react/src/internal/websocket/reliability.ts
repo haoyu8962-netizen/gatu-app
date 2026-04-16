@@ -51,6 +51,15 @@ export const WS_RELIABILITY_LIMITS = {
 
 const USER_STREAM_METHODS = new Set(["orderUpdates", "webData2", "webData3", "allDexsClearinghouseState"]);
 
+// Union of methods we explicitly classify. Anything outside this list falls
+// through to "market stream" behavior (pause-and-buffer on hidden). We emit a
+// one-shot dev warning so new SDK methods don't silently land on that path.
+const KNOWN_METHODS = new Set<string>([
+	...USER_STREAM_METHODS,
+	...Object.keys(WS_RELIABILITY_LIMITS.staleness.perMethodThresholdMs),
+]);
+const warnedUnknownMethods = new Set<string>();
+
 // Subscription keys are stringified JSON arrays. `useSub` passes the same key
 // to multiple helpers per render; cache the parse so we parse each key once.
 // The store calls `forgetParsedKey` from `releaseSubscription` so the cache
@@ -82,7 +91,16 @@ export function forgetParsedKey(key: string): void {
 export function isUserStreamKey(key: string): boolean {
 	const parsed = parseKey(key);
 	if (!parsed) return false;
-	if (parsed.method !== undefined && USER_STREAM_METHODS.has(parsed.method)) return true;
+	if (parsed.method !== undefined) {
+		if (USER_STREAM_METHODS.has(parsed.method)) return true;
+		if (import.meta.env?.DEV && !KNOWN_METHODS.has(parsed.method) && !warnedUnknownMethods.has(parsed.method)) {
+			warnedUnknownMethods.add(parsed.method);
+			console.warn(
+				`[hl-react] Unknown subscription method "${parsed.method}"; treating as market stream. ` +
+					"If this is a user stream, add it to USER_STREAM_METHODS in reliability.ts.",
+			);
+		}
+	}
 	const params = parsed.params;
 	if (params && typeof params === "object" && !Array.isArray(params) && "user" in params) return true;
 	return false;

@@ -103,12 +103,15 @@ describe("chaos harness", () => {
 		createHyperliquidStore = storeMod.createHyperliquidStore;
 		const chaosMod = await import("@hypeterminal/hl-react/internal/websocket/chaos");
 		registerChaosHarness = chaosMod.registerChaosHarness;
+		const debugMod = await import("@hypeterminal/hl-react/internal/websocket/debug");
+		registerDebugSnapshot = debugMod.registerDebugSnapshot;
 	});
 
 	afterEach(() => {
 		vi.useRealTimers();
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 		delete window.__hl_chaos;
+		delete window.__hl_debug;
 	});
 
 	it("freezeMessages swallows data for the specified duration", async () => {
@@ -203,6 +206,73 @@ describe("chaos harness", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 
 		expect(store.getState().subscriptions[key]?.data).toEqual({ v: 2 });
+
+		store.getState().releaseSubscription(key);
+	});
+
+	it("full cycle: freeze → stale → triggerReconnect → unfreeze → markFresh clears isStale", async () => {
+		const triggerReconnect = vi.fn();
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
+		registerChaosHarness(store);
+
+		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
+		const { subscribe } = createFakeSubscription();
+		store.getState().acquireSubscription(key, subscribe);
+		await vi.advanceTimersByTimeAsync(0);
+
+		// Initial fresh data: subscription starts non-stale.
+		store.getState().setSubscriptionData(key, { v: 1 });
+		expect(store.getState().subscriptions[key]?.isStale).toBeFalsy();
+
+		// Freeze message delivery and advance past the 20s market threshold.
+		window.__hl_chaos?.freezeMessages(60_000);
+		store.getState().setSubscriptionData(key, { v: 2 }); // swallowed by freeze
+		triggerReconnect.mockClear();
+
+		await vi.advanceTimersByTimeAsync(25_000);
+
+		expect(store.getState().subscriptions[key]?.isStale).toBe(true);
+		expect(triggerReconnect).toHaveBeenCalled();
+		// Data remained at v:1 because the freeze dropped v:2.
+		expect(store.getState().subscriptions[key]?.data).toEqual({ v: 1 });
+
+		// Unfreeze and deliver fresh data; watchdog clears isStale on markFresh.
+		await vi.advanceTimersByTimeAsync(40_000); // past freeze window (60s total)
+		store.getState().setSubscriptionData(key, { v: 3 });
+
+		expect(store.getState().subscriptions[key]?.data).toEqual({ v: 3 });
+		expect(store.getState().subscriptions[key]?.isStale).toBe(false);
+
+		store.getState().releaseSubscription(key);
+	});
+
+	it("visibility buffer stays bounded under high-frequency market updates while hidden", async () => {
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		registerChaosHarness(store);
+		registerDebugSnapshot(store);
+
+		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
+		const { subscribe } = createFakeSubscription();
+		store.getState().acquireSubscription(key, subscribe);
+		await vi.advanceTimersByTimeAsync(0);
+
+		window.__hl_chaos?.simulateHidden();
+		Object.defineProperty(document, "hidden", { value: true, configurable: true });
+
+		// Emit 1000 updates for the same key while hidden.
+		for (let i = 0; i < 1000; i++) {
+			store.getState().setSubscriptionData(key, { v: i });
+		}
+
+		// Buffer holds only the latest value per key — 1 entry, not 1000.
+		const snapshot = window.__hl_debug?.();
+		expect(snapshot?.transportState.visibilityBufferSize).toBe(1);
+
+		window.__hl_chaos?.simulateVisible();
+		Object.defineProperty(document, "hidden", { value: false, configurable: true });
+
+		// On flush, the buffered latest value (v:999) lands in store state.
+		expect(store.getState().subscriptions[key]?.data).toEqual({ v: 999 });
 
 		store.getState().releaseSubscription(key);
 	});

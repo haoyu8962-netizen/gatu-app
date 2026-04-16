@@ -1,3 +1,6 @@
+// Module-level singleton shared across all HyperliquidStore instances in the
+// same app. See `visibility.ts` for the single-provider assumption this
+// implies.
 type NetworkState = "online" | "offline";
 type NetworkListener = (state: NetworkState) => void;
 
