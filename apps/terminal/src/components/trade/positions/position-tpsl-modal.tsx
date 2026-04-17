@@ -109,7 +109,11 @@ export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
 
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
-			<ModalPopup size="sm" showClose={false}>
+			<ModalPopup
+				size="sm"
+				showClose={false}
+				aria-label={t`Manage TP/SL for ${position.coin} ${position.isLong ? "long" : "short"} position`}
+			>
 				<ModalHeader>
 					<ModalTitle>{t`Manage TP/SL`}</ModalTitle>
 					<div className="flex items-center gap-1.5">

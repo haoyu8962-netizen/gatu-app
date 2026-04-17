@@ -1234,6 +1234,12 @@ msgstr ""
 msgid "Manage TP/SL"
 msgstr ""
 
+#. placeholder {0}: position.coin
+#. placeholder {1}: position.isLong ? "long" : "short"
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Manage TP/SL for {0} {1} position"
+msgstr ""
+
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #~ msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
 #~ msgstr ""

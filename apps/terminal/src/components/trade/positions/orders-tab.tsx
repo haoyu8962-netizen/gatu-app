@@ -364,7 +364,9 @@ function OrderRow({
 			</TableCell>
 			<TableCell className={cn(positionsPanelTableCellClass, "text-fg")}>
 				<Tooltip content={typeConfig.fullLabel}>
-					<span className={cn("text-2xs uppercase whitespace-nowrap", typeConfig.class)}>{typeConfig.shortLabel}</span>
+					<span className={cn("text-2xs px-1.5 py-0.5 rounded-8 uppercase whitespace-nowrap", typeConfig.class)}>
+						{typeConfig.shortLabel}
+					</span>
 				</Tooltip>
 			</TableCell>
 			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>

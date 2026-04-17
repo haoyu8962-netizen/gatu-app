@@ -7,8 +7,8 @@ export type OpenOrder = FrontendOpenOrdersResponse[number];
 export type OrderSide = OpenOrder["side"];
 
 export const ORDER_TYPE_CONFIG = {
-	takeProfit: { prefix: "Take Profit", class: "text-success" },
-	stop: { prefix: "Stop", class: "text-warning" },
+	takeProfit: { prefix: "Take Profit", class: "bg-success-soft text-success" },
+	stop: { prefix: "Stop", class: "bg-warning-soft text-warning" },
 	default: { class: "text-fg-muted" },
 } as const;
 
