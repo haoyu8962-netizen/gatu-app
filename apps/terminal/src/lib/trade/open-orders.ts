@@ -12,10 +12,6 @@ export const ORDER_TYPE_CONFIG = {
 	default: { class: "text-fg-muted" },
 } as const;
 
-export function isLongOrder(order: OpenOrder): boolean {
-	return order.side === "B";
-}
-
 export function isTakeProfitOrder(order: OpenOrder): boolean {
 	return order.orderType.startsWith(ORDER_TYPE_CONFIG.takeProfit.prefix);
 }

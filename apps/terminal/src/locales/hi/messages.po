@@ -1213,9 +1213,12 @@ msgstr "लोड हो रहा है..."
 msgid "Long"
 msgstr "लॉन्ग"
 
-#. placeholder {0}: position.coin
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Long {0} position"
+#~ msgid "Long {0} position"
+#~ msgstr ""
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Long position"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
@@ -2051,9 +2054,12 @@ msgstr "सेटिंग्स"
 msgid "Short"
 msgstr "शॉर्ट"
 
-#. placeholder {0}: position.coin
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Short {0} position"
+#~ msgid "Short {0} position"
+#~ msgstr ""
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Short position"
 msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx

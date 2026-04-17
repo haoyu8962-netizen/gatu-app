@@ -1,13 +1,4 @@
-import {
-	Button,
-	Modal,
-	ModalContent,
-	ModalDescription,
-	ModalFooter,
-	ModalHeader,
-	ModalPopup,
-	ModalTitle,
-} from "@hypeterminal/ui";
+import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
@@ -19,6 +10,7 @@ import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDe
 import { useExchange } from "@/lib/hyperliquid";
 import { getValueColorClass, isPositive, toNumber } from "@/lib/trade/numbers";
 import { validateSlPrice, validateTpPrice } from "@/lib/trade/tpsl";
+import { AssetDisplay } from "../components/asset-display";
 import { TradingActionButton } from "../components/trading-action-button";
 import { TpSlSection } from "../tradebox/tp-sl-section";
 
@@ -120,9 +112,14 @@ export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
 			<ModalPopup size="sm" showClose={false}>
 				<ModalHeader>
 					<ModalTitle>{t`Manage TP/SL`}</ModalTitle>
-					<ModalDescription>
-						{position.isLong ? t`Long ${position.coin} position` : t`Short ${position.coin} position`}
-					</ModalDescription>
+					<div className="flex items-center gap-1.5">
+						<span
+							className={cn("h-4 w-0.5 shrink-0 rounded-full", position.isLong ? "bg-success" : "bg-error")}
+							aria-hidden="true"
+						/>
+						<AssetDisplay coin={position.coin} />
+						<span className="text-xs text-fg-muted">· {position.isLong ? t`Long position` : t`Short position`}</span>
+					</div>
 				</ModalHeader>
 
 				<ModalContent>

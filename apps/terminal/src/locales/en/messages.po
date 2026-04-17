@@ -1217,10 +1217,13 @@ msgstr "Loading..."
 msgid "Long"
 msgstr "Long"
 
-#. placeholder {0}: position.coin
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Long {0} position"
-msgstr "Long {0} position"
+#~ msgid "Long {0} position"
+#~ msgstr "Long {0} position"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Long position"
+msgstr "Long position"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Low Balance"
@@ -2055,10 +2058,13 @@ msgstr "Settings"
 msgid "Short"
 msgstr "Short"
 
-#. placeholder {0}: position.coin
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Short {0} position"
-msgstr "Short {0} position"
+#~ msgid "Short {0} position"
+#~ msgstr "Short {0} position"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Short position"
+msgstr "Short position"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Executions"
