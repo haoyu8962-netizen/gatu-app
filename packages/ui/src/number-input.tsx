@@ -7,7 +7,10 @@ import { DEFAULT_SIZE } from "./config";
 import { cn } from "./utils";
 
 const numberInputVariants = cva(
-	["flex items-center w-full rounded-8", "bg-fill-inverse transition-colors duration-150"],
+	[
+		"flex items-center w-full rounded-8 border",
+		"bg-fill-inverse transition-colors duration-150 motion-reduce:transition-none",
+	],
 	{
 		variants: {
 			size: {
@@ -18,8 +21,8 @@ const numberInputVariants = cva(
 				lg: "py-3 px-4 gap-2",
 			},
 			invalid: {
-				true: "border-2 border-stroke-error-strong bg-error-soft",
-				false: "border border-stroke-strong hover:bg-fill-hover active:bg-fill-press",
+				true: "border-stroke-error-strong bg-error-soft ring-1 ring-stroke-error-strong",
+				false: "border-stroke-strong hover:bg-fill-hover active:bg-fill-press",
 			},
 		},
 		defaultVariants: {
@@ -34,7 +37,7 @@ const stepperButtonClasses = [
 	"text-icon hover:bg-fill-hover active:bg-fill-press",
 	"transition-colors duration-150 cursor-pointer select-none",
 	"focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stroke-focus",
-	"data-disabled:opacity-40 data-disabled:cursor-not-allowed data-disabled:pointer-events-none",
+	"data-disabled:text-icon-disabled data-disabled:cursor-not-allowed data-disabled:pointer-events-none",
 ].join(" ");
 
 interface NumberInputProps extends Omit<VariantProps<typeof numberInputVariants>, "invalid"> {

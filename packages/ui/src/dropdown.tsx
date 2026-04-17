@@ -9,10 +9,10 @@ const dropdownTriggerVariants = cva(
 	[
 		"inline-flex items-center justify-center gap-2 cursor-pointer select-none",
 		"rounded-8 border border-stroke-strong bg-background",
-		"font-semibold transition-colors",
+		"font-semibold transition-colors duration-150 motion-reduce:transition-none",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"data-popup-open:border-stroke-focus",
-		"data-disabled:opacity-40 data-disabled:cursor-not-allowed",
+		"data-disabled:text-fg-disabled data-disabled:cursor-not-allowed",
 	],
 	{
 		variants: {
@@ -34,9 +34,9 @@ const dropdownMinimalTriggerVariants = cva(
 	[
 		"group inline-flex items-center justify-center cursor-pointer select-none rounded-8",
 		"border-0 bg-transparent shadow-none appearance-none font-normal",
-		"transition-colors hover:text-fg data-[popup-open]:text-fg",
+		"transition-colors duration-150 motion-reduce:transition-none hover:text-fg data-[popup-open]:text-fg",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		"data-disabled:opacity-40 data-disabled:cursor-not-allowed",
+		"data-disabled:text-fg-disabled data-disabled:cursor-not-allowed",
 	],
 	{
 		variants: {
@@ -57,7 +57,7 @@ const dropdownMinimalTriggerVariants = cva(
 const dropdownItemVariants = cva(
 	[
 		"flex items-center gap-2 rounded-8 cursor-pointer select-none",
-		"transition-colors",
+		"transition-colors duration-150 motion-reduce:transition-none",
 		"data-highlighted:bg-fill-hover",
 		"data-disabled:text-fg-disabled data-disabled:cursor-not-allowed",
 	],
@@ -96,18 +96,20 @@ interface DropdownGroup {
 	items: DropdownItem[];
 }
 
-interface DropdownProps extends VariantProps<typeof dropdownTriggerVariants> {
+interface DropdownBaseProps extends VariantProps<typeof dropdownTriggerVariants> {
 	trigger?: React.ReactNode;
 	items?: DropdownItem[];
 	groups?: DropdownGroup[];
 	disabled?: boolean;
 	className?: string;
 	align?: "start" | "center" | "end";
-	triggerVariant?: "default" | "minimal";
-	triggerAriaLabel?: string;
 	triggerClassName?: string;
 	popupClassName?: string;
 }
+
+type DropdownProps =
+	| (DropdownBaseProps & { triggerVariant?: "default"; triggerAriaLabel?: string })
+	| (DropdownBaseProps & { triggerVariant: "minimal"; triggerAriaLabel: string });
 
 const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 	(
@@ -178,7 +180,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 							size={caretSize}
 							weight={isMinimalTrigger ? "regular" : "bold"}
 							className={cn(
-								"shrink-0 transition-transform [[data-popup-open]>&]:rotate-180",
+								"shrink-0 transition-transform duration-150 motion-reduce:transition-none [[data-popup-open]>&]:rotate-180",
 								isMinimalTrigger ? "text-fg-muted group-hover:text-fg group-data-[popup-open]:text-fg" : "text-icon",
 							)}
 						/>
@@ -188,7 +190,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 						<Menu.Positioner sideOffset={4} align={align} className="z-[1000]">
 							<Menu.Popup
 								className={cn(
-									"z-50 max-h-64 min-w-40 overflow-y-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
+									"z-50 max-h-64 min-w-40 overflow-y-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
 									popupClassName,
 								)}
 							>

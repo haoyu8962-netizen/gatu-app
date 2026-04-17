@@ -180,7 +180,7 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
 							className={cn(
 								"relative shrink-0 size-6 flex items-center justify-center cursor-pointer rounded-4",
 								"hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-								"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10",
+								"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 								colors.close,
 							)}
 							aria-label="Close alert"

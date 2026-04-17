@@ -9,11 +9,10 @@ const tooltipPopupVariants = cva([
 	"rounded-8 px-3 py-2",
 	"shadow-overlay",
 	"origin-(--transform-origin)",
-	"transition-[opacity,transform] duration-150",
+	"transition-[opacity,transform] duration-150 motion-reduce:transition-none",
 	"data-starting-style:opacity-0",
 	"data-ending-style:opacity-0",
 	"data-instant:duration-0",
-	"motion-reduce:transition-none",
 ]);
 
 const tooltipArrowVariants = cva([

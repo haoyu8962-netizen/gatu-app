@@ -7,7 +7,7 @@ import { cn } from "./utils";
 const toggleVariants = cva(
 	[
 		"relative inline-flex shrink-0 cursor-pointer items-center rounded-full",
-		"transition-colors duration-150",
+		"transition-colors duration-150 motion-reduce:transition-none",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"data-unchecked:bg-fill-weak",
 		"data-unchecked:ring-1 data-unchecked:ring-inset data-unchecked:ring-stroke-strong",
@@ -15,6 +15,7 @@ const toggleVariants = cva(
 		"data-checked:bg-fill-selected",
 		"data-checked:hover:opacity-90 data-checked:active:opacity-80",
 		"data-disabled:cursor-not-allowed data-disabled:opacity-40",
+		"before:content-[''] before:absolute before:top-1/2 before:left-1/2 before:-translate-1/2 before:min-w-11 before:min-h-11",
 	],
 	{
 		variants: {

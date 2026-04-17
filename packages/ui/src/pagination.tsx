@@ -60,7 +60,7 @@ const navButtonVariants = cva(
 		"rounded-4",
 		"hover:opacity-80",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		"data-disabled:opacity-40 data-disabled:cursor-not-allowed data-disabled:pointer-events-none",
+		"data-disabled:text-fg-disabled data-disabled:cursor-not-allowed data-disabled:pointer-events-none",
 	],
 	{
 		variants: {
@@ -186,7 +186,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 						aria-label="Previous page"
 						className={cn(navButtonVariants({ variant: "desktop" }), navBtnH, "pr-4")}
 					>
-						<ArrowLeft size={iconSize} className="shrink-0 text-icon" />
+						<ArrowLeftIcon size={iconSize} className="shrink-0 text-icon" />
 						Previous
 					</button>
 
@@ -222,7 +222,7 @@ const Pagination = React.forwardRef<HTMLElement, PaginationProps>(
 						className={cn(navButtonVariants({ variant: "desktop" }), navBtnH, "pl-4")}
 					>
 						Next
-						<ArrowRight size={iconSize} className="shrink-0 text-icon" />
+						<ArrowRightIcon size={iconSize} className="shrink-0 text-icon" />
 					</button>
 				</div>
 

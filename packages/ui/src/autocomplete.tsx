@@ -7,7 +7,7 @@ import { cn } from "./utils";
 
 const autocompleteVariants = cva(
 	[
-		"group flex items-center w-full rounded-8 border transition-colors",
+		"group flex items-center w-full rounded-8 border transition-colors duration-150 motion-reduce:transition-none",
 		"focus-within:border-stroke-focus",
 		"data-disabled:border-stroke-disabled",
 	],
@@ -47,6 +47,7 @@ interface AutocompleteProps extends Omit<VariantProps<typeof autocompleteVariant
 	required?: boolean;
 	disabled?: boolean;
 	className?: string;
+	id?: string;
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
 	value?: string | string[] | null;
 	defaultValue?: string | string[] | null;
@@ -67,6 +68,7 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 			errorMessage,
 			required = false,
 			disabled = false,
+			id,
 			value,
 			defaultValue,
 			onValueChange,
@@ -74,6 +76,8 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 		ref,
 	) => {
 		const size = sizeProp ?? DEFAULT_SIZE;
+		const reactId = React.useId();
+		const inputId = id ?? reactId;
 		const filter = Combobox.useFilter();
 		const [query, setQuery] = React.useState("");
 		const [internalMultiValue, setInternalMultiValue] = React.useState<string[]>(
@@ -137,6 +141,7 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 					</Combobox.Chips>
 				)}
 				<Combobox.Input
+					id={inputId}
 					placeholder={multiple && multiValue.length > 0 ? "" : placeholder}
 					className={cn(
 						"flex-1 min-w-0 bg-transparent outline-none",
@@ -157,7 +162,7 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 		const renderPopup = (
 			<Combobox.Portal>
 				<Combobox.Positioner sideOffset={4} className="z-[1000]">
-					<Combobox.Popup className="z-50 max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+					<Combobox.Popup className="z-50 max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
 						<Combobox.List>
 							{filteredOptions.map((option) => (
 								<Combobox.Item
@@ -193,10 +198,10 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 		return (
 			<div className={cn("flex flex-col gap-1", className)} ref={ref}>
 				{label && (
-					<span className="text-xs font-semibold text-fg">
+					<label htmlFor={inputId} className="text-xs font-semibold text-fg">
 						{label}
 						{required && <span className="text-error"> *</span>}
-					</span>
+					</label>
 				)}
 				{helperText && <span className="text-xs text-fg-muted">{helperText}</span>}
 

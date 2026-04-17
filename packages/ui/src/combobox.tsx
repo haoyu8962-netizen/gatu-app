@@ -7,7 +7,7 @@ import { cn } from "./utils";
 
 const comboboxVariants = cva(
 	[
-		"group flex items-center w-full rounded-8 border transition-colors",
+		"group flex items-center w-full rounded-8 border transition-colors duration-150 motion-reduce:transition-none",
 		"focus-within:border-stroke-focus",
 		"data-disabled:border-stroke-disabled",
 	],
@@ -47,6 +47,7 @@ interface ComboboxProps extends Omit<VariantProps<typeof comboboxVariants>, "siz
 	required?: boolean;
 	disabled?: boolean;
 	className?: string;
+	id?: string;
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
 	value?: string | string[] | null;
 	defaultValue?: string | string[] | null;
@@ -67,6 +68,7 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
 			errorMessage,
 			required = false,
 			disabled = false,
+			id,
 			value,
 			defaultValue,
 			onValueChange,
@@ -74,6 +76,8 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
 		ref,
 	) => {
 		const size = sizeProp ?? DEFAULT_SIZE;
+		const reactId = React.useId();
+		const inputId = id ?? reactId;
 		const filter = BaseCombobox.useFilter();
 		const [query, setQuery] = React.useState("");
 		const [internalMultiValue, setInternalMultiValue] = React.useState<string[]>(
@@ -126,6 +130,7 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
 					</BaseCombobox.Chips>
 				)}
 				<BaseCombobox.Input
+					id={inputId}
 					placeholder={multiple && multiValue.length > 0 ? "" : placeholder}
 					className={cn(
 						"flex-1 min-w-0 bg-transparent outline-none",
@@ -143,7 +148,7 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
 					<CaretDownIcon
 						size={16}
 						weight="bold"
-						className="shrink-0 text-icon transition-transform group-data-popup-open:rotate-180 group-data-disabled:text-icon-disabled"
+						className="shrink-0 text-icon transition-transform duration-150 motion-reduce:transition-none group-data-popup-open:rotate-180 group-data-disabled:text-icon-disabled"
 					/>
 				)}
 			</BaseCombobox.InputGroup>
@@ -152,7 +157,7 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
 		const renderPopup = (
 			<BaseCombobox.Portal>
 				<BaseCombobox.Positioner sideOffset={4} className="z-[1000]">
-					<BaseCombobox.Popup className="z-50 max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+					<BaseCombobox.Popup className="z-50 max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
 						<BaseCombobox.List>
 							{filteredOptions.map((option) => (
 								<BaseCombobox.Item
@@ -188,10 +193,10 @@ const Combobox = React.forwardRef<HTMLDivElement, ComboboxProps>(
 		return (
 			<div className={cn("flex flex-col gap-1", className)} ref={ref}>
 				{label && (
-					<span className="text-xs font-semibold text-fg">
+					<label htmlFor={inputId} className="text-xs font-semibold text-fg">
 						{label}
 						{required && <span className="text-error"> *</span>}
-					</span>
+					</label>
 				)}
 				{helperText && <span className="text-xs text-fg-muted">{helperText}</span>}
 

@@ -9,7 +9,7 @@ const textareaVariants = cva(
 	[
 		"w-full rounded-8 border font-normal",
 		"text-fg bg-background placeholder:text-fg-muted",
-		"transition-colors outline-none resize-y",
+		"transition-colors duration-150 motion-reduce:transition-none outline-none resize-y",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"disabled:border-stroke-disabled disabled:text-fg-disabled",
 		"disabled:placeholder:text-fg-disabled disabled:cursor-not-allowed",

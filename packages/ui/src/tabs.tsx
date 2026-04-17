@@ -69,7 +69,7 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
 				{!hideIndicator &&
 					(variant === "underline" ? (
 						<Tabs.Indicator
-							className="absolute -bottom-px h-0.5 bg-brand transition-[left,width] duration-200 ease-out motion-reduce:transition-none"
+							className="absolute -bottom-px h-0.5 bg-brand transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none"
 							style={{
 								left: "var(--active-tab-left)",
 								width: "var(--active-tab-width)",
@@ -96,11 +96,11 @@ const tabsTriggerVariants = cva(
 		"inline-flex items-center justify-center",
 		"font-normal text-fg-muted",
 		"cursor-pointer select-none whitespace-nowrap",
-		"transition-colors duration-150",
+		"transition-colors duration-150 motion-reduce:transition-none",
 		"data-active:text-fg",
 		"hover:text-fg",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		"data-disabled:opacity-40 data-disabled:cursor-not-allowed",
+		"data-disabled:text-fg-disabled data-disabled:cursor-not-allowed",
 	],
 	{
 		variants: {

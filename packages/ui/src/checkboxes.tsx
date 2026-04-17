@@ -10,10 +10,11 @@ const checkboxVariants = cva(
 	[
 		"relative inline-flex items-center justify-center shrink-0",
 		"border rounded-4 bg-background",
-		"transition-colors duration-150",
+		"transition-colors duration-150 motion-reduce:transition-none",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"data-checked:bg-brand data-checked:border-transparent",
 		"data-indeterminate:bg-brand data-indeterminate:border-transparent",
+		"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 	],
 	{
 		variants: {

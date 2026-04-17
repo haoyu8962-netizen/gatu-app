@@ -61,7 +61,7 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 					<Dialog.Popup
 						className={cn(
 							modalPopupVariants({ size, className }),
-							"max-h-[calc(100vh-3rem)] overflow-y-auto",
+							"max-h-[calc(100dvh-3rem)] overflow-y-auto",
 							"transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
 						)}
 						ref={ref}
@@ -76,7 +76,7 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 									"text-icon cursor-pointer",
 									"hover:bg-fill-hover active:bg-fill-press",
 									"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-									"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10",
+									"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 								)}
 								aria-label="Close"
 							>
@@ -169,7 +169,7 @@ function AdaptiveModal({ open, onOpenChange, size, showClose = true, children, c
 								"text-icon cursor-pointer",
 								"hover:bg-fill-hover active:bg-fill-press",
 								"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-								"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10",
+								"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 							)}
 							aria-label="Close"
 						>

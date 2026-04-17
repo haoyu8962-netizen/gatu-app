@@ -9,6 +9,15 @@
 /* --- Dark mode: class-based toggle --- */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* --- Hover: only apply on hover-capable pointers (prevents sticky hover on touch) --- */
+@custom-variant hover {
+	@media (hover: hover) {
+		&:hover {
+			@slot;
+		}
+	}
+}
+
 /* =============================================
    Layer 1: Primitive Tokens
    These override Tailwind defaults with our

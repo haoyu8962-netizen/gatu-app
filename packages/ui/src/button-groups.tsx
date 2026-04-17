@@ -46,9 +46,9 @@ const buttonGroupItemVariants = cva(
 		"inline-flex items-center justify-center",
 		"font-semibold select-none cursor-pointer",
 		"relative",
-		"transition-colors duration-150",
+		"transition-colors duration-150 motion-reduce:transition-none",
 		"focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		"data-disabled:cursor-not-allowed data-disabled:opacity-40",
+		"data-disabled:cursor-not-allowed data-disabled:text-fg-disabled",
 	],
 	{
 		variants: {
