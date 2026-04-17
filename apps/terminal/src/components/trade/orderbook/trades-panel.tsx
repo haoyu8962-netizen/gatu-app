@@ -29,7 +29,7 @@ const TradeRow = memo(function TradeRow({ trade, szDecimals, showInQuote }: Prop
 		>
 			<div className="text-fg flex items-center gap-1">
 				{trade.time}
-				<ArrowSquareOutIcon className="size-2.5 opacity-100 hover:opacity-80" />
+				<ArrowSquareOutIcon className="size-2.5 opacity-100 hover:opacity-80" aria-hidden="true" />
 			</div>
 			<div className={cn("text-right font-medium", trade.side === "buy" ? "text-success" : "text-error")}>
 				{formatNumber(trade.price, 2)}

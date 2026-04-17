@@ -192,7 +192,7 @@ export function MarketOverview() {
 							className="inline-flex items-center gap-0.5 font-sans text-xs font-medium tabular-nums text-fg hover:text-brand transition-colors"
 						>
 							{shortenAddress(spotTokenAddress, 4, 4)}
-							<ArrowSquareOutIcon className="size-2.5 shrink-0 text-icon" />
+							<ArrowSquareOutIcon className="size-2.5 shrink-0 text-icon" aria-hidden="true" />
 						</a>
 					</div>
 				</>

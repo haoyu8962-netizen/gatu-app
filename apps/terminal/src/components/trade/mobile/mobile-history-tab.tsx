@@ -132,7 +132,7 @@ export function MobileHistoryTab({ className }: Props) {
 											className="flex items-center gap-1 text-xs text-fg-muted hover:text-fg active:text-fg touch-manipulation"
 										>
 											{t`Explorer`}
-											<ArrowSquareOutIcon className="size-3" />
+											<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
 										</a>
 									)}
 								</div>

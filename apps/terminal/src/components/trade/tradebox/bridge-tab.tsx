@@ -220,7 +220,7 @@ function ExplorerLink({ href, children }: { href: string; children: React.ReactN
 			className="inline-flex items-center gap-1 text-brand hover:opacity-80"
 		>
 			{children}
-			<ArrowSquareOutIcon className="size-3" />
+			<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
 		</a>
 	);
 }

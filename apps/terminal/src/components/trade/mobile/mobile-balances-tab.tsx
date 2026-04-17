@@ -148,6 +148,7 @@ export function MobileBalancesTab({ className }: Props) {
 								variant="outline"
 								intent="neutral"
 								size="sm"
+								className="touch-target"
 								onClick={() => handleTransferClick(row)}
 								iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
 							>
@@ -159,6 +160,7 @@ export function MobileBalancesTab({ className }: Props) {
 								variant="outline"
 								intent="neutral"
 								size="sm"
+								className="touch-target"
 								onClick={() => openSwapModal(row.asset)}
 								iconLeft={<ArrowsDownUpIcon className="size-3.5" />}
 							>
@@ -171,7 +173,7 @@ export function MobileBalancesTab({ className }: Props) {
 								intent="neutral"
 								size="sm"
 								onClick={() => handleSendClick(row)}
-								className="ml-auto"
+								className="ml-auto touch-target"
 								iconLeft={<PaperPlaneTiltIcon className="size-3.5" />}
 							>
 								{t`Send`}

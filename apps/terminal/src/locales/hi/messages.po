@@ -123,13 +123,18 @@ msgstr "सक्रिय पोजीशन"
 msgid "Add"
 msgstr ""
 
+#. placeholder {0}: market.pairName
+#: src/components/trade/chart/token-selector.tsx
+msgid "Add {0} to favorites"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 msgid "Add funds"
 msgstr "धन जोड़ें"
 
 #: src/components/trade/chart/token-selector.tsx
-msgid "Add to favorites"
-msgstr "पसंदीदा में जोड़ें"
+#~ msgid "Add to favorites"
+#~ msgstr "पसंदीदा में जोड़ें"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Add TP/SL"
@@ -1327,6 +1332,10 @@ msgstr "मार्केट ऑर्डर स्लिपेज"
 msgid "markets"
 msgstr "बाज़ार"
 
+#: src/components/trade/chart/token-selector.tsx
+msgid "Markets"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Master"
 #~ msgstr ""
@@ -1872,13 +1881,18 @@ msgstr "केवल कम करें"
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
+#. placeholder {0}: market.pairName
+#: src/components/trade/chart/token-selector.tsx
+msgid "Remove {0} from favorites"
+msgstr ""
+
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Remove {displayName} from favorites"
 msgstr ""
 
 #: src/components/trade/chart/token-selector.tsx
-msgid "Remove from favorites"
-msgstr "पसंदीदा से हटाएं"
+#~ msgid "Remove from favorites"
+#~ msgstr "पसंदीदा से हटाएं"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Requirements:"

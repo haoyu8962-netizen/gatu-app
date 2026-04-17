@@ -94,40 +94,58 @@ export function PositionsPanel() {
 						})}
 					</TabsList>
 				</div>
-				<TabsContent value="balances" className={cn("flex-1 min-h-0 flex flex-col mt-0", isPending && "opacity-70")}>
+				<TabsContent
+					value="balances"
+					className={cn("flex-1 min-h-0 flex flex-col mt-0 transition-opacity duration-150", isPending && "opacity-70")}
+				>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<BalancesTab />
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="positions" className={cn("flex-1 min-h-0 flex flex-col mt-0", isPending && "opacity-70")}>
+				<TabsContent
+					value="positions"
+					className={cn("flex-1 min-h-0 flex flex-col mt-0 transition-opacity duration-150", isPending && "opacity-70")}
+				>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<PositionsTab />
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="orders" className={cn("flex-1 min-h-0 flex flex-col mt-0", isPending && "opacity-70")}>
+				<TabsContent
+					value="orders"
+					className={cn("flex-1 min-h-0 flex flex-col mt-0 transition-opacity duration-150", isPending && "opacity-70")}
+				>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<OrdersTab />
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="twap" className={cn("flex-1 min-h-0 flex flex-col mt-0", isPending && "opacity-70")}>
+				<TabsContent
+					value="twap"
+					className={cn("flex-1 min-h-0 flex flex-col mt-0 transition-opacity duration-150", isPending && "opacity-70")}
+				>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<TwapTab />
 					</Suspense>
 				</TabsContent>
 				<TabsContent
 					value="orders-history"
-					className={cn("flex-1 min-h-0 flex flex-col mt-0", isPending && "opacity-70")}
+					className={cn("flex-1 min-h-0 flex flex-col mt-0 transition-opacity duration-150", isPending && "opacity-70")}
 				>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<OrdersHistoryTab />
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="history" className={cn("flex-1 min-h-0 flex flex-col mt-0", isPending && "opacity-70")}>
+				<TabsContent
+					value="history"
+					className={cn("flex-1 min-h-0 flex flex-col mt-0 transition-opacity duration-150", isPending && "opacity-70")}
+				>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<HistoryTab />
 					</Suspense>
 				</TabsContent>
-				<TabsContent value="funding" className={cn("flex-1 min-h-0 flex flex-col mt-0", isPending && "opacity-70")}>
+				<TabsContent
+					value="funding"
+					className={cn("flex-1 min-h-0 flex flex-col mt-0 transition-opacity duration-150", isPending && "opacity-70")}
+				>
 					<Suspense fallback={<TabLoadingFallback />}>
 						<FundingTab />
 					</Suspense>

@@ -35,7 +35,13 @@ export function MobileHeader({ className }: Props) {
 
 				<div className="flex items-center gap-0.5">
 					<UserMenu />
-					<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label={TOP_NAV_TEXT.NOTIFICATIONS_ARIA}>
+					<ButtonIcon
+						variant="ghost"
+						intent="neutral"
+						size="md"
+						className="touch-target"
+						aria-label={TOP_NAV_TEXT.NOTIFICATIONS_ARIA}
+					>
 						<BellIcon className="size-4" />
 					</ButtonIcon>
 					<ThemeToggle />
@@ -43,6 +49,7 @@ export function MobileHeader({ className }: Props) {
 						variant="ghost"
 						intent="neutral"
 						size="md"
+						className="touch-target"
 						aria-label={TOP_NAV_TEXT.SETTINGS_ARIA}
 						onClick={openSettingsDialog}
 					>

@@ -75,7 +75,10 @@ export function MobilePositionsView({ className }: Props) {
 		return false;
 	}
 
-	const tabContentClass = cn("flex-1 min-h-0 flex flex-col mt-0", isPending && "opacity-70");
+	const tabContentClass = cn(
+		"flex-1 min-h-0 flex flex-col mt-0 transition-opacity duration-150",
+		isPending && "opacity-70",
+	);
 
 	return (
 		<div className={cn("flex-1 min-h-0 flex flex-col", className)}>

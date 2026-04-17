@@ -178,7 +178,7 @@ export function HistoryTab() {
 														rel="noopener noreferrer"
 													>
 														<span>{formatDateTimeShort(fill.time)}</span>
-														<ArrowSquareOutIcon className="size-2.5 opacity-100 hover:opacity-80" />
+														<ArrowSquareOutIcon className="size-2.5 opacity-100 hover:opacity-80" aria-hidden="true" />
 													</a>
 												</div>
 											</TableCell>

@@ -98,6 +98,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									variant="ghost"
 									intent="neutral"
 									size="sm"
+									className="touch-target"
 									onClick={handleCopyAddress}
 									aria-label={t`Copy address`}
 								>
@@ -113,6 +114,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						variant="ghost"
 						intent="error"
 						size="md"
+						className="touch-target"
 						onClick={() => disconnect.mutate()}
 						aria-label={t`Disconnect wallet`}
 					>

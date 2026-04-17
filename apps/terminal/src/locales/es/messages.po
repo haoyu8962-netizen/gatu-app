@@ -123,13 +123,18 @@ msgstr "Posiciones activas"
 msgid "Add"
 msgstr ""
 
+#. placeholder {0}: market.pairName
+#: src/components/trade/chart/token-selector.tsx
+msgid "Add {0} to favorites"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 msgid "Add funds"
 msgstr "Agregar fondos"
 
 #: src/components/trade/chart/token-selector.tsx
-msgid "Add to favorites"
-msgstr "Agregar a favoritos"
+#~ msgid "Add to favorites"
+#~ msgstr "Agregar a favoritos"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Add TP/SL"
@@ -1327,6 +1332,10 @@ msgstr "Deslizamiento de orden de mercado"
 msgid "markets"
 msgstr "mercados"
 
+#: src/components/trade/chart/token-selector.tsx
+msgid "Markets"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Master"
 #~ msgstr ""
@@ -1872,13 +1881,18 @@ msgstr "Solo reducir"
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
+#. placeholder {0}: market.pairName
+#: src/components/trade/chart/token-selector.tsx
+msgid "Remove {0} from favorites"
+msgstr ""
+
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Remove {displayName} from favorites"
 msgstr ""
 
 #: src/components/trade/chart/token-selector.tsx
-msgid "Remove from favorites"
-msgstr "Quitar de favoritos"
+#~ msgid "Remove from favorites"
+#~ msgstr "Quitar de favoritos"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Requirements:"

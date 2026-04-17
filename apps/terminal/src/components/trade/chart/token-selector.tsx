@@ -157,7 +157,7 @@ const TokenSelectorRow = memo(function TokenSelectorRow({
 			}}
 			role="option"
 			aria-selected={isSelected}
-			tabIndex={0}
+			tabIndex={-1}
 			className={cn(
 				"flex items-center px-2 cursor-pointer border-b border-stroke-weak",
 				"hover:bg-fill-hover transition-colors",
@@ -193,7 +193,7 @@ const TokenSelectorRow = memo(function TokenSelectorRow({
 								onToggleFavorite(market.name);
 							}}
 							className="shrink-0 rounded-4 p-0.5 hover:scale-110 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-							aria-label={isFav ? t`Remove from favorites` : t`Add to favorites`}
+							aria-label={isFav ? t`Remove ${market.pairName} from favorites` : t`Add ${market.pairName} to favorites`}
 							aria-pressed={isFav}
 						>
 							<StarIcon
@@ -452,6 +452,8 @@ function TokenSelectorContent({
 					<div className={cn("py-8 text-center text-fg", mobile ? "text-xs" : "text-xs")}>{t`No markets found.`}</div>
 				) : (
 					<div
+						role="listbox"
+						aria-label={t`Markets`}
 						style={{
 							height: `${virtualizer.getTotalSize()}px`,
 							width: "100%",

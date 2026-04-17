@@ -242,7 +242,7 @@ function MobilePositionCard({
 							variant="outline"
 							intent="neutral"
 							size="xs"
-							className="flex-1 justify-center"
+							className="flex-1 justify-center touch-target"
 							onClick={handleOpenTpSl}
 							disabled={typeof assetId !== "number"}
 							iconLeft={hasTpSl ? <CrosshairIcon className="size-3.5" /> : <PlusIcon className="size-3.5" />}
@@ -266,7 +266,7 @@ function MobilePositionCard({
 							variant="outline"
 							intent="neutral"
 							size="xs"
-							className="flex-1 justify-center"
+							className="flex-1 justify-center touch-target"
 							onClick={handleLimitClose}
 							disabled={!canClose || isClosing}
 						>
@@ -276,7 +276,7 @@ function MobilePositionCard({
 							variant="outline"
 							intent="error"
 							size="xs"
-							className="flex-1 justify-center"
+							className="flex-1 justify-center touch-target"
 							onClick={() => setConfirmingClose(true)}
 							disabled={!canClose || isClosing}
 							iconLeft={<XIcon className="size-3.5" />}

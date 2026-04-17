@@ -32,7 +32,7 @@ function PopoverContent({
 				sideOffset={sideOffset}
 				alignOffset={alignOffset}
 				collisionPadding={collisionPadding}
-				className="z-[1000]"
+				className="z-50"
 			>
 				<PopoverPrimitive.Popup
 					data-slot="popover-content"

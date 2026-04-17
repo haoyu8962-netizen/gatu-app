@@ -159,7 +159,7 @@ export function MobileOrdersTab({ className }: Props) {
 						variant="ghost"
 						intent="error"
 						size="sm"
-						className="ml-auto"
+						className="ml-auto touch-target"
 						onClick={handleCancelAll}
 						disabled={isCancelling || openOrders.length === 0}
 					>
@@ -249,6 +249,7 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 					variant="ghost"
 					intent="error"
 					size="sm"
+					className="touch-target"
 					onClick={() => onCancel([order])}
 					disabled={isCancelling}
 					iconLeft={isCancelling ? <Spinner className="size-3" /> : <XIcon className="size-3.5" />}

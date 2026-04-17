@@ -123,13 +123,18 @@ msgstr "المراكز النشطة"
 msgid "Add"
 msgstr ""
 
+#. placeholder {0}: market.pairName
+#: src/components/trade/chart/token-selector.tsx
+msgid "Add {0} to favorites"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 msgid "Add funds"
 msgstr "إضافة أموال"
 
 #: src/components/trade/chart/token-selector.tsx
-msgid "Add to favorites"
-msgstr "إضافة إلى المفضلة"
+#~ msgid "Add to favorites"
+#~ msgstr "إضافة إلى المفضلة"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Add TP/SL"
@@ -1327,6 +1332,10 @@ msgstr "انزلاق أمر السوق"
 msgid "markets"
 msgstr "أسواق"
 
+#: src/components/trade/chart/token-selector.tsx
+msgid "Markets"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Master"
 #~ msgstr ""
@@ -1872,13 +1881,18 @@ msgstr "تقليل فقط"
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
+#. placeholder {0}: market.pairName
+#: src/components/trade/chart/token-selector.tsx
+msgid "Remove {0} from favorites"
+msgstr ""
+
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Remove {displayName} from favorites"
 msgstr ""
 
 #: src/components/trade/chart/token-selector.tsx
-msgid "Remove from favorites"
-msgstr "إزالة من المفضلة"
+#~ msgid "Remove from favorites"
+#~ msgstr "إزالة من المفضلة"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Requirements:"

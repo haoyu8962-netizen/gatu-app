@@ -123,13 +123,18 @@ msgstr "活跃仓位"
 msgid "Add"
 msgstr ""
 
+#. placeholder {0}: market.pairName
+#: src/components/trade/chart/token-selector.tsx
+msgid "Add {0} to favorites"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 msgid "Add funds"
 msgstr "添加资金"
 
 #: src/components/trade/chart/token-selector.tsx
-msgid "Add to favorites"
-msgstr "添加到收藏"
+#~ msgid "Add to favorites"
+#~ msgstr "添加到收藏"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Add TP/SL"
@@ -1327,6 +1332,10 @@ msgstr "市价单滑点"
 msgid "markets"
 msgstr "个市场"
 
+#: src/components/trade/chart/token-selector.tsx
+msgid "Markets"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Master"
 #~ msgstr ""
@@ -1872,13 +1881,18 @@ msgstr "只减仓"
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
+#. placeholder {0}: market.pairName
+#: src/components/trade/chart/token-selector.tsx
+msgid "Remove {0} from favorites"
+msgstr ""
+
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Remove {displayName} from favorites"
 msgstr ""
 
 #: src/components/trade/chart/token-selector.tsx
-msgid "Remove from favorites"
-msgstr "从收藏中移除"
+#~ msgid "Remove from favorites"
+#~ msgstr "从收藏中移除"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Requirements:"

@@ -128,7 +128,7 @@ function StatusScreen({
 								className="inline-flex items-center gap-1.5 text-xs text-brand hover:underline"
 							>
 								<Trans>View on explorer</Trans>
-								<ArrowSquareOutIcon className="size-3" />
+								<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
 							</a>
 						)}
 						{children && <div className="w-full pt-2">{children}</div>}

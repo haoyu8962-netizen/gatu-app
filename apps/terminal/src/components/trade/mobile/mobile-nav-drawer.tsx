@@ -80,12 +80,19 @@ export function MobileNavDrawer() {
 
 	return (
 		<>
-			<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label="Open navigation" onClick={() => setOpen(true)}>
+			<ButtonIcon
+				variant="ghost"
+				intent="neutral"
+				size="md"
+				className="touch-target"
+				aria-label="Open navigation"
+				onClick={() => setOpen(true)}
+			>
 				<ListIcon className="size-4" />
 			</ButtonIcon>
 
 			<Drawer side="left" open={open} onOpenChange={setOpen}>
-				<DrawerContent className="w-72 flex flex-col p-0">
+				<DrawerContent className="w-[80vw] max-w-72 flex flex-col p-0">
 					<div className="h-12 px-3 flex items-center justify-between border-b border-stroke-weak/60 shrink-0">
 						<div className="flex items-center gap-1.5">
 							<div className="size-5 rounded-8 bg-brand/10 border border-stroke-brand-strong/30 flex items-center justify-center">

@@ -112,7 +112,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 							intent={view === "book" ? "neutral" : "neutral"}
 							size="sm"
 							onClick={() => setView("book")}
-							className={cn("min-h-[36px]", view !== "book" && "opacity-60")}
+							className={cn("min-h-11", view !== "book" && "opacity-60")}
 						>
 							{ORDERBOOK_TEXT.BOOK_LABEL}
 						</Button>
@@ -121,7 +121,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 							intent={view === "trades" ? "neutral" : "neutral"}
 							size="sm"
 							onClick={() => setView("trades")}
-							className={cn("min-h-[36px]", view !== "trades" && "opacity-60")}
+							className={cn("min-h-11", view !== "trades" && "opacity-60")}
 						>
 							{ORDERBOOK_TEXT.TRADES_LABEL}
 						</Button>
@@ -133,7 +133,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 							intent="neutral"
 							size="sm"
 							onClick={() => setShowOrderbookInQuote(!showOrderbookInQuote)}
-							className="min-h-[36px]"
+							className="min-h-11"
 							aria-label="Toggle display units"
 							iconRight={<ArrowsLeftRightIcon className="size-3" />}
 						>
