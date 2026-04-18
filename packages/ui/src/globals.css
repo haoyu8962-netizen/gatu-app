@@ -97,6 +97,13 @@
 	/* ---- Letter Spacing ---- */
 	--tracking-uppercase: 2px;
 	--tracking-heading-1: -0.5px;
+
+	/* ---- Z-Index Scale ---- */
+	--z-sticky: 40;
+	--z-overlay: 50;
+	--z-dropdown: 1000;
+	--z-tooltip: 1100;
+	--z-toast: 1200;
 }
 
 /* =============================================
@@ -411,7 +418,8 @@
 		-moz-osx-font-smoothing: grayscale;
 	}
 
-	@supports (-webkit-touch-callout: none) {
+	/* Prevent zoom on focus for any touch/coarse-pointer device (iOS Safari, Android Chrome/Firefox). */
+	@media (pointer: coarse) {
 		input,
 		textarea,
 		select {

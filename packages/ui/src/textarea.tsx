@@ -47,6 +47,13 @@ interface TextareaProps
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
 }
 
+const resizeClasses: Record<"none" | "vertical" | "horizontal" | "both", string> = {
+	none: "resize-none",
+	vertical: "resize-y",
+	horizontal: "resize-x",
+	both: "resize",
+};
+
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 	(
 		{
@@ -66,14 +73,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 		ref,
 	) => {
 		const size = sizeProp ?? DEFAULT_SIZE;
-		const resizeClass =
-			resize === "none"
-				? "resize-none"
-				: resize === "horizontal"
-					? "resize-x"
-					: resize === "both"
-						? "resize"
-						: "resize-y";
+		const resizeClass = resizeClasses[resize];
 
 		return (
 			<Field.Root disabled={disabled} invalid={error === true} className="flex flex-col gap-1">

@@ -33,6 +33,14 @@ const toggleVariants = cva(
 	},
 );
 
+const labelTextSizeClasses: Record<"xxs" | "xs" | "sm" | "md" | "lg", string> = {
+	xxs: "text-xs",
+	xs: "text-xs",
+	sm: "text-xs",
+	md: "text-sm",
+	lg: "text-base",
+};
+
 const thumbVariants = cva(
 	[
 		"pointer-events-none block rounded-full bg-surface shadow-raised",
@@ -88,13 +96,7 @@ const Toggle = React.forwardRef<HTMLButtonElement, ToggleProps>(
 				)}
 			>
 				{track}
-				<span
-					className={cn(
-						"font-normal",
-						size === "xxs" || size === "xs" || size === "sm" ? "text-xs" : size === "lg" ? "text-base" : "text-sm",
-						disabled ? "text-fg-disabled" : "text-fg",
-					)}
-				>
+				<span className={cn("font-normal", labelTextSizeClasses[size], disabled ? "text-fg-disabled" : "text-fg")}>
 					{label}
 				</span>
 			</label>

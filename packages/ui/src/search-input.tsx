@@ -40,6 +40,24 @@ interface SearchInputProps
 	onClear?: () => void;
 }
 
+type SearchInputSize = "xxs" | "xs" | "sm" | "md" | "lg";
+
+const searchIconSizes: Record<SearchInputSize, number> = {
+	xxs: 12,
+	xs: 14,
+	sm: 16,
+	md: 20,
+	lg: 20,
+};
+
+const searchInputTextClasses: Record<SearchInputSize, string> = {
+	xxs: "text-2xs",
+	xs: "text-xs",
+	sm: "text-xs",
+	md: "text-sm",
+	lg: "text-sm",
+};
+
 const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 	(
 		{
@@ -60,7 +78,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 		},
 		ref,
 	) => {
-		const size = sizeProp ?? DEFAULT_SIZE;
+		const size = (sizeProp ?? DEFAULT_SIZE) as SearchInputSize;
 		const reactId = React.useId();
 		const inputId = id ?? reactId;
 		const [internalValue, setInternalValue] = React.useState(defaultValue?.toString() ?? "");
@@ -81,7 +99,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 			onClear?.();
 		};
 
-		const iconSize = size === "xxs" ? 12 : size === "xs" ? 14 : size === "sm" ? 16 : 20;
+		const iconSize = searchIconSizes[size];
 
 		return (
 			<div className={cn("flex flex-col gap-1", className)}>
@@ -109,7 +127,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 						className={cn(
 							"flex-1 min-w-0 bg-transparent outline-none",
 							"[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden",
-							size === "md" || size === "lg" ? "text-sm" : size === "xxs" ? "text-2xs" : "text-xs",
+							searchInputTextClasses[size],
 							"text-fg placeholder:text-fg-muted",
 							"disabled:text-fg-disabled disabled:placeholder:text-fg-disabled disabled:cursor-not-allowed",
 						)}

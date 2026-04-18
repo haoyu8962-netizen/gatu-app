@@ -40,6 +40,22 @@ const stepperButtonClasses = [
 	"data-disabled:text-icon-disabled data-disabled:cursor-not-allowed data-disabled:pointer-events-none",
 ].join(" ");
 
+const inputTextSizeClasses: Record<"xxs" | "xs" | "sm" | "md" | "lg", string> = {
+	xxs: "text-2xs",
+	xs: "text-xs",
+	sm: "text-xs",
+	md: "text-sm",
+	lg: "text-base",
+};
+
+const stepperIconSizes: Record<"xxs" | "xs" | "sm" | "md" | "lg", number> = {
+	xxs: 12,
+	xs: 14,
+	sm: 16,
+	md: 18,
+	lg: 20,
+};
+
 interface NumberInputProps extends Omit<VariantProps<typeof numberInputVariants>, "invalid"> {
 	value?: number | null;
 	defaultValue?: number | null;
@@ -115,7 +131,7 @@ const NumberInput = React.forwardRef<HTMLDivElement, NumberInputProps>(
 	) => {
 		const size = sizeProp ?? DEFAULT_SIZE;
 		const isInvalid = !!error;
-		const stepperSize = size === "lg" ? 20 : size === "md" ? 18 : size === "sm" ? 16 : size === "xs" ? 14 : 12;
+		const stepperSize = stepperIconSizes[size];
 
 		function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
 			if (selectOnFocus) {
@@ -183,13 +199,7 @@ const NumberInput = React.forwardRef<HTMLDivElement, NumberInputProps>(
 							onBlur={onBlur}
 							className={cn(
 								"flex-1 min-w-0 bg-transparent outline-none tabular-nums",
-								size === "xxs"
-									? "text-2xs"
-									: size === "xs" || size === "sm"
-										? "text-xs"
-										: size === "lg"
-											? "text-base"
-											: "text-sm",
+								inputTextSizeClasses[size],
 								"font-normal text-fg placeholder:text-fg-muted",
 								"data-disabled:text-fg-disabled data-disabled:placeholder:text-fg-disabled data-disabled:cursor-not-allowed",
 							)}

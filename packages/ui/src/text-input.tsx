@@ -32,6 +32,14 @@ const textInputVariants = cva(
 	},
 );
 
+const inputTextSizeClasses: Record<"xxs" | "xs" | "sm" | "md" | "lg", string> = {
+	xxs: "text-2xs",
+	xs: "text-xs",
+	sm: "text-xs",
+	md: "text-sm",
+	lg: "text-base",
+};
+
 interface TextInputProps
 	extends Omit<React.ComponentPropsWithoutRef<"input">, "size">,
 		Omit<VariantProps<typeof textInputVariants>, "invalid"> {
@@ -98,13 +106,7 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 						required={required}
 						className={cn(
 							"flex-1 min-w-0 bg-transparent outline-none",
-							size === "xxs"
-								? "text-2xs"
-								: size === "xs" || size === "sm"
-									? "text-xs"
-									: size === "lg"
-										? "text-base"
-										: "text-sm",
+							inputTextSizeClasses[size],
 							"font-normal text-fg placeholder:text-fg-muted",
 							"data-disabled:text-fg-disabled data-disabled:placeholder:text-fg-disabled data-disabled:cursor-not-allowed",
 						)}

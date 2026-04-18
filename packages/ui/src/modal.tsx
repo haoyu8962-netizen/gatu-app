@@ -98,7 +98,7 @@ interface ModalHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
 const ModalHeader = React.forwardRef<HTMLDivElement, ModalHeaderProps>(
 	({ className, divider = true, ...props }, ref) => (
 		<div
-			className={cn("flex flex-col gap-1 p-4 pr-14", divider && "border-b border-stroke-weak/40", className)}
+			className={cn("flex flex-col gap-1 p-4 pr-14", divider && "border-b border-stroke-weak", className)}
 			ref={ref}
 			{...props}
 		/>

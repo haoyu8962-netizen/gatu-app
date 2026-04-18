@@ -100,6 +100,48 @@ const toneColors: Record<
 	},
 };
 
+type AlertSize = "xxs" | "xs" | "sm" | "md" | "lg";
+
+const paddingClasses: Record<AlertSize, string> = {
+	xxs: "p-2",
+	xs: "p-3",
+	sm: "p-4",
+	md: "p-5",
+	lg: "p-6",
+};
+
+const titleTextClasses: Record<AlertSize, string> = {
+	xxs: "text-2xs",
+	xs: "text-xs",
+	sm: "text-xs",
+	md: "text-sm",
+	lg: "text-base",
+};
+
+const descTextClasses: Record<AlertSize, string> = {
+	xxs: "text-xs",
+	xs: "text-xs",
+	sm: "text-xs",
+	md: "text-sm",
+	lg: "text-sm",
+};
+
+const iconWrapperSizeClasses: Record<AlertSize, string> = {
+	xxs: "size-4",
+	xs: "size-4",
+	sm: "size-5",
+	md: "size-5",
+	lg: "size-6",
+};
+
+const closeIconSizes: Record<AlertSize, number> = {
+	xxs: 10,
+	xs: 10,
+	sm: 12,
+	md: 12,
+	lg: 12,
+};
+
 interface AlertProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title">, VariantProps<typeof alertVariants> {
 	tone?: AlertTone;
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
@@ -133,25 +175,11 @@ const Alert = React.forwardRef<HTMLDivElement, AlertProps>(
 		const size = sizeProp ?? DEFAULT_ALERT_SIZE;
 		const colors = toneColors[tone];
 		const isVertical = layout === "vertical";
-
-		const paddingClass =
-			size === "xxs" ? "p-2" : size === "xs" ? "p-3" : size === "sm" ? "p-4" : size === "md" ? "p-5" : "p-6";
-
-		const titleTextClass =
-			size === "xxs"
-				? "text-2xs"
-				: size === "xs" || size === "sm"
-					? "text-xs"
-					: size === "md"
-						? "text-sm"
-						: "text-base";
-
-		const descTextClass = size === "md" || size === "lg" ? "text-sm" : "text-xs";
-
-		const iconWrapperSize =
-			size === "xxs" || size === "xs" ? "size-4" : size === "sm" || size === "md" ? "size-5" : "size-6";
-
-		const closeIconSize = size === "xxs" || size === "xs" ? 10 : 12;
+		const paddingClass = paddingClasses[size];
+		const titleTextClass = titleTextClasses[size];
+		const descTextClass = descTextClasses[size];
+		const iconWrapperSize = iconWrapperSizeClasses[size];
+		const closeIconSize = closeIconSizes[size];
 
 		return (
 			<div className={cn(alertVariants({ tone, className }))} ref={ref} role="alert" {...props}>
