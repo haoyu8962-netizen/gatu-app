@@ -44,16 +44,24 @@ export function TradeHeader({
 
 	const isSpot = marketKind === "spot";
 	const orderTypeItems = [
-		{ label: t`Market`, onSelect: () => onOrderTypeChange("market") },
-		{ label: t`Limit`, onSelect: () => onOrderTypeChange("limit") },
+		{ label: t`Market`, active: orderType === "market", onSelect: () => onOrderTypeChange("market") },
+		{ label: t`Limit`, active: orderType === "limit", onSelect: () => onOrderTypeChange("limit") },
 		...(!isSpot
 			? [
-					{ label: t`Stop Market`, onSelect: () => onOrderTypeChange("stopMarket" as OrderType) },
-					{ label: t`Stop Limit`, onSelect: () => onOrderTypeChange("stopLimit" as OrderType) },
+					{
+						label: t`Stop Market`,
+						active: orderType === "stopMarket",
+						onSelect: () => onOrderTypeChange("stopMarket" as OrderType),
+					},
+					{
+						label: t`Stop Limit`,
+						active: orderType === "stopLimit",
+						onSelect: () => onOrderTypeChange("stopLimit" as OrderType),
+					},
 				]
 			: []),
-		{ label: t`TWAP`, onSelect: () => onOrderTypeChange("twap" as OrderType) },
-		{ label: t`Scale`, onSelect: () => onOrderTypeChange("scale" as OrderType) },
+		{ label: t`TWAP`, active: orderType === "twap", onSelect: () => onOrderTypeChange("twap" as OrderType) },
+		{ label: t`Scale`, active: orderType === "scale", onSelect: () => onOrderTypeChange("scale" as OrderType) },
 	];
 
 	const marginLabel = marginMode === "isolated" ? t`Isolated` : t`Cross`;

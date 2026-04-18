@@ -713,8 +713,16 @@ msgid "Dismiss"
 msgstr "تجاهل"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Display Language"
-msgstr "لغة العرض"
+msgid "Display"
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Display language"
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+#~ msgid "Display Language"
+#~ msgstr "لغة العرض"
 
 #: src/components/ui/sidebar.tsx
 #~ msgid "Displays the mobile sidebar."
@@ -795,6 +803,10 @@ msgstr "الدخول"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Entry Price"
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Environment"
 msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
@@ -968,8 +980,8 @@ msgid "Flip transfer direction"
 msgstr ""
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Format for numbers and dates"
-msgstr ""
+#~ msgid "Format for numbers and dates"
+#~ msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1230,6 +1242,10 @@ msgstr ""
 msgid "Low Balance"
 msgstr ""
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Mainnet"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Maintenance Margin"
@@ -1325,8 +1341,8 @@ msgid "Market not ready"
 msgstr "السوق غير جاهز"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Market Order Slippage"
-msgstr "انزلاق أمر السوق"
+#~ msgid "Market Order Slippage"
+#~ msgstr "انزلاق أمر السوق"
 
 #: src/components/trade/chart/token-selector.tsx
 msgid "markets"
@@ -1365,8 +1381,8 @@ msgstr "الأقصى"
 #~ msgstr "الحد الأقصى للانزلاق المسموح به لأوامر السوق."
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Maximum slippage tolerance for market orders"
-msgstr ""
+#~ msgid "Maximum slippage tolerance for market orders"
+#~ msgstr ""
 
 #: src/components/ui/price-input.tsx
 msgid "Mid"
@@ -1576,8 +1592,12 @@ msgstr "غير متصل"
 #~ msgstr "الإشعارات"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Number Format"
+msgid "Number format"
 msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+#~ msgid "Number Format"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Number of Orders"
@@ -1632,11 +1652,14 @@ msgstr "الأوامر المفتوحة"
 msgid "ORACLE"
 msgstr "أوراكل"
 
-#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Order Book"
 msgstr "دفتر الأوامر"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Order book in quote asset"
+msgstr ""
 
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Order failed"
@@ -1696,6 +1719,10 @@ msgstr ""
 #: src/components/pages/not-found-page.tsx
 msgid "Page not found"
 msgstr "الصفحة غير موجودة"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Page reloads when changed"
+msgstr ""
 
 #: src/components/ui/pagination.tsx
 #~ msgid "pagination"
@@ -2115,8 +2142,8 @@ msgstr ""
 #~ msgstr "إظهار خطوط المسح"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Show Values in Quote Asset"
-msgstr ""
+#~ msgid "Show Values in Quote Asset"
+#~ msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Values in USD"
@@ -2192,6 +2219,7 @@ msgstr ""
 msgid "Slippage"
 msgstr "الانزلاق"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Slippage tolerance"
 msgstr ""
@@ -2335,8 +2363,8 @@ msgid "Swapping..."
 msgstr ""
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Switch between mainnet and testnet. Page will reload."
-msgstr ""
+#~ msgid "Switch between mainnet and testnet. Page will reload."
+#~ msgstr ""
 
 #. placeholder {0}: fill.coin
 #: src/components/trade/positions/history-tab.tsx
@@ -2436,6 +2464,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Taking longer than expected"
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Testnet"
 msgstr ""
 
 #: src/components/pages/builder-page.tsx
@@ -2578,6 +2610,10 @@ msgstr ""
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Trades"
 msgstr "الصفقات"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Trading"
+msgstr ""
 
 #: src/components/trade/chart/chart-source-toggle.tsx
 msgid "TradingView"

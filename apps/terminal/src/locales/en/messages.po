@@ -713,8 +713,16 @@ msgid "Dismiss"
 msgstr "Dismiss"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Display Language"
-msgstr "Display Language"
+msgid "Display"
+msgstr "Display"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Display language"
+msgstr "Display language"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#~ msgid "Display Language"
+#~ msgstr "Display Language"
 
 #: src/components/ui/sidebar.tsx
 #~ msgid "Displays the mobile sidebar."
@@ -796,6 +804,10 @@ msgstr "Entry"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Entry Price"
 msgstr "Entry Price"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Environment"
+msgstr "Environment"
 
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Equity"
@@ -968,8 +980,8 @@ msgid "Flip transfer direction"
 msgstr "Flip transfer direction"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Format for numbers and dates"
-msgstr "Format for numbers and dates"
+#~ msgid "Format for numbers and dates"
+#~ msgstr "Format for numbers and dates"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1234,6 +1246,10 @@ msgstr "Long position"
 msgid "Low Balance"
 msgstr "Low Balance"
 
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Mainnet"
+msgstr "Mainnet"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Maintenance Margin"
@@ -1329,8 +1345,8 @@ msgid "Market not ready"
 msgstr "Market not ready"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Market Order Slippage"
-msgstr "Market Order Slippage"
+#~ msgid "Market Order Slippage"
+#~ msgstr "Market Order Slippage"
 
 #: src/components/trade/chart/token-selector.tsx
 msgid "markets"
@@ -1369,8 +1385,8 @@ msgstr "Max"
 #~ msgstr "Max slippage allowed for market orders."
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Maximum slippage tolerance for market orders"
-msgstr "Maximum slippage tolerance for market orders"
+#~ msgid "Maximum slippage tolerance for market orders"
+#~ msgstr "Maximum slippage tolerance for market orders"
 
 #: src/components/ui/price-input.tsx
 msgid "Mid"
@@ -1580,8 +1596,12 @@ msgstr "Not connected"
 #~ msgstr "Notifications"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Number Format"
-msgstr "Number Format"
+msgid "Number format"
+msgstr "Number format"
+
+#: src/components/trade/components/global-settings-modal.tsx
+#~ msgid "Number Format"
+#~ msgstr "Number Format"
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Number of Orders"
@@ -1636,11 +1656,14 @@ msgstr "Open Orders"
 msgid "ORACLE"
 msgstr "ORACLE"
 
-#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Order Book"
 msgstr "Order Book"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Order book in quote asset"
+msgstr "Order book in quote asset"
 
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Order failed"
@@ -1700,6 +1723,10 @@ msgstr "Other"
 #: src/components/pages/not-found-page.tsx
 msgid "Page not found"
 msgstr "Page not found"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Page reloads when changed"
+msgstr "Page reloads when changed"
 
 #: src/components/ui/pagination.tsx
 #~ msgid "pagination"
@@ -2119,8 +2146,8 @@ msgstr "Show fewer wallets"
 #~ msgstr "Show Scanlines"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Show Values in Quote Asset"
-msgstr "Show Values in Quote Asset"
+#~ msgid "Show Values in Quote Asset"
+#~ msgstr "Show Values in Quote Asset"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Values in USD"
@@ -2196,6 +2223,7 @@ msgstr "SL Price"
 msgid "Slippage"
 msgstr "Slippage"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Slippage tolerance"
 msgstr "Slippage tolerance"
@@ -2339,8 +2367,8 @@ msgid "Swapping..."
 msgstr "Swapping..."
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Switch between mainnet and testnet. Page will reload."
-msgstr "Switch between mainnet and testnet. Page will reload."
+#~ msgid "Switch between mainnet and testnet. Page will reload."
+#~ msgstr "Switch between mainnet and testnet. Page will reload."
 
 #. placeholder {0}: fill.coin
 #: src/components/trade/positions/history-tab.tsx
@@ -2441,6 +2469,10 @@ msgstr "Take profit trigger must be below mark"
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "Taking longer than expected"
 msgstr "Taking longer than expected"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Testnet"
+msgstr "Testnet"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
@@ -2583,9 +2615,9 @@ msgstr "trades"
 msgid "Trades"
 msgstr "Trades"
 
-#: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Trading"
-#~ msgstr "Trading"
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Trading"
+msgstr "Trading"
 
 #: src/components/trade/chart/chart-source-toggle.tsx
 msgid "TradingView"

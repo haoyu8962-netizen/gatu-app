@@ -86,20 +86,14 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 
 		const multiValue = multiple && value !== undefined ? (value as string[]) : internalMultiValue;
 
-		const filteredOptions = React.useMemo(
-			() => (query ? options.filter((opt) => filter.contains(opt, query)) : options),
-			[options, query, filter],
-		);
+		const filteredOptions = query ? options.filter((opt) => filter.contains(opt, query)) : options;
 
-		const handleValueChange = React.useCallback(
-			(newValue: string | string[] | null) => {
-				if (multiple && Array.isArray(newValue)) {
-					setInternalMultiValue(newValue);
-				}
-				onValueChange?.(newValue);
-			},
-			[multiple, onValueChange],
-		);
+		function handleValueChange(newValue: string | string[] | null) {
+			if (multiple && Array.isArray(newValue)) {
+				setInternalMultiValue(newValue);
+			}
+			onValueChange?.(newValue);
+		}
 
 		const comboboxProps = {
 			disabled,
@@ -161,8 +155,8 @@ const Autocomplete = React.forwardRef<HTMLDivElement, AutocompleteProps>(
 
 		const renderPopup = (
 			<Combobox.Portal>
-				<Combobox.Positioner sideOffset={4} className="z-[1000]">
-					<Combobox.Popup className="z-50 max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+				<Combobox.Positioner sideOffset={4} className="z-[var(--z-dropdown)]">
+					<Combobox.Popup className="max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
 						<Combobox.List>
 							{filteredOptions.map((option) => (
 								<Combobox.Item

@@ -144,6 +144,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 						intent: item.danger ? "danger" : "neutral",
 					}),
 					"justify-between",
+					item.active && !item.danger && "font-semibold text-fg",
 				)}
 			>
 				<span className="flex items-center gap-2">
@@ -160,7 +161,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 					)}
 					{item.label}
 				</span>
-				{item.active && <CheckIcon size={14} weight="bold" className="ml-2 shrink-0 text-icon-brand" />}
+				{item.active && <CheckIcon size={12} weight="bold" className="ml-2 shrink-0 text-icon-brand" />}
 			</Menu.Item>
 		);
 
@@ -187,10 +188,10 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 					</Menu.Trigger>
 
 					<Menu.Portal>
-						<Menu.Positioner sideOffset={4} align={align} className="z-[1000]">
+						<Menu.Positioner sideOffset={4} align={align} className="z-[var(--z-dropdown)]">
 							<Menu.Popup
 								className={cn(
-									"z-50 max-h-64 min-w-40 overflow-y-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
+									"max-h-64 min-w-40 overflow-y-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
 									popupClassName,
 								)}
 							>

@@ -172,8 +172,8 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 					</BaseSelect.Trigger>
 
 					<BaseSelect.Portal>
-						<BaseSelect.Positioner sideOffset={4} className="z-[1000]">
-							<BaseSelect.Popup className="z-50 max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+						<BaseSelect.Positioner sideOffset={4} className="z-[var(--z-dropdown)]">
+							<BaseSelect.Popup className="max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
 								{options.map((option) =>
 									isGroupOption(option) ? (
 										<BaseSelect.Group key={option.label}>
