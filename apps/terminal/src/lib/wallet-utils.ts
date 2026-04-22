@@ -5,6 +5,7 @@ import { CoinbaseIcon } from "@/components/icons/coinbase-icon";
 import { MetaMaskIcon } from "@/components/icons/metamask-icon";
 import { RabbyIcon } from "@/components/icons/rabby-icon";
 import { WalletConnectIcon } from "@/components/icons/walletconnect-icon";
+import { RECENT_WALLETS_LIMIT, STORAGE_KEYS } from "@/config/constants";
 
 export interface WalletInfo {
 	icon: React.ComponentType<{ className?: string }>;
@@ -147,14 +148,22 @@ export function getWalletInfo(connector: Connector): WalletInfo {
 	return DEFAULT_WALLET_INFO;
 }
 
-const LAST_WALLET_KEY = "hypeterminal:last-wallet";
-
-export function getLastUsedWallet(): string | null {
-	if (typeof window === "undefined") return null;
-	return localStorage.getItem(LAST_WALLET_KEY);
+export function getRecentWallets(): string[] {
+	if (typeof window === "undefined") return [];
+	const raw = localStorage.getItem(STORAGE_KEYS.RECENT_WALLETS);
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed.filter((id): id is string => typeof id === "string").slice(0, RECENT_WALLETS_LIMIT);
+	} catch {
+		return [];
+	}
 }
 
-export function setLastUsedWallet(connectorId: string): void {
+export function addRecentWallet(connectorId: string): void {
 	if (typeof window === "undefined") return;
-	localStorage.setItem(LAST_WALLET_KEY, connectorId);
+	const existing = getRecentWallets().filter((id) => id !== connectorId);
+	const next = [connectorId, ...existing].slice(0, RECENT_WALLETS_LIMIT);
+	localStorage.setItem(STORAGE_KEYS.RECENT_WALLETS, JSON.stringify(next));
 }

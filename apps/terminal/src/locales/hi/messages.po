@@ -1397,7 +1397,6 @@ msgid "Min order $10"
 msgstr "न्यूनतम ऑर्डर $10"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Minimum"
 msgstr ""
 
@@ -1884,6 +1883,10 @@ msgstr ""
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "दर"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Recent"
+msgstr ""
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"

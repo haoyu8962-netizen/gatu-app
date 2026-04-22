@@ -1401,7 +1401,6 @@ msgid "Min order $10"
 msgstr "Min order $10"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Minimum"
 msgstr "Minimum"
 
@@ -1888,6 +1887,10 @@ msgstr "Randomize timing"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "Rate"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Recent"
+msgstr "Recent"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"

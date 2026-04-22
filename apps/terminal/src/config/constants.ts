@@ -11,7 +11,15 @@ export const FALLBACK_VALUE_PLACEHOLDER = "-";
 export const FORMAT_COMPACT_THRESHOLD = 10_000;
 export const FORMAT_COMPACT_DEFAULT = true;
 
+export const SMALL_BALANCE_THRESHOLD_USD = 1;
+export const MAX_HISTORY_ROWS = 200;
+export const LIQ_WARNING_PROXIMITY = 0.1;
+
+export const DEFAULT_FAVORITE_MARKETS = ["BTC", "ETH", "HYPE"] as const;
+
 export const MOBILE_BREAKPOINT_PX = 768;
+
+export const RECENT_WALLETS_LIMIT = 3;
 
 export const DEFAULT_MARKET_KEY = "perp:BTC";
 export const DEFAULT_MARKET_NAME = "BTC";
@@ -46,7 +54,14 @@ export const STORAGE_KEYS = {
 	META_CACHE: "hyperliquid-meta-cache-v2",
 	SIDEBAR_STATE: "sidebar_state-v2",
 	ORDER_ENTRY: "order-entry-v2",
+	LAST_MARK: "hl-last-mark-v1",
+	MARKETS_STATS: "hl-mkt-stats-v1",
+	RECENT_WALLETS: "hypeterminal:recent-wallets",
+	RQ_CACHE: "hl-rq-cache-v1",
+	LEGACY_METADATA: "hl-markets-meta-v1",
 } as const;
+
+export const RQ_CACHE_BUSTER = "v1";
 
 export const GITHUB_URL = "https://github.com/vipineth/hypeterminal/";
 export const TOKEN_ICON_BASE_URL = "https://app.hyperliquid.xyz/coins";
@@ -217,16 +232,6 @@ export const CHART_DATAFEED_CONFIG = {
 	MIN_MOVEMENT: 1,
 	VOLUME_PRECISION: 2,
 	SEARCH_LIMIT: 50,
-} as const;
-
-export const MARKET_CATEGORY_LABELS = {
-	all: "All",
-	trending: "Hot",
-	new: "New",
-	defi: "DeFi",
-	layer1: "L1",
-	layer2: "L2",
-	meme: "Meme",
 } as const;
 
 export const POSITIONS_TABS = [
