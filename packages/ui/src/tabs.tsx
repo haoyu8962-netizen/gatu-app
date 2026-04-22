@@ -201,7 +201,7 @@ TabsTrigger.displayName = "TabsTrigger";
 interface TabsContentProps extends React.ComponentPropsWithoutRef<typeof Tabs.Panel> {}
 
 const TabsContent = React.forwardRef<HTMLDivElement, TabsContentProps>(({ className, ...props }, ref) => (
-	<Tabs.Panel ref={ref} className={cn("pt-2", className)} {...props} />
+	<Tabs.Panel ref={ref} className={cn("pt-2 [&[hidden]]:!hidden", className)} {...props} />
 ));
 TabsContent.displayName = "TabsContent";
 
