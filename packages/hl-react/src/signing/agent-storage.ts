@@ -82,6 +82,14 @@ let cacheVersion = 0;
 
 const STORAGE_KEY_PREFIX = "hyperliquid_agent_";
 
+// Single canonical derivation for the (env, address) cache key. Addresses from
+// wagmi arrive EIP-55 checksum-cased; the storage key is always lowercase, so
+// normalizing here keeps the set/read path and the StorageEvent invalidation
+// path in lock-step.
+function getCacheKey(env: HyperliquidEnv, userAddress: string): string {
+	return `${env}:${userAddress.toLowerCase()}`;
+}
+
 function invalidateSnapshotCache() {
 	cacheVersion++;
 }
@@ -93,9 +101,6 @@ function invalidateSnapshotKey(storageKey: string | null) {
 		invalidateSnapshotCache();
 		return;
 	}
-	// Storage key format: `hyperliquid_agent_<env>_<address>`. Map to the
-	// internal cache key `${env}:${address}`. LRU.delete removes just this
-	// entry — other cached pairs keep their stable reads.
 	const rest = storageKey.slice(STORAGE_KEY_PREFIX.length);
 	const underscore = rest.indexOf("_");
 	if (underscore === -1) {
@@ -104,12 +109,12 @@ function invalidateSnapshotKey(storageKey: string | null) {
 	}
 	const env = rest.slice(0, underscore);
 	const address = rest.slice(underscore + 1);
-	snapshotCache.delete(`${env}:${address}`);
+	snapshotCache.delete(getCacheKey(env as HyperliquidEnv, address));
 }
 
 /** @internal — exported only for tests; do not consume from outside this package. */
 export function getCachedAgentSnapshot(env: HyperliquidEnv, userAddress: string): AgentWallet | null {
-	const key = `${env}:${userAddress}`;
+	const key = getCacheKey(env, userAddress);
 	const entry = snapshotCache.get(key);
 	if (entry && entry.version === cacheVersion) return entry.value;
 	const value = readAgentFromStorage(env, userAddress);
@@ -117,7 +122,8 @@ export function getCachedAgentSnapshot(env: HyperliquidEnv, userAddress: string)
 	return value;
 }
 
-function subscribeToStorage(callback: () => void): () => void {
+/** @internal — exported only for tests; do not consume from outside this package. */
+export function subscribeToStorage(callback: () => void): () => void {
 	if (typeof window === "undefined") return () => {};
 	function handleStorage(event: StorageEvent) {
 		// Cross-tab StorageEvents carry the affected key; same-tab synthetic

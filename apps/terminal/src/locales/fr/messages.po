@@ -238,6 +238,10 @@ msgstr "Prix moy."
 msgid "Back"
 msgstr ""
 
+#: src/components/trade/mobile/offline-banner.tsx
+msgid "Back online"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Back to asset selection"
 #~ msgstr ""
@@ -708,6 +712,7 @@ msgstr ""
 msgid "Disconnected"
 msgstr ""
 
+#: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Dismiss"
 msgstr "Fermer"
@@ -1353,6 +1358,7 @@ msgid "markets"
 msgstr "marchés"
 
 #: src/components/trade/chart/token-selector.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Markets"
 msgstr ""
 
@@ -1780,6 +1786,10 @@ msgstr ""
 msgid "Place Limit Close"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Platform"
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Please enter an address"
 msgstr ""
@@ -1936,6 +1946,7 @@ msgstr ""
 msgid "Resets in"
 msgstr ""
 
+#: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -1956,7 +1967,7 @@ msgid "RO"
 msgstr ""
 
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/lib/trade/order-types.ts
+#: src/config/trade.ts
 msgid "Scale"
 msgstr ""
 
@@ -2235,6 +2246,10 @@ msgstr ""
 msgid "Something went wrong"
 msgstr "Une erreur s'est produite"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Soon"
+msgstr ""
+
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Sort by {0}"
 #~ msgstr "Trier par {0}"
@@ -2310,7 +2325,7 @@ msgstr "Statut"
 #~ msgstr "Stop"
 
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/lib/trade/order-types.ts
+#: src/config/trade.ts
 msgid "Stop Limit"
 msgstr ""
 
@@ -2320,7 +2335,7 @@ msgid "Stop Loss"
 msgstr ""
 
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/lib/trade/order-types.ts
+#: src/config/trade.ts
 msgid "Stop Market"
 msgstr ""
 
@@ -2444,11 +2459,11 @@ msgstr ""
 msgid "Switching..."
 msgstr "Changement..."
 
-#: src/lib/trade/order-types.ts
+#: src/config/trade.ts
 msgid "Take Limit"
 msgstr ""
 
-#: src/lib/trade/order-types.ts
+#: src/config/trade.ts
 msgid "Take Market"
 msgstr ""
 
@@ -2676,7 +2691,7 @@ msgid "Try Again"
 msgstr ""
 
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/lib/trade/order-types.ts
+#: src/config/trade.ts
 msgid "TWAP"
 msgstr ""
 
@@ -2862,6 +2877,10 @@ msgstr ""
 #: src/components/trade/tradebox/bridge-tab.tsx
 #: src/components/trade/tradebox/bridge-tab.tsx
 msgid "You send"
+msgstr ""
+
+#: src/components/trade/mobile/offline-banner.tsx
+msgid "You're offline"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
