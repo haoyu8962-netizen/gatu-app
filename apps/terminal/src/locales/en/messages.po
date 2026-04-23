@@ -1243,8 +1243,12 @@ msgid "Long position"
 msgstr "Long position"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
-msgid "Low Balance"
-msgstr "Low Balance"
+msgid "Low balance"
+msgstr "Low balance"
+
+#: src/components/trade/tradebox/bridge-tab.tsx
+#~ msgid "Low Balance"
+#~ msgstr "Low Balance"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Mainnet"

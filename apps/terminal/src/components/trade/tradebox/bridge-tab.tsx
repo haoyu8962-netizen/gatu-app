@@ -66,7 +66,7 @@ function PoweredByLiFi() {
 			href="https://li.fi"
 			target="_blank"
 			rel="noopener noreferrer"
-			className="flex items-center justify-center gap-1.5 text-fg-muted"
+			className="flex items-center justify-center gap-1.5 text-fg-disabled opacity-70 hover:opacity-100 transition-opacity"
 		>
 			<span className="text-3xs">Powered by</span>
 			<LiFiLogo className="h-2.5" />
@@ -292,17 +292,18 @@ function TokenRow({ token, isSelected, onSelect }: TokenRowProps) {
 					<span className="text-xs font-medium text-fg truncate">{token.symbol}</span>
 					<span className="text-xs text-fg-muted truncate">{token.chainName}</span>
 				</div>
-				<span className="text-xs text-fg-muted truncate block">{token.name}</span>
+				{token.isDust ? (
+					<span className="text-2xs text-fg-disabled truncate block">
+						<Trans>Low balance</Trans>
+					</span>
+				) : (
+					<span className="text-xs text-fg-muted truncate block">{token.name}</span>
+				)}
 			</div>
 			<div className="text-right shrink-0">
 				<div className="text-xs tabular-nums text-fg">{formatTokenBalance(token.amount, token.decimals)}</div>
 				<div className="text-xs tabular-nums text-fg-muted">{formatUSD(token.amountUSD, 2)}</div>
 			</div>
-			{token.isDust ? (
-				<Badge tone="neutral" size="sm" className="shrink-0">
-					<Trans>Low Balance</Trans>
-				</Badge>
-			) : null}
 		</button>
 	);
 }
@@ -371,7 +372,7 @@ function AssetSelectionScreen({ address, onSelect }: AssetSelectionScreenProps) 
 
 	return (
 		<div className="flex flex-1 flex-col">
-			<div className="max-h-80 overflow-y-auto -mx-1">
+			<div className="max-h-72 overflow-y-auto -mx-1 [mask-image:linear-gradient(to_bottom,black_88%,transparent_100%)]">
 				{tokens.map((token) => (
 					<TokenRow key={`${token.chainId}-${token.address}`} token={token} isSelected={false} onSelect={onSelect} />
 				))}
