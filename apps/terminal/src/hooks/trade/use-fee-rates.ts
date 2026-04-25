@@ -4,7 +4,7 @@ import {
 	ORDER_FEE_RATE_SPOT_MAKER,
 	ORDER_FEE_RATE_SPOT_TAKER,
 	ORDER_FEE_RATE_TAKER,
-} from "@/config/constants";
+} from "@/config/trade";
 import { type MarketKind, useInfo } from "@/lib/hyperliquid";
 
 interface FeeRates {

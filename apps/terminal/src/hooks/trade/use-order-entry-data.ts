@@ -1,4 +1,3 @@
-import { useCallback, useMemo } from "react";
 import { useConnection } from "wagmi";
 import { deriveOrderEntry, type OrderEntryDerived } from "@/domain/trade/order/derive";
 import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle } from "@/domain/trade/order/size";
@@ -68,47 +67,39 @@ export function useOrderEntryData({
 
 	const conversionPrice = markPx > 0 ? markPx : 0;
 
-	const derived = useMemo(
-		() =>
-			deriveOrderEntry({
-				isConnected,
-				market,
-				side,
-				conversionPrice,
-				sizeMode,
-				sizeInput,
-				spotBalances,
-				maxTradeSzs,
-				availableToTrade,
-			}),
-		[isConnected, market, side, conversionPrice, sizeMode, sizeInput, spotBalances, maxTradeSzs, availableToTrade],
-	);
+	const derived = deriveOrderEntry({
+		isConnected,
+		market,
+		side,
+		conversionPrice,
+		sizeMode,
+		sizeInput,
+		spotBalances,
+		maxTradeSzs,
+		availableToTrade,
+	});
 
-	const getSizeForPercent = useCallback(
-		(pct: number): string =>
-			getSizeForPercentCalc({
-				pct,
-				isSpotMarket: derived.isSpotMarket,
-				side,
-				sizeMode,
-				price: conversionPrice,
-				maxSize: derived.maxSize,
-				spotBalance: derived.spotBalance,
-				szDecimals: derived.szDecimals,
-			}),
-		[derived.isSpotMarket, derived.maxSize, derived.spotBalance, derived.szDecimals, side, sizeMode, conversionPrice],
-	);
+	function getSizeForPercent(pct: number): string {
+		return getSizeForPercentCalc({
+			pct,
+			isSpotMarket: derived.isSpotMarket,
+			side,
+			sizeMode,
+			price: conversionPrice,
+			maxSize: derived.maxSize,
+			spotBalance: derived.spotBalance,
+			szDecimals: derived.szDecimals,
+		});
+	}
 
-	const convertSizeForModeToggle = useCallback(
-		(): string =>
-			getSizeValueForModeToggle({
-				sizeValue: derived.sizeValue,
-				sizeMode,
-				price: conversionPrice,
-				szDecimals: derived.szDecimals,
-			}),
-		[derived.sizeValue, derived.szDecimals, sizeMode, conversionPrice],
-	);
+	function convertSizeForModeToggle(): string {
+		return getSizeValueForModeToggle({
+			sizeValue: derived.sizeValue,
+			sizeMode,
+			price: conversionPrice,
+			szDecimals: derived.szDecimals,
+		});
+	}
 
 	return {
 		isConnected,

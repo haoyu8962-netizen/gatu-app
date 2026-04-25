@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/constants";
+import { TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
 import { createValidator, type Validator } from "../types";
 
 export interface TwapContext {

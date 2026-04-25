@@ -15,14 +15,14 @@ export function createValidatedStorage<T>(schema: ZodType<T>, label: string): St
 				const validationResult = schema.safeParse(parsed);
 
 				if (!validationResult.success) {
-					console.warn(`Invalid ${label} data in localStorage, resetting:`, validationResult.error);
+					console.warn(`[${label}] persisted state failed schema validation, clearing`, validationResult.error.issues);
 					localStorage.removeItem(name);
 					return null;
 				}
 
 				return item;
-			} catch (error) {
-				console.warn(`Failed to parse ${label} from localStorage:`, error);
+			} catch (err) {
+				console.warn(`[${label}] persisted state could not be parsed, clearing`, err);
 				localStorage.removeItem(name);
 				return null;
 			}

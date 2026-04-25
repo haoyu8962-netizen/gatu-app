@@ -1,10 +1,12 @@
 import { t } from "@lingui/core/macro";
 
+const MAX_CAUSE_DEPTH = 6;
+
 export function formatErrorForDisplay(error: unknown, fallbackMessage = t`Something went wrong`): string {
 	const parts: string[] = [];
 
 	function collect(err: unknown, depth: number) {
-		if (!err || depth > 6) return;
+		if (!err || depth > MAX_CAUSE_DEPTH) return;
 
 		if (typeof err === "string") {
 			parts.push(err);

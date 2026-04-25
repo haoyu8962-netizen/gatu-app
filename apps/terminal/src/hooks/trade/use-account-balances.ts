@@ -79,4 +79,4 @@ export function useDefaultDexBalances(): AccountBalances {
 	};
 }
 
-export const useAccountBalances = useDefaultDexBalances;
+export { useDefaultDexBalances as useAccountBalances };

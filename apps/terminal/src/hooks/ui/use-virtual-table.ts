@@ -12,6 +12,9 @@ import {
 import { useVirtualizer, type VirtualItem, type Virtualizer } from "@tanstack/react-virtual";
 import { type Dispatch, type RefObject, type SetStateAction, useRef, useState } from "react";
 
+const VIRTUAL_TABLE_DEFAULT_ROW_SIZE = 42;
+const VIRTUAL_TABLE_DEFAULT_OVERSCAN = 5;
+
 export interface UseVirtualTableOptions<TData extends RowData> {
 	data: TData[];
 	columns: ColumnDef<TData, unknown>[];
@@ -39,7 +42,14 @@ export interface UseVirtualTableReturn<TData extends RowData> {
 export function useVirtualTable<TData extends RowData>(
 	options: UseVirtualTableOptions<TData>,
 ): UseVirtualTableReturn<TData> {
-	const { data, columns, estimateRowSize = 42, overscan = 5, enableSorting = true, tableOptions = {} } = options;
+	const {
+		data,
+		columns,
+		estimateRowSize = VIRTUAL_TABLE_DEFAULT_ROW_SIZE,
+		overscan = VIRTUAL_TABLE_DEFAULT_OVERSCAN,
+		enableSorting = true,
+		tableOptions = {},
+	} = options;
 
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [sorting, setSorting] = useState<SortingState>([]);

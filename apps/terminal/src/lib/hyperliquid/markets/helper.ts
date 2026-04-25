@@ -1,17 +1,27 @@
-import { DEFAULT_QUOTE_TOKEN } from "@/config/constants";
-import { PERP_MARKET_NAME_SEPARATOR, SPOT_MARKET_NAME_SEPARATOR } from "@/domain/market";
-import { BUILDER_DEX_SEPARATOR } from "@/domain/market/display";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import type { MarketKind } from "@/domain/market";
+import { BUILDER_DEX_SEPARATOR, PERP_MARKET_NAME_SEPARATOR, SPOT_MARKET_NAME_SEPARATOR } from "@/domain/market";
+
+export const SPOT_ASSET_ID_BASE = 10_000;
+export const BUILDER_PERP_ASSET_ID_BASE = 100_000;
+export const BUILDER_PERP_SLOTS_PER_DEX = 10_000;
 
 export function getPerpAssetId(index: number): number {
 	return index;
 }
 
 export function getSpotAssetId(pairIndex: number): number {
-	return 10000 + pairIndex;
+	return SPOT_ASSET_ID_BASE + pairIndex;
 }
 
 export function getBuilderPerpAssetId(dexIndex: number, assetIndex: number): number {
-	return 100000 + dexIndex * 10000 + assetIndex;
+	return BUILDER_PERP_ASSET_ID_BASE + dexIndex * BUILDER_PERP_SLOTS_PER_DEX + assetIndex;
+}
+
+export function getMarketKindFromName(name: string): MarketKind {
+	if (name.includes(BUILDER_DEX_SEPARATOR)) return "builderPerp";
+	if (name.startsWith("@")) return "spot";
+	return "perp";
 }
 
 export function getPerpDisplayName(name: string, quoteToken?: string): string {

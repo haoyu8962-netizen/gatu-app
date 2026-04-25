@@ -9,7 +9,7 @@ import {
 	colorToRgba,
 	getChartColors,
 	strokeWeakLayerRgba,
-} from "@/components/trade/chart/theme-colors";
+} from "./theme-colors";
 
 function formatTooltipTs(ts: number): string {
 	const d = new Date(ts);

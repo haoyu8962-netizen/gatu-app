@@ -1,5 +1,5 @@
 import Big from "big.js";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import { toBig, toSafeBig } from "@/lib/trade/numbers";

@@ -1,4 +1,5 @@
 import type { FrontendOpenOrdersResponse } from "@nktkas/hyperliquid";
+import { OPEN_ORDER_TYPE_PREFIXES, OPEN_ORDER_TYPE_SHORT_LABELS } from "@/config/trade";
 import type { MarketKind } from "@/lib/hyperliquid/markets";
 import { toBig } from "@/lib/trade/numbers";
 
@@ -6,18 +7,25 @@ export type OpenOrder = FrontendOpenOrdersResponse[number];
 
 export type OrderSide = OpenOrder["side"];
 
-export const ORDER_TYPE_CONFIG = {
-	takeProfit: { prefix: "Take Profit", class: "bg-success-soft text-success" },
-	stop: { prefix: "Stop", class: "bg-warning-soft text-warning" },
-	default: { class: "text-fg-muted" },
+export interface TpSlOrderInfo {
+	tpPrice?: number;
+	slPrice?: number;
+	tpOrderId?: number;
+	slOrderId?: number;
+}
+
+const ORDER_TYPE_CLASS = {
+	takeProfit: "bg-success-soft text-success",
+	stop: "bg-warning-soft text-warning",
+	default: "text-fg-muted",
 } as const;
 
 export function isTakeProfitOrder(order: OpenOrder): boolean {
-	return order.orderType.startsWith(ORDER_TYPE_CONFIG.takeProfit.prefix);
+	return order.orderType.startsWith(OPEN_ORDER_TYPE_PREFIXES.takeProfit);
 }
 
 export function isStopOrder(order: OpenOrder): boolean {
-	return order.orderType.startsWith(ORDER_TYPE_CONFIG.stop.prefix);
+	return order.orderType.startsWith(OPEN_ORDER_TYPE_PREFIXES.stop);
 }
 
 export function isMarketTriggerOrder(order: OpenOrder): boolean {
@@ -56,25 +64,45 @@ export function getSideLabel(side: OrderSide, kind?: MarketKind): string {
 	return side === "B" ? "long" : "short";
 }
 
-const ORDER_TYPE_SHORT_LABEL: Record<string, string> = {
-	"Take Profit Market": "TP Market",
-	"Take Profit Limit": "TP Limit",
-	"Stop Market": "SL Market",
-	"Stop Limit": "SL Limit",
-};
+export function buildTpSlOrdersByCoin(orders: readonly OpenOrder[]): Map<string, TpSlOrderInfo> {
+	const map = new Map<string, TpSlOrderInfo>();
+	for (const order of orders) {
+		if (!order.isTrigger) continue;
+
+		const triggerPx = toBig(order.triggerPx)?.toNumber();
+		if (!triggerPx || triggerPx <= 0) continue;
+
+		const existing = map.get(order.coin) ?? {};
+		if (isTakeProfitOrder(order) && !existing.tpPrice) {
+			existing.tpPrice = triggerPx;
+			existing.tpOrderId = order.oid;
+		} else if (isStopOrder(order) && !existing.slPrice) {
+			existing.slPrice = triggerPx;
+			existing.slOrderId = order.oid;
+		}
+		map.set(order.coin, existing);
+	}
+	return map;
+}
+
+export function getOrderLineLabel(order: OpenOrder): string {
+	if (isTakeProfitOrder(order)) return "TP";
+	if (isStopOrder(order)) return "SL";
+	return order.side === "B" ? "Limit Buy" : "Limit Sell";
+}
 
 export function getOrderTypeConfig(order: OpenOrder) {
-	let typeClass: string = ORDER_TYPE_CONFIG.default.class;
+	let typeClass: string = ORDER_TYPE_CLASS.default;
 	const suffix = order.reduceOnly && !order.isTrigger ? " RO" : "";
 	const fullLabel = `${order.orderType}${suffix}`;
-	const shortLabel = `${ORDER_TYPE_SHORT_LABEL[order.orderType] ?? order.orderType}${suffix}`;
+	const shortLabel = `${OPEN_ORDER_TYPE_SHORT_LABELS[order.orderType] ?? order.orderType}${suffix}`;
 
 	if (isTakeProfitOrder(order)) {
-		typeClass = ORDER_TYPE_CONFIG.takeProfit.class;
+		typeClass = ORDER_TYPE_CLASS.takeProfit;
 	}
 
 	if (isStopOrder(order)) {
-		typeClass = ORDER_TYPE_CONFIG.stop.class;
+		typeClass = ORDER_TYPE_CLASS.stop;
 	}
 
 	return { fullLabel, shortLabel, class: typeClass };

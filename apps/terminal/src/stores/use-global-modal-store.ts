@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 
 type DepositTab = "deposit" | "withdraw" | "bridge";
 
@@ -64,20 +64,39 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 	};
 });
 
-export const useDepositModalOpen = () => useGlobalModalStore((s) => s.modal?.type === "deposit");
-export const useDepositModalTab = () =>
-	useGlobalModalStore((s) => (s.modal?.type === "deposit" ? s.modal.tab : "deposit"));
-export const useDepositModalActions = () => useGlobalModalStore((s) => s.depositActions);
+export function useDepositModalOpen() {
+	return useGlobalModalStore((s) => s.modal?.type === "deposit");
+}
+export function useDepositModalTab() {
+	return useGlobalModalStore((s) => (s.modal?.type === "deposit" ? s.modal.tab : "deposit"));
+}
+export function useDepositModalActions() {
+	return useGlobalModalStore((s) => s.depositActions);
+}
 
-export const useSettingsDialogOpen = () => useGlobalModalStore((s) => s.modal?.type === "settings");
-export const useSettingsDialogActions = () => useGlobalModalStore((s) => s.settingsActions);
+export function useSettingsDialogOpen() {
+	return useGlobalModalStore((s) => s.modal?.type === "settings");
+}
+export function useSettingsDialogActions() {
+	return useGlobalModalStore((s) => s.settingsActions);
+}
 
-export const useSwapModalOpen = () => useGlobalModalStore((s) => s.modal?.type === "swap");
-export const useSwapModalFromToken = () =>
-	useGlobalModalStore((s) => (s.modal?.type === "swap" ? s.modal.fromToken : undefined));
-export const useSwapModalToToken = () =>
-	useGlobalModalStore((s) => (s.modal?.type === "swap" ? s.modal.toToken : undefined));
-export const useSwapModalActions = () => useGlobalModalStore((s) => s.swapActions);
+export function useSwapModalOpen() {
+	return useGlobalModalStore((s) => s.modal?.type === "swap");
+}
+export function useSwapModalFromToken() {
+	return useGlobalModalStore((s) => (s.modal?.type === "swap" ? s.modal.fromToken : undefined));
+}
+export function useSwapModalToToken() {
+	return useGlobalModalStore((s) => (s.modal?.type === "swap" ? s.modal.toToken : undefined));
+}
+export function useSwapModalActions() {
+	return useGlobalModalStore((s) => s.swapActions);
+}
 
-export const useCommandMenuOpen = () => useGlobalModalStore((s) => s.modal?.type === "commandMenu");
-export const useCommandMenuActions = () => useGlobalModalStore((s) => s.commandMenuActions);
+export function useCommandMenuOpen() {
+	return useGlobalModalStore((s) => s.modal?.type === "commandMenu");
+}
+export function useCommandMenuActions() {
+	return useGlobalModalStore((s) => s.commandMenuActions);
+}

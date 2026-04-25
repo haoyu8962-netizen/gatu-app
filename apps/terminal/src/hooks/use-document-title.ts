@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { SEO_DEFAULTS } from "@/config/constants";
+import { SEO_DEFAULTS } from "@/config/seo";
 import { formatPrice } from "@/lib/format";
 import { type SpotMarketInfo, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 

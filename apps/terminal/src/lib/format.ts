@@ -1,4 +1,4 @@
-import { FALLBACK_VALUE_PLACEHOLDER, FORMAT_COMPACT_DEFAULT, FORMAT_COMPACT_THRESHOLD } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER, FORMAT_COMPACT_DEFAULT, FORMAT_COMPACT_THRESHOLD } from "@/config/app";
 import { toNumber } from "@/lib/trade/numbers";
 import { getResolvedFormatLocale } from "@/stores/use-global-settings-store";
 
@@ -392,4 +392,16 @@ export function formatDuration(minutes: number): string {
 	const days = Math.floor(minutes / 1440);
 	const remainingHours = Math.floor((minutes % 1440) / 60);
 	return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
+}
+
+/**
+ * Format a millisecond elapsed duration as a clock-style string.
+ * @example formatClockDuration(65_000) -> "00:01:05"
+ */
+export function formatClockDuration(ms: number): string {
+	const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+	const hours = Math.floor(totalSeconds / 3600);
+	const minutes = Math.floor((totalSeconds % 3600) / 60);
+	const seconds = totalSeconds % 60;
+	return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }

@@ -2,16 +2,17 @@ import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
+import { STORAGE_KEYS } from "@/config/app";
+import type { NumberFormatLocale } from "@/config/i18n";
 import {
 	DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
 	MARKET_ORDER_SLIPPAGE_MIN_PERCENT,
-	STORAGE_KEYS,
-} from "@/config/constants";
-import { type NumberFormatLocale, resolveNumberFormatLocale } from "@/lib/i18n";
+} from "@/config/trade";
+import { resolveNumberFormatLocale } from "@/lib/i18n";
 import type { Network } from "@/lib/network";
+import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { createValidatedStorage } from "@/stores/validated-storage";
 
 type Theme = "dark" | "light";
 

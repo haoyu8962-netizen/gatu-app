@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { DEFAULT_MARKET_NAME, STORAGE_KEYS } from "@/config/constants";
-import { DEFAULT_SELECTED_MARKETS, type ExchangeScope } from "@/domain/market";
+import { DEFAULT_FAVORITE_MARKETS, DEFAULT_MARKET_NAME, STORAGE_KEYS } from "@/config/app";
+import { DEFAULT_SELECTED_MARKETS } from "@/config/markets";
+import type { ExchangeScope } from "@/domain/market";
+import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import { useExchangeScope } from "@/providers/exchange-scope";
-import { createValidatedStorage } from "@/stores/validated-storage";
 
 const marketStoreSchema = z.object({
 	state: z.object({
@@ -28,7 +29,7 @@ const useMarketStore = create<MarketStore>()(
 	persist(
 		(set) => ({
 			selectedMarkets: { ...DEFAULT_SELECTED_MARKETS },
-			favoriteMarkets: ["BTC", "ETH", "HYPE"],
+			favoriteMarkets: [...DEFAULT_FAVORITE_MARKETS],
 			actions: {
 				setSelectedMarket: (scope, marketName) => {
 					set((state) => ({

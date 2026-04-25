@@ -1,6 +1,6 @@
 import { type PerpOrderContext, validatePerpOrder } from "@/lib/errors/stacks/perp-order";
 import { type SpotOrderContext, validateSpotOrder } from "@/lib/errors/stacks/spot-order";
-import type { Side, ValidationResult } from "@/lib/trade/types";
+import type { FormValidationResult, Side } from "@/lib/trade/types";
 
 export interface BaseOrderInput {
 	isConnected: boolean;
@@ -61,7 +61,7 @@ function toResult(result: {
 	errors: { message: string }[];
 	canSubmit: boolean;
 	needsApproval: boolean;
-}): ValidationResult {
+}): FormValidationResult {
 	return {
 		valid: result.valid,
 		errors: result.errors.map((e) => e.message),
@@ -70,7 +70,7 @@ function toResult(result: {
 	};
 }
 
-export function useOrderValidation(input: ValidationInput): ValidationResult {
+export function useOrderValidation(input: ValidationInput): FormValidationResult {
 	if (input.isSpotMarket) {
 		const context: SpotOrderContext = input;
 		return toResult(validateSpotOrder(context));

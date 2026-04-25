@@ -20,6 +20,9 @@ import {
 	getSpotDisplayName,
 } from "./helper";
 
+const META_STALE_TIME_MS = 30 * 60 * 1_000;
+const DEXS_STALE_TIME_MS = 5 * 60 * 1_000;
+
 interface CreateMarketsParams {
 	perpMeta: MetaResponse | undefined;
 	spotMeta: SpotMetaResponse | undefined;
@@ -174,26 +177,23 @@ interface Props {
 }
 
 export function MarketsProvider({ children }: Props) {
-	const META_STALE_TIME = 30 * 60 * 1000;
-	const DEXS_STALE_TIME = 5 * 60 * 1000;
-
 	const {
 		data: spotMeta,
 		isLoading: spotLoading,
 		error: spotError,
-	} = useInfo("spotMeta", undefined, { refetchInterval: Infinity, staleTime: META_STALE_TIME, persist: true });
+	} = useInfo("spotMeta", undefined, { refetchInterval: Infinity, staleTime: META_STALE_TIME_MS, persist: true });
 
 	const {
 		data: perpDexs,
 		isLoading: dexsLoading,
 		error: dexsError,
-	} = useInfo("perpDexs", undefined, { refetchInterval: Infinity, staleTime: DEXS_STALE_TIME, persist: true });
+	} = useInfo("perpDexs", undefined, { refetchInterval: Infinity, staleTime: DEXS_STALE_TIME_MS, persist: true });
 
 	const {
 		data: allPerpMetas,
 		isLoading: allMetasLoading,
 		error: allMetasError,
-	} = useInfo("allPerpMetas", undefined, { refetchInterval: Infinity, staleTime: META_STALE_TIME, persist: true });
+	} = useInfo("allPerpMetas", undefined, { refetchInterval: Infinity, staleTime: META_STALE_TIME_MS, persist: true });
 
 	const perpMeta = allPerpMetas?.[0];
 

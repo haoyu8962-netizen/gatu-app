@@ -1,10 +1,17 @@
-import { getReconnectDelayMs, WS_RELIABILITY_LIMITS } from "@hypeterminal/hl-react";
-import type { ISubscription } from "@nktkas/hyperliquid";
+import { WS_RELIABILITY_LIMITS } from "@hypeterminal/hl-react";
 import { createStore, type StoreApi } from "zustand/vanilla";
-import { getSubscriptionClient } from "@/lib/hyperliquid";
 import type { Bar, SubscribeBarsCallback } from "@/types/charting_library";
-import { candleEventToBar } from "./candle";
 import type { CandleInterval } from "./resolution";
+import {
+	clearCooldownTimer,
+	clearReconnectTimer,
+	detachFailureListener,
+	runUnsubscribe,
+	type StreamRuntime,
+	type StreamStatus,
+	type SubscribeContext,
+	startSubscription,
+} from "./subscribe-with-reconnect";
 
 type CandleListener = {
 	id: string;
@@ -12,24 +19,11 @@ type CandleListener = {
 	onResetCache: () => void;
 };
 
-type StreamStatus = "idle" | "connecting" | "active" | "error";
-
 type CandleStream = {
 	status: StreamStatus;
 	listeners: Map<string, CandleListener>;
 	lastBar?: Bar;
 	error?: unknown;
-};
-
-type StreamRuntime = {
-	subscription?: ISubscription;
-	promise?: Promise<ISubscription | undefined>;
-	reconnectTimer?: ReturnType<typeof setTimeout>;
-	cooldownTimer?: ReturnType<typeof setTimeout>;
-	reconnectAttempts: number;
-	detachFailureListener?: () => void;
-	coin: string;
-	interval: CandleInterval;
 };
 
 export type CandleStoreState = {
@@ -54,30 +48,6 @@ const MAX_LAST_BAR_CACHE = WS_RELIABILITY_LIMITS.cache.maxChartLastBarEntries;
 
 function streamKey(coin: string, interval: CandleInterval): string {
 	return `${coin}:${interval}`;
-}
-
-function clearReconnectTimer(runtime: StreamRuntime): void {
-	if (runtime.reconnectTimer) {
-		clearTimeout(runtime.reconnectTimer);
-		runtime.reconnectTimer = undefined;
-	}
-}
-
-function clearCooldownTimer(runtime: StreamRuntime): void {
-	if (runtime.cooldownTimer) {
-		clearTimeout(runtime.cooldownTimer);
-		runtime.cooldownTimer = undefined;
-	}
-}
-
-function detachFailureListener(runtime: StreamRuntime): void {
-	runtime.detachFailureListener?.();
-	runtime.detachFailureListener = undefined;
-}
-
-function runUnsubscribe(subscription?: ISubscription): void {
-	if (!subscription || subscription.failureSignal.aborted) return;
-	void subscription.unsubscribe().catch(() => {});
 }
 
 function isSameBar(a: Bar | undefined, b: Bar | undefined): boolean {
@@ -152,31 +122,72 @@ export function createCandleStore(): CandleStore {
 			clearReconnectTimer(runtimeEntry);
 			clearCooldownTimer(runtimeEntry);
 
-			const notifyReset = () => {
-				const current = get().streams[key];
-				if (!current) return;
-				for (const entry of current.listeners.values()) {
-					entry.onResetCache();
-				}
-			};
+			const ctx: SubscribeContext = {
+				key,
+				runtime,
+				getLastBar: () => get().streams[key]?.lastBar,
+				hasListeners: () => {
+					const stream = get().streams[key];
+					return !!stream && stream.listeners.size > 0;
+				},
+				onCandle: (bar) => {
+					const current = get().streams[key];
+					if (!current) return;
 
-			const scheduleReconnect = () => {
-				const runtimeEntry = runtime.get(key);
-				if (!runtimeEntry || runtimeEntry.reconnectTimer || runtimeEntry.promise || runtimeEntry.subscription) {
-					return;
-				}
-
-				const stream = get().streams[key];
-				if (!stream || stream.listeners.size === 0) {
-					return;
-				}
-
-				runtimeEntry.reconnectAttempts += 1;
-				if (runtimeEntry.reconnectAttempts > WS_RELIABILITY_LIMITS.reconnect.maxAttemptsBeforeCooldown) {
-					if (runtimeEntry.cooldownTimer) {
-						return;
+					if (!isSameBar(current.lastBar, bar) || current.status !== "active" || current.error !== undefined) {
+						set((state) => {
+							const stream = state.streams[key];
+							if (!stream) return state;
+							return {
+								streams: {
+									...state.streams,
+									[key]: {
+										...stream,
+										lastBar: bar,
+										status: "active",
+										error: undefined,
+									},
+								},
+							};
+						});
 					}
 
+					for (const l of current.listeners.values()) {
+						l.onTick(bar);
+					}
+				},
+				onConnecting: () => {
+					set((state) => {
+						const stream = state.streams[key];
+						if (!stream || stream.status === "connecting") return state;
+						return {
+							streams: {
+								...state.streams,
+								[key]: { ...stream, status: "connecting", error: undefined },
+							},
+						};
+					});
+				},
+				onActive: () => {
+					set((state) => {
+						const stream = state.streams[key];
+						if (!stream) return state;
+						if (stream.status === "active" && stream.error === undefined) return state;
+						return {
+							streams: { ...state.streams, [key]: { ...stream, status: "active", error: undefined } },
+						};
+					});
+				},
+				onError: (error) => {
+					set((state) => {
+						const stream = state.streams[key];
+						if (!stream) return state;
+						return {
+							streams: { ...state.streams, [key]: { ...stream, status: "error", error } },
+						};
+					});
+				},
+				onCooldown: () => {
 					set((state) => {
 						const stream = state.streams[key];
 						if (!stream) return state;
@@ -187,170 +198,14 @@ export function createCandleStore(): CandleStore {
 							},
 						};
 					});
-
-					runtimeEntry.cooldownTimer = setTimeout(() => {
-						const runtimeEntry = runtime.get(key);
-						if (!runtimeEntry) return;
-						runtimeEntry.cooldownTimer = undefined;
-						runtimeEntry.reconnectAttempts = 0;
-
-						const stream = get().streams[key];
-						if (!stream || stream.listeners.size === 0) {
-							return;
-						}
-
-						startSubscription();
-					}, WS_RELIABILITY_LIMITS.reconnect.cooldownMs);
-					return;
-				}
-
-				const delay = getReconnectDelayMs(runtimeEntry.reconnectAttempts);
-				runtimeEntry.reconnectTimer = setTimeout(() => {
-					const runtimeEntry = runtime.get(key);
-					if (!runtimeEntry) return;
-					runtimeEntry.reconnectTimer = undefined;
-
-					const stream = get().streams[key];
-					if (!stream || stream.listeners.size === 0) {
-						return;
+				},
+				onResetListeners: () => {
+					const current = get().streams[key];
+					if (!current) return;
+					for (const entry of current.listeners.values()) {
+						entry.onResetCache();
 					}
-
-					startSubscription();
-				}, delay);
-			};
-
-			const startSubscription = () => {
-				const runtimeEntry = runtime.get(key);
-				if (!runtimeEntry || runtimeEntry.subscription || runtimeEntry.promise) {
-					return;
-				}
-
-				const stream = get().streams[key];
-				if (!stream || stream.listeners.size === 0) {
-					return;
-				}
-
-				set((state) => {
-					const stream = state.streams[key];
-					if (!stream || stream.status === "connecting") return state;
-					return {
-						streams: {
-							...state.streams,
-							[key]: { ...stream, status: "connecting", error: undefined },
-						},
-					};
-				});
-
-				runtimeEntry.promise = getSubscriptionClient()
-					.candle({ coin: runtimeEntry.coin, interval: runtimeEntry.interval }, (event) => {
-						const bar = candleEventToBar(event);
-						if (!bar) return;
-
-						const current = get().streams[key];
-						if (!current) return;
-
-						if (!isSameBar(current.lastBar, bar) || current.status !== "active" || current.error !== undefined) {
-							set((state) => {
-								const stream = state.streams[key];
-								if (!stream) return state;
-								return {
-									streams: {
-										...state.streams,
-										[key]: {
-											...stream,
-											lastBar: bar,
-											status: "active",
-											error: undefined,
-										},
-									},
-								};
-							});
-						}
-
-						for (const l of current.listeners.values()) {
-							l.onTick(bar);
-						}
-					})
-					.then((subscription) => {
-						const runtimeEntry = runtime.get(key);
-						if (!runtimeEntry) {
-							runUnsubscribe(subscription);
-							return subscription;
-						}
-
-						runtimeEntry.promise = undefined;
-
-						const stream = get().streams[key];
-						if (!stream || stream.listeners.size === 0) {
-							runUnsubscribe(subscription);
-							runtime.delete(key);
-							return subscription;
-						}
-
-						runtimeEntry.subscription = subscription;
-						runtimeEntry.reconnectAttempts = 0;
-						detachFailureListener(runtimeEntry);
-
-						const onFailure = () => {
-							const runtimeEntry = runtime.get(key);
-							if (!runtimeEntry) return;
-							runtimeEntry.subscription = undefined;
-							detachFailureListener(runtimeEntry);
-
-							const reason = subscription.failureSignal.reason ?? new Error("Subscription failed");
-							set((state) => {
-								const stream = state.streams[key];
-								if (!stream) return state;
-								return {
-									streams: {
-										...state.streams,
-										[key]: { ...stream, status: "error", error: reason },
-									},
-								};
-							});
-
-							notifyReset();
-							scheduleReconnect();
-						};
-
-						subscription.failureSignal.addEventListener("abort", onFailure, { once: true });
-						runtimeEntry.detachFailureListener = () => {
-							subscription.failureSignal.removeEventListener("abort", onFailure);
-						};
-
-						set((state) => {
-							const stream = state.streams[key];
-							if (!stream) return state;
-							if (stream.status === "active" && stream.error === undefined) return state;
-							return {
-								streams: { ...state.streams, [key]: { ...stream, status: "active", error: undefined } },
-							};
-						});
-
-						return subscription;
-					})
-					.catch((error) => {
-						const runtimeEntry = runtime.get(key);
-						if (!runtimeEntry) {
-							return undefined;
-						}
-
-						runtimeEntry.promise = undefined;
-						runtimeEntry.subscription = undefined;
-						detachFailureListener(runtimeEntry);
-
-						set((state) => {
-							const stream = state.streams[key];
-							if (!stream) return state;
-							return {
-								streams: { ...state.streams, [key]: { ...stream, status: "error", error } },
-							};
-						});
-
-						notifyReset();
-						scheduleReconnect();
-						return undefined;
-					});
+				},
 			};
 
 			if (runtimeEntry.subscription || runtimeEntry.promise) {
@@ -361,7 +216,7 @@ export function createCandleStore(): CandleStore {
 				return;
 			}
 
-			startSubscription();
+			startSubscription(ctx);
 		},
 
 		unsubscribe: (key, listenerId) => {

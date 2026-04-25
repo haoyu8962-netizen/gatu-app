@@ -1,4 +1,4 @@
-import { CHART_DEFAULT_PRICESCALE, CHART_QUOTE_ASSET } from "@/config/constants";
+import { CHART_DEFAULT_PRICESCALE, CHART_QUOTE_ASSET } from "@/config/chart";
 
 export function coinFromSymbolName(symbolName: string): string {
 	const trimmed = symbolName.trim();

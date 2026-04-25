@@ -2,13 +2,14 @@ import { createConfig, EVM } from "@lifi/sdk";
 import type { Config as WagmiConfig } from "@wagmi/core";
 import { getAccount, getConnectorClient, switchChain } from "@wagmi/core";
 import type { Client } from "viem";
+import { LIFI_INTEGRATOR } from "@/config/app";
 import { config as wagmiConfig } from "@/config/wagmi";
 
 const wc = wagmiConfig as unknown as WagmiConfig;
 
 export function initLiFi() {
 	return createConfig({
-		integrator: "hypeterminal",
+		integrator: LIFI_INTEGRATOR,
 		providers: [
 			EVM({
 				getWalletClient: async () => {

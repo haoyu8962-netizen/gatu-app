@@ -13,7 +13,7 @@
  * ```
  */
 
-import { SEO_BASE_KEYWORDS, SEO_DEFAULTS } from "@/config/constants";
+import { SEO_BASE_KEYWORDS, SEO_DEFAULTS } from "@/config/seo";
 
 export { SEO_DEFAULTS };
 
@@ -31,7 +31,7 @@ export interface PageSeoOptions {
 	/** Page type for Open Graph */
 	ogType?: "website" | "article";
 	/** Additional keywords for meta keywords tag */
-	keywords?: string[];
+	keywords?: readonly string[];
 	/** Prevent search engine indexing */
 	noIndex?: boolean;
 }

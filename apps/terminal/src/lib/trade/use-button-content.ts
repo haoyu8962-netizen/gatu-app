@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useMemo } from "react";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import type { RegistrationStatus } from "@/lib/hyperliquid";
-import type { ButtonContent, Side, ValidationResult } from "@/lib/trade/types";
+import type { ButtonContent, FormValidationResult, Side } from "@/lib/trade/types";
 
 interface ButtonContentInput {
 	isConnected: boolean;
@@ -10,7 +10,7 @@ interface ButtonContentInput {
 	isSwitchingChain: boolean;
 	switchChain: (chainId: number) => void;
 	availableBalance: number;
-	validation: ValidationResult;
+	validation: FormValidationResult;
 	isAgentLoading: boolean;
 	registerStatus: RegistrationStatus;
 	canApprove: boolean;

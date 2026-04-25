@@ -1,111 +1,16 @@
 import { FlaskIcon, WalletIcon } from "@phosphor-icons/react";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
-import { CoinbaseIcon } from "@/components/icons/coinbase-icon";
-import { MetaMaskIcon } from "@/components/icons/metamask-icon";
-import { RabbyIcon } from "@/components/icons/rabby-icon";
-import { WalletConnectIcon } from "@/components/icons/walletconnect-icon";
-import { RECENT_WALLETS_LIMIT, STORAGE_KEYS } from "@/config/constants";
+import { RECENT_WALLETS_LIMIT, STORAGE_KEYS } from "@/config/app";
+import { WALLET_INFO, type WalletInfo } from "@/config/wallets";
 
-export interface WalletInfo {
-	icon: React.ComponentType<{ className?: string }>;
-	description: string;
-	popular?: boolean;
-	priority?: number;
-}
+export type { WalletInfo } from "@/config/wallets";
 
 export interface MockWalletConfig {
 	name: string;
 	address: Address;
 	icon?: React.ComponentType<{ className?: string }>;
 }
-
-export const WALLET_INFO: Record<string, WalletInfo> = {
-	"io.rabby": {
-		icon: RabbyIcon,
-		description: "Multi-chain wallet with pre-sign checks",
-		popular: true,
-		priority: 1,
-	},
-	"Rabby Wallet": {
-		icon: RabbyIcon,
-		description: "Multi-chain wallet with pre-sign checks",
-		popular: true,
-		priority: 1,
-	},
-	Rabby: {
-		icon: RabbyIcon,
-		description: "Multi-chain wallet with pre-sign checks",
-		popular: true,
-		priority: 1,
-	},
-	metaMask: {
-		icon: MetaMaskIcon,
-		description: "The most popular crypto wallet",
-		popular: true,
-		priority: 2,
-	},
-	MetaMask: {
-		icon: MetaMaskIcon,
-		description: "The most popular crypto wallet",
-		popular: true,
-		priority: 2,
-	},
-	coinbaseWallet: {
-		icon: CoinbaseIcon,
-		description: "Easy to use mobile & browser wallet",
-		popular: true,
-		priority: 3,
-	},
-	"Coinbase Wallet": {
-		icon: CoinbaseIcon,
-		description: "Easy to use mobile & browser wallet",
-		popular: true,
-		priority: 3,
-	},
-	walletConnect: {
-		icon: WalletConnectIcon,
-		description: "Scan QR code with your mobile wallet",
-		popular: true,
-		priority: 4,
-	},
-	WalletConnect: {
-		icon: WalletConnectIcon,
-		description: "Scan QR code with your mobile wallet",
-		popular: true,
-		priority: 4,
-	},
-	injected: {
-		icon: WalletIcon,
-		description: "Use your browser's built-in wallet",
-		popular: false,
-		priority: 10,
-	},
-	Injected: {
-		icon: WalletIcon,
-		description: "Use your browser's built-in wallet",
-		popular: false,
-		priority: 10,
-	},
-	"Browser Wallet": {
-		icon: WalletIcon,
-		description: "Use your browser's built-in wallet",
-		popular: false,
-		priority: 10,
-	},
-	mock: {
-		icon: FlaskIcon,
-		description: "Mock wallet for testing",
-		popular: false,
-		priority: 0,
-	},
-	Mock: {
-		icon: FlaskIcon,
-		description: "Mock wallet for testing",
-		popular: false,
-		priority: 0,
-	},
-};
 
 const DEFAULT_WALLET_INFO: WalletInfo = {
 	icon: WalletIcon,
