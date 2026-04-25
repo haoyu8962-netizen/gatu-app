@@ -1,7 +1,8 @@
 import { Button, Dropdown, type DropdownItem } from "@hypeterminal/ui";
 import { ArrowsClockwiseIcon, ArrowsLeftRightIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FALLBACK_VALUE_PLACEHOLDER, UI_TEXT } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { UI_TEXT } from "@/config/ui-text";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
@@ -143,7 +144,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 						{view === "book" && (
 							<Dropdown
 								size="sm"
-								trigger={selectedOption?.label ?? "\u2014"}
+								trigger={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
 								align="end"
 								className="font-mono"
 								items={priceGroupingOptions.map(

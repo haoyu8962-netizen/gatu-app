@@ -2,10 +2,9 @@ import { Badge, Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ListIcon, ListNumbersIcon, XIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
-import { useCallback, useEffect, useState } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
-import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
@@ -23,6 +22,7 @@ import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetDisplay } from "../components/asset-display";
+import { MetricCell } from "./metric-cell";
 
 interface Props {
 	className?: string;
@@ -60,62 +60,26 @@ export function MobileOrdersTab({ className }: Props) {
 	} = useExchange("cancel");
 
 	const openOrders = openOrdersEvent?.orders ?? [];
-	const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(() => new Set());
 
-	useEffect(() => {
-		if (selectedOrderIds.size === 0) return;
-		const openIds = new Set(openOrders.map((order) => order.oid));
-		let changed = false;
-		for (const id of selectedOrderIds) {
-			if (!openIds.has(id)) {
-				changed = true;
-				break;
-			}
-		}
-		if (!changed) return;
+	function handleCancelOrders(ordersToCancel: OpenOrder[]) {
+		if (isCancelling || ordersToCancel.length === 0) return;
 
-		setSelectedOrderIds((prev) => {
-			const next = new Set<number>();
-			for (const id of prev) {
-				if (openIds.has(id)) next.add(id);
-			}
-			return next;
-		});
-	}, [openOrders, selectedOrderIds]);
+		const cancels = ordersToCancel.reduce<{ a: number; o: number }[]>((acc, order) => {
+			const assetId = markets.getAssetId(order.coin);
+			if (typeof assetId !== "number") return acc;
+			acc.push({ a: assetId, o: order.oid });
+			return acc;
+		}, []);
 
-	const handleCancelOrders = useCallback(
-		(ordersToCancel: OpenOrder[]) => {
-			if (isCancelling || ordersToCancel.length === 0) return;
+		if (cancels.length === 0) return;
 
-			const cancels = ordersToCancel.reduce<{ a: number; o: number }[]>((acc, order) => {
-				const assetId = markets.getAssetId(order.coin);
-				if (typeof assetId !== "number") return acc;
-				acc.push({ a: assetId, o: order.oid });
-				return acc;
-			}, []);
+		resetCancelError();
+		cancelOrders({ cancels });
+	}
 
-			if (cancels.length === 0) return;
-
-			resetCancelError();
-			cancelOrders(
-				{ cancels },
-				{
-					onSuccess: () => {
-						setSelectedOrderIds((prev) => {
-							const next = new Set(prev);
-							for (const order of ordersToCancel) next.delete(order.oid);
-							return next;
-						});
-					},
-				},
-			);
-		},
-		[isCancelling, markets, cancelOrders, resetCancelError],
-	);
-
-	const handleCancelAll = useCallback(() => {
+	function handleCancelAll() {
 		handleCancelOrders(openOrders);
-	}, [handleCancelOrders, openOrders]);
+	}
 
 	const headerCount = isConnected ? openOrders.length : FALLBACK_VALUE_PLACEHOLDER;
 	const actionError = cancelError?.message;
@@ -257,20 +221,6 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 					{t`Cancel`}
 				</Button>
 			</div>
-		</div>
-	);
-}
-
-interface MetricCellProps {
-	label: string;
-	value: string;
-}
-
-function MetricCell({ label, value }: MetricCellProps) {
-	return (
-		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-fg-muted">{label}</div>
-			<div className="text-xs tabular-nums font-medium">{value}</div>
 		</div>
 	);
 }

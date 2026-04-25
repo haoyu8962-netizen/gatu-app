@@ -2,8 +2,9 @@ import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, Moda
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, SpinnerGapIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { MARGIN_MODE_SUCCESS_DURATION_MS } from "@/config/time";
+import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { TradingActionButton } from "../components/trading-action-button";
@@ -128,26 +129,18 @@ export function MarginModeModal({
 	onApply,
 }: Props) {
 	const [selectedMode, setSelectedMode] = useState<MarginMode>(currentMode);
-	const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
-	const [showSuccess, setShowSuccess] = useState(false);
+	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(
+		() => onOpenChange(false),
+		MARGIN_MODE_SUCCESS_DURATION_MS,
+	);
 
 	const displayLeverage = pendingLeverage ?? currentLeverage;
 
 	useEffect(() => {
 		if (open) {
 			setSelectedMode(currentMode);
-			setShowSuccess(false);
 			resetPendingLeverage();
-		} else if (autoCloseTimerRef.current) {
-			clearTimeout(autoCloseTimerRef.current);
-			autoCloseTimerRef.current = null;
 		}
-
-		return () => {
-			if (autoCloseTimerRef.current) {
-				clearTimeout(autoCloseTimerRef.current);
-			}
-		};
 	}, [open, currentMode, resetPendingLeverage]);
 
 	const modeDirty = selectedMode !== currentMode;
@@ -160,11 +153,7 @@ export function MarginModeModal({
 		const lev = pendingLeverage ?? currentLeverage;
 		try {
 			await onApply(selectedMode, lev);
-			setShowSuccess(true);
-			autoCloseTimerRef.current = setTimeout(() => {
-				onOpenChange(false);
-				setShowSuccess(false);
-			}, MARGIN_MODE_SUCCESS_DURATION_MS);
+			triggerAutoClose();
 		} catch {}
 	}
 

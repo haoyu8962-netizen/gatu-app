@@ -9,17 +9,16 @@ import {
 	TimerIcon,
 	XCircleIcon,
 } from "@phosphor-icons/react";
-import { cn } from "@/lib/cn";
-import type { MarketKind } from "@/lib/hyperliquid";
 import {
 	ADVANCED_ORDER_GROUPS,
-	ADVANCED_ORDER_LABELS,
 	ADVANCED_ORDER_TYPES,
 	type AdvancedOrderType,
-	getAdvancedOrderLabel,
-	isAdvancedOrderType,
 	type OrderType,
-} from "@/lib/trade/order-types";
+	SPOT_ALLOWED_TYPES,
+} from "@/config/trade";
+import { cn } from "@/lib/cn";
+import type { MarketKind } from "@/lib/hyperliquid";
+import { getAdvancedOrderLabel, getAdvancedOrderTypeLabel, isAdvancedOrderType } from "@/lib/trade/order-types";
 
 interface Props {
 	orderType: OrderType;
@@ -44,17 +43,14 @@ const ADVANCED_ORDER_ICONS: Record<AdvancedOrderType, Icon> = {
 	scale: RowsIcon,
 };
 
-const ADVANCED_ORDER_OPTIONS: AdvancedOrderOption[] = ADVANCED_ORDER_TYPES.map((value) => ({
-	value,
-	label: ADVANCED_ORDER_LABELS[value],
-	icon: ADVANCED_ORDER_ICONS[value],
-	group: ADVANCED_ORDER_GROUPS[value],
-}));
-
-const TRIGGER_OPTIONS = ADVANCED_ORDER_OPTIONS.filter((option) => option.group === "trigger");
-const EXECUTION_OPTIONS = ADVANCED_ORDER_OPTIONS.filter((option) => option.group === "execution");
-
-const SPOT_ALLOWED_TYPES: AdvancedOrderType[] = ["twap", "scale"];
+function buildAdvancedOrderOptions(): AdvancedOrderOption[] {
+	return ADVANCED_ORDER_TYPES.map((value) => ({
+		value,
+		label: getAdvancedOrderTypeLabel(value),
+		icon: ADVANCED_ORDER_ICONS[value],
+		group: ADVANCED_ORDER_GROUPS[value],
+	}));
+}
 
 function getFilteredOptions(options: AdvancedOrderOption[], marketKind: MarketKind): AdvancedOrderOption[] {
 	if (marketKind === "spot") {
@@ -75,8 +71,15 @@ export function AdvancedOrderDropdown({ orderType, onOrderTypeChange, marketKind
 	const isAdvanced = isAdvancedOrderType(orderType);
 	const label = getAdvancedOrderLabel(orderType, t`Other`);
 
-	const triggerOptions = getFilteredOptions(TRIGGER_OPTIONS, marketKind);
-	const executionOptions = getFilteredOptions(EXECUTION_OPTIONS, marketKind);
+	const options = buildAdvancedOrderOptions();
+	const triggerOptions = getFilteredOptions(
+		options.filter((option) => option.group === "trigger"),
+		marketKind,
+	);
+	const executionOptions = getFilteredOptions(
+		options.filter((option) => option.group === "execution"),
+		marketKind,
+	);
 	const hasTriggerOptions = triggerOptions.length > 0;
 
 	const groups: DropdownGroup[] = [

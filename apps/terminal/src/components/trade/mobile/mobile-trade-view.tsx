@@ -4,9 +4,12 @@ import { type ChangeEvent, useEffect, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
-import { FALLBACK_VALUE_PLACEHOLDER, UI_TEXT } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
+import { BPS_PER_UNIT, DEFAULT_SIZE_PERCENT, SIZE_PERCENT_OPTIONS } from "@/config/trade";
+import { UI_TEXT } from "@/config/ui-text";
 import { get24hChange } from "@/domain/market";
+import { getLiquidationInfo } from "@/domain/trade/order/metrics";
 import { getSliderValue } from "@/domain/trade/order/size";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
@@ -15,14 +18,15 @@ import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { getValueColorClass, toNumberOrZero } from "@/lib/trade/numbers";
+import { toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isTakerOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
 } from "@/lib/trade/order-types";
-import type { SizeMode } from "@/lib/trade/types";
+import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
@@ -39,11 +43,11 @@ import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
 const ORDER_TEXT = UI_TEXT.ORDER_ENTRY;
 
-interface MobileTradeViewProps {
+interface Props {
 	className?: string;
 }
 
-export function MobileTradeView({ className }: MobileTradeViewProps) {
+export function MobileTradeView({ className }: Props) {
 	const { address, isConnected } = useConnection();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
@@ -81,7 +85,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 	const [tpSlEnabled, setTpSlEnabled] = useState(false);
 	const [hasUserSized, setHasUserSized] = useState(false);
 	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-	const [dragSliderValue, setDragSliderValue] = useState(25);
+	const [dragSliderValue, setDragSliderValue] = useState<number>(DEFAULT_SIZE_PERCENT);
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 
 	const canUseTpSl = canUseTpSlForOrder(orderType);
@@ -139,11 +143,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 	const estimatedFee = orderValue * feeRate;
 	const marginRequired = capabilities.isLeveraged && leverage > 0 ? orderValue / leverage : 0;
 
-	const liqPrice = (() => {
-		if (!capabilities.isLeveraged || !price || !sizeValue || !leverage) return null;
-		const buffer = price * (1 / leverage) * 0.9;
-		return side === "buy" ? price - buffer : price + buffer;
-	})();
+	const liqPrice = capabilities.isLeveraged ? getLiquidationInfo({ price, sizeValue, leverage, side }).liqPrice : null;
 
 	const baseInput = {
 		isConnected,
@@ -195,16 +195,18 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 		setSizeInput(getSizeForPercent(pct));
 	}
 
-	const handleSizeModeToggle = () => {
+	function handleSizeModeToggle() {
 		const newMode = sizeMode === "base" ? "quote" : "base";
 		const convertedSize = convertSizeForModeToggle();
 		setSizeMode(newMode);
 		if (convertedSize) setSizeInput(convertedSize);
-	};
+	}
 
-	const handleSwitchChain = () => switchChain({ chainId: ARBITRUM_CHAIN_ID });
+	function handleSwitchChain() {
+		switchChain({ chainId: ARBITRUM_CHAIN_ID });
+	}
 
-	const handleApprove = async () => {
+	async function handleApprove() {
 		if (isRegistering) return;
 		setApprovalError(null);
 		try {
@@ -212,15 +214,16 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 		} catch (error) {
 			setApprovalError(error instanceof Error ? error.message : ORDER_TEXT.APPROVAL_ERROR_FALLBACK);
 		}
-	};
+	}
 
-	const handleSubmit = async () => {
+	async function handleSubmit() {
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
 		let orderPrice = price;
 		if (isMarketExecution) {
-			orderPrice = side === "buy" ? markPx * (1 + slippageBps / 10000) : markPx * (1 - slippageBps / 10000);
+			const slip = slippageBps / BPS_PER_UNIT;
+			orderPrice = side === "buy" ? markPx * (1 + slip) : markPx * (1 - slip);
 		}
 
 		const szDecimals = market.szDecimals ?? 0;
@@ -262,54 +265,34 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 				error: error instanceof Error ? error.message : ORDER_TEXT.ORDER_ERROR_FALLBACK,
 			});
 		}
-	};
+	}
 
-	const sliderValue = (() => {
-		if (isDraggingSlider) return dragSliderValue;
-		if (!hasUserSized || sizeValue <= 0) return 25;
-		return getSliderValue(sizeValue, maxSize);
-	})();
+	const sliderValue = getDisplaySliderValue({
+		isDraggingSlider,
+		dragSliderValue,
+		hasUserSized,
+		sizeValue,
+		maxSize,
+	});
 
-	const buttonContent = (() => {
-		if (!isConnected)
-			return {
-				text: ORDER_TEXT.BUTTON_CONNECT,
-				action: () => setWalletModalOpen(true),
-				disabled: false,
-				variant: "cyan" as const,
-			};
-		if (needsChainSwitch)
-			return {
-				text: isSwitchingChain ? ORDER_TEXT.BUTTON_SWITCHING : ORDER_TEXT.BUTTON_SWITCH_CHAIN,
-				action: handleSwitchChain,
-				disabled: isSwitchingChain,
-				variant: "cyan" as const,
-			};
-		if (availableBalance <= 0)
-			return {
-				text: ORDER_TEXT.BUTTON_DEPOSIT,
-				action: () => openDepositModal("deposit"),
-				disabled: false,
-				variant: "cyan" as const,
-			};
-		if (validation.needsApproval)
-			return {
-				text: isRegistering
-					? ORDER_TEXT.BUTTON_SIGNING
-					: !canApprove
-						? ORDER_TEXT.BUTTON_LOADING
-						: ORDER_TEXT.BUTTON_ENABLE_TRADING,
-				action: handleApprove,
-				disabled: isRegistering || !canApprove,
-				variant: "cyan" as const,
-			};
-		return {
-			text: sideLabels[side],
-			action: handleSubmit,
-			disabled: !validation.canSubmit || isSubmitting,
-			variant: side as "buy" | "sell",
-		};
-	})();
+	const buttonContent = getMobileOrderButtonContent({
+		isConnected,
+		needsChainSwitch,
+		isSwitchingChain,
+		availableBalance,
+		needsApproval: validation.needsApproval,
+		canSubmit: validation.canSubmit,
+		isRegistering,
+		canApprove,
+		isSubmitting,
+		side,
+		sideLabel: sideLabels[side],
+		onConnect: () => setWalletModalOpen(true),
+		onSwitchChain: handleSwitchChain,
+		onDeposit: () => openDepositModal("deposit"),
+		onApprove: handleApprove,
+		onSubmit: handleSubmit,
+	});
 
 	const isFormDisabled = !isConnected || availableBalance <= 0;
 
@@ -425,7 +408,7 @@ export function MobileTradeView({ className }: MobileTradeViewProps) {
 								disabled={isFormDisabled || maxSize <= 0}
 							/>
 							<div className="flex items-center justify-between text-2xs text-fg-muted tabular-nums leading-none">
-								{[0, 25, 50, 75, 100].map((pct) => (
+								{SIZE_PERCENT_OPTIONS.map((pct) => (
 									<button
 										key={pct}
 										type="button"
@@ -556,4 +539,84 @@ function SummaryRow({ label, value, valueClass }: { label: string; value: string
 			<span className={cn("tabular-nums", valueClass ?? "text-fg")}>{value}</span>
 		</div>
 	);
+}
+
+interface SliderValueInput {
+	isDraggingSlider: boolean;
+	dragSliderValue: number;
+	hasUserSized: boolean;
+	sizeValue: number;
+	maxSize: number;
+}
+
+function getDisplaySliderValue(input: SliderValueInput): number {
+	if (input.isDraggingSlider) return input.dragSliderValue;
+	if (!input.hasUserSized || input.sizeValue <= 0) return DEFAULT_SIZE_PERCENT;
+	return getSliderValue(input.sizeValue, input.maxSize);
+}
+
+interface MobileButtonContentInput {
+	isConnected: boolean;
+	needsChainSwitch: boolean;
+	isSwitchingChain: boolean;
+	availableBalance: number;
+	needsApproval: boolean;
+	canSubmit: boolean;
+	isRegistering: boolean;
+	canApprove: boolean;
+	isSubmitting: boolean;
+	side: Side;
+	sideLabel: string;
+	onConnect: () => void;
+	onSwitchChain: () => void;
+	onDeposit: () => void;
+	onApprove: () => void;
+	onSubmit: () => void;
+}
+
+function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonContent {
+	if (!input.isConnected) {
+		return {
+			text: ORDER_TEXT.BUTTON_CONNECT,
+			action: input.onConnect,
+			disabled: false,
+			variant: "cyan",
+		};
+	}
+	if (input.needsChainSwitch) {
+		return {
+			text: input.isSwitchingChain ? ORDER_TEXT.BUTTON_SWITCHING : ORDER_TEXT.BUTTON_SWITCH_CHAIN,
+			action: input.onSwitchChain,
+			disabled: input.isSwitchingChain,
+			variant: "cyan",
+		};
+	}
+	if (input.availableBalance <= 0) {
+		return {
+			text: ORDER_TEXT.BUTTON_DEPOSIT,
+			action: input.onDeposit,
+			disabled: false,
+			variant: "cyan",
+		};
+	}
+	if (input.needsApproval) {
+		return {
+			text: getApprovalButtonText(input.isRegistering, input.canApprove),
+			action: input.onApprove,
+			disabled: input.isRegistering || !input.canApprove,
+			variant: "cyan",
+		};
+	}
+	return {
+		text: input.sideLabel,
+		action: input.onSubmit,
+		disabled: !input.canSubmit || input.isSubmitting,
+		variant: input.side,
+	};
+}
+
+function getApprovalButtonText(isRegistering: boolean, canApprove: boolean): string {
+	if (isRegistering) return ORDER_TEXT.BUTTON_SIGNING;
+	if (!canApprove) return ORDER_TEXT.BUTTON_LOADING;
+	return ORDER_TEXT.BUTTON_ENABLE_TRADING;
 }

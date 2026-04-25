@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, WifiHighIcon, WifiSlashIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useOnlineStatus } from "@/hooks/use-mobile";
@@ -52,12 +54,16 @@ export function OfflineBanner({ className }: Props) {
 				{isOnline ? (
 					<>
 						<WifiHighIcon className="size-4" />
-						<span>Back online</span>
+						<span>
+							<Trans>Back online</Trans>
+						</span>
 					</>
 				) : (
 					<>
 						<WifiSlashIcon className="size-4" />
-						<span>You're offline</span>
+						<span>
+							<Trans>You're offline</Trans>
+						</span>
 					</>
 				)}
 			</div>
@@ -70,13 +76,13 @@ export function OfflineBanner({ className }: Props) {
 						className="flex items-center gap-1 rounded-8 px-2 py-1 text-xs font-medium bg-warning-soft hover:bg-warning-soft/80 active:scale-[0.97] motion-reduce:active:scale-100 transition touch-manipulation"
 					>
 						<ArrowClockwiseIcon className="size-3" />
-						Retry
+						<Trans>Retry</Trans>
 					</button>
 					<button
 						type="button"
 						onClick={() => setDismissed(true)}
 						className="flex items-center justify-center size-7 rounded-8 hover:bg-warning-soft active:scale-[0.97] motion-reduce:active:scale-100 transition touch-manipulation"
-						aria-label="Dismiss"
+						aria-label={t`Dismiss`}
 					>
 						<XIcon className="size-3.5" />
 					</button>

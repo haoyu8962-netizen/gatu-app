@@ -1,10 +1,10 @@
 import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useConnection } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
 import { getAvailableFromTotals, getPerpAvailable, getSpotBalance } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/cn";
 import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
+import { formatTokenId } from "@/lib/trade/token-id";
 
 type TransferDirection = "toSpot" | "toPerp";
 
@@ -25,24 +26,20 @@ export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" 
 	const [direction, setDirection] = useState<TransferDirection>(initialDirection);
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
+	const [prevOpen, setPrevOpen] = useState(open);
+
+	if (open !== prevOpen) {
+		setPrevOpen(open);
+		if (open) setDirection(initialDirection);
+	}
 
 	const { address } = useConnection();
 	const { getToken } = useSpotTokens();
 	const { mutateAsync: sendAsset, isPending } = useExchange("sendAsset");
 	const { perpSummary, spotBalances } = useDefaultDexBalances();
 
-	useEffect(() => {
-		if (open) {
-			setDirection(initialDirection);
-		}
-	}, [open, initialDirection]);
-
 	const usdcTokenInfo = useMemo(() => getToken(DEFAULT_QUOTE_TOKEN), [getToken]);
-	const usdcTokenId = useMemo(() => {
-		if (!usdcTokenInfo) return "";
-		const tokenId = usdcTokenInfo.tokenId;
-		return `${usdcTokenInfo.name}:${tokenId}`;
-	}, [usdcTokenInfo]);
+	const usdcTokenId = usdcTokenInfo ? formatTokenId(usdcTokenInfo) : "";
 
 	const usdcDecimals = useMemo(() => getToken(DEFAULT_QUOTE_TOKEN)?.weiDecimals ?? 2, [getToken]);
 

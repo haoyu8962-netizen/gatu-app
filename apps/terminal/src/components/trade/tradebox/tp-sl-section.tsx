@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { NumberInput } from "@/components/ui/number-input";
-import { SL_QUICK_PERCENT_OPTIONS, TP_QUICK_PERCENT_OPTIONS } from "@/config/constants";
+import { SL_QUICK_PERCENT_OPTIONS, TP_QUICK_PERCENT_OPTIONS } from "@/config/trade";
 import { getRiskRewardRatio } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";

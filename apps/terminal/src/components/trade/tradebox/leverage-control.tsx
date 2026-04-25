@@ -2,13 +2,19 @@ import { Button, Drawer, DrawerContent } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
-import { forwardRef, useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { LEVERAGE_SUCCESS_DURATION_MS } from "@/config/time";
 import { useAssetLeverage } from "@/hooks/trade/use-asset-leverage";
+import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { LeverageSlider } from "./leverage-slider";
+
+const LEVERAGE_INPUT_WIDTH_COMPACT = "w-12";
+const LEVERAGE_INPUT_WIDTH_DEFAULT = "w-16";
+const LEVERAGE_POPOVER_WIDTH = "w-56";
 
 interface BadgeProps {
 	leverage: number;
@@ -66,20 +72,14 @@ function LeverageEditor({
 }: EditorProps) {
 	const displayValue = pendingLeverage ?? currentLeverage;
 	const [inputValue, setInputValue] = useState(String(displayValue));
-	const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
-	const [showSuccess, setShowSuccess] = useState(false);
+	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(
+		() => onOpenChange(false),
+		LEVERAGE_SUCCESS_DURATION_MS,
+	);
 
 	useEffect(() => {
 		setInputValue(String(displayValue));
 	}, [displayValue]);
-
-	useEffect(() => {
-		return () => {
-			if (autoCloseTimerRef.current) {
-				clearTimeout(autoCloseTimerRef.current);
-			}
-		};
-	}, []);
 
 	function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
 		const raw = e.target.value;
@@ -105,11 +105,7 @@ function LeverageEditor({
 	async function handleConfirm() {
 		try {
 			await onConfirm();
-			setShowSuccess(true);
-			autoCloseTimerRef.current = setTimeout(() => {
-				onOpenChange(false);
-				setShowSuccess(false);
-			}, 1500);
+			triggerAutoClose();
 		} catch {
 			/* handled by hook */
 		}
@@ -143,7 +139,10 @@ function LeverageEditor({
 						min={1}
 						max={maxLeverage}
 						inputSize={compact ? "sm" : "lg"}
-						className={cn("text-center font-medium tabular-nums", compact ? "w-12" : "w-16")}
+						className={cn(
+							"text-center font-medium tabular-nums",
+							compact ? LEVERAGE_INPUT_WIDTH_COMPACT : LEVERAGE_INPUT_WIDTH_DEFAULT,
+						)}
 					/>
 					<span className={cn("text-fg-muted", compact ? "text-xs" : "text-base")}>x</span>
 				</div>
@@ -298,7 +297,7 @@ export function LeverageControl({ className }: Props) {
 			<PopoverTrigger asChild>
 				<LeverageBadge leverage={displayLeverage} isLoading={isLoading} className={className} />
 			</PopoverTrigger>
-			<PopoverContent align="end" className="w-56 p-3">
+			<PopoverContent align="end" className={cn(LEVERAGE_POPOVER_WIDTH, "p-3")}>
 				<LeverageEditor {...editorProps} compact />
 			</PopoverContent>
 		</Popover>

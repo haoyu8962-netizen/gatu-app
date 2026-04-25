@@ -2,12 +2,15 @@ import { t } from "@lingui/core/macro";
 import { PercentIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useConnection } from "wagmi";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { getValueColorClass, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetDisplay } from "../components/asset-display";
+import { MetricCell } from "./metric-cell";
 
 interface Props {
 	className?: string;
@@ -22,7 +25,7 @@ export function MobileFundingTab({ className }: Props) {
 	} = useSubscription("userFundings", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
 	const markets = useMarkets();
 
-	const updates = fundingEvent?.fundings?.slice(0, 200).sort((a, b) => b.time - a.time) ?? [];
+	const updates = fundingEvent?.fundings?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
 	const totalFunding = updates.reduce((acc, f) => acc + toNumberOrZero(f.usdc), 0);
 	const headerTotal =
 		isConnected && status === "active"
@@ -108,20 +111,5 @@ export function MobileFundingTab({ className }: Props) {
 				</div>
 			</div>
 		</Skeleton>
-	);
-}
-
-interface MetricCellProps {
-	label: string;
-	value: string;
-	valueClass?: string;
-}
-
-function MetricCell({ label, value, valueClass }: MetricCellProps) {
-	return (
-		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-fg-muted">{label}</div>
-			<div className={cn("text-xs tabular-nums font-medium", valueClass)}>{value}</div>
-		</div>
 	);
 }

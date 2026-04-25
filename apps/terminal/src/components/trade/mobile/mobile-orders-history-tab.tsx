@@ -3,7 +3,8 @@ import { t } from "@lingui/core/macro";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useConnection } from "wagmi";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
@@ -11,6 +12,7 @@ import { getSideLabel } from "@/lib/trade/open-orders";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
+import { MetricCell } from "./metric-cell";
 
 interface Props {
 	className?: string;
@@ -31,7 +33,7 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 		historicalOrdersEvent?.orderHistory
 			?.slice()
 			.sort((a, b) => b.statusTimestamp - a.statusTimestamp)
-			.slice(0, 200) ?? [];
+			.slice(0, MAX_HISTORY_ROWS) ?? [];
 
 	const headerCount = isConnected ? `${orders.length}` : FALLBACK_VALUE_PLACEHOLDER;
 
@@ -138,19 +140,5 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 				</div>
 			</div>
 		</Skeleton>
-	);
-}
-
-interface MetricCellProps {
-	label: string;
-	value: string;
-}
-
-function MetricCell({ label, value }: MetricCellProps) {
-	return (
-		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-fg-muted">{label}</div>
-			<div className="text-xs tabular-nums font-medium">{value}</div>
-		</div>
 	);
 }

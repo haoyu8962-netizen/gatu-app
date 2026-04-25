@@ -1,27 +1,20 @@
 import { Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
-import { DEFAULT_QUOTE_TOKEN, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
-import { buildOrderPlan } from "@/domain/trade/order-intent";
-import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { cn } from "@/lib/cn";
-import {
-	useAgentRegistration,
-	useAgentStatus,
-	useExchange,
-	useSelectedMarketInfo,
-	useUserPositions,
-} from "@/lib/hyperliquid";
+import { useAgentRegistration, useAgentStatus, useSelectedMarketInfo, useUserPositions } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { clampInt, isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isScaleOrderType,
@@ -56,7 +49,6 @@ import {
 	useTwapMinutes,
 	useTwapRandomize,
 } from "@/stores/use-order-entry-store";
-import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { WalletModal } from "../components/wallet-modal";
 import { MarginModeModal } from "./margin-mode-modal";
@@ -66,9 +58,6 @@ import { TradeFormFields } from "./trade-form-fields";
 import { TradeHeader } from "./trade-header";
 
 export function TradePanel() {
-	const reduceOnlyId = useId();
-	const tpSlId = useId();
-
 	const { address, isConnected } = useConnection();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const switchChain = useSwitchChain();
@@ -80,8 +69,7 @@ export function TradePanel() {
 
 	const { isReady: isAgentReady, isLoading: isAgentLoading } = useAgentStatus();
 	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
-	const { mutateAsync: placeOrder, isPending: isSubmittingOrder } = useExchange("order");
-	const { mutateAsync: placeTwapOrder, isPending: isSubmittingTwap } = useExchange("twapOrder");
+	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit();
 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
@@ -117,7 +105,6 @@ export function TradePanel() {
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
 
 	const { takerRate, makerRate } = useFeeRates(market?.kind);
-	const { addOrder, updateOrder } = useOrderQueueActions();
 	const selectedPrice = useSelectedPrice();
 	const orderType = useOrderType();
 	const reduceOnly = useReduceOnly();
@@ -141,7 +128,7 @@ export function TradePanel() {
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 
-	const { setSide, setOrderType, setSizeMode, setSize, setLimitPrice, resetForm } = useOrderEntryActions();
+	const { setSide, setOrderType, setSizeMode, setSize, setLimitPrice } = useOrderEntryActions();
 
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 	const [activeModal, setActiveModal] = useState<ActiveModal>(null);
@@ -178,8 +165,6 @@ export function TradePanel() {
 	const triggerPriceNum = toNumber(triggerPriceInput);
 	const scaleStartPriceNum = toNumber(scaleStartPriceInput);
 	const scaleEndPriceNum = toNumber(scaleEndPriceInput);
-
-	const isSubmitting = isSubmittingOrder || isSubmittingTwap;
 
 	const position = market?.name ? userPositions.getPosition(market.name) : null;
 	const positionSize = toNumberOrZero(position?.szi);
@@ -294,103 +279,33 @@ export function TradePanel() {
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
-		const szDecimals = market.szDecimals ?? 0;
-		const formattedSize = formatSizeForOrder(sizeValue, szDecimals);
-		const formattedPrice = formatPriceForOrder(price);
-
-		const getQueueOrderType = () => {
-			if (twapOrder) return "twap" as const;
-			if (scaleOrder) return "scale" as const;
-			if (triggerOrder) return "trigger" as const;
-			if (orderType === "limit") return "limit" as const;
-			return "market" as const;
-		};
-
-		const hasTp = tpSlEnabled && canUseTpSl && isPositive(tpPriceNum);
-		const hasSl = tpSlEnabled && canUseTpSl && isPositive(slPriceNum);
-
-		const orderId = addOrder({
-			market: baseToken,
+		await submitOrder({
+			market: { assetId: market.assetId, szDecimals: market.szDecimals },
+			baseToken,
 			side,
-			size: formattedSize,
-			price: formattedPrice,
-			orderType: getQueueOrderType(),
-			tpPrice: hasTp ? formatPriceForOrder(tpPriceNum ?? 0) : undefined,
-			slPrice: hasSl ? formatPriceForOrder(slPriceNum ?? 0) : undefined,
-			status: "pending",
+			orderType,
+			sizeValue,
+			price,
+			markPx,
+			slippageBps,
+			reduceOnly,
+			tif,
+			limitPriceInput,
+			triggerPriceInput,
+			scaleStartPriceInput,
+			scaleEndPriceInput,
+			scaleLevelsNum,
+			twapMinutesNum,
+			twapRandomize,
+			tpSlEnabled,
+			canUseTpSl,
+			tpPriceNum,
+			slPriceNum,
+			twapOrder,
+			scaleOrder,
+			triggerOrder,
 		});
-
-		try {
-			if (twapOrder) {
-				const minutes = clampInt(Math.round(twapMinutesNum ?? 0), TWAP_MINUTES_MIN, TWAP_MINUTES_MAX);
-				const result = await placeTwapOrder({
-					twap: {
-						a: market.assetId,
-						b: side === "buy",
-						s: formattedSize,
-						r: reduceOnly,
-						m: minutes,
-						t: twapRandomize,
-					},
-				});
-				throwIfResponseError(result.response?.data?.status);
-				updateOrder(orderId, { status: "success", fillPercent: 100 });
-			} else {
-				const plan = buildOrderPlan({
-					kind: "entry",
-					assetId: market.assetId,
-					side,
-					orderType,
-					sizeValue,
-					szDecimals,
-					markPx,
-					price,
-					slippageBps,
-					reduceOnly,
-					tif,
-					limitPriceInput,
-					triggerPriceInput,
-					scaleStartPriceInput,
-					scaleEndPriceInput,
-					scaleLevelsNum,
-					tpSlEnabled,
-					canUseTpSl,
-					tpPriceNum,
-					slPriceNum,
-				});
-
-				if (plan.errors.length > 0) {
-					updateOrder(orderId, { status: "failed", error: plan.errors.join("; ") });
-					return;
-				}
-
-				const result = await placeOrder({ orders: plan.orders, grouping: plan.grouping });
-				const statuses = result.response?.data?.statuses ?? [];
-
-				const errors: string[] = [];
-				for (const status of statuses) {
-					if (status && typeof status === "object" && "error" in status) {
-						errors.push((status as { error: string }).error);
-					}
-				}
-
-				if (errors.length > 0) {
-					updateOrder(orderId, { status: "failed", error: errors.join("; ") });
-				} else if (statuses.length === 0) {
-					updateOrder(orderId, { status: "failed", error: t`No response from exchange` });
-				} else {
-					updateOrder(orderId, { status: "success", fillPercent: 100 });
-				}
-			}
-
-			resetForm();
-			return;
-		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : t`Order failed`;
-			updateOrder(orderId, { status: "failed", error: errorMessage });
-		}
 	}, [
-		addOrder,
 		baseToken,
 		canUseTpSl,
 		isSubmitting,
@@ -398,11 +313,8 @@ export function TradePanel() {
 		market,
 		markPx,
 		orderType,
-		placeOrder,
-		placeTwapOrder,
 		price,
 		reduceOnly,
-		resetForm,
 		scaleEndPriceInput,
 		scaleLevelsNum,
 		scaleOrder,
@@ -411,6 +323,7 @@ export function TradePanel() {
 		sizeValue,
 		slippageBps,
 		slPriceNum,
+		submitOrder,
 		tif,
 		tpPriceNum,
 		tpSlEnabled,
@@ -419,7 +332,6 @@ export function TradePanel() {
 		twapMinutesNum,
 		twapOrder,
 		twapRandomize,
-		updateOrder,
 		validation.canSubmit,
 	]);
 
@@ -441,8 +353,6 @@ export function TradePanel() {
 		onRegister: handleRegister,
 		onSubmit: handleSubmit,
 	});
-
-	// const actionButtonClass = getActionButtonClass(buttonContent.variant);
 
 	return (
 		<div className="min-h-0 flex flex-col overflow-hidden bg-surface">
@@ -481,8 +391,6 @@ export function TradePanel() {
 					price={price}
 					positionSize={positionSize}
 					swapTargetToken={swapTargetToken}
-					reduceOnlyId={reduceOnlyId}
-					tpSlId={tpSlId}
 					onSizeModeToggle={handleSizeModeToggle}
 					onSizePercentApply={handleSizePercentApply}
 					onDepositClick={() => openDepositModal("deposit")}
@@ -503,7 +411,7 @@ export function TradePanel() {
 						onClick={buttonContent.action}
 						disabled={buttonContent.disabled}
 						className={cn(
-							"h-auto min-h-0 w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
+							"w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
 							buttonContent.variant === "buy" && "bg-success hover:bg-success/90 text-background",
 							buttonContent.variant === "sell" && "text-background",
 						)}

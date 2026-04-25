@@ -4,15 +4,16 @@ import { useMemo } from "react";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { TimeTicker } from "@/components/ui/time-ticker";
-import { HL_ALL_DEXS } from "@/config/constants";
+import { HL_ALL_DEXS } from "@/config/app";
 import { getAvgPrice } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration, formatNumber, formatPrice } from "@/lib/format";
-import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
+import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
 	positionsPanelRowStripeClass,
@@ -26,24 +27,6 @@ import {
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
 
-interface PlaceholderProps {
-	children: React.ReactNode;
-	variant?: "error";
-}
-
-function Placeholder({ children, variant }: PlaceholderProps) {
-	return (
-		<div
-			className={cn(
-				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-error" : "text-fg-muted",
-			)}
-		>
-			{children}
-		</div>
-	);
-}
-
 export function TwapTab() {
 	const { address, isConnected } = useConnection();
 	const { scope } = useExchangeScope();
@@ -54,6 +37,7 @@ export function TwapTab() {
 		{ enabled: isConnected && !!address },
 	);
 	const markets = useMarkets();
+	const { mutate: cancelTwap, isPending: isCancelling } = useExchange("twapCancel");
 
 	const twapStates = twapStatesEvent?.states ?? [];
 
@@ -89,28 +73,44 @@ export function TwapTab() {
 						<Table className="table-fixed min-w-[58rem] w-full">
 							<TableHeader className={positionsPanelTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[18%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[18%] text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
+									>
 										{t`Size`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
+									>
 										{t`Executed`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+									>
 										{t`Avg Price`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
 										{t`Time / Total`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[10%] text-left")}>
 										{t`Reduce Only`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
 										{t`Created`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
+									>
 										{t`Actions`}
 									</TableHead>
 								</TableRow>
@@ -130,7 +130,7 @@ export function TwapTab() {
 											key={twapId}
 											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
 										>
-											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 												<div className="flex items-center gap-1.5">
 													<span
 														className={cn("h-4 w-0.5 shrink-0 rounded-full", isBuy ? "bg-success" : "bg-error")}
@@ -150,25 +150,31 @@ export function TwapTab() {
 													</Button>
 												</div>
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
+											>
 												{formatNumber(totalSize, szDecimals)}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
 												<span className={cn(isBuy ? "text-success" : "text-error")}>
 													{formatNumber(executedSize, szDecimals)}
 												</span>
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
+											>
 												{formatPrice(avgPrice, { szDecimals })}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "tabular-nums text-fg")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "tabular-nums text-fg")}>
 												<TimeTicker startTime={creationTime} durationMs={totalMinutes * 60 * 1000} isActive={true} /> /{" "}
 												{formatDuration(totalMinutes)}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-fg")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg")}>
 												{state.reduceOnly ? t`Yes` : t`No`}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "tabular-nums text-fg")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "tabular-nums text-fg")}>
 												{formatDateTime(creationTime, {
 													day: "2-digit",
 													month: "2-digit",
@@ -179,8 +185,19 @@ export function TwapTab() {
 													hour12: false,
 												})}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
-												<Button variant="outline" intent="error" size="sm" aria-label={t`Cancel TWAP order`}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
+												<Button
+													variant="outline"
+													intent="error"
+													size="sm"
+													aria-label={t`Cancel TWAP order`}
+													disabled={isCancelling}
+													onClick={() => {
+														const assetId = markets.getAssetId(state.coin);
+														if (typeof assetId !== "number") return;
+														cancelTwap({ a: assetId, t: twapId });
+													}}
+												>
 													{t`Cancel`}
 												</Button>
 											</TableCell>

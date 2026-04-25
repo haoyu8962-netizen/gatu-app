@@ -6,6 +6,9 @@ import { ORDER_TOAST_SUCCESS_DURATION_MS } from "@/config/time";
 import { cn } from "@/lib/cn";
 import { type OrderQueueItem, useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
 
+const ORDER_TOAST_WIDTH = "w-80";
+const ORDER_TOAST_LIST_MAX_HEIGHT = "max-h-72";
+
 function useAutoRemove(order: OrderQueueItem, onRemove: () => void) {
 	useEffect(() => {
 		if (order.status !== "success" || !order.completedAt) return;
@@ -149,7 +152,8 @@ export function OrderToast() {
 	return (
 		<div
 			className={cn(
-				"fixed bottom-6 right-6 z-50 w-80",
+				ORDER_TOAST_WIDTH,
+				"fixed bottom-6 right-6 z-50",
 				"bg-surface/95 backdrop-blur-sm",
 				"border border-stroke-weak/60 rounded-8 overflow-hidden",
 				"shadow-overlay shadow-black/20 dark:shadow-black/50",
@@ -179,7 +183,7 @@ export function OrderToast() {
 				</div>
 			</div>
 
-			<div className="divide-y divide-stroke-weak/30 max-h-72 overflow-y-auto">
+			<div className={cn("divide-y divide-stroke-weak/30 overflow-y-auto", ORDER_TOAST_LIST_MAX_HEIGHT)}>
 				{orders.map((order) => (
 					<div key={order.id} className="relative">
 						<OrderItem order={order} onRemove={() => removeOrder(order.id)} />

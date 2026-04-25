@@ -1,22 +1,10 @@
-import { BookOpenIcon, ChartBarIcon, CurrencyCircleDollarIcon, ListIcon, TrendUpIcon } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
+import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
+import { MOBILE_NAV_ITEMS, type MobileTab } from "@/config/nav";
 import { cn } from "@/lib/cn";
 
-export type MobileTab = "chart" | "book" | "trade" | "positions" | "account";
+const NAV_BADGE_MAX_COUNT = 99;
 
-interface NavItem {
-	id: MobileTab;
-	label: string;
-	icon: ReactNode;
-}
-
-const NAV_ITEMS: NavItem[] = [
-	{ id: "chart", label: "Chart", icon: <ChartBarIcon className="size-5" /> },
-	{ id: "book", label: "Book", icon: <BookOpenIcon className="size-5" /> },
-	{ id: "trade", label: "Trade", icon: <TrendUpIcon className="size-5" /> },
-	{ id: "positions", label: "Positions", icon: <ListIcon className="size-5" /> },
-	{ id: "account", label: "Account", icon: <CurrencyCircleDollarIcon className="size-5" /> },
-];
+export type { MobileTab };
 
 interface Props {
 	activeTab: MobileTab;
@@ -36,19 +24,21 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 			aria-label="Primary navigation"
 		>
 			<div className="flex items-stretch">
-				{NAV_ITEMS.map((item) => {
+				{MOBILE_NAV_ITEMS.map((item) => {
 					const isActive = activeTab === item.id;
 					const badgeCount = badges?.[item.id];
 					const showBadge = typeof badgeCount === "number" && badgeCount > 0;
+					const Icon = item.icon;
 
 					return (
 						<button
 							key={item.id}
 							type="button"
 							onClick={() => onTabChange(item.id)}
+							style={{ minHeight: `${MOBILE_BOTTOM_NAV_HEIGHT_PX}px` }}
 							className={cn(
 								"flex-1 flex flex-col items-center justify-center gap-0.5 rounded-none",
-								"min-h-[56px] py-2 px-1",
+								"py-2 px-1",
 								"transition-colors duration-150 ease-out",
 								"active:bg-fill-press active:scale-95",
 								isActive ? "text-brand" : "text-fg",
@@ -57,7 +47,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 							aria-label={item.label}
 						>
 							<span className="relative">
-								{item.icon}
+								<Icon className="size-5" />
 								{isActive && <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-brand" />}
 								{showBadge && (
 									<span
@@ -68,7 +58,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 											"bg-brand text-white",
 										)}
 									>
-										{badgeCount > 99 ? "99+" : badgeCount}
+										{badgeCount > NAV_BADGE_MAX_COUNT ? `${NAV_BADGE_MAX_COUNT}+` : badgeCount}
 									</span>
 								)}
 							</span>
@@ -82,5 +72,11 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 }
 
 export function MobileBottomNavSpacer({ className }: { className?: string }) {
-	return <div className={cn("h-[calc(56px+env(safe-area-inset-bottom))]", "shrink-0", className)} aria-hidden="true" />;
+	return (
+		<div
+			style={{ height: `calc(${MOBILE_BOTTOM_NAV_HEIGHT_PX}px + env(safe-area-inset-bottom))` }}
+			className={cn("shrink-0", className)}
+			aria-hidden="true"
+		/>
+	);
 }

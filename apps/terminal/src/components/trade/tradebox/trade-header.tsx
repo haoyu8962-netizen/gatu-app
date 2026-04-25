@@ -1,10 +1,11 @@
 import { Dropdown } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
-import type { SideLabels } from "@/domain/trade/order/labels";
+import type { OrderType } from "@/config/trade";
+import type { SideLabels } from "@/config/ui-text";
 import type { MarketKind } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { getAdvancedOrderLabel, getTabsOrderType, type OrderType } from "@/lib/trade/order-types";
+import { getAdvancedOrderLabel, getTabsOrderType } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
 import { SideToggle } from "./side-toggle";
 

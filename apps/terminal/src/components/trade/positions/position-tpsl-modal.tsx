@@ -8,32 +8,18 @@ import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useExchange } from "@/lib/hyperliquid";
-import { getValueColorClass, isPositive, toNumber } from "@/lib/trade/numbers";
+import { isPositive, toNumber } from "@/lib/trade/numbers";
 import { validateSlPrice, validateTpPrice } from "@/lib/trade/tpsl";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetDisplay } from "../components/asset-display";
 import { TradingActionButton } from "../components/trading-action-button";
 import { TpSlSection } from "../tradebox/tp-sl-section";
-
-interface PositionData {
-	coin: string;
-	assetId: number;
-	isLong: boolean;
-	size: number;
-	entryPx: number;
-	markPx: number;
-	unrealizedPnl: number;
-	roe: number;
-	szDecimals: number;
-	existingTpPrice?: number;
-	existingSlPrice?: number;
-	existingTpOrderId?: number;
-	existingSlOrderId?: number;
-}
+import type { TpSlPositionData } from "./position-dialog-types";
 
 interface Props {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	position: PositionData | null;
+	position: TpSlPositionData | null;
 }
 
 export function PositionTpSlModal({ open, onOpenChange, position }: Props) {

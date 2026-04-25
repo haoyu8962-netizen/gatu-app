@@ -1,7 +1,6 @@
-export const positionsPanelTableHeadClass =
-	"!h-8 !min-h-0 !px-2.5 !py-2 text-2xs font-medium uppercase tracking-wide text-fg-muted";
+export const positionsPanelTableHeadClass = "font-medium uppercase tracking-wide text-fg-muted";
 
-export const positionsPanelTableCellClass = "!h-auto !min-h-0 !px-2.5 py-2 align-middle text-2xs leading-normal";
+export const positionsPanelTableCellClass = "";
 
 export const positionsPanelTableHeaderClass = "[&_tr]:border-stroke-weak/60 [&_tr]:border-t-0 bg-fill-weaker/50";
 

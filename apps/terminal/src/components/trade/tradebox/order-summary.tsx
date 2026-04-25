@@ -1,11 +1,10 @@
 import { t } from "@lingui/core/macro";
 import { PencilIcon } from "@phosphor-icons/react";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { cn } from "@/lib/cn";
 import { bpsToPercentage, formatPrice, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
-
-const SUMMARY_EMPTY = "\u2014";
 
 interface Props {
 	liqPrice: number | null;
@@ -48,19 +47,19 @@ export function OrderSummary({
 			{isLeveraged && (
 				<SummaryRow label={t`Liq. Price`}>
 					<span className={cn(liqPrice ? (liqWarning ? "text-error" : "text-fg") : "text-fg-muted")}>
-						{liqPrice ? formatPrice(liqPrice, { szDecimals }) : SUMMARY_EMPTY}
+						{liqPrice ? formatPrice(liqPrice, { szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
 			)}
 			<SummaryRow label={t`Order Value`}>
 				<span className={orderValue > 0 ? "text-fg" : "text-fg-muted"}>
-					{orderValue > 0 ? formatUSD(orderValue) : SUMMARY_EMPTY}
+					{orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{isLeveraged && (
 				<SummaryRow label={t`Margin Req.`}>
 					<span className={marginRequired > 0 ? "text-fg" : "text-fg-muted"}>
-						{marginRequired > 0 ? formatUSD(marginRequired) : SUMMARY_EMPTY}
+						{marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
 			)}

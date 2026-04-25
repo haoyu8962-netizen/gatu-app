@@ -3,15 +3,18 @@ import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { getValueColorClass, toNumber } from "@/lib/trade/numbers";
+import { toNumber } from "@/lib/trade/numbers";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "../components/asset-display";
+import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
 	positionsPanelRowStripeClass,
@@ -24,24 +27,6 @@ import {
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
-
-interface PlaceholderProps {
-	children: React.ReactNode;
-	variant?: "error";
-}
-
-function Placeholder({ children, variant }: PlaceholderProps) {
-	return (
-		<div
-			className={cn(
-				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-error" : "text-fg-muted",
-			)}
-		>
-			{children}
-		</div>
-	);
-}
 
 export function HistoryTab() {
 	const { address, isConnected } = useConnection();
@@ -58,7 +43,7 @@ export function HistoryTab() {
 		{ enabled: isConnected && !!address },
 	);
 
-	const fills = fillsEvent?.fills?.slice(0, 200).sort((a, b) => b.time - a.time) ?? [];
+	const fills = fillsEvent?.fills?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
 
 	const headerCount = isConnected ? `${fills.length} ${t`trades`}` : null;
 
@@ -90,25 +75,45 @@ export function HistoryTab() {
 						<Table className="table-fixed min-w-[50rem] w-full">
 							<TableHeader className={positionsPanelTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
 										{t`Type`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+									>
 										{t`Price`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+									>
 										{t`Size`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+									>
 										{t`Fee`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+									>
 										{t`PNL`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[18%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[18%] text-right")}
+									>
 										{t`Time`}
 									</TableHead>
 								</TableRow>
@@ -125,7 +130,7 @@ export function HistoryTab() {
 											key={`${fill.hash}-${fill.tid}`}
 											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
 										>
-											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 												<Button
 													variant="link"
 													onClick={() => setSelectedMarket(scope, fill.coin)}
@@ -135,7 +140,7 @@ export function HistoryTab() {
 													<AssetDisplay coin={fill.coin} />
 												</Button>
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-fg")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg")}>
 												<span
 													className={cn(
 														"text-xs px-1 py-0.5 rounded-8 uppercase",
@@ -145,20 +150,26 @@ export function HistoryTab() {
 													{fill.liquidation ? t`Liquidated` : fill.dir}
 												</span>
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
+											>
 												{formatUSD(fill.px)}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
+											>
 												{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
 												<span className={feeClass}>
 													{formatToken(fill.fee, {
 														symbol: fill.feeToken,
 													})}
 												</span>
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
 												{showPnl ? (
 													<span className={getValueColorClass(closedPnl)}>
 														{formatUSD(closedPnl, {
@@ -169,8 +180,11 @@ export function HistoryTab() {
 													<span className="text-fg-muted">{FALLBACK_VALUE_PLACEHOLDER}</span>
 												)}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted")}>
-												<div className="flex flex-col items-end underline decoration-dashed decoration-muted-fg/30">
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted")}
+											>
+												<div className="flex flex-col items-end underline decoration-dashed decoration-fg-muted/30">
 													<a
 														className="flex items-center gap-1"
 														href={getExplorerTxUrl(fill.hash) ?? ""}

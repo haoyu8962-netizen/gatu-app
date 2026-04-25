@@ -14,7 +14,7 @@ import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor
 import { type ChangeEvent, useCallback, useMemo, useState } from "react";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
 import { type BalanceRow, getAvailableFromTotals, getPerpAvailable } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
@@ -22,6 +22,7 @@ import { cn } from "@/lib/cn";
 import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
+import { formatTokenId } from "@/lib/trade/token-id";
 
 type AccountType = "perp" | "spot";
 
@@ -77,10 +78,7 @@ export function SendModal({
 	}, [accountType, availableSpotTokens]);
 
 	const tokenInfo = useMemo(() => getToken(selectedToken), [getToken, selectedToken]);
-	const tokenId = useMemo(() => {
-		if (!tokenInfo) return "";
-		return `${tokenInfo.name}:${tokenInfo.tokenId}`;
-	}, [tokenInfo]);
+	const tokenId = tokenInfo ? formatTokenId(tokenInfo) : "";
 
 	const decimals = useMemo(() => getToken(selectedToken)?.transferDecimals ?? 2, [getToken, selectedToken]);
 

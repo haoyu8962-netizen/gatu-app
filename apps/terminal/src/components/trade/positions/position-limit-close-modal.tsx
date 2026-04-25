@@ -11,25 +11,15 @@ import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useExchange, useSubscription } from "@/lib/hyperliquid";
-import { formatDecimalFloor, getValueColorClass, isPositive, toNumber } from "@/lib/trade/numbers";
+import { formatDecimalFloor, isPositive, toNumber } from "@/lib/trade/numbers";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import { TradingActionButton } from "../components/trading-action-button";
-
-interface PositionData {
-	coin: string;
-	assetId: number;
-	isLong: boolean;
-	size: number;
-	entryPx: number;
-	markPx: number;
-	unrealizedPnl: number;
-	roe: number;
-	szDecimals: number;
-}
+import type { LimitClosePositionData } from "./position-dialog-types";
 
 interface Props {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	position: PositionData | null;
+	position: LimitClosePositionData | null;
 }
 
 export function PositionLimitCloseModal({ open, onOpenChange, position }: Props) {

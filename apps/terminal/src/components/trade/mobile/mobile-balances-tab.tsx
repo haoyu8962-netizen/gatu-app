@@ -4,7 +4,8 @@ import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon, WalletIcon }
 import { Skeleton } from "boneyard-js/react";
 import { useMemo, useState } from "react";
 import { useConnection } from "wagmi";
-import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
+import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import {
 	type BalanceRow,
 	filterBalanceRowsByUsdValue,
@@ -22,9 +23,9 @@ import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-glo
 import { AssetDisplay } from "../components/asset-display";
 import { SendModal } from "../positions/send-modal";
 import { TransferModal } from "../positions/transfer-modal";
+import { MetricCell } from "./metric-cell";
 
 type TransferDirection = "toSpot" | "toPerp";
-const SMALL_BALANCE_THRESHOLD = 1;
 
 interface Props {
 	className?: string;
@@ -53,7 +54,7 @@ export function MobileBalancesTab({ className }: Props) {
 	const balances = useMemo(() => getBalanceRows(perpSummary, spotBalances), [perpSummary, spotBalances]);
 	const filteredBalances = useMemo(() => {
 		if (!hideSmallBalances) return balances;
-		return filterBalanceRowsByUsdValue(balances, SMALL_BALANCE_THRESHOLD);
+		return filterBalanceRowsByUsdValue(balances, SMALL_BALANCE_THRESHOLD_USD);
 	}, [balances, hideSmallBalances]);
 
 	const perpBalances = useMemo(() => filteredBalances.filter((row) => row.type === "perp"), [filteredBalances]);
@@ -229,19 +230,5 @@ export function MobileBalancesTab({ className }: Props) {
 				/>
 			</div>
 		</Skeleton>
-	);
-}
-
-interface MetricCellProps {
-	label: string;
-	value: string;
-}
-
-function MetricCell({ label, value }: MetricCellProps) {
-	return (
-		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-fg-muted">{label}</div>
-			<div className="text-xs tabular-nums font-medium">{value}</div>
-		</div>
 	);
 }

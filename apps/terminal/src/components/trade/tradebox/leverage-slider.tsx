@@ -10,15 +10,14 @@ interface Props {
 
 export function LeverageSlider({ value, onChange, max, disabled, className }: Props) {
 	return (
-		<div className={className}>
-			<Slider
-				value={value}
-				onValueChange={(v) => onChange(v as number)}
-				min={1}
-				max={max}
-				step={1}
-				disabled={disabled}
-			/>
-		</div>
+		<Slider
+			className={className}
+			value={value}
+			onValueChange={(v) => onChange(v as number)}
+			min={1}
+			max={max}
+			step={1}
+			disabled={disabled}
+		/>
 	);
 }

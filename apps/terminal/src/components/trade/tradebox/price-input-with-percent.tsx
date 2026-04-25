@@ -4,7 +4,8 @@ import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import { formatUSD } from "@/lib/format";
-import { getValueColorClass, isPositive } from "@/lib/trade/numbers";
+import { isPositive } from "@/lib/trade/numbers";
+import { getValueColorClass } from "@/lib/ui/value-color";
 
 interface Props {
 	label: string;
