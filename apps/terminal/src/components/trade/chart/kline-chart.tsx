@@ -1,51 +1,19 @@
-import { Dropdown } from "@hypeterminal/ui";
-import { t } from "@lingui/core/macro";
-import Big from "big.js";
 import type { Chart, KLineData } from "klinecharts";
 import { dispose, FormatDateType, init, LoadDataType } from "klinecharts";
 import { useEffect, useRef, useState } from "react";
-import { useConnection } from "wagmi";
-import { HL_ALL_DEXS } from "@/config/constants";
+import { type ChartTypeConfig, DEFAULT_CHART_TYPE, INITIAL_CANDLE_COUNT, VOLUME_INDICATOR_NAME } from "@/config/chart";
+import { MS_PER_DAY, TAB_RESTORE_THRESHOLD_MS } from "@/config/time";
 import { candleEventToKLineData, candlesToKLineData } from "@/lib/chart/candle";
-import {
-	CHART_TYPES,
-	type ChartTypeConfig,
-	DEFAULT_CHART_TYPE,
-	DEFAULT_INTERVAL,
-	FAVORITE_SET,
-	MORE_INTERVALS,
-	STARRED_INTERVALS,
-} from "@/lib/chart/kline-config";
+import { formatShortDate, formatTime, formatTooltipDate } from "@/lib/chart/format";
+import { DEFAULT_INTERVAL } from "@/lib/chart/kline-config";
 import { buildKlineStyles } from "@/lib/chart/kline-styles";
-import { ORDER_LINE_NAME, registerOrderLineOverlay } from "@/lib/chart/order-line-overlay";
-import { POSITION_LINE_NAME, registerPositionLineOverlay } from "@/lib/chart/position-line-overlay";
-import { cn } from "@/lib/cn";
+import { registerOrderLineOverlay } from "@/lib/chart/order-line-overlay";
+import { registerPositionLineOverlay } from "@/lib/chart/position-line-overlay";
 import { getInfoClient, useSubscription } from "@/lib/hyperliquid";
-import { isStopOrder, isTakeProfitOrder, type OpenOrder } from "@/lib/trade/open-orders";
-import { type ChartSource, ChartSourceToggle, type ChartSourceToggleIntentHandlers } from "./chart-source-toggle";
-
-const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function formatShortDate(date: Date): string {
-	return `${SHORT_MONTHS[date.getMonth()]} ${date.getDate()}`;
-}
-
-function formatTime(date: Date): string {
-	return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-}
-
-function formatTooltipDate(date: Date): string {
-	const m = date.getMonth() + 1;
-	const d = date.getDate();
-	const y = String(date.getFullYear()).slice(2);
-	return `${m}/${d}/${y} ${formatTime(date)}`;
-}
-
-function getOrderLineLabel(order: OpenOrder): string {
-	if (isTakeProfitOrder(order)) return "TP";
-	if (isStopOrder(order)) return "SL";
-	return order.side === "B" ? "Limit Buy" : "Limit Sell";
-}
+import type { ChartSource, ChartSourceToggleIntentHandlers } from "./chart-source-toggle";
+import { KlineToolbar } from "./kline-toolbar";
+import { useKlineOrderOverlays } from "./use-kline-order-overlays";
+import { useKlinePositionOverlays } from "./use-kline-position-overlays";
 
 interface Props {
 	symbol?: string;
@@ -71,7 +39,6 @@ export function KlineChart({
 	const isHiddenRef = useRef(false);
 	const hiddenAtRef = useRef<number | null>(null);
 	const candleBufferRef = useRef<KLineData[]>([]);
-	const { address, isConnected } = useConnection();
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -85,7 +52,7 @@ export function KlineChart({
 				formatDate: (_dateTimeFormat, timestamp, _format, type) => {
 					const date = new Date(timestamp);
 					if (type === FormatDateType.XAxis) {
-						if (activeInterval.barMs >= 86_400_000) return formatShortDate(date);
+						if (activeInterval.barMs >= MS_PER_DAY) return formatShortDate(date);
 						if (date.getHours() === 0 && date.getMinutes() === 0) return formatShortDate(date);
 						return formatTime(date);
 					}
@@ -97,14 +64,14 @@ export function KlineChart({
 		chartRef.current = chart;
 
 		chart.setStyles(buildKlineStyles(activeChartType.type, { yAxisInside }));
-		chart.createIndicator("VOL");
+		chart.createIndicator(VOLUME_INDICATOR_NAME);
 
 		chart.setLoadDataCallback(({ type, data, callback }) => {
 			const interval = intervalRef.current;
 
 			if (type === LoadDataType.Forward && data) {
 				const endTime = data.timestamp;
-				const startTime = endTime - 500 * interval.barMs;
+				const startTime = endTime - INITIAL_CANDLE_COUNT * interval.barMs;
 
 				getInfoClient()
 					.candleSnapshot({
@@ -114,7 +81,10 @@ export function KlineChart({
 						endTime,
 					})
 					.then((candles) => callback(candlesToKLineData(candles), candles.length > 0))
-					.catch(() => callback([], false));
+					.catch((err) => {
+						console.error("kline forward-load failed", err);
+						callback([], false);
+					});
 			}
 
 			if (type === LoadDataType.Backward) {
@@ -123,7 +93,7 @@ export function KlineChart({
 		});
 
 		const endTime = Date.now();
-		const startTime = endTime - 500 * activeInterval.barMs;
+		const startTime = endTime - INITIAL_CANDLE_COUNT * activeInterval.barMs;
 
 		getInfoClient()
 			.candleSnapshot({
@@ -137,7 +107,7 @@ export function KlineChart({
 					chart.applyNewData(candlesToKLineData(candles), true);
 				}
 			})
-			.catch((err) => console.error("[kline-chart] initial candle fetch failed", err));
+			.catch((err) => console.error("kline initial candle fetch failed", err));
 
 		const ro = new ResizeObserver(() => chart.resize());
 		ro.observe(container);
@@ -175,10 +145,10 @@ export function KlineChart({
 
 			chart.resize();
 
-			if (gapMs >= 30_000 && symbol) {
+			if (gapMs >= TAB_RESTORE_THRESHOLD_MS && symbol) {
 				const interval = intervalRef.current;
 				const endTime = Date.now();
-				const startTime = endTime - 500 * interval.barMs;
+				const startTime = endTime - INITIAL_CANDLE_COUNT * interval.barMs;
 				getInfoClient()
 					.candleSnapshot({ coin: symbol, interval: interval.candleInterval, startTime, endTime })
 					.then((candles) => {
@@ -186,7 +156,7 @@ export function KlineChart({
 							chart.applyNewData(candlesToKLineData(candles), true);
 						}
 					})
-					.catch((err) => console.error("[kline-chart] tab-restore candle fetch failed", err));
+					.catch((err) => console.error("kline tab-restore refetch failed", err));
 			}
 		}
 
@@ -218,157 +188,19 @@ export function KlineChart({
 		}
 	}, [candleData.data]);
 
-	const { data: openOrdersEvent } = useSubscription(
-		"openOrders",
-		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
-		{ enabled: isConnected && !!address },
-	);
-
-	useEffect(() => {
-		const chart = chartRef.current;
-		if (!chart) return;
-
-		chart.removeOverlay({ name: ORDER_LINE_NAME });
-
-		const orders = openOrdersEvent?.orders;
-		if (!orders) return;
-
-		const symbolOrders = orders.filter((o) => o.coin === symbol);
-
-		for (const order of symbolOrders) {
-			const rawPrice = order.isTrigger ? order.triggerPx : order.limitPx;
-			const price = Big(rawPrice).toNumber();
-			if (!Number.isFinite(price)) continue;
-
-			const label = getOrderLineLabel(order);
-
-			chart.createOverlay({
-				name: ORDER_LINE_NAME,
-				points: [{ value: price }],
-				modeSensitivity: 0,
-				styles: {
-					rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
-					polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
-				},
-				extendData: {
-					side: order.side,
-					label,
-				},
-			});
-		}
-	}, [openOrdersEvent, symbol]);
-
-	const { data: clearinghouseEvent } = useSubscription(
-		"allDexsClearinghouseState",
-		{ user: address ?? "" },
-		{ enabled: isConnected && !!address },
-	);
-
-	useEffect(() => {
-		const chart = chartRef.current;
-		if (!chart) return;
-
-		chart.removeOverlay({ name: POSITION_LINE_NAME });
-
-		const states = clearinghouseEvent?.clearinghouseStates;
-		if (!states) return;
-
-		const mainDex = states.find(([dex]) => dex === "")?.[1];
-		if (!mainDex) return;
-
-		const position = mainDex.assetPositions.find((p) => p.position.coin === symbol);
-		if (!position) return;
-
-		const entryPxBig = Big(position.position.entryPx);
-		const sziBig = Big(position.position.szi);
-		if (sziBig.eq(0)) return;
-		const entryPx = entryPxBig.toNumber();
-
-		chart.createOverlay({
-			name: POSITION_LINE_NAME,
-			points: [{ value: entryPx }],
-			modeSensitivity: 0,
-			styles: {
-				rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
-				polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
-			},
-			extendData: {
-				isLong: sziBig.gt(0),
-			},
-		});
-	}, [clearinghouseEvent, symbol]);
-
-	const isNonFavoriteActive = !FAVORITE_SET.has(activeInterval.resolution);
-
-	const showChartSourceToggle = Boolean(onChartSourceChange && tradingViewIntentHandlers);
+	useKlineOrderOverlays({ chartRef, symbol });
+	useKlinePositionOverlays({ chartRef, symbol });
 
 	return (
 		<div className="flex flex-col h-full">
-			<div className="flex min-w-0 items-center justify-between gap-2 border-b border-stroke-weak/60 bg-surface">
-				<div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5 p-2 py-1.5">
-					{STARRED_INTERVALS.map((interval) => (
-						<button
-							key={interval.resolution}
-							type="button"
-							onClick={() => setActiveInterval(interval)}
-							className={cn(
-								"px-1.5 py-0.5 text-xs rounded-8 transition-colors",
-								activeInterval.resolution === interval.resolution
-									? "text-fg font-semibold"
-									: "text-fg-muted hover:text-fg",
-							)}
-						>
-							{interval.label}
-						</button>
-					))}
-					<Dropdown
-						trigger={
-							<span
-								className={cn(
-									"flex items-center gap-0.5",
-									isNonFavoriteActive ? "text-fg font-semibold" : "text-fg-muted font-normal",
-								)}
-							>
-								{isNonFavoriteActive ? activeInterval.label : null}
-							</span>
-						}
-						items={MORE_INTERVALS.map((interval) => ({
-							label: interval.label,
-							active: activeInterval.resolution === interval.resolution,
-							onSelect: () => setActiveInterval(interval),
-						}))}
-						align="start"
-						size="sm"
-						triggerVariant="minimal"
-						triggerAriaLabel={isNonFavoriteActive ? undefined : t`More intervals`}
-						className="inline-flex"
-						popupClassName="min-w-0 w-max"
-					/>
-					<div className="h-3 w-px shrink-0 self-center bg-stroke-weak/50" aria-hidden />
-					<Dropdown
-						trigger={<span className="flex items-center gap-0.5 font-semibold text-fg">{activeChartType.label}</span>}
-						items={CHART_TYPES.map((ct) => ({
-							label: ct.label,
-							active: activeChartType.type === ct.type,
-							onSelect: () => setActiveChartType(ct),
-						}))}
-						align="start"
-						size="sm"
-						triggerVariant="minimal"
-						className="inline-flex"
-						popupClassName="min-w-0 w-max"
-					/>
-				</div>
-				{showChartSourceToggle ? (
-					<div className="shrink-0 pr-2">
-						<ChartSourceToggle
-							value="default"
-							onValueChange={onChartSourceChange}
-							tradingViewIntentHandlers={tradingViewIntentHandlers}
-						/>
-					</div>
-				) : null}
-			</div>
+			<KlineToolbar
+				activeInterval={activeInterval}
+				onIntervalChange={setActiveInterval}
+				activeChartType={activeChartType}
+				onChartTypeChange={setActiveChartType}
+				onChartSourceChange={onChartSourceChange}
+				tradingViewIntentHandlers={tradingViewIntentHandlers}
+			/>
 			<div ref={containerRef} className="flex-1 min-h-0" />
 		</div>
 	);

@@ -1,6 +1,6 @@
 import { useDefaultLayout } from "react-resizable-panels";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { PANEL_LAYOUT } from "@/config/constants";
+import { PANEL_LAYOUT } from "@/config/layout";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { ChartPanel } from "../chart/chart-panel";
 import { OrderbookPanel } from "../orderbook/orderbook-panel";

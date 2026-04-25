@@ -17,7 +17,7 @@ import {
 	CHART_TIME_FRAMES,
 	CHART_TIMEZONE,
 	CHART_WIDGET_DEFAULTS,
-} from "@/config/constants";
+} from "@/config/chart";
 import { CHART_ALL_MIDS_TTL_MS } from "@/config/time";
 
 export {

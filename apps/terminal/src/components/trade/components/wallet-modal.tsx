@@ -20,6 +20,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { addRecentWallet, getRecentWallets, getWalletInfo, isMockConnector } from "@/lib/wallet-utils";
 
+const WALLET_LIST_MAX_HEIGHT = "max-h-[min(55vh,22rem)]";
+const DRAWER_HANDLE_SIZE_CLASS = "w-8 h-1";
+
 function ConnectorRow({
 	connector,
 	isPending,
@@ -166,7 +169,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 			<div className="flex items-center justify-between px-4 pt-4 pb-3">
 				{isMobile && (
 					<div
-						className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20"
+						className={cn(DRAWER_HANDLE_SIZE_CLASS, "absolute top-2 left-1/2 -translate-x-1/2 rounded-full bg-fill/20")}
 						aria-hidden="true"
 					/>
 				)}
@@ -186,7 +189,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 				</button>
 			</div>
 
-			<div className="overflow-y-auto overscroll-contain max-h-[min(55vh,22rem)]">
+			<div className={cn("overflow-y-auto overscroll-contain", WALLET_LIST_MAX_HEIGHT)}>
 				{hasConnectors ? (
 					<>
 						<div className="divide-y divide-stroke-weak/30">

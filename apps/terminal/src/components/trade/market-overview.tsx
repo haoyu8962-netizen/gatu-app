@@ -2,10 +2,9 @@ import { Tooltip } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, FireIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { formatDuration } from "@/components/ui/time-ticker";
 import { get24hChange, getOiUsd } from "@/domain/market";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatUSD, shortenAddress } from "@/lib/format";
+import { formatClockDuration, formatPercent, formatUSD, shortenAddress } from "@/lib/format";
 import {
 	getExplorerTokenUrl,
 	type SpotMarketInfo,
@@ -13,7 +12,8 @@ import {
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { getValueColorClass, toBig } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import { StatBlock } from "./chart/stat-block";
 
 const HOUR_MS = 3_600_000;
@@ -36,7 +36,7 @@ function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
 		<div className="min-w-[9rem] space-y-2">
 			<div className="flex items-center justify-between gap-4">
 				<span className="text-2xs uppercase tracking-wide text-fg-muted">{t`Resets in`}</span>
-				<span className="font-mono text-xs tabular-nums text-fg">{formatDuration(remaining)}</span>
+				<span className="font-mono text-xs tabular-nums text-fg">{formatClockDuration(remaining)}</span>
 			</div>
 			<div className="border-t border-stroke-weak pt-2 space-y-1.5">
 				{rows.map(({ label, rate }) => (

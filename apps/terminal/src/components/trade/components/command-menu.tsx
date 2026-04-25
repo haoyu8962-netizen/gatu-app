@@ -1,20 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { KIND_LABELS, marketSearchConfig } from "@/config/search";
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/format";
 import { type UnifiedMarketInfo, useMarketsInfo } from "@/lib/hyperliquid";
 import { createSearcher } from "@/lib/search";
-import { marketSearchConfig } from "@/lib/search/presets";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useCommandMenuActions, useCommandMenuOpen } from "@/stores/use-global-modal-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "./asset-display";
 
-const KIND_LABELS: Record<UnifiedMarketInfo["kind"], string> = {
-	perp: "Perp",
-	spot: "Spot",
-	builderPerp: "Builder",
-};
+const COMMAND_DIALOG_MAX_WIDTH_CLASS = "sm:max-w-[30rem]";
+const COMMAND_LIST_HEIGHT_CLASS = "h-[22.5rem] max-h-[22.5rem]";
 
 export function CommandMenu() {
 	const open = useCommandMenuOpen();
@@ -70,10 +67,10 @@ export function CommandMenu() {
 			description="Search for a market to trade"
 			showCloseButton={false}
 			shouldFilter={false}
-			className="sm:max-w-[480px]"
+			className={COMMAND_DIALOG_MAX_WIDTH_CLASS}
 		>
 			<CommandInput placeholder="Search markets..." value={query} onValueChange={setQuery} />
-			<CommandList className="h-[360px] max-h-[360px]">
+			<CommandList className={COMMAND_LIST_HEIGHT_CLASS}>
 				<CommandEmpty>No markets found.</CommandEmpty>
 				{displayItems.map((market) => (
 					<CommandItem

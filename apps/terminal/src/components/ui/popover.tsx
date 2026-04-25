@@ -2,6 +2,10 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import type * as React from "react";
 import { cn } from "@/lib/cn";
 
+const POPOVER_DEFAULT_SIDE_OFFSET = 4;
+const POPOVER_DEFAULT_COLLISION_PADDING = 8;
+const POPOVER_DEFAULT_WIDTH_CLASS = "w-72";
+
 function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
 	return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
@@ -13,9 +17,9 @@ function PopoverTrigger({ ...props }: React.ComponentProps<typeof PopoverPrimiti
 function PopoverContent({
 	className,
 	align = "center",
-	sideOffset = 4,
+	sideOffset = POPOVER_DEFAULT_SIDE_OFFSET,
 	alignOffset = 0,
-	collisionPadding = 8,
+	collisionPadding = POPOVER_DEFAULT_COLLISION_PADDING,
 	keepMounted = false,
 	...props
 }: React.ComponentProps<typeof PopoverPrimitive.Popup> & {
@@ -37,7 +41,8 @@ function PopoverContent({
 				<PopoverPrimitive.Popup
 					data-slot="popover-content"
 					className={cn(
-						"font-sans bg-surface text-fg z-50 w-72 rounded-12 border border-stroke-weak p-4 shadow-overlay outline-hidden",
+						"font-sans bg-surface text-fg z-50 rounded-12 border border-stroke-weak p-4 shadow-overlay outline-hidden",
+						POPOVER_DEFAULT_WIDTH_CLASS,
 						"transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin)",
 						"data-starting-style:opacity-0 data-starting-style:scale-95",
 						"data-ending-style:opacity-0 data-ending-style:scale-95",

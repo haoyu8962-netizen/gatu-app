@@ -1,10 +1,12 @@
 import { getCoreRowModel, getSortedRowModel, type Row, type SortingState, useReactTable } from "@tanstack/react-table";
 import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { TOKEN_SELECTOR_OVERSCAN, TOKEN_SELECTOR_ROW_HEIGHT_PX } from "@/config/layout";
+import { PERP_CATEGORIES } from "@/config/markets";
+import { marketSearchConfig } from "@/config/search";
 import { type ExchangeScope, isTokenInCategory, type MarketCategory } from "@/domain/market";
 import { useMarketsInfo } from "@/lib/hyperliquid";
 import { createSearcher } from "@/lib/search";
-import { marketSearchConfig } from "@/lib/search/presets/market";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useFavoriteMarkets, useMarketActions } from "@/stores/use-market-store";
 import { type MarketRow, type MarketScope, TOKEN_SELECTOR_COLUMNS } from "./token-selector-columns";
@@ -45,16 +47,6 @@ export interface UseTokenSelectorReturn {
 	highlightedIndex: number;
 	handleKeyDown: (e: React.KeyboardEvent) => void;
 }
-
-const PERP_CATEGORIES: Subcategory[] = [
-	{ value: "all", label: "All" },
-	{ value: "trending", label: "Trending" },
-	{ value: "new", label: "New" },
-	{ value: "defi", label: "DeFi" },
-	{ value: "layer1", label: "L1" },
-	{ value: "layer2", label: "L2" },
-	{ value: "meme", label: "Meme" },
-];
 
 function mapExchangeToMarketScope(es: ExchangeScope): MarketScope {
 	if (es === "builders-perp") return "hip3";
@@ -206,8 +198,8 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 	const virtualizer = useVirtualizer({
 		count: rows.length,
 		getScrollElement: () => containerRef.current,
-		estimateSize: () => 48,
-		overscan: 10,
+		estimateSize: () => TOKEN_SELECTOR_ROW_HEIGHT_PX,
+		overscan: TOKEN_SELECTOR_OVERSCAN,
 	});
 
 	useEffect(() => {

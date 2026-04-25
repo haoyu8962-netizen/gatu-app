@@ -4,11 +4,15 @@ import { Trans } from "@lingui/react/macro";
 import { CheckIcon, CopyIcon, PlusCircleIcon, SignOutIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useConnection, useDisconnect, useEnsName } from "wagmi";
+import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { WalletModal } from "../components/wallet-modal";
+
+const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
+const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 export function UserMenu() {
 	const { address, isConnected, isConnecting } = useConnection();
@@ -29,7 +33,11 @@ export function UserMenu() {
 				variant="outline"
 				intent="neutral"
 				size="sm"
-				className="h-8 min-h-8 min-w-[9rem] shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out"
+				className={cn(
+					APP_BAR_BUTTON_HEIGHT_CLASS,
+					USER_MENU_BUTTON_MIN_WIDTH,
+					"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+				)}
 				disabled
 			>
 				<SpinnerGapIcon className="size-3.5 animate-spin" />
@@ -47,7 +55,10 @@ export function UserMenu() {
 					size="sm"
 					onClick={() => setIsOpen(true)}
 					iconLeft={<WalletIcon className="size-3.5" />}
-					className="h-8 min-h-8 shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out"
+					className={cn(
+						APP_BAR_BUTTON_HEIGHT_CLASS,
+						"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+					)}
 				>
 					<Trans>Connect Wallet</Trans>
 				</Button>
@@ -86,7 +97,8 @@ export function UserMenu() {
 			triggerVariant="minimal"
 			className="flex shrink-0 items-center"
 			triggerClassName={cn(
-				"h-8 min-h-8 max-h-8 shrink-0 !rounded-8 border border-stroke-weak bg-transparent px-3 shadow-raised",
+				APP_BAR_BUTTON_HEIGHT_CLASS,
+				"max-h-8 shrink-0 !rounded-8 border border-stroke-weak bg-transparent px-3 shadow-raised",
 				"!py-0 text-xs gap-1.5",
 				"items-center justify-start font-semibold text-fg",
 				"hover:bg-fill-hover active:bg-fill-press",
@@ -97,7 +109,9 @@ export function UserMenu() {
 			trigger={
 				<>
 					<span className="size-1.5 shrink-0 rounded-full bg-success" aria-hidden />
-					<span className="min-w-0 max-w-[11rem] truncate font-mono text-xs text-fg">{displayLabel}</span>
+					<span className={cn("min-w-0 truncate font-mono text-xs text-fg", USER_MENU_LABEL_MAX_WIDTH)}>
+						{displayLabel}
+					</span>
 				</>
 			}
 			groups={[

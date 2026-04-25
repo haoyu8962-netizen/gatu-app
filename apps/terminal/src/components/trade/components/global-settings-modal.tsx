@@ -15,14 +15,9 @@ import { useLingui } from "@lingui/react";
 import type { ChangeEvent, ReactNode } from "react";
 import { useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
-import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/constants";
-import {
-	dynamicActivate,
-	type LocaleCode,
-	localeList,
-	type NumberFormatLocale,
-	numberFormatLocaleList,
-} from "@/lib/i18n";
+import { type LocaleCode, localeList, type NumberFormatLocale, numberFormatLocaleList } from "@/config/i18n";
+import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
+import { dynamicActivate } from "@/lib/i18n";
 import { useSettingsDialogActions, useSettingsDialogOpen } from "@/stores/use-global-modal-store";
 import {
 	useGlobalSettings,

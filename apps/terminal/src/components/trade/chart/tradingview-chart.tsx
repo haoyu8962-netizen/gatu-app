@@ -1,5 +1,12 @@
 import { useEffect, useRef } from "react";
+import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
+import {
+	buildChartOverrides,
+	generateChartCssUrl,
+	getLoadingScreenColors,
+	getToolbarBgColor,
+} from "@/lib/chart/theme-colors";
 import type { IChartingLibraryWidget, ResolutionString } from "@/types/charting_library";
 import {
 	CHART_CUSTOM_FONT_FAMILY,
@@ -16,7 +23,6 @@ import {
 	TIMEZONE,
 } from "./constants";
 import { createDatafeed } from "./datafeed";
-import { buildChartOverrides, generateChartCssUrl, getLoadingScreenColors, getToolbarBgColor } from "./theme-colors";
 
 interface Props {
 	symbol?: string;
@@ -129,8 +135,8 @@ export function TradingViewChart({
 						btn.appendChild(tvLabel);
 					});
 				}
-			} catch (error) {
-				console.error("Error initializing TradingView widget:", error);
+			} catch {
+				// widgetRef stays null on failure; source toggle then shows default chart
 			}
 		};
 
@@ -150,7 +156,7 @@ export function TradingViewChart({
 	}, [symbol, interval, theme]);
 
 	return (
-		<div className="relative w-full h-full" style={{ minHeight: "300px" }}>
+		<div className="relative w-full h-full" style={{ minHeight: CHART_MIN_HEIGHT_PX }}>
 			<div ref={containerRef} className="w-full h-full" />
 		</div>
 	);

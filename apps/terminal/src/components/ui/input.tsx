@@ -1,3 +1,12 @@
+/**
+ * Bare controlled input for the trade UI.
+ *
+ * This wraps `@base-ui/react/input` rather than `TextInput` from `@hypeterminal/ui`
+ * because `TextInput` is a full form field (wraps the input in `Field.Root` with
+ * label/hint/error slots). The trade UI needs a stripped-down input whose class
+ * string composes directly with `cn()` at the callsite, with a tighter `sm` size
+ * and tabular-num spacing for price/size entry. Do not replace with `TextInput`.
+ */
 import { Input as BaseInput } from "@base-ui/react/input";
 import type * as React from "react";
 import { cn } from "@/lib/cn";

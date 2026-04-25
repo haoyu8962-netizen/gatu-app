@@ -5,7 +5,7 @@ import { get24hChange } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatPercent } from "@/lib/format";
 import { useMarketsInfo } from "@/lib/hyperliquid";
-import { getValueColorClass } from "@/lib/trade/numbers";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useFavoriteMarkets, useMarketActions, useSelectedMarket } from "@/stores/use-market-store";
 
@@ -76,7 +76,7 @@ function FavoriteChip({ name, isActive }: FavoriteChipProps) {
 					"flex items-center gap-1.5 shrink-0 px-2 py-1 text-xs rounded-8 border no-underline transition-[color,background-color,border-color,opacity] duration-150 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 					isActive
 						? "border-stroke-weak/90 bg-fill-weak"
-						: "border-stroke-weak/35 bg-fill-weaker/50 hover:border-stroke-weak/55 hover:bg-fill-weak/80 opacity-60",
+						: "border-stroke-weak/35 bg-fill-weaker/50 hover:border-stroke-weak/55 hover:bg-fill-weak/80 opacity-90",
 				)}
 			>
 				<span className={cn("font-semibold uppercase transition-colors", isActive ? "text-fg" : "text-fg-muted")}>

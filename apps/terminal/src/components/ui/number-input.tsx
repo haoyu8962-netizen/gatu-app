@@ -1,7 +1,23 @@
+/**
+ * String-based numeric input for the trade UI.
+ *
+ * This does NOT use `NumberInput` from `@hypeterminal/ui`. The package primitive
+ * exposes a `number | null` value via `onValueChange` (built on @base-ui NumberField)
+ * and wraps the input in `Field.Root` with label/hint/error slots. The tradebox
+ * callers (size/price/TP/SL/leverage/trigger inputs) keep Hyperliquid price/size
+ * strings end-to-end: API returns strings with exact decimals, they flow through
+ * `onChange(string)` unchanged, are validated for decimal limits, and converted to
+ * `Big()` only when math is required. Converting to `number` here would lose
+ * precision (HL's sz/px can have up to 8 decimals). See `rules/hyperliquid.md`.
+ *
+ * The synthetic change event below enables the ArrowUp/ArrowDown keyboard stepper
+ * without rewriting every caller's `onChange(e)` handler.
+ */
 import { Input as BaseInput } from "@base-ui/react/input";
 import type * as React from "react";
 import { useCallback } from "react";
 import { cn } from "@/lib/cn";
+import { labelTypographyClass } from "./field-label";
 import { getInputClassName, type InputSize } from "./input";
 
 /**
@@ -204,7 +220,7 @@ export function NumberInput({
 	return (
 		<div>
 			<div className="mb-1.5 flex items-center justify-between">
-				<span className="text-3xs font-medium uppercase tracking-wide text-fg-muted leading-none">{label}</span>
+				<span className={labelTypographyClass}>{label}</span>
 				{labelValue != null && onLabelValueClick ? (
 					<button
 						type="button"

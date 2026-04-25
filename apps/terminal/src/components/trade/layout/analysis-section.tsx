@@ -2,7 +2,7 @@ import { useLayoutEffect } from "react";
 import { useDefaultLayout, usePanelRef } from "react-resizable-panels";
 import { useConnection } from "wagmi";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { PANEL_LAYOUT } from "@/config/constants";
+import { PANEL_LAYOUT } from "@/config/layout";
 import { PositionsPanel } from "../positions/positions-panel";
 import { MarketInfo } from "./market-info";
 
