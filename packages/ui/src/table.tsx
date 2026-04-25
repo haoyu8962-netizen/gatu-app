@@ -14,11 +14,29 @@ const tableVariants = cva(["w-full caption-bottom border-collapse"], {
 	},
 });
 
-const tableHeadVariants = cva([
-	"h-12 px-6 text-left align-middle text-xs font-semibold text-fg-muted whitespace-nowrap",
-]);
+const tableHeadVariants = cva(["text-left align-middle font-semibold text-fg-muted whitespace-nowrap"], {
+	variants: {
+		size: {
+			default: "h-12 px-6 text-xs",
+			dense: "h-8 px-2.5 py-2 text-2xs",
+		},
+	},
+	defaultVariants: {
+		size: "default",
+	},
+});
 
-const tableCellVariants = cva(["h-20 px-6 align-middle text-sm text-fg-muted"]);
+const tableCellVariants = cva(["align-middle text-fg-muted"], {
+	variants: {
+		size: {
+			default: "h-20 px-6 text-sm",
+			dense: "h-auto px-2.5 py-2 text-2xs leading-normal",
+		},
+	},
+	defaultVariants: {
+		size: "default",
+	},
+});
 
 interface TableProps extends React.HTMLAttributes<HTMLTableElement>, VariantProps<typeof tableVariants> {}
 
@@ -57,17 +75,17 @@ const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(({ classNa
 ));
 TableRow.displayName = "TableRow";
 
-interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElement> {}
+interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElement>, VariantProps<typeof tableHeadVariants> {}
 
-const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(({ className, ...props }, ref) => (
-	<th className={cn(tableHeadVariants({ className }))} ref={ref} {...props} />
+const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(({ className, size, ...props }, ref) => (
+	<th className={cn(tableHeadVariants({ size, className }))} ref={ref} {...props} />
 ));
 TableHead.displayName = "TableHead";
 
-interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement> {}
+interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement>, VariantProps<typeof tableCellVariants> {}
 
-const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(({ className, ...props }, ref) => (
-	<td className={cn(tableCellVariants({ className }))} ref={ref} {...props} />
+const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(({ className, size, ...props }, ref) => (
+	<td className={cn(tableCellVariants({ size, className }))} ref={ref} {...props} />
 ));
 TableCell.displayName = "TableCell";
 

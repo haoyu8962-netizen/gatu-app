@@ -1,248 +1,23 @@
-import type { ChartingLibraryFeatureset, ResolutionString, TimeFrameItem } from "@/types/charting_library";
+import type { SizeMode } from "@/lib/trade/types";
+import { APP_VERSION } from "./app";
 
-export const APP_NAME = "HypeTerminal";
-export const APP_VERSION = "v0.1.0";
+export interface SideLabels {
+	buy: string;
+	sell: string;
+	buyAria: string;
+	sellAria: string;
+}
 
-export const QUICK_PERCENT_OPTIONS = [25, 50, 100, 200, 400] as const;
-export const TP_QUICK_PERCENT_OPTIONS = [25, 50, 100, 200] as const;
-export const SL_QUICK_PERCENT_OPTIONS = [5, 10, 25, 50] as const;
+export function getSideLabels(isSpotMarket: boolean): SideLabels {
+	if (isSpotMarket) {
+		return { buy: "Buy", sell: "Sell", buyAria: "Buy", sellAria: "Sell" };
+	}
+	return { buy: "Long", sell: "Short", buyAria: "Buy Long", sellAria: "Sell Short" };
+}
 
-export const FALLBACK_VALUE_PLACEHOLDER = "-";
-export const FORMAT_COMPACT_THRESHOLD = 10_000;
-export const FORMAT_COMPACT_DEFAULT = true;
-
-export const SMALL_BALANCE_THRESHOLD_USD = 1;
-export const MAX_HISTORY_ROWS = 200;
-export const LIQ_WARNING_PROXIMITY = 0.1;
-
-export const DEFAULT_FAVORITE_MARKETS = ["BTC", "ETH", "HYPE"] as const;
-
-export const MOBILE_BREAKPOINT_PX = 768;
-
-export const RECENT_WALLETS_LIMIT = 3;
-
-export const DEFAULT_MARKET_KEY = "perp:BTC";
-export const DEFAULT_MARKET_NAME = "BTC";
-export const DEFAULT_MARKET_SCOPE = "perp" as const;
-export const DEFAULT_QUOTE_TOKEN = "USDC";
-
-export const HL_ALL_DEXS = "ALL_DEXS" as const;
-
-export const ORDER_MIN_NOTIONAL_USD = 10;
-export const ORDER_FEE_RATE_TAKER = 0.00045;
-export const ORDER_FEE_RATE_MAKER = 0.00015;
-export const ORDER_FEE_RATE_SPOT_TAKER = 0.0007;
-export const ORDER_FEE_RATE_SPOT_MAKER = 0.0004;
-export const ORDER_SIZE_PERCENT_STEPS = [25, 50, 75, 100] as const;
-export const ORDER_LEVERAGE_STEPS = [1, 2, 3, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 200] as const;
-
-export const TWAP_MINUTES_MIN = 5;
-export const TWAP_MINUTES_MAX = 1440;
-export const SCALE_LEVELS_MIN = 2;
-export const SCALE_LEVELS_MAX = 20;
-
-export const DEFAULT_MAX_LEVERAGE = 50;
-export const MARKET_LEVERAGE_HARD_MAX = 100;
-export const DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT = 2.5;
-export const MARKET_ORDER_SLIPPAGE_MIN_PERCENT = 0.1;
-export const MARKET_ORDER_SLIPPAGE_MAX_PERCENT = 5;
-export const DEFAULT_LEVERAGE_BY_MODE = { cross: 10, isolated: 10 } as const;
-
-export const STORAGE_KEYS = {
-	MARKET_PREFS: "market-prefs-v2",
-	GLOBAL_SETTINGS: "global-settings-v2",
-	META_CACHE: "hyperliquid-meta-cache-v2",
-	SIDEBAR_STATE: "sidebar_state-v2",
-	ORDER_ENTRY: "order-entry-v2",
-	LAST_MARK: "hl-last-mark-v1",
-	MARKETS_STATS: "hl-mkt-stats-v1",
-	RECENT_WALLETS: "hypeterminal:recent-wallets",
-	RQ_CACHE: "hl-rq-cache-v1",
-	LEGACY_METADATA: "hl-markets-meta-v1",
-} as const;
-
-export const RQ_CACHE_BUSTER = "v1";
-
-export const GITHUB_URL = "https://github.com/vipineth/hypeterminal/";
-export const TOKEN_ICON_BASE_URL = "https://app.hyperliquid.xyz/coins";
-
-export const PANEL_LAYOUT = {
-	MAIN: {
-		id: "CHART_WITH_SWAPBOX",
-		analysis: { defaultSize: 77, minSize: 50 },
-		sidebar: { defaultSize: 23, minSize: 18 },
-	},
-	ANALYSIS: {
-		id: "CHART_WITH_POSITIONS",
-		chart: { defaultSize: 55, disconnectedSize: 70, minSize: 40 },
-		positions: { defaultSize: 45, disconnectedSize: 30, minSize: 15 },
-	},
-	MARKET: {
-		id: "CHART_WITH_ORDERBOOK",
-		chart: { defaultSize: 76, minSize: 40 },
-		orderbook: { defaultSize: 24, minSize: 20 },
-	},
-} as const;
-
-export const SIDEBAR_LAYOUT = {
-	WIDTH: "16rem",
-	WIDTH_MOBILE: "18rem",
-	WIDTH_ICON: "3rem",
-	KEYBOARD_SHORTCUT: "b",
-} as const;
-
-export const SEO_DEFAULTS = {
-	siteName: APP_NAME,
-	siteUrl: "https://hypeterminal.xyz",
-	defaultTitle: "HypeTerminal - Hyperliquid Trading Terminal",
-	defaultDescription:
-		"A professional trading terminal for Hyperliquid DEX. Trade perpetuals and spot markets with real-time data, advanced charting, and seamless wallet connectivity.",
-	twitterHandle: "@hypeterminal",
-	locale: "en_US",
-	themeColor: "#0a0a0a",
-} as const;
-
-export const SEO_BASE_KEYWORDS = ["hyperliquid", "trading", "dex", "perpetuals", "crypto", "defi"] as const;
-
-export const ROUTE_SEO = {
-	TRADE: {
-		title: "Trade",
-		description:
-			"Trade perpetuals and spot markets on Hyperliquid DEX with real-time charts, orderbook, and one-click order execution.",
-		path: "/",
-		keywords: ["trade", "orderbook", "chart", "perpetuals", "spot"],
-	},
-	PERP: {
-		title: "Perpetuals Trading",
-		description:
-			"Trade perpetual futures on Hyperliquid DEX with up to 50x leverage, real-time charts, and advanced order types.",
-		path: "/perp",
-		keywords: ["perpetuals", "futures", "leverage", "trading"],
-	},
-	SPOT: {
-		title: "Spot Trading",
-		description: "Trade spot markets on Hyperliquid DEX with real-time orderbook, charts, and instant execution.",
-		path: "/spot",
-		keywords: ["spot", "trading", "exchange"],
-	},
-	BUILDERS_PERP: {
-		title: "Builder Perpetuals",
-		description: "Trade builder-deployed perpetual markets (HIP-3) on Hyperliquid DEX.",
-		path: "/builders-perp",
-		keywords: ["builders", "hip-3", "perpetuals", "community"],
-	},
-	COMPONENTS: {
-		title: "Components",
-		description:
-			"UI component showcase for HypeTerminal design system. Explore buttons, badges, cards, and trading-specific components.",
-		path: "/components",
-		keywords: ["components", "design system", "ui"],
-		noIndex: true,
-	},
-	NOT_FOUND: {
-		title: "Page Not Found",
-		description: "The page you are looking for does not exist.",
-		path: "/404",
-		noIndex: true,
-	},
-} as const;
-
-export const CHART_LIBRARY_PATH = "/charting_library/";
-export const CHART_TIME_FRAMES: TimeFrameItem[] = [
-	{ text: "5y", resolution: "1W" as ResolutionString, description: "5 Years" },
-	{ text: "1y", resolution: "1D" as ResolutionString, description: "1 Year" },
-	{ text: "3m", resolution: "240" as ResolutionString, description: "3 Months" },
-	{ text: "1m", resolution: "60" as ResolutionString, description: "1 Month" },
-	{ text: "5d", resolution: "15" as ResolutionString, description: "5 Days" },
-	{ text: "1d", resolution: "5" as ResolutionString, description: "1 Day" },
-];
-
-export const CHART_DEFAULT_SYMBOL = "AAVE/USDC";
-export const CHART_DEFAULT_INTERVAL = "60";
-export const CHART_DEFAULT_THEME = "dark" as const;
-export const CHART_EXCHANGE = "Hyperliquid";
-export const CHART_QUOTE_ASSET = DEFAULT_QUOTE_TOKEN;
-export const CHART_SESSION = "24x7";
-export const CHART_TIMEZONE = "Etc/UTC";
-export const CHART_DEFAULT_PRICESCALE = 100;
-export const CHART_SUPPORTED_RESOLUTIONS = [
-	"1",
-	"3",
-	"5",
-	"15",
-	"30",
-	"60",
-	"120",
-	"240",
-	"480",
-	"720",
-	"1D",
-	"1W",
-	"1M",
-] as unknown as ResolutionString[];
-export const CHART_LOCALE = "en";
-export const CHART_CUSTOM_FONT_FAMILY = "'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif";
-export const CHART_ENABLED_FEATURES = [
-	"side_toolbar_in_fullscreen_mode",
-	"header_in_fullscreen_mode",
-	"hide_last_na_study_output",
-	"constraint_dialogs_to_chart",
-	"dont_show_boolean_study_arguments",
-	"hide_resolution_in_legend",
-	"items_favoriting",
-	"save_shortcut",
-] as ChartingLibraryFeatureset[];
-export const CHART_DISABLED_FEATURES = [
-	"header_symbol_search",
-	"header_quick_search",
-	"header_compare",
-	"display_market_status",
-	"popup_hints",
-	"header_saveload",
-	"header_screenshot",
-	"volume_force_overlay",
-	"show_logo_on_all_charts",
-	"caption_buttons_text_if_possible",
-	"symbol_search_hot_key",
-	"compare_symbol",
-	"border_around_the_chart",
-	"remove_library_container_border",
-	"header_undo_redo",
-	"go_to_date",
-	"timezone_menu",
-	"study_templates",
-	"use_localstorage_for_settings",
-	"save_chart_properties_to_local_storage",
-	"countdown",
-	"timeframes_toolbar",
-	"main_series_scale_menu",
-] as ChartingLibraryFeatureset[];
-export const CHART_FAVORITE_INTERVALS = ["1", "5", "60", "240", "1D"] as ResolutionString[];
-export const CHART_WIDGET_DEFAULTS = {
-	AUTOSIZE: true,
-	FULLSCREEN: false,
-	DEBUG: false,
-} as const;
-
-export const CHART_DATAFEED_CONFIG = {
-	SYMBOL_TYPE: "crypto",
-	SYMBOL_TYPES: [{ name: "crypto", value: "crypto" }],
-	DATA_STATUS: "streaming",
-	FORMAT: "price",
-	MIN_MOVEMENT: 1,
-	VOLUME_PRECISION: 2,
-	SEARCH_LIMIT: 50,
-} as const;
-
-export const POSITIONS_TABS = [
-	{ value: "balances", label: "Balances" },
-	{ value: "positions", label: "Positions" },
-	{ value: "orders", label: "Open Orders" },
-	{ value: "twap", label: "TWAP" },
-	{ value: "history", label: "Trade History" },
-	{ value: "funding", label: "Funding History" },
-	{ value: "orders-history", label: "Order History" },
-] as const;
+export function getSizeModeLabel(sizeMode: SizeMode, baseToken: string, quoteToken: string): string {
+	return sizeMode === "base" ? baseToken || "---" : quoteToken;
+}
 
 export const UI_TEXT = {
 	COMMON: {
@@ -334,7 +109,7 @@ export const UI_TEXT = {
 		WAITING: "Waiting for order book...",
 		SPREAD_LABEL: "Spread",
 		WEBSOCKET_ERROR: "WebSocket error",
-		APPROX_PREFIX: "\u2248 ",
+		APPROX_PREFIX: "≈ ",
 	},
 	TRADES: {
 		HEADER_TIME: "Time",
@@ -349,9 +124,6 @@ export const UI_TEXT = {
 		BLOCK_LABEL: "Block:",
 		GAS_LABEL: "Gas:",
 		LATENCY_LABEL: "Latency:",
-		BLOCK_VALUE: "18,942,103",
-		GAS_VALUE: "24 gwei",
-		LATENCY_VALUE: "12ms",
 		VERSION: APP_VERSION,
 	},
 	ORDER_TOAST: {

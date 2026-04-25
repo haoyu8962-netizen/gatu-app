@@ -112,3 +112,31 @@ From the user's perspective:
 - The tooltip stays tight on purpose. Longer prose invites the very "what is this fee for?" confusion the user currently experiences; minimal value-first rows are the cure.
 - The verification step (comparing our rate against Hyperliquid's UI on three markets) is cheap and catches the formula being wrong at `×2` instead of `÷2`, or any other sign-of-mistake reversal.
 - This PRD will be broken into sub-issues once approved: (a) effective-fee module + tests, (b) `useFeeRates` rewrite + constant removal, (c) `OrderSummary` + tooltip UI, (d) verification pass.
+
+## Sub-Issues
+
+Two vertical slices. Both cut end-to-end through pure function → hook → UI.
+
+### Slice 1 — Single-row Fee + tooltip on validator markets (AFK)
+
+- Blocked by: none
+- User stories: 1, 5, 6, 7, 8, 9, 10, 11, 12, 15, 18, 19, 20
+- End-to-end behavior on validator markets (BTC, ETH, etc.):
+  - Replace `Est. Fee` + `Builder Fee` rows with one `Fee` row showing effective % + $.
+  - Hover/tap tooltip shows: exchange fee (taker/maker), builder fee with one-line hint, total.
+  - Hide row when wallet disconnected; skeleton while `userFees` loads.
+  - New pure `computeEffectiveFee` (validator branch only) + unit tests.
+  - `useFeeRates` rewrite; delete `ORDER_FEE_RATE_*` constants.
+  - `getOrderMetrics` signature update.
+- HIP-3 markets in this slice still show whatever comes out of the validator branch (temporarily wrong on HIP-3 — fixed in Slice 2).
+
+### Slice 2 — HIP-3 effective rate + strikethrough + subsidy hint (HITL)
+
+- Blocked by: Slice 1
+- User stories: 2, 3, 4, 13, 14, 16, 17
+- End-to-end behavior on HIP-3 markets (brentoil et al.):
+  - Extend `computeEffectiveFee` with HIP-3 branch: `× 2 × deployerFeeScale × (growthMode ? 0.1 : 1)`.
+  - `useFeeRates` reads `perpDexs[dexIndex].deployerFeeScale` and asset `growthMode`; HIP-3 detection via `kind === "builderPerp"`.
+  - Tooltip gains strikethrough tier-0 row (shown only when discounted/subsidized) and "Subsidized market" hint for growth mode.
+  - Extended unit tests (HIP-3 normal, growth mode, scale > 1, spot, edge cases).
+- Verification gate (HITL): before merge, confirm our rate matches Hyperliquid's UI to 4 decimals on one validator market, one HIP-3 growth-mode market, one HIP-3 non-growth market.
