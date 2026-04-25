@@ -5,7 +5,9 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { useConnection, WagmiProvider } from "wagmi";
-import { DEFAULT_BUILDER_CONFIG, PROJECT_NAME } from "@/config/hyperliquid";
+import { APP_NAME, RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
+import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
+import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
 import { config } from "@/config/wagmi";
 import { HyperliquidProvider } from "@/lib/hyperliquid";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
@@ -17,15 +19,9 @@ const env = network === "testnet" ? "Testnet" : "Mainnet";
 
 const isServer = typeof document === "undefined";
 
-const RQ_CACHE_KEY = "hl-rq-cache-v1";
-const RQ_CACHE_BUSTER = "v1";
-const RQ_CACHE_MAX_AGE = 24 * 60 * 60 * 1000;
-
-const LEGACY_METADATA_KEY = "hl-markets-meta-v1";
-
 if (!isServer) {
 	try {
-		localStorage.removeItem(LEGACY_METADATA_KEY);
+		localStorage.removeItem(STORAGE_KEYS.LEGACY_METADATA);
 	} catch {}
 }
 
@@ -33,7 +29,7 @@ const persister = isServer
 	? null
 	: createSyncStoragePersister({
 			storage: window.localStorage,
-			key: RQ_CACHE_KEY,
+			key: STORAGE_KEYS.RQ_CACHE,
 			throttleTime: 1000,
 		});
 
@@ -46,12 +42,7 @@ function HyperliquidBridge({ children }: { children: React.ReactNode }) {
 	const { address } = useConnection();
 
 	return (
-		<HyperliquidProvider
-			env={env}
-			userAddress={address}
-			builderConfig={DEFAULT_BUILDER_CONFIG}
-			agentName={PROJECT_NAME}
-		>
+		<HyperliquidProvider env={env} userAddress={address} builderConfig={DEFAULT_BUILDER_CONFIG} agentName={APP_NAME}>
 			<MarketsProvider>{children}</MarketsProvider>
 		</HyperliquidProvider>
 	);
@@ -72,7 +63,7 @@ export function RootProvider({ children, queryClient }: { children: React.ReactN
 				client={queryClient}
 				persistOptions={{
 					persister,
-					maxAge: RQ_CACHE_MAX_AGE,
+					maxAge: RQ_CACHE_MAX_AGE_MS,
 					buster: RQ_CACHE_BUSTER,
 					dehydrateOptions: {
 						shouldDehydrateQuery: (query) => query.queryKey[0] === PERSISTED_QUERY_PREFIX,

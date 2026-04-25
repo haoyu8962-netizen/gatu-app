@@ -1,4 +1,10 @@
 import { Suspense } from "react";
+import {
+	APP_HEADER_OFFSET_CLASS,
+	APP_HEADER_PLUS_BANNER_OFFSET_CLASS,
+	MOBILE_BOTTOM_NAV_HEIGHT_PX,
+	MOBILE_BREAKPOINT_PX,
+} from "@/config/layout";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
@@ -13,9 +19,7 @@ const MobileTerminal = createLazyComponent(() => import("./mobile/mobile-termina
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 
-// Eagerly kick off the mobile chunk if we're on a mobile viewport so it's
-// ready (or in-flight) before useIsMobile() flips to true and Suspense fires.
-if (typeof window !== "undefined" && window.innerWidth < 768) {
+if (typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT_PX) {
 	MobileTerminal.preload();
 }
 
@@ -34,7 +38,7 @@ export function TradeTerminalPage() {
 				<div
 					className={cn(
 						"bg-background text-fg min-h-screen w-full flex flex-col font-sans pb-8",
-						isTestnet ? "pt-[4.75rem]" : "pt-11",
+						isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS,
 						isTestnet && "testnet-bg",
 					)}
 				>
@@ -90,7 +94,10 @@ function MobileLoadingFallback() {
 
 function NavSkeleton() {
 	return (
-		<div className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[56px] py-2">
+		<div
+			className="flex-1 flex flex-col items-center justify-center gap-1 py-2"
+			style={{ minHeight: MOBILE_BOTTOM_NAV_HEIGHT_PX }}
+		>
 			<div className="size-5 rounded bg-surface animate-pulse" />
 			<div className="h-2 w-8 rounded bg-surface animate-pulse" />
 		</div>
