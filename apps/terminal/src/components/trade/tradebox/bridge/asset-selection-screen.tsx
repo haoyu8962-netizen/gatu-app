@@ -11,17 +11,15 @@ const BRIDGE_ASSET_LIST_MAX_HEIGHT = "max-h-72";
 
 interface TokenRowProps {
 	token: BridgeToken;
-	isSelected: boolean;
 	onSelect: (token: BridgeToken) => void;
 }
 
-function tokenRowStyle(isDust: boolean, isSelected: boolean): string {
+function tokenRowStyle(isDust: boolean): string {
 	if (isDust) return "opacity-50 cursor-not-allowed border-transparent";
-	if (isSelected) return "border-stroke-brand-strong bg-brand/5 cursor-pointer";
 	return "border-transparent hover:bg-fill-hover active:bg-fill-weak cursor-pointer";
 }
 
-function TokenRow({ token, isSelected, onSelect }: TokenRowProps) {
+function TokenRow({ token, onSelect }: TokenRowProps) {
 	return (
 		<button
 			type="button"
@@ -29,7 +27,7 @@ function TokenRow({ token, isSelected, onSelect }: TokenRowProps) {
 			onClick={() => onSelect(token)}
 			className={cn(
 				"flex items-center gap-3 px-3 py-2.5 text-left transition-colors rounded-8 w-full border",
-				tokenRowStyle(token.isDust, isSelected),
+				tokenRowStyle(token.isDust),
 			)}
 		>
 			<TokenIcon token={token} />
@@ -125,7 +123,7 @@ export function AssetSelectionScreen({ address, onSelect }: Props) {
 				)}
 			>
 				{tokens.map((token) => (
-					<TokenRow key={`${token.chainId}-${token.address}`} token={token} isSelected={false} onSelect={onSelect} />
+					<TokenRow key={`${token.chainId}-${token.address}`} token={token} onSelect={onSelect} />
 				))}
 			</div>
 			<PoweredByLiFi />

@@ -51,5 +51,5 @@ export function useKlinePositionOverlays({ chartRef, symbol }: Params) {
 				isLong: sziBig.gt(0),
 			},
 		});
-	}, [clearinghouseEvent, symbol, chartRef]);
+	}, [clearinghouseEvent, symbol]);
 }

@@ -53,5 +53,5 @@ export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
 				},
 			});
 		}
-	}, [openOrdersEvent, symbol, chartRef]);
+	}, [openOrdersEvent, symbol]);
 }

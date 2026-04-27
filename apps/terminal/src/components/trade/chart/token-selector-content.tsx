@@ -2,7 +2,6 @@ import { Badge, Button, SearchInput, TableHead, TableHeader, TableRow, tableVari
 import { t } from "@lingui/core/macro";
 import { ArrowDownIcon, ArrowsDownUpIcon, ArrowUpIcon, FireIcon, StarIcon } from "@phosphor-icons/react";
 import { flexRender } from "@tanstack/react-table";
-import { memo } from "react";
 import { get24hChange, getOiUsd, isTokenInCategory } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatUSD } from "@/lib/format";
@@ -64,22 +63,7 @@ interface RowProps {
 	onToggleFavorite: (name: string) => void;
 }
 
-function rowPropsEqual(prev: RowProps, next: RowProps): boolean {
-	return (
-		prev.market === next.market &&
-		prev.mobile === next.mobile &&
-		prev.scope === next.scope &&
-		prev.isSelected === next.isSelected &&
-		prev.isHighlighted === next.isHighlighted &&
-		prev.isFavorite === next.isFavorite &&
-		prev.top === next.top &&
-		prev.height === next.height &&
-		prev.onSelect === next.onSelect &&
-		prev.onToggleFavorite === next.onToggleFavorite
-	);
-}
-
-const TokenSelectorRow = memo(function TokenSelectorRow({
+function TokenSelectorRow({
 	market,
 	mobile,
 	scope,
@@ -201,7 +185,7 @@ const TokenSelectorRow = memo(function TokenSelectorRow({
 			)}
 		</div>
 	);
-}, rowPropsEqual);
+}
 
 function SortIcon({ columnId, sorting }: { columnId: string; sorting: { id: string; desc: boolean }[] }) {
 	const sort = sorting.find((s) => s.id === columnId);
