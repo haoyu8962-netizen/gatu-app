@@ -230,6 +230,17 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					});
 					get().config.triggerReconnect?.();
 				});
+			} else if (pauseWhenHidden === false) {
+				runtime.pauseWhenHidden = false;
+				if (visibilityBuffer.has(key)) {
+					const buffered = visibilityBuffer.get(key);
+					visibilityBuffer.delete(key);
+					set((state) => {
+						const current = state.subscriptions[key];
+						if (!current) return state;
+						return setSubscriptionEntry(state, key, { ...current, data: buffered, isStale: false });
+					});
+				}
 			}
 			runtime.refCount += 1;
 			clearReconnectTimer(runtime);

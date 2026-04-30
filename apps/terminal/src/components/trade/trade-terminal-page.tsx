@@ -5,7 +5,7 @@ import {
 	MOBILE_BOTTOM_NAV_HEIGHT_PX,
 	MOBILE_BREAKPOINT_PX,
 } from "@/config/layout";
-import { useDocumentTitle } from "@/hooks/use-document-title";
+import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
@@ -24,12 +24,12 @@ if (typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT_PX) {
 }
 
 export function TradeTerminalPage() {
-	useDocumentTitle();
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
 
 	return (
 		<>
+			<TabTitleSync />
 			{isMobile ? (
 				<Suspense fallback={<MobileLoadingFallback />}>
 					<MobileTerminal />

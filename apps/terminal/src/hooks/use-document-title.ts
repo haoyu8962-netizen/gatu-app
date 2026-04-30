@@ -8,6 +8,11 @@ function getSpotSubscriptionCoin(market: ReturnType<typeof useSelectedMarketInfo
 	return `@${(market as SpotMarketInfo).index}`;
 }
 
+export function TabTitleSync() {
+	useDocumentTitle();
+	return null;
+}
+
 export function useDocumentTitle() {
 	const { data: market } = useSelectedMarketInfo();
 
@@ -18,12 +23,12 @@ export function useDocumentTitle() {
 	const { data: perpCtxEvent } = useSubscription(
 		"activeAssetCtx",
 		{ coin: perpCoin },
-		{ enabled: !!perpCoin && !isSpot },
+		{ enabled: !!perpCoin && !isSpot, pauseWhenHidden: false },
 	);
 	const { data: spotCtxEvent } = useSubscription(
 		"activeSpotAssetCtx",
 		{ coin: spotCoin },
-		{ enabled: !!spotCoin && isSpot },
+		{ enabled: !!spotCoin && isSpot, pauseWhenHidden: false },
 	);
 
 	const markPx = isSpot ? spotCtxEvent?.ctx?.markPx : perpCtxEvent?.ctx?.markPx;
