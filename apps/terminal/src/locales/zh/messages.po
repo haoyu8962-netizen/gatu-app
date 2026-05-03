@@ -31,8 +31,8 @@ msgid "{totalSeconds} seconds"
 msgstr ""
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "% filled"
-msgstr "% 已成交"
+#~ msgid "% filled"
+#~ msgstr "% 已成交"
 
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
@@ -215,6 +215,8 @@ msgstr "资产"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Available"
 msgstr "可用"
@@ -927,6 +929,10 @@ msgstr "加载成交记录失败。"
 #~ msgid "Failed to load TWAP history."
 #~ msgstr "加载 TWAP 历史失败。"
 
+#: src/components/trade/positions/position-limit-close-modal.tsx
+msgid "Failed to place limit close order"
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Failed to register builder code"
 #~ msgstr ""
@@ -938,6 +944,10 @@ msgstr ""
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Failed to switch margin mode"
 #~ msgstr ""
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Failed to update TP/SL orders"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -969,9 +979,9 @@ msgstr "手续费"
 msgid "Fill status"
 msgstr ""
 
-#: src/components/trade/positions/orders-tab.tsx
-#~ msgid "Filled"
-#~ msgstr "已成交"
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Filled"
+msgstr "已成交"
 
 #. placeholder {0}: sub.label
 #: src/components/trade/chart/token-selector-content.tsx
@@ -1261,10 +1271,18 @@ msgstr ""
 msgid "Manage TP/SL"
 msgstr ""
 
-#. placeholder {0}: position.coin
-#. placeholder {1}: position.isLong ? "long" : "short"
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Manage TP/SL for {0} {1} position"
+#~ msgid "Manage TP/SL for {0} {1} position"
+#~ msgstr ""
+
+#. placeholder {0}: position.coin
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Manage TP/SL for {0} long position"
+msgstr ""
+
+#. placeholder {0}: position.coin
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Manage TP/SL for {0} short position"
 msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
@@ -1485,7 +1503,6 @@ msgstr ""
 #~ msgid "Next"
 #~ msgstr "下一页"
 
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No"
 msgstr ""
@@ -1782,6 +1799,10 @@ msgstr ""
 msgid "Place Limit Close"
 msgstr ""
 
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Placed"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Platform"
 msgstr ""
@@ -1902,8 +1923,8 @@ msgid "Recent Trades"
 msgstr "最近成交"
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Reduce"
-msgstr ""
+#~ msgid "Reduce"
+#~ msgstr ""
 
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -1959,6 +1980,10 @@ msgstr ""
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "RO"
+msgstr ""
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Running"
 msgstr ""
 
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2079,6 +2104,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "sent to Hyperliquid"
+msgstr ""
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Set"
 msgstr ""
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -2382,6 +2411,9 @@ msgstr ""
 #~ msgstr ""
 
 #. placeholder {0}: fill.coin
+#. placeholder {0}: update.coin
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Switch to {0} market"
 msgstr ""
@@ -2453,12 +2485,12 @@ msgid "Switching..."
 msgstr "切换中..."
 
 #: src/lib/trade/order-types.ts
-msgid "Take Limit"
-msgstr ""
+#~ msgid "Take Limit"
+#~ msgstr ""
 
 #: src/lib/trade/order-types.ts
-msgid "Take Market"
-msgstr ""
+#~ msgid "Take Market"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
@@ -2468,6 +2500,14 @@ msgstr ""
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Take Profit / Stop Loss"
 msgstr "止盈 / 止损"
+
+#: src/lib/trade/order-types.ts
+msgid "Take Profit Limit"
+msgstr ""
+
+#: src/lib/trade/order-types.ts
+msgid "Take Profit Market"
+msgstr ""
 
 #: src/lib/errors/definitions/trigger.ts
 msgid "Take profit trigger must be above mark"
@@ -2851,7 +2891,6 @@ msgstr ""
 msgid "Wrong network"
 msgstr ""
 
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Yes"
 msgstr ""

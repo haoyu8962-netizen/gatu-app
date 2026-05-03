@@ -31,8 +31,8 @@ msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} seconds"
 
 #: src/components/trade/tradebox/order-toast.tsx
-msgid "% filled"
-msgstr "% filled"
+#~ msgid "% filled"
+#~ msgstr "% filled"
 
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
@@ -215,6 +215,8 @@ msgstr "Asset"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Available"
 msgstr "Available"
@@ -927,6 +929,10 @@ msgstr "Failed to load trades."
 #~ msgid "Failed to load TWAP history."
 #~ msgstr "Failed to load TWAP history."
 
+#: src/components/trade/positions/position-limit-close-modal.tsx
+msgid "Failed to place limit close order"
+msgstr "Failed to place limit close order"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Failed to register builder code"
 #~ msgstr "Failed to register builder code"
@@ -938,6 +944,10 @@ msgstr "Failed to reverse position"
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Failed to switch margin mode"
 #~ msgstr "Failed to switch margin mode"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Failed to update TP/SL orders"
+msgstr "Failed to update TP/SL orders"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -969,9 +979,9 @@ msgstr "Fee"
 msgid "Fill status"
 msgstr "Fill status"
 
-#: src/components/trade/positions/orders-tab.tsx
-#~ msgid "Filled"
-#~ msgstr "Filled"
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Filled"
+msgstr "Filled"
 
 #. placeholder {0}: sub.label
 #: src/components/trade/chart/token-selector-content.tsx
@@ -1265,11 +1275,19 @@ msgstr "Maintenance Margin"
 msgid "Manage TP/SL"
 msgstr "Manage TP/SL"
 
-#. placeholder {0}: position.coin
-#. placeholder {1}: position.isLong ? "long" : "short"
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Manage TP/SL for {0} {1} position"
-msgstr "Manage TP/SL for {0} {1} position"
+#~ msgid "Manage TP/SL for {0} {1} position"
+#~ msgstr "Manage TP/SL for {0} {1} position"
+
+#. placeholder {0}: position.coin
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Manage TP/SL for {0} long position"
+msgstr "Manage TP/SL for {0} long position"
+
+#. placeholder {0}: position.coin
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Manage TP/SL for {0} short position"
+msgstr "Manage TP/SL for {0} short position"
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #~ msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
@@ -1489,7 +1507,6 @@ msgstr "New to wallets?"
 #~ msgid "Next"
 #~ msgstr "Next"
 
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No"
 msgstr "No"
@@ -1786,6 +1803,10 @@ msgstr "Place {0} Order"
 msgid "Place Limit Close"
 msgstr "Place Limit Close"
 
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Placed"
+msgstr "Placed"
+
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Platform"
 msgstr "Platform"
@@ -1906,8 +1927,8 @@ msgid "Recent Trades"
 msgstr "Recent Trades"
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Reduce"
-msgstr "Reduce"
+#~ msgid "Reduce"
+#~ msgstr "Reduce"
 
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -1964,6 +1985,10 @@ msgstr "Risk/Reward"
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "RO"
 msgstr "RO"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Running"
+msgstr "Running"
 
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
@@ -2084,6 +2109,10 @@ msgstr "Sending..."
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "sent to Hyperliquid"
 msgstr "sent to Hyperliquid"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Set"
+msgstr "Set"
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #~ msgid "Set {p}%"
@@ -2386,6 +2415,9 @@ msgstr "Swapping..."
 #~ msgstr "Switch between mainnet and testnet. Page will reload."
 
 #. placeholder {0}: fill.coin
+#. placeholder {0}: update.coin
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Switch to {0} market"
 msgstr "Switch to {0} market"
@@ -2457,12 +2489,12 @@ msgid "Switching..."
 msgstr "Switching..."
 
 #: src/lib/trade/order-types.ts
-msgid "Take Limit"
-msgstr "Take Limit"
+#~ msgid "Take Limit"
+#~ msgstr "Take Limit"
 
 #: src/lib/trade/order-types.ts
-msgid "Take Market"
-msgstr "Take Market"
+#~ msgid "Take Market"
+#~ msgstr "Take Market"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
@@ -2472,6 +2504,14 @@ msgstr "Take Profit"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Take Profit / Stop Loss"
 msgstr "Take Profit / Stop Loss"
+
+#: src/lib/trade/order-types.ts
+msgid "Take Profit Limit"
+msgstr "Take Profit Limit"
+
+#: src/lib/trade/order-types.ts
+msgid "Take Profit Market"
+msgstr "Take Profit Market"
 
 #: src/lib/errors/definitions/trigger.ts
 msgid "Take profit trigger must be above mark"
@@ -2855,7 +2895,6 @@ msgstr "Withdrawal submitted"
 msgid "Wrong network"
 msgstr "Wrong network"
 
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Yes"
 msgstr "Yes"

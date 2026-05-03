@@ -8,7 +8,9 @@ import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/li
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { AssetDisplay } from "../components/asset-display";
+import { useExchangeScope } from "@/providers/exchange-scope";
+import { useMarketActions } from "@/stores/use-market-store";
+import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
@@ -25,6 +27,8 @@ import {
 
 export function FundingTab() {
 	const { address, isConnected } = useConnection();
+	const { scope } = useExchangeScope();
+	const { setSelectedMarket } = useMarketActions();
 	const {
 		data: fundingEvent,
 		status,
@@ -116,7 +120,11 @@ export function FundingTab() {
 											className={cn(positionsPanelRowHoverClass, index % 2 === 1 && positionsPanelRowStripeClass)}
 										>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
-												<AssetDisplay coin={update.coin} />
+												<AssetBadge
+													coin={update.coin}
+													onClick={() => setSelectedMarket(scope, update.coin)}
+													aria-label={t`Switch to ${update.coin} market`}
+												/>
 											</TableCell>
 											<TableCell
 												size="dense"

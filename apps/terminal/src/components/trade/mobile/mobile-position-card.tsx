@@ -12,7 +12,7 @@ import { isPositive, toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
 import type { LimitClosePositionData, TpSlPositionData } from "../positions/position-dialog-types";
 import { MetricCell } from "./metric-cell";
 
@@ -110,32 +110,31 @@ export function MobilePositionCard({
 	}
 
 	return (
-		<div className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden">
-			<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
-				<div className={cn("absolute left-0 top-0 bottom-0 w-px", isLong ? "bg-market-up" : "bg-market-down")} />
-				<Button
-					variant="ghost"
-					intent="neutral"
-					size="sm"
-					onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
-					aria-label={
-						isLong
-							? t`Switch to ${displayName} market, long position`
-							: t`Switch to ${displayName} market, short position`
-					}
-				>
-					<AssetDisplay coin={p.coin} nameClassName="text-sm font-semibold" />
+		<div className="rounded-xs border border-stroke-weak bg-surface overflow-hidden">
+			<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
+				<div className="flex items-center gap-2">
+					<AssetBadge
+						coin={p.coin}
+						side={isLong ? "buy" : "sell"}
+						onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
+						aria-label={
+							isLong
+								? t`Switch to ${displayName} market, long position`
+								: t`Switch to ${displayName} market, short position`
+						}
+						nameClassName="text-sm"
+					/>
 					<span className={cn("text-2xs font-medium uppercase", isLong ? "text-success" : "text-error")}>
 						{isLong ? t`Long` : t`Short`}
 					</span>
-				</Button>
+				</div>
 				<div className={cn("text-xs tabular-nums font-medium", pnlClass)}>
 					{formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })}
 					<span className="text-2xs ml-1 font-normal text-fg-muted">{formatPercent(p.returnOnEquity, 1)}</span>
 				</div>
 			</div>
 
-			<div className="grid grid-cols-3 divide-x divide-stroke-weak/40">
+			<div className="grid grid-cols-3 divide-x divide-stroke-weak">
 				<MetricCell
 					label={t`Size`}
 					value={
@@ -152,7 +151,7 @@ export function MobilePositionCard({
 				<MetricCell label={t`Entry`} value={formatPrice(entryPx, { szDecimals })} />
 				<MetricCell label={t`Mark`} value={formatPrice(markPx, { szDecimals })} />
 			</div>
-			<div className="grid grid-cols-3 divide-x divide-stroke-weak/40 border-t border-stroke-weak/40">
+			<div className="grid grid-cols-3 divide-x divide-stroke-weak border-t border-stroke-weak">
 				<MetricCell
 					label={p.leverage.type === "isolated" ? t`Margin · Iso` : t`Margin`}
 					value={formatUSD(p.marginUsed)}
@@ -165,7 +164,7 @@ export function MobilePositionCard({
 				<MetricCell label={t`Funding`} value={fundingValue} valueClass={fundingClass} />
 			</div>
 
-			<div className="flex gap-1.5 px-2.5 py-1.5 border-t border-stroke-weak/40">
+			<div className="flex gap-1.5 px-2.5 py-1.5 border-t border-stroke-weak">
 				{confirmingClose ? (
 					<>
 						<Button
@@ -240,7 +239,7 @@ export function MobilePositionCard({
 				)}
 			</div>
 			{closeErrorMessage && (
-				<div className="px-3 py-1.5 text-xs text-error border-t border-stroke-weak/40">{closeErrorMessage}</div>
+				<div className="px-3 py-1.5 text-xs text-error border-t border-stroke-weak">{closeErrorMessage}</div>
 			)}
 		</div>
 	);

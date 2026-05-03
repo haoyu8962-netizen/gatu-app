@@ -1,4 +1,4 @@
-import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -8,7 +8,7 @@ import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
@@ -123,24 +123,16 @@ export function OrdersHistoryTab() {
 												{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
-												<div className="flex items-center gap-1.5">
-													<span
-														className={cn("h-4 w-0.5 shrink-0 rounded-full", isLong ? "bg-success" : "bg-error")}
-														aria-hidden="true"
-													/>
-													<Button
-														variant="link"
-														onClick={() => setSelectedMarket(scope, order.coin)}
-														className="gap-1.5"
-														aria-label={
-															isLong
-																? t`Switch to ${order.coin} market, long order`
-																: t`Switch to ${order.coin} market, short order`
-														}
-													>
-														<AssetDisplay coin={order.coin} />
-													</Button>
-												</div>
+												<AssetBadge
+													coin={order.coin}
+													side={isLong ? "buy" : "sell"}
+													onClick={() => setSelectedMarket(scope, order.coin)}
+													aria-label={
+														isLong
+															? t`Switch to ${order.coin} market, long order`
+															: t`Switch to ${order.coin} market, short order`
+													}
+												/>
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
 												{order.orderType}

@@ -1,4 +1,4 @@
-import { Button, TableCell, TableRow, Tooltip } from "@hypeterminal/ui";
+import { TableCell, TableRow, Tooltip } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { PencilIcon, PlusIcon } from "@phosphor-icons/react";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
@@ -10,7 +10,7 @@ import { isPositive, toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
 import { PositionActionsDropdown } from "./position-actions-dropdown";
 import type { LimitClosePositionData, TpSlPositionData } from "./position-dialog-types";
 import {
@@ -155,31 +155,17 @@ export function PositionRow({
 
 	return (
 		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
-			<TableCell
-				size="dense"
-				className={cn(
-					positionsPanelTableCellClass,
-					"min-w-0 border-l-2 text-fg",
-					isLong ? "border-l-success" : "border-l-error",
-				)}
-			>
-				<Button
-					variant="ghost"
-					intent="neutral"
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "min-w-0 text-fg")}>
+				<AssetBadge
+					coin={p.coin}
+					side={isLong ? "buy" : "sell"}
 					onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
-					className="h-auto min-h-0 min-w-0 max-w-full gap-1.5 justify-start p-0.5 -m-0.5 font-normal rounded-6 hover:bg-fill-hover/60"
 					aria-label={
 						isLong
 							? t`Switch to ${displayName} market, long position`
 							: t`Switch to ${displayName} market, short position`
 					}
-				>
-					<AssetDisplay
-						coin={p.coin}
-						iconClassName="size-4"
-						nameClassName="text-xs font-semibold text-fg leading-none"
-					/>
-				</Button>
+				/>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 				<div className="flex flex-col items-end gap-px">

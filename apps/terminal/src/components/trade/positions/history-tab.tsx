@@ -1,4 +1,4 @@
-import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { useConnection } from "wagmi";
@@ -13,7 +13,7 @@ import { toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
@@ -131,14 +131,12 @@ export function HistoryTab() {
 											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
 										>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
-												<Button
-													variant="link"
+												<AssetBadge
+													coin={fill.coin}
+													side={fill.side === "B" ? "buy" : "sell"}
 													onClick={() => setSelectedMarket(scope, fill.coin)}
-													className="gap-1.5"
 													aria-label={t`Switch to ${fill.coin} market`}
-												>
-													<AssetDisplay coin={fill.coin} />
-												</Button>
+												/>
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg")}>
 												<span

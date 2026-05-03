@@ -12,7 +12,7 @@ import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
@@ -131,24 +131,16 @@ export function TwapTab() {
 											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
 										>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
-												<div className="flex items-center gap-1.5">
-													<span
-														className={cn("h-4 w-0.5 shrink-0 rounded-full", isBuy ? "bg-success" : "bg-error")}
-														aria-hidden="true"
-													/>
-													<Button
-														variant="link"
-														onClick={() => setSelectedMarket(scope, state.coin)}
-														className="gap-1.5"
-														aria-label={
-															isBuy
-																? t`Switch to ${state.coin} market, buy TWAP`
-																: t`Switch to ${state.coin} market, sell TWAP`
-														}
-													>
-														<AssetDisplay coin={state.coin} />
-													</Button>
-												</div>
+												<AssetBadge
+													coin={state.coin}
+													side={isBuy ? "buy" : "sell"}
+													onClick={() => setSelectedMarket(scope, state.coin)}
+													aria-label={
+														isBuy
+															? t`Switch to ${state.coin} market, buy TWAP`
+															: t`Switch to ${state.coin} market, sell TWAP`
+													}
+												/>
 											</TableCell>
 											<TableCell
 												size="dense"

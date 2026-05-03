@@ -9,7 +9,9 @@ import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/li
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { AssetDisplay } from "../components/asset-display";
+import { useExchangeScope } from "@/providers/exchange-scope";
+import { useMarketActions } from "@/stores/use-market-store";
+import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 
 interface Props {
@@ -18,6 +20,8 @@ interface Props {
 
 export function MobileFundingTab({ className }: Props) {
 	const { address, isConnected } = useConnection();
+	const { scope } = useExchangeScope();
+	const { setSelectedMarket } = useMarketActions();
 	const {
 		data: fundingEvent,
 		status,
@@ -73,27 +77,25 @@ export function MobileFundingTab({ className }: Props) {
 						const rate = toNumber(update.fundingRate);
 						const usdc = toNumber(update.usdc);
 						const positionSize = szi !== null ? Math.abs(szi) : null;
-						const isPositivePayment = usdc !== null && usdc >= 0;
 
 						return (
 							<div
 								key={`${update.coin}-${update.time}-${index}`}
-								className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden"
+								className="rounded-xs border border-stroke-weak bg-surface overflow-hidden"
 							>
-								<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
-									<div
-										className={cn(
-											"absolute left-0 top-0 bottom-0 w-px",
-											isPositivePayment ? "bg-market-up" : "bg-market-down",
-										)}
+								<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
+									<AssetBadge
+										coin={update.coin}
+										onClick={() => setSelectedMarket(scope, update.coin)}
+										aria-label={t`Switch to ${update.coin} market`}
+										nameClassName="text-sm"
 									/>
-									<AssetDisplay coin={update.coin} nameClassName="text-sm font-semibold" />
 									<div className={cn("text-xs font-medium tabular-nums", getValueColorClass(usdc))}>
 										{formatToken(usdc, { symbol: "USDC" })}
 									</div>
 								</div>
 
-								<div className="grid grid-cols-3 divide-x divide-stroke-weak/40">
+								<div className="grid grid-cols-3 divide-x divide-stroke-weak">
 									<MetricCell
 										label={t`Position`}
 										value={formatToken(positionSize, { decimals: market?.szDecimals, symbol: market?.shortName })}

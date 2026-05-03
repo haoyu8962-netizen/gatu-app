@@ -28,7 +28,7 @@ import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
@@ -42,6 +42,8 @@ import {
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
+
+type CancelScope = "row" | "selected" | "all";
 
 export function OrdersTab() {
 	const { address, isConnected } = useConnection();
@@ -64,6 +66,8 @@ export function OrdersTab() {
 	);
 	const markets = useMarkets();
 	const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(() => new Set());
+	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
+	const [cancelScope, setCancelScope] = useState<CancelScope | null>(null);
 
 	const {
 		mutate: cancelOrders,
@@ -108,7 +112,7 @@ export function OrdersTab() {
 		});
 	}
 
-	function handleCancelOrders(ordersToCancel: OpenOrder[]) {
+	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope) {
 		if (isCancelling || ordersToCancel.length === 0) return;
 
 		const cancels = ordersToCancel.reduce<{ a: number; o: number }[]>((acc, order) => {
@@ -120,6 +124,8 @@ export function OrdersTab() {
 
 		if (cancels.length === 0) return;
 
+		setCancellingOids(new Set(ordersToCancel.map((order) => order.oid)));
+		setCancelScope(nextScope);
 		resetCancelError();
 		cancelOrders(
 			{ cancels },
@@ -133,17 +139,25 @@ export function OrdersTab() {
 						return next;
 					});
 				},
+				onSettled: () => {
+					setCancellingOids(new Set());
+					setCancelScope(null);
+				},
 			},
 		);
 	}
 
+	function handleCancelRow(ordersToCancel: OpenOrder[]) {
+		handleCancel(ordersToCancel, "row");
+	}
+
 	function handleCancelSelected() {
 		const ordersToCancel = openOrders.filter((order) => validSelectedIds.has(order.oid));
-		handleCancelOrders(ordersToCancel);
+		handleCancel(ordersToCancel, "selected");
 	}
 
 	function handleCancelAll() {
-		handleCancelOrders(openOrders);
+		handleCancel(openOrders, "all");
 	}
 
 	const canCancel = !isCancelling;
@@ -188,7 +202,7 @@ export function OrdersTab() {
 					onClick={handleCancelSelected}
 					disabled={disableCancelSelected}
 				>
-					{isCancelling ? t`Canceling...` : t`Cancel selected`}
+					{cancelScope === "selected" ? t`Canceling...` : t`Cancel selected`}
 				</Button>
 				<Button
 					variant="link"
@@ -197,7 +211,7 @@ export function OrdersTab() {
 					onClick={handleCancelAll}
 					disabled={disableCancelAll}
 				>
-					{isCancelling ? t`Canceling...` : t`Cancel all`}
+					{cancelScope === "all" ? t`Canceling...` : t`Cancel all`}
 				</Button>
 			</div>
 			{actionError ? <div className="px-2.5 py-1 text-2xs text-error">{actionError}</div> : null}
@@ -220,39 +234,36 @@ export function OrdersTab() {
 											disabled={openOrders.length === 0 || isCancelling}
 										/>
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[11%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[13%] text-left")}>
 										{t`Time`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[17%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[19%] text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[10%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[15%] text-left")}>
 										{t`Type`}
 									</TableHead>
 									<TableHead
 										scope="col"
 										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[12%] text-right")}
+										className={cn(positionsPanelTableHeadClass, "w-[13%] text-right")}
 									>
 										{t`Price`}
 									</TableHead>
 									<TableHead
 										scope="col"
 										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+										className={cn(positionsPanelTableHeadClass, "w-[15%] text-right")}
 									>
 										{t`Size`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[11%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
 										{t`Trigger`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[8%] text-left")}>
-										{t`Reduce`}
 									</TableHead>
 									<TableHead
 										scope="col"
 										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[13%] text-right")}
+										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
 									>
 										{t`Actions`}
 									</TableHead>
@@ -266,11 +277,11 @@ export function OrdersTab() {
 											order={order}
 											szDecimals={markets.getSzDecimals(order.coin)}
 											isSelected={validSelectedIds.has(order.oid)}
-											isCancelling={isCancelling}
+											isCancelling={cancellingOids.has(order.oid)}
 											canCancel={canCancel}
 											isEven={i % 2 === 1}
 											onToggle={handleToggleOrder}
-											onCancel={handleCancelOrders}
+											onCancel={handleCancelRow}
 											onSelectMarket={handleSelectMarket}
 										/>
 									);
@@ -318,34 +329,33 @@ function OrderRow({
 					checked={isSelected}
 					onCheckedChange={(value) => onToggle(order.oid, value)}
 					aria-label={`${t`Select order`} ${order.coin}`}
-					disabled={isCancelling}
+					disabled={!canCancel}
 				/>
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "whitespace-nowrap text-fg-muted")}>
+			<TableCell
+				size="dense"
+				className={cn(positionsPanelTableCellClass, "whitespace-nowrap tabular-nums text-fg-muted")}
+			>
 				{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
-				<div className="flex items-center gap-1.5">
-					<span
-						className={cn("h-4 w-0.5 shrink-0 rounded-full", isLong ? "bg-success" : "bg-error")}
-						aria-hidden="true"
-					/>
-					<Button
-						variant="link"
-						onClick={() => onSelectMarket(order.coin, isLong ? "buy" : "sell")}
-						className="gap-1.5"
-						aria-label={
-							isLong ? t`Switch to ${order.coin} market, long order` : t`Switch to ${order.coin} market, short order`
-						}
-					>
-						<AssetDisplay coin={order.coin} />
-					</Button>
-				</div>
+				<AssetBadge
+					coin={order.coin}
+					side={isLong ? "buy" : "sell"}
+					onClick={() => onSelectMarket(order.coin, isLong ? "buy" : "sell")}
+					aria-label={
+						isLong ? t`Switch to ${order.coin} market, long order` : t`Switch to ${order.coin} market, short order`
+					}
+				/>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg")}>
 				<Tooltip content={typeConfig.fullLabel}>
-					<span className={cn("text-2xs px-1.5 py-0.5 rounded-8 uppercase whitespace-nowrap", typeConfig.class)}>
-						{typeConfig.shortLabel}
+					<span className="inline-flex items-baseline gap-1 text-xs whitespace-nowrap">
+						{typeConfig.triggerLabel ? (
+							<span className={cn("font-medium", typeConfig.triggerClass)}>{typeConfig.triggerLabel}</span>
+						) : null}
+						<span className="text-fg">{typeConfig.executionLabel}</span>
+						{typeConfig.reduceOnly ? <span className="text-2xs uppercase text-fg-muted">RO</span> : null}
 					</span>
 				</Tooltip>
 			</TableCell>
@@ -370,13 +380,6 @@ function OrderRow({
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg-muted")}>
 				{order.triggerCondition || FALLBACK_VALUE_PLACEHOLDER}
-			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg")}>
-				{order.reduceOnly ? (
-					<span className="text-brand">{t`Yes`}</span>
-				) : (
-					<span className="text-fg-muted">{t`No`}</span>
-				)}
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
 				<Button
