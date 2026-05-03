@@ -1,0 +1,26 @@
+---
+import Logo from "./Logo.astro";
+const appUrl = "https://app.hypeterminal.com";
+---
+
+<header class="sticky top-0 z-40 border-b border-stroke-weaker bg-background/80 backdrop-blur">
+	<nav class="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-5 sm:px-6">
+		<Logo size="sm" />
+
+		<div class="hidden md:flex items-center gap-8 text-xs text-fg-subtle">
+			<a href="#features" class="hover:text-fg transition-colors duration-200">Features</a>
+			<a href="/blog" class="hover:text-fg transition-colors duration-200">Blog</a>
+			<a href="#faq" class="hover:text-fg transition-colors duration-200">FAQ</a>
+		</div>
+
+		<a
+			href={appUrl}
+			class="press inline-flex h-9 items-center gap-1.5 rounded-xs px-3.5 text-xs font-medium text-fg hover:text-fg-muted transition-colors duration-200"
+		>
+			Open terminal
+			<svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+				<path d="M3 9l6-6M5 3h4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+			</svg>
+		</a>
+	</nav>
+</header>

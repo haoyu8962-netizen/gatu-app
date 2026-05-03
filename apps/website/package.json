@@ -1,0 +1,18 @@
+{
+	"name": "@hypeterminal/website",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "astro dev --port 3010",
+		"build": "astro build",
+		"preview": "astro preview --port 3010",
+		"astro": "astro"
+	},
+	"dependencies": {
+		"@fontsource-variable/inter": "5.2.8",
+		"@phosphor-icons/core": "2.1.1",
+		"@tailwindcss/vite": "4.1.18",
+		"astro": "5.14.6",
+		"tailwindcss": "4.0.6"
+	}
+}

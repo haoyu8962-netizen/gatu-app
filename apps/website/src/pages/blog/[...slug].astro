@@ -1,0 +1,134 @@
+---
+import { getCollection, render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+import Base from "@/layouts/Base.astro";
+import Nav from "@/components/Nav.astro";
+import Footer from "@/components/Footer.astro";
+
+export async function getStaticPaths() {
+	const posts = await getCollection("blog", ({ data }) => !data.draft);
+	return posts.map((post) => ({
+		params: { slug: post.id.replace(/\.md$/, "") },
+		props: { post },
+	}));
+}
+
+interface Props {
+	post: CollectionEntry<"blog">;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const formatter = new Intl.DateTimeFormat("en-US", {
+	year: "numeric",
+	month: "long",
+	day: "numeric",
+});
+---
+
+<Base title={`${post.data.title} — HypeTerminal`} description={post.data.description}>
+	<Nav />
+	<main>
+		<article class="mx-auto w-full max-w-2xl px-5 sm:px-6 pt-16 pb-20 md:pt-24 md:pb-28">
+			<a
+				href="/blog"
+				class="inline-flex items-center gap-1.5 text-2xs uppercase tracking-uppercase text-fg-faint hover:text-fg-muted transition-colors duration-200"
+			>
+				<svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+					<path d="M7.5 9l-3-3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+				Back to blog
+			</a>
+
+			<header class="mt-8 border-b border-stroke-weaker pb-8">
+				<time
+					datetime={post.data.date.toISOString()}
+					class="text-2xs uppercase tracking-uppercase text-fg-faint tabular"
+				>
+					{formatter.format(post.data.date)}
+				</time>
+				<h1 class="mt-3 text-2xl md:text-3xl font-medium tracking-display leading-[1.1]">
+					{post.data.title}
+				</h1>
+				<p class="mt-4 text-sm md:text-base text-fg-muted leading-relaxed">
+					{post.data.description}
+				</p>
+			</header>
+
+			<div class="prose-body mt-8 text-sm md:text-base text-fg-weak leading-relaxed">
+				<Content />
+			</div>
+		</article>
+	</main>
+	<Footer />
+</Base>
+
+<style is:global>
+	.prose-body > * + * {
+		margin-top: 1.25em;
+	}
+	.prose-body h2 {
+		font-size: var(--text-lg);
+		line-height: var(--text-lg--line-height);
+		font-weight: 500;
+		letter-spacing: var(--tracking-display);
+		color: var(--text-strong);
+		margin-top: 2em;
+	}
+	.prose-body h3 {
+		font-size: var(--text-base);
+		font-weight: 500;
+		color: var(--text-strong);
+		margin-top: 1.75em;
+	}
+	.prose-body a {
+		color: var(--text-brand);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+		text-decoration-thickness: 1px;
+	}
+	.prose-body a:hover {
+		opacity: 0.85;
+	}
+	.prose-body code {
+		font-family: var(--font-mono);
+		font-size: 0.9em;
+		background: var(--fill-weak);
+		padding: 0.1em 0.35em;
+		border-radius: var(--radius-4);
+	}
+	.prose-body pre {
+		font-family: var(--font-mono);
+		background: var(--bg-sunken);
+		border: 1px solid var(--stroke-weak);
+		padding: 1em;
+		border-radius: var(--radius-8);
+		overflow-x: auto;
+		font-size: var(--text-xs);
+	}
+	.prose-body pre code {
+		background: transparent;
+		padding: 0;
+	}
+	.prose-body blockquote {
+		border-left: 2px solid var(--stroke-weak);
+		padding-left: 1em;
+		color: var(--text-muted);
+	}
+	.prose-body ul,
+	.prose-body ol {
+		padding-left: 1.25em;
+	}
+	.prose-body ul {
+		list-style: disc;
+	}
+	.prose-body ol {
+		list-style: decimal;
+	}
+	.prose-body hr {
+		border: 0;
+		border-top: 1px solid var(--stroke-weak);
+		margin: 2em 0;
+	}
+</style>

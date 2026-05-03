@@ -1,0 +1,18 @@
+node_modules/
+
+# Astro/build output
+dist/
+.astro/
+.output/
+.vercel/
+.netlify/
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Logs and local files
+*.log
+*.tsbuildinfo
+.DS_Store

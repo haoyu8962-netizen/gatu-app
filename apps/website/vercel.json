@@ -1,0 +1,7 @@
+{
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"framework": "astro",
+	"buildCommand": "pnpm --filter @hypeterminal/website build",
+	"installCommand": "pnpm install --filter @hypeterminal/website...",
+	"outputDirectory": "dist"
+}
