@@ -30,6 +30,10 @@ msgstr "{p}%"
 msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} seconds"
 
+#: src/components/trade/tradebox/twap-order-summary.tsx
+msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
+
 #: src/components/trade/tradebox/order-toast.tsx
 #~ msgid "% filled"
 #~ msgstr "% filled"
@@ -311,6 +315,8 @@ msgstr "Bridge failed"
 #~ msgstr "Builder codes allow DeFi builders to receive a fee on fills they send on behalf of users. They are set per-order for maximal flexibility."
 
 #: src/components/trade/tradebox/order-summary.tsx
+#: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Builder Fee"
 msgstr "Builder Fee"
 
@@ -743,8 +749,8 @@ msgid "Done"
 msgstr "Done"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "Duration (Minutes)"
-msgstr "Duration (Minutes)"
+#~ msgid "Duration (Minutes)"
+#~ msgstr "Duration (Minutes)"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
@@ -770,6 +776,7 @@ msgstr "Enabling"
 #~ msgid "Enabling..."
 #~ msgstr "Enabling..."
 
+#: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 msgid "End Price"
 msgstr "End Price"
@@ -819,6 +826,7 @@ msgstr "Environment"
 #~ msgstr "Equity"
 
 #: src/components/trade/tradebox/order-summary.tsx
+#: src/components/trade/tradebox/scale-order-summary.tsx
 msgid "Est. Fee"
 msgstr "Est. Fee"
 
@@ -962,9 +970,9 @@ msgstr "Fee"
 #~ msgid "Fee rate must be between 0.001% and 1%"
 #~ msgstr "Fee rate must be between 0.001% and 1%"
 
-#: src/components/trade/tradebox/bridge-tab.tsx
-#~ msgid "Fees"
-#~ msgstr "Fees"
+#: src/components/trade/tradebox/twap-order-summary.tsx
+msgid "Fees"
+msgstr "Fees"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
@@ -995,6 +1003,10 @@ msgstr "Flip transfer direction"
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Format for numbers and dates"
 #~ msgstr "Format for numbers and dates"
+
+#: src/components/trade/tradebox/twap-order-summary.tsx
+msgid "Frequency"
+msgstr "Frequency"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -1054,10 +1066,18 @@ msgstr "Go to trading terminal"
 msgid "GTC (Good Til Cancel)"
 msgstr "GTC (Good Til Cancel)"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "H"
+msgstr "H"
+
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr "Hide small"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Hour(s)"
+msgstr "Hour(s)"
 
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "In Orders"
@@ -1262,6 +1282,10 @@ msgstr "Low balance"
 #~ msgid "Low Balance"
 #~ msgstr "Low Balance"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "M"
+msgstr "M"
+
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Mainnet"
 msgstr "Mainnet"
@@ -1319,6 +1343,7 @@ msgstr "Margin mode"
 #~ msgstr "Margin Ratio"
 
 #: src/components/trade/tradebox/order-summary.tsx
+#: src/components/trade/tradebox/scale-order-summary.tsx
 msgid "Margin Req."
 msgstr "Margin Req."
 
@@ -1446,6 +1471,10 @@ msgstr "Minimum withdrawal is ${0}"
 #: src/lib/trade/withdraw-validation.ts
 msgid "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
 msgstr "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
+
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Minute(s)"
+msgstr "Minute(s)"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Mock Wallet (Testing)"
@@ -1626,7 +1655,9 @@ msgstr "Number format"
 #~ msgid "Number Format"
 #~ msgstr "Number Format"
 
+#: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
+#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Number of Orders"
 msgstr "Number of Orders"
 
@@ -1709,6 +1740,7 @@ msgid "Order submitted"
 msgstr "Order submitted"
 
 #: src/components/trade/tradebox/order-summary.tsx
+#: src/components/trade/tradebox/scale-order-summary.tsx
 msgid "Order Value"
 msgstr "Order Value"
 
@@ -1990,6 +2022,15 @@ msgstr "RO"
 msgid "Running"
 msgstr "Running"
 
+#. placeholder {0}: TWAP_MINUTES_MAX / 60
+#: src/components/trade/tradebox/trade-form-twap.tsx
+msgid "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
+msgstr "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
+
+#: src/components/trade/tradebox/twap-order-summary.tsx
+msgid "Runtime"
+msgstr "Runtime"
+
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Scale"
@@ -2239,6 +2280,10 @@ msgstr "Size"
 msgid "Size exceeds position"
 msgstr "Size exceeds position"
 
+#: src/components/trade/tradebox/twap-order-summary.tsx
+msgid "Size per Suborder"
+msgstr "Size per Suborder"
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "SL"
 #~ msgstr "SL"
@@ -2334,6 +2379,7 @@ msgstr "Staking"
 msgid "Start and end must differ"
 msgstr "Start and end must differ"
 
+#: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 msgid "Start Price"
 msgstr "Start Price"
@@ -2735,6 +2781,10 @@ msgstr "TWAP"
 #: src/lib/errors/definitions/twap.ts
 msgid "TWAP minutes must be {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 msgstr "TWAP minutes must be {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
+
+#: src/lib/errors/definitions/twap.ts
+msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
+msgstr "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "TWAP Orders"

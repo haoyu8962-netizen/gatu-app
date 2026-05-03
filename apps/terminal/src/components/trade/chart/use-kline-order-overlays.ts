@@ -1,6 +1,6 @@
 import Big from "big.js";
 import type { Chart } from "klinecharts";
-import { type RefObject, useEffect } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 import { useConnection } from "wagmi";
 import { HL_ALL_DEXS } from "@/config/app";
 import { ORDER_LINE_NAME } from "@/lib/chart/order-line-overlay";
@@ -12,6 +12,11 @@ interface Params {
 	symbol: string;
 }
 
+const TRANSPARENT_OVERLAY_STYLES = {
+	rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+	polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+};
+
 export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
 	const { address, isConnected } = useConnection();
 
@@ -21,37 +26,35 @@ export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
 		{ enabled: isConnected && !!address },
 	);
 
+	const symbolOrders = openOrdersEvent?.orders?.filter((o) => o.coin === symbol) ?? [];
+	const ordersKey = symbolOrders
+		.map((o) => `${o.oid}:${o.isTrigger}:${o.isTrigger ? o.triggerPx : o.limitPx}:${o.side}`)
+		.join("|");
+
+	const symbolOrdersRef = useRef(symbolOrders);
+	symbolOrdersRef.current = symbolOrders;
+
 	useEffect(() => {
 		const chart = chartRef.current;
 		if (!chart) return;
 
 		chart.removeOverlay({ name: ORDER_LINE_NAME });
 
-		const orders = openOrdersEvent?.orders;
-		if (!orders) return;
-
-		const symbolOrders = orders.filter((o) => o.coin === symbol);
-
-		for (const order of symbolOrders) {
+		for (const order of symbolOrdersRef.current) {
 			const rawPrice = order.isTrigger ? order.triggerPx : order.limitPx;
 			const price = Big(rawPrice).toNumber();
 			if (!Number.isFinite(price)) continue;
-
-			const label = getOrderLineLabel(order);
 
 			chart.createOverlay({
 				name: ORDER_LINE_NAME,
 				points: [{ value: price }],
 				modeSensitivity: 0,
-				styles: {
-					rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
-					polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
-				},
+				styles: TRANSPARENT_OVERLAY_STYLES,
 				extendData: {
 					side: order.side,
-					label,
+					label: getOrderLineLabel(order),
 				},
 			});
 		}
-	}, [openOrdersEvent, symbol]);
+	}, [chartRef, ordersKey]);
 }
