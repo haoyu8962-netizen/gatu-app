@@ -4,7 +4,6 @@ import { colorToHex, colorToRgba, getChartColors } from "./theme-colors";
 
 interface LineOverlayStyle {
 	lineAlpha: number;
-	borderAlpha: number;
 }
 
 interface ResolveInput {
@@ -48,7 +47,6 @@ export function createLineOverlay({ name, style, resolve }: Config): () => void 
 				const color = colorToHex(marketColor);
 				const lineColor = colorToRgba(marketColor, style.lineAlpha);
 				const bgColor = colorToHex(colors.background);
-				const borderColor = colorToRgba(marketColor, style.borderAlpha);
 
 				const rawPrice = overlay.points[0]?.value;
 				const priceText = rawPrice != null ? Big(rawPrice).toFixed(precision.price) : "";
@@ -74,15 +72,14 @@ export function createLineOverlay({ name, style, resolve }: Config): () => void 
 						styles: {
 							color,
 							size: 10,
-							paddingLeft: 6,
-							paddingRight: 6,
-							paddingTop: 3,
-							paddingBottom: 3,
+							paddingLeft: 4,
+							paddingRight: 4,
+							paddingTop: 2,
+							paddingBottom: 2,
 							backgroundColor: bgColor,
-							borderColor,
-							borderSize: 1,
-							borderRadius: 3,
-							style: "stroke_fill" as const,
+							borderColor: "transparent",
+							borderSize: 0,
+							style: "fill" as const,
 						},
 						ignoreEvent: true,
 					},
@@ -97,10 +94,9 @@ export function createLineOverlay({ name, style, resolve }: Config): () => void 
 							paddingTop: 2,
 							paddingBottom: 2,
 							backgroundColor: bgColor,
-							borderColor,
-							borderSize: 1,
-							borderRadius: 2,
-							style: "stroke_fill" as const,
+							borderColor: "transparent",
+							borderSize: 0,
+							style: "fill" as const,
 						},
 						ignoreEvent: true,
 					},

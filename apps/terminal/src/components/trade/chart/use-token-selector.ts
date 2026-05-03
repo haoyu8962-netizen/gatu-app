@@ -1,6 +1,6 @@
 import { getCoreRowModel, getSortedRowModel, type Row, type SortingState, useReactTable } from "@tanstack/react-table";
 import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { TOKEN_SELECTOR_OVERSCAN, TOKEN_SELECTOR_ROW_HEIGHT_PX } from "@/config/layout";
 import { PERP_CATEGORIES } from "@/config/markets";
 import { marketSearchConfig } from "@/config/search";
@@ -19,6 +19,8 @@ export interface Subcategory {
 export interface UseTokenSelectorOptions {
 	value: string;
 	onValueChange: (value: string) => void;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
 export interface UseTokenSelectorReturn {
@@ -54,8 +56,13 @@ function mapExchangeToMarketScope(es: ExchangeScope): MarketScope {
 	return "all";
 }
 
-export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptions): UseTokenSelectorReturn {
-	const [open, setOpen] = useState(false);
+export function useTokenSelector({
+	value,
+	onValueChange,
+	open: controlledOpen,
+	onOpenChange,
+}: UseTokenSelectorOptions): UseTokenSelectorReturn {
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
 	const [localScope, setLocalScope] = useState<MarketScope>("all");
 	const [localSubcategory, setLocalSubcategory] = useState<string>("all");
 	const [search, setSearch] = useState("");
@@ -65,23 +72,30 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 	const [highlightedIndex, setHighlightedIndex] = useState(-1);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const hasInitializedRef = useRef(false);
+	const open = controlledOpen ?? uncontrolledOpen;
+	const setOpen = onOpenChange ?? setUncontrolledOpen;
 
 	const { scope: exchangeScope, dex: exchangeDex } = useExchangeScope();
 	const scope = exchangeScope !== "all" ? mapExchangeToMarketScope(exchangeScope) : localScope;
 	const subcategory = exchangeDex ?? localSubcategory;
 
-	const handleSearchChange = useCallback((value: string) => {
+	function handleSearchChange(value: string) {
 		setSearch(value);
 		startTransition(() => setDeferredSearch(value));
-	}, []);
+		if (open && hasInitializedRef.current) {
+			setHighlightedIndex(0);
+		}
+	}
 
 	const { markets, spotMarkets, builderPerpMarkets, isLoading } = useMarketsInfo();
 
 	const favorites = useFavoriteMarkets();
 	const { toggleFavoriteMarket } = useMarketActions();
 
-	const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
-	const isFavorite = useCallback((name: string) => favoriteSet.has(name), [favoriteSet]);
+	const favoriteSet = new Set(favorites);
+	function isFavorite(name: string) {
+		return favoriteSet.has(name);
+	}
 
 	const subcategories = useMemo((): Subcategory[] => {
 		if (scope === "all") return [];
@@ -112,10 +126,13 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 		return [];
 	}, [scope, spotMarkets, builderPerpMarkets]);
 
-	const handleScopeSelect = useCallback((newScope: MarketScope) => {
+	function handleScopeSelect(newScope: MarketScope) {
 		setLocalScope(newScope);
 		setLocalSubcategory("all");
-	}, []);
+		if (open && hasInitializedRef.current) {
+			setHighlightedIndex(0);
+		}
+	}
 
 	const stableScopeFilteredRef = useRef<{ key: string; value: MarketRow[] }>({ key: "", value: [] });
 	const scopeFilteredMarkets = useMemo(() => {
@@ -158,7 +175,6 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 		return filtered;
 	}, [markets, scope, subcategory, open]);
 
-	// eslint-disable-next-line react-hooks/exhaustive-deps
 	const searcher = useMemo(() => createSearcher(scopeFilteredMarkets, marketSearchConfig), [scopeFilteredMarkets]);
 
 	const filteredMarkets = useMemo(() => {
@@ -190,10 +206,11 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 
 	const sortedRows = table.getRowModel().rows;
 	const rows = useMemo(() => {
-		const favoriteRows = sortedRows.filter((r) => isFavorite(r.original.name));
-		const nonFavoriteRows = sortedRows.filter((r) => !isFavorite(r.original.name));
+		const favoriteNames = new Set(favorites);
+		const favoriteRows = sortedRows.filter((r) => favoriteNames.has(r.original.name));
+		const nonFavoriteRows = sortedRows.filter((r) => !favoriteNames.has(r.original.name));
 		return [...favoriteRows, ...nonFavoriteRows];
-	}, [sortedRows, isFavorite]);
+	}, [sortedRows, favorites]);
 
 	const virtualizer = useVirtualizer({
 		count: rows.length,
@@ -217,7 +234,7 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 
 		window.addEventListener("blur", handleWindowBlur);
 		return () => window.removeEventListener("blur", handleWindowBlur);
-	}, [open]);
+	}, [open, setOpen]);
 
 	useEffect(() => {
 		if (!open) {
@@ -238,12 +255,6 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 			}
 		}
 	}, [open, rows, value, virtualizer]);
-
-	useEffect(() => {
-		if (open && hasInitializedRef.current) {
-			setHighlightedIndex(0);
-		}
-	}, [deferredSearch, scope, subcategory]);
 
 	function handleKeyDown(e: React.KeyboardEvent) {
 		if (rows.length === 0) return;
@@ -277,18 +288,31 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 		}
 	}
 
-	const handleSelect = useCallback(
-		(name: string) => {
-			onValueChange(name);
-			setOpen(false);
+	function handleSelect(name: string) {
+		onValueChange(name);
+		setOpen(false);
+		setSearch("");
+		setDeferredSearch("");
+	}
+
+	function handleOpenChange(next: boolean) {
+		setOpen(next);
+		if (!next) {
 			setSearch("");
-		},
-		[onValueChange],
-	);
+			setDeferredSearch("");
+		}
+	}
+
+	function handleSubcategorySelect(next: string) {
+		setLocalSubcategory(next);
+		if (open && hasInitializedRef.current) {
+			setHighlightedIndex(0);
+		}
+	}
 
 	return {
 		open,
-		setOpen,
+		setOpen: handleOpenChange,
 		scope,
 		exchangeScope,
 		exchangeDex,
@@ -301,7 +325,7 @@ export function useTokenSelector({ value, onValueChange }: UseTokenSelectorOptio
 		sorting,
 		handleSort,
 		handleSelect,
-		handleSubcategorySelect: setLocalSubcategory,
+		handleSubcategorySelect,
 		handleScopeSelect,
 		toggleFavorite: toggleFavoriteMarket,
 		table,

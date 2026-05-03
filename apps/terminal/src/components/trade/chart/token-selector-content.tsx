@@ -6,6 +6,7 @@ import { get24hChange, getOiUsd, isTokenInCategory } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatUSD } from "@/lib/format";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
+import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetDisplay } from "../components/asset-display";
 import { getMarketTableColumnClass, type MarketRow, type MarketScope } from "./token-selector-columns";
@@ -247,6 +248,7 @@ export function TokenSelectorContent({
 	headingId,
 	mobile,
 }: Props) {
+	useRenderCommitTrack("token-search");
 	const virtualItems = virtualizer.getVirtualItems();
 	const headerGroup = table.getHeaderGroups()[0];
 	const showScopeTabs = exchangeScope === "all";

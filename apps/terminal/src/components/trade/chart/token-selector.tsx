@@ -1,15 +1,13 @@
-import { Drawer, DrawerContent, DrawerTrigger } from "@hypeterminal/ui";
+import { Drawer, DrawerTrigger } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { useId } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Suspense, useId, useState } from "react";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
-import { TokenSelectorContent } from "./token-selector-content";
+import { createLazyComponent } from "@/lib/lazy";
 import { TOKEN_SELECTOR_TRIGGER_CLASSNAME, TokenSelectorTriggerContent } from "./token-selector-trigger";
-import { useTokenSelector } from "./use-token-selector";
 
-const TOKEN_SELECTOR_POPOVER_WIDTH = "w-[min(44rem,calc(100vw-1rem))]";
+const TokenSelectorPopup = createLazyComponent(() => import("./token-selector-popup"), "TokenSelectorPopup");
 
 export type TokenSelectorProps = {
 	selectedMarket: UnifiedMarketInfo | undefined;
@@ -19,58 +17,20 @@ export type TokenSelectorProps = {
 export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorProps) {
 	const isMobile = useIsMobile();
 	const headingId = useId();
-	const {
-		open,
-		setOpen,
-		scope,
-		exchangeScope,
-		exchangeDex,
-		subcategory,
-		subcategories,
-		search,
-		setSearch,
-		isLoading,
-		isFavorite,
-		sorting,
-		handleSort,
-		handleSelect,
-		handleSubcategorySelect,
-		handleScopeSelect,
-		toggleFavorite,
-		table,
-		rows,
-		virtualizer,
-		containerRef,
-		filteredMarkets,
-		highlightedIndex,
-		handleKeyDown,
-	} = useTokenSelector({ value: selectedMarket?.name ?? "", onValueChange });
-
-	const contentProps = {
-		selectedMarket,
-		scope,
-		exchangeScope,
-		exchangeDex,
-		subcategory,
-		subcategories,
-		search,
-		setSearch,
-		isLoading,
-		isFavorite,
-		sorting,
-		handleSort,
-		handleSelect,
-		handleSubcategorySelect,
-		handleScopeSelect,
-		toggleFavorite,
-		table,
-		rows,
-		virtualizer,
-		containerRef,
-		filteredMarkets,
-		highlightedIndex,
-		headingId,
-	};
+	const [open, setOpen] = useState(false);
+	const preloadPopup = () => TokenSelectorPopup.preload?.();
+	const popup = open ? (
+		<Suspense fallback={null}>
+			<TokenSelectorPopup
+				selectedMarket={selectedMarket}
+				onValueChange={onValueChange}
+				open={open}
+				onOpenChange={setOpen}
+				mobile={isMobile}
+				headingId={headingId}
+			/>
+		</Suspense>
+	) : null;
 
 	if (isMobile) {
 		return (
@@ -80,12 +40,12 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 					aria-expanded={open}
 					aria-label={t`Select token`}
 					className={TOKEN_SELECTOR_TRIGGER_CLASSNAME}
+					onPointerEnter={preloadPopup}
+					onFocus={preloadPopup}
 				>
 					<TokenSelectorTriggerContent selectedMarket={selectedMarket} />
 				</DrawerTrigger>
-				<DrawerContent keepMounted>
-					<TokenSelectorContent {...contentProps} mobile />
-				</DrawerContent>
+				{popup}
 			</Drawer>
 		);
 	}
@@ -99,22 +59,13 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 					aria-expanded={open}
 					aria-label={t`Select token`}
 					className={TOKEN_SELECTOR_TRIGGER_CLASSNAME}
+					onPointerEnter={preloadPopup}
+					onFocus={preloadPopup}
 				>
 					<TokenSelectorTriggerContent selectedMarket={selectedMarket} />
 				</button>
 			</PopoverTrigger>
-			<PopoverContent
-				className={cn(TOKEN_SELECTOR_POPOVER_WIDTH, "p-0 border-stroke-weak bg-surface")}
-				align="start"
-				sideOffset={4}
-				alignOffset={-2}
-				collisionPadding={8}
-				aria-labelledby={headingId}
-				onKeyDown={handleKeyDown}
-				keepMounted
-			>
-				<TokenSelectorContent {...contentProps} />
-			</PopoverContent>
+			{popup}
 		</Popover>
 	);
 }
