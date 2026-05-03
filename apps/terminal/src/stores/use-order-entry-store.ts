@@ -105,10 +105,16 @@ const useOrderEntryStore = create<OrderEntryStore>()(
 						const isTrigger = isTriggerOrderType(orderType);
 						const isScale = isScaleOrderType(orderType);
 						set((state) => {
+							const wasTrigger = isTriggerOrderType(state.orderType);
 							const needsTifReset = isScale && state.tif === "Ioc";
+							function nextReduceOnly() {
+								if (isTrigger) return true;
+								if (wasTrigger) return false;
+								return state.reduceOnly;
+							}
 							return {
 								orderType,
-								reduceOnly: isTrigger ? true : state.reduceOnly,
+								reduceOnly: nextReduceOnly(),
 								tpSlEnabled: isTrigger ? false : state.tpSlEnabled,
 								tif: needsTifReset ? "Gtc" : state.tif,
 							};

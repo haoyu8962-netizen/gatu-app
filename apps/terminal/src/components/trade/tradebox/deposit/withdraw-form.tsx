@@ -11,11 +11,12 @@ import {
 } from "@phosphor-icons/react";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
+import { USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { WITHDRAWAL_FEE_USD } from "@/config/contracts";
 import { NETWORKS } from "@/config/networks";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
-import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { floorToString, limitDecimalInput, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import { NetworkSelect } from "./shared-ui";
 
 const ARBITRUM_NETWORK = NETWORKS[0];
@@ -49,10 +50,10 @@ export function WithdrawForm({ amount, onAmountChange, available, validation, is
 							</span>
 						</>
 					}
-					onLabelValueClick={() => !isPending && onAmountChange(availableNum.toString())}
+					onLabelValueClick={() => !isPending && onAmountChange(floorToString(availableNum, USDC_TRANSFER_DECIMALS))}
 					placeholder="0.00"
 					value={amount}
-					onChange={(e) => onAmountChange(e.target.value)}
+					onChange={(e) => onAmountChange(limitDecimalInput(e.target.value, USDC_TRANSFER_DECIMALS))}
 					disabled={isPending}
 					className={cn(
 						"w-full tabular-nums",

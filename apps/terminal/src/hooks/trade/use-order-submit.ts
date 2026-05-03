@@ -3,7 +3,7 @@ import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } fro
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { useExchange } from "@/lib/hyperliquid";
-import { extractStatusErrors } from "@/lib/trade/extract-order-status";
+import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
 import { clampInt, isPositive } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
@@ -122,7 +122,7 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 					},
 				});
 				throwIfResponseError(result.response?.data?.status);
-				updateOrder(orderId, { status: "success", fillPercent: 100 });
+				updateOrder(orderId, { status: "success", outcome: "twapStarted" });
 			} else {
 				const plan = buildOrderPlan({
 					kind: "entry",
@@ -161,7 +161,7 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 				} else if (statuses.length === 0) {
 					updateOrder(orderId, { status: "failed", error: t`No response from exchange` });
 				} else {
-					updateOrder(orderId, { status: "success", fillPercent: 100 });
+					updateOrder(orderId, { status: "success", outcome: deriveOrderOutcome(statuses) });
 				}
 			}
 

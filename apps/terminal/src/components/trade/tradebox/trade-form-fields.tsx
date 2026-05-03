@@ -7,7 +7,7 @@ import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { DEFAULT_SIZE_PERCENT, ORDER_MIN_NOTIONAL_USD, SIZE_PERCENT_OPTIONS } from "@/config/trade";
+import { ORDER_MIN_NOTIONAL_USD, SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { getSliderValue } from "@/domain/trade/order/size";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { cn } from "@/lib/cn";
@@ -60,8 +60,7 @@ export function TradeFormFields({
 }: Props) {
 	const sizeFieldId = useId();
 	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-	const [dragSliderValue, setDragSliderValue] = useState<number>(DEFAULT_SIZE_PERCENT);
-	const [hasUserSized, setHasUserSized] = useState(false);
+	const [dragSliderValue, setDragSliderValue] = useState(0);
 
 	const { isConnected } = useConnection();
 	const { data: market } = useSelectedMarketInfo();
@@ -105,26 +104,11 @@ export function TradeFormFields({
 	const triggerPriceNum = toNumber(triggerPriceInput);
 	const sizeHasError = (sizeValue > maxSize && maxSize > 0) || (orderValue > 0 && orderValue < ORDER_MIN_NOTIONAL_USD);
 
-	const sliderValue = (() => {
-		if (isDraggingSlider) return dragSliderValue;
-		if (!hasUserSized || sizeValue <= 0) return DEFAULT_SIZE_PERCENT;
-		return getSliderValue(sizeValue, maxSize);
-	})();
-
-	function handleSizeChange(value: string) {
-		setHasUserSized(true);
-		setSize(value);
-	}
+	const sliderValue = isDraggingSlider ? dragSliderValue : getSliderValue(sizeValue, maxSize);
 
 	function handleSizePercentApply(pct: number) {
 		if (maxSize <= 0) return;
-		setHasUserSized(true);
 		onSizePercentApply(pct);
-	}
-
-	function handleSizeModeToggle() {
-		setHasUserSized(true);
-		onSizeModeToggle();
 	}
 
 	function formatAvailableBalance(): string {
@@ -139,18 +123,18 @@ export function TradeFormFields({
 			<div className="flex min-w-0 flex-col gap-3">
 				<div className="flex min-w-0 flex-col gap-2">
 					<div className="flex min-w-0 items-baseline justify-between gap-2">
-						<p className="inline-flex justify-between w-full min-w-0 items-baseline gap-x-1.5 text-3xs leading-snug">
+						<div className="inline-flex justify-between w-full min-w-0 items-baseline gap-x-1.5 text-3xs leading-snug">
 							<Tooltip content={t`Balance available to trade`} side="top">
 								<span className="font-medium uppercase tracking-wider text-fg-muted cursor-default">{t`Available`}</span>
 							</Tooltip>
-							<div>
+							<span>
 								{isConnected ? (
 									<span className={cn("tabular-nums", getValueColorClass(availableBalance))}>
 										{formatAvailableBalance()}
 									</span>
 								) : null}
-							</div>
-						</p>
+							</span>
+						</div>
 						<div className="flex shrink-0 items-center">
 							{isConnected && swapTargetToken ? (
 								<Button variant="link" intent="brand" size="xxs" onClick={onSwapClick}>
@@ -178,7 +162,7 @@ export function TradeFormFields({
 				</div>
 
 				{usesTriggerPrice && (
-					<div className="border-t border-stroke-weak/25 pt-3">
+					<div className="border-t border-stroke-weak pt-3">
 						<PriceInput
 							label={t`Trigger Price`}
 							placeholder="0.00"
@@ -200,7 +184,7 @@ export function TradeFormFields({
 				)}
 
 				{usesLimitPrice && (
-					<div className="border-t border-stroke-weak/25 pt-3">
+					<div className="border-t border-stroke-weak pt-3">
 						<PriceInput
 							label={t`Limit Price`}
 							placeholder="0.00"
@@ -221,7 +205,7 @@ export function TradeFormFields({
 					</div>
 				)}
 
-				<div className="flex flex-col gap-0.5 border-t border-stroke-weak/25 pt-3">
+				<div className="flex flex-col gap-0.5 border-t border-stroke-weak pt-3">
 					<div className="mb-1 flex items-center justify-between gap-2">
 						<label htmlFor={sizeFieldId} className={labelTypographyClass}>
 							{t`Size`}
@@ -240,7 +224,7 @@ export function TradeFormFields({
 							id={sizeFieldId}
 							placeholder="0.00"
 							value={sizeInput}
-							onChange={(e) => handleSizeChange(e.target.value)}
+							onChange={(e) => setSize(e.target.value)}
 							maxAllowedDecimals={szDecimals}
 							className={cn(
 								"flex-1 text-xs tabular-nums",
@@ -252,7 +236,7 @@ export function TradeFormFields({
 							variant="outline"
 							intent="neutral"
 							size="sm"
-							onClick={handleSizeModeToggle}
+							onClick={onSizeModeToggle}
 							aria-label={t`Toggle size mode`}
 							disabled={isFormDisabled}
 							iconRight={<CaretDownIcon className="size-2.5" />}
@@ -320,8 +304,17 @@ export function TradeFormFields({
 						{showTif && <TradeFormTif orderType={orderType} disabled={isFormDisabled} />}
 					</div>
 
-					{capabilities.hasTpSl && tpSlEnabled && canUseTpSl && (
-						<TradeFormTpSl referencePrice={price} size={sizeValue} szDecimals={szDecimals} disabled={isFormDisabled} />
+					{capabilities.hasTpSl && canUseTpSl && (
+						<div className="h-56">
+							{tpSlEnabled && (
+								<TradeFormTpSl
+									referencePrice={price}
+									size={sizeValue}
+									szDecimals={szDecimals}
+									disabled={isFormDisabled}
+								/>
+							)}
+						</div>
 					)}
 				</div>
 			)}

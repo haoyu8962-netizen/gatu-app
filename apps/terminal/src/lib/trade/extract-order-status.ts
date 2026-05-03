@@ -1,3 +1,5 @@
+export type OrderOutcome = "filled" | "resting" | "triggerSet" | "twapStarted";
+
 export function extractStatusErrors(statuses: unknown[]): string[] {
 	const errors: string[] = [];
 	for (const status of statuses) {
@@ -6,4 +8,15 @@ export function extractStatusErrors(statuses: unknown[]): string[] {
 		}
 	}
 	return errors;
+}
+
+export function deriveOrderOutcome(statuses: unknown[]): OrderOutcome {
+	const primary = statuses[0];
+	if (primary === "waitingForTrigger") return "triggerSet";
+	if (primary === "waitingForFill") return "resting";
+	if (primary && typeof primary === "object") {
+		if ("resting" in primary) return "resting";
+		if ("filled" in primary) return "filled";
+	}
+	return "filled";
 }

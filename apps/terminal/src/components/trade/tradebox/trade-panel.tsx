@@ -55,8 +55,10 @@ import { WalletModal } from "../components/wallet-modal";
 import { MarginModeModal } from "./margin-mode-modal";
 import { OrderSummary } from "./order-summary";
 import { OrderToast } from "./order-toast";
+import { ScaleOrderSummary } from "./scale-order-summary";
 import { TradeFormFields } from "./trade-form-fields";
 import { TradeHeader } from "./trade-header";
+import { TwapOrderSummary } from "./twap-order-summary";
 
 export function TradePanel() {
 	const { address, isConnected } = useConnection();
@@ -310,6 +312,52 @@ export function TradePanel() {
 		onSubmit: handleSubmit,
 	});
 
+	function renderSummary() {
+		if (twapOrder) {
+			return (
+				<TwapOrderSummary
+					twapMinutesNum={twapMinutesNum}
+					sizeValue={sizeValue}
+					orderValue={orderValue}
+					estimatedFee={estimatedFee}
+					feeRatePercent={feeRatePercent}
+					baseToken={baseToken}
+					szDecimals={market?.szDecimals}
+				/>
+			);
+		}
+		if (scaleOrder) {
+			return (
+				<ScaleOrderSummary
+					scaleStart={scaleStartPriceNum}
+					scaleEnd={scaleEndPriceNum}
+					scaleLevels={scaleLevelsNum}
+					orderValue={orderValue}
+					marginRequired={marginRequired}
+					estimatedFee={estimatedFee}
+					feeRatePercent={feeRatePercent}
+					szDecimals={market?.szDecimals}
+					marketKind={market?.kind}
+				/>
+			);
+		}
+		return (
+			<OrderSummary
+				liqPrice={liqPrice}
+				liqWarning={liqWarning}
+				orderValue={orderValue}
+				marginRequired={marginRequired}
+				estimatedFee={estimatedFee}
+				feeRatePercent={feeRatePercent}
+				slippagePercent={slippagePercent}
+				szDecimals={market?.szDecimals}
+				onSlippageClick={openSettingsDialog}
+				orderType={orderType}
+				marketKind={market?.kind}
+			/>
+		);
+	}
+
 	return (
 		<div className="flex flex-col bg-surface">
 			<MarginModeModal
@@ -380,18 +428,7 @@ export function TradePanel() {
 					</Button>
 				</div>
 
-				<OrderSummary
-					liqPrice={liqPrice}
-					liqWarning={liqWarning}
-					orderValue={orderValue}
-					marginRequired={marginRequired}
-					estimatedFee={estimatedFee}
-					feeRatePercent={feeRatePercent}
-					slippagePercent={slippagePercent}
-					szDecimals={market?.szDecimals}
-					onSlippageClick={openSettingsDialog}
-					marketKind={market?.kind}
-				/>
+				{renderSummary()}
 			</div>
 
 			<WalletModal open={activeModal === "wallet"} onOpenChange={(open) => setActiveModal(open ? "wallet" : null)} />

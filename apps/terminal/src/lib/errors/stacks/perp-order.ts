@@ -28,7 +28,7 @@ import {
 	tpTriggerAboveMarkValidator,
 	tpTriggerBelowMarkValidator,
 } from "../definitions/trigger";
-import { type TwapContext, twapMinutesRangeValidator } from "../definitions/twap";
+import { type TwapContext, twapMinNotionalValidator, twapMinutesRangeValidator } from "../definitions/twap";
 import { runValidators, type ValidationError, type Validator } from "../types";
 
 export interface PerpOrderContext extends OrderInputContext, TpSlContext, TriggerContext, ScaleContext, TwapContext {
@@ -74,6 +74,7 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	scaleStartEndDifferValidator,
 	scaleLevelMinNotionalValidator,
 	twapMinutesRangeValidator,
+	twapMinNotionalValidator,
 ];
 
 export function validatePerpOrder(context: PerpOrderContext): PerpOrderValidationResult {

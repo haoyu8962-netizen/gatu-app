@@ -8,9 +8,9 @@ export function getAdvancedOrderTypeLabel(orderType: AdvancedOrderType): string 
 		case "stopLimit":
 			return t`Stop Limit`;
 		case "takeProfitMarket":
-			return t`Take Market`;
+			return t`Take Profit Market`;
 		case "takeProfitLimit":
-			return t`Take Limit`;
+			return t`Take Profit Limit`;
 		case "twap":
 			return t`TWAP`;
 		case "scale":
