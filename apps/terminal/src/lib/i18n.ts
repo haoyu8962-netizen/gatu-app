@@ -11,7 +11,10 @@ export function resolveNumberFormatLocale(formatLocale: NumberFormatLocale): str
 
 i18n.loadAndActivate({ locale: defaultLocale, messages: enMessages });
 
-const catalogImports = import.meta.glob<{ messages: Messages }>("../locales/*/messages.po");
+const catalogImports = import.meta.glob<{ messages: Messages }>([
+	"../locales/*/messages.po",
+	"!../locales/en/messages.po",
+]);
 
 /**
  * We do a dynamic import of just the catalog that we need
@@ -19,6 +22,11 @@ const catalogImports = import.meta.glob<{ messages: Messages }>("../locales/*/me
  */
 export async function dynamicActivate(locale: string) {
 	if (i18n.locale === locale) return;
+
+	if (locale === defaultLocale) {
+		i18n.loadAndActivate({ locale, messages: enMessages });
+		return;
+	}
 
 	const path = `../locales/${locale}/messages.po`;
 	const loader = catalogImports[path];

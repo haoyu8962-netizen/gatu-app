@@ -132,7 +132,6 @@ export const UI_TEXT = {
 		FAILED_LABEL: "failed",
 		DISMISS_ARIA: "Dismiss",
 		SIZE_LABEL: "Size",
-		FILLED_SUFFIX: "% filled",
 	},
 	ACCOUNT_PANEL: {
 		ARIA_EXPAND: "Expand account panel",

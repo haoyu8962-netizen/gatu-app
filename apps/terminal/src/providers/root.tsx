@@ -1,4 +1,4 @@
-import { PERSISTED_QUERY_PREFIX } from "@hypeterminal/hl-react";
+import { HyperliquidProvider, PERSISTED_QUERY_PREFIX } from "@hypeterminal/hl-react";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
@@ -9,7 +9,6 @@ import { APP_NAME, RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
 import { config } from "@/config/wagmi";
-import { HyperliquidProvider } from "@/lib/hyperliquid";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
 import { getNetwork } from "@/lib/network";
 import "@/lib/i18n";

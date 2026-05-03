@@ -13,6 +13,7 @@ export const DEFAULT_MARKET_KEY = "perp:BTC";
 export const DEFAULT_MARKET_NAME = "BTC";
 export const DEFAULT_MARKET_SCOPE = "perp" as const;
 export const DEFAULT_QUOTE_TOKEN = "USDC";
+export const USDC_TRANSFER_DECIMALS = 2;
 
 export const HL_ALL_DEXS = "ALL_DEXS" as const;
 

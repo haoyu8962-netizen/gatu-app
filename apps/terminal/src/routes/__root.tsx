@@ -1,14 +1,16 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { ClientOnly, createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
-import { Toaster } from "@/components/ui/sonner";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
+import { createLazyComponent } from "@/lib/lazy";
 import { buildPageHead, mergeHead } from "@/lib/seo";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
 import "@/bones/registry";
 import appCss from "../styles.css?url";
+
+const Toaster = createLazyComponent(() => import("@/components/ui/sonner"), "Toaster");
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -38,7 +40,9 @@ function RootComponent() {
 			<ExchangeScopeProvider>
 				<MarketsInfoProvider>
 					<Outlet />
-					<Toaster />
+					<Suspense fallback={null}>
+						<Toaster />
+					</Suspense>
 				</MarketsInfoProvider>
 			</ExchangeScopeProvider>
 		</ClientOnly>
@@ -47,7 +51,7 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 			</head>

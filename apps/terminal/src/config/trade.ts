@@ -15,7 +15,6 @@ export const ORDER_FEE_RATE_SPOT_TAKER = 0.0007;
 export const ORDER_FEE_RATE_SPOT_MAKER = 0.0004;
 export const ORDER_SIZE_PERCENT_STEPS = [25, 50, 75, 100] as const;
 export const SIZE_PERCENT_OPTIONS = [0, 25, 50, 75, 100] as const;
-export const DEFAULT_SIZE_PERCENT = 25;
 export const ORDER_LEVERAGE_STEPS = [1, 2, 3, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 200] as const;
 
 /** Liquidation-distance safety multiplier applied to the 1/leverage price buffer. */
@@ -32,6 +31,8 @@ export const DEFAULT_LEVERAGE_FALLBACK = 5;
 
 export const TWAP_MINUTES_MIN = 5;
 export const TWAP_MINUTES_MAX = 1440;
+export const TWAP_MIN_NOTIONAL_PER_MINUTE_USD = 10;
+export const TWAP_SUBORDER_INTERVAL_SECONDS = 30;
 export const SCALE_LEVELS_MIN = 2;
 export const SCALE_LEVELS_MAX = 20;
 
@@ -114,10 +115,3 @@ export const OPEN_ORDER_TYPE_PREFIXES = {
 	takeProfit: "Take Profit",
 	stop: "Stop",
 } as const;
-
-export const OPEN_ORDER_TYPE_SHORT_LABELS: Record<string, string> = {
-	"Take Profit Market": "TP Market",
-	"Take Profit Limit": "TP Limit",
-	"Stop Market": "SL Market",
-	"Stop Limit": "SL Limit",
-};
