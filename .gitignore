@@ -1,29 +1,44 @@
 # Dependencies
-node_modules
+node_modules/
+.pnpm-store/
 
 # Build outputs
-dist
-dist-ssr
-.output
-.nitro
-.vinxi
-.vercel
+dist/
+dist-ssr/
+.output/
+.nitro/
+.vinxi/
+.vercel/
+coverage/
+*.tsbuildinfo
+*.tgz
+
+# Logs and one-off scratch output
+*.log
+logs/
+tmp/
+temp/
+.expect/
+.sandcastle/logs/
 
 # Compiled translation catalogs (generated at build time)
 src/locales/**/messages.js
 
 # Framework temp files
-.tanstack
-.wrangler
+.astro/
+.tanstack/
+.wrangler/
 
 # Environment files
 .env
 .env.local
 .env.*.local
+*.env.local
 
 # Editor/IDE (personal, not shared)
-.cursor
-.idea
+.cursor/
+.idea/
+.vscode/
 
 # OS files
 .DS_Store

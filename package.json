@@ -7,6 +7,7 @@
 		"build": "pnpm --filter @hypeterminal/terminal build",
 		"serve": "pnpm --filter @hypeterminal/terminal serve",
 		"test": "pnpm --filter @hypeterminal/terminal test",
+		"diagnostics:browser": "node scripts/browser-diagnostics.js",
 		"format": "biome format",
 		"lint": "biome lint",
 		"check": "biome check",
@@ -16,6 +17,7 @@
 		"prepare": "lefthook install"
 	},
 	"devDependencies": {
+		"@ai-hero/sandcastle": "^0.5.6",
 		"@biomejs/biome": "2.2.4",
 		"@commitlint/cli": "^20.3.1",
 		"@commitlint/config-conventional": "^20.3.1",
