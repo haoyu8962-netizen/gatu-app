@@ -3,7 +3,7 @@ import { ClientOnly } from "@tanstack/react-router";
 import { Skeleton } from "boneyard-js/react";
 import { Suspense } from "react";
 import { UI_TEXT } from "@/config/ui-text";
-import { get24hChange, getOiUsd } from "@/domain/market";
+import { get24hChange, getOiUsd, getPositionDex } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
@@ -107,7 +107,12 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 				>
 					<Suspense fallback={<ChartSkeleton />}>
 						{selectedMarket && (
-							<KlineChart symbol={selectedMarket.name} theme={theme === "dark" ? "dark" : "light"} yAxisInside />
+							<KlineChart
+								symbol={selectedMarket.name}
+								positionDex={getPositionDex(selectedMarket)}
+								theme={theme === "dark" ? "dark" : "light"}
+								yAxisInside
+							/>
 						)}
 					</Suspense>
 				</ClientOnly>

@@ -1,10 +1,11 @@
 import { Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
+import { getPositionDex } from "@/domain/market";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
@@ -137,14 +138,7 @@ export function TradePanel() {
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { open: openSwapModal } = useSwapModalActions();
 
-	const swapTargetToken = useMemo(() => {
-		if (!market || market.kind !== "builderPerp") return null;
-
-		const quoteToken = getMarketQuoteToken(market);
-		if (quoteToken === DEFAULT_QUOTE_TOKEN) return null;
-
-		return quoteToken;
-	}, [market]);
+	const swapTargetToken = getSwapTargetToken(market);
 
 	useEffect(() => {
 		if (selectedPrice !== null) {
@@ -166,7 +160,7 @@ export function TradePanel() {
 	const scaleStartPriceNum = toNumber(scaleStartPriceInput);
 	const scaleEndPriceNum = toNumber(scaleEndPriceInput);
 
-	const position = market?.name ? userPositions.getPosition(market.name) : null;
+	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSize = toNumberOrZero(position?.szi);
 
 	const price = getOrderPrice(
@@ -181,15 +175,8 @@ export function TradePanel() {
 	const feeRate = isTakerOrderType(orderType) ? takerRate : makerRate;
 	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
 
-	const { marginRequired, estimatedFee } = useMemo(
-		() => getOrderMetrics({ sizeValue, price, leverage, feeRate }),
-		[leverage, feeRate, price, sizeValue],
-	);
-
-	const { liqPrice, liqWarning } = useMemo(
-		() => getLiquidationInfo({ price, sizeValue, leverage, side }),
-		[leverage, price, side, sizeValue],
-	);
+	const { marginRequired, estimatedFee } = getOrderMetrics({ sizeValue, price, leverage, feeRate });
+	const { liqPrice, liqWarning } = getLiquidationInfo({ price, sizeValue, leverage, side });
 
 	const needsAgentApproval = !isAgentReady;
 	const isReadyToTrade = isAgentReady;
@@ -257,14 +244,11 @@ export function TradePanel() {
 	const isRegistering =
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
 
-	const handleMarginApply = useCallback(
-		async (mode: MarginMode, leverageValue: number) => {
-			await applyMarginAndLeverage(mode, leverageValue);
-		},
-		[applyMarginAndLeverage],
-	);
+	async function handleMarginApply(mode: MarginMode, leverageValue: number) {
+		await applyMarginAndLeverage(mode, leverageValue);
+	}
 
-	const handleRegister = useCallback(() => {
+	function handleRegister() {
 		if (isRegistering) return;
 		setApprovalError(null);
 
@@ -273,9 +257,9 @@ export function TradePanel() {
 			setApprovalError(message);
 			setTimeout(() => setApprovalError(null), APPROVAL_ERROR_DISMISS_MS);
 		});
-	}, [isRegistering, registerAgent]);
+	}
 
-	const handleSubmit = useCallback(async () => {
+	async function handleSubmit() {
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
@@ -305,35 +289,7 @@ export function TradePanel() {
 			scaleOrder,
 			triggerOrder,
 		});
-	}, [
-		baseToken,
-		canUseTpSl,
-		isSubmitting,
-		limitPriceInput,
-		market,
-		markPx,
-		orderType,
-		price,
-		reduceOnly,
-		scaleEndPriceInput,
-		scaleLevelsNum,
-		scaleOrder,
-		scaleStartPriceInput,
-		side,
-		sizeValue,
-		slippageBps,
-		slPriceNum,
-		submitOrder,
-		tif,
-		tpPriceNum,
-		tpSlEnabled,
-		triggerOrder,
-		triggerPriceInput,
-		twapMinutesNum,
-		twapOrder,
-		twapRandomize,
-		validation.canSubmit,
-	]);
+	}
 
 	const buttonContent = useButtonContent({
 		isConnected,
@@ -355,16 +311,18 @@ export function TradePanel() {
 	});
 
 	return (
-		<div className="min-h-0 flex flex-col overflow-hidden bg-surface">
+		<div className="flex flex-col bg-surface">
 			<MarginModeModal
 				open={activeModal === "marginMode"}
-				onOpenChange={(open) => setActiveModal(open ? "marginMode" : null)}
+				onOpenChange={(open) => {
+					if (!open) resetPendingLeverage();
+					setActiveModal(open ? "marginMode" : null);
+				}}
 				currentMode={marginMode}
 				currentLeverage={currentLeverage}
 				pendingLeverage={pendingLeverage}
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
-				resetPendingLeverage={resetPendingLeverage}
 				hasPosition={hasPosition}
 				isOnlyIsolated={capabilities.isOnlyIsolated}
 				isUpdating={isSwitchingMode}
@@ -373,7 +331,7 @@ export function TradePanel() {
 				onApply={handleMarginApply}
 			/>
 
-			<div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-3 py-3">
+			<div className="flex flex-col gap-5 px-3 py-3">
 				<TradeHeader
 					orderType={orderType}
 					side={side}
@@ -412,7 +370,7 @@ export function TradePanel() {
 						disabled={buttonContent.disabled}
 						className={cn(
 							"w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
-							buttonContent.variant === "buy" && "bg-success hover:bg-success/90 text-background",
+							buttonContent.variant === "buy" && "bg-success text-background hover:opacity-90",
 							buttonContent.variant === "sell" && "text-background",
 						)}
 						aria-label={buttonContent.text}
@@ -441,4 +399,13 @@ export function TradePanel() {
 			<OrderToast />
 		</div>
 	);
+}
+
+function getSwapTargetToken(market: NonNullable<ReturnType<typeof useSelectedMarketInfo>["data"]> | undefined) {
+	if (!market || market.kind !== "builderPerp") return null;
+
+	const quoteToken = getMarketQuoteToken(market);
+	if (quoteToken === DEFAULT_QUOTE_TOKEN) return null;
+
+	return quoteToken;
 }

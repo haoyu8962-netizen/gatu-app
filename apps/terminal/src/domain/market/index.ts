@@ -7,6 +7,7 @@ export {
 	getRiskRewardRatio,
 	isAmountWithinBalance,
 } from "./calculations";
+export { getPositionDex } from "./dex";
 export {
 	BUILDER_DEX_SEPARATOR,
 	getBaseQuoteFromPairName,
@@ -18,6 +19,7 @@ export type { ExchangeScope } from "./scope";
 export {
 	getIconUrlFromMarketName,
 	getIconUrlFromPair,
+	getTokenTransferDecimals,
 	getUnderlyingAsset,
 	isTokenInCategory,
 	type MarketCategory,

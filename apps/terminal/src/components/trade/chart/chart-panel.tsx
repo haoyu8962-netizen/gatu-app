@@ -1,9 +1,11 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
+import { getPositionDex } from "@/domain/market";
 import { useIntentScriptLoader } from "@/hooks/ui/use-intent-script-loader";
 import { TRADINGVIEW_SCRIPT_SRC } from "@/lib/chart/load-tradingview";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
+import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { useTheme } from "@/stores/use-global-settings-store";
 
 const TradingViewChart = createLazyComponent(() => import("./tradingview-chart"), "TradingViewChart");
@@ -12,6 +14,7 @@ const KlineChart = createLazyComponent(() => import("./kline-chart"), "KlineChar
 type ChartType = "default" | "tradingview";
 
 export function ChartPanel() {
+	useRenderCommitTrack("chart");
 	const theme = useTheme();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const [chartType, setChartType] = useState<ChartType>("default");
@@ -29,6 +32,7 @@ export function ChartPanel() {
 					<Suspense fallback={<ChartLoadingFallback />}>
 						<KlineChart
 							symbol={selectedMarket.name}
+							positionDex={getPositionDex(selectedMarket)}
 							theme={chartTheme}
 							onChartSourceChange={setChartType}
 							tradingViewIntentHandlers={tradingViewIntentHandlers}
