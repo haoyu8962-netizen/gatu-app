@@ -10,7 +10,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
-import { FooterBar } from "./footer/footer-bar";
 import { TopNav } from "./header/top-nav";
 import { MainWorkspace } from "./layout/main-workspace";
 import { TestnetBanner } from "./testnet-banner";
@@ -18,6 +17,7 @@ import { TestnetBanner } from "./testnet-banner";
 const MobileTerminal = createLazyComponent(() => import("./mobile/mobile-terminal"), "MobileTerminal");
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
+const FooterBar = createLazyComponent(() => import("./footer/footer-bar"), "FooterBar");
 
 if (typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT_PX) {
 	MobileTerminal.preload();
@@ -37,7 +37,7 @@ export function TradeTerminalPage() {
 			) : (
 				<div
 					className={cn(
-						"bg-background text-fg min-h-screen w-full flex flex-col font-sans pb-8",
+						"bg-background text-fg min-h-dvh w-full flex flex-col overflow-x-hidden font-sans pb-8",
 						isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS,
 						isTestnet && "testnet-bg",
 					)}
@@ -45,7 +45,9 @@ export function TradeTerminalPage() {
 					<TestnetBanner />
 					<TopNav />
 					<MainWorkspace />
-					<FooterBar />
+					<Suspense fallback={null}>
+						<FooterBar />
+					</Suspense>
 				</div>
 			)}
 			<Suspense fallback={null}>

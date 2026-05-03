@@ -15,7 +15,7 @@ import { type ChangeEvent, useCallback, useMemo, useState } from "react";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
-import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
+import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
 import { type BalanceRow, getAvailableFromTotals, getPerpAvailable } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
@@ -77,10 +77,10 @@ export function SendModal({
 		return availableSpotTokens.map((b) => b.asset);
 	}, [accountType, availableSpotTokens]);
 
-	const tokenInfo = useMemo(() => getToken(selectedToken), [getToken, selectedToken]);
+	const tokenInfo = getToken(selectedToken);
 	const tokenId = tokenInfo ? formatTokenId(tokenInfo) : "";
 
-	const decimals = useMemo(() => getToken(selectedToken)?.transferDecimals ?? 2, [getToken, selectedToken]);
+	const decimals = getTokenTransferDecimals(tokenInfo);
 
 	const availableBalance = useMemo(() => {
 		if (accountType === "perp") {

@@ -1,4 +1,3 @@
-import { Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
@@ -13,7 +12,7 @@ import { toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 
 interface Props {
@@ -81,33 +80,25 @@ export function MobileHistoryTab({ className }: Props) {
 						return (
 							<div
 								key={`${fill.hash}-${fill.tid}`}
-								className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden"
+								className="rounded-xs border border-stroke-weak bg-surface overflow-hidden"
 							>
-								<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
-									<div
-										className={cn("absolute left-0 top-0 bottom-0 w-px", isBuy ? "bg-market-up" : "bg-market-down")}
-									/>
-									<Button
-										variant="ghost"
-										intent="neutral"
-										size="sm"
-										onClick={() => setSelectedMarket(scope, fill.coin)}
-									>
-										<AssetDisplay
+								<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
+									<div className="flex items-center gap-2">
+										<AssetBadge
 											coin={fill.coin}
-											nameClassName="text-sm font-semibold"
-											subtitle={
-												<span
-													className={cn(
-														"text-xs font-medium uppercase",
-														isLiquidation ? "text-error" : isBuy ? "text-success" : "text-error",
-													)}
-												>
-													{isLiquidation ? t`Liquidated` : fill.dir}
-												</span>
-											}
+											side={isBuy ? "buy" : "sell"}
+											onClick={() => setSelectedMarket(scope, fill.coin)}
+											nameClassName="text-sm"
 										/>
-									</Button>
+										<span
+											className={cn(
+												"text-2xs font-medium uppercase",
+												isLiquidation ? "text-error" : isBuy ? "text-success" : "text-error",
+											)}
+										>
+											{isLiquidation ? t`Liquidated` : fill.dir}
+										</span>
+									</div>
 									{showPnl && (
 										<div className={cn("text-xs font-medium tabular-nums", getValueColorClass(closedPnl))}>
 											{formatUSD(closedPnl, { signDisplay: "exceptZero" })}
@@ -115,7 +106,7 @@ export function MobileHistoryTab({ className }: Props) {
 									)}
 								</div>
 
-								<div className="grid grid-cols-3 divide-x divide-stroke-weak/40">
+								<div className="grid grid-cols-3 divide-x divide-stroke-weak">
 									<MetricCell label={t`Price`} value={formatUSD(fill.px)} />
 									<MetricCell label={t`Size`} value={formatNumber(fill.sz, markets.getSzDecimals(fill.coin))} />
 									<MetricCell

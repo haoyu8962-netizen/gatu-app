@@ -1,5 +1,5 @@
 import { Divider } from "@hypeterminal/ui";
-import { Suspense } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { useDefaultLayout } from "react-resizable-panels";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { PANEL_LAYOUT } from "@/config/layout";
@@ -21,6 +21,12 @@ export function MainWorkspace() {
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
+	const [marketBodyMinHeightPx, setMarketBodyMinHeightPx] = useState(PANEL_LAYOUT.ANALYSIS.minHeightPx);
+	const marketBodyHeight = `max(calc(100dvh - 9.375rem), ${marketBodyMinHeightPx}px)`;
+
+	const handleAnalysisHeightChange = useCallback((heightPx: number) => {
+		setMarketBodyMinHeightPx(Math.max(PANEL_LAYOUT.ANALYSIS.minHeightPx, Math.ceil(heightPx)));
+	}, []);
 
 	function handleMarketChange(marketName: string) {
 		setSelectedMarket(scope, marketName);
@@ -38,12 +44,17 @@ export function MainWorkspace() {
 					<MarketOverview />
 				</div>
 			</div>
-			<ResizablePanelGroup className="min-h-0 flex-1" defaultLayout={defaultLayout} onLayoutChanged={onLayoutChanged}>
+			<ResizablePanelGroup
+				className="min-h-0 shrink-0"
+				defaultLayout={defaultLayout}
+				onLayoutChanged={onLayoutChanged}
+				style={{ height: marketBodyHeight, minHeight: marketBodyMinHeightPx }}
+			>
 				<ResizablePanel defaultSize={analysis.defaultSize} minSize={analysis.minSize}>
 					<div className="h-full flex flex-col bg-surface">
 						<div className="flex-1 min-h-0">
 							<Suspense fallback={<PanelSkeleton />}>
-								<AnalysisSection />
+								<AnalysisSection onDesiredHeightChange={handleAnalysisHeightChange} />
 							</Suspense>
 						</div>
 					</div>

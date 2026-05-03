@@ -1,5 +1,5 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
-import type * as React from "react";
+import * as React from "react";
 import { cn } from "@/lib/cn";
 
 const POPOVER_DEFAULT_SIDE_OFFSET = 4;
@@ -10,8 +10,20 @@ function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root
 	return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-function PopoverTrigger({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
-	return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+type PopoverTriggerProps = React.ComponentProps<typeof PopoverPrimitive.Trigger> & {
+	asChild?: boolean;
+};
+
+function PopoverTrigger({ asChild, children, ...props }: PopoverTriggerProps) {
+	if (asChild && React.isValidElement(children)) {
+		return <PopoverPrimitive.Trigger data-slot="popover-trigger" render={children} {...props} />;
+	}
+
+	return (
+		<PopoverPrimitive.Trigger data-slot="popover-trigger" {...props}>
+			{children}
+		</PopoverPrimitive.Trigger>
+	);
 }
 
 function PopoverContent({
@@ -55,8 +67,4 @@ function PopoverContent({
 	);
 }
 
-function PopoverAnchor({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
-	return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
-}
-
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };
+export { Popover, PopoverTrigger, PopoverContent };

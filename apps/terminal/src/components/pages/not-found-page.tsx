@@ -1,4 +1,4 @@
-import { Button } from "@hypeterminal/ui";
+import { buttonVariants } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 
@@ -15,10 +15,12 @@ export function NotFoundPage() {
 						<Trans>The page you are looking for does not exist.</Trans>
 					</p>
 				</div>
-				<a href="/" aria-label={t`Go to trading terminal`}>
-					<Button variant="filled" intent="brand" size="sm">
-						<Trans>Go to trading terminal</Trans>
-					</Button>
+				<a
+					href="/"
+					aria-label={t`Go to trading terminal`}
+					className={buttonVariants({ variant: "filled", intent: "brand", size: "sm" })}
+				>
+					<Trans>Go to trading terminal</Trans>
 				</a>
 			</div>
 		</div>

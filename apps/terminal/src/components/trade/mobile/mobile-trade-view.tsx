@@ -6,7 +6,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
-import { BPS_PER_UNIT, DEFAULT_SIZE_PERCENT, SIZE_PERCENT_OPTIONS } from "@/config/trade";
+import { BPS_PER_UNIT, SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { UI_TEXT } from "@/config/ui-text";
 import { get24hChange } from "@/domain/market";
 import { getLiquidationInfo } from "@/domain/trade/order/metrics";
@@ -17,6 +17,7 @@ import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import {
@@ -83,9 +84,8 @@ export function MobileTradeView({ className }: Props) {
 	const [limitPriceInput, setLimitPriceInput] = useState("");
 	const [reduceOnly, setReduceOnly] = useState(false);
 	const [tpSlEnabled, setTpSlEnabled] = useState(false);
-	const [hasUserSized, setHasUserSized] = useState(false);
 	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-	const [dragSliderValue, setDragSliderValue] = useState<number>(DEFAULT_SIZE_PERCENT);
+	const [dragSliderValue, setDragSliderValue] = useState(0);
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 
 	const canUseTpSl = canUseTpSlForOrder(orderType);
@@ -191,7 +191,6 @@ export function MobileTradeView({ className }: Props) {
 
 	function applySizeFromPercent(pct: number) {
 		if (maxSize <= 0) return;
-		setHasUserSized(true);
 		setSizeInput(getSizeForPercent(pct));
 	}
 
@@ -254,9 +253,10 @@ export function MobileTradeView({ className }: Props) {
 				grouping: "na",
 			});
 
-			throwIfResponseError(result.response?.data?.statuses?.[0]);
+			const statuses = result.response?.data?.statuses ?? [];
+			throwIfResponseError(statuses[0]);
 
-			updateOrder(orderId, { status: "success", fillPercent: 100 });
+			updateOrder(orderId, { status: "success", outcome: deriveOrderOutcome(statuses) });
 			setSizeInput("");
 			setLimitPriceInput("");
 		} catch (error) {
@@ -267,13 +267,7 @@ export function MobileTradeView({ className }: Props) {
 		}
 	}
 
-	const sliderValue = getDisplaySliderValue({
-		isDraggingSlider,
-		dragSliderValue,
-		hasUserSized,
-		sizeValue,
-		maxSize,
-	});
+	const sliderValue = isDraggingSlider ? dragSliderValue : getSliderValue(sizeValue, maxSize);
 
 	const buttonContent = getMobileOrderButtonContent({
 		isConnected,
@@ -309,13 +303,15 @@ export function MobileTradeView({ className }: Props) {
 		<div className={cn("flex flex-col h-full min-h-0 bg-background", className)}>
 			<MarginModeModal
 				open={showMarginDialog}
-				onOpenChange={setShowMarginDialog}
+				onOpenChange={(open) => {
+					if (!open) resetPendingLeverage();
+					setShowMarginDialog(open);
+				}}
 				currentMode={marginMode}
 				currentLeverage={currentLeverage}
 				pendingLeverage={pendingLeverage}
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
-				resetPendingLeverage={resetPendingLeverage}
 				hasPosition={hasPosition}
 				isOnlyIsolated={capabilities.isOnlyIsolated}
 				isUpdating={isSwitchingMode}
@@ -370,10 +366,7 @@ export function MobileTradeView({ className }: Props) {
 								inputSize="xl"
 								placeholder="0.00"
 								value={sizeInput}
-								onChange={(e: ChangeEvent<HTMLInputElement>) => {
-									setHasUserSized(true);
-									setSizeInput(e.target.value);
-								}}
+								onChange={(e: ChangeEvent<HTMLInputElement>) => setSizeInput(e.target.value)}
 								className="flex-1 tabular-nums font-semibold"
 								disabled={isFormDisabled}
 							/>
@@ -539,20 +532,6 @@ function SummaryRow({ label, value, valueClass }: { label: string; value: string
 			<span className={cn("tabular-nums", valueClass ?? "text-fg")}>{value}</span>
 		</div>
 	);
-}
-
-interface SliderValueInput {
-	isDraggingSlider: boolean;
-	dragSliderValue: number;
-	hasUserSized: boolean;
-	sizeValue: number;
-	maxSize: number;
-}
-
-function getDisplaySliderValue(input: SliderValueInput): number {
-	if (input.isDraggingSlider) return input.dragSliderValue;
-	if (!input.hasUserSized || input.sizeValue <= 0) return DEFAULT_SIZE_PERCENT;
-	return getSliderValue(input.sizeValue, input.maxSize);
 }
 
 interface MobileButtonContentInput {

@@ -2,6 +2,7 @@ import { Badge, Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ListIcon, ListNumbersIcon, XIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
+import { useState } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
@@ -21,12 +22,14 @@ import { useExchangeScope } from "@/providers/exchange-scope";
 import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 
 interface Props {
 	className?: string;
 }
+
+type CancelScope = "row" | "all";
 
 export function MobileOrdersTab({ className }: Props) {
 	const { address, isConnected } = useConnection();
@@ -59,9 +62,12 @@ export function MobileOrdersTab({ className }: Props) {
 		reset: resetCancelError,
 	} = useExchange("cancel");
 
+	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
+	const [cancelScope, setCancelScope] = useState<CancelScope | null>(null);
+
 	const openOrders = openOrdersEvent?.orders ?? [];
 
-	function handleCancelOrders(ordersToCancel: OpenOrder[]) {
+	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope) {
 		if (isCancelling || ordersToCancel.length === 0) return;
 
 		const cancels = ordersToCancel.reduce<{ a: number; o: number }[]>((acc, order) => {
@@ -73,12 +79,26 @@ export function MobileOrdersTab({ className }: Props) {
 
 		if (cancels.length === 0) return;
 
+		setCancellingOids(new Set(ordersToCancel.map((order) => order.oid)));
+		setCancelScope(nextScope);
 		resetCancelError();
-		cancelOrders({ cancels });
+		cancelOrders(
+			{ cancels },
+			{
+				onSettled: () => {
+					setCancellingOids(new Set());
+					setCancelScope(null);
+				},
+			},
+		);
+	}
+
+	function handleCancelRow(ordersToCancel: OpenOrder[]) {
+		handleCancel(ordersToCancel, "row");
 	}
 
 	function handleCancelAll() {
-		handleCancelOrders(openOrders);
+		handleCancel(openOrders, "all");
 	}
 
 	const headerCount = isConnected ? openOrders.length : FALLBACK_VALUE_PLACEHOLDER;
@@ -127,7 +147,7 @@ export function MobileOrdersTab({ className }: Props) {
 						onClick={handleCancelAll}
 						disabled={isCancelling || openOrders.length === 0}
 					>
-						{isCancelling ? t`Canceling...` : t`Cancel All`}
+						{cancelScope === "all" ? t`Canceling...` : t`Cancel All`}
 					</Button>
 				</div>
 				{actionError && <div className="px-3 pb-1 text-xs text-error">{actionError}</div>}
@@ -138,8 +158,9 @@ export function MobileOrdersTab({ className }: Props) {
 							order={order}
 							szDecimals={markets.getSzDecimals(order.coin)}
 							kind={markets.getMarket(order.coin)?.kind}
-							isCancelling={isCancelling}
-							onCancel={handleCancelOrders}
+							isCancelling={cancellingOids.has(order.oid)}
+							canCancel={!isCancelling}
+							onCancel={handleCancelRow}
 							onSelectMarket={handleSelectMarket}
 						/>
 					))}
@@ -154,42 +175,51 @@ interface MobileOrderCardProps {
 	szDecimals: number;
 	kind: MarketKind | undefined;
 	isCancelling: boolean;
+	canCancel: boolean;
 	onCancel: (orders: OpenOrder[]) => void;
 	onSelectMarket: (marketName: string, side: Side) => void;
 }
 
-function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSelectMarket }: MobileOrderCardProps) {
+function MobileOrderCard({
+	order,
+	szDecimals,
+	kind,
+	isCancelling,
+	canCancel,
+	onCancel,
+	onSelectMarket,
+}: MobileOrderCardProps) {
 	const typeConfig = getOrderTypeConfig(order);
 	const sideLabel = getSideLabel(order.side, kind);
 	const isLong = order.side === "B";
 	const side: Side = isLong ? "buy" : "sell";
 
 	return (
-		<div className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden">
-			<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
-				<div className={cn("absolute left-0 top-0 bottom-0 w-px", isLong ? "bg-market-up" : "bg-market-down")} />
+		<div className="rounded-xs border border-stroke-weak bg-surface overflow-hidden">
+			<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
 				<div className="flex items-center gap-2">
-					<Button variant="ghost" intent="neutral" size="sm" onClick={() => onSelectMarket(order.coin, side)}>
-						<AssetDisplay coin={order.coin} nameClassName="text-sm font-semibold" />
-					</Button>
+					<AssetBadge
+						coin={order.coin}
+						side={side}
+						onClick={() => onSelectMarket(order.coin, side)}
+						nameClassName="text-sm"
+					/>
 					<Badge tone={isLong ? "success" : "error"} size="xs">
 						{sideLabel}
 					</Badge>
 				</div>
 				<div className="flex items-center gap-2">
-					<span
-						className={cn("text-2xs px-1.5 py-0.5 rounded-xs uppercase whitespace-nowrap", typeConfig.class)}
-						title={typeConfig.fullLabel}
-					>
-						{typeConfig.shortLabel}
+					<span className="inline-flex items-baseline gap-1 text-xs whitespace-nowrap" title={typeConfig.fullLabel}>
+						{typeConfig.triggerLabel ? (
+							<span className={cn("font-medium", typeConfig.triggerClass)}>{typeConfig.triggerLabel}</span>
+						) : null}
+						<span className="text-fg">{typeConfig.executionLabel}</span>
 					</span>
-					{order.reduceOnly && (
-						<span className="text-xs px-1.5 py-0.5 rounded-xs bg-brand-soft text-brand uppercase">{t`RO`}</span>
-					)}
+					{order.reduceOnly && <span className="text-2xs uppercase text-fg-muted">{t`RO`}</span>}
 				</div>
 			</div>
 
-			<div className="grid grid-cols-3 divide-x divide-stroke-weak/40">
+			<div className="grid grid-cols-3 divide-x divide-stroke-weak">
 				<MetricCell
 					label={t`Price`}
 					value={isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals })}
@@ -215,7 +245,7 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 					size="sm"
 					className="touch-target"
 					onClick={() => onCancel([order])}
-					disabled={isCancelling}
+					disabled={!canCancel}
 					iconLeft={isCancelling ? <Spinner className="size-3" /> : <XIcon className="size-3.5" />}
 				>
 					{t`Cancel`}

@@ -3,15 +3,18 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, TerminalIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
+import { Suspense } from "react";
 import { useConnection } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
 import { cn } from "@/lib/cn";
+import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { ThemeToggle } from "./theme-toggle";
-import { UserMenu } from "./user-menu";
+
+const UserMenu = createLazyComponent(() => import("./user-menu"), "UserMenu");
 
 function getScopeAccentClass(scope: string): string {
 	switch (scope) {
@@ -96,7 +99,9 @@ export function TopNav() {
 						<Trans>Deposit</Trans>
 					</Button>
 				)}
-				<UserMenu />
+				<Suspense fallback={<UserMenuSkeleton />}>
+					<UserMenu />
+				</Suspense>
 				<ThemeToggle />
 				<ButtonIcon
 					variant="ghost"
@@ -110,4 +115,8 @@ export function TopNav() {
 			</div>
 		</header>
 	);
+}
+
+function UserMenuSkeleton() {
+	return <div className={cn(APP_BAR_BUTTON_HEIGHT_CLASS, "h-8 w-32 shrink-0 rounded-8 bg-surface animate-pulse")} />;
 }

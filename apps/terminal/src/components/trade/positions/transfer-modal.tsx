@@ -1,11 +1,11 @@
 import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { useConnection } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
-import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
+import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
 import { getAvailableFromTotals, getPerpAvailable, getSpotBalance } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
@@ -23,34 +23,44 @@ interface Props {
 }
 
 export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" }: Props) {
+	return (
+		<Modal open={open} onOpenChange={onOpenChange}>
+			<ModalPopup size="sm">
+				<TransferModalBody
+					key={`${initialDirection}:${open ? "open" : "closed"}`}
+					onOpenChange={onOpenChange}
+					initialDirection={initialDirection}
+				/>
+			</ModalPopup>
+		</Modal>
+	);
+}
+
+interface BodyProps {
+	onOpenChange: (open: boolean) => void;
+	initialDirection: TransferDirection;
+}
+
+function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 	const [direction, setDirection] = useState<TransferDirection>(initialDirection);
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
-	const [prevOpen, setPrevOpen] = useState(open);
-
-	if (open !== prevOpen) {
-		setPrevOpen(open);
-		if (open) setDirection(initialDirection);
-	}
 
 	const { address } = useConnection();
 	const { getToken } = useSpotTokens();
 	const { mutateAsync: sendAsset, isPending } = useExchange("sendAsset");
 	const { perpSummary, spotBalances } = useDefaultDexBalances();
 
-	const usdcTokenInfo = useMemo(() => getToken(DEFAULT_QUOTE_TOKEN), [getToken]);
+	const usdcTokenInfo = getToken(DEFAULT_QUOTE_TOKEN);
 	const usdcTokenId = usdcTokenInfo ? formatTokenId(usdcTokenInfo) : "";
 
-	const usdcDecimals = useMemo(() => getToken(DEFAULT_QUOTE_TOKEN)?.weiDecimals ?? 2, [getToken]);
+	const usdcDecimals = getTokenTransferDecimals(usdcTokenInfo);
 
-	const spotUsdcBal = useMemo(() => getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN), [spotBalances]);
-	const availableBalanceValue = useMemo(() => {
-		if (direction === "toSpot") {
-			return getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed);
-		}
-
-		return getAvailableFromTotals(spotUsdcBal?.total, spotUsdcBal?.hold);
-	}, [direction, perpSummary, spotUsdcBal]);
+	const spotUsdcBal = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
+	const availableBalanceValue =
+		direction === "toSpot"
+			? getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed)
+			: getAvailableFromTotals(spotUsdcBal?.total, spotUsdcBal?.hold);
 
 	const isValidAmount = isAmountWithinBalance(amount, availableBalanceValue) && !!address && !!usdcTokenId;
 
@@ -62,7 +72,7 @@ export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" 
 		setAmount("");
 	}
 
-	const handleTransfer = useCallback(async () => {
+	async function handleTransfer() {
 		if (!isValidAmount || isPending || !address) return;
 
 		setError(null);
@@ -80,7 +90,7 @@ export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" 
 			const message = err instanceof Error ? err.message : t`Transfer failed`;
 			setError(message);
 		}
-	}, [address, amount, direction, isValidAmount, isPending, onOpenChange, sendAsset, usdcTokenId]);
+	}
 
 	function handleAmountChange(value: string) {
 		setAmount(limitDecimalInput(value, usdcDecimals));
@@ -90,96 +100,86 @@ export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" 
 		setAmount(floorToString(availableBalanceValue, usdcDecimals));
 	}
 
-	function handleOpenChange(newOpen: boolean) {
-		if (!newOpen) {
-			setAmount("");
-			setError(null);
-		}
-		onOpenChange(newOpen);
-	}
-
 	return (
-		<Modal open={open} onOpenChange={handleOpenChange}>
-			<ModalPopup size="sm">
-				<ModalHeader>
-					<ModalTitle>{t`Transfer USDC`}</ModalTitle>
-					<ModalDescription>{t`Move USDC between your Perp and Spot accounts.`}</ModalDescription>
-				</ModalHeader>
+		<>
+			<ModalHeader>
+				<ModalTitle>{t`Transfer USDC`}</ModalTitle>
+				<ModalDescription>{t`Move USDC between your Perp and Spot accounts.`}</ModalDescription>
+			</ModalHeader>
 
-				<ModalContent>
-					<div className="space-y-4">
-						<div className="flex items-center justify-center gap-3 py-2">
-							<div className="flex flex-col items-center">
-								<span
-									className={cn(
-										"text-xs px-2 py-1 uppercase font-medium",
-										direction === "toSpot" ? "bg-brand/20 text-brand" : "bg-warning/20 text-warning",
-									)}
-								>
-									{fromLabel}
-								</span>
-							</div>
-							<button
-								type="button"
-								onClick={handleFlip}
-								aria-label={t`Flip transfer direction`}
-								className="p-1.5 rounded-8 hover:bg-surface/50 transition-colors text-fg-muted hover:text-brand"
+			<ModalContent>
+				<div className="space-y-4">
+					<div className="flex items-center justify-center gap-3 py-2">
+						<div className="flex flex-col items-center">
+							<span
+								className={cn(
+									"text-xs px-2 py-1 uppercase font-medium",
+									direction === "toSpot" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
+								)}
 							>
-								<ArrowsLeftRightIcon className="size-4" />
-							</button>
-							<div className="flex flex-col items-center">
-								<span
-									className={cn(
-										"text-xs px-2 py-1 uppercase font-medium",
-										direction === "toPerp" ? "bg-brand/20 text-brand" : "bg-warning/20 text-warning",
-									)}
-								>
-									{toLabel}
-								</span>
-							</div>
+								{fromLabel}
+							</span>
 						</div>
-
-						<NumberInput
-							label={t`Amount`}
-							labelValue={
-								<>
-									Available:{" "}
-									<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-										{floorToString(availableBalanceValue, usdcDecimals)} USDC
-									</span>
-								</>
-							}
-							onLabelValueClick={handleMaxClick}
-							placeholder="0.00"
-							value={amount}
-							onChange={(e) => handleAmountChange(e.target.value)}
-							className={cn(
-								"w-full tabular-nums",
-								exceedsBalance(amount, availableBalanceValue) &&
-									"border-stroke-error-strong focus:border-stroke-error-strong",
-							)}
-						/>
-
-						{error && (
-							<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error">
-								<WarningCircleIcon className="size-3.5 shrink-0" />
-								<span className="flex-1">{error}</span>
-							</div>
-						)}
-
-						<Button
-							variant="filled"
-							intent="neutral"
-							onClick={handleTransfer}
-							disabled={!isValidAmount || isPending}
-							className="w-full"
+						<button
+							type="button"
+							onClick={handleFlip}
+							aria-label={t`Flip transfer direction`}
+							className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-brand"
 						>
-							{isPending && <SpinnerGapIcon className="size-3.5 animate-spin mr-2" />}
-							{isPending ? t`Transferring...` : t`Transfer`}
-						</Button>
+							<ArrowsLeftRightIcon className="size-4" />
+						</button>
+						<div className="flex flex-col items-center">
+							<span
+								className={cn(
+									"text-xs px-2 py-1 uppercase font-medium",
+									direction === "toPerp" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
+								)}
+							>
+								{toLabel}
+							</span>
+						</div>
 					</div>
-				</ModalContent>
-			</ModalPopup>
-		</Modal>
+
+					<NumberInput
+						label={t`Amount`}
+						labelValue={
+							<>
+								{t`Available`}:{" "}
+								<span className="underline decoration-dashed underline-offset-2 decoration-stroke-weak">
+									{floorToString(availableBalanceValue, usdcDecimals)} USDC
+								</span>
+							</>
+						}
+						onLabelValueClick={handleMaxClick}
+						placeholder="0.00"
+						value={amount}
+						onChange={(e) => handleAmountChange(e.target.value)}
+						className={cn(
+							"w-full tabular-nums",
+							exceedsBalance(amount, availableBalanceValue) &&
+								"border-stroke-error-strong focus:border-stroke-error-strong",
+						)}
+					/>
+
+					{error && (
+						<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-weak text-xs text-error">
+							<WarningCircleIcon className="size-3.5 shrink-0" />
+							<span className="flex-1">{error}</span>
+						</div>
+					)}
+
+					<Button
+						variant="filled"
+						intent="neutral"
+						onClick={handleTransfer}
+						disabled={!isValidAmount || isPending}
+						className="w-full"
+					>
+						{isPending && <SpinnerGapIcon className="size-3.5 animate-spin mr-2" />}
+						{isPending ? t`Transferring...` : t`Transfer`}
+					</Button>
+				</div>
+			</ModalContent>
+		</>
 	);
 }

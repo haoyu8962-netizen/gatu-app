@@ -117,11 +117,8 @@ export function MobileBalancesTab({ className }: Props) {
 		const pnlData = getPnl(row);
 
 		return (
-			<div
-				key={`${row.type}-${row.asset}`}
-				className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden"
-			>
-				<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
+			<div key={`${row.type}-${row.asset}`} className="rounded-xs border border-stroke-weak bg-surface overflow-hidden">
+				<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
 					<AssetDisplay coin={row.asset} nameClassName="text-sm font-semibold" />
 					<div className="text-right">
 						<div className="text-sm font-semibold tabular-nums text-fg">
@@ -137,7 +134,7 @@ export function MobileBalancesTab({ className }: Props) {
 					</div>
 				</div>
 
-				<div className="grid grid-cols-2 divide-x divide-stroke-weak/40">
+				<div className="grid grid-cols-2 divide-x divide-stroke-weak">
 					<MetricCell label={t`Available`} value={formatToken(row.available, decimals)} />
 					<MetricCell label={t`Total`} value={formatToken(row.total, decimals)} />
 				</div>

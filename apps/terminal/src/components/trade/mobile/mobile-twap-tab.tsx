@@ -13,7 +13,7 @@ import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 
 interface Props {
@@ -77,27 +77,19 @@ export function MobileTwapTab({ className }: Props) {
 						const totalMinutes = state.minutes;
 
 						return (
-							<div key={twapId} className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden">
-								<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
-									<div
-										className={cn("absolute left-0 top-0 bottom-0 w-px", isBuy ? "bg-market-up" : "bg-market-down")}
-									/>
-									<Button
-										variant="ghost"
-										intent="neutral"
-										size="sm"
-										onClick={() => setSelectedMarket(scope, state.coin)}
-									>
-										<AssetDisplay
+							<div key={twapId} className="rounded-xs border border-stroke-weak bg-surface overflow-hidden">
+								<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
+									<div className="flex items-center gap-2">
+										<AssetBadge
 											coin={state.coin}
-											nameClassName="text-sm font-semibold"
-											subtitle={
-												<span className={cn("text-xs font-medium uppercase", isBuy ? "text-success" : "text-error")}>
-													{isBuy ? t`Buy` : t`Sell`}
-												</span>
-											}
+											side={isBuy ? "buy" : "sell"}
+											onClick={() => setSelectedMarket(scope, state.coin)}
+											nameClassName="text-sm"
 										/>
-									</Button>
+										<span className={cn("text-2xs font-medium uppercase", isBuy ? "text-success" : "text-error")}>
+											{isBuy ? t`Buy` : t`Sell`}
+										</span>
+									</div>
 									<div className="flex items-center gap-2">
 										{state.reduceOnly && (
 											<span className="text-xs px-1.5 py-0.5 rounded-xs bg-brand-soft text-brand uppercase">
@@ -120,7 +112,7 @@ export function MobileTwapTab({ className }: Props) {
 									</div>
 								</div>
 
-								<div className="grid grid-cols-3 divide-x divide-stroke-weak/40">
+								<div className="grid grid-cols-3 divide-x divide-stroke-weak">
 									<MetricCell label={t`Size`} value={formatNumber(totalSize, szDecimals)} />
 									<MetricCell
 										label={t`Executed`}
