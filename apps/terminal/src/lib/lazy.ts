@@ -1,17 +1,16 @@
 import { lazyRouteComponent } from "@tanstack/react-router";
 
 /**
- * Creates a lazy-loaded component with preloading support.
- * Uses TanStack Router's lazyRouteComponent for better integration with the framework.
+ * Lazy-loaded component with preloading support. Uses TanStack Router's
+ * lazyRouteComponent which defers evaluation on the server too — `React.lazy()`
+ * does NOT (Vite's SSR runner walks the full import chain), so prefer this
+ * helper for SSR-unsafe modules.
  *
- * Benefits over React.lazy():
- * - `.preload()` method for prefetching on hover/intent
- * - Auto-reload on stale builds (module not found recovery)
- * - Uses React 19's React.use() for suspense
+ * Adds `.preload()` for hover prefetch, recovers from stale-build module-not-
+ * found errors, and uses React 19's `React.use()` under the hood.
  *
  * @example
  * const Chart = createLazyComponent(() => import("./chart"), "Chart");
- * // Preload on hover
  * <button onMouseEnter={() => Chart.preload()}>Show Chart</button>
  */
 export function createLazyComponent<T extends Record<string, any>, K extends keyof T>(

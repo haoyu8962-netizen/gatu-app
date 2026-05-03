@@ -7,6 +7,7 @@ import { candleEventToKLineData, candlesToKLineData } from "@/lib/chart/candle";
 import { formatShortDate, formatTime, formatTooltipDate } from "@/lib/chart/format";
 import { DEFAULT_INTERVAL } from "@/lib/chart/kline-config";
 import { buildKlineStyles } from "@/lib/chart/kline-styles";
+import { registerLiquidationLineOverlay } from "@/lib/chart/liquidation-line-overlay";
 import { registerOrderLineOverlay } from "@/lib/chart/order-line-overlay";
 import { registerPositionLineOverlay } from "@/lib/chart/position-line-overlay";
 import { getInfoClient, useSubscription } from "@/lib/hyperliquid";
@@ -17,14 +18,48 @@ import { useKlinePositionOverlays } from "./use-kline-position-overlays";
 
 interface Props {
 	symbol?: string;
+	positionDex?: string;
 	theme?: "light" | "dark";
 	yAxisInside?: boolean;
 	onChartSourceChange?: (source: ChartSource) => void;
 	tradingViewIntentHandlers?: ChartSourceToggleIntentHandlers;
 }
 
+const CANDLE_FETCH_RETRY_DELAYS_MS = [750, 2_000] as const;
+
+type CandleSnapshotParams = Parameters<ReturnType<typeof getInfoClient>["candleSnapshot"]>[0];
+
+function delay(ms: number) {
+	return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function logRecoverableCandleFetchFailure(label: string, err: unknown) {
+	if (import.meta.env.DEV) {
+		console.warn(`kline ${label} candle fetch failed`, err);
+	}
+}
+
+async function fetchCandlesWithRetry(params: CandleSnapshotParams, shouldContinue: () => boolean) {
+	let lastError: unknown;
+
+	for (const retryDelayMs of [0, ...CANDLE_FETCH_RETRY_DELAYS_MS]) {
+		if (!shouldContinue()) return [];
+		if (retryDelayMs > 0) await delay(retryDelayMs);
+		if (!shouldContinue()) return [];
+
+		try {
+			return await getInfoClient().candleSnapshot(params);
+		} catch (err) {
+			lastError = err;
+		}
+	}
+
+	throw lastError;
+}
+
 export function KlineChart({
 	symbol = "",
+	positionDex,
 	theme,
 	yAxisInside = false,
 	onChartSourceChange,
@@ -43,9 +78,12 @@ export function KlineChart({
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container || !symbol) return;
+		let disposed = false;
+		void theme;
 
 		registerOrderLineOverlay();
 		registerPositionLineOverlay();
+		registerLiquidationLineOverlay();
 
 		const chart = init(container, {
 			customApi: {
@@ -73,16 +111,18 @@ export function KlineChart({
 				const endTime = data.timestamp;
 				const startTime = endTime - INITIAL_CANDLE_COUNT * interval.barMs;
 
-				getInfoClient()
-					.candleSnapshot({
+				fetchCandlesWithRetry(
+					{
 						coin: symbol,
 						interval: interval.candleInterval,
 						startTime,
 						endTime,
-					})
+					},
+					() => !disposed && chartRef.current === chart,
+				)
 					.then((candles) => callback(candlesToKLineData(candles), candles.length > 0))
 					.catch((err) => {
-						console.error("kline forward-load failed", err);
+						logRecoverableCandleFetchFailure("forward-load", err);
 						callback([], false);
 					});
 			}
@@ -95,24 +135,32 @@ export function KlineChart({
 		const endTime = Date.now();
 		const startTime = endTime - INITIAL_CANDLE_COUNT * activeInterval.barMs;
 
-		getInfoClient()
-			.candleSnapshot({
+		fetchCandlesWithRetry(
+			{
 				coin: symbol,
 				interval: activeInterval.candleInterval,
 				startTime,
 				endTime,
-			})
+			},
+			() => !disposed && chartRef.current === chart,
+		)
 			.then((candles) => {
 				if (chartRef.current === chart) {
 					chart.applyNewData(candlesToKLineData(candles), true);
 				}
 			})
-			.catch((err) => console.error("kline initial candle fetch failed", err));
+			.catch((err) => {
+				logRecoverableCandleFetchFailure("initial", err);
+				if (chartRef.current === chart) {
+					chart.applyNewData([], false);
+				}
+			});
 
 		const ro = new ResizeObserver(() => chart.resize());
 		ro.observe(container);
 
 		return () => {
+			disposed = true;
 			ro.disconnect();
 			chartRef.current = null;
 			candleBufferRef.current = [];
@@ -121,6 +169,7 @@ export function KlineChart({
 	}, [symbol, activeInterval, activeChartType, yAxisInside, theme]);
 
 	useEffect(() => {
+		let disposed = false;
 		isHiddenRef.current = document.visibilityState === "hidden";
 		candleBufferRef.current = [];
 
@@ -149,19 +198,22 @@ export function KlineChart({
 				const interval = intervalRef.current;
 				const endTime = Date.now();
 				const startTime = endTime - INITIAL_CANDLE_COUNT * interval.barMs;
-				getInfoClient()
-					.candleSnapshot({ coin: symbol, interval: interval.candleInterval, startTime, endTime })
+				fetchCandlesWithRetry(
+					{ coin: symbol, interval: interval.candleInterval, startTime, endTime },
+					() => !disposed && chartRef.current === chart,
+				)
 					.then((candles) => {
 						if (chartRef.current === chart) {
 							chart.applyNewData(candlesToKLineData(candles), true);
 						}
 					})
-					.catch((err) => console.error("kline tab-restore refetch failed", err));
+					.catch((err) => logRecoverableCandleFetchFailure("tab-restore", err));
 			}
 		}
 
 		document.addEventListener("visibilitychange", handleVisibility);
 		return () => {
+			disposed = true;
 			document.removeEventListener("visibilitychange", handleVisibility);
 			candleBufferRef.current = [];
 		};
@@ -189,7 +241,7 @@ export function KlineChart({
 	}, [candleData.data]);
 
 	useKlineOrderOverlays({ chartRef, symbol });
-	useKlinePositionOverlays({ chartRef, symbol });
+	useKlinePositionOverlays({ chartRef, symbol, dex: positionDex });
 
 	return (
 		<div className="flex flex-col h-full">
