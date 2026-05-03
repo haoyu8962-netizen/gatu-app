@@ -1,4 +1,5 @@
-import { TOKEN_ICON_BASE_URL } from "@/config/app";
+import type { MarketSpotToken as SpotToken } from "@hypeterminal/hl-react";
+import { DEFAULT_QUOTE_TOKEN, TOKEN_ICON_BASE_URL, USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { ASSET_REPLACEMENTS, categoryMapping, type MarketCategory, NO_SPOT_PREFIX_ASSETS } from "@/config/tokens";
 import { PERP_MARKET_NAME_SEPARATOR, SPOT_MARKET_NAME_SEPARATOR } from "./display";
 import type { MarketKind } from "./types";
@@ -44,6 +45,11 @@ export function getIconUrlFromMarketName(tokenName: string, kind?: MarketKind) {
 		return `${TOKEN_ICON_BASE_URL}/${tokenName}_spot.svg`;
 	}
 	return `${TOKEN_ICON_BASE_URL}/${tokenName}.svg`;
+}
+
+export function getTokenTransferDecimals(token: SpotToken | undefined): number {
+	if (token?.name === DEFAULT_QUOTE_TOKEN) return USDC_TRANSFER_DECIMALS;
+	return token?.transferDecimals ?? USDC_TRANSFER_DECIMALS;
 }
 
 export function isTokenInCategory(token: string, category: MarketCategory) {

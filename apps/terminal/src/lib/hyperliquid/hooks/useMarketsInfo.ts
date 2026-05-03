@@ -1,5 +1,4 @@
-import { useSubscription } from "@hypeterminal/hl-react";
-import type { BuilderPerpMarket, PerpMarket, SpotMarket } from "@hypeterminal/hl-react/markets/types";
+import { type BuilderPerpMarket, type PerpMarket, type SpotMarket, useSubscription } from "@hypeterminal/hl-react";
 import { useEffect, useMemo, useState } from "react";
 import { STORAGE_KEYS } from "@/config/app";
 import { MARKETS_STATS_TTL_MS } from "@/config/time";

@@ -1,12 +1,12 @@
-import { useInfo } from "@hypeterminal/hl-react";
-import type {
-	BuilderPerpMarket,
-	Markets,
-	PerpMarket,
-	SpotMarket,
-	SpotToken,
-	UnifiedMarket,
-} from "@hypeterminal/hl-react/markets/types";
+import {
+	type BuilderPerpMarket,
+	type Markets,
+	type PerpMarket,
+	type SpotMarket,
+	type MarketSpotToken as SpotToken,
+	type UnifiedMarket,
+	useInfo,
+} from "@hypeterminal/hl-react";
 import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { getIconUrlFromMarketName, getTokenDisplayName, getUnderlyingAsset } from "@/domain/market/tokens";
