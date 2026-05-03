@@ -1,15 +1,18 @@
 import { Divider } from "@hypeterminal/ui";
+import { Suspense } from "react";
 import { useDefaultLayout } from "react-resizable-panels";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { PANEL_LAYOUT } from "@/config/layout";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { TokenSelector } from "../chart/token-selector";
 import { FavoritesStrip } from "../header/favorites-strip";
 import { MarketOverview } from "../market-overview";
-import { AnalysisSection } from "./analysis-section";
-import { TradeSidebar } from "./trade-sidebar";
+
+const AnalysisSection = createLazyComponent(() => import("./analysis-section"), "AnalysisSection");
+const TradeSidebar = createLazyComponent(() => import("./trade-sidebar"), "TradeSidebar");
 
 const { id, analysis, sidebar } = PANEL_LAYOUT.MAIN;
 
@@ -39,15 +42,38 @@ export function MainWorkspace() {
 				<ResizablePanel defaultSize={analysis.defaultSize} minSize={analysis.minSize}>
 					<div className="h-full flex flex-col bg-surface">
 						<div className="flex-1 min-h-0">
-							<AnalysisSection />
+							<Suspense fallback={<PanelSkeleton />}>
+								<AnalysisSection />
+							</Suspense>
 						</div>
 					</div>
 				</ResizablePanel>
 				<ResizableHandle withHandle />
 				<ResizablePanel defaultSize={sidebar.defaultSize} minSize={sidebar.minSize}>
-					<TradeSidebar />
+					<Suspense fallback={<SidebarSkeleton />}>
+						<TradeSidebar />
+					</Suspense>
 				</ResizablePanel>
 			</ResizablePanelGroup>
+		</div>
+	);
+}
+
+function PanelSkeleton() {
+	return (
+		<div className="h-full min-h-0 bg-surface p-2">
+			<div className="h-full rounded-xs bg-fill-weak animate-pulse" />
+		</div>
+	);
+}
+
+function SidebarSkeleton() {
+	return (
+		<div className="h-full min-h-0 bg-surface p-3 space-y-3">
+			<div className="h-8 rounded-xs bg-fill-weak animate-pulse" />
+			<div className="h-24 rounded-xs bg-fill-weaker animate-pulse" />
+			<div className="h-48 rounded-xs bg-fill-weaker animate-pulse" />
+			<div className="h-20 rounded-xs bg-fill-weaker animate-pulse" />
 		</div>
 	);
 }
