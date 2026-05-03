@@ -14,6 +14,19 @@ One file per blog idea. Each file is the full brief: angle, evidence, sources, d
 - **Done = update status to `published`** and append the live URL inside the file. Do not delete or move.
 - **Research lives inside the file**, not in separate research docs. If a piece needs deep external data, cache raw outputs under `tmp/dataforseo/` and link from the file.
 
+## Research workflow
+
+When picking up a brief:
+
+1. **Read the file's existing `Sources` and `Notes` sections.** Don't re-research what's already locked.
+2. **Pull SEO + search-demand data via the `/dataforseo` skill.** Use it for:
+   - **SERP** (`/v3/serp/google/organic/live/advanced`) — see who's already ranking for the topic, what angles they took, what's missing. Cache to `tmp/dataforseo/<slug>-serp.json`.
+   - **Keyword volume** (`/v3/keywords_data/google_ads/search_volume/live`) — decide whether to optimize the title for search vs. for X/aggregator pickup. Cache to `tmp/dataforseo/<slug>-volume.json`.
+   - **Google Trends** (`/v3/keywords_data/google_trends/explore/live`) — momentum check on a narrative.
+3. **Fetch primary sources** (Tokenomist, DefiLlama, CoinGecko, on-chain trackers) via `WebFetch`. Quote numbers with the date you sourced them.
+4. **Lock numbers in the file** under a `Locked numbers (sourced YYYY-MM-DD)` heading before drafting. Once they're frozen, the draft can be written without re-checking.
+5. **Draft inline** under `Notes / draft scratch`. Keep iterations in the same file — `Draft v1`, `Draft v2`. Don't spawn separate doc files.
+
 ## Listing the backlog
 
 ```bash
