@@ -1,7 +1,6 @@
 import {
 	type KeyboardEvent,
 	type PointerEvent as ReactPointerEvent,
-	useCallback,
 	useEffect,
 	useLayoutEffect,
 	useRef,
@@ -26,6 +25,8 @@ export function AnalysisSection({ onDesiredHeightChange }: AnalysisSectionProps)
 	const initializedRef = useRef(false);
 	const positionsMinHeightPx = isConnected ? positions.minHeightPx : positions.disconnectedMinHeightPx;
 	const [chartHeightPx, setChartHeightPx] = useState(chart.minHeightPx);
+	const [containerHeightPx, setContainerHeightPx] = useState<number>(PANEL_LAYOUT.ANALYSIS.minHeightPx);
+	const maxChartHeightPx = Math.max(chart.minHeightPx, containerHeightPx - positionsMinHeightPx);
 
 	useLayoutEffect(() => {
 		if (initializedRef.current) return;
@@ -35,9 +36,22 @@ export function AnalysisSection({ onDesiredHeightChange }: AnalysisSectionProps)
 		const availableHeight = rootRef.current?.getBoundingClientRect().height ?? PANEL_LAYOUT.ANALYSIS.minHeightPx;
 		const initialChartHeight = Math.max(chart.minHeightPx, storedChartHeight ?? availableHeight - positionsMinHeightPx);
 
+		setContainerHeightPx(availableHeight);
 		setChartHeightPx(initialChartHeight);
 		onDesiredHeightChange?.(initialChartHeight + positionsMinHeightPx);
 	}, [onDesiredHeightChange, positionsMinHeightPx]);
+
+	useEffect(() => {
+		const root = rootRef.current;
+		if (!root || typeof ResizeObserver === "undefined") return;
+
+		const observer = new ResizeObserver((entries) => {
+			const entry = entries[0];
+			if (entry) setContainerHeightPx(entry.contentRect.height);
+		});
+		observer.observe(root);
+		return () => observer.disconnect();
+	}, []);
 
 	useLayoutEffect(() => {
 		onDesiredHeightChange?.(chartHeightPx + positionsMinHeightPx);
@@ -53,9 +67,10 @@ export function AnalysisSection({ onDesiredHeightChange }: AnalysisSectionProps)
 		};
 	}, []);
 
-	const resizeChartTo = useCallback((nextHeightPx: number) => {
-		setChartHeightPx(Math.max(chart.minHeightPx, Math.round(nextHeightPx)));
-	}, []);
+	function resizeChartTo(nextHeightPx: number) {
+		const clamped = Math.min(maxChartHeightPx, Math.max(chart.minHeightPx, Math.round(nextHeightPx)));
+		setChartHeightPx(clamped);
+	}
 
 	function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
 		if (event.button !== 0) return;
@@ -120,6 +135,7 @@ export function AnalysisSection({ onDesiredHeightChange }: AnalysisSectionProps)
 				aria-orientation="horizontal"
 				aria-label="Resize chart and positions"
 				aria-valuemin={chart.minHeightPx}
+				aria-valuemax={maxChartHeightPx}
 				aria-valuenow={chartHeightPx}
 				tabIndex={0}
 				onPointerDown={handlePointerDown}
