@@ -4,7 +4,15 @@ import { WS_RELIABILITY_LIMITS } from "./reliability";
 export type HealthAlertSeverity = "warning" | "critical";
 
 export type HealthAlert = {
-	id: "heap-growth" | "heap-pressure" | "reconnect-storm" | "listener-growth" | "stale-streams";
+	id:
+		| "heap-growth"
+		| "heap-pressure"
+		| "reconnect-storm"
+		| "listener-mismatch"
+		| "listener-high-refcount"
+		| "listener-ref-surplus"
+		| "listener-key-limit"
+		| "stale-streams";
 	severity: HealthAlertSeverity;
 	message: string;
 	value: number;
@@ -224,7 +232,7 @@ export function createHealthReport(store: HyperliquidStore): HealthReport {
 	const refSurplus = metrics.totalRefCount - metrics.runtimeSubscriptions;
 	if (metrics.runtimeSubscriptions !== metrics.activeSubscriptions) {
 		alerts.push({
-			id: "listener-growth",
+			id: "listener-mismatch",
 			severity: "warning",
 			message: "Tracked subscription entries differ from websocket runtime entries.",
 			value: Math.abs(metrics.runtimeSubscriptions - metrics.activeSubscriptions),
@@ -234,7 +242,7 @@ export function createHealthReport(store: HyperliquidStore): HealthReport {
 
 	if (metrics.maxRefCount >= HEALTH_LIMITS.refCountWarning) {
 		alerts.push({
-			id: "listener-growth",
+			id: "listener-high-refcount",
 			severity: "warning",
 			message: "A websocket subscription has more listeners than expected.",
 			value: metrics.maxRefCount,
@@ -244,7 +252,7 @@ export function createHealthReport(store: HyperliquidStore): HealthReport {
 
 	if (refSurplus >= HEALTH_LIMITS.refSurplusWarning) {
 		alerts.push({
-			id: "listener-growth",
+			id: "listener-ref-surplus",
 			severity: "warning",
 			message: "Total websocket listener references exceed runtime subscriptions by a large margin.",
 			value: refSurplus,
@@ -256,7 +264,7 @@ export function createHealthReport(store: HyperliquidStore): HealthReport {
 		WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys * HEALTH_LIMITS.trackedKeyWarningRatio;
 	if (metrics.activeSubscriptions >= trackedKeyWarningThreshold) {
 		alerts.push({
-			id: "listener-growth",
+			id: "listener-key-limit",
 			severity:
 				metrics.activeSubscriptions >= WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys ? "critical" : "warning",
 			message: "The active websocket subscription key count is near the tracked-key limit.",

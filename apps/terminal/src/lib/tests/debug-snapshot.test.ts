@@ -120,7 +120,7 @@ describe("debug snapshot", () => {
 		expect(report?.metrics.maxRefCount).toBe(8);
 		expect(report?.metrics.maxReconnectAttempts).toBe(12);
 		expect(report?.alerts.map((alert) => alert.id)).toEqual(
-			expect.arrayContaining(["listener-growth", "reconnect-storm"]),
+			expect.arrayContaining(["listener-high-refcount", "reconnect-storm"]),
 		);
 
 		for (let i = 0; i < 8; i++) {

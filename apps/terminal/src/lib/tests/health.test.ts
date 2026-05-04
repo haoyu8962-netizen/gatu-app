@@ -74,7 +74,7 @@ describe("websocket health report", () => {
 		const trackedKeyAlert = report.alerts.find((alert) => alert.message.includes("tracked-key limit"));
 
 		expect(trackedKeyAlert).toMatchObject({
-			id: "listener-growth",
+			id: "listener-key-limit",
 			severity: "warning",
 			value: warningThreshold,
 			threshold: warningThreshold,
