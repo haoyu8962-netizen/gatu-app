@@ -47,7 +47,7 @@ deadline: 2026-05-06
 - **% of circulating:** 4.16% (circ = 238.39M)
 - **Recipient:** 100% core contributors. Not investors, not foundation, not community.
 - **Pre-positioning:** 422k HYPE (~4.25% of the cliff, ~$17.3M) was unstaked ahead of the unlock per HyperliquidNews on-chain tracking. The other 95.75% remains staked or never moved.
-- **Buyback flow:** Hyperliquid generated $2.05M in fees on Apr 17. 100% routed to buyback+burn. April 17 example: 43,321 HYPE bought back, 26,837 staking rewards minted, **net –16,484 HYPE/day** = ~5.93M HYPE/year deflation. Cumulative burns to date: 43.4M HYPE.
+- **Buyback flow:** 100% of fees routed to buyback+burn. DefiLlama (verified 2026-05-04): 30d fees $56.2M = **$1.87M/day mean**, 7d fees $11.45M = $1.64M/day, last 24h $1.08M. At $41.83 spot, 30d-mean fees = ~44.7k HYPE/day of structural bid. Net of staking emissions (~27k/day): **~17.7k HYPE/day removed from float, ~6.4M HYPE/year deflation.** Cumulative burns to date: 43.4M HYPE. Note: April 17 anchor of $2.05M/day was a high-volume day, not the run-rate.
 - **HIP-3 deployer stake:** 500k HYPE per perp DEX. The unlock equals ~20 deployer slots if every contributor token were redeployed.
 
 ---
@@ -60,22 +60,22 @@ deadline: 2026-05-06
 
 **Why 422k is the only signal worth watching.** Unstaking on Hyperliquid takes 7 days. Anyone planning to sell into the cliff had to start the clock by the end of April. So the wallets we can see right now — 422k HYPE, ~$17M, ~4.25% of the unlock — are the *upper bound* of what hits CEX order books in the first week. The other 9.5M sits in staking contracts or contributor wallets that haven't moved. That doesn't mean it never sells. It means the often-cited "$407M cliff" reads more like "$17M known liquid + $390M optional."
 
-**The buy side, sized.** Hyperliquid's fee→buyback flow is roughly $2M/day going entirely to HYPE bids. At $41, that's ~49k HYPE/day of structural demand. Net of staking emissions (~27k/day), that's –16k HYPE/day of float, or 5.93M HYPE/year removed.
+**The buy side, sized.** Hyperliquid's fee→buyback flow is $1.87M/day on a 30-day mean (DefiLlama, $56.2M over 30d), 100% routed to HYPE bids. At $41.83, that's ~45k HYPE/day of structural demand. Net of staking emissions (~27k/day), that's –18k HYPE/day of float, ~6.4M HYPE/year removed.
 
 Now run the unlock against that:
 
 | Sell-through | HYPE/day sold over 30d | Buyback/day | Net pressure |
 |---|---|---|---|
-| 5% (only the pre-unstaked 422k) | ~14k | 49k | **Net +35k/day buy** |
-| 25% | ~83k | 49k | -34k/day, 4 weeks |
-| 50% | ~165k | 49k | -116k/day, 6+ weeks |
-| 100% | ~331k | 49k | -282k/day, 6 months to digest |
+| 5% (only the pre-unstaked 422k) | ~17k | 45k | **Net +28k/day buy** |
+| 25% | ~83k | 45k | -38k/day, 4 weeks |
+| 50% | ~165k | 45k | -120k/day, 6+ weeks |
+| 100% | ~331k | 45k | -286k/day, 6 months to digest |
 
 Read the on-chain pre-unstake number as the market's vote. As of today, it's voting for case 1.
 
 **Three scenarios for what the locked 95% does.**
 
-1. **Sell.** The base-rate take. Bearish 1–2 weeks if more than ~25% hits exchanges. Buyback flow recovers float in 30–45 days. The market has seen this play out: every prior month's "team distribution" cliff (the 6th-of-the-month schedule formalized in Dec 2025) has been absorbed inside two weeks. Falsifiable check: net HYPE flow onto Binance/Bybit/OKX in the 7 days after May 6.
+1. **Sell.** The base-rate take. Bearish 1–2 weeks if more than ~25% hits exchanges. Buyback flow recovers float in 30–45 days. Note: official Hyperliquid docs do not publish the contributor vesting schedule, so whether May 6 is a one-off cliff or the largest of a recurring monthly series is an inference, not a confirmed fact. Tokenomist labels it the "next unlock" but doesn't enumerate the cadence beyond. Falsifiable check: net HYPE flow onto Binance/Bybit/OKX in the 7 days after May 6.
 
 2. **Stake.** Best case for security and worst case for FUD merchants. HYPE staked = HYPE that earns rewards + counts toward validator security + can't be sold without a 7-day unbond. If contributors stake 70%+, the unlock is a non-event for float and a positive for validator decentralization. Falsifiable check: total staked HYPE delta on May 6–13 (visible on-chain).
 
@@ -103,11 +103,12 @@ Track these in the retro on May 13 and again on June 6.
 
 ### Open items before publish
 
-- Confirm $2M/day fee average is current (Apr 17 was a single day; pull a 7-day or 30-day mean from DefiLlama or HL stats)
-- Pull exact Assistance Fund balance for the buyback claim
-- Add a chart: cumulative HYPE burned vs unlock cliffs overlaid
-- Get a quote / on-chain tx ref for the 422k unstake claim — sourced to HyperliquidNews, want a primary tx
-- Check if the "6th of each month" team distribution schedule changes the framing — is May 6 the *cliff* or the largest of monthly distributions?
+- ~~Confirm 7d/30d fee mean.~~ ✓ DefiLlama 2026-05-04: 7d=$11.45M ($1.64M/day), 30d=$56.2M ($1.87M/day). Article uses 30d mean.
+- ~~Verify schedule framing.~~ ✓ Hyperliquid docs do not publish the contributor vesting schedule. Soften "6th of month" claim to inference. Tokenomist confirms the May 6 event as the next unlock but does not enumerate cadence.
+- Pull exact Assistance Fund balance for the buyback claim — could not retrieve via WebFetch (DefiLlama 403, asxn dashboard JS-rendered). Manual lookup needed before publish.
+- Get a primary tx hash for the 422k unstake claim — sourced to HyperliquidNews, want an on-chain ref. Manual lookup.
+- Add a chart: cumulative HYPE burned vs unlock cliffs overlaid (visual asset, not blocking).
+- Refresh price + USD value at publish time. Anchor drifted from $41.05 → $41.83 in 24h ($407M → $415M).
 
 ### SEO / distribution notes
 
