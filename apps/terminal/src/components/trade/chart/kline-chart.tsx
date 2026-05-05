@@ -69,17 +69,19 @@ export function KlineChart({
 	const chartRef = useRef<Chart | null>(null);
 	const [activeInterval, setActiveInterval] = useState(DEFAULT_INTERVAL);
 	const [activeChartType, setActiveChartType] = useState<ChartTypeConfig>(DEFAULT_CHART_TYPE);
+	const activeCandleType = activeChartType.type;
 	const intervalRef = useRef(activeInterval);
 	intervalRef.current = activeInterval;
 	const isHiddenRef = useRef(false);
 	const hiddenAtRef = useRef<number | null>(null);
 	const candleBufferRef = useRef<KLineData[]>([]);
+	const chartStyleRef = useRef({ candleType: activeCandleType, yAxisInside });
+	chartStyleRef.current = { candleType: activeCandleType, yAxisInside };
 
 	useEffect(() => {
 		const container = containerRef.current;
 		if (!container || !symbol) return;
 		let disposed = false;
-		void theme;
 
 		registerOrderLineOverlay();
 		registerPositionLineOverlay();
@@ -101,7 +103,9 @@ export function KlineChart({
 		if (!chart) return;
 		chartRef.current = chart;
 
-		chart.setStyles(buildKlineStyles(activeChartType.type, { yAxisInside }));
+		chart.setStyles(
+			buildKlineStyles(chartStyleRef.current.candleType, { yAxisInside: chartStyleRef.current.yAxisInside }),
+		);
 		chart.createIndicator(VOLUME_INDICATOR_NAME);
 
 		chart.setLoadDataCallback(({ type, data, callback }) => {
@@ -166,7 +170,14 @@ export function KlineChart({
 			candleBufferRef.current = [];
 			dispose(container);
 		};
-	}, [symbol, activeInterval, activeChartType, yAxisInside, theme]);
+	}, [symbol, activeInterval]);
+
+	useEffect(() => {
+		const chart = chartRef.current;
+		if (!chart) return;
+		void theme;
+		chart.setStyles(buildKlineStyles(activeCandleType, { yAxisInside }));
+	}, [activeCandleType, yAxisInside, theme]);
 
 	useEffect(() => {
 		let disposed = false;

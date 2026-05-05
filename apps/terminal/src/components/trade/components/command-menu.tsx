@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { KIND_LABELS, marketSearchConfig } from "@/config/search";
 import { cn } from "@/lib/cn";
@@ -21,11 +21,7 @@ export function CommandMenu() {
 	const { markets } = useMarketsInfo();
 
 	const [query, setQuery] = useState("");
-	const searcherRef = useRef(createSearcher(markets, marketSearchConfig));
-
-	useEffect(() => {
-		searcherRef.current.setItems(markets);
-	}, [markets]);
+	const searcher = useMemo(() => createSearcher(markets, marketSearchConfig), [markets]);
 
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
@@ -43,7 +39,7 @@ export function CommandMenu() {
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [open, close, openMenu]);
 
-	const results = query ? searcherRef.current.search(query) : [];
+	const results = query ? searcher.search(query) : [];
 	const displayItems = query ? results.map((r) => r.item) : markets;
 
 	function handleSelect(market: UnifiedMarketInfo) {

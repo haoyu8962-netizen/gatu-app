@@ -6,9 +6,12 @@ import { LIFI_INTEGRATOR } from "@/config/app";
 import { config as wagmiConfig } from "@/config/wagmi";
 
 const wc = wagmiConfig as unknown as WagmiConfig;
+let lifiInitialized = false;
 
 export function initLiFi() {
-	return createConfig({
+	if (lifiInitialized) return;
+
+	createConfig({
 		integrator: LIFI_INTEGRATOR,
 		providers: [
 			EVM({
@@ -24,4 +27,5 @@ export function initLiFi() {
 			}),
 		],
 	});
+	lifiInitialized = true;
 }

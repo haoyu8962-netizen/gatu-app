@@ -21,7 +21,7 @@ export function useKlinePositionOverlays({ chartRef, symbol, dex }: Params) {
 
 	useEffect(() => {
 		const chart = chartRef.current;
-		if (!chart) return;
+		if (!chart || !symbol) return;
 
 		chart.removeOverlay({ name: POSITION_LINE_NAME });
 		chart.removeOverlay({ name: LIQUIDATION_LINE_NAME });
@@ -50,7 +50,7 @@ export function useKlinePositionOverlays({ chartRef, symbol, dex }: Params) {
 				});
 			}
 		}
-	}, [chartRef, symbol, dex, szi, entryPx, liquidationPx]);
+	}, [chartRef, symbol, szi, entryPx, liquidationPx]);
 }
 
 function getShortBuilderSymbol(symbol: string): string {

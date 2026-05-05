@@ -15,7 +15,6 @@ import type { BridgeScreen } from "./types";
 
 export function BridgeTab() {
 	const { address } = useConnection();
-	const lifiInitialized = useRef(false);
 	const [screen, setScreen] = useState<BridgeScreen>("select");
 	const [selectedToken, setSelectedToken] = useState<BridgeToken | null>(null);
 	const [usdInput, setUsdInput] = useState("");
@@ -24,10 +23,7 @@ export function BridgeTab() {
 	const bridge = useBridgeExecutor();
 
 	useEffect(() => {
-		if (!lifiInitialized.current) {
-			initLiFi();
-			lifiInitialized.current = true;
-		}
+		initLiFi();
 	}, []);
 
 	useEffect(() => {

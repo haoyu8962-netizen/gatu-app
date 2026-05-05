@@ -135,7 +135,7 @@ export function MobileTradeView({ className }: Props) {
 			setLimitPriceInput(String(selectedPrice));
 			getOrderbookActionsStore().actions.clearSelectedPrice();
 		}
-	}, [selectedPrice]);
+	}, [selectedPrice, setOrderType]);
 	const price = isMarketExecution ? markPx : toNumberOrZero(limitPriceInput);
 	const { takerRate, makerRate } = useFeeRates(market?.kind);
 	const feeRate = isMarketExecution ? takerRate : makerRate;

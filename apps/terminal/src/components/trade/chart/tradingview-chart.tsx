@@ -46,13 +46,14 @@ export function TradingViewChart({
 
 	useEffect(() => {
 		if (!containerRef.current) return;
+		let disposed = false;
 		chartReadyRef.current = false;
 
 		const initWidget = async () => {
 			try {
 				await loadTradingViewScript();
 
-				if (!containerRef.current || !window.TradingView) return;
+				if (disposed || !containerRef.current || !window.TradingView) return;
 
 				if (widgetRef.current) {
 					widgetRef.current.remove();
@@ -66,9 +67,13 @@ export function TradingViewChart({
 				const loadingColors = getLoadingScreenColors();
 				const toolbarBg = getToolbarBgColor();
 				const customCssUrl = await generateChartCssUrl();
+				if (disposed || !containerRef.current || !window.TradingView) {
+					URL.revokeObjectURL(customCssUrl);
+					return;
+				}
 				cssUrlRef.current = customCssUrl;
 
-				widgetRef.current = new window.TradingView.widget({
+				const widget = new window.TradingView.widget({
 					container: containerRef.current,
 					library_path: CHART_LIBRARY_PATH,
 					datafeed: createDatafeed(),
@@ -93,15 +98,16 @@ export function TradingViewChart({
 						intervals: CHART_FAVORITE_INTERVALS,
 					},
 				});
+				widgetRef.current = widget;
 
-				widgetRef.current.onChartReady(() => {
+				widget.onChartReady(() => {
+					if (disposed || widgetRef.current !== widget) return;
 					chartReadyRef.current = true;
 				});
 
 				if (onSwitchToDefaultRef.current) {
-					widgetRef.current.headerReady().then(() => {
-						const widget = widgetRef.current;
-						if (!widget) return;
+					widget.headerReady().then(() => {
+						if (disposed || widgetRef.current !== widget) return;
 
 						const btn = widget.createButton({ align: "right", useTradingViewStyle: false });
 						btn.style.cssText =
@@ -143,6 +149,7 @@ export function TradingViewChart({
 		initWidget();
 
 		return () => {
+			disposed = true;
 			if (widgetRef.current) {
 				widgetRef.current.remove();
 				widgetRef.current = null;

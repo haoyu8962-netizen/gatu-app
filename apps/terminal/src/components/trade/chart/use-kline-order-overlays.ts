@@ -1,6 +1,6 @@
 import Big from "big.js";
 import type { Chart } from "klinecharts";
-import { type RefObject, useEffect, useRef } from "react";
+import { type RefObject, useEffect, useMemo } from "react";
 import { useConnection } from "wagmi";
 import { HL_ALL_DEXS } from "@/config/app";
 import { TRANSPARENT_OVERLAY_STYLES } from "@/lib/chart/kline-styles";
@@ -22,21 +22,16 @@ export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
 		{ enabled: isConnected && !!address },
 	);
 
-	const symbolOrders = openOrdersEvent?.orders?.filter((o) => o.coin === symbol) ?? [];
-	const ordersKey = symbolOrders
-		.map((o) => `${o.oid}:${o.isTrigger}:${o.isTrigger ? o.triggerPx : o.limitPx}:${o.side}`)
-		.join("|");
-
-	const symbolOrdersRef = useRef(symbolOrders);
-	symbolOrdersRef.current = symbolOrders;
+	const openOrders = openOrdersEvent?.orders;
+	const symbolOrders = useMemo(() => openOrders?.filter((order) => order.coin === symbol) ?? [], [openOrders, symbol]);
 
 	useEffect(() => {
 		const chart = chartRef.current;
-		if (!chart) return;
+		if (!chart || !symbol) return;
 
 		chart.removeOverlay({ name: ORDER_LINE_NAME });
 
-		for (const order of symbolOrdersRef.current) {
+		for (const order of symbolOrders) {
 			const rawPrice = order.isTrigger ? order.triggerPx : order.limitPx;
 			const price = Big(rawPrice).toNumber();
 			if (!Number.isFinite(price)) continue;
@@ -52,5 +47,5 @@ export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
 				},
 			});
 		}
-	}, [chartRef, ordersKey]);
+	}, [chartRef, symbol, symbolOrders]);
 }

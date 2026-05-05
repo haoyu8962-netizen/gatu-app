@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, WifiHighIcon, WifiSlashIcon, XIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useOnlineStatus } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 
@@ -12,26 +12,27 @@ interface Props {
 export function OfflineBanner({ className }: Props) {
 	const isOnline = useOnlineStatus();
 	const [dismissed, setDismissed] = useState(false);
-	const [wasOffline, setWasOffline] = useState(false);
 	const [showReconnected, setShowReconnected] = useState(false);
+	const wasOfflineRef = useRef(false);
 
 	useEffect(() => {
 		if (!isOnline) {
-			setWasOffline(true);
+			wasOfflineRef.current = true;
 			setDismissed(false);
+			setShowReconnected(false);
+			return;
 		}
-	}, [isOnline]);
 
-	useEffect(() => {
-		if (isOnline && wasOffline) {
-			setShowReconnected(true);
-			const timer = setTimeout(() => {
-				setShowReconnected(false);
-				setWasOffline(false);
-			}, 3000);
-			return () => clearTimeout(timer);
-		}
-	}, [isOnline, wasOffline]);
+		if (!wasOfflineRef.current) return;
+
+		setShowReconnected(true);
+		const timer = setTimeout(() => {
+			setShowReconnected(false);
+			wasOfflineRef.current = false;
+		}, 3000);
+
+		return () => clearTimeout(timer);
+	}, [isOnline]);
 
 	if (isOnline && !showReconnected) return null;
 	if (!isOnline && dismissed) return null;
