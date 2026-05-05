@@ -160,6 +160,7 @@ msgstr "Add TP/SL"
 #~ msgid "Agent verification failed"
 #~ msgstr "Agent verification failed"
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "All"
 msgstr "All"
@@ -1075,6 +1076,10 @@ msgstr "H"
 msgid "Hide small"
 msgstr "Hide small"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "HIP-3"
+msgstr "HIP-3"
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr "Hour(s)"
@@ -1799,6 +1804,7 @@ msgstr "pending"
 #~ msgid "perp"
 #~ msgstr "perp"
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/config/nav.tsx
@@ -2350,6 +2356,7 @@ msgstr "Source"
 #~ msgid "spot"
 #~ msgstr "spot"
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx

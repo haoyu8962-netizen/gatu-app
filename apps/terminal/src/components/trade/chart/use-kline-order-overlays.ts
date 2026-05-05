@@ -3,6 +3,7 @@ import type { Chart } from "klinecharts";
 import { type RefObject, useEffect, useRef } from "react";
 import { useConnection } from "wagmi";
 import { HL_ALL_DEXS } from "@/config/app";
+import { TRANSPARENT_OVERLAY_STYLES } from "@/lib/chart/kline-styles";
 import { ORDER_LINE_NAME } from "@/lib/chart/order-line-overlay";
 import { useSubscription } from "@/lib/hyperliquid";
 import { getOrderLineLabel } from "@/lib/trade/open-orders";
@@ -11,11 +12,6 @@ interface Params {
 	chartRef: RefObject<Chart | null>;
 	symbol: string;
 }
-
-const TRANSPARENT_OVERLAY_STYLES = {
-	rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
-	polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
-};
 
 export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
 	const { address, isConnected } = useConnection();

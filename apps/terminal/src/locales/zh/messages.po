@@ -160,6 +160,7 @@ msgstr ""
 #~ msgid "Agent verification failed"
 #~ msgstr ""
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "All"
 msgstr ""
@@ -1075,6 +1076,10 @@ msgstr ""
 msgid "Hide small"
 msgstr ""
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "HIP-3"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr ""
@@ -1795,6 +1800,7 @@ msgstr "待处理"
 #~ msgid "perp"
 #~ msgstr "永续"
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/config/nav.tsx
@@ -2346,6 +2352,7 @@ msgstr ""
 #~ msgid "spot"
 #~ msgstr "现货"
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx

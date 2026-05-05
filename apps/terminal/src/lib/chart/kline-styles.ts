@@ -40,6 +40,11 @@ interface KlineStyleOptions {
 	yAxisInside?: boolean;
 }
 
+export const TRANSPARENT_OVERLAY_STYLES = {
+	rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+	polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
+};
+
 export function buildKlineStyles(candleType: CandleType, options?: KlineStyleOptions): DeepPartial<Styles> {
 	const colors = getChartColors();
 

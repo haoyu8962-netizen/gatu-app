@@ -21,7 +21,7 @@ export function MainWorkspace() {
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
-	const [marketBodyMinHeightPx, setMarketBodyMinHeightPx] = useState(PANEL_LAYOUT.ANALYSIS.minHeightPx);
+	const [marketBodyMinHeightPx, setMarketBodyMinHeightPx] = useState<number>(PANEL_LAYOUT.ANALYSIS.minHeightPx);
 	const marketBodyHeight = `max(calc(100dvh - 9.375rem), ${marketBodyMinHeightPx}px)`;
 
 	const handleAnalysisHeightChange = useCallback((heightPx: number) => {

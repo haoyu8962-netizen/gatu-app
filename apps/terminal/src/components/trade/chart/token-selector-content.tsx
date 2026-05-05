@@ -12,13 +12,6 @@ import { AssetDisplay } from "../components/asset-display";
 import { getMarketTableColumnClass, type MarketRow, type MarketScope } from "./token-selector-columns";
 import type { useTokenSelector } from "./use-token-selector";
 
-const marketScopes: { value: MarketScope; label: string }[] = [
-	{ value: "all", label: "All" },
-	{ value: "perp", label: "Perp" },
-	{ value: "spot", label: "Spot" },
-	{ value: "hip3", label: "HIP-3" },
-];
-
 function getColumnSortLabel(columnId: string): string {
 	switch (columnId) {
 		case "price":
@@ -251,6 +244,12 @@ export function TokenSelectorContent({
 	useRenderCommitTrack("token-search");
 	const virtualItems = virtualizer.getVirtualItems();
 	const headerGroup = table.getHeaderGroups()[0];
+	const marketScopes: { value: MarketScope; label: string }[] = [
+		{ value: "all", label: t`All` },
+		{ value: "perp", label: t`Perp` },
+		{ value: "spot", label: t`Spot` },
+		{ value: "hip3", label: t`HIP-3` },
+	];
 	const showScopeTabs = exchangeScope === "all";
 	const showSubcategoryTabs = !exchangeDex && subcategories.length > 0;
 	const showSelectorFilters = showScopeTabs || showSubcategoryTabs;

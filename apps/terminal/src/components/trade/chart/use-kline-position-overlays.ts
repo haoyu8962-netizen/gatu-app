@@ -1,6 +1,7 @@
 import Big from "big.js";
 import type { Chart } from "klinecharts";
 import { type RefObject, useEffect } from "react";
+import { TRANSPARENT_OVERLAY_STYLES } from "@/lib/chart/kline-styles";
 import { LIQUIDATION_LINE_NAME } from "@/lib/chart/liquidation-line-overlay";
 import { POSITION_LINE_NAME } from "@/lib/chart/position-line-overlay";
 import { useUserPositions } from "@/lib/hyperliquid";
@@ -10,11 +11,6 @@ interface Params {
 	symbol: string;
 	dex?: string;
 }
-
-const TRANSPARENT_OVERLAY_STYLES = {
-	rect: { color: "transparent", borderColor: "transparent", borderSize: 0 },
-	polygon: { color: "transparent", borderColor: "transparent", borderSize: 0 },
-};
 
 export function useKlinePositionOverlays({ chartRef, symbol, dex }: Params) {
 	const { getPosition } = useUserPositions();

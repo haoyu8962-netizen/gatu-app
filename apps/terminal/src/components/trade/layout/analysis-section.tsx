@@ -24,7 +24,7 @@ export function AnalysisSection({ onDesiredHeightChange }: AnalysisSectionProps)
 	const cleanupDragRef = useRef<(() => void) | null>(null);
 	const initializedRef = useRef(false);
 	const positionsMinHeightPx = isConnected ? positions.minHeightPx : positions.disconnectedMinHeightPx;
-	const [chartHeightPx, setChartHeightPx] = useState(chart.minHeightPx);
+	const [chartHeightPx, setChartHeightPx] = useState<number>(chart.minHeightPx);
 	const [containerHeightPx, setContainerHeightPx] = useState<number>(PANEL_LAYOUT.ANALYSIS.minHeightPx);
 	const maxChartHeightPx = Math.max(chart.minHeightPx, containerHeightPx - positionsMinHeightPx);
 
