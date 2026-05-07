@@ -56,6 +56,41 @@ function mapExchangeToMarketScope(es: ExchangeScope): MarketScope {
 	return "all";
 }
 
+type MarketsInfo = ReturnType<typeof useMarketsInfo>;
+
+function computeSubcategories(
+	scope: MarketScope,
+	spotMarkets: MarketsInfo["spotMarkets"],
+	builderPerpMarkets: MarketsInfo["builderPerpMarkets"],
+): Subcategory[] {
+	if (scope === "all") return [];
+	if (scope === "perp") return PERP_CATEGORIES;
+
+	if (scope === "spot") {
+		const quoteTokens = new Map<string, string>();
+		for (const market of spotMarkets) {
+			const quoteToken = market.tokensInfo[1];
+			if (quoteToken?.name && !quoteTokens.has(quoteToken.name)) {
+				quoteTokens.set(quoteToken.name, quoteToken.displayName);
+			}
+		}
+		return [
+			{ value: "all", label: "All" },
+			...Array.from(quoteTokens.entries()).map(([name, displayName]) => ({
+				value: name,
+				label: displayName,
+			})),
+		];
+	}
+
+	if (scope === "hip3") {
+		const dexNames = Object.keys(builderPerpMarkets).filter((k) => k !== "all");
+		return [{ value: "all", label: "All" }, ...dexNames.map((d) => ({ value: d, label: d }))];
+	}
+
+	return [];
+}
+
 export function useTokenSelector({
 	value,
 	onValueChange,
@@ -97,34 +132,7 @@ export function useTokenSelector({
 		return favoriteSet.has(name);
 	}
 
-	const subcategories = useMemo((): Subcategory[] => {
-		if (scope === "all") return [];
-		if (scope === "perp") return PERP_CATEGORIES;
-
-		if (scope === "spot") {
-			const quoteTokens = new Map<string, string>();
-			for (const market of spotMarkets) {
-				const quoteToken = market.tokensInfo[1];
-				if (quoteToken?.name && !quoteTokens.has(quoteToken.name)) {
-					quoteTokens.set(quoteToken.name, quoteToken.displayName);
-				}
-			}
-			return [
-				{ value: "all", label: "All" },
-				...Array.from(quoteTokens.entries()).map(([name, displayName]) => ({
-					value: name,
-					label: displayName,
-				})),
-			];
-		}
-
-		if (scope === "hip3") {
-			const dexNames = Object.keys(builderPerpMarkets).filter((k) => k !== "all");
-			return [{ value: "all", label: "All" }, ...dexNames.map((d) => ({ value: d, label: d }))];
-		}
-
-		return [];
-	}, [scope, spotMarkets, builderPerpMarkets]);
+	const subcategories = computeSubcategories(scope, spotMarkets, builderPerpMarkets);
 
 	function handleScopeSelect(newScope: MarketScope) {
 		setLocalScope(newScope);
@@ -134,57 +142,57 @@ export function useTokenSelector({
 		}
 	}
 
+	// Semantic ref stability: when the popover is closed, freeze scopeFilteredMarkets to
+	// the previous reference whenever the membership key (scope|subcategory|names) is unchanged,
+	// so hidden rows don't re-render on every WS price tick. When open, always pass the live
+	// reference through so prices update.
 	const stableScopeFilteredRef = useRef<{ key: string; value: MarketRow[] }>({ key: "", value: [] });
-	const scopeFilteredMarkets = useMemo(() => {
-		const filtered = markets.filter((market) => {
-			if (scope === "perp" && market.kind !== "perp") return false;
-			if (scope === "spot" && market.kind !== "spot") return false;
-			if (scope === "hip3" && market.kind !== "builderPerp") return false;
+	const filteredByScope = markets.filter((market) => {
+		if (scope === "perp" && market.kind !== "perp") return false;
+		if (scope === "spot" && market.kind !== "spot") return false;
+		if (scope === "hip3" && market.kind !== "builderPerp") return false;
 
-			if (subcategory === "all") return true;
+		if (subcategory === "all") return true;
 
-			if (scope === "perp") {
-				return isTokenInCategory(market.shortName, subcategory as MarketCategory);
-			}
-
-			if (scope === "spot" && market.kind === "spot") {
-				const quoteToken = market.tokensInfo[1]?.name;
-				return quoteToken === subcategory;
-			}
-
-			if (scope === "hip3" && market.kind === "builderPerp") {
-				return market.dex === subcategory;
-			}
-
-			return true;
-		});
-		// When closed: freeze the list by names-key so hidden rows don't re-render on each WS tick.
-		// When open: always return the fresh reference so prices update live every ~5s.
-		if (open) {
-			stableScopeFilteredRef.current = {
-				key: `${scope}|${subcategory}|${filtered.length}|${filtered.map((m) => m.name).join(",")}`,
-				value: filtered,
-			};
-			return filtered;
+		if (scope === "perp") {
+			return isTokenInCategory(market.shortName, subcategory as MarketCategory);
 		}
-		const key = `${scope}|${subcategory}|${filtered.length}|${filtered.map((m) => m.name).join(",")}`;
-		if (stableScopeFilteredRef.current.key === key) {
-			return stableScopeFilteredRef.current.value;
+
+		if (scope === "spot" && market.kind === "spot") {
+			const quoteToken = market.tokensInfo[1]?.name;
+			return quoteToken === subcategory;
 		}
-		stableScopeFilteredRef.current = { key, value: filtered };
-		return filtered;
-	}, [markets, scope, subcategory, open]);
 
-	const searcher = useMemo(() => createSearcher(scopeFilteredMarkets, marketSearchConfig), [scopeFilteredMarkets]);
+		if (scope === "hip3" && market.kind === "builderPerp") {
+			return market.dex === subcategory;
+		}
 
-	const filteredMarkets = useMemo(() => {
-		if (!deferredSearch) return scopeFilteredMarkets;
+		return true;
+	});
+	const scopeKey = `${scope}|${subcategory}|${filteredByScope.length}|${filteredByScope.map((m) => m.name).join(",")}`;
+	let scopeFilteredMarkets: MarketRow[];
+	if (open) {
+		stableScopeFilteredRef.current = { key: scopeKey, value: filteredByScope };
+		scopeFilteredMarkets = filteredByScope;
+	} else if (stableScopeFilteredRef.current.key === scopeKey) {
+		scopeFilteredMarkets = stableScopeFilteredRef.current.value;
+	} else {
+		stableScopeFilteredRef.current = { key: scopeKey, value: filteredByScope };
+		scopeFilteredMarkets = filteredByScope;
+	}
+
+	const searcher = createSearcher(scopeFilteredMarkets, marketSearchConfig);
+
+	let filteredMarkets: MarketRow[];
+	if (!deferredSearch) {
+		filteredMarkets = scopeFilteredMarkets;
+	} else {
 		const marketByName = new Map(scopeFilteredMarkets.map((m) => [m.name, m]));
-		return searcher
+		filteredMarkets = searcher
 			.search(deferredSearch)
 			.map((result) => marketByName.get(result.item.name))
 			.filter((m): m is MarketRow => m != null);
-	}, [scopeFilteredMarkets, searcher, deferredSearch]);
+	}
 
 	function handleSort(columnId: string) {
 		setSorting((prev) => {
@@ -205,6 +213,8 @@ export function useTokenSelector({
 	});
 
 	const sortedRows = table.getRowModel().rows;
+	// Semantic: `rows` is used as an effect dep below — keep referential stability so the
+	// initialization effect doesn't re-run on every render.
 	const rows = useMemo(() => {
 		const favoriteNames = new Set(favorites);
 		const favoriteRows = sortedRows.filter((r) => favoriteNames.has(r.original.name));

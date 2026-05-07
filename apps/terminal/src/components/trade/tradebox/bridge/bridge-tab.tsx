@@ -26,12 +26,6 @@ export function BridgeTab() {
 		initLiFi();
 	}, []);
 
-	useEffect(() => {
-		if (bridge.status === "idle" && screen === "executing") {
-			setScreen("confirm");
-		}
-	}, [bridge.status, screen]);
-
 	if (!address) {
 		return <BridgeWalletNotConnected />;
 	}
@@ -58,17 +52,19 @@ export function BridgeTab() {
 		setScreen("amount");
 	}
 
+	async function runBridge(quote: BridgeQuote) {
+		setScreen("executing");
+		const outcome = await bridge.execute(quote);
+		if (outcome === "rejected") setScreen("confirm");
+	}
+
 	function handleConfirm(quote: BridgeQuote) {
 		lastQuoteRef.current = quote;
-		setScreen("executing");
-		bridge.execute(quote);
+		runBridge(quote);
 	}
 
 	function handleRetry() {
-		if (lastQuoteRef.current) {
-			setScreen("executing");
-			bridge.execute(lastQuoteRef.current);
-		}
+		if (lastQuoteRef.current) runBridge(lastQuoteRef.current);
 	}
 
 	function resetToSelect() {

@@ -128,7 +128,7 @@ msgid "Add"
 msgstr "Add"
 
 #. placeholder {0}: market.pairName
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 msgid "Add {0} to favorites"
 msgstr "Add {0} to favorites"
 
@@ -1525,7 +1525,7 @@ msgstr "Network"
 msgid "Network fee"
 msgstr "Network fee"
 
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 msgid "NEW"
 msgstr "NEW"
 
@@ -1984,7 +1984,7 @@ msgstr "Reduce Only"
 #~ msgstr "Register Builder Code"
 
 #. placeholder {0}: market.pairName
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 msgid "Remove {0} from favorites"
 msgstr "Remove {0} from favorites"
 

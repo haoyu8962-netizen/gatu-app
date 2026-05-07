@@ -34,9 +34,7 @@ function delay(ms: number) {
 }
 
 function logRecoverableCandleFetchFailure(label: string, err: unknown) {
-	if (import.meta.env.DEV) {
-		console.warn(`kline ${label} candle fetch failed`, err);
-	}
+	console.warn(`kline ${label} candle fetch failed`, err);
 }
 
 async function fetchCandlesWithRetry(params: CandleSnapshotParams, shouldContinue: () => boolean) {
@@ -175,8 +173,7 @@ export function KlineChart({
 	useEffect(() => {
 		const chart = chartRef.current;
 		if (!chart) return;
-		void theme;
-		chart.setStyles(buildKlineStyles(activeCandleType, { yAxisInside }));
+		chart.setStyles(buildKlineStyles(activeCandleType, { yAxisInside, theme }));
 	}, [activeCandleType, yAxisInside, theme]);
 
 	useEffect(() => {

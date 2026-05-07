@@ -236,7 +236,7 @@ export function PositionsTab() {
 							<TableBody className={positionsPanelTableBodyClass}>
 								{positions.map((p, i) => (
 									<PositionRow
-										key={`${p.coin}-${p.entryPx}-${p.szi}`}
+										key={p.coin}
 										position={p}
 										markets={markets}
 										markPx={mids?.[p.coin]}

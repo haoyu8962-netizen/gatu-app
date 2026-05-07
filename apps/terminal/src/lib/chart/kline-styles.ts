@@ -38,6 +38,10 @@ function formatVolume(n: number): string {
 
 interface KlineStyleOptions {
 	yAxisInside?: boolean;
+	// Theme is read implicitly via CSS custom properties on `document.documentElement`,
+	// so this argument has no effect on the returned styles. It exists so callers can
+	// thread `theme` as a real dependency instead of suppressing it via `void theme`.
+	theme?: "light" | "dark";
 }
 
 export const TRANSPARENT_OVERLAY_STYLES = {

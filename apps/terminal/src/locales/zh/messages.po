@@ -128,7 +128,7 @@ msgid "Add"
 msgstr ""
 
 #. placeholder {0}: market.pairName
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 msgid "Add {0} to favorites"
 msgstr ""
 
@@ -1521,7 +1521,7 @@ msgstr ""
 msgid "Network fee"
 msgstr ""
 
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 msgid "NEW"
 msgstr "新"
 
@@ -1980,7 +1980,7 @@ msgstr "只减仓"
 #~ msgstr ""
 
 #. placeholder {0}: market.pairName
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 msgid "Remove {0} from favorites"
 msgstr ""
 

@@ -1,4 +1,5 @@
 import { Divider } from "@hypeterminal/ui";
+import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, useCallback, useState } from "react";
 import { useDefaultLayout } from "react-resizable-panels";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
@@ -54,7 +55,9 @@ export function MainWorkspace() {
 					<div className="h-full flex flex-col bg-surface">
 						<div className="flex-1 min-h-0">
 							<Suspense fallback={<PanelSkeleton />}>
-								<AnalysisSection onDesiredHeightChange={handleAnalysisHeightChange} />
+								<ClientOnly fallback={<PanelSkeleton />}>
+									<AnalysisSection onDesiredHeightChange={handleAnalysisHeightChange} />
+								</ClientOnly>
 							</Suspense>
 						</div>
 					</div>

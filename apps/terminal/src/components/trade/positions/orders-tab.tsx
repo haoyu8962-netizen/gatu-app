@@ -84,10 +84,6 @@ export function OrdersTab() {
 		if (openIds.has(id)) validSelectedIds.add(id);
 	}
 
-	if (validSelectedIds.size !== selectedOrderIds.size) {
-		setSelectedOrderIds(validSelectedIds);
-	}
-
 	const selectedCount = validSelectedIds.size;
 	const allSelected = selectedCount > 0 && selectedCount === openOrders.length;
 	const someSelected = selectedCount > 0 && selectedCount < openOrders.length;

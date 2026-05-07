@@ -5,6 +5,8 @@ import type { BridgeQuote } from "./use-quote";
 
 type BridgeStatus = "idle" | "executing" | "success" | "error";
 
+export type BridgeOutcome = "success" | "error" | "rejected";
+
 export interface ProcessDetail {
 	type: string;
 	txHash: string;
@@ -90,8 +92,8 @@ export function useBridgeExecutor() {
 	const [state, setState] = useState<BridgeState>(INITIAL_STATE);
 	const executingRef = useRef(false);
 
-	async function execute(quote: BridgeQuote) {
-		if (executingRef.current) return;
+	async function execute(quote: BridgeQuote): Promise<BridgeOutcome> {
+		if (executingRef.current) return "error";
 		executingRef.current = true;
 
 		setState({
@@ -133,6 +135,7 @@ export function useBridgeExecutor() {
 				endTime: Date.now(),
 				processDetails: getAllProcessDetails(result),
 			});
+			return "success";
 		} catch (err) {
 			const message = err instanceof Error ? err.message : "Bridge failed";
 			const isUserRejection =
@@ -149,14 +152,15 @@ export function useBridgeExecutor() {
 					error: null,
 					endTime: Date.now(),
 				}));
-			} else {
-				setState((prev) => ({
-					...prev,
-					status: "error",
-					error: message,
-					endTime: Date.now(),
-				}));
+				return "rejected";
 			}
+			setState((prev) => ({
+				...prev,
+				status: "error",
+				error: message,
+				endTime: Date.now(),
+			}));
+			return "error";
 		} finally {
 			executingRef.current = false;
 		}
