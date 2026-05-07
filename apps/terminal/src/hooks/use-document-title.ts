@@ -37,12 +37,13 @@ export function useDocumentTitle() {
 
 	useEffect(() => {
 		if (!markPx || !pairName) return;
-
 		const price = formatPrice(markPx, { szDecimals });
 		document.title = `${price} · ${pairName} | HypeTerminal`;
+	}, [markPx, pairName, szDecimals]);
 
+	useEffect(() => {
 		return () => {
 			document.title = SEO_DEFAULTS.defaultTitle;
 		};
-	}, [markPx, pairName, szDecimals]);
+	}, []);
 }

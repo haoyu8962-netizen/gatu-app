@@ -263,16 +263,13 @@ export function createHealthReport(store: HyperliquidStore): HealthReport {
 	const trackedKeyWarningThreshold =
 		WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys * HEALTH_LIMITS.trackedKeyWarningRatio;
 	if (metrics.activeSubscriptions >= trackedKeyWarningThreshold) {
+		const atHardLimit = metrics.activeSubscriptions >= WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys;
 		alerts.push({
 			id: "listener-key-limit",
-			severity:
-				metrics.activeSubscriptions >= WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys ? "critical" : "warning",
+			severity: atHardLimit ? "critical" : "warning",
 			message: "The active websocket subscription key count is near the tracked-key limit.",
 			value: metrics.activeSubscriptions,
-			threshold:
-				metrics.activeSubscriptions >= WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys
-					? WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys
-					: trackedKeyWarningThreshold,
+			threshold: atHardLimit ? WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys : trackedKeyWarningThreshold,
 		});
 	}
 
