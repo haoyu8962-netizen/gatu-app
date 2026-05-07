@@ -35,7 +35,22 @@ export { useSubscription } from "./hooks/useSubscription";
 export { useTradingGuard } from "./hooks/useTradingGuard";
 export { useHttpTransport, useSubscriptionTransport } from "./hooks/useTransport";
 export { enableHyperliquidDebug } from "./internal/websocket/debug";
+export {
+	createHealthReport,
+	type HealthAlert,
+	type HealthReport,
+	registerHealthReport,
+} from "./internal/websocket/health";
 export { getReconnectDelayMs, WS_RELIABILITY_LIMITS } from "./internal/websocket/reliability";
+export type {
+	BuilderPerpMarket,
+	MarketKind,
+	Markets,
+	PerpMarket,
+	SpotMarket,
+	SpotToken as MarketSpotToken,
+	UnifiedMarket,
+} from "./markets/types";
 export type { HyperliquidContextValue, HyperliquidProviderProps } from "./provider";
 export { HyperliquidProvider, useConfig, useHyperliquid, useHyperliquidOptional } from "./provider";
 export { createKey, infoKeys, serializeKey, subscriptionKeys } from "./query/keys";

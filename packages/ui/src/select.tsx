@@ -8,7 +8,7 @@ import { cn } from "./utils";
 
 const selectTriggerVariants = cva(
 	[
-		"group/trigger flex items-center w-full rounded-8 border transition-colors",
+		"group/trigger flex items-center w-full rounded-8 border transition-colors duration-150 motion-reduce:transition-none",
 		"cursor-pointer select-none",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"data-popup-open:border-stroke-focus",
@@ -149,7 +149,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 					<BaseSelect.Trigger
 						className={cn(
 							selectTriggerVariants({ size, error }),
-							"data-disabled:border-stroke-disabled data-disabled:cursor-not-allowed data-disabled:opacity-40",
+							"data-disabled:border-stroke-disabled data-disabled:cursor-not-allowed data-disabled:text-fg-disabled",
 							triggerClassName,
 						)}
 					>
@@ -172,8 +172,8 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 					</BaseSelect.Trigger>
 
 					<BaseSelect.Portal>
-						<BaseSelect.Positioner sideOffset={4} className="z-[1000]">
-							<BaseSelect.Popup className="z-50 max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
+						<BaseSelect.Positioner sideOffset={4} className="z-[var(--z-dropdown)]">
+							<BaseSelect.Popup className="max-h-64 overflow-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95">
 								{options.map((option) =>
 									isGroupOption(option) ? (
 										<BaseSelect.Group key={option.label}>

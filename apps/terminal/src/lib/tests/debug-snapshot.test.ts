@@ -3,8 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFakeSubscription } from "./harness/subscription";
 
 let createHyperliquidStore: typeof import("@hypeterminal/hl-react/store").createHyperliquidStore;
+let getStoreInternals: typeof import("@hypeterminal/hl-react/store").getStoreInternals;
 let registerDebugSnapshot: typeof import("@hypeterminal/hl-react/internal/websocket/debug").registerDebugSnapshot;
 let registerChaosHarness: typeof import("@hypeterminal/hl-react/internal/websocket/chaos").registerChaosHarness;
+let registerHealthReport: typeof import("@hypeterminal/hl-react/internal/websocket/health").registerHealthReport;
 
 describe("debug snapshot", () => {
 	beforeEach(async () => {
@@ -13,10 +15,13 @@ describe("debug snapshot", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 		const storeMod = await import("@hypeterminal/hl-react/store");
 		createHyperliquidStore = storeMod.createHyperliquidStore;
+		getStoreInternals = storeMod.getStoreInternals;
 		const debugMod = await import("@hypeterminal/hl-react/internal/websocket/debug");
 		registerDebugSnapshot = debugMod.registerDebugSnapshot;
 		const chaosMod = await import("@hypeterminal/hl-react/internal/websocket/chaos");
 		registerChaosHarness = chaosMod.registerChaosHarness;
+		const healthMod = await import("@hypeterminal/hl-react/internal/websocket/health");
+		registerHealthReport = healthMod.registerHealthReport;
 	});
 
 	afterEach(() => {
@@ -24,6 +29,7 @@ describe("debug snapshot", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 		delete window.__hl_debug;
 		delete window.__hl_chaos;
+		delete window.__hl_health;
 	});
 
 	it("returns snapshot with expected keys given 2 fake subscriptions", async () => {
@@ -91,6 +97,61 @@ describe("debug snapshot", () => {
 		expect(snapshot.subscriptions[key]?.isStale).toBe(true);
 
 		store.getState().releaseSubscription(key);
+	});
+
+	it("returns websocket health alerts for reconnect and listener growth", async () => {
+		const store = createHyperliquidStore({ ssr: false });
+		registerHealthReport(store);
+
+		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
+		const { subscribe } = createFakeSubscription();
+		for (let i = 0; i < 8; i++) {
+			store.getState().acquireSubscription(key, subscribe);
+		}
+		await vi.advanceTimersByTimeAsync(0);
+
+		const runtime = getStoreInternals(store).subscriptionRuntime.get(key);
+		if (!runtime) throw new Error("missing runtime");
+		runtime.reconnectAttempts = 12;
+
+		const report = window.__hl_health?.();
+
+		expect(report?.status).toBe("warning");
+		expect(report?.metrics.maxRefCount).toBe(8);
+		expect(report?.metrics.maxReconnectAttempts).toBe(12);
+		expect(report?.alerts.map((alert) => alert.id)).toEqual(
+			expect.arrayContaining(["listener-high-refcount", "reconnect-storm"]),
+		);
+
+		for (let i = 0; i < 8; i++) {
+			store.getState().releaseSubscription(key);
+		}
+	});
+
+	it("reports sustained heap growth when Chrome memory samples are available", async () => {
+		const store = createHyperliquidStore({ ssr: false });
+		registerHealthReport(store);
+		const memory = {
+			usedJSHeapSize: 10 * 1024 * 1024,
+			totalJSHeapSize: 20 * 1024 * 1024,
+			jsHeapSizeLimit: 256 * 1024 * 1024,
+		};
+		Object.defineProperty(performance, "memory", { value: memory, configurable: true });
+
+		window.__hl_health?.();
+		await vi.advanceTimersByTimeAsync(60_000);
+		memory.usedJSHeapSize = 20 * 1024 * 1024;
+		window.__hl_health?.();
+		await vi.advanceTimersByTimeAsync(60_000);
+		memory.usedJSHeapSize = 50 * 1024 * 1024;
+
+		const report = window.__hl_health?.();
+
+		expect(report?.status).toBe("critical");
+		expect(report?.metrics.heapSlopeBytesPerMinute).toBeGreaterThanOrEqual(16 * 1024 * 1024);
+		expect(report?.alerts.map((alert) => alert.id)).toContain("heap-growth");
+
+		delete (performance as Performance & { memory?: unknown }).memory;
 	});
 });
 

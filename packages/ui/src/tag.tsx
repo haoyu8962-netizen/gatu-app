@@ -8,8 +8,8 @@ const tagVariants = cva(
 	[
 		"inline-flex items-center font-normal select-none",
 		"border rounded-16",
-		"transition-colors duration-150",
-		"data-disabled:opacity-40 data-disabled:cursor-not-allowed",
+		"transition-colors duration-150 motion-reduce:transition-none",
+		"data-disabled:text-fg-disabled data-disabled:border-stroke-disabled data-disabled:cursor-not-allowed",
 	],
 	{
 		variants: {
@@ -73,8 +73,8 @@ const Tag = React.forwardRef<HTMLSpanElement, TagProps>(
 						}}
 						className={cn(
 							"relative inline-flex items-center justify-center shrink-0",
-							"text-current opacity-70 hover:opacity-100 transition-opacity",
-							"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-8",
+							"text-current opacity-70 hover:opacity-100 transition-opacity motion-reduce:transition-none",
+							"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 							disabled && "pointer-events-none",
 						)}
 						aria-label="Remove"

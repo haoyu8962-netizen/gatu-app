@@ -6,11 +6,11 @@ import { cn } from "./utils";
 const textLinkVariants = cva(
 	[
 		"inline-flex items-center cursor-pointer",
-		"transition-opacity duration-150",
+		"transition-opacity duration-150 motion-reduce:transition-none",
 		"rounded-4",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"hover:opacity-80",
-		"data-disabled:cursor-not-allowed data-disabled:opacity-40 data-disabled:pointer-events-none",
+		"data-disabled:cursor-not-allowed data-disabled:text-fg-disabled data-disabled:pointer-events-none",
 	],
 	{
 		variants: {

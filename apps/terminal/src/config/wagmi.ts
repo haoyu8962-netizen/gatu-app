@@ -84,12 +84,14 @@ export function createWagmiConfig(options: WagmiConfigOptions = {}) {
 	});
 }
 
-export const MOCK_WALLETS: MockWalletConfig[] = [
-	{
-		name: "Mock Wallet",
-		address: "0x5b5d51203a0f9079f8aeb098a6523a13f298c060",
-	},
-];
+export const MOCK_WALLETS: MockWalletConfig[] = import.meta.env.DEV
+	? [
+			{
+				name: "Mock Wallet",
+				address: "0x5b5d51203a0f9079f8aeb098a6523a13f298c060",
+			},
+		]
+	: [];
 
 export const config = createWagmiConfig({
 	mockWallets: MOCK_WALLETS,

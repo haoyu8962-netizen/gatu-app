@@ -1,4 +1,5 @@
 import Big from "big.js";
+import type { OrderType } from "@/config/trade";
 import { toBig } from "@/lib/trade/numbers";
 import {
 	isMarketExecutionOrderType,
@@ -6,7 +7,6 @@ import {
 	isStopOrderType,
 	isTakeProfitOrderType,
 	isTwapOrderType,
-	type OrderType,
 	usesLimitPrice,
 } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";

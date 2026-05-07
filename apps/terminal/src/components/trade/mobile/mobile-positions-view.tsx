@@ -3,7 +3,8 @@ import { WalletIcon } from "@phosphor-icons/react";
 import { useState, useTransition } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
-import { HL_ALL_DEXS } from "@/config/constants";
+import { HL_ALL_DEXS } from "@/config/app";
+import { MOBILE_POSITIONS_TABS, type MobilePositionsTabValue } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
@@ -18,17 +19,7 @@ import { MobileOrdersTab } from "./mobile-orders-tab";
 import { MobilePositionsTab } from "./mobile-positions-tab";
 import { MobileTwapTab } from "./mobile-twap-tab";
 
-const MOBILE_TABS = [
-	{ value: "positions", label: "Positions" },
-	{ value: "orders", label: "Orders" },
-	{ value: "balances", label: "Balances" },
-	{ value: "twap", label: "TWAP" },
-	{ value: "history", label: "Trades" },
-	{ value: "orders-history", label: "Order Hist." },
-	{ value: "funding", label: "Funding" },
-] as const;
-
-type TabValue = (typeof MOBILE_TABS)[number]["value"];
+type TabValue = MobilePositionsTabValue;
 
 interface Props {
 	className?: string;
@@ -82,7 +73,7 @@ export function MobilePositionsView({ className }: Props) {
 			<Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 min-h-0 flex flex-col">
 				<div className="shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 					<TabsList className="px-3 min-w-max">
-						{MOBILE_TABS.map((tab) => {
+						{MOBILE_POSITIONS_TABS.map((tab) => {
 							const count = getTabCount(tab.value);
 							const loading = isTabLoading(tab.value);
 

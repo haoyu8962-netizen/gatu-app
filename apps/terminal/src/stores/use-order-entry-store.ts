@@ -1,16 +1,11 @@
 import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist, subscribeWithSelector } from "zustand/middleware";
-import { STORAGE_KEYS } from "@/config/constants";
-import {
-	isScaleOrderType,
-	isTriggerOrderType,
-	type LimitTif,
-	ORDER_TYPES,
-	type OrderType,
-} from "@/lib/trade/order-types";
+import { STORAGE_KEYS } from "@/config/app";
+import { type LimitTif, ORDER_TYPES, type OrderType } from "@/config/trade";
+import { createValidatedStorage } from "@/lib/storage/validated-storage";
+import { isScaleOrderType, isTriggerOrderType } from "@/lib/trade/order-types";
 import type { Side, SizeMode } from "@/lib/trade/types";
-import { createValidatedStorage } from "@/stores/validated-storage";
 
 interface PersistedState {
 	side: Side;
@@ -110,10 +105,16 @@ const useOrderEntryStore = create<OrderEntryStore>()(
 						const isTrigger = isTriggerOrderType(orderType);
 						const isScale = isScaleOrderType(orderType);
 						set((state) => {
+							const wasTrigger = isTriggerOrderType(state.orderType);
 							const needsTifReset = isScale && state.tif === "Ioc";
+							function nextReduceOnly() {
+								if (isTrigger) return true;
+								if (wasTrigger) return false;
+								return state.reduceOnly;
+							}
 							return {
 								orderType,
-								reduceOnly: isTrigger ? true : state.reduceOnly,
+								reduceOnly: nextReduceOnly(),
 								tpSlEnabled: isTrigger ? false : state.tpSlEnabled,
 								tif: needsTifReset ? "Gtc" : state.tif,
 							};
@@ -174,26 +175,60 @@ const useOrderEntryStore = create<OrderEntryStore>()(
 	),
 );
 
-export const useOrderSide = () => useOrderEntryStore((s) => s.side);
-export const useOrderType = () => useOrderEntryStore((s) => s.orderType);
-export const useSizeMode = () => useOrderEntryStore((s) => s.sizeMode);
-export const useReduceOnly = () => useOrderEntryStore((s) => s.reduceOnly);
+export function useOrderSide() {
+	return useOrderEntryStore((s) => s.side);
+}
+export function useOrderType() {
+	return useOrderEntryStore((s) => s.orderType);
+}
+export function useSizeMode() {
+	return useOrderEntryStore((s) => s.sizeMode);
+}
+export function useReduceOnly() {
+	return useOrderEntryStore((s) => s.reduceOnly);
+}
 
-export const useOrderSize = () => useOrderEntryStore((s) => s.size);
-export const useLimitPrice = () => useOrderEntryStore((s) => s.limitPrice);
-export const useTriggerPrice = () => useOrderEntryStore((s) => s.triggerPrice);
+export function useOrderSize() {
+	return useOrderEntryStore((s) => s.size);
+}
+export function useLimitPrice() {
+	return useOrderEntryStore((s) => s.limitPrice);
+}
+export function useTriggerPrice() {
+	return useOrderEntryStore((s) => s.triggerPrice);
+}
 
-export const useScaleStart = () => useOrderEntryStore((s) => s.scaleStart);
-export const useScaleEnd = () => useOrderEntryStore((s) => s.scaleEnd);
-export const useScaleLevels = () => useOrderEntryStore((s) => s.scaleLevels);
+export function useScaleStart() {
+	return useOrderEntryStore((s) => s.scaleStart);
+}
+export function useScaleEnd() {
+	return useOrderEntryStore((s) => s.scaleEnd);
+}
+export function useScaleLevels() {
+	return useOrderEntryStore((s) => s.scaleLevels);
+}
 
-export const useTwapMinutes = () => useOrderEntryStore((s) => s.twapMinutes);
-export const useTwapRandomize = () => useOrderEntryStore((s) => s.twapRandomize);
+export function useTwapMinutes() {
+	return useOrderEntryStore((s) => s.twapMinutes);
+}
+export function useTwapRandomize() {
+	return useOrderEntryStore((s) => s.twapRandomize);
+}
 
-export const useTpSlEnabled = () => useOrderEntryStore((s) => s.tpSlEnabled);
-export const useTpPrice = () => useOrderEntryStore((s) => s.tpPrice);
-export const useSlPrice = () => useOrderEntryStore((s) => s.slPrice);
+export function useTpSlEnabled() {
+	return useOrderEntryStore((s) => s.tpSlEnabled);
+}
+export function useTpPrice() {
+	return useOrderEntryStore((s) => s.tpPrice);
+}
+export function useSlPrice() {
+	return useOrderEntryStore((s) => s.slPrice);
+}
 
-export const useTif = () => useOrderEntryStore((s) => s.tif);
+export function useTif() {
+	return useOrderEntryStore((s) => s.tif);
+}
 
-export const useOrderEntryActions = () => useOrderEntryStore((s) => s.actions);
+export function useOrderEntryActions() {
+	return useOrderEntryStore((s) => s.actions);
+}

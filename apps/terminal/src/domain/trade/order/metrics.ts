@@ -1,4 +1,5 @@
 import Big from "big.js";
+import { LIQ_WARNING_THRESHOLD, LIQUIDATION_BUFFER_FACTOR } from "@/config/trade";
 import { toBig } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 
@@ -42,9 +43,9 @@ export function getLiquidationInfo(input: LiquidationInput): LiquidationResult {
 	if (!px || !lev || !input.sizeValue || px.lte(0) || lev.lte(0)) {
 		return { liqPrice: null, liqWarning: false };
 	}
-	const buffer = px.div(lev).times(0.9);
+	const buffer = px.div(lev).times(LIQUIDATION_BUFFER_FACTOR);
 	const liqPrice = input.side === "buy" ? px.minus(buffer).toNumber() : px.plus(buffer).toNumber();
 	const priceDiff = Math.abs(liqPrice - input.price);
-	const liqWarning = Big(priceDiff).div(input.price).lt(0.05);
+	const liqWarning = Big(priceDiff).div(input.price).lt(LIQ_WARNING_THRESHOLD);
 	return { liqPrice, liqWarning };
 }

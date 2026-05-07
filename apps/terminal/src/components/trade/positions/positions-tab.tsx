@@ -1,33 +1,27 @@
-import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@hypeterminal/ui";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { PencilIcon, PlusIcon } from "@phosphor-icons/react";
-import { type ReactNode, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { HL_ALL_DEXS } from "@/config/constants";
+import { HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { cn } from "@/lib/cn";
-import { formatLiquidationPrice, formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
-import { type Position, useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
-import type { Markets } from "@/lib/hyperliquid/markets";
-import { getValueColorClass, isPositive, toBig } from "@/lib/trade/numbers";
-import { isStopOrder, isTakeProfitOrder } from "@/lib/trade/open-orders";
+import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
-import { AssetDisplay } from "../components/asset-display";
-import { PositionActionsDropdown } from "./position-actions-dropdown";
+import { Placeholder } from "./placeholder";
+import type { LimitClosePositionData, TpSlPositionData } from "./position-dialog-types";
 import { PositionLimitCloseModal } from "./position-limit-close-modal";
+import { PositionRow } from "./position-row";
 import { PositionTpSlModal } from "./position-tpsl-modal";
 import {
-	positionsPanelRowHoverClass,
-	positionsPanelRowStripeClass,
 	positionsPanelTableBodyClass,
 	positionsPanelTableCaptionRowClass,
-	positionsPanelTableCellClass,
 	positionsPanelTableHeadClass,
 	positionsPanelTableHeaderClass,
 	positionsPanelTableHeaderRowClass,
@@ -35,292 +29,7 @@ import {
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
 
-interface PlaceholderProps {
-	children: ReactNode;
-	variant?: "error";
-}
-
-function Placeholder({ children, variant }: PlaceholderProps) {
-	return (
-		<div
-			className={cn(
-				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-error" : "text-fg-muted",
-			)}
-		>
-			{children}
-		</div>
-	);
-}
-
-interface TpSlPositionData {
-	coin: string;
-	assetId: number;
-	isLong: boolean;
-	size: number;
-	entryPx: number;
-	markPx: number;
-	unrealizedPnl: number;
-	roe: number;
-	szDecimals: number;
-	existingTpPrice?: number;
-	existingSlPrice?: number;
-	existingTpOrderId?: number;
-	existingSlOrderId?: number;
-}
-
-interface TpSlOrderInfo {
-	tpPrice?: number;
-	slPrice?: number;
-	tpOrderId?: number;
-	slOrderId?: number;
-}
-
-interface LimitClosePositionData {
-	coin: string;
-	assetId: number;
-	isLong: boolean;
-	size: number;
-	entryPx: number;
-	markPx: number;
-	unrealizedPnl: number;
-	roe: number;
-	szDecimals: number;
-}
-
-interface PositionRowProps {
-	position: Position;
-	markets: Markets;
-	markPx: string | undefined;
-	tpSlInfo: TpSlOrderInfo | undefined;
-	isClosing: boolean;
-	isRowClosing: boolean;
-	isEven: boolean;
-	onClose: (assetId: number, size: number, markPx: number, szDecimals: number, isLong: boolean, coin: string) => void;
-	onLimitClose: (data: LimitClosePositionData) => void;
-	onReverse: (assetId: number, size: number, markPx: number, szDecimals: number, isLong: boolean, coin: string) => void;
-	onOpenTpSl: (data: TpSlPositionData) => void;
-	onSelectMarket: (coin: string, side: Side) => void;
-}
-
-function PositionRow({
-	position: p,
-	markets,
-	markPx: markPxRaw,
-	tpSlInfo,
-	isClosing,
-	isRowClosing,
-	isEven,
-	onClose,
-	onLimitClose,
-	onReverse,
-	onOpenTpSl,
-	onSelectMarket,
-}: PositionRowProps) {
-	const size = toBig(p.szi)?.toNumber() ?? Number.NaN;
-	const isLong = size > 0;
-	const absSize = Math.abs(size);
-	const market = markets.getMarket(p.coin);
-	const assetId = market?.assetId;
-	const szDecimals = market?.szDecimals ?? 4;
-	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
-	const displayName = market?.pairName ?? p.coin;
-
-	const liqPx = toBig(p.liquidationPx)?.toNumber();
-	const liqIsNear =
-		liqPx != null && Number.isFinite(markPx) && Number.isFinite(liqPx) && Math.abs(liqPx - markPx) / markPx <= 0.1;
-
-	const entryPx = toBig(p.entryPx)?.toNumber() ?? Number.NaN;
-	const unrealizedPnl = toBig(p.unrealizedPnl)?.toNumber() ?? Number.NaN;
-	const roe = toBig(p.returnOnEquity)?.toNumber() ?? Number.NaN;
-	const cumFunding = toBig(p.cumFunding.sinceOpen)?.toNumber() ?? Number.NaN;
-	const canClose = isPositive(absSize) && typeof assetId === "number" && isPositive(markPx);
-
-	const pnlClass = getValueColorClass(unrealizedPnl);
-	const fundingClass = getValueColorClass(cumFunding ? -cumFunding : null);
-	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
-
-	function handleClose() {
-		if (!canClose || typeof assetId !== "number") return;
-		onClose(assetId, absSize, markPx, szDecimals, isLong, p.coin);
-	}
-
-	function handleLimitClose() {
-		if (!canClose || typeof assetId !== "number") return;
-		onLimitClose({
-			coin: p.coin,
-			assetId,
-			isLong,
-			size: absSize,
-			entryPx,
-			markPx,
-			unrealizedPnl,
-			roe,
-			szDecimals,
-		});
-	}
-
-	function handleReverse() {
-		if (!canClose || typeof assetId !== "number") return;
-		onReverse(assetId, absSize, markPx, szDecimals, isLong, p.coin);
-	}
-
-	function handleOpenTpSl() {
-		if (typeof assetId !== "number") return;
-		onOpenTpSl({
-			coin: p.coin,
-			assetId,
-			isLong,
-			size: absSize,
-			entryPx,
-			markPx,
-			unrealizedPnl,
-			roe,
-			szDecimals,
-			existingTpPrice: tpSlInfo?.tpPrice,
-			existingSlPrice: tpSlInfo?.slPrice,
-			existingTpOrderId: tpSlInfo?.tpOrderId,
-			existingSlOrderId: tpSlInfo?.slOrderId,
-		});
-	}
-
-	return (
-		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
-			<TableCell
-				className={cn(
-					positionsPanelTableCellClass,
-					"min-w-0 border-l-2 text-fg",
-					isLong ? "border-l-success" : "border-l-error",
-				)}
-			>
-				<Button
-					variant="ghost"
-					intent="neutral"
-					onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
-					className="h-auto min-h-0 min-w-0 max-w-full gap-1.5 justify-start p-0.5 -m-0.5 font-normal rounded-6 hover:bg-fill-hover/60"
-					aria-label={
-						isLong
-							? t`Switch to ${displayName} market, long position`
-							: t`Switch to ${displayName} market, short position`
-					}
-				>
-					<AssetDisplay
-						coin={p.coin}
-						iconClassName="size-4"
-						nameClassName="text-xs font-semibold text-fg leading-none"
-					/>
-				</Button>
-			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
-				<div className="flex flex-col items-end gap-px">
-					<span className="text-xs font-semibold tabular-nums leading-tight">
-						{formatToken(absSize, {
-							decimals: szDecimals,
-							symbol: p.coin,
-						})}
-					</span>
-					<span className="text-2xs text-fg-muted tabular-nums leading-tight">
-						({formatUSD(p.positionValue, { compact: true })})
-					</span>
-				</div>
-			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right text-fg")}>
-				<div className="flex flex-col items-end gap-px">
-					<span className="text-xs font-semibold tabular-nums leading-tight">{formatUSD(p.marginUsed)}</span>
-					<span className="text-2xs font-medium text-fg-muted leading-tight">
-						{p.leverage.type === "isolated" ? t`Isolated` : t`Cross`}
-					</span>
-				</div>
-			</TableCell>
-			<TableCell
-				className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted whitespace-nowrap")}
-			>
-				<span className="tabular-nums">{formatPrice(p.entryPx, { szDecimals })}</span>
-			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg whitespace-nowrap")}>
-				<span className="text-xs font-semibold tabular-nums">{formatPrice(markPx, { szDecimals })}</span>
-			</TableCell>
-			<TableCell
-				className={cn(
-					positionsPanelTableCellClass,
-					"text-right tabular-nums min-w-0",
-					liqIsNear ? "text-error font-medium" : "text-fg-muted",
-				)}
-			>
-				<span className="block truncate" title={formatPrice(p.liquidationPx, { szDecimals })}>
-					{formatLiquidationPrice(p.liquidationPx, szDecimals)}
-				</span>
-			</TableCell>
-			<TableCell
-				className={cn(positionsPanelTableCellClass, "text-right tabular-nums whitespace-nowrap", fundingClass)}
-			>
-				<span className="font-medium tabular-nums">
-					{formatUSD(cumFunding ? -cumFunding : null, { signDisplay: "exceptZero" })}
-				</span>
-			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
-				<div className={cn("flex flex-col items-end gap-px tabular-nums", pnlClass)}>
-					<span className="text-xs font-semibold leading-tight">
-						{formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })}
-					</span>
-					<span className={cn("text-2xs leading-tight opacity-90", pnlClass)}>
-						({formatPercent(p.returnOnEquity, 1)})
-					</span>
-				</div>
-			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
-				<Tooltip content={tpSlInfo?.tpPrice && tpSlInfo?.slPrice ? t`Edit TP/SL` : t`Add TP/SL`} side="left">
-					<button
-						type="button"
-						onClick={handleOpenTpSl}
-						disabled={typeof assetId !== "number"}
-						className={cn(
-							"group inline-flex items-center gap-1.5 cursor-pointer transition-opacity disabled:cursor-not-allowed disabled:opacity-50",
-							!hasTpSl && "text-fg-disabled hover:text-fg-muted",
-						)}
-					>
-						{tpSlInfo?.tpPrice && tpSlInfo?.slPrice ? (
-							<>
-								<div className="flex items-center gap-1 text-2xs tabular-nums">
-									<span className="text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
-									<span className="text-fg-muted">/</span>
-									<span className="text-error">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
-								</div>
-								<PencilIcon className="size-2.5 text-fg-disabled group-hover:text-fg-muted transition-colors" />
-							</>
-						) : hasTpSl ? (
-							<>
-								<div className="flex items-center gap-1 text-2xs tabular-nums">
-									{tpSlInfo?.tpPrice ? (
-										<span className="text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
-									) : (
-										<span className="text-error">{formatPrice(tpSlInfo?.slPrice, { szDecimals })}</span>
-									)}
-								</div>
-								<PlusIcon className="size-2.5 text-fg-disabled group-hover:text-fg-muted transition-colors" />
-							</>
-						) : (
-							<div className="flex items-center gap-0.5 text-2xs font-medium text-fg-muted">
-								<PlusIcon className="size-2.5 group-hover:text-fg-muted transition-colors" />
-								<span>{t`Add`}</span>
-							</div>
-						)}
-					</button>
-				</Tooltip>
-			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
-				<PositionActionsDropdown
-					canClose={canClose}
-					isClosing={isClosing}
-					isRowClosing={isRowClosing}
-					onMarketClose={handleClose}
-					onLimitClose={handleLimitClose}
-					onReverse={handleReverse}
-				/>
-			</TableCell>
-		</TableRow>
-	);
-}
+type CloseIntent = "close" | "reverse";
 
 export function PositionsTab() {
 	const { address, isConnected } = useConnection();
@@ -355,30 +64,12 @@ export function PositionsTab() {
 	);
 	const openOrders = openOrdersEvent?.orders ?? [];
 
-	const tpSlOrdersByCoin = useMemo(() => {
-		const map = new Map<string, TpSlOrderInfo>();
-		for (const order of openOrders) {
-			if (!order.isTrigger) continue;
-
-			const triggerPx = toBig(order.triggerPx)?.toNumber();
-			if (!triggerPx || triggerPx <= 0) continue;
-
-			const existing = map.get(order.coin) ?? {};
-			if (isTakeProfitOrder(order) && !existing.tpPrice) {
-				existing.tpPrice = triggerPx;
-				existing.tpOrderId = order.oid;
-			} else if (isStopOrder(order) && !existing.slPrice) {
-				existing.slPrice = triggerPx;
-				existing.slOrderId = order.oid;
-			}
-			map.set(order.coin, existing);
-		}
-		return map;
-	}, [openOrders]);
+	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 
 	const actionError = closeError?.message;
 
-	function handleClosePosition(
+	function submitCloseOrReverse(
+		intent: CloseIntent,
 		assetId: number,
 		size: number,
 		markPx: number,
@@ -392,7 +83,7 @@ export function PositionsTab() {
 		closingKeyRef.current = `${assetId}`;
 
 		const { orders, grouping } = buildOrderPlan({
-			kind: "marketClose",
+			kind: intent === "close" ? "marketClose" : "reverse",
 			assetId,
 			size,
 			szDecimals,
@@ -401,20 +92,34 @@ export function PositionsTab() {
 			slippageBps,
 		});
 
+		const successMessage = intent === "close" ? t`Position closed` : t`Position reversed`;
+		const failureMessage = intent === "close" ? t`Failed to close position` : t`Failed to reverse position`;
+
 		placeOrder(
 			{ orders, grouping },
 			{
 				onSuccess: () => {
-					toast.success(t`Position closed` + (coin ? ` — ${coin}` : ""));
+					toast.success(successMessage + (coin ? ` — ${coin}` : ""));
 				},
 				onError: (error) => {
-					toast.error(error.message || t`Failed to close position`);
+					toast.error(error.message || failureMessage);
 				},
 				onSettled: () => {
 					closingKeyRef.current = null;
 				},
 			},
 		);
+	}
+
+	function handleClosePosition(
+		assetId: number,
+		size: number,
+		markPx: number,
+		szDecimals: number,
+		isLong: boolean,
+		coin: string,
+	) {
+		submitCloseOrReverse("close", assetId, size, markPx, szDecimals, isLong, coin);
 	}
 
 	function handleReverse(
@@ -425,35 +130,7 @@ export function PositionsTab() {
 		isLong: boolean,
 		coin: string,
 	) {
-		if (isClosing) return;
-
-		resetCloseError();
-		closingKeyRef.current = `${assetId}`;
-
-		const { orders, grouping } = buildOrderPlan({
-			kind: "reverse",
-			assetId,
-			size,
-			szDecimals,
-			isLong,
-			markPx,
-			slippageBps,
-		});
-
-		placeOrder(
-			{ orders, grouping },
-			{
-				onSuccess: () => {
-					toast.success(t`Position reversed` + (coin ? ` — ${coin}` : ""));
-				},
-				onError: (error) => {
-					toast.error(error.message || t`Failed to reverse position`);
-				},
-				onSettled: () => {
-					closingKeyRef.current = null;
-				},
-			},
-		);
+		submitCloseOrReverse("reverse", assetId, size, markPx, szDecimals, isLong, coin);
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {
@@ -500,34 +177,58 @@ export function PositionsTab() {
 						<Table className="table-fixed min-w-[64rem] w-full">
 							<TableHeader className={positionsPanelTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[8%] min-w-0 text-left")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[8%] min-w-0 text-left")}
+									>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+									>
 										{t`Size`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[12%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[12%] text-right")}
+									>
 										{t`Margin`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[8%] text-right")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[8%] text-right")}>
 										{t`Entry`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[9%] text-right")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[9%] text-right")}>
 										{t`Mark`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[9%] text-right")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[9%] text-right")}>
 										{t`Liq`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[8%] text-right")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[8%] text-right")}>
 										{t`Funding`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[12%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[12%] text-right")}
+									>
 										{t`PNL`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
+									>
 										{t`TP/SL`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
+									>
 										{t`Actions`}
 									</TableHead>
 								</TableRow>
@@ -535,7 +236,7 @@ export function PositionsTab() {
 							<TableBody className={positionsPanelTableBodyClass}>
 								{positions.map((p, i) => (
 									<PositionRow
-										key={`${p.coin}-${p.entryPx}-${p.szi}`}
+										key={p.coin}
 										position={p}
 										markets={markets}
 										markPx={mids?.[p.coin]}

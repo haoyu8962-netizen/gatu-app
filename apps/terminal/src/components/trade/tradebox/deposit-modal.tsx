@@ -7,408 +7,28 @@ import {
 	ModalTitle,
 	SegmentedControlItem,
 	SegmentedControls,
-	Select,
 } from "@hypeterminal/ui";
-import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import {
-	ArrowLineDownIcon,
-	ArrowLineUpIcon,
-	ArrowSquareOutIcon,
-	ArrowsLeftRightIcon,
-	CheckCircleIcon,
-	ClockIcon,
-	SpinnerGapIcon,
-	WalletIcon,
-	WarningCircleIcon,
-} from "@phosphor-icons/react";
+import { ArrowLineDownIcon, ArrowLineUpIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Suspense, useState } from "react";
-import { formatUnits } from "viem";
 import { useConnection } from "wagmi";
-import { InfoRow } from "@/components/ui/info-row";
-import { NumberInput } from "@/components/ui/number-input";
-import { MIN_DEPOSIT_USDC, MIN_WITHDRAW_USD, USDC_DECIMALS, WITHDRAWAL_FEE_USD } from "@/config/contracts";
-import { cn } from "@/lib/cn";
+import { NETWORKS } from "@/config/networks";
 import { formatTransferError } from "@/lib/errors/format";
-import { getExplorerTxUrl } from "@/lib/explorer";
-import { formatNumber } from "@/lib/format";
 import { useDeposit, useExchange, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { toNumberOrZero } from "@/lib/trade/numbers";
+import { validateWithdraw } from "@/lib/trade/withdraw-validation";
 import { useDepositModalActions, useDepositModalOpen, useDepositModalTab } from "@/stores/use-global-modal-store";
+import { DepositForm } from "./deposit/deposit-form";
+import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
+import { WithdrawForm } from "./deposit/withdraw-form";
+import { WrongNetworkScreen } from "./deposit/wrong-network-screen";
 
-const LazyBridgeTab = createLazyComponent(() => import("./bridge-tab"), "BridgeTab");
+const LazyBridgeTab = createLazyComponent(() => import("./bridge/bridge-tab"), "BridgeTab");
 
-const NETWORKS = [{ id: "arbitrum", name: "Arbitrum", shortName: "ARB" }] as const;
+const ARBITRUM_NETWORK = NETWORKS[0];
 
-type NetworkId = (typeof NETWORKS)[number]["id"];
-
-interface NetworkSelectProps {
-	label: React.ReactNode;
-	value: NetworkId;
-	onChange: (value: NetworkId) => void;
-	disabled?: boolean;
-}
-
-function NetworkSelect({ label, value, onChange, disabled }: NetworkSelectProps) {
-	return (
-		<Select
-			label={label as string}
-			value={value}
-			onValueChange={(v) => v && onChange(v as NetworkId)}
-			disabled={disabled}
-			options={NETWORKS.map((n) => ({ value: n.id, label: n.name }))}
-		/>
-	);
-}
-
-interface StatusScreenProps {
-	title: React.ReactNode;
-	icon: "success" | "error" | "loading";
-	heading: React.ReactNode;
-	description?: React.ReactNode;
-	txHash?: string;
-	children?: React.ReactNode;
-	onClose?: () => void;
-	closable?: boolean;
-}
-
-function StatusScreen({
-	title,
-	icon,
-	heading,
-	description,
-	txHash,
-	children,
-	onClose,
-	closable = true,
-}: StatusScreenProps) {
-	const explorerUrl = txHash ? getExplorerTxUrl(txHash) : null;
-
-	return (
-		<Modal open onOpenChange={closable ? onClose : undefined}>
-			<ModalPopup size="sm" showClose={closable}>
-				<ModalHeader className="border-b border-stroke-weak/40">
-					<ModalTitle>{title}</ModalTitle>
-				</ModalHeader>
-				<ModalContent>
-					<div className="flex flex-col items-center gap-4 py-6">
-						{icon === "loading" ? (
-							<div className="relative">
-								<div className="absolute inset-0 animate-ping rounded-full bg-brand-soft/20" />
-								<div className="relative flex size-14 items-center justify-center rounded-full bg-brand-soft/10 border border-stroke-brand-strong/30">
-									<SpinnerGapIcon className="size-7 animate-spin text-brand" />
-								</div>
-							</div>
-						) : (
-							<div
-								className={cn(
-									"flex size-14 items-center justify-center rounded-full border",
-									icon === "success"
-										? "bg-success-soft border-stroke-success-strong/30"
-										: "bg-error-soft border-stroke-error-strong/30",
-								)}
-							>
-								{icon === "success" ? (
-									<CheckCircleIcon className="size-7 text-success" />
-								) : (
-									<WarningCircleIcon className="size-7 text-error" />
-								)}
-							</div>
-						)}
-						<div className="text-center space-y-1.5">
-							<p className="text-sm font-medium">{heading}</p>
-							{description && <p className="text-xs text-fg-muted">{description}</p>}
-						</div>
-						{explorerUrl && (
-							<a
-								href={explorerUrl}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1.5 text-xs text-brand hover:underline"
-							>
-								<Trans>View on explorer</Trans>
-								<ArrowSquareOutIcon className="size-3" />
-							</a>
-						)}
-						{children && <div className="w-full pt-2">{children}</div>}
-					</div>
-				</ModalContent>
-			</ModalPopup>
-		</Modal>
-	);
-}
-
-interface DepositFormProps {
-	amount: string;
-	onAmountChange: (value: string) => void;
-	balance: string;
-	validation: { valid: boolean; error: string | null };
-	isPending: boolean;
-	onSubmit: () => void;
-}
-
-function DepositForm({ amount, onAmountChange, balance, validation, isPending, onSubmit }: DepositFormProps) {
-	return (
-		<div className="flex flex-1 flex-col gap-2">
-			<NetworkSelect label={<Trans>From</Trans>} value="arbitrum" onChange={() => {}} disabled />
-
-			<div>
-				<NumberInput
-					label={t`Amount`}
-					labelValue={
-						<>
-							Available:{" "}
-							<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-								{balance} USDC
-							</span>
-						</>
-					}
-					onLabelValueClick={() => onAmountChange(balance)}
-					placeholder="0.00"
-					value={amount}
-					onChange={(e) => onAmountChange(e.target.value)}
-					className={cn(
-						"w-full tabular-nums",
-						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",
-					)}
-				/>
-				<p className={cn("h-4 text-xs flex items-center gap-1", validation.error ? "text-error" : "invisible")}>
-					<WarningCircleIcon className="size-3" />
-					{validation.error || "\u00A0"}
-				</p>
-			</div>
-
-			<div className="rounded-8 border border-stroke-weak/40 bg-surface p-3 space-y-2 text-xs">
-				<InfoRow
-					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<WalletIcon className="size-3" />
-							<Trans>Minimum</Trans>
-						</>
-					}
-					value={`${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`}
-				/>
-				<InfoRow
-					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<ClockIcon className="size-3" />
-							<Trans>Estimated time</Trans>
-						</>
-					}
-					value="~1 min"
-					valueClassName="font-medium"
-				/>
-			</div>
-
-			<Button
-				variant="filled"
-				intent="neutral"
-				onClick={onSubmit}
-				disabled={!validation.valid || isPending}
-				className="mt-auto w-full"
-			>
-				{isPending ? (
-					<>
-						<SpinnerGapIcon className="size-4 animate-spin" />
-						<Trans>Processing...</Trans>
-					</>
-				) : (
-					<>
-						<ArrowLineDownIcon className="size-4" />
-						<Trans>Deposit</Trans>
-					</>
-				)}
-			</Button>
-		</div>
-	);
-}
-
-interface WithdrawFormProps {
-	amount: string;
-	onAmountChange: (value: string) => void;
-	available: string;
-	validation: { valid: boolean; error: string | null };
-	isPending: boolean;
-	onSubmit: () => void;
-}
-
-function WithdrawForm({ amount, onAmountChange, available, validation, isPending, onSubmit }: WithdrawFormProps) {
-	const availableNum = toNumberOrZero(available);
-	const amountNum = toNumber(amount);
-	const netReceived = amountNum !== null && amountNum > 0 ? Math.max(amountNum - WITHDRAWAL_FEE_USD, 0) : null;
-
-	return (
-		<div className="flex flex-1 flex-col gap-2">
-			<NetworkSelect label={<Trans>To</Trans>} value="arbitrum" onChange={() => {}} disabled />
-
-			<div>
-				<NumberInput
-					label={t`Amount`}
-					labelValue={
-						<>
-							Available:{" "}
-							<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-								{formatNumber(availableNum, 2)} USDC
-							</span>
-						</>
-					}
-					onLabelValueClick={() => !isPending && onAmountChange(availableNum.toString())}
-					placeholder="0.00"
-					value={amount}
-					onChange={(e) => onAmountChange(e.target.value)}
-					disabled={isPending}
-					className={cn(
-						"w-full tabular-nums",
-						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",
-					)}
-				/>
-				<p className={cn("h-4 text-xs flex items-center gap-1", validation.error ? "text-error" : "invisible")}>
-					<WarningCircleIcon className="size-3" />
-					{validation.error || "\u00A0"}
-				</p>
-			</div>
-
-			<div className="rounded-8 border border-stroke-weak/40 bg-surface p-3 space-y-2 text-xs">
-				<InfoRow
-					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<WalletIcon className="size-3" />
-							<Trans>Network fee</Trans>
-						</>
-					}
-					value={`$${WITHDRAWAL_FEE_USD}`}
-				/>
-				<InfoRow
-					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<ArrowLineDownIcon className="size-3" />
-							<Trans>Net received</Trans>
-						</>
-					}
-					value={netReceived === null ? "--" : `$${formatNumber(netReceived, 2)}`}
-				/>
-				<InfoRow
-					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<ArrowLineUpIcon className="size-3" />
-							<Trans>Minimum</Trans>
-						</>
-					}
-					value={`$${MIN_WITHDRAW_USD}`}
-				/>
-				<InfoRow
-					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<ClockIcon className="size-3" />
-							<Trans>Estimated time</Trans>
-						</>
-					}
-					value="~5 min"
-					valueClassName="font-medium"
-				/>
-			</div>
-
-			<Button
-				variant="filled"
-				intent="neutral"
-				onClick={onSubmit}
-				disabled={!validation.valid || isPending}
-				className="mt-auto w-full"
-			>
-				{isPending ? (
-					<>
-						<SpinnerGapIcon className="size-4 animate-spin" />
-						<Trans>Processing...</Trans>
-					</>
-				) : (
-					<>
-						<ArrowLineUpIcon className="size-4" />
-						<Trans>Withdraw</Trans>
-					</>
-				)}
-			</Button>
-		</div>
-	);
-}
-
-function WalletNotConnected() {
-	return (
-		<div className="flex flex-col items-center gap-4 py-8">
-			<div className="flex size-12 items-center justify-center rounded-full bg-surface border border-stroke-weak/40">
-				<WalletIcon className="size-6 text-fg" />
-			</div>
-			<div className="text-center space-y-1">
-				<p className="text-sm font-medium">
-					<Trans>Wallet not connected</Trans>
-				</p>
-				<p className="text-xs text-fg">
-					<Trans>Connect your wallet to withdraw funds</Trans>
-				</p>
-			</div>
-		</div>
-	);
-}
-
-interface WrongNetworkScreenProps {
-	open: boolean;
-	onClose: () => void;
-	onSwitch: () => void;
-	isSwitching: boolean;
-	error?: Error | null;
-}
-
-function WrongNetworkScreen({ open, onClose, onSwitch, isSwitching, error }: WrongNetworkScreenProps) {
-	return (
-		<Modal open={open} onOpenChange={onClose}>
-			<ModalPopup size="sm">
-				<ModalHeader>
-					<ModalTitle>
-						<Trans>Transfer</Trans>
-					</ModalTitle>
-				</ModalHeader>
-				<ModalContent className="space-y-4">
-					<div className="flex items-start gap-3 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft/10 p-4">
-						<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-warning-soft/20">
-							<WarningCircleIcon className="size-4 text-warning" />
-						</div>
-						<div className="space-y-1">
-							<p className="text-sm font-medium">
-								<Trans>Wrong network</Trans>
-							</p>
-							<p className="text-xs text-fg">
-								<Trans>Switch to Arbitrum to deposit USDC to Hyperliquid</Trans>
-							</p>
-						</div>
-					</div>
-					{error && <p className="text-xs text-error px-1">{error.message}</p>}
-					<Button variant="filled" intent="neutral" onClick={onSwitch} disabled={isSwitching} className="w-full">
-						{isSwitching ? (
-							<>
-								<SpinnerGapIcon className="size-4 animate-spin" />
-								<Trans>Switching...</Trans>
-							</>
-						) : (
-							<Trans>Switch to Arbitrum</Trans>
-						)}
-					</Button>
-				</ModalContent>
-			</ModalPopup>
-		</Modal>
-	);
-}
+const DEPOSIT_TAB_MIN_HEIGHT = "min-h-72";
 
 export function DepositModal() {
 	const open = useDepositModalOpen();
@@ -447,17 +67,7 @@ export function DepositModal() {
 	} = useExchange("withdraw3");
 
 	const depositValidation = validateDeposit(depositAmount);
-
-	function validateWithdraw(amount: string) {
-		if (!amount || amount === "0") return { valid: false, error: null };
-		const amountNum = toNumber(amount);
-		if (amountNum === null || amountNum <= 0) return { valid: false, error: t`Invalid amount` };
-		if (amountNum < MIN_WITHDRAW_USD) return { valid: false, error: t`Minimum withdrawal is $${MIN_WITHDRAW_USD}` };
-		if (amountNum > withdrawableNum) return { valid: false, error: t`Insufficient balance` };
-		return { valid: true, error: null };
-	}
-
-	const withdrawValidation = validateWithdraw(withdrawAmount);
+	const withdrawValidation = validateWithdraw(withdrawAmount, withdrawableNum);
 
 	function handleClose() {
 		resetDeposit();
@@ -479,7 +89,6 @@ export function DepositModal() {
 		}
 	}
 
-	// Wrong network state
 	if (!isArbitrum && activeTab === "deposit") {
 		return (
 			<WrongNetworkScreen
@@ -492,7 +101,6 @@ export function DepositModal() {
 		);
 	}
 
-	// Deposit status screens
 	if (depositStatus === "success") {
 		return (
 			<StatusScreen
@@ -549,7 +157,6 @@ export function DepositModal() {
 		);
 	}
 
-	// Withdraw status screens
 	if (isWithdrawSuccess) {
 		return (
 			<StatusScreen
@@ -559,7 +166,7 @@ export function DepositModal() {
 				description={
 					<>
 						<span className="tabular-nums font-medium text-success">${withdrawAmount}</span>{" "}
-						<Trans>will arrive in ~5 min</Trans>
+						<Trans>will arrive in {ARBITRUM_NETWORK.estimatedWithdrawTime}</Trans>
 					</>
 				}
 				onClose={handleClose}
@@ -592,7 +199,6 @@ export function DepositModal() {
 		);
 	}
 
-	// Main form
 	return (
 		<Modal open={open} onOpenChange={handleClose}>
 			<ModalPopup size="sm">
@@ -619,7 +225,7 @@ export function DepositModal() {
 						</SegmentedControlItem>
 					</SegmentedControls>
 
-					<div className="min-h-72">
+					<div className={`flex flex-col ${DEPOSIT_TAB_MIN_HEIGHT}`}>
 						{activeTab === "deposit" && (
 							<DepositForm
 								amount={depositAmount}

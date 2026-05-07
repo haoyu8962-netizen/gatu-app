@@ -1,17 +1,19 @@
-import { Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useConnection } from "wagmi";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { getValueColorClass, toNumber } from "@/lib/trade/numbers";
+import { toNumber } from "@/lib/trade/numbers";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
+import { MetricCell } from "./metric-cell";
 
 interface Props {
 	className?: string;
@@ -32,7 +34,7 @@ export function MobileHistoryTab({ className }: Props) {
 		{ enabled: isConnected && !!address },
 	);
 
-	const fills = fillsEvent?.fills?.slice(0, 200).sort((a, b) => b.time - a.time) ?? [];
+	const fills = fillsEvent?.fills?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
 	const headerCount = isConnected ? `${fills.length}` : FALLBACK_VALUE_PLACEHOLDER;
 
 	if (!isConnected) {
@@ -78,33 +80,25 @@ export function MobileHistoryTab({ className }: Props) {
 						return (
 							<div
 								key={`${fill.hash}-${fill.tid}`}
-								className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden"
+								className="rounded-xs border border-stroke-weak bg-surface overflow-hidden"
 							>
-								<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
-									<div
-										className={cn("absolute left-0 top-0 bottom-0 w-px", isBuy ? "bg-market-up" : "bg-market-down")}
-									/>
-									<Button
-										variant="ghost"
-										intent="neutral"
-										size="sm"
-										onClick={() => setSelectedMarket(scope, fill.coin)}
-									>
-										<AssetDisplay
+								<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
+									<div className="flex items-center gap-2">
+										<AssetBadge
 											coin={fill.coin}
-											nameClassName="text-sm font-semibold"
-											subtitle={
-												<span
-													className={cn(
-														"text-xs font-medium uppercase",
-														isLiquidation ? "text-error" : isBuy ? "text-success" : "text-error",
-													)}
-												>
-													{isLiquidation ? t`Liquidated` : fill.dir}
-												</span>
-											}
+											side={isBuy ? "buy" : "sell"}
+											onClick={() => setSelectedMarket(scope, fill.coin)}
+											nameClassName="text-sm"
 										/>
-									</Button>
+										<span
+											className={cn(
+												"text-2xs font-medium uppercase",
+												isLiquidation ? "text-error" : isBuy ? "text-success" : "text-error",
+											)}
+										>
+											{isLiquidation ? t`Liquidated` : fill.dir}
+										</span>
+									</div>
 									{showPnl && (
 										<div className={cn("text-xs font-medium tabular-nums", getValueColorClass(closedPnl))}>
 											{formatUSD(closedPnl, { signDisplay: "exceptZero" })}
@@ -112,7 +106,7 @@ export function MobileHistoryTab({ className }: Props) {
 									)}
 								</div>
 
-								<div className="grid grid-cols-3 divide-x divide-stroke-weak/40">
+								<div className="grid grid-cols-3 divide-x divide-stroke-weak">
 									<MetricCell label={t`Price`} value={formatUSD(fill.px)} />
 									<MetricCell label={t`Size`} value={formatNumber(fill.sz, markets.getSzDecimals(fill.coin))} />
 									<MetricCell
@@ -132,7 +126,7 @@ export function MobileHistoryTab({ className }: Props) {
 											className="flex items-center gap-1 text-xs text-fg-muted hover:text-fg active:text-fg touch-manipulation"
 										>
 											{t`Explorer`}
-											<ArrowSquareOutIcon className="size-3" />
+											<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
 										</a>
 									)}
 								</div>
@@ -142,20 +136,5 @@ export function MobileHistoryTab({ className }: Props) {
 				</div>
 			</div>
 		</Skeleton>
-	);
-}
-
-interface MetricCellProps {
-	label: string;
-	value: string;
-	valueClass?: string;
-}
-
-function MetricCell({ label, value, valueClass }: MetricCellProps) {
-	return (
-		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-fg-muted">{label}</div>
-			<div className={cn("text-xs tabular-nums font-medium", valueClass)}>{value}</div>
-		</div>
 	);
 }

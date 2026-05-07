@@ -26,9 +26,9 @@ const thumbSizeClasses: Record<SliderThumbSize, string> = {
 };
 
 const thumbHitAreaClasses: Record<SliderThumbSize, string> = {
-	sm: "before:-inset-2",
-	md: "before:-inset-2.5",
-	lg: "before:-inset-2",
+	sm: "before:-inset-4",
+	md: "before:-inset-3.5",
+	lg: "before:-inset-2.5",
 };
 
 const controlHeightClasses: Record<SliderThumbSize, string> = {

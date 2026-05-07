@@ -11,6 +11,8 @@
 		"./provider": "./src/provider.tsx",
 		"./clients": "./src/clients.ts",
 		"./create-config": "./src/create-config.ts",
+		"./hooks/useInfo": "./src/hooks/useInfo.ts",
+		"./hooks/useSubscription": "./src/hooks/useSubscription.ts",
 		"./lru": "./src/lru.ts",
 		"./hooks/utils/useSub": "./src/hooks/utils/useSub.ts",
 		"./markets/types": "./src/markets/types.ts",

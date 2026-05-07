@@ -1,10 +1,11 @@
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon } from "@phosphor-icons/react";
-import { type ReactNode, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
+import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import {
 	type BalanceRow,
 	filterBalanceRowsByUsdValue,
@@ -20,6 +21,7 @@ import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useSwapModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-global-settings-store";
 import { AssetDisplay } from "../components/asset-display";
+import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
 	positionsPanelRowStripeClass,
@@ -35,27 +37,7 @@ import {
 import { SendModal } from "./send-modal";
 import { TransferModal } from "./transfer-modal";
 
-interface PlaceholderProps {
-	children: ReactNode;
-	variant?: "error";
-}
-
-function Placeholder({ children, variant }: PlaceholderProps) {
-	return (
-		<div
-			className={cn(
-				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-error" : "text-fg",
-			)}
-		>
-			{children}
-		</div>
-	);
-}
-
 type TransferDirection = "toSpot" | "toPerp";
-
-const SMALL_BALANCE_THRESHOLD = 1;
 
 export function BalancesTab() {
 	const { isConnected } = useConnection();
@@ -103,7 +85,7 @@ export function BalancesTab() {
 
 	const filteredBalances = useMemo(() => {
 		if (!hideSmallBalances) return balances;
-		return filterBalanceRowsByUsdValue(balances, SMALL_BALANCE_THRESHOLD);
+		return filterBalanceRowsByUsdValue(balances, SMALL_BALANCE_THRESHOLD_USD);
 	}, [balances, hideSmallBalances]);
 
 	const perpBalances = useMemo(() => filteredBalances.filter((row) => row.type === "perp"), [filteredBalances]);
@@ -140,19 +122,19 @@ export function BalancesTab() {
 				key={`${row.type}-${row.asset}`}
 				className={cn(positionsPanelRowHoverClass, index % 2 === 1 && positionsPanelRowStripeClass)}
 			>
-				<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
+				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 					<AssetDisplay coin={row.asset} />
 				</TableCell>
-				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 					{formatToken(row.available, decimals)}
 				</TableCell>
-				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 					{formatToken(row.total, decimals)}
 				</TableCell>
-				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-success")}>
+				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-success")}>
 					{formatUSD(row.usdValue, { compact: true })}
 				</TableCell>
-				<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 					{pnlData ? (
 						<span className={pnlData.pnl >= 0 ? "text-success" : "text-error"}>
 							{pnlData.pnl >= 0 ? "+" : ""}
@@ -163,7 +145,7 @@ export function BalancesTab() {
 						<span className="text-fg-muted">—</span>
 					)}
 				</TableCell>
-				<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
+				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
 					<div className="flex flex-nowrap items-center justify-end gap-1 whitespace-nowrap">
 						{canTransfer && (
 							<Button
@@ -236,22 +218,42 @@ export function BalancesTab() {
 						<Table className="table-fixed min-w-[44rem] w-full">
 							<TableHeader className={positionsPanelTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[20%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[20%] text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+									>
 										{t`Available`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+									>
 										{t`Total`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}
+									>
 										{t`USD Value`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}
+									>
 										{t`PNL`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[20%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[20%] text-right")}
+									>
 										{t`Actions`}
 									</TableHead>
 								</TableRow>

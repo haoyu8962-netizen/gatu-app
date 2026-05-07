@@ -1,6 +1,7 @@
-import { useSubscription } from "@hypeterminal/hl-react";
-import type { BuilderPerpMarket, PerpMarket, SpotMarket } from "@hypeterminal/hl-react/markets/types";
+import { type BuilderPerpMarket, type PerpMarket, type SpotMarket, useSubscription } from "@hypeterminal/hl-react";
 import { useEffect, useMemo, useState } from "react";
+import { STORAGE_KEYS } from "@/config/app";
+import { MARKETS_STATS_TTL_MS } from "@/config/time";
 import { loadLastMark, saveLastMark } from "@/lib/last-mark-cache";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useSelectedMarket } from "@/stores/use-market-store";
@@ -38,17 +39,14 @@ interface StatsCache {
 	savedAt: number;
 }
 
-const STATS_CACHE_KEY = "hl-mkt-stats-v1";
-const STATS_CACHE_TTL = 5 * 60 * 1000;
-
 function loadStatsCache(): StatsCache | null {
 	if (typeof window === "undefined") return null;
 	try {
-		const json = sessionStorage.getItem(STATS_CACHE_KEY);
+		const json = sessionStorage.getItem(STORAGE_KEYS.MARKETS_STATS);
 		if (!json) return null;
 		const data = JSON.parse(json) as StatsCache;
-		if (Date.now() - data.savedAt > STATS_CACHE_TTL) {
-			sessionStorage.removeItem(STATS_CACHE_KEY);
+		if (Date.now() - data.savedAt > MARKETS_STATS_TTL_MS) {
+			sessionStorage.removeItem(STORAGE_KEYS.MARKETS_STATS);
 			return null;
 		}
 		return data;
@@ -62,7 +60,7 @@ function saveStatsCache(allDexsCtxs: AllDexsAssetCtxs | undefined, spotCtxs: Spo
 	if (!allDexsCtxs && !spotCtxs) return;
 	try {
 		const data: StatsCache = { allDexsCtxs, spotCtxs, savedAt: Date.now() };
-		sessionStorage.setItem(STATS_CACHE_KEY, JSON.stringify(data));
+		sessionStorage.setItem(STORAGE_KEYS.MARKETS_STATS, JSON.stringify(data));
 	} catch {}
 }
 

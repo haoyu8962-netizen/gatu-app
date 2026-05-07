@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { ORDER_MIN_NOTIONAL_USD } from "@/config/constants";
+import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
 import { createValidator, type Validator } from "../types";
 
 export interface SpotInputContext {

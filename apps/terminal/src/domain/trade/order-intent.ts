@@ -1,16 +1,9 @@
 import Big from "big.js";
+import type { ExchangeOrder, LimitTif, OrderType } from "@/config/trade";
 import { getExecutedPrice } from "@/domain/trade/order/price";
 import { buildOrders, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import { isPositive } from "@/lib/trade/numbers";
-import {
-	type ExchangeOrder,
-	isScaleOrderType,
-	isStopOrderType,
-	isTriggerOrderType,
-	type LimitTif,
-	type OrderType,
-	usesLimitPrice,
-} from "@/lib/trade/order-types";
+import { isScaleOrderType, isStopOrderType, isTriggerOrderType, usesLimitPrice } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
 
 export type OrderPlan = {

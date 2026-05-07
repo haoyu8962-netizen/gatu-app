@@ -2,14 +2,16 @@ import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup,
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ArrowsDownUpIcon, CheckIcon, SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SWAP_SUCCESS_DURATION_MS } from "@/config/time";
 import { getAvailableFromTotals, getSpotBalance } from "@/domain/trade/balances";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { findSpotPair, getAvailablePairTokens, getSwapSide } from "@/domain/trade/swap";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import { useExchange } from "@/lib/hyperliquid";
@@ -58,9 +60,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 	const [fromToken, setFromToken] = useState(initialFromToken);
 	const [toToken, setToToken] = useState(defaultToToken);
 	const [amount, setAmount] = useState("");
-	const [showSuccess, setShowSuccess] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
+	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(onClose, SWAP_SUCCESS_DURATION_MS);
 
 	const getTokenBalance = useCallback(
 		(token: string) => {
@@ -151,15 +152,9 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 		setAmount(String(fromBalance));
 	}
 
-	const handleClose = useCallback(
+	const handleOpenChange = useCallback(
 		(open: boolean) => {
-			if (!open) {
-				if (autoCloseTimerRef.current) {
-					clearTimeout(autoCloseTimerRef.current);
-					autoCloseTimerRef.current = null;
-				}
-				onClose();
-			}
+			if (!open) onClose();
 		},
 		[onClose],
 	);
@@ -185,15 +180,12 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 			const result = await placeOrder({ orders: [order], grouping: "na" });
 			throwIfResponseError(result.response?.data?.statuses?.[0]);
 
-			setShowSuccess(true);
-			autoCloseTimerRef.current = setTimeout(() => {
-				handleClose(false);
-			}, SWAP_SUCCESS_DURATION_MS);
+			triggerAutoClose();
 		} catch (err) {
 			const message = err instanceof Error ? err.message : t`Swap failed`;
 			setError(message);
 		}
-	}, [spotMarket, orderSize, isSubmitting, isBuying, markPx, szDecimals, placeOrder, handleClose]);
+	}, [spotMarket, orderSize, isSubmitting, isBuying, markPx, szDecimals, placeOrder, triggerAutoClose]);
 
 	const insufficientBalance = amountValue > fromBalance;
 	const noPairAvailable = fromToken && toToken && !spotMarket;
@@ -201,9 +193,9 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 	const isDisabled = isSubmitting || showSuccess;
 
 	return (
-		<Modal open onOpenChange={handleClose}>
+		<Modal open onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm">
-				<ModalHeader className="border-b border-stroke-weak/40">
+				<ModalHeader>
 					<ModalTitle>
 						<Trans>Swap</Trans>
 					</ModalTitle>
@@ -391,7 +383,7 @@ function TokenPanel({
 			)}
 		>
 			<div className="flex items-center justify-between">
-				<span className="text-3xs font-medium uppercase tracking-wide text-fg-muted leading-none">{label}</span>
+				<span className={labelTypographyClass}>{label}</span>
 				{editable ? (
 					<button
 						type="button"

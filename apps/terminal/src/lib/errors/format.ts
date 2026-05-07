@@ -1,5 +1,7 @@
 import { t } from "@lingui/core/macro";
 
+const ERROR_MESSAGE_TRUNCATE_LIMIT = 100;
+
 const ERROR_PATTERNS = [
 	{ pattern: /user rejected/i, message: () => t`Transaction was rejected` },
 	{ pattern: /insufficient funds/i, message: () => t`Insufficient funds for gas` },
@@ -18,5 +20,7 @@ export function formatTransferError(error: Error | null): string {
 	}
 
 	const firstLine = message.split("\n")[0];
-	return firstLine.length > 100 ? `${firstLine.slice(0, 100)}...` : firstLine;
+	return firstLine.length > ERROR_MESSAGE_TRUNCATE_LIMIT
+		? `${firstLine.slice(0, ERROR_MESSAGE_TRUNCATE_LIMIT)}...`
+		: firstLine;
 }

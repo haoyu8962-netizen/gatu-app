@@ -1,7 +1,15 @@
-import { SCALE_LEVELS_MAX, SCALE_LEVELS_MIN } from "@/config/constants";
+import {
+	DEFAULT_LEVERAGE_FALLBACK,
+	type ExchangeOrder,
+	HL_PRICE_MAX_DECIMALS,
+	HL_PRICE_MAX_SIG_FIGS,
+	type LimitTif,
+	type OrderType,
+	SCALE_LEVELS_MAX,
+	SCALE_LEVELS_MIN,
+} from "@/config/trade";
 import { getExecutedPrice } from "@/domain/trade/order/price";
 import { clampInt, formatDecimalFloor, isPositive, toBig, toSafeBig } from "@/lib/trade/numbers";
-import type { ExchangeOrder, LimitTif, OrderType } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
 
 export interface OrderBuildParams {
@@ -248,7 +256,7 @@ export function throwIfAnyResponseError(statuses: unknown[] | undefined): void {
 }
 
 export function getDefaultLeverage(maxLeverage: number): number {
-	if (maxLeverage <= 5) return maxLeverage;
+	if (maxLeverage <= DEFAULT_LEVERAGE_FALLBACK) return maxLeverage;
 	return Math.floor(maxLeverage / 2);
 }
 
@@ -260,18 +268,17 @@ export function getDefaultLeverage(maxLeverage: number): number {
 export function formatPriceForOrder(price: number): string {
 	if (!Number.isFinite(price) || price <= 0) return "0";
 
-	const maxSignificantFigures = 5;
 	const log10Price = Math.log10(price);
 	const integerDigits = Math.floor(log10Price) + 1;
 
 	let decimals: number;
 	if (price >= 1) {
-		decimals = Math.max(0, maxSignificantFigures - integerDigits);
+		decimals = Math.max(0, HL_PRICE_MAX_SIG_FIGS - integerDigits);
 	} else {
-		decimals = maxSignificantFigures - integerDigits;
+		decimals = HL_PRICE_MAX_SIG_FIGS - integerDigits;
 	}
 
-	decimals = Math.min(decimals, 8);
+	decimals = Math.min(decimals, HL_PRICE_MAX_DECIMALS);
 
 	const multiplier = 10 ** decimals;
 	const rounded = Math.round(price * multiplier) / multiplier;

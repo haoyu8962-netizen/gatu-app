@@ -1,8 +1,11 @@
 import { CheckCircleIcon, InfoIcon, SpinnerGapIcon, WarningIcon, WarningOctagonIcon } from "@phosphor-icons/react";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { TOAST_DEFAULT_DURATION_MS } from "@/config/time";
 import { useTheme } from "@/stores/use-global-settings-store";
 
-const Toaster = ({ ...props }: ToasterProps) => {
+const TOAST_WIDTH = "20rem";
+
+function Toaster(props: ToasterProps) {
 	const theme = useTheme();
 
 	return (
@@ -10,7 +13,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 			theme={theme as ToasterProps["theme"]}
 			className="toaster group"
 			position="bottom-right"
-			duration={3000}
+			duration={TOAST_DEFAULT_DURATION_MS}
 			icons={{
 				success: <CheckCircleIcon className="size-4" />,
 				info: <InfoIcon className="size-4" />,
@@ -33,12 +36,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
 					"--error-bg": "var(--bg-overlay)",
 					"--error-text": "var(--text-error)",
 					"--error-border": "var(--text-error)",
-					"--width": "320px",
+					"--width": TOAST_WIDTH,
 				} as React.CSSProperties
 			}
 			{...props}
 		/>
 	);
-};
+}
 
 export { Toaster };

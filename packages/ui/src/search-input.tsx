@@ -6,7 +6,7 @@ import { cn } from "./utils";
 
 const searchInputVariants = cva(
 	[
-		"group flex items-center w-full rounded-8 border transition-colors",
+		"group flex items-center w-full rounded-8 border transition-colors duration-150 motion-reduce:transition-none",
 		"focus-within:border-stroke-focus",
 		"data-disabled:border-stroke-disabled data-disabled:cursor-not-allowed",
 	],
@@ -40,6 +40,24 @@ interface SearchInputProps
 	onClear?: () => void;
 }
 
+type SearchInputSize = "xxs" | "xs" | "sm" | "md" | "lg";
+
+const searchIconSizes: Record<SearchInputSize, number> = {
+	xxs: 12,
+	xs: 14,
+	sm: 16,
+	md: 20,
+	lg: 20,
+};
+
+const searchInputTextClasses: Record<SearchInputSize, string> = {
+	xxs: "text-2xs",
+	xs: "text-xs",
+	sm: "text-xs",
+	md: "text-sm",
+	lg: "text-sm",
+};
+
 const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 	(
 		{
@@ -55,11 +73,14 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 			defaultValue,
 			onChange,
 			onClear,
+			id,
 			...props
 		},
 		ref,
 	) => {
-		const size = sizeProp ?? DEFAULT_SIZE;
+		const size = (sizeProp ?? DEFAULT_SIZE) as SearchInputSize;
+		const reactId = React.useId();
+		const inputId = id ?? reactId;
 		const [internalValue, setInternalValue] = React.useState(defaultValue?.toString() ?? "");
 		const currentValue = value !== undefined ? value.toString() : internalValue;
 		const hasValue = currentValue.length > 0;
@@ -78,15 +99,15 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 			onClear?.();
 		};
 
-		const iconSize = size === "xxs" ? 12 : size === "xs" ? 14 : size === "sm" ? 16 : 20;
+		const iconSize = searchIconSizes[size];
 
 		return (
 			<div className={cn("flex flex-col gap-1", className)}>
 				{label && (
-					<span className="text-xs font-semibold text-fg">
+					<label htmlFor={inputId} className="text-xs font-semibold text-fg">
 						{label}
 						{required && <span className="text-error"> *</span>}
-					</span>
+					</label>
 				)}
 				{helperText && <span className="text-xs text-fg-muted">{helperText}</span>}
 				<div data-disabled={disabled || undefined} className={cn(searchInputVariants({ size, error }))}>
@@ -97,6 +118,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 					/>
 					<input
 						ref={ref}
+						id={inputId}
 						type="search"
 						value={currentValue}
 						onChange={handleChange}
@@ -105,7 +127,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 						className={cn(
 							"flex-1 min-w-0 bg-transparent outline-none",
 							"[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden",
-							size === "md" || size === "lg" ? "text-sm" : size === "xxs" ? "text-2xs" : "text-xs",
+							searchInputTextClasses[size],
 							"text-fg placeholder:text-fg-muted",
 							"disabled:text-fg-disabled disabled:placeholder:text-fg-disabled disabled:cursor-not-allowed",
 						)}
@@ -117,7 +139,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 							onClick={handleClear}
 							tabIndex={-1}
 							aria-label="Clear search"
-							className="relative shrink-0 cursor-pointer text-icon hover:text-fg transition-colors after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10"
+							className="relative shrink-0 cursor-pointer text-icon hover:text-fg transition-colors duration-150 motion-reduce:transition-none after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11"
 						>
 							<XIcon size={iconSize} weight="bold" />
 						</button>

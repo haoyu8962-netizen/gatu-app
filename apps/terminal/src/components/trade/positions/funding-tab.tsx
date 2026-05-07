@@ -2,11 +2,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { t } from "@lingui/core/macro";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { getValueColorClass, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
-import { AssetDisplay } from "../components/asset-display";
+import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { getValueColorClass } from "@/lib/ui/value-color";
+import { useExchangeScope } from "@/providers/exchange-scope";
+import { useMarketActions } from "@/stores/use-market-store";
+import { AssetBadge } from "../components/asset-badge";
+import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
 	positionsPanelRowStripeClass,
@@ -20,26 +25,10 @@ import {
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
 
-interface PlaceholderProps {
-	children: React.ReactNode;
-	variant?: "error";
-}
-
-function Placeholder({ children, variant }: PlaceholderProps) {
-	return (
-		<div
-			className={cn(
-				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-error" : "text-fg-muted",
-			)}
-		>
-			{children}
-		</div>
-	);
-}
-
 export function FundingTab() {
 	const { address, isConnected } = useConnection();
+	const { scope } = useExchangeScope();
+	const { setSelectedMarket } = useMarketActions();
 	const {
 		data: fundingEvent,
 		status,
@@ -47,7 +36,7 @@ export function FundingTab() {
 	} = useSubscription("userFundings", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
 	const markets = useMarkets();
 
-	const updates = fundingEvent?.fundings?.slice(0, 200).sort((a, b) => b.time - a.time) ?? [];
+	const updates = fundingEvent?.fundings?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
 	const totalFunding = updates.reduce((acc, f) => acc + toNumberOrZero(f.usdc), 0);
 
 	const headerTotal = formatUSD(totalFunding, { signDisplay: "exceptZero" });
@@ -84,19 +73,35 @@ export function FundingTab() {
 						<Table className="table-fixed min-w-[38rem] w-full">
 							<TableHeader className={positionsPanelTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[22%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[22%] text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[18%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[18%] text-right")}
+									>
 										{t`Position`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[18%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[18%] text-right")}
+									>
 										{t`Rate`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[22%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[22%] text-right")}
+									>
 										{t`Payment`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[20%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[20%] text-right")}
+									>
 										{t`Time`}
 									</TableHead>
 								</TableRow>
@@ -114,22 +119,32 @@ export function FundingTab() {
 											key={`${update.coin}-${update.time}-${index}`}
 											className={cn(positionsPanelRowHoverClass, index % 2 === 1 && positionsPanelRowStripeClass)}
 										>
-											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
-												<AssetDisplay coin={update.coin} />
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
+												<AssetBadge
+													coin={update.coin}
+													onClick={() => setSelectedMarket(scope, update.coin)}
+													aria-label={t`Switch to ${update.coin} market`}
+												/>
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
+											>
 												{formatToken(positionSize, { decimals: market?.szDecimals, symbol: market?.shortName })}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
 												<span className={getValueColorClass(rate)}>
 													{formatPercent(rate, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
 												</span>
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
 												<span className={getValueColorClass(usdc)}>{formatToken(usdc, { symbol: "USDC" })}</span>
 											</TableCell>
 
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted")}
+											>
 												<div className="flex flex-col items-end">
 													<span>{formatDateTimeShort(update.time)}</span>
 												</div>

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { loadScript } from "@/lib/load-script";
 
 export type ScriptLoadStatus = "idle" | "loading" | "ready" | "error";
@@ -30,7 +30,7 @@ export function useIntentScriptLoader({
 	const [status, setStatus] = useState<ScriptLoadStatus>(() => (safeCheckReady(isReady) ? "ready" : "idle"));
 	const [error, setError] = useState<Error | null>(null);
 
-	const preload = useCallback(async () => {
+	async function preload() {
 		if (!enabled) return;
 
 		if (safeCheckReady(isReady)) {
@@ -49,26 +49,23 @@ export function useIntentScriptLoader({
 			setError(err instanceof Error ? err : new Error("Failed to load script"));
 			setStatus("error");
 		}
-	}, [enabled, isReady, src, timeoutMs]);
+	}
 
-	const preloadOnIntent = useCallback(() => {
+	function preloadOnIntent() {
 		try {
 			onIntent?.();
 		} catch {
 			// Intentionally ignore intent callback failures so script preload can continue.
 		}
 		void preload();
-	}, [onIntent, preload]);
+	}
 
-	const intentHandlers = useMemo(
-		() => ({
-			onMouseEnter: preloadOnIntent,
-			onFocus: preloadOnIntent,
-			onPointerDown: preloadOnIntent,
-			onTouchStart: preloadOnIntent,
-		}),
-		[preloadOnIntent],
-	);
+	const intentHandlers = {
+		onMouseEnter: preloadOnIntent,
+		onFocus: preloadOnIntent,
+		onPointerDown: preloadOnIntent,
+		onTouchStart: preloadOnIntent,
+	};
 
 	return {
 		status,

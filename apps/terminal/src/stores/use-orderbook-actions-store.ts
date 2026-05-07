@@ -21,6 +21,12 @@ const useOrderbookActionsStore = create<OrderbookActionsStore>((set) => ({
 	},
 }));
 
-export const useSelectedPrice = () => useOrderbookActionsStore((s) => s.selectedPrice);
-export const useOrderbookActions = () => useOrderbookActionsStore((s) => s.actions);
-export const getOrderbookActionsStore = () => useOrderbookActionsStore.getState();
+export function useSelectedPrice() {
+	return useOrderbookActionsStore((s) => s.selectedPrice);
+}
+export function useOrderbookActions() {
+	return useOrderbookActionsStore((s) => s.actions);
+}
+export function getOrderbookActionsStore() {
+	return useOrderbookActionsStore.getState();
+}

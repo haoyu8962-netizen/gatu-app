@@ -11,7 +11,10 @@ const isAnalyze = process.env.ANALYZE === 'true'
 
 function createManualChunks(id: string) {
   if (id.includes('node_modules')) {
+    if (id.includes('@base-ui')) return 'vendor-base-ui'
+    if (id.includes('@phosphor-icons/react')) return 'vendor-icons'
     if (id.includes('@radix-ui')) return 'vendor-radix'
+    if (id.includes('@tanstack/react-router') || id.includes('@tanstack/router-core') || id.includes('@tanstack/history')) return 'vendor-router'
     if (id.includes('@tanstack/react-query') || id.includes('@tanstack/react-table') || id.includes('@tanstack/react-virtual')) return 'vendor-tanstack'
     if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts'
     if (id.includes('viem') || id.includes('wagmi') || id.includes('@wagmi')) return 'vendor-web3'
@@ -27,7 +30,7 @@ const config = defineConfig({
     dedupe: ['react', 'react-dom', '@tanstack/react-query'],
   },
   optimizeDeps: {
-    include: ['@lifi/sdk', '@lifi/types'],
+    include: ['@lifi/sdk'],
   },
   build: {
     sourcemap: isAnalyze,

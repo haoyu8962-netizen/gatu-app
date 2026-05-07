@@ -196,7 +196,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			// `store` below is a deferred (TDZ-safe) reference: zustand calls
 			// this factory synchronously but acquireSubscription only runs after
 			// createStore returns, so `store` is already assigned by then.
-			if (import.meta.env?.DEV && pauseWhenHidden && !get().config.triggerReconnect) {
+			if (import.meta.env.DEV && pauseWhenHidden && !get().config.triggerReconnect) {
 				console.warn(
 					"[hl-react] acquireSubscription: pauseWhenHidden has no effect without config.triggerReconnect. " +
 						"Visibility-buffered values will never be flushed because no reconnect can happen on resume.",
@@ -230,6 +230,17 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					});
 					get().config.triggerReconnect?.();
 				});
+			} else if (pauseWhenHidden === false) {
+				runtime.pauseWhenHidden = false;
+				if (visibilityBuffer.has(key)) {
+					const buffered = visibilityBuffer.get(key);
+					visibilityBuffer.delete(key);
+					set((state) => {
+						const current = state.subscriptions[key];
+						if (!current) return state;
+						return setSubscriptionEntry(state, key, { ...current, data: buffered, isStale: false });
+					});
+				}
 			}
 			runtime.refCount += 1;
 			clearReconnectTimer(runtime);
@@ -249,14 +260,20 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			});
 
 			const scheduleReconnect = () => {
-				const runtime = subscriptionRuntime.get(key);
-				if (!runtime || runtime.refCount <= 0 || runtime.reconnectTimer || runtime.promise || runtime.subscription) {
+				const currentRuntime = subscriptionRuntime.get(key);
+				if (
+					!currentRuntime ||
+					currentRuntime.refCount <= 0 ||
+					currentRuntime.reconnectTimer ||
+					currentRuntime.promise ||
+					currentRuntime.subscription
+				) {
 					return;
 				}
 
-				runtime.reconnectAttempts += 1;
-				if (runtime.reconnectAttempts > WS_RELIABILITY_LIMITS.reconnect.maxAttemptsBeforeCooldown) {
-					if (runtime.cooldownTimer) {
+				currentRuntime.reconnectAttempts += 1;
+				if (currentRuntime.reconnectAttempts > WS_RELIABILITY_LIMITS.reconnect.maxAttemptsBeforeCooldown) {
+					if (currentRuntime.cooldownTimer) {
 						return;
 					}
 
@@ -272,7 +289,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 						return setSubscriptionEntry(state, key, nextEntry);
 					});
 
-					runtime.cooldownTimer = setTimeout(() => {
+					currentRuntime.cooldownTimer = setTimeout(() => {
 						const runtime = subscriptionRuntime.get(key);
 						if (!runtime) return;
 						runtime.cooldownTimer = undefined;
@@ -295,8 +312,8 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					return;
 				}
 
-				const delay = getReconnectDelayMs(runtime.reconnectAttempts);
-				runtime.reconnectTimer = setTimeout(() => {
+				const delay = getReconnectDelayMs(currentRuntime.reconnectAttempts);
+				currentRuntime.reconnectTimer = setTimeout(() => {
 					const runtime = subscriptionRuntime.get(key);
 					if (!runtime) return;
 					runtime.reconnectTimer = undefined;

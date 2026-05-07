@@ -3,8 +3,7 @@ import { getQuote } from "@lifi/sdk";
 import { useQuery } from "@tanstack/react-query";
 import Big from "big.js";
 
-const HYPERCORE_CHAIN_ID = 1337;
-const HYPERCORE_USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+import { HYPERCORE_CHAIN_ID, HYPERCORE_USDC_ADDRESS } from "@/config/contracts";
 
 interface QuoteParams {
 	fromChainId: number;

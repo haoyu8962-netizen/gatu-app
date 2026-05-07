@@ -4,7 +4,11 @@ import { CheckIcon, LightningIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons
 import { useEffect } from "react";
 import { ORDER_TOAST_SUCCESS_DURATION_MS } from "@/config/time";
 import { cn } from "@/lib/cn";
+import type { OrderOutcome } from "@/lib/trade/extract-order-status";
 import { type OrderQueueItem, useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
+
+const ORDER_TOAST_WIDTH = "w-80";
+const ORDER_TOAST_LIST_MAX_HEIGHT = "max-h-72";
 
 function useAutoRemove(order: OrderQueueItem, onRemove: () => void) {
 	useEffect(() => {
@@ -33,6 +37,19 @@ function getOrderTypeLabel(orderType: OrderQueueItem["orderType"]): string | nul
 			return "TWAP";
 		default:
 			return null;
+	}
+}
+
+function getOutcomeLabel(outcome: OrderOutcome): string {
+	switch (outcome) {
+		case "filled":
+			return t`Filled`;
+		case "resting":
+			return t`Placed`;
+		case "triggerSet":
+			return t`Set`;
+		case "twapStarted":
+			return t`Running`;
 	}
 }
 
@@ -75,10 +92,9 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 						{order.side}
 					</span>
 					<span className="text-xs font-medium text-fg">{order.market}</span>
-					{order.status === "success" && order.fillPercent !== undefined && (
-						<span className="text-xs text-success font-medium">
-							{order.fillPercent}
-							{t`% filled`}
+					{order.status === "success" && order.outcome && (
+						<span className={cn("text-xs font-medium", order.outcome === "filled" ? "text-success" : "text-fg-muted")}>
+							{getOutcomeLabel(order.outcome)}
 						</span>
 					)}
 				</div>
@@ -149,7 +165,8 @@ export function OrderToast() {
 	return (
 		<div
 			className={cn(
-				"fixed bottom-6 right-6 z-50 w-80",
+				ORDER_TOAST_WIDTH,
+				"fixed bottom-6 right-6 z-50",
 				"bg-surface/95 backdrop-blur-sm",
 				"border border-stroke-weak/60 rounded-8 overflow-hidden",
 				"shadow-overlay shadow-black/20 dark:shadow-black/50",
@@ -179,7 +196,7 @@ export function OrderToast() {
 				</div>
 			</div>
 
-			<div className="divide-y divide-stroke-weak/30 max-h-72 overflow-y-auto">
+			<div className={cn("divide-y divide-stroke-weak/30 overflow-y-auto", ORDER_TOAST_LIST_MAX_HEIGHT)}>
 				{orders.map((order) => (
 					<div key={order.id} className="relative">
 						<OrderItem order={order} onRemove={() => removeOrder(order.id)} />

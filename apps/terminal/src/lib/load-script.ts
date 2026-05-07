@@ -1,3 +1,5 @@
+import { SCRIPT_LOAD_TIMEOUT_MS } from "@/config/time";
+
 interface LoadScriptOptions {
 	async?: boolean;
 	timeoutMs?: number;
@@ -100,7 +102,7 @@ export function loadScript(src: string, options: LoadScriptOptions = {}): Promis
 		script.addEventListener("load", onLoad);
 		script.addEventListener("error", onError);
 
-		const timeoutMs = options.timeoutMs ?? 30000;
+		const timeoutMs = options.timeoutMs ?? SCRIPT_LOAD_TIMEOUT_MS;
 		if (timeoutMs > 0) {
 			timeout = setTimeout(() => {
 				cleanup();

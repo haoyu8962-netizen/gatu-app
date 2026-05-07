@@ -92,8 +92,3 @@ export function limitDecimalInput(input: string, maxDecimals: number): string {
 	if (decimalsInInput <= maxDecimals) return input;
 	return input.slice(0, decimalIndex + maxDecimals + 1);
 }
-
-export function getValueColorClass(value: Numeric): "text-success" | "text-error" {
-	const num = toNumber(value);
-	return num !== null && num >= 0 ? "text-success" : "text-error";
-}

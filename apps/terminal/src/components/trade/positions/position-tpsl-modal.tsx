@@ -1,78 +1,78 @@
-import { Badge, Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
+import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { SpinnerGapIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState } from "react";
+import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { InfoRow } from "@/components/ui/info-row";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useExchange } from "@/lib/hyperliquid";
-import { getValueColorClass, isPositive, toNumber } from "@/lib/trade/numbers";
+import { isPositive, toNumber } from "@/lib/trade/numbers";
 import { validateSlPrice, validateTpPrice } from "@/lib/trade/tpsl";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetDisplay } from "../components/asset-display";
 import { TradingActionButton } from "../components/trading-action-button";
 import { TpSlSection } from "../tradebox/tp-sl-section";
-
-interface PositionData {
-	coin: string;
-	assetId: number;
-	isLong: boolean;
-	size: number;
-	entryPx: number;
-	markPx: number;
-	unrealizedPnl: number;
-	roe: number;
-	szDecimals: number;
-	existingTpPrice?: number;
-	existingSlPrice?: number;
-	existingTpOrderId?: number;
-	existingSlOrderId?: number;
-}
+import type { TpSlPositionData } from "./position-dialog-types";
 
 interface Props {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	position: PositionData | null;
+	position: TpSlPositionData | null;
 }
 
 export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
-	const [tpPriceInput, setTpPriceInput] = useState("");
-	const [slPriceInput, setSlPriceInput] = useState("");
+	if (!position) return null;
+	return (
+		<Modal open={open} onOpenChange={onOpenChange}>
+			<ModalPopup size="sm" showClose={false} aria-label={getTpSlModalAriaLabel(position)}>
+				<PositionTpSlModalBody
+					key={`${position.assetId}:${open ? "open" : "closed"}`}
+					position={position}
+					onOpenChange={onOpenChange}
+				/>
+			</ModalPopup>
+		</Modal>
+	);
+}
 
-	const { mutateAsync: placeOrder, isPending: isSubmitting, error, reset: resetError } = useExchange("order");
+interface BodyProps {
+	position: TpSlPositionData;
+	onOpenChange: (open: boolean) => void;
+}
 
-	useEffect(() => {
-		if (open && position) {
-			const decimals = szDecimalsToPriceDecimals(position.szDecimals);
-			setTpPriceInput(position.existingTpPrice ? position.existingTpPrice.toFixed(decimals) : "");
-			setSlPriceInput(position.existingSlPrice ? position.existingSlPrice.toFixed(decimals) : "");
-		} else if (!open) {
-			setTpPriceInput("");
-			setSlPriceInput("");
-		}
-	}, [open, position]);
+function PositionTpSlModalBody({ position, onOpenChange }: BodyProps) {
+	const decimals = szDecimalsToPriceDecimals(position.szDecimals);
+	const [tpPriceInput, setTpPriceInput] = useState(
+		position.existingTpPrice ? position.existingTpPrice.toFixed(decimals) : "",
+	);
+	const [slPriceInput, setSlPriceInput] = useState(
+		position.existingSlPrice ? position.existingSlPrice.toFixed(decimals) : "",
+	);
+	const [submitError, setSubmitError] = useState<string | null>(null);
+
+	const { mutateAsync: placeOrder, isPending: isSubmitting, error } = useExchange("order");
 
 	const tpPriceNum = toNumber(tpPriceInput);
 	const slPriceNum = toNumber(slPriceInput);
 
-	const side = position?.isLong ? "buy" : "sell";
-	const referencePrice = position?.entryPx ?? 0;
-	const size = position?.size ?? 0;
+	const side = position.isLong ? "buy" : "sell";
+	const referencePrice = position.entryPx;
+	const size = position.size;
 
 	const hasTp = isPositive(tpPriceNum);
 	const hasSl = isPositive(slPriceNum);
 	const tpValid = !hasTp || validateTpPrice(referencePrice, tpPriceNum, side);
 	const slValid = !hasSl || validateSlPrice(referencePrice, slPriceNum, side);
-	const canSubmit = position && (hasTp || hasSl) && tpValid && slValid && !isSubmitting;
+	const canSubmit = (hasTp || hasSl) && tpValid && slValid && !isSubmitting;
 
-	const tpError = hasTp && !tpValid ? (position?.isLong ? t`TP must be above entry` : t`TP must be below entry`) : null;
-	const slError = hasSl && !slValid ? (position?.isLong ? t`SL must be below entry` : t`SL must be above entry`) : null;
+	const tpError = hasTp && !tpValid ? (position.isLong ? t`TP must be above entry` : t`TP must be below entry`) : null;
+	const slError = hasSl && !slValid ? (position.isLong ? t`SL must be below entry` : t`SL must be above entry`) : null;
 
-	const handleSubmit = useCallback(async () => {
-		if (!canSubmit || !position) return;
-
-		resetError();
+	async function handleSubmit() {
+		if (!canSubmit) return;
 
 		const plan = buildOrderPlan({
 			kind: "positionTpsl",
@@ -82,130 +82,111 @@ export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
 			slPriceNum: hasSl ? slPriceNum : null,
 		});
 
-		if (plan.errors.length > 0) {
-			return;
-		}
+		if (plan.errors.length > 0) return;
 
+		setSubmitError(null);
 		try {
 			const result = await placeOrder({ orders: plan.orders, grouping: plan.grouping });
 			throwIfAnyResponseError(result.response?.data?.statuses);
-
-			setTpPriceInput("");
-			setSlPriceInput("");
 			onOpenChange(false);
-		} catch {}
-	}, [canSubmit, hasSl, hasTp, onOpenChange, placeOrder, position, resetError, slPriceNum, tpPriceNum]);
-
-	function handleOpenChange(nextOpen: boolean) {
-		if (!nextOpen) {
-			setTpPriceInput("");
-			setSlPriceInput("");
-			resetError();
+		} catch (err) {
+			const message = err instanceof Error ? err.message : t`Failed to update TP/SL orders`;
+			setSubmitError(message);
+			toast.error(message);
 		}
-		onOpenChange(nextOpen);
 	}
 
-	if (!position) return null;
+	const visibleError = submitError ?? error?.message;
 
 	return (
-		<Modal open={open} onOpenChange={handleOpenChange}>
-			<ModalPopup size="sm" showClose={false}>
-				<ModalHeader className="border-b border-stroke-weak/40">
-					<ModalTitle className="flex items-center gap-1">
-						<AssetDisplay coin={position.coin} />
-						<Badge tone={position.isLong ? "success" : "error"} size="sm">
-							{position.isLong ? (
-								<>
-									<TrendUpIcon className="size-3" />
-									{t`Long`}
-								</>
-							) : (
-								<>
-									<TrendDownIcon className="size-3" />
-									{t`Short`}
-								</>
-							)}
-						</Badge>
-					</ModalTitle>
-				</ModalHeader>
-
-				<ModalContent>
-					<div className="rounded-8 border border-stroke-weak/50 bg-surface p-3 space-y-1 text-xs">
-						<InfoRow
-							className="p-0"
-							label={t`Size`}
-							value={`${formatToken(position.size, position.szDecimals)} ${position.coin}`}
-							valueClassName="font-medium"
-						/>
-						<InfoRow
-							className="p-0"
-							label={t`Entry Price`}
-							value={formatPrice(position.entryPx, { szDecimals: position.szDecimals })}
-							valueClassName="font-medium"
-						/>
-						<InfoRow
-							className="p-0"
-							label={t`Mark Price`}
-							value={formatPrice(position.markPx, { szDecimals: position.szDecimals })}
-							valueClassName="font-medium text-warning"
-						/>
-						<InfoRow
-							className="p-0 border-t border-stroke-weak/50 pt-3"
-							label={t`Unrealized P&L`}
-							value={
-								<>
-									{formatUSD(position.unrealizedPnl, { signDisplay: "exceptZero" })}
-									<span className="font-normal text-fg-muted ml-1">({formatPercent(position.roe, 1)})</span>
-								</>
-							}
-							valueClassName={cn("font-semibold", getValueColorClass(position.unrealizedPnl))}
-						/>
-					</div>
-				</ModalContent>
-
-				<div className="px-6 pb-4">
-					<TpSlSection
-						side={side}
-						referencePrice={referencePrice}
-						size={size}
-						szDecimals={position.szDecimals}
-						tpPrice={tpPriceInput}
-						slPrice={slPriceInput}
-						onTpPriceChange={setTpPriceInput}
-						onSlPriceChange={setSlPriceInput}
-						tpError={tpError}
-						slError={slError}
+		<>
+			<ModalHeader>
+				<ModalTitle>{t`Manage TP/SL`}</ModalTitle>
+				<div className="flex items-center gap-1.5">
+					<span
+						className={cn("h-4 w-0.5 shrink-0 rounded-full", position.isLong ? "bg-success" : "bg-error")}
+						aria-hidden="true"
 					/>
-
-					{error && (
-						<div className="mt-3 px-2 py-1.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error">
-							{error.message}
-						</div>
-					)}
+					<AssetDisplay coin={position.coin} />
+					<span className="text-xs text-fg-muted">· {position.isLong ? t`Long position` : t`Short position`}</span>
 				</div>
+			</ModalHeader>
 
-				<ModalFooter>
-					<Button
-						size="sm"
-						variant="ghost"
-						intent="neutral"
-						onClick={() => handleOpenChange(false)}
-						disabled={isSubmitting}
-					>
-						{t`Cancel`}
-					</Button>
-					<TradingActionButton onClick={handleSubmit} disabled={!canSubmit} className="min-w-24">
-						{isSubmitting ? (
+			<ModalContent>
+				<div className="rounded-8 border border-stroke-weak bg-surface p-3 space-y-1 text-xs">
+					<InfoRow
+						className="p-0"
+						label={t`Size`}
+						value={`${formatToken(position.size, position.szDecimals)} ${position.coin}`}
+						valueClassName="font-medium"
+					/>
+					<InfoRow
+						className="p-0"
+						label={t`Entry Price`}
+						value={formatPrice(position.entryPx, { szDecimals: position.szDecimals })}
+						valueClassName="font-medium"
+					/>
+					<InfoRow
+						className="p-0"
+						label={t`Mark Price`}
+						value={formatPrice(position.markPx, { szDecimals: position.szDecimals })}
+						valueClassName="font-medium text-warning"
+					/>
+					<InfoRow
+						className="p-0 border-t border-stroke-weak pt-3"
+						label={t`Unrealized P&L`}
+						value={
 							<>
-								<SpinnerGapIcon className="size-3.5 animate-spin" />
-								{t`Submitting...`}
+								{formatUSD(position.unrealizedPnl, { signDisplay: "exceptZero" })}
+								<span className="font-normal text-fg-muted ml-1">({formatPercent(position.roe, 1)})</span>
 							</>
-						) : (
-							t`Confirm`
-						)}
-					</TradingActionButton>
-				</ModalFooter>
-			</ModalPopup>
-		</Modal>
+						}
+						valueClassName={cn("font-semibold", getValueColorClass(position.unrealizedPnl))}
+					/>
+				</div>
+			</ModalContent>
+
+			<div className="px-4 pb-4">
+				<TpSlSection
+					side={side}
+					referencePrice={referencePrice}
+					size={size}
+					szDecimals={position.szDecimals}
+					tpPrice={tpPriceInput}
+					slPrice={slPriceInput}
+					onTpPriceChange={setTpPriceInput}
+					onSlPriceChange={setSlPriceInput}
+					tpError={tpError}
+					slError={slError}
+				/>
+
+				{visibleError && (
+					<div className="mt-3 px-2 py-1.5 rounded-8 bg-error-soft border border-stroke-error-weak text-xs text-error">
+						{visibleError}
+					</div>
+				)}
+			</div>
+
+			<ModalFooter>
+				<Button size="sm" variant="ghost" intent="neutral" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+					{t`Cancel`}
+				</Button>
+				<TradingActionButton onClick={handleSubmit} disabled={!canSubmit} className="min-w-24">
+					{isSubmitting ? (
+						<>
+							<SpinnerGapIcon className="size-3.5 animate-spin" />
+							{t`Submitting...`}
+						</>
+					) : (
+						t`Confirm`
+					)}
+				</TradingActionButton>
+			</ModalFooter>
+		</>
 	);
+}
+
+function getTpSlModalAriaLabel(position: TpSlPositionData): string {
+	if (position.isLong) return t`Manage TP/SL for ${position.coin} long position`;
+	return t`Manage TP/SL for ${position.coin} short position`;
 }

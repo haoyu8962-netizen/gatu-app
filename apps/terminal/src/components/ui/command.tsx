@@ -4,6 +4,9 @@ import { Command as CommandPrimitive } from "cmdk";
 import type * as React from "react";
 import { cn } from "@/lib/cn";
 
+const COMMAND_LIST_MAX_HEIGHT = "max-h-[300px]";
+const COMMAND_INPUT_WRAPPER_HEIGHT = "**:data-[slot=command-input-wrapper]:h-12";
+
 function Command({ className, ...props }: React.ComponentProps<typeof CommandPrimitive>) {
 	return (
 		<CommandPrimitive
@@ -38,7 +41,10 @@ function CommandDialog({
 				</div>
 				<Command
 					shouldFilter={shouldFilter}
-					className="**:[[cmdk-group-heading]]:text-fg-muted **:data-[slot=command-input-wrapper]:h-12 **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 **:[[cmdk-input]]:h-12 **:[[cmdk-item]]:px-2 **:[[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
+					className={cn(
+						"**:[[cmdk-group-heading]]:text-fg-muted **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 **:[[cmdk-input]]:h-12 **:[[cmdk-item]]:px-2 **:[[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5",
+						COMMAND_INPUT_WRAPPER_HEIGHT,
+					)}
 				>
 					{children}
 				</Command>
@@ -67,7 +73,7 @@ function CommandList({ className, ...props }: React.ComponentProps<typeof Comman
 	return (
 		<CommandPrimitive.List
 			data-slot="command-list"
-			className={cn("max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto", className)}
+			className={cn(COMMAND_LIST_MAX_HEIGHT, "scroll-py-1 overflow-x-hidden overflow-y-auto", className)}
 			{...props}
 		/>
 	);

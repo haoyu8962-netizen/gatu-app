@@ -5,6 +5,8 @@ import { szDecimalsToPriceDecimals } from "@/lib/format";
 import { toFixed } from "@/lib/trade/numbers";
 import { NumberInput } from "./number-input";
 
+const PRICE_INPUT_DEFAULT_DECIMALS = 4;
+
 interface Props extends Omit<React.ComponentPropsWithoutRef<typeof NumberInput>, "maxLabel" | "onMaxClick"> {
 	midPrice?: number | null;
 	szDecimals?: number;
@@ -13,7 +15,7 @@ interface Props extends Omit<React.ComponentPropsWithoutRef<typeof NumberInput>,
 
 export function PriceInput({ midPrice, szDecimals, onMidClick, labelValue, ...props }: Props) {
 	const hasMid = midPrice != null && midPrice > 0 && onMidClick != null;
-	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? 4);
+	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? PRICE_INPUT_DEFAULT_DECIMALS);
 	const formattedMid = midPrice != null && midPrice > 0 ? toFixed(midPrice, priceDecimals) : undefined;
 
 	return (

@@ -7,7 +7,10 @@ import { DEFAULT_SIZE } from "./config";
 import { cn } from "./utils";
 
 const textInputVariants = cva(
-	["flex items-center w-full rounded-8", "bg-fill-inverse transition-colors duration-150"],
+	[
+		"flex items-center w-full rounded-8 border",
+		"bg-fill-inverse transition-colors duration-150 motion-reduce:transition-none",
+	],
 	{
 		variants: {
 			size: {
@@ -18,8 +21,8 @@ const textInputVariants = cva(
 				lg: "py-3 px-4 gap-2",
 			},
 			invalid: {
-				true: "border-2 border-stroke-error-strong bg-error-soft",
-				false: "border border-stroke-strong hover:bg-fill-hover active:bg-fill-press",
+				true: "border-stroke-error-strong bg-error-soft ring-1 ring-stroke-error-strong",
+				false: "border-stroke-strong hover:bg-fill-hover active:bg-fill-press",
 			},
 		},
 		defaultVariants: {
@@ -28,6 +31,14 @@ const textInputVariants = cva(
 		},
 	},
 );
+
+const inputTextSizeClasses: Record<"xxs" | "xs" | "sm" | "md" | "lg", string> = {
+	xxs: "text-2xs",
+	xs: "text-xs",
+	sm: "text-xs",
+	md: "text-sm",
+	lg: "text-base",
+};
 
 interface TextInputProps
 	extends Omit<React.ComponentPropsWithoutRef<"input">, "size">,
@@ -95,13 +106,7 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 						required={required}
 						className={cn(
 							"flex-1 min-w-0 bg-transparent outline-none",
-							size === "xxs"
-								? "text-2xs"
-								: size === "xs" || size === "sm"
-									? "text-xs"
-									: size === "lg"
-										? "text-base"
-										: "text-sm",
+							inputTextSizeClasses[size],
 							"font-normal text-fg placeholder:text-fg-muted",
 							"data-disabled:text-fg-disabled data-disabled:placeholder:text-fg-disabled data-disabled:cursor-not-allowed",
 						)}

@@ -76,6 +76,7 @@ export function subscribeVisibility(listener: VisibilityListener): () => void {
 
 export function getVisibilityState(): VisibilityState {
 	if (typeof document === "undefined") return "visible";
+	if (!listeners) return document.hidden ? "hidden" : "visible";
 	return currentState;
 }
 

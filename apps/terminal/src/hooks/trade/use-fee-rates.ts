@@ -1,16 +1,18 @@
+import { type MarketKind, useInfo } from "@hypeterminal/hl-react";
 import { useConnection } from "wagmi";
 import {
 	ORDER_FEE_RATE_MAKER,
 	ORDER_FEE_RATE_SPOT_MAKER,
 	ORDER_FEE_RATE_SPOT_TAKER,
 	ORDER_FEE_RATE_TAKER,
-} from "@/config/constants";
-import { type MarketKind, useInfo } from "@/lib/hyperliquid";
+} from "@/config/trade";
 
 interface FeeRates {
 	takerRate: number;
 	makerRate: number;
 }
+
+const USER_FEES_STALE_TIME_MS = 30 * 60 * 1000;
 
 function getDefaults(marketKind?: MarketKind): FeeRates {
 	if (marketKind === "spot") {
@@ -27,7 +29,7 @@ export function useFeeRates(marketKind?: MarketKind): FeeRates {
 	const { data } = useInfo(
 		"userFees",
 		{ user },
-		{ enabled: isConnected && Boolean(address), staleTime: 5 * 60 * 1000, persist: true },
+		{ enabled: isConnected && Boolean(address), staleTime: USER_FEES_STALE_TIME_MS, persist: true },
 	);
 
 	if (!data) return defaults;

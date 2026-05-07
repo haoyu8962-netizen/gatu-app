@@ -20,8 +20,8 @@
 - [x] Item 1: Centralized websocket reliability limits + reconnect circuit breaker
 - [x] Item 2: Subscription payload size guardrails and drop strategy
 - [x] Item 3: Long-running soak test (30-60 min) with memory trend output
-- [ ] Item 4: Runtime health alerts (heap slope, reconnect storms, listener growth)
-- [ ] Item 5: Production incident diagnostics bundle (one-command capture)
+- [x] Item 4: Runtime health alerts (heap slope, reconnect storms, listener growth)
+- [x] Item 5: Production incident diagnostics bundle (one-command capture)
 
 ## Benchmarks Collected So Far
 - `websocket-store-benchmark`
@@ -47,7 +47,7 @@
   - `data-overwrite`: stable bounded overwrite behavior
 
 ## Next Item
-- Item 4: Runtime health alerts (heap slope, reconnect storms, listener growth).
+- Profile React render tracks for table, orderbook, chart, and token search interactions.
 
 ## Item 2 Result
 - Added payload-size estimator + oversized detection in:
@@ -73,9 +73,51 @@
 - Smoke soak validation run (20s) produced:
   - `heapDelta=-0.35MB`, `maxSubs=24`, `maxChartCache=256`, `droppedPayloads=151`
   - report path: `.output/websocket-soak-2026-02-07T13-38-28-414Z.json`
+- Release-candidate 30-minute soak produced:
+  - report path: `apps/terminal/.output/websocket-soak-2026-05-02T08-13-47-768Z.json`
+  - `duration=1800000ms`, `iterations=77434`, `recoveryTransitions=1403`
+  - `heapDelta=11.96MB`, `heapGrowthMbPerHour=23.836`, `maxHeap=92.67MB`
+  - `maxSubs=59`, `maxChartCache=256`, `droppedPayloads=6932`, `unhandledRejections=0`
+
+## Item 4 Result
+- Added runtime websocket health reporting:
+  - `packages/hl-react/src/internal/websocket/health.ts`
+- Registered the Chrome console hook alongside the existing debug/chaos hooks:
+  - `window.__hl_health()`
+- In production, the debug and health hooks are opt-in via `?hl_diagnostics=1` or the persisted `hl-diagnostics-enabled` localStorage flag.
+- The health report covers:
+  - JS heap growth slope from Chrome `performance.memory` samples
+  - high heap pressure against Chrome's heap limit
+  - reconnect storms before cooldown
+  - subscription/listener growth and runtime bookkeeping mismatches
+  - stale websocket streams
+- Added validation coverage:
+  - `src/lib/tests/debug-snapshot.test.ts` health-alert cases
+
+## Item 5 Result
+- Added one-command browser diagnostics capture:
+  - `pnpm diagnostics:browser -- --url <terminal-url>`
+- The diagnostics runner writes:
+  - `.output/diagnostics/browser-diagnostics-<timestamp>.json`
+- The runner performs an initial load, warm reload, and browser gate checks for:
+  - `window.__hl_health().status === "healthy"`
+  - `window.__hl_debug()` availability
+  - no browser page errors or console errors
+  - no stale websocket streams or reconnect attempts during normal operation
+  - populated `hl-rq-cache-v1`, `hl-last-mark-v1`, and `hl-mkt-stats-v1`
+- Production builds expose `window.__hl_debug()` and `window.__hl_health()` only when diagnostics are explicitly enabled via `?hl_diagnostics=1` or the persisted `hl-diagnostics-enabled` localStorage flag.
+- Latest passing browser report:
+  - `.output/diagnostics/browser-diagnostics-2026-05-02T10-10-24-412Z.json`
+  - Warm production-preview reload: `316ms`
+  - Runtime health: `healthy`, `5` active streams, `0` reconnect attempts, `0` stale streams
+  - Render tracks: chart `3` commits, orderbook `25` commits, positions table `1` commit on warm load; token search `btc` interaction committed `7` times and kept runtime health `healthy`
 
 ## Progress Log
 - 2026-02-07: Roadmap created; Item 1 started.
 - 2026-02-07: Item 1 completed and benchmark-validated.
 - 2026-02-07: Item 2 completed and benchmark-validated.
 - 2026-02-07: Item 3 completed (soak runner + smoke validation).
+- 2026-05-02: Item 4 completed (runtime health reports exposed via `window.__hl_health()`).
+- 2026-05-02: Item 5 completed (one-command browser diagnostics capture with opt-in production hooks).
+- 2026-05-02: 30-minute release-candidate soak passed and report was attached.
+- 2026-05-02: Render-track profiling added behind `?terminal_perf=1` and verified in production preview.

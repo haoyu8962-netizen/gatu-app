@@ -14,14 +14,15 @@ import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor
 import { type ChangeEvent, useCallback, useMemo, useState } from "react";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/constants";
-import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
 import { type BalanceRow, getAvailableFromTotals, getPerpAvailable } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
+import { formatTokenId } from "@/lib/trade/token-id";
 
 type AccountType = "perp" | "spot";
 
@@ -76,13 +77,10 @@ export function SendModal({
 		return availableSpotTokens.map((b) => b.asset);
 	}, [accountType, availableSpotTokens]);
 
-	const tokenInfo = useMemo(() => getToken(selectedToken), [getToken, selectedToken]);
-	const tokenId = useMemo(() => {
-		if (!tokenInfo) return "";
-		return `${tokenInfo.name}:${tokenInfo.tokenId}`;
-	}, [tokenInfo]);
+	const tokenInfo = getToken(selectedToken);
+	const tokenId = tokenInfo ? formatTokenId(tokenInfo) : "";
 
-	const decimals = useMemo(() => getToken(selectedToken)?.transferDecimals ?? 2, [getToken, selectedToken]);
+	const decimals = getTokenTransferDecimals(tokenInfo);
 
 	const availableBalance = useMemo(() => {
 		if (accountType === "perp") {
@@ -173,7 +171,7 @@ export function SendModal({
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm">
-				<ModalHeader className="border-b border-stroke-weak/40">
+				<ModalHeader>
 					<ModalTitle>{t`Send Tokens`}</ModalTitle>
 					<ModalDescription>{t`Send tokens to another account on the Hyperliquid L1.`}</ModalDescription>
 				</ModalHeader>

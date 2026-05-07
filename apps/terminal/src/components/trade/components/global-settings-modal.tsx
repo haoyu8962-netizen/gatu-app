@@ -1,17 +1,23 @@
-import { Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle, Select, Slider, Toggle } from "@hypeterminal/ui";
+import {
+	Modal,
+	ModalContent,
+	ModalHeader,
+	ModalPopup,
+	ModalTitle,
+	SegmentedControlItem,
+	SegmentedControls,
+	Select,
+	Slider,
+	Toggle,
+} from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import type { ChangeEvent, ReactNode } from "react";
 import { useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
-import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/constants";
-import {
-	dynamicActivate,
-	type LocaleCode,
-	localeList,
-	type NumberFormatLocale,
-	numberFormatLocaleList,
-} from "@/lib/i18n";
+import { type LocaleCode, localeList, type NumberFormatLocale, numberFormatLocaleList } from "@/config/i18n";
+import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
+import { dynamicActivate } from "@/lib/i18n";
 import { useSettingsDialogActions, useSettingsDialogOpen } from "@/stores/use-global-modal-store";
 import {
 	useGlobalSettings,
@@ -31,18 +37,14 @@ export function GlobalSettingsModal() {
 	const network = useNetwork();
 
 	const [localSlippageInput, setLocalSlippageInput] = useState<string | null>(null);
-
 	const slippageInputValue = localSlippageInput ?? String(slippagePercent);
 
 	function handleSlippageInputChange(event: ChangeEvent<HTMLInputElement>) {
 		const nextValue = event.target.value;
 		setLocalSlippageInput(nextValue);
-
 		if (nextValue.trim() === "") return;
 		const parsed = Number(nextValue);
-		if (Number.isFinite(parsed)) {
-			setMarketOrderSlippagePercent(parsed);
-		}
+		if (Number.isFinite(parsed)) setMarketOrderSlippagePercent(parsed);
 	}
 
 	function handleSlippageInputBlur() {
@@ -66,43 +68,32 @@ export function GlobalSettingsModal() {
 
 	const languageOptions = localeList.map(({ code, name }) => ({ value: code, label: name }));
 	const numberFormatOptions = numberFormatLocaleList.map(({ code, name }) => ({ value: code, label: name }));
-	const networkOptions = [
-		{ value: "mainnet", label: "Mainnet" },
-		{ value: "testnet", label: "Testnet" },
-	];
 
 	return (
 		<Modal open={open} onOpenChange={close}>
 			<ModalPopup size="sm">
-				<ModalHeader className="border-b border-stroke-weak/40">
+				<ModalHeader>
 					<ModalTitle>{t`Settings`}</ModalTitle>
 				</ModalHeader>
 
-				<ModalContent className="space-y-5 max-h-[70vh] overflow-y-auto">
-					<SettingsSection title={t`Display Language`}>
-						<Select value={i18n.locale} onValueChange={handleLanguageChange} options={languageOptions} />
-					</SettingsSection>
-
-					<SettingsSection title={t`Number Format`} description={t`Format for numbers and dates`}>
-						<Select value={numberFormatLocale} onValueChange={handleNumberFormatChange} options={numberFormatOptions} />
-					</SettingsSection>
-
-					<SettingsSection
-						title={t`Market Order Slippage`}
-						description={t`Maximum slippage tolerance for market orders`}
-					>
-						<div className="space-y-3">
-							<div className="flex items-center gap-2">
-								<NumberInput
-									value={slippageInputValue}
-									onChange={handleSlippageInputChange}
-									onBlur={handleSlippageInputBlur}
-									min={MARKET_ORDER_SLIPPAGE_MIN_PERCENT}
-									max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
-									inputSize="sm"
-									className="flex-1 text-right tabular-nums"
-								/>
-								<span className="text-xs text-fg-muted min-w-8">%</span>
+				<ModalContent className="space-y-6 max-h-[70vh] overflow-y-auto">
+					<SettingsGroup label={t`Trading`}>
+						<div className="space-y-2.5">
+							<div className="flex items-center justify-between gap-3">
+								<span className="text-xs text-fg">{t`Slippage tolerance`}</span>
+								<div className="flex items-center gap-1 shrink-0">
+									<NumberInput
+										value={slippageInputValue}
+										onChange={handleSlippageInputChange}
+										onBlur={handleSlippageInputBlur}
+										min={MARKET_ORDER_SLIPPAGE_MIN_PERCENT}
+										max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
+										maxAllowedDecimals={2}
+										inputSize="sm"
+										className="w-16 text-right tabular-nums"
+									/>
+									<span className="text-xs text-fg-muted">%</span>
+								</div>
 							</div>
 							<Slider
 								value={[slippagePercent]}
@@ -110,52 +101,85 @@ export function GlobalSettingsModal() {
 								min={MARKET_ORDER_SLIPPAGE_MIN_PERCENT}
 								max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
 								step={0.1}
+								thumbSize="sm"
 							/>
-							<div className="flex items-center justify-between text-xs text-fg">
+							<div className="flex items-center justify-between text-2xs tabular-nums text-fg-muted">
 								<span>{MARKET_ORDER_SLIPPAGE_MIN_PERCENT}%</span>
-								<span className="font-medium text-fg tabular-nums">{slippagePercent}%</span>
 								<span>{MARKET_ORDER_SLIPPAGE_MAX_PERCENT}%</span>
 							</div>
 						</div>
-					</SettingsSection>
+					</SettingsGroup>
 
-					<SettingsSection title={t`Order Book`}>
-						<Toggle
-							label={t`Show Values in Quote Asset`}
-							checked={showOrderbookInQuote}
-							onCheckedChange={setShowOrderbookInQuote}
-						/>
-					</SettingsSection>
+					<SettingsGroup label={t`Display`}>
+						<SettingRow label={t`Order book in quote asset`}>
+							<Toggle size="xs" checked={showOrderbookInQuote} onCheckedChange={setShowOrderbookInQuote} />
+						</SettingRow>
+						<SettingRow label={t`Display language`}>
+							<Select
+								value={i18n.locale}
+								onValueChange={handleLanguageChange}
+								options={languageOptions}
+								size="xs"
+								triggerClassName="min-w-32"
+							/>
+						</SettingRow>
+						<SettingRow label={t`Number format`}>
+							<Select
+								value={numberFormatLocale}
+								onValueChange={handleNumberFormatChange}
+								options={numberFormatOptions}
+								size="xs"
+								triggerClassName="min-w-32"
+							/>
+						</SettingRow>
+					</SettingsGroup>
 
-					<SettingsSection title={t`Network`} description={t`Switch between mainnet and testnet. Page will reload.`}>
-						<Select
-							value={network}
-							onValueChange={(value) => {
-								if (value) setNetwork(value as "mainnet" | "testnet");
-							}}
-							options={networkOptions}
-						/>
-					</SettingsSection>
+					<SettingsGroup label={t`Network`}>
+						<SettingRow label={t`Environment`} hint={t`Page reloads when changed`}>
+							<SegmentedControls
+								value={network}
+								onValueChange={(value) => setNetwork(value as "mainnet" | "testnet")}
+								size="xxs"
+							>
+								<SegmentedControlItem value="mainnet">{t`Mainnet`}</SegmentedControlItem>
+								<SegmentedControlItem value="testnet">{t`Testnet`}</SegmentedControlItem>
+							</SegmentedControls>
+						</SettingRow>
+					</SettingsGroup>
 				</ModalContent>
 			</ModalPopup>
 		</Modal>
 	);
 }
 
-interface SettingsSectionProps {
-	title: string;
-	description?: string;
+interface SettingsGroupProps {
+	label: string;
 	children: ReactNode;
 }
 
-function SettingsSection({ title, description, children }: SettingsSectionProps) {
+function SettingsGroup({ label, children }: SettingsGroupProps) {
 	return (
-		<div className="space-y-2">
-			<div>
-				<h3 className="text-sm font-medium text-fg">{title}</h3>
-				{description && <p className="text-xs text-fg-muted mt-0.5">{description}</p>}
+		<section className="space-y-3">
+			<h3 className="text-2xs font-semibold uppercase tracking-wider text-fg-muted">{label}</h3>
+			<div className="space-y-2">{children}</div>
+		</section>
+	);
+}
+
+interface SettingRowProps {
+	label: string;
+	hint?: string;
+	children: ReactNode;
+}
+
+function SettingRow({ label, hint, children }: SettingRowProps) {
+	return (
+		<div className="space-y-1">
+			<div className="flex items-center justify-between gap-3 min-h-7">
+				<span className="text-xs text-fg min-w-0">{label}</span>
+				<div className="shrink-0">{children}</div>
 			</div>
-			{children}
+			{hint && <p className="text-2xs text-fg-muted text-pretty">{hint}</p>}
 		</div>
 	);
 }

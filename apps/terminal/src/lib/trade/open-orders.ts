@@ -1,4 +1,5 @@
 import type { FrontendOpenOrdersResponse } from "@nktkas/hyperliquid";
+import { OPEN_ORDER_TYPE_PREFIXES } from "@/config/trade";
 import type { MarketKind } from "@/lib/hyperliquid/markets";
 import { toBig } from "@/lib/trade/numbers";
 
@@ -6,27 +7,19 @@ export type OpenOrder = FrontendOpenOrdersResponse[number];
 
 export type OrderSide = OpenOrder["side"];
 
-const SIDE_CLASS = {
-	B: "bg-success-soft text-success",
-	A: "bg-error-soft text-error",
-} as const satisfies Record<OrderSide, string>;
-
-export const ORDER_TYPE_CONFIG = {
-	takeProfit: { prefix: "Take Profit", class: "bg-success-soft text-success" },
-	stop: { prefix: "Stop", class: "bg-warning-soft text-warning" },
-	default: { class: "bg-surface/50" },
-} as const;
-
-export function isLongOrder(order: OpenOrder): boolean {
-	return order.side === "B";
+export interface TpSlOrderInfo {
+	tpPrice?: number;
+	slPrice?: number;
+	tpOrderId?: number;
+	slOrderId?: number;
 }
 
 export function isTakeProfitOrder(order: OpenOrder): boolean {
-	return order.orderType.startsWith(ORDER_TYPE_CONFIG.takeProfit.prefix);
+	return order.orderType.startsWith(OPEN_ORDER_TYPE_PREFIXES.takeProfit);
 }
 
 export function isStopOrder(order: OpenOrder): boolean {
-	return order.orderType.startsWith(ORDER_TYPE_CONFIG.stop.prefix);
+	return order.orderType.startsWith(OPEN_ORDER_TYPE_PREFIXES.stop);
 }
 
 export function isMarketTriggerOrder(order: OpenOrder): boolean {
@@ -65,30 +58,57 @@ export function getSideLabel(side: OrderSide, kind?: MarketKind): string {
 	return side === "B" ? "long" : "short";
 }
 
-export function getSideClass(side: OrderSide): string {
-	return SIDE_CLASS[side];
+export function buildTpSlOrdersByCoin(orders: readonly OpenOrder[]): Map<string, TpSlOrderInfo> {
+	const map = new Map<string, TpSlOrderInfo>();
+	for (const order of orders) {
+		if (!order.isTrigger) continue;
+
+		const triggerPx = toBig(order.triggerPx)?.toNumber();
+		if (!triggerPx || triggerPx <= 0) continue;
+
+		const existing = map.get(order.coin) ?? {};
+		if (isTakeProfitOrder(order) && !existing.tpPrice) {
+			existing.tpPrice = triggerPx;
+			existing.tpOrderId = order.oid;
+		} else if (isStopOrder(order) && !existing.slPrice) {
+			existing.slPrice = triggerPx;
+			existing.slOrderId = order.oid;
+		}
+		map.set(order.coin, existing);
+	}
+	return map;
 }
 
-const ORDER_TYPE_SHORT_LABEL: Record<string, string> = {
-	"Take Profit Market": "TP Market",
-	"Take Profit Limit": "TP Limit",
-	"Stop Market": "SL Market",
-	"Stop Limit": "SL Limit",
-};
+export function getOrderLineLabel(order: OpenOrder): string {
+	if (isTakeProfitOrder(order)) return "TP";
+	if (isStopOrder(order)) return "SL";
+	return order.side === "B" ? "Limit Buy" : "Limit Sell";
+}
 
-export function getOrderTypeConfig(order: OpenOrder) {
-	let typeClass: string = ORDER_TYPE_CONFIG.default.class;
-	const suffix = order.reduceOnly && !order.isTrigger ? " RO" : "";
+export interface OrderTypeConfig {
+	fullLabel: string;
+	triggerLabel: "Stop" | "Take Profit" | null;
+	triggerClass: string | null;
+	executionLabel: string;
+	reduceOnly: boolean;
+}
+
+export function getOrderTypeConfig(order: OpenOrder): OrderTypeConfig {
+	const reduceOnly = order.reduceOnly;
+	const suffix = reduceOnly ? " RO" : "";
 	const fullLabel = `${order.orderType}${suffix}`;
-	const shortLabel = `${ORDER_TYPE_SHORT_LABEL[order.orderType] ?? order.orderType}${suffix}`;
 
-	if (isTakeProfitOrder(order)) {
-		typeClass = ORDER_TYPE_CONFIG.takeProfit.class;
-	}
-
+	let triggerLabel: "Stop" | "Take Profit" | null = null;
+	let triggerClass: string | null = null;
 	if (isStopOrder(order)) {
-		typeClass = ORDER_TYPE_CONFIG.stop.class;
+		triggerLabel = "Stop";
+		triggerClass = "text-warning";
+	} else if (isTakeProfitOrder(order)) {
+		triggerLabel = "Take Profit";
+		triggerClass = "text-success";
 	}
 
-	return { fullLabel, shortLabel, class: typeClass };
+	const executionLabel = order.orderType.endsWith("Market") ? "Market" : "Limit";
+
+	return { fullLabel, triggerLabel, triggerClass, executionLabel, reduceOnly };
 }

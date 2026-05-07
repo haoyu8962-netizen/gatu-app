@@ -2,13 +2,14 @@ import { FireIcon } from "@phosphor-icons/react";
 import { ClientOnly } from "@tanstack/react-router";
 import { Skeleton } from "boneyard-js/react";
 import { Suspense } from "react";
-import { UI_TEXT } from "@/config/constants";
-import { get24hChange, getOiUsd } from "@/domain/market";
+import { UI_TEXT } from "@/config/ui-text";
+import { get24hChange, getOiUsd, getPositionDex } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { getValueColorClass, toBig } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useTheme } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
@@ -106,7 +107,12 @@ export function MobileChartView({ className }: MobileChartViewProps) {
 				>
 					<Suspense fallback={<ChartSkeleton />}>
 						{selectedMarket && (
-							<KlineChart symbol={selectedMarket.name} theme={theme === "dark" ? "dark" : "light"} yAxisInside />
+							<KlineChart
+								symbol={selectedMarket.name}
+								positionDex={getPositionDex(selectedMarket)}
+								theme={theme === "dark" ? "dark" : "light"}
+								yAxisInside
+							/>
 						)}
 					</Suspense>
 				</ClientOnly>

@@ -1,5 +1,5 @@
 import { useConnection } from "wagmi";
-import { HL_ALL_DEXS } from "@/config/constants";
+import { HL_ALL_DEXS } from "@/config/app";
 import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";

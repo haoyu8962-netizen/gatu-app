@@ -9,7 +9,7 @@ const textareaVariants = cva(
 	[
 		"w-full rounded-8 border font-normal",
 		"text-fg bg-background placeholder:text-fg-muted",
-		"transition-colors outline-none resize-y",
+		"transition-colors duration-150 motion-reduce:transition-none outline-none resize-y",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"disabled:border-stroke-disabled disabled:text-fg-disabled",
 		"disabled:placeholder:text-fg-disabled disabled:cursor-not-allowed",
@@ -47,6 +47,13 @@ interface TextareaProps
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
 }
 
+const resizeClasses: Record<"none" | "vertical" | "horizontal" | "both", string> = {
+	none: "resize-none",
+	vertical: "resize-y",
+	horizontal: "resize-x",
+	both: "resize",
+};
+
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 	(
 		{
@@ -66,14 +73,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 		ref,
 	) => {
 		const size = sizeProp ?? DEFAULT_SIZE;
-		const resizeClass =
-			resize === "none"
-				? "resize-none"
-				: resize === "horizontal"
-					? "resize-x"
-					: resize === "both"
-						? "resize"
-						: "resize-y";
+		const resizeClass = resizeClasses[resize];
 
 		return (
 			<Field.Root disabled={disabled} invalid={error === true} className="flex flex-col gap-1">

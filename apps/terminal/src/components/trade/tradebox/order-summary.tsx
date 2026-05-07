@@ -1,11 +1,12 @@
 import { t } from "@lingui/core/macro";
 import { PencilIcon } from "@phosphor-icons/react";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
+import type { OrderType } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { bpsToPercentage, formatPrice, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
-
-const SUMMARY_EMPTY = "\u2014";
+import { isMarketExecutionOrderType } from "@/lib/trade/order-types";
 
 interface Props {
 	liqPrice: number | null;
@@ -17,6 +18,7 @@ interface Props {
 	slippagePercent: number;
 	szDecimals: number | undefined;
 	onSlippageClick: () => void;
+	orderType: OrderType;
 	marketKind?: MarketKind;
 }
 
@@ -39,41 +41,45 @@ export function OrderSummary({
 	slippagePercent,
 	szDecimals,
 	onSlippageClick,
+	orderType,
 	marketKind = "perp",
 }: Props) {
 	const isLeveraged = marketKind !== "spot";
+	const showSlippage = isMarketExecutionOrderType(orderType);
 
 	return (
 		<div className="flex flex-col">
 			{isLeveraged && (
 				<SummaryRow label={t`Liq. Price`}>
 					<span className={cn(liqPrice ? (liqWarning ? "text-error" : "text-fg") : "text-fg-muted")}>
-						{liqPrice ? formatPrice(liqPrice, { szDecimals }) : SUMMARY_EMPTY}
+						{liqPrice ? formatPrice(liqPrice, { szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
 			)}
 			<SummaryRow label={t`Order Value`}>
 				<span className={orderValue > 0 ? "text-fg" : "text-fg-muted"}>
-					{orderValue > 0 ? formatUSD(orderValue) : SUMMARY_EMPTY}
+					{orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{isLeveraged && (
 				<SummaryRow label={t`Margin Req.`}>
 					<span className={marginRequired > 0 ? "text-fg" : "text-fg-muted"}>
-						{marginRequired > 0 ? formatUSD(marginRequired) : SUMMARY_EMPTY}
+						{marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
 			)}
-			<SummaryRow label={t`Slippage`}>
-				<button
-					type="button"
-					onClick={onSlippageClick}
-					className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
-				>
-					<span className="tabular-nums text-error">{slippagePercent}%</span>
-					<PencilIcon className="size-2.5 text-fg-muted" />
-				</button>
-			</SummaryRow>
+			{showSlippage && (
+				<SummaryRow label={t`Slippage`}>
+					<button
+						type="button"
+						onClick={onSlippageClick}
+						className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
+					>
+						<span className="tabular-nums text-error">{slippagePercent}%</span>
+						<PencilIcon className="size-2.5 text-fg-muted" />
+					</button>
+				</SummaryRow>
+			)}
 			<SummaryRow label={t`Est. Fee`}>
 				<span className="text-fg-muted">
 					{orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}

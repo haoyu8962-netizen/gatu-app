@@ -11,7 +11,7 @@ import {
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { useConnection, useDisconnect } from "wagmi";
-import { UI_TEXT } from "@/config/constants";
+import { UI_TEXT } from "@/config/ui-text";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
@@ -98,6 +98,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									variant="ghost"
 									intent="neutral"
 									size="sm"
+									className="touch-target"
 									onClick={handleCopyAddress}
 									aria-label={t`Copy address`}
 								>
@@ -113,6 +114,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						variant="ghost"
 						intent="error"
 						size="md"
+						className="touch-target"
 						onClick={() => disconnect.mutate()}
 						aria-label={t`Disconnect wallet`}
 					>

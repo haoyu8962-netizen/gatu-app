@@ -40,7 +40,7 @@ const segmentedControlItemVariants = cva(
 		"data-active:text-fg",
 		"hover:text-fg",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		"data-disabled:opacity-40 data-disabled:cursor-not-allowed",
+		"data-disabled:text-fg-disabled data-disabled:cursor-not-allowed",
 	],
 	{
 		variants: {

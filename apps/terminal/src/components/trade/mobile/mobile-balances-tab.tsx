@@ -4,7 +4,8 @@ import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon, WalletIcon }
 import { Skeleton } from "boneyard-js/react";
 import { useMemo, useState } from "react";
 import { useConnection } from "wagmi";
-import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/constants";
+import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
+import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import {
 	type BalanceRow,
 	filterBalanceRowsByUsdValue,
@@ -22,9 +23,9 @@ import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-glo
 import { AssetDisplay } from "../components/asset-display";
 import { SendModal } from "../positions/send-modal";
 import { TransferModal } from "../positions/transfer-modal";
+import { MetricCell } from "./metric-cell";
 
 type TransferDirection = "toSpot" | "toPerp";
-const SMALL_BALANCE_THRESHOLD = 1;
 
 interface Props {
 	className?: string;
@@ -53,7 +54,7 @@ export function MobileBalancesTab({ className }: Props) {
 	const balances = useMemo(() => getBalanceRows(perpSummary, spotBalances), [perpSummary, spotBalances]);
 	const filteredBalances = useMemo(() => {
 		if (!hideSmallBalances) return balances;
-		return filterBalanceRowsByUsdValue(balances, SMALL_BALANCE_THRESHOLD);
+		return filterBalanceRowsByUsdValue(balances, SMALL_BALANCE_THRESHOLD_USD);
 	}, [balances, hideSmallBalances]);
 
 	const perpBalances = useMemo(() => filteredBalances.filter((row) => row.type === "perp"), [filteredBalances]);
@@ -116,11 +117,8 @@ export function MobileBalancesTab({ className }: Props) {
 		const pnlData = getPnl(row);
 
 		return (
-			<div
-				key={`${row.type}-${row.asset}`}
-				className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden"
-			>
-				<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
+			<div key={`${row.type}-${row.asset}`} className="rounded-xs border border-stroke-weak bg-surface overflow-hidden">
+				<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
 					<AssetDisplay coin={row.asset} nameClassName="text-sm font-semibold" />
 					<div className="text-right">
 						<div className="text-sm font-semibold tabular-nums text-fg">
@@ -136,7 +134,7 @@ export function MobileBalancesTab({ className }: Props) {
 					</div>
 				</div>
 
-				<div className="grid grid-cols-2 divide-x divide-stroke-weak/40">
+				<div className="grid grid-cols-2 divide-x divide-stroke-weak">
 					<MetricCell label={t`Available`} value={formatToken(row.available, decimals)} />
 					<MetricCell label={t`Total`} value={formatToken(row.total, decimals)} />
 				</div>
@@ -148,6 +146,7 @@ export function MobileBalancesTab({ className }: Props) {
 								variant="outline"
 								intent="neutral"
 								size="sm"
+								className="touch-target"
 								onClick={() => handleTransferClick(row)}
 								iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
 							>
@@ -159,6 +158,7 @@ export function MobileBalancesTab({ className }: Props) {
 								variant="outline"
 								intent="neutral"
 								size="sm"
+								className="touch-target"
 								onClick={() => openSwapModal(row.asset)}
 								iconLeft={<ArrowsDownUpIcon className="size-3.5" />}
 							>
@@ -171,7 +171,7 @@ export function MobileBalancesTab({ className }: Props) {
 								intent="neutral"
 								size="sm"
 								onClick={() => handleSendClick(row)}
-								className="ml-auto"
+								className="ml-auto touch-target"
 								iconLeft={<PaperPlaneTiltIcon className="size-3.5" />}
 							>
 								{t`Send`}
@@ -227,19 +227,5 @@ export function MobileBalancesTab({ className }: Props) {
 				/>
 			</div>
 		</Skeleton>
-	);
-}
-
-interface MetricCellProps {
-	label: string;
-	value: string;
-}
-
-function MetricCell({ label, value }: MetricCellProps) {
-	return (
-		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-fg-muted">{label}</div>
-			<div className="text-xs tabular-nums font-medium">{value}</div>
-		</div>
 	);
 }

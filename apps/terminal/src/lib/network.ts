@@ -1,4 +1,4 @@
-import { STORAGE_KEYS } from "@/config/constants";
+import { STORAGE_KEYS } from "@/config/app";
 
 export type Network = "mainnet" | "testnet";
 

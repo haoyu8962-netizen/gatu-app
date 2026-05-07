@@ -1,16 +1,17 @@
-import { Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useConnection } from "wagmi";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { getSideClass, getSideLabel } from "@/lib/trade/open-orders";
+import { getSideLabel } from "@/lib/trade/open-orders";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
+import { MetricCell } from "./metric-cell";
 
 interface Props {
 	className?: string;
@@ -31,7 +32,7 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 		historicalOrdersEvent?.orderHistory
 			?.slice()
 			.sort((a, b) => b.statusTimestamp - a.statusTimestamp)
-			.slice(0, 200) ?? [];
+			.slice(0, MAX_HISTORY_ROWS) ?? [];
 
 	const headerCount = isConnected ? `${orders.length}` : FALLBACK_VALUE_PLACEHOLDER;
 
@@ -77,28 +78,20 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 						return (
 							<div
 								key={`${order.oid}-${entry.statusTimestamp}`}
-								className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden"
+								className="rounded-xs border border-stroke-weak bg-surface overflow-hidden"
 							>
-								<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
-									<div
-										className={cn("absolute left-0 top-0 bottom-0 w-px", isLong ? "bg-market-up" : "bg-market-down")}
-									/>
-									<Button
-										variant="ghost"
-										intent="neutral"
-										size="sm"
-										onClick={() => setSelectedMarket(scope, order.coin)}
-									>
-										<AssetDisplay
+								<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
+									<div className="flex items-center gap-2">
+										<AssetBadge
 											coin={order.coin}
-											nameClassName="text-sm font-semibold"
-											subtitle={
-												<span className={cn("text-xs font-medium uppercase", getSideClass(order.side))}>
-													{getSideLabel(order.side, market?.kind)}
-												</span>
-											}
+											side={isLong ? "buy" : "sell"}
+											onClick={() => setSelectedMarket(scope, order.coin)}
+											nameClassName="text-sm"
 										/>
-									</Button>
+										<span className={cn("text-2xs font-medium uppercase", isLong ? "text-success" : "text-error")}>
+											{getSideLabel(order.side, market?.kind)}
+										</span>
+									</div>
 									<span
 										className={cn(
 											"text-xs px-1.5 py-0.5 rounded-8 capitalize",
@@ -113,7 +106,7 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 									</span>
 								</div>
 
-								<div className="grid grid-cols-3 divide-x divide-stroke-weak/40">
+								<div className="grid grid-cols-3 divide-x divide-stroke-weak">
 									<MetricCell label={t`Type`} value={order.orderType} />
 									<MetricCell label={t`Price`} value={formatUSD(order.limitPx, { compact: false })} />
 									<MetricCell label={t`Size`} value={formatToken(order.origSz, market?.szDecimals)} />
@@ -133,19 +126,5 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 				</div>
 			</div>
 		</Skeleton>
-	);
-}
-
-interface MetricCellProps {
-	label: string;
-	value: string;
-}
-
-function MetricCell({ label, value }: MetricCellProps) {
-	return (
-		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-fg-muted">{label}</div>
-			<div className="text-xs tabular-nums font-medium">{value}</div>
-		</div>
 	);
 }

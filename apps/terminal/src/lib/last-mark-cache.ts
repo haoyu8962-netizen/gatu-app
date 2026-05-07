@@ -1,5 +1,5 @@
-const KEY = "hl-last-mark-v1";
-const TTL = 60 * 60 * 1000;
+import { STORAGE_KEYS } from "@/config/app";
+import { LAST_MARK_TTL_MS } from "@/config/time";
 
 export interface LastMarkEntry {
 	markPx: string;
@@ -12,7 +12,7 @@ type Store = Record<string, LastMarkEntry>;
 function loadStore(): Store {
 	if (typeof window === "undefined") return {};
 	try {
-		return JSON.parse(localStorage.getItem(KEY) ?? "{}") as Store;
+		return JSON.parse(localStorage.getItem(STORAGE_KEYS.LAST_MARK) ?? "{}") as Store;
 	} catch {
 		return {};
 	}
@@ -21,7 +21,7 @@ function loadStore(): Store {
 export function loadLastMark(coin: string): LastMarkEntry | null {
 	const entry = loadStore()[coin];
 	if (!entry) return null;
-	if (Date.now() - entry.savedAt > TTL) return null;
+	if (Date.now() - entry.savedAt > LAST_MARK_TTL_MS) return null;
 	return entry;
 }
 
@@ -30,6 +30,6 @@ export function saveLastMark(coin: string, markPx: string, oraclePx?: string) {
 	try {
 		const store = loadStore();
 		store[coin] = { markPx, oraclePx, savedAt: Date.now() };
-		localStorage.setItem(KEY, JSON.stringify(store));
+		localStorage.setItem(STORAGE_KEYS.LAST_MARK, JSON.stringify(store));
 	} catch {}
 }

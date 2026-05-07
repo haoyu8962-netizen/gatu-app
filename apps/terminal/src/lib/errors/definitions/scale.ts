@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { ORDER_MIN_NOTIONAL_USD, SCALE_LEVELS_MAX, SCALE_LEVELS_MIN } from "@/config/constants";
+import { ORDER_MIN_NOTIONAL_USD, SCALE_LEVELS_MAX, SCALE_LEVELS_MIN } from "@/config/trade";
 import { clampInt, isPositive } from "@/lib/trade/numbers";
 import { createValidator, type Validator } from "../types";
 
@@ -33,7 +33,7 @@ export const scaleLevelsRangeValidator: Validator<ScaleContext> = createValidato
 	getMessage: () => t`Scale levels must be ${SCALE_LEVELS_MIN}-${SCALE_LEVELS_MAX}`,
 	validate: (ctx) => {
 		if (!ctx.scaleOrder) return true;
-		const levels = clampInt(Math.round(ctx.scaleLevelsNum ?? 0), 0, 100);
+		const levels = clampInt(Math.round(ctx.scaleLevelsNum ?? 0), 0, SCALE_LEVELS_MAX);
 		return levels >= SCALE_LEVELS_MIN && levels <= SCALE_LEVELS_MAX;
 	},
 });
@@ -59,7 +59,7 @@ export const scaleLevelMinNotionalValidator: Validator<ScaleContext> = createVal
 	getMessage: () => t`Scale level below min notional`,
 	validate: (ctx) => {
 		if (!ctx.scaleOrder) return true;
-		const levels = clampInt(Math.round(ctx.scaleLevelsNum ?? 0), 0, 100);
+		const levels = clampInt(Math.round(ctx.scaleLevelsNum ?? 0), 0, SCALE_LEVELS_MAX);
 		if (levels < 2 || ctx.sizeValue <= 0) return true;
 		if (!isPositive(ctx.scaleStartPriceNum) || !isPositive(ctx.scaleEndPriceNum)) return true;
 

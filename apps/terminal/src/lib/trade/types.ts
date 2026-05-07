@@ -5,7 +5,7 @@
 export type Side = "buy" | "sell";
 export type SizeMode = "base" | "quote";
 
-export interface ValidationResult {
+export interface FormValidationResult {
 	valid: boolean;
 	errors: string[];
 	canSubmit: boolean;

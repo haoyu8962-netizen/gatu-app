@@ -123,7 +123,6 @@ export {
 	useMarketsInfo,
 	useSelectedMarketInfo,
 } from "./hooks/useMarketsInfo";
-export { getMarketKindFromName } from "./hooks/utils/markets";
 export {
 	type BuilderPerpMarket,
 	type Markets,
@@ -136,5 +135,6 @@ export {
 	type UnifiedMarket,
 	useMarkets,
 } from "./markets";
+export { getMarketKindFromName } from "./markets/helper";
 export { type UseSpotTokensReturn, useSpotTokens } from "./markets/use-spot-tokens";
 export { type DepositStatus, type UseDepositResult, useDeposit } from "./use-deposit";

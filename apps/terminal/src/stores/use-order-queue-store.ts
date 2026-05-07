@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { OrderOutcome } from "@/lib/trade/extract-order-status";
 
 export interface OrderQueueItem {
 	id: string;
@@ -10,7 +11,7 @@ export interface OrderQueueItem {
 	tpPrice?: string;
 	slPrice?: string;
 	status: "pending" | "success" | "failed";
-	fillPercent?: number;
+	outcome?: OrderOutcome;
 	error?: string;
 	createdAt: number;
 	completedAt?: number;

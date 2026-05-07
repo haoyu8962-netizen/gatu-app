@@ -1,11 +1,11 @@
+import { getSideLabels, getSizeModeLabel, type SideLabels } from "@/config/ui-text";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { getAvailableBalanceToken, getSpotBalanceData, type SpotBalanceData } from "@/domain/trade/balances";
-import { getSideLabels, getSizeModeLabel, type SideLabels, type SizeMode } from "@/domain/trade/order/labels";
 import { getMaxSizeForOrderEntry, getOrderValue, getSizeValueFromInput } from "@/domain/trade/order/size";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
 import { getMarketCapabilities, type MarketCapabilities } from "@/lib/hyperliquid";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
-import type { Side } from "@/lib/trade/types";
+import type { Side, SizeMode } from "@/lib/trade/types";
 
 export interface OrderEntryInputs {
 	isConnected: boolean;

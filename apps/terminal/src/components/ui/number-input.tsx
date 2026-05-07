@@ -1,7 +1,23 @@
+/**
+ * String-based numeric input for the trade UI.
+ *
+ * This does NOT use `NumberInput` from `@hypeterminal/ui`. The package primitive
+ * exposes a `number | null` value via `onValueChange` (built on @base-ui NumberField)
+ * and wraps the input in `Field.Root` with label/hint/error slots. The tradebox
+ * callers (size/price/TP/SL/leverage/trigger inputs) keep Hyperliquid price/size
+ * strings end-to-end: API returns strings with exact decimals, they flow through
+ * `onChange(string)` unchanged, are validated for decimal limits, and converted to
+ * `Big()` only when math is required. Converting to `number` here would lose
+ * precision (HL's sz/px can have up to 8 decimals). See `rules/hyperliquid.md`.
+ *
+ * The synthetic change event below enables the ArrowUp/ArrowDown keyboard stepper
+ * without rewriting every caller's `onChange(e)` handler.
+ */
 import { Input as BaseInput } from "@base-ui/react/input";
 import type * as React from "react";
 import { useCallback } from "react";
 import { cn } from "@/lib/cn";
+import { labelTypographyClass } from "./field-label";
 import { getInputClassName, type InputSize } from "./input";
 
 /**
@@ -41,6 +57,7 @@ interface Props extends Omit<React.ComponentProps<"input">, "type" | "onChange" 
 	step?: number;
 	maxLabel?: React.ReactNode;
 	onMaxClick?: () => void;
+	suffix?: React.ReactNode;
 	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	label?: string;
 	labelValue?: React.ReactNode;
@@ -58,6 +75,7 @@ export function NumberInput({
 	step = 1,
 	maxLabel,
 	onMaxClick,
+	suffix,
 	value,
 	onChange,
 	onKeyDown,
@@ -69,6 +87,7 @@ export function NumberInput({
 }: Props) {
 	const effectiveAllowDecimals = allowDecimals && (maxAllowedDecimals === undefined || maxAllowedDecimals > 0);
 	const hasMax = maxLabel != null && onMaxClick != null;
+	const hasSuffix = !hasMax && suffix != null;
 
 	const createSyntheticEvent = useCallback(
 		(input: HTMLInputElement, newValue: string): React.ChangeEvent<HTMLInputElement> => {
@@ -176,35 +195,50 @@ export function NumberInput({
 			data-size={inputSize}
 			value={value}
 			disabled={disabled}
-			className={getInputClassName(inputSize, cn(hasMax && "pr-20", className))}
+			className={getInputClassName(inputSize, cn(hasMax && "pr-20", hasSuffix && "pr-7", className))}
 			onKeyDown={handleKeyDown}
 			onChange={handleChange}
 			{...props}
 		/>
 	);
 
-	const inputWithAction = hasMax ? (
-		<div className="relative">
-			{inputEl}
-			<button
-				type="button"
-				onClick={onMaxClick}
-				disabled={disabled}
-				className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-brand hover:text-brand/80 active:scale-90 active:opacity-70 transition-[color,opacity,transform] whitespace-nowrap tabular-nums disabled:opacity-50 disabled:pointer-events-none"
-			>
-				{maxLabel}
-			</button>
-		</div>
-	) : (
-		inputEl
-	);
+	function renderInputWithAction() {
+		if (hasMax) {
+			return (
+				<div className="relative">
+					{inputEl}
+					<button
+						type="button"
+						onClick={onMaxClick}
+						disabled={disabled}
+						className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-brand hover:text-brand/80 active:scale-90 active:opacity-70 transition-[color,opacity,transform] whitespace-nowrap tabular-nums disabled:opacity-50 disabled:pointer-events-none"
+					>
+						{maxLabel}
+					</button>
+				</div>
+			);
+		}
+		if (hasSuffix) {
+			return (
+				<div className="relative">
+					{inputEl}
+					<span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-fg-muted whitespace-nowrap tabular-nums">
+						{suffix}
+					</span>
+				</div>
+			);
+		}
+		return inputEl;
+	}
+
+	const inputWithAction = renderInputWithAction();
 
 	if (!label) return inputWithAction;
 
 	return (
 		<div>
 			<div className="mb-1.5 flex items-center justify-between">
-				<span className="text-3xs font-medium uppercase tracking-wide text-fg-muted leading-none">{label}</span>
+				<span className={labelTypographyClass}>{label}</span>
 				{labelValue != null && onLabelValueClick ? (
 					<button
 						type="button"

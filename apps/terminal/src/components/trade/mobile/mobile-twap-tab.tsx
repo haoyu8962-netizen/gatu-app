@@ -5,15 +5,16 @@ import { Skeleton } from "boneyard-js/react";
 import { useMemo } from "react";
 import { useConnection } from "wagmi";
 import { TimeTicker } from "@/components/ui/time-ticker";
-import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { getAvgPrice } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration, formatNumber, formatPrice } from "@/lib/format";
-import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
+import { MetricCell } from "./metric-cell";
 
 interface Props {
 	className?: string;
@@ -29,6 +30,7 @@ export function MobileTwapTab({ className }: Props) {
 		{ enabled: isConnected && !!address },
 	);
 	const markets = useMarkets();
+	const { mutate: cancelTwap, isPending: isCancelling } = useExchange("twapCancel");
 
 	const twapStates = twapStatesEvent?.states ?? [];
 	const activeOrders = useMemo(
@@ -75,40 +77,42 @@ export function MobileTwapTab({ className }: Props) {
 						const totalMinutes = state.minutes;
 
 						return (
-							<div key={twapId} className="rounded-xs border border-stroke-weak/40 bg-surface overflow-hidden">
-								<div className="relative flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak/40">
-									<div
-										className={cn("absolute left-0 top-0 bottom-0 w-px", isBuy ? "bg-market-up" : "bg-market-down")}
-									/>
-									<Button
-										variant="ghost"
-										intent="neutral"
-										size="sm"
-										onClick={() => setSelectedMarket(scope, state.coin)}
-									>
-										<AssetDisplay
+							<div key={twapId} className="rounded-xs border border-stroke-weak bg-surface overflow-hidden">
+								<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
+									<div className="flex items-center gap-2">
+										<AssetBadge
 											coin={state.coin}
-											nameClassName="text-sm font-semibold"
-											subtitle={
-												<span className={cn("text-xs font-medium uppercase", isBuy ? "text-success" : "text-error")}>
-													{isBuy ? t`Buy` : t`Sell`}
-												</span>
-											}
+											side={isBuy ? "buy" : "sell"}
+											onClick={() => setSelectedMarket(scope, state.coin)}
+											nameClassName="text-sm"
 										/>
-									</Button>
+										<span className={cn("text-2xs font-medium uppercase", isBuy ? "text-success" : "text-error")}>
+											{isBuy ? t`Buy` : t`Sell`}
+										</span>
+									</div>
 									<div className="flex items-center gap-2">
 										{state.reduceOnly && (
 											<span className="text-xs px-1.5 py-0.5 rounded-xs bg-brand-soft text-brand uppercase">
 												{t`RO`}
 											</span>
 										)}
-										<Button variant="outline" intent="error" size="sm">
+										<Button
+											variant="outline"
+											intent="error"
+											size="sm"
+											disabled={isCancelling}
+											onClick={() => {
+												const assetId = markets.getAssetId(state.coin);
+												if (typeof assetId !== "number") return;
+												cancelTwap({ a: assetId, t: twapId });
+											}}
+										>
 											{t`Cancel`}
 										</Button>
 									</div>
 								</div>
 
-								<div className="grid grid-cols-3 divide-x divide-stroke-weak/40">
+								<div className="grid grid-cols-3 divide-x divide-stroke-weak">
 									<MetricCell label={t`Size`} value={formatNumber(totalSize, szDecimals)} />
 									<MetricCell
 										label={t`Executed`}
@@ -134,20 +138,5 @@ export function MobileTwapTab({ className }: Props) {
 				</div>
 			</div>
 		</Skeleton>
-	);
-}
-
-interface MetricCellProps {
-	label: string;
-	value: string;
-	valueClass?: string;
-}
-
-function MetricCell({ label, value, valueClass }: MetricCellProps) {
-	return (
-		<div className="px-2.5 py-1.5">
-			<div className="text-xs text-fg-muted">{label}</div>
-			<div className={cn("text-xs tabular-nums font-medium", valueClass)}>{value}</div>
-		</div>
 	);
 }

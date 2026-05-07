@@ -1,35 +1,28 @@
-import { Button, Checkbox, Select, Slider, Tooltip } from "@hypeterminal/ui";
+import { Button, Checkbox, Slider, Tooltip } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import { useConnection } from "wagmi";
-import { DefinitionTooltip } from "@/components/ui/definition-tooltip";
+import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
-import {
-	FALLBACK_VALUE_PLACEHOLDER,
-	ORDER_MIN_NOTIONAL_USD,
-	SCALE_LEVELS_MAX,
-	SCALE_LEVELS_MIN,
-	TWAP_MINUTES_MAX,
-	TWAP_MINUTES_MIN,
-} from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { ORDER_MIN_NOTIONAL_USD, SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { getSliderValue } from "@/domain/trade/order/size";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { formatDecimalFloor, getValueColorClass, isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { formatDecimalFloor, isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isScaleOrderType,
 	isTriggerOrderType,
 	isTwapOrderType,
-	type LimitTif,
-	TIF_OPTIONS,
 	usesLimitPrice as usesLimitPriceForOrder,
 	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import {
 	useLimitPrice,
 	useOrderEntryActions,
@@ -37,26 +30,19 @@ import {
 	useOrderSize,
 	useOrderType,
 	useReduceOnly,
-	useScaleEnd,
-	useScaleLevels,
-	useScaleStart,
 	useSizeMode,
-	useSlPrice,
-	useTif,
-	useTpPrice,
 	useTpSlEnabled,
 	useTriggerPrice,
-	useTwapMinutes,
-	useTwapRandomize,
 } from "@/stores/use-order-entry-store";
-import { TpSlSection } from "./tp-sl-section";
+import { TradeFormScale } from "./trade-form-scale";
+import { TradeFormTif } from "./trade-form-tif";
+import { TradeFormTpSl } from "./trade-form-tp-sl";
+import { TradeFormTwap } from "./trade-form-twap";
 
 interface Props {
 	price: number;
 	positionSize: number;
 	swapTargetToken: string | null;
-	reduceOnlyId: string;
-	tpSlId: string;
 	onSizeModeToggle: () => void;
 	onSizePercentApply: (pct: number) => void;
 	onDepositClick: () => void;
@@ -67,8 +53,6 @@ export function TradeFormFields({
 	price,
 	positionSize,
 	swapTargetToken,
-	reduceOnlyId: _reduceOnlyId,
-	tpSlId: _tpSlId,
 	onSizeModeToggle,
 	onSizePercentApply,
 	onDepositClick,
@@ -76,8 +60,7 @@ export function TradeFormFields({
 }: Props) {
 	const sizeFieldId = useId();
 	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-	const [dragSliderValue, setDragSliderValue] = useState(25);
-	const [hasUserSized, setHasUserSized] = useState(false);
+	const [dragSliderValue, setDragSliderValue] = useState(0);
 
 	const { isConnected } = useConnection();
 	const { data: market } = useSelectedMarketInfo();
@@ -88,16 +71,8 @@ export function TradeFormFields({
 	const orderType = useOrderType();
 	const limitPriceInput = useLimitPrice();
 	const triggerPriceInput = useTriggerPrice();
-	const scaleStartPriceInput = useScaleStart();
-	const scaleEndPriceInput = useScaleEnd();
-	const scaleLevelsNum = useScaleLevels();
-	const twapMinutesNum = useTwapMinutes();
-	const twapRandomize = useTwapRandomize();
-	const tif = useTif();
 	const reduceOnly = useReduceOnly();
 	const tpSlEnabled = useTpSlEnabled();
-	const tpPriceInput = useTpPrice();
-	const slPriceInput = useSlPrice();
 
 	const markPx = toNumberOrZero(market?.markPx);
 
@@ -114,21 +89,7 @@ export function TradeFormFields({
 		szDecimals,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
 
-	const {
-		setSize,
-		setLimitPrice,
-		setTriggerPrice,
-		setScaleStart,
-		setScaleEnd,
-		setScaleLevels,
-		setTwapMinutes,
-		setTwapRandomize,
-		setTif,
-		setReduceOnly,
-		setTpSlEnabled,
-		setTpPrice,
-		setSlPrice,
-	} = useOrderEntryActions();
+	const { setSize, setLimitPrice, setTriggerPrice, setReduceOnly, setTpSlEnabled } = useOrderEntryActions();
 
 	const isFormDisabled = !isConnected || availableBalance <= 0;
 
@@ -139,31 +100,15 @@ export function TradeFormFields({
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 	const showTif = orderType === "limit" || orderType === "scale";
-	const availableTifOptions = orderType === "limit" ? (["Gtc", "Ioc", "Alo"] as const) : (["Gtc", "Alo"] as const);
 
 	const triggerPriceNum = toNumber(triggerPriceInput);
 	const sizeHasError = (sizeValue > maxSize && maxSize > 0) || (orderValue > 0 && orderValue < ORDER_MIN_NOTIONAL_USD);
 
-	const sliderValue = (() => {
-		if (isDraggingSlider) return dragSliderValue;
-		if (!hasUserSized || sizeValue <= 0) return 25;
-		return getSliderValue(sizeValue, maxSize);
-	})();
-
-	function handleSizeChange(value: string) {
-		setHasUserSized(true);
-		setSize(value);
-	}
+	const sliderValue = isDraggingSlider ? dragSliderValue : getSliderValue(sizeValue, maxSize);
 
 	function handleSizePercentApply(pct: number) {
 		if (maxSize <= 0) return;
-		setHasUserSized(true);
 		onSizePercentApply(pct);
-	}
-
-	function handleSizeModeToggle() {
-		setHasUserSized(true);
-		onSizeModeToggle();
 	}
 
 	function formatAvailableBalance(): string {
@@ -178,18 +123,18 @@ export function TradeFormFields({
 			<div className="flex min-w-0 flex-col gap-3">
 				<div className="flex min-w-0 flex-col gap-2">
 					<div className="flex min-w-0 items-baseline justify-between gap-2">
-						<p className="inline-flex justify-between w-full min-w-0 items-baseline gap-x-1.5 text-3xs leading-snug">
+						<div className="inline-flex justify-between w-full min-w-0 items-baseline gap-x-1.5 text-3xs leading-snug">
 							<Tooltip content={t`Balance available to trade`} side="top">
 								<span className="font-medium uppercase tracking-wider text-fg-muted cursor-default">{t`Available`}</span>
 							</Tooltip>
-							<div>
+							<span>
 								{isConnected ? (
 									<span className={cn("tabular-nums", getValueColorClass(availableBalance))}>
 										{formatAvailableBalance()}
 									</span>
 								) : null}
-							</div>
-						</p>
+							</span>
+						</div>
 						<div className="flex shrink-0 items-center">
 							{isConnected && swapTargetToken ? (
 								<Button variant="link" intent="brand" size="xxs" onClick={onSwapClick}>
@@ -217,7 +162,7 @@ export function TradeFormFields({
 				</div>
 
 				{usesTriggerPrice && (
-					<div className="border-t border-stroke-weak/25 pt-3">
+					<div className="border-t border-stroke-weak pt-3">
 						<PriceInput
 							label={t`Trigger Price`}
 							placeholder="0.00"
@@ -239,7 +184,7 @@ export function TradeFormFields({
 				)}
 
 				{usesLimitPrice && (
-					<div className="border-t border-stroke-weak/25 pt-3">
+					<div className="border-t border-stroke-weak pt-3">
 						<PriceInput
 							label={t`Limit Price`}
 							placeholder="0.00"
@@ -260,12 +205,9 @@ export function TradeFormFields({
 					</div>
 				)}
 
-				<div className="flex flex-col gap-0.5 border-t border-stroke-weak/25 pt-3">
+				<div className="flex flex-col gap-0.5 border-t border-stroke-weak pt-3">
 					<div className="mb-1 flex items-center justify-between gap-2">
-						<label
-							htmlFor={sizeFieldId}
-							className="text-3xs font-medium uppercase tracking-wide text-fg-muted leading-none"
-						>
+						<label htmlFor={sizeFieldId} className={labelTypographyClass}>
 							{t`Size`}
 						</label>
 						{sizeValue > 0 ? (
@@ -282,7 +224,7 @@ export function TradeFormFields({
 							id={sizeFieldId}
 							placeholder="0.00"
 							value={sizeInput}
-							onChange={(e) => handleSizeChange(e.target.value)}
+							onChange={(e) => setSize(e.target.value)}
 							maxAllowedDecimals={szDecimals}
 							className={cn(
 								"flex-1 text-xs tabular-nums",
@@ -294,7 +236,7 @@ export function TradeFormFields({
 							variant="outline"
 							intent="neutral"
 							size="sm"
-							onClick={handleSizeModeToggle}
+							onClick={onSizeModeToggle}
 							aria-label={t`Toggle size mode`}
 							disabled={isFormDisabled}
 							iconRight={<CaretDownIcon className="size-2.5" />}
@@ -319,7 +261,7 @@ export function TradeFormFields({
 						disabled={isFormDisabled || maxSize <= 0}
 					/>
 					<div className="flex items-center justify-between pt-1 text-3xs text-fg-muted tabular-nums leading-none">
-						{[0, 25, 50, 75, 100].map((pct) => (
+						{SIZE_PERCENT_OPTIONS.map((pct) => (
 							<button
 								key={pct}
 								type="button"
@@ -334,65 +276,9 @@ export function TradeFormFields({
 				</div>
 			</div>
 
-			{scaleOrder && (
-				<>
-					<PriceInput
-						label={t`Start Price`}
-						placeholder="0.00"
-						value={scaleStartPriceInput}
-						onChange={(e) => setScaleStart(e.target.value)}
-						onMidClick={setScaleStart}
-						midPrice={markPx}
-						szDecimals={szDecimals}
-						className="w-full text-xs tabular-nums"
-						disabled={isFormDisabled}
-					/>
-					<PriceInput
-						label={t`End Price`}
-						placeholder="0.00"
-						value={scaleEndPriceInput}
-						onChange={(e) => setScaleEnd(e.target.value)}
-						onMidClick={setScaleEnd}
-						midPrice={markPx}
-						szDecimals={szDecimals}
-						className="w-full text-xs tabular-nums"
-						disabled={isFormDisabled}
-					/>
-					<NumberInput
-						label={t`Number of Orders`}
-						labelValue={`${SCALE_LEVELS_MIN}–${SCALE_LEVELS_MAX}`}
-						placeholder="4"
-						value={String(scaleLevelsNum)}
-						onChange={(e) => setScaleLevels(Number(e.target.value) || 4)}
-						allowDecimals={false}
-						className="w-full text-xs tabular-nums"
-						disabled={isFormDisabled}
-					/>
-				</>
-			)}
+			{scaleOrder && <TradeFormScale markPx={markPx} szDecimals={szDecimals} disabled={isFormDisabled} />}
 
-			{twapOrder && (
-				<>
-					<NumberInput
-						label={t`Duration (Minutes)`}
-						labelValue={`${TWAP_MINUTES_MIN}–${TWAP_MINUTES_MAX}`}
-						placeholder="30"
-						value={String(twapMinutesNum)}
-						onChange={(e) => setTwapMinutes(Number(e.target.value) || 30)}
-						allowDecimals={false}
-						className="w-full text-xs tabular-nums"
-						disabled={isFormDisabled}
-					/>
-					<div className="flex items-center text-xs">
-						<Checkbox
-							checked={twapRandomize}
-							onCheckedChange={(checked) => setTwapRandomize(checked === true)}
-							disabled={isFormDisabled}
-							label={t`Randomize timing`}
-						/>
-					</div>
-				</>
-			)}
+			{twapOrder && <TradeFormTwap disabled={isFormDisabled} />}
 
 			{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl) || showTif) && (
 				<div className="space-y-3.5 py-0.5">
@@ -415,38 +301,20 @@ export function TradeFormFields({
 								label={t`TP/SL`}
 							/>
 						)}
-						{showTif && (
-							<div className="ml-auto flex items-center gap-1.5">
-								<DefinitionTooltip topic="tif" only={availableTifOptions}>
-									<span className="text-3xs font-medium text-fg-muted/60 uppercase tracking-wide select-none cursor-default">{t`TIF`}</span>
-								</DefinitionTooltip>
-								<Select
-									size="xs"
-									value={tif}
-									onValueChange={(value) => value && setTif(value as LimitTif)}
-									disabled={isFormDisabled}
-									triggerClassName="border-transparent bg-transparent hover:bg-fill-hover/40 px-1.5 gap-1"
-									options={availableTifOptions.map((opt) => ({
-										value: opt,
-										label: TIF_OPTIONS[opt].label,
-									}))}
-								/>
-							</div>
-						)}
+						{showTif && <TradeFormTif orderType={orderType} disabled={isFormDisabled} />}
 					</div>
 
-					{capabilities.hasTpSl && tpSlEnabled && canUseTpSl && (
-						<TpSlSection
-							side={side}
-							referencePrice={price}
-							size={sizeValue}
-							szDecimals={szDecimals}
-							tpPrice={tpPriceInput}
-							slPrice={slPriceInput}
-							onTpPriceChange={setTpPrice}
-							onSlPriceChange={setSlPrice}
-							disabled={isFormDisabled}
-						/>
+					{capabilities.hasTpSl && canUseTpSl && (
+						<div className="h-56">
+							{tpSlEnabled && (
+								<TradeFormTpSl
+									referencePrice={price}
+									size={sizeValue}
+									szDecimals={szDecimals}
+									disabled={isFormDisabled}
+								/>
+							)}
+						</div>
 					)}
 				</div>
 			)}

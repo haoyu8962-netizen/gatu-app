@@ -13,45 +13,12 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useConnection } from "wagmi";
+import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
 import { cn } from "@/lib/cn";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { WalletModal } from "../components/wallet-modal";
 import { ThemeToggle } from "../header/theme-toggle";
-
-const SCOPE_NAV_ITEMS = [
-	{
-		scope: "all" as const,
-		label: <Trans>All</Trans>,
-		to: "/",
-		activeClass: "text-fg font-medium bg-fill-hover",
-	},
-	{
-		scope: "perp" as const,
-		label: <Trans>Perp</Trans>,
-		to: "/perp",
-		activeClass: "text-scope-perp font-medium bg-scope-perp/10",
-	},
-	{
-		scope: "spot" as const,
-		label: <Trans>Spot</Trans>,
-		to: "/spot",
-		activeClass: "text-scope-spot font-medium bg-scope-spot/10",
-	},
-	{
-		scope: "builders-perp" as const,
-		label: <Trans>Builders</Trans>,
-		to: "/builders-perp",
-		activeClass: "text-scope-builders font-medium bg-scope-builders/10",
-	},
-] as const;
-
-const STATIC_NAV_ITEMS = [
-	{ key: "vaults", label: <Trans>Vaults</Trans> },
-	{ key: "portfolio", label: <Trans>Portfolio</Trans> },
-	{ key: "staking", label: <Trans>Staking</Trans> },
-	{ key: "leaderboard", label: <Trans>Leaderboard</Trans> },
-] as const;
 
 function ScopeIcon({ scope }: { scope: string }) {
 	switch (scope) {
@@ -80,12 +47,19 @@ export function MobileNavDrawer() {
 
 	return (
 		<>
-			<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label="Open navigation" onClick={() => setOpen(true)}>
+			<ButtonIcon
+				variant="ghost"
+				intent="neutral"
+				size="md"
+				className="touch-target"
+				aria-label="Open navigation"
+				onClick={() => setOpen(true)}
+			>
 				<ListIcon className="size-4" />
 			</ButtonIcon>
 
 			<Drawer side="left" open={open} onOpenChange={setOpen}>
-				<DrawerContent className="w-72 flex flex-col p-0">
+				<DrawerContent className="w-[80vw] max-w-72 flex flex-col p-0">
 					<div className="h-12 px-3 flex items-center justify-between border-b border-stroke-weak/60 shrink-0">
 						<div className="flex items-center gap-1.5">
 							<div className="size-5 rounded-8 bg-brand/10 border border-stroke-brand-strong/30 flex items-center justify-center">
@@ -103,7 +77,9 @@ export function MobileNavDrawer() {
 
 					<div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
 						<nav className="p-2 flex flex-col" aria-label="Markets">
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">Markets</p>
+							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
+								<Trans>Markets</Trans>
+							</p>
 							{SCOPE_NAV_ITEMS.map((item) => (
 								<Link
 									key={item.scope}
@@ -123,7 +99,9 @@ export function MobileNavDrawer() {
 						<Divider className="mx-3" />
 
 						<nav className="p-2 flex flex-col" aria-label="Platform">
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">Platform</p>
+							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
+								<Trans>Platform</Trans>
+							</p>
 							{STATIC_NAV_ITEMS.map((item) => (
 								<div
 									key={item.key}
@@ -131,7 +109,7 @@ export function MobileNavDrawer() {
 								>
 									<span>{item.label}</span>
 									<Badge tone="neutral" size="xxs" className="text-fg-disabled">
-										Soon
+										<Trans>Soon</Trans>
 									</Badge>
 								</div>
 							))}

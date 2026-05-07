@@ -1,0 +1,77 @@
+---
+const features = [
+	{
+		title: "Pro charts",
+		desc: "Candles with live order, position, and liquidation overlays",
+		icon: "chart",
+	},
+	{
+		title: "Every order type",
+		desc: "Market, limit, stop, take-profit, TWAP, and scale orders",
+		icon: "orders",
+	},
+	{
+		title: "Position control",
+		desc: "Close, reverse, edit TP/SL, transfer margin, adjust leverage",
+		icon: "target",
+	},
+	{
+		title: "Up to 50× leverage",
+		desc: "Cross or isolated, per-position, with live margin checks",
+		icon: "gauge",
+	},
+	{
+		title: "Mobile-native",
+		desc: "Dedicated mobile views with native gestures, not a shrunk desktop",
+		icon: "phone",
+	},
+	{
+		title: "Multi-DEX",
+		desc: "Perp, spot, and builder markets in one unified interface",
+		icon: "layers",
+	},
+	{
+		title: "Wallet-native",
+		desc: "MetaMask, WalletConnect, Coinbase across 19+ EVM chains",
+		icon: "wallet",
+	},
+	{
+		title: "Bridge in & out",
+		desc: "Deposit and withdraw across chains powered by LiFi",
+		icon: "bridge",
+	},
+];
+
+// Phosphor (regular) — paths from @phosphor-icons/core, scaled for 24x24 viewBox.
+const iconSvg: Record<string, string> = {
+	chart: '<polyline points="208,72 128,152 96,120 32,184" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="160,72 208,72 208,120" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
+	orders: '<line x1="40" y1="64" x2="216" y2="64" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="40" y1="128" x2="216" y2="128" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="40" y1="192" x2="216" y2="192" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
+	target: '<circle cx="128" cy="128" r="96" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="128" cy="128" r="56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="128" cy="128" r="16" fill="currentColor"/>',
+	gauge: '<path d="M48,176a87.6,87.6,0,0,1,8-36.6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M200,139.4a87.5,87.5,0,0,1,8,36.6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M40,176a88,88,0,0,1,176,0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="128" y1="176" x2="168" y2="120" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
+	phone: '<rect x="64" y="24" width="128" height="208" rx="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="112" y1="200" x2="144" y2="200" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
+	layers: '<polygon points="128,32 24,80 128,128 232,80 128,32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="24,128 128,176 232,128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="24,176 128,224 232,176" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
+	wallet: '<path d="M40,72H216a0,0,0,0,1,0,0V192a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V72A0,0,0,0,1,40,72Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><path d="M40,72V64a16,16,0,0,1,16-16H192" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="180" cy="136" r="12" fill="currentColor"/>',
+	bridge: '<line x1="32" y1="128" x2="224" y2="128" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="168,72 224,128 168,184" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><polyline points="88,184 32,128 88,72" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>',
+};
+---
+
+<section id="features" class="border-b border-stroke-weaker">
+	<div class="mx-auto w-full max-w-6xl px-6 py-20 md:py-28">
+		<div class="text-center mb-12 md:mb-16">
+			<span class="text-3xs uppercase tracking-uppercase text-fg-faint">What's inside</span>
+			<h2 class="mt-3 text-xl md:text-2xl font-medium tracking-display">Everything serious traders need.</h2>
+		</div>
+
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-stroke-weaker rounded-xs overflow-hidden border border-stroke-weak">
+			{features.map((f) => (
+				<div class="bg-surface p-5 md:p-7 group hover:bg-overlay transition-colors duration-200">
+					<div class="h-9 w-9 rounded-xs bg-fill-weaker flex items-center justify-center text-fg-muted group-hover:text-fg transition-colors duration-200">
+						<svg width="16" height="16" viewBox="0 0 256 256" aria-hidden="true" set:html={iconSvg[f.icon]} />
+					</div>
+					<h3 class="mt-5 text-sm font-medium">{f.title}</h3>
+					<p class="mt-1.5 text-xs text-fg-muted leading-relaxed">{f.desc}</p>
+				</div>
+			))}
+		</div>
+	</div>
+</section>

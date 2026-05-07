@@ -1,11 +1,16 @@
 import { useEffect } from "react";
-import { SEO_DEFAULTS } from "@/config/constants";
+import { SEO_DEFAULTS } from "@/config/seo";
 import { formatPrice } from "@/lib/format";
 import { type SpotMarketInfo, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 
 function getSpotSubscriptionCoin(market: ReturnType<typeof useSelectedMarketInfo>["data"]): string {
 	if (market?.kind !== "spot") return "";
 	return `@${(market as SpotMarketInfo).index}`;
+}
+
+export function TabTitleSync() {
+	useDocumentTitle();
+	return null;
 }
 
 export function useDocumentTitle() {
@@ -18,12 +23,12 @@ export function useDocumentTitle() {
 	const { data: perpCtxEvent } = useSubscription(
 		"activeAssetCtx",
 		{ coin: perpCoin },
-		{ enabled: !!perpCoin && !isSpot },
+		{ enabled: !!perpCoin && !isSpot, pauseWhenHidden: false },
 	);
 	const { data: spotCtxEvent } = useSubscription(
 		"activeSpotAssetCtx",
 		{ coin: spotCoin },
-		{ enabled: !!spotCoin && isSpot },
+		{ enabled: !!spotCoin && isSpot, pauseWhenHidden: false },
 	);
 
 	const markPx = isSpot ? spotCtxEvent?.ctx?.markPx : perpCtxEvent?.ctx?.markPx;
@@ -32,12 +37,13 @@ export function useDocumentTitle() {
 
 	useEffect(() => {
 		if (!markPx || !pairName) return;
-
 		const price = formatPrice(markPx, { szDecimals });
 		document.title = `${price} · ${pairName} | HypeTerminal`;
+	}, [markPx, pairName, szDecimals]);
 
+	useEffect(() => {
 		return () => {
 			document.title = SEO_DEFAULTS.defaultTitle;
 		};
-	}, [markPx, pairName, szDecimals]);
+	}, []);
 }

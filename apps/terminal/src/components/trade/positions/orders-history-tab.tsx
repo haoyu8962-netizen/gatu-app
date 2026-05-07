@@ -1,14 +1,15 @@
-import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { getSideClass, getSideLabel } from "@/lib/trade/open-orders";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
+import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
 	positionsPanelRowStripeClass,
@@ -21,24 +22,6 @@ import {
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
-
-interface PlaceholderProps {
-	children: React.ReactNode;
-	variant?: "error";
-}
-
-function Placeholder({ children, variant }: PlaceholderProps) {
-	return (
-		<div
-			className={cn(
-				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-error" : "text-fg-muted",
-			)}
-		>
-			{children}
-		</div>
-	);
-}
 
 export function OrdersHistoryTab() {
 	const { address, isConnected } = useConnection();
@@ -55,7 +38,7 @@ export function OrdersHistoryTab() {
 		historicalOrdersEvent?.orderHistory
 			?.slice()
 			.sort((a, b) => b.statusTimestamp - a.statusTimestamp)
-			.slice(0, 200) ?? [];
+			.slice(0, MAX_HISTORY_ROWS) ?? [];
 
 	const headerCount = isConnected ? `${orders.length} ${t`orders`}` : null;
 
@@ -87,25 +70,37 @@ export function OrdersHistoryTab() {
 						<Table className="table-fixed min-w-[52rem] w-full">
 							<TableHeader className={positionsPanelTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
 										{t`Time`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[18%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[18%] text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
 										{t`Type`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+									>
 										{t`Price`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
+									>
 										{t`Size`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
 										{t`Status`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}
+									>
 										{t`Updated`}
 									</TableHead>
 								</TableRow>
@@ -114,43 +109,51 @@ export function OrdersHistoryTab() {
 								{orders.map((entry, i) => {
 									const { order } = entry;
 									const market = markets.getMarket(order.coin);
+									const isLong = order.side === "B";
 
 									return (
 										<TableRow
 											key={`${order.oid}-${entry.statusTimestamp}`}
 											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
 										>
-											<TableCell className={cn(positionsPanelTableCellClass, "whitespace-nowrap text-fg-muted")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, "whitespace-nowrap text-fg-muted")}
+											>
 												{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
-												<div className="flex items-center gap-1.5">
-													<Button
-														variant="link"
-														onClick={() => setSelectedMarket(scope, order.coin)}
-														className="gap-1.5"
-														aria-label={t`Switch to ${order.coin} market`}
-													>
-														<AssetDisplay coin={order.coin} />
-													</Button>
-													<span className={cn("text-xs px-1 py-0.5 rounded-8 uppercase", getSideClass(order.side))}>
-														{getSideLabel(order.side, market?.kind)}
-													</span>
-												</div>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
+												<AssetBadge
+													coin={order.coin}
+													side={isLong ? "buy" : "sell"}
+													onClick={() => setSelectedMarket(scope, order.coin)}
+													aria-label={
+														isLong
+															? t`Switch to ${order.coin} market, long order`
+															: t`Switch to ${order.coin} market, short order`
+													}
+												/>
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
 												{order.orderType}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
+											>
 												{formatUSD(order.limitPx, { compact: false })}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
+											>
 												{formatToken(order.origSz, market?.szDecimals)}
 											</TableCell>
-											<TableCell className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
 												{entry.status}
 											</TableCell>
 											<TableCell
+												size="dense"
 												className={cn(
 													positionsPanelTableCellClass,
 													"whitespace-nowrap text-right tabular-nums text-fg-muted",

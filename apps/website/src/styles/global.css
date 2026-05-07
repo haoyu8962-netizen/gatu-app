@@ -1,0 +1,310 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+	--font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+	--font-mono: ui-monospace, "SF Mono", monospace;
+
+	/* Strong custom easings — built-in CSS easings lack punch.
+	   Source: easings.dev / Emil Kowalski's animations.dev course. */
+	--ease-out-quint: cubic-bezier(0.23, 1, 0.32, 1);
+	--ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+	--ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
+
+	--text-3xs: 10px;
+	--text-3xs--line-height: 14px;
+	--text-2xs: 11px;
+	--text-2xs--line-height: 16px;
+	--text-xs: 12px;
+	--text-xs--line-height: 16px;
+	--text-sm: 14px;
+	--text-sm--line-height: 20px;
+	--text-base: 16px;
+	--text-base--line-height: 24px;
+	--text-lg: 20px;
+	--text-lg--line-height: 28px;
+	--text-xl: 28px;
+	--text-xl--line-height: 36px;
+	--text-2xl: 40px;
+	--text-2xl--line-height: 48px;
+	--text-3xl: 56px;
+	--text-3xl--line-height: 64px;
+	--text-4xl: 72px;
+	--text-4xl--line-height: 80px;
+
+	--spacing: 4px;
+
+	--tracking-uppercase: 2px;
+	--tracking-heading-1: -0.5px;
+	--tracking-display: -1.5px;
+
+	--radius-factor: 0.5;
+	--radius-4: calc(4px * var(--radius-factor));
+	--radius-8: calc(8px * var(--radius-factor));
+	--radius-12: calc(12px * var(--radius-factor));
+	--radius-16: calc(16px * var(--radius-factor));
+	--radius-full: 9999px;
+}
+
+@layer base {
+	:root {
+		color-scheme: dark;
+
+		/* Match apps/terminal/src/styles.css dark-mode tokens exactly. */
+		--bg-base: #12131a;
+		--bg-raised: #1d1e26;
+		--bg-overlay: #292b33;
+		--bg-sunken: #000000;
+		--bg-alternate: #1d1e26;
+		--bg-brand: #b2bcf1;
+		--bg-inverse: #ffffff;
+
+		--text-strong: #ffffff;
+		--text-weak: #ffffffc7;
+		--text-muted: #ffffff8a;
+		--text-faint: #ffffff52;
+		--text-brand: #b2bcf1;
+		--text-disabled: #ffffff1f;
+		--text-error: #ff9c9c;
+		--text-warning: #e0be70;
+		--text-success: #77c7af;
+		--text-info: #7ec0e5;
+		--text-inverse-strong: #000626e5;
+
+		--fill-strong: #ffffff;
+		--fill-weak: #ffffff0f;
+		--fill-weaker: #ffffff08;
+		--fill-hover: #ffffff14;
+		--fill-press: #ffffff1f;
+		--fill-brand-strong: #b2bcf1;
+		--fill-brand-weak: #b2bcf10f;
+
+		--stroke-strong: #ffffff99;
+		--stroke-weak: #ffffff1f;
+		--stroke-weaker: #ffffff0f;
+		--stroke-focus: #b2bcf1;
+
+		--market-up: #77c7af;
+		--market-down: #ff9c9c;
+		--scope-perp: #4f7dff;
+		--scope-spot: #2dd4bf;
+		--scope-builders: #f59e0b;
+
+		/* Terminal-prompt brand green from apps/terminal/public/icon.svg. */
+		--terminal: #57cb60;
+		--terminal-soft: rgba(87, 203, 96, 0.15);
+	}
+
+	.light {
+		color-scheme: light;
+
+		--bg-base: #ffffff;
+		--bg-raised: #ffffff;
+		--bg-overlay: #ffffff;
+		--bg-sunken: #f5f6fa;
+		--bg-alternate: #f5f6fa;
+		--bg-brand: #4c64d9;
+		--bg-inverse: #12131a;
+
+		--text-strong: #000626e5;
+		--text-weak: #000933a6;
+		--text-muted: #00093370;
+		--text-faint: #00093340;
+		--text-brand: #4c64d9;
+
+		--fill-weak: #0015800a;
+		--fill-weaker: #00158005;
+		--fill-hover: #00158014;
+		--fill-press: #0011661a;
+		--fill-brand-strong: #4c64d9;
+		--fill-brand-weak: #4c64d90d;
+
+		--stroke-strong: #000d4d52;
+		--stroke-weak: #0011661a;
+		--stroke-weaker: #0011660f;
+		--stroke-focus: #4c64d9;
+
+		--scope-perp: #2563eb;
+		--scope-spot: #0f766e;
+		--scope-builders: #b45309;
+	}
+}
+
+@theme inline {
+	--color-background: var(--bg-base);
+	--color-surface: var(--bg-raised);
+	--color-overlay: var(--bg-overlay);
+	--color-sunken: var(--bg-sunken);
+	--color-alternate: var(--bg-alternate);
+	--color-inverse-surface: var(--bg-inverse);
+
+	--color-fg: var(--text-strong);
+	--color-fg-muted: var(--text-weak);
+	--color-fg-subtle: var(--text-muted);
+	--color-fg-faint: var(--text-faint);
+	--color-fg-disabled: var(--text-disabled);
+	--color-fg-inverse: var(--text-inverse-strong);
+
+	--color-brand: var(--text-brand);
+	--color-brand-soft: var(--fill-brand-weak);
+	--color-error: var(--text-error);
+	--color-warning: var(--text-warning);
+	--color-success: var(--text-success);
+	--color-info: var(--text-info);
+
+	--color-fill: var(--fill-strong);
+	--color-fill-weak: var(--fill-weak);
+	--color-fill-weaker: var(--fill-weaker);
+	--color-fill-hover: var(--fill-hover);
+	--color-fill-press: var(--fill-press);
+
+	--color-stroke-weak: var(--stroke-weak);
+	--color-stroke-weaker: var(--stroke-weaker);
+	--color-stroke-strong: var(--stroke-strong);
+	--color-stroke-focus: var(--stroke-focus);
+
+	--color-market-up: var(--market-up);
+	--color-market-down: var(--market-down);
+	--color-scope-perp: var(--scope-perp);
+	--color-scope-spot: var(--scope-spot);
+	--color-scope-builders: var(--scope-builders);
+	--color-terminal: var(--terminal);
+	--color-terminal-soft: var(--terminal-soft);
+}
+
+@layer base {
+	* {
+		border-color: var(--stroke-weak);
+	}
+
+	html {
+		scroll-behavior: smooth;
+	}
+
+	body {
+		font-family: var(--font-sans);
+		background-color: var(--bg-base);
+		color: var(--text-strong);
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	::selection {
+		background: var(--fill-brand-strong);
+		color: var(--bg-base);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
+}
+
+/* Match apps/terminal mobile type scale. */
+@layer base {
+	@media (max-width: 767px) {
+		:root {
+			--text-xl: 24px;
+			--text-xl--line-height: 32px;
+			--text-2xl: 32px;
+			--text-2xl--line-height: 40px;
+			--text-3xl: 36px;
+			--text-3xl--line-height: 44px;
+			--text-4xl: 44px;
+			--text-4xl--line-height: 52px;
+		}
+	}
+}
+
+@layer components {
+	.grain {
+		position: relative;
+		isolation: isolate;
+	}
+	.grain::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		opacity: 0.035;
+		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+		mix-blend-mode: overlay;
+	}
+
+	.terminal-grid {
+		background-image:
+			linear-gradient(to right, var(--stroke-weaker) 1px, transparent 1px),
+			linear-gradient(to bottom, var(--stroke-weaker) 1px, transparent 1px);
+		background-size: 56px 56px;
+	}
+
+	.glow-radial {
+		background:
+			radial-gradient(ellipse 50% 40% at 50% 0%, rgba(178, 188, 241, 0.22), transparent 65%),
+			radial-gradient(ellipse 80% 30% at 50% 0%, rgba(87, 203, 96, 0.06), transparent 70%);
+	}
+
+	.glow-terminal {
+		background: radial-gradient(
+			ellipse 40% 35% at 50% 50%,
+			rgba(87, 203, 96, 0.18),
+			transparent 70%
+		);
+	}
+
+	/* Staggered fade-in: applies to children with `.stagger-item`. */
+	.stagger > .stagger-item {
+		opacity: 0;
+		transform: translateY(8px) scale(0.98);
+		animation: stagger-in 600ms var(--ease-out-quint) forwards;
+	}
+	.stagger > .stagger-item:nth-child(1) { animation-delay: 0ms; }
+	.stagger > .stagger-item:nth-child(2) { animation-delay: 60ms; }
+	.stagger > .stagger-item:nth-child(3) { animation-delay: 120ms; }
+	.stagger > .stagger-item:nth-child(4) { animation-delay: 180ms; }
+	.stagger > .stagger-item:nth-child(5) { animation-delay: 240ms; }
+
+	@keyframes stagger-in {
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	/* Press feedback: every interactive element should feel responsive.
+	   Transitions both opacity and transform so hover-fade and press-scale coexist. */
+	.press {
+		transition:
+			transform 160ms var(--ease-out-quint),
+			opacity 200ms var(--ease-out-quint),
+			background-color 200ms var(--ease-out-quint),
+			border-color 200ms var(--ease-out-quint),
+			color 200ms var(--ease-out-quint);
+	}
+	.press:active {
+		transform: scale(0.97);
+	}
+
+	/* Gate hover-only effects to fine pointers (avoids stuck hover on touch). */
+	@media (hover: hover) and (pointer: fine) {
+		.hover-lift {
+			transition:
+				background-color 200ms var(--ease-out-quint),
+				border-color 200ms var(--ease-out-quint),
+				transform 200ms var(--ease-out-quint);
+		}
+	}
+
+	.tabular {
+		font-variant-numeric: tabular-nums;
+		font-feature-settings: "tnum";
+	}
+}

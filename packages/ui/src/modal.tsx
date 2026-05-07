@@ -61,7 +61,7 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 					<Dialog.Popup
 						className={cn(
 							modalPopupVariants({ size, className }),
-							"max-h-[calc(100vh-3rem)] overflow-y-auto",
+							"max-h-[calc(100dvh-3rem)] overflow-y-auto",
 							"transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
 						)}
 						ref={ref}
@@ -76,7 +76,7 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 									"text-icon cursor-pointer",
 									"hover:bg-fill-hover active:bg-fill-press",
 									"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-									"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10",
+									"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 								)}
 								aria-label="Close"
 							>
@@ -91,11 +91,19 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 );
 ModalPopup.displayName = "ModalPopup";
 
-interface ModalHeaderProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface ModalHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+	divider?: boolean;
+}
 
-const ModalHeader = React.forwardRef<HTMLDivElement, ModalHeaderProps>(({ className, ...props }, ref) => (
-	<div className={cn("flex flex-col gap-1 px-6 pt-6 pr-14", className)} ref={ref} {...props} />
-));
+const ModalHeader = React.forwardRef<HTMLDivElement, ModalHeaderProps>(
+	({ className, divider = true, ...props }, ref) => (
+		<div
+			className={cn("flex flex-col gap-1 p-4 pr-14", divider && "border-b border-stroke-weak", className)}
+			ref={ref}
+			{...props}
+		/>
+	),
+);
 ModalHeader.displayName = "ModalHeader";
 
 interface ModalTitleProps extends React.ComponentPropsWithoutRef<typeof Dialog.Title> {}
@@ -117,14 +125,14 @@ ModalDescription.displayName = "ModalDescription";
 interface ModalContentProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 const ModalContent = React.forwardRef<HTMLDivElement, ModalContentProps>(({ className, ...props }, ref) => (
-	<div className={cn("px-6 py-4", className)} ref={ref} {...props} />
+	<div className={cn("p-4", className)} ref={ref} {...props} />
 ));
 ModalContent.displayName = "ModalContent";
 
 interface ModalFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 const ModalFooter = React.forwardRef<HTMLDivElement, ModalFooterProps>(({ className, ...props }, ref) => (
-	<div className={cn("flex items-center justify-end gap-3 px-6 pb-6", className)} ref={ref} {...props} />
+	<div className={cn("flex items-center justify-end gap-3 p-4", className)} ref={ref} {...props} />
 ));
 ModalFooter.displayName = "ModalFooter";
 
@@ -161,7 +169,7 @@ function AdaptiveModal({ open, onOpenChange, size, showClose = true, children, c
 								"text-icon cursor-pointer",
 								"hover:bg-fill-hover active:bg-fill-press",
 								"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-								"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10",
+								"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 							)}
 							aria-label="Close"
 						>

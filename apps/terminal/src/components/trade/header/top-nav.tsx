@@ -3,47 +3,18 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, TerminalIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
+import { Suspense } from "react";
 import { useConnection } from "wagmi";
+import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
+import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
 import { cn } from "@/lib/cn";
+import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { ThemeToggle } from "./theme-toggle";
-import { UserMenu } from "./user-menu";
 
-const SCOPE_NAV_ITEMS = [
-	{
-		scope: "all" as const,
-		label: <Trans>All</Trans>,
-		to: "/",
-		activeClass: "text-fg font-medium bg-fill-hover",
-	},
-	{
-		scope: "perp" as const,
-		label: <Trans>Perp</Trans>,
-		to: "/perp",
-		activeClass: "text-scope-perp font-medium bg-scope-perp/10",
-	},
-	{
-		scope: "spot" as const,
-		label: <Trans>Spot</Trans>,
-		to: "/spot",
-		activeClass: "text-scope-spot font-medium bg-scope-spot/10",
-	},
-	{
-		scope: "builders-perp" as const,
-		label: <Trans>Builders</Trans>,
-		to: "/builders-perp",
-		activeClass: "text-scope-builders font-medium bg-scope-builders/10",
-	},
-] as const;
-
-const STATIC_NAV_ITEMS = [
-	{ key: "vaults", label: <Trans>Vaults</Trans> },
-	{ key: "portfolio", label: <Trans>Portfolio</Trans> },
-	{ key: "staking", label: <Trans>Staking</Trans> },
-	{ key: "leaderboard", label: <Trans>Leaderboard</Trans> },
-] as const;
+const UserMenu = createLazyComponent(() => import("./user-menu"), "UserMenu");
 
 function getScopeAccentClass(scope: string): string {
 	switch (scope) {
@@ -70,7 +41,8 @@ export function TopNav() {
 	return (
 		<header
 			className={cn(
-				"fixed left-0 right-0 z-40 h-11 border-b border-stroke-weak px-3 flex items-center justify-between bg-background transition-colors duration-300 ease-in-out",
+				APP_HEADER_HEIGHT_CLASS,
+				"fixed left-0 right-0 z-40 border-b border-stroke-weak px-3 flex items-center justify-between bg-background transition-colors duration-300 ease-in-out",
 				isTestnet ? "top-8" : "top-0",
 				accentClass,
 			)}
@@ -122,12 +94,14 @@ export function TopNav() {
 						size="sm"
 						onClick={() => openDepositModal("deposit")}
 						iconLeft={<DownloadSimpleIcon className="size-3.5" />}
-						className="h-8 min-h-8 shrink-0 px-3"
+						className={cn(APP_BAR_BUTTON_HEIGHT_CLASS, "shrink-0 px-3")}
 					>
 						<Trans>Deposit</Trans>
 					</Button>
 				)}
-				<UserMenu />
+				<Suspense fallback={<UserMenuSkeleton />}>
+					<UserMenu />
+				</Suspense>
 				<ThemeToggle />
 				<ButtonIcon
 					variant="ghost"
@@ -141,4 +115,8 @@ export function TopNav() {
 			</div>
 		</header>
 	);
+}
+
+function UserMenuSkeleton() {
+	return <div className={cn(APP_BAR_BUTTON_HEIGHT_CLASS, "h-8 w-32 shrink-0 rounded-8 bg-surface animate-pulse")} />;
 }

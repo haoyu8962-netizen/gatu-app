@@ -1,10 +1,15 @@
 import { Suspense } from "react";
-import { useDocumentTitle } from "@/hooks/use-document-title";
+import {
+	APP_HEADER_OFFSET_CLASS,
+	APP_HEADER_PLUS_BANNER_OFFSET_CLASS,
+	MOBILE_BOTTOM_NAV_HEIGHT_PX,
+	MOBILE_BREAKPOINT_PX,
+} from "@/config/layout";
+import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
-import { FooterBar } from "./footer/footer-bar";
 import { TopNav } from "./header/top-nav";
 import { MainWorkspace } from "./layout/main-workspace";
 import { TestnetBanner } from "./testnet-banner";
@@ -12,20 +17,19 @@ import { TestnetBanner } from "./testnet-banner";
 const MobileTerminal = createLazyComponent(() => import("./mobile/mobile-terminal"), "MobileTerminal");
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
+const FooterBar = createLazyComponent(() => import("./footer/footer-bar"), "FooterBar");
 
-// Eagerly kick off the mobile chunk if we're on a mobile viewport so it's
-// ready (or in-flight) before useIsMobile() flips to true and Suspense fires.
-if (typeof window !== "undefined" && window.innerWidth < 768) {
+if (typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT_PX) {
 	MobileTerminal.preload();
 }
 
 export function TradeTerminalPage() {
-	useDocumentTitle();
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
 
 	return (
 		<>
+			<TabTitleSync />
 			{isMobile ? (
 				<Suspense fallback={<MobileLoadingFallback />}>
 					<MobileTerminal />
@@ -33,15 +37,17 @@ export function TradeTerminalPage() {
 			) : (
 				<div
 					className={cn(
-						"bg-background text-fg min-h-screen w-full flex flex-col font-sans pb-8",
-						isTestnet ? "pt-[4.75rem]" : "pt-11",
+						"bg-background text-fg min-h-dvh w-full flex flex-col overflow-x-hidden font-sans pb-8",
+						isTestnet ? APP_HEADER_PLUS_BANNER_OFFSET_CLASS : APP_HEADER_OFFSET_CLASS,
 						isTestnet && "testnet-bg",
 					)}
 				>
 					<TestnetBanner />
 					<TopNav />
 					<MainWorkspace />
-					<FooterBar />
+					<Suspense fallback={null}>
+						<FooterBar />
+					</Suspense>
 				</div>
 			)}
 			<Suspense fallback={null}>
@@ -90,7 +96,10 @@ function MobileLoadingFallback() {
 
 function NavSkeleton() {
 	return (
-		<div className="flex-1 flex flex-col items-center justify-center gap-1 min-h-[56px] py-2">
+		<div
+			className="flex-1 flex flex-col items-center justify-center gap-1 py-2"
+			style={{ minHeight: MOBILE_BOTTOM_NAV_HEIGHT_PX }}
+		>
 			<div className="size-5 rounded bg-surface animate-pulse" />
 			<div className="h-2 w-8 rounded bg-surface animate-pulse" />
 		</div>

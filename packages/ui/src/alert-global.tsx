@@ -68,7 +68,7 @@ const AlertGlobal = React.forwardRef<HTMLDivElement, AlertGlobalProps>(
 						className={cn(
 							"relative shrink-0 size-6 flex items-center justify-center cursor-pointer m-3",
 							"hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus rounded-4",
-							"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-10",
+							"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 							colors.close,
 						)}
 						aria-label="Dismiss alert"

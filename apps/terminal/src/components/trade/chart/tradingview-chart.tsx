@@ -1,5 +1,12 @@
 import { useEffect, useRef } from "react";
+import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
+import {
+	buildChartOverrides,
+	generateChartCssUrl,
+	getLoadingScreenColors,
+	getToolbarBgColor,
+} from "@/lib/chart/theme-colors";
 import type { IChartingLibraryWidget, ResolutionString } from "@/types/charting_library";
 import {
 	CHART_CUSTOM_FONT_FAMILY,
@@ -16,7 +23,6 @@ import {
 	TIMEZONE,
 } from "./constants";
 import { createDatafeed } from "./datafeed";
-import { buildChartOverrides, generateChartCssUrl, getLoadingScreenColors, getToolbarBgColor } from "./theme-colors";
 
 interface Props {
 	symbol?: string;
@@ -40,13 +46,14 @@ export function TradingViewChart({
 
 	useEffect(() => {
 		if (!containerRef.current) return;
+		let disposed = false;
 		chartReadyRef.current = false;
 
 		const initWidget = async () => {
 			try {
 				await loadTradingViewScript();
 
-				if (!containerRef.current || !window.TradingView) return;
+				if (disposed || !containerRef.current || !window.TradingView) return;
 
 				if (widgetRef.current) {
 					widgetRef.current.remove();
@@ -60,9 +67,13 @@ export function TradingViewChart({
 				const loadingColors = getLoadingScreenColors();
 				const toolbarBg = getToolbarBgColor();
 				const customCssUrl = await generateChartCssUrl();
+				if (disposed || !containerRef.current || !window.TradingView) {
+					URL.revokeObjectURL(customCssUrl);
+					return;
+				}
 				cssUrlRef.current = customCssUrl;
 
-				widgetRef.current = new window.TradingView.widget({
+				const widget = new window.TradingView.widget({
 					container: containerRef.current,
 					library_path: CHART_LIBRARY_PATH,
 					datafeed: createDatafeed(),
@@ -87,15 +98,16 @@ export function TradingViewChart({
 						intervals: CHART_FAVORITE_INTERVALS,
 					},
 				});
+				widgetRef.current = widget;
 
-				widgetRef.current.onChartReady(() => {
+				widget.onChartReady(() => {
+					if (disposed || widgetRef.current !== widget) return;
 					chartReadyRef.current = true;
 				});
 
 				if (onSwitchToDefaultRef.current) {
-					widgetRef.current.headerReady().then(() => {
-						const widget = widgetRef.current;
-						if (!widget) return;
+					widget.headerReady().then(() => {
+						if (disposed || widgetRef.current !== widget) return;
 
 						const btn = widget.createButton({ align: "right", useTradingViewStyle: false });
 						btn.style.cssText =
@@ -129,14 +141,15 @@ export function TradingViewChart({
 						btn.appendChild(tvLabel);
 					});
 				}
-			} catch (error) {
-				console.error("Error initializing TradingView widget:", error);
+			} catch {
+				// widgetRef stays null on failure; source toggle then shows default chart
 			}
 		};
 
 		initWidget();
 
 		return () => {
+			disposed = true;
 			if (widgetRef.current) {
 				widgetRef.current.remove();
 				widgetRef.current = null;
@@ -150,7 +163,7 @@ export function TradingViewChart({
 	}, [symbol, interval, theme]);
 
 	return (
-		<div className="relative w-full h-full" style={{ minHeight: "300px" }}>
+		<div className="relative w-full h-full" style={{ minHeight: CHART_MIN_HEIGHT_PX }}>
 			<div ref={containerRef} className="w-full h-full" />
 		</div>
 	);

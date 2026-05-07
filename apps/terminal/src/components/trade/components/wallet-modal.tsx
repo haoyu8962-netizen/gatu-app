@@ -18,17 +18,22 @@ import { mock } from "wagmi/connectors";
 import { MOCK_WALLETS } from "@/config/wagmi";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import { getLastUsedWallet, getWalletInfo, isMockConnector, setLastUsedWallet } from "@/lib/wallet-utils";
+import { addRecentWallet, getRecentWallets, getWalletInfo, isMockConnector } from "@/lib/wallet-utils";
+
+const WALLET_LIST_MAX_HEIGHT = "max-h-[min(55vh,22rem)]";
+const DRAWER_HANDLE_SIZE_CLASS = "w-8 h-1";
 
 function ConnectorRow({
 	connector,
 	isPending,
 	connectingId,
+	isRecent,
 	onConnect,
 }: {
 	connector: Connector;
 	isPending: boolean;
 	connectingId: string | null;
+	isRecent: boolean;
 	onConnect: (connector: Connector) => void;
 }) {
 	const walletInfo = getWalletInfo(connector);
@@ -54,6 +59,11 @@ function ConnectorRow({
 			<span className="flex-1 text-sm font-medium group-hover:text-brand transition-colors min-w-0 truncate">
 				{connector.name}
 			</span>
+			{isRecent && (
+				<span className="text-2xs uppercase tracking-wider font-medium text-fg-muted bg-fill-weak px-1.5 py-0.5 rounded-xs flex-shrink-0">
+					<Trans>Recent</Trans>
+				</span>
+			)}
 			{isConnecting ? (
 				<SpinnerGapIcon
 					className="size-3.5 animate-spin motion-reduce:animate-none text-brand flex-shrink-0"
@@ -75,7 +85,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 	const [connectingId, setConnectingId] = useState<string | null>(null);
 	const [showAll, setShowAll] = useState(false);
 	const [showMock, setShowMock] = useState(false);
-	const [lastUsedWallet] = useState(() => getLastUsedWallet());
+	const [recentWallets] = useState(() => getRecentWallets());
 	const [customAddress, setCustomAddress] = useState("");
 	const [customAddressError, setCustomAddressError] = useState<string | null>(null);
 
@@ -89,11 +99,14 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 		}
 	}
 
+	function recentRank(connectorId: string) {
+		const index = recentWallets.indexOf(connectorId);
+		return index === -1 ? Number.POSITIVE_INFINITY : index;
+	}
+
 	function sortByPriority(a: Connector, b: Connector) {
-		if (lastUsedWallet) {
-			if (a.id === lastUsedWallet) return -1;
-			if (b.id === lastUsedWallet) return 1;
-		}
+		const rankDelta = recentRank(a.id) - recentRank(b.id);
+		if (rankDelta !== 0) return rankDelta;
 		const priorityA = getWalletInfo(a).priority ?? 50;
 		const priorityB = getWalletInfo(b).priority ?? 50;
 		return priorityA - priorityB;
@@ -104,9 +117,11 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 
 	async function handleConnect(connector: Connector) {
 		setConnectingId(connector.uid);
-		setLastUsedWallet(connector.id);
 		try {
 			await connectAsync({ connector });
+			if (!isMockConnector(connector)) {
+				addRecentWallet(connector.id);
+			}
 			onClose();
 		} finally {
 			setConnectingId(null);
@@ -154,7 +169,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 			<div className="flex items-center justify-between px-4 pt-4 pb-3">
 				{isMobile && (
 					<div
-						className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20"
+						className={cn(DRAWER_HANDLE_SIZE_CLASS, "absolute top-2 left-1/2 -translate-x-1/2 rounded-full bg-fill/20")}
 						aria-hidden="true"
 					/>
 				)}
@@ -174,7 +189,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 				</button>
 			</div>
 
-			<div className="overflow-y-auto overscroll-contain max-h-[min(55vh,22rem)]">
+			<div className={cn("overflow-y-auto overscroll-contain", WALLET_LIST_MAX_HEIGHT)}>
 				{hasConnectors ? (
 					<>
 						<div className="divide-y divide-stroke-weak/30">
@@ -184,6 +199,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 									connector={connector}
 									isPending={isPending}
 									connectingId={connectingId}
+									isRecent={recentWallets.includes(connector.id)}
 									onConnect={handleConnect}
 								/>
 							))}

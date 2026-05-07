@@ -1,61 +1,25 @@
 import { t } from "@lingui/core/macro";
-import type { OrderParameters, TwapOrderParameters } from "@nktkas/hyperliquid";
+import type { AdvancedOrderType, OrderType } from "@/config/trade";
 
-export const ORDER_TYPES = [
-	"market",
-	"limit",
-	"stopMarket",
-	"stopLimit",
-	"takeProfitMarket",
-	"takeProfitLimit",
-	"twap",
-	"scale",
-] as const;
-
-export type OrderType = (typeof ORDER_TYPES)[number];
-export type AdvancedOrderType = Exclude<OrderType, "market" | "limit">;
-export type AdvancedOrderGroup = "trigger" | "execution";
-export type ExchangeOrder = OrderParameters["orders"][number];
-export type TwapOrderParams = TwapOrderParameters;
-
-type OrderTypeSpec = ExchangeOrder["t"];
-export type LimitTif = Extract<OrderTypeSpec, { limit: unknown }>["limit"]["tif"];
-
-export const TIF_OPTIONS: Record<"Gtc" | "Ioc" | "Alo", { label: string }> = {
-	Gtc: { label: "GTC" },
-	Ioc: { label: "IOC" },
-	Alo: { label: "Post Only" },
-};
-
-export const ADVANCED_ORDER_TYPES: AdvancedOrderType[] = [
-	"stopMarket",
-	"stopLimit",
-	"takeProfitMarket",
-	"takeProfitLimit",
-	"twap",
-	"scale",
-];
-
-export const ADVANCED_ORDER_GROUPS: Record<AdvancedOrderType, AdvancedOrderGroup> = {
-	stopMarket: "trigger",
-	stopLimit: "trigger",
-	takeProfitMarket: "trigger",
-	takeProfitLimit: "trigger",
-	twap: "execution",
-	scale: "execution",
-};
-
-export const ADVANCED_ORDER_LABELS: Record<AdvancedOrderType, string> = {
-	stopMarket: t`Stop Market`,
-	stopLimit: t`Stop Limit`,
-	takeProfitMarket: t`Take Market`,
-	takeProfitLimit: t`Take Limit`,
-	twap: t`TWAP`,
-	scale: t`Scale`,
-};
+export function getAdvancedOrderTypeLabel(orderType: AdvancedOrderType): string {
+	switch (orderType) {
+		case "stopMarket":
+			return t`Stop Market`;
+		case "stopLimit":
+			return t`Stop Limit`;
+		case "takeProfitMarket":
+			return t`Take Profit Market`;
+		case "takeProfitLimit":
+			return t`Take Profit Limit`;
+		case "twap":
+			return t`TWAP`;
+		case "scale":
+			return t`Scale`;
+	}
+}
 
 export function getAdvancedOrderLabel(orderType: OrderType, fallback: string): string {
-	return isAdvancedOrderType(orderType) ? ADVANCED_ORDER_LABELS[orderType] : fallback;
+	return isAdvancedOrderType(orderType) ? getAdvancedOrderTypeLabel(orderType) : fallback;
 }
 
 export function isAdvancedOrderType(orderType: OrderType): orderType is AdvancedOrderType {

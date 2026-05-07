@@ -2,7 +2,9 @@ import { Divider } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { GithubLogoIcon, SpinnerGapIcon, WifiHighIcon, WifiSlashIcon } from "@phosphor-icons/react";
 import { ClientOnly } from "@tanstack/react-router";
-import { APP_VERSION, GITHUB_URL } from "@/config/constants";
+import { APP_VERSION, GITHUB_URL } from "@/config/app";
+import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_FOOTER_HEIGHT_CLASS } from "@/config/layout";
+import { cn } from "@/lib/cn";
 import { formatTime } from "@/lib/format";
 import { type ApiStatus, useApiStatus } from "@/lib/hyperliquid";
 import { useCommandMenuActions } from "@/stores/use-global-modal-store";
@@ -42,7 +44,12 @@ export function FooterBar() {
 	const { open } = useCommandMenuActions();
 
 	return (
-		<footer className="fixed bottom-0 left-0 right-0 z-40 h-8 border-t border-stroke-weak px-4 text-3xs font-medium uppercase tracking-wide leading-none flex items-center justify-between bg-background">
+		<footer
+			className={cn(
+				APP_FOOTER_HEIGHT_CLASS,
+				"fixed bottom-0 left-0 right-0 z-40 border-t border-stroke-weak px-4 text-3xs font-medium uppercase tracking-wide leading-none flex items-center justify-between bg-background",
+			)}
+		>
 			<div className="flex min-w-0 items-center gap-2">
 				<div className="flex min-w-0 items-center gap-1.5">
 					{icon}
@@ -52,7 +59,10 @@ export function FooterBar() {
 			<button
 				type="button"
 				onClick={open}
-				className="absolute left-1/2 flex min-h-8 min-w-8 -translate-x-1/2 items-center justify-center rounded-8 text-fg-muted transition-colors hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+				className={cn(
+					APP_BAR_BUTTON_HEIGHT_CLASS,
+					"absolute left-1/2 flex min-w-8 -translate-x-1/2 items-center justify-center rounded-8 text-fg-muted transition-colors hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+				)}
 				aria-label={t`Open command menu`}
 			>
 				<kbd className="pointer-events-none rounded-6 border border-stroke-weak bg-sunken px-1 py-px font-sans text-3xs leading-none text-fg-muted">

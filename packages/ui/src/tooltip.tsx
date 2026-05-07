@@ -9,14 +9,19 @@ const tooltipPopupVariants = cva([
 	"rounded-8 px-3 py-2",
 	"shadow-overlay",
 	"origin-(--transform-origin)",
-	"transition-[opacity,transform] duration-150",
+	"transition-[opacity,transform] duration-150 motion-reduce:transition-none",
 	"data-starting-style:opacity-0",
 	"data-ending-style:opacity-0",
 	"data-instant:duration-0",
-	"motion-reduce:transition-none",
 ]);
 
-const tooltipArrowVariants = cva(["size-2 rotate-45 bg-overlay border border-stroke-weak"]);
+const tooltipArrowVariants = cva([
+	"size-2 rotate-45 bg-overlay border border-stroke-weak",
+	"data-[side=top]:-bottom-1",
+	"data-[side=bottom]:-top-1",
+	"data-[side=left]:-right-1",
+	"data-[side=right]:-left-1",
+]);
 
 interface TooltipProps extends VariantProps<typeof tooltipPopupVariants> {
 	children: React.ReactElement;
@@ -57,14 +62,10 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 			<BaseTooltip.Root open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
 				<BaseTooltip.Trigger delay={delay} closeDelay={closeDelay} render={children} />
 				<BaseTooltip.Portal>
-					<BaseTooltip.Positioner side={side} align={align} sideOffset={sideOffset} className="z-[1000]">
+					<BaseTooltip.Positioner side={side} align={align} sideOffset={sideOffset} className="z-tooltip">
 						<BaseTooltip.Popup ref={ref} className={cn(tooltipPopupVariants(), className)}>
 							{content}
-							{arrow && (
-								<BaseTooltip.Arrow>
-									<div className={cn(tooltipArrowVariants())} />
-								</BaseTooltip.Arrow>
-							)}
+							{arrow && <BaseTooltip.Arrow className={cn(tooltipArrowVariants())} />}
 						</BaseTooltip.Popup>
 					</BaseTooltip.Positioner>
 				</BaseTooltip.Portal>

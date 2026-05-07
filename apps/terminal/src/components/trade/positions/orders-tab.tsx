@@ -10,19 +10,16 @@ import {
 	Tooltip,
 } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/constants";
+import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
-import type { MarketKind } from "@/lib/hyperliquid/markets";
 import {
 	getOrderTypeConfig,
 	getOrderValue,
-	getSideClass,
-	getSideLabel,
 	isClosePositionOrder,
 	isMarketTriggerOrder,
 	type OpenOrder,
@@ -31,7 +28,8 @@ import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
-import { AssetDisplay } from "../components/asset-display";
+import { AssetBadge } from "../components/asset-badge";
+import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
 	positionsPanelRowStripeClass,
@@ -45,23 +43,7 @@ import {
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
 
-interface PlaceholderProps {
-	children: React.ReactNode;
-	variant?: "error";
-}
-
-function Placeholder({ children, variant }: PlaceholderProps) {
-	return (
-		<div
-			className={cn(
-				"h-full w-full flex flex-col items-center justify-center px-2 py-6 text-xs",
-				variant === "error" ? "text-error" : "text-fg-muted",
-			)}
-		>
-			{children}
-		</div>
-	);
-}
+type CancelScope = "row" | "selected" | "all";
 
 export function OrdersTab() {
 	const { address, isConnected } = useConnection();
@@ -84,6 +66,8 @@ export function OrdersTab() {
 	);
 	const markets = useMarkets();
 	const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(() => new Set());
+	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
+	const [cancelScope, setCancelScope] = useState<CancelScope | null>(null);
 
 	const {
 		mutate: cancelOrders,
@@ -94,45 +78,25 @@ export function OrdersTab() {
 
 	const openOrders = openOrdersEvent?.orders ?? [];
 
-	useEffect(() => {
-		if (selectedOrderIds.size === 0) return;
-		const openIds = new Set(openOrders.map((order) => order.oid));
-		let changed = false;
-		for (const id of selectedOrderIds) {
-			if (!openIds.has(id)) {
-				changed = true;
-				break;
-			}
-		}
-		if (!changed) return;
+	const openIds = new Set(openOrders.map((order) => order.oid));
+	const validSelectedIds = new Set<number>();
+	for (const id of selectedOrderIds) {
+		if (openIds.has(id)) validSelectedIds.add(id);
+	}
 
-		setSelectedOrderIds((prev) => {
-			const next = new Set<number>();
-			for (const id of prev) {
-				if (openIds.has(id)) {
-					next.add(id);
-				}
-			}
-			return next;
-		});
-	}, [openOrders, selectedOrderIds]);
-
-	const selectedCount = selectedOrderIds.size;
+	const selectedCount = validSelectedIds.size;
 	const allSelected = selectedCount > 0 && selectedCount === openOrders.length;
 	const someSelected = selectedCount > 0 && selectedCount < openOrders.length;
 
-	const handleToggleAll = useCallback(
-		(value: boolean | "indeterminate") => {
-			if (value === true) {
-				setSelectedOrderIds(new Set(openOrders.map((order) => order.oid)));
-			} else {
-				setSelectedOrderIds(new Set());
-			}
-		},
-		[openOrders],
-	);
+	function handleToggleAll(value: boolean | "indeterminate") {
+		if (value === true) {
+			setSelectedOrderIds(new Set(openOrders.map((order) => order.oid)));
+		} else {
+			setSelectedOrderIds(new Set());
+		}
+	}
 
-	const handleToggleOrder = useCallback((orderId: number, value: boolean | "indeterminate") => {
+	function handleToggleOrder(orderId: number, value: boolean | "indeterminate") {
 		setSelectedOrderIds((prev) => {
 			const next = new Set(prev);
 			if (value === true) {
@@ -142,48 +106,55 @@ export function OrdersTab() {
 			}
 			return next;
 		});
-	}, []);
+	}
 
-	const handleCancelOrders = useCallback(
-		(ordersToCancel: OpenOrder[]) => {
-			if (isCancelling || ordersToCancel.length === 0) return;
+	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope) {
+		if (isCancelling || ordersToCancel.length === 0) return;
 
-			const cancels = ordersToCancel.reduce<{ a: number; o: number }[]>((acc, order) => {
-				const assetId = markets.getAssetId(order.coin);
-				if (typeof assetId !== "number") return acc;
-				acc.push({ a: assetId, o: order.oid });
-				return acc;
-			}, []);
+		const cancels = ordersToCancel.reduce<{ a: number; o: number }[]>((acc, order) => {
+			const assetId = markets.getAssetId(order.coin);
+			if (typeof assetId !== "number") return acc;
+			acc.push({ a: assetId, o: order.oid });
+			return acc;
+		}, []);
 
-			if (cancels.length === 0) return;
+		if (cancels.length === 0) return;
 
-			resetCancelError();
-			cancelOrders(
-				{ cancels },
-				{
-					onSuccess: () => {
-						setSelectedOrderIds((prev) => {
-							const next = new Set(prev);
-							for (const order of ordersToCancel) {
-								next.delete(order.oid);
-							}
-							return next;
-						});
-					},
+		setCancellingOids(new Set(ordersToCancel.map((order) => order.oid)));
+		setCancelScope(nextScope);
+		resetCancelError();
+		cancelOrders(
+			{ cancels },
+			{
+				onSuccess: () => {
+					setSelectedOrderIds((prev) => {
+						const next = new Set(prev);
+						for (const order of ordersToCancel) {
+							next.delete(order.oid);
+						}
+						return next;
+					});
 				},
-			);
-		},
-		[isCancelling, markets, cancelOrders, resetCancelError],
-	);
+				onSettled: () => {
+					setCancellingOids(new Set());
+					setCancelScope(null);
+				},
+			},
+		);
+	}
 
-	const handleCancelSelected = useCallback(() => {
-		const ordersToCancel = openOrders.filter((order) => selectedOrderIds.has(order.oid));
-		handleCancelOrders(ordersToCancel);
-	}, [handleCancelOrders, openOrders, selectedOrderIds]);
+	function handleCancelRow(ordersToCancel: OpenOrder[]) {
+		handleCancel(ordersToCancel, "row");
+	}
 
-	const handleCancelAll = useCallback(() => {
-		handleCancelOrders(openOrders);
-	}, [handleCancelOrders, openOrders]);
+	function handleCancelSelected() {
+		const ordersToCancel = openOrders.filter((order) => validSelectedIds.has(order.oid));
+		handleCancel(ordersToCancel, "selected");
+	}
+
+	function handleCancelAll() {
+		handleCancel(openOrders, "all");
+	}
 
 	const canCancel = !isCancelling;
 	const disableCancelSelected = !canCancel || selectedCount === 0;
@@ -227,7 +198,7 @@ export function OrdersTab() {
 					onClick={handleCancelSelected}
 					disabled={disableCancelSelected}
 				>
-					{isCancelling ? t`Canceling...` : t`Cancel selected`}
+					{cancelScope === "selected" ? t`Canceling...` : t`Cancel selected`}
 				</Button>
 				<Button
 					variant="link"
@@ -236,7 +207,7 @@ export function OrdersTab() {
 					onClick={handleCancelAll}
 					disabled={disableCancelAll}
 				>
-					{isCancelling ? t`Canceling...` : t`Cancel all`}
+					{cancelScope === "all" ? t`Canceling...` : t`Cancel all`}
 				</Button>
 			</div>
 			{actionError ? <div className="px-2.5 py-1 text-2xs text-error">{actionError}</div> : null}
@@ -246,7 +217,11 @@ export function OrdersTab() {
 						<Table className="table-fixed min-w-[60rem] w-full">
 							<TableHeader className={positionsPanelTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[3%] text-center")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[3%] text-center")}
+									>
 										<Checkbox
 											checked={allSelected}
 											indeterminate={someSelected && !allSelected}
@@ -255,28 +230,37 @@ export function OrdersTab() {
 											disabled={openOrders.length === 0 || isCancelling}
 										/>
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[11%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[13%] text-left")}>
 										{t`Time`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[17%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[19%] text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[10%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[15%] text-left")}>
 										{t`Type`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[12%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[13%] text-right")}
+									>
 										{t`Price`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[15%] text-right")}
+									>
 										{t`Size`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[11%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
 										{t`Trigger`}
 									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[8%] text-left")}>
-										{t`Reduce`}
-									</TableHead>
-									<TableHead scope="col" className={cn(positionsPanelTableHeadClass, "w-[13%] text-right")}>
+									<TableHead
+										scope="col"
+										size="dense"
+										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
+									>
 										{t`Actions`}
 									</TableHead>
 								</TableRow>
@@ -287,14 +271,13 @@ export function OrdersTab() {
 										<OrderRow
 											key={order.oid}
 											order={order}
-											kind={markets.getMarket(order.coin)?.kind}
 											szDecimals={markets.getSzDecimals(order.coin)}
-											isSelected={selectedOrderIds.has(order.oid)}
-											isCancelling={isCancelling}
+											isSelected={validSelectedIds.has(order.oid)}
+											isCancelling={cancellingOids.has(order.oid)}
 											canCancel={canCancel}
 											isEven={i % 2 === 1}
 											onToggle={handleToggleOrder}
-											onCancel={handleCancelOrders}
+											onCancel={handleCancelRow}
 											onSelectMarket={handleSelectMarket}
 										/>
 									);
@@ -311,7 +294,6 @@ export function OrdersTab() {
 
 interface OrderRowProps {
 	order: OpenOrder;
-	kind: MarketKind | undefined;
 	szDecimals: number;
 	isSelected: boolean;
 	isCancelling: boolean;
@@ -324,7 +306,6 @@ interface OrderRowProps {
 
 function OrderRow({
 	order,
-	kind,
 	szDecimals,
 	isSelected,
 	isCancelling,
@@ -335,48 +316,51 @@ function OrderRow({
 	onSelectMarket,
 }: OrderRowProps) {
 	const typeConfig = getOrderTypeConfig(order);
+	const isLong = order.side === "B";
 
 	return (
 		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-center")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-center")}>
 				<Checkbox
 					checked={isSelected}
 					onCheckedChange={(value) => onToggle(order.oid, value)}
 					aria-label={`${t`Select order`} ${order.coin}`}
-					disabled={isCancelling}
+					disabled={!canCancel}
 				/>
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "whitespace-nowrap text-fg-muted")}>
+			<TableCell
+				size="dense"
+				className={cn(positionsPanelTableCellClass, "whitespace-nowrap tabular-nums text-fg-muted")}
+			>
 				{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
-				<div className="flex items-center gap-1.5">
-					<Button
-						variant="link"
-						onClick={() => onSelectMarket(order.coin, order.side === "B" ? "buy" : "sell")}
-						className="gap-1.5"
-						aria-label={t`Switch to ${order.coin} market`}
-					>
-						<AssetDisplay coin={order.coin} />
-					</Button>
-					<span className={cn("text-xs px-1 py-0.5 rounded-8 uppercase", getSideClass(order.side))}>
-						{getSideLabel(order.side, kind)}
-					</span>
-				</div>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
+				<AssetBadge
+					coin={order.coin}
+					side={isLong ? "buy" : "sell"}
+					onClick={() => onSelectMarket(order.coin, isLong ? "buy" : "sell")}
+					aria-label={
+						isLong ? t`Switch to ${order.coin} market, long order` : t`Switch to ${order.coin} market, short order`
+					}
+				/>
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-fg")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg")}>
 				<Tooltip content={typeConfig.fullLabel}>
-					<span className={cn("text-2xs px-1.5 py-0.5 rounded-8 uppercase whitespace-nowrap", typeConfig.class)}>
-						{typeConfig.shortLabel}
+					<span className="inline-flex items-baseline gap-1 text-xs whitespace-nowrap">
+						{typeConfig.triggerLabel ? (
+							<span className={cn("font-medium", typeConfig.triggerClass)}>{typeConfig.triggerLabel}</span>
+						) : null}
+						<span className="text-fg">{typeConfig.executionLabel}</span>
+						{typeConfig.reduceOnly ? <span className="text-2xs uppercase text-fg-muted">RO</span> : null}
 					</span>
 				</Tooltip>
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
 				<span className="text-xs font-semibold tabular-nums leading-tight">
 					{isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals })}
 				</span>
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right text-fg")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right text-fg")}>
 				{isClosePositionOrder(order) ? (
 					<span className="text-xs font-semibold text-fg-muted">{t`Close Position`}</span>
 				) : (
@@ -390,17 +374,10 @@ function OrderRow({
 					</div>
 				)}
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-fg-muted")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg-muted")}>
 				{order.triggerCondition || FALLBACK_VALUE_PLACEHOLDER}
 			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-fg")}>
-				{order.reduceOnly ? (
-					<span className="text-brand">{t`Yes`}</span>
-				) : (
-					<span className="text-fg-muted">{t`No`}</span>
-				)}
-			</TableCell>
-			<TableCell className={cn(positionsPanelTableCellClass, "text-right")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
 				<Button
 					variant="link"
 					size="sm"
