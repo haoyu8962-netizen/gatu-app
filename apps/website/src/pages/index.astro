@@ -6,9 +6,21 @@ import FeatureSpeed from "@/components/FeatureSpeed.astro";
 import Features from "@/components/Features.astro";
 import Faq from "@/components/Faq.astro";
 import Footer from "@/components/Footer.astro";
+import { ROUTE_SEO } from "@/config/seo";
+import { organizationSchema, softwareApplicationSchema, websiteSchema } from "@/lib/seo";
+
+const seo = ROUTE_SEO.HOME;
+const jsonLd = [organizationSchema(), websiteSchema(), softwareApplicationSchema()];
 ---
 
-<Base>
+<Base
+	title={seo.title}
+	fullTitle={seo.fullTitle}
+	description={seo.description}
+	path={seo.path}
+	keywords={seo.keywords}
+	jsonLd={jsonLd}
+>
 	<Nav />
 	<main>
 		<Hero />

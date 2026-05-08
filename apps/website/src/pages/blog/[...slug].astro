@@ -4,6 +4,7 @@ import type { CollectionEntry } from "astro:content";
 import Base from "@/layouts/Base.astro";
 import Nav from "@/components/Nav.astro";
 import Footer from "@/components/Footer.astro";
+import { blogPostingSchema, breadcrumbSchema } from "@/lib/seo";
 
 export async function getStaticPaths() {
 	const posts = await getCollection("blog", ({ data }) => !data.draft);
@@ -20,6 +21,26 @@ interface Props {
 const { post } = Astro.props;
 const { Content } = await render(post);
 
+const slug = post.id.replace(/\.md$/, "");
+const publishedTime = post.data.date.toISOString();
+const modifiedTime = post.data.updated?.toISOString();
+
+const jsonLd = [
+	blogPostingSchema({
+		title: post.data.title,
+		description: post.data.description,
+		slug,
+		publishedTime,
+		modifiedTime,
+		author: post.data.author,
+	}),
+	breadcrumbSchema([
+		{ name: "Home", path: "/" },
+		{ name: "Blog", path: "/blog" },
+		{ name: post.data.title, path: `/blog/${slug}` },
+	]),
+];
+
 const formatter = new Intl.DateTimeFormat("en-US", {
 	year: "numeric",
 	month: "long",
@@ -27,7 +48,16 @@ const formatter = new Intl.DateTimeFormat("en-US", {
 });
 ---
 
-<Base title={`${post.data.title} — HypeTerminal`} description={post.data.description}>
+<Base
+	title={post.data.title}
+	description={post.data.description}
+	path={`/blog/${slug}`}
+	ogType="article"
+	publishedTime={publishedTime}
+	modifiedTime={modifiedTime}
+	author={post.data.author}
+	jsonLd={jsonLd}
+>
 	<Nav />
 	<main>
 		<article class="mx-auto w-full max-w-2xl px-5 sm:px-6 pt-16 pb-20 md:pt-24 md:pb-28">
@@ -43,7 +73,7 @@ const formatter = new Intl.DateTimeFormat("en-US", {
 
 			<header class="mt-8 border-b border-stroke-weaker pb-8">
 				<time
-					datetime={post.data.date.toISOString()}
+					datetime={publishedTime}
 					class="text-2xs uppercase tracking-uppercase text-fg-faint tabular"
 				>
 					{formatter.format(post.data.date)}

@@ -3,6 +3,8 @@ import { getCollection } from "astro:content";
 import Base from "@/layouts/Base.astro";
 import Nav from "@/components/Nav.astro";
 import Footer from "@/components/Footer.astro";
+import { ROUTE_SEO } from "@/config/seo";
+import { blogSchema, breadcrumbSchema } from "@/lib/seo";
 
 const posts = (await getCollection("blog", ({ data }) => !data.draft)).sort(
 	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
@@ -13,12 +15,18 @@ const formatter = new Intl.DateTimeFormat("en-US", {
 	month: "short",
 	day: "numeric",
 });
+
+const seo = ROUTE_SEO.BLOG_INDEX;
+const jsonLd = [
+	blogSchema(),
+	breadcrumbSchema([
+		{ name: "Home", path: "/" },
+		{ name: "Blog", path: "/blog" },
+	]),
+];
 ---
 
-<Base
-	title="Blog — HypeTerminal"
-	description="Notes from building an open-source trading terminal for Hyperliquid."
->
+<Base title={seo.title} description={seo.description} path={seo.path} keywords={seo.keywords} jsonLd={jsonLd}>
 	<Nav />
 	<main>
 		<section class="border-b border-stroke-weaker">
