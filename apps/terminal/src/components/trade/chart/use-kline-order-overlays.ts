@@ -1,6 +1,6 @@
 import Big from "big.js";
 import type { Chart } from "klinecharts";
-import { type RefObject, useEffect, useMemo } from "react";
+import { type RefObject, useEffect } from "react";
 import { useConnection } from "wagmi";
 import { HL_ALL_DEXS } from "@/config/app";
 import { TRANSPARENT_OVERLAY_STYLES } from "@/lib/chart/kline-styles";
@@ -23,7 +23,7 @@ export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
 	);
 
 	const openOrders = openOrdersEvent?.orders;
-	const symbolOrders = useMemo(() => openOrders?.filter((order) => order.coin === symbol) ?? [], [openOrders, symbol]);
+	const symbolOrders = openOrders?.filter((order) => order.coin === symbol) ?? [];
 
 	useEffect(() => {
 		const chart = chartRef.current;

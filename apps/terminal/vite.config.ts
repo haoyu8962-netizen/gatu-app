@@ -30,7 +30,7 @@ const config = defineConfig({
     dedupe: ['react', 'react-dom', '@tanstack/react-query'],
   },
   optimizeDeps: {
-    include: ['@lifi/sdk'],
+    include: ['@lifi/sdk', '@tanstack/react-table', '@tanstack/react-virtual'],
   },
   build: {
     sourcemap: isAnalyze,

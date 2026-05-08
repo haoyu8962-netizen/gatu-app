@@ -1,6 +1,6 @@
 import { getCoreRowModel, getSortedRowModel, type Row, type SortingState, useReactTable } from "@tanstack/react-table";
 import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { TOKEN_SELECTOR_OVERSCAN, TOKEN_SELECTOR_ROW_HEIGHT_PX } from "@/config/layout";
 import { PERP_CATEGORIES } from "@/config/markets";
 import { marketSearchConfig } from "@/config/search";
@@ -127,12 +127,13 @@ export function useTokenSelector({
 	const favorites = useFavoriteMarkets();
 	const { toggleFavoriteMarket } = useMarketActions();
 
-	const favoriteSet = new Set(favorites);
-	function isFavorite(name: string) {
-		return favoriteSet.has(name);
-	}
+	const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
+	const isFavorite = useCallback((name: string) => favoriteSet.has(name), [favoriteSet]);
 
-	const subcategories = computeSubcategories(scope, spotMarkets, builderPerpMarkets);
+	const subcategories = useMemo(
+		() => computeSubcategories(scope, spotMarkets, builderPerpMarkets),
+		[scope, spotMarkets, builderPerpMarkets],
+	);
 
 	function handleScopeSelect(newScope: MarketScope) {
 		setLocalScope(newScope);
@@ -147,28 +148,32 @@ export function useTokenSelector({
 	// so hidden rows don't re-render on every WS price tick. When open, always pass the live
 	// reference through so prices update.
 	const stableScopeFilteredRef = useRef<{ key: string; value: MarketRow[] }>({ key: "", value: [] });
-	const filteredByScope = markets.filter((market) => {
-		if (scope === "perp" && market.kind !== "perp") return false;
-		if (scope === "spot" && market.kind !== "spot") return false;
-		if (scope === "hip3" && market.kind !== "builderPerp") return false;
+	const filteredByScope = useMemo(
+		() =>
+			markets.filter((market) => {
+				if (scope === "perp" && market.kind !== "perp") return false;
+				if (scope === "spot" && market.kind !== "spot") return false;
+				if (scope === "hip3" && market.kind !== "builderPerp") return false;
 
-		if (subcategory === "all") return true;
+				if (subcategory === "all") return true;
 
-		if (scope === "perp") {
-			return isTokenInCategory(market.shortName, subcategory as MarketCategory);
-		}
+				if (scope === "perp") {
+					return isTokenInCategory(market.shortName, subcategory as MarketCategory);
+				}
 
-		if (scope === "spot" && market.kind === "spot") {
-			const quoteToken = market.tokensInfo[1]?.name;
-			return quoteToken === subcategory;
-		}
+				if (scope === "spot" && market.kind === "spot") {
+					const quoteToken = market.tokensInfo[1]?.name;
+					return quoteToken === subcategory;
+				}
 
-		if (scope === "hip3" && market.kind === "builderPerp") {
-			return market.dex === subcategory;
-		}
+				if (scope === "hip3" && market.kind === "builderPerp") {
+					return market.dex === subcategory;
+				}
 
-		return true;
-	});
+				return true;
+			}),
+		[markets, scope, subcategory],
+	);
 	const scopeKey = `${scope}|${subcategory}|${filteredByScope.length}|${filteredByScope.map((m) => m.name).join(",")}`;
 	let scopeFilteredMarkets: MarketRow[];
 	if (open) {
@@ -181,18 +186,19 @@ export function useTokenSelector({
 		scopeFilteredMarkets = filteredByScope;
 	}
 
-	const searcher = createSearcher(scopeFilteredMarkets, marketSearchConfig);
+	const searcher = useMemo(() => createSearcher(scopeFilteredMarkets, marketSearchConfig), [scopeFilteredMarkets]);
 
-	let filteredMarkets: MarketRow[];
-	if (!deferredSearch) {
-		filteredMarkets = scopeFilteredMarkets;
-	} else {
+	const filteredMarkets = useMemo(() => {
+		if (!deferredSearch) {
+			return scopeFilteredMarkets;
+		}
+
 		const marketByName = new Map(scopeFilteredMarkets.map((m) => [m.name, m]));
-		filteredMarkets = searcher
+		return searcher
 			.search(deferredSearch)
 			.map((result) => marketByName.get(result.item.name))
 			.filter((m): m is MarketRow => m != null);
-	}
+	}, [deferredSearch, scopeFilteredMarkets, searcher]);
 
 	function handleSort(columnId: string) {
 		setSorting((prev) => {

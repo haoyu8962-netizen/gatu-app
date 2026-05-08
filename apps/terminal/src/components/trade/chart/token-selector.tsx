@@ -1,6 +1,6 @@
 import { Drawer, DrawerTrigger } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { Suspense, useId, useState } from "react";
+import { Suspense, useCallback, useEffect, useId, useState } from "react";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
@@ -18,29 +18,51 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 	const isMobile = useIsMobile();
 	const headingId = useId();
 	const [open, setOpen] = useState(false);
-	const preloadPopup = () => TokenSelectorPopup.preload?.();
-	const popup = open ? (
-		<Suspense fallback={null}>
-			<TokenSelectorPopup
-				selectedMarket={selectedMarket}
-				onValueChange={onValueChange}
-				open={open}
-				onOpenChange={setOpen}
-				mobile={isMobile}
-				headingId={headingId}
-			/>
-		</Suspense>
-	) : null;
+	const [hasOpened, setHasOpened] = useState(false);
+	const preloadPopup = useCallback(() => TokenSelectorPopup.preload?.(), []);
+	const handleOpenChange = useCallback((nextOpen: boolean) => {
+		if (nextOpen) {
+			setHasOpened(true);
+		}
+		setOpen(nextOpen);
+	}, []);
+
+	useEffect(() => {
+		if (hasOpened || typeof window === "undefined") return;
+
+		if ("requestIdleCallback" in window) {
+			const idleId = window.requestIdleCallback(() => preloadPopup(), { timeout: 2_000 });
+			return () => window.cancelIdleCallback(idleId);
+		}
+
+		const timeoutId = window.setTimeout(preloadPopup, 1_000);
+		return () => window.clearTimeout(timeoutId);
+	}, [hasOpened, preloadPopup]);
+
+	const popup =
+		open || hasOpened ? (
+			<Suspense fallback={null}>
+				<TokenSelectorPopup
+					selectedMarket={selectedMarket}
+					onValueChange={onValueChange}
+					open={open}
+					onOpenChange={handleOpenChange}
+					mobile={isMobile}
+					headingId={headingId}
+				/>
+			</Suspense>
+		) : null;
 
 	if (isMobile) {
 		return (
-			<Drawer side="bottom" open={open} onOpenChange={setOpen}>
+			<Drawer side="bottom" open={open} onOpenChange={handleOpenChange}>
 				<DrawerTrigger
 					role="combobox"
 					aria-expanded={open}
 					aria-label={t`Select token`}
 					className={TOKEN_SELECTOR_TRIGGER_CLASSNAME}
 					onPointerEnter={preloadPopup}
+					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}
 				>
 					<TokenSelectorTriggerContent selectedMarket={selectedMarket} />
@@ -51,7 +73,7 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 	}
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover open={open} onOpenChange={handleOpenChange}>
 			<PopoverTrigger asChild>
 				<button
 					type="button"
@@ -60,6 +82,7 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 					aria-label={t`Select token`}
 					className={TOKEN_SELECTOR_TRIGGER_CLASSNAME}
 					onPointerEnter={preloadPopup}
+					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}
 				>
 					<TokenSelectorTriggerContent selectedMarket={selectedMarket} />

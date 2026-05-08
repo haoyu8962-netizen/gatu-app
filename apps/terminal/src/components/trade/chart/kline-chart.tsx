@@ -34,7 +34,9 @@ function delay(ms: number) {
 }
 
 function logRecoverableCandleFetchFailure(label: string, err: unknown) {
-	console.warn(`kline ${label} candle fetch failed`, err);
+	if (import.meta.env.DEV) {
+		console.warn(`kline ${label} candle fetch failed`, err);
+	}
 }
 
 async function fetchCandlesWithRetry(params: CandleSnapshotParams, shouldContinue: () => boolean) {
