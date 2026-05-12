@@ -17,12 +17,12 @@
 		"prepare": "lefthook install"
 	},
 	"devDependencies": {
-		"@ai-hero/sandcastle": "^0.5.6",
+		"@ai-hero/sandcastle": "0.5.6",
 		"@biomejs/biome": "2.2.4",
-		"@commitlint/cli": "^20.3.1",
-		"@commitlint/config-conventional": "^20.3.1",
-		"lefthook": "^1.11.0",
-		"typescript": "^5.7.2"
+		"@commitlint/cli": "20.3.1",
+		"@commitlint/config-conventional": "20.3.1",
+		"lefthook": "1.11.0",
+		"typescript": "5.7.2"
 	},
 	"pnpm": {
 		"overrides": {
