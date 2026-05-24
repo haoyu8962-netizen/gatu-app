@@ -50,9 +50,13 @@ function HyperliquidBridge({ children }: { children: React.ReactNode }) {
 export function RootProvider({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
 	if (isServer || !persister) {
 		return (
-			<QueryClientProvider client={queryClient}>
-				<I18nProvider i18n={i18n}>{children}</I18nProvider>
-			</QueryClientProvider>
+			<WagmiProvider config={config}>
+				<QueryClientProvider client={queryClient}>
+					<I18nProvider i18n={i18n}>
+						<HyperliquidBridge>{children}</HyperliquidBridge>
+					</I18nProvider>
+				</QueryClientProvider>
+			</WagmiProvider>
 		);
 	}
 
