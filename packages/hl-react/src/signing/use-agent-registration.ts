@@ -35,6 +35,8 @@ function deriveRegistrationStatus(
 export function useAgentRegistration(): UseAgentRegistrationResult {
 	const { env, agentName, builderConfig } = useHyperliquid();
 	const { address } = useConnection();
+	const addressRef = useRef(address);
+	addressRef.current = address;
 
 	const [currentStep, setCurrentStep] = useState<RegistrationStep>(null);
 	const { setAgent, clearAgent } = useAgentWalletActions();
@@ -58,9 +60,17 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	const registration = useMutation({
 		mutationKey: ["hl", "registration", address],
 		mutationFn: async (): Promise<Address> => {
-			if (!address) throw new Error("No wallet connected");
+			const startAddress = address;
+			if (!startAddress) throw new Error("No wallet connected");
+
+			function assertSameWallet() {
+				if (addressRef.current !== startAddress) {
+					throw new Error("Wallet changed during registration");
+				}
+			}
 
 			let requirements = await agentStatus.refetch();
+			assertSameWallet();
 
 			if (requirements.needsBuilderFee && builderConfig?.b && builderConfig?.f !== undefined) {
 				safeSetStep("fee");
@@ -68,19 +78,23 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					builder: builderConfig.b,
 					maxFeeRate: convertFeeToPercentageString(builderConfig.f),
 				});
+				assertSameWallet();
 				requirements = await agentStatus.refetch();
+				assertSameWallet();
 			}
 
 			if (requirements.needsAgent) {
 				safeSetStep("agent");
-				clearAgent(env, address);
 
 				const privateKey = generatePrivateKey();
 				const account = privateKeyToAccount(privateKey);
 				const publicKey = account.address;
 
-				setAgent(env, address, privateKey, publicKey);
 				await approveAgent.mutateAsync({ agentAddress: publicKey, agentName });
+				assertSameWallet();
+
+				clearAgent(env, startAddress);
+				setAgent(env, startAddress, privateKey, publicKey);
 				await agentStatus.refetch();
 
 				safeSetStep(null);
