@@ -4,21 +4,13 @@ import { ArrowsClockwiseIcon, LightningIcon, TagIcon } from "@phosphor-icons/rea
 
 interface Props {
 	canClose: boolean;
-	isClosing: boolean;
 	isRowClosing: boolean;
 	onMarketClose: () => void;
 	onLimitClose: () => void;
 	onReverse: () => void;
 }
 
-export function PositionActionsDropdown({
-	canClose,
-	isClosing,
-	isRowClosing,
-	onMarketClose,
-	onLimitClose,
-	onReverse,
-}: Props) {
+export function PositionActionsDropdown({ canClose, isRowClosing, onMarketClose, onLimitClose, onReverse }: Props) {
 	return (
 		<Dropdown
 			className="flex justify-end text-xs text-fg-muted"
@@ -26,7 +18,7 @@ export function PositionActionsDropdown({
 			triggerClassName="font-medium"
 			triggerAriaLabel={t`Position close actions`}
 			trigger={isRowClosing ? t`Closing...` : t`Close`}
-			disabled={!canClose || isClosing}
+			disabled={!canClose || isRowClosing}
 			align="end"
 			groups={[
 				{

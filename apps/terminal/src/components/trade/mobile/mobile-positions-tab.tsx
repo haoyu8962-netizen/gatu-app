@@ -2,19 +2,20 @@ import { Button } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
 import { ChartLineIcon, ListChecksIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useConnection } from "wagmi";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useGlobalSettingsActions, useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
-import type { LimitClosePositionData, TpSlPositionData } from "../positions/position-dialog-types";
+import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "../positions/position-dialog-types";
 import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
@@ -22,7 +23,6 @@ import { MobilePositionCard } from "./mobile-position-card";
 export function MobilePositionsTab() {
 	const { address, isConnected } = useConnection();
 	const slippageBps = useMarketOrderSlippageBps();
-	const closingKeyRef = useRef<string | null>(null);
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { setMobileActiveTab } = useGlobalSettingsActions();
@@ -37,9 +37,10 @@ export function MobilePositionsTab() {
 	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionData | null>(null);
 	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
 	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
-	const [closeErrorKey, setCloseErrorKey] = useState<string | null>(null);
+	const [closingAssetIds, setClosingAssetIds] = useState<Set<number>>(() => new Set());
+	const [closeErrors, setCloseErrors] = useState<Map<number, string>>(() => new Map());
 
-	const { mutate: placeOrder, isPending: isClosing, error: closeError, reset: resetCloseError } = useExchange("order");
+	const { mutate: placeOrder, reset: resetCloseError } = useExchange("order");
 	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
 	const markets = useMarkets();
 
@@ -56,18 +57,21 @@ export function MobilePositionsTab() {
 
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 
-	function handleClosePosition(
-		assetId: number,
-		size: number,
-		markPx: number,
-		szDecimals: number,
-		isLong: boolean,
-		coin: string,
-	) {
-		if (isClosing) return;
+	function handleClosePosition(data: ClosePositionData) {
+		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe } = data;
+		if (closingAssetIds.has(assetId)) return;
 		resetCloseError();
-		setCloseErrorKey(null);
-		closingKeyRef.current = `${assetId}`;
+		setCloseErrors((prev) => {
+			if (!prev.has(assetId)) return prev;
+			const next = new Map(prev);
+			next.delete(assetId);
+			return next;
+		});
+		setClosingAssetIds((prev) => {
+			const next = new Set(prev);
+			next.add(assetId);
+			return next;
+		});
 
 		const { orders, grouping } = buildOrderPlan({
 			kind: "marketClose",
@@ -82,13 +86,25 @@ export function MobilePositionsTab() {
 		placeOrder(
 			{ orders, grouping },
 			{
-				onSuccess: () => toast.success(t`Position closed` + (coin ? ` — ${coin}` : "")),
+				onSuccess: () =>
+					toast.success(t`Position closed — ${coin}`, {
+						description: buildClosePositionDescription({ size, szDecimals, coin, unrealizedPnl, roe }),
+					}),
 				onError: (error) => {
-					toast.error(error.message || t`Failed to close position`);
-					setCloseErrorKey(`${assetId}`);
+					const message = error.message || t`Failed to close position`;
+					toast.error(message);
+					setCloseErrors((prev) => {
+						const next = new Map(prev);
+						next.set(assetId, message);
+						return next;
+					});
 				},
 				onSettled: () => {
-					closingKeyRef.current = null;
+					setClosingAssetIds((prev) => {
+						const next = new Set(prev);
+						next.delete(assetId);
+						return next;
+					});
 				},
 			},
 		);
@@ -153,6 +169,8 @@ export function MobilePositionsTab() {
 				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
 					{positions.map((p) => {
 						const assetId = markets.getAssetId(p.coin);
+						const isRowClosing = typeof assetId === "number" && closingAssetIds.has(assetId);
+						const closeErrorMessage = typeof assetId === "number" ? (closeErrors.get(assetId) ?? null) : null;
 						return (
 							<MobilePositionCard
 								key={`${p.coin}-${p.entryPx}-${p.szi}`}
@@ -160,9 +178,8 @@ export function MobilePositionsTab() {
 								markets={markets}
 								markPx={mids?.[p.coin]}
 								tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
-								isClosing={isClosing}
-								isRowClosing={isClosing && closingKeyRef.current === `${assetId}`}
-								closeErrorMessage={closeErrorKey === `${assetId}` ? (closeError?.message ?? null) : null}
+								isRowClosing={isRowClosing}
+								closeErrorMessage={closeErrorMessage}
 								onClose={handleClosePosition}
 								onLimitClose={handleOpenLimitCloseModal}
 								onOpenTpSl={handleOpenTpSlModal}

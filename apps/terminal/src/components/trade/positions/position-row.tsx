@@ -12,7 +12,7 @@ import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
 import { PositionActionsDropdown } from "./position-actions-dropdown";
-import type { LimitClosePositionData, TpSlPositionData } from "./position-dialog-types";
+import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "./position-dialog-types";
 import {
 	positionsPanelRowHoverClass,
 	positionsPanelRowStripeClass,
@@ -24,12 +24,11 @@ interface Props {
 	markets: Markets;
 	markPx: string | undefined;
 	tpSlInfo: TpSlOrderInfo | undefined;
-	isClosing: boolean;
 	isRowClosing: boolean;
 	isEven: boolean;
-	onClose: (assetId: number, size: number, markPx: number, szDecimals: number, isLong: boolean, coin: string) => void;
+	onClose: (data: ClosePositionData) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
-	onReverse: (assetId: number, size: number, markPx: number, szDecimals: number, isLong: boolean, coin: string) => void;
+	onReverse: (data: ClosePositionData) => void;
 	onOpenTpSl: (data: TpSlPositionData) => void;
 	onSelectMarket: (coin: string, side: Side) => void;
 }
@@ -39,7 +38,6 @@ export function PositionRow({
 	markets,
 	markPx: markPxRaw,
 	tpSlInfo,
-	isClosing,
 	isRowClosing,
 	isEven,
 	onClose,
@@ -109,9 +107,23 @@ export function PositionRow({
 		);
 	}
 
+	function buildCloseData(): ClosePositionData | null {
+		if (!canClose || typeof assetId !== "number") return null;
+		return {
+			assetId,
+			coin: p.coin,
+			size: absSize,
+			markPx,
+			szDecimals,
+			isLong,
+			unrealizedPnl,
+			roe,
+		};
+	}
+
 	function handleClose() {
-		if (!canClose || typeof assetId !== "number") return;
-		onClose(assetId, absSize, markPx, szDecimals, isLong, p.coin);
+		const data = buildCloseData();
+		if (data) onClose(data);
 	}
 
 	function handleLimitClose() {
@@ -130,8 +142,8 @@ export function PositionRow({
 	}
 
 	function handleReverse() {
-		if (!canClose || typeof assetId !== "number") return;
-		onReverse(assetId, absSize, markPx, szDecimals, isLong, p.coin);
+		const data = buildCloseData();
+		if (data) onReverse(data);
 	}
 
 	function handleOpenTpSl() {
@@ -248,7 +260,6 @@ export function PositionRow({
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
 				<PositionActionsDropdown
 					canClose={canClose}
-					isClosing={isClosing}
 					isRowClosing={isRowClosing}
 					onMarketClose={handleClose}
 					onLimitClose={handleLimitClose}

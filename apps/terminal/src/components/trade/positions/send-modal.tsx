@@ -39,6 +39,27 @@ export function SendModal({
 	initialAsset = DEFAULT_QUOTE_TOKEN,
 	initialAccountType = "spot",
 }: Props) {
+	return (
+		<Modal open={open} onOpenChange={onOpenChange}>
+			<ModalPopup size="sm">
+				<SendModalBody
+					key={`${initialAsset}:${initialAccountType}:${open ? "open" : "closed"}`}
+					onOpenChange={onOpenChange}
+					initialAsset={initialAsset}
+					initialAccountType={initialAccountType}
+				/>
+			</ModalPopup>
+		</Modal>
+	);
+}
+
+interface BodyProps {
+	onOpenChange: (open: boolean) => void;
+	initialAsset: string;
+	initialAccountType: AccountType;
+}
+
+function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyProps) {
 	const [destination, setDestination] = useState("");
 	const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
 	const [selectedToken, setSelectedToken] = useState(initialAsset);
@@ -149,15 +170,6 @@ export function SendModal({
 		}
 	}, [accountType, amount, canSend, destination, onOpenChange, sendAsset, spotSend, tokenId]);
 
-	function handleOpenChange(newOpen: boolean) {
-		if (!newOpen) {
-			setDestination("");
-			setAmount("");
-			setError(null);
-		}
-		onOpenChange(newOpen);
-	}
-
 	const accountTypeOptions = [
 		{ value: "perp", label: t`Perps Account` },
 		{ value: "spot", label: t`Spot Account` },
@@ -169,80 +181,77 @@ export function SendModal({
 	}));
 
 	return (
-		<Modal open={open} onOpenChange={handleOpenChange}>
-			<ModalPopup size="sm">
-				<ModalHeader>
-					<ModalTitle>{t`Send Tokens`}</ModalTitle>
-					<ModalDescription>{t`Send tokens to another account on the Hyperliquid L1.`}</ModalDescription>
-				</ModalHeader>
+		<>
+			<ModalHeader>
+				<ModalTitle>{t`Send Tokens`}</ModalTitle>
+				<ModalDescription>{t`Send tokens to another account on the Hyperliquid L1.`}</ModalDescription>
+			</ModalHeader>
 
-				<ModalContent>
-					<div className="space-y-4">
-						<TextInput
-							placeholder={t`Destination address`}
-							value={destination}
-							onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
-							autoComplete="off"
-							spellCheck={false}
-							className={cn(
-								destination &&
-									!isValidDestination &&
-									"border-stroke-error-strong focus-visible:border-stroke-error-strong",
-							)}
-						/>
-
-						<div className="flex gap-2">
-							<Select
-								value={accountType}
-								onValueChange={handleAccountTypeChange}
-								options={accountTypeOptions}
-								className="flex-1"
-							/>
-
-							<Select
-								value={selectedToken}
-								onValueChange={handleTokenChange}
-								options={tokenSelectOptions}
-								className="flex-1"
-							/>
-						</div>
-
-						<NumberInput
-							label={t`Amount`}
-							labelValue={
-								<>
-									Available:{" "}
-									<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-										{floorToString(availableBalance, decimals)} {selectedToken}
-									</span>
-								</>
-							}
-							onLabelValueClick={handleMaxClick}
-							placeholder="0.00"
-							value={amount}
-							onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
-							className={cn(
-								"w-full tabular-nums",
-								exceedsBalance(amount, availableBalance) &&
-									"border-stroke-error-strong focus:border-stroke-error-strong",
-							)}
-						/>
-
-						{error && (
-							<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error">
-								<WarningCircleIcon className="size-3.5 shrink-0" />
-								<span className="flex-1">{error}</span>
-							</div>
+			<ModalContent>
+				<div className="space-y-4">
+					<TextInput
+						placeholder={t`Destination address`}
+						value={destination}
+						onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
+						autoComplete="off"
+						spellCheck={false}
+						className={cn(
+							destination &&
+								!isValidDestination &&
+								"border-stroke-error-strong focus-visible:border-stroke-error-strong",
 						)}
+					/>
 
-						<Button variant="filled" intent="neutral" onClick={handleSend} disabled={!canSend} className="w-full">
-							{isPending && <SpinnerGapIcon className="size-3.5 animate-spin mr-2" />}
-							<PaperPlaneTiltIcon className="size-3.5 mr-2" />
-							{isPending ? t`Sending...` : t`Send`}
-						</Button>
+					<div className="flex gap-2">
+						<Select
+							value={accountType}
+							onValueChange={handleAccountTypeChange}
+							options={accountTypeOptions}
+							className="flex-1"
+						/>
+
+						<Select
+							value={selectedToken}
+							onValueChange={handleTokenChange}
+							options={tokenSelectOptions}
+							className="flex-1"
+						/>
 					</div>
-				</ModalContent>
-			</ModalPopup>
-		</Modal>
+
+					<NumberInput
+						label={t`Amount`}
+						labelValue={
+							<>
+								Available:{" "}
+								<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
+									{floorToString(availableBalance, decimals)} {selectedToken}
+								</span>
+							</>
+						}
+						onLabelValueClick={handleMaxClick}
+						placeholder="0.00"
+						value={amount}
+						onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
+						className={cn(
+							"w-full tabular-nums",
+							exceedsBalance(amount, availableBalance) && "border-stroke-error-strong focus:border-stroke-error-strong",
+						)}
+					/>
+
+					{error && (
+						<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-strong/20 text-xs text-error">
+							<WarningCircleIcon className="size-3.5 shrink-0" />
+							<span className="flex-1">{error}</span>
+						</div>
+					)}
+
+					<Button variant="filled" intent="neutral" onClick={handleSend} disabled={!canSend} className="w-full">
+						{isPending && <SpinnerGapIcon className="size-3.5 animate-spin mr-2" />}
+						<PaperPlaneTiltIcon className="size-3.5 mr-2" />
+						{isPending ? t`Sending...` : t`Send`}
+					</Button>
+				</div>
+			</ModalContent>
+		</>
 	);
 }

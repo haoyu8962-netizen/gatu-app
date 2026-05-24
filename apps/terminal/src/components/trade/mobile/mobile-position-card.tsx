@@ -13,7 +13,7 @@ import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
-import type { LimitClosePositionData, TpSlPositionData } from "../positions/position-dialog-types";
+import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "../positions/position-dialog-types";
 import { MetricCell } from "./metric-cell";
 
 interface Props {
@@ -21,10 +21,9 @@ interface Props {
 	markets: Markets;
 	markPx: string | undefined;
 	tpSlInfo: TpSlOrderInfo | undefined;
-	isClosing: boolean;
 	isRowClosing: boolean;
 	closeErrorMessage: string | null;
-	onClose: (assetId: number, size: number, markPx: number, szDecimals: number, isLong: boolean, coin: string) => void;
+	onClose: (data: ClosePositionData) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onOpenTpSl: (data: TpSlPositionData) => void;
 	onSelectMarket: (coin: string, side: Side) => void;
@@ -35,7 +34,6 @@ export function MobilePositionCard({
 	markets,
 	markPx: markPxRaw,
 	tpSlInfo,
-	isClosing,
 	isRowClosing,
 	closeErrorMessage,
 	onClose,
@@ -55,6 +53,7 @@ export function MobilePositionCard({
 	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
 	const entryPx = toBig(p.entryPx)?.toNumber() ?? Number.NaN;
 	const unrealizedPnl = toBig(p.unrealizedPnl)?.toNumber() ?? Number.NaN;
+	const roe = toBig(p.returnOnEquity)?.toNumber() ?? Number.NaN;
 	const liqPx = toBig(p.liquidationPx)?.toNumber();
 	const liqIsNear =
 		liqPx != null &&
@@ -72,7 +71,16 @@ export function MobilePositionCard({
 
 	function handleClose() {
 		if (!canClose || typeof assetId !== "number") return;
-		onClose(assetId, absSize, markPx, szDecimals, isLong, p.coin);
+		onClose({
+			assetId,
+			coin: p.coin,
+			size: absSize,
+			markPx,
+			szDecimals,
+			isLong,
+			unrealizedPnl,
+			roe,
+		});
 	}
 
 	function handleLimitClose() {
@@ -85,7 +93,7 @@ export function MobilePositionCard({
 			entryPx,
 			markPx,
 			unrealizedPnl,
-			roe: toBig(p.returnOnEquity)?.toNumber() ?? 0,
+			roe,
 			szDecimals,
 		});
 	}
@@ -100,7 +108,7 @@ export function MobilePositionCard({
 			entryPx,
 			markPx,
 			unrealizedPnl,
-			roe: toBig(p.returnOnEquity)?.toNumber() ?? 0,
+			roe,
 			szDecimals,
 			existingTpPrice: tpSlInfo?.tpPrice,
 			existingSlPrice: tpSlInfo?.slPrice,
@@ -182,7 +190,7 @@ export function MobilePositionCard({
 							size="xs"
 							className="flex-1 justify-center"
 							onClick={handleClose}
-							disabled={!canClose || isClosing}
+							disabled={!canClose || isRowClosing}
 							iconLeft={isRowClosing ? <Spinner className="size-3" /> : <XIcon className="size-3.5" />}
 						>
 							{t`Confirm Close`}
@@ -220,7 +228,7 @@ export function MobilePositionCard({
 							size="xs"
 							className="flex-1 justify-center touch-target"
 							onClick={handleLimitClose}
-							disabled={!canClose || isClosing}
+							disabled={!canClose || isRowClosing}
 						>
 							{t`Limit Close`}
 						</Button>
@@ -230,7 +238,7 @@ export function MobilePositionCard({
 							size="xs"
 							className="flex-1 justify-center touch-target"
 							onClick={() => setConfirmingClose(true)}
-							disabled={!canClose || isClosing}
+							disabled={!canClose || isRowClosing}
 							iconLeft={<XIcon className="size-3.5" />}
 						>
 							{t`Close`}

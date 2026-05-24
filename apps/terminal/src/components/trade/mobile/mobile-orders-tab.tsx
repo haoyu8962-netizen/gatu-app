@@ -55,22 +55,20 @@ export function MobileOrdersTab({ className }: Props) {
 		{ enabled: isConnected && !!address },
 	);
 
-	const {
-		mutate: cancelOrders,
-		isPending: isCancelling,
-		error: cancelError,
-		reset: resetCancelError,
-	} = useExchange("cancel");
+	const { mutate: cancelOrders, error: cancelError, reset: resetCancelError } = useExchange("cancel");
 
 	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
-	const [cancelScope, setCancelScope] = useState<CancelScope | null>(null);
+	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
 
 	const openOrders = openOrdersEvent?.orders ?? [];
 
 	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope) {
-		if (isCancelling || ordersToCancel.length === 0) return;
+		if (ordersToCancel.length === 0) return;
 
-		const cancels = ordersToCancel.reduce<{ a: number; o: number }[]>((acc, order) => {
+		const fresh = ordersToCancel.filter((order) => !cancellingOids.has(order.oid));
+		if (fresh.length === 0) return;
+
+		const cancels = fresh.reduce<{ a: number; o: number }[]>((acc, order) => {
 			const assetId = markets.getAssetId(order.coin);
 			if (typeof assetId !== "number") return acc;
 			acc.push({ a: assetId, o: order.oid });
@@ -79,15 +77,32 @@ export function MobileOrdersTab({ className }: Props) {
 
 		if (cancels.length === 0) return;
 
-		setCancellingOids(new Set(ordersToCancel.map((order) => order.oid)));
-		setCancelScope(nextScope);
+		const oids = fresh.map((order) => order.oid);
+		setCancellingOids((prev) => {
+			const next = new Set(prev);
+			for (const oid of oids) next.add(oid);
+			return next;
+		});
+		setPendingScopes((prev) => {
+			const next = new Set(prev);
+			next.add(nextScope);
+			return next;
+		});
 		resetCancelError();
 		cancelOrders(
 			{ cancels },
 			{
 				onSettled: () => {
-					setCancellingOids(new Set());
-					setCancelScope(null);
+					setCancellingOids((prev) => {
+						const next = new Set(prev);
+						for (const oid of oids) next.delete(oid);
+						return next;
+					});
+					setPendingScopes((prev) => {
+						const next = new Set(prev);
+						next.delete(nextScope);
+						return next;
+					});
 				},
 			},
 		);
@@ -145,9 +160,9 @@ export function MobileOrdersTab({ className }: Props) {
 						size="sm"
 						className="ml-auto touch-target"
 						onClick={handleCancelAll}
-						disabled={isCancelling || openOrders.length === 0}
+						disabled={pendingScopes.has("all") || openOrders.length === 0}
 					>
-						{cancelScope === "all" ? t`Canceling...` : t`Cancel All`}
+						{pendingScopes.has("all") ? t`Canceling...` : t`Cancel All`}
 					</Button>
 				</div>
 				{actionError && <div className="px-3 pb-1 text-xs text-error">{actionError}</div>}
@@ -159,7 +174,6 @@ export function MobileOrdersTab({ className }: Props) {
 							szDecimals={markets.getSzDecimals(order.coin)}
 							kind={markets.getMarket(order.coin)?.kind}
 							isCancelling={cancellingOids.has(order.oid)}
-							canCancel={!isCancelling}
 							onCancel={handleCancelRow}
 							onSelectMarket={handleSelectMarket}
 						/>
@@ -175,20 +189,11 @@ interface MobileOrderCardProps {
 	szDecimals: number;
 	kind: MarketKind | undefined;
 	isCancelling: boolean;
-	canCancel: boolean;
 	onCancel: (orders: OpenOrder[]) => void;
 	onSelectMarket: (marketName: string, side: Side) => void;
 }
 
-function MobileOrderCard({
-	order,
-	szDecimals,
-	kind,
-	isCancelling,
-	canCancel,
-	onCancel,
-	onSelectMarket,
-}: MobileOrderCardProps) {
+function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSelectMarket }: MobileOrderCardProps) {
 	const typeConfig = getOrderTypeConfig(order);
 	const sideLabel = getSideLabel(order.side, kind);
 	const isLong = order.side === "B";
@@ -245,7 +250,7 @@ function MobileOrderCard({
 					size="sm"
 					className="touch-target"
 					onClick={() => onCancel([order])}
-					disabled={!canCancel}
+					disabled={isCancelling}
 					iconLeft={isCancelling ? <Spinner className="size-3" /> : <XIcon className="size-3.5" />}
 				>
 					{t`Cancel`}

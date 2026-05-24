@@ -67,14 +67,9 @@ export function OrdersTab() {
 	const markets = useMarkets();
 	const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(() => new Set());
 	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
-	const [cancelScope, setCancelScope] = useState<CancelScope | null>(null);
+	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
 
-	const {
-		mutate: cancelOrders,
-		isPending: isCancelling,
-		error: cancelError,
-		reset: resetCancelError,
-	} = useExchange("cancel");
+	const { mutate: cancelOrders, error: cancelError, reset: resetCancelError } = useExchange("cancel");
 
 	const openOrders = openOrdersEvent?.orders ?? [];
 
@@ -109,9 +104,12 @@ export function OrdersTab() {
 	}
 
 	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope) {
-		if (isCancelling || ordersToCancel.length === 0) return;
+		if (ordersToCancel.length === 0) return;
 
-		const cancels = ordersToCancel.reduce<{ a: number; o: number }[]>((acc, order) => {
+		const fresh = ordersToCancel.filter((order) => !cancellingOids.has(order.oid));
+		if (fresh.length === 0) return;
+
+		const cancels = fresh.reduce<{ a: number; o: number }[]>((acc, order) => {
 			const assetId = markets.getAssetId(order.coin);
 			if (typeof assetId !== "number") return acc;
 			acc.push({ a: assetId, o: order.oid });
@@ -120,8 +118,17 @@ export function OrdersTab() {
 
 		if (cancels.length === 0) return;
 
-		setCancellingOids(new Set(ordersToCancel.map((order) => order.oid)));
-		setCancelScope(nextScope);
+		const oids = fresh.map((order) => order.oid);
+		setCancellingOids((prev) => {
+			const next = new Set(prev);
+			for (const oid of oids) next.add(oid);
+			return next;
+		});
+		setPendingScopes((prev) => {
+			const next = new Set(prev);
+			next.add(nextScope);
+			return next;
+		});
 		resetCancelError();
 		cancelOrders(
 			{ cancels },
@@ -129,15 +136,23 @@ export function OrdersTab() {
 				onSuccess: () => {
 					setSelectedOrderIds((prev) => {
 						const next = new Set(prev);
-						for (const order of ordersToCancel) {
+						for (const order of fresh) {
 							next.delete(order.oid);
 						}
 						return next;
 					});
 				},
 				onSettled: () => {
-					setCancellingOids(new Set());
-					setCancelScope(null);
+					setCancellingOids((prev) => {
+						const next = new Set(prev);
+						for (const oid of oids) next.delete(oid);
+						return next;
+					});
+					setPendingScopes((prev) => {
+						const next = new Set(prev);
+						next.delete(nextScope);
+						return next;
+					});
 				},
 			},
 		);
@@ -156,9 +171,8 @@ export function OrdersTab() {
 		handleCancel(openOrders, "all");
 	}
 
-	const canCancel = !isCancelling;
-	const disableCancelSelected = !canCancel || selectedCount === 0;
-	const disableCancelAll = !canCancel || openOrders.length === 0;
+	const disableCancelSelected = pendingScopes.has("selected") || selectedCount === 0;
+	const disableCancelAll = pendingScopes.has("all") || openOrders.length === 0;
 	const actionError = cancelError?.message;
 
 	function renderPlaceholder() {
@@ -198,7 +212,7 @@ export function OrdersTab() {
 					onClick={handleCancelSelected}
 					disabled={disableCancelSelected}
 				>
-					{cancelScope === "selected" ? t`Canceling...` : t`Cancel selected`}
+					{pendingScopes.has("selected") ? t`Canceling...` : t`Cancel selected`}
 				</Button>
 				<Button
 					variant="link"
@@ -207,7 +221,7 @@ export function OrdersTab() {
 					onClick={handleCancelAll}
 					disabled={disableCancelAll}
 				>
-					{cancelScope === "all" ? t`Canceling...` : t`Cancel all`}
+					{pendingScopes.has("all") ? t`Canceling...` : t`Cancel all`}
 				</Button>
 			</div>
 			{actionError ? <div className="px-2.5 py-1 text-2xs text-error">{actionError}</div> : null}
@@ -227,7 +241,7 @@ export function OrdersTab() {
 											indeterminate={someSelected && !allSelected}
 											onCheckedChange={handleToggleAll}
 											aria-label={t`Select all orders`}
-											disabled={openOrders.length === 0 || isCancelling}
+											disabled={openOrders.length === 0}
 										/>
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[13%] text-left")}>
@@ -274,7 +288,6 @@ export function OrdersTab() {
 											szDecimals={markets.getSzDecimals(order.coin)}
 											isSelected={validSelectedIds.has(order.oid)}
 											isCancelling={cancellingOids.has(order.oid)}
-											canCancel={canCancel}
 											isEven={i % 2 === 1}
 											onToggle={handleToggleOrder}
 											onCancel={handleCancelRow}
@@ -297,7 +310,6 @@ interface OrderRowProps {
 	szDecimals: number;
 	isSelected: boolean;
 	isCancelling: boolean;
-	canCancel: boolean;
 	isEven: boolean;
 	onToggle: (orderId: number, value: boolean | "indeterminate") => void;
 	onCancel: (orders: OpenOrder[]) => void;
@@ -309,7 +321,6 @@ function OrderRow({
 	szDecimals,
 	isSelected,
 	isCancelling,
-	canCancel,
 	isEven,
 	onToggle,
 	onCancel,
@@ -325,7 +336,7 @@ function OrderRow({
 					checked={isSelected}
 					onCheckedChange={(value) => onToggle(order.oid, value)}
 					aria-label={`${t`Select order`} ${order.coin}`}
-					disabled={!canCancel}
+					disabled={isCancelling}
 				/>
 			</TableCell>
 			<TableCell
@@ -383,7 +394,7 @@ function OrderRow({
 					size="sm"
 					aria-label={t`Cancel order`}
 					onClick={() => onCancel([order])}
-					disabled={!canCancel}
+					disabled={isCancelling}
 				>
 					{isCancelling ? t`Canceling...` : t`Cancel`}
 				</Button>

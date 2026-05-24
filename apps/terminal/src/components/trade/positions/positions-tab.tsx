@@ -1,6 +1,6 @@
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
 import { t } from "@lingui/core/macro";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -8,6 +8,7 @@ import { HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { cn } from "@/lib/cn";
 import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
@@ -15,7 +16,7 @@ import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
-import type { LimitClosePositionData, TpSlPositionData } from "./position-dialog-types";
+import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "./position-dialog-types";
 import { PositionLimitCloseModal } from "./position-limit-close-modal";
 import { PositionRow } from "./position-row";
 import { PositionTpSlModal } from "./position-tpsl-modal";
@@ -34,7 +35,6 @@ type CloseIntent = "close" | "reverse";
 export function PositionsTab() {
 	const { address, isConnected } = useConnection();
 	const slippageBps = useMarketOrderSlippageBps();
-	const closingKeyRef = useRef<string | null>(null);
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { setSide } = useOrderEntryActions();
@@ -47,8 +47,9 @@ export function PositionsTab() {
 	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionData | null>(null);
 	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
 	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
+	const [closingAssetIds, setClosingAssetIds] = useState<Set<number>>(() => new Set());
 
-	const { mutate: placeOrder, isPending: isClosing, error: closeError, reset: resetCloseError } = useExchange("order");
+	const { mutate: placeOrder, error: closeError, reset: resetCloseError } = useExchange("order");
 
 	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
 
@@ -68,19 +69,16 @@ export function PositionsTab() {
 
 	const actionError = closeError?.message;
 
-	function submitCloseOrReverse(
-		intent: CloseIntent,
-		assetId: number,
-		size: number,
-		markPx: number,
-		szDecimals: number,
-		isLong: boolean,
-		coin: string,
-	) {
-		if (isClosing) return;
+	function submitCloseOrReverse(intent: CloseIntent, data: ClosePositionData) {
+		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe } = data;
+		if (closingAssetIds.has(assetId)) return;
 
 		resetCloseError();
-		closingKeyRef.current = `${assetId}`;
+		setClosingAssetIds((prev) => {
+			const next = new Set(prev);
+			next.add(assetId);
+			return next;
+		});
 
 		const { orders, grouping } = buildOrderPlan({
 			kind: intent === "close" ? "marketClose" : "reverse",
@@ -92,45 +90,37 @@ export function PositionsTab() {
 			slippageBps,
 		});
 
-		const successMessage = intent === "close" ? t`Position closed` : t`Position reversed`;
+		const title = intent === "close" ? t`Position closed — ${coin}` : t`Position reversed — ${coin}`;
 		const failureMessage = intent === "close" ? t`Failed to close position` : t`Failed to reverse position`;
 
 		placeOrder(
 			{ orders, grouping },
 			{
 				onSuccess: () => {
-					toast.success(successMessage + (coin ? ` — ${coin}` : ""));
+					toast.success(title, {
+						description: buildClosePositionDescription({ size, szDecimals, coin, unrealizedPnl, roe }),
+					});
 				},
 				onError: (error) => {
 					toast.error(error.message || failureMessage);
 				},
 				onSettled: () => {
-					closingKeyRef.current = null;
+					setClosingAssetIds((prev) => {
+						const next = new Set(prev);
+						next.delete(assetId);
+						return next;
+					});
 				},
 			},
 		);
 	}
 
-	function handleClosePosition(
-		assetId: number,
-		size: number,
-		markPx: number,
-		szDecimals: number,
-		isLong: boolean,
-		coin: string,
-	) {
-		submitCloseOrReverse("close", assetId, size, markPx, szDecimals, isLong, coin);
+	function handleClosePosition(data: ClosePositionData) {
+		submitCloseOrReverse("close", data);
 	}
 
-	function handleReverse(
-		assetId: number,
-		size: number,
-		markPx: number,
-		szDecimals: number,
-		isLong: boolean,
-		coin: string,
-	) {
-		submitCloseOrReverse("reverse", assetId, size, markPx, szDecimals, isLong, coin);
+	function handleReverse(data: ClosePositionData) {
+		submitCloseOrReverse("reverse", data);
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {
@@ -234,23 +224,25 @@ export function PositionsTab() {
 								</TableRow>
 							</TableHeader>
 							<TableBody className={positionsPanelTableBodyClass}>
-								{positions.map((p, i) => (
-									<PositionRow
-										key={p.coin}
-										position={p}
-										markets={markets}
-										markPx={mids?.[p.coin]}
-										tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
-										isClosing={isClosing}
-										isRowClosing={isClosing && closingKeyRef.current === `${markets.getAssetId(p.coin)}`}
-										isEven={i % 2 === 1}
-										onClose={handleClosePosition}
-										onLimitClose={handleOpenLimitCloseModal}
-										onReverse={handleReverse}
-										onOpenTpSl={handleOpenTpSlModal}
-										onSelectMarket={handleSelectMarket}
-									/>
-								))}
+								{positions.map((p, i) => {
+									const assetId = markets.getAssetId(p.coin);
+									return (
+										<PositionRow
+											key={p.coin}
+											position={p}
+											markets={markets}
+											markPx={mids?.[p.coin]}
+											tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
+											isRowClosing={typeof assetId === "number" && closingAssetIds.has(assetId)}
+											isEven={i % 2 === 1}
+											onClose={handleClosePosition}
+											onLimitClose={handleOpenLimitCloseModal}
+											onReverse={handleReverse}
+											onOpenTpSl={handleOpenTpSlModal}
+											onSelectMarket={handleSelectMarket}
+										/>
+									);
+								})}
 							</TableBody>
 						</Table>
 						<ScrollBar orientation="horizontal" />
