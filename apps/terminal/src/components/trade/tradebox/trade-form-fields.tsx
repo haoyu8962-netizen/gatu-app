@@ -304,17 +304,8 @@ export function TradeFormFields({
 						{showTif && <TradeFormTif orderType={orderType} disabled={isFormDisabled} />}
 					</div>
 
-					{capabilities.hasTpSl && canUseTpSl && (
-						<div className="h-56">
-							{tpSlEnabled && (
-								<TradeFormTpSl
-									referencePrice={price}
-									size={sizeValue}
-									szDecimals={szDecimals}
-									disabled={isFormDisabled}
-								/>
-							)}
-						</div>
+					{capabilities.hasTpSl && canUseTpSl && tpSlEnabled && (
+						<TradeFormTpSl referencePrice={price} size={sizeValue} szDecimals={szDecimals} disabled={isFormDisabled} />
 					)}
 				</div>
 			)}

@@ -1,15 +1,15 @@
+import { i18n } from "@lingui/core";
 import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import { STORAGE_KEYS } from "@/config/app";
-import type { NumberFormatLocale } from "@/config/i18n";
+import { type LocaleCode, type NumberFormatLocale, resolveNumberFormatLocale } from "@/config/i18n";
 import {
 	DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
 	MARKET_ORDER_SLIPPAGE_MIN_PERCENT,
 } from "@/config/trade";
-import { resolveNumberFormatLocale } from "@/lib/i18n";
 import type { Network } from "@/lib/network";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import type { MarginMode } from "@/lib/trade/margin-mode";
@@ -191,11 +191,11 @@ export function useMarginMode() {
 
 export function useResolvedFormatLocale(): string {
 	const numberFormatLocale = useGlobalSettingsStore((state) => state.numberFormatLocale);
-	return resolveNumberFormatLocale(numberFormatLocale);
+	return resolveNumberFormatLocale(numberFormatLocale, i18n.locale as LocaleCode);
 }
 
 export function getResolvedFormatLocale(): string {
-	return resolveNumberFormatLocale(useGlobalSettingsStore.getState().numberFormatLocale);
+	return resolveNumberFormatLocale(useGlobalSettingsStore.getState().numberFormatLocale, i18n.locale as LocaleCode);
 }
 
 export function useHideSmallBalances() {

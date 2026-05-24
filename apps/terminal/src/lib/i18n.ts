@@ -1,13 +1,9 @@
 import { i18n, type Messages } from "@lingui/core";
-import { defaultLocale, type LocaleCode, languageToIntlLocale, type NumberFormatLocale } from "@/config/i18n";
-import { messages as enMessages } from "@/locales/en/messages.po";
+import { defaultLocale } from "@/config/i18n";
 
-export function resolveNumberFormatLocale(formatLocale: NumberFormatLocale): string {
-	if (formatLocale === "auto") {
-		return languageToIntlLocale[i18n.locale as LocaleCode] ?? "en-US";
-	}
-	return formatLocale;
-}
+export { resolveNumberFormatLocale } from "@/config/i18n";
+
+import { messages as enMessages } from "@/locales/en/messages.po";
 
 i18n.loadAndActivate({ locale: defaultLocale, messages: enMessages });
 

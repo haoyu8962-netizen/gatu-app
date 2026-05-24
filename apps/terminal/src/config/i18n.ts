@@ -46,3 +46,13 @@ export const languageToIntlLocale: Record<LocaleCode, string> = {
 };
 
 export const defaultLocale: LocaleCode = "en";
+
+export function resolveNumberFormatLocale(
+	formatLocale: NumberFormatLocale,
+	activeLocale: LocaleCode = defaultLocale,
+): string {
+	if (formatLocale === "auto") {
+		return languageToIntlLocale[activeLocale] ?? "en-US";
+	}
+	return formatLocale;
+}

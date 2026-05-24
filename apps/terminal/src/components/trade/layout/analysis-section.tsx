@@ -13,6 +13,7 @@ import { MarketInfo } from "./market-info";
 
 const { id, chart, positions } = PANEL_LAYOUT.ANALYSIS;
 const chartHeightStorageKey = `${id}:chart-height-px`;
+const fallbackFooterHeightPx = 32;
 
 type AnalysisSectionProps = {
 	onDesiredHeightChange?: (heightPx: number) => void;
@@ -25,8 +26,10 @@ export function AnalysisSection({ onDesiredHeightChange }: AnalysisSectionProps)
 	const initializedRef = useRef(false);
 	const positionsMinHeightPx = isConnected ? positions.minHeightPx : positions.disconnectedMinHeightPx;
 	const [chartHeightPx, setChartHeightPx] = useState<number>(chart.minHeightPx);
-	const [containerHeightPx, setContainerHeightPx] = useState<number>(PANEL_LAYOUT.ANALYSIS.minHeightPx);
-	const maxChartHeightPx = Math.max(chart.minHeightPx, containerHeightPx - positionsMinHeightPx);
+	const [visibleChartMaxHeightPx, setVisibleChartMaxHeightPx] = useState<number>(
+		PANEL_LAYOUT.ANALYSIS.minHeightPx - positionsMinHeightPx,
+	);
+	const maxChartHeightPx = Math.max(chart.minHeightPx, visibleChartMaxHeightPx, chartHeightPx);
 
 	useLayoutEffect(() => {
 		if (initializedRef.current) return;
@@ -36,7 +39,7 @@ export function AnalysisSection({ onDesiredHeightChange }: AnalysisSectionProps)
 		const availableHeight = rootRef.current?.getBoundingClientRect().height ?? PANEL_LAYOUT.ANALYSIS.minHeightPx;
 		const initialChartHeight = Math.max(chart.minHeightPx, storedChartHeight ?? availableHeight - positionsMinHeightPx);
 
-		setContainerHeightPx(availableHeight);
+		setVisibleChartMaxHeightPx(getVisibleChartMaxHeight(rootRef.current));
 		setChartHeightPx(initialChartHeight);
 		onDesiredHeightChange?.(initialChartHeight + positionsMinHeightPx);
 	}, [onDesiredHeightChange, positionsMinHeightPx]);
@@ -47,10 +50,20 @@ export function AnalysisSection({ onDesiredHeightChange }: AnalysisSectionProps)
 
 		const observer = new ResizeObserver((entries) => {
 			const entry = entries[0];
-			if (entry) setContainerHeightPx(entry.contentRect.height);
+			if (entry) {
+				setVisibleChartMaxHeightPx(getVisibleChartMaxHeight(root));
+			}
 		});
 		observer.observe(root);
-		return () => observer.disconnect();
+		function handleResize() {
+			setVisibleChartMaxHeightPx(getVisibleChartMaxHeight(root));
+		}
+		window.addEventListener("resize", handleResize);
+		handleResize();
+		return () => {
+			window.removeEventListener("resize", handleResize);
+			observer.disconnect();
+		};
 	}, []);
 
 	useLayoutEffect(() => {
@@ -164,4 +177,12 @@ function readStoredChartHeight() {
 function writeStoredChartHeight(heightPx: number) {
 	if (typeof window === "undefined") return;
 	window.localStorage.setItem(chartHeightStorageKey, String(heightPx));
+}
+
+function getVisibleChartMaxHeight(root: HTMLElement | null) {
+	if (!root || typeof window === "undefined") return chart.minHeightPx;
+
+	const footerHeight = document.querySelector("footer")?.getBoundingClientRect().height ?? fallbackFooterHeightPx;
+	const top = root.getBoundingClientRect().top;
+	return Math.max(chart.minHeightPx, Math.floor(window.innerHeight - top - footerHeight));
 }

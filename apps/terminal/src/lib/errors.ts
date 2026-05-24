@@ -1,8 +1,7 @@
-import { t } from "@lingui/core/macro";
-
 const MAX_CAUSE_DEPTH = 6;
+const DEFAULT_ERROR_MESSAGE = "Something went wrong";
 
-export function formatErrorForDisplay(error: unknown, fallbackMessage = t`Something went wrong`): string {
+export function formatErrorForDisplay(error: unknown, fallbackMessage = DEFAULT_ERROR_MESSAGE): string {
 	const parts: string[] = [];
 
 	function collect(err: unknown, depth: number) {

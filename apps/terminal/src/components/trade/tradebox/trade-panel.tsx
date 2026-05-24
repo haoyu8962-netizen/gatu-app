@@ -403,7 +403,7 @@ export function TradePanel() {
 					onSwapClick={() => swapTargetToken && openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken)}
 				/>
 
-				<div className="flex flex-col gap-3 pb-1">
+				<div className="flex flex-col gap-3 pt-5 pb-1">
 					{validation.errors.length > 0 && isConnected && availableBalance > 0 && (
 						<div className="text-xs text-error">{validation.errors.join(" • ")}</div>
 					)}
