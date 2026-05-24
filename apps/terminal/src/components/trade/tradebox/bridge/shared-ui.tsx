@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { HL_ICON_URL, USDC_ICON_URL } from "@/config/bridge";
 import { cn } from "@/lib/cn";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
+import { isSafeHttpUrl } from "@/lib/safe-url";
 
 export function LiFiLogo({ className }: { className?: string }) {
 	return (
@@ -114,6 +115,14 @@ export function TokenIcon({ token, size = "md" }: { token: BridgeToken; size?: "
 }
 
 export function ExplorerLink({ href, children }: { href: string; children: React.ReactNode }) {
+	if (!isSafeHttpUrl(href)) {
+		return (
+			<span className="inline-flex items-center gap-1 text-fg-muted">
+				{children}
+				<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
+			</span>
+		);
+	}
 	return (
 		<a
 			href={href}

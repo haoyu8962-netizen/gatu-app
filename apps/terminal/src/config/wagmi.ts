@@ -22,6 +22,7 @@ import {
 	zkSync,
 } from "wagmi/chains";
 import { coinbaseWallet, injected, mock, walletConnect } from "wagmi/connectors";
+import { APP_NAME } from "@/config/app";
 import type { MockWalletConfig } from "@/lib/wallet-utils";
 import { registerMockWallet } from "@/lib/wallet-utils";
 
@@ -48,10 +49,19 @@ const BRIDGE_CHAINS = [
 	polygonZkEvm,
 ] as const satisfies readonly [Chain, ...Chain[]];
 
-const BRIDGE_TRANSPORTS = Object.fromEntries(BRIDGE_CHAINS.map((chain) => [chain.id, http()])) as Record<
-	(typeof BRIDGE_CHAINS)[number]["id"],
-	ReturnType<typeof http>
->;
+const DEFAULT_ETHEREUM_RPC_URL = "https://ethereum-rpc.publicnode.com";
+
+export function getBridgeRpcUrl(
+	chain: Pick<Chain, "id">,
+	env: Record<string, string | undefined> = import.meta.env,
+): string | undefined {
+	if (chain.id === mainnet.id) return env.VITE_ETHEREUM_RPC_URL || DEFAULT_ETHEREUM_RPC_URL;
+	return undefined;
+}
+
+const BRIDGE_TRANSPORTS = Object.fromEntries(
+	BRIDGE_CHAINS.map((chain) => [chain.id, http(getBridgeRpcUrl(chain))]),
+) as Record<(typeof BRIDGE_CHAINS)[number]["id"], ReturnType<typeof http>>;
 
 function createMockConnectors(mockWallets: MockWalletConfig[]) {
 	return mockWallets.map((wallet) => {
@@ -67,6 +77,14 @@ interface WagmiConfigOptions {
 	mockWallets?: MockWalletConfig[];
 }
 
+const WALLET_CONNECT_PROJECT_ID = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID;
+const WALLET_CONNECT_METADATA = {
+	name: APP_NAME,
+	description: "Professional trading terminal for Hyperliquid.",
+	url: "https://hypeterminal.xyz",
+	icons: ["https://hypeterminal.xyz/icon-192.png"],
+};
+
 export function createWagmiConfig(options: WagmiConfigOptions = {}) {
 	const { mockWallets = [] } = options;
 	const mockConnectors = createMockConnectors(mockWallets);
@@ -77,7 +95,11 @@ export function createWagmiConfig(options: WagmiConfigOptions = {}) {
 			...mockConnectors,
 			injected(),
 			coinbaseWallet(),
-			walletConnect({ projectId: import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID }),
+			walletConnect({
+				projectId: WALLET_CONNECT_PROJECT_ID,
+				metadata: WALLET_CONNECT_METADATA,
+				showQrModal: false,
+			}),
 		],
 		transports: BRIDGE_TRANSPORTS,
 		ssr: true,

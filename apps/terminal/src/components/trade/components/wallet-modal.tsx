@@ -4,7 +4,10 @@ import { Trans } from "@lingui/react/macro";
 import {
 	ArrowSquareOutIcon,
 	CaretDownIcon,
+	CopyIcon,
+	DeviceMobileIcon,
 	FlaskIcon,
+	LinkIcon,
 	SpinnerGapIcon,
 	WalletIcon,
 	WarningCircleIcon,
@@ -18,7 +21,15 @@ import { mock } from "wagmi/connectors";
 import { MOCK_WALLETS } from "@/config/wagmi";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import { addRecentWallet, getRecentWallets, getWalletInfo, isMockConnector } from "@/lib/wallet-utils";
+import {
+	addRecentWallet,
+	getRecentWallets,
+	getWalletConnectorGroups,
+	getWalletInfo,
+	isMockConnector,
+	isWalletConnectConnector,
+	subscribeWalletConnectUri,
+} from "@/lib/wallet-utils";
 
 const WALLET_LIST_MAX_HEIGHT = "max-h-[min(55vh,22rem)]";
 const DRAWER_HANDLE_SIZE_CLASS = "w-8 h-1";
@@ -79,44 +90,81 @@ function ConnectorRow({
 	);
 }
 
+function WalletConnectPairingPanel({ uri, isMobile }: { uri: string; isMobile: boolean }) {
+	const [copied, setCopied] = useState(false);
+
+	async function handleCopy() {
+		try {
+			await navigator.clipboard.writeText(uri);
+			setCopied(true);
+			window.setTimeout(() => setCopied(false), 1500);
+		} catch {
+			setCopied(false);
+		}
+	}
+
+	return (
+		<div className="mx-4 mb-3 rounded-xs border border-stroke-brand-strong/25 bg-fill-weak p-3 space-y-3">
+			<div className="flex items-start gap-2">
+				<LinkIcon className="size-4 text-brand mt-0.5 shrink-0" aria-hidden="true" />
+				<div className="min-w-0 space-y-0.5">
+					<p className="text-sm font-medium text-fg">
+						<Trans>WalletConnect pairing ready</Trans>
+					</p>
+					<p className="text-xs text-fg-muted">
+						<Trans>Open a WalletConnect wallet or copy the pairing link.</Trans>
+					</p>
+				</div>
+			</div>
+			<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+				{isMobile && (
+					<a
+						href={uri}
+						className={cn(
+							"inline-flex items-center justify-center gap-2 h-9 px-3 rounded-xs text-sm font-medium",
+							"bg-brand text-fg-inverse hover:bg-brand-hover active:bg-brand-press transition-colors",
+							"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+						)}
+					>
+						<DeviceMobileIcon className="size-4" aria-hidden="true" />
+						<Trans>Open wallet</Trans>
+					</a>
+				)}
+				<button
+					type="button"
+					onClick={handleCopy}
+					className={cn(
+						"inline-flex items-center justify-center gap-2 h-9 px-3 rounded-xs text-sm font-medium",
+						"border border-stroke-weak bg-fill hover:bg-fill-hover active:bg-fill-press transition-colors",
+						"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+						!isMobile && "sm:col-span-2",
+					)}
+				>
+					<CopyIcon className="size-4" aria-hidden="true" />
+					{copied ? <Trans>Copied</Trans> : <Trans>Copy link</Trans>}
+				</button>
+			</div>
+		</div>
+	);
+}
+
 function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: boolean }) {
 	const connectors = useConnectors();
 	const { mutateAsync: connectAsync, isPending, error } = useConnect();
 	const [connectingId, setConnectingId] = useState<string | null>(null);
+	const [walletConnectUri, setWalletConnectUri] = useState<string | null>(null);
 	const [showAll, setShowAll] = useState(false);
 	const [showMock, setShowMock] = useState(false);
 	const [recentWallets] = useState(() => getRecentWallets());
 	const [customAddress, setCustomAddress] = useState("");
 	const [customAddressError, setCustomAddressError] = useState<string | null>(null);
 
-	const mockConnectors: Connector[] = [];
-	const regularConnectors: Connector[] = [];
-	for (const connector of connectors) {
-		if (isMockConnector(connector)) {
-			mockConnectors.push(connector);
-		} else {
-			regularConnectors.push(connector);
-		}
-	}
-
-	function recentRank(connectorId: string) {
-		const index = recentWallets.indexOf(connectorId);
-		return index === -1 ? Number.POSITIVE_INFINITY : index;
-	}
-
-	function sortByPriority(a: Connector, b: Connector) {
-		const rankDelta = recentRank(a.id) - recentRank(b.id);
-		if (rankDelta !== 0) return rankDelta;
-		const priorityA = getWalletInfo(a).priority ?? 50;
-		const priorityB = getWalletInfo(b).priority ?? 50;
-		return priorityA - priorityB;
-	}
-
-	const popular = regularConnectors.filter((c) => getWalletInfo(c).popular).sort(sortByPriority);
-	const other = regularConnectors.filter((c) => !getWalletInfo(c).popular).sort(sortByPriority);
+	const { mockConnectors, popular, other } = getWalletConnectorGroups(connectors, recentWallets);
 
 	async function handleConnect(connector: Connector) {
 		setConnectingId(connector.uid);
+		if (isWalletConnectConnector(connector)) setWalletConnectUri(null);
+		const unsubscribeWalletConnectUri = subscribeWalletConnectUri(connector, setWalletConnectUri);
 		try {
 			await connectAsync({ connector });
 			if (!isMockConnector(connector)) {
@@ -124,6 +172,8 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 			}
 			onClose();
 		} finally {
+			unsubscribeWalletConnectUri();
+			if (isWalletConnectConnector(connector)) setWalletConnectUri(null);
 			setConnectingId(null);
 		}
 	}
@@ -161,7 +211,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 		}
 	}
 
-	const hasConnectors = regularConnectors.length > 0 || mockConnectors.length > 0;
+	const hasConnectors = popular.length > 0 || other.length > 0 || mockConnectors.length > 0;
 	const visibleConnectors = showAll ? [...popular, ...other] : popular;
 
 	return (
@@ -218,6 +268,10 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 									className={cn("size-3 transition-transform duration-150", showAll && "rotate-180")}
 								/>
 							</button>
+						)}
+
+						{walletConnectUri && connectingId && (
+							<WalletConnectPairingPanel uri={walletConnectUri} isMobile={isMobile} />
 						)}
 					</>
 				) : (

@@ -33,6 +33,10 @@ export function isMockConnector(connector: Connector): boolean {
 	return connector.id === "mock" || connector.type === "mock";
 }
 
+export function isWalletConnectConnector(connector: Connector): boolean {
+	return connector.id === "walletConnect" || connector.type === "walletConnect";
+}
+
 function getMockWalletInfo(connector: Connector): WalletInfo {
 	const config = mockWalletRegistry.get(connector.name);
 	const address = config?.address;
@@ -71,4 +75,71 @@ export function addRecentWallet(connectorId: string): void {
 	const existing = getRecentWallets().filter((id) => id !== connectorId);
 	const next = [connectorId, ...existing].slice(0, RECENT_WALLETS_LIMIT);
 	localStorage.setItem(STORAGE_KEYS.RECENT_WALLETS, JSON.stringify(next));
+}
+
+export function splitWalletConnectors(connectors: readonly Connector[]): {
+	mockConnectors: Connector[];
+	regularConnectors: Connector[];
+} {
+	const mockConnectors: Connector[] = [];
+	const regularConnectors: Connector[] = [];
+	for (const connector of connectors) {
+		if (isMockConnector(connector)) mockConnectors.push(connector);
+		else regularConnectors.push(connector);
+	}
+	return { mockConnectors, regularConnectors };
+}
+
+export function sortWalletConnectors(connectors: readonly Connector[], recentWallets: readonly string[]): Connector[] {
+	function recentRank(connectorId: string) {
+		const index = recentWallets.indexOf(connectorId);
+		return index === -1 ? Number.POSITIVE_INFINITY : index;
+	}
+
+	return [...connectors].sort((a, b) => {
+		const rankA = recentRank(a.id);
+		const rankB = recentRank(b.id);
+		if (rankA !== rankB) return rankA - rankB;
+		const priorityA = getWalletInfo(a).priority ?? 50;
+		const priorityB = getWalletInfo(b).priority ?? 50;
+		if (priorityA !== priorityB) return priorityA - priorityB;
+		return a.name.localeCompare(b.name);
+	});
+}
+
+export function getWalletConnectorGroups(connectors: readonly Connector[], recentWallets: readonly string[]) {
+	const { mockConnectors, regularConnectors } = splitWalletConnectors(connectors);
+	return {
+		mockConnectors,
+		popular: sortWalletConnectors(
+			regularConnectors.filter((connector) => getWalletInfo(connector).popular),
+			recentWallets,
+		),
+		other: sortWalletConnectors(
+			regularConnectors.filter((connector) => !getWalletInfo(connector).popular),
+			recentWallets,
+		),
+	};
+}
+
+type ConnectorMessage = { type?: string; data?: unknown };
+type ConnectorMessageHandler = (message: ConnectorMessage) => void;
+type ConnectorEmitter = {
+	on(eventName: "message", handler: ConnectorMessageHandler): void;
+	off(eventName: "message", handler: ConnectorMessageHandler): void;
+};
+
+export function subscribeWalletConnectUri(connector: Connector, onUri: (uri: string) => void): () => void {
+	if (!isWalletConnectConnector(connector)) return () => {};
+	const emitter = (connector as Connector & { emitter?: ConnectorEmitter }).emitter;
+	if (!emitter) return () => {};
+
+	function handleMessage(message: ConnectorMessage) {
+		if (message.type === "display_uri" && typeof message.data === "string") {
+			onUri(message.data);
+		}
+	}
+
+	emitter.on("message", handleMessage);
+	return () => emitter.off("message", handleMessage);
 }

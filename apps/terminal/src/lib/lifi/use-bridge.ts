@@ -1,6 +1,7 @@
 import type { RouteExtended } from "@lifi/sdk";
 import { convertQuoteToRoute, executeRoute } from "@lifi/sdk";
 import { useRef, useState } from "react";
+import { isSafeHttpUrl } from "@/lib/safe-url";
 import type { BridgeQuote } from "./use-quote";
 
 type BridgeStatus = "idle" | "executing" | "success" | "error";
@@ -79,7 +80,7 @@ function getAllProcessDetails(route: RouteExtended): ProcessDetail[] {
 			details.push({
 				type: process.type,
 				txHash: process.txHash,
-				txLink: process.txLink ?? "",
+				txLink: isSafeHttpUrl(process.txLink) ? process.txLink : "",
 				startedAt: process.startedAt,
 				doneAt: process.doneAt ?? null,
 			});
@@ -96,13 +97,14 @@ export function useBridgeExecutor() {
 		if (executingRef.current) return "error";
 		executingRef.current = true;
 
+		const startedAt = Date.now();
 		setState({
 			status: "executing",
 			statusText: "Preparing transaction...",
 			error: null,
 			txHash: null,
 			receivedAmount: null,
-			startTime: Date.now(),
+			startTime: startedAt,
 			endTime: null,
 			processDetails: [],
 		});
@@ -131,7 +133,7 @@ export function useBridgeExecutor() {
 				error: null,
 				txHash: getLastTxHash(result),
 				receivedAmount: toAmount,
-				startTime: state.startTime,
+				startTime: startedAt,
 				endTime: Date.now(),
 				processDetails: getAllProcessDetails(result),
 			});
