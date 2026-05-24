@@ -204,6 +204,10 @@ msgstr ""
 #~ msgid "Approve a builder to charge fees on orders placed on your behalf. Builder codes allow DeFi applications to receive a portion of trading fees."
 #~ msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Approve in wallet..."
+msgstr ""
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -484,6 +488,22 @@ msgstr ""
 #~ msgid "Connect a wallet to manage positions."
 #~ msgstr "Conecta una billetera para gestionar posiciones."
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Connect the same owner wallet used on desktop before importing phone access."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Connect the same wallet used on desktop before importing phone access."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Connect the same wallet used on desktop."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Connect wallet"
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -496,6 +516,14 @@ msgstr "Conectar billetera"
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect wallet to view account"
 msgstr "Conecta billetera para ver cuenta"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Connect your wallet before linking a mobile device."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Connect your wallet before resetting mobile access."
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Connect your wallet to bridge funds"
@@ -572,6 +600,11 @@ msgstr "Conectando..."
 msgid "Continue"
 msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Copied"
+msgstr ""
+
 #: src/hooks/ui/use-copy-to-clipboard.ts
 msgid "Copied to clipboard"
 msgstr ""
@@ -588,6 +621,14 @@ msgstr ""
 msgid "Copy Address"
 msgstr "Copiar dirección"
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Copy link"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Copy phone link"
+msgstr ""
+
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Could not create wallet"
 #~ msgstr "No se pudo crear la billetera"
@@ -596,8 +637,40 @@ msgstr "Copiar dirección"
 msgid "Could not fetch your token balances"
 msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Could not import phone access."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Could not link mobile device."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Could not render QR"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Could not reset mobile access."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Create phone access"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Create phone link"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Create secure phone access for trading from this account."
+msgstr ""
+
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Created"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Creating link..."
 msgstr ""
 
 #: src/components/trade/positions/position-row.tsx
@@ -800,6 +873,10 @@ msgstr ""
 msgid "Enter size"
 msgstr "Ingresa tamaño"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Enter the 16-character pairing code."
+msgstr ""
+
 #: src/lib/errors/definitions/tpsl.ts
 msgid "Enter TP or SL price"
 msgstr ""
@@ -866,6 +943,10 @@ msgstr ""
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Expand account panel"
 #~ msgstr "Expandir panel de cuenta"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Expires {expiresAtLabel}"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Explorer"
@@ -1084,6 +1165,15 @@ msgstr ""
 msgid "Hour(s)"
 msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "Import phone access"
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Importing..."
+msgstr ""
+
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "In Orders"
 #~ msgstr ""
@@ -1199,6 +1289,11 @@ msgstr "Precio límite"
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "limit ro"
 #~ msgstr "límite sr"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/header/user-menu.tsx
+msgid "Link mobile device"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1590,6 +1685,10 @@ msgstr "Sin mercado"
 msgid "No markets found."
 msgstr "No se encontraron mercados."
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "No mobile link found."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "No open orders."
@@ -1635,6 +1734,10 @@ msgstr ""
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "No user address"
 #~ msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "No wallet connected"
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "No wallets found"
@@ -1682,6 +1785,10 @@ msgstr ""
 #~ msgid "open"
 #~ msgstr "abierta"
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Open a WalletConnect wallet or copy the pairing link."
+msgstr ""
+
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Open command menu"
 msgstr ""
@@ -1702,6 +1809,18 @@ msgstr "Órdenes abiertas"
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Open positions count"
 #~ msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Open terminal"
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Open the phone link, then enter the pairing code shown on desktop."
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Open wallet"
+msgstr ""
 
 #: src/components/trade/layout/market-overview-variants-demo.tsx
 #~ msgid "Oracle"
@@ -1772,6 +1891,10 @@ msgstr ""
 #~ msgid "Other Options"
 #~ msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Owner account"
+msgstr ""
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "P&L"
 #~ msgstr ""
@@ -1787,6 +1910,23 @@ msgstr ""
 #: src/components/ui/pagination.tsx
 #~ msgid "pagination"
 #~ msgstr "paginación"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "Pairing code"
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Pairing code does not match this link."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Paste link from desktop"
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Paste the full phone link from desktop."
+msgstr ""
 
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
@@ -1827,6 +1967,26 @@ msgstr ""
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
 #~ msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Phone access ready"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Phone access reset. The replacement key expires at {expiresAtLabel}."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Phone link"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Phone link QR"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Phone link ready"
+msgstr ""
 
 #. placeholder {0}: input.sideLabel
 #: src/lib/trade/use-button-content.ts
@@ -1879,11 +2039,20 @@ msgstr ""
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Position closed"
+#~ msgid "Position closed"
+#~ msgstr ""
+
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Position closed — {coin}"
 msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Position reversed"
+#~ msgid "Position reversed"
+#~ msgstr ""
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Position reversed — {coin}"
 msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
@@ -1942,6 +2111,10 @@ msgstr ""
 #~ msgid "Progress"
 #~ msgstr "Progreso"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "QR visible"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Randomize timing"
 msgstr ""
@@ -1992,12 +2165,28 @@ msgstr ""
 #~ msgid "Remove from favorites"
 #~ msgstr "Quitar de favoritos"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Replaces the current phone key. The old phone must link again."
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Requirements:"
 #~ msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Reset"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Reset phone access"
+msgstr ""
+
 #: src/components/trade/market-overview.tsx
 msgid "Resets in"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Resetting..."
 msgstr ""
 
 #: src/components/trade/mobile/offline-banner.tsx
@@ -2044,6 +2233,10 @@ msgstr ""
 
 #: src/lib/errors/definitions/scale.ts
 msgid "Scale levels must be {SCALE_LEVELS_MIN}-{SCALE_LEVELS_MAX}"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Scan on your phone"
 msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
@@ -2226,6 +2419,10 @@ msgstr ""
 #~ msgid "Show Positions on Chart"
 #~ msgstr "Mostrar posiciones en gráfico"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Show QR"
+msgstr ""
+
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Scanlines"
 #~ msgstr "Mostrar líneas de escaneo"
@@ -2318,8 +2515,8 @@ msgid "Slippage tolerance"
 msgstr ""
 
 #: src/lib/errors.ts
-msgid "Something went wrong"
-msgstr "Algo salió mal"
+#~ msgid "Something went wrong"
+#~ msgstr "Algo salió mal"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
@@ -2590,6 +2787,26 @@ msgstr "La página que buscas no existe."
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "This is not a valid HypeTerminal mobile link."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This link was created for a different network."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This link was created for a different site."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This mobile link expired."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This phone link is not approved on Hyperliquid."
+msgstr ""
+
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
 msgstr ""
@@ -2723,6 +2940,10 @@ msgstr "Operaciones"
 msgid "Trading"
 msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Trading key approved"
+msgstr ""
+
 #: src/components/trade/chart/chart-source-toggle.tsx
 msgid "TradingView"
 msgstr ""
@@ -2770,6 +2991,10 @@ msgstr ""
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #~ msgid "Trigger Price (USDC)"
 #~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Try again"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
@@ -2855,6 +3080,15 @@ msgstr "Valor en USD"
 msgid "USDC"
 msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Use phone link"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "Using"
+msgstr ""
+
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Value"
 #~ msgstr "Valor"
@@ -2901,10 +3135,15 @@ msgstr ""
 #~ msgid "Wallet client not ready"
 #~ msgstr "Cliente de billetera no está listo"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "Wallet not connected"
 msgstr "Billetera no conectada"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "WalletConnect pairing ready"
+msgstr ""
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #~ msgid "WebSocket error"
@@ -2994,4 +3233,8 @@ msgstr ""
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your transaction is being processed"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Your wallet approves one trading key for this phone. It cannot withdraw funds."
 msgstr ""

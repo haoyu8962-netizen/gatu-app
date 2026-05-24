@@ -61,8 +61,28 @@ export {
 	useAgentWalletStorage,
 	writeAgentToStorage,
 } from "./signing/agent-storage";
+export {
+	createMobileAgentApproval,
+	createMobileAgentName,
+	createMobileAgentRevocationApproval,
+	createMobileAgentStorageMetadata,
+	createMobileAgentWalletRecord,
+	findApprovedMobileAgent,
+	getMobileAgentNameBase,
+	isMobileAgentName,
+	isStoredMobileAgent,
+	MOBILE_AGENT_NAME_BASE,
+	MOBILE_AGENT_REVOKE_VALIDITY_MS,
+	MOBILE_AGENT_VALIDITY_MS,
+	type MobileAgentApproval,
+	type MobileAgentStorageMetadata,
+	type MobileAgentVerification,
+	shouldClearMobileAgent,
+	verifyMobileAgent,
+} from "./signing/mobile-agent";
 export type {
 	AgentWallet,
+	AgentWalletSource,
 	BuilderConfig,
 	HyperliquidEnv,
 	RegistrationStatus,
