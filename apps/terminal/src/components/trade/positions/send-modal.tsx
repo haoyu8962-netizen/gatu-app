@@ -16,7 +16,7 @@ import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
-import { type BalanceRow, getAvailableFromTotals, getPerpAvailable } from "@/domain/trade/balances";
+import { type BalanceRow, getPerpAvailable, getSpotAvailable, getSpotAvailableValue } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { useExchange } from "@/lib/hyperliquid";
@@ -69,7 +69,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 	const { getToken } = useSpotTokens();
 	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset");
 	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend");
-	const { perpSummary, spotBalances } = useDefaultDexBalances();
+	const { perpSummary, spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
 
 	const isPending = isSendAssetPending || isSpotSendPending;
 
@@ -77,19 +77,19 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 		if (!spotBalances?.length) return [];
 		return spotBalances
 			.filter((b) => {
-				const available = getAvailableFromTotals(b.total, b.hold);
+				const available = getSpotAvailable(b, spotAvailableAfterMaintenance);
 				return available > 0;
 			})
 			.map((b) => ({
 				asset: b.coin,
 				type: "spot" as const,
-				available: String(getAvailableFromTotals(b.total, b.hold)),
+				available: getSpotAvailableValue(b, spotAvailableAfterMaintenance),
 				inOrder: b.hold,
 				total: b.total,
 				usdValue: b.coin === DEFAULT_QUOTE_TOKEN ? b.total : b.entryNtl,
 				entryNtl: b.entryNtl,
 			}));
-	}, [spotBalances]);
+	}, [spotBalances, spotAvailableAfterMaintenance]);
 
 	const tokenOptions = useMemo(() => {
 		if (accountType === "perp") {
@@ -108,8 +108,8 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 			return getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed);
 		}
 		const balance = spotBalances?.find((b) => b.coin === selectedToken);
-		return getAvailableFromTotals(balance?.total, balance?.hold);
-	}, [accountType, perpSummary, spotBalances, selectedToken]);
+		return getSpotAvailable(balance, spotAvailableAfterMaintenance);
+	}, [accountType, perpSummary, spotBalances, selectedToken, spotAvailableAfterMaintenance]);
 
 	const isValidDestination = isAddress(destination);
 	const isValidAmount = isAmountWithinBalance(amount, availableBalance);

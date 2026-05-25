@@ -4,6 +4,7 @@ import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phos
 import { useConnection } from "wagmi";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { DEFAULT_QUOTE_TOKEN, FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { getSpotAvailableValue } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
@@ -20,8 +21,14 @@ type SummaryRow = {
 export function AccountPanel() {
 	const { open: openDepositModal } = useDepositModalActions();
 	const { isConnected } = useConnection();
-	const { marginSummary, perpSummary, perpPositions, spotBalances, crossMaintenanceMarginUsed } =
-		useDefaultDexBalances();
+	const {
+		marginSummary,
+		perpSummary,
+		perpPositions,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		crossMaintenanceMarginUsed,
+	} = useDefaultDexBalances();
 
 	let perpMetrics = null;
 	if (marginSummary && perpSummary) {
@@ -55,12 +62,11 @@ export function AccountPanel() {
 
 		for (const b of spotBalances) {
 			const total = toNumberOrZero(b.total);
-			const hold = toNumberOrZero(b.hold);
 			const entryNtl = toNumberOrZero(b.entryNtl);
 
 			if (total === 0) continue;
 
-			const available = Math.max(0, total - hold);
+			const available = toNumberOrZero(getSpotAvailableValue(b, spotAvailableAfterMaintenance));
 			const usdValue = b.coin === DEFAULT_QUOTE_TOKEN ? total : entryNtl;
 
 			totalValue += usdValue;

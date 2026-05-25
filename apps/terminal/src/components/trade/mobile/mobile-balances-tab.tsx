@@ -9,7 +9,8 @@ import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import {
 	type BalanceRow,
 	filterBalanceRowsByUsdValue,
-	getBalanceRows,
+	getPerpBalanceRows,
+	getSpotBalanceRows,
 	getTotalUsdValue,
 } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
@@ -47,18 +48,29 @@ export function MobileBalancesTab({ className }: Props) {
 		accountType: "spot",
 	});
 
-	const { perpSummary, spotBalances, isLoading, hasError } = useDefaultDexBalances();
+	const { perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, isLoading, hasError } =
+		useDefaultDexBalances();
 	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const mids = allMidsEvent?.mids;
 
-	const balances = useMemo(() => getBalanceRows(perpSummary, spotBalances), [perpSummary, spotBalances]);
-	const filteredBalances = useMemo(() => {
-		if (!hideSmallBalances) return balances;
-		return filterBalanceRowsByUsdValue(balances, SMALL_BALANCE_THRESHOLD_USD);
-	}, [balances, hideSmallBalances]);
+	const perpBalances = useMemo(
+		() => getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction),
+		[accountAbstraction, perpSummary, spotBalances, spotAvailableAfterMaintenance],
+	);
+	const spotBalanceRows = useMemo(
+		() => getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction),
+		[accountAbstraction, spotBalances, spotAvailableAfterMaintenance],
+	);
+	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
+	const filteredPerpBalances = useMemo(() => {
+		if (!hideSmallBalances) return perpBalances;
+		return filterBalanceRowsByUsdValue(perpBalances, SMALL_BALANCE_THRESHOLD_USD);
+	}, [hideSmallBalances, perpBalances]);
+	const filteredSpotBalances = useMemo(() => {
+		if (!hideSmallBalances) return spotBalanceRows;
+		return filterBalanceRowsByUsdValue(spotBalanceRows, SMALL_BALANCE_THRESHOLD_USD);
+	}, [hideSmallBalances, spotBalanceRows]);
 
-	const perpBalances = useMemo(() => filteredBalances.filter((row) => row.type === "perp"), [filteredBalances]);
-	const spotBalancesFiltered = useMemo(() => filteredBalances.filter((row) => row.type === "spot"), [filteredBalances]);
 	const totalValue = useMemo(() => getTotalUsdValue(balances), [balances]);
 
 	function getPnl(row: BalanceRow): { pnl: number; pnlPercent: number } | null {
@@ -200,16 +212,16 @@ export function MobileBalancesTab({ className }: Props) {
 					<span className="text-success font-semibold tabular-nums">{formatUSD(totalValue, { compact: true })}</span>
 				</div>
 				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
-					{perpBalances.length > 0 && (
+					{filteredPerpBalances.length > 0 && (
 						<>
 							<div className="text-xs uppercase tracking-wider text-brand font-medium px-1 pt-1">{t`Perpetuals`}</div>
-							{perpBalances.map(renderBalanceCard)}
+							{filteredPerpBalances.map(renderBalanceCard)}
 						</>
 					)}
-					{spotBalancesFiltered.length > 0 && (
+					{filteredSpotBalances.length > 0 && (
 						<>
 							<div className="text-xs uppercase tracking-wider text-warning font-medium px-1 pt-1">{t`Spot`}</div>
-							{spotBalancesFiltered.map(renderBalanceCard)}
+							{filteredSpotBalances.map(renderBalanceCard)}
 						</>
 					)}
 				</div>

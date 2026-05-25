@@ -7,7 +7,7 @@ import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SWAP_SUCCESS_DURATION_MS } from "@/config/time";
-import { getAvailableFromTotals, getSpotBalance } from "@/domain/trade/balances";
+import { getSpotAvailable, getSpotBalance } from "@/domain/trade/balances";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { findSpotPair, getAvailablePairTokens, getSwapSide } from "@/domain/trade/swap";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
@@ -48,7 +48,7 @@ interface Props {
 
 function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Props) {
 	const { spotMarkets } = useMarketsInfo();
-	const { spotBalances } = useDefaultDexBalances();
+	const { spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
 	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
 
 	const defaultToToken = useMemo(() => {
@@ -66,9 +66,9 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 	const getTokenBalance = useCallback(
 		(token: string) => {
 			const balance = getSpotBalance(spotBalances, token);
-			return getAvailableFromTotals(balance?.total, balance?.hold);
+			return getSpotAvailable(balance, spotAvailableAfterMaintenance);
 		},
-		[spotBalances],
+		[spotBalances, spotAvailableAfterMaintenance],
 	);
 
 	const fromBalance = getTokenBalance(fromToken);

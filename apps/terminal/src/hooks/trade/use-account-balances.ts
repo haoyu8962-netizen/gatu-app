@@ -1,19 +1,27 @@
-import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent } from "@nktkas/hyperliquid";
+import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent, WebData3WsEvent } from "@nktkas/hyperliquid";
+import { useMemo } from "react";
 import { useConnection } from "wagmi";
 import { useSubscription } from "@/lib/hyperliquid";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
+type RawSpotState = SpotStateWsEvent["spotState"] & {
+	tokenToAvailableAfterMaintenance?: Array<[number | string, string]>;
+};
 
 export type MarginSummary = RawClearinghouseState["marginSummary"];
 export type PerpSummary = RawClearinghouseState["crossMarginSummary"];
 export type PerpPosition = RawClearinghouseState["assetPositions"][number];
 export type SpotBalance = NonNullable<SpotStateWsEvent["spotState"]["balances"]>[number];
+export type SpotAvailableAfterMaintenance = NonNullable<RawSpotState["tokenToAvailableAfterMaintenance"]>;
+export type AccountAbstraction = NonNullable<WebData3WsEvent["userState"]["abstraction"]> | null;
 
 export interface AccountBalances {
 	marginSummary: MarginSummary | null;
 	perpSummary: PerpSummary | null;
 	perpPositions: PerpPosition[];
 	spotBalances: SpotBalance[];
+	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance;
+	accountAbstraction: AccountAbstraction;
 	withdrawable: string;
 	crossMaintenanceMarginUsed: string;
 	isLoading: boolean;
@@ -22,10 +30,13 @@ export interface AccountBalances {
 
 const EMPTY_SPOT_BALANCES: SpotBalance[] = [];
 const EMPTY_PERP_POSITIONS: PerpPosition[] = [];
+const EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE: SpotAvailableAfterMaintenance = [];
 
 export interface AllDexsAccountState {
 	clearinghouseStates: AllDexsClearinghouseStateWsEvent["clearinghouseStates"];
 	spotBalances: SpotBalance[];
+	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance;
+	accountAbstraction: AccountAbstraction;
 	isLoading: boolean;
 	hasError: boolean;
 }
@@ -41,24 +52,43 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	);
 
 	const { data: spotEvent, status: spotStatus } = useSubscription("spotState", { user: address ?? "0x0" }, { enabled });
+	const { data: webData3Event, status: webData3Status } = useSubscription(
+		"webData3",
+		{ user: address ?? "0x0" },
+		{ enabled },
+	);
+	const spotState = spotEvent?.spotState as RawSpotState | undefined;
 
 	const clearinghouseStates = clearinghouseEvent?.clearinghouseStates ?? [];
-	const spotBalances = spotEvent?.spotState?.balances ?? EMPTY_SPOT_BALANCES;
+	const spotBalances = spotState?.balances ?? EMPTY_SPOT_BALANCES;
+	const accountAbstraction = webData3Event?.userState.abstraction ?? null;
+	const spotAvailableAfterMaintenance = useMemo(
+		() => spotState?.tokenToAvailableAfterMaintenance ?? EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
+		[spotState?.tokenToAvailableAfterMaintenance],
+	);
 
 	const isLoading =
-		perpStatus === "subscribing" || perpStatus === "idle" || spotStatus === "subscribing" || spotStatus === "idle";
-	const hasError = perpStatus === "error" || spotStatus === "error";
+		perpStatus === "subscribing" ||
+		perpStatus === "idle" ||
+		spotStatus === "subscribing" ||
+		spotStatus === "idle" ||
+		webData3Status === "subscribing" ||
+		webData3Status === "idle";
+	const hasError = perpStatus === "error" || spotStatus === "error" || webData3Status === "error";
 
 	return {
 		clearinghouseStates,
 		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
 		isLoading,
 		hasError,
 	};
 }
 
 export function useDefaultDexBalances(): AccountBalances {
-	const { clearinghouseStates, spotBalances, isLoading, hasError } = useAllDexsAccountState();
+	const { clearinghouseStates, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, isLoading, hasError } =
+		useAllDexsAccountState();
 
 	const mainDex = clearinghouseStates.find(([dex]) => dex === "")?.[1];
 	const marginSummary = mainDex?.marginSummary ?? null;
@@ -72,6 +102,8 @@ export function useDefaultDexBalances(): AccountBalances {
 		perpSummary,
 		perpPositions,
 		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
 		withdrawable,
 		crossMaintenanceMarginUsed,
 		isLoading,
