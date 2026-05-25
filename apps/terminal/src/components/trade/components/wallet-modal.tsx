@@ -14,7 +14,7 @@ import {
 	WarningCircleIcon,
 	XIcon,
 } from "@phosphor-icons/react";
-import { type ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import type { Address } from "viem";
 import { isAddress } from "viem";
 import { type Connector, useConnect, useConnectors } from "wagmi";
@@ -22,6 +22,11 @@ import { mock } from "wagmi/connectors";
 import { MOCK_WALLETS } from "@/config/wagmi";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
+import {
+	classifyQrValue,
+	type QrFeedbackThrottleState,
+	shouldShowQrFeedback,
+} from "@/lib/mobile-sync/qr-classification";
 import {
 	addRecentWallet,
 	getRecentWallets,
@@ -34,6 +39,9 @@ import {
 
 const WALLET_LIST_MAX_HEIGHT = "max-h-[min(55vh,22rem)]";
 const DRAWER_HANDLE_SIZE_CLASS = "w-8 h-1";
+const WRONG_QR_FEEDBACK_THROTTLE_MS = 1800;
+
+type ScannerDetectionResult = "stop" | "continue";
 
 type BarcodeDetectorConstructor = new (options?: {
 	formats?: string[];
@@ -187,17 +195,32 @@ function DesktopWalletScannerPanel({
 	errorMessage,
 	isConnecting,
 	onCancel,
-	onScan,
+	onQrValue,
 }: {
 	errorMessage: string | null;
 	isConnecting: boolean;
 	onCancel: () => void;
-	onScan: (uri: string) => void;
+	onQrValue: (value: string) => ScannerDetectionResult;
 }) {
+	const titleId = useId();
+	const panelRef = useRef<HTMLDivElement | null>(null);
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const [cameraReady, setCameraReady] = useState(false);
 	const [cameraError, setCameraError] = useState<string | null>(null);
+	const [manualUri, setManualUri] = useState("");
 	const visibleError = errorMessage ?? cameraError;
+	const hasQrTypeError = !!errorMessage;
+
+	function handleManualSubmit(event: FormEvent<HTMLFormElement>) {
+		event.preventDefault();
+		if (!manualUri.trim()) return;
+		const result = onQrValue(manualUri);
+		if (result === "stop") setManualUri("");
+	}
+
+	useEffect(() => {
+		panelRef.current?.focus();
+	}, []);
 
 	useEffect(() => {
 		if (isConnecting) {
@@ -262,9 +285,16 @@ function DesktopWalletScannerPanel({
 			if (video) {
 				const detectedValue = await readQrCode(video);
 				if (cancelled) return;
-				if (detectedValue?.startsWith("wc:")) {
-					onScan(detectedValue);
-					return;
+				if (detectedValue) {
+					const result = onQrValue(detectedValue);
+					if (result === "stop") {
+						cancelled = true;
+						if (animationFrame) window.cancelAnimationFrame(animationFrame);
+						stream?.getTracks().forEach((track) => {
+							track.stop();
+						});
+						return;
+					}
 				}
 			}
 			if (cancelled) return;
@@ -275,16 +305,33 @@ function DesktopWalletScannerPanel({
 			setCameraReady(false);
 			setCameraError(null);
 
+			async function requestCameraStream() {
+				try {
+					return await navigator.mediaDevices.getUserMedia({
+						audio: false,
+						video: { facingMode: { ideal: "environment" } },
+					});
+				} catch (error) {
+					if (
+						error instanceof DOMException &&
+						(error.name === "OverconstrainedError" || error.name === "NotFoundError")
+					) {
+						return await navigator.mediaDevices.getUserMedia({
+							audio: false,
+							video: true,
+						});
+					}
+					throw error;
+				}
+			}
+
 			try {
 				if (!navigator.mediaDevices?.getUserMedia) {
 					setCameraError(t`Camera access is not available in this browser.`);
 					return;
 				}
 
-				const cameraStream = await navigator.mediaDevices.getUserMedia({
-					audio: false,
-					video: { facingMode: { ideal: "environment" } },
-				});
+				const cameraStream = await requestCameraStream();
 				if (cancelled) {
 					cameraStream.getTracks().forEach((track) => {
 						track.stop();
@@ -304,6 +351,14 @@ function DesktopWalletScannerPanel({
 				animationFrame = window.requestAnimationFrame(scanNextFrame);
 			} catch (error) {
 				if (cancelled) return;
+				if (error instanceof DOMException && error.name === "NotFoundError") {
+					setCameraError(t`No camera was found on this device.`);
+					return;
+				}
+				if (error instanceof DOMException && error.name === "NotReadableError") {
+					setCameraError(t`Could not open the camera.`);
+					return;
+				}
 				setCameraError(
 					error instanceof DOMException && error.name === "NotAllowedError"
 						? t`Camera permission was denied.`
@@ -322,30 +377,41 @@ function DesktopWalletScannerPanel({
 			});
 			if (videoRef.current) videoRef.current.srcObject = null;
 		};
-	}, [isConnecting, onScan]);
+	}, [isConnecting, onQrValue]);
 
 	return (
-		<div className="mx-3 mb-3 rounded-xs border border-stroke-brand-strong/30 bg-fill-weak p-3 space-y-3">
+		<section
+			ref={panelRef}
+			tabIndex={-1}
+			aria-labelledby={titleId}
+			className="flex max-h-[min(76dvh,40rem)] flex-col gap-3 px-4 pb-4 focus:outline-none"
+		>
 			<div className="flex items-start gap-2">
 				<QrCodeIcon className="size-4 text-brand mt-0.5 shrink-0" aria-hidden="true" />
 				<div className="min-w-0 space-y-0.5">
-					<p className="text-sm font-semibold text-fg">
-						<Trans>Scan desktop wallet QR</Trans>
+					<p id={titleId} className="text-sm font-semibold text-fg">
+						{hasQrTypeError ? <Trans>Wrong QR type</Trans> : <Trans>Scan WalletConnect QR</Trans>}
 					</p>
 					<p className="text-xs text-fg-muted">
-						<Trans>Point your camera at the WalletConnect QR code on your desktop wallet.</Trans>
+						{isConnecting ? (
+							<Trans>Connecting</Trans>
+						) : cameraReady ? (
+							<Trans>Looking for a WalletConnect QR code</Trans>
+						) : (
+							<Trans>Point your camera at the WalletConnect QR code on your desktop wallet.</Trans>
+						)}
 					</p>
 				</div>
 			</div>
 
-			<div className="relative overflow-hidden rounded-xs border border-stroke-weak bg-fill">
+			<div className="relative min-h-0 overflow-hidden rounded-xs border border-stroke-weak bg-fill">
 				<video
 					ref={videoRef}
 					aria-label={t`Desktop wallet QR scanner`}
 					autoPlay
 					muted
 					playsInline
-					className="aspect-square w-full bg-black object-cover"
+					className="aspect-[4/3] max-h-[min(48dvh,24rem)] w-full bg-black object-cover"
 				/>
 				<div className="pointer-events-none absolute inset-[18%] rounded-xs border-2 border-white/80 shadow-[0_0_0_999px_rgba(0,0,0,0.35)]" />
 				{isConnecting && (
@@ -375,18 +441,35 @@ function DesktopWalletScannerPanel({
 				</p>
 			)}
 
+			<form className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]" onSubmit={handleManualSubmit}>
+				<TextInput
+					aria-label={t`Paste WalletConnect URI`}
+					value={manualUri}
+					onChange={(event: ChangeEvent<HTMLInputElement>) => setManualUri(event.target.value)}
+					placeholder={t`Paste WalletConnect URI`}
+					autoCapitalize="none"
+					autoCorrect="off"
+					inputMode="url"
+					spellCheck={false}
+					disabled={isConnecting}
+				/>
+				<Button type="submit" variant="outline" intent="neutral" size="md" disabled={isConnecting || !manualUri.trim()}>
+					<Trans>Connect</Trans>
+				</Button>
+			</form>
+
 			<button
 				type="button"
 				onClick={onCancel}
 				className={cn(
-					"inline-flex h-9 w-full items-center justify-center rounded-xs border border-stroke-weak px-3 text-sm font-medium",
-					"bg-fill hover:bg-fill-hover active:bg-fill-press transition-colors",
+					"sticky bottom-0 z-10 inline-flex h-11 w-full items-center justify-center rounded-xs border border-stroke-weak px-3 text-sm font-medium",
+					"bg-fill-weak text-fg hover:bg-fill-hover active:bg-fill-press transition-colors",
 					"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 				)}
 			>
-				<Trans>Cancel</Trans>
+				<Trans>Back</Trans>
 			</button>
-		</div>
+		</section>
 	);
 }
 
@@ -504,6 +587,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 	const [walletConnectUri, setWalletConnectUri] = useState<string | null>(null);
 	const [desktopWalletScannerOpen, setDesktopWalletScannerOpen] = useState(false);
 	const [desktopWalletScannerError, setDesktopWalletScannerError] = useState<string | null>(null);
+	const lastScannerFeedbackRef = useRef<QrFeedbackThrottleState | null>(null);
 	const [showAll, setShowAll] = useState(false);
 	const [showMock, setShowMock] = useState(false);
 	const [recentWallets] = useState(() => getRecentWallets());
@@ -540,6 +624,39 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 			}
 		},
 		[connectAsync, onClose, walletConnectConnector],
+	);
+
+	const showScannerFeedback = useCallback((message: string) => {
+		const nowMs = Date.now();
+		const lastFeedback = lastScannerFeedbackRef.current;
+		if (!shouldShowQrFeedback(lastFeedback, message, nowMs, WRONG_QR_FEEDBACK_THROTTLE_MS)) return;
+
+		lastScannerFeedbackRef.current = { message, atMs: nowMs };
+		setDesktopWalletScannerError(message);
+	}, []);
+
+	const handleScannerQrValue = useCallback(
+		(value: string): ScannerDetectionResult => {
+			const classification = classifyQrValue(value);
+			if (classification.type === "walletconnect") {
+				if (!getWalletConnectPairingTopic(classification.uri)) {
+					showScannerFeedback(t`Scan a WalletConnect QR code.`);
+					return "continue";
+				}
+				handleScannedWalletConnectUri(classification.uri);
+				return "stop";
+			}
+			if (classification.type === "phoneAccessLink") {
+				showScannerFeedback(
+					t`This is a phone-access QR. Open it with the phone camera or paste it on the phone access page.`,
+				);
+				return "continue";
+			}
+
+			showScannerFeedback(t`This is not a WalletConnect QR code.`);
+			return "continue";
+		},
+		[handleScannedWalletConnectUri, showScannerFeedback],
 	);
 
 	async function handleConnect(connector: Connector) {
@@ -609,6 +726,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 		showDesktopWalletLink && walletConnectConnector
 			? other.filter((connector) => connector.uid !== walletConnectConnector.uid)
 			: other;
+	const isScannerMode = desktopWalletScannerOpen && walletConnectConnector !== null;
 
 	return (
 		<div className="flex flex-col">
@@ -635,8 +753,23 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 				</button>
 			</div>
 
-			<div className={cn("overflow-y-auto overscroll-contain", WALLET_LIST_MAX_HEIGHT)}>
-				{hasConnectors ? (
+			<div
+				className={cn(
+					"overflow-y-auto overscroll-contain",
+					isScannerMode ? "max-h-[min(82dvh,42rem)]" : WALLET_LIST_MAX_HEIGHT,
+				)}
+			>
+				{isScannerMode && walletConnectConnector ? (
+					<DesktopWalletScannerPanel
+						errorMessage={desktopWalletScannerError}
+						isConnecting={connectingId === walletConnectConnector.uid}
+						onCancel={() => {
+							setDesktopWalletScannerOpen(false);
+							setDesktopWalletScannerError(null);
+						}}
+						onQrValue={handleScannerQrValue}
+					/>
+				) : hasConnectors ? (
 					<>
 						{showDesktopWalletLink && walletConnectConnector && (
 							<LinkDesktopWalletRow
@@ -647,18 +780,6 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 									setDesktopWalletScannerError(null);
 									setDesktopWalletScannerOpen(true);
 								}}
-							/>
-						)}
-
-						{desktopWalletScannerOpen && (
-							<DesktopWalletScannerPanel
-								errorMessage={desktopWalletScannerError}
-								isConnecting={walletConnectConnector ? connectingId === walletConnectConnector.uid : false}
-								onCancel={() => {
-									setDesktopWalletScannerOpen(false);
-									setDesktopWalletScannerError(null);
-								}}
-								onScan={handleScannedWalletConnectUri}
 							/>
 						)}
 
@@ -719,7 +840,7 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 				)}
 			</div>
 
-			{mockConnectors.length > 0 && (
+			{!isScannerMode && mockConnectors.length > 0 && (
 				<div className="border-t border-stroke-warning-strong/20 bg-warning-soft/10">
 					<button
 						type="button"
@@ -814,20 +935,22 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 				</div>
 			)}
 
-			<div className="border-t border-stroke-weak/40 px-4 py-2.5 flex items-center justify-center gap-1.5">
-				<span className="text-xs text-fg-muted">
-					<Trans>New to wallets?</Trans>
-				</span>
-				<a
-					href="https://ethereum.org/en/wallets/"
-					target="_blank"
-					rel="noopener noreferrer"
-					className="inline-flex items-center gap-1 text-xs text-brand hover:underline focus-visible:outline-2 focus-visible:outline-stroke-focus focus-visible:rounded-xs"
-				>
-					<Trans>Learn more</Trans>
-					<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
-				</a>
-			</div>
+			{!isScannerMode && (
+				<div className="border-t border-stroke-weak/40 px-4 py-2.5 flex items-center justify-center gap-1.5">
+					<span className="text-xs text-fg-muted">
+						<Trans>New to wallets?</Trans>
+					</span>
+					<a
+						href="https://ethereum.org/en/wallets/"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="inline-flex items-center gap-1 text-xs text-brand hover:underline focus-visible:outline-2 focus-visible:outline-stroke-focus focus-visible:rounded-xs"
+					>
+						<Trans>Learn more</Trans>
+						<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
+					</a>
+				</div>
+			)}
 		</div>
 	);
 }

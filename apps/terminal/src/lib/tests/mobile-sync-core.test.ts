@@ -50,7 +50,11 @@ describe("mobile sync core", () => {
 		expect(url.pathname).toBe(MOBILE_SYNC_ROUTE_PATH);
 		expect(url.search).toBe("");
 		expect(url.hash.startsWith(`#${MOBILE_SYNC_FRAGMENT_KEY}=`)).toBe(true);
+		expect("userAddress" in sync.envelope).toBe(false);
+		expect(JSON.stringify(sync.envelope)).not.toContain("userAddress");
+		expect(JSON.stringify(sync.envelope).toLowerCase()).not.toContain(USER_ADDRESS.toLowerCase());
 		expect(sync.url).not.toContain(AGENT_PRIVATE_KEY);
+		expect(sync.url.toLowerCase()).not.toContain(USER_ADDRESS.toLowerCase());
 		expect(sync.pairingCode).toMatch(/^[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/);
 		expect(sync.agentName).toBe(createMobileAgentName(sync.agentValidUntilMs));
 

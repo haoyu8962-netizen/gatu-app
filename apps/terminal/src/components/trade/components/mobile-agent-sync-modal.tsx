@@ -55,7 +55,8 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 	const localAgent = useAgentWalletStorage(env, address);
 	const { clearAgent } = useAgentWalletActions();
 	const approveAgent = useExchange("approveAgent");
-	const { copied, copy } = useCopyToClipboard(1500);
+	const { copied: copiedPhoneLink, copy: copyPhoneLink } = useCopyToClipboard(1500);
+	const { copied: copiedPairingCode, copy: copyPairingCode } = useCopyToClipboard(1500);
 	const [syncState, setSyncState] = useState<SyncState>({ status: "idle" });
 	const [resetState, setResetState] = useState<ResetState>({ status: "idle" });
 	const [showQr, setShowQr] = useState(false);
@@ -256,11 +257,13 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 				{isReady && (
 					<ReadySyncPanel
 						state={syncState}
-						copied={copied}
+						copiedPhoneLink={copiedPhoneLink}
+						copiedPairingCode={copiedPairingCode}
 						showQr={showQr}
 						qrDataUrl={qrDataUrl}
 						qrError={qrError}
-						onCopy={() => copy(syncState.url)}
+						onCopyPhoneLink={() => copyPhoneLink(syncState.url)}
+						onCopyPairingCode={() => copyPairingCode(syncState.pairingCode)}
 						onReveal={() => setShowQr(true)}
 					/>
 				)}
@@ -306,19 +309,23 @@ function getPrimaryButtonLabel(status: SyncState["status"]): string {
 
 function ReadySyncPanel({
 	state,
-	copied,
+	copiedPhoneLink,
+	copiedPairingCode,
 	showQr,
 	qrDataUrl,
 	qrError,
-	onCopy,
+	onCopyPhoneLink,
+	onCopyPairingCode,
 	onReveal,
 }: {
 	state: Extract<SyncState, { status: "ready" }>;
-	copied: boolean;
+	copiedPhoneLink: boolean;
+	copiedPairingCode: boolean;
 	showQr: boolean;
 	qrDataUrl: string | null;
 	qrError: string | null;
-	onCopy: () => void;
+	onCopyPhoneLink: () => void;
+	onCopyPairingCode: () => void;
 	onReveal: () => void;
 }) {
 	const expiresAtLabel = new Date(state.expiresAtMs).toLocaleTimeString([], {
@@ -341,11 +348,24 @@ function ReadySyncPanel({
 			</div>
 
 			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
-				<div className="flex items-center gap-2">
-					<KeyIcon className="size-4 text-icon" aria-hidden />
-					<p className="text-xs font-semibold text-fg-muted">
-						<Trans>Pairing code</Trans>
-					</p>
+				<div className="flex items-center justify-between gap-3">
+					<div className="flex min-w-0 items-center gap-2">
+						<KeyIcon className="size-4 shrink-0 text-icon" aria-hidden />
+						<p className="truncate text-xs font-semibold text-fg-muted">
+							<Trans>Pairing code</Trans>
+						</p>
+					</div>
+					<Button
+						type="button"
+						variant="outline"
+						intent="neutral"
+						size="sm"
+						onClick={onCopyPairingCode}
+						iconLeft={copiedPairingCode ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+						className="shrink-0"
+					>
+						{copiedPairingCode ? <Trans>Copied</Trans> : <Trans>Copy code</Trans>}
+					</Button>
 				</div>
 				<p className="mt-2 select-all rounded-8 border border-stroke-weak bg-background px-3 py-2 text-center font-mono text-base font-semibold tracking-[0.12em] text-fg">
 					{state.pairingCode}
@@ -387,11 +407,11 @@ function ReadySyncPanel({
 					variant="outline"
 					intent="neutral"
 					size="sm"
-					onClick={onCopy}
-					iconLeft={copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+					onClick={onCopyPhoneLink}
+					iconLeft={copiedPhoneLink ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
 					className="w-full"
 				>
-					{copied ? <Trans>Copied</Trans> : <Trans>Copy phone link</Trans>}
+					{copiedPhoneLink ? <Trans>Copied</Trans> : <Trans>Copy phone link</Trans>}
 				</Button>
 				<Button
 					type="button"

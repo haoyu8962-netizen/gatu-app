@@ -10,6 +10,7 @@ const testState = vi.hoisted(() => ({
 	activateWalletConnectPairing: vi.fn(),
 	connectAsync: vi.fn(),
 	isMobile: false,
+	jsQrDecode: vi.fn(),
 	pairWalletConnectUri: vi.fn(),
 	walletConnectHandler: null as ((message: ConnectorMessage) => void) | null,
 }));
@@ -70,16 +71,19 @@ vi.mock("@hypeterminal/ui", () => ({
 		label,
 		onChange,
 		value,
+		...props
 	}: {
 		label: ReactNode;
 		onChange?: (event: { target: { value: string } }) => void;
 		value?: string;
+		[key: string]: unknown;
 	}) =>
 		createElement(
 			"label",
 			null,
 			label,
 			createElement("input", {
+				...props,
 				onChange: (event) => onChange?.({ target: { value: event.currentTarget.value } }),
 				value: value ?? "",
 			}),
@@ -136,6 +140,10 @@ vi.mock("qrcode", () => ({
 	toDataURL: vi.fn(async () => "data:image/png;base64,qr"),
 }));
 
+vi.mock("jsqr", () => ({
+	default: testState.jsQrDecode,
+}));
+
 vi.mock("wagmi/connectors", () => ({
 	mock: ({ accounts }: { accounts: readonly string[] }) => ({
 		id: "mock",
@@ -190,6 +198,27 @@ function mockBarcodeDetector(detect: () => Promise<Array<{ rawValue?: string }>>
 	});
 }
 
+function mockCanvasQrFrame() {
+	Object.defineProperty(HTMLVideoElement.prototype, "videoWidth", {
+		configurable: true,
+		get: () => 96,
+	});
+	Object.defineProperty(HTMLVideoElement.prototype, "videoHeight", {
+		configurable: true,
+		get: () => 96,
+	});
+	vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+		drawImage: vi.fn(),
+		getImageData: vi.fn(() => ({
+			data: new Uint8ClampedArray(96 * 96 * 4),
+		})),
+	} as unknown as CanvasRenderingContext2D);
+}
+
+function hasAlertText(container: HTMLElement, text: string) {
+	return [...container.querySelectorAll('[role="alert"]')].some((alert) => alert.textContent?.includes(text));
+}
+
 describe("WalletModal", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -202,6 +231,8 @@ describe("WalletModal", () => {
 		testState.walletConnectHandler = null;
 		testState.activateWalletConnectPairing.mockReset();
 		testState.activateWalletConnectPairing.mockResolvedValue(undefined);
+		testState.jsQrDecode.mockReset();
+		testState.jsQrDecode.mockReturnValue(null);
 		testState.pairWalletConnectUri.mockReset();
 		testState.pairWalletConnectUri.mockResolvedValue(undefined);
 		testState.connectAsync.mockReset();
@@ -220,6 +251,8 @@ describe("WalletModal", () => {
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
 		Reflect.deleteProperty(window, "BarcodeDetector");
+		Reflect.deleteProperty(HTMLVideoElement.prototype, "videoWidth");
+		Reflect.deleteProperty(HTMLVideoElement.prototype, "videoHeight");
 	});
 
 	it("renders connector groups without crashing", async () => {
@@ -275,12 +308,23 @@ describe("WalletModal", () => {
 
 		await flushAsyncWork();
 
-		expect(container.textContent).toContain("Scan desktop wallet QR");
+		const scannerButtonLabels = [...container.querySelectorAll("button")].map((button) => button.textContent?.trim());
+		expect(container.textContent).toContain("Scan WalletConnect QR");
+		expect(container.textContent).not.toContain("Coinbase Wallet");
+		expect(container.textContent).not.toContain("New to wallets?");
+		expect(scannerButtonLabels).not.toContain("Coinbase Wallet");
+		expect(scannerButtonLabels).not.toContain("WalletConnect");
+		expect(scannerButtonLabels).not.toContain("Mock Wallet");
+		expect(scannerButtonLabels).toContain("Back");
+		expect(document.activeElement).toBe(container.querySelector('[tabindex="-1"][aria-labelledby]'));
+		expect(container.querySelector('input[aria-label="Paste WalletConnect URI"]')).not.toBeNull();
 		expect(getUserMedia).toHaveBeenCalledWith({
 			audio: false,
 			video: { facingMode: { ideal: "environment" } },
 		});
-		expect(container.querySelector('video[aria-label="Desktop wallet QR scanner"]')).not.toBeNull();
+		const scannerVideo = container.querySelector('video[aria-label="Desktop wallet QR scanner"]');
+		expect(scannerVideo).not.toBeNull();
+		expect(scannerVideo?.className).toContain("aspect-[4/3]");
 	});
 
 	it("connects a scanned WalletConnect desktop QR", async () => {
@@ -322,9 +366,164 @@ describe("WalletModal", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
-	it("does not connect if QR detection resolves after the scanner is cancelled", async () => {
+	it("connects a manually pasted WalletConnect URI from scanner mode", async () => {
 		testState.isMobile = true;
 		mockCamera();
+		mockBarcodeDetector(async () => []);
+
+		const onOpenChange = vi.fn();
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange }));
+		});
+
+		const linkDesktopButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		act(() => {
+			linkDesktopButton?.click();
+		});
+		await flushAsyncWork();
+
+		const manualUriInput = container.querySelector(
+			'input[aria-label="Paste WalletConnect URI"]',
+		) as HTMLInputElement | null;
+		expect(manualUriInput).not.toBeNull();
+		act(() => {
+			if (manualUriInput) {
+				Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(
+					manualUriInput,
+					"wc:manual@2?relay-protocol=irn",
+				);
+				manualUriInput.dispatchEvent(new Event("input", { bubbles: true }));
+			}
+		});
+		await flushAsyncWork();
+
+		act(() => {
+			manualUriInput?.closest("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+		});
+		await flushAsyncWork(8);
+
+		expect(testState.pairWalletConnectUri).toHaveBeenCalledWith({
+			activatePairing: true,
+			uri: "wc:manual@2?relay-protocol=irn",
+		});
+		expect(testState.activateWalletConnectPairing).toHaveBeenCalledWith({
+			topic: "manual",
+		});
+		expect(testState.connectAsync).toHaveBeenCalledWith(
+			expect.objectContaining({
+				connector: expect.objectContaining({ id: "walletConnect" }),
+				pairingTopic: "manual",
+			}),
+		);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("shows wrong-QR feedback for manually pasted non-WalletConnect values without connecting", async () => {
+		testState.isMobile = true;
+		mockCamera();
+		mockBarcodeDetector(async () => []);
+
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		const linkDesktopButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		act(() => {
+			linkDesktopButton?.click();
+		});
+		await flushAsyncWork();
+
+		const manualUriInput = container.querySelector(
+			'input[aria-label="Paste WalletConnect URI"]',
+		) as HTMLInputElement | null;
+		expect(manualUriInput).not.toBeNull();
+		act(() => {
+			if (manualUriInput) {
+				Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(
+					manualUriInput,
+					"https://app.hypeterminal.com/mobile-agent-sync#ht-mobile-sync=payload",
+				);
+				manualUriInput.dispatchEvent(new Event("input", { bubbles: true }));
+			}
+		});
+		await flushAsyncWork();
+
+		act(() => {
+			manualUriInput?.closest("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+		});
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("This is a phone-access QR.");
+		expect(hasAlertText(container, "This is a phone-access QR.")).toBe(true);
+		expect(testState.pairWalletConnectUri).not.toHaveBeenCalled();
+		expect(testState.connectAsync).not.toHaveBeenCalled();
+
+		act(() => {
+			if (manualUriInput) {
+				Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(
+					manualUriInput,
+					"https://example.com/not-walletconnect",
+				);
+				manualUriInput.dispatchEvent(new Event("input", { bubbles: true }));
+			}
+		});
+		await flushAsyncWork();
+
+		act(() => {
+			manualUriInput?.closest("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+		});
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("This is not a WalletConnect QR code.");
+		expect(hasAlertText(container, "This is not a WalletConnect QR code.")).toBe(true);
+		expect(testState.pairWalletConnectUri).not.toHaveBeenCalled();
+		expect(testState.connectAsync).not.toHaveBeenCalled();
+	});
+
+	it("falls back to jsqr when BarcodeDetector is unavailable", async () => {
+		testState.isMobile = true;
+		mockCamera();
+		mockCanvasQrFrame();
+		testState.jsQrDecode.mockReturnValue({ data: "wc:fallback@2?relay-protocol=irn" });
+
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		const linkDesktopButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		act(() => {
+			linkDesktopButton?.click();
+		});
+
+		await flushAsyncWork(10);
+
+		expect(testState.jsQrDecode).toHaveBeenCalled();
+		expect(testState.pairWalletConnectUri).toHaveBeenCalledWith({
+			activatePairing: true,
+			uri: "wc:fallback@2?relay-protocol=irn",
+		});
+		expect(testState.connectAsync).toHaveBeenCalledWith(
+			expect.objectContaining({
+				pairingTopic: "fallback",
+			}),
+		);
+	});
+
+	it("does not connect if QR detection resolves after the scanner is cancelled", async () => {
+		testState.isMobile = true;
+		const { stopTrack } = mockCamera();
 		let resolveDetect: ((codes: Array<{ rawValue?: string }>) => void) | null = null;
 		const detectStarted = vi.fn();
 		mockBarcodeDetector(
@@ -354,13 +553,15 @@ describe("WalletModal", () => {
 		expect(detectStarted).toHaveBeenCalled();
 
 		const cancelButton = [...container.querySelectorAll("button")].find(
-			(button) => button.textContent?.trim() === "Cancel",
+			(button) => button.textContent?.trim() === "Back",
 		);
 		expect(cancelButton).toBeDefined();
 
 		act(() => {
 			cancelButton?.click();
 		});
+		await flushAsyncWork();
+		expect(stopTrack).toHaveBeenCalled();
 
 		await act(async () => {
 			resolveDetect?.([{ rawValue: "wc:late@2?relay-protocol=irn" }]);
@@ -370,5 +571,143 @@ describe("WalletModal", () => {
 
 		expect(testState.pairWalletConnectUri).not.toHaveBeenCalled();
 		expect(testState.connectAsync).not.toHaveBeenCalled();
+	});
+
+	it("shows wrong-QR feedback for phone-access and unsupported values without connecting", async () => {
+		testState.isMobile = true;
+		mockCamera();
+		mockBarcodeDetector(async () => [
+			{
+				rawValue: "https://app.hypeterminal.com/mobile-agent-sync#ht-mobile-sync=payload",
+			},
+		]);
+
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		const linkDesktopButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		expect(linkDesktopButton).toBeDefined();
+
+		act(() => {
+			linkDesktopButton?.click();
+		});
+
+		await flushAsyncWork(8);
+
+		expect(container.textContent).toContain("This is a phone-access QR.");
+		expect(hasAlertText(container, "This is a phone-access QR.")).toBe(true);
+		expect(testState.pairWalletConnectUri).not.toHaveBeenCalled();
+		expect(testState.connectAsync).not.toHaveBeenCalled();
+	});
+
+	it("shows wrong-QR feedback for unsupported scanner values without connecting", async () => {
+		testState.isMobile = true;
+		mockCamera();
+		mockBarcodeDetector(async () => [{ rawValue: "https://example.com/not-walletconnect" }]);
+
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		const linkDesktopButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		expect(linkDesktopButton).toBeDefined();
+
+		act(() => {
+			linkDesktopButton?.click();
+		});
+
+		await flushAsyncWork(8);
+
+		expect(container.textContent).toContain("This is not a WalletConnect QR code.");
+		expect(hasAlertText(container, "This is not a WalletConnect QR code.")).toBe(true);
+		expect(testState.pairWalletConnectUri).not.toHaveBeenCalled();
+		expect(testState.connectAsync).not.toHaveBeenCalled();
+	});
+
+	it("shows camera fallback messages when camera access is unavailable or denied", async () => {
+		testState.isMobile = true;
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: undefined,
+		});
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		const linkDesktopButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		act(() => {
+			linkDesktopButton?.click();
+		});
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("Camera access is not available in this browser.");
+		expect(hasAlertText(container, "Camera access is not available in this browser.")).toBe(true);
+		expect(container.querySelector('input[aria-label="Paste WalletConnect URI"]')).not.toBeNull();
+
+		act(() => root.unmount());
+		root = createRoot(container);
+
+		const getUserMedia = vi.fn(async () => {
+			throw new DOMException("denied", "NotAllowedError");
+		});
+		Object.defineProperty(navigator, "mediaDevices", {
+			configurable: true,
+			value: { getUserMedia },
+		});
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+		await flushAsyncWork();
+
+		const linkDesktopButtonAfterRerender = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		act(() => {
+			linkDesktopButtonAfterRerender?.click();
+		});
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("Camera permission was denied.");
+		expect(hasAlertText(container, "Camera permission was denied.")).toBe(true);
+		expect(container.querySelector('input[aria-label="Paste WalletConnect URI"]')).not.toBeNull();
+	});
+
+	it("stops camera tracks when the modal closes during scanner mode", async () => {
+		testState.isMobile = true;
+		const { stopTrack } = mockCamera();
+		mockBarcodeDetector(async () => []);
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		const linkDesktopButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		act(() => {
+			linkDesktopButton?.click();
+		});
+		await flushAsyncWork();
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: false, onOpenChange: vi.fn() }));
+		});
+		await flushAsyncWork();
+
+		expect(stopTrack).toHaveBeenCalled();
 	});
 });

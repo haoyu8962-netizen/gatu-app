@@ -3,6 +3,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
 	CheckCircleIcon,
+	CopyIcon,
 	DeviceMobileIcon,
 	KeyIcon,
 	SpinnerGapIcon,
@@ -10,11 +11,27 @@ import {
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
+import {
+	type ChangeEvent,
+	type FormEvent,
+	forwardRef,
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import { useConnection } from "wagmi";
 import { WalletModal } from "@/components/trade/components/wallet-modal";
 import { shortenAddress } from "@/lib/format";
 import { useAgentWalletActions, useHyperliquid } from "@/lib/hyperliquid";
+import {
+	clearMobileSyncDraft,
+	isMobileSyncEnvelopeExpired,
+	readMobileSyncDraft,
+	saveMobileSyncDraft,
+	updateMobileSyncPairingCodeDraft,
+} from "@/lib/mobile-sync/draft-storage";
 import { isMobileSyncImportError, verifyImportedMobileAgent } from "@/lib/mobile-sync/import-verification";
 import {
 	decryptMobileAgentSyncEnvelope,
@@ -42,41 +59,160 @@ type ImportStatus =
 	| { state: "importing" }
 	| { state: "success"; userAddress: string; agentAddress: string };
 
+type EnvelopeSource = "url" | "stored" | "manual";
+
 function MobileAgentSyncRoute() {
 	const { address } = useConnection();
 	const { env, info } = useHyperliquid();
 	const { setAgent } = useAgentWalletActions();
 	const [envelope, setEnvelope] = useState<MobileSyncEnvelope | null>(null);
+	const [envelopeSource, setEnvelopeSource] = useState<EnvelopeSource | null>(null);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [linkInput, setLinkInput] = useState("");
 	const [pairingCode, setPairingCode] = useState("");
+	const [showLinkInput, setShowLinkInput] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [status, setStatus] = useState<ImportStatus>({ state: "idle" });
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
+	const errorAlertRef = useRef<HTMLDivElement | null>(null);
+	const pairingCodeInputRef = useRef<HTMLInputElement | null>(null);
+	const pairingCodeSelectionRef = useRef<number | null>(null);
+
+	const clearExpiredEnvelope = useCallback(() => {
+		clearMobileSyncDraft();
+		setEnvelope(null);
+		setEnvelopeSource(null);
+		setLoadError(t`This mobile link expired.`);
+		setSubmitError(null);
+		setPairingCode("");
+		setStatus({ state: "idle" });
+		setShowLinkInput(true);
+	}, []);
+
+	const clearInvalidEnvelope = useCallback((message: string) => {
+		clearMobileSyncDraft();
+		setEnvelope(null);
+		setEnvelopeSource(null);
+		setLoadError(message);
+		setSubmitError(null);
+		setPairingCode("");
+		setStatus({ state: "idle" });
+		setShowLinkInput(true);
+	}, []);
+
+	const loadEnvelope = useCallback(
+		(nextEnvelope: MobileSyncEnvelope, source: EnvelopeSource) => {
+			if (isMobileSyncEnvelopeExpired(nextEnvelope)) {
+				clearExpiredEnvelope();
+				return;
+			}
+
+			setEnvelope(nextEnvelope);
+			setEnvelopeSource(source);
+			setLoadError(null);
+			setSubmitError(null);
+			setPairingCode("");
+			setStatus({ state: "idle" });
+			setShowLinkInput(false);
+			saveMobileSyncDraft(nextEnvelope);
+		},
+		[clearExpiredEnvelope],
+	);
+
+	const restoreStoredDraft = useCallback(() => {
+		const storedDraft = readMobileSyncDraft();
+		if (storedDraft.status === "found") {
+			setEnvelope(storedDraft.draft.envelope);
+			setEnvelopeSource("stored");
+			setPairingCode(storedDraft.draft.pairingCodeDraft);
+			setLoadError(null);
+			setShowLinkInput(false);
+			return;
+		}
+		if (storedDraft.status === "expired") {
+			clearInvalidEnvelope(t`This mobile link expired.`);
+			return;
+		}
+		if (storedDraft.status === "invalid") {
+			clearInvalidEnvelope(t`Saved phone link was invalid. Paste the link again.`);
+		}
+	}, [clearInvalidEnvelope]);
+
+	const processLocationSyncHash = useCallback(() => {
+		if (window.location.hash) {
+			try {
+				const nextEnvelope = readAndClearMobileSyncEnvelope();
+				loadEnvelope(nextEnvelope, "url");
+			} catch (error) {
+				clearInvalidEnvelope(getMobileSyncImportErrorMessage(error));
+			}
+			return;
+		}
+
+		restoreStoredDraft();
+	}, [clearInvalidEnvelope, loadEnvelope, restoreStoredDraft]);
 
 	useEffect(() => {
-		try {
-			setEnvelope(readAndClearMobileSyncEnvelope());
-		} catch (error) {
-			setLoadError(getMobileSyncImportErrorMessage(error));
+		processLocationSyncHash();
+
+		function handleLocationChange() {
+			if (window.location.pathname === MOBILE_SYNC_ROUTE_PATH && window.location.hash) {
+				processLocationSyncHash();
+			}
 		}
-	}, []);
+
+		window.addEventListener("hashchange", handleLocationChange);
+		window.addEventListener("popstate", handleLocationChange);
+		return () => {
+			window.removeEventListener("hashchange", handleLocationChange);
+			window.removeEventListener("popstate", handleLocationChange);
+		};
+	}, [processLocationSyncHash]);
+
+	useEffect(() => {
+		if (!envelope || loadError || status.state === "success") return;
+
+		const expiresInMs = envelope.expiresAtMs - Date.now();
+		if (expiresInMs <= 0) {
+			clearExpiredEnvelope();
+			return;
+		}
+
+		const timeoutId = window.setTimeout(clearExpiredEnvelope, expiresInMs + 1);
+		return () => window.clearTimeout(timeoutId);
+	}, [clearExpiredEnvelope, envelope, loadError, status.state]);
+
+	useLayoutEffect(() => {
+		const nextSelectionStart = pairingCodeSelectionRef.current;
+		pairingCodeSelectionRef.current = null;
+		if (nextSelectionStart === null) return;
+
+		const input = pairingCodeInputRef.current;
+		if (!input || document.activeElement !== input) return;
+		input.setSelectionRange(nextSelectionStart, nextSelectionStart);
+	});
+
+	useEffect(() => {
+		if (!loadError && !submitError) return;
+		errorAlertRef.current?.focus();
+	}, [loadError, submitError]);
 
 	function handleLoadPastedLink(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
 		try {
 			const nextEnvelope = parseMobileSyncUrl(linkInput.trim());
-			setEnvelope(nextEnvelope);
-			setLoadError(null);
+			setLinkInput("");
+			loadEnvelope(nextEnvelope, "manual");
+		} catch (error) {
+			clearMobileSyncDraft();
+			setEnvelope(null);
+			setEnvelopeSource(null);
+			setLoadError(getMobileSyncImportErrorMessage(error));
 			setSubmitError(null);
 			setPairingCode("");
 			setStatus({ state: "idle" });
-		} catch (error) {
-			setEnvelope(null);
-			setLoadError(getMobileSyncImportErrorMessage(error));
-			setSubmitError(null);
-			setStatus({ state: "idle" });
+			setShowLinkInput(true);
 		}
 	}
 
@@ -110,6 +246,10 @@ function MobileAgentSyncRoute() {
 			const { privateKey, publicKey, ...metadata } = verifiedAgent;
 
 			setAgent(imported.env, imported.userAddress, privateKey, publicKey, metadata);
+			clearMobileSyncDraft();
+			setEnvelope(null);
+			setEnvelopeSource(null);
+			setPairingCode("");
 			setStatus({
 				state: "success",
 				userAddress: imported.userAddress,
@@ -121,12 +261,57 @@ function MobileAgentSyncRoute() {
 		}
 	}
 
+	function handleResetLink() {
+		clearMobileSyncDraft();
+		setEnvelope(null);
+		setEnvelopeSource(null);
+		setLoadError(null);
+		setLinkInput("");
+		setPairingCode("");
+		setSubmitError(null);
+		setStatus({ state: "idle" });
+		setShowLinkInput(false);
+	}
+
+	async function handlePastePairingCode() {
+		if (!navigator.clipboard?.readText) {
+			setSubmitError(t`Clipboard paste is not available. Paste from the keyboard menu or type the code manually.`);
+			return;
+		}
+
+		try {
+			const clipboardText = await navigator.clipboard.readText();
+			const nextPairingCode = formatPairingCodeInput(clipboardText);
+			if (nextPairingCode.replace(/[\s-]/g, "").length !== 16) {
+				setSubmitError(t`Clipboard does not contain a pairing code.`);
+				return;
+			}
+			setPairingCode(nextPairingCode);
+			updateMobileSyncPairingCodeDraft(envelope, nextPairingCode);
+			setSubmitError(null);
+		} catch {
+			setSubmitError(t`Clipboard paste was blocked. Paste from the keyboard menu or type the code manually.`);
+		}
+	}
+
 	const isImporting = status.state === "importing";
-	const disabled = !address || !envelope || !!loadError || isImporting || status.state === "success";
+	const pairingCodeReady = pairingCode.replace(/[\s-]/g, "").length === 16;
+	const pairingCodeDisabled = !envelope || !!loadError || isImporting || status.state === "success";
+	const importDisabled =
+		!address || !envelope || !!loadError || isImporting || status.state === "success" || !pairingCodeReady;
 	const needsPastedLink = !envelope || !!loadError;
+	const showPhoneLinkForm = needsPastedLink || showLinkInput;
 	const handleLinkInputChange = (event: ChangeEvent<HTMLInputElement>) => setLinkInput(event.target.value);
-	const handlePairingCodeChange = (event: ChangeEvent<HTMLInputElement>) =>
-		setPairingCode(formatPairingCodeInput(event.target.value));
+	const handlePairingCodeChange = (event: ChangeEvent<HTMLInputElement>) => {
+		pairingCodeSelectionRef.current = getFormattedPairingCodeCaretIndex(
+			event.target.value,
+			event.target.selectionStart ?? event.target.value.length,
+		);
+		const nextPairingCode = formatPairingCodeInput(event.target.value);
+		setPairingCode(nextPairingCode);
+		updateMobileSyncPairingCodeDraft(envelope, nextPairingCode);
+		setSubmitError(null);
+	};
 
 	return (
 		<>
@@ -162,15 +347,39 @@ function MobileAgentSyncRoute() {
 								</span>
 							</div>
 
+							{envelope && !loadError && (
+								<LoadedLinkPanel
+									envelope={envelope}
+									env={env}
+									connectedAddress={address}
+									pairingCodeReady={pairingCodeReady}
+									source={envelopeSource}
+									onReset={handleResetLink}
+								/>
+							)}
 							{!address && <ConnectWalletCallout onConnect={() => setWalletModalOpen(true)} />}
-							{loadError && <ErrorCallout message={loadError} />}
-							{submitError && <ErrorCallout message={submitError} />}
+							{loadError && <ErrorCallout ref={errorAlertRef} message={loadError} />}
+							{submitError && !loadError && <ErrorCallout ref={errorAlertRef} message={submitError} />}
+							{submitError && loadError && <ErrorCallout message={submitError} />}
 
 							{status.state === "success" ? (
 								<SuccessPanel userAddress={status.userAddress} agentAddress={status.agentAddress} />
 							) : (
 								<div className="space-y-3">
-									{needsPastedLink && (
+									{envelope && !loadError && !showLinkInput && (
+										<Button
+											type="button"
+											variant="outline"
+											intent="neutral"
+											size="sm"
+											className="w-full"
+											onClick={() => setShowLinkInput(true)}
+										>
+											<Trans>Use a different phone link</Trans>
+										</Button>
+									)}
+
+									{showPhoneLinkForm && (
 										<form className="space-y-3" onSubmit={handleLoadPastedLink}>
 											<TextInput
 												label={t`Phone link`}
@@ -192,28 +401,62 @@ function MobileAgentSyncRoute() {
 											>
 												<Trans>Use phone link</Trans>
 											</Button>
+											{envelope && !loadError && (
+												<Button
+													type="button"
+													variant="ghost"
+													intent="neutral"
+													size="sm"
+													className="w-full"
+													onClick={() => {
+														setShowLinkInput(false);
+														setLinkInput("");
+													}}
+												>
+													<Trans>Cancel</Trans>
+												</Button>
+											)}
 										</form>
 									)}
 
 									<form className="space-y-3" onSubmit={handleSubmit}>
-										<TextInput
-											label={t`Pairing code`}
-											value={pairingCode}
-											onChange={handlePairingCodeChange}
-											placeholder="0000-0000-0000-0000"
-											autoComplete="one-time-code"
-											autoCapitalize="characters"
-											inputMode="text"
-											iconLeft={<KeyIcon className="size-4" aria-hidden />}
-											disabled={!address || !envelope || !!loadError || isImporting}
-										/>
+										<div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+											<TextInput
+												ref={pairingCodeInputRef}
+												label={t`Pairing code`}
+												value={pairingCode}
+												onChange={handlePairingCodeChange}
+												placeholder="0000-0000-0000-0000"
+												autoComplete="one-time-code"
+												autoCapitalize="characters"
+												autoCorrect="off"
+												inputMode="text"
+												pattern="[0-9A-Fa-f\\s-]*"
+												maxLength={19}
+												spellCheck={false}
+												iconLeft={<KeyIcon className="size-4" aria-hidden />}
+												disabled={pairingCodeDisabled}
+											/>
+											<Button
+												type="button"
+												variant="outline"
+												intent="neutral"
+												size="md"
+												className="sm:w-auto"
+												disabled={pairingCodeDisabled}
+												iconLeft={<CopyIcon className="size-4" aria-hidden />}
+												onClick={handlePastePairingCode}
+											>
+												<Trans>Paste code</Trans>
+											</Button>
+										</div>
 										<Button
 											type="submit"
 											variant="filled"
 											intent="brand"
 											size="md"
 											className="w-full"
-											disabled={disabled || pairingCode.replace(/[\s-]/g, "").length !== 16}
+											disabled={importDisabled}
 											iconLeft={
 												isImporting ? (
 													<SpinnerGapIcon className="size-4 animate-spin" aria-hidden />
@@ -236,17 +479,102 @@ function MobileAgentSyncRoute() {
 	);
 }
 
-function ErrorCallout({ message }: { message: string }) {
+function LoadedLinkPanel({
+	envelope,
+	env,
+	connectedAddress,
+	pairingCodeReady,
+	source,
+	onReset,
+}: {
+	envelope: MobileSyncEnvelope;
+	env: string;
+	connectedAddress: string | undefined;
+	pairingCodeReady: boolean;
+	source: EnvelopeSource | null;
+	onReset: () => void;
+}) {
+	const expiresAtLabel = new Date(envelope.expiresAtMs).toLocaleTimeString([], {
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+	const syncPreview = envelope.syncId.slice(0, 8);
+
+	return (
+		<div className="space-y-3 rounded-8 border border-stroke-brand-strong/25 bg-fill-weak p-3">
+			<div className="flex items-start justify-between gap-3">
+				<div className="flex min-w-0 items-start gap-2">
+					<CheckCircleIcon className="mt-0.5 size-5 shrink-0 text-success" weight="fill" aria-hidden />
+					<div className="min-w-0">
+						<p className="text-sm font-semibold text-fg">
+							<Trans>Phone link loaded</Trans>
+						</p>
+						<p className="mt-0.5 truncate text-xs text-fg-muted">
+							{source === "stored" ? (
+								<Trans>Recovered after reload. Expires {expiresAtLabel}.</Trans>
+							) : (
+								<Trans>Expires {expiresAtLabel}.</Trans>
+							)}
+						</p>
+					</div>
+				</div>
+				<button
+					type="button"
+					onClick={onReset}
+					className="shrink-0 rounded-xs px-2 py-1 text-xs font-medium text-fg-muted hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+				>
+					<Trans>Reset</Trans>
+				</button>
+			</div>
+
+			<div className="grid gap-2 text-xs">
+				<RequirementRow label={t`Sync ID`} value={syncPreview} complete />
+				<RequirementRow label={t`Network`} value={env} complete />
+				<RequirementRow
+					label={t`Owner wallet`}
+					value={connectedAddress ? shortenAddress(connectedAddress) : t`Connect to verify`}
+					complete={!!connectedAddress}
+				/>
+				<RequirementRow
+					label={t`Pairing code`}
+					value={pairingCodeReady ? t`Ready` : t`Enter the desktop code`}
+					complete={pairingCodeReady}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function RequirementRow({ label, value, complete }: { label: string; value: string; complete: boolean }) {
+	return (
+		<div className="flex items-center justify-between gap-3 rounded-8 border border-stroke-weak bg-background px-3 py-2">
+			<span className="text-fg-muted">{label}</span>
+			<span className="flex min-w-0 items-center gap-1.5 font-medium text-fg">
+				<span
+					className={
+						complete ? "size-1.5 shrink-0 rounded-full bg-success" : "size-1.5 shrink-0 rounded-full bg-warning"
+					}
+					aria-hidden
+				/>
+				<span className="truncate">{value}</span>
+			</span>
+		</div>
+	);
+}
+
+const ErrorCallout = forwardRef<HTMLDivElement, { message: string }>(function ErrorCallout({ message }, ref) {
 	return (
 		<div
+			ref={ref}
 			role="alert"
+			tabIndex={-1}
 			className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/25 bg-error-soft p-3 text-xs text-error"
 		>
 			<WarningCircleIcon className="mt-0.5 size-4 shrink-0" weight="fill" aria-hidden />
 			<p>{message}</p>
 		</div>
 	);
-}
+});
 
 function ConnectWalletCallout({ onConnect }: { onConnect: () => void }) {
 	return (
@@ -310,6 +638,16 @@ function formatPairingCodeInput(value: string): string {
 		.replace(/[^0-9A-F]/g, "")
 		.slice(0, 16);
 	return cleaned.replace(/(.{4})(?=.)/g, "$1-");
+}
+
+function getFormattedPairingCodeCaretIndex(value: string, selectionStart: number): number {
+	const hexBeforeSelection = value
+		.slice(0, selectionStart)
+		.toUpperCase()
+		.replace(/[^0-9A-F]/g, "")
+		.slice(0, 16).length;
+	if (hexBeforeSelection <= 0) return 0;
+	return hexBeforeSelection + Math.floor((hexBeforeSelection - 1) / 4);
 }
 
 function getMobileSyncImportErrorMessage(error: unknown): string {
