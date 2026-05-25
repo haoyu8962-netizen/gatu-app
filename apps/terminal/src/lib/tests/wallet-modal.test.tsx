@@ -4,6 +4,16 @@ import { act, createElement, Fragment, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+type ConnectorMessage = { type?: string; data?: unknown };
+
+const testState = vi.hoisted(() => ({
+	activateWalletConnectPairing: vi.fn(),
+	connectAsync: vi.fn(),
+	isMobile: false,
+	pairWalletConnectUri: vi.fn(),
+	walletConnectHandler: null as ((message: ConnectorMessage) => void) | null,
+}));
+
 function renderChildren(children: ReactNode) {
 	return createElement(Fragment, null, children);
 }
@@ -30,6 +40,7 @@ vi.mock("@phosphor-icons/react", () => ({
 	DeviceMobileIcon: Icon,
 	FlaskIcon: Icon,
 	LinkIcon: Icon,
+	QrCodeIcon: Icon,
 	SpinnerGapIcon: Icon,
 	WalletIcon: Icon,
 	WarningCircleIcon: Icon,
@@ -80,20 +91,49 @@ vi.mock("@/config/wagmi", () => ({
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
-	useIsMobile: () => false,
+	useIsMobile: () => testState.isMobile,
 }));
 
 vi.mock("wagmi", () => ({
 	useConnect: () => ({
 		error: null,
 		isPending: false,
-		mutateAsync: vi.fn(),
+		mutateAsync: testState.connectAsync,
 	}),
 	useConnectors: () => [
 		{ id: "coinbaseWallet", name: "Coinbase Wallet", type: "coinbaseWallet", uid: "coinbase" },
-		{ id: "walletConnect", name: "WalletConnect", type: "walletConnect", uid: "wallet-connect" },
+		{
+			id: "walletConnect",
+			name: "WalletConnect",
+			type: "walletConnect",
+			uid: "wallet-connect",
+			emitter: {
+				on: (_eventName: "message", handler: (message: ConnectorMessage) => void) => {
+					testState.walletConnectHandler = handler;
+				},
+				off: (_eventName: "message", handler: (message: ConnectorMessage) => void) => {
+					if (testState.walletConnectHandler === handler) testState.walletConnectHandler = null;
+				},
+			},
+			getProvider: vi.fn(async () => ({
+				signer: {
+					client: {
+						core: {
+							pairing: {
+								activate: testState.activateWalletConnectPairing,
+							},
+						},
+						pair: testState.pairWalletConnectUri,
+					},
+				},
+			})),
+		},
 		{ id: "mock", name: "Mock Wallet", type: "mock", uid: "mock" },
 	],
+}));
+
+vi.mock("qrcode", () => ({
+	toDataURL: vi.fn(async () => "data:image/png;base64,qr"),
 }));
 
 vi.mock("wagmi/connectors", () => ({
@@ -105,6 +145,51 @@ vi.mock("wagmi/connectors", () => ({
 	}),
 }));
 
+function mockCamera() {
+	const stopTrack = vi.fn();
+	const getUserMedia = vi.fn(async () => ({
+		getTracks: () => [{ stop: stopTrack }],
+	}));
+
+	Object.defineProperty(navigator, "mediaDevices", {
+		configurable: true,
+		value: { getUserMedia },
+	});
+	Object.defineProperty(HTMLMediaElement.prototype, "srcObject", {
+		configurable: true,
+		writable: true,
+		value: null,
+	});
+	vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+	vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) =>
+		window.setTimeout(() => callback(performance.now()), 0),
+	);
+	vi.spyOn(window, "cancelAnimationFrame").mockImplementation((handle) => window.clearTimeout(handle));
+
+	return { getUserMedia, stopTrack };
+}
+
+async function flushAsyncWork(times = 4) {
+	for (let i = 0; i < times; i += 1) {
+		await act(async () => {
+			await new Promise((resolve) => window.setTimeout(resolve, 0));
+		});
+	}
+}
+
+function mockBarcodeDetector(detect: () => Promise<Array<{ rawValue?: string }>>) {
+	class BarcodeDetectorMock {
+		async detect() {
+			return detect();
+		}
+	}
+	vi.stubGlobal("BarcodeDetector", BarcodeDetectorMock);
+	Object.defineProperty(window, "BarcodeDetector", {
+		configurable: true,
+		value: BarcodeDetectorMock,
+	});
+}
+
 describe("WalletModal", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -113,6 +198,14 @@ describe("WalletModal", () => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
+		testState.isMobile = false;
+		testState.walletConnectHandler = null;
+		testState.activateWalletConnectPairing.mockReset();
+		testState.activateWalletConnectPairing.mockResolvedValue(undefined);
+		testState.pairWalletConnectUri.mockReset();
+		testState.pairWalletConnectUri.mockResolvedValue(undefined);
+		testState.connectAsync.mockReset();
+		testState.connectAsync.mockResolvedValue(undefined);
 		vi.stubGlobal("localStorage", {
 			getItem: vi.fn(() => null),
 			setItem: vi.fn(),
@@ -124,7 +217,9 @@ describe("WalletModal", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.clearAllMocks();
+		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
+		Reflect.deleteProperty(window, "BarcodeDetector");
 	});
 
 	it("renders connector groups without crashing", async () => {
@@ -137,5 +232,143 @@ describe("WalletModal", () => {
 		expect(container.textContent).toContain("Coinbase Wallet");
 		expect(container.textContent).toContain("WalletConnect");
 		expect(container.textContent).toContain("Mock Wallet");
+	});
+
+	it("keeps the standard mobile WalletConnect path available alongside desktop linking", async () => {
+		testState.isMobile = true;
+
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		const buttons = [...container.querySelectorAll("button")];
+		expect(buttons.some((button) => button.textContent?.includes("Link desktop wallet"))).toBe(true);
+		expect(
+			buttons.some(
+				(button) =>
+					button.textContent?.includes("WalletConnect") && !button.textContent?.includes("Link desktop wallet"),
+			),
+		).toBe(true);
+	});
+
+	it("shows a mobile link desktop wallet action and starts the camera scanner", async () => {
+		testState.isMobile = true;
+		const { getUserMedia } = mockCamera();
+		mockBarcodeDetector(async () => []);
+
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		const linkDesktopButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		expect(linkDesktopButton).toBeDefined();
+
+		act(() => {
+			linkDesktopButton?.click();
+		});
+
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("Scan desktop wallet QR");
+		expect(getUserMedia).toHaveBeenCalledWith({
+			audio: false,
+			video: { facingMode: { ideal: "environment" } },
+		});
+		expect(container.querySelector('video[aria-label="Desktop wallet QR scanner"]')).not.toBeNull();
+	});
+
+	it("connects a scanned WalletConnect desktop QR", async () => {
+		testState.isMobile = true;
+		mockCamera();
+		mockBarcodeDetector(async () => [{ rawValue: "wc:abc123@2?relay-protocol=irn" }]);
+
+		const onOpenChange = vi.fn();
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange }));
+		});
+
+		const linkDesktopButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		expect(linkDesktopButton).toBeDefined();
+
+		act(() => {
+			linkDesktopButton?.click();
+		});
+
+		await flushAsyncWork(8);
+
+		expect(testState.pairWalletConnectUri).toHaveBeenCalledWith({
+			activatePairing: true,
+			uri: "wc:abc123@2?relay-protocol=irn",
+		});
+		expect(testState.activateWalletConnectPairing).toHaveBeenCalledWith({
+			topic: "abc123",
+		});
+		expect(testState.connectAsync).toHaveBeenCalledWith(
+			expect.objectContaining({
+				connector: expect.objectContaining({ id: "walletConnect" }),
+				pairingTopic: "abc123",
+			}),
+		);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("does not connect if QR detection resolves after the scanner is cancelled", async () => {
+		testState.isMobile = true;
+		mockCamera();
+		let resolveDetect: ((codes: Array<{ rawValue?: string }>) => void) | null = null;
+		const detectStarted = vi.fn();
+		mockBarcodeDetector(
+			() =>
+				new Promise((resolve) => {
+					detectStarted();
+					resolveDetect = resolve;
+				}),
+		);
+
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		const linkDesktopButton = [...container.querySelectorAll("button")].find((button) =>
+			button.textContent?.includes("Link desktop wallet"),
+		);
+		expect(linkDesktopButton).toBeDefined();
+
+		act(() => {
+			linkDesktopButton?.click();
+		});
+
+		await flushAsyncWork(6);
+		expect(detectStarted).toHaveBeenCalled();
+
+		const cancelButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent?.trim() === "Cancel",
+		);
+		expect(cancelButton).toBeDefined();
+
+		act(() => {
+			cancelButton?.click();
+		});
+
+		await act(async () => {
+			resolveDetect?.([{ rawValue: "wc:late@2?relay-protocol=irn" }]);
+			await new Promise((resolve) => window.setTimeout(resolve, 0));
+		});
+		await flushAsyncWork();
+
+		expect(testState.pairWalletConnectUri).not.toHaveBeenCalled();
+		expect(testState.connectAsync).not.toHaveBeenCalled();
 	});
 });

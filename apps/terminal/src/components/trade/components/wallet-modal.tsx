@@ -8,12 +8,13 @@ import {
 	DeviceMobileIcon,
 	FlaskIcon,
 	LinkIcon,
+	QrCodeIcon,
 	SpinnerGapIcon,
 	WalletIcon,
 	WarningCircleIcon,
 	XIcon,
 } from "@phosphor-icons/react";
-import { type ChangeEvent, useState } from "react";
+import { type ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { isAddress } from "viem";
 import { type Connector, useConnect, useConnectors } from "wagmi";
@@ -33,6 +34,48 @@ import {
 
 const WALLET_LIST_MAX_HEIGHT = "max-h-[min(55vh,22rem)]";
 const DRAWER_HANDLE_SIZE_CLASS = "w-8 h-1";
+
+type BarcodeDetectorConstructor = new (options?: {
+	formats?: string[];
+}) => {
+	detect(source: HTMLVideoElement): Promise<Array<{ rawValue?: string }>>;
+};
+
+type WindowWithBarcodeDetector = Window &
+	typeof globalThis & {
+		BarcodeDetector?: BarcodeDetectorConstructor;
+	};
+
+type WalletConnectPairingClient = {
+	core?: {
+		pairing?: {
+			activate?: (parameters: { topic: string }) => Promise<unknown>;
+		};
+	};
+	pair?: (parameters: { activatePairing?: boolean; uri: string }) => Promise<unknown>;
+};
+
+type WalletConnectProviderWithPairing = {
+	client?: WalletConnectPairingClient;
+	signer?: {
+		client?: WalletConnectPairingClient;
+	};
+};
+
+function getWalletConnectPairingTopic(uri: string) {
+	return /^wc:([^@]+)@2(?:\?|$)/.exec(uri)?.[1] ?? null;
+}
+
+async function pairWalletConnectUri(connector: Connector, uri: string) {
+	const provider = (await connector.getProvider?.()) as WalletConnectProviderWithPairing | undefined;
+	const pairingClient = provider?.client ?? provider?.signer?.client;
+	if (typeof pairingClient?.pair !== "function") return;
+	const pairingTopic = getWalletConnectPairingTopic(uri);
+	await pairingClient.pair({ activatePairing: true, uri });
+	if (pairingTopic && typeof pairingClient.core?.pairing?.activate === "function") {
+		await pairingClient.core.pairing.activate({ topic: pairingTopic });
+	}
+}
 
 function ConnectorRow({
 	connector,
@@ -90,8 +133,297 @@ function ConnectorRow({
 	);
 }
 
+function LinkDesktopWalletRow({
+	isPending,
+	isConnecting,
+	onOpenScanner,
+}: {
+	isPending: boolean;
+	isConnecting: boolean;
+	onOpenScanner: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onOpenScanner}
+			disabled={isPending || isConnecting}
+			className={cn(
+				"m-3 w-[calc(100%-1.5rem)] flex items-center gap-3 rounded-xs border border-stroke-brand-strong/30 bg-fill-weak px-3 py-3 cursor-pointer text-left",
+				"hover:bg-fill-hover active:bg-fill-press",
+				"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+				"disabled:opacity-50 disabled:cursor-not-allowed transition-colors group",
+			)}
+		>
+			<div
+				className="size-9 rounded-xs bg-brand/10 text-brand flex items-center justify-center flex-shrink-0"
+				aria-hidden="true"
+			>
+				<QrCodeIcon className="size-5" />
+			</div>
+			<div className="min-w-0 flex-1">
+				<p className="text-sm font-semibold text-fg group-hover:text-brand transition-colors">
+					<Trans>Link desktop wallet</Trans>
+				</p>
+				<p className="mt-0.5 text-xs text-fg-muted">
+					<Trans>Scan a QR code from a desktop wallet.</Trans>
+				</p>
+			</div>
+			{isConnecting ? (
+				<SpinnerGapIcon
+					className="size-3.5 animate-spin motion-reduce:animate-none text-brand flex-shrink-0"
+					aria-hidden="true"
+				/>
+			) : (
+				<CaretDownIcon
+					className="size-3 -rotate-90 text-icon flex-shrink-0 opacity-30 group-hover:opacity-60 transition-opacity"
+					aria-hidden="true"
+				/>
+			)}
+		</button>
+	);
+}
+
+function DesktopWalletScannerPanel({
+	errorMessage,
+	isConnecting,
+	onCancel,
+	onScan,
+}: {
+	errorMessage: string | null;
+	isConnecting: boolean;
+	onCancel: () => void;
+	onScan: (uri: string) => void;
+}) {
+	const videoRef = useRef<HTMLVideoElement | null>(null);
+	const [cameraReady, setCameraReady] = useState(false);
+	const [cameraError, setCameraError] = useState<string | null>(null);
+	const visibleError = errorMessage ?? cameraError;
+
+	useEffect(() => {
+		if (isConnecting) {
+			setCameraReady(false);
+			return;
+		}
+
+		let animationFrame = 0;
+		let cancelled = false;
+		let decoderUnavailable = false;
+		let canvas: HTMLCanvasElement | null = null;
+		let context: CanvasRenderingContext2D | null = null;
+		let jsQrDecoder: ((data: Uint8ClampedArray, width: number, height: number) => { data: string } | null) | null =
+			null;
+		let stream: MediaStream | null = null;
+
+		async function readQrCode(video: HTMLVideoElement) {
+			const BarcodeDetector = (window as WindowWithBarcodeDetector).BarcodeDetector;
+			if (BarcodeDetector) {
+				try {
+					const detector = new BarcodeDetector({ formats: ["qr_code"] });
+					const codes = await detector.detect(video);
+					const detectedValue = codes.find(
+						(code) => typeof code.rawValue === "string" && code.rawValue.length > 0,
+					)?.rawValue;
+					return detectedValue ?? null;
+				} catch {
+					// Fall back to canvas decoding below.
+				}
+			}
+
+			if (decoderUnavailable) return null;
+
+			if (!jsQrDecoder) {
+				try {
+					jsQrDecoder = (await import("jsqr")).default;
+				} catch {
+					decoderUnavailable = true;
+					setCameraError(t`QR scanning is not available in this browser.`);
+					return null;
+				}
+			}
+
+			if (!canvas) canvas = document.createElement("canvas");
+			if (!context) context = canvas.getContext("2d", { willReadFrequently: true });
+			if (!context) return null;
+
+			const width = video.videoWidth;
+			const height = video.videoHeight;
+			if (width <= 0 || height <= 0) return null;
+
+			canvas.width = width;
+			canvas.height = height;
+			context.drawImage(video, 0, 0, width, height);
+			const imageData = context.getImageData(0, 0, width, height);
+			return jsQrDecoder(imageData.data, width, height)?.data ?? null;
+		}
+
+		async function scanNextFrame() {
+			if (cancelled) return;
+			const video = videoRef.current;
+			if (video) {
+				const detectedValue = await readQrCode(video);
+				if (cancelled) return;
+				if (detectedValue?.startsWith("wc:")) {
+					onScan(detectedValue);
+					return;
+				}
+			}
+			if (cancelled) return;
+			animationFrame = window.requestAnimationFrame(scanNextFrame);
+		}
+
+		async function startCamera() {
+			setCameraReady(false);
+			setCameraError(null);
+
+			try {
+				if (!navigator.mediaDevices?.getUserMedia) {
+					setCameraError(t`Camera access is not available in this browser.`);
+					return;
+				}
+
+				const cameraStream = await navigator.mediaDevices.getUserMedia({
+					audio: false,
+					video: { facingMode: { ideal: "environment" } },
+				});
+				if (cancelled) {
+					cameraStream.getTracks().forEach((track) => {
+						track.stop();
+					});
+					return;
+				}
+
+				stream = cameraStream;
+				const video = videoRef.current;
+				if (video) {
+					video.srcObject = cameraStream;
+					await video.play().catch(() => undefined);
+				}
+				if (cancelled) return;
+
+				setCameraReady(true);
+				animationFrame = window.requestAnimationFrame(scanNextFrame);
+			} catch (error) {
+				if (cancelled) return;
+				setCameraError(
+					error instanceof DOMException && error.name === "NotAllowedError"
+						? t`Camera permission was denied.`
+						: t`Could not open the camera.`,
+				);
+			}
+		}
+
+		startCamera();
+
+		return () => {
+			cancelled = true;
+			if (animationFrame) window.cancelAnimationFrame(animationFrame);
+			stream?.getTracks().forEach((track) => {
+				track.stop();
+			});
+			if (videoRef.current) videoRef.current.srcObject = null;
+		};
+	}, [isConnecting, onScan]);
+
+	return (
+		<div className="mx-3 mb-3 rounded-xs border border-stroke-brand-strong/30 bg-fill-weak p-3 space-y-3">
+			<div className="flex items-start gap-2">
+				<QrCodeIcon className="size-4 text-brand mt-0.5 shrink-0" aria-hidden="true" />
+				<div className="min-w-0 space-y-0.5">
+					<p className="text-sm font-semibold text-fg">
+						<Trans>Scan desktop wallet QR</Trans>
+					</p>
+					<p className="text-xs text-fg-muted">
+						<Trans>Point your camera at the WalletConnect QR code on your desktop wallet.</Trans>
+					</p>
+				</div>
+			</div>
+
+			<div className="relative overflow-hidden rounded-xs border border-stroke-weak bg-fill">
+				<video
+					ref={videoRef}
+					aria-label={t`Desktop wallet QR scanner`}
+					autoPlay
+					muted
+					playsInline
+					className="aspect-square w-full bg-black object-cover"
+				/>
+				<div className="pointer-events-none absolute inset-[18%] rounded-xs border-2 border-white/80 shadow-[0_0_0_999px_rgba(0,0,0,0.35)]" />
+				{isConnecting && (
+					<div className="absolute inset-0 flex items-center justify-center bg-fill/80 backdrop-blur-sm">
+						<div className="flex items-center gap-2 text-sm font-medium text-fg">
+							<SpinnerGapIcon
+								className="size-4 animate-spin motion-reduce:animate-none text-brand"
+								aria-hidden="true"
+							/>
+							<Trans>Connecting desktop wallet</Trans>
+						</div>
+					</div>
+				)}
+			</div>
+
+			{visibleError ? (
+				<p role="alert" className="text-xs text-error">
+					{visibleError}
+				</p>
+			) : (
+				<p className="text-xs text-fg-muted">
+					{cameraReady ? (
+						<Trans>Camera is on. Looking for a WalletConnect QR code.</Trans>
+					) : (
+						<Trans>Opening camera...</Trans>
+					)}
+				</p>
+			)}
+
+			<button
+				type="button"
+				onClick={onCancel}
+				className={cn(
+					"inline-flex h-9 w-full items-center justify-center rounded-xs border border-stroke-weak px-3 text-sm font-medium",
+					"bg-fill hover:bg-fill-hover active:bg-fill-press transition-colors",
+					"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+				)}
+			>
+				<Trans>Cancel</Trans>
+			</button>
+		</div>
+	);
+}
+
 function WalletConnectPairingPanel({ uri, isMobile }: { uri: string; isMobile: boolean }) {
 	const [copied, setCopied] = useState(false);
+	const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+	const [qrError, setQrError] = useState<string | null>(null);
+
+	useEffect(() => {
+		let cancelled = false;
+		setQrDataUrl(null);
+		setQrError(null);
+
+		async function renderQr() {
+			try {
+				const QRCode = await import("qrcode");
+				const dataUrl = await QRCode.toDataURL(uri, {
+					errorCorrectionLevel: "M",
+					margin: 1,
+					width: 224,
+					color: {
+						dark: "#111827",
+						light: "#FFFFFF",
+					},
+				});
+				if (!cancelled) setQrDataUrl(dataUrl);
+			} catch {
+				if (!cancelled) setQrError(t`Could not render QR`);
+			}
+		}
+
+		renderQr();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [uri]);
 
 	async function handleCopy() {
 		try {
@@ -112,9 +444,26 @@ function WalletConnectPairingPanel({ uri, isMobile }: { uri: string; isMobile: b
 						<Trans>WalletConnect pairing ready</Trans>
 					</p>
 					<p className="text-xs text-fg-muted">
-						<Trans>Open a WalletConnect wallet or copy the pairing link.</Trans>
+						{isMobile ? (
+							<Trans>Scan this QR with your desktop wallet.</Trans>
+						) : (
+							<Trans>Scan this QR with your mobile wallet.</Trans>
+						)}
 					</p>
 				</div>
+			</div>
+			<div className="flex justify-center rounded-xs border border-stroke-weak bg-white p-3">
+				{qrDataUrl ? (
+					<img src={qrDataUrl} alt={t`WalletConnect QR code`} className="size-56 max-w-full" />
+				) : qrError ? (
+					<div className="flex h-56 w-56 items-center justify-center text-center text-xs font-semibold text-error">
+						{qrError}
+					</div>
+				) : (
+					<div className="flex h-56 w-56 items-center justify-center">
+						<SpinnerGapIcon className="size-5 animate-spin motion-reduce:animate-none text-brand" aria-hidden="true" />
+					</div>
+				)}
 			</div>
 			<div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
 				{isMobile && (
@@ -153,6 +502,8 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 	const { mutateAsync: connectAsync, isPending, error } = useConnect();
 	const [connectingId, setConnectingId] = useState<string | null>(null);
 	const [walletConnectUri, setWalletConnectUri] = useState<string | null>(null);
+	const [desktopWalletScannerOpen, setDesktopWalletScannerOpen] = useState(false);
+	const [desktopWalletScannerError, setDesktopWalletScannerError] = useState<string | null>(null);
 	const [showAll, setShowAll] = useState(false);
 	const [showMock, setShowMock] = useState(false);
 	const [recentWallets] = useState(() => getRecentWallets());
@@ -160,9 +511,41 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 	const [customAddressError, setCustomAddressError] = useState<string | null>(null);
 
 	const { mockConnectors, popular, other } = getWalletConnectorGroups(connectors, recentWallets);
+	const walletConnectConnector = connectors.find(isWalletConnectConnector) ?? null;
+	const showDesktopWalletLink = isMobile && walletConnectConnector !== null;
+
+	const handleScannedWalletConnectUri = useCallback(
+		async (uri: string) => {
+			if (!walletConnectConnector) return;
+
+			const pairingTopic = getWalletConnectPairingTopic(uri);
+			if (!pairingTopic) {
+				setDesktopWalletScannerError(t`Scan a WalletConnect QR code.`);
+				return;
+			}
+
+			setDesktopWalletScannerError(null);
+			setConnectingId(walletConnectConnector.uid);
+			try {
+				await pairWalletConnectUri(walletConnectConnector, uri);
+				await connectAsync({ connector: walletConnectConnector, pairingTopic } as Parameters<typeof connectAsync>[0] & {
+					pairingTopic: string;
+				});
+				addRecentWallet(walletConnectConnector.id);
+				onClose();
+			} catch (error) {
+				setDesktopWalletScannerError(error instanceof Error ? error.message : t`Failed to link desktop wallet`);
+			} finally {
+				setConnectingId(null);
+			}
+		},
+		[connectAsync, onClose, walletConnectConnector],
+	);
 
 	async function handleConnect(connector: Connector) {
 		setConnectingId(connector.uid);
+		setDesktopWalletScannerOpen(false);
+		setDesktopWalletScannerError(null);
 		if (isWalletConnectConnector(connector)) setWalletConnectUri(null);
 		const unsubscribeWalletConnectUri = subscribeWalletConnectUri(connector, setWalletConnectUri);
 		try {
@@ -212,7 +595,20 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 	}
 
 	const hasConnectors = popular.length > 0 || other.length > 0 || mockConnectors.length > 0;
-	const visibleConnectors = showAll ? [...popular, ...other] : popular;
+	const shouldPromoteWalletConnectRow =
+		showDesktopWalletLink &&
+		walletConnectConnector !== null &&
+		!showAll &&
+		!popular.some((connector) => connector.uid === walletConnectConnector.uid);
+	const visibleConnectors = showAll
+		? [...popular, ...other]
+		: shouldPromoteWalletConnectRow
+			? [...popular, walletConnectConnector]
+			: popular;
+	const otherConnectors =
+		showDesktopWalletLink && walletConnectConnector
+			? other.filter((connector) => connector.uid !== walletConnectConnector.uid)
+			: other;
 
 	return (
 		<div className="flex flex-col">
@@ -242,6 +638,30 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 			<div className={cn("overflow-y-auto overscroll-contain", WALLET_LIST_MAX_HEIGHT)}>
 				{hasConnectors ? (
 					<>
+						{showDesktopWalletLink && walletConnectConnector && (
+							<LinkDesktopWalletRow
+								isPending={isPending}
+								isConnecting={connectingId === walletConnectConnector.uid}
+								onOpenScanner={() => {
+									setWalletConnectUri(null);
+									setDesktopWalletScannerError(null);
+									setDesktopWalletScannerOpen(true);
+								}}
+							/>
+						)}
+
+						{desktopWalletScannerOpen && (
+							<DesktopWalletScannerPanel
+								errorMessage={desktopWalletScannerError}
+								isConnecting={walletConnectConnector ? connectingId === walletConnectConnector.uid : false}
+								onCancel={() => {
+									setDesktopWalletScannerOpen(false);
+									setDesktopWalletScannerError(null);
+								}}
+								onScan={handleScannedWalletConnectUri}
+							/>
+						)}
+
 						<div className="divide-y divide-stroke-weak/30">
 							{visibleConnectors.map((connector) => (
 								<ConnectorRow
@@ -255,14 +675,16 @@ function WalletContent({ onClose, isMobile }: { onClose: () => void; isMobile: b
 							))}
 						</div>
 
-						{other.length > 0 && (
+						{otherConnectors.length > 0 && (
 							<button
 								type="button"
 								onClick={() => setShowAll((v) => !v)}
 								aria-expanded={showAll}
 								className="w-full flex items-center justify-center gap-1.5 px-4 py-2 text-xs text-fg-muted hover:text-fg hover:bg-fill-hover transition-colors cursor-pointer border-t border-stroke-weak/20 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus"
 							>
-								<span>{showAll ? <Trans>Show fewer wallets</Trans> : <Trans>{other.length} more wallets</Trans>}</span>
+								<span>
+									{showAll ? <Trans>Show fewer wallets</Trans> : <Trans>{otherConnectors.length} more wallets</Trans>}
+								</span>
 								<CaretDownIcon
 									aria-hidden="true"
 									className={cn("size-3 transition-transform duration-150", showAll && "rotate-180")}

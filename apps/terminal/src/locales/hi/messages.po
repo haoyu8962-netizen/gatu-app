@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. placeholder {0}: other.length
+#. placeholder {0}: otherConnectors.length
 #: src/components/trade/components/wallet-modal.tsx
 msgid "{0} more wallets"
 msgstr ""
@@ -349,6 +349,19 @@ msgstr "खरीदें"
 #~ msgid "Buy Long"
 #~ msgstr "लॉन्ग खरीदें"
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Camera access is not available in this browser."
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Camera is on. Looking for a WalletConnect QR code."
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Camera permission was denied."
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
@@ -592,6 +605,10 @@ msgstr "कनेक्टेड"
 msgid "Connecting"
 msgstr ""
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Connecting desktop wallet"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
 msgstr "कनेक्ट हो रहा है..."
@@ -645,7 +662,12 @@ msgstr ""
 msgid "Could not link mobile device."
 msgstr ""
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Could not open the camera."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Could not render QR"
 msgstr ""
 
@@ -760,6 +782,10 @@ msgstr ""
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Desktop wallet QR scanner"
 msgstr ""
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -972,6 +998,10 @@ msgstr ""
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Failed to enable trading"
 msgstr "ट्रेडिंग सक्षम करने में विफल"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Failed to link desktop wallet"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Failed to load balances"
@@ -1289,6 +1319,10 @@ msgstr "लिमिट प्राइस"
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "limit ro"
 #~ msgstr "लिमिट आरओ"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Link desktop wallet"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -1786,8 +1820,8 @@ msgstr ""
 #~ msgstr "खुला"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Open a WalletConnect wallet or copy the pairing link."
-msgstr ""
+#~ msgid "Open a WalletConnect wallet or copy the pairing link."
+#~ msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Open command menu"
@@ -1820,6 +1854,10 @@ msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Open wallet"
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Opening camera..."
 msgstr ""
 
 #: src/components/trade/layout/market-overview-variants-demo.tsx
@@ -2015,6 +2053,10 @@ msgstr ""
 msgid "PNL"
 msgstr "PNL"
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Point your camera at the WalletConnect QR code on your desktop wallet."
+msgstr ""
+
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Popular"
 #~ msgstr ""
@@ -2110,6 +2152,10 @@ msgstr ""
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Progress"
 #~ msgstr "प्रगति"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "QR scanning is not available in this browser."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "QR visible"
@@ -2235,8 +2281,28 @@ msgstr ""
 msgid "Scale levels must be {SCALE_LEVELS_MIN}-{SCALE_LEVELS_MAX}"
 msgstr ""
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Scan a QR code from a desktop wallet."
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Scan a WalletConnect QR code."
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Scan desktop wallet QR"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Scan on your phone"
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Scan this QR with your desktop wallet."
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Scan this QR with your mobile wallet."
 msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
@@ -2390,6 +2456,10 @@ msgstr "शॉर्ट"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Short position"
 msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+#~ msgid "Show a QR code for a desktop wallet to scan."
+#~ msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Executions"
@@ -3143,6 +3213,10 @@ msgstr "वॉलेट कनेक्ट नहीं है"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "WalletConnect pairing ready"
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "WalletConnect QR code"
 msgstr ""
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
