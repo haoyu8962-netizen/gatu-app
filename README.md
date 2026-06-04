@@ -2,6 +2,10 @@
 
 A trading terminal for [Hyperliquid](https://hyperliquid.xyz) — perps, spot, and builder-deployed perp DEXes — with real-time market data, full order-type support, and multi-wallet / agent-wallet signing.
 
+## Why this exists
+
+Hyperliquid is an open blockchain, and serious users should have open-source clients and tooling they can inspect instead of relying only on closed trading interfaces. HypeTerminal keeps the trading surface reproducible: market data, order flow, signing, wallet flows, and UI primitives live in one public monorepo.
+
 This repo is a pnpm monorepo. The `apps/terminal` web app is the product; the `packages/*` are the pieces it's built from. Each package/app has its own README with depth — this file is the map.
 
 ## Monorepo map
