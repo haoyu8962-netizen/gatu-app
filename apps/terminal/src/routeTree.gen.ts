@@ -9,18 +9,37 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as SupportRouteImport } from './routes/support'
 import { Route as SpotRouteImport } from './routes/spot'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PerpRouteImport } from './routes/perp'
 import { Route as MobileAgentSyncRouteImport } from './routes/mobile-agent-sync'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as BuildersPerpRouteImport } from './routes/builders-perp'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BuildersPerpIndexRouteImport } from './routes/builders-perp.index'
 import { Route as BuildersPerpDexRouteImport } from './routes/builders-perp.$dex'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SpotRoute = SpotRouteImport.update({
   id: '/spot',
   path: '/spot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerpRoute = PerpRouteImport.update({
@@ -31,6 +50,11 @@ const PerpRoute = PerpRouteImport.update({
 const MobileAgentSyncRoute = MobileAgentSyncRouteImport.update({
   id: '/mobile-agent-sync',
   path: '/mobile-agent-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BuildersPerpRoute = BuildersPerpRouteImport.update({
@@ -63,18 +87,26 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
+  '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
+  '/privacy': typeof PrivacyRoute
   '/spot': typeof SpotRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/builders-perp/': typeof BuildersPerpIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
+  '/privacy': typeof PrivacyRoute
   '/spot': typeof SpotRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/builders-perp': typeof BuildersPerpIndexRoute
 }
@@ -83,9 +115,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
+  '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
+  '/privacy': typeof PrivacyRoute
   '/spot': typeof SpotRoute
+  '/support': typeof SupportRoute
+  '/terms': typeof TermsRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
   '/builders-perp/': typeof BuildersPerpIndexRoute
 }
@@ -95,18 +131,26 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/builders-perp'
+    | '/docs'
     | '/mobile-agent-sync'
     | '/perp'
+    | '/privacy'
     | '/spot'
+    | '/support'
+    | '/terms'
     | '/builders-perp/$dex'
     | '/builders-perp/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/$'
+    | '/docs'
     | '/mobile-agent-sync'
     | '/perp'
+    | '/privacy'
     | '/spot'
+    | '/support'
+    | '/terms'
     | '/builders-perp/$dex'
     | '/builders-perp'
   id:
@@ -114,9 +158,13 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/builders-perp'
+    | '/docs'
     | '/mobile-agent-sync'
     | '/perp'
+    | '/privacy'
     | '/spot'
+    | '/support'
+    | '/terms'
     | '/builders-perp/$dex'
     | '/builders-perp/'
   fileRoutesById: FileRoutesById
@@ -125,18 +173,43 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   BuildersPerpRoute: typeof BuildersPerpRouteWithChildren
+  DocsRoute: typeof DocsRoute
   MobileAgentSyncRoute: typeof MobileAgentSyncRoute
   PerpRoute: typeof PerpRoute
+  PrivacyRoute: typeof PrivacyRoute
   SpotRoute: typeof SpotRoute
+  SupportRoute: typeof SupportRoute
+  TermsRoute: typeof TermsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/spot': {
       id: '/spot'
       path: '/spot'
       fullPath: '/spot'
       preLoaderRoute: typeof SpotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perp': {
@@ -151,6 +224,13 @@ declare module '@tanstack/react-router' {
       path: '/mobile-agent-sync'
       fullPath: '/mobile-agent-sync'
       preLoaderRoute: typeof MobileAgentSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/builders-perp': {
@@ -209,9 +289,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   BuildersPerpRoute: BuildersPerpRouteWithChildren,
+  DocsRoute: DocsRoute,
   MobileAgentSyncRoute: MobileAgentSyncRoute,
   PerpRoute: PerpRoute,
+  PrivacyRoute: PrivacyRoute,
   SpotRoute: SpotRoute,
+  SupportRoute: SupportRoute,
+  TermsRoute: TermsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

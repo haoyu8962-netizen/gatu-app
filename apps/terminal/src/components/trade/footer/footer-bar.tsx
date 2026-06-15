@@ -1,13 +1,17 @@
-import { Divider } from "@hypeterminal/ui";
+import { Divider } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { GithubLogoIcon, SpinnerGapIcon, WifiHighIcon, WifiSlashIcon } from "@phosphor-icons/react";
-import { ClientOnly } from "@tanstack/react-router";
-import { APP_VERSION, GITHUB_URL } from "@/config/app";
+import { Trans } from "@lingui/react/macro";
+import { SpinnerGapIcon, WifiHighIcon, WifiSlashIcon } from "@phosphor-icons/react";
+import { ClientOnly, Link } from "@tanstack/react-router";
+import { APP_VERSION } from "@/config/app";
 import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_FOOTER_HEIGHT_CLASS } from "@/config/layout";
 import { cn } from "@/lib/cn";
 import { formatTime } from "@/lib/format";
 import { type ApiStatus, useApiStatus } from "@/lib/hyperliquid";
 import { useCommandMenuActions } from "@/stores/use-global-modal-store";
+
+const FOOTER_LINK_CLASS =
+	"rounded-6 text-fg-muted transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus";
 
 function getStatusDisplay(status: ApiStatus) {
 	switch (status) {
@@ -70,16 +74,21 @@ export function FooterBar() {
 				</kbd>
 			</button>
 			<div className="flex shrink-0 items-center gap-2.5 text-fg-muted">
-				<a
-					href={GITHUB_URL}
-					target="_blank"
-					rel="noopener noreferrer"
-					className="flex items-center rounded-6 p-0.5 text-fg-muted transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-					aria-label="GitHub"
-				>
-					<GithubLogoIcon className="size-2.5" />
-				</a>
-				<Divider orientation="vertical" className="my-1.5" />
+				<nav className="hidden items-center gap-2.5 normal-case md:flex" aria-label="Documentation and legal">
+					<Link to="/docs" className={FOOTER_LINK_CLASS}>
+						<Trans>Docs</Trans>
+					</Link>
+					<Link to="/support" className={FOOTER_LINK_CLASS}>
+						<Trans>Support</Trans>
+					</Link>
+					<Link to="/terms" className={FOOTER_LINK_CLASS}>
+						<Trans>Terms</Trans>
+					</Link>
+					<Link to="/privacy" className={FOOTER_LINK_CLASS}>
+						<Trans>Privacy Policy</Trans>
+					</Link>
+				</nav>
+				<Divider orientation="vertical" className="my-1.5 hidden md:block" />
 				<ClientOnly>
 					<span className="tabular-nums text-fg">{formatTime(new Date())}</span>
 				</ClientOnly>

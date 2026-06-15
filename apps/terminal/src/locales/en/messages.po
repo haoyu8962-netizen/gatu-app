@@ -13,10 +13,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. placeholder {0}: otherConnectors.length
 #: src/components/trade/components/wallet-modal.tsx
-msgid "{0} more wallets"
-msgstr "{0} more wallets"
+#~ msgid "{0} more wallets"
+#~ msgstr "{0} more wallets"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
@@ -242,7 +241,6 @@ msgstr "Available"
 msgid "Avg Price"
 msgstr "Avg Price"
 
-#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -351,16 +349,16 @@ msgstr "Buy"
 #~ msgstr "Buy Long"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Camera access is not available in this browser."
-msgstr "Camera access is not available in this browser."
+#~ msgid "Camera access is not available in this browser."
+#~ msgstr "Camera access is not available in this browser."
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Camera is on. Looking for a WalletConnect QR code."
-msgstr "Camera is on. Looking for a WalletConnect QR code."
+#~ msgid "Camera is on. Looking for a WalletConnect QR code."
+#~ msgstr "Camera is on. Looking for a WalletConnect QR code."
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Camera permission was denied."
-msgstr "Camera permission was denied."
+#~ msgid "Camera permission was denied."
+#~ msgstr "Camera permission was denied."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -440,7 +438,6 @@ msgstr "Clipboard paste is not available. Paste from the keyboard menu or type t
 msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
 msgstr "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
 
-#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -504,8 +501,8 @@ msgstr "Confirm transaction in your wallet"
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Connect"
-msgstr "Connect"
+#~ msgid "Connect"
+#~ msgstr "Connect"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Connect a wallet to manage orders."
@@ -535,7 +532,6 @@ msgstr "Connect to verify"
 msgid "Connect wallet"
 msgstr "Connect wallet"
 
-#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -619,14 +615,13 @@ msgstr "Connected"
 #~ msgid "Connected: {0}...{1}"
 #~ msgstr "Connected: {0}...{1}"
 
-#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Connecting"
 msgstr "Connecting"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Connecting desktop wallet"
-msgstr "Connecting desktop wallet"
+#~ msgid "Connecting desktop wallet"
+#~ msgstr "Connecting desktop wallet"
 
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
@@ -638,7 +633,6 @@ msgstr "Continue"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/wallet-modal.tsx
 msgid "Copied"
 msgstr "Copied"
 
@@ -663,8 +657,8 @@ msgid "Copy code"
 msgstr "Copy code"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Copy link"
-msgstr "Copy link"
+#~ msgid "Copy link"
+#~ msgstr "Copy link"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Copy phone link"
@@ -688,11 +682,10 @@ msgstr "Could not link mobile device."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Could not open the camera."
-msgstr "Could not open the camera."
+#~ msgid "Could not open the camera."
+#~ msgstr "Could not open the camera."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/wallet-modal.tsx
 msgid "Could not render QR"
 msgstr "Could not render QR"
 
@@ -756,8 +749,8 @@ msgstr "Current"
 #~ msgstr "Custom TP percentage"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Custom wallet address"
-msgstr "Custom wallet address"
+#~ msgid "Custom wallet address"
+#~ msgstr "Custom wallet address"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Customize your trading experience."
@@ -810,8 +803,8 @@ msgid "Deposit successful"
 msgstr "Deposit successful"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Desktop wallet QR scanner"
-msgstr "Desktop wallet QR scanner"
+#~ msgid "Desktop wallet QR scanner"
+#~ msgstr "Desktop wallet QR scanner"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -864,9 +857,9 @@ msgstr "Display language"
 #~ msgid "Displays the mobile sidebar."
 #~ msgstr "Displays the mobile sidebar."
 
-#: src/components/trade/header/top-nav.tsx
-#~ msgid "Docs"
-#~ msgstr "Docs"
+#: src/components/trade/footer/footer-bar.tsx
+msgid "Docs"
+msgstr "Docs"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1021,8 +1014,8 @@ msgid "Failed to close position"
 msgstr "Failed to close position"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Failed to connect with custom address"
-msgstr "Failed to connect with custom address"
+#~ msgid "Failed to connect with custom address"
+#~ msgstr "Failed to connect with custom address"
 
 #: src/hooks/ui/use-copy-to-clipboard.ts
 msgid "Failed to copy"
@@ -1033,8 +1026,8 @@ msgid "Failed to enable trading"
 msgstr "Failed to enable trading"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Failed to link desktop wallet"
-msgstr "Failed to link desktop wallet"
+#~ msgid "Failed to link desktop wallet"
+#~ msgstr "Failed to link desktop wallet"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Failed to load balances"
@@ -1246,8 +1239,8 @@ msgstr "Importing..."
 #~ msgstr "In Use"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Install a wallet extension to continue"
-msgstr "Install a wallet extension to continue"
+#~ msgid "Install a wallet extension to continue"
+#~ msgstr "Install a wallet extension to continue"
 
 #. placeholder {0}: ctx.baseToken
 #. placeholder {0}: ctx.quoteToken
@@ -1285,8 +1278,8 @@ msgid "Invalid amount"
 msgstr "Invalid amount"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Invalid Ethereum address"
-msgstr "Invalid Ethereum address"
+#~ msgid "Invalid Ethereum address"
+#~ msgstr "Invalid Ethereum address"
 
 #: src/config/tooltips.ts
 msgid "IOC (Immediate Or Cancel)"
@@ -1312,8 +1305,8 @@ msgid "Leaderboard"
 msgstr "Leaderboard"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Learn more"
-msgstr "Learn more"
+#~ msgid "Learn more"
+#~ msgstr "Learn more"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -1358,8 +1351,8 @@ msgstr "Limit Price"
 #~ msgstr "limit ro"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Link desktop wallet"
-msgstr "Link desktop wallet"
+#~ msgid "Link desktop wallet"
+#~ msgstr "Link desktop wallet"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -1442,8 +1435,8 @@ msgid "Long position"
 msgstr "Long position"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Looking for a WalletConnect QR code"
-msgstr "Looking for a WalletConnect QR code"
+#~ msgid "Looking for a WalletConnect QR code"
+#~ msgstr "Looking for a WalletConnect QR code"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Low balance"
@@ -1648,8 +1641,8 @@ msgid "Minute(s)"
 msgstr "Minute(s)"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Mock Wallet (Testing)"
-msgstr "Mock Wallet (Testing)"
+#~ msgid "Mock Wallet (Testing)"
+#~ msgstr "Mock Wallet (Testing)"
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More"
@@ -1701,8 +1694,8 @@ msgid "New deposit"
 msgstr "New deposit"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "New to wallets?"
-msgstr "New to wallets?"
+#~ msgid "New to wallets?"
+#~ msgstr "New to wallets?"
 
 #: src/components/ui/pagination.tsx
 #~ msgid "Next"
@@ -1740,8 +1733,8 @@ msgid "No balances found. Deposit funds to start trading."
 msgstr "No balances found. Deposit funds to start trading."
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "No camera was found on this device."
-msgstr "No camera was found on this device."
+#~ msgid "No camera was found on this device."
+#~ msgstr "No camera was found on this device."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -1820,8 +1813,8 @@ msgid "No wallet connected"
 msgstr "No wallet connected"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "No wallets found"
-msgstr "No wallets found"
+#~ msgid "No wallets found"
+#~ msgstr "No wallets found"
 
 #: src/lib/errors/definitions/connection.ts
 msgid "Not connected"
@@ -1899,12 +1892,12 @@ msgid "Open the phone link, then enter the pairing code shown on desktop."
 msgstr "Open the phone link, then enter the pairing code shown on desktop."
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Open wallet"
-msgstr "Open wallet"
+#~ msgid "Open wallet"
+#~ msgstr "Open wallet"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Opening camera..."
-msgstr "Opening camera..."
+#~ msgid "Opening camera..."
+#~ msgstr "Opening camera..."
 
 #: src/components/trade/layout/market-overview-variants-demo.tsx
 #~ msgid "Oracle"
@@ -2023,8 +2016,8 @@ msgstr "Paste the full phone link from desktop."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Paste WalletConnect URI"
-msgstr "Paste WalletConnect URI"
+#~ msgid "Paste WalletConnect URI"
+#~ msgstr "Paste WalletConnect URI"
 
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
@@ -2108,8 +2101,8 @@ msgid "Platform"
 msgstr "Platform"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Please enter an address"
-msgstr "Please enter an address"
+#~ msgid "Please enter an address"
+#~ msgstr "Please enter an address"
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2118,8 +2111,8 @@ msgid "PNL"
 msgstr "PNL"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Point your camera at the WalletConnect QR code on your desktop wallet."
-msgstr "Point your camera at the WalletConnect QR code on your desktop wallet."
+#~ msgid "Point your camera at the WalletConnect QR code on your desktop wallet."
+#~ msgstr "Point your camera at the WalletConnect QR code on your desktop wallet."
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Popular"
@@ -2195,6 +2188,10 @@ msgstr "Price"
 msgid "Price grouping"
 msgstr "Price grouping"
 
+#: src/components/trade/footer/footer-bar.tsx
+msgid "Privacy Policy"
+msgstr "Privacy Policy"
+
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #~ msgid "Pro"
@@ -2218,8 +2215,8 @@ msgstr "Processing..."
 #~ msgstr "Progress"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "QR scanning is not available in this browser."
-msgstr "QR scanning is not available in this browser."
+#~ msgid "QR scanning is not available in this browser."
+#~ msgstr "QR scanning is not available in this browser."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "QR visible"
@@ -2240,8 +2237,8 @@ msgid "Ready"
 msgstr "Ready"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Recent"
-msgstr "Recent"
+#~ msgid "Recent"
+#~ msgstr "Recent"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"
@@ -2359,13 +2356,13 @@ msgid "Scale levels must be {SCALE_LEVELS_MIN}-{SCALE_LEVELS_MAX}"
 msgstr "Scale levels must be {SCALE_LEVELS_MIN}-{SCALE_LEVELS_MAX}"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Scan a QR code from a desktop wallet."
-msgstr "Scan a QR code from a desktop wallet."
+#~ msgid "Scan a QR code from a desktop wallet."
+#~ msgstr "Scan a QR code from a desktop wallet."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Scan a WalletConnect QR code."
-msgstr "Scan a WalletConnect QR code."
+#~ msgid "Scan a WalletConnect QR code."
+#~ msgstr "Scan a WalletConnect QR code."
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Scan desktop wallet QR"
@@ -2376,16 +2373,16 @@ msgid "Scan on your phone"
 msgstr "Scan on your phone"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Scan this QR with your desktop wallet."
-msgstr "Scan this QR with your desktop wallet."
+#~ msgid "Scan this QR with your desktop wallet."
+#~ msgstr "Scan this QR with your desktop wallet."
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Scan this QR with your mobile wallet."
-msgstr "Scan this QR with your mobile wallet."
+#~ msgid "Scan this QR with your mobile wallet."
+#~ msgstr "Scan this QR with your mobile wallet."
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Scan WalletConnect QR"
-msgstr "Scan WalletConnect QR"
+#~ msgid "Scan WalletConnect QR"
+#~ msgstr "Scan WalletConnect QR"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Search"
@@ -2552,8 +2549,8 @@ msgstr "Short position"
 #~ msgstr "Show Executions on Chart"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Show fewer wallets"
-msgstr "Show fewer wallets"
+#~ msgid "Show fewer wallets"
+#~ msgstr "Show fewer wallets"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Orders"
@@ -2780,9 +2777,9 @@ msgstr "Submitting..."
 msgid "Successful"
 msgstr "Successful"
 
-#: src/components/trade/header/top-nav.tsx
-#~ msgid "Support"
-#~ msgstr "Support"
+#: src/components/trade/footer/footer-bar.tsx
+msgid "Support"
+msgstr "Support"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -2927,6 +2924,10 @@ msgstr "Take profit trigger must be below mark"
 msgid "Taking longer than expected"
 msgstr "Taking longer than expected"
 
+#: src/components/trade/footer/footer-bar.tsx
+msgid "Terms"
+msgstr "Terms"
+
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Testnet"
 msgstr "Testnet"
@@ -2944,16 +2945,20 @@ msgstr "The page you are looking for does not exist."
 #~ msgstr "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
-msgstr "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
+#~ msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
+#~ msgstr "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This is not a valid HypeTerminal mobile link."
-msgstr "This is not a valid HypeTerminal mobile link."
+msgid "This is not a valid gatu mobile link."
+msgstr "This is not a valid gatu mobile link."
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "This is not a valid HypeTerminal mobile link."
+#~ msgstr "This is not a valid HypeTerminal mobile link."
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "This is not a WalletConnect QR code."
-msgstr "This is not a WalletConnect QR code."
+#~ msgid "This is not a WalletConnect QR code."
+#~ msgstr "This is not a WalletConnect QR code."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This link was created for a different network."
@@ -3312,12 +3317,12 @@ msgid "Wallet not connected"
 msgstr "Wallet not connected"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "WalletConnect pairing ready"
-msgstr "WalletConnect pairing ready"
+#~ msgid "WalletConnect pairing ready"
+#~ msgstr "WalletConnect pairing ready"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "WalletConnect QR code"
-msgstr "WalletConnect QR code"
+#~ msgid "WalletConnect QR code"
+#~ msgstr "WalletConnect QR code"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #~ msgid "WebSocket error"
@@ -3362,8 +3367,8 @@ msgid "Wrong network"
 msgstr "Wrong network"
 
 #: src/components/trade/components/wallet-modal.tsx
-msgid "Wrong QR type"
-msgstr "Wrong QR type"
+#~ msgid "Wrong QR type"
+#~ msgstr "Wrong QR type"
 
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Yes"
