@@ -1,4 +1,4 @@
-import { Button, Dropdown } from "@hypeterminal/ui";
+import { Button, Dropdown } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
@@ -10,25 +10,24 @@ import {
 	SpinnerGapIcon,
 	WalletIcon,
 } from "@phosphor-icons/react";
+import { usePrivy } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
-import { useConnection, useDisconnect, useEnsName } from "wagmi";
+import { useConnection, useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { MobileAgentSyncModal } from "../components/mobile-agent-sync-modal";
-import { WalletModal } from "../components/wallet-modal";
 
 const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 export function UserMenu() {
-	const { address, isConnected, isConnecting } = useConnection();
-	const disconnect = useDisconnect();
+	const { ready, authenticated, login, logout, user } = usePrivy();
+	const { address } = useConnection();
 	const { data: ensName } = useEnsName({ address });
 	const { open: openDepositModal } = useDepositModalActions();
-	const [isOpen, setIsOpen] = useState(false);
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
 	const [mounted, setMounted] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
@@ -37,7 +36,7 @@ export function UserMenu() {
 		setMounted(true);
 	}, []);
 
-	if (!mounted || isConnecting) {
+	if (!mounted || !ready) {
 		return (
 			<Button
 				variant="outline"
@@ -56,31 +55,29 @@ export function UserMenu() {
 		);
 	}
 
-	if (!isConnected) {
+	if (!authenticated) {
 		return (
-			<>
-				<Button
-					variant="outline"
-					intent="neutral"
-					size="sm"
-					onClick={() => setIsOpen(true)}
-					iconLeft={<WalletIcon className="size-3.5" />}
-					className={cn(
-						APP_BAR_BUTTON_HEIGHT_CLASS,
-						"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
-					)}
-				>
-					<Trans>Connect Wallet</Trans>
-				</Button>
-				<WalletModal open={isOpen} onOpenChange={setIsOpen} />
-			</>
+			<Button
+				variant="outline"
+				intent="neutral"
+				size="sm"
+				onClick={() => login()}
+				iconLeft={<WalletIcon className="size-3.5" />}
+				className={cn(
+					APP_BAR_BUTTON_HEIGHT_CLASS,
+					"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+				)}
+			>
+				<Trans>Connect Wallet</Trans>
+			</Button>
 		);
 	}
 
-	const displayLabel = ensName ?? (address ? shortenAddress(address) : "");
+	const displayAddress = address ?? (user?.wallet?.address as `0x${string}` | undefined);
+	const displayLabel = ensName ?? (displayAddress ? shortenAddress(displayAddress) : "");
 
 	const actionItems = [
-		...(address
+		...(displayAddress
 			? [
 					{
 						label: copied ? t`Copied!` : t`Copy Address`,
@@ -89,7 +86,7 @@ export function UserMenu() {
 						) : (
 							<CopyIcon className="size-3.5" />
 						),
-						onSelect: () => copy(address),
+						onSelect: () => copy(displayAddress),
 					},
 				]
 			: []),
@@ -140,7 +137,7 @@ export function UserMenu() {
 								label: t`Disconnect`,
 								icon: <SignOutIcon className="size-3.5" />,
 								danger: true,
-								onSelect: () => disconnect.mutate(),
+								onSelect: () => logout(),
 							},
 						],
 					},

@@ -30,7 +30,7 @@ const config = defineConfig({
     dedupe: ['react', 'react-dom', '@tanstack/react-query', 'wagmi'],
   },
   optimizeDeps: {
-    include: ['@lifi/sdk', '@tanstack/react-table', '@tanstack/react-virtual'],
+    include: ['@lifi/sdk', '@tanstack/react-table', '@tanstack/react-virtual', '@privy-io/react-auth', '@privy-io/wagmi'],
   },
   build: {
     sourcemap: isAnalyze,

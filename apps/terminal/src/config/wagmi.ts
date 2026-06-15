@@ -1,5 +1,6 @@
+import { createConfig } from "@privy-io/wagmi";
 import type { Chain } from "viem";
-import { createConfig, http } from "wagmi";
+import { http } from "wagmi";
 import {
 	arbitrum,
 	aurora,
@@ -21,10 +22,7 @@ import {
 	scroll,
 	zkSync,
 } from "wagmi/chains";
-import { coinbaseWallet, injected, mock, walletConnect } from "wagmi/connectors";
-import { APP_NAME } from "@/config/app";
 import type { MockWalletConfig } from "@/lib/wallet-utils";
-import { registerMockWallet } from "@/lib/wallet-utils";
 
 // All chains supported for LiFi bridging — wagmi requires these upfront
 const BRIDGE_CHAINS = [
@@ -63,49 +61,16 @@ const BRIDGE_TRANSPORTS = Object.fromEntries(
 	BRIDGE_CHAINS.map((chain) => [chain.id, http(getBridgeRpcUrl(chain))]),
 ) as Record<(typeof BRIDGE_CHAINS)[number]["id"], ReturnType<typeof http>>;
 
-function createMockConnectors(mockWallets: MockWalletConfig[]) {
-	return mockWallets.map((wallet) => {
-		registerMockWallet(wallet);
-		return mock({
-			accounts: [wallet.address],
-			features: { reconnect: true },
-		});
-	});
-}
+// Connectors are intentionally omitted: Privy drives wagmi's connector state for both
+// external and embedded wallets. Wallet selection happens through Privy's login modal,
+// wired in providers/root.tsx + config/privy.ts.
+export const config = createConfig({
+	chains: BRIDGE_CHAINS,
+	transports: BRIDGE_TRANSPORTS,
+});
 
-interface WagmiConfigOptions {
-	mockWallets?: MockWalletConfig[];
-}
-
-const WALLET_CONNECT_PROJECT_ID = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID;
-const WALLET_CONNECT_METADATA = {
-	name: APP_NAME,
-	description: "Professional trading terminal for Hyperliquid.",
-	url: "https://hypeterminal.xyz",
-	icons: ["https://hypeterminal.xyz/icon-192.png"],
-};
-
-export function createWagmiConfig(options: WagmiConfigOptions = {}) {
-	const { mockWallets = [] } = options;
-	const mockConnectors = createMockConnectors(mockWallets);
-
-	return createConfig({
-		chains: BRIDGE_CHAINS,
-		connectors: [
-			...mockConnectors,
-			injected(),
-			coinbaseWallet(),
-			walletConnect({
-				projectId: WALLET_CONNECT_PROJECT_ID,
-				metadata: WALLET_CONNECT_METADATA,
-				showQrModal: false,
-			}),
-		],
-		transports: BRIDGE_TRANSPORTS,
-		ssr: true,
-	});
-}
-
+// Retained as data for the dev-only mock wallet section in wallet-modal.tsx. With Privy
+// driving connectors these are no longer registered as wagmi connectors.
 export const MOCK_WALLETS: MockWalletConfig[] = import.meta.env.DEV
 	? [
 			{
@@ -114,7 +79,3 @@ export const MOCK_WALLETS: MockWalletConfig[] = import.meta.env.DEV
 			},
 		]
 	: [];
-
-export const config = createWagmiConfig({
-	mockWallets: MOCK_WALLETS,
-});

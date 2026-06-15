@@ -1,12 +1,15 @@
-import { HyperliquidProvider, PERSISTED_QUERY_PREFIX } from "@hypeterminal/hl-react";
+import { HyperliquidProvider, PERSISTED_QUERY_PREFIX } from "@gatu/hl-react";
+import { PrivyProvider } from "@privy-io/react-auth";
+import { WagmiProvider } from "@privy-io/wagmi";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { useConnection, WagmiProvider } from "wagmi";
+import { useConnection } from "wagmi";
 import { APP_NAME, RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
+import { PRIVY_APP_ID, privyConfig } from "@/config/privy";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
 import { config } from "@/config/wagmi";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
@@ -47,21 +50,34 @@ function HyperliquidBridge({ children }: { children: React.ReactNode }) {
 	);
 }
 
-export function RootProvider({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
-	if (isServer || !persister) {
-		return (
-			<WagmiProvider config={config}>
-				<QueryClientProvider client={queryClient}>
-					<I18nProvider i18n={i18n}>
-						<HyperliquidBridge>{children}</HyperliquidBridge>
-					</I18nProvider>
-				</QueryClientProvider>
-			</WagmiProvider>
-		);
-	}
+// The app is gated behind <ClientOnly> in routes/__root.tsx, so the server only ever
+// renders the static AppShellSkeleton. PrivyProvider is client-only (it mounts a dialog
+// and an iframe), so the server path deliberately omits Privy + wagmi and renders the
+// Hyperliquid context with no connected user.
+function ServerProviders({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
+	return (
+		<QueryClientProvider client={queryClient}>
+			<I18nProvider i18n={i18n}>
+				<HyperliquidProvider
+					env={env}
+					userAddress={undefined}
+					builderConfig={DEFAULT_BUILDER_CONFIG}
+					agentName={APP_NAME}
+				>
+					<MarketsProvider>{children}</MarketsProvider>
+				</HyperliquidProvider>
+			</I18nProvider>
+		</QueryClientProvider>
+	);
+}
+
+// Privy requires the order PrivyProvider > QueryClientProvider > WagmiProvider, and the
+// WagmiProvider must come from @privy-io/wagmi so Privy drives the connector state.
+function ClientProviders({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
+	if (!persister) return null;
 
 	return (
-		<WagmiProvider config={config}>
+		<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={privyConfig}>
 			<PersistQueryClientProvider
 				client={queryClient}
 				persistOptions={{
@@ -73,10 +89,20 @@ export function RootProvider({ children, queryClient }: { children: React.ReactN
 					},
 				}}
 			>
-				<I18nProvider i18n={i18n}>
-					<HyperliquidBridge>{children}</HyperliquidBridge>
-				</I18nProvider>
+				<WagmiProvider config={config}>
+					<I18nProvider i18n={i18n}>
+						<HyperliquidBridge>{children}</HyperliquidBridge>
+					</I18nProvider>
+				</WagmiProvider>
 			</PersistQueryClientProvider>
-		</WagmiProvider>
+		</PrivyProvider>
 	);
+}
+
+export function RootProvider({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
+	if (isServer) {
+		return <ServerProviders queryClient={queryClient}>{children}</ServerProviders>;
+	}
+
+	return <ClientProviders queryClient={queryClient}>{children}</ClientProviders>;
 }
