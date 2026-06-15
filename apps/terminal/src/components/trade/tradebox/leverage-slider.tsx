@@ -1,4 +1,4 @@
-import { Slider } from "@hypeterminal/ui";
+import { Slider } from "@gatu/ui";
 
 interface Props {
 	value: number;

@@ -1,4 +1,4 @@
-import { Button } from "@hypeterminal/ui";
+import { Button } from "@gatu/ui";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { Side } from "@/lib/trade/types";

@@ -1,4 +1,4 @@
-import { Button, Checkbox, Slider, Tooltip } from "@hypeterminal/ui";
+import { Button, Checkbox, Slider, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";

@@ -1,4 +1,4 @@
-import { isUserStreamKey } from "@hypeterminal/hl-react/internal/websocket/reliability";
+import { isUserStreamKey } from "@gatu/hl-react/internal/websocket/reliability";
 import { describe, expect, it } from "vitest";
 
 function key(method: string, params: Record<string, unknown> = {}) {

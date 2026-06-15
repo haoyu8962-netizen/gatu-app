@@ -1,4 +1,4 @@
-import { Button } from "@hypeterminal/ui";
+import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { CrosshairIcon, PencilIcon, PlusIcon, XIcon } from "@phosphor-icons/react";
 import { useState } from "react";

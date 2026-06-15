@@ -1,4 +1,4 @@
-import { Button } from "@hypeterminal/ui";
+import { Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { CaretDownIcon, CaretUpIcon, CheckCircleIcon, WalletIcon } from "@phosphor-icons/react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";

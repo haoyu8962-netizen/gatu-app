@@ -1,6 +1,6 @@
-import { isPayloadOversized } from "@hypeterminal/hl-react/internal/websocket/payload-guard";
-import { WS_RELIABILITY_LIMITS } from "@hypeterminal/hl-react/internal/websocket/reliability";
-import { createHyperliquidStore } from "@hypeterminal/hl-react/store";
+import { isPayloadOversized } from "@gatu/hl-react/internal/websocket/payload-guard";
+import { WS_RELIABILITY_LIMITS } from "@gatu/hl-react/internal/websocket/reliability";
+import { createHyperliquidStore } from "@gatu/hl-react/store";
 import { afterEach, describe, expect, it } from "vitest";
 import type { HyperliquidConfig } from "@/lib/hyperliquid";
 

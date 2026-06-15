@@ -1,4 +1,4 @@
-import { Button, Drawer, DrawerContent } from "@hypeterminal/ui";
+import { Button, Drawer, DrawerContent } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";

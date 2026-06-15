@@ -1,5 +1,5 @@
-import type { AgentWallet } from "@hypeterminal/hl-react";
-import { createMobileAgentWalletRecord, verifyMobileAgent } from "@hypeterminal/hl-react/signing/mobile-agent";
+import type { AgentWallet } from "@gatu/hl-react";
+import { createMobileAgentWalletRecord, verifyMobileAgent } from "@gatu/hl-react/signing/mobile-agent";
 import type { ExtraAgentsResponse } from "@nktkas/hyperliquid";
 import { type HyperliquidEnvName, type ImportedMobileAgent, MobileSyncError } from "./sync-core";
 

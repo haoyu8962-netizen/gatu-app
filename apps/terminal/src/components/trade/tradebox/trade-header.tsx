@@ -1,4 +1,4 @@
-import { Dropdown } from "@hypeterminal/ui";
+import { Dropdown } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
 import type { OrderType } from "@/config/trade";

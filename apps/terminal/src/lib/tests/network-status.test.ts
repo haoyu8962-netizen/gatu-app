@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-let subscribeNetworkStatus: typeof import("@hypeterminal/hl-react/internal/websocket/network-status").subscribeNetworkStatus;
-let getNetworkState: typeof import("@hypeterminal/hl-react/internal/websocket/network-status").getNetworkState;
+let subscribeNetworkStatus: typeof import("@gatu/hl-react/internal/websocket/network-status").subscribeNetworkStatus;
+let getNetworkState: typeof import("@gatu/hl-react/internal/websocket/network-status").getNetworkState;
 
 describe("network-status singleton", () => {
 	beforeEach(async () => {
 		vi.resetModules();
 		Object.defineProperty(navigator, "onLine", { value: true, configurable: true, writable: true });
-		const mod = await import("@hypeterminal/hl-react/internal/websocket/network-status");
+		const mod = await import("@gatu/hl-react/internal/websocket/network-status");
 		subscribeNetworkStatus = mod.subscribeNetworkStatus;
 		getNetworkState = mod.getNetworkState;
 	});
@@ -92,7 +92,7 @@ describe("network-status singleton", () => {
 		const originalDocument = globalThis.document;
 		Object.defineProperty(globalThis, "document", { value: undefined, configurable: true });
 
-		const mod = await import("@hypeterminal/hl-react/internal/websocket/network-status");
+		const mod = await import("@gatu/hl-react/internal/websocket/network-status");
 		expect(mod.getNetworkState()).toBe("online");
 
 		const unsub = mod.subscribeNetworkStatus(vi.fn());

@@ -1,4 +1,4 @@
-import { Badge } from "@hypeterminal/ui";
+import { Badge } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { FireIcon, StarIcon } from "@phosphor-icons/react";
 import { get24hChange, getOiUsd, isTokenInCategory } from "@/domain/market";

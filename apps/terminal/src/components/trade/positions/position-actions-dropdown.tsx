@@ -1,4 +1,4 @@
-import { Dropdown } from "@hypeterminal/ui";
+import { Dropdown } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsClockwiseIcon, LightningIcon, TagIcon } from "@phosphor-icons/react";
 

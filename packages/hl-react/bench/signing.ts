@@ -2,7 +2,7 @@
  * Benchmark: EIP-712 signing latency — before vs. after FastHyperliquidSigner
  *
  * Run from repo root:
- *   pnpm --filter @hypeterminal/hl-react exec tsx bench/signing.ts
+ *   pnpm --filter @gatu/hl-react exec tsx bench/signing.ts
  */
 
 import { privateKeyToAccount } from "viem/accounts";

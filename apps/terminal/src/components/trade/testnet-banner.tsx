@@ -1,4 +1,4 @@
-import { Button } from "@hypeterminal/ui";
+import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { WarningIcon } from "@phosphor-icons/react";
 import { APP_BANNER_HEIGHT_CLASS } from "@/config/layout";

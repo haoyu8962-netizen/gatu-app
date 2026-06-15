@@ -486,7 +486,7 @@ server.tool("get_orderbook", {
 4. **Real-time data**: Should the MCP server expose WebSocket-like streaming via SSE, or stick to polling? MCP's streaming story is still evolving.
 5. **Multi-chain**: Should the MCP server cover only Hyperliquid L1, or also HyperEVM and potential future chains?
 6. **Pricing**: Free read-only tier + paid execution tier? Usage-based pricing? Flat subscription?
-7. **SDK distribution**: Should we publish an npm package (`@hypeterminal/mcp-server`) that others can self-host, or only offer a hosted service?
+7. **SDK distribution**: Should we publish an npm package (`@gatu/mcp-server`) that others can self-host, or only offer a hosted service?
 8. **Agent guardrails**: What guardrails should be built into the MCP server itself (vs. relying on the agent to be responsible)? Max order size? Position concentration limits? Cooldown periods?
 9. **Privacy**: If the MCP server processes user portfolio data, what data retention and privacy policies apply? GDPR considerations for EU users?
 10. **Interop with multi-agent systems**: How does the MCP server interact with the multi-agent architecture described in 03-multi-agent-architecture.md? Should the coordinator agent use MCP tools, or direct SDK calls?

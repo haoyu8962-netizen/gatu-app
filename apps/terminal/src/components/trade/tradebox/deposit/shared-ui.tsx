@@ -1,4 +1,4 @@
-import { Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle, Select } from "@hypeterminal/ui";
+import { Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle, Select } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import {
 	ArrowSquareOutIcon,

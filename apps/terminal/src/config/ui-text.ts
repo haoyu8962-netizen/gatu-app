@@ -32,8 +32,8 @@ export const UI_TEXT = {
 		CTA_ARIA: "Go to trading terminal",
 	},
 	TOP_NAV: {
-		BRAND_PREFIX: "HYPE",
-		BRAND_SUFFIX: "TERMINAL",
+		BRAND_PREFIX: "ga",
+		BRAND_SUFFIX: "tu",
 		NAV_ITEMS: ["Trade", "Vaults", "Portfolio", "Staking", "Leaderboard"],
 		MORE_LABEL: "More",
 		MORE_ARIA: "More options",
@@ -373,7 +373,7 @@ export const UI_TEXT = {
 		ERROR_WALLET_CLIENT_NOT_READY: "Wallet client not ready. Please wait and try again.",
 		ERROR_WALLET_NOT_CONNECTED: "Wallet not connected",
 		ERROR_CREATE_WALLET: "Failed to create wallet",
-		AGENT_NAME: "HypeTerminal",
+		AGENT_NAME: "gatu",
 	},
 	ERRORS: {
 		GENERIC_FALLBACK: "Something went wrong.",

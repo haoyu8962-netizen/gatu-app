@@ -7,7 +7,7 @@ import {
 	ModalTitle,
 	SegmentedControlItem,
 	SegmentedControls,
-} from "@hypeterminal/ui";
+} from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { ArrowLineDownIcon, ArrowLineUpIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Suspense, useState } from "react";

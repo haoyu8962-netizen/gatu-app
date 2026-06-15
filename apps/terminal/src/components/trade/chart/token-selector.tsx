@@ -1,4 +1,4 @@
-import { Drawer, DrawerTrigger } from "@hypeterminal/ui";
+import { Drawer, DrawerTrigger } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Suspense, useCallback, useEffect, useId, useState } from "react";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";

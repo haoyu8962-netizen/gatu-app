@@ -3,7 +3,7 @@ import { APP_NAME } from "./app";
 export const SEO_DEFAULTS = {
 	siteName: APP_NAME,
 	siteUrl: "https://hypeterminal.xyz",
-	defaultTitle: "HypeTerminal - Hyperliquid Trading Terminal",
+	defaultTitle: "gatu - Hyperliquid Trading Terminal",
 	defaultDescription:
 		"A professional trading terminal for Hyperliquid DEX. Trade perpetuals and spot markets with real-time data, advanced charting, and seamless wallet connectivity.",
 	twitterHandle: "@hypeterminal",
@@ -44,7 +44,7 @@ export const ROUTE_SEO = {
 	COMPONENTS: {
 		title: "Components",
 		description:
-			"UI component showcase for HypeTerminal design system. Explore buttons, badges, cards, and trading-specific components.",
+			"UI component showcase for gatu design system. Explore buttons, badges, cards, and trading-specific components.",
 		path: "/components",
 		keywords: ["components", "design system", "ui"],
 		noIndex: true,

@@ -1,5 +1,5 @@
-import { getExchangeMethodConfig } from "@hypeterminal/hl-react/registries/exchange";
-import { getAccumulateConfig, getDefaultThrottle } from "@hypeterminal/hl-react/registries/subscription";
+import { getExchangeMethodConfig } from "@gatu/hl-react/registries/exchange";
+import { getAccumulateConfig, getDefaultThrottle } from "@gatu/hl-react/registries/subscription";
 import { ExchangeClient, SubscriptionClient } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
 import type { ExchangeMethod, SubMethod } from "@/lib/hyperliquid";

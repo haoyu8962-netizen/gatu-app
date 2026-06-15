@@ -8,7 +8,7 @@ import {
 	TableHeader,
 	TableRow,
 	Tooltip,
-} from "@hypeterminal/ui";
+} from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { useConnection } from "wagmi";

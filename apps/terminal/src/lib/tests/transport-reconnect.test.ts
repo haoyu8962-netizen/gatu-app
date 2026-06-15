@@ -1,4 +1,4 @@
-import { getSdkReconnectionDelayMs } from "@hypeterminal/hl-react/internal/websocket/reliability";
+import { getSdkReconnectionDelayMs } from "@gatu/hl-react/internal/websocket/reliability";
 import { describe, expect, it, vi } from "vitest";
 
 describe("SDK reconnect backoff constant", () => {
@@ -24,7 +24,7 @@ describe("createWsReconnectTrigger SDK coupling", () => {
 	// than silently in production.
 	it("invokes socket.close(undefined, undefined, false) against a real WebSocketTransport", async () => {
 		const { WebSocketTransport } = await import("@nktkas/hyperliquid");
-		const { createWsReconnectTrigger, getWsTransport } = await import("@hypeterminal/hl-react/clients");
+		const { createWsReconnectTrigger, getWsTransport } = await import("@gatu/hl-react/clients");
 
 		// Retrieve the module-cached transport the trigger will target.
 		const transport = getWsTransport(true);
@@ -48,7 +48,7 @@ describe("createWsReconnectTrigger SDK coupling", () => {
 
 describe("store reconnect with fake subscriptions", () => {
 	it("store acquires and releases subscriptions correctly", async () => {
-		const { createHyperliquidStore } = await import("@hypeterminal/hl-react/store");
+		const { createHyperliquidStore } = await import("@gatu/hl-react/store");
 		const store = createHyperliquidStore({ ssr: false });
 
 		const failureController = new AbortController();
@@ -70,7 +70,7 @@ describe("store reconnect with fake subscriptions", () => {
 	});
 
 	it("store schedules reconnect on subscription failure", async () => {
-		const { createHyperliquidStore } = await import("@hypeterminal/hl-react/store");
+		const { createHyperliquidStore } = await import("@gatu/hl-react/store");
 		const store = createHyperliquidStore({ ssr: false });
 
 		const failureController = new AbortController();
@@ -91,7 +91,7 @@ describe("store reconnect with fake subscriptions", () => {
 	});
 
 	it("recovers after repeated failures: cycles through errors then lands active", async () => {
-		const { createHyperliquidStore } = await import("@hypeterminal/hl-react/store");
+		const { createHyperliquidStore } = await import("@gatu/hl-react/store");
 		const store = createHyperliquidStore({ ssr: false });
 
 		const key = "test:retry-then-success";

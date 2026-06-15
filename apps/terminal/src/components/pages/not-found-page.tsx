@@ -1,4 +1,4 @@
-import { buttonVariants } from "@hypeterminal/ui";
+import { buttonVariants } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 

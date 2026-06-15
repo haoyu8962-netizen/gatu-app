@@ -256,7 +256,7 @@ Given HypeTerminal's existing codebase (full trading terminal, 45+ SDK hooks, bu
 - Open-source SDK = adoption flywheel for builder code revenue (default builder code in SDK config)
 
 **What's needed:**
-- Extract existing hooks into a standalone `@hypeterminal/react` package
+- Extract existing hooks into a standalone `@gatu/react` package
 - Add documentation and examples
 - Default builder code baked into SDK configuration
 - Publish to npm
@@ -366,7 +366,7 @@ The highest-leverage play is a **three-layer approach** that compounds:
 
 ```
 Layer 1: Open-Source React SDK (2-4 weeks)
-  → Extract existing hooks into @hypeterminal/react
+  → Extract existing hooks into @gatu/react
   → Default builder code baked in
   → Every app built on it generates revenue for you
   → Marketing + ecosystem moat

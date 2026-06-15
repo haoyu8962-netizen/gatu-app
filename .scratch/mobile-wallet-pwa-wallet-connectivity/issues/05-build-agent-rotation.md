@@ -48,7 +48,7 @@ Implemented:
 - `packages/hl-react/src/signing/mobile-agent.ts`
 - mobile metadata extensions in `packages/hl-react/src/signing/types.ts`
 - metadata-aware storage writes in `packages/hl-react/src/signing/agent-storage.ts`
-- package exports for `@hypeterminal/hl-react/signing/mobile-agent`
+- package exports for `@gatu/hl-react/signing/mobile-agent`
 - `apps/terminal/src/lib/tests/mobile-agent-lifecycle.test.ts`
 
 The lifecycle module now provides:
@@ -63,8 +63,8 @@ The lifecycle module now provides:
 
 Verification run:
 
-- `pnpm --filter @hypeterminal/terminal exec vitest run src/lib/tests/mobile-sync-core.test.ts src/lib/tests/mobile-agent-lifecycle.test.ts`
-- `pnpm --filter @hypeterminal/terminal exec vitest run src/lib/tests/agent-snapshot-cache.test.ts src/lib/tests/mobile-agent-lifecycle.test.ts`
+- `pnpm --filter @gatu/terminal exec vitest run src/lib/tests/mobile-sync-core.test.ts src/lib/tests/mobile-agent-lifecycle.test.ts`
+- `pnpm --filter @gatu/terminal exec vitest run src/lib/tests/agent-snapshot-cache.test.ts src/lib/tests/mobile-agent-lifecycle.test.ts`
 - `pnpm exec biome check packages/hl-react/src/signing/types.ts packages/hl-react/src/signing/agent-storage.ts packages/hl-react/src/signing/mobile-agent.ts packages/hl-react/src/index.ts apps/terminal/src/lib/mobile-sync/sync-core.ts apps/terminal/src/lib/tests/mobile-agent-lifecycle.test.ts apps/terminal/src/lib/tests/mobile-sync-core.test.ts`
 - `pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution bundler --lib ES2022,DOM,DOM.Iterable --strict --skipLibCheck apps/terminal/src/lib/mobile-sync/sync-core.ts apps/terminal/src/lib/tests/mobile-sync-core.test.ts apps/terminal/src/lib/tests/mobile-agent-lifecycle.test.ts packages/hl-react/src/signing/mobile-agent.ts packages/hl-react/src/signing/agent-storage.ts packages/hl-react/src/signing/types.ts`
 

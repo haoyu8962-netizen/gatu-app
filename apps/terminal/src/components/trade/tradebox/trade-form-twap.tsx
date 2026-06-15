@@ -1,4 +1,4 @@
-import { Checkbox } from "@hypeterminal/ui";
+import { Checkbox } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { NumberInput } from "@/components/ui/number-input";
 import { TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";

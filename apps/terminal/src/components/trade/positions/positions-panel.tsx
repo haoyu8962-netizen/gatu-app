@@ -1,4 +1,4 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@hypeterminal/ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { Suspense, useMemo, useTransition } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";

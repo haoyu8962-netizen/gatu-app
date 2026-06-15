@@ -6,7 +6,7 @@ import {
 	type MarketSpotToken as SpotToken,
 	type UnifiedMarket,
 	useInfo,
-} from "@hypeterminal/hl-react";
+} from "@gatu/hl-react";
 import type { MetaResponse, PerpDexsResponse, SpotMetaResponse } from "@nktkas/hyperliquid";
 import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { getIconUrlFromMarketName, getTokenDisplayName, getUnderlyingAsset } from "@/domain/market/tokens";

@@ -1,4 +1,4 @@
-import { Badge, Button } from "@hypeterminal/ui";
+import { Badge, Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ListIcon, ListNumbersIcon, XIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";

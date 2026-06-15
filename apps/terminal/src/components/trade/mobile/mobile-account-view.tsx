@@ -1,4 +1,4 @@
-import { Badge, Button, ButtonIcon } from "@hypeterminal/ui";
+import { Badge, Button, ButtonIcon } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import {
 	ArrowsLeftRightIcon,

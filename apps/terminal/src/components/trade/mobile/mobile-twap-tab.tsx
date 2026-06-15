@@ -1,4 +1,4 @@
-import { Button } from "@hypeterminal/ui";
+import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { TimerIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";

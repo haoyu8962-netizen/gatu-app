@@ -2,25 +2,25 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFakeSubscription } from "./harness/subscription";
 
-let createHyperliquidStore: typeof import("@hypeterminal/hl-react/store").createHyperliquidStore;
-let getStoreInternals: typeof import("@hypeterminal/hl-react/store").getStoreInternals;
-let registerDebugSnapshot: typeof import("@hypeterminal/hl-react/internal/websocket/debug").registerDebugSnapshot;
-let registerChaosHarness: typeof import("@hypeterminal/hl-react/internal/websocket/chaos").registerChaosHarness;
-let registerHealthReport: typeof import("@hypeterminal/hl-react/internal/websocket/health").registerHealthReport;
+let createHyperliquidStore: typeof import("@gatu/hl-react/store").createHyperliquidStore;
+let getStoreInternals: typeof import("@gatu/hl-react/store").getStoreInternals;
+let registerDebugSnapshot: typeof import("@gatu/hl-react/internal/websocket/debug").registerDebugSnapshot;
+let registerChaosHarness: typeof import("@gatu/hl-react/internal/websocket/chaos").registerChaosHarness;
+let registerHealthReport: typeof import("@gatu/hl-react/internal/websocket/health").registerHealthReport;
 
 describe("debug snapshot", () => {
 	beforeEach(async () => {
 		vi.useFakeTimers();
 		vi.resetModules();
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
-		const storeMod = await import("@hypeterminal/hl-react/store");
+		const storeMod = await import("@gatu/hl-react/store");
 		createHyperliquidStore = storeMod.createHyperliquidStore;
 		getStoreInternals = storeMod.getStoreInternals;
-		const debugMod = await import("@hypeterminal/hl-react/internal/websocket/debug");
+		const debugMod = await import("@gatu/hl-react/internal/websocket/debug");
 		registerDebugSnapshot = debugMod.registerDebugSnapshot;
-		const chaosMod = await import("@hypeterminal/hl-react/internal/websocket/chaos");
+		const chaosMod = await import("@gatu/hl-react/internal/websocket/chaos");
 		registerChaosHarness = chaosMod.registerChaosHarness;
-		const healthMod = await import("@hypeterminal/hl-react/internal/websocket/health");
+		const healthMod = await import("@gatu/hl-react/internal/websocket/health");
 		registerHealthReport = healthMod.registerHealthReport;
 	});
 
@@ -160,11 +160,11 @@ describe("chaos harness", () => {
 		vi.useFakeTimers();
 		vi.resetModules();
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
-		const storeMod = await import("@hypeterminal/hl-react/store");
+		const storeMod = await import("@gatu/hl-react/store");
 		createHyperliquidStore = storeMod.createHyperliquidStore;
-		const chaosMod = await import("@hypeterminal/hl-react/internal/websocket/chaos");
+		const chaosMod = await import("@gatu/hl-react/internal/websocket/chaos");
 		registerChaosHarness = chaosMod.registerChaosHarness;
-		const debugMod = await import("@hypeterminal/hl-react/internal/websocket/debug");
+		const debugMod = await import("@gatu/hl-react/internal/websocket/debug");
 		registerDebugSnapshot = debugMod.registerDebugSnapshot;
 	});
 

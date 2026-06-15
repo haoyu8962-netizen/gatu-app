@@ -1,4 +1,4 @@
-import { SegmentedControlItem, SegmentedControls } from "@hypeterminal/ui";
+import { SegmentedControlItem, SegmentedControls } from "@gatu/ui";
 import { cn } from "@/lib/cn";
 import type { Side } from "@/lib/trade/types";
 

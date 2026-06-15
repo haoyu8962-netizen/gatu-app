@@ -1,4 +1,4 @@
-import { Dropdown, Tabs, TabsContent, TabsList, TabsTrigger } from "@hypeterminal/ui";
+import { Dropdown, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { BookBookmarkIcon, ListDashesIcon } from "@phosphor-icons/react";
 import { useDeferredValue, useMemo, useState } from "react";

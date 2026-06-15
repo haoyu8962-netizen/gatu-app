@@ -1,4 +1,4 @@
-import { ButtonIcon } from "@hypeterminal/ui";
+import { ButtonIcon } from "@gatu/ui";
 import { BellIcon, GearIcon, TerminalIcon } from "@phosphor-icons/react";
 import { APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { UI_TEXT } from "@/config/ui-text";

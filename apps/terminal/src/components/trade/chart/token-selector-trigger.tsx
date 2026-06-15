@@ -1,4 +1,4 @@
-import { Badge } from "@hypeterminal/ui";
+import { Badge } from "@gatu/ui";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { AssetDisplay } from "../components/asset-display";

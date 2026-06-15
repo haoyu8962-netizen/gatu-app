@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { useSub } from "@hypeterminal/hl-react/hooks/utils/useSub";
-import { HyperliquidStoreContext } from "@hypeterminal/hl-react/provider";
-import { createHyperliquidStore, getStoreInternals, type HyperliquidStore } from "@hypeterminal/hl-react/store";
+import { useSub } from "@gatu/hl-react/hooks/utils/useSub";
+import { HyperliquidStoreContext } from "@gatu/hl-react/provider";
+import { createHyperliquidStore, getStoreInternals, type HyperliquidStore } from "@gatu/hl-react/store";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

@@ -1,4 +1,4 @@
-import { Divider } from "@hypeterminal/ui";
+import { Divider } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { cn } from "@/lib/cn";
 

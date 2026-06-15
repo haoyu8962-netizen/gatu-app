@@ -1,4 +1,4 @@
-import { Badge, Button, ButtonIcon, Divider, Drawer, DrawerContent } from "@hypeterminal/ui";
+import { Badge, Button, ButtonIcon, Divider, Drawer, DrawerContent } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import {
 	DownloadSimpleIcon,
@@ -66,8 +66,8 @@ export function MobileNavDrawer() {
 								<TerminalIcon className="size-3 text-brand" />
 							</div>
 							<span className="text-xs font-bold tracking-tight">
-								<span className="text-brand">HYPE</span>
-								<span className="text-fg">TERMINAL</span>
+								<span className="text-brand">ga</span>
+								<span className="text-fg">tu</span>
 							</span>
 						</div>
 						<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label="Close navigation" onClick={close}>

@@ -38,7 +38,7 @@ export function useDocumentTitle() {
 	useEffect(() => {
 		if (!markPx || !pairName) return;
 		const price = formatPrice(markPx, { szDecimals });
-		document.title = `${price} · ${pairName} | HypeTerminal`;
+		document.title = `${price} · ${pairName} | gatu`;
 	}, [markPx, pairName, szDecimals]);
 
 	useEffect(() => {

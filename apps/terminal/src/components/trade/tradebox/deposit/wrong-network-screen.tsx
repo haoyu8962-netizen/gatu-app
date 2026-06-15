@@ -1,4 +1,4 @@
-import { Button, Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle } from "@hypeterminal/ui";
+import { Button, Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 

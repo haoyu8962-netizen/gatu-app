@@ -6,7 +6,7 @@ Create an installable package that can ship a Hyperliquid-focused skill for clie
 
 ## Current package direction
 
-- Package target: `@hypeterminal/hyperliquid-api-skill`
+- Package target: `@gatu/hyperliquid-api-skill`
 - Distribution intent: package-first artifact that can later bundle a cross-client skill directory instead of only repo-local `.agents/skills/...` content
 - Working principle: keep `SKILL.md` compact and operational, move large API and return-shape detail into `references/`
 - Validation principle: the skill must be backed by evals and source-anchored reference material, not generic LLM knowledge

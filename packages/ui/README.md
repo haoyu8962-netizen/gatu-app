@@ -1,4 +1,4 @@
-# @hypeterminal/ui
+# @gatu/ui
 
 The HypeTerminal design system. Primitives, tokens, and variants — nothing app-specific.
 
@@ -113,13 +113,13 @@ Overlays use Base UI's compound pattern:
 ```tsx
 // App-level styles entry — apps/terminal/src/styles.css
 @import "tailwindcss";
-@import "@hypeterminal/ui/globals.css";
+@import "@gatu/ui/globals.css";
 @source "../../../packages/ui/src";   // scan primitives for used utilities
 ```
 
 ```tsx
 // In any component
-import { Button, Modal, TextInput } from "@hypeterminal/ui";
+import { Button, Modal, TextInput } from "@gatu/ui";
 
 <Button variant="filled" intent="brand" size="md">Place order</Button>
 ```
@@ -130,7 +130,7 @@ When the app needs a specialized component, wrap — don't modify the primitive.
 
 ```tsx
 // apps/terminal/src/components/ui/info-row.tsx
-import { Divider } from "@hypeterminal/ui";
+import { Divider } from "@gatu/ui";
 
 export function InfoRow({ label, value }: Props) {
   return (
@@ -162,10 +162,10 @@ No runtime deps — the consuming app owns the versions.
 
 ```ts
 // index (components + utils)
-import { Button, Modal, Table, cn } from "@hypeterminal/ui";
+import { Button, Modal, Table, cn } from "@gatu/ui";
 
 // tokens + base styles
-import "@hypeterminal/ui/globals.css";
+import "@gatu/ui/globals.css";
 ```
 
 ## Conventions

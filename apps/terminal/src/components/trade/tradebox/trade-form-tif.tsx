@@ -1,4 +1,4 @@
-import { Select } from "@hypeterminal/ui";
+import { Select } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { DefinitionTooltip } from "@/components/ui/definition-tooltip";
 import { type LimitTif, TIF_OPTIONS } from "@/config/trade";

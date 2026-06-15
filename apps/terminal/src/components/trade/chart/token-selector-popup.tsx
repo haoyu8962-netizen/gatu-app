@@ -1,4 +1,4 @@
-import { DrawerContent } from "@hypeterminal/ui";
+import { DrawerContent } from "@gatu/ui";
 import { PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";

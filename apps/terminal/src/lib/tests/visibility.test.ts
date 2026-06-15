@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-let subscribeVisibility: typeof import("@hypeterminal/hl-react/internal/websocket/visibility").subscribeVisibility;
-let getVisibilityState: typeof import("@hypeterminal/hl-react/internal/websocket/visibility").getVisibilityState;
+let subscribeVisibility: typeof import("@gatu/hl-react/internal/websocket/visibility").subscribeVisibility;
+let getVisibilityState: typeof import("@gatu/hl-react/internal/websocket/visibility").getVisibilityState;
 
 describe("visibility singleton", () => {
 	beforeEach(async () => {
 		vi.resetModules();
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
-		const mod = await import("@hypeterminal/hl-react/internal/websocket/visibility");
+		const mod = await import("@gatu/hl-react/internal/websocket/visibility");
 		subscribeVisibility = mod.subscribeVisibility;
 		getVisibilityState = mod.getVisibilityState;
 	});
@@ -115,7 +115,7 @@ describe("visibility singleton", () => {
 		const originalDocument = globalThis.document;
 		Object.defineProperty(globalThis, "document", { value: undefined, configurable: true });
 
-		const mod = await import("@hypeterminal/hl-react/internal/websocket/visibility");
+		const mod = await import("@gatu/hl-react/internal/websocket/visibility");
 		expect(mod.getVisibilityState()).toBe("visible");
 
 		const unsub = mod.subscribeVisibility(vi.fn());

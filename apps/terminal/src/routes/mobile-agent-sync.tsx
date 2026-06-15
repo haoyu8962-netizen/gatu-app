@@ -1,4 +1,4 @@
-import { Button, TextInput } from "@hypeterminal/ui";
+import { Button, TextInput } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
@@ -664,7 +664,7 @@ function getMobileSyncImportErrorMessage(error: unknown): string {
 			case "invalid_envelope":
 			case "invalid_plaintext":
 			case "agent_key_mismatch":
-				return t`This is not a valid HypeTerminal mobile link.`;
+				return t`This is not a valid gatu mobile link.`;
 			case "expired_payload":
 				return t`This mobile link expired.`;
 			case "decrypt_failed":

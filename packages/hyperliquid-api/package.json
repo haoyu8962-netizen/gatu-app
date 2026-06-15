@@ -1,5 +1,5 @@
 {
-	"name": "@hypeterminal/hyperliquid-api-skill",
+	"name": "@gatu/hyperliquid-api-skill",
 	"version": "0.0.1",
 	"type": "module",
 	"description": "Installable Hyperliquid API skill package for Agent Skills-compatible clients.",

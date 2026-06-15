@@ -1,4 +1,4 @@
-import { Button, Dropdown, type DropdownItem } from "@hypeterminal/ui";
+import { Button, Dropdown, type DropdownItem } from "@gatu/ui";
 import { ArrowsClockwiseIcon, ArrowsLeftRightIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";

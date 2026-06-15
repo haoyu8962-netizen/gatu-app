@@ -1,4 +1,4 @@
-import { Button, ButtonIcon, Divider } from "@hypeterminal/ui";
+import { Button, ButtonIcon, Divider } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon, TerminalIcon } from "@phosphor-icons/react";
@@ -53,8 +53,8 @@ export function TopNav() {
 						<TerminalIcon className="size-3 text-brand" />
 					</div>
 					<span className="text-xs font-bold tracking-tight">
-						<span className="text-brand">HYPE</span>
-						<span className="text-fg">TERMINAL</span>
+						<span className="text-brand">ga</span>
+						<span className="text-fg">tu</span>
 					</span>
 				</div>
 				<Divider orientation="vertical" className="my-2 hidden lg:block" />

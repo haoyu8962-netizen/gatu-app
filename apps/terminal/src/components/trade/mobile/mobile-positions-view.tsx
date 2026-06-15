@@ -1,4 +1,4 @@
-import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@hypeterminal/ui";
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { WalletIcon } from "@phosphor-icons/react";
 import { useState, useTransition } from "react";
 import { useConnection } from "wagmi";

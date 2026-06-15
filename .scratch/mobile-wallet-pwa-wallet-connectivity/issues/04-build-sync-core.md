@@ -61,7 +61,7 @@ The sync core now provides:
 
 Verification run:
 
-- `pnpm --filter @hypeterminal/terminal exec vitest run src/lib/tests/mobile-sync-core.test.ts`
+- `pnpm --filter @gatu/terminal exec vitest run src/lib/tests/mobile-sync-core.test.ts`
 - `pnpm exec biome check apps/terminal/src/lib/mobile-sync/sync-core.ts apps/terminal/src/lib/tests/mobile-sync-core.test.ts`
 - `pnpm exec tsc --noEmit --target ES2022 --module ESNext --moduleResolution bundler --lib ES2022,DOM,DOM.Iterable --strict --skipLibCheck apps/terminal/src/lib/mobile-sync/sync-core.ts apps/terminal/src/lib/tests/mobile-sync-core.test.ts`
 

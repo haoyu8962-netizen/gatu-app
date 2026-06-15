@@ -1,4 +1,4 @@
-import { TableCell, TableRow, Tooltip } from "@hypeterminal/ui";
+import { TableCell, TableRow, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { PencilIcon, PlusIcon } from "@phosphor-icons/react";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";

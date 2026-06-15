@@ -1,21 +1,21 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-let createHyperliquidStore: typeof import("@hypeterminal/hl-react/store").createHyperliquidStore;
-let getStoreInternals: typeof import("@hypeterminal/hl-react/store").getStoreInternals;
-let createHealthReport: typeof import("@hypeterminal/hl-react/internal/websocket/health").createHealthReport;
+let createHyperliquidStore: typeof import("@gatu/hl-react/store").createHyperliquidStore;
+let getStoreInternals: typeof import("@gatu/hl-react/store").getStoreInternals;
+let createHealthReport: typeof import("@gatu/hl-react/internal/websocket/health").createHealthReport;
 let maxTrackedKeys: number;
 
 describe("websocket health report", () => {
 	beforeEach(async () => {
 		vi.useFakeTimers();
 		vi.resetModules();
-		const storeMod = await import("@hypeterminal/hl-react/store");
+		const storeMod = await import("@gatu/hl-react/store");
 		createHyperliquidStore = storeMod.createHyperliquidStore;
 		getStoreInternals = storeMod.getStoreInternals;
-		const healthMod = await import("@hypeterminal/hl-react/internal/websocket/health");
+		const healthMod = await import("@gatu/hl-react/internal/websocket/health");
 		createHealthReport = healthMod.createHealthReport;
-		const reliabilityMod = await import("@hypeterminal/hl-react/internal/websocket/reliability");
+		const reliabilityMod = await import("@gatu/hl-react/internal/websocket/reliability");
 		maxTrackedKeys = reliabilityMod.WS_RELIABILITY_LIMITS.subscriptions.maxTrackedKeys;
 	});
 

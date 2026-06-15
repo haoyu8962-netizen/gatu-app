@@ -1,4 +1,4 @@
-import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@hypeterminal/ui";
+import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useMemo } from "react";
 import { useConnection } from "wagmi";

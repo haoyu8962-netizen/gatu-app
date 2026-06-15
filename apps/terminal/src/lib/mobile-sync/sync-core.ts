@@ -2,7 +2,7 @@ import {
 	createMobileAgentName,
 	MOBILE_AGENT_NAME_BASE,
 	MOBILE_AGENT_VALIDITY_MS,
-} from "@hypeterminal/hl-react/signing/mobile-agent";
+} from "@gatu/hl-react/signing/mobile-agent";
 import { type Address, getAddress, type Hex, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
@@ -13,8 +13,8 @@ export const MOBILE_SYNC_CLOCK_SKEW_MS = 60 * 1000;
 export const MOBILE_SYNC_KDF_ITERATIONS = 310000;
 export { createMobileAgentName, MOBILE_AGENT_NAME_BASE, MOBILE_AGENT_VALIDITY_MS };
 
-const MOBILE_SYNC_ENVELOPE_TYPE = "hypeterminal.mobile-agent-sync";
-const MOBILE_SYNC_PLAINTEXT_TYPE = "hypeterminal.mobile-agent";
+const MOBILE_SYNC_ENVELOPE_TYPE = "gatu.mobile-agent-sync";
+const MOBILE_SYNC_PLAINTEXT_TYPE = "gatu.mobile-agent";
 const PAIRING_CODE_BYTES = 8;
 const SYNC_ID_BYTES = 16;
 const SALT_BYTES = 16;
@@ -461,7 +461,7 @@ async function deriveMobileSyncKey(
 	const normalizedCode = normalizePairingCode(pairingCode);
 	const keyMaterial = await crypto.subtle.importKey(
 		"raw",
-		toArrayBuffer(utf8Encode(`HypeTerminal mobile sync v1:${normalizedCode}`)),
+		toArrayBuffer(utf8Encode(`gatu mobile sync v1:${normalizedCode}`)),
 		"PBKDF2",
 		false,
 		["deriveKey"],
@@ -561,7 +561,7 @@ function removeCiphertext(envelope: MobileSyncEnvelope): Omit<MobileSyncEnvelope
 }
 
 function createEnvelopeAdditionalData(envelope: Omit<MobileSyncEnvelope, "ciphertext">): Uint8Array {
-	return utf8Encode(`HypeTerminal mobile sync envelope v1:${canonicalJson(envelope)}`);
+	return utf8Encode(`gatu mobile sync envelope v1:${canonicalJson(envelope)}`);
 }
 
 function validateOrigin(issuerOrigin: string, currentOrigin: string | undefined, allowedOrigins: string[] | undefined) {

@@ -16,9 +16,9 @@ hypeterminal/
 │   └── terminal/                         # the web app (TanStack Start + Vite + SSR)
 │       └── README.md  ───────────────▶   apps/terminal/README.md
 ├── packages/
-│   ├── hl-react/                         # @hypeterminal/hl-react — React bindings for Hyperliquid
+│   ├── hl-react/                         # @gatu/hl-react — React bindings for Hyperliquid
 │   │   └── README.md  ───────────────▶   packages/hl-react/README.md
-│   ├── ui/                               # @hypeterminal/ui — design system (Base UI + Tailwind v4 + CVA)
+│   ├── ui/                               # @gatu/ui — design system (Base UI + Tailwind v4 + CVA)
 │   │   └── README.md  ───────────────▶   packages/ui/README.md
 │   └── hyperliquid-api/                  # Agent Skill for AI tools (NOT a runtime dep)
 │       └── SKILL.md   ───────────────▶   packages/hyperliquid-api/SKILL.md
@@ -38,7 +38,7 @@ hypeterminal/
            │ imports hooks                            │ imports primitives
            ▼                                          ▼
 ┌─────────────────────────────────────┐   ┌──────────────────────────────┐
-│ @hypeterminal/hl-react              │   │ @hypeterminal/ui             │
+│ @gatu/hl-react              │   │ @gatu/ui             │
 │ ─ HttpTransport + WebSocketTransport│   │ ─ Base UI primitives         │
 │ ─ useInfo / useSub / useExchange    │   │ ─ CVA variants               │
 │ ─ Agent-wallet lifecycle            │   │ ─ Tailwind v4 `@theme` tokens│

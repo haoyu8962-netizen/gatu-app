@@ -1,4 +1,4 @@
-import { ButtonIcon } from "@hypeterminal/ui";
+import { ButtonIcon } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { ClientOnly } from "@tanstack/react-router";

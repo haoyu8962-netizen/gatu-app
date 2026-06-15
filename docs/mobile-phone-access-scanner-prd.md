@@ -349,8 +349,8 @@ Local implementation is complete for the code paths that can be covered in autom
    - `pnpm validate:mobile-device -- --allow-incomplete` passed the device-runbook structure check and reported RD-1 through RD-8 plus TW-1 through TW-3 as incomplete.
    - `pnpm template:mobile-device` printed validator-compatible evidence-section templates with explicit result placeholders for all required rows.
    - `pnpm init:mobile-device` is available to insert missing evidence-section templates without changing `Not run` statuses.
-   - `pnpm --filter @hypeterminal/terminal test` passed 44 files with 1 skipped file, and 260 tests with 1 skipped test.
-   - `pnpm --filter @hypeterminal/terminal build` passed with existing dependency directive, pure annotation, TanStack export, and chunk-size warnings.
+   - `pnpm --filter @gatu/terminal test` passed 44 files with 1 skipped file, and 260 tests with 1 skipped test.
+   - `pnpm --filter @gatu/terminal build` passed with existing dependency directive, pure annotation, TanStack export, and chunk-size warnings.
 
 ### Browser smoke evidence
 

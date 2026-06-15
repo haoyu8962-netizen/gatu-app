@@ -1,4 +1,4 @@
-import { Dropdown, type DropdownGroup } from "@hypeterminal/ui";
+import { Dropdown, type DropdownGroup } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import {
 	CrosshairIcon,

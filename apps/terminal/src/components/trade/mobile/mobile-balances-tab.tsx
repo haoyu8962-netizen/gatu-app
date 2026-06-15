@@ -1,4 +1,4 @@
-import { Button, Checkbox } from "@hypeterminal/ui";
+import { Button, Checkbox } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon, WalletIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";

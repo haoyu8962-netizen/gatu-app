@@ -220,7 +220,7 @@ describe("mobile sync core", () => {
 		const sync = await createSyncFixture();
 		const plaintext: MobileAgentSyncPlaintext = {
 			v: 1,
-			type: "hypeterminal.mobile-agent",
+			type: "gatu.mobile-agent",
 			syncId: sync.syncId,
 			issuerOrigin: APP_ORIGIN,
 			env: "Mainnet",

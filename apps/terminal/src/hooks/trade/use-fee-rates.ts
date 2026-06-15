@@ -1,4 +1,4 @@
-import { type MarketKind, useInfo } from "@hypeterminal/hl-react";
+import { type MarketKind, useInfo } from "@gatu/hl-react";
 import { useConnection } from "wagmi";
 import {
 	ORDER_FEE_RATE_MAKER,

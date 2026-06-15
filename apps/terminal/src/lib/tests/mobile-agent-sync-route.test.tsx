@@ -63,7 +63,7 @@ vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: unknown) => options,
 }));
 
-vi.mock("@hypeterminal/ui", () => ({
+vi.mock("@gatu/ui", () => ({
 	Button: ({
 		children,
 		disabled,
@@ -232,7 +232,7 @@ describe("MobileAgentSyncRoute", () => {
 		await flushAsyncWork();
 
 		expect(window.location.hash).toBe("");
-		expect(window.sessionStorage.getItem("hypeterminal.mobile-sync.import-draft.v1")).not.toBeNull();
+		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).not.toBeNull();
 		expect(container.textContent).toContain("Phone link loaded");
 		expect(container.textContent).toContain("No wallet connected");
 
@@ -340,7 +340,7 @@ describe("MobileAgentSyncRoute", () => {
 		const pairingInput = container.querySelector('input[placeholder="0000-0000-0000-0000"]') as HTMLInputElement | null;
 		expect(window.location.hash).toBe("");
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).toContain("This is not a valid HypeTerminal mobile link.");
+		expect(container.textContent).toContain("This is not a valid gatu mobile link.");
 		expect(container.textContent).not.toContain("Phone link loaded");
 		expect(pairingInput?.disabled).toBe(true);
 	});
@@ -380,7 +380,7 @@ describe("MobileAgentSyncRoute", () => {
 		});
 		await flushAsyncWork();
 
-		expect(window.sessionStorage.getItem("hypeterminal.mobile-sync.import-draft.v1")).toBeNull();
+		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).toBeNull();
 		expect(container.textContent).toContain("This mobile link expired.");
 		expect(container.textContent).not.toContain("Phone link loaded");
 		expect(container.querySelector('input[placeholder="Paste link from desktop"]')).not.toBeNull();
@@ -455,7 +455,7 @@ describe("MobileAgentSyncRoute", () => {
 			await new Promise((resolve) => window.setTimeout(resolve, 80));
 		});
 
-		expect(window.sessionStorage.getItem("hypeterminal.mobile-sync.import-draft.v1")).toBeNull();
+		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).toBeNull();
 		expect(container.textContent).toContain("This mobile link expired.");
 		expect(container.textContent).not.toContain("Phone link loaded");
 		expect(container.querySelector('input[placeholder="Paste link from desktop"]')).not.toBeNull();
@@ -511,7 +511,7 @@ describe("MobileAgentSyncRoute", () => {
 		expect(container.textContent).not.toContain(firstSync.syncId.slice(0, 8));
 		expect(container.textContent).toContain(secondSync.syncId.slice(0, 8));
 		expect(pairingInput?.value).toBe("");
-		expect(window.sessionStorage.getItem("hypeterminal.mobile-sync.import-draft.v1")).toContain(secondSync.syncId);
+		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).toContain(secondSync.syncId);
 	});
 
 	it("keeps the loaded link and code when manual replacement is cancelled", async () => {
@@ -620,7 +620,7 @@ describe("MobileAgentSyncRoute", () => {
 
 		const pairingInput = container.querySelector('input[placeholder="0000-0000-0000-0000"]') as HTMLInputElement | null;
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
-		expect(container.textContent).toContain("This is not a valid HypeTerminal mobile link.");
+		expect(container.textContent).toContain("This is not a valid gatu mobile link.");
 		expect(container.textContent).not.toContain(sync.syncId.slice(0, 8));
 		expect(container.textContent).not.toContain("Phone link loaded");
 		expect(pairingInput?.disabled).toBe(true);
@@ -904,7 +904,7 @@ describe("MobileAgentSyncRoute", () => {
 
 		let alerts = [...container.querySelectorAll('[role="alert"]')];
 		const invalidLinkAlert = alerts.find((alert) =>
-			alert.textContent?.includes("This is not a valid HypeTerminal mobile link."),
+			alert.textContent?.includes("This is not a valid gatu mobile link."),
 		);
 		expect(invalidLinkAlert).toBeDefined();
 		expect(document.activeElement).toBe(invalidLinkAlert);
@@ -1073,7 +1073,7 @@ describe("MobileAgentSyncRoute", () => {
 		await flushAsyncWork(60);
 
 		expect(testState.setAgent).toHaveBeenCalled();
-		expect(window.sessionStorage.getItem("hypeterminal.mobile-sync.import-draft.v1")).toBeNull();
+		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).toBeNull();
 		expect(container.textContent).toContain("Phone access ready");
 		expect(container.textContent).not.toContain("Phone link loaded");
 		expect(container.querySelector('input[placeholder="0000-0000-0000-0000"]')).toBeNull();

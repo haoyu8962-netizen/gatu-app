@@ -2,7 +2,7 @@
 
 The HypeTerminal web app. React 19 + TanStack Start (SSR) + Vite 7.
 
-Composes `@hypeterminal/hl-react` (data/signing) and `@hypeterminal/ui` (design system) into the product. See the [root README](../../README.md) for how it fits into the monorepo.
+Composes `@gatu/hl-react` (data/signing) and `@gatu/ui` (design system) into the product. See the [root README](../../README.md) for how it fits into the monorepo.
 
 ## Stack
 
@@ -13,7 +13,7 @@ Composes `@hypeterminal/hl-react` (data/signing) and `@hypeterminal/ui` (design 
 | React | React + React Compiler (babel plugin) | 19.2 |
 | Server state | TanStack Query | 5.90 |
 | Client state | Zustand (+ `persist`) | 5.0 |
-| Styling | Tailwind v4 + `@hypeterminal/ui` tokens | 4.0 |
+| Styling | Tailwind v4 + `@gatu/ui` tokens | 4.0 |
 | Wallets | wagmi + viem | 3.1 / 2.42 |
 | Charting | klinecharts (+ optional TradingView via `types/charting_library`) | 9.8 |
 | Bridging | `@lifi/sdk` | 3.16 |
@@ -48,7 +48,7 @@ apps/terminal/
 │   ├── lib/               trade/, chart/, search/, lifi/, hyperliquid/, tests/, format.ts, cn.ts, ...
 │   ├── components/
 │   │   ├── trade/         product UI (see below)
-│   │   ├── ui/            app-specific compositions of @hypeterminal/ui primitives
+│   │   ├── ui/            app-specific compositions of @gatu/ui primitives
 │   │   ├── pages/         page shells
 │   │   └── icons/         icon assets
 │   ├── config/            constants, chains, ABIs, wagmi config, builder fees
@@ -136,11 +136,11 @@ Top-level: `format.ts`, `cn.ts`, `i18n.ts`, `seo.ts`, `errors.ts`, `explorer.ts`
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource-variable/inter";
-@import "@hypeterminal/ui/globals.css";   /* design-system tokens */
+@import "@gatu/ui/globals.css";   /* design-system tokens */
 /* app-level tokens + dark-mode variant follow */
 ```
 
-App-level tokens extend the `@hypeterminal/ui` base. `@source "../../../packages/ui/src"` tells Tailwind to scan the UI package for class usage.
+App-level tokens extend the `@gatu/ui` base. `@source "../../../packages/ui/src"` tells Tailwind to scan the UI package for class usage.
 
 See `.claude/rules/design-tokens.md` for the token taxonomy (`bg-bg-sunken`, `text-text-strong`, `bg-market-up`, etc.) — **never use hex literals**.
 
@@ -183,6 +183,6 @@ Env vars are read via `import.meta.env` in `src/lib/network.ts` and `src/config/
 See the root [README](../../README.md#conventions) and `.claude/rules/`. In this app specifically:
 
 - Trade math goes in `lib/trade/`, not components.
-- Components use `@hypeterminal/ui` primitives; app-specific compositions go in `components/ui/`.
+- Components use `@gatu/ui` primitives; app-specific compositions go in `components/ui/`.
 - SSR: never touch `window`/`document` at module top-level. Use `ClientOnly` from `@tanstack/react-router` for client-only trees.
 - No manual `useMemo`/`useCallback` for performance — the React Compiler handles it.

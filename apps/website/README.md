@@ -1,4 +1,4 @@
-# @hypeterminal/website
+# @gatu/website
 
 Marketing site served at **hypeterminal.com**. Built with Astro + Tailwind v4. Static output, no JS framework on the client.
 
@@ -7,9 +7,9 @@ The trading app lives at **app.hypeterminal.com** (`apps/terminal`).
 ## Local
 
 ```bash
-pnpm --filter @hypeterminal/website dev      # http://localhost:3010
-pnpm --filter @hypeterminal/website build    # → dist/
-pnpm --filter @hypeterminal/website preview
+pnpm --filter @gatu/website dev      # http://localhost:3010
+pnpm --filter @gatu/website build    # → dist/
+pnpm --filter @gatu/website preview
 ```
 
 ## Deploying to Vercel (apex domain)
@@ -41,6 +41,6 @@ The terminal is a TanStack Start app that needs Nitro/Vercel functions. The webs
 
 ## Design notes
 
-- **Theme:** uses the same token system as `@hypeterminal/ui` (a trimmed subset is inlined into `src/styles/global.css` so the website has zero workspace dependencies).
+- **Theme:** uses the same token system as `@gatu/ui` (a trimmed subset is inlined into `src/styles/global.css` so the website has zero workspace dependencies).
 - **Type:** Inter Variable everywhere. Numbers use `tabular-nums` via the `.tabular` utility.
 - **Inspiration:** [midday.ai](https://midday.ai) — single-column layout, restrained motion, every section is a short headline + one-line subtitle + one visual.

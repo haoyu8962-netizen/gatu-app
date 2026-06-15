@@ -9,7 +9,7 @@ describe("QR classification", () => {
 		});
 	});
 
-	it("classifies HypeTerminal phone-access links", () => {
+	it("classifies gatu phone-access links", () => {
 		const url = "https://app.hypeterminal.com/mobile-agent-sync#ht-mobile-sync=payload";
 		expect(classifyQrValue(url)).toEqual({
 			type: "phoneAccessLink",

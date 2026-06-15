@@ -1,5 +1,5 @@
-import { getExchangeMethodConfig } from "@hypeterminal/hl-react/registries/exchange";
-import type { AgentWalletMetadata } from "@hypeterminal/hl-react/signing/agent-storage";
+import { getExchangeMethodConfig } from "@gatu/hl-react/registries/exchange";
+import type { AgentWalletMetadata } from "@gatu/hl-react/signing/agent-storage";
 import {
 	createMobileAgentApproval,
 	createMobileAgentRevocationApproval,
@@ -11,7 +11,7 @@ import {
 	MOBILE_AGENT_VALIDITY_MS,
 	shouldClearMobileAgent,
 	verifyMobileAgent,
-} from "@hypeterminal/hl-react/signing/mobile-agent";
+} from "@gatu/hl-react/signing/mobile-agent";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const NOW_MS = 1_779_364_227_000;
@@ -133,7 +133,7 @@ describe("mobile agent lifecycle", () => {
 			syncId: "storage-reset",
 		}) satisfies AgentWalletMetadata;
 		const { readAgentFromStorage, removeAgentFromStorage, writeAgentToStorage } = await import(
-			"@hypeterminal/hl-react/signing/agent-storage"
+			"@gatu/hl-react/signing/agent-storage"
 		);
 
 		writeAgentToStorage("Mainnet", USER_ADDRESS, approval.privateKey, approval.publicKey, metadata);

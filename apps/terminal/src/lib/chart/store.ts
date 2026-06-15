@@ -1,4 +1,4 @@
-import { WS_RELIABILITY_LIMITS } from "@hypeterminal/hl-react";
+import { WS_RELIABILITY_LIMITS } from "@gatu/hl-react";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type { Bar, SubscribeBarsCallback } from "@/types/charting_library";
 import type { CandleInterval } from "./resolution";

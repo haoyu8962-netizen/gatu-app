@@ -8,7 +8,7 @@ import {
 	ModalTitle,
 	Select,
 	TextInput,
-} from "@hypeterminal/ui";
+} from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useCallback, useMemo, useState } from "react";

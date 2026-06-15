@@ -50,24 +50,24 @@ Avoid unrelated refactors.
 
 ## Automated QA Results
 
-- Passed: `pnpm --filter @hypeterminal/terminal exec vitest run src/lib/tests/mobile-sync-core.test.ts src/lib/tests/mobile-agent-lifecycle.test.ts src/lib/tests/mobile-sync-import.test.ts src/lib/tests/wallet-utils.test.ts src/lib/tests/agent-snapshot-cache.test.ts src/lib/tests/l1-agent-signing.test.ts`
+- Passed: `pnpm --filter @gatu/terminal exec vitest run src/lib/tests/mobile-sync-core.test.ts src/lib/tests/mobile-agent-lifecycle.test.ts src/lib/tests/mobile-sync-import.test.ts src/lib/tests/wallet-utils.test.ts src/lib/tests/agent-snapshot-cache.test.ts src/lib/tests/l1-agent-signing.test.ts`
   - 6 test files passed.
   - 36 tests passed.
-- Passed: `pnpm --filter @hypeterminal/terminal test`
+- Passed: `pnpm --filter @gatu/terminal test`
   - 37 test files passed.
   - 199 tests passed.
   - 1 websocket soak test skipped.
 - Passed: `pnpm exec biome check` on the mobile wallet, mobile sync, agent lifecycle, and test files touched by this work.
 - Passed: `pnpm exec biome check apps/terminal/src/config/i18n.ts apps/terminal/src/lib/i18n.ts apps/terminal/src/stores/use-global-settings-store.ts apps/terminal/src/lib/errors.ts apps/terminal/src/components/trade/components/mobile-agent-sync-modal.tsx`
-- Passed: `pnpm --filter @hypeterminal/terminal build`
+- Passed: `pnpm --filter @gatu/terminal build`
 - Passed: local dev-server smoke check for `http://localhost:3001/mobile-agent-sync`
   - `curl -I http://localhost:3001/mobile-agent-sync` returned `HTTP/1.1 200 OK`.
-- Passed after adding the manual QA protocol: `pnpm --filter @hypeterminal/terminal exec vitest run src/lib/tests/mobile-sync-core.test.ts src/lib/tests/mobile-agent-lifecycle.test.ts src/lib/tests/mobile-sync-import.test.ts src/lib/tests/wallet-utils.test.ts`
+- Passed after adding the manual QA protocol: `pnpm --filter @gatu/terminal exec vitest run src/lib/tests/mobile-sync-core.test.ts src/lib/tests/mobile-agent-lifecycle.test.ts src/lib/tests/mobile-sync-import.test.ts src/lib/tests/wallet-utils.test.ts`
   - 4 test files passed.
   - 24 tests passed.
 - Passed after fixing the wallet-modal crash: `pnpm exec biome check apps/terminal/src/components/trade/components/wallet-modal.tsx apps/terminal/src/lib/wallet-utils.ts apps/terminal/src/lib/tests/wallet-utils.test.ts`
-- Passed after fixing the wallet-modal crash: `pnpm --filter @hypeterminal/terminal build`
-- Passed after adding wallet-modal regression coverage: `pnpm --filter @hypeterminal/terminal exec vitest run src/lib/tests/wallet-modal.test.tsx src/lib/tests/wallet-utils.test.ts`
+- Passed after fixing the wallet-modal crash: `pnpm --filter @gatu/terminal build`
+- Passed after adding wallet-modal regression coverage: `pnpm --filter @gatu/terminal exec vitest run src/lib/tests/wallet-modal.test.tsx src/lib/tests/wallet-utils.test.ts`
   - 2 test files passed.
   - 4 tests passed.
 - Passed after adding wallet-modal regression coverage: `pnpm exec biome check apps/terminal/src/lib/tests/wallet-modal.test.tsx apps/terminal/src/components/trade/components/wallet-modal.tsx apps/terminal/src/lib/wallet-utils.ts apps/terminal/src/lib/tests/wallet-utils.test.ts`

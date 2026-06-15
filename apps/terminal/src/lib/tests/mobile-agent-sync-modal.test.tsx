@@ -52,7 +52,7 @@ vi.mock("@phosphor-icons/react", () => ({
 	WarningCircleIcon: Icon,
 }));
 
-vi.mock("@hypeterminal/ui", () => ({
+vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		onOpenChange,
@@ -88,7 +88,7 @@ vi.mock("@hypeterminal/ui", () => ({
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 }));
 
-vi.mock("@hypeterminal/hl-react/signing/mobile-agent", () => ({
+vi.mock("@gatu/hl-react/signing/mobile-agent", () => ({
 	createMobileAgentApproval: () => ({
 		agentName: AGENT_NAME,
 		agentValidUntilMs: AGENT_VALID_UNTIL_MS,

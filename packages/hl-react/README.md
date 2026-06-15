@@ -1,4 +1,4 @@
-# @hypeterminal/hl-react
+# @gatu/hl-react
 
 React bindings for the Hyperliquid API. Wraps [`@nktkas/hyperliquid`](https://github.com/nktkas/hyperliquid) with hooks for info queries, WebSocket subscriptions, signed exchange mutations, and **agent-wallet lifecycle**.
 
@@ -62,7 +62,7 @@ packages/hl-react/src/
 ## Setup
 
 ```tsx
-import { HyperliquidProvider } from "@hypeterminal/hl-react";
+import { HyperliquidProvider } from "@gatu/hl-react";
 
 <HyperliquidProvider env="mainnet" builderConfig={builderConfig} agentName="hypeterminal">
   {/* your app */}
@@ -166,11 +166,11 @@ No runtime dependencies — everything is peer, so the consuming app controls ve
 Fine-grained entry points for consumers that want only part of the surface:
 
 ```ts
-import { useHyperliquidStore } from "@hypeterminal/hl-react/store";
-import type { PerpMarket } from "@hypeterminal/hl-react/markets/types";
-import { subscriptionRegistry } from "@hypeterminal/hl-react/registries/subscription";
-import { estimatePayloadSizeBytes } from "@hypeterminal/hl-react/internal/websocket/payload-guard";
-import { RingBuffer } from "@hypeterminal/hl-react/internal/circular-buffer/ring-buffer";
+import { useHyperliquidStore } from "@gatu/hl-react/store";
+import type { PerpMarket } from "@gatu/hl-react/markets/types";
+import { subscriptionRegistry } from "@gatu/hl-react/registries/subscription";
+import { estimatePayloadSizeBytes } from "@gatu/hl-react/internal/websocket/payload-guard";
+import { RingBuffer } from "@gatu/hl-react/internal/circular-buffer/ring-buffer";
 ```
 
 ## Conventions

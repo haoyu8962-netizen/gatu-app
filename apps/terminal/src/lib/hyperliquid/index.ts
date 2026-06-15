@@ -94,14 +94,14 @@ export {
 	type WebSocketTransportOptions,
 	WS_RELIABILITY_LIMITS,
 	writeAgentToStorage,
-} from "@hypeterminal/hl-react";
+} from "@gatu/hl-react";
 
 export type { MarketKind } from "@/domain/market";
 
 import {
 	getInfoClient as getInfoClientBase,
 	getSubscriptionClient as getSubscriptionClientBase,
-} from "@hypeterminal/hl-react";
+} from "@gatu/hl-react";
 import { isTestnet } from "@/lib/network";
 
 export function getInfoClient() {

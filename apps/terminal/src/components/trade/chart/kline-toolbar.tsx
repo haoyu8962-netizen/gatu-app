@@ -1,4 +1,4 @@
-import { Dropdown } from "@hypeterminal/ui";
+import { Dropdown } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { CHART_TYPES, type ChartTypeConfig } from "@/config/chart";
 import { FAVORITE_SET, type IntervalConfig, MORE_INTERVALS, STARRED_INTERVALS } from "@/lib/chart/kline-config";

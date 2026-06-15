@@ -1,4 +1,4 @@
-import { Button, SearchInput, TableHead, TableHeader, TableRow, tableVariants } from "@hypeterminal/ui";
+import { Button, SearchInput, TableHead, TableHeader, TableRow, tableVariants } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowDownIcon, ArrowsDownUpIcon, ArrowUpIcon } from "@phosphor-icons/react";
 import { flexRender } from "@tanstack/react-table";

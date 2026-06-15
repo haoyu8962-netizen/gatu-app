@@ -1,4 +1,4 @@
-import { Badge, Button } from "@hypeterminal/ui";
+import { Badge, Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { ClockIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";

@@ -1,4 +1,4 @@
-import { Button, Checkbox, Slider } from "@hypeterminal/ui";
+import { Button, Checkbox, Slider } from "@gatu/ui";
 import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useEffect, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";

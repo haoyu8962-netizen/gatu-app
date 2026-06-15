@@ -1,4 +1,4 @@
-import { Button } from "@hypeterminal/ui";
+import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { StarIcon, XIcon } from "@phosphor-icons/react";
 import { get24hChange } from "@/domain/market";

@@ -67,8 +67,8 @@ Notes:
    pnpm validate:mobile-device -- --allow-incomplete
    pnpm template:mobile-device
    pnpm init:mobile-device
-   pnpm --filter @hypeterminal/terminal test
-   pnpm --filter @hypeterminal/terminal build
+   pnpm --filter @gatu/terminal test
+   pnpm --filter @gatu/terminal build
    ```
 
    The `git diff --check` command covers tracked docs. The `--no-index` commands cover newly added docs before they are staged; exit code 1 is expected when the only difference is that the file exists.

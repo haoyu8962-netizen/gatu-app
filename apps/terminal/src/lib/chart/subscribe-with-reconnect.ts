@@ -1,4 +1,4 @@
-import { getReconnectDelayMs, WS_RELIABILITY_LIMITS } from "@hypeterminal/hl-react";
+import { getReconnectDelayMs, WS_RELIABILITY_LIMITS } from "@gatu/hl-react";
 import type { ISubscription } from "@nktkas/hyperliquid";
 import { getSubscriptionClient } from "@/lib/hyperliquid";
 import type { Bar } from "@/types/charting_library";

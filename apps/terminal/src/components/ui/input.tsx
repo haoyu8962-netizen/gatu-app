@@ -1,7 +1,7 @@
 /**
  * Bare controlled input for the trade UI.
  *
- * This wraps `@base-ui/react/input` rather than `TextInput` from `@hypeterminal/ui`
+ * This wraps `@base-ui/react/input` rather than `TextInput` from `@gatu/ui`
  * because `TextInput` is a full form field (wraps the input in `Field.Root` with
  * label/hint/error slots). The trade UI needs a stripped-down input whose class
  * string composes directly with `cn()` at the callsite, with a tighter `sm` size

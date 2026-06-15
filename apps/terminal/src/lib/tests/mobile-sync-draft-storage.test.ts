@@ -51,7 +51,7 @@ describe("mobile sync draft storage", () => {
 
 		expect(saveMobileSyncDraft(sync.envelope, "ABCD-1234", { storage, nowMs: NOW_MS })).toBe(true);
 
-		const rawStoredValue = storage.getItem("hypeterminal.mobile-sync.import-draft.v1");
+		const rawStoredValue = storage.getItem("gatu.mobile-sync.import-draft.v1");
 		expect(rawStoredValue).not.toContain(AGENT_PRIVATE_KEY);
 		expect(rawStoredValue).not.toContain(USER_ADDRESS);
 
@@ -96,7 +96,7 @@ describe("mobile sync draft storage", () => {
 		).toEqual({ status: "expired" });
 		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS })).toEqual({ status: "empty" });
 
-		storage.setItem("hypeterminal.mobile-sync.import-draft.v1", JSON.stringify({ v: 1, encodedEnvelope: "bad" }));
+		storage.setItem("gatu.mobile-sync.import-draft.v1", JSON.stringify({ v: 1, encodedEnvelope: "bad" }));
 		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS })).toEqual({ status: "invalid" });
 		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS })).toEqual({ status: "empty" });
 	});

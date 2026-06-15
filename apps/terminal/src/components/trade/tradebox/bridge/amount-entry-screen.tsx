@@ -1,4 +1,4 @@
-import { Button } from "@hypeterminal/ui";
+import { Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 import Big from "big.js";

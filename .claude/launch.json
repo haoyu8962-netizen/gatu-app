@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "terminal",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@gatu/terminal", "exec", "vite", "dev", "--port", "3005", "--strictPort"],
+      "port": 3005
+    }
+  ]
+}

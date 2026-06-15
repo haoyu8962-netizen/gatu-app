@@ -1,4 +1,4 @@
-## HyperTerminal UI (`@hypeterminal/ui`)
+## HyperTerminal UI (`@gatu/ui`)
 
 The design system lives in `packages/ui/` as a workspace package.
 
@@ -13,7 +13,7 @@ The design system lives in `packages/ui/` as a workspace package.
 ### Import convention
 ```tsx
 // Correct — import from the UI package
-import { Button, Modal, Tabs } from "@hypeterminal/ui";
+import { Button, Modal, Tabs } from "@gatu/ui";
 
 // Correct — app-specific component that composes UI primitives
 import { InfoRow } from "@/components/ui/info-row";

@@ -47,9 +47,9 @@ Do not build mobile agent QR sync UI in this issue.
 
 ## Verification Notes
 
-- `pnpm --filter @hypeterminal/terminal exec vitest run src/lib/tests/wallet-utils.test.ts`
+- `pnpm --filter @gatu/terminal exec vitest run src/lib/tests/wallet-utils.test.ts`
 - `pnpm exec biome check apps/terminal/src/config/wagmi.ts apps/terminal/src/lib/wallet-utils.ts apps/terminal/src/components/trade/components/wallet-modal.tsx apps/terminal/src/lib/tests/wallet-utils.test.ts`
-- `pnpm --filter @hypeterminal/terminal build`
+- `pnpm --filter @gatu/terminal build`
 
 ## Goal Prompt
 

@@ -51,9 +51,9 @@ Do not change wallet connector architecture in this issue.
 
 ## Verification Notes
 
-- `pnpm --filter @hypeterminal/terminal exec vitest run src/lib/tests/mobile-sync-core.test.ts src/lib/tests/mobile-agent-lifecycle.test.ts src/lib/tests/mobile-sync-import.test.ts`
+- `pnpm --filter @gatu/terminal exec vitest run src/lib/tests/mobile-sync-core.test.ts src/lib/tests/mobile-agent-lifecycle.test.ts src/lib/tests/mobile-sync-import.test.ts`
 - `pnpm exec biome check apps/terminal/src/components/trade/components/mobile-agent-sync-modal.tsx apps/terminal/src/components/trade/header/user-menu.tsx apps/terminal/src/routes/mobile-agent-sync.tsx apps/terminal/src/lib/mobile-sync/import-verification.ts apps/terminal/src/lib/tests/mobile-sync-import.test.ts`
-- `pnpm --filter @hypeterminal/terminal build`
+- `pnpm --filter @gatu/terminal build`
 - The sync core tests assert the sync URL is fragment-only and does not contain the raw agent private key.
 - Physical desktop-to-phone QA is deferred to issue 08.
 

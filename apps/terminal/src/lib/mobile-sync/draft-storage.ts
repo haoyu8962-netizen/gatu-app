@@ -5,7 +5,7 @@ import {
 	type MobileSyncEnvelope,
 } from "./sync-core";
 
-const MOBILE_SYNC_DRAFT_STORAGE_KEY = "hypeterminal.mobile-sync.import-draft.v1";
+const MOBILE_SYNC_DRAFT_STORAGE_KEY = "gatu.mobile-sync.import-draft.v1";
 
 interface StoredMobileSyncDraft {
 	v: 1;

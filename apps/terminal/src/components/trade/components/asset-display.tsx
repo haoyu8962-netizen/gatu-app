@@ -1,4 +1,4 @@
-import { Avatar } from "@hypeterminal/ui";
+import { Avatar } from "@gatu/ui";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import type { SpotToken, UnifiedMarket } from "@/lib/hyperliquid/markets";

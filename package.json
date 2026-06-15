@@ -3,10 +3,10 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "pnpm --filter @hypeterminal/terminal dev",
-		"build": "pnpm --filter @hypeterminal/terminal build",
-		"serve": "pnpm --filter @hypeterminal/terminal serve",
-		"test": "pnpm --filter @hypeterminal/terminal test",
+		"dev": "pnpm --filter @gatu/terminal dev",
+		"build": "pnpm --filter @gatu/terminal build",
+		"serve": "pnpm --filter @gatu/terminal serve",
+		"test": "pnpm --filter @gatu/terminal test",
 		"diagnostics:browser": "node scripts/browser-diagnostics.js",
 		"validate:mobile-device": "node scripts/validate-mobile-phone-access-device-validation.js",
 		"test:mobile-device-validator": "node --test scripts/validate-mobile-phone-access-device-validation.test.js",
@@ -16,8 +16,8 @@
 		"lint": "biome lint",
 		"check": "biome check",
 		"fix": "biome check --write",
-		"i18n:extract": "pnpm --filter @hypeterminal/terminal i18n:extract",
-		"i18n:compile": "pnpm --filter @hypeterminal/terminal i18n:compile",
+		"i18n:extract": "pnpm --filter @gatu/terminal i18n:extract",
+		"i18n:compile": "pnpm --filter @gatu/terminal i18n:compile",
 		"prepare": "lefthook install"
 	},
 	"devDependencies": {

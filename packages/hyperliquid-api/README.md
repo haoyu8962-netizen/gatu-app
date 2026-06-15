@@ -1,8 +1,8 @@
-# @hypeterminal/hyperliquid-api-skill
+# @gatu/hyperliquid-api-skill
 
 **This is not a runtime dependency.** It's an [Agent Skill](https://www.anthropic.com/news/agent-skills) — installable tooling for AI coding agents (Claude Code, Codex, etc.) that guides them toward correct Hyperliquid API usage.
 
-Runtime Hyperliquid integration lives in [`@hypeterminal/hl-react`](../hl-react/README.md).
+Runtime Hyperliquid integration lives in [`@gatu/hl-react`](../hl-react/README.md).
 
 ## What's inside
 

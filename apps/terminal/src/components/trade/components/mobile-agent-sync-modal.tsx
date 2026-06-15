@@ -2,7 +2,7 @@ import {
 	createMobileAgentApproval,
 	createMobileAgentRevocationApproval,
 	isStoredMobileAgent,
-} from "@hypeterminal/hl-react/signing/mobile-agent";
+} from "@gatu/hl-react/signing/mobile-agent";
 import {
 	AdaptiveModal,
 	Button,
@@ -11,7 +11,7 @@ import {
 	ModalFooter,
 	ModalHeader,
 	ModalTitle,
-} from "@hypeterminal/ui";
+} from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {

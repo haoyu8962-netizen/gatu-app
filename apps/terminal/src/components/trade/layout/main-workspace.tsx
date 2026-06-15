@@ -1,4 +1,4 @@
-import { Divider } from "@hypeterminal/ui";
+import { Divider } from "@gatu/ui";
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, useCallback, useState } from "react";
 import { useDefaultLayout } from "react-resizable-panels";

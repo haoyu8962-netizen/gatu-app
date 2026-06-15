@@ -2,13 +2,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFakeSubscription } from "./harness/subscription";
 
-let createHyperliquidStore: typeof import("@hypeterminal/hl-react/store").createHyperliquidStore;
+let createHyperliquidStore: typeof import("@gatu/hl-react/store").createHyperliquidStore;
 
 describe("store-driven resume via singletons", () => {
 	beforeEach(async () => {
 		vi.resetModules();
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
-		const mod = await import("@hypeterminal/hl-react/store");
+		const mod = await import("@gatu/hl-react/store");
 		createHyperliquidStore = mod.createHyperliquidStore;
 	});
 

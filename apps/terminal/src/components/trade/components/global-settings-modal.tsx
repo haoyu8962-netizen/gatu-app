@@ -9,7 +9,7 @@ import {
 	Select,
 	Slider,
 	Toggle,
-} from "@hypeterminal/ui";
+} from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import type { ChangeEvent, ReactNode } from "react";

@@ -1,4 +1,4 @@
-import { Tooltip } from "@hypeterminal/ui";
+import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, FireIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
