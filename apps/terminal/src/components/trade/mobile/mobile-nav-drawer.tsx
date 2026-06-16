@@ -14,6 +14,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useConnection } from "wagmi";
 import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { cn } from "@/lib/cn";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
@@ -38,6 +39,7 @@ export function MobileNavDrawer() {
 	const [walletOpen, setWalletOpen] = useState(false);
 	const { scope } = useExchangeScope();
 	const { isConnected } = useConnection();
+	const { tradeRestricted } = useGeoRestriction();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 
@@ -117,7 +119,19 @@ export function MobileNavDrawer() {
 					</div>
 
 					<div className="shrink-0 p-3 border-t border-stroke-weak/60 flex flex-col gap-2">
-						{isConnected ? (
+						{!isConnected && (
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="sm"
+								onClick={() => setWalletOpen(true)}
+								iconLeft={<WalletIcon className="size-3.5" />}
+								className="w-full"
+							>
+								<Trans>Connect Wallet</Trans>
+							</Button>
+						)}
+						{isConnected && !tradeRestricted && (
 							<Button
 								variant="filled"
 								intent="brand"
@@ -130,17 +144,6 @@ export function MobileNavDrawer() {
 								className="w-full"
 							>
 								<Trans>Deposit</Trans>
-							</Button>
-						) : (
-							<Button
-								variant="outline"
-								intent="neutral"
-								size="sm"
-								onClick={() => setWalletOpen(true)}
-								iconLeft={<WalletIcon className="size-3.5" />}
-								className="w-full"
-							>
-								<Trans>Connect Wallet</Trans>
 							</Button>
 						)}
 						<div className="flex items-center justify-between pt-1">

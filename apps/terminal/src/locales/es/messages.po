@@ -802,6 +802,7 @@ msgstr ""
 msgid "Deposit successful"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposits and withdrawals are not allowed."
 msgstr "Los depósitos y retiros no están permitidos."
@@ -3111,6 +3112,7 @@ msgstr "Operaciones"
 msgid "Trading"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Trading is not available in your region"

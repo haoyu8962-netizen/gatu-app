@@ -4,6 +4,7 @@ import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, useMobileActiveTab } from "@/stores/use-global-settings-store";
+import { GeoRestrictionBanner } from "../geo/geo-restriction-banner";
 import { MobileAccountView } from "./mobile-account-view";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileBottomNav, type MobileTab } from "./mobile-bottom-nav";
@@ -38,6 +39,7 @@ export function MobileTerminal({ className }: Props) {
 	return (
 		<div className={cn("h-dvh w-full flex flex-col bg-background text-fg font-sans", "overflow-hidden", className)}>
 			<MobileHeader />
+			<GeoRestrictionBanner />
 			<OfflineBanner />
 			<main className="flex-1 min-h-0 flex flex-col overflow-hidden">
 				{activeTab === "chart" && <MobileChartView />}

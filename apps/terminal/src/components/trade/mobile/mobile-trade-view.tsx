@@ -1,4 +1,5 @@
 import { Button, Checkbox, Slider } from "@gatu/ui";
+import { t } from "@lingui/core/macro";
 import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useEffect, useState } from "react";
 import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
@@ -14,6 +15,7 @@ import { getSliderValue } from "@/domain/trade/order/size";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
@@ -94,6 +96,7 @@ export function MobileTradeView({ className }: Props) {
 	const [showMarginDialog, setShowMarginDialog] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
+	const { tradeRestricted } = useGeoRestriction();
 
 	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
 
@@ -206,6 +209,7 @@ export function MobileTradeView({ className }: Props) {
 	}
 
 	async function handleApprove() {
+		if (tradeRestricted) return;
 		if (isRegistering) return;
 		setApprovalError(null);
 		try {
@@ -216,6 +220,7 @@ export function MobileTradeView({ className }: Props) {
 	}
 
 	async function handleSubmit() {
+		if (tradeRestricted) return;
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
@@ -498,24 +503,30 @@ export function MobileTradeView({ className }: Props) {
 					<p className="text-xs text-error mb-2">{validation.errors.join(" \u2022 ")}</p>
 				)}
 				{approvalError && <p className="text-xs text-error mb-2">{approvalError}</p>}
-				<Button
-					variant="outline"
-					size="lg"
-					onClick={buttonContent.action}
-					disabled={buttonContent.disabled}
-					intent={buttonContent.variant === "cyan" ? "brand" : buttonContent.variant === "buy" ? "neutral" : "error"}
-					className={cn(
-						"w-full",
-						buttonContent.variant === "cyan"
-							? "bg-brand-soft border-stroke-brand-strong text-brand hover:bg-brand-soft/30"
-							: buttonContent.variant === "buy"
-								? "bg-success-soft border-stroke-success-strong text-success hover:bg-success-soft/30"
-								: "bg-error-soft border-stroke-error-strong text-error hover:bg-error-soft/30",
-					)}
-					iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
-				>
-					{buttonContent.text}
-				</Button>
+				{tradeRestricted ? (
+					<Button variant="outline" size="lg" intent="neutral" disabled className="w-full">
+						{t`Trading is not available in your region`}
+					</Button>
+				) : (
+					<Button
+						variant="outline"
+						size="lg"
+						onClick={buttonContent.action}
+						disabled={buttonContent.disabled}
+						intent={buttonContent.variant === "cyan" ? "brand" : buttonContent.variant === "buy" ? "neutral" : "error"}
+						className={cn(
+							"w-full",
+							buttonContent.variant === "cyan"
+								? "bg-brand-soft border-stroke-brand-strong text-brand hover:bg-brand-soft/30"
+								: buttonContent.variant === "buy"
+									? "bg-success-soft border-stroke-success-strong text-success hover:bg-success-soft/30"
+									: "bg-error-soft border-stroke-error-strong text-error hover:bg-error-soft/30",
+						)}
+						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
+					>
+						{buttonContent.text}
+					</Button>
+				)}
 				<MobileBottomNavSpacer />
 			</div>
 

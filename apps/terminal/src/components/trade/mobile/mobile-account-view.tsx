@@ -14,6 +14,7 @@ import { useConnection, useDisconnect } from "wagmi";
 import { UI_TEXT } from "@/config/ui-text";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { toNumberOrZero } from "@/lib/trade/numbers";
@@ -37,6 +38,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
 	const { open: openDepositModal } = useDepositModalActions();
+	const { tradeRestricted } = useGeoRestriction();
 
 	function handleCopyAddress() {
 		if (!address) return;
@@ -161,35 +163,39 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						/>
 					</div>
 
-					<div className="grid grid-cols-3 gap-2 pt-2">
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="md"
-							onClick={() => openDepositModal("withdraw")}
-							iconLeft={<UploadSimpleIcon className="size-4" />}
-						>
-							{ACCOUNT_TEXT.WITHDRAW_LABEL}
-						</Button>
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="md"
-							onClick={() => openDepositModal("deposit")}
-							iconLeft={<DownloadSimpleIcon className="size-4" />}
-						>
-							{ACCOUNT_TEXT.DEPOSIT_LABEL}
-						</Button>
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="md"
-							onClick={() => openDepositModal("bridge")}
-							iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-						>
-							{t`Bridge`}
-						</Button>
-					</div>
+					{tradeRestricted ? (
+						<p className="pt-2 text-center text-sm text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
+					) : (
+						<div className="grid grid-cols-3 gap-2 pt-2">
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="md"
+								onClick={() => openDepositModal("withdraw")}
+								iconLeft={<UploadSimpleIcon className="size-4" />}
+							>
+								{ACCOUNT_TEXT.WITHDRAW_LABEL}
+							</Button>
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="md"
+								onClick={() => openDepositModal("deposit")}
+								iconLeft={<DownloadSimpleIcon className="size-4" />}
+							>
+								{ACCOUNT_TEXT.DEPOSIT_LABEL}
+							</Button>
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="md"
+								onClick={() => openDepositModal("bridge")}
+								iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+							>
+								{t`Bridge`}
+							</Button>
+						</div>
+					)}
 				</div>
 			</div>
 
