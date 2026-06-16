@@ -427,9 +427,9 @@ msgstr "持有仓位时无法切换到逐仓模式。请先平仓。"
 msgid "Change leverage"
 msgstr "调整杠杆"
 
-#: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Chart"
-#~ msgstr "图表"
+#: src/components/trade/mobile/mobile-trade-layout.tsx
+msgid "Chart"
+msgstr "图表"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Clipboard does not contain a pairing code."
@@ -1931,6 +1931,7 @@ msgstr "打开手机链接，然后输入桌面端显示的配对码。"
 msgid "ORACLE"
 msgstr "预言机"
 
+#: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -3144,6 +3145,7 @@ msgstr "通过{0}现货市场交易"
 msgid "trades"
 msgstr "成交"
 
+#: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Trades"

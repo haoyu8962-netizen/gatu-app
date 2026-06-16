@@ -427,9 +427,9 @@ msgstr "खुली पोज़िशन के साथ आइसोले�
 msgid "Change leverage"
 msgstr "लेवरेज बदलें"
 
-#: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Chart"
-#~ msgstr "चार्ट"
+#: src/components/trade/mobile/mobile-trade-layout.tsx
+msgid "Chart"
+msgstr "चार्ट"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Clipboard does not contain a pairing code."
@@ -1931,6 +1931,7 @@ msgstr "फ़ोन लिंक खोलें, फिर डेस्कट�
 msgid "ORACLE"
 msgstr "ऑरेकल"
 
+#: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -3144,6 +3145,7 @@ msgstr "{0} Spot मार्केट के माध्यम से ट्�
 msgid "trades"
 msgstr "ट्रेड"
 
+#: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Trades"

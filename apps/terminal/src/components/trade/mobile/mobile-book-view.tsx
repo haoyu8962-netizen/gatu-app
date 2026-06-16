@@ -21,10 +21,12 @@ type View = "book" | "trades";
 interface MobileBookViewProps {
 	className?: string;
 	embedded?: boolean;
+	view?: View;
 }
 
-export function MobileBookView({ className, embedded }: MobileBookViewProps) {
-	const [view, setView] = useState<View>("book");
+export function MobileBookView({ className, embedded, view: viewProp }: MobileBookViewProps) {
+	const [internalView, setView] = useState<View>("book");
+	const view = viewProp ?? internalView;
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const { setShowOrderbookInQuote } = useGlobalSettingsActions();

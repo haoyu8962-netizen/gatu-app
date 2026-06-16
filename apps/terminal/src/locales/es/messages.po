@@ -427,9 +427,9 @@ msgstr "No se puede cambiar al modo aislado con una posición abierta. Cierra tu
 msgid "Change leverage"
 msgstr "Cambiar apalancamiento"
 
-#: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Chart"
-#~ msgstr "Gráfico"
+#: src/components/trade/mobile/mobile-trade-layout.tsx
+msgid "Chart"
+msgstr "Gráfico"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Clipboard does not contain a pairing code."
@@ -1931,6 +1931,7 @@ msgstr "Abre el enlace del teléfono y luego introduce el código de emparejamie
 msgid "ORACLE"
 msgstr "ORÁCULO"
 
+#: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -3144,6 +3145,7 @@ msgstr "Operar vía mercado spot {0}"
 msgid "trades"
 msgstr "operaciones"
 
+#: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Trades"
