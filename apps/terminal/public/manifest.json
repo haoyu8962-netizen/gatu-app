@@ -1,10 +1,10 @@
 {
-  "short_name": "HypeTerminal",
-  "name": "HypeTerminal",
+  "short_name": "gatu",
+  "name": "gatu",
   "icons": [
     {
       "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
+      "sizes": "16x16 32x32 48x48 64x64",
       "type": "image/x-icon"
     },
     {
@@ -33,6 +33,6 @@
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
-  "theme_color": "#0a0a0a",
-  "background_color": "#0a0a0a"
+  "theme_color": "#0a0e13",
+  "background_color": "#0a0e13"
 }

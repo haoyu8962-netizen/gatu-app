@@ -9,7 +9,7 @@ export const SEO_DEFAULTS = {
 	twitterHandle: "@hypeterminal",
 	locale: "en_US",
 	// meta theme-color needs a literal CSS color value (tag consumer reads from HTML, not CSS vars)
-	themeColor: "#0a0a0a",
+	themeColor: "#0a0e13",
 } as const;
 
 export const SEO_BASE_KEYWORDS = ["hyperliquid", "trading", "dex", "perpetuals", "crypto", "defi"] as const;
