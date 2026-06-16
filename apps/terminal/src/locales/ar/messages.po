@@ -1310,6 +1310,10 @@ msgstr "IOC (تنفيذ فوري أو إلغاء)"
 msgid "Isolated"
 msgstr "معزول"
 
+#: src/components/trade/header/language-switcher.tsx
+msgid "Language"
+msgstr "اللغة"
+
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Latency:"
 #~ msgstr "التأخير:"

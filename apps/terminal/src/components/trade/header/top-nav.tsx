@@ -13,6 +13,7 @@ import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { LanguageSwitcher } from "./language-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
 const UserMenu = createLazyComponent(() => import("./user-menu"), "UserMenu");
@@ -103,6 +104,7 @@ export function TopNav() {
 					<UserMenu />
 				</Suspense>
 				<ThemeToggle />
+				<LanguageSwitcher />
 				<ButtonIcon
 					variant="ghost"
 					intent="neutral"

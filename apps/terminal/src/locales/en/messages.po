@@ -1310,9 +1310,9 @@ msgstr "IOC (Immediate Or Cancel)"
 msgid "Isolated"
 msgstr "Isolated"
 
-#: src/components/trade/components/global-settings-dialog.tsx
-#~ msgid "Language"
-#~ msgstr "Language"
+#: src/components/trade/header/language-switcher.tsx
+msgid "Language"
+msgstr "Language"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Latency:"

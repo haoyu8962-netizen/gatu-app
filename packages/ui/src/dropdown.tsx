@@ -105,6 +105,7 @@ interface DropdownBaseProps extends VariantProps<typeof dropdownTriggerVariants>
 	align?: "start" | "center" | "end";
 	triggerClassName?: string;
 	popupClassName?: string;
+	hideCaret?: boolean;
 }
 
 type DropdownProps =
@@ -125,6 +126,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 			triggerAriaLabel,
 			triggerClassName,
 			popupClassName,
+			hideCaret = false,
 		},
 		ref,
 	) => {
@@ -177,14 +179,16 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 						)}
 					>
 						{trigger ?? "Menu"}
-						<CaretDownIcon
-							size={caretSize}
-							weight={isMinimalTrigger ? "regular" : "bold"}
-							className={cn(
-								"shrink-0 transition-transform duration-150 motion-reduce:transition-none [[data-popup-open]>&]:rotate-180",
-								isMinimalTrigger ? "text-fg-muted group-hover:text-fg group-data-[popup-open]:text-fg" : "text-icon",
-							)}
-						/>
+						{!hideCaret && (
+							<CaretDownIcon
+								size={caretSize}
+								weight={isMinimalTrigger ? "regular" : "bold"}
+								className={cn(
+									"shrink-0 transition-transform duration-150 motion-reduce:transition-none [[data-popup-open]>&]:rotate-180",
+									isMinimalTrigger ? "text-fg-muted group-hover:text-fg group-data-[popup-open]:text-fg" : "text-icon",
+								)}
+							/>
+						)}
 					</Menu.Trigger>
 
 					<Menu.Portal>

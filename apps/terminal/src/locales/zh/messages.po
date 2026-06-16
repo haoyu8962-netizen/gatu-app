@@ -1310,6 +1310,10 @@ msgstr "IOC（立即成交或取消）"
 msgid "Isolated"
 msgstr "逐仓"
 
+#: src/components/trade/header/language-switcher.tsx
+msgid "Language"
+msgstr "语言"
+
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Latency:"
 #~ msgstr "延迟:"

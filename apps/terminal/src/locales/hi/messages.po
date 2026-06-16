@@ -1310,6 +1310,10 @@ msgstr "IOC (Immediate Or Cancel)"
 msgid "Isolated"
 msgstr "आइसोलेटेड"
 
+#: src/components/trade/header/language-switcher.tsx
+msgid "Language"
+msgstr "भाषा"
+
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Latency:"
 #~ msgstr "लेटेंसी:"
