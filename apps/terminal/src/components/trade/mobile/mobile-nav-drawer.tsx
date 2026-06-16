@@ -64,9 +64,7 @@ export function MobileNavDrawer() {
 				<DrawerContent className="w-[80vw] max-w-72 flex flex-col p-0">
 					<div className="h-12 px-3 flex items-center justify-between border-b border-stroke-weak/60 shrink-0">
 						<div className="flex items-center gap-1.5">
-							<div className="size-5 rounded-8 bg-brand/10 border border-stroke-brand-strong/30 flex items-center justify-center">
-								<TerminalIcon className="size-3 text-brand" />
-							</div>
+							<img src="/icon.svg" alt="gatu" className="size-5 rounded-8" />
 							<span className="text-xs font-bold tracking-tight">
 								<span className="text-brand">ga</span>
 								<span className="text-fg">tu</span>

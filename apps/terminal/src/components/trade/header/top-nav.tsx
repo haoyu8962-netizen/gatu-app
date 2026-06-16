@@ -1,7 +1,7 @@
 import { Button, ButtonIcon, Divider } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { DownloadSimpleIcon, GearIcon, TerminalIcon } from "@phosphor-icons/react";
+import { DownloadSimpleIcon, GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { useConnection } from "wagmi";
@@ -51,9 +51,7 @@ export function TopNav() {
 		>
 			<div className="flex items-center gap-3 min-w-0">
 				<div className="flex items-center gap-1.5">
-					<div className="size-5 rounded-8 bg-brand/10 border border-stroke-brand-strong/30 flex items-center justify-center">
-						<TerminalIcon className="size-3 text-brand" />
-					</div>
+					<img src="/icon.svg" alt="gatu" className="size-5 rounded-8" />
 					<span className="text-xs font-bold tracking-tight">
 						<span className="text-brand">ga</span>
 						<span className="text-fg">tu</span>
