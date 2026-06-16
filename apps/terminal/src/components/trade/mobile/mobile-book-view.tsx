@@ -20,9 +20,10 @@ type View = "book" | "trades";
 
 interface MobileBookViewProps {
 	className?: string;
+	embedded?: boolean;
 }
 
-export function MobileBookView({ className }: MobileBookViewProps) {
+export function MobileBookView({ className, embedded }: MobileBookViewProps) {
 	const [view, setView] = useState<View>("book");
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const { showOrderbookInQuote } = useGlobalSettings();
@@ -105,7 +106,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 
 	return (
 		<div className={cn("flex flex-col h-full min-h-0", className)}>
-			<div className="shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-surface">
+			<div className={cn("shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-surface", embedded && "hidden")}>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-1 bg-surface rounded-8 p-0.5">
 						<Button
@@ -244,7 +245,7 @@ export function MobileBookView({ className }: MobileBookViewProps) {
 				</div>
 			)}
 
-			<MobileBottomNavSpacer />
+			{!embedded && <MobileBottomNavSpacer />}
 		</div>
 	);
 }

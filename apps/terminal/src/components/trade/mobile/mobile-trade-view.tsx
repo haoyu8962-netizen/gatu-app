@@ -48,9 +48,10 @@ const ORDER_TEXT = UI_TEXT.ORDER_ENTRY;
 
 interface Props {
 	className?: string;
+	embedded?: boolean;
 }
 
-export function MobileTradeView({ className }: Props) {
+export function MobileTradeView({ className, embedded }: Props) {
 	const { address, isConnected } = useConnection();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
@@ -305,7 +306,7 @@ export function MobileTradeView({ className }: Props) {
 	const priceColorClass = change24h !== null ? getValueColorClass(change24h) : "text-fg";
 
 	return (
-		<div className={cn("flex flex-col h-full min-h-0 bg-background", className)}>
+		<div className={cn("flex flex-col h-full min-h-0", !embedded && "bg-background", className)}>
 			<MarginModeModal
 				open={showMarginDialog}
 				onOpenChange={(open) => {
@@ -324,12 +325,12 @@ export function MobileTradeView({ className }: Props) {
 				showLeverage={capabilities.isLeveraged}
 				onApply={async (mode: MarginMode, lev: number) => applyMarginAndLeverage(mode, lev)}
 			/>
-			<div className="shrink-0 px-4 py-2 border-b border-stroke-weak/60 bg-surface">
+			<div className={cn("shrink-0 px-4 py-2 border-b border-stroke-weak/60 bg-surface", embedded && "hidden")}>
 				<div className="flex items-center justify-between">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					<div className="text-right">
 						<div className={cn("text-sm font-semibold tabular-nums", priceColorClass)}>
-							${formatPrice(markPx || null, { szDecimals: market?.szDecimals })}
+							{formatPrice(markPx || null, { szDecimals: market?.szDecimals })}
 						</div>
 						{typeof change24h === "number" && (
 							<div className={cn("text-xs tabular-nums", getValueColorClass(change24h))}>
