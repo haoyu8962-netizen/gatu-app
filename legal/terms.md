@@ -1,12 +1,10 @@
 # Gatu — Terms of Use
 
-> **DRAFT — Not for public release until reviewed and approved by qualified legal counsel** · Brand: Gatu · Website: gatu.ai · App: app.gatu.ai
-
-**Last Updated:** [Date — to be completed by the operator before release]
+**Last Updated:** June 15, 2026
 
 These Terms of Use ("Terms") govern your access to and use of the website-hosted user
 interface currently available at app.gatu.ai (the "Interface") and are entered into
-between you and [Gatu operating entity's full legal name — to be determined, e.g., Gatu Labs Ltd.] ("Company," "we," "us," or "our"). By accepting
+between you and Gatu Corp. ("Company," "we," "us," or "our"). By accepting
 these Terms, connecting a wallet or otherwise using the Interface, you confirm that you
 have read, understand, and agree to be bound by these Terms. If you do not agree, you may
 not access or use the Interface.
@@ -15,8 +13,8 @@ not access or use the Interface.
 
 ### 1.1. The Interface
 The Interface is one, but not the exclusive, means of reading from and writing
-transactions to the permissionless [underlying protocol — to be confirmed: Hyperliquid / HyperCore perpetuals] (the "Protocol") that runs on the
-[underlying blockchain] ("Chain") and is distinct from the Protocol. The Protocol and the
+transactions to the permissionless Hyperliquid protocol (the "Protocol") that runs on the
+Hyperliquid blockchain ("Chain") and is distinct from the Protocol. The Protocol and the
 Chain are each decentralized, permissionless, and community-driven. We do not own,
 control, operate, or custody the Protocol or the Chain, and we cannot stop, reverse, or
 modify transactions on them. You acknowledge that blockchain transactions are irreversible
@@ -53,7 +51,7 @@ you represent.
 The Interface is not developed for and is not available to "Restricted Persons," who are
 strictly prohibited from accessing or using it. "Restricted Persons" include: (a) persons or
 entities who reside in, are located in, are incorporated in, or have a registered office or
-principal place of business in the United States of America, Canada, or the United Kingdom;
+principal place of business in the United States of America, the People's Republic of China, or the Province of Ontario (Canada);
 (b) persons or entities (or any person owned or controlled by them) in jurisdictions subject
 to comprehensive economic and trade sanctions or export control laws, including the Crimea
 region, Cuba, Iran, North Korea, Syria, Myanmar (Burma), Donetsk, Luhansk, or any other
@@ -145,7 +143,7 @@ you a limited, revocable, non-exclusive, non-sublicensable, non-transferable lic
 access and use the Interface per these Terms; no reverse engineering, modification, or
 distribution. You grant us a worldwide, non-exclusive, sublicensable, royalty-free license to
 use content and feedback you provide for our business purposes. DMCA/IP notices:
-legal@gatu.ai.
+support@gatu.ai.
 
 ## 8. Release; Indemnity; Limitation of Liability
 
@@ -166,10 +164,13 @@ US$100.**
 ## 9. Dispute Resolution; Governing Law
 
 Disputes are subject to **binding individual arbitration**; **no class actions**. These Terms
-are governed by the internal laws of [governing jurisdiction, e.g., the Cayman Islands]. Before filing,
-email legal@gatu.ai with 30 days to resolve informally. Arbitration is administered by
-[arbitration institution], seated in [seat of arbitration], in English, by a sole arbitrator. Claims must be brought
-within 12 months. We may seek injunctive relief to protect our IP or enforce Section 4.
+are governed by the laws of England and Wales, without regard to its conflict-of-laws rules.
+Before filing, email support@gatu.ai with 30 days to resolve informally. Arbitration is
+administered by the London Court of International Arbitration (LCIA) under its rules, seated in
+London, United Kingdom, in English, by a sole arbitrator appointed under the LCIA rules. Claims
+must be brought within 12 months. Small claims may be brought in the small claims court of England
+and Wales. No dispute may be brought in any court located in the United States. We may seek
+injunctive relief to protect our IP or enforce Section 4.
 
 ## 10. Miscellaneous
 
@@ -182,4 +183,4 @@ within 12 months. We may seek injunctive relief to protect our IP or enforce Sec
   national securities exchange or in any other capacity; we do not broker, execute, or settle
   trades and do not guarantee best price or best execution.
 - **10.5. Entire Agreement.**
-- **10.6. Notices.** Via the Interface or public communications; contact legal@gatu.ai.
+- **10.6. Notices.** Via the Interface or public communications; contact support@gatu.ai.

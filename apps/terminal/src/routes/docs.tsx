@@ -10,7 +10,6 @@ export const Route = createFileRoute("/docs")({
 			title: "Docs",
 			description: "Product documentation for the gatu trading terminal.",
 			path: "/docs",
-			noIndex: true,
 		}),
 	component: DocsRoute,
 });

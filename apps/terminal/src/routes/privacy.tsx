@@ -10,7 +10,6 @@ export const Route = createFileRoute("/privacy")({
 			title: "Privacy Policy",
 			description: "Privacy Policy for the gatu trading terminal.",
 			path: "/privacy",
-			noIndex: true,
 		}),
 	component: PrivacyRoute,
 });

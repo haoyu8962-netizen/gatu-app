@@ -1,10 +1,8 @@
 # Gatu — Privacy Policy
 
-> **DRAFT — Not for public release until reviewed and approved by qualified legal counsel** · Brand: Gatu · Website: gatu.ai · App: app.gatu.ai
+**Last Updated:** January 26, 2025
 
-**Last Updated:** [Date — to be completed by the operator before release]
-
-This Privacy Policy ("Policy") for Gatu describes the basis on which [Gatu operating entity's full legal name — to be determined, e.g., Gatu Labs Ltd.] ("Company," "we," "us," or "our") will process personal data we may collect from users
+This Privacy Policy ("Policy") for Gatu describes the basis on which Gatu Corp. ("Company," "we," "us," or "our") will process personal data we may collect from users
 of the interface available at app.gatu.ai, including any subdomains ("Website"), and all
 related services ("Services"), in accordance with applicable law. For purposes of applicable
 data protection laws, the Company is the data controller. Capitalized but undefined terms
@@ -39,7 +37,7 @@ policy; we disclaim liability for third-party wallets.
 
 Subject to applicable law, you may have rights of: access; correction; deletion; objection;
 restriction of processing; portability; objection to marketing communications; breach
-notification; complaint to [the relevant data protection supervisory authority]; and withdrawal of consent. We will respond
+notification; complaint to the data protection supervisory authority in your EEA country, or to the UK Information Commissioner's Office (ICO); and withdrawal of consent. We will respond
 without undue delay and, where required, within one month (extendable by a further two months
 in certain circumstances).
 
@@ -47,18 +45,19 @@ in certain circumstances).
 
 We will not take decisions producing legal effects concerning you, or otherwise significantly
 affecting you, based solely on automated processing unless it meets applicable requirements.
-Requests: legal@gatu.ai.
+Requests: support@gatu.ai.
 
 ## Sharing of Personal Data
 
-We may share your data with: service providers and vendors (including blockchain analysis,
-KYC and screening providers, developers, content delivery, and data analytics providers, who
-may help determine eligibility); professional advisors; for legal and security reasons; with
+We may share your data with: service providers and vendors (including IP-based geolocation
+providers such as IPdata, analytics providers such as Mixpanel, blockchain analysis, KYC and
+screening providers, developers, content delivery, and data analytics providers, who may help
+determine eligibility); professional advisors; for legal and security reasons; with
 law enforcement and regulatory authorities; with our affiliates; and in connection with a
 merger, sale, bankruptcy, or reorganization.
 
 Your personal information may be transferred to and processed in countries outside your
-jurisdiction, including outside the [EEA/UK/operating jurisdiction] and including the U.S. For transfers out of
+jurisdiction, including outside the EEA and the UK and including the U.S. For transfers out of
 the EEA/UK we seek to put in place appropriate safeguards, including the EU **Standard
 Contractual Clauses (SCCs)** and/or the UK ICO international data transfer agreement/addendum,
 unless an adequacy decision applies.
@@ -94,11 +93,10 @@ visit to your profile.
 
 ## Periodic Reviews and Updates
 
-This Policy takes into account [the applicable data protection law, e.g., the Cayman Islands Data
-Protection Act 2021] and general privacy principles. Individuals in the EU and UK may have GDPR rights and
+This Policy takes into account Panama's Law No. 81 of 2019 and general privacy principles. Individuals in the EU and UK may have GDPR rights and
 may complain to their supervisory authority or the UK ICO. We may update this Policy; updates
 apply only to information collected after the change.
 
 ## Contact
 
-legal@gatu.ai
+support@gatu.ai

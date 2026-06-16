@@ -10,7 +10,6 @@ export const Route = createFileRoute("/support")({
 			title: "Support",
 			description: "Help, FAQ, troubleshooting, and contact channels for gatu.",
 			path: "/support",
-			noIndex: true,
 		}),
 	component: SupportRoute,
 });

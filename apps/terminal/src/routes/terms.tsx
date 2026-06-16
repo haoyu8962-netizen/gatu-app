@@ -10,7 +10,6 @@ export const Route = createFileRoute("/terms")({
 			title: "Terms of Use",
 			description: "Terms of Use for the gatu trading terminal.",
 			path: "/terms",
-			noIndex: true,
 		}),
 	component: TermsRoute,
 });

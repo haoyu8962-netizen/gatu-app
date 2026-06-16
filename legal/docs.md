@@ -2,7 +2,7 @@
 
 Welcome to the official documentation for **gatu**, a professional trading terminal for the Hyperliquid decentralized exchange.
 
-> _Last updated: [Effective Date]_
+> _Last updated: June 15, 2026_
 
 ---
 
@@ -47,7 +47,7 @@ Guiding principles:
 
 Follow these steps to place your first trade:
 
-1. **Open gatu** — navigate to [Website URL].
+1. **Open gatu** — navigate to https://app.gatu.ai.
 2. **Connect your wallet** — click **Connect Wallet** and choose your preferred method (external wallet or email sign-in).
 3. **Fund your account** — deposit funds directly, or use the built-in bridge to move assets from another network.
 4. **Approve the trading agent** — the first time you trade, approve the agent (API) wallet. This is a one-time signature that enables fast order signing.
@@ -105,6 +105,6 @@ Follow these steps to place your first trade:
 
 ## Help & Legal
 
-- Need help? See the [Support](support.md) page or email [Support Email].
-- [Terms of Service](terms.md)
-- [Privacy Policy](privacy.md)
+- Need help? See the [Support](/support) page or email support@gatu.ai.
+- [Terms of Service](/terms)
+- [Privacy Policy](/privacy)

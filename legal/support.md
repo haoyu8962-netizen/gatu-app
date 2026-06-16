@@ -2,7 +2,7 @@
 
 Welcome to gatu Support. This page helps you find answers, troubleshoot common issues, and get in touch with our team.
 
-> _Last updated: [Last Updated]_
+> _Last updated: June 15, 2026_
 
 ---
 
@@ -26,7 +26,7 @@ gatu is a non-custodial trading terminal for the Hyperliquid decentralized excha
 No. gatu is fully non-custodial. Your funds remain in your own account, and we never have access to your private keys.
 
 **Is gatu free to use?**
-Using the interface is [free / subject to the fees described in our Terms]. You remain responsible for network fees and any protocol or builder fees applied to your trades.
+Using the interface is free to use. You remain responsible for network fees and any protocol or builder fees applied to your trades.
 
 ### Wallet & Sign-In
 
@@ -86,9 +86,9 @@ Use the **Link mobile device** option to generate a secure, time-limited pairing
 
 ## Contact Support
 
-- **Email:** [Support Email]
-- **Help Center / Docs:** [Docs URL]
-- **Community:** [Discord URL] · [Telegram URL] · [X/Twitter URL]
+- **Email:** support@gatu.ai
+- **Help Center / Docs:** https://app.gatu.ai/docs
+- **Community:** coming soon
 
 When contacting us, please include:
 - a clear description of the issue and what you expected to happen;
@@ -103,21 +103,21 @@ When contacting us, please include:
 
 ## Reporting Bugs & Feedback
 
-- **Bug reports:** [Bug Report URL / Email]
-- **Feature requests & feedback:** [Feedback URL / Email]
-- **Security vulnerabilities:** please report responsibly to [Security Email]. Do not disclose publicly until we have had a reasonable opportunity to address the issue.
+- **Bug reports:** support@gatu.ai
+- **Feature requests & feedback:** support@gatu.ai
+- **Security vulnerabilities:** please report responsibly to support@gatu.ai. Do not disclose publicly until we have had a reasonable opportunity to address the issue.
 
 ---
 
 ## Response Times
 
-We aim to respond within the following target windows (business days, [Time Zone]):
+We aim to respond within the following target windows (business days, UTC):
 
 | Channel | Target First Response |
 |---|---|
-| Critical security issues | [Within 24 hours] |
-| General support email | [1–2 business days] |
-| Bug reports | [2–3 business days] |
-| Feature requests / feedback | [As capacity allows] |
+| Critical security issues | Within 24 hours |
+| General support email | 1–2 business days |
+| Bug reports | 2–3 business days |
+| Feature requests / feedback | As capacity allows |
 
 These are targets, not guarantees, and may vary with support volume.
