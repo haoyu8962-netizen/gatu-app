@@ -12,6 +12,7 @@ import { getOrderPrice } from "@/domain/trade/order/price";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { cn } from "@/lib/cn";
 import { useAgentRegistration, useAgentStatus, useSelectedMarketInfo, useUserPositions } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
@@ -73,6 +74,7 @@ export function TradePanel() {
 	const { isReady: isAgentReady, isLoading: isAgentLoading } = useAgentStatus();
 	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
 	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit();
+	const { tradeRestricted } = useGeoRestriction();
 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
@@ -251,6 +253,7 @@ export function TradePanel() {
 	}
 
 	function handleRegister() {
+		if (tradeRestricted) return;
 		if (isRegistering) return;
 		setApprovalError(null);
 
@@ -262,6 +265,7 @@ export function TradePanel() {
 	}
 
 	async function handleSubmit() {
+		if (tradeRestricted) return;
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
@@ -410,22 +414,35 @@ export function TradePanel() {
 
 					{approvalError && <div className="text-xs text-error">{approvalError}</div>}
 
-					<Button
-						variant="filled"
-						size="xs"
-						intent={buttonContent.variant === "buy" ? "brand" : buttonContent.variant === "sell" ? "error" : "brand"}
-						onClick={buttonContent.action}
-						disabled={buttonContent.disabled}
-						className={cn(
-							"w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
-							buttonContent.variant === "buy" && "bg-success text-background hover:opacity-90",
-							buttonContent.variant === "sell" && "text-background",
-						)}
-						aria-label={buttonContent.text}
-						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
-					>
-						{buttonContent.text}
-					</Button>
+					{tradeRestricted ? (
+						<Button
+							variant="filled"
+							size="xs"
+							intent="neutral"
+							disabled
+							className="w-full px-3 py-2 text-sm font-semibold"
+							aria-label={t`Trading is not available in your region`}
+						>
+							{t`Trading is not available in your region`}
+						</Button>
+					) : (
+						<Button
+							variant="filled"
+							size="xs"
+							intent={buttonContent.variant === "buy" ? "brand" : buttonContent.variant === "sell" ? "error" : "brand"}
+							onClick={buttonContent.action}
+							disabled={buttonContent.disabled}
+							className={cn(
+								"w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
+								buttonContent.variant === "buy" && "bg-success text-background hover:opacity-90",
+								buttonContent.variant === "sell" && "text-background",
+							)}
+							aria-label={buttonContent.text}
+							iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
+						>
+							{buttonContent.text}
+						</Button>
+					)}
 				</div>
 
 				{renderSummary()}

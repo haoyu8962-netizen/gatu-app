@@ -3107,6 +3107,11 @@ msgstr "الصفقات"
 msgid "Trading"
 msgstr ""
 
+#: src/components/trade/tradebox/trade-panel.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Trading is not available in your region"
+msgstr "التداول غير متاح في منطقتك"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading key approved"
 msgstr ""

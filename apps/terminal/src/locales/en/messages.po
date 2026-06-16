@@ -3111,6 +3111,11 @@ msgstr "Trades"
 msgid "Trading"
 msgstr "Trading"
 
+#: src/components/trade/tradebox/trade-panel.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Trading is not available in your region"
+msgstr "Trading is not available in your region"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading key approved"
 msgstr "Trading key approved"
