@@ -11,9 +11,18 @@ interface Props {
 	priceDecimals: number;
 	showInQuote?: boolean;
 	szDecimals: number;
+	compact?: boolean;
 }
 
-function OrderbookRowComponent({ level, side, maxTotal, priceDecimals, showInQuote = false, szDecimals }: Props) {
+function OrderbookRowComponent({
+	level,
+	side,
+	maxTotal,
+	priceDecimals,
+	showInQuote = false,
+	szDecimals,
+	compact = false,
+}: Props) {
 	const { setSelectedPrice } = useOrderbookActions();
 	const depthPct = maxTotal > 0 ? (level.total / maxTotal) * 100 : 0;
 	const isAsk = side === "ask";
@@ -31,7 +40,12 @@ function OrderbookRowComponent({ level, side, maxTotal, priceDecimals, showInQuo
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
 				style={{ width: `${depthPct}%`, [isAsk ? "right" : "left"]: 0, [isAsk ? "left" : "right"]: "auto" }}
 			/>
-			<div className="grid grid-cols-3 gap-1 text-2xs tabular-nums py-0.5 px-2 relative z-10">
+			<div
+				className={cn(
+					"grid gap-1 text-2xs tabular-nums py-0.5 relative z-10",
+					compact ? "grid-cols-2 px-1.5" : "grid-cols-3 px-2",
+				)}
+			>
 				<button
 					type="button"
 					onClick={() => setSelectedPrice(level.price)}
@@ -43,7 +57,7 @@ function OrderbookRowComponent({ level, side, maxTotal, priceDecimals, showInQuo
 					{formatNumber(level.price, priceDecimals)}
 				</button>
 				<div className="text-right text-fg group-hover:text-fg">{sizeText}</div>
-				<div className="text-right text-fg group-hover:text-fg">{totalText}</div>
+				{!compact && <div className="text-right text-fg group-hover:text-fg">{totalText}</div>}
 			</div>
 		</div>
 	);
@@ -58,7 +72,8 @@ function areEqual(prev: Props, next: Props): boolean {
 		prev.szDecimals === next.szDecimals &&
 		prev.level.price === next.level.price &&
 		prev.level.size === next.level.size &&
-		prev.level.total === next.level.total
+		prev.level.total === next.level.total &&
+		prev.compact === next.compact
 	);
 }
 

@@ -164,10 +164,15 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 
 			{view === "book" ? (
 				<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-					<div className="shrink-0 grid grid-cols-3 gap-2 px-3 py-2 text-xs uppercase tracking-wider text-fg-muted border-b border-stroke-weak/40">
+					<div
+						className={cn(
+							"shrink-0 grid uppercase tracking-wider text-fg-muted border-b border-stroke-weak/40",
+							embedded ? "grid-cols-2 gap-1 px-1.5 py-1.5 text-2xs" : "grid-cols-3 gap-2 px-3 py-2 text-xs",
+						)}
+					>
 						<div>{ORDERBOOK_TEXT.HEADER_PRICE}</div>
 						<div className="text-right">{ORDERBOOK_TEXT.HEADER_SIZE}</div>
-						<div className="text-right">{ORDERBOOK_TEXT.HEADER_TOTAL}</div>
+						{!embedded && <div className="text-right">{ORDERBOOK_TEXT.HEADER_TOTAL}</div>}
 					</div>
 
 					<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -185,6 +190,7 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 											priceDecimals={priceDecimals}
 											showInQuote={showOrderbookInQuote}
 											szDecimals={szDecimals}
+											compact={embedded}
 										/>
 									))}
 							</div>
@@ -201,15 +207,16 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 							</div>
 						)}
 
-						<div className="shrink-0 py-2 px-3 flex items-center justify-center gap-3 border-y border-stroke-weak/40 bg-surface">
-							<span className="text-xl font-bold tabular-nums text-warning">
+						<div
+							className={cn(
+								"shrink-0 flex items-center justify-center border-y border-stroke-weak/40 bg-surface",
+								embedded ? "py-1.5 px-2 gap-1.5" : "py-2 px-3 gap-3",
+							)}
+						>
+							<span className={cn("font-bold tabular-nums text-warning", embedded ? "text-sm" : "text-xl")}>
 								{typeof mid === "number" && Number.isFinite(mid) ? formatNumber(mid, 2) : FALLBACK_VALUE_PLACEHOLDER}
 							</span>
-							{midDirection === "up" ? (
-								<TrendUpIcon className="size-5 text-success" />
-							) : midDirection === "down" ? (
-								<TrendDownIcon className="size-5 text-error" />
-							) : null}
+							<MidTrendIcon direction={midDirection} className={embedded ? "size-4" : "size-5"} />
 						</div>
 
 						{bookStatus !== "error" && bids.length > 0 ? (
@@ -223,13 +230,19 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 										priceDecimals={priceDecimals}
 										showInQuote={showOrderbookInQuote}
 										szDecimals={szDecimals}
+										compact={embedded}
 									/>
 								))}
 							</div>
 						) : null}
 					</div>
 
-					<div className="shrink-0 px-3 py-2 border-t border-stroke-weak/40 flex items-center justify-between text-xs text-fg-muted">
+					<div
+						className={cn(
+							"shrink-0 border-t border-stroke-weak/40 flex items-center justify-between text-fg-muted",
+							embedded ? "px-2 py-1.5 text-2xs" : "px-3 py-2 text-xs",
+						)}
+					>
 						<span>{ORDERBOOK_TEXT.SPREAD_LABEL}</span>
 						<span className="tabular-nums text-warning">
 							{typeof spread === "number" &&
@@ -250,4 +263,10 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 			{!embedded && <MobileBottomNavSpacer />}
 		</div>
 	);
+}
+
+function MidTrendIcon({ direction, className }: { direction: "up" | "down" | "flat"; className?: string }) {
+	if (direction === "up") return <TrendUpIcon className={cn("text-success", className)} />;
+	if (direction === "down") return <TrendDownIcon className={cn("text-error", className)} />;
+	return null;
 }
