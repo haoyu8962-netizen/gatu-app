@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui/react";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { MOBILE_NAV_ITEMS, type MobileTab } from "@/config/nav";
 import { cn } from "@/lib/cn";
@@ -14,6 +15,8 @@ interface Props {
 }
 
 export function MobileBottomNav({ activeTab, onTabChange, badges, className }: Props) {
+	const { i18n } = useLingui();
+
 	return (
 		<nav
 			className={cn(
@@ -44,7 +47,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 								isActive ? "text-brand" : "text-fg",
 							)}
 							aria-current={isActive ? "page" : undefined}
-							aria-label={item.label}
+							aria-label={i18n._(item.label)}
 						>
 							<span className="relative">
 								<Icon className="size-5" />
@@ -62,7 +65,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 									</span>
 								)}
 							</span>
-							<span className="text-xs font-medium tracking-wide">{item.label}</span>
+							<span className="text-xs font-medium tracking-wide">{i18n._(item.label)}</span>
 						</button>
 					);
 				})}

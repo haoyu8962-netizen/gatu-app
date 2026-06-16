@@ -84,6 +84,7 @@ msgstr "7 दिन"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/config/nav.tsx
 msgid "Account"
 msgstr "खाता"
 
@@ -1590,6 +1591,7 @@ msgstr "बाज़ार"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/nav.tsx
 msgid "Markets"
 msgstr "मार्केट"
 
@@ -3124,9 +3126,9 @@ msgstr "TP/SL"
 msgid "Track on LI.FI Explorer"
 msgstr "LI.FI Explorer पर ट्रैक करें"
 
-#: src/components/trade/header/top-nav.tsx
-#~ msgid "Trade"
-#~ msgstr "ट्रेड"
+#: src/config/nav.tsx
+msgid "Trade"
+msgstr "ट्रेड"
 
 #: src/components/trade/positions/history-tab.tsx
 #~ msgid "Trade ClockCounterClockwise"

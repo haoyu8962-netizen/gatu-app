@@ -41,7 +41,7 @@ const DEFAULT_GLOBAL_SETTINGS = {
 	marketOrderSlippagePercent: DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	marginMode: "cross" as MarginMode,
 	positionsActiveTab: "positions",
-	mobileActiveTab: "chart",
+	mobileActiveTab: "trade",
 	theme: "dark" as Theme,
 	network: "mainnet" as Network,
 } as const;

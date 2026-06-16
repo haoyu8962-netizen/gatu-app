@@ -84,6 +84,7 @@ msgstr "7 天"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/config/nav.tsx
 msgid "Account"
 msgstr "账户"
 
@@ -1590,6 +1591,7 @@ msgstr "个市场"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/nav.tsx
 msgid "Markets"
 msgstr "市场"
 
@@ -3124,9 +3126,9 @@ msgstr "止盈止损"
 msgid "Track on LI.FI Explorer"
 msgstr "在 LI.FI Explorer 上追踪"
 
-#: src/components/trade/header/top-nav.tsx
-#~ msgid "Trade"
-#~ msgstr "交易"
+#: src/config/nav.tsx
+msgid "Trade"
+msgstr "交易"
 
 #: src/components/trade/positions/history-tab.tsx
 #~ msgid "Trade ClockCounterClockwise"

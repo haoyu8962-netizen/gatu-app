@@ -84,6 +84,7 @@ msgstr "7 days"
 #~ msgstr "About Builder Codes"
 
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/config/nav.tsx
 msgid "Account"
 msgstr "Account"
 
@@ -1590,6 +1591,7 @@ msgstr "markets"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/nav.tsx
 msgid "Markets"
 msgstr "Markets"
 
@@ -3124,9 +3126,9 @@ msgstr "TP/SL"
 msgid "Track on LI.FI Explorer"
 msgstr "Track on LI.FI Explorer"
 
-#: src/components/trade/header/top-nav.tsx
-#~ msgid "Trade"
-#~ msgstr "Trade"
+#: src/config/nav.tsx
+msgid "Trade"
+msgstr "Trade"
 
 #: src/components/trade/positions/history-tab.tsx
 #~ msgid "Trade ClockCounterClockwise"

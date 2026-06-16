@@ -1,22 +1,22 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { Icon } from "@phosphor-icons/react";
-import { BookOpenIcon, ChartBarIcon, CurrencyCircleDollarIcon, ListIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { ChartBarIcon, CurrencyCircleDollarIcon, TrendUpIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 
-export type MobileTab = "chart" | "book" | "trade" | "positions" | "account";
+export type MobileTab = "markets" | "trade" | "account";
 
 export interface MobileNavItem {
 	id: MobileTab;
-	label: string;
+	label: MessageDescriptor;
 	icon: Icon;
 }
 
 export const MOBILE_NAV_ITEMS: MobileNavItem[] = [
-	{ id: "chart", label: "Chart", icon: ChartBarIcon },
-	{ id: "book", label: "Book", icon: BookOpenIcon },
-	{ id: "trade", label: "Trade", icon: TrendUpIcon },
-	{ id: "positions", label: "Positions", icon: ListIcon },
-	{ id: "account", label: "Account", icon: CurrencyCircleDollarIcon },
+	{ id: "markets", label: msg`Markets`, icon: ChartBarIcon },
+	{ id: "trade", label: msg`Trade`, icon: TrendUpIcon },
+	{ id: "account", label: msg`Account`, icon: CurrencyCircleDollarIcon },
 ];
 
 export type ScopeNavKey = "all" | "perp" | "spot" | "builders-perp";
