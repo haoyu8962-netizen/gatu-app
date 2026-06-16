@@ -226,6 +226,8 @@ msgstr "संपत्ति"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
+#: src/config/ui-text.ts
 msgid "Available"
 msgstr "उपलब्ध"
 
@@ -256,6 +258,7 @@ msgstr "फिर ऑनलाइन"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/config/ui-text.ts
 msgid "Balance"
 msgstr "शेष"
 
@@ -341,12 +344,14 @@ msgstr "बिल्डर फ़ीस"
 #~ msgstr "खरीदें"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/config/ui-text.ts
+#: src/config/ui-text.ts
 msgid "Buy"
 msgstr "खरीदें"
 
-#: src/components/trade/order-entry/side-toggle.tsx
-#~ msgid "Buy Long"
-#~ msgstr "लॉन्ग खरीदें"
+#: src/config/ui-text.ts
+msgid "Buy Long"
+msgstr "लॉन्ग खरीदें"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Camera access is not available in this browser."
@@ -536,6 +541,7 @@ msgstr "वॉलेट कनेक्ट करें"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "वॉलेट कनेक्ट करें"
@@ -724,9 +730,9 @@ msgstr "क्रॉस"
 msgid "Cross Account Leverage"
 msgstr "क्रॉस खाता लेवरेज"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Cross Leverage"
-#~ msgstr "क्रॉस लीवरेज"
+#: src/config/ui-text.ts
+msgid "Cross Leverage"
+msgstr "क्रॉस लीवरेज"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Cross Margin"
@@ -774,6 +780,8 @@ msgstr "डिफ़ॉल्ट"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Deposit"
 msgstr "जमा करें"
@@ -887,6 +895,7 @@ msgstr "TP/SL संपादित करें"
 msgid "Enable"
 msgstr "सक्षम करें"
 
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Enable Trading"
 msgstr "ट्रेडिंग सक्षम करें"
@@ -952,12 +961,13 @@ msgstr "एंट्री कीमत"
 msgid "Environment"
 msgstr "एनवायरनमेंट"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Equity"
-#~ msgstr "इक्विटी"
+#: src/config/ui-text.ts
+msgid "Equity"
+msgstr "इक्विटी"
 
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/ui-text.ts
 msgid "Est. Fee"
 msgstr "अनु. शुल्क"
 
@@ -1027,6 +1037,7 @@ msgid "Failed to copy"
 msgstr "कॉपी करने में विफल"
 
 #: src/components/trade/tradebox/trade-panel.tsx
+#: src/config/ui-text.ts
 msgid "Failed to enable trading"
 msgstr "ट्रेडिंग सक्षम करने में विफल"
 
@@ -1054,6 +1065,7 @@ msgid "Failed to load open orders."
 msgstr "खुले ऑर्डर लोड करने में विफल।"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/ui-text.ts
 msgid "Failed to load order book."
 msgstr "ऑर्डर बुक लोड करने में विफल।"
 
@@ -1341,6 +1353,7 @@ msgstr "Limit क्लोज़ ऑर्डर लगाया गया"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
 msgid "Limit Price"
 msgstr "लिमिट प्राइस"
 
@@ -1367,6 +1380,7 @@ msgid "Liq"
 msgstr "लिक्विडेशन"
 
 #: src/components/trade/tradebox/order-summary.tsx
+#: src/config/ui-text.ts
 msgid "Liq. Price"
 msgstr "लिक्विडेशन प्राइस"
 
@@ -1419,12 +1433,14 @@ msgstr "TWAP ऑर्डर लोड हो रहे हैं..."
 msgid "Loading wallet..."
 msgstr "वॉलेट लोड हो रहा है..."
 
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/config/ui-text.ts
 msgid "Long"
 msgstr "लॉन्ग"
 
@@ -1504,18 +1520,19 @@ msgstr "Margin मोड"
 #~ msgid "Margin Mode"
 #~ msgstr ""
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Margin Ratio"
-#~ msgstr "मार्जिन अनुपात"
+#: src/config/ui-text.ts
+msgid "Margin Ratio"
+msgstr "मार्जिन अनुपात"
 
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/ui-text.ts
 msgid "Margin Req."
 msgstr "मार्जिन आवश्यक"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Margin Used"
-#~ msgstr "उपयोग किया गया मार्जिन"
+#: src/config/ui-text.ts
+msgid "Margin Used"
+msgstr "उपयोग किया गया मार्जिन"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1822,9 +1839,9 @@ msgstr "कोई वॉलेट कनेक्ट नहीं"
 msgid "Not connected"
 msgstr "कनेक्टेड नहीं"
 
-#: src/components/trade/header/top-nav.tsx
-#~ msgid "Notifications"
-#~ msgstr "सूचनाएं"
+#: src/config/ui-text.ts
+msgid "Notifications"
+msgstr "सूचनाएं"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Number format"
@@ -1844,9 +1861,9 @@ msgstr "ऑर्डर की संख्या"
 msgid "Offline"
 msgstr "ऑफ़लाइन"
 
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#~ msgid "OI"
-#~ msgstr "OI"
+#: src/config/ui-text.ts
+msgid "OI"
+msgstr "OI"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "on"
@@ -1906,11 +1923,13 @@ msgstr "फ़ोन लिंक खोलें, फिर डेस्कट�
 #~ msgstr ""
 
 #: src/components/trade/market-overview.tsx
+#: src/config/ui-text.ts
 msgid "ORACLE"
 msgstr "ऑरेकल"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/ui-text.ts
 msgid "Order Book"
 msgstr "ऑर्डर बुक"
 
@@ -1918,6 +1937,7 @@ msgstr "ऑर्डर बुक"
 msgid "Order book in quote asset"
 msgstr "क्वोट एसेट में ऑर्डर बुक"
 
+#: src/config/ui-text.ts
 #: src/hooks/trade/use-order-submit.ts
 msgid "Order failed"
 msgstr "ऑर्डर विफल"
@@ -1940,6 +1960,7 @@ msgstr "ऑर्डर सबमिट किया गया"
 
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/ui-text.ts
 msgid "Order Value"
 msgstr "ऑर्डर वैल्यू"
 
@@ -2179,6 +2200,7 @@ msgstr "आपका कोट तैयार किया जा रहा ह
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
+#: src/config/ui-text.ts
 msgid "Price"
 msgstr "मूल्य"
 
@@ -2257,6 +2279,7 @@ msgstr "रीलोड के बाद रिकवर हुआ। {expiresAt
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
 msgid "Reduce Only"
 msgstr "केवल कम करें"
 
@@ -2460,12 +2483,14 @@ msgstr "चयनित"
 #~ msgstr "बेचें"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/config/ui-text.ts
+#: src/config/ui-text.ts
 msgid "Sell"
 msgstr "बेचें"
 
-#: src/components/trade/order-entry/side-toggle.tsx
-#~ msgid "Sell Short"
-#~ msgstr "शॉर्ट बेचें"
+#: src/config/ui-text.ts
+msgid "Sell Short"
+msgstr "शॉर्ट बेचें"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -2523,10 +2548,12 @@ msgstr "{p}% पर सेट करें"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/config/ui-text.ts
 msgid "Settings"
 msgstr "सेटिंग्स"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/config/ui-text.ts
 msgid "Short"
 msgstr "शॉर्ट"
 
@@ -2602,9 +2629,9 @@ msgstr "वॉलेट में साइन करें..."
 msgid "Signer not ready"
 msgstr "साइनर तैयार नहीं"
 
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Signing..."
-#~ msgstr "साइन हो रहा है..."
+#: src/config/ui-text.ts
+msgid "Signing..."
+msgstr "साइन हो रहा है..."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -2623,6 +2650,8 @@ msgstr "साइनर तैयार नहीं"
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
+#: src/config/ui-text.ts
 msgid "Size"
 msgstr "आकार"
 
@@ -2657,6 +2686,7 @@ msgstr "SL मूल्य"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/order-summary.tsx
+#: src/config/ui-text.ts
 msgid "Slippage"
 msgstr "स्लिपेज"
 
@@ -2719,6 +2749,7 @@ msgstr "Spot खाता"
 #~ msgstr ""
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/ui-text.ts
 msgid "Spread"
 msgstr "स्प्रेड"
 
@@ -2860,6 +2891,7 @@ msgid "Switch to {displayName} market, short position"
 msgstr "{displayName} मार्केट पर स्विच करें, Short पोज़िशन"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Switch to Arbitrum"
 msgstr "Arbitrum पर स्विच करें"
@@ -2881,6 +2913,7 @@ msgid "Switch to Mainnet"
 msgstr "Mainnet पर स्विच करें"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Switching..."
 msgstr "स्विच हो रहा है..."
@@ -3037,6 +3070,7 @@ msgstr "टोकन"
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/config/ui-text.ts
 msgid "Total"
 msgstr "कुल"
 
@@ -3077,6 +3111,7 @@ msgstr "TP मूल्य"
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
 msgid "TP/SL"
 msgstr "TP/SL"
 
@@ -3106,6 +3141,7 @@ msgid "trades"
 msgstr "ट्रेड"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/ui-text.ts
 msgid "Trades"
 msgstr "ट्रेड्स"
 
@@ -3227,6 +3263,7 @@ msgid "Unrealized P&L"
 msgstr "अवास्तविक P&L"
 
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/config/ui-text.ts
 msgid "Unrealized PNL"
 msgstr "अवास्तविक PNL"
 
@@ -3288,9 +3325,9 @@ msgstr "सत्यापित किया जा रहा है..."
 msgid "View on explorer"
 msgstr "Explorer पर देखें"
 
-#: src/components/trade/market-overview.tsx
-#~ msgid "VOL"
-#~ msgstr "वॉल्यूम"
+#: src/config/ui-text.ts
+msgid "VOL"
+msgstr "वॉल्यूम"
 
 #: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
@@ -3302,6 +3339,7 @@ msgstr "वॉल्यूम"
 #~ msgstr ""
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/ui-text.ts
 msgid "Waiting for order book..."
 msgstr "ऑर्डर बुक की प्रतीक्षा..."
 
@@ -3359,6 +3397,7 @@ msgstr "{0} में पहुँचेगा"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "निकासी"
 

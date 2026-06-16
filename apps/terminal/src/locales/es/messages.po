@@ -226,6 +226,8 @@ msgstr "Activo"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
+#: src/config/ui-text.ts
 msgid "Available"
 msgstr "Disponible"
 
@@ -256,6 +258,7 @@ msgstr "De nuevo en línea"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/config/ui-text.ts
 msgid "Balance"
 msgstr "Saldo"
 
@@ -341,12 +344,14 @@ msgstr "Comisión de builder"
 #~ msgstr "compra"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/config/ui-text.ts
+#: src/config/ui-text.ts
 msgid "Buy"
 msgstr "Comprar"
 
-#: src/components/trade/order-entry/side-toggle.tsx
-#~ msgid "Buy Long"
-#~ msgstr "Comprar largo"
+#: src/config/ui-text.ts
+msgid "Buy Long"
+msgstr "Comprar largo"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Camera access is not available in this browser."
@@ -536,6 +541,7 @@ msgstr "Conectar monedero"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
 msgstr "Conectar billetera"
@@ -724,9 +730,9 @@ msgstr "Cruzado"
 msgid "Cross Account Leverage"
 msgstr "Apalancamiento de cuenta cruzada"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Cross Leverage"
-#~ msgstr "Apalancamiento cruzado"
+#: src/config/ui-text.ts
+msgid "Cross Leverage"
+msgstr "Apalancamiento cruzado"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Cross Margin"
@@ -774,6 +780,8 @@ msgstr "Predeterminado"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Deposit"
 msgstr "Depositar"
@@ -887,6 +895,7 @@ msgstr "Editar TP/SL"
 msgid "Enable"
 msgstr "Activar"
 
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Enable Trading"
 msgstr "Habilitar trading"
@@ -952,12 +961,13 @@ msgstr "Precio de entrada"
 msgid "Environment"
 msgstr "Entorno"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Equity"
-#~ msgstr "Patrimonio"
+#: src/config/ui-text.ts
+msgid "Equity"
+msgstr "Patrimonio"
 
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/ui-text.ts
 msgid "Est. Fee"
 msgstr "Comisión est."
 
@@ -1027,6 +1037,7 @@ msgid "Failed to copy"
 msgstr "No se pudo copiar"
 
 #: src/components/trade/tradebox/trade-panel.tsx
+#: src/config/ui-text.ts
 msgid "Failed to enable trading"
 msgstr "Error al habilitar trading"
 
@@ -1054,6 +1065,7 @@ msgid "Failed to load open orders."
 msgstr "Error al cargar órdenes abiertas."
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/ui-text.ts
 msgid "Failed to load order book."
 msgstr "Error al cargar libro de órdenes."
 
@@ -1341,6 +1353,7 @@ msgstr "Orden de cierre con límite colocada"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
 msgid "Limit Price"
 msgstr "Precio límite"
 
@@ -1367,6 +1380,7 @@ msgid "Liq"
 msgstr "Liq"
 
 #: src/components/trade/tradebox/order-summary.tsx
+#: src/config/ui-text.ts
 msgid "Liq. Price"
 msgstr "Precio liq."
 
@@ -1419,12 +1433,14 @@ msgstr "Cargando órdenes TWAP..."
 msgid "Loading wallet..."
 msgstr "Cargando billetera..."
 
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "Cargando..."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/config/ui-text.ts
 msgid "Long"
 msgstr "Largo"
 
@@ -1504,18 +1520,19 @@ msgstr "Modo de margen"
 #~ msgid "Margin Mode"
 #~ msgstr ""
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Margin Ratio"
-#~ msgstr "Ratio de margen"
+#: src/config/ui-text.ts
+msgid "Margin Ratio"
+msgstr "Ratio de margen"
 
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/ui-text.ts
 msgid "Margin Req."
 msgstr "Margen req."
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Margin Used"
-#~ msgstr "Margen usado"
+#: src/config/ui-text.ts
+msgid "Margin Used"
+msgstr "Margen usado"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1822,9 +1839,9 @@ msgstr "No hay wallet conectada"
 msgid "Not connected"
 msgstr "No conectado"
 
-#: src/components/trade/header/top-nav.tsx
-#~ msgid "Notifications"
-#~ msgstr "Notificaciones"
+#: src/config/ui-text.ts
+msgid "Notifications"
+msgstr "Notificaciones"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Number format"
@@ -1844,9 +1861,9 @@ msgstr "Número de órdenes"
 msgid "Offline"
 msgstr "Sin conexión"
 
-#: src/components/trade/layout/market-overview-variants-demo.tsx
-#~ msgid "OI"
-#~ msgstr "IA"
+#: src/config/ui-text.ts
+msgid "OI"
+msgstr "IA"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "on"
@@ -1906,11 +1923,13 @@ msgstr "Abre el enlace del teléfono y luego introduce el código de emparejamie
 #~ msgstr ""
 
 #: src/components/trade/market-overview.tsx
+#: src/config/ui-text.ts
 msgid "ORACLE"
 msgstr "ORÁCULO"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/ui-text.ts
 msgid "Order Book"
 msgstr "Libro de órdenes"
 
@@ -1918,6 +1937,7 @@ msgstr "Libro de órdenes"
 msgid "Order book in quote asset"
 msgstr "Libro de órdenes en el activo de cotización"
 
+#: src/config/ui-text.ts
 #: src/hooks/trade/use-order-submit.ts
 msgid "Order failed"
 msgstr "Orden fallida"
@@ -1940,6 +1960,7 @@ msgstr "Orden enviada"
 
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
+#: src/config/ui-text.ts
 msgid "Order Value"
 msgstr "Valor orden"
 
@@ -2179,6 +2200,7 @@ msgstr "Preparando tu cotización..."
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
+#: src/config/ui-text.ts
 msgid "Price"
 msgstr "Precio"
 
@@ -2257,6 +2279,7 @@ msgstr "Recuperado tras recargar. Caduca el {expiresAtLabel}."
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
 msgid "Reduce Only"
 msgstr "Solo reducir"
 
@@ -2460,12 +2483,14 @@ msgstr "seleccionado"
 #~ msgstr "venta"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/config/ui-text.ts
+#: src/config/ui-text.ts
 msgid "Sell"
 msgstr "Vender"
 
-#: src/components/trade/order-entry/side-toggle.tsx
-#~ msgid "Sell Short"
-#~ msgstr "Vender corto"
+#: src/config/ui-text.ts
+msgid "Sell Short"
+msgstr "Vender corto"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -2523,10 +2548,12 @@ msgstr "Establecer en {p}%"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/config/ui-text.ts
 msgid "Settings"
 msgstr "Configuración"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/config/ui-text.ts
 msgid "Short"
 msgstr "Corto"
 
@@ -2602,9 +2629,9 @@ msgstr "Firma en la wallet..."
 msgid "Signer not ready"
 msgstr "Firmante no listo"
 
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Signing..."
-#~ msgstr "Firmando..."
+#: src/config/ui-text.ts
+msgid "Signing..."
+msgstr "Firmando..."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -2623,6 +2650,8 @@ msgstr "Firmante no listo"
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
+#: src/config/ui-text.ts
 msgid "Size"
 msgstr "Tamaño"
 
@@ -2657,6 +2686,7 @@ msgstr "Precio SL"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/order-summary.tsx
+#: src/config/ui-text.ts
 msgid "Slippage"
 msgstr "Deslizamiento"
 
@@ -2719,6 +2749,7 @@ msgstr "Cuenta Spot"
 #~ msgstr ""
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/ui-text.ts
 msgid "Spread"
 msgstr "Diferencial"
 
@@ -2860,6 +2891,7 @@ msgid "Switch to {displayName} market, short position"
 msgstr "Cambiar al mercado {displayName}, posición corta"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Switch to Arbitrum"
 msgstr "Cambiar a Arbitrum"
@@ -2881,6 +2913,7 @@ msgid "Switch to Mainnet"
 msgstr "Cambiar a Mainnet"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Switching..."
 msgstr "Cambiando..."
@@ -3037,6 +3070,7 @@ msgstr "TOKEN"
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/config/ui-text.ts
 msgid "Total"
 msgstr "Total"
 
@@ -3077,6 +3111,7 @@ msgstr "Precio TP"
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/config/ui-text.ts
 msgid "TP/SL"
 msgstr "TP/SL"
 
@@ -3106,6 +3141,7 @@ msgid "trades"
 msgstr "operaciones"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/ui-text.ts
 msgid "Trades"
 msgstr "Operaciones"
 
@@ -3227,6 +3263,7 @@ msgid "Unrealized P&L"
 msgstr "P&L no realizado"
 
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/config/ui-text.ts
 msgid "Unrealized PNL"
 msgstr "PNL no realizado"
 
@@ -3288,9 +3325,9 @@ msgstr "Verificando..."
 msgid "View on explorer"
 msgstr "Ver en el explorador"
 
-#: src/components/trade/market-overview.tsx
-#~ msgid "VOL"
-#~ msgstr "VOL"
+#: src/config/ui-text.ts
+msgid "VOL"
+msgstr "VOL"
 
 #: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
@@ -3302,6 +3339,7 @@ msgstr "Volumen"
 #~ msgstr ""
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/ui-text.ts
 msgid "Waiting for order book..."
 msgstr "Esperando libro de órdenes..."
 
@@ -3359,6 +3397,7 @@ msgstr "llegará en {0}"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "Retirar"
 
