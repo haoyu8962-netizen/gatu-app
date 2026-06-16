@@ -256,7 +256,7 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 				</div>
 			) : (
 				<div className="flex-1 min-h-0">
-					<TradesPanel key={name} />
+					<TradesPanel key={name} compact={embedded} />
 				</div>
 			)}
 

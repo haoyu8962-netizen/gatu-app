@@ -12,9 +12,10 @@ interface Props {
 	trade: ProcessedTrade;
 	szDecimals: number;
 	showInQuote: boolean;
+	compact?: boolean;
 }
 
-const TradeRow = memo(function TradeRow({ trade, szDecimals, showInQuote }: Props) {
+const TradeRow = memo(function TradeRow({ trade, szDecimals, showInQuote, compact = false }: Props) {
 	const sizeDisplay = showInQuote ? formatNumber(trade.price * trade.size, 2) : formatNumber(trade.size, szDecimals);
 
 	return (
@@ -23,15 +24,24 @@ const TradeRow = memo(function TradeRow({ trade, szDecimals, showInQuote }: Prop
 			target="_blank"
 			rel="noopener noreferrer"
 			className={cn(
-				"grid grid-cols-3 gap-2 text-xs tabular-nums py-0.5 hover:bg-fill-hover group",
+				"grid gap-2 tabular-nums py-0.5 hover:bg-fill-hover group",
+				compact ? "grid-cols-2 text-2xs" : "grid-cols-3 text-xs",
 				trade.side === "buy" ? "trade-row-buy" : "trade-row-sell",
 			)}
 		>
-			<div className="text-fg flex items-center gap-1">
-				{trade.time}
-				<ArrowSquareOutIcon className="size-2.5 opacity-100 hover:opacity-80" aria-hidden="true" />
-			</div>
-			<div className={cn("text-right font-medium", trade.side === "buy" ? "text-success" : "text-error")}>
+			{!compact && (
+				<div className="text-fg flex items-center gap-1">
+					{trade.time}
+					<ArrowSquareOutIcon className="size-2.5 opacity-100 hover:opacity-80" aria-hidden="true" />
+				</div>
+			)}
+			<div
+				className={cn(
+					"font-medium",
+					compact ? "text-left" : "text-right",
+					trade.side === "buy" ? "text-success" : "text-error",
+				)}
+			>
 				{formatNumber(trade.price, 2)}
 			</div>
 			<div className="text-right text-fg">{sizeDisplay}</div>
@@ -39,7 +49,7 @@ const TradeRow = memo(function TradeRow({ trade, szDecimals, showInQuote }: Prop
 	);
 });
 
-export function TradesPanel() {
+export function TradesPanel({ compact = false }: { compact?: boolean }) {
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const subscriptionCoin = selectedMarket?.name ?? "";
 	const params = useMemo(() => ({ coin: subscriptionCoin }), [subscriptionCoin]);
@@ -65,9 +75,14 @@ export function TradesPanel() {
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col">
-			<div className="grid grid-cols-3 gap-2 px-2 py-1 h-9 items-center text-xs text-fg uppercase tracking-wider border-b border-stroke-weak/40">
-				<div>{t`Time`}</div>
-				<div className="text-right">{t`Price`}</div>
+			<div
+				className={cn(
+					"grid gap-2 items-center text-fg uppercase tracking-wider border-b border-stroke-weak/40",
+					compact ? "grid-cols-2 px-1.5 h-7 text-2xs" : "grid-cols-3 px-2 h-9 text-xs",
+				)}
+			>
+				{!compact && <div>{t`Time`}</div>}
+				<div className={compact ? "text-left" : "text-right"}>{t`Price`}</div>
 				<button
 					type="button"
 					onClick={toggleAssetDisplay}
@@ -89,9 +104,15 @@ export function TradesPanel() {
 				</div>
 			) : (
 				<div className="flex-1 min-h-0 overflow-y-auto">
-					<div className="px-2 py-1 space-y-px">
+					<div className={cn("py-1 space-y-px", compact ? "px-1.5" : "px-2")}>
 						{processed.map((trade) => (
-							<TradeRow key={trade.id} trade={trade} szDecimals={szDecimals} showInQuote={showOrderbookInQuote} />
+							<TradeRow
+								key={trade.id}
+								trade={trade}
+								szDecimals={szDecimals}
+								showInQuote={showOrderbookInQuote}
+								compact={compact}
+							/>
 						))}
 					</div>
 				</div>
