@@ -333,8 +333,8 @@ msgstr ""
 #~ msgstr ""
 
 #: src/config/nav.tsx
-msgid "Builders"
-msgstr ""
+#~ msgid "Builders"
+#~ msgstr ""
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "buy"
@@ -1219,6 +1219,7 @@ msgid "Hide small"
 msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/config/nav.tsx
 msgid "HIP-3"
 msgstr ""
 

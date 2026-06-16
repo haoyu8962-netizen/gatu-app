@@ -333,8 +333,8 @@ msgstr "Builder Fee"
 #~ msgstr "Builder must have at least 100 USDC in perps account value"
 
 #: src/config/nav.tsx
-msgid "Builders"
-msgstr "Builders"
+#~ msgid "Builders"
+#~ msgstr "Builders"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "buy"
@@ -1219,6 +1219,7 @@ msgid "Hide small"
 msgstr "Hide small"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
 
