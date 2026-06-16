@@ -802,6 +802,10 @@ msgstr ""
 msgid "Deposit successful"
 msgstr ""
 
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Deposits and withdrawals are not allowed."
+msgstr "暂不支持充值和提现。"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Desktop wallet QR scanner"
 #~ msgstr ""
@@ -3374,6 +3378,10 @@ msgstr ""
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Yes"
 msgstr ""
+
+#: src/components/trade/geo/geo-restriction-banner.tsx
+msgid "You are accessing our products and services from a restricted jurisdiction. We do not allow access from certain jurisdictions including locations subject to sanctions restrictions and other jurisdictions where our services are ineligible for use. For more information, see our <0>Terms of Use</0>. If you think this is an error, try refreshing the page or <1>opening a support ticket</1>."
+msgstr "您正从受限制的司法管辖区访问我们的产品和服务。我们不允许来自某些司法管辖区的访问,包括受制裁限制的地区以及我们的服务不适用的其他司法管辖区。更多信息请参阅我们的<0>使用条款</0>。如果您认为这是一个错误,请尝试刷新页面或<1>提交支持工单</1>。"
 
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"

@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { useConnection } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
@@ -35,6 +36,7 @@ export function TopNav() {
 	const { isConnected } = useConnection();
 	const { scope } = useExchangeScope();
 	const isTestnet = useIsTestnet();
+	const { tradeRestricted } = useGeoRestriction();
 
 	const accentClass = getScopeAccentClass(scope);
 
@@ -87,7 +89,7 @@ export function TopNav() {
 			</div>
 
 			<div className="flex items-center gap-2 min-h-8">
-				{isConnected && (
+				{isConnected && !tradeRestricted && (
 					<Button
 						variant="filled"
 						intent="brand"

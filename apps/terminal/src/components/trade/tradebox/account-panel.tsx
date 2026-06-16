@@ -6,6 +6,7 @@ import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { DEFAULT_QUOTE_TOKEN, FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getSpotAvailableValue } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { toNumberOrZero } from "@/lib/trade/numbers";
@@ -21,6 +22,7 @@ type SummaryRow = {
 export function AccountPanel() {
 	const { open: openDepositModal } = useDepositModalActions();
 	const { isConnected } = useConnection();
+	const { tradeRestricted } = useGeoRestriction();
 	const {
 		marginSummary,
 		perpSummary,
@@ -145,37 +147,40 @@ export function AccountPanel() {
 						</>
 					)}
 
-					{(hasPerpData || hasSpotData) && (
-						<div className="grid grid-cols-3 gap-1 mt-4">
-							<Button
-								variant="outline"
-								intent="neutral"
-								onClick={() => openDepositModal("withdraw")}
-								aria-label={t`Withdraw`}
-								iconLeft={<UploadSimpleIcon className="size-4" />}
-							>
-								{t`Withdraw`}
-							</Button>
-							<Button
-								variant="outline"
-								intent="neutral"
-								onClick={() => openDepositModal("deposit")}
-								aria-label={t`Deposit`}
-								iconLeft={<DownloadSimpleIcon className="size-4" />}
-							>
-								{t`Deposit`}
-							</Button>
-							<Button
-								variant="outline"
-								intent="neutral"
-								onClick={() => openDepositModal("bridge")}
-								aria-label={t`Bridge`}
-								iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-							>
-								{t`Bridge`}
-							</Button>
-						</div>
-					)}
+					{(hasPerpData || hasSpotData) &&
+						(tradeRestricted ? (
+							<p className="mt-4 text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
+						) : (
+							<div className="grid grid-cols-3 gap-1 mt-4">
+								<Button
+									variant="outline"
+									intent="neutral"
+									onClick={() => openDepositModal("withdraw")}
+									aria-label={t`Withdraw`}
+									iconLeft={<UploadSimpleIcon className="size-4" />}
+								>
+									{t`Withdraw`}
+								</Button>
+								<Button
+									variant="outline"
+									intent="neutral"
+									onClick={() => openDepositModal("deposit")}
+									aria-label={t`Deposit`}
+									iconLeft={<DownloadSimpleIcon className="size-4" />}
+								>
+									{t`Deposit`}
+								</Button>
+								<Button
+									variant="outline"
+									intent="neutral"
+									onClick={() => openDepositModal("bridge")}
+									aria-label={t`Bridge`}
+									iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+								>
+									{t`Bridge`}
+								</Button>
+							</div>
+						))}
 				</div>
 			)}
 		</div>

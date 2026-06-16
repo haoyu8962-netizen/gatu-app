@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { GeoRestrictionBanner } from "./geo/geo-restriction-banner";
 import { TopNav } from "./header/top-nav";
 import { MainWorkspace } from "./layout/main-workspace";
 import { TestnetBanner } from "./testnet-banner";
@@ -44,6 +45,7 @@ export function TradeTerminalPage() {
 				>
 					<TestnetBanner />
 					<TopNav />
+					<GeoRestrictionBanner />
 					<MainWorkspace />
 					<Suspense fallback={null}>
 						<FooterBar />

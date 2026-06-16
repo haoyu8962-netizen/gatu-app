@@ -802,6 +802,10 @@ msgstr ""
 msgid "Deposit successful"
 msgstr ""
 
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Deposits and withdrawals are not allowed."
+msgstr "Los depósitos y retiros no están permitidos."
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Desktop wallet QR scanner"
 #~ msgstr ""
@@ -3374,6 +3378,10 @@ msgstr ""
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Yes"
 msgstr ""
+
+#: src/components/trade/geo/geo-restriction-banner.tsx
+msgid "You are accessing our products and services from a restricted jurisdiction. We do not allow access from certain jurisdictions including locations subject to sanctions restrictions and other jurisdictions where our services are ineligible for use. For more information, see our <0>Terms of Use</0>. If you think this is an error, try refreshing the page or <1>opening a support ticket</1>."
+msgstr "Estás accediendo a nuestros productos y servicios desde una jurisdicción restringida. No permitimos el acceso desde determinadas jurisdicciones, incluidas las ubicaciones sujetas a restricciones por sanciones y otras jurisdicciones donde nuestros servicios no son elegibles para su uso. Para más información, consulta nuestros <0>Términos de uso</0>. Si crees que se trata de un error, intenta actualizar la página o <1>abrir un ticket de soporte</1>."
 
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"

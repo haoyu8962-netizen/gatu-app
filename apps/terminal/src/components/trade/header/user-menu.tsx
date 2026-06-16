@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { useConnection, useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
@@ -28,6 +29,7 @@ export function UserMenu() {
 	const { address } = useConnection();
 	const { data: ensName } = useEnsName({ address });
 	const { open: openDepositModal } = useDepositModalActions();
+	const { tradeRestricted } = useGeoRestriction();
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
 	const [mounted, setMounted] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
@@ -90,11 +92,15 @@ export function UserMenu() {
 					},
 				]
 			: []),
-		{
-			label: t`Add funds`,
-			icon: <PlusCircleIcon className="size-3.5" />,
-			onSelect: () => openDepositModal("deposit"),
-		},
+		...(tradeRestricted
+			? []
+			: [
+					{
+						label: t`Add funds`,
+						icon: <PlusCircleIcon className="size-3.5" />,
+						onSelect: () => openDepositModal("deposit"),
+					},
+				]),
 		{
 			label: t`Link mobile device`,
 			icon: <DeviceMobileIcon className="size-3.5" />,

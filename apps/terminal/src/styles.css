@@ -58,6 +58,9 @@
   --color-grey-solid-900: #12131a;
   --color-grey-solid-1000: #000000;
 
+  /* ---- Restricted-jurisdiction alert banner (wine red, same in both themes) ---- */
+  --color-restricted: #aa112f;
+
   /* ---- Spacing Base (4px grid) ---- */
   --spacing: 4px;
 
