@@ -497,6 +497,10 @@ msgstr "बंद करने की पुष्टि करें"
 msgid "Confirm in wallet"
 msgstr "वॉलेट में पुष्टि करें"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
+msgid "Confirm Reverse"
+msgstr "रिवर्स की पुष्टि करें"
+
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Confirm transaction in your wallet"
 msgstr "अपने वॉलेट में लेनदेन की पुष्टि करें"
@@ -1101,6 +1105,7 @@ msgstr "लिमिट क्लोज़ ऑर्डर देने मे�
 #~ msgid "Failed to register builder code"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to reverse position"
 msgstr "पोज़िशन रिवर्स करने में विफल"
@@ -1341,12 +1346,12 @@ msgstr "Leverage"
 #~ msgid "limit"
 #~ msgstr "लिमिट"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
 msgstr "लिमिट"
 
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
@@ -2180,6 +2185,7 @@ msgstr "पोज़िशन क्लोज़ हो गई — {coin}"
 #~ msgid "Position reversed"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position reversed — {coin}"
 msgstr "पोज़िशन रिवर्स हो गई — {coin}"
@@ -2344,6 +2350,7 @@ msgstr "रीसेट हो रहा है..."
 msgid "Retry"
 msgstr "फिर से प्रयास करें"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Reverse"
 msgstr "रिवर्स"

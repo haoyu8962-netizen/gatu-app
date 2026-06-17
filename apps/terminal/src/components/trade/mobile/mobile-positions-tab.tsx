@@ -20,6 +20,8 @@ import { PositionLimitCloseModal } from "../positions/position-limit-close-modal
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
 
+type CloseIntent = "close" | "reverse";
+
 export function MobilePositionsTab() {
 	const { address, isConnected } = useConnection();
 	const slippageBps = useMarketOrderSlippageBps();
@@ -57,7 +59,7 @@ export function MobilePositionsTab() {
 
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 
-	function handleClosePosition(data: ClosePositionData) {
+	function submitCloseOrReverse(intent: CloseIntent, data: ClosePositionData) {
 		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe } = data;
 		if (closingAssetIds.has(assetId)) return;
 		resetCloseError();
@@ -74,7 +76,7 @@ export function MobilePositionsTab() {
 		});
 
 		const { orders, grouping } = buildOrderPlan({
-			kind: "marketClose",
+			kind: intent === "close" ? "marketClose" : "reverse",
 			assetId,
 			size,
 			szDecimals,
@@ -83,15 +85,18 @@ export function MobilePositionsTab() {
 			slippageBps,
 		});
 
+		const title = intent === "close" ? t`Position closed — ${coin}` : t`Position reversed — ${coin}`;
+		const failureMessage = intent === "close" ? t`Failed to close position` : t`Failed to reverse position`;
+
 		placeOrder(
 			{ orders, grouping },
 			{
 				onSuccess: () =>
-					toast.success(t`Position closed — ${coin}`, {
+					toast.success(title, {
 						description: buildClosePositionDescription({ size, szDecimals, coin, unrealizedPnl, roe }),
 					}),
 				onError: (error) => {
-					const message = error.message || t`Failed to close position`;
+					const message = error.message || failureMessage;
 					toast.error(message);
 					setCloseErrors((prev) => {
 						const next = new Map(prev);
@@ -108,6 +113,14 @@ export function MobilePositionsTab() {
 				},
 			},
 		);
+	}
+
+	function handleClosePosition(data: ClosePositionData) {
+		submitCloseOrReverse("close", data);
+	}
+
+	function handleReverse(data: ClosePositionData) {
+		submitCloseOrReverse("reverse", data);
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {
@@ -181,6 +194,7 @@ export function MobilePositionsTab() {
 								isRowClosing={isRowClosing}
 								closeErrorMessage={closeErrorMessage}
 								onClose={handleClosePosition}
+								onReverse={handleReverse}
 								onLimitClose={handleOpenLimitCloseModal}
 								onOpenTpSl={handleOpenTpSlModal}
 								onSelectMarket={handleSelectMarket}

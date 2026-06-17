@@ -497,6 +497,10 @@ msgstr "确认平仓"
 msgid "Confirm in wallet"
 msgstr "在钱包中确认"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
+msgid "Confirm Reverse"
+msgstr "确认反向"
+
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Confirm transaction in your wallet"
 msgstr "在钱包中确认交易"
@@ -1101,6 +1105,7 @@ msgstr "限价平仓委托下单失败"
 #~ msgid "Failed to register builder code"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to reverse position"
 msgstr "反向开仓失败"
@@ -1341,12 +1346,12 @@ msgstr "杠杆"
 #~ msgid "limit"
 #~ msgstr "限价"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
 msgstr "限价"
 
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
@@ -2180,6 +2185,7 @@ msgstr "仓位已平 — {coin}"
 #~ msgid "Position reversed"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position reversed — {coin}"
 msgstr "仓位已反向 — {coin}"
@@ -2344,6 +2350,7 @@ msgstr "正在重置…"
 msgid "Retry"
 msgstr "重试"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Reverse"
 msgstr "反向"

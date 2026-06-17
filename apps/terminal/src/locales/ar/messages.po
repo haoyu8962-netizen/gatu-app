@@ -497,6 +497,10 @@ msgstr "تأكيد الإغلاق"
 msgid "Confirm in wallet"
 msgstr "أكّد في المحفظة"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
+msgid "Confirm Reverse"
+msgstr "تأكيد العكس"
+
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Confirm transaction in your wallet"
 msgstr "أكّد المعاملة في محفظتك"
@@ -1101,6 +1105,7 @@ msgstr "فشل وضع أمر إغلاق محدد"
 #~ msgid "Failed to register builder code"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to reverse position"
 msgstr "فشل عكس المركز"
@@ -1341,12 +1346,12 @@ msgstr "الرافعة المالية"
 #~ msgid "limit"
 #~ msgstr "محدد"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
 msgstr "محدد"
 
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
@@ -2180,6 +2185,7 @@ msgstr "تم إغلاق المركز — {coin}"
 #~ msgid "Position reversed"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position reversed — {coin}"
 msgstr "تم عكس المركز — {coin}"
@@ -2344,6 +2350,7 @@ msgstr "جارٍ إعادة التعيين..."
 msgid "Retry"
 msgstr "إعادة المحاولة"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Reverse"
 msgstr "عكس"

@@ -497,6 +497,10 @@ msgstr "Confirmar cierre"
 msgid "Confirm in wallet"
 msgstr "Confirmar en el monedero"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
+msgid "Confirm Reverse"
+msgstr "Confirmar inversión"
+
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Confirm transaction in your wallet"
 msgstr "Confirma la transacción en tu monedero"
@@ -1101,6 +1105,7 @@ msgstr "No se pudo colocar la orden de cierre límite"
 #~ msgid "Failed to register builder code"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to reverse position"
 msgstr "No se pudo invertir la posición"
@@ -1341,12 +1346,12 @@ msgstr "Apalancamiento"
 #~ msgid "limit"
 #~ msgstr "límite"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
 msgstr "Límite"
 
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
@@ -2180,6 +2185,7 @@ msgstr "Posición cerrada — {coin}"
 #~ msgid "Position reversed"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position reversed — {coin}"
 msgstr "Posición invertida — {coin}"
@@ -2344,6 +2350,7 @@ msgstr "Restableciendo..."
 msgid "Retry"
 msgstr "Reintentar"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Reverse"
 msgstr "Invertir"

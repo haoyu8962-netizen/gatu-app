@@ -1,6 +1,6 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { CrosshairIcon, PencilIcon, PlusIcon, XIcon } from "@phosphor-icons/react";
+import { ArrowsClockwiseIcon, CrosshairIcon, PencilIcon, PlusIcon, XIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
@@ -24,6 +24,7 @@ interface Props {
 	isRowClosing: boolean;
 	closeErrorMessage: string | null;
 	onClose: (data: ClosePositionData) => void;
+	onReverse: (data: ClosePositionData) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onOpenTpSl: (data: TpSlPositionData) => void;
 	onSelectMarket: (coin: string, side: Side) => void;
@@ -37,11 +38,12 @@ export function MobilePositionCard({
 	isRowClosing,
 	closeErrorMessage,
 	onClose,
+	onReverse,
 	onLimitClose,
 	onOpenTpSl,
 	onSelectMarket,
 }: Props) {
-	const [confirmingClose, setConfirmingClose] = useState(false);
+	const [confirming, setConfirming] = useState<"close" | "reverse" | null>(null);
 
 	const size = toBig(p.szi)?.toNumber() ?? Number.NaN;
 	const isLong = size > 0;
@@ -69,18 +71,16 @@ export function MobilePositionCard({
 	const pnlClass = getValueColorClass(unrealizedPnl);
 	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
 
-	function handleClose() {
-		if (!canClose || typeof assetId !== "number") return;
-		onClose({
-			assetId,
-			coin: p.coin,
-			size: absSize,
-			markPx,
-			szDecimals,
-			isLong,
-			unrealizedPnl,
-			roe,
-		});
+	function buildCloseData(): ClosePositionData | null {
+		if (!canClose || typeof assetId !== "number") return null;
+		return { assetId, coin: p.coin, size: absSize, markPx, szDecimals, isLong, unrealizedPnl, roe };
+	}
+
+	function handleConfirm() {
+		const data = buildCloseData();
+		if (!data) return;
+		if (confirming === "reverse") onReverse(data);
+		else onClose(data);
 	}
 
 	function handleLimitClose() {
@@ -173,27 +173,27 @@ export function MobilePositionCard({
 			</div>
 
 			<div className="flex gap-1.5 px-2.5 py-1.5 border-t border-stroke-weak">
-				{confirmingClose ? (
+				{confirming !== null ? (
 					<>
 						<Button
 							variant="outline"
 							intent="neutral"
 							size="xs"
 							className="flex-1 justify-center"
-							onClick={() => setConfirmingClose(false)}
+							onClick={() => setConfirming(null)}
 						>
 							{t`Cancel`}
 						</Button>
 						<Button
 							variant="outline"
-							intent="error"
+							intent={confirming === "close" ? "error" : "neutral"}
 							size="xs"
 							className="flex-1 justify-center"
-							onClick={handleClose}
+							onClick={handleConfirm}
 							disabled={!canClose || isRowClosing}
-							iconLeft={isRowClosing ? <Spinner className="size-3" /> : <XIcon className="size-3.5" />}
+							iconLeft={isRowClosing ? <Spinner className="size-3" /> : undefined}
 						>
-							{t`Confirm Close`}
+							{confirming === "close" ? t`Confirm Close` : t`Confirm Reverse`}
 						</Button>
 					</>
 				) : (
@@ -230,14 +230,25 @@ export function MobilePositionCard({
 							onClick={handleLimitClose}
 							disabled={!canClose || isRowClosing}
 						>
-							{t`Limit Close`}
+							{t`Limit`}
+						</Button>
+						<Button
+							variant="outline"
+							intent="neutral"
+							size="xs"
+							className="flex-1 justify-center touch-target"
+							onClick={() => setConfirming("reverse")}
+							disabled={!canClose || isRowClosing}
+							iconLeft={<ArrowsClockwiseIcon className="size-3.5" />}
+						>
+							{t`Reverse`}
 						</Button>
 						<Button
 							variant="outline"
 							intent="error"
 							size="xs"
 							className="flex-1 justify-center touch-target"
-							onClick={() => setConfirmingClose(true)}
+							onClick={() => setConfirming("close")}
 							disabled={!canClose || isRowClosing}
 							iconLeft={<XIcon className="size-3.5" />}
 						>
