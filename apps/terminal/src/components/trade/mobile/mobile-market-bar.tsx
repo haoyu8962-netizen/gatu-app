@@ -9,6 +9,7 @@ import { toBig } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
+import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { TokenSelector } from "../chart/token-selector";
 
 const overviewText = UI_TEXT.MARKET_OVERVIEW;
@@ -21,6 +22,12 @@ export function MobileMarketBar({ className }: Props) {
 	const { data: market, isLoading } = useSelectedMarketInfo();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
+	const { resetPrices } = useOrderEntryActions();
+
+	function handleMarketChange(name: string) {
+		setSelectedMarket(scope, name);
+		resetPrices();
+	}
 
 	const fundingNum = toBig(market?.funding)?.toNumber() ?? 0;
 	const change24h = get24hChange(market?.prevDayPx, market?.markPx);
@@ -31,7 +38,7 @@ export function MobileMarketBar({ className }: Props) {
 		<div className={cn("shrink-0 bg-surface border-b border-stroke-weak/60", className)}>
 			<div className="px-3 py-2 flex items-center justify-between gap-3">
 				<div className="flex items-center gap-2 min-w-0">
-					<TokenSelector selectedMarket={market} onValueChange={(name) => setSelectedMarket(scope, name)} />
+					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					{hasLeverage && (
 						<span className="shrink-0 rounded-xs bg-fill-weak px-1.5 py-0.5 text-2xs font-medium tabular-nums text-fg-muted">
 							{market?.maxLeverage}x

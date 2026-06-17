@@ -276,7 +276,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 					</div>
 				</div>
 			) : (
-				<div className="flex-1 min-h-0">
+				<div className="flex-1 min-h-0 flex flex-col">
 					<TradesPanel key={name} compact={compact} />
 				</div>
 			)}

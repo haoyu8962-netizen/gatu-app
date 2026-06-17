@@ -291,6 +291,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 			setLimitPriceInput("");
 			setTpPrice("");
 			setSlPrice("");
+			setTriggerPrice("");
 		} catch (error) {
 			updateOrder(orderId, {
 				status: "failed",
