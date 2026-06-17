@@ -20,11 +20,14 @@ type View = "book" | "trades";
 
 interface MobileBookViewProps {
 	className?: string;
-	embedded?: boolean;
+	/** Narrow split-column mode: hide all chrome, render compact 2-col rows. */
+	compact?: boolean;
+	/** Embedded in a parent tab layout: hide the Book/Trades toggle + bottom spacer; view is parent-controlled. */
+	inTabLayout?: boolean;
 	view?: View;
 }
 
-export function MobileBookView({ className, embedded, view: viewProp }: MobileBookViewProps) {
+export function MobileBookView({ className, compact, inTabLayout, view: viewProp }: MobileBookViewProps) {
 	const [internalView, setView] = useState<View>("book");
 	const view = viewProp ?? internalView;
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
@@ -108,28 +111,30 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 
 	return (
 		<div className={cn("flex flex-col h-full min-h-0", className)}>
-			<div className={cn("shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-surface", embedded && "hidden")}>
+			<div className={cn("shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-surface", compact && "hidden")}>
 				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-1 bg-surface rounded-8 p-0.5">
-						<Button
-							variant={view === "book" ? "filled" : "ghost"}
-							intent={view === "book" ? "neutral" : "neutral"}
-							size="sm"
-							onClick={() => setView("book")}
-							className={cn("min-h-11", view !== "book" && "opacity-60")}
-						>
-							{ORDERBOOK_TEXT.BOOK_LABEL}
-						</Button>
-						<Button
-							variant={view === "trades" ? "filled" : "ghost"}
-							intent={view === "trades" ? "neutral" : "neutral"}
-							size="sm"
-							onClick={() => setView("trades")}
-							className={cn("min-h-11", view !== "trades" && "opacity-60")}
-						>
-							{ORDERBOOK_TEXT.TRADES_LABEL}
-						</Button>
-					</div>
+					{!inTabLayout && (
+						<div className="flex items-center gap-1 bg-surface rounded-8 p-0.5">
+							<Button
+								variant={view === "book" ? "filled" : "ghost"}
+								intent={view === "book" ? "neutral" : "neutral"}
+								size="sm"
+								onClick={() => setView("book")}
+								className={cn("min-h-11", view !== "book" && "opacity-60")}
+							>
+								{ORDERBOOK_TEXT.BOOK_LABEL}
+							</Button>
+							<Button
+								variant={view === "trades" ? "filled" : "ghost"}
+								intent={view === "trades" ? "neutral" : "neutral"}
+								size="sm"
+								onClick={() => setView("trades")}
+								className={cn("min-h-11", view !== "trades" && "opacity-60")}
+							>
+								{ORDERBOOK_TEXT.TRADES_LABEL}
+							</Button>
+						</div>
+					)}
 
 					<div className="flex items-center gap-2">
 						<Button
@@ -167,12 +172,12 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 					<div
 						className={cn(
 							"shrink-0 grid uppercase tracking-wider text-fg-muted border-b border-stroke-weak/40",
-							embedded ? "grid-cols-2 gap-1 px-1.5 py-1.5 text-2xs" : "grid-cols-3 gap-2 px-3 py-2 text-xs",
+							compact ? "grid-cols-2 gap-1 px-1.5 py-1.5 text-2xs" : "grid-cols-3 gap-2 px-3 py-2 text-xs",
 						)}
 					>
 						<div>{ORDERBOOK_TEXT.HEADER_PRICE}</div>
 						<div className="text-right">{ORDERBOOK_TEXT.HEADER_SIZE}</div>
-						{!embedded && <div className="text-right">{ORDERBOOK_TEXT.HEADER_TOTAL}</div>}
+						{!compact && <div className="text-right">{ORDERBOOK_TEXT.HEADER_TOTAL}</div>}
 					</div>
 
 					<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -190,7 +195,7 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 											priceDecimals={priceDecimals}
 											showInQuote={showOrderbookInQuote}
 											szDecimals={szDecimals}
-											compact={embedded}
+											compact={compact}
 										/>
 									))}
 							</div>
@@ -210,13 +215,13 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 						<div
 							className={cn(
 								"shrink-0 flex items-center justify-center border-y border-stroke-weak/40 bg-surface",
-								embedded ? "py-1.5 px-2 gap-1.5" : "py-2 px-3 gap-3",
+								compact ? "py-1.5 px-2 gap-1.5" : "py-2 px-3 gap-3",
 							)}
 						>
-							<span className={cn("font-bold tabular-nums text-warning", embedded ? "text-sm" : "text-xl")}>
+							<span className={cn("font-bold tabular-nums text-warning", compact ? "text-sm" : "text-xl")}>
 								{typeof mid === "number" && Number.isFinite(mid) ? formatNumber(mid, 2) : FALLBACK_VALUE_PLACEHOLDER}
 							</span>
-							<MidTrendIcon direction={midDirection} className={embedded ? "size-4" : "size-5"} />
+							<MidTrendIcon direction={midDirection} className={compact ? "size-4" : "size-5"} />
 						</div>
 
 						{bookStatus !== "error" && bids.length > 0 ? (
@@ -230,7 +235,7 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 										priceDecimals={priceDecimals}
 										showInQuote={showOrderbookInQuote}
 										szDecimals={szDecimals}
-										compact={embedded}
+										compact={compact}
 									/>
 								))}
 							</div>
@@ -240,7 +245,7 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 					<div
 						className={cn(
 							"shrink-0 border-t border-stroke-weak/40 flex items-center justify-between text-fg-muted",
-							embedded ? "px-2 py-1.5 text-2xs" : "px-3 py-2 text-xs",
+							compact ? "px-2 py-1.5 text-2xs" : "px-3 py-2 text-xs",
 						)}
 					>
 						<span>{ORDERBOOK_TEXT.SPREAD_LABEL}</span>
@@ -256,11 +261,11 @@ export function MobileBookView({ className, embedded, view: viewProp }: MobileBo
 				</div>
 			) : (
 				<div className="flex-1 min-h-0">
-					<TradesPanel key={name} compact={embedded} />
+					<TradesPanel key={name} compact={compact} />
 				</div>
 			)}
 
-			{!embedded && <MobileBottomNavSpacer />}
+			{!inTabLayout && <MobileBottomNavSpacer />}
 		</div>
 	);
 }
