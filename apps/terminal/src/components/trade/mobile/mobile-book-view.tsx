@@ -248,7 +248,23 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 							compact ? "px-2 py-1.5 text-2xs" : "px-3 py-2 text-xs",
 						)}
 					>
-						<span>{ORDERBOOK_TEXT.SPREAD_LABEL}</span>
+						{compact ? (
+							<Dropdown
+								size="sm"
+								hideCaret
+								align="start"
+								trigger={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
+								triggerClassName="font-mono text-2xs px-1.5"
+								items={priceGroupingOptions.map(
+									(option): DropdownItem => ({
+										label: option.label,
+										onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
+									}),
+								)}
+							/>
+						) : (
+							<span>{ORDERBOOK_TEXT.SPREAD_LABEL}</span>
+						)}
 						<span className="tabular-nums text-warning">
 							{typeof spread === "number" &&
 							Number.isFinite(spread) &&
