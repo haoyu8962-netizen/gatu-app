@@ -23,9 +23,6 @@ export function getSizeModeLabel(sizeMode: SizeMode, baseToken: string, quoteTok
 
 export const UI_TEXT = {
 	TOP_NAV: {
-		get NOTIFICATIONS_ARIA() {
-			return t`Notifications`;
-		},
 		get SETTINGS_ARIA() {
 			return t`Settings`;
 		},

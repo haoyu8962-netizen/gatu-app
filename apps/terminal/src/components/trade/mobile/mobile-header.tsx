@@ -1,5 +1,5 @@
 import { ButtonIcon } from "@gatu/ui";
-import { BellIcon, GearIcon } from "@phosphor-icons/react";
+import { GearIcon } from "@phosphor-icons/react";
 import { APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { UI_TEXT } from "@/config/ui-text";
 import { cn } from "@/lib/cn";
@@ -34,15 +34,6 @@ export function MobileHeader({ className }: Props) {
 
 				<div className="flex items-center gap-0.5">
 					<UserMenu />
-					<ButtonIcon
-						variant="ghost"
-						intent="neutral"
-						size="md"
-						className="touch-target"
-						aria-label={TOP_NAV_TEXT.NOTIFICATIONS_ARIA}
-					>
-						<BellIcon className="size-4" />
-					</ButtonIcon>
 					<ThemeToggle />
 					<ButtonIcon
 						variant="ghost"
