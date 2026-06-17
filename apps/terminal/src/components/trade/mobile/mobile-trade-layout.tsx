@@ -28,7 +28,7 @@ function TradeOrderView() {
 				<MobileBookView compact inTabLayout view="book" className="flex-1 min-w-0" />
 			</div>
 
-			<div className="flex-1 min-h-0 border-t border-stroke-weak/60">
+			<div className="flex-1 min-h-0 flex flex-col border-t border-stroke-weak/60">
 				<MobilePositionsView />
 			</div>
 		</div>
@@ -74,7 +74,7 @@ function MarketsDataView() {
 				{topView !== "chart" && <MobileBookView inTabLayout view={bookView} className="h-full" />}
 			</div>
 
-			<div className="flex-1 min-h-0 border-t border-stroke-weak/60">
+			<div className="flex-1 min-h-0 flex flex-col border-t border-stroke-weak/60">
 				<MobilePositionsView />
 			</div>
 		</div>

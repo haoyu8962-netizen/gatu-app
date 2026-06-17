@@ -80,7 +80,10 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 
 	const meta: MetaTag[] = [
 		{ charSet: "utf-8" },
-		{ name: "viewport", content: "width=device-width, initial-scale=1" },
+		{
+			name: "viewport",
+			content: "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
+		},
 		{ title: pageTitle },
 		{ name: "description", content: description },
 		{ name: "keywords", content: allKeywords.join(", ") },
