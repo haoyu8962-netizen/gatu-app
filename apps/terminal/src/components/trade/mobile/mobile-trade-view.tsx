@@ -528,7 +528,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 						{buttonContent.text}
 					</Button>
 				)}
-				<MobileBottomNavSpacer />
+				{!embedded && <MobileBottomNavSpacer />}
 			</div>
 
 			<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
