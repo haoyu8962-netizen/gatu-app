@@ -69,7 +69,7 @@ function MarketsDataView() {
 				})}
 			</div>
 
-			<div className="flex-[1.4] min-h-0">
+			<div className="flex-[1.4] min-h-0 flex flex-col">
 				{topView === "chart" && <MobileChartView />}
 				{topView !== "chart" && <MobileBookView inTabLayout view={bookView} className="h-full" />}
 			</div>
