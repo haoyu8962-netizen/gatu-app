@@ -7,11 +7,12 @@ import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
-import { BPS_PER_UNIT, SIZE_PERCENT_OPTIONS } from "@/config/trade";
+import { SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { UI_TEXT } from "@/config/ui-text";
 import { get24hChange } from "@/domain/market";
 import { getLiquidationInfo } from "@/domain/trade/order/metrics";
 import { getSliderValue } from "@/domain/trade/order/size";
+import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
@@ -21,7 +22,7 @@ import { formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { toNumberOrZero } from "@/lib/trade/numbers";
+import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
 	isTakerOrderType,
@@ -34,13 +35,23 @@ import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
-import { useOrderEntryActions, useOrderSide, useOrderType } from "@/stores/use-order-entry-store";
+import {
+	useOrderEntryActions,
+	useOrderSide,
+	useOrderType,
+	useSlPrice,
+	useTif,
+	useTpPrice,
+	useTpSlEnabled,
+} from "@/stores/use-order-entry-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { WalletModal } from "../components/wallet-modal";
 import { MarginModeModal } from "../tradebox/margin-mode-modal";
 import { OrderToast } from "../tradebox/order-toast";
+import { TpSlSection } from "../tradebox/tp-sl-section";
+import { TradeFormTif } from "../tradebox/trade-form-tif";
 import { TradeHeader } from "../tradebox/trade-header";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
@@ -81,12 +92,15 @@ export function MobileTradeView({ className, embedded }: Props) {
 
 	const orderType = useOrderType();
 	const side = useOrderSide();
-	const { setOrderType, setSide } = useOrderEntryActions();
+	const { setOrderType, setSide, setTpSlEnabled, setTpPrice, setSlPrice } = useOrderEntryActions();
+	const tpSlEnabled = useTpSlEnabled();
+	const tpPrice = useTpPrice();
+	const slPrice = useSlPrice();
+	const tif = useTif();
 	const [sizeInput, setSizeInput] = useState("");
 	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
 	const [limitPriceInput, setLimitPriceInput] = useState("");
 	const [reduceOnly, setReduceOnly] = useState(false);
-	const [tpSlEnabled, setTpSlEnabled] = useState(false);
 	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
 	const [dragSliderValue, setDragSliderValue] = useState(0);
 	const [approvalError, setApprovalError] = useState<string | null>(null);
@@ -186,10 +200,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 					scaleEndPriceNum: null,
 					scaleLevelsNum: null,
 					twapMinutesNum: null,
-					tpSlEnabled: false,
-					canUseTpSl: false,
-					tpPriceNum: null,
-					slPriceNum: null,
+					tpSlEnabled,
+					canUseTpSl,
+					tpPriceNum: toNumber(tpPrice),
+					slPriceNum: toNumber(slPrice),
 				}),
 	);
 
@@ -225,39 +239,43 @@ export function MobileTradeView({ className, embedded }: Props) {
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
-		let orderPrice = price;
-		if (isMarketExecution) {
-			const slip = slippageBps / BPS_PER_UNIT;
-			orderPrice = side === "buy" ? markPx * (1 + slip) : markPx * (1 - slip);
-		}
+		const orderSzDecimals = market.szDecimals ?? 0;
+		const plan = buildOrderPlan({
+			kind: "entry",
+			assetId: market.assetId,
+			side,
+			orderType,
+			sizeValue,
+			szDecimals: orderSzDecimals,
+			markPx,
+			price,
+			slippageBps,
+			reduceOnly,
+			tif,
+			limitPriceInput,
+			triggerPriceInput: "",
+			scaleStartPriceInput: "",
+			scaleEndPriceInput: "",
+			scaleLevelsNum: null,
+			tpSlEnabled,
+			canUseTpSl,
+			tpPriceNum: toNumber(tpPrice),
+			slPriceNum: toNumber(slPrice),
+		});
 
-		const szDecimals = market.szDecimals ?? 0;
-		const formattedPrice = formatPriceForOrder(orderPrice);
-		const formattedSize = formatSizeForOrder(sizeValue, szDecimals);
+		if (plan.orders.length === 0) return;
 
 		const orderId = addOrder({
 			market: baseToken,
 			side,
-			size: formattedSize,
-			price: formattedPrice,
+			size: formatSizeForOrder(sizeValue, orderSzDecimals),
+			price: formatPriceForOrder(price),
 			orderType: isMarketExecution ? "market" : "limit",
 			status: "pending",
 		});
 
 		try {
-			const result = await placeOrder({
-				orders: [
-					{
-						a: market.assetId,
-						b: side === "buy",
-						p: formattedPrice,
-						s: formattedSize,
-						r: reduceOnly,
-						t: isMarketExecution ? { limit: { tif: "FrontendMarket" as const } } : { limit: { tif: "Gtc" as const } },
-					},
-				],
-				grouping: "na",
-			});
+			const result = await placeOrder({ orders: plan.orders, grouping: plan.grouping });
 
 			const statuses = result.response?.data?.statuses ?? [];
 			throwIfResponseError(statuses[0]);
@@ -265,6 +283,8 @@ export function MobileTradeView({ className, embedded }: Props) {
 			updateOrder(orderId, { status: "success", outcome: deriveOrderOutcome(statuses) });
 			setSizeInput("");
 			setLimitPriceInput("");
+			setTpPrice("");
+			setSlPrice("");
 		} catch (error) {
 			updateOrder(orderId, {
 				status: "failed",
@@ -423,19 +443,24 @@ export function MobileTradeView({ className, embedded }: Props) {
 					</div>
 
 					{usesLimitPrice && (
-						<PriceInput
-							label={ORDER_TEXT.LIMIT_PRICE_LABEL}
-							inputMode="decimal"
-							inputSize="xl"
-							placeholder="0.00"
-							value={limitPriceInput}
-							onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
-							onMidClick={setLimitPriceInput}
-							midPrice={markPx}
-							szDecimals={market?.szDecimals}
-							className="tabular-nums font-semibold"
-							disabled={isFormDisabled}
-						/>
+						<div className="space-y-2">
+							<PriceInput
+								label={ORDER_TEXT.LIMIT_PRICE_LABEL}
+								inputMode="decimal"
+								inputSize="xl"
+								placeholder="0.00"
+								value={limitPriceInput}
+								onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
+								onMidClick={setLimitPriceInput}
+								midPrice={markPx}
+								szDecimals={market?.szDecimals}
+								className="tabular-nums font-semibold"
+								disabled={isFormDisabled}
+							/>
+							<div className="flex">
+								<TradeFormTif orderType={orderType} disabled={isFormDisabled} />
+							</div>
+						</div>
 					)}
 
 					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
@@ -457,6 +482,21 @@ export function MobileTradeView({ className, embedded }: Props) {
 								/>
 							)}
 						</div>
+					)}
+
+					{tpSlEnabled && canUseTpSl && (
+						<TpSlSection
+							compact
+							side={side}
+							referencePrice={markPx}
+							size={sizeValue}
+							szDecimals={szDecimals}
+							tpPrice={tpPrice}
+							slPrice={slPrice}
+							onTpPriceChange={setTpPrice}
+							onSlPriceChange={setSlPrice}
+							disabled={isFormDisabled}
+						/>
 					)}
 
 					<div className="divide-y divide-stroke-weak/40 text-xs">
