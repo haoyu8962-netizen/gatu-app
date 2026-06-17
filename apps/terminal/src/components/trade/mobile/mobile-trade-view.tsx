@@ -25,8 +25,11 @@ import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
+	isStopOrderType,
+	isTakeProfitOrderType,
 	isTakerOrderType,
 	usesLimitPrice as usesLimitPriceForOrder,
+	usesTriggerPrice as usesTriggerPriceForOrder,
 } from "@/lib/trade/order-types";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
@@ -43,6 +46,7 @@ import {
 	useTif,
 	useTpPrice,
 	useTpSlEnabled,
+	useTriggerPrice,
 } from "@/stores/use-order-entry-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
@@ -92,11 +96,12 @@ export function MobileTradeView({ className, embedded }: Props) {
 
 	const orderType = useOrderType();
 	const side = useOrderSide();
-	const { setOrderType, setSide, setTpSlEnabled, setTpPrice, setSlPrice } = useOrderEntryActions();
+	const { setOrderType, setSide, setTpSlEnabled, setTpPrice, setSlPrice, setTriggerPrice } = useOrderEntryActions();
 	const tpSlEnabled = useTpSlEnabled();
 	const tpPrice = useTpPrice();
 	const slPrice = useSlPrice();
 	const tif = useTif();
+	const triggerPrice = useTriggerPrice();
 	const [sizeInput, setSizeInput] = useState("");
 	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
 	const [limitPriceInput, setLimitPriceInput] = useState("");
@@ -116,6 +121,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
 
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
+	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
 	const isMarketExecution = orderType === "market" || isTakerOrderType(orderType);
 	const markPx = toNumberOrZero(market?.markPx);
 
@@ -190,10 +196,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 					orderType,
 					markPx,
 					maxSize,
-					usesTriggerPrice: false,
-					triggerPriceNum: null,
-					stopOrder: false,
-					takeProfitOrder: false,
+					usesTriggerPrice,
+					triggerPriceNum: toNumber(triggerPrice),
+					stopOrder: isStopOrderType(orderType),
+					takeProfitOrder: isTakeProfitOrderType(orderType),
 					scaleOrder: false,
 					twapOrder: false,
 					scaleStartPriceNum: null,
@@ -253,7 +259,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 			reduceOnly,
 			tif,
 			limitPriceInput,
-			triggerPriceInput: "",
+			triggerPriceInput: triggerPrice,
 			scaleStartPriceInput: "",
 			scaleEndPriceInput: "",
 			scaleLevelsNum: null,
@@ -374,6 +380,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 						leverage={leverage}
 						onMarginLeverageClick={() => setShowMarginDialog(true)}
 						isLeveraged={capabilities.isLeveraged}
+						hideAlgoOrders
 					/>
 
 					<div className="flex items-center justify-end text-xs">
@@ -441,6 +448,22 @@ export function MobileTradeView({ className, embedded }: Props) {
 							</div>
 						</div>
 					</div>
+
+					{usesTriggerPrice && (
+						<PriceInput
+							label={t`Trigger Price`}
+							inputMode="decimal"
+							inputSize="xl"
+							placeholder="0.00"
+							value={triggerPrice}
+							onChange={(e: ChangeEvent<HTMLInputElement>) => setTriggerPrice(e.target.value)}
+							onMidClick={setTriggerPrice}
+							midPrice={markPx}
+							szDecimals={market?.szDecimals}
+							className="tabular-nums font-semibold"
+							disabled={isFormDisabled}
+						/>
+					)}
 
 					{usesLimitPrice && (
 						<div className="space-y-2">

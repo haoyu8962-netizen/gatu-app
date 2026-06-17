@@ -20,6 +20,7 @@ interface Props {
 	leverage?: number;
 	onMarginLeverageClick?: () => void;
 	isLeveraged?: boolean;
+	hideAlgoOrders?: boolean;
 }
 
 export function TradeHeader({
@@ -33,6 +34,7 @@ export function TradeHeader({
 	leverage,
 	onMarginLeverageClick,
 	isLeveraged,
+	hideAlgoOrders,
 }: Props) {
 	const tabsOrderType = getTabsOrderType(orderType);
 
@@ -61,8 +63,12 @@ export function TradeHeader({
 					},
 				]
 			: []),
-		{ label: t`TWAP`, active: orderType === "twap", onSelect: () => onOrderTypeChange("twap" as OrderType) },
-		{ label: t`Scale`, active: orderType === "scale", onSelect: () => onOrderTypeChange("scale" as OrderType) },
+		...(!hideAlgoOrders
+			? [
+					{ label: t`TWAP`, active: orderType === "twap", onSelect: () => onOrderTypeChange("twap" as OrderType) },
+					{ label: t`Scale`, active: orderType === "scale", onSelect: () => onOrderTypeChange("scale" as OrderType) },
+				]
+			: []),
 	];
 
 	const marginLabel = marginMode === "isolated" ? t`Isolated` : t`Cross`;
