@@ -1,3 +1,4 @@
+import Big from "big.js";
 import {
 	DEFAULT_LEVERAGE_FALLBACK,
 	type ExchangeOrder,
@@ -9,7 +10,7 @@ import {
 	SCALE_LEVELS_MIN,
 } from "@/config/trade";
 import { getExecutedPrice } from "@/domain/trade/order/price";
-import { clampInt, formatDecimalFloor, isPositive, toBig, toSafeBig } from "@/lib/trade/numbers";
+import { clampInt, formatDecimalFloor, isPositive, type Numeric, toBig, toSafeBig } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 
 export interface OrderBuildParams {
@@ -169,7 +170,7 @@ function buildTriggerOrder(orders: ExchangeOrder[], params: TriggerOrderParams):
 	if (!triggerBig || triggerBig.lte(0)) {
 		throw new Error("Trigger price must be greater than zero");
 	}
-	const triggerPx = formatPriceForOrder(triggerBig.toNumber());
+	const triggerPx = formatPriceForOrder(triggerBig);
 
 	let orderPx = triggerPx;
 	if (params.usesLimitPriceForOrder) {
@@ -177,7 +178,7 @@ function buildTriggerOrder(orders: ExchangeOrder[], params: TriggerOrderParams):
 		if (!limitBig || limitBig.lte(0)) {
 			throw new Error("Limit price must be greater than zero");
 		}
-		orderPx = formatPriceForOrder(limitBig.toNumber());
+		orderPx = formatPriceForOrder(limitBig);
 	}
 
 	orders.push({
@@ -273,36 +274,25 @@ export function getDefaultLeverage(maxLeverage: number): number {
 }
 
 /**
- * Format price according to Hyperliquid's tick size rules.
- * Prices must have at most 5 significant figures.
- * The number of decimal places depends on the price magnitude.
+ * Format a price to Hyperliquid's tick rules: at most 5 significant figures, capped at
+ * HL_PRICE_MAX_DECIMALS decimal places. Big.js based so the magnitude (via `.e`) and rounding (via
+ * `toFixed`) are exact — no `Math.log10`/`Math.round` float error — and it accepts a Big/string
+ * directly so callers don't lose precision by converting to a number first.
  */
-export function formatPriceForOrder(price: number): string {
-	if (!Number.isFinite(price) || price <= 0) return "0";
+export function formatPriceForOrder(value: Numeric): string {
+	const price = toBig(value);
+	if (!price || price.lte(0)) return "0";
 
-	const log10Price = Math.log10(price);
-	const integerDigits = Math.floor(log10Price) + 1;
-
-	let decimals: number;
-	if (price >= 1) {
-		decimals = Math.max(0, HL_PRICE_MAX_SIG_FIGS - integerDigits);
-	} else {
-		decimals = HL_PRICE_MAX_SIG_FIGS - integerDigits;
-	}
-
+	// price.e is the exponent of the most significant digit, so integerDigits = e + 1.
+	const integerDigits = price.e + 1;
+	let decimals = price.gte(1)
+		? Math.max(0, HL_PRICE_MAX_SIG_FIGS - integerDigits)
+		: HL_PRICE_MAX_SIG_FIGS - integerDigits;
 	decimals = Math.min(decimals, HL_PRICE_MAX_DECIMALS);
 
-	const multiplier = 10 ** decimals;
-	const rounded = Math.round(price * multiplier) / multiplier;
-
-	if (decimals === 0) {
-		return rounded.toFixed(0);
-	}
-
-	return rounded
-		.toFixed(decimals)
-		.replace(/(\.\d*?)0+$/, "$1")
-		.replace(/\.$/, "");
+	const fixed = price.toFixed(decimals, Big.roundHalfUp);
+	if (decimals === 0) return fixed;
+	return fixed.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 }
 
 export function formatSizeForOrder(size: string | number, szDecimals: number): string {
