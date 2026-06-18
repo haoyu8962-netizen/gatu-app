@@ -21,11 +21,14 @@ export function getPersistedLocale(): LocaleCode {
 	}
 }
 
-function persistLocale(locale: string) {
-	if (typeof window === "undefined") return;
+function persistLocale(locale: string): boolean {
+	if (typeof window === "undefined") return false;
 	try {
 		window.localStorage.setItem(STORAGE_KEYS.LOCALE, locale);
-	} catch {}
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 // Keeps <html lang/dir> in sync with the active locale, re-asserting past any document-shell
@@ -58,12 +61,15 @@ let activationSeq = 0;
  * Dynamically import + activate a locale's catalog and persist the choice. Only English is bundled
  * eagerly; every other locale is a lazy chunk loaded here on demand. Throws if the locale has no
  * catalog — callers must handle it (and keep the previous locale).
+ *
+ * Returns `true` only when THIS call actually activated + persisted `locale`; returns `false` if a
+ * newer switch superseded it (rapid switching) or persistence failed. Switchers reload the page only
+ * on `true`, so a stale/superseded request never reloads into the wrong language.
  */
-export async function dynamicActivate(locale: string) {
+export async function dynamicActivate(locale: string): Promise<boolean> {
 	const seq = ++activationSeq;
 	if (i18n.locale === locale) {
-		persistLocale(locale);
-		return;
+		return persistLocale(locale);
 	}
 	if (locale === defaultLocale) {
 		i18n.loadAndActivate({ locale, messages: enMessages });
@@ -73,11 +79,11 @@ export async function dynamicActivate(locale: string) {
 			throw new Error(`No locale data found for "${locale}"`);
 		}
 		const { messages } = await loader();
-		if (seq !== activationSeq) return;
+		if (seq !== activationSeq) return false;
 		i18n.loadAndActivate({ locale, messages });
 	}
-	if (seq !== activationSeq) return;
-	persistLocale(locale);
+	if (seq !== activationSeq) return false;
+	return persistLocale(locale);
 }
 
 // Boot: activate English synchronously (the only eagerly-bundled catalog) so the app always has an
