@@ -165,13 +165,25 @@ interface TriggerOrderParams {
 }
 
 function buildTriggerOrder(orders: ExchangeOrder[], params: TriggerOrderParams): void {
-	const triggerPx = formatPriceForOrder(toBig(params.triggerPriceInput)?.toNumber() ?? 0);
-	const limitPx = formatPriceForOrder(toBig(params.limitPriceInput)?.toNumber() ?? 0);
+	const triggerBig = toBig(params.triggerPriceInput);
+	if (!triggerBig || triggerBig.lte(0)) {
+		throw new Error("Trigger price must be greater than zero");
+	}
+	const triggerPx = formatPriceForOrder(triggerBig.toNumber());
+
+	let orderPx = triggerPx;
+	if (params.usesLimitPriceForOrder) {
+		const limitBig = toBig(params.limitPriceInput);
+		if (!limitBig || limitBig.lte(0)) {
+			throw new Error("Limit price must be greater than zero");
+		}
+		orderPx = formatPriceForOrder(limitBig.toNumber());
+	}
 
 	orders.push({
 		a: params.assetId,
 		b: params.isBuy,
-		p: params.usesLimitPriceForOrder ? limitPx : triggerPx,
+		p: orderPx,
 		s: params.formattedSize,
 		r: true,
 		t: {
