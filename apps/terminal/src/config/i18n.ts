@@ -54,7 +54,7 @@ export function isRtlLocale(locale: string): boolean {
 }
 
 export function isValidLocale(locale: string): locale is LocaleCode {
-	return locale in locales;
+	return Object.hasOwn(locales, locale);
 }
 
 export function resolveNumberFormatLocale(

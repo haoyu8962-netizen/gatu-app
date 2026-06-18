@@ -1,6 +1,5 @@
 import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowsDownUpIcon, CheckIcon, SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
 import { useCallback, useMemo, useState } from "react";
 import { labelTypographyClass } from "@/components/ui/field-label";
@@ -47,6 +46,7 @@ interface Props {
 }
 
 function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Props) {
+	const { t } = useLingui();
 	const { spotMarkets } = useMarketsInfo();
 	const { spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
 	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");

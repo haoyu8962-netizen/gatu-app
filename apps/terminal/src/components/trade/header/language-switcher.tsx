@@ -2,6 +2,7 @@ import { Dropdown } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { GlobeIcon } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import { localeList } from "@/config/i18n";
 import { dynamicActivate } from "@/lib/i18n";
 
@@ -12,7 +13,9 @@ export function LanguageSwitcher() {
 		label: name,
 		active: i18n.locale === code,
 		onSelect: () => {
-			dynamicActivate(code);
+			dynamicActivate(code).catch(() => {
+				toast.error(t`Failed to change language`);
+			});
 		},
 	}));
 

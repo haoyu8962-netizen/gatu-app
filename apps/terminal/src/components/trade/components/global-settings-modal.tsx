@@ -10,10 +10,10 @@ import {
 	Slider,
 	Toggle,
 } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
+import { useLingui } from "@lingui/react/macro";
 import type { ChangeEvent, ReactNode } from "react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
 import { type LocaleCode, localeList, type NumberFormatLocale, numberFormatLocaleList } from "@/config/i18n";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
@@ -29,7 +29,7 @@ import {
 export function GlobalSettingsModal() {
 	const open = useSettingsDialogOpen();
 	const { close } = useSettingsDialogActions();
-	const { i18n } = useLingui();
+	const { t, i18n } = useLingui();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const { showOrderbookInQuote, numberFormatLocale } = useGlobalSettings();
 	const { setShowOrderbookInQuote, setNumberFormatLocale, setMarketOrderSlippagePercent, setNetwork } =
@@ -59,7 +59,10 @@ export function GlobalSettingsModal() {
 	}
 
 	function handleLanguageChange(value: string | null) {
-		if (value) dynamicActivate(value as LocaleCode);
+		if (!value) return;
+		dynamicActivate(value as LocaleCode).catch(() => {
+			toast.error(t`Failed to change language`);
+		});
 	}
 
 	function handleNumberFormatChange(value: string | null) {

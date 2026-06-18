@@ -1,6 +1,5 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	ArrowLineDownIcon,
 	ArrowLineUpIcon,
@@ -31,6 +30,7 @@ interface Props {
 }
 
 export function WithdrawForm({ amount, onAmountChange, available, validation, isPending, onSubmit }: Props) {
+	const { t } = useLingui();
 	const availableNum = toNumberOrZero(available);
 	const amountNum = toNumber(amount);
 	const netReceived = amountNum !== null && amountNum > 0 ? Math.max(amountNum - WITHDRAWAL_FEE_USD, 0) : null;

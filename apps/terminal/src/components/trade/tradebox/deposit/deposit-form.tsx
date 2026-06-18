@@ -1,6 +1,5 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowLineDownIcon, ClockIcon, SpinnerGapIcon, WalletIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { formatUnits } from "viem";
 import { InfoRow } from "@/components/ui/info-row";
@@ -22,6 +21,7 @@ interface Props {
 }
 
 export function DepositForm({ amount, onAmountChange, balance, validation, isPending, onSubmit }: Props) {
+	const { t } = useLingui();
 	return (
 		<div className="flex flex-1 flex-col gap-2">
 			<NetworkSelect label={<Trans>From</Trans>} value="arbitrum" onChange={() => {}} disabled />
