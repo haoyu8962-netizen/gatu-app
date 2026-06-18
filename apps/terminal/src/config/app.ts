@@ -20,6 +20,7 @@ export const HL_ALL_DEXS = "ALL_DEXS" as const;
 export const STORAGE_KEYS = {
 	MARKET_PREFS: "market-prefs-v2",
 	GLOBAL_SETTINGS: "global-settings-v2",
+	LOCALE: "locale-v1",
 	META_CACHE: "hyperliquid-meta-cache-v2",
 	SIDEBAR_STATE: "sidebar_state-v2",
 	ORDER_ENTRY: "order-entry-v2",

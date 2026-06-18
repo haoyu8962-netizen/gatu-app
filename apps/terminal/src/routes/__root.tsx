@@ -50,8 +50,11 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+	// lang/dir default to English here for SSR; on the client they are owned and kept in sync with
+	// the active language by the i18n module (see lib/i18n.ts), which re-asserts them past any
+	// shell re-render.
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="en" dir="ltr" suppressHydrationWarning>
 			<head>
 				<HeadContent />
 			</head>

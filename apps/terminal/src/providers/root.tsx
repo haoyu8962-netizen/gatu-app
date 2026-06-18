@@ -1,11 +1,12 @@
 import { HyperliquidProvider, PERSISTED_QUERY_PREFIX } from "@gatu/hl-react";
+import { i18n } from "@lingui/core";
+import { I18nProvider, useLingui } from "@lingui/react";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { WagmiProvider } from "@privy-io/wagmi";
-import { i18n } from "@lingui/core";
-import { I18nProvider } from "@lingui/react";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { Fragment } from "react";
 import { useConnection } from "wagmi";
 import { APP_NAME, RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
@@ -38,6 +39,15 @@ const persister = isServer
 export function getRootProviderContext() {
 	const queryClient = new QueryClient();
 	return { queryClient };
+}
+
+// Remounts the route subtree when the language changes so every component re-renders in the new
+// locale — Lingui's I18nProvider only re-renders context consumers, leaving plain `t``` strings in
+// non-subscribed components stale. The data providers (WS/query/wagmi) sit above this boundary, so
+// they stay mounted; only the route content (and the chart) re-initializes on a language switch.
+function LocaleKeyBoundary({ children }: { children: React.ReactNode }) {
+	const { i18n: activeI18n } = useLingui();
+	return <Fragment key={activeI18n.locale}>{children}</Fragment>;
 }
 
 function HyperliquidBridge({ children }: { children: React.ReactNode }) {
@@ -91,7 +101,9 @@ function ClientProviders({ children, queryClient }: { children: React.ReactNode;
 			>
 				<WagmiProvider config={config}>
 					<I18nProvider i18n={i18n}>
-						<HyperliquidBridge>{children}</HyperliquidBridge>
+						<HyperliquidBridge>
+							<LocaleKeyBoundary>{children}</LocaleKeyBoundary>
+						</HyperliquidBridge>
 					</I18nProvider>
 				</WagmiProvider>
 			</PersistQueryClientProvider>

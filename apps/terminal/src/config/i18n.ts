@@ -47,6 +47,16 @@ export const languageToIntlLocale: Record<LocaleCode, string> = {
 
 export const defaultLocale: LocaleCode = "en";
 
+export const rtlLocales: ReadonlySet<LocaleCode> = new Set<LocaleCode>(["ar"]);
+
+export function isRtlLocale(locale: string): boolean {
+	return rtlLocales.has(locale as LocaleCode);
+}
+
+export function isValidLocale(locale: string): locale is LocaleCode {
+	return locale in locales;
+}
+
 export function resolveNumberFormatLocale(
 	formatLocale: NumberFormatLocale,
 	activeLocale: LocaleCode = defaultLocale,
