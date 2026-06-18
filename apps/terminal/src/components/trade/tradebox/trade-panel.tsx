@@ -213,7 +213,7 @@ export function TradePanel() {
 					orderType,
 					markPx,
 					maxSize,
-					usesTriggerPrice: usesLimitPriceForOrder(orderType) ? false : isTriggerOrderType(orderType),
+					usesTriggerPrice: isTriggerOrderType(orderType),
 					triggerPriceNum,
 					stopOrder,
 					takeProfitOrder,

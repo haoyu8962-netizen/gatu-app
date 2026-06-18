@@ -2,7 +2,7 @@ import Big from "big.js";
 import type { ExchangeOrder, LimitTif, OrderType } from "@/config/trade";
 import { getExecutedPrice } from "@/domain/trade/order/price";
 import { buildOrders, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
-import { isPositive } from "@/lib/trade/numbers";
+import { isPositive, toBig } from "@/lib/trade/numbers";
 import { isScaleOrderType, isStopOrderType, isTriggerOrderType, usesLimitPrice } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
 
@@ -98,6 +98,11 @@ function getCloseSide(isLong: boolean): Side {
 
 function buildEntryPlan(intent: EntryOrderIntent): OrderPlan {
 	const orderType = intent.orderType;
+
+	if (isTriggerOrderType(orderType) && !isPositive(toBig(intent.triggerPriceInput)?.toNumber() ?? null)) {
+		return { orders: [], grouping: "na", errors: ["Enter trigger price"], warnings: [] };
+	}
+
 	const { orders, grouping } = buildOrders({
 		assetId: intent.assetId,
 		side: intent.side,
