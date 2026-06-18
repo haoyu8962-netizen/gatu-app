@@ -10,7 +10,8 @@ import {
 	Slider,
 	Toggle,
 } from "@gatu/ui";
-import { useLingui } from "@lingui/react/macro";
+import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react";
 import type { ChangeEvent, ReactNode } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -29,7 +30,7 @@ import {
 export function GlobalSettingsModal() {
 	const open = useSettingsDialogOpen();
 	const { close } = useSettingsDialogActions();
-	const { t, i18n } = useLingui();
+	const { i18n } = useLingui();
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const { showOrderbookInQuote, numberFormatLocale } = useGlobalSettings();
 	const { setShowOrderbookInQuote, setNumberFormatLocale, setMarketOrderSlippagePercent, setNetwork } =
