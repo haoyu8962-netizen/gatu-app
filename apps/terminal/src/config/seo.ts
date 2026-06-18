@@ -2,7 +2,7 @@ import { APP_NAME } from "./app";
 
 export const SEO_DEFAULTS = {
 	siteName: APP_NAME,
-	siteUrl: "https://hypeterminal.xyz",
+	siteUrl: "https://app.gatu.ai",
 	defaultTitle: "gatu - Hyperliquid Trading Terminal",
 	defaultDescription:
 		"A professional trading terminal for Hyperliquid DEX. Trade perpetuals and spot markets with real-time data, advanced charting, and seamless wallet connectivity.",

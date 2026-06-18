@@ -35,4 +35,4 @@ export const RQ_CACHE_BUSTER = "v1";
 
 export const TOKEN_ICON_BASE_URL = "https://app.hyperliquid.xyz/coins";
 
-export const LIFI_INTEGRATOR = "hypeterminal";
+export const LIFI_INTEGRATOR = "gatu";
