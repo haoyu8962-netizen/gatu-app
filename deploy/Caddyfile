@@ -1,0 +1,36 @@
+# /etc/caddy/Caddyfile — gatu single-host reverse proxy + automatic HTTPS.
+#
+# Caddy obtains and renews a Let's Encrypt certificate for this domain
+# automatically. Requirements:
+#   - DNS A record  app.gatu.ai → this host's public IP
+#   - inbound ports 80 and 443 open in the security group
+#
+# Replace the domain below if you serve on a different hostname.
+
+app.gatu.ai {
+	encode zstd gzip
+
+	# Long-cache the immutable, content-hashed build assets. Nitro already sets
+	# this via routeRules; we re-assert it at the edge for safety.
+	@immutable path /assets/* /charting_library/*
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+	# Baseline security headers. A Content-Security-Policy is intentionally NOT
+	# set here — see deploy/README.md ("可选加固: CSP") for why and how to add it.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	reverse_proxy 127.0.0.1:3000
+
+	log {
+		output file /var/log/caddy/gatu.access.log {
+			roll_size 50MiB
+			roll_keep 5
+		}
+		format json
+	}
+}

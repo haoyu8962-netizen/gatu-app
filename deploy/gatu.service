@@ -1,0 +1,32 @@
+[Unit]
+Description=gatu — Hyperliquid trading terminal (TanStack Start SSR)
+Documentation=https://github.com/zora4523-bot/gatu-app
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=gatu
+Group=gatu
+# Run the self-contained Nitro node-server output (proven to need no monorepo deps).
+WorkingDirectory=/opt/gatu/repo/apps/terminal/.output
+# Runtime-only env: PORT, HOST, IPDATA_API_KEY. NOT the VITE_* vars (those are baked
+# into the client bundle at build time and are not read here).
+EnvironmentFile=/opt/gatu/shared/.env.runtime
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node server/index.mjs
+Restart=on-failure
+RestartSec=3
+
+# --- hardening ---
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gatu
+
+[Install]
+WantedBy=multi-user.target
