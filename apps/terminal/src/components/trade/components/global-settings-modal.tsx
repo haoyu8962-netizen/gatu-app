@@ -59,10 +59,14 @@ export function GlobalSettingsModal() {
 	}
 
 	function handleLanguageChange(value: string | null) {
-		if (!value) return;
-		dynamicActivate(value as LocaleCode).catch(() => {
-			toast.error(t`Failed to change language`);
-		});
+		if (!value || value === i18n.locale) return;
+		dynamicActivate(value as LocaleCode)
+			.then(() => {
+				window.location.reload();
+			})
+			.catch(() => {
+				toast.error(t`Failed to change language`);
+			});
 	}
 
 	function handleNumberFormatChange(value: string | null) {

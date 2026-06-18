@@ -17,6 +17,7 @@ import { TestnetBanner } from "./testnet-banner";
 
 const MobileTerminal = createLazyComponent(() => import("./mobile/mobile-terminal"), "MobileTerminal");
 
+const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 const FooterBar = createLazyComponent(() => import("./footer/footer-bar"), "FooterBar");
 
 if (typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT_PX) {
@@ -51,6 +52,9 @@ export function TradeTerminalPage() {
 					</Suspense>
 				</div>
 			)}
+			<Suspense fallback={null}>
+				<GlobalModals />
+			</Suspense>
 		</>
 	);
 }
