@@ -100,7 +100,7 @@ export function TokenSelectorContent({
 	const showSelectorFilters = showScopeTabs || showSubcategoryTabs;
 
 	return (
-		<div className={cn("flex flex-col", mobile ? "h-full" : "max-h-144")}>
+		<div className={cn("flex flex-col", mobile ? "h-full min-h-0" : "max-h-144")}>
 			<div className="border-b border-stroke-weak shrink-0 px-2 pt-3 pb-2 space-y-2">
 				<h2 id={headingId} className="text-sm font-semibold text-fg tracking-tight">
 					{t`Select market`}

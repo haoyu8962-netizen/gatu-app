@@ -211,6 +211,7 @@ export function useTokenSelector({
 	const table = useReactTable({
 		data: filteredMarkets,
 		columns: TOKEN_SELECTOR_COLUMNS,
+		getRowId: (row) => row.name,
 		getCoreRowModel: getCoreRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		state: { sorting },
@@ -236,9 +237,15 @@ export function useTokenSelector({
 	});
 
 	useEffect(() => {
-		if (open) {
-			virtualizer.measure();
-		}
+		if (!open) return;
+
+		virtualizer.measure();
+		const frameId = window.requestAnimationFrame(() => virtualizer.measure());
+		const timeoutId = window.setTimeout(() => virtualizer.measure(), 250);
+		return () => {
+			window.cancelAnimationFrame(frameId);
+			window.clearTimeout(timeoutId);
+		};
 	}, [open, virtualizer]);
 
 	useEffect(() => {

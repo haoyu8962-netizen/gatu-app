@@ -84,7 +84,11 @@ export function TokenSelectorPopup({
 	);
 
 	if (mobile) {
-		return <DrawerContent keepMounted>{content}</DrawerContent>;
+		return (
+			<DrawerContent keepMounted className="h-[85dvh] overflow-hidden p-0">
+				{content}
+			</DrawerContent>
+		);
 	}
 
 	return (
