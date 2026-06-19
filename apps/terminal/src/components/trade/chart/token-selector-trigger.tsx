@@ -30,7 +30,10 @@ export function TokenSelectorTriggerContent({ selectedMarket }: Props) {
 						hideName
 						iconClassName="size-[18px]"
 					/>
-					<span className="shrink-0 whitespace-nowrap text-sm font-medium text-fg tracking-tight leading-none">
+					<span
+						className="min-w-[82px] max-w-[34vw] truncate text-sm font-medium text-fg tracking-tight leading-none"
+						title={selectedMarket.pairName ?? selectedMarket.name}
+					>
 						{selectedMarket.pairName ?? selectedMarket.name}
 					</span>
 					{kindBadge ? (

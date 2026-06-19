@@ -1,4 +1,5 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
+import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { WalletIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -227,9 +228,9 @@ function EmptyState() {
 				<div className="size-10 rounded-full flex items-center justify-center bg-surface">
 					<WalletIcon className="size-5 text-fg-muted" />
 				</div>
-				<p className="text-xs text-fg-muted max-w-xs text-pretty">Connect wallet to view positions</p>
+				<p className="text-xs text-fg-muted max-w-xs text-pretty">{t`Connect wallet to view positions`}</p>
 				<Button variant="outline" intent="brand" size="sm" onClick={() => setWalletModalOpen(true)}>
-					Connect Wallet
+					{t`Connect Wallet`}
 				</Button>
 			</div>
 			<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
