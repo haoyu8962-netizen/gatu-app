@@ -15,6 +15,12 @@ import { TradesPanel } from "../orderbook/trades-panel";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
 const ORDERBOOK_TEXT = UI_TEXT.ORDERBOOK;
+const DEFAULT_LEVEL_COUNT = 12;
+const COMPACT_LEVEL_COUNT = 5;
+const ORDERBOOK_ROW_HEIGHT_PX = 20;
+const ORDERBOOK_ROW_GAP_PX = 1;
+const ORDERBOOK_LADDER_VERTICAL_PADDING_PX = 8;
+const PLACEHOLDER_ROW_KEYS = Array.from({ length: 64 }, (_, index) => `placeholder-${index}`);
 
 type View = "book" | "trades";
 
@@ -59,6 +65,9 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 
 	const bids = useMemo(() => processLevels(book?.levels[0]), [book?.levels]);
 	const asks = useMemo(() => processLevels(book?.levels[1]), [book?.levels]);
+	const levelCount = compact ? COMPACT_LEVEL_COUNT : DEFAULT_LEVEL_COUNT;
+	const [askLevelCount, askLadderRef] = useOrderbookLadderRows(levelCount, view === "book" && asks.length > 0);
+	const [bidLevelCount, bidLadderRef] = useOrderbookLadderRows(levelCount, view === "book" && bids.length > 0);
 
 	const maxTotal = useMemo(() => {
 		const totals = [...asks, ...bids].map((r) => r.total);
@@ -110,7 +119,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 	}, [selectedMarket]);
 
 	return (
-		<div className={cn("flex flex-col h-full min-h-0", className)}>
+		<div className={cn("flex flex-col min-h-0 flex-1 self-stretch", className)}>
 			<div className={cn("shrink-0 px-3 py-2 border-b border-stroke-weak/60 bg-surface", compact && "hidden")}>
 				<div className="flex items-center justify-between">
 					{!inTabLayout && (
@@ -182,9 +191,14 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 
 					<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
 						{bookStatus !== "error" && asks.length > 0 ? (
-							<div className="flex-1 flex flex-col justify-end gap-px py-1 overflow-hidden">
+							<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-px py-1 overflow-hidden">
+								{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
+									(key) => (
+										<OrderbookPlaceholderRow key={`ask-${key}`} />
+									),
+								)}
 								{asks
-									.slice(0, 12)
+									.slice(0, askLevelCount)
 									.reverse()
 									.map((level, index) => (
 										<OrderbookRow
@@ -225,8 +239,8 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 						</div>
 
 						{bookStatus !== "error" && bids.length > 0 ? (
-							<div className="flex-1 flex flex-col gap-px py-1 overflow-hidden">
-								{bids.slice(0, 12).map((level, index) => (
+							<div ref={bidLadderRef} className="flex-1 min-h-0 flex flex-col gap-px py-1 overflow-hidden">
+								{bids.slice(0, bidLevelCount).map((level, index) => (
 									<OrderbookRow
 										key={`bid-${level.price}-${index}`}
 										level={level}
@@ -238,6 +252,11 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 										compact={compact}
 									/>
 								))}
+								{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - Math.min(bids.length, bidLevelCount))).map(
+									(key) => (
+										<OrderbookPlaceholderRow key={`bid-${key}`} />
+									),
+								)}
 							</div>
 						) : null}
 					</div>
@@ -284,6 +303,50 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 			{!inTabLayout && <MobileBottomNavSpacer />}
 		</div>
 	);
+}
+
+function useOrderbookLadderRows(defaultRows: number, enabled: boolean) {
+	const ladderRef = useRef<HTMLDivElement>(null);
+	const [rows, setRows] = useState(defaultRows);
+
+	useEffect(() => {
+		if (!enabled) {
+			setRows(defaultRows);
+			return;
+		}
+
+		const el = ladderRef.current;
+		if (!el) return;
+
+		function updateRows(height: number) {
+			setRows(getRowsForLadderHeight(height));
+		}
+
+		updateRows(el.getBoundingClientRect().height);
+
+		if (typeof ResizeObserver === "undefined") return;
+
+		const observer = new ResizeObserver(([entry]) => {
+			if (!entry) return;
+			updateRows(entry.contentRect.height);
+		});
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [defaultRows, enabled]);
+
+	return [rows, ladderRef] as const;
+}
+
+function getRowsForLadderHeight(height: number): number {
+	const availableHeight = Math.max(0, height - ORDERBOOK_LADDER_VERTICAL_PADDING_PX);
+	return Math.max(
+		1,
+		Math.floor((availableHeight + ORDERBOOK_ROW_GAP_PX) / (ORDERBOOK_ROW_HEIGHT_PX + ORDERBOOK_ROW_GAP_PX)),
+	);
+}
+
+function OrderbookPlaceholderRow() {
+	return <div className="h-5 shrink-0" aria-hidden="true" />;
 }
 
 function MidTrendIcon({ direction, className }: { direction: "up" | "down" | "flat"; className?: string }) {

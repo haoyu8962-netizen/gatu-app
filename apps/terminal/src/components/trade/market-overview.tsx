@@ -3,6 +3,7 @@ import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, FireIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { get24hChange, getOiUsd } from "@/domain/market";
+import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { cn } from "@/lib/cn";
 import { formatClockDuration, formatPercent, formatUSD, shortenAddress } from "@/lib/format";
 import {
@@ -72,6 +73,7 @@ function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string 
 
 export function MarketOverview() {
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
+	const { midPx } = useOrderbookMidPrice(selectedMarketInfo?.name);
 
 	const isSpot = selectedMarketInfo?.kind === "spot";
 	const perpCoin = selectedMarketInfo?.name ?? "";
@@ -91,21 +93,18 @@ export function MarketOverview() {
 	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
 	const perpCtx = perpCtxEvent?.ctx;
 
-	const markPxLive = liveCtx?.markPx;
 	const dayNtlVlm = liveCtx?.dayNtlVlm;
 	const oraclePx = perpCtx?.oraclePx;
 	const funding = perpCtx?.funding;
 
-	const markPxForDisplay = markPxLive ?? selectedMarketInfo?.markPx;
 	const prevDayForChange = liveCtx?.prevDayPx ?? selectedMarketInfo?.prevDayPx;
-	const markForChange = markPxLive ?? selectedMarketInfo?.markPx;
 
 	const fundingNum = toBig(funding)?.toNumber() ?? 0;
-	const change24h = get24hChange(prevDayForChange, markForChange);
+	const change24h = get24hChange(prevDayForChange, midPx);
 	const oiUsd = getOiUsd(perpCtx?.openInterest, perpCtx?.markPx);
 	const spotTokenAddress = getSpotTokenAddress(selectedMarketInfo);
 
-	const heroPrice = markPxForDisplay != null ? formatUSD(markPxForDisplay, { compact: false }) : "—";
+	const heroPrice = midPx != null ? formatUSD(midPx, { compact: false }) : "—";
 	const changePct = change24h !== null ? formatPercent(change24h / 100, { signDisplay: "exceptZero" }) : "—";
 
 	return (

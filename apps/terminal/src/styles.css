@@ -542,4 +542,25 @@
       background-color: oklch(from var(--text-error) l c h / 0.12);
     }
   }
+
+  .use-color-change {
+    animation: mobile-price-color-change 1.8s ease 0s 1 normal none;
+  }
+
+  .use-color-change[data-direction="up"] {
+    --price-flash-color: var(--market-up);
+  }
+
+  .use-color-change[data-direction="down"] {
+    --price-flash-color: var(--market-down);
+  }
+
+  @keyframes mobile-price-color-change {
+    0% {
+      color: var(--price-flash-color);
+    }
+
+    100% {
+    }
+  }
 }

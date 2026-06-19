@@ -12,12 +12,14 @@ import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
+import type { MobileDataScrollMode } from "./mobile-positions-view";
 
 interface Props {
 	className?: string;
+	scrollMode?: MobileDataScrollMode;
 }
 
-export function MobileOrdersHistoryTab({ className }: Props) {
+export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: Props) {
 	const { address, isConnected } = useConnection();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
@@ -35,6 +37,7 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 			.slice(0, MAX_HISTORY_ROWS) ?? [];
 
 	const headerCount = isConnected ? `${orders.length}` : FALLBACK_VALUE_PLACEHOLDER;
+	const isPageScroll = scrollMode === "page";
 
 	if (!isConnected) {
 		return (
@@ -63,13 +66,13 @@ export function MobileOrdersHistoryTab({ className }: Props) {
 
 	return (
 		<Skeleton name="orders-history-tab" loading={status === "subscribing" || status === "idle"}>
-			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
+			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
 				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
 					<ClockCounterClockwiseIcon className="size-3" />
 					{t`Order History`}
 					<span className="font-semibold text-brand ml-auto tabular-nums">{headerCount}</span>
 				</div>
-				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
+				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 					{orders.map((entry) => {
 						const { order } = entry;
 						const market = markets.getMarket(order.coin);

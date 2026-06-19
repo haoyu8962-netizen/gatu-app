@@ -271,6 +271,11 @@ msgstr "ट्रेड के लिए उपलब्ध बैलेंस"
 #~ msgid "Balance:"
 #~ msgstr ""
 
+#: src/config/trade.ts
+#: src/config/trade.ts
+msgid "Balances"
+msgstr "बैलेंस"
+
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Block:"
 #~ msgstr "ब्लॉक:"
@@ -1028,6 +1033,11 @@ msgstr "एक्सप्लोरर"
 msgid "failed"
 msgstr "विफल"
 
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
+msgid "Failed to change language"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to close position"
@@ -1182,6 +1192,7 @@ msgstr "से"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/config/trade.ts
 msgid "Funding"
 msgstr "फंडिंग"
 
@@ -1190,6 +1201,7 @@ msgid "FUNDING"
 msgstr "फंडिंग"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/config/trade.ts
 msgid "Funding History"
 msgstr "फंडिंग इतिहास"
 
@@ -1851,8 +1863,8 @@ msgid "Not connected"
 msgstr "कनेक्टेड नहीं"
 
 #: src/config/ui-text.ts
-msgid "Notifications"
-msgstr "सूचनाएं"
+#~ msgid "Notifications"
+#~ msgstr "सूचनाएं"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Number format"
@@ -1906,6 +1918,7 @@ msgid "Open Interest"
 msgstr "ओपन इंटरेस्ट"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/config/trade.ts
 msgid "Open Orders"
 msgstr "खुले ऑर्डर"
 
@@ -1959,6 +1972,8 @@ msgid "Order filled"
 msgstr "ऑर्डर भर गया"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Order History"
 msgstr "ऑर्डर हिस्ट्री"
 
@@ -1989,9 +2004,9 @@ msgstr "ऑर्डर तब तक बना रहेगा जब तक �
 msgid "orders"
 msgstr "ऑर्डर"
 
-#: src/components/trade/positions/orders-history-tab.tsx
-#~ msgid "Orders"
-#~ msgstr ""
+#: src/config/trade.ts
+msgid "Orders"
+msgstr "ऑर्डर"
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -2192,6 +2207,11 @@ msgstr "पोज़िशन रिवर्स हो गई — {coin}"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "positions"
+msgstr "पोज़िशन"
+
+#: src/config/trade.ts
+#: src/config/trade.ts
+msgid "Positions"
 msgstr "पोज़िशन"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -3142,6 +3162,7 @@ msgstr "ट्रेड"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/config/trade.ts
 msgid "Trade History"
 msgstr "ट्रेड इतिहास"
 
@@ -3156,6 +3177,7 @@ msgstr "ट्रेड"
 
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/trade.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "ट्रेड्स"
@@ -3214,6 +3236,7 @@ msgstr "ट्रांसफ़र किया जा रहा है..."
 msgid "Trigger"
 msgstr "ट्रिगर"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
 msgstr "ट्रिगर मूल्य"
@@ -3232,6 +3255,8 @@ msgid "Try Again"
 msgstr "फिर से प्रयास करें"
 
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade.ts
+#: src/config/trade.ts
 #: src/lib/trade/order-types.ts
 msgid "TWAP"
 msgstr "TWAP"

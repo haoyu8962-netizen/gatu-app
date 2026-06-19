@@ -271,6 +271,11 @@ msgstr "الرصيد المتاح للتداول"
 #~ msgid "Balance:"
 #~ msgstr ""
 
+#: src/config/trade.ts
+#: src/config/trade.ts
+msgid "Balances"
+msgstr "الأرصدة"
+
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Block:"
 #~ msgstr "الكتلة:"
@@ -1028,6 +1033,11 @@ msgstr "المستكشف"
 msgid "failed"
 msgstr "فشل"
 
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
+msgid "Failed to change language"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to close position"
@@ -1182,6 +1192,7 @@ msgstr "من"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/config/trade.ts
 msgid "Funding"
 msgstr "التمويل"
 
@@ -1190,6 +1201,7 @@ msgid "FUNDING"
 msgstr "FUNDING"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/config/trade.ts
 msgid "Funding History"
 msgstr "سجل التمويل"
 
@@ -1851,8 +1863,8 @@ msgid "Not connected"
 msgstr "غير متصل"
 
 #: src/config/ui-text.ts
-msgid "Notifications"
-msgstr "الإشعارات"
+#~ msgid "Notifications"
+#~ msgstr "الإشعارات"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Number format"
@@ -1906,6 +1918,7 @@ msgid "Open Interest"
 msgstr "العقود المفتوحة"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/config/trade.ts
 msgid "Open Orders"
 msgstr "الأوامر المفتوحة"
 
@@ -1959,6 +1972,8 @@ msgid "Order filled"
 msgstr "تم تنفيذ الأمر"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Order History"
 msgstr "سجل الأوامر"
 
@@ -1989,9 +2004,9 @@ msgstr "سيبقى الأمر قائماً حتى يُنفَّذ أو يُلغى
 msgid "orders"
 msgstr "أوامر"
 
-#: src/components/trade/positions/orders-history-tab.tsx
-#~ msgid "Orders"
-#~ msgstr ""
+#: src/config/trade.ts
+msgid "Orders"
+msgstr "الأوامر"
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -2193,6 +2208,11 @@ msgstr "تم عكس المركز — {coin}"
 #: src/components/trade/positions/positions-tab.tsx
 msgid "positions"
 msgstr "مراكز"
+
+#: src/config/trade.ts
+#: src/config/trade.ts
+msgid "Positions"
+msgstr "المراكز"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."
@@ -3142,6 +3162,7 @@ msgstr "تداول"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/config/trade.ts
 msgid "Trade History"
 msgstr "سجل التداول"
 
@@ -3156,6 +3177,7 @@ msgstr "صفقات"
 
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/trade.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "الصفقات"
@@ -3214,6 +3236,7 @@ msgstr "جارٍ التحويل..."
 msgid "Trigger"
 msgstr "المُحفِّز"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
 msgstr "سعر التحفيز"
@@ -3232,6 +3255,8 @@ msgid "Try Again"
 msgstr "حاول مرة أخرى"
 
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade.ts
+#: src/config/trade.ts
 #: src/lib/trade/order-types.ts
 msgid "TWAP"
 msgstr "TWAP"

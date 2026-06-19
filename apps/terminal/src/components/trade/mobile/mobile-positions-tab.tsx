@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useConnection } from "wagmi";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
+import { cn } from "@/lib/cn";
 import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
@@ -19,10 +20,15 @@ import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from
 import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
+import type { MobileDataScrollMode } from "./mobile-positions-view";
 
 type CloseIntent = "close" | "reverse";
 
-export function MobilePositionsTab() {
+interface Props {
+	scrollMode?: MobileDataScrollMode;
+}
+
+export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const { address, isConnected } = useConnection();
 	const slippageBps = useMarketOrderSlippageBps();
 	const { scope } = useExchangeScope();
@@ -58,6 +64,7 @@ export function MobilePositionsTab() {
 	const openOrders = openOrdersEvent?.orders ?? [];
 
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
+	const isPageScroll = scrollMode === "page";
 
 	function submitCloseOrReverse(intent: CloseIntent, data: ClosePositionData) {
 		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe } = data;
@@ -173,13 +180,13 @@ export function MobilePositionsTab() {
 
 	return (
 		<Skeleton name="positions-tab" loading={positionsLoading}>
-			<div className="flex-1 min-h-0 flex flex-col">
+			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col")}>
 				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-fg-muted">
 					<ListChecksIcon className="size-3" />
 					{t`Active Positions`}
 					<span className="font-semibold text-success ml-auto tabular-nums">{headerCount}</span>
 				</div>
-				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
+				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 					{positions.map((p) => {
 						const assetId = markets.getAssetId(p.coin);
 						const isRowClosing = typeof assetId === "number" && closingAssetIds.has(assetId);

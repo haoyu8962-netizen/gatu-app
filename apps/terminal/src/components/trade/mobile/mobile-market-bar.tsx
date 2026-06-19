@@ -1,18 +1,23 @@
-import { FireIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
-import { UI_TEXT } from "@/config/ui-text";
-import { get24hChange, getOiUsd } from "@/domain/market";
+import { useEffect, useRef, useState } from "react";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { get24hChange } from "@/domain/market";
+import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatUSD } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
-import { getValueColorClass } from "@/lib/ui/value-color";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { TokenSelector } from "../chart/token-selector";
 
-const overviewText = UI_TEXT.MARKET_OVERVIEW;
+type PriceDirection = "up" | "down";
+
+interface PriceFlashState {
+	sequence: number;
+	direction: PriceDirection | null;
+}
 
 interface Props {
 	className?: string;
@@ -29,61 +34,68 @@ export function MobileMarketBar({ className }: Props) {
 		resetPrices();
 	}
 
-	const fundingNum = toBig(market?.funding)?.toNumber() ?? 0;
-	const change24h = get24hChange(market?.prevDayPx, market?.markPx);
-	const oiUsd = getOiUsd(market?.openInterest, market?.markPx);
-	const hasLeverage = typeof market?.maxLeverage === "number" && market.maxLeverage > 0;
+	const { midPx } = useOrderbookMidPrice(market?.name);
+	const prevDayPx = market?.prevDayPx;
+
+	const [priceFlash, setPriceFlash] = useState<PriceFlashState>({ sequence: 0, direction: null });
+	const previousMidPxRef = useRef<number | undefined>(undefined);
+
+	useEffect(() => {
+		const previous = previousMidPxRef.current;
+		previousMidPxRef.current = midPx;
+		if (typeof midPx !== "number" || typeof previous !== "number" || midPx === previous) return;
+		setPriceFlash((state) => ({
+			sequence: state.sequence + 1,
+			direction: midPx > previous ? "up" : "down",
+		}));
+	}, [midPx]);
+
+	const change24h = get24hChange(prevDayPx, midPx);
+	const changeAmount = getPriceChangeAmount(midPx, prevDayPx);
+	const changeColorClass = getPriceChangeColorClass(change24h);
+	const priceText = formatNumber(midPx, 2);
+	const changeAmountText = formatSignedFixed(changeAmount, PRICE_DECIMALS);
+	const changePercentText = formatSignedPercent(change24h);
+	const maxLeverage = market && "maxLeverage" in market ? market.maxLeverage : undefined;
+	const hasLeverage = typeof maxLeverage === "number" && maxLeverage > 0;
 
 	return (
-		<div className={cn("shrink-0 bg-surface border-b border-stroke-weak/60", className)}>
-			<div className="px-3 py-2 flex items-center justify-between gap-3">
-				<div className="flex items-center gap-2 min-w-0">
+		<div
+			className={cn(
+				"shrink-0 w-full max-w-full min-w-0 overflow-hidden bg-surface border-b border-stroke-weak/60",
+				className,
+			)}
+		>
+			<div className="min-w-0 px-2 py-1.5 min-[390px]:px-2.5 flex items-center justify-between gap-1.5 min-[390px]:gap-2">
+				<div className="flex items-center gap-1.5 min-[390px]:gap-2 min-w-0">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					{hasLeverage && (
-						<span className="shrink-0 rounded-xs bg-fill-weak px-1.5 py-0.5 text-2xs font-medium tabular-nums text-fg-muted">
-							{market?.maxLeverage}x
+						<span className="shrink-0 rounded-xs bg-fill-weak px-1.5 py-1 text-xs font-medium leading-none tabular-nums text-fg-muted">
+							{maxLeverage}x
 						</span>
 					)}
 				</div>
 
 				<Skeleton name="market-price" loading={isLoading}>
-					<div className="text-right shrink-0">
-						<div
-							className={cn(
-								"text-sm font-semibold tabular-nums",
-								change24h !== null ? getValueColorClass(change24h) : "text-fg",
-							)}
-						>
-							{formatUSD(market?.markPx ?? null)}
-						</div>
-						{typeof change24h === "number" && (
-							<div className={cn("text-xs tabular-nums", getValueColorClass(change24h))}>
-								{change24h >= 0 ? "+" : ""}
-								{change24h.toFixed(2)}%
-							</div>
-						)}
-					</div>
-				</Skeleton>
-			</div>
-
-			<div className="px-3 py-1.5 border-t border-stroke-weak/40 bg-background overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-				<Skeleton name="market-stats" loading={isLoading}>
-					<div className="flex items-center gap-4 text-xs min-w-max">
-						<StatPill label={overviewText.LABEL_ORACLE} value={formatUSD(market?.oraclePx)} />
-						<StatPill
-							label={overviewText.LABEL_VOLUME}
-							value={formatUSD(market?.dayNtlVlm, { notation: "compact", compactDisplay: "short" })}
-						/>
-						<StatPill
-							label={overviewText.LABEL_OPEN_INTEREST}
-							value={formatUSD(oiUsd, { notation: "compact", compactDisplay: "short" })}
-						/>
-						<div className="flex items-center gap-1">
-							<FireIcon className={cn("size-3", getValueColorClass(fundingNum))} />
-							<span className={cn("tabular-nums font-medium", getValueColorClass(fundingNum))}>
-								{formatPercent(fundingNum, { minimumFractionDigits: 4, signDisplay: "exceptZero" })}
+					<div className="grid w-[102px] min-[390px]:w-[132px] min-[400px]:w-[148px] grid-cols-[1fr_0px] min-[390px]:grid-cols-[1fr_32px] items-center shrink-0">
+						<div className="min-w-0 text-right">
+							<span
+								key={priceFlash.sequence}
+								data-direction={priceFlash.direction ?? undefined}
+								className={cn(
+									"block font-sans text-lg leading-7 font-medium text-fg tabular-nums",
+									priceFlash.direction && "use-color-change",
+								)}
+							>
+								{priceText}
 							</span>
+							{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER && (
+								<div className={cn("font-sans text-2xs leading-4 tabular-nums", changeColorClass)}>
+									{changeAmountText} / {changePercentText}
+								</div>
+							)}
 						</div>
+						<div className="h-8 w-0 min-[390px]:w-8" aria-hidden="true" />
 					</div>
 				</Skeleton>
 			</div>
@@ -91,11 +103,34 @@ export function MobileMarketBar({ className }: Props) {
 	);
 }
 
-function StatPill({ label, value }: { label: string; value: string }) {
-	return (
-		<div className="flex items-center gap-1.5">
-			<span className="text-fg-muted text-xs">{label}</span>
-			<span className="tabular-nums text-fg text-xs">{value}</span>
-		</div>
-	);
+const PRICE_DECIMALS = 2;
+
+function getPriceChangeAmount(
+	price: string | number | null | undefined,
+	prevDayPx: string | number | null | undefined,
+) {
+	const current = toBig(price);
+	const previous = toBig(prevDayPx);
+	if (!current || !previous) return null;
+	return current.minus(previous);
+}
+
+function formatSignedFixed(value: ReturnType<typeof getPriceChangeAmount>, decimals: number): string {
+	if (!value) return FALLBACK_VALUE_PLACEHOLDER;
+	const rounded = value.round(decimals);
+	if (rounded.eq(0)) return rounded.toFixed(decimals);
+	const sign = rounded.gt(0) ? "+" : "";
+	return `${sign}${rounded.toFixed(decimals)}`;
+}
+
+function formatSignedPercent(value: number | null): string {
+	if (typeof value !== "number" || !Number.isFinite(value)) return FALLBACK_VALUE_PLACEHOLDER;
+	if (Math.abs(value) < 0.005) return "0.00%";
+	const sign = value > 0 ? "+" : "";
+	return `${sign}${value.toFixed(2)}%`;
+}
+
+function getPriceChangeColorClass(value: number | null): string {
+	if (typeof value !== "number" || !Number.isFinite(value) || value === 0) return "text-fg-muted";
+	return value < 0 ? "text-error" : "text-success";
 }

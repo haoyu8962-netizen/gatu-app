@@ -1,6 +1,7 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
+import { useLingui } from "@lingui/react";
 import { WalletIcon } from "@phosphor-icons/react";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -20,17 +21,25 @@ import { MobilePositionsTab } from "./mobile-positions-tab";
 import { MobileTwapTab } from "./mobile-twap-tab";
 
 type TabValue = MobilePositionsTabValue;
+export type MobileDataScrollMode = "contained" | "page";
+
+const PAGE_SCROLL_OVERFLOW_THRESHOLD_PX = 24;
 
 interface Props {
 	className?: string;
+	scrollMode?: MobileDataScrollMode;
+	onNeedsPageScrollChange?: (needsPageScroll: boolean) => void;
 }
 
-export function MobilePositionsView({ className }: Props) {
+export function MobilePositionsView({ className, scrollMode = "contained", onNeedsPageScrollChange }: Props) {
+	const { i18n } = useLingui();
 	const activeTab = usePositionsActiveTab() as TabValue;
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useConnection();
 	const { positions, isLoading: isLoadingState } = useUserPositions();
+	const isPageScroll = scrollMode === "page";
+	const contentViewportRef = useRef<HTMLDivElement>(null);
 
 	const { data: ordersEvent, status: ordersStatus } = useSubscription(
 		"openOrders",
@@ -66,55 +75,115 @@ export function MobilePositionsView({ className }: Props) {
 		return false;
 	}
 
-	const tabContentClass = cn("flex-1 min-h-0 flex flex-col mt-0", isPending && "opacity-70");
+	const tabContentClass = cn(
+		isPageScroll ? "min-h-0 flex flex-col mt-0" : "flex-1 min-h-0 flex flex-col mt-0",
+		isPending && "opacity-70",
+	);
+
+	useEffect(() => {
+		void activeTab;
+		if (!onNeedsPageScrollChange) return;
+		if (!isConnected) {
+			onNeedsPageScrollChange(false);
+			return;
+		}
+		if (isPageScroll) return;
+
+		const container = contentViewportRef.current;
+		if (!container) return;
+
+		let frame = 0;
+		const measure = () => {
+			if (frame) cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => {
+				frame = 0;
+				onNeedsPageScrollChange(hasActiveTabOverflow(container));
+			});
+		};
+
+		measure();
+
+		const resizeObserver =
+			typeof ResizeObserver === "undefined"
+				? null
+				: new ResizeObserver(() => {
+						measure();
+					});
+		resizeObserver?.observe(container);
+
+		const mutationObserver =
+			typeof MutationObserver === "undefined"
+				? null
+				: new MutationObserver(() => {
+						measure();
+					});
+		mutationObserver?.observe(container, { childList: true, subtree: true, characterData: true });
+
+		window.addEventListener("resize", measure);
+
+		return () => {
+			if (frame) cancelAnimationFrame(frame);
+			resizeObserver?.disconnect();
+			mutationObserver?.disconnect();
+			window.removeEventListener("resize", measure);
+		};
+	}, [activeTab, isConnected, isPageScroll, onNeedsPageScrollChange]);
 
 	return (
-		<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
-			<Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 min-h-0 flex flex-col">
-				<div className="shrink-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<TabsList className="px-3 min-w-max">
+		<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
+			<Tabs
+				value={activeTab}
+				onValueChange={handleTabChange}
+				size="xxs"
+				className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col")}
+			>
+				<div className="shrink-0 min-w-0 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					<TabsList className="w-full min-w-max justify-between px-1">
 						{MOBILE_POSITIONS_TABS.map((tab) => {
 							const count = getTabCount(tab.value);
 							const loading = isTabLoading(tab.value);
 
 							return (
-								<TabsTrigger key={tab.value} value={tab.value} className="inline-flex items-center gap-1">
-									<span>{tab.label}</span>
+								<TabsTrigger key={tab.value} value={tab.value} className="shrink-0 px-1 text-[10px] leading-7">
+									<span>{i18n._(tab.label)}</span>
 									{loading ? (
-										<Spinner className="size-3" />
+										<Spinner className="size-3 shrink-0" />
 									) : typeof count === "number" && count > 0 ? (
-										<span>({count})</span>
+										<span className="shrink-0">({count})</span>
 									) : null}
 								</TabsTrigger>
 							);
 						})}
 					</TabsList>
 				</div>
-				<div className="flex-1 min-h-0 overflow-y-auto">
+				<div
+					ref={contentViewportRef}
+					className={cn(isPageScroll ? "min-h-0 overflow-visible" : "flex-1 min-h-0 overflow-y-auto")}
+				>
 					{!isConnected ? (
 						<EmptyState />
 					) : (
 						<>
 							<TabsContent value="positions" className={tabContentClass}>
-								<MobilePositionsTab />
+								<MobilePositionsTab scrollMode={scrollMode} />
 							</TabsContent>
 							<TabsContent value="orders" className={tabContentClass}>
-								<MobileOrdersTab />
+								<MobileOrdersTab scrollMode={scrollMode} />
 							</TabsContent>
 							<TabsContent value="balances" className={tabContentClass}>
-								<MobileBalancesTab />
+								<MobileBalancesTab scrollMode={scrollMode} />
 							</TabsContent>
 							<TabsContent value="twap" className={tabContentClass}>
-								<MobileTwapTab />
+								<MobileTwapTab scrollMode={scrollMode} />
 							</TabsContent>
 							<TabsContent value="history" className={tabContentClass}>
-								<MobileHistoryTab />
+								<MobileHistoryTab scrollMode={scrollMode} />
 							</TabsContent>
 							<TabsContent value="orders-history" className={tabContentClass}>
-								<MobileOrdersHistoryTab />
+								<MobileOrdersHistoryTab scrollMode={scrollMode} />
 							</TabsContent>
 							<TabsContent value="funding" className={tabContentClass}>
-								<MobileFundingTab />
+								<MobileFundingTab scrollMode={scrollMode} />
 							</TabsContent>
 						</>
 					)}
@@ -125,16 +194,40 @@ export function MobilePositionsView({ className }: Props) {
 	);
 }
 
+function hasActiveTabOverflow(container: HTMLDivElement) {
+	const activePanel = Array.from(container.children).find((child): child is HTMLElement => {
+		if (!(child instanceof HTMLElement)) return false;
+		if (child.hidden || child.hasAttribute("hidden")) return false;
+		return child.getBoundingClientRect().height > 0;
+	});
+
+	if (!activePanel) {
+		return container.scrollHeight > container.clientHeight + PAGE_SCROLL_OVERFLOW_THRESHOLD_PX;
+	}
+
+	if (activePanel.scrollHeight > container.clientHeight + PAGE_SCROLL_OVERFLOW_THRESHOLD_PX) return true;
+
+	const scrollableDescendants = Array.from(activePanel.querySelectorAll("*")).filter(
+		(element): element is HTMLElement => element instanceof HTMLElement,
+	);
+
+	return scrollableDescendants.some((element) => {
+		const overflowY = getComputedStyle(element).overflowY;
+		if (overflowY !== "auto" && overflowY !== "scroll") return false;
+		return element.scrollHeight > element.clientHeight + PAGE_SCROLL_OVERFLOW_THRESHOLD_PX;
+	});
+}
+
 function EmptyState() {
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 
 	return (
 		<>
-			<div className="h-full flex flex-col items-center justify-center gap-4 p-6 text-center">
-				<div className="size-16 rounded-full flex items-center justify-center bg-surface">
-					<WalletIcon className="size-8 text-fg-muted" />
+			<div className="h-full flex flex-col items-center justify-center gap-2.5 p-3 text-center">
+				<div className="size-10 rounded-full flex items-center justify-center bg-surface">
+					<WalletIcon className="size-5 text-fg-muted" />
 				</div>
-				<p className="text-sm text-fg-muted max-w-xs text-pretty">Connect wallet to view positions</p>
+				<p className="text-xs text-fg-muted max-w-xs text-pretty">Connect wallet to view positions</p>
 				<Button variant="outline" intent="brand" size="sm" onClick={() => setWalletModalOpen(true)}>
 					Connect Wallet
 				</Button>

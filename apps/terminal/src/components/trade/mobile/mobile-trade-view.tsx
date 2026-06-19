@@ -1,4 +1,4 @@
-import { Button, Checkbox, Slider } from "@gatu/ui";
+import { Button, buttonVariants, Checkbox, Slider } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, useEffect, useState } from "react";
@@ -322,6 +322,11 @@ export function MobileTradeView({ className, embedded }: Props) {
 	});
 
 	const isFormDisabled = !isConnected || availableBalance <= 0;
+	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
+	const sizePercentDisabled = isFormDisabled || maxSize <= 0;
+	const entryInputSize = embedded ? "lg" : "xl";
+	const inlineButtonSize = embedded ? "xs" : "sm";
+	const sliderThumbSize = embedded ? "md" : "lg";
 
 	function formatAvailableBalance(): string {
 		if (!isConnected) return FALLBACK_VALUE_PLACEHOLDER;
@@ -333,7 +338,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const priceColorClass = change24h !== null ? getValueColorClass(change24h) : "text-fg";
 
 	return (
-		<div className={cn("flex flex-col h-full min-h-0", !embedded && "bg-background", className)}>
+		<div className={cn("flex flex-col min-h-0 self-stretch", !embedded && "h-full bg-background", className)}>
 			<MarginModeModal
 				open={showMarginDialog}
 				onOpenChange={(open) => {
@@ -368,8 +373,12 @@ export function MobileTradeView({ className, embedded }: Props) {
 					</div>
 				</div>
 			</div>
-			<div className="flex-1 min-h-0 overflow-y-auto">
-				<div className="px-3 py-4 space-y-4">
+			<div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+				<div
+					className={cn(
+						embedded ? "flex-1 min-h-min flex flex-col justify-between px-2 py-2 space-y-2" : "px-3 py-4 space-y-4",
+					)}
+				>
 					<TradeHeader
 						orderType={orderType}
 						side={side}
@@ -382,9 +391,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 						onMarginLeverageClick={() => setShowMarginDialog(true)}
 						isLeveraged={capabilities.isLeveraged}
 						hideAlgoOrders
+						compact={embedded}
 					/>
 
-					<div className="flex items-center justify-end text-xs">
+					<div className={cn("flex items-center justify-end", embedded ? "text-2xs" : "text-xs")}>
 						<span className="text-fg-muted uppercase text-2xs font-medium">{ORDER_TEXT.AVAILABLE_LABEL} </span>
 						<span className={cn("tabular-nums font-semibold text-xs ml-1", getValueColorClass(availableBalance))}>
 							{formatAvailableBalance()}
@@ -392,41 +402,55 @@ export function MobileTradeView({ className, embedded }: Props) {
 						<span className="ml-1 text-2xs tabular-nums text-fg-muted">{availableBalanceToken}</span>
 					</div>
 
-					<div className="space-y-3">
+					<div className={cn(embedded ? "space-y-1.5" : "space-y-3")}>
 						<p className="text-2xs font-medium uppercase text-fg-muted">{ORDER_TEXT.SIZE_LABEL}</p>
-						<div className="flex items-stretch gap-2">
+						<div className={cn("flex items-stretch", embedded ? "gap-1.5" : "gap-2")}>
 							<NumberInput
 								inputMode="decimal"
-								inputSize="xl"
+								inputSize={entryInputSize}
 								placeholder="0.00"
 								value={sizeInput}
 								onChange={(e: ChangeEvent<HTMLInputElement>) => setSizeInput(e.target.value)}
 								className="flex-1 tabular-nums font-semibold"
 								disabled={isFormDisabled}
 							/>
-							<Button
-								variant="outline"
-								intent="neutral"
-								size="sm"
-								onClick={handleSizeModeToggle}
-								disabled={isFormDisabled}
-								iconRight={<CaretDownIcon className="size-3.5" />}
-								className="shrink-0 self-stretch"
-							>
-								{sizeMode === "base" ? baseToken || "\u2014" : quoteToken || "\u2014"}
-							</Button>
+							{isFormDisabled ? (
+								<span
+									data-disabled
+									className={cn(
+										buttonVariants({ variant: "outline", intent: "neutral", size: inlineButtonSize }),
+										"shrink-0 self-stretch pointer-events-none",
+									)}
+								>
+									{sizeModeLabel}
+									<CaretDownIcon className="size-3.5" />
+								</span>
+							) : (
+								<Button
+									variant="outline"
+									intent="neutral"
+									size={inlineButtonSize}
+									onClick={handleSizeModeToggle}
+									iconRight={<CaretDownIcon className="size-3.5" />}
+									className="shrink-0 self-stretch"
+								>
+									{sizeModeLabel}
+								</Button>
+							)}
 						</div>
-						<div className="space-y-2">
+						<div className={cn(embedded ? "space-y-1.5" : "space-y-2")}>
 							<Slider
-								thumbSize="lg"
+								thumbSize={sliderThumbSize}
 								value={[sliderValue]}
-								onValueChange={(v) => {
+								onValueChange={(v: number | readonly number[]) => {
 									const val = Array.isArray(v) ? v[0] : v;
+									if (typeof val !== "number") return;
 									setIsDraggingSlider(true);
 									setDragSliderValue(val);
 								}}
-								onValueCommitted={(v) => {
+								onValueCommitted={(v: number | readonly number[]) => {
 									const val = Array.isArray(v) ? v[0] : v;
+									if (typeof val !== "number") return;
 									setIsDraggingSlider(false);
 									applySizeFromPercent(val);
 								}}
@@ -435,17 +459,20 @@ export function MobileTradeView({ className, embedded }: Props) {
 								disabled={isFormDisabled || maxSize <= 0}
 							/>
 							<div className="flex items-center justify-between text-2xs text-fg-muted tabular-nums leading-none">
-								{SIZE_PERCENT_OPTIONS.map((pct) => (
-									<button
-										key={pct}
-										type="button"
-										onClick={() => applySizeFromPercent(pct)}
-										disabled={isFormDisabled || maxSize <= 0}
-										className="hover:text-fg transition-colors disabled:cursor-not-allowed"
-									>
-										{pct}%
-									</button>
-								))}
+								{SIZE_PERCENT_OPTIONS.map((pct) =>
+									sizePercentDisabled ? (
+										<span key={pct}>{pct}%</span>
+									) : (
+										<button
+											key={pct}
+											type="button"
+											onClick={() => applySizeFromPercent(pct)}
+											className="hover:text-fg transition-colors disabled:cursor-not-allowed"
+										>
+											{pct}%
+										</button>
+									),
+								)}
 							</div>
 						</div>
 					</div>
@@ -454,7 +481,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 						<PriceInput
 							label={t`Trigger Price`}
 							inputMode="decimal"
-							inputSize="xl"
+							inputSize={entryInputSize}
 							placeholder="0.00"
 							value={triggerPrice}
 							onChange={(e: ChangeEvent<HTMLInputElement>) => setTriggerPrice(e.target.value)}
@@ -467,11 +494,11 @@ export function MobileTradeView({ className, embedded }: Props) {
 					)}
 
 					{usesLimitPrice && (
-						<div className="space-y-2">
+						<div className={cn(embedded ? "space-y-1.5" : "space-y-2")}>
 							<PriceInput
 								label={ORDER_TEXT.LIMIT_PRICE_LABEL}
 								inputMode="decimal"
-								inputSize="xl"
+								inputSize={entryInputSize}
 								placeholder="0.00"
 								value={limitPriceInput}
 								onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
@@ -488,7 +515,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 					)}
 
 					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
-						<div className="flex items-center gap-4">
+						<div className={cn("flex items-center", embedded ? "gap-2 text-2xs" : "gap-4")}>
 							{capabilities.hasReduceOnly && (
 								<Checkbox
 									checked={reduceOnly}
@@ -523,7 +550,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 						/>
 					)}
 
-					<div className="divide-y divide-stroke-weak/40 text-xs">
+					<div className={cn("divide-y divide-stroke-weak/40", embedded ? "text-2xs" : "text-xs")}>
 						{capabilities.isLeveraged && (
 							<SummaryRow
 								label={ORDER_TEXT.SUMMARY_LIQ}
@@ -543,16 +570,23 @@ export function MobileTradeView({ className, embedded }: Props) {
 								value={marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
 							/>
 						)}
-						<div className="flex items-center justify-between py-2.5">
+						<div className={cn("flex items-center justify-between", embedded ? "py-1.5" : "py-2.5")}>
 							<span className="text-fg-muted">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
-							<button
-								type="button"
-								onClick={openSettingsDialog}
-								className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
-							>
-								<span className="tabular-nums text-error">{slippagePercent}%</span>
-								<PencilIcon className="size-2.5 text-fg-muted" />
-							</button>
+							{embedded && !isConnected ? (
+								<span className="inline-flex items-center gap-1">
+									<span className="tabular-nums text-error">{slippagePercent}%</span>
+									<PencilIcon className="size-2.5 text-fg-muted" />
+								</span>
+							) : (
+								<button
+									type="button"
+									onClick={openSettingsDialog}
+									className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
+								>
+									<span className="tabular-nums text-error">{slippagePercent}%</span>
+									<PencilIcon className="size-2.5 text-fg-muted" />
+								</button>
+							)}
 						</div>
 						<SummaryRow
 							label={ORDER_TEXT.SUMMARY_FEE}
@@ -563,19 +597,21 @@ export function MobileTradeView({ className, embedded }: Props) {
 				</div>
 			</div>
 
-			<div className="shrink-0 px-3 py-3 border-t border-stroke-weak/40 bg-background">
+			<div
+				className={cn("shrink-0 border-t border-stroke-weak/40 bg-background", embedded ? "px-2 py-2" : "px-3 py-3")}
+			>
 				{validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval && (
 					<p className="text-xs text-error mb-2">{validation.errors.join(" \u2022 ")}</p>
 				)}
 				{approvalError && <p className="text-xs text-error mb-2">{approvalError}</p>}
 				{tradeRestricted ? (
-					<Button variant="outline" size="lg" intent="neutral" disabled className="w-full">
+					<Button variant="outline" size={embedded ? "md" : "lg"} intent="neutral" disabled className="w-full">
 						{t`Trading is not available in your region`}
 					</Button>
 				) : (
 					<Button
 						variant="outline"
-						size="lg"
+						size={embedded ? "md" : "lg"}
 						onClick={buttonContent.action}
 						disabled={buttonContent.disabled}
 						intent={buttonContent.variant === "cyan" ? "brand" : buttonContent.variant === "buy" ? "neutral" : "error"}
@@ -603,7 +639,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 
 function SummaryRow({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
 	return (
-		<div className="flex items-center justify-between py-2.5">
+		<div className="flex items-center justify-between py-1.5">
 			<span className="text-fg-muted">{label}</span>
 			<span className={cn("tabular-nums", valueClass ?? "text-fg")}>{value}</span>
 		</div>

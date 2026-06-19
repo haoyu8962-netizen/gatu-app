@@ -37,6 +37,7 @@ export const WS_RELIABILITY_LIMITS = {
 			allMids: 20_000,
 			candle: 20_000,
 			activeAssetCtx: 20_000,
+			activeSpotAssetCtx: 20_000,
 			activeAssetData: 20_000,
 			allDexsAssetCtxs: 20_000,
 			spotAssetCtxs: 20_000,
@@ -49,7 +50,22 @@ export const WS_RELIABILITY_LIMITS = {
 	},
 } as const;
 
-const USER_STREAM_METHODS = new Set(["orderUpdates", "webData2", "webData3", "allDexsClearinghouseState"]);
+const USER_STREAM_METHODS = new Set([
+	"orderUpdates",
+	"webData2",
+	"webData3",
+	"allDexsClearinghouseState",
+	"spotState",
+	"openOrders",
+	"twapStates",
+	"clearinghouseState",
+	"userFills",
+	"userFundings",
+	"userHistoricalOrders",
+	"userNonFundingLedgerUpdates",
+	"userTwapHistory",
+	"userTwapSliceFills",
+]);
 
 // Union of methods we explicitly classify. Anything outside this list falls
 // through to "market stream" behavior (pause-and-buffer on hidden). We emit a

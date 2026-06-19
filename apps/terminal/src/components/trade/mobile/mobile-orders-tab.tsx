@@ -24,14 +24,16 @@ import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
+import type { MobileDataScrollMode } from "./mobile-positions-view";
 
 interface Props {
 	className?: string;
+	scrollMode?: MobileDataScrollMode;
 }
 
 type CancelScope = "row" | "all";
 
-export function MobileOrdersTab({ className }: Props) {
+export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) {
 	const { address, isConnected } = useConnection();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
@@ -61,6 +63,7 @@ export function MobileOrdersTab({ className }: Props) {
 	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
 
 	const openOrders = openOrdersEvent?.orders ?? [];
+	const isPageScroll = scrollMode === "page";
 
 	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope) {
 		if (ordersToCancel.length === 0) return;
@@ -149,7 +152,7 @@ export function MobileOrdersTab({ className }: Props) {
 
 	return (
 		<Skeleton name="orders-tab" loading={status === "subscribing" || status === "idle"}>
-			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
+			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
 				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-fg-muted">
 					<ListNumbersIcon className="size-3" />
 					{t`Open Orders`}
@@ -166,7 +169,7 @@ export function MobileOrdersTab({ className }: Props) {
 					</Button>
 				</div>
 				{actionError && <div className="px-3 pb-1 text-xs text-error">{actionError}</div>}
-				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
+				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 					{openOrders.map((order) => (
 						<MobileOrderCard
 							key={order.oid}

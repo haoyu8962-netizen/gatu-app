@@ -1,3 +1,4 @@
+import { msg } from "@lingui/core/macro";
 import type { OrderParameters, TwapOrderParameters } from "@nktkas/hyperliquid";
 
 export const QUICK_PERCENT_OPTIONS = [25, 50, 100, 200, 400] as const;
@@ -44,23 +45,23 @@ export const MARKET_ORDER_SLIPPAGE_MAX_PERCENT = 5;
 export const DEFAULT_LEVERAGE_BY_MODE = { cross: 10, isolated: 10 } as const;
 
 export const POSITIONS_TABS = [
-	{ value: "balances", label: "Balances" },
-	{ value: "positions", label: "Positions" },
-	{ value: "orders", label: "Open Orders" },
-	{ value: "twap", label: "TWAP" },
-	{ value: "history", label: "Trade History" },
-	{ value: "funding", label: "Funding History" },
-	{ value: "orders-history", label: "Order History" },
+	{ value: "balances", label: msg`Balances` },
+	{ value: "positions", label: msg`Positions` },
+	{ value: "orders", label: msg`Open Orders` },
+	{ value: "twap", label: msg`TWAP` },
+	{ value: "history", label: msg`Trade History` },
+	{ value: "funding", label: msg`Funding History` },
+	{ value: "orders-history", label: msg`Order History` },
 ] as const;
 
 export const MOBILE_POSITIONS_TABS = [
-	{ value: "positions", label: "Positions" },
-	{ value: "orders", label: "Orders" },
-	{ value: "balances", label: "Balances" },
-	{ value: "twap", label: "TWAP" },
-	{ value: "history", label: "Trades" },
-	{ value: "orders-history", label: "Order Hist." },
-	{ value: "funding", label: "Funding" },
+	{ value: "positions", label: msg`Positions` },
+	{ value: "orders", label: msg`Orders` },
+	{ value: "balances", label: msg`Balances` },
+	{ value: "twap", label: msg`TWAP` },
+	{ value: "history", label: msg`Trades` },
+	{ value: "orders-history", label: msg`Order History` },
+	{ value: "funding", label: msg`Funding` },
 ] as const;
 
 export type MobilePositionsTabValue = (typeof MOBILE_POSITIONS_TABS)[number]["value"];

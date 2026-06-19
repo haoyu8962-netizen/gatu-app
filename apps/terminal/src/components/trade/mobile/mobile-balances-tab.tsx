@@ -25,14 +25,16 @@ import { AssetDisplay } from "../components/asset-display";
 import { SendModal } from "../positions/send-modal";
 import { TransferModal } from "../positions/transfer-modal";
 import { MetricCell } from "./metric-cell";
+import type { MobileDataScrollMode } from "./mobile-positions-view";
 
 type TransferDirection = "toSpot" | "toPerp";
 
 interface Props {
 	className?: string;
+	scrollMode?: MobileDataScrollMode;
 }
 
-export function MobileBalancesTab({ className }: Props) {
+export function MobileBalancesTab({ className, scrollMode = "contained" }: Props) {
 	const { isConnected } = useConnection();
 	const { getToken } = useSpotTokens();
 	const hideSmallBalances = useHideSmallBalances();
@@ -70,6 +72,7 @@ export function MobileBalancesTab({ className }: Props) {
 		if (!hideSmallBalances) return spotBalanceRows;
 		return filterBalanceRowsByUsdValue(spotBalanceRows, SMALL_BALANCE_THRESHOLD_USD);
 	}, [hideSmallBalances, spotBalanceRows]);
+	const isPageScroll = scrollMode === "page";
 
 	const totalValue = useMemo(() => getTotalUsdValue(balances), [balances]);
 
@@ -197,7 +200,7 @@ export function MobileBalancesTab({ className }: Props) {
 
 	return (
 		<Skeleton name="balances-tab" loading={isLoading}>
-			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
+			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
 				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
 					<WalletIcon className="size-3" />
 					{t`Account Balances`}
@@ -211,7 +214,7 @@ export function MobileBalancesTab({ className }: Props) {
 					</span>
 					<span className="text-success font-semibold tabular-nums">{formatUSD(totalValue, { compact: true })}</span>
 				</div>
-				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
+				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 					{filteredPerpBalances.length > 0 && (
 						<>
 							<div className="text-xs uppercase tracking-wider text-brand font-medium px-1 pt-1">{t`Perpetuals`}</div>

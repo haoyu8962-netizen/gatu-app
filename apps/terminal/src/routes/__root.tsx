@@ -7,7 +7,7 @@ import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
 import { createLazyComponent } from "@/lib/lazy";
-import { buildPageHead, mergeHead } from "@/lib/seo";
+import { buildPageHead } from "@/lib/seo";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
 import "@/bones/registry";
 import appCss from "../styles.css?url";
@@ -19,12 +19,7 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-	head: () => {
-		const seoHead = buildPageHead();
-		return mergeHead(seoHead, {
-			links: [{ rel: "stylesheet", href: appCss }],
-		});
-	},
+	head: () => buildPageHead(),
 	shellComponent: RootDocument,
 	component: RootComponent,
 	notFoundComponent: NotFoundPage,
@@ -79,6 +74,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		<html lang="en" dir="ltr" suppressHydrationWarning>
 			<head>
 				<HeadContent />
+				<link rel="stylesheet" href={appCss} />
 			</head>
 			<body>
 				{children}

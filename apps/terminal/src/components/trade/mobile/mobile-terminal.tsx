@@ -1,3 +1,4 @@
+import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { cn } from "@/lib/cn";
 import { useGlobalSettingsActions, useMobileActiveTab } from "@/stores/use-global-settings-store";
 import { GeoRestrictionBanner } from "../geo/geo-restriction-banner";
@@ -21,7 +22,10 @@ export function MobileTerminal({ className }: Props) {
 			<MobileHeader />
 			<GeoRestrictionBanner />
 			<OfflineBanner />
-			<main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+			<main
+				className="flex-1 min-h-0 flex flex-col overflow-hidden"
+				style={{ paddingBottom: `calc(${MOBILE_BOTTOM_NAV_HEIGHT_PX}px + env(safe-area-inset-bottom))` }}
+			>
 				{activeTab === "markets" && <MobileTradeLayout showOrderForm={false} />}
 				{activeTab === "trade" && <MobileTradeLayout />}
 				{activeTab === "account" && <MobileAccountView />}

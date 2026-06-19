@@ -271,6 +271,11 @@ msgstr "Saldo disponible para operar"
 #~ msgid "Balance:"
 #~ msgstr ""
 
+#: src/config/trade.ts
+#: src/config/trade.ts
+msgid "Balances"
+msgstr "Saldos"
+
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Block:"
 #~ msgstr "Bloque:"
@@ -1028,6 +1033,11 @@ msgstr "Explorador"
 msgid "failed"
 msgstr "fallido"
 
+#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
+msgid "Failed to change language"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to close position"
@@ -1182,6 +1192,7 @@ msgstr "Desde"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/config/trade.ts
 msgid "Funding"
 msgstr "Financiamiento"
 
@@ -1190,6 +1201,7 @@ msgid "FUNDING"
 msgstr "FUNDING"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/config/trade.ts
 msgid "Funding History"
 msgstr "Historial de funding"
 
@@ -1851,8 +1863,8 @@ msgid "Not connected"
 msgstr "No conectado"
 
 #: src/config/ui-text.ts
-msgid "Notifications"
-msgstr "Notificaciones"
+#~ msgid "Notifications"
+#~ msgstr "Notificaciones"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Number format"
@@ -1906,6 +1918,7 @@ msgid "Open Interest"
 msgstr "Interés abierto"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/config/trade.ts
 msgid "Open Orders"
 msgstr "Órdenes abiertas"
 
@@ -1959,6 +1972,8 @@ msgid "Order filled"
 msgstr "Orden ejecutada"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Order History"
 msgstr "Historial de órdenes"
 
@@ -1989,9 +2004,9 @@ msgstr "La orden permanecerá en el libro hasta ejecutarse o cancelarse."
 msgid "orders"
 msgstr "órdenes"
 
-#: src/components/trade/positions/orders-history-tab.tsx
-#~ msgid "Orders"
-#~ msgstr ""
+#: src/config/trade.ts
+msgid "Orders"
+msgstr "Órdenes"
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -2193,6 +2208,11 @@ msgstr "Posición invertida — {coin}"
 #: src/components/trade/positions/positions-tab.tsx
 msgid "positions"
 msgstr "posiciones"
+
+#: src/config/trade.ts
+#: src/config/trade.ts
+msgid "Positions"
+msgstr "Posiciones"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."
@@ -3142,6 +3162,7 @@ msgstr "Operar"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/config/trade.ts
 msgid "Trade History"
 msgstr "Historial de operaciones"
 
@@ -3156,6 +3177,7 @@ msgstr "operaciones"
 
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/config/trade.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "Operaciones"
@@ -3214,6 +3236,7 @@ msgstr "Transfiriendo..."
 msgid "Trigger"
 msgstr "Disparador"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
 msgstr "Precio de disparo"
@@ -3232,6 +3255,8 @@ msgid "Try Again"
 msgstr "Intentar de nuevo"
 
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/config/trade.ts
+#: src/config/trade.ts
 #: src/lib/trade/order-types.ts
 msgid "TWAP"
 msgstr "TWAP"

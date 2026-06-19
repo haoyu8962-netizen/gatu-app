@@ -11,6 +11,16 @@ describe("isUserStreamKey", () => {
 		expect(isUserStreamKey(key("webData2"))).toBe(true);
 		expect(isUserStreamKey(key("webData3"))).toBe(true);
 		expect(isUserStreamKey(key("allDexsClearinghouseState"))).toBe(true);
+		expect(isUserStreamKey(key("spotState"))).toBe(true);
+		expect(isUserStreamKey(key("openOrders"))).toBe(true);
+		expect(isUserStreamKey(key("twapStates"))).toBe(true);
+		expect(isUserStreamKey(key("clearinghouseState"))).toBe(true);
+		expect(isUserStreamKey(key("userFills"))).toBe(true);
+		expect(isUserStreamKey(key("userFundings"))).toBe(true);
+		expect(isUserStreamKey(key("userHistoricalOrders"))).toBe(true);
+		expect(isUserStreamKey(key("userNonFundingLedgerUpdates"))).toBe(true);
+		expect(isUserStreamKey(key("userTwapHistory"))).toBe(true);
+		expect(isUserStreamKey(key("userTwapSliceFills"))).toBe(true);
 	});
 
 	it("returns true for subscriptions with user param", () => {
@@ -26,6 +36,7 @@ describe("isUserStreamKey", () => {
 		expect(isUserStreamKey(key("allMids"))).toBe(false);
 		expect(isUserStreamKey(key("candle", { coin: "ETH", interval: "1h" }))).toBe(false);
 		expect(isUserStreamKey(key("activeAssetCtx", { coin: "ETH" }))).toBe(false);
+		expect(isUserStreamKey(key("activeSpotAssetCtx", { coin: "@1" }))).toBe(false);
 		expect(isUserStreamKey(key("activeAssetData", { coin: "ETH" }))).toBe(false);
 		expect(isUserStreamKey(key("assetCtxs"))).toBe(false);
 		expect(isUserStreamKey(key("spotAssetCtxs"))).toBe(false);

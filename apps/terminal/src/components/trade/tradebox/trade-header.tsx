@@ -21,6 +21,7 @@ interface Props {
 	onMarginLeverageClick?: () => void;
 	isLeveraged?: boolean;
 	hideAlgoOrders?: boolean;
+	compact?: boolean;
 }
 
 export function TradeHeader({
@@ -35,6 +36,7 @@ export function TradeHeader({
 	onMarginLeverageClick,
 	isLeveraged,
 	hideAlgoOrders,
+	compact,
 }: Props) {
 	const tabsOrderType = getTabsOrderType(orderType);
 
@@ -74,7 +76,7 @@ export function TradeHeader({
 	const marginLabel = marginMode === "isolated" ? t`Isolated` : t`Cross`;
 
 	return (
-		<div className="min-w-0 space-y-4">
+		<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-4"}>
 			<div className="flex items-center justify-between">
 				<Dropdown
 					trigger={<span className="flex items-center gap-0.5 font-semibold text-fg">{orderTypeLabel}</span>}
@@ -98,7 +100,7 @@ export function TradeHeader({
 				)}
 			</div>
 
-			<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} />
+			<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} />
 		</div>
 	);
 }

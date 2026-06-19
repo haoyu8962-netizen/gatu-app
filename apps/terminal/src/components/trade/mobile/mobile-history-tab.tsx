@@ -14,12 +14,14 @@ import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
+import type { MobileDataScrollMode } from "./mobile-positions-view";
 
 interface Props {
 	className?: string;
+	scrollMode?: MobileDataScrollMode;
 }
 
-export function MobileHistoryTab({ className }: Props) {
+export function MobileHistoryTab({ className, scrollMode = "contained" }: Props) {
 	const { address, isConnected } = useConnection();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
@@ -36,6 +38,7 @@ export function MobileHistoryTab({ className }: Props) {
 
 	const fills = fillsEvent?.fills?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
 	const headerCount = isConnected ? `${fills.length}` : FALLBACK_VALUE_PLACEHOLDER;
+	const isPageScroll = scrollMode === "page";
 
 	if (!isConnected) {
 		return (
@@ -62,13 +65,13 @@ export function MobileHistoryTab({ className }: Props) {
 
 	return (
 		<Skeleton name="history-tab" loading={status === "subscribing" || status === "idle"}>
-			<div className={cn("flex-1 min-h-0 flex flex-col", className)}>
+			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
 				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
 					<ClockCounterClockwiseIcon className="size-3" />
 					{t`Trade History`}
 					<span className="font-semibold text-brand ml-auto tabular-nums">{headerCount}</span>
 				</div>
-				<div className="flex-1 min-h-0 overflow-y-auto px-3 pb-3 space-y-2">
+				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 					{fills.map((fill) => {
 						const fee = toNumber(fill.fee);
 						const closedPnl = toNumber(fill.closedPnl);
