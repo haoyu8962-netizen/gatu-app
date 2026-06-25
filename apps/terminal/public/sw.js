@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const CHARTING_CACHE = `charting-${CACHE_VERSION}`;
 const FONT_CACHE = `fonts-${CACHE_VERSION}`;
 const ICON_CACHE = `icons-${CACHE_VERSION}`;
@@ -11,16 +11,16 @@ const NAV_TIMEOUT_MS = 3000;
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => {
 	event.waitUntil(
-		caches.keys().then((keys) =>
-			Promise.all(
-				keys
-					.filter(
-						(k) =>
-							![CHARTING_CACHE, FONT_CACHE, ICON_CACHE, NAV_CACHE].includes(k),
-					)
-					.map((k) => caches.delete(k)),
-			),
-		),
+		caches
+			.keys()
+			.then((keys) =>
+				Promise.all(
+					keys
+						.filter((k) => ![CHARTING_CACHE, FONT_CACHE, ICON_CACHE, NAV_CACHE].includes(k))
+						.map((k) => caches.delete(k)),
+				),
+			)
+			.then(() => self.clients.claim()),
 	);
 });
 
