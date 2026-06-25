@@ -1,0 +1,102 @@
+// @vitest-environment jsdom
+
+import { act, createElement } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { TradingViewChart } from "@/components/trade/chart/tradingview-chart";
+
+vi.mock("@/lib/chart/load-tradingview", () => ({
+	loadTradingViewScript: vi.fn(async () => {}),
+}));
+
+vi.mock("@/lib/chart/theme-colors", () => ({
+	buildChartOverrides: () => ({}),
+	generateChartCssUrl: vi.fn(async () => "blob:chart-css"),
+	getLoadingScreenColors: () => ({}),
+	getToolbarBgColor: () => "#000",
+}));
+
+vi.mock("@/components/trade/chart/datafeed", () => ({
+	createDatafeed: () => ({}),
+}));
+
+type MockWidget = {
+	createButton: ReturnType<typeof vi.fn>;
+	headerReady: ReturnType<typeof vi.fn>;
+	onChartReady: ReturnType<typeof vi.fn>;
+	remove: ReturnType<typeof vi.fn>;
+	setSymbol: ReturnType<typeof vi.fn>;
+};
+
+function createMockWidget(): MockWidget {
+	return {
+		createButton: vi.fn(() => document.createElement("button")),
+		headerReady: vi.fn(async () => {}),
+		onChartReady: vi.fn((callback: () => void) => {
+			queueMicrotask(callback);
+		}),
+		remove: vi.fn(),
+		setSymbol: vi.fn((_symbol: string, _interval: string, callback: () => void) => callback()),
+	};
+}
+
+async function flushChartEffects() {
+	await act(async () => {
+		await Promise.resolve();
+		await Promise.resolve();
+		await Promise.resolve();
+	});
+}
+
+describe("TradingViewChart", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+	let widgets: MockWidget[];
+	let widgetConstructor: ReturnType<typeof vi.fn>;
+
+	beforeEach(() => {
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+		widgets = [];
+		widgetConstructor = vi.fn(function Widget(this: unknown, _options: unknown) {
+			void this;
+			const widget = createMockWidget();
+			widgets.push(widget);
+			return widget;
+		});
+		Object.defineProperty(window, "TradingView", {
+			configurable: true,
+			value: { widget: widgetConstructor },
+		});
+		vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+	});
+
+	afterEach(() => {
+		act(() => root.unmount());
+		container.remove();
+		vi.restoreAllMocks();
+		delete (window as { TradingView?: unknown }).TradingView;
+	});
+
+	it("reuses the widget and switches symbols without rebuilding the iframe", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		expect(widgets).toHaveLength(1);
+		expect(widgets[0]?.setSymbol).not.toHaveBeenCalled();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+		expect(widgets[0]?.setSymbol).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
+	});
+});

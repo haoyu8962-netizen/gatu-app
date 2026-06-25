@@ -73,7 +73,7 @@ export function OrderbookPanel() {
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
 	const toggleAssetDisplay = () => setShowOrderbookInQuote(!showOrderbookInQuote);
 
-	const hasData = orderbookStatus !== "error";
+	const hasData = !!deferredOrderbook;
 
 	const dropdownItems = priceGroupingOptions.map((option) => ({
 		label: option.label,

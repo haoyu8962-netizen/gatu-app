@@ -41,8 +41,27 @@ export function TradingViewChart({
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const cssUrlRef = useRef<string | null>(null);
 	const chartReadyRef = useRef(false);
+	const targetSymbolRef = useRef(symbol);
+	const targetIntervalRef = useRef(interval);
+	const appliedSymbolRef = useRef<string | null>(null);
+	const appliedIntervalRef = useRef<string | null>(null);
 	const onSwitchToDefaultRef = useRef(onSwitchToDefault);
+	const applySymbolRef = useRef<() => void>(() => {});
+	targetSymbolRef.current = symbol;
+	targetIntervalRef.current = interval;
 	onSwitchToDefaultRef.current = onSwitchToDefault;
+	applySymbolRef.current = () => {
+		const widget = widgetRef.current;
+		if (!widget || !chartReadyRef.current) return;
+
+		const nextSymbol = targetSymbolRef.current;
+		const nextInterval = targetIntervalRef.current;
+		if (appliedSymbolRef.current === nextSymbol && appliedIntervalRef.current === nextInterval) return;
+
+		appliedSymbolRef.current = nextSymbol;
+		appliedIntervalRef.current = nextInterval;
+		widget.setSymbol(nextSymbol, nextInterval as ResolutionString, () => {});
+	};
 
 	useEffect(() => {
 		if (!containerRef.current) return;
@@ -73,12 +92,15 @@ export function TradingViewChart({
 				}
 				cssUrlRef.current = customCssUrl;
 
+				const initialSymbol = targetSymbolRef.current;
+				const initialInterval = targetIntervalRef.current;
+
 				const widget = new window.TradingView.widget({
 					container: containerRef.current,
 					library_path: CHART_LIBRARY_PATH,
 					datafeed: createDatafeed(),
-					symbol: symbol,
-					interval: interval as ResolutionString,
+					symbol: initialSymbol,
+					interval: initialInterval as ResolutionString,
 					locale: CHART_LOCALE,
 					fullscreen: CHART_WIDGET_DEFAULTS.FULLSCREEN,
 					autosize: CHART_WIDGET_DEFAULTS.AUTOSIZE,
@@ -99,10 +121,13 @@ export function TradingViewChart({
 					},
 				});
 				widgetRef.current = widget;
+				appliedSymbolRef.current = initialSymbol;
+				appliedIntervalRef.current = initialInterval;
 
 				widget.onChartReady(() => {
 					if (disposed || widgetRef.current !== widget) return;
 					chartReadyRef.current = true;
+					applySymbolRef.current();
 				});
 
 				if (onSwitchToDefaultRef.current) {
@@ -155,12 +180,20 @@ export function TradingViewChart({
 				widgetRef.current = null;
 			}
 			chartReadyRef.current = false;
+			appliedSymbolRef.current = null;
+			appliedIntervalRef.current = null;
 			if (cssUrlRef.current) {
 				URL.revokeObjectURL(cssUrlRef.current);
 				cssUrlRef.current = null;
 			}
 		};
-	}, [symbol, interval, theme]);
+	}, [theme]);
+
+	useEffect(() => {
+		targetSymbolRef.current = symbol;
+		targetIntervalRef.current = interval;
+		applySymbolRef.current();
+	}, [symbol, interval]);
 
 	return (
 		<div className="relative w-full h-full" style={{ minHeight: CHART_MIN_HEIGHT_PX }}>
