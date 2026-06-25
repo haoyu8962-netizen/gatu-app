@@ -481,7 +481,6 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			}
 
 			const subscription = runtime.subscription;
-			const pending = runtime.promise;
 			runtime.subscription = undefined;
 			runtime.promise = undefined;
 
@@ -492,8 +491,6 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 
 			if (subscription) {
 				void runUnsubscribe(subscription);
-			} else if (pending) {
-				void pending.then(runUnsubscribe).catch(() => {});
 			}
 		},
 		setSubscriptionData: (key, data) => {

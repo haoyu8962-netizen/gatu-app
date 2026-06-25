@@ -239,7 +239,6 @@ export function createCandleStore(): CandleStore {
 					detachFailureListener(runtimeEntry);
 
 					const subscription = runtimeEntry.subscription;
-					const pending = runtimeEntry.promise;
 					runtimeEntry.subscription = undefined;
 					runtimeEntry.promise = undefined;
 
@@ -247,8 +246,6 @@ export function createCandleStore(): CandleStore {
 
 					if (subscription) {
 						runUnsubscribe(subscription);
-					} else if (pending) {
-						void pending.then((sub) => runUnsubscribe(sub)).catch(() => {});
 					}
 				}
 			} else {
