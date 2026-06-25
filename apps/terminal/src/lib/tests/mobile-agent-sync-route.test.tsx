@@ -43,6 +43,10 @@ vi.mock("@lingui/react/macro", () => ({
 }));
 
 vi.mock("@lingui/core/macro", () => ({
+	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
+		if (typeof strings === "string") return strings;
+		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
+	},
 	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
 		if (typeof strings === "string") return strings;
 		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
@@ -61,6 +65,17 @@ vi.mock("@phosphor-icons/react", () => ({
 
 vi.mock("@tanstack/react-router", () => ({
 	createFileRoute: () => (options: unknown) => options,
+	lazyRouteComponent:
+		() =>
+		({ onOpenChange, open }: { onOpenChange: (open: boolean) => void; open: boolean }) =>
+			open
+				? createElement(
+						"div",
+						null,
+						"Wallet modal",
+						createElement("button", { onClick: () => onOpenChange(false), type: "button" }, "Close wallet"),
+					)
+				: null,
 }));
 
 vi.mock("@gatu/ui", () => ({
@@ -109,9 +124,10 @@ vi.mock("@/components/trade/components/wallet-modal", () => ({
 			: null,
 }));
 
-vi.mock("wagmi", () => ({
-	useConnection: () => ({
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({
+	useWalletSession: () => ({
 		address: testState.address,
+		isConnected: Boolean(testState.address),
 	}),
 }));
 

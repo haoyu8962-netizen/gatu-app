@@ -1,12 +1,12 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
-import { useConnection } from "wagmi";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { DEFAULT_QUOTE_TOKEN, FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getSpotAvailableValue } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { toNumberOrZero } from "@/lib/trade/numbers";
@@ -21,7 +21,7 @@ type SummaryRow = {
 
 export function AccountPanel() {
 	const { open: openDepositModal } = useDepositModalActions();
-	const { isConnected } = useConnection();
+	const { isConnected } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
 	const {
 		marginSummary,

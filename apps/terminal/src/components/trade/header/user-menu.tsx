@@ -10,12 +10,12 @@ import {
 	SpinnerGapIcon,
 	WalletIcon,
 } from "@phosphor-icons/react";
-import { usePrivy } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
-import { useConnection, useEnsName } from "wagmi";
+import { useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
@@ -25,9 +25,9 @@ const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 export function UserMenu() {
-	const { ready, authenticated, login, logout, user } = usePrivy();
-	const { address } = useConnection();
-	const { data: ensName } = useEnsName({ address });
+	const { ready, authenticated, login, displayAddress } = useWalletSession();
+	const { disconnectWallet } = useDisconnectWallet();
+	const { data: ensName } = useEnsName({ address: displayAddress });
 	const { open: openDepositModal } = useDepositModalActions();
 	const { tradeRestricted } = useGeoRestriction();
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
@@ -75,7 +75,6 @@ export function UserMenu() {
 		);
 	}
 
-	const displayAddress = address ?? (user?.wallet?.address as `0x${string}` | undefined);
 	const displayLabel = ensName ?? (displayAddress ? shortenAddress(displayAddress) : "");
 
 	const actionItems = [
@@ -143,7 +142,9 @@ export function UserMenu() {
 								label: t`Disconnect`,
 								icon: <SignOutIcon className="size-3.5" />,
 								danger: true,
-								onSelect: () => logout(),
+								onSelect: () => {
+									void disconnectWallet();
+								},
 							},
 						],
 					},

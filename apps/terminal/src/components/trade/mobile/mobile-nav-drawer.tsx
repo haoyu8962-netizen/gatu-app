@@ -11,15 +11,17 @@ import {
 	XIcon,
 } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { useConnection } from "wagmi";
+import { Suspense, useState } from "react";
 import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
-import { WalletModal } from "../components/wallet-modal";
 import { ThemeToggle } from "../header/theme-toggle";
+
+const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 function ScopeIcon({ scope }: { scope: string }) {
 	switch (scope) {
@@ -38,7 +40,7 @@ export function MobileNavDrawer() {
 	const [open, setOpen] = useState(false);
 	const [walletOpen, setWalletOpen] = useState(false);
 	const { scope } = useExchangeScope();
-	const { isConnected } = useConnection();
+	const { isConnected } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
@@ -163,7 +165,11 @@ export function MobileNavDrawer() {
 				</DrawerContent>
 			</Drawer>
 
-			<WalletModal open={walletOpen} onOpenChange={setWalletOpen} />
+			{walletOpen && (
+				<Suspense fallback={null}>
+					<WalletModal open onOpenChange={setWalletOpen} />
+				</Suspense>
+			)}
 		</>
 	);
 }

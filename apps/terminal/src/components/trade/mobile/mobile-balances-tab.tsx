@@ -3,7 +3,6 @@ import { t } from "@lingui/core/macro";
 import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon, WalletIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useMemo, useState } from "react";
-import { useConnection } from "wagmi";
 import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import {
@@ -14,6 +13,7 @@ import {
 	getTotalUsdValue,
 } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSubscription } from "@/lib/hyperliquid";
@@ -35,7 +35,7 @@ interface Props {
 }
 
 export function MobileBalancesTab({ className, scrollMode = "contained" }: Props) {
-	const { isConnected } = useConnection();
+	const { isConnected } = useWalletSession();
 	const { getToken } = useSpotTokens();
 	const hideSmallBalances = useHideSmallBalances();
 	const { setHideSmallBalances } = useGlobalSettingsActions();

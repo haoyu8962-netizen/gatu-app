@@ -4,9 +4,9 @@ import { ChartLineIcon, ListChecksIcon, TrendUpIcon } from "@phosphor-icons/reac
 import { Skeleton } from "boneyard-js/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useConnection } from "wagmi";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
@@ -29,7 +29,7 @@ interface Props {
 }
 
 export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const slippageBps = useMarketOrderSlippageBps();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();

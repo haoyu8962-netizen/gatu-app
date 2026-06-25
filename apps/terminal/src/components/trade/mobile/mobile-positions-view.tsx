@@ -2,16 +2,16 @@ import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { WalletIcon } from "@phosphor-icons/react";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { useConnection } from "wagmi";
+import { Suspense, useEffect, useRef, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { HL_ALL_DEXS } from "@/config/app";
 import { MOBILE_POSITIONS_TABS, type MobilePositionsTabValue } from "@/config/trade";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { createLazyComponent } from "@/lib/lazy";
 import { toNumber } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
-import { WalletModal } from "../components/wallet-modal";
 import { MobileBalancesTab } from "./mobile-balances-tab";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 import { MobileFundingTab } from "./mobile-funding-tab";
@@ -25,6 +25,7 @@ type TabValue = MobilePositionsTabValue;
 export type MobileDataScrollMode = "contained" | "page";
 
 const PAGE_SCROLL_OVERFLOW_THRESHOLD_PX = 24;
+const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 interface Props {
 	className?: string;
@@ -37,7 +38,7 @@ export function MobilePositionsView({ className, scrollMode = "contained", onNee
 	const activeTab = usePositionsActiveTab() as TabValue;
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const { positions, isLoading: isLoadingState } = useUserPositions();
 	const isPageScroll = scrollMode === "page";
 	const contentViewportRef = useRef<HTMLDivElement>(null);
@@ -233,7 +234,11 @@ function EmptyState() {
 					{t`Connect Wallet`}
 				</Button>
 			</div>
-			<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
+			{walletModalOpen && (
+				<Suspense fallback={null}>
+					<WalletModal open onOpenChange={setWalletModalOpen} />
+				</Suspense>
+			)}
 		</>
 	);
 }

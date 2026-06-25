@@ -2,10 +2,10 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
@@ -33,7 +33,7 @@ import {
 type CloseIntent = "close" | "reverse";
 
 export function PositionsTab() {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const slippageBps = useMarketOrderSlippageBps();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();

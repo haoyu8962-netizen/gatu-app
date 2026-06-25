@@ -2,15 +2,9 @@ import { t } from "@lingui/core/macro";
 import { useCallback, useMemo } from "react";
 import type { Hash } from "viem";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
-import {
-	useChainId,
-	useConnection,
-	useReadContract,
-	useSwitchChain,
-	useWaitForTransactionReceipt,
-	useWriteContract,
-} from "wagmi";
+import { useChainId, useReadContract, useSwitchChain, useWaitForTransactionReceipt, useWriteContract } from "wagmi";
 import { ARBITRUM_CHAIN_ID, CONTRACTS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 
 export type DepositStatus = "idle" | "pending" | "confirming" | "success" | "error";
 
@@ -91,7 +85,7 @@ function useUsdcBalance(address: `0x${string}` | undefined, enabled: boolean) {
 }
 
 export function useDeposit(): UseDepositResult {
-	const { address } = useConnection();
+	const { address } = useWalletSession();
 	const chain = useArbitrumChain();
 	const { balanceRaw, balance, refetch } = useUsdcBalance(address, chain.isArbitrum && !!address);
 

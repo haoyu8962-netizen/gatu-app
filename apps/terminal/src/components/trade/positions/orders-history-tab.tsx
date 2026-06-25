@@ -1,8 +1,8 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
@@ -24,7 +24,7 @@ import {
 } from "./positions-panel-table-styles";
 
 export function OrdersHistoryTab() {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const markets = useMarkets();

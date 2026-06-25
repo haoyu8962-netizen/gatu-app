@@ -6,12 +6,12 @@ import { WagmiProvider } from "@privy-io/wagmi";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { useConnection } from "wagmi";
 import { APP_NAME, RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { PRIVY_APP_ID, privyConfig } from "@/config/privy";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
 import { config } from "@/config/wagmi";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
 import { getNetwork } from "@/lib/network";
 import "@/lib/i18n";
@@ -41,7 +41,7 @@ export function getRootProviderContext() {
 }
 
 function HyperliquidBridge({ children }: { children: React.ReactNode }) {
-	const { address } = useConnection();
+	const { address } = useWalletSession();
 
 	return (
 		<HyperliquidProvider env={env} userAddress={address} builderConfig={DEFAULT_BUILDER_CONFIG} agentName={APP_NAME}>

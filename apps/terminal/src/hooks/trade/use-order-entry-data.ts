@@ -1,6 +1,6 @@
-import { useConnection } from "wagmi";
 import { deriveOrderEntry, type OrderEntryDerived } from "@/domain/trade/order/derive";
 import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle } from "@/domain/trade/order/size";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
 import { useDefaultDexBalances } from "./use-account-balances";
@@ -44,7 +44,7 @@ export function useOrderEntryData({
 	sizeMode,
 	sizeInput,
 }: UseOrderEntryDataOptions): OrderEntryData {
-	const { isConnected } = useConnection();
+	const { isConnected } = useWalletSession();
 	const { spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
 	const {
 		displayLeverage: leverage,

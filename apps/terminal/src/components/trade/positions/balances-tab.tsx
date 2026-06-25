@@ -2,7 +2,6 @@ import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, 
 import { t } from "@lingui/core/macro";
 import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
-import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
@@ -14,6 +13,7 @@ import {
 	getTotalUsdValue,
 } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSubscription } from "@/lib/hyperliquid";
@@ -41,7 +41,7 @@ import { TransferModal } from "./transfer-modal";
 type TransferDirection = "toSpot" | "toPerp";
 
 export function BalancesTab() {
-	const { isConnected } = useConnection();
+	const { isConnected } = useWalletSession();
 	const { getToken } = useSpotTokens();
 	const hideSmallBalances = useHideSmallBalances();
 	const { setHideSmallBalances } = useGlobalSettingsActions();

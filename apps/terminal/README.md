@@ -126,7 +126,7 @@ All in `src/stores/`. `validated-storage.ts` wraps `localStorage` with Zod valid
 | `lifi/` | bridge SDK integration |
 | `tests/` | vitest suites — unit + integration |
 
-Top-level: `format.ts`, `cn.ts`, `i18n.ts`, `seo.ts`, `errors.ts`, `explorer.ts`, `network.ts`, `wallet-utils.ts`.
+Top-level: `format.ts`, `cn.ts`, `i18n.ts`, `seo.ts`, `errors.ts`, `explorer.ts`, `network.ts`.
 
 ## Styling
 

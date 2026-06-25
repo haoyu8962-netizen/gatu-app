@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { zeroAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { useConnection } from "wagmi";
 import { useExchange } from "../hooks/useExchange";
 import { useHyperliquid } from "../provider";
 import { useAgentWalletActions } from "./agent-storage";
@@ -33,8 +32,8 @@ function deriveRegistrationStatus(
 }
 
 export function useAgentRegistration(): UseAgentRegistrationResult {
-	const { env, agentName, builderConfig } = useHyperliquid();
-	const { address } = useConnection();
+	const { env, agentName, builderConfig, clientKey } = useHyperliquid();
+	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
 	const addressRef = useRef(address);
 	addressRef.current = address;
 

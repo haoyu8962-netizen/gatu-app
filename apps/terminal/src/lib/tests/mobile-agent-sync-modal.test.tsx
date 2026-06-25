@@ -35,6 +35,10 @@ vi.mock("@lingui/react/macro", () => ({
 }));
 
 vi.mock("@lingui/core/macro", () => ({
+	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
+		if (typeof strings === "string") return strings;
+		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
+	},
 	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
 		if (typeof strings === "string") return strings;
 		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
@@ -108,6 +112,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useAgentWalletStorage: () => null,
 	useExchange: () => ({ mutateAsync: testState.approveAgent }),
 	useHyperliquid: () => ({ env: "Mainnet" }),
+}));
+
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({
+	useWalletSession: () => ({ address: testState.address, isConnected: !!testState.address }),
 }));
 
 vi.mock("wagmi", () => ({
@@ -263,7 +271,10 @@ describe("MobileAgentSyncModal", () => {
 		act(() => {
 			getButton(container, "Show QR").click();
 		});
-		await flushAsyncWork(10);
+		for (let i = 0; i < 20 && testState.qrToDataUrl.mock.calls.length === 0; i += 1) {
+			await flushAsyncWork();
+		}
+		await flushAsyncWork();
 
 		expect(testState.qrToDataUrl).toHaveBeenCalledWith(
 			PHONE_LINK,

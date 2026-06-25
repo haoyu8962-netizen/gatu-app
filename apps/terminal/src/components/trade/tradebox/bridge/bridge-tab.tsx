@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useConnection } from "wagmi";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { initLiFi } from "@/lib/lifi/config";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
 import { useBridgeExecutor } from "@/lib/lifi/use-bridge";
@@ -14,7 +14,7 @@ import { SuccessScreen } from "./success-screen";
 import type { BridgeScreen } from "./types";
 
 export function BridgeTab() {
-	const { address } = useConnection();
+	const { address } = useWalletSession();
 	const [screen, setScreen] = useState<BridgeScreen>("select");
 	const [selectedToken, setSelectedToken] = useState<BridgeToken | null>(null);
 	const [usdInput, setUsdInput] = useState("");

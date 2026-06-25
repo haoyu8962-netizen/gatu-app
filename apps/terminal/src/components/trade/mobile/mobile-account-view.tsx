@@ -9,28 +9,29 @@ import {
 	WalletIcon,
 } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
-import { useState } from "react";
-import { useConnection, useDisconnect } from "wagmi";
+import { Suspense, useState } from "react";
 import { UI_TEXT } from "@/config/ui-text";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
+import { createLazyComponent } from "@/lib/lazy";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
-import { WalletModal } from "../components/wallet-modal";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
 const ACCOUNT_TEXT = UI_TEXT.ACCOUNT_PANEL;
+const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 interface MobileAccountViewProps {
 	className?: string;
 }
 
 export function MobileAccountView({ className }: MobileAccountViewProps) {
-	const { address, isConnected } = useConnection();
-	const disconnect = useDisconnect();
+	const { address, isConnected } = useWalletSession();
+	const { disconnectWallet } = useDisconnectWallet();
 
 	const { marginSummary, perpSummary, perpPositions, withdrawable, crossMaintenanceMarginUsed, isLoading } =
 		useDefaultDexBalances();
@@ -78,7 +79,11 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					</Button>
 				</div>
 				<MobileBottomNavSpacer />
-				<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
+				{walletModalOpen && (
+					<Suspense fallback={null}>
+						<WalletModal open onOpenChange={setWalletModalOpen} />
+					</Suspense>
+				)}
 			</div>
 		);
 	}
@@ -117,7 +122,9 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						intent="error"
 						size="md"
 						className="touch-target"
-						onClick={() => disconnect.mutate()}
+						onClick={() => {
+							void disconnectWallet();
+						}}
 						aria-label={t`Disconnect wallet`}
 					>
 						<SignOutIcon className="size-5" />
@@ -129,7 +136,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 				<div className="p-2 space-y-4">
 					<div className="p-4 rounded-xs border border-stroke-weak/60 bg-surface">
 						<Skeleton name="account-equity" loading={isLoading}>
-							<>
+							<div>
 								<div className="text-2xs uppercase font-medium text-fg-muted mb-1.5">{ACCOUNT_TEXT.EQUITY_LABEL}</div>
 								<div className="text-3xl font-bold tabular-nums text-fg">{formatUSD(accountValue)}</div>
 								<div
@@ -141,7 +148,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									{unrealizedPnl >= 0 ? "+" : ""}
 									{formatUSD(unrealizedPnl)} {ACCOUNT_TEXT.UNREALIZED_LABEL}
 								</div>
-							</>
+							</div>
 						</Skeleton>
 					</div>
 

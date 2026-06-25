@@ -15,16 +15,17 @@ import {
 	type ChangeEvent,
 	type FormEvent,
 	forwardRef,
+	Suspense,
 	useCallback,
 	useEffect,
 	useLayoutEffect,
 	useRef,
 	useState,
 } from "react";
-import { useConnection } from "wagmi";
-import { WalletModal } from "@/components/trade/components/wallet-modal";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { shortenAddress } from "@/lib/format";
 import { useAgentWalletActions, useHyperliquid } from "@/lib/hyperliquid";
+import { createLazyComponent } from "@/lib/lazy";
 import {
 	clearMobileSyncDraft,
 	isMobileSyncEnvelopeExpired,
@@ -42,6 +43,8 @@ import {
 	readAndClearMobileSyncEnvelope,
 } from "@/lib/mobile-sync/sync-core";
 import { buildPageHead } from "@/lib/seo";
+
+const WalletModal = createLazyComponent(() => import("@/components/trade/components/wallet-modal"), "WalletModal");
 
 export const Route = createFileRoute("/mobile-agent-sync")({
 	ssr: false,
@@ -62,7 +65,7 @@ type ImportStatus =
 type EnvelopeSource = "url" | "stored" | "manual";
 
 function MobileAgentSyncRoute() {
-	const { address } = useConnection();
+	const { address } = useWalletSession();
 	const { env, info } = useHyperliquid();
 	const { setAgent } = useAgentWalletActions();
 	const [envelope, setEnvelope] = useState<MobileSyncEnvelope | null>(null);
@@ -474,7 +477,11 @@ function MobileAgentSyncRoute() {
 					</div>
 				</div>
 			</main>
-			<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
+			{walletModalOpen && (
+				<Suspense fallback={null}>
+					<WalletModal open onOpenChange={setWalletModalOpen} />
+				</Suspense>
+			)}
 		</>
 	);
 }

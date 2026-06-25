@@ -1,6 +1,6 @@
 import type { AllDexsClearinghouseStateWsEvent } from "@nktkas/hyperliquid";
-import { useConnection } from "wagmi";
 import { useSubscription } from "../hooks/useSubscription";
+import { useHyperliquid } from "../provider";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
 type RawPosition = RawClearinghouseState["assetPositions"][number];
@@ -82,8 +82,9 @@ const EMPTY: UserPositions = {
 };
 
 export function useUserPositions(): UserPositions {
-	const { address, isConnected } = useConnection();
-	const enabled = isConnected && !!address;
+	const { clientKey } = useHyperliquid();
+	const address = clientKey === "disconnected" ? undefined : (clientKey as `0x${string}`);
+	const enabled = !!address;
 
 	const { data, status } = useSubscription("allDexsClearinghouseState", { user: address ?? "" }, { enabled });
 

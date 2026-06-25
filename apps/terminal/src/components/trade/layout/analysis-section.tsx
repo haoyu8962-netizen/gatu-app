@@ -6,8 +6,8 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { useConnection } from "wagmi";
 import { PANEL_LAYOUT } from "@/config/layout";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { PositionsPanel } from "../positions/positions-panel";
 import { MarketInfo } from "./market-info";
 
@@ -20,7 +20,7 @@ type AnalysisSectionProps = {
 };
 
 export function AnalysisSection({ onDesiredHeightChange }: AnalysisSectionProps) {
-	const { isConnected } = useConnection();
+	const { isConnected } = useWalletSession();
 	const rootRef = useRef<HTMLDivElement>(null);
 	const cleanupDragRef = useRef<(() => void) | null>(null);
 	const initializedRef = useRef(false);

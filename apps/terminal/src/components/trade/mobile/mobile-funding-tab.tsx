@@ -1,9 +1,9 @@
 import { t } from "@lingui/core/macro";
 import { PercentIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
-import { useConnection } from "wagmi";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
@@ -21,7 +21,7 @@ interface Props {
 }
 
 export function MobileFundingTab({ className, scrollMode = "contained" }: Props) {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const {

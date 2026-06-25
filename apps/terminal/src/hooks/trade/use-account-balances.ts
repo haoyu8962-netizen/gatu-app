@@ -1,6 +1,6 @@
 import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent, WebData3WsEvent } from "@nktkas/hyperliquid";
 import { useMemo } from "react";
-import { useConnection } from "wagmi";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useSubscription } from "@/lib/hyperliquid";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
@@ -42,7 +42,7 @@ export interface AllDexsAccountState {
 }
 
 export function useAllDexsAccountState(): AllDexsAccountState {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const enabled = isConnected && !!address;
 
 	const { data: clearinghouseEvent, status: perpStatus } = useSubscription(
@@ -57,15 +57,27 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		{ user: address ?? "0x0" },
 		{ enabled },
 	);
-	const spotState = spotEvent?.spotState as RawSpotState | undefined;
 
-	const clearinghouseStates = clearinghouseEvent?.clearinghouseStates ?? [];
-	const spotBalances = spotState?.balances ?? EMPTY_SPOT_BALANCES;
-	const accountAbstraction = webData3Event?.userState.abstraction ?? null;
+	const spotState = spotEvent?.spotState as RawSpotState | undefined;
 	const spotAvailableAfterMaintenance = useMemo(
 		() => spotState?.tokenToAvailableAfterMaintenance ?? EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
 		[spotState?.tokenToAvailableAfterMaintenance],
 	);
+
+	if (!enabled) {
+		return {
+			clearinghouseStates: [],
+			spotBalances: EMPTY_SPOT_BALANCES,
+			spotAvailableAfterMaintenance: EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
+			accountAbstraction: null,
+			isLoading: false,
+			hasError: false,
+		};
+	}
+
+	const clearinghouseStates = clearinghouseEvent?.clearinghouseStates ?? [];
+	const spotBalances = spotState?.balances ?? EMPTY_SPOT_BALANCES;
+	const accountAbstraction = webData3Event?.userState.abstraction ?? null;
 
 	const isLoading =
 		perpStatus === "subscribing" ||

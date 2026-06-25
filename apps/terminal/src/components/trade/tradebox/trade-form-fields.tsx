@@ -2,7 +2,6 @@ import { Button, Checkbox, Slider, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";
-import { useConnection } from "wagmi";
 import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
@@ -10,6 +9,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD, SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { getSliderValue } from "@/domain/trade/order/size";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
@@ -62,7 +62,7 @@ export function TradeFormFields({
 	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
 	const [dragSliderValue, setDragSliderValue] = useState(0);
 
-	const { isConnected } = useConnection();
+	const { isConnected } = useWalletSession();
 	const { data: market } = useSelectedMarketInfo();
 
 	const side = useOrderSide();

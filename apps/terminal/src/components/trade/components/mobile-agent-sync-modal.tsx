@@ -3,15 +3,7 @@ import {
 	createMobileAgentRevocationApproval,
 	isStoredMobileAgent,
 } from "@gatu/hl-react/signing/mobile-agent";
-import {
-	AdaptiveModal,
-	Button,
-	ModalContent,
-	ModalDescription,
-	ModalFooter,
-	ModalHeader,
-	ModalTitle,
-} from "@gatu/ui";
+import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
@@ -25,8 +17,8 @@ import {
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { useConnection } from "wagmi";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { shortenAddress } from "@/lib/format";
 import { useAgentWalletActions, useAgentWalletStorage, useExchange, useHyperliquid } from "@/lib/hyperliquid";
 import { createMobileAgentSyncUrl } from "@/lib/mobile-sync/sync-core";
@@ -50,7 +42,7 @@ type ResetState =
 	| { status: "error"; message: string };
 
 export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModalProps) {
-	const { address } = useConnection();
+	const { address } = useWalletSession();
 	const { env } = useHyperliquid();
 	const localAgent = useAgentWalletStorage(env, address);
 	const { clearAgent } = useAgentWalletActions();

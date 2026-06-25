@@ -1,11 +1,11 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
 import { Suspense, useMemo, useTransition } from "react";
-import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
 import { HL_ALL_DEXS } from "@/config/app";
 import { POSITIONS_TABS } from "@/config/trade";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
@@ -29,7 +29,7 @@ export function PositionsPanel() {
 	const activeTab = usePositionsActiveTab();
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const { perpSummary, spotBalances } = useDefaultDexBalances();
 	const { positions } = useUserPositions();
 	const { data: ordersEvent } = useSubscription(

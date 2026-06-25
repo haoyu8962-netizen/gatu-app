@@ -1,8 +1,8 @@
 import { Button, buttonVariants, Checkbox, Slider } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, useEffect, useState } from "react";
-import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
+import { type ChangeEvent, Suspense, useEffect, useState } from "react";
+import { useSwitchChain, useWalletClient } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -17,9 +17,11 @@ import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { createLazyComponent } from "@/lib/lazy";
 import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
@@ -51,7 +53,6 @@ import {
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
-import { WalletModal } from "../components/wallet-modal";
 import { MarginModeModal } from "../tradebox/margin-mode-modal";
 import { OrderToast } from "../tradebox/order-toast";
 import { TpSlSection } from "../tradebox/tp-sl-section";
@@ -60,6 +61,7 @@ import { TradeHeader } from "../tradebox/trade-header";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
 const ORDER_TEXT = UI_TEXT.ORDER_ENTRY;
+const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 interface Props {
 	className?: string;
@@ -67,7 +69,7 @@ interface Props {
 }
 
 export function MobileTradeView({ className, embedded }: Props) {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
 
@@ -232,6 +234,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 	async function handleApprove() {
 		if (tradeRestricted) return;
 		if (isRegistering) return;
+		if (!isConnected || !address) {
+			setWalletModalOpen(true);
+			return;
+		}
 		setApprovalError(null);
 		try {
 			await registerAgent();
@@ -242,6 +248,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 
 	async function handleSubmit() {
 		if (tradeRestricted) return;
+		if (!isConnected || !address) return;
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
@@ -631,7 +638,11 @@ export function MobileTradeView({ className, embedded }: Props) {
 				{!embedded && <MobileBottomNavSpacer />}
 			</div>
 
-			<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
+			{walletModalOpen && (
+				<Suspense fallback={null}>
+					<WalletModal open onOpenChange={setWalletModalOpen} />
+				</Suspense>
+			)}
 			<OrderToast />
 		</div>
 	);

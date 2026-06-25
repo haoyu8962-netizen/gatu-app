@@ -4,10 +4,10 @@ import { Trans } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { useConnection } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
@@ -34,7 +34,7 @@ function getScopeAccentClass(scope: string): string {
 export function TopNav() {
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
-	const { isConnected } = useConnection();
+	const { isConnected } = useWalletSession();
 	const { scope } = useExchangeScope();
 	const isTestnet = useIsTestnet();
 	const { tradeRestricted } = useGeoRestriction();

@@ -1,8 +1,8 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
-import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
+import { Suspense, useEffect, useState } from "react";
+import { useSwitchChain, useWalletClient } from "wagmi";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
 import { getPositionDex } from "@/domain/market";
@@ -13,8 +13,10 @@ import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useAgentRegistration, useAgentStatus, useSelectedMarketInfo, useUserPositions } from "@/lib/hyperliquid";
+import { createLazyComponent } from "@/lib/lazy";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
@@ -52,7 +54,6 @@ import {
 	useTwapRandomize,
 } from "@/stores/use-order-entry-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
-import { WalletModal } from "../components/wallet-modal";
 import { MarginModeModal } from "./margin-mode-modal";
 import { OrderSummary } from "./order-summary";
 import { OrderToast } from "./order-toast";
@@ -61,8 +62,10 @@ import { TradeFormFields } from "./trade-form-fields";
 import { TradeHeader } from "./trade-header";
 import { TwapOrderSummary } from "./twap-order-summary";
 
+const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
+
 export function TradePanel() {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const switchChain = useSwitchChain();
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
@@ -255,6 +258,10 @@ export function TradePanel() {
 	function handleRegister() {
 		if (tradeRestricted) return;
 		if (isRegistering) return;
+		if (!isConnected || !address) {
+			setActiveModal("wallet");
+			return;
+		}
 		setApprovalError(null);
 
 		registerAgent().catch((error: unknown) => {
@@ -266,6 +273,7 @@ export function TradePanel() {
 
 	async function handleSubmit() {
 		if (tradeRestricted) return;
+		if (!isConnected || !address) return;
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
@@ -448,7 +456,11 @@ export function TradePanel() {
 				{renderSummary()}
 			</div>
 
-			<WalletModal open={activeModal === "wallet"} onOpenChange={(open) => setActiveModal(open ? "wallet" : null)} />
+			{activeModal === "wallet" && (
+				<Suspense fallback={null}>
+					<WalletModal open onOpenChange={(open) => setActiveModal(open ? "wallet" : null)} />
+				</Suspense>
+			)}
 
 			<OrderToast />
 		</div>

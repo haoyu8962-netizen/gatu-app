@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { KIND_LABELS, marketSearchConfig } from "@/config/search";
 import { cn } from "@/lib/cn";
@@ -15,29 +15,13 @@ const COMMAND_LIST_HEIGHT_CLASS = "h-[22.5rem] max-h-[22.5rem]";
 
 export function CommandMenu() {
 	const open = useCommandMenuOpen();
-	const { open: openMenu, close } = useCommandMenuActions();
+	const { close } = useCommandMenuActions();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { markets } = useMarketsInfo();
 
 	const [query, setQuery] = useState("");
 	const searcher = useMemo(() => createSearcher(markets, marketSearchConfig), [markets]);
-
-	useEffect(() => {
-		function handleKeyDown(e: KeyboardEvent) {
-			if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-				e.preventDefault();
-				if (open) {
-					close();
-				} else {
-					openMenu();
-				}
-			}
-		}
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [open, close, openMenu]);
 
 	const results = query ? searcher.search(query) : [];
 	const displayItems = query ? results.map((r) => r.item) : markets;

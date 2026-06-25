@@ -2,12 +2,12 @@ import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup,
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import { useConnection } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
 import { getPerpAvailable, getSpotAvailable, getSpotBalance } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
@@ -46,7 +46,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
 
-	const { address } = useConnection();
+	const { address } = useWalletSession();
 	const { getToken } = useSpotTokens();
 	const { mutateAsync: sendAsset, isPending } = useExchange("sendAsset");
 	const { perpSummary, spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();

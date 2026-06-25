@@ -11,8 +11,8 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { ArrowLineDownIcon, ArrowLineUpIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Suspense, useState } from "react";
-import { useConnection } from "wagmi";
 import { NETWORKS } from "@/config/networks";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
 import { useDeposit, useExchange, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
@@ -52,7 +52,7 @@ export function DepositModal() {
 		reset: resetDeposit,
 	} = useDeposit();
 
-	const { address } = useConnection();
+	const { address } = useWalletSession();
 
 	const userPositions = useUserPositions();
 	const withdrawable = userPositions.withdrawable;
