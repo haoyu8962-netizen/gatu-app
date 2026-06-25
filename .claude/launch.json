@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@gatu/terminal", "exec", "vite", "dev", "--port", "3005", "--strictPort"],
       "port": 3005
+    },
+    {
+      "name": "terminal-inspect",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@gatu/terminal", "exec", "vite", "dev", "--port", "3015", "--strictPort"],
+      "port": 3015
     }
   ]
 }
