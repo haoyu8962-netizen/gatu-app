@@ -52,8 +52,10 @@ Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai)
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs git
 
-# pnpm（锁大版本，匹配 lockfile）
-sudo npm i -g pnpm@10
+# pnpm（锁精确版本，匹配 packageManager 与 lockfile）
+sudo corepack enable
+sudo corepack prepare pnpm@10.21.0 --activate
+pnpm --version # should print 10.21.0
 
 # Caddy（官方 apt 源）
 sudo apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl
