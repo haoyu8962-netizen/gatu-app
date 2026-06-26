@@ -439,16 +439,16 @@ msgid "Chart"
 msgstr "चार्ट"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard does not contain a pairing code."
-msgstr "क्लिपबोर्ड में कोई पेयरिंग कोड नहीं है।"
+#~ msgid "Clipboard does not contain a pairing code."
+#~ msgstr "क्लिपबोर्ड में कोई पेयरिंग कोड नहीं है।"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
-msgstr "क्लिपबोर्ड पेस्ट उपलब्ध नहीं है। कीबोर्ड मेन्यू से पेस्ट करें या कोड मैन्युअल रूप से टाइप करें।"
+#~ msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
+#~ msgstr "क्लिपबोर्ड पेस्ट उपलब्ध नहीं है। कीबोर्ड मेन्यू से पेस्ट करें या कोड मैन्युअल रूप से टाइप करें।"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
-msgstr "क्लिपबोर्ड पेस्ट ब्लॉक हो गया। कीबोर्ड मेन्यू से पेस्ट करें या कोड मैन्युअल रूप से टाइप करें।"
+#~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
+#~ msgstr "क्लिपबोर्ड पेस्ट ब्लॉक हो गया। कीबोर्ड मेन्यू से पेस्ट करें या कोड मैन्युअल रूप से टाइप करें।"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
@@ -654,7 +654,6 @@ msgid "Continue"
 msgstr "जारी रखें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Copied"
 msgstr "कॉपी हो गया"
 
@@ -675,8 +674,8 @@ msgid "Copy Address"
 msgstr "पता कॉपी करें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Copy code"
-msgstr "कोड कॉपी करें"
+#~ msgid "Copy code"
+#~ msgstr "कोड कॉपी करें"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Copy link"
@@ -958,12 +957,12 @@ msgid "Enter size"
 msgstr "साइज दर्ज करें"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the 16-character pairing code."
-msgstr "16-अक्षरों का पेयरिंग कोड दर्ज करें।"
+#~ msgid "Enter the 16-character pairing code."
+#~ msgstr "16-अक्षरों का पेयरिंग कोड दर्ज करें।"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the desktop code"
-msgstr "डेस्कटॉप कोड दर्ज करें"
+#~ msgid "Enter the desktop code"
+#~ msgstr "डेस्कटॉप कोड दर्ज करें"
 
 #: src/lib/errors/definitions/tpsl.ts
 msgid "Enter TP or SL price"
@@ -1948,8 +1947,12 @@ msgid "Open terminal"
 msgstr "टर्मिनल खोलें"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Open the phone link, then enter the pairing code shown on desktop."
-msgstr "फ़ोन लिंक खोलें, फिर डेस्कटॉप पर दिखाया गया पेयरिंग कोड दर्ज करें।"
+msgid "Open the phone link and connect the same wallet you use on desktop to import."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "Open the phone link, then enter the pairing code shown on desktop."
+#~ msgstr "फ़ोन लिंक खोलें, फिर डेस्कटॉप पर दिखाया गया पेयरिंग कोड दर्ज करें।"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open wallet"
@@ -2062,16 +2065,16 @@ msgstr "बदलने पर पेज रीलोड होता है"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code"
-msgstr "पेयरिंग कोड"
+#~ msgid "Pairing code"
+#~ msgstr "पेयरिंग कोड"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code does not match this link."
-msgstr "पेयरिंग कोड इस लिंक से मेल नहीं खाता।"
+#~ msgid "Pairing code does not match this link."
+#~ msgstr "पेयरिंग कोड इस लिंक से मेल नहीं खाता।"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Paste code"
-msgstr "कोड पेस्ट करें"
+#~ msgid "Paste code"
+#~ msgstr "कोड पेस्ट करें"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Paste link from desktop"
@@ -2307,8 +2310,8 @@ msgid "Rate"
 msgstr "दर"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Ready"
-msgstr "तैयार"
+#~ msgid "Ready"
+#~ msgstr "तैयार"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -2414,6 +2417,7 @@ msgstr "चलने का समय ({TWAP_MINUTES_MIN}m - {0}h)"
 msgid "Runtime"
 msgstr "रनटाइम"
 
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "सहेजा गया फ़ोन लिंक अमान्य था। लिंक फिर से पेस्ट करें।"
@@ -3065,8 +3069,12 @@ msgid "This mobile link expired."
 msgstr "यह मोबाइल लिंक समाप्त हो गया।"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This phone link is not approved on Hyperliquid."
-msgstr "यह फ़ोन लिंक Hyperliquid पर स्वीकृत नहीं है।"
+msgid "This mobile link is damaged or incomplete. Scan or paste it again."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "This phone link is not approved on Hyperliquid."
+#~ msgstr "यह फ़ोन लिंक Hyperliquid पर स्वीकृत नहीं है।"
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"

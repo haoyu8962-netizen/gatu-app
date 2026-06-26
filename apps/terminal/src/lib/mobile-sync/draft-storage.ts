@@ -13,16 +13,16 @@ interface StoredMobileSyncDraft {
 	createdAtMs: number;
 	expiresAtMs: number;
 	encodedEnvelope: string;
-	pairingCodeDraft?: string;
+	encodedKey: string;
 	storedAtMs: number;
 }
 
 export interface MobileSyncDraft {
 	envelope: MobileSyncEnvelope;
+	encodedKey: string;
 	syncId: string;
 	createdAtMs: number;
 	expiresAtMs: number;
-	pairingCodeDraft: string;
 	storedAtMs: number;
 }
 
@@ -39,7 +39,7 @@ interface MobileSyncDraftStorageOptions {
 
 export function saveMobileSyncDraft(
 	envelope: MobileSyncEnvelope,
-	pairingCodeDraft = "",
+	encodedKey: string,
 	options: MobileSyncDraftStorageOptions = {},
 ): boolean {
 	const storage = getDraftStorage(options.storage);
@@ -51,7 +51,7 @@ export function saveMobileSyncDraft(
 		createdAtMs: envelope.createdAtMs,
 		expiresAtMs: envelope.expiresAtMs,
 		encodedEnvelope: encodeMobileSyncEnvelope(envelope),
-		pairingCodeDraft,
+		encodedKey,
 		storedAtMs: options.nowMs ?? Date.now(),
 	};
 
@@ -61,15 +61,6 @@ export function saveMobileSyncDraft(
 	} catch {
 		return false;
 	}
-}
-
-export function updateMobileSyncPairingCodeDraft(
-	envelope: MobileSyncEnvelope | null,
-	pairingCodeDraft: string,
-	options: MobileSyncDraftStorageOptions = {},
-): boolean {
-	if (!envelope) return false;
-	return saveMobileSyncDraft(envelope, pairingCodeDraft, options);
 }
 
 export function readMobileSyncDraft(options: MobileSyncDraftStorageOptions = {}): ReadMobileSyncDraftResult {
@@ -92,6 +83,7 @@ export function readMobileSyncDraft(options: MobileSyncDraftStorageOptions = {})
 			typeof parsed.createdAtMs !== "number" ||
 			typeof parsed.expiresAtMs !== "number" ||
 			typeof parsed.encodedEnvelope !== "string" ||
+			typeof parsed.encodedKey !== "string" ||
 			typeof parsed.storedAtMs !== "number"
 		) {
 			clearMobileSyncDraft({ storage });
@@ -117,10 +109,10 @@ export function readMobileSyncDraft(options: MobileSyncDraftStorageOptions = {})
 			status: "found",
 			draft: {
 				envelope,
+				encodedKey: parsed.encodedKey,
 				syncId: parsed.syncId,
 				createdAtMs: parsed.createdAtMs,
 				expiresAtMs: parsed.expiresAtMs,
-				pairingCodeDraft: typeof parsed.pairingCodeDraft === "string" ? parsed.pairingCodeDraft : "",
 				storedAtMs: parsed.storedAtMs,
 			},
 		};

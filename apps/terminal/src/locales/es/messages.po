@@ -439,16 +439,16 @@ msgid "Chart"
 msgstr "Gráfico"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard does not contain a pairing code."
-msgstr "El portapapeles no contiene un código de emparejamiento."
+#~ msgid "Clipboard does not contain a pairing code."
+#~ msgstr "El portapapeles no contiene un código de emparejamiento."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
-msgstr "No está disponible pegar desde el portapapeles. Pega desde el menú del teclado o escribe el código manualmente."
+#~ msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
+#~ msgstr "No está disponible pegar desde el portapapeles. Pega desde el menú del teclado o escribe el código manualmente."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
-msgstr "Se bloqueó pegar desde el portapapeles. Pega desde el menú del teclado o escribe el código manualmente."
+#~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
+#~ msgstr "Se bloqueó pegar desde el portapapeles. Pega desde el menú del teclado o escribe el código manualmente."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
@@ -654,7 +654,6 @@ msgid "Continue"
 msgstr "Continuar"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Copied"
 msgstr "Copiado"
 
@@ -675,8 +674,8 @@ msgid "Copy Address"
 msgstr "Copiar dirección"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Copy code"
-msgstr "Copiar código"
+#~ msgid "Copy code"
+#~ msgstr "Copiar código"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Copy link"
@@ -958,12 +957,12 @@ msgid "Enter size"
 msgstr "Ingresa tamaño"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the 16-character pairing code."
-msgstr "Introduce el código de emparejamiento de 16 caracteres."
+#~ msgid "Enter the 16-character pairing code."
+#~ msgstr "Introduce el código de emparejamiento de 16 caracteres."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the desktop code"
-msgstr "Introduce el código del escritorio"
+#~ msgid "Enter the desktop code"
+#~ msgstr "Introduce el código del escritorio"
 
 #: src/lib/errors/definitions/tpsl.ts
 msgid "Enter TP or SL price"
@@ -1948,8 +1947,12 @@ msgid "Open terminal"
 msgstr "Abrir terminal"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Open the phone link, then enter the pairing code shown on desktop."
-msgstr "Abre el enlace del teléfono y luego introduce el código de emparejamiento que se muestra en el escritorio."
+msgid "Open the phone link and connect the same wallet you use on desktop to import."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "Open the phone link, then enter the pairing code shown on desktop."
+#~ msgstr "Abre el enlace del teléfono y luego introduce el código de emparejamiento que se muestra en el escritorio."
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open wallet"
@@ -2062,16 +2065,16 @@ msgstr "La página se recarga al cambiar"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code"
-msgstr "Código de emparejamiento"
+#~ msgid "Pairing code"
+#~ msgstr "Código de emparejamiento"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code does not match this link."
-msgstr "El código de emparejamiento no coincide con este enlace."
+#~ msgid "Pairing code does not match this link."
+#~ msgstr "El código de emparejamiento no coincide con este enlace."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Paste code"
-msgstr "Pegar código"
+#~ msgid "Paste code"
+#~ msgstr "Pegar código"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Paste link from desktop"
@@ -2307,8 +2310,8 @@ msgid "Rate"
 msgstr "Tasa"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Ready"
-msgstr "Listo"
+#~ msgid "Ready"
+#~ msgstr "Listo"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -2414,6 +2417,7 @@ msgstr "Tiempo de ejecución ({TWAP_MINUTES_MIN}m - {0}h)"
 msgid "Runtime"
 msgstr "Tiempo de ejecución"
 
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "El enlace del teléfono guardado no era válido. Pega el enlace de nuevo."
@@ -3065,8 +3069,12 @@ msgid "This mobile link expired."
 msgstr "Este enlace móvil ha expirado."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This phone link is not approved on Hyperliquid."
-msgstr "Este enlace móvil no está aprobado en Hyperliquid."
+msgid "This mobile link is damaged or incomplete. Scan or paste it again."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "This phone link is not approved on Hyperliquid."
+#~ msgstr "Este enlace móvil no está aprobado en Hyperliquid."
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"

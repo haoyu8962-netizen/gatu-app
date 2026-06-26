@@ -7,28 +7,26 @@ import { type Address, getAddress, type Hex, isAddress } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
 export const MOBILE_SYNC_FRAGMENT_KEY = "ht-mobile-sync";
+export const MOBILE_SYNC_KEY_FRAGMENT_KEY = "k";
 export const MOBILE_SYNC_ROUTE_PATH = "/mobile-agent-sync";
 export const MOBILE_SYNC_PAYLOAD_TTL_MS = 10 * 60 * 1000;
 export const MOBILE_SYNC_CLOCK_SKEW_MS = 60 * 1000;
-export const MOBILE_SYNC_KDF_ITERATIONS = 310000;
 export { createMobileAgentName, MOBILE_AGENT_NAME_BASE, MOBILE_AGENT_VALIDITY_MS };
 
 const MOBILE_SYNC_ENVELOPE_TYPE = "gatu.mobile-agent-sync";
 const MOBILE_SYNC_PLAINTEXT_TYPE = "gatu.mobile-agent";
-const PAIRING_CODE_BYTES = 8;
 const SYNC_ID_BYTES = 16;
-const SALT_BYTES = 16;
+const SYNC_KEY_BYTES = 32;
 const AES_GCM_IV_BYTES = 12;
 const AES_GCM_TAG_LENGTH = 128;
 const AES_GCM_KEY_LENGTH = 256;
 const HEX_PRIVATE_KEY_RE = /^0x[0-9a-fA-F]{64}$/;
-const HEX_PAIRING_CODE_RE = /^[0-9A-F]{16}$/;
 
 export type HyperliquidEnvName = "Mainnet" | "Testnet";
 
 export type MobileSyncErrorCode =
-	| "invalid_pairing_code"
 	| "missing_sync_fragment"
+	| "missing_sync_key"
 	| "sync_payload_in_query"
 	| "sync_payload_in_path"
 	| "unknown_fragment_key"
@@ -58,12 +56,6 @@ export interface MobileSyncEnvelope {
 	syncId: string;
 	createdAtMs: number;
 	expiresAtMs: number;
-	kdf: {
-		name: "PBKDF2";
-		hash: "SHA-256";
-		iterations: typeof MOBILE_SYNC_KDF_ITERATIONS;
-		salt: string;
-	};
 	cipher: {
 		name: "AES-GCM";
 		length: typeof AES_GCM_KEY_LENGTH;
@@ -114,7 +106,8 @@ export interface CreateMobileAgentSyncUrlInput {
 
 export interface CreateMobileAgentSyncUrlResult {
 	url: string;
-	pairingCode: string;
+	/** base64url of the AES key embedded in the URL fragment — kept so callers can persist it. */
+	encodedKey: string;
 	envelope: MobileSyncEnvelope;
 	agentAddress: Address;
 	agentName: string;
@@ -129,6 +122,14 @@ export interface DecryptMobileAgentSyncOptions {
 	expectedUserAddress?: string;
 	expectedEnv?: HyperliquidEnvName;
 	allowedOrigins?: string[];
+}
+
+/** A parsed phone-sync link: the encrypted envelope plus the AES key carried in the URL fragment. */
+export interface ParsedMobileSync {
+	envelope: MobileSyncEnvelope;
+	keyBytes: Uint8Array;
+	/** base64url of the AES key, as carried in the fragment — for persisting/restoring drafts. */
+	encodedKey: string;
 }
 
 export interface MobileSyncLocationLike {
@@ -156,9 +157,9 @@ export async function createMobileAgentSyncUrl(
 	const agentValidUntilMs = input.agentValidUntilMs ?? nowMs + MOBILE_AGENT_VALIDITY_MS;
 	const agentName = input.agentName ?? createMobileAgentName(agentValidUntilMs);
 	assertValidAgentApproval(agentName, agentValidUntilMs, nowMs);
-	const pairingCode = createPairingCode();
 	const crypto = getCrypto();
 
+	const keyBytes = createSyncKeyBytes(crypto);
 	const envelopeWithoutCiphertext = createEnvelopeWithoutCiphertext(nowMs, expiresAtMs, crypto);
 	const plaintext: MobileAgentSyncPlaintext = {
 		v: 1,
@@ -176,7 +177,7 @@ export async function createMobileAgentSyncUrl(
 		expiresAtMs,
 	};
 
-	const key = await deriveMobileSyncKey(pairingCode, envelopeWithoutCiphertext, crypto);
+	const key = await importRawKey(keyBytes, crypto);
 	const ciphertext = await crypto.subtle.encrypt(
 		{
 			name: "AES-GCM",
@@ -191,11 +192,12 @@ export async function createMobileAgentSyncUrl(
 		...envelopeWithoutCiphertext,
 		ciphertext: bytesToBase64Url(new Uint8Array(ciphertext)),
 	};
-	const url = buildMobileSyncUrl(appOrigin, input.routePath ?? MOBILE_SYNC_ROUTE_PATH, envelope);
+	const encodedKey = bytesToBase64Url(keyBytes);
+	const url = buildMobileSyncUrl(appOrigin, input.routePath ?? MOBILE_SYNC_ROUTE_PATH, envelope, encodedKey);
 
 	return {
 		url,
-		pairingCode,
+		encodedKey,
 		envelope,
 		agentAddress,
 		agentName,
@@ -205,22 +207,21 @@ export async function createMobileAgentSyncUrl(
 	};
 }
 
-export function normalizePairingCode(pairingCode: string): string {
-	const normalized = pairingCode.toUpperCase().replace(/[\s-]/g, "");
-	if (!HEX_PAIRING_CODE_RE.test(normalized)) {
-		throw new MobileSyncError("invalid_pairing_code");
-	}
-	return normalized;
-}
-
-export function createPairingCode(crypto: Crypto = getCrypto()): string {
-	const bytes = new Uint8Array(PAIRING_CODE_BYTES);
+export function createSyncKeyBytes(crypto: Crypto = getCrypto()): Uint8Array {
+	const bytes = new Uint8Array(SYNC_KEY_BYTES);
 	crypto.getRandomValues(bytes);
-	const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0").toUpperCase()).join("");
-	return `${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}`;
+	return bytes;
 }
 
-export function parseMobileSyncUrl(urlInput: string | URL): MobileSyncEnvelope {
+export function decodeSyncKey(encoded: string): Uint8Array {
+	const keyBytes = base64UrlToBytes(encoded);
+	if (keyBytes.length !== SYNC_KEY_BYTES) {
+		throw new MobileSyncError("invalid_payload_encoding");
+	}
+	return keyBytes;
+}
+
+export function parseMobileSyncUrl(urlInput: string | URL): ParsedMobileSync {
 	const url = typeof urlInput === "string" ? new URL(urlInput) : urlInput;
 
 	if (url.searchParams.has(MOBILE_SYNC_FRAGMENT_KEY)) {
@@ -236,23 +237,30 @@ export function parseMobileSyncUrl(urlInput: string | URL): MobileSyncEnvelope {
 	}
 
 	const params = new URLSearchParams(rawHash);
-	const entries = Array.from(params.entries());
-	if (entries.length !== 1) {
-		throw new MobileSyncError(entries.length === 0 ? "missing_sync_fragment" : "unknown_fragment_key");
+	for (const [key] of params.entries()) {
+		if (key !== MOBILE_SYNC_FRAGMENT_KEY && key !== MOBILE_SYNC_KEY_FRAGMENT_KEY) {
+			throw new MobileSyncError("unknown_fragment_key");
+		}
 	}
 
-	const [key, encoded] = entries[0] ?? [];
-	if (key !== MOBILE_SYNC_FRAGMENT_KEY || !encoded) {
-		throw new MobileSyncError(key ? "unknown_fragment_key" : "missing_sync_fragment");
+	const encoded = params.get(MOBILE_SYNC_FRAGMENT_KEY);
+	if (!encoded) {
+		throw new MobileSyncError("missing_sync_fragment");
+	}
+	const encodedKey = params.get(MOBILE_SYNC_KEY_FRAGMENT_KEY);
+	if (!encodedKey) {
+		throw new MobileSyncError("missing_sync_key");
 	}
 
-	return decodeMobileSyncEnvelope(encoded);
+	const envelope = decodeMobileSyncEnvelope(encoded);
+	const keyBytes = decodeSyncKey(encodedKey);
+	return { envelope, keyBytes, encodedKey };
 }
 
 export function readAndClearMobileSyncEnvelope(
 	location: MobileSyncLocationLike = window.location,
 	history: MobileSyncHistoryLike = window.history,
-): MobileSyncEnvelope {
+): ParsedMobileSync {
 	const href = location.href;
 	history.replaceState(null, "", getMobileSyncCleanUrl(location));
 	return parseMobileSyncUrl(href);
@@ -264,7 +272,7 @@ export function getMobileSyncCleanUrl(location: Pick<MobileSyncLocationLike, "pa
 
 export async function decryptMobileAgentSyncEnvelope(
 	envelope: MobileSyncEnvelope,
-	pairingCode: string,
+	keyBytes: Uint8Array,
 	options: DecryptMobileAgentSyncOptions = {},
 ): Promise<ImportedMobileAgent> {
 	const validEnvelope = validateMobileSyncEnvelope(envelope);
@@ -275,7 +283,7 @@ export async function decryptMobileAgentSyncEnvelope(
 	try {
 		const crypto = getCrypto();
 		const envelopeWithoutCiphertext = removeCiphertext(validEnvelope);
-		const key = await deriveMobileSyncKey(pairingCode, envelopeWithoutCiphertext, crypto);
+		const key = await importRawKey(keyBytes, crypto);
 		plaintextBytes = await crypto.subtle.decrypt(
 			{
 				name: "AES-GCM",
@@ -306,10 +314,10 @@ export async function decryptMobileAgentSyncEnvelope(
 
 export async function importMobileAgentSyncUrl(
 	urlInput: string | URL,
-	pairingCode: string,
 	options: DecryptMobileAgentSyncOptions = {},
 ): Promise<ImportedMobileAgent> {
-	return decryptMobileAgentSyncEnvelope(parseMobileSyncUrl(urlInput), pairingCode, options);
+	const { envelope, keyBytes } = parseMobileSyncUrl(urlInput);
+	return decryptMobileAgentSyncEnvelope(envelope, keyBytes, options);
 }
 
 export function validateMobileAgentSyncPlaintext(
@@ -404,9 +412,14 @@ export function isMobileSyncError(error: unknown): error is MobileSyncError {
 	return error instanceof MobileSyncError;
 }
 
-function buildMobileSyncUrl(appOrigin: string, routePath: string, envelope: MobileSyncEnvelope): string {
+function buildMobileSyncUrl(
+	appOrigin: string,
+	routePath: string,
+	envelope: MobileSyncEnvelope,
+	encodedKey: string,
+): string {
 	const url = new URL(routePath, appOrigin);
-	url.hash = `${MOBILE_SYNC_FRAGMENT_KEY}=${encodeMobileSyncEnvelope(envelope)}`;
+	url.hash = `${MOBILE_SYNC_FRAGMENT_KEY}=${encodeMobileSyncEnvelope(envelope)}&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${encodedKey}`;
 	return url.toString();
 }
 
@@ -416,10 +429,8 @@ function createEnvelopeWithoutCiphertext(
 	crypto: Crypto,
 ): Omit<MobileSyncEnvelope, "ciphertext"> {
 	const syncIdBytes = new Uint8Array(SYNC_ID_BYTES);
-	const saltBytes = new Uint8Array(SALT_BYTES);
 	const ivBytes = new Uint8Array(AES_GCM_IV_BYTES);
 	crypto.getRandomValues(syncIdBytes);
-	crypto.getRandomValues(saltBytes);
 	crypto.getRandomValues(ivBytes);
 
 	return {
@@ -428,12 +439,6 @@ function createEnvelopeWithoutCiphertext(
 		syncId: bytesToBase64Url(syncIdBytes),
 		createdAtMs,
 		expiresAtMs,
-		kdf: {
-			name: "PBKDF2",
-			hash: "SHA-256",
-			iterations: MOBILE_SYNC_KDF_ITERATIONS,
-			salt: bytesToBase64Url(saltBytes),
-		},
 		cipher: {
 			name: "AES-GCM",
 			length: AES_GCM_KEY_LENGTH,
@@ -453,27 +458,13 @@ function assertValidAgentApproval(agentName: string, agentValidUntilMs: number, 
 	}
 }
 
-async function deriveMobileSyncKey(
-	pairingCode: string,
-	envelope: Omit<MobileSyncEnvelope, "ciphertext">,
-	crypto: Crypto,
-): Promise<CryptoKey> {
-	const normalizedCode = normalizePairingCode(pairingCode);
-	const keyMaterial = await crypto.subtle.importKey(
+function importRawKey(keyBytes: Uint8Array, crypto: Crypto): Promise<CryptoKey> {
+	if (keyBytes.length !== SYNC_KEY_BYTES) {
+		throw new MobileSyncError("decrypt_failed");
+	}
+	return crypto.subtle.importKey(
 		"raw",
-		toArrayBuffer(utf8Encode(`gatu mobile sync v1:${normalizedCode}`)),
-		"PBKDF2",
-		false,
-		["deriveKey"],
-	);
-	return crypto.subtle.deriveKey(
-		{
-			name: "PBKDF2",
-			hash: "SHA-256",
-			salt: toArrayBuffer(base64UrlToBytes(envelope.kdf.salt)),
-			iterations: envelope.kdf.iterations,
-		},
-		keyMaterial,
+		toArrayBuffer(keyBytes),
 		{ name: "AES-GCM", length: AES_GCM_KEY_LENGTH },
 		false,
 		["encrypt", "decrypt"],
@@ -497,15 +488,6 @@ function validateMobileSyncEnvelope(envelopeInput: unknown): MobileSyncEnvelope 
 		throw new MobileSyncError("invalid_envelope");
 	}
 
-	const kdf = asRecord(envelope.kdf, "invalid_envelope");
-	if (kdf.name !== "PBKDF2" || kdf.hash !== "SHA-256" || kdf.iterations !== MOBILE_SYNC_KDF_ITERATIONS) {
-		throw new MobileSyncError("invalid_envelope");
-	}
-	const salt = asString(kdf.salt, "invalid_envelope");
-	if (base64UrlToBytes(salt).length !== SALT_BYTES) {
-		throw new MobileSyncError("invalid_envelope");
-	}
-
 	const cipher = asRecord(envelope.cipher, "invalid_envelope");
 	if (cipher.name !== "AES-GCM" || cipher.length !== AES_GCM_KEY_LENGTH || cipher.tagLength !== AES_GCM_TAG_LENGTH) {
 		throw new MobileSyncError("invalid_envelope");
@@ -526,12 +508,6 @@ function validateMobileSyncEnvelope(envelopeInput: unknown): MobileSyncEnvelope 
 		syncId,
 		createdAtMs,
 		expiresAtMs,
-		kdf: {
-			name: "PBKDF2",
-			hash: "SHA-256",
-			iterations: MOBILE_SYNC_KDF_ITERATIONS,
-			salt,
-		},
 		cipher: {
 			name: "AES-GCM",
 			length: AES_GCM_KEY_LENGTH,
@@ -555,7 +531,6 @@ function removeCiphertext(envelope: MobileSyncEnvelope): Omit<MobileSyncEnvelope
 		syncId: envelope.syncId,
 		createdAtMs: envelope.createdAtMs,
 		expiresAtMs: envelope.expiresAtMs,
-		kdf: envelope.kdf,
 		cipher: envelope.cipher,
 	};
 }
@@ -684,6 +659,5 @@ function getCrypto(): Crypto {
 
 function getMobileSyncErrorMessage(code: MobileSyncErrorCode): string {
 	if (code === "expired_payload") return "This mobile trading link has expired.";
-	if (code === "invalid_pairing_code") return "Invalid pairing code.";
 	return "Invalid mobile sync payload.";
 }

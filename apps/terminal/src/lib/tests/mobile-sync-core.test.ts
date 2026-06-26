@@ -9,12 +9,12 @@ import {
 	MOBILE_AGENT_VALIDITY_MS,
 	MOBILE_SYNC_CLOCK_SKEW_MS,
 	MOBILE_SYNC_FRAGMENT_KEY,
+	MOBILE_SYNC_KEY_FRAGMENT_KEY,
 	MOBILE_SYNC_PAYLOAD_TTL_MS,
 	MOBILE_SYNC_ROUTE_PATH,
 	type MobileAgentSyncPlaintext,
 	type MobileSyncEnvelope,
 	MobileSyncError,
-	normalizePairingCode,
 	parseMobileSyncUrl,
 	readAndClearMobileSyncEnvelope,
 	validateMobileAgentSyncPlaintext,
@@ -25,6 +25,9 @@ const APP_ORIGIN = "https://app.hypeterminal.com";
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
 const OTHER_USER_ADDRESS = "0x2222222222222222222222222222222222222222" as const;
 const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
+// A syntactically valid 32-byte base64url key, used to satisfy the `&k=` fragment in URLs whose
+// envelope payload is intentionally malformed.
+const VALID_KEY = "A".repeat(43);
 
 function expectMobileSyncError(error: unknown, code: string) {
 	expect(error).toBeInstanceOf(MobileSyncError);
@@ -32,17 +35,19 @@ function expectMobileSyncError(error: unknown, code: string) {
 }
 
 async function createSyncFixture() {
-	return createMobileAgentSyncUrl({
+	const sync = await createMobileAgentSyncUrl({
 		appOrigin: APP_ORIGIN,
 		env: "Mainnet",
 		userAddress: USER_ADDRESS,
 		agentPrivateKey: AGENT_PRIVATE_KEY,
 		nowMs: NOW_MS,
 	});
+	const { keyBytes } = parseMobileSyncUrl(sync.url);
+	return { ...sync, keyBytes };
 }
 
 describe("mobile sync core", () => {
-	it("creates a fragment-only encrypted QR URL and imports it with the pairing code", async () => {
+	it("creates a fragment-only encrypted QR URL with an embedded key and imports it", async () => {
 		const sync = await createSyncFixture();
 		const url = new URL(sync.url);
 
@@ -50,15 +55,15 @@ describe("mobile sync core", () => {
 		expect(url.pathname).toBe(MOBILE_SYNC_ROUTE_PATH);
 		expect(url.search).toBe("");
 		expect(url.hash.startsWith(`#${MOBILE_SYNC_FRAGMENT_KEY}=`)).toBe(true);
+		expect(url.hash).toContain(`&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=`);
 		expect("userAddress" in sync.envelope).toBe(false);
 		expect(JSON.stringify(sync.envelope)).not.toContain("userAddress");
 		expect(JSON.stringify(sync.envelope).toLowerCase()).not.toContain(USER_ADDRESS.toLowerCase());
 		expect(sync.url).not.toContain(AGENT_PRIVATE_KEY);
 		expect(sync.url.toLowerCase()).not.toContain(USER_ADDRESS.toLowerCase());
-		expect(sync.pairingCode).toMatch(/^[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/);
 		expect(sync.agentName).toBe(createMobileAgentName(sync.agentValidUntilMs));
 
-		const imported = await importMobileAgentSyncUrl(sync.url, sync.pairingCode, {
+		const imported = await importMobileAgentSyncUrl(sync.url, {
 			currentOrigin: APP_ORIGIN,
 			expectedUserAddress: USER_ADDRESS,
 			expectedEnv: "Mainnet",
@@ -92,12 +97,13 @@ describe("mobile sync core", () => {
 			agentValidUntilMs: approvedAgentValidUntilMs,
 			nowMs: linkCreatedAtMs,
 		});
+		const { keyBytes } = parseMobileSyncUrl(sync.url);
 
 		expect(sync.expiresAtMs).toBe(linkCreatedAtMs + MOBILE_SYNC_PAYLOAD_TTL_MS);
 		expect(sync.agentName).toBe(approvedAgentName);
 		expect(sync.agentValidUntilMs).toBe(approvedAgentValidUntilMs);
 
-		const imported = await decryptMobileAgentSyncEnvelope(sync.envelope, sync.pairingCode, {
+		const imported = await decryptMobileAgentSyncEnvelope(sync.envelope, keyBytes, {
 			currentOrigin: APP_ORIGIN,
 			expectedUserAddress: USER_ADDRESS,
 			expectedEnv: "Mainnet",
@@ -111,33 +117,36 @@ describe("mobile sync core", () => {
 		});
 	});
 
-	it("normalizes pairing code input without reducing the required entropy", () => {
-		expect(normalizePairingCode("abcd-1234 ef56 7890")).toBe("ABCD1234EF567890");
-		expect(() => normalizePairingCode("1234-5678")).toThrow(MobileSyncError);
-		expect(() => normalizePairingCode("ZZZZ-ZZZZ-ZZZZ-ZZZZ")).toThrow(MobileSyncError);
-	});
-
 	it("rejects sync payloads in query strings, paths, missing fragments, and unknown fragment keys", async () => {
 		const sync = await createSyncFixture();
-		const encoded = new URL(sync.url).hash.slice(`#${MOBILE_SYNC_FRAGMENT_KEY}=`.length);
+		const hash = new URL(sync.url).hash.slice(1);
+		const params = new URLSearchParams(hash);
+		const encoded = params.get(MOBILE_SYNC_FRAGMENT_KEY) ?? "";
+		const encodedKey = params.get(MOBILE_SYNC_KEY_FRAGMENT_KEY) ?? "";
 
 		expect(() =>
 			parseMobileSyncUrl(`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}?${MOBILE_SYNC_FRAGMENT_KEY}=${encoded}`),
 		).toThrow(MobileSyncError);
 		expect(() => parseMobileSyncUrl(`${APP_ORIGIN}/${MOBILE_SYNC_FRAGMENT_KEY}/${encoded}`)).toThrow(MobileSyncError);
 		expect(() => parseMobileSyncUrl(`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}`)).toThrow(MobileSyncError);
-		expect(() => parseMobileSyncUrl(`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}#other=${encoded}`)).toThrow(
-			MobileSyncError,
-		);
+		expect(() =>
+			parseMobileSyncUrl(
+				`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}#other=${encoded}&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${encodedKey}`,
+			),
+		).toThrow(MobileSyncError);
+		// envelope present but the embedded key missing
+		expect(() =>
+			parseMobileSyncUrl(`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}#${MOBILE_SYNC_FRAGMENT_KEY}=${encoded}`),
+		).toThrow(MobileSyncError);
 	});
 
 	it("cleans the URL before parsing so invalid links are removed from history too", () => {
 		const history = { replaceState: vi.fn() };
 		const location = {
-			href: `${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}?from=qr#${MOBILE_SYNC_FRAGMENT_KEY}=not*base64`,
+			href: `${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}?from=qr#${MOBILE_SYNC_FRAGMENT_KEY}=not*base64&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${VALID_KEY}`,
 			pathname: MOBILE_SYNC_ROUTE_PATH,
 			search: "?from=qr",
-			hash: `#${MOBILE_SYNC_FRAGMENT_KEY}=not*base64`,
+			hash: `#${MOBILE_SYNC_FRAGMENT_KEY}=not*base64&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${VALID_KEY}`,
 		};
 
 		expect(() => readAndClearMobileSyncEnvelope(location, history)).toThrow(MobileSyncError);
@@ -147,7 +156,9 @@ describe("mobile sync core", () => {
 
 	it("rejects malformed payload encoding", () => {
 		expect(() =>
-			parseMobileSyncUrl(`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}#${MOBILE_SYNC_FRAGMENT_KEY}=not*base64`),
+			parseMobileSyncUrl(
+				`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}#${MOBILE_SYNC_FRAGMENT_KEY}=not*base64&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${VALID_KEY}`,
+			),
 		).toThrow(MobileSyncError);
 	});
 
@@ -155,7 +166,7 @@ describe("mobile sync core", () => {
 		const sync = await createSyncFixture();
 
 		await expect(
-			decryptMobileAgentSyncEnvelope(sync.envelope, sync.pairingCode, {
+			decryptMobileAgentSyncEnvelope(sync.envelope, sync.keyBytes, {
 				currentOrigin: APP_ORIGIN,
 				nowMs: NOW_MS + MOBILE_SYNC_PAYLOAD_TTL_MS + MOBILE_SYNC_CLOCK_SKEW_MS + 1,
 			}),
@@ -165,11 +176,12 @@ describe("mobile sync core", () => {
 		});
 	});
 
-	it("rejects a wrong pairing code without exposing which validation branch failed", async () => {
+	it("rejects a wrong decryption key without exposing which validation branch failed", async () => {
 		const sync = await createSyncFixture();
+		const wrongKey = new Uint8Array(32).fill(7);
 
 		await expect(
-			decryptMobileAgentSyncEnvelope(sync.envelope, "0000-0000-0000-0000", {
+			decryptMobileAgentSyncEnvelope(sync.envelope, wrongKey, {
 				currentOrigin: APP_ORIGIN,
 				nowMs: NOW_MS,
 			}),
@@ -184,7 +196,7 @@ describe("mobile sync core", () => {
 		const sync = await createSyncFixture();
 
 		await expect(
-			decryptMobileAgentSyncEnvelope(sync.envelope, sync.pairingCode, {
+			decryptMobileAgentSyncEnvelope(sync.envelope, sync.keyBytes, {
 				currentOrigin: APP_ORIGIN,
 				expectedUserAddress: OTHER_USER_ADDRESS,
 				nowMs: NOW_MS,
@@ -195,7 +207,7 @@ describe("mobile sync core", () => {
 		});
 
 		await expect(
-			decryptMobileAgentSyncEnvelope(sync.envelope, sync.pairingCode, {
+			decryptMobileAgentSyncEnvelope(sync.envelope, sync.keyBytes, {
 				currentOrigin: APP_ORIGIN,
 				expectedEnv: "Testnet",
 				nowMs: NOW_MS,
@@ -206,7 +218,7 @@ describe("mobile sync core", () => {
 		});
 
 		await expect(
-			decryptMobileAgentSyncEnvelope(sync.envelope, sync.pairingCode, {
+			decryptMobileAgentSyncEnvelope(sync.envelope, sync.keyBytes, {
 				currentOrigin: "https://evil.example",
 				nowMs: NOW_MS,
 			}),
@@ -255,7 +267,7 @@ describe("mobile sync core", () => {
 
 		expect(() =>
 			parseMobileSyncUrl(
-				`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}#${MOBILE_SYNC_FRAGMENT_KEY}=${btoa(JSON.stringify({ ...sync.envelope, cipher: { ...sync.envelope.cipher, iv: "short" } }))}`,
+				`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}#${MOBILE_SYNC_FRAGMENT_KEY}=${btoa(JSON.stringify({ ...sync.envelope, cipher: { ...sync.envelope.cipher, iv: "short" } }))}&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${VALID_KEY}`,
 			),
 		).toThrow(MobileSyncError);
 	});

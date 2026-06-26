@@ -439,16 +439,16 @@ msgid "Chart"
 msgstr "图表"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard does not contain a pairing code."
-msgstr "剪贴板中没有配对码。"
+#~ msgid "Clipboard does not contain a pairing code."
+#~ msgstr "剪贴板中没有配对码。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
-msgstr "无法从剪贴板粘贴。请从键盘菜单粘贴或手动输入配对码。"
+#~ msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
+#~ msgstr "无法从剪贴板粘贴。请从键盘菜单粘贴或手动输入配对码。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
-msgstr "剪贴板粘贴被阻止。请从键盘菜单粘贴或手动输入配对码。"
+#~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
+#~ msgstr "剪贴板粘贴被阻止。请从键盘菜单粘贴或手动输入配对码。"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
@@ -654,7 +654,6 @@ msgid "Continue"
 msgstr "继续"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Copied"
 msgstr "已复制"
 
@@ -675,8 +674,8 @@ msgid "Copy Address"
 msgstr "复制地址"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Copy code"
-msgstr "复制代码"
+#~ msgid "Copy code"
+#~ msgstr "复制代码"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Copy link"
@@ -958,12 +957,12 @@ msgid "Enter size"
 msgstr "输入数量"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the 16-character pairing code."
-msgstr "请输入 16 位配对码。"
+#~ msgid "Enter the 16-character pairing code."
+#~ msgstr "请输入 16 位配对码。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the desktop code"
-msgstr "输入桌面端代码"
+#~ msgid "Enter the desktop code"
+#~ msgstr "输入桌面端代码"
 
 #: src/lib/errors/definitions/tpsl.ts
 msgid "Enter TP or SL price"
@@ -1948,8 +1947,12 @@ msgid "Open terminal"
 msgstr "打开终端"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Open the phone link, then enter the pairing code shown on desktop."
-msgstr "打开手机链接，然后输入桌面端显示的配对码。"
+msgid "Open the phone link and connect the same wallet you use on desktop to import."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "Open the phone link, then enter the pairing code shown on desktop."
+#~ msgstr "打开手机链接，然后输入桌面端显示的配对码。"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open wallet"
@@ -2062,16 +2065,16 @@ msgstr "更改后页面将重新加载"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code"
-msgstr "配对码"
+#~ msgid "Pairing code"
+#~ msgstr "配对码"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code does not match this link."
-msgstr "配对码与此链接不匹配。"
+#~ msgid "Pairing code does not match this link."
+#~ msgstr "配对码与此链接不匹配。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Paste code"
-msgstr "粘贴配对码"
+#~ msgid "Paste code"
+#~ msgstr "粘贴配对码"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Paste link from desktop"
@@ -2307,8 +2310,8 @@ msgid "Rate"
 msgstr "费率"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Ready"
-msgstr "就绪"
+#~ msgid "Ready"
+#~ msgstr "就绪"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -2414,6 +2417,7 @@ msgstr "运行时长（{TWAP_MINUTES_MIN}m - {0}h）"
 msgid "Runtime"
 msgstr "运行时长"
 
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "已保存的手机链接无效。请重新粘贴链接。"
@@ -3065,8 +3069,12 @@ msgid "This mobile link expired."
 msgstr "此手机链接已过期。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This phone link is not approved on Hyperliquid."
-msgstr "此手机链接未在 Hyperliquid 上获得授权。"
+msgid "This mobile link is damaged or incomplete. Scan or paste it again."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "This phone link is not approved on Hyperliquid."
+#~ msgstr "此手机链接未在 Hyperliquid 上获得授权。"
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"

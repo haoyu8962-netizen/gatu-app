@@ -439,16 +439,16 @@ msgid "Chart"
 msgstr "الرسم البياني"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard does not contain a pairing code."
-msgstr "لا تحتوي الحافظة على رمز اقتران."
+#~ msgid "Clipboard does not contain a pairing code."
+#~ msgstr "لا تحتوي الحافظة على رمز اقتران."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
-msgstr "اللصق من الحافظة غير متاح. الصق من قائمة لوحة المفاتيح أو أدخل الرمز يدويًا."
+#~ msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
+#~ msgstr "اللصق من الحافظة غير متاح. الصق من قائمة لوحة المفاتيح أو أدخل الرمز يدويًا."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
-msgstr "تم حظر اللصق من الحافظة. الصق من قائمة لوحة المفاتيح أو أدخل الرمز يدويًا."
+#~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
+#~ msgstr "تم حظر اللصق من الحافظة. الصق من قائمة لوحة المفاتيح أو أدخل الرمز يدويًا."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
@@ -654,7 +654,6 @@ msgid "Continue"
 msgstr "متابعة"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Copied"
 msgstr "تم النسخ"
 
@@ -675,8 +674,8 @@ msgid "Copy Address"
 msgstr "نسخ العنوان"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Copy code"
-msgstr "نسخ الرمز"
+#~ msgid "Copy code"
+#~ msgstr "نسخ الرمز"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Copy link"
@@ -958,12 +957,12 @@ msgid "Enter size"
 msgstr "أدخل الحجم"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the 16-character pairing code."
-msgstr "أدخل رمز الاقتران المكوّن من 16 حرفًا."
+#~ msgid "Enter the 16-character pairing code."
+#~ msgstr "أدخل رمز الاقتران المكوّن من 16 حرفًا."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the desktop code"
-msgstr "أدخل رمز سطح المكتب"
+#~ msgid "Enter the desktop code"
+#~ msgstr "أدخل رمز سطح المكتب"
 
 #: src/lib/errors/definitions/tpsl.ts
 msgid "Enter TP or SL price"
@@ -1948,8 +1947,12 @@ msgid "Open terminal"
 msgstr "فتح الطرفية"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Open the phone link, then enter the pairing code shown on desktop."
-msgstr "افتح رابط الهاتف، ثم أدخل رمز الاقتران الظاهر على سطح المكتب."
+msgid "Open the phone link and connect the same wallet you use on desktop to import."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "Open the phone link, then enter the pairing code shown on desktop."
+#~ msgstr "افتح رابط الهاتف، ثم أدخل رمز الاقتران الظاهر على سطح المكتب."
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open wallet"
@@ -2062,16 +2065,16 @@ msgstr "تُعاد تحميل الصفحة عند التغيير"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code"
-msgstr "رمز الاقتران"
+#~ msgid "Pairing code"
+#~ msgstr "رمز الاقتران"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code does not match this link."
-msgstr "رمز الاقتران لا يطابق هذا الرابط."
+#~ msgid "Pairing code does not match this link."
+#~ msgstr "رمز الاقتران لا يطابق هذا الرابط."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Paste code"
-msgstr "لصق الرمز"
+#~ msgid "Paste code"
+#~ msgstr "لصق الرمز"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Paste link from desktop"
@@ -2307,8 +2310,8 @@ msgid "Rate"
 msgstr "المعدل"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Ready"
-msgstr "جاهز"
+#~ msgid "Ready"
+#~ msgstr "جاهز"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -2414,6 +2417,7 @@ msgstr "مدة التشغيل ({TWAP_MINUTES_MIN}m - {0}h)"
 msgid "Runtime"
 msgstr "مدة التشغيل"
 
+#: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "كان رابط الهاتف المحفوظ غير صالح. الصق الرابط مجدداً."
@@ -3065,8 +3069,12 @@ msgid "This mobile link expired."
 msgstr "انتهت صلاحية رابط الجوال هذا."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This phone link is not approved on Hyperliquid."
-msgstr "رابط الهاتف هذا غير معتمد على Hyperliquid."
+msgid "This mobile link is damaged or incomplete. Scan or paste it again."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "This phone link is not approved on Hyperliquid."
+#~ msgstr "رابط الهاتف هذا غير معتمد على Hyperliquid."
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
