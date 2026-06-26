@@ -1,6 +1,6 @@
 import { Button, Dropdown, type DropdownItem } from "@gatu/ui";
 import { ArrowsClockwiseIcon, ArrowsLeftRightIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { UI_TEXT } from "@/config/ui-text";
 import { getBaseQuoteFromPairName } from "@/domain/market";
@@ -8,8 +8,15 @@ import { cn } from "@/lib/cn";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
-import { getPriceGroupingKey, getPriceGroupingOptions, processLevels } from "@/lib/trade/orderbook";
+import {
+	type BookLevel,
+	getPriceGroupingKey,
+	getPriceGroupingOptions,
+	type L2BookPriceGroupOption,
+	processLevels,
+} from "@/lib/trade/orderbook";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
+import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookRow } from "../orderbook/orderbook-row";
 import { TradesPanel } from "../orderbook/trades-panel";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
@@ -112,6 +119,10 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 		}
 		return (spread / mid) * 100;
 	}, [spread, mid]);
+	const spreadText =
+		typeof spread === "number" && Number.isFinite(spread) && typeof spreadPct === "number" && Number.isFinite(spreadPct)
+			? `${formatNumber(spread, 2)} (${formatNumber(spreadPct, 3)}%)`
+			: FALLBACK_VALUE_PLACEHOLDER;
 
 	const { baseToken, quoteToken } = useMemo(() => {
 		if (!selectedMarket) return { baseToken: "", quoteToken: "" };
@@ -177,123 +188,42 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 			</div>
 
 			{view === "book" ? (
-				<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-					<div
-						className={cn(
-							"shrink-0 grid uppercase tracking-wider text-fg-muted border-b border-stroke-weak/40",
-							compact ? "grid-cols-2 gap-1 px-1.5 py-1.5 text-2xs" : "grid-cols-3 gap-2 px-3 py-2 text-xs",
-						)}
-					>
-						<div>{ORDERBOOK_TEXT.HEADER_PRICE}</div>
-						<div className="text-right">{ORDERBOOK_TEXT.HEADER_SIZE}</div>
-						{!compact && <div className="text-right">{ORDERBOOK_TEXT.HEADER_TOTAL}</div>}
-					</div>
-
-					<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-						{bookStatus !== "error" && asks.length > 0 ? (
-							<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-px py-1 overflow-hidden">
-								{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
-									(key) => (
-										<OrderbookPlaceholderRow key={`ask-${key}`} />
-									),
-								)}
-								{asks
-									.slice(0, askLevelCount)
-									.reverse()
-									.map((level, index) => (
-										<OrderbookRow
-											key={`ask-${level.price}-${index}`}
-											level={level}
-											side="ask"
-											maxTotal={maxTotal}
-											priceDecimals={priceDecimals}
-											showInQuote={showOrderbookInQuote}
-											szDecimals={szDecimals}
-											compact={compact}
-										/>
-									))}
-							</div>
-						) : (
-							<div className="flex-1 flex items-center justify-center">
-								{bookStatus === "error" ? (
-									<div className="text-sm text-error">{ORDERBOOK_TEXT.FAILED}</div>
-								) : (
-									<div className="flex flex-col items-center gap-2 text-fg-muted">
-										<ArrowsClockwiseIcon className="size-5 animate-spin" />
-										<span className="text-sm">{ORDERBOOK_TEXT.WAITING}</span>
-									</div>
-								)}
-							</div>
-						)}
-
-						<div
-							className={cn(
-								"shrink-0 flex items-center justify-center border-y border-stroke-weak/40 bg-surface",
-								compact ? "py-1.5 px-2 gap-1.5" : "py-2 px-3 gap-3",
-							)}
-						>
-							<span className={cn("font-bold tabular-nums text-warning", compact ? "text-sm" : "text-xl")}>
-								{typeof mid === "number" && Number.isFinite(mid) ? formatNumber(mid, 2) : FALLBACK_VALUE_PLACEHOLDER}
-							</span>
-							<MidTrendIcon direction={midDirection} className={compact ? "size-4" : "size-5"} />
-						</div>
-
-						{bookStatus !== "error" && bids.length > 0 ? (
-							<div ref={bidLadderRef} className="flex-1 min-h-0 flex flex-col gap-px py-1 overflow-hidden">
-								{bids.slice(0, bidLevelCount).map((level, index) => (
-									<OrderbookRow
-										key={`bid-${level.price}-${index}`}
-										level={level}
-										side="bid"
-										maxTotal={maxTotal}
-										priceDecimals={priceDecimals}
-										showInQuote={showOrderbookInQuote}
-										szDecimals={szDecimals}
-										compact={compact}
-									/>
-								))}
-								{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - Math.min(bids.length, bidLevelCount))).map(
-									(key) => (
-										<OrderbookPlaceholderRow key={`bid-${key}`} />
-									),
-								)}
-							</div>
-						) : null}
-					</div>
-
-					<div
-						className={cn(
-							"shrink-0 border-t border-stroke-weak/40 flex items-center justify-between text-fg-muted",
-							compact ? "px-2 py-1.5 text-2xs" : "px-3 py-2 text-xs",
-						)}
-					>
-						{compact ? (
-							<Dropdown
-								size="sm"
-								hideCaret
-								align="start"
-								trigger={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
-								triggerClassName="font-mono text-2xs px-1.5"
-								items={priceGroupingOptions.map(
-									(option): DropdownItem => ({
-										label: option.label,
-										onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
-									}),
-								)}
-							/>
-						) : (
-							<span>{ORDERBOOK_TEXT.SPREAD_LABEL}</span>
-						)}
-						<span className="tabular-nums text-warning">
-							{typeof spread === "number" &&
-							Number.isFinite(spread) &&
-							typeof spreadPct === "number" &&
-							Number.isFinite(spreadPct)
-								? `${formatNumber(spread, 2)} (${formatNumber(spreadPct, 3)}%)`
-								: FALLBACK_VALUE_PLACEHOLDER}
-						</span>
-					</div>
-				</div>
+				compact ? (
+					<CompactOrderbook
+						asks={asks}
+						bids={bids}
+						askLevelCount={askLevelCount}
+						bidLevelCount={bidLevelCount}
+						askLadderRef={askLadderRef}
+						bidLadderRef={bidLadderRef}
+						bookStatus={bookStatus}
+						maxTotal={maxTotal}
+						priceDecimals={priceDecimals}
+						showOrderbookInQuote={showOrderbookInQuote}
+						szDecimals={szDecimals}
+						mid={mid}
+						midDirection={midDirection}
+						spreadText={spreadText}
+						selectedOptionLabel={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
+						priceGroupingOptions={priceGroupingOptions}
+						setSelectedOptionKey={setSelectedOptionKey}
+					/>
+				) : (
+					<SplitOrderbook
+						asks={asks}
+						bids={bids}
+						askLevelCount={askLevelCount}
+						bidLevelCount={bidLevelCount}
+						askLadderRef={askLadderRef}
+						bidLadderRef={bidLadderRef}
+						bookStatus={bookStatus}
+						maxTotal={maxTotal}
+						priceDecimals={priceDecimals}
+						showOrderbookInQuote={showOrderbookInQuote}
+						szDecimals={szDecimals}
+						spreadText={spreadText}
+					/>
+				)
 			) : (
 				<div className="flex-1 min-h-0 flex flex-col">
 					<TradesPanel key={name} compact={compact} />
@@ -301,6 +231,290 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 			)}
 
 			{!inTabLayout && <MobileBottomNavSpacer />}
+		</div>
+	);
+}
+
+interface OrderbookLayoutProps {
+	asks: BookLevel[];
+	bids: BookLevel[];
+	askLevelCount: number;
+	bidLevelCount: number;
+	askLadderRef: RefObject<HTMLDivElement | null>;
+	bidLadderRef: RefObject<HTMLDivElement | null>;
+	bookStatus: string;
+	maxTotal: number;
+	priceDecimals: number;
+	showOrderbookInQuote: boolean;
+	szDecimals: number;
+}
+
+interface CompactOrderbookProps extends OrderbookLayoutProps {
+	mid: number | undefined;
+	midDirection: "up" | "down" | "flat";
+	spreadText: string;
+	selectedOptionLabel: string;
+	priceGroupingOptions: L2BookPriceGroupOption[];
+	setSelectedOptionKey: (key: string) => void;
+}
+
+function CompactOrderbook({
+	asks,
+	bids,
+	askLevelCount,
+	bidLevelCount,
+	askLadderRef,
+	bidLadderRef,
+	bookStatus,
+	maxTotal,
+	priceDecimals,
+	showOrderbookInQuote,
+	szDecimals,
+	mid,
+	midDirection,
+	spreadText,
+	selectedOptionLabel,
+	priceGroupingOptions,
+	setSelectedOptionKey,
+}: CompactOrderbookProps) {
+	return (
+		<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+			<div className="shrink-0 grid uppercase tracking-wider text-fg-muted border-b border-stroke-weak/40 grid-cols-2 gap-1 px-1.5 py-1.5 text-2xs">
+				<div>{ORDERBOOK_TEXT.HEADER_PRICE}</div>
+				<div className="text-right">{ORDERBOOK_TEXT.HEADER_SIZE}</div>
+			</div>
+
+			<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+				{bookStatus !== "error" && asks.length > 0 ? (
+					<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-px py-1 overflow-hidden">
+						{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
+							(key) => (
+								<OrderbookPlaceholderRow key={`ask-${key}`} />
+							),
+						)}
+						{asks
+							.slice(0, askLevelCount)
+							.reverse()
+							.map((level, index) => (
+								<OrderbookRow
+									key={`ask-${level.price}-${index}`}
+									level={level}
+									side="ask"
+									maxTotal={maxTotal}
+									priceDecimals={priceDecimals}
+									showInQuote={showOrderbookInQuote}
+									szDecimals={szDecimals}
+									compact
+								/>
+							))}
+					</div>
+				) : (
+					<OrderbookStatus bookStatus={bookStatus} />
+				)}
+
+				<div className="shrink-0 flex items-center justify-center border-y border-stroke-weak/40 bg-surface py-1.5 px-2 gap-1.5">
+					<span className="font-bold tabular-nums text-warning text-sm">
+						{typeof mid === "number" && Number.isFinite(mid) ? formatNumber(mid, 2) : FALLBACK_VALUE_PLACEHOLDER}
+					</span>
+					<MidTrendIcon direction={midDirection} className="size-4" />
+				</div>
+
+				{bookStatus !== "error" && bids.length > 0 ? (
+					<div ref={bidLadderRef} className="flex-1 min-h-0 flex flex-col gap-px py-1 overflow-hidden">
+						{bids.slice(0, bidLevelCount).map((level, index) => (
+							<OrderbookRow
+								key={`bid-${level.price}-${index}`}
+								level={level}
+								side="bid"
+								maxTotal={maxTotal}
+								priceDecimals={priceDecimals}
+								showInQuote={showOrderbookInQuote}
+								szDecimals={szDecimals}
+								compact
+							/>
+						))}
+						{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - Math.min(bids.length, bidLevelCount))).map(
+							(key) => (
+								<OrderbookPlaceholderRow key={`bid-${key}`} />
+							),
+						)}
+					</div>
+				) : null}
+			</div>
+
+			<div className="shrink-0 border-t border-stroke-weak/40 flex items-center justify-between text-fg-muted px-2 py-1.5 text-2xs">
+				<Dropdown
+					size="sm"
+					hideCaret
+					align="start"
+					trigger={selectedOptionLabel}
+					triggerClassName="font-mono text-2xs px-1.5"
+					items={priceGroupingOptions.map(
+						(option): DropdownItem => ({
+							label: option.label,
+							onSelect: () => setSelectedOptionKey(getPriceGroupingKey(option)),
+						}),
+					)}
+				/>
+				<span className="tabular-nums text-warning">{spreadText}</span>
+			</div>
+		</div>
+	);
+}
+
+interface SplitOrderbookProps extends OrderbookLayoutProps {
+	spreadText: string;
+}
+
+function SplitOrderbook({
+	asks,
+	bids,
+	askLevelCount,
+	bidLevelCount,
+	askLadderRef,
+	bidLadderRef,
+	bookStatus,
+	maxTotal,
+	priceDecimals,
+	showOrderbookInQuote,
+	szDecimals,
+	spreadText,
+}: SplitOrderbookProps) {
+	const hasBook = bookStatus !== "error" && asks.length > 0 && bids.length > 0;
+
+	return (
+		<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+			<div className="shrink-0 border-b border-stroke-weak/40 bg-background">
+				<div className="flex items-center justify-between gap-2 px-3 py-1.5 text-2xs text-fg-muted">
+					<span>{ORDERBOOK_TEXT.SPREAD_LABEL}</span>
+					<span className="tabular-nums text-warning">{spreadText}</span>
+				</div>
+				<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px px-2 pb-1.5 text-2xs uppercase tracking-wider text-fg-muted">
+					<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1">
+						<div>{ORDERBOOK_TEXT.HEADER_TOTAL}</div>
+						<div className="text-right">{ORDERBOOK_TEXT.HEADER_PRICE}</div>
+					</div>
+					<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1">
+						<div>{ORDERBOOK_TEXT.HEADER_PRICE}</div>
+						<div className="text-right">{ORDERBOOK_TEXT.HEADER_TOTAL}</div>
+					</div>
+				</div>
+			</div>
+
+			{hasBook ? (
+				<div className="grid flex-1 min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px overflow-hidden">
+					<div ref={bidLadderRef} className="min-h-0 overflow-hidden py-1">
+						{bids.slice(0, bidLevelCount).map((level, index) => (
+							<SplitOrderbookRow
+								key={`bid-${level.price}-${index}`}
+								level={level}
+								side="bid"
+								maxTotal={maxTotal}
+								priceDecimals={priceDecimals}
+								showInQuote={showOrderbookInQuote}
+								szDecimals={szDecimals}
+							/>
+						))}
+						{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - Math.min(bids.length, bidLevelCount))).map(
+							(key) => (
+								<OrderbookPlaceholderRow key={`bid-${key}`} />
+							),
+						)}
+					</div>
+
+					<div ref={askLadderRef} className="min-h-0 overflow-hidden py-1">
+						{asks.slice(0, askLevelCount).map((level, index) => (
+							<SplitOrderbookRow
+								key={`ask-${level.price}-${index}`}
+								level={level}
+								side="ask"
+								maxTotal={maxTotal}
+								priceDecimals={priceDecimals}
+								showInQuote={showOrderbookInQuote}
+								szDecimals={szDecimals}
+							/>
+						))}
+						{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
+							(key) => (
+								<OrderbookPlaceholderRow key={`ask-${key}`} />
+							),
+						)}
+					</div>
+				</div>
+			) : (
+				<OrderbookStatus bookStatus={bookStatus} />
+			)}
+		</div>
+	);
+}
+
+function OrderbookStatus({ bookStatus }: { bookStatus: string }) {
+	return (
+		<div className="flex-1 flex items-center justify-center">
+			{bookStatus === "error" ? (
+				<div className="text-sm text-error">{ORDERBOOK_TEXT.FAILED}</div>
+			) : (
+				<div className="flex flex-col items-center gap-2 text-fg-muted">
+					<ArrowsClockwiseIcon className="size-5 animate-spin" />
+					<span className="text-sm">{ORDERBOOK_TEXT.WAITING}</span>
+				</div>
+			)}
+		</div>
+	);
+}
+
+interface SplitOrderbookRowProps {
+	level: BookLevel;
+	side: "ask" | "bid";
+	maxTotal: number;
+	priceDecimals: number;
+	showInQuote: boolean;
+	szDecimals: number;
+}
+
+function SplitOrderbookRow({ level, side, maxTotal, priceDecimals, showInQuote, szDecimals }: SplitOrderbookRowProps) {
+	const { setSelectedPrice } = useOrderbookActions();
+	const isAsk = side === "ask";
+	const depthPct = maxTotal > 0 ? (level.total / maxTotal) * 100 : 0;
+	const totalValue = showInQuote ? level.total * level.price : level.total;
+	const totalDecimals = showInQuote ? 2 : szDecimals;
+	const price = (
+		<button
+			type="button"
+			onClick={() => setSelectedPrice(level.price)}
+			className={cn(
+				"font-medium tabular-nums",
+				isAsk ? "text-left text-error hover:text-error" : "text-right text-success hover:text-success",
+			)}
+		>
+			{formatNumber(level.price, priceDecimals)}
+		</button>
+	);
+	const total = (
+		<div className={cn("truncate tabular-nums text-fg group-hover:text-fg", isAsk ? "text-right" : "text-left")}>
+			{formatNumber(totalValue, { decimals: totalDecimals, compact: true })}
+		</div>
+	);
+
+	return (
+		<div className="relative h-5 shrink-0 hover:bg-fill-hover cursor-pointer group overflow-hidden">
+			<div
+				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
+				style={{ width: `${depthPct}%`, [isAsk ? "left" : "right"]: 0, [isAsk ? "right" : "left"]: "auto" }}
+			/>
+			<div className="relative z-10 grid h-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1 px-2 py-0.5 text-2xs">
+				{isAsk ? (
+					<>
+						{price}
+						{total}
+					</>
+				) : (
+					<>
+						{total}
+						{price}
+					</>
+				)}
+			</div>
 		</div>
 	);
 }
