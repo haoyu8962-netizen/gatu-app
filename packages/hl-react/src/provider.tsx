@@ -15,6 +15,7 @@ import { ProviderNotFoundError } from "./errors";
 import { registerChaosHarness } from "./internal/websocket/chaos";
 import { registerDebugSnapshot, setDebugStore } from "./internal/websocket/debug";
 import { registerHealthReport } from "./internal/websocket/health";
+import { resolveSession, type SessionMode, useActiveAgentOwner } from "./signing/agent-session";
 import type { BuilderConfig, HyperliquidEnv } from "./signing/types";
 import { createHyperliquidStore, type HyperliquidStore, type HyperliquidStoreState } from "./store";
 
@@ -28,6 +29,7 @@ export interface HyperliquidContextValue {
 	builderConfig: BuilderConfig;
 	agentName: string;
 	clientKey: string;
+	sessionMode: SessionMode;
 }
 
 export const HyperliquidContext = createContext<HyperliquidContextValue | null>(null);
@@ -96,7 +98,8 @@ export function HyperliquidProvider({
 		}
 	}
 
-	const clientKey = userAddress ?? "disconnected";
+	const activeAgentOwner = useActiveAgentOwner();
+	const { clientKey, sessionMode } = resolveSession(userAddress, activeAgentOwner, env);
 
 	const value = {
 		info: getInfoClient(isTestnet),
@@ -106,6 +109,7 @@ export function HyperliquidProvider({
 		builderConfig,
 		agentName,
 		clientKey,
+		sessionMode,
 	};
 
 	return (

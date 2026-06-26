@@ -1,7 +1,7 @@
 import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent, WebData3WsEvent } from "@nktkas/hyperliquid";
 import { useMemo } from "react";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { useSubscription } from "@/lib/hyperliquid";
+import { getAccountLedgerRefreshKey, useSubscription } from "@/lib/hyperliquid";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
 type RawSpotState = SpotStateWsEvent["spotState"] & {
@@ -45,17 +45,24 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	const { address, isConnected } = useWalletSession();
 	const enabled = isConnected && !!address;
 
+	const { data: ledgerEvent } = useSubscription("userNonFundingLedgerUpdates", { user: address ?? "" }, { enabled });
+	const ledgerRefreshKey = getAccountLedgerRefreshKey(ledgerEvent);
+
 	const { data: clearinghouseEvent, status: perpStatus } = useSubscription(
 		"allDexsClearinghouseState",
 		{ user: address ?? "" },
-		{ enabled },
+		{ enabled, refreshKey: ledgerRefreshKey },
 	);
 
-	const { data: spotEvent, status: spotStatus } = useSubscription("spotState", { user: address ?? "0x0" }, { enabled });
+	const { data: spotEvent, status: spotStatus } = useSubscription(
+		"spotState",
+		{ user: address ?? "0x0" },
+		{ enabled, refreshKey: ledgerRefreshKey },
+	);
 	const { data: webData3Event, status: webData3Status } = useSubscription(
 		"webData3",
 		{ user: address ?? "0x0" },
-		{ enabled },
+		{ enabled, refreshKey: ledgerRefreshKey },
 	);
 
 	const spotState = spotEvent?.spotState as RawSpotState | undefined;

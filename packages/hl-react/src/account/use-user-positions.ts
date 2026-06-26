@@ -1,6 +1,7 @@
 import type { AllDexsClearinghouseStateWsEvent } from "@nktkas/hyperliquid";
 import { useSubscription } from "../hooks/useSubscription";
 import { useHyperliquid } from "../provider";
+import { getAccountLedgerRefreshKey } from "./ledger-refresh";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
 type RawPosition = RawClearinghouseState["assetPositions"][number];
@@ -86,7 +87,13 @@ export function useUserPositions(): UserPositions {
 	const address = clientKey === "disconnected" ? undefined : (clientKey as `0x${string}`);
 	const enabled = !!address;
 
-	const { data, status } = useSubscription("allDexsClearinghouseState", { user: address ?? "" }, { enabled });
+	const { data: ledgerEvent } = useSubscription("userNonFundingLedgerUpdates", { user: address ?? "" }, { enabled });
+	const ledgerRefreshKey = getAccountLedgerRefreshKey(ledgerEvent);
+	const { data, status } = useSubscription(
+		"allDexsClearinghouseState",
+		{ user: address ?? "" },
+		{ enabled, refreshKey: ledgerRefreshKey },
+	);
 
 	const isLoading = enabled && (status === "subscribing" || status === "idle");
 	const hasError = status === "error";

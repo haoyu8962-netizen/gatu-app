@@ -55,6 +55,16 @@ export type { HyperliquidContextValue, HyperliquidProviderProps } from "./provid
 export { HyperliquidProvider, useConfig, useHyperliquid, useHyperliquidOptional } from "./provider";
 export { createKey, infoKeys, serializeKey, subscriptionKeys } from "./query/keys";
 export {
+	type AgentOwner,
+	clearActiveAgentOwner,
+	getActiveAgentOwner,
+	type ResolvedSession,
+	resolveSession,
+	type SessionMode,
+	setActiveAgentOwner,
+	useActiveAgentOwner,
+} from "./signing/agent-session";
+export {
 	readAgentFromStorage,
 	removeAgentFromStorage,
 	useAgentWalletActions,
