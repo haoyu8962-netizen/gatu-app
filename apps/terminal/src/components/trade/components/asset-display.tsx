@@ -33,15 +33,28 @@ function resolveName(
 	return coin;
 }
 
-function resolveIconUrl(
+function getBuilderBaseIconUrl(coin: string): string | undefined {
+	if (!coin.includes(BUILDER_DEX_SEPARATOR)) return undefined;
+	const base = coin.split(BUILDER_DEX_SEPARATOR).pop();
+	if (!base || base === coin) return undefined;
+	return getIconUrlFromMarketName(base, "perp");
+}
+
+function uniqueUrls(urls: (string | undefined)[]): string[] {
+	return Array.from(new Set(urls.filter((url): url is string => !!url)));
+}
+
+function resolveIconUrls(
 	market: UnifiedMarket | undefined,
 	token: SpotToken | undefined,
 	coin: string,
-): string | undefined {
-	if (market?.iconUrl) return market.iconUrl;
-	if (token?.iconUrl) return token.iconUrl;
-	if (coin.includes(BUILDER_DEX_SEPARATOR)) return getIconUrlFromMarketName(coin, "builderPerp");
-	return undefined;
+	iconUrlOverride: string | undefined,
+): string[] {
+	const namespacedBuilderIcon = coin.includes(BUILDER_DEX_SEPARATOR)
+		? getIconUrlFromMarketName(coin, "builderPerp")
+		: undefined;
+	const baseBuilderIcon = getBuilderBaseIconUrl(market?.name ?? coin);
+	return uniqueUrls([iconUrlOverride, market?.iconUrl, token?.iconUrl, namespacedBuilderIcon, baseBuilderIcon]);
 }
 
 function getFallbackText(name: string): string {
@@ -67,11 +80,19 @@ export function AssetDisplay({
 	const showIcon = !hideIcon;
 	const showName = !hideName;
 	const name = resolveName(market, token, coin, variant);
-	const iconUrl = iconUrlOverride ?? resolveIconUrl(market, token, coin);
+	const iconUrls = resolveIconUrls(market, token, coin, iconUrlOverride);
+	const [iconUrl, ...fallbackIconUrls] = iconUrls;
 	const fallbackText = getFallbackText(name);
 
 	const icon = (
-		<Avatar className={cn("size-4", iconClassName)} size="sm" src={iconUrl} alt={name} initials={fallbackText} />
+		<Avatar
+			className={cn("size-4", iconClassName)}
+			size="sm"
+			src={iconUrl}
+			fallbackSrcs={fallbackIconUrls}
+			alt={name}
+			initials={fallbackText}
+		/>
 	);
 
 	if (showIcon && !showName) {

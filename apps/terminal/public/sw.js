@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v5";
 const CHARTING_CACHE = `charting-${CACHE_VERSION}`;
 const FONT_CACHE = `fonts-${CACHE_VERSION}`;
 const ICON_CACHE = `icons-${CACHE_VERSION}`;
@@ -100,7 +100,9 @@ function promiseWithTimeout(promise, ms) {
 }
 
 function isCacheableResponse(response) {
-	return response.ok || response.type === "opaque";
+	if (response.type === "opaque") return true;
+	const contentType = response.headers.get("content-type") ?? "";
+	return response.ok && contentType.toLowerCase().startsWith("image/");
 }
 
 async function evictOldEntries(cache, maxEntries) {
