@@ -1,4 +1,4 @@
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v4";
 const CHARTING_CACHE = `charting-${CACHE_VERSION}`;
 const FONT_CACHE = `fonts-${CACHE_VERSION}`;
 const ICON_CACHE = `icons-${CACHE_VERSION}`;
@@ -68,13 +68,15 @@ async function cacheFirst(request, cacheName) {
 async function staleWhileRevalidate(request, cacheName) {
 	const cache = await caches.open(cacheName);
 	const cached = await cache.match(request);
-	const fetched = fetch(request).then((response) => {
-		if (response.ok) {
-			cache.put(request, response.clone());
-			evictOldEntries(cache, MAX_ICON_ENTRIES);
-		}
-		return response;
-	});
+	const fetched = fetch(request)
+		.then(async (response) => {
+			if (isCacheableResponse(response)) {
+				await cache.put(request, response.clone());
+				await evictOldEntries(cache, MAX_ICON_ENTRIES);
+			}
+			return response;
+		})
+		.catch((error) => cached || Promise.reject(error));
 	return cached || fetched;
 }
 
@@ -95,6 +97,10 @@ function promiseWithTimeout(promise, ms) {
 		promise,
 		new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
 	]);
+}
+
+function isCacheableResponse(response) {
+	return response.ok || response.type === "opaque";
 }
 
 async function evictOldEntries(cache, maxEntries) {
