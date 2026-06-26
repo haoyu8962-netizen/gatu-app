@@ -38,4 +38,8 @@ describe("errors", () => {
 			"Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.",
 		);
 	});
+
+	it("does not label unrelated timeout errors as deposit failures", () => {
+		expect(formatTransferError(new Error("Withdraw confirmation timed out."))).toBe("Withdraw confirmation timed out.");
+	});
 });

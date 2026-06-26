@@ -12,7 +12,7 @@ const ERROR_PATTERNS = [
 	},
 	{ pattern: /not broadcast/i, message: () => t`Transaction was not broadcast. Please retry.` },
 	{
-		pattern: /confirmation timed out|timed out|timeout/i,
+		pattern: /deposit transaction was broadcast but confirmation timed out/i,
 		message: () => t`Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.`,
 	},
 ] as const;
