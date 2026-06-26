@@ -15,7 +15,7 @@ export interface HyperliquidClients {
 }
 
 export function useHyperliquidClients(): HyperliquidClients {
-	const { info, subscription, isTestnet, clientKey } = useHyperliquid();
+	const { info, subscription, isTestnet, clientKey, sessionMode } = useHyperliquid();
 	const { signer, isReady: agentReady } = useAgentWallet();
 	const { data: walletClient } = useWalletClient();
 	const hasUserSession = clientKey !== "disconnected";
@@ -27,7 +27,7 @@ export function useHyperliquidClients(): HyperliquidClients {
 	})();
 
 	const user = (() => {
-		if (!hasUserSession || !walletClient || !address) return null;
+		if (sessionMode !== "wallet" || !walletClient || !address) return null;
 		const wallet = toHyperliquidWallet(walletClient, address);
 		if (!wallet) return null;
 		return createExchangeClient(wallet, isTestnet, `user:${isTestnet}:${address.toLowerCase()}`);

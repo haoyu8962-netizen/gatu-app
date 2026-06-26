@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { Address } from "viem";
+import { type Address, isAddress, zeroAddress } from "viem";
 import type { HyperliquidEnv } from "./types";
 
 /**
@@ -22,7 +22,6 @@ export interface ResolvedSession {
 }
 
 const STORAGE_KEY = "hyperliquid_active_agent_owner";
-const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
 /**
  * Resolve the effective session identity. A connected master wallet (`userAddress`) always wins,
@@ -45,15 +44,18 @@ function normalizeOwner(value: unknown): AgentOwner | null {
 	if (!value || typeof value !== "object") return null;
 	const { env, address } = value as Record<string, unknown>;
 	if (env !== "Mainnet" && env !== "Testnet") return null;
-	if (typeof address !== "string" || !ADDRESS_RE.test(address)) return null;
-	return { env, address: address.toLowerCase() as Address };
+	if (typeof address !== "string" || !isAddress(address)) return null;
+	const normalized = address.toLowerCase() as Address;
+	if (normalized === zeroAddress) return null;
+	return { env, address: normalized };
 }
 
-// Memory is the source of truth; localStorage is a persistence mirror so the session survives a
-// reload. Reading from storage is guarded for SSR/node (returns null), so the module is safe to
-// evaluate on the server.
-let activeOwner: AgentOwner | null = readPersisted();
-const listeners = new Set<() => void>();
+// localStorage is the source of truth, so the active agent-only session survives reloads and stays
+// consistent across tabs. A cache + version counter hands useSyncExternalStore a stable snapshot
+// reference between writes. All storage access is guarded for SSR/node (no window → null read,
+// no-op write), so the module is safe to evaluate and call on the server.
+let cache: { value: AgentOwner | null; version: number } | null = null;
+let version = 0;
 
 function readPersisted(): AgentOwner | null {
 	if (typeof window === "undefined") return null;
@@ -65,45 +67,52 @@ function readPersisted(): AgentOwner | null {
 	}
 }
 
-function persist(owner: AgentOwner | null): void {
+export function getActiveAgentOwner(): AgentOwner | null {
+	if (cache && cache.version === version) return cache.value;
+	const value = readPersisted();
+	cache = { value, version };
+	return value;
+}
+
+function writeOwner(owner: AgentOwner | null): void {
 	if (typeof window === "undefined") return;
 	try {
 		if (owner) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(owner));
 		else window.localStorage.removeItem(STORAGE_KEY);
+		version += 1;
+		cache = null;
+		// Same-tab listeners never receive the native storage event, so dispatch one explicitly
+		// (matches the agent-storage pattern); other tabs receive the native event.
+		window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
 	} catch {
-		// Storage may be unavailable (private mode, quota); in-memory state still works.
+		// Storage may be unavailable (private mode, quota); nothing else to do.
 	}
-}
-
-function emit(): void {
-	for (const listener of listeners) listener();
-}
-
-export function getActiveAgentOwner(): AgentOwner | null {
-	return activeOwner;
 }
 
 export function setActiveAgentOwner(env: HyperliquidEnv, address: Address): void {
 	const next = normalizeOwner({ env, address });
 	if (!next) return;
-	if (activeOwner && activeOwner.env === next.env && activeOwner.address === next.address) return;
-	activeOwner = next;
-	persist(next);
-	emit();
+	const current = getActiveAgentOwner();
+	if (current && current.env === next.env && current.address === next.address) return;
+	writeOwner(next);
 }
 
 export function clearActiveAgentOwner(): void {
-	if (!activeOwner) return;
-	activeOwner = null;
-	persist(null);
-	emit();
+	if (!getActiveAgentOwner()) return;
+	writeOwner(null);
 }
 
 function subscribe(callback: () => void): () => void {
-	listeners.add(callback);
-	return () => {
-		listeners.delete(callback);
-	};
+	if (typeof window === "undefined") return () => {};
+	function handleStorage(event: StorageEvent) {
+		if (event.key === STORAGE_KEY || event.key === null) {
+			version += 1;
+			cache = null;
+			callback();
+		}
+	}
+	window.addEventListener("storage", handleStorage);
+	return () => window.removeEventListener("storage", handleStorage);
 }
 
 export function useActiveAgentOwner(): AgentOwner | null {
