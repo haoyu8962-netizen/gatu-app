@@ -1,5 +1,6 @@
 import { Avatar } from "@gatu/ui";
 import type { ReactNode } from "react";
+import { BUILDER_DEX_SEPARATOR, getIconUrlFromMarketName } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import type { SpotToken, UnifiedMarket } from "@/lib/hyperliquid/markets";
 import { useMarkets } from "@/lib/hyperliquid/markets/use-markets";
@@ -32,8 +33,15 @@ function resolveName(
 	return coin;
 }
 
-function resolveIconUrl(market: UnifiedMarket | undefined, token: SpotToken | undefined): string | undefined {
-	return market?.iconUrl ?? token?.iconUrl;
+function resolveIconUrl(
+	market: UnifiedMarket | undefined,
+	token: SpotToken | undefined,
+	coin: string,
+): string | undefined {
+	if (market?.iconUrl) return market.iconUrl;
+	if (token?.iconUrl) return token.iconUrl;
+	if (coin.includes(BUILDER_DEX_SEPARATOR)) return getIconUrlFromMarketName(coin, "builderPerp");
+	return undefined;
 }
 
 function getFallbackText(name: string): string {
@@ -59,7 +67,7 @@ export function AssetDisplay({
 	const showIcon = !hideIcon;
 	const showName = !hideName;
 	const name = resolveName(market, token, coin, variant);
-	const iconUrl = iconUrlOverride ?? resolveIconUrl(market, token);
+	const iconUrl = iconUrlOverride ?? resolveIconUrl(market, token, coin);
 	const fallbackText = getFallbackText(name);
 
 	const icon = (
