@@ -14,6 +14,7 @@ import { config } from "@/config/wagmi";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
 import { getNetwork } from "@/lib/network";
+import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
 import "@/lib/i18n";
 
 const network = getNetwork();
@@ -89,7 +90,7 @@ function ClientProviders({ children, queryClient }: { children: React.ReactNode;
 					},
 				}}
 			>
-				<WagmiProvider config={config}>
+				<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
 					<I18nProvider i18n={i18n}>
 						<HyperliquidBridge>{children}</HyperliquidBridge>
 					</I18nProvider>

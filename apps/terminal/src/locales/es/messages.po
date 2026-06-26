@@ -825,6 +825,11 @@ msgstr "Depósito fallido"
 msgid "Deposit successful"
 msgstr "Depósito exitoso"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposits and withdrawals are not allowed."
@@ -1820,6 +1825,7 @@ msgid "No order history found."
 msgstr "No se encontró historial de órdenes."
 
 #: src/hooks/trade/use-order-submit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "No response from exchange"
 msgstr "Sin respuesta del exchange"
 
@@ -2517,6 +2523,11 @@ msgstr "Selecciona tokens para intercambiar"
 msgid "selected"
 msgstr "seleccionado"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
+msgstr ""
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
 #~ msgstr "venta"
@@ -3209,6 +3220,15 @@ msgstr "TradingView"
 msgid "Transaction breakdown"
 msgstr "Desglose de la transacción"
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Transaction reverted on Arbitrum"
+msgstr ""
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Transaction was not broadcast. Please retry."
+msgstr ""
+
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
 msgstr "La transacción fue rechazada"
@@ -3295,6 +3315,7 @@ msgstr "Tipo"
 #~ msgstr "No se puede cerrar la posición."
 
 #: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
 msgstr "Error desconocido"
 
@@ -3397,13 +3418,14 @@ msgstr "Esperando operaciones..."
 msgid "Wallet ({0})"
 msgstr "Wallet ({0})"
 
-#: src/hooks/hyperliquid/use-trading-agent.ts
-#~ msgid "Wallet client not ready"
-#~ msgstr "Cliente de billetera no está listo"
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet client not ready"
+msgstr "Cliente de billetera no está listo"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "Billetera no conectada"
 

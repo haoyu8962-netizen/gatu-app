@@ -825,6 +825,11 @@ msgstr "فشل الإيداع"
 msgid "Deposit successful"
 msgstr "تم الإيداع بنجاح"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposits and withdrawals are not allowed."
@@ -1820,6 +1825,7 @@ msgid "No order history found."
 msgstr "لم يُعثر على سجل أوامر."
 
 #: src/hooks/trade/use-order-submit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "No response from exchange"
 msgstr "لا توجد استجابة من المنصة"
 
@@ -2517,6 +2523,11 @@ msgstr "اختر الرموز للمبادلة"
 msgid "selected"
 msgstr "محدد"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
+msgstr ""
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
 #~ msgstr "بيع"
@@ -3209,6 +3220,15 @@ msgstr "TradingView"
 msgid "Transaction breakdown"
 msgstr "تفاصيل المعاملة"
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Transaction reverted on Arbitrum"
+msgstr ""
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Transaction was not broadcast. Please retry."
+msgstr ""
+
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
 msgstr "تم رفض المعاملة"
@@ -3295,6 +3315,7 @@ msgstr "النوع"
 #~ msgstr "تعذر إغلاق المركز."
 
 #: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
 msgstr "خطأ غير معروف"
 
@@ -3397,13 +3418,14 @@ msgstr "في انتظار الصفقات..."
 msgid "Wallet ({0})"
 msgstr "المحفظة ({0})"
 
-#: src/hooks/hyperliquid/use-trading-agent.ts
-#~ msgid "Wallet client not ready"
-#~ msgstr "عميل المحفظة غير جاهز"
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet client not ready"
+msgstr "عميل المحفظة غير جاهز"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "المحفظة غير متصلة"
 

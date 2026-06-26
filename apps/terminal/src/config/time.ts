@@ -17,6 +17,9 @@ export const LAST_MARK_TTL_MS = 60 * 60 * 1_000;
 export const MARKETS_STATS_TTL_MS = 5 * 60 * 1_000;
 
 export const SCRIPT_LOAD_TIMEOUT_MS = 30_000;
+export const DEPOSIT_BROADCAST_TIMEOUT_MS = 30_000;
+export const DEPOSIT_CONFIRMATION_TIMEOUT_MS = 10 * 60 * 1_000;
+export const DEPOSIT_POLL_INTERVAL_MS = 2_000;
 
 export const MS_PER_DAY = 86_400_000;
 export const TAB_RESTORE_THRESHOLD_MS = 30_000;

@@ -130,6 +130,7 @@ export function DepositModal() {
 				icon="error"
 				heading={<Trans>Deposit failed</Trans>}
 				description={formatTransferError(depositError)}
+				txHash={depositHash}
 				onClose={handleClose}
 			>
 				<div className="flex w-full gap-2">

@@ -825,6 +825,11 @@ msgstr "डिपॉज़िट विफल"
 msgid "Deposit successful"
 msgstr "डिपॉज़िट सफल"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposits and withdrawals are not allowed."
@@ -1820,6 +1825,7 @@ msgid "No order history found."
 msgstr "कोई ऑर्डर हिस्ट्री नहीं मिली।"
 
 #: src/hooks/trade/use-order-submit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "No response from exchange"
 msgstr "एक्सचेंज से कोई जवाब नहीं"
 
@@ -2517,6 +2523,11 @@ msgstr "स्वैप करने के लिए टोकन चुने�
 msgid "selected"
 msgstr "चयनित"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
+msgstr ""
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
 #~ msgstr "बेचें"
@@ -3209,6 +3220,15 @@ msgstr "TradingView"
 msgid "Transaction breakdown"
 msgstr "लेन-देन विवरण"
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Transaction reverted on Arbitrum"
+msgstr ""
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Transaction was not broadcast. Please retry."
+msgstr ""
+
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
 msgstr "लेन-देन अस्वीकार कर दिया गया"
@@ -3295,6 +3315,7 @@ msgstr "प्रकार"
 #~ msgstr "पोजीशन बंद करने में असमर्थ।"
 
 #: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
 msgstr "अज्ञात त्रुटि"
 
@@ -3397,13 +3418,14 @@ msgstr "ट्रेड की प्रतीक्षा..."
 msgid "Wallet ({0})"
 msgstr "वॉलेट ({0})"
 
-#: src/hooks/hyperliquid/use-trading-agent.ts
-#~ msgid "Wallet client not ready"
-#~ msgstr "वॉलेट क्लाइंट तैयार नहीं है"
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet client not ready"
+msgstr "वॉलेट क्लाइंट तैयार नहीं है"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "वॉलेट कनेक्ट नहीं है"
 
