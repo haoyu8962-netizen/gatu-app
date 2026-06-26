@@ -51,8 +51,8 @@ export function AccountPanel() {
 	}
 
 	const hasPerpData = isConnected && perpMetrics !== null;
-	const hasWithdrawableData = isConnected;
-	const withdrawableValue = toNumberOrZero(withdrawable);
+	const hasWithdrawableData = isConnected && marginSummary !== null;
+	const withdrawableDisplay = hasWithdrawableData ? formatUSD(withdrawable) : FALLBACK_VALUE_PLACEHOLDER;
 
 	const perpRows: SummaryRow[] = perpMetrics
 		? [
@@ -96,11 +96,7 @@ export function AccountPanel() {
 				<div className="p-2 overflow-y-auto">
 					<p className="text-xs font-medium text-fg mb-1">{t`Account Equity`}</p>
 					<InfoRowGroup className="divide-y-0">
-						<InfoRow
-							label={t`Spot`}
-							value={hasWithdrawableData ? formatUSD(withdrawableValue) : FALLBACK_VALUE_PLACEHOLDER}
-							valueClassName="tabular-nums"
-						/>
+						<InfoRow label={t`Available`} value={withdrawableDisplay} valueClassName="tabular-nums" />
 						<InfoRow
 							label={t`Perps`}
 							value={hasPerpData ? formatUSD(perpMetrics.accountValue) : FALLBACK_VALUE_PLACEHOLDER}
@@ -119,40 +115,39 @@ export function AccountPanel() {
 						</>
 					)}
 
-					{(hasPerpData || hasWithdrawableData) &&
-						(tradeRestricted ? (
-							<p className="mt-4 text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
-						) : (
-							<div className="grid grid-cols-3 gap-1 mt-4">
-								<Button
-									variant="outline"
-									intent="neutral"
-									onClick={() => openDepositModal("withdraw")}
-									aria-label={t`Withdraw`}
-									iconLeft={<UploadSimpleIcon className="size-4" />}
-								>
-									{t`Withdraw`}
-								</Button>
-								<Button
-									variant="outline"
-									intent="neutral"
-									onClick={() => openDepositModal("deposit")}
-									aria-label={t`Deposit`}
-									iconLeft={<DownloadSimpleIcon className="size-4" />}
-								>
-									{t`Deposit`}
-								</Button>
-								<Button
-									variant="outline"
-									intent="neutral"
-									onClick={() => openDepositModal("bridge")}
-									aria-label={t`Bridge`}
-									iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-								>
-									{t`Bridge`}
-								</Button>
-							</div>
-						))}
+					{tradeRestricted ? (
+						<p className="mt-4 text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
+					) : (
+						<div className="grid grid-cols-3 gap-1 mt-4">
+							<Button
+								variant="outline"
+								intent="neutral"
+								onClick={() => openDepositModal("withdraw")}
+								aria-label={t`Withdraw`}
+								iconLeft={<UploadSimpleIcon className="size-4" />}
+							>
+								{t`Withdraw`}
+							</Button>
+							<Button
+								variant="outline"
+								intent="neutral"
+								onClick={() => openDepositModal("deposit")}
+								aria-label={t`Deposit`}
+								iconLeft={<DownloadSimpleIcon className="size-4" />}
+							>
+								{t`Deposit`}
+							</Button>
+							<Button
+								variant="outline"
+								intent="neutral"
+								onClick={() => openDepositModal("bridge")}
+								aria-label={t`Bridge`}
+								iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+							>
+								{t`Bridge`}
+							</Button>
+						</div>
+					)}
 				</div>
 			)}
 		</div>
