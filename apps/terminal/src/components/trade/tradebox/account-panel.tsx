@@ -2,8 +2,7 @@ import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
-import { DEFAULT_QUOTE_TOKEN, FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { getSpotAvailableValue } from "@/domain/trade/balances";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -23,14 +22,8 @@ export function AccountPanel() {
 	const { open: openDepositModal } = useDepositModalActions();
 	const { isConnected } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
-	const {
-		marginSummary,
-		perpSummary,
-		perpPositions,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		crossMaintenanceMarginUsed,
-	} = useDefaultDexBalances();
+	const { marginSummary, perpSummary, perpPositions, withdrawable, crossMaintenanceMarginUsed } =
+		useDefaultDexBalances();
 
 	let perpMetrics = null;
 	if (marginSummary && perpSummary) {
@@ -57,30 +50,9 @@ export function AccountPanel() {
 		};
 	}
 
-	let spotMetrics = null;
-	if (isConnected) {
-		let totalValue = 0;
-		const tokens: Array<{ coin: string; total: number; available: number; usdValue: number }> = [];
-
-		for (const b of spotBalances) {
-			const total = toNumberOrZero(b.total);
-			const entryNtl = toNumberOrZero(b.entryNtl);
-
-			if (total === 0) continue;
-
-			const available = toNumberOrZero(getSpotAvailableValue(b, spotAvailableAfterMaintenance));
-			const usdValue = b.coin === DEFAULT_QUOTE_TOKEN ? total : entryNtl;
-
-			totalValue += usdValue;
-			tokens.push({ coin: b.coin, total, available, usdValue });
-		}
-
-		tokens.sort((a, b) => b.usdValue - a.usdValue);
-		spotMetrics = { totalValue, topTokens: tokens.slice(0, 3) };
-	}
-
 	const hasPerpData = isConnected && perpMetrics !== null;
-	const hasSpotData = isConnected && spotMetrics !== null;
+	const hasWithdrawableData = isConnected;
+	const withdrawableValue = toNumberOrZero(withdrawable);
 
 	const perpRows: SummaryRow[] = perpMetrics
 		? [
@@ -126,7 +98,7 @@ export function AccountPanel() {
 					<InfoRowGroup className="divide-y-0">
 						<InfoRow
 							label={t`Spot`}
-							value={hasSpotData ? formatUSD(spotMetrics.totalValue) : FALLBACK_VALUE_PLACEHOLDER}
+							value={hasWithdrawableData ? formatUSD(withdrawableValue) : FALLBACK_VALUE_PLACEHOLDER}
 							valueClassName="tabular-nums"
 						/>
 						<InfoRow
@@ -147,7 +119,7 @@ export function AccountPanel() {
 						</>
 					)}
 
-					{(hasPerpData || hasSpotData) &&
+					{(hasPerpData || hasWithdrawableData) &&
 						(tradeRestricted ? (
 							<p className="mt-4 text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 						) : (
