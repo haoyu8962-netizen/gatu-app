@@ -39,6 +39,12 @@ describe("errors", () => {
 		);
 	});
 
+	it("formats deposit nonce sync failures", () => {
+		expect(formatTransferError(new Error("wallet nonce may be out of sync with the network"))).toBe(
+			"Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry.",
+		);
+	});
+
 	it("does not label unrelated timeout errors as deposit failures", () => {
 		expect(formatTransferError(new Error("Withdraw confirmation timed out."))).toBe("Withdraw confirmation timed out.");
 	});

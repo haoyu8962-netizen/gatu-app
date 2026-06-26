@@ -828,7 +828,12 @@ msgstr "Depósito exitoso"
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
-msgstr ""
+msgstr "La transacción de depósito se transmitió, pero agotó el tiempo de confirmación. Revisa Arbiscan antes de intentarlo de nuevo."
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
+msgstr "La transacción de depósito se envió, pero no se confirmó en Arbitrum. Es posible que el nonce de tu billetera no esté sincronizado con la red. Borra la actividad pendiente o restablece los datos de nonce en tu billetera y vuelve a intentarlo."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -2270,8 +2275,8 @@ msgid "Processing"
 msgstr "Procesando"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Processing deposit"
-msgstr "Procesando depósito"
+#~ msgid "Processing deposit"
+#~ msgstr "Procesando depósito"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -3225,7 +3230,6 @@ msgid "Transaction reverted on Arbitrum"
 msgstr ""
 
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction was not broadcast. Please retry."
 msgstr ""
 
@@ -3403,6 +3407,10 @@ msgstr "Volumen"
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "waiting"
 #~ msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Waiting for chain confirmation"
+msgstr "Esperando confirmación en la cadena"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts

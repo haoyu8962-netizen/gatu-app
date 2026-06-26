@@ -828,7 +828,12 @@ msgstr "充值成功"
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
-msgstr ""
+msgstr "充值交易已广播，但确认超时。请先在 Arbiscan 上检查后再重试。"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
+msgstr "充值交易已提交，但未在 Arbitrum 上确认。你的钱包 nonce 可能与链上状态不同步。请在钱包中清除待处理活动或重置 nonce 数据后重试。"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -2270,8 +2275,8 @@ msgid "Processing"
 msgstr "处理中"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Processing deposit"
-msgstr "正在处理充值"
+#~ msgid "Processing deposit"
+#~ msgstr "正在处理充值"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -3225,7 +3230,6 @@ msgid "Transaction reverted on Arbitrum"
 msgstr ""
 
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction was not broadcast. Please retry."
 msgstr ""
 
@@ -3403,6 +3407,10 @@ msgstr "成交量"
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "waiting"
 #~ msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Waiting for chain confirmation"
+msgstr "等待链上确认"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts

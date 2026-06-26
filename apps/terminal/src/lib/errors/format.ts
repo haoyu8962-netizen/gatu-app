@@ -15,6 +15,11 @@ const ERROR_PATTERNS = [
 		pattern: /deposit transaction was broadcast but confirmation timed out/i,
 		message: () => t`Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.`,
 	},
+	{
+		pattern: /wallet nonce may be out of sync/i,
+		message: () =>
+			t`Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry.`,
+	},
 ] as const;
 
 export function formatTransferError(error: Error | null): string {

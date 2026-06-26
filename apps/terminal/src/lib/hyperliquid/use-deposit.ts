@@ -4,7 +4,7 @@ import type { Hash, PublicClient, WalletClient } from "viem";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
 import { useChainId, usePublicClient, useReadContract, useSwitchChain, useWalletClient, useWriteContract } from "wagmi";
 import { ARBITRUM_CHAIN_ID, CONTRACTS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
-import { DEPOSIT_BROADCAST_TIMEOUT_MS, DEPOSIT_CONFIRMATION_TIMEOUT_MS, DEPOSIT_POLL_INTERVAL_MS } from "@/config/time";
+import { DEPOSIT_CONFIRMATION_TIMEOUT_MS, DEPOSIT_POLL_INTERVAL_MS } from "@/config/time";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
 
@@ -59,10 +59,6 @@ function toError(error: unknown): Error {
 	return new Error(typeof error === "string" ? error : t`Unknown error`);
 }
 
-function delay(ms: number) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function assertReadyToDeposit({
 	address,
 	publicClient,
@@ -80,21 +76,6 @@ function assertReadyToDeposit({
 	}
 }
 
-async function waitForBroadcast(publicClient: PublicClient, hash: Hash) {
-	const deadline = Date.now() + DEPOSIT_BROADCAST_TIMEOUT_MS;
-
-	while (Date.now() < deadline) {
-		try {
-			const transaction = await publicClient.getTransaction({ hash });
-			if (transaction) return;
-		} catch {}
-
-		await delay(DEPOSIT_POLL_INTERVAL_MS);
-	}
-
-	throw new Error(t`Transaction was not broadcast. Please retry.`);
-}
-
 async function waitForConfirmedReceipt(publicClient: PublicClient, hash: Hash) {
 	try {
 		const receipt = await publicClient.waitForTransactionReceipt({
@@ -110,6 +91,17 @@ async function waitForConfirmedReceipt(publicClient: PublicClient, hash: Hash) {
 		return receipt;
 	} catch (error) {
 		if (/timed out|timeout/i.test(toError(error).message)) {
+			let transaction: Awaited<ReturnType<PublicClient["getTransaction"]>> | null = null;
+			try {
+				transaction = await publicClient.getTransaction({ hash });
+			} catch {}
+
+			if (transaction && transaction.blockNumber === null) {
+				throw new Error(
+					t`Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry.`,
+				);
+			}
+
 			throw new Error(t`Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.`);
 		}
 
@@ -179,9 +171,6 @@ export function useDeposit(): UseDepositResult {
 					args: [CONTRACTS.arbitrum.bridge2, parseUnits(amount, USDC_DECIMALS)],
 					chainId: ARBITRUM_CHAIN_ID,
 				});
-
-				if (operationIdRef.current !== operationId) return;
-				await waitForBroadcast(publicClient, hash);
 
 				if (operationIdRef.current !== operationId) return;
 				setState({ status: "confirming", error: null, hash });

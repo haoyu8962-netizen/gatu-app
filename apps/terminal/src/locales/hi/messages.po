@@ -828,7 +828,12 @@ msgstr "डिपॉज़िट सफल"
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
-msgstr ""
+msgstr "जमा लेनदेन ब्रॉडकास्ट हो गया, लेकिन पुष्टि समय समाप्त हो गया। दोबारा प्रयास करने से पहले Arbiscan पर जांचें।"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
+msgstr "जमा लेनदेन सबमिट हो गया, लेकिन Arbitrum पर पुष्टि नहीं हुई। आपके वॉलेट का nonce नेटवर्क से सिंक नहीं हो सकता है। वॉलेट में लंबित गतिविधि साफ करें या nonce डेटा रीसेट करें, फिर दोबारा प्रयास करें।"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -2270,8 +2275,8 @@ msgid "Processing"
 msgstr "प्रोसेसिंग"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Processing deposit"
-msgstr "जमा प्रोसेस हो रही है"
+#~ msgid "Processing deposit"
+#~ msgstr "जमा प्रोसेस हो रही है"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -3225,7 +3230,6 @@ msgid "Transaction reverted on Arbitrum"
 msgstr ""
 
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction was not broadcast. Please retry."
 msgstr ""
 
@@ -3403,6 +3407,10 @@ msgstr "वॉल्यूम"
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "waiting"
 #~ msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Waiting for chain confirmation"
+msgstr "ऑन-चेन पुष्टि की प्रतीक्षा है"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts

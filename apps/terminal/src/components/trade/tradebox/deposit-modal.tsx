@@ -150,7 +150,9 @@ export function DepositModal() {
 			<StatusScreen
 				title={<Trans>Deposit</Trans>}
 				icon="loading"
-				heading={depositStatus === "pending" ? <Trans>Confirm in wallet</Trans> : <Trans>Processing deposit</Trans>}
+				heading={
+					depositStatus === "pending" ? <Trans>Confirm in wallet</Trans> : <Trans>Waiting for chain confirmation</Trans>
+				}
 				description={<span className="tabular-nums">{depositAmount} USDC → Hyperliquid</span>}
 				txHash={depositStatus === "confirming" ? depositHash : undefined}
 				closable={false}
