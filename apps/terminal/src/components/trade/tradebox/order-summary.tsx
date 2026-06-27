@@ -24,9 +24,9 @@ interface Props {
 
 function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
 	return (
-		<div className="flex items-center justify-between py-1.5">
-			<span className="text-xs tracking-[0.5px] text-fg-muted">{label}</span>
-			<span className="text-xs tabular-nums text-fg">{children}</span>
+		<div className="flex min-w-0 items-center justify-between gap-2 py-1.5">
+			<span className="min-w-0 truncate text-xs tracking-[0.5px] text-fg-muted">{label}</span>
+			<span className="shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-fg">{children}</span>
 		</div>
 	);
 }
@@ -48,22 +48,24 @@ export function OrderSummary({
 	const showSlippage = isMarketExecutionOrderType(orderType);
 
 	return (
-		<div className="flex flex-col">
+		<div className="flex min-w-0 flex-col">
 			{isLeveraged && (
 				<SummaryRow label={t`Liq. Price`}>
-					<span className={cn(liqPrice ? (liqWarning ? "text-error" : "text-fg") : "text-fg-muted")}>
+					<span
+						className={cn("whitespace-nowrap", liqPrice ? (liqWarning ? "text-error" : "text-fg") : "text-fg-muted")}
+					>
 						{liqPrice ? formatPrice(liqPrice, { szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
 			)}
 			<SummaryRow label={t`Order Value`}>
-				<span className={orderValue > 0 ? "text-fg" : "text-fg-muted"}>
+				<span className={cn("whitespace-nowrap", orderValue > 0 ? "text-fg" : "text-fg-muted")}>
 					{orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{isLeveraged && (
 				<SummaryRow label={t`Margin Req.`}>
-					<span className={marginRequired > 0 ? "text-fg" : "text-fg-muted"}>
+					<span className={cn("whitespace-nowrap", marginRequired > 0 ? "text-fg" : "text-fg-muted")}>
 						{marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
@@ -73,7 +75,7 @@ export function OrderSummary({
 					<button
 						type="button"
 						onClick={onSlippageClick}
-						className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
+						className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
 					>
 						<span className="tabular-nums text-error">{slippagePercent}%</span>
 						<PencilIcon className="size-2.5 text-fg-muted" />
@@ -81,13 +83,13 @@ export function OrderSummary({
 				</SummaryRow>
 			)}
 			<SummaryRow label={t`Est. Fee`}>
-				<span className="text-fg-muted">
+				<span className="whitespace-nowrap text-fg-muted">
 					{orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
 				</span>
 			</SummaryRow>
 			{DEFAULT_BUILDER_CONFIG?.f && (
 				<SummaryRow label={t`Builder Fee`}>
-					<span className="text-fg-muted">{`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}</span>
+					<span className="whitespace-nowrap text-fg-muted">{`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}</span>
 				</SummaryRow>
 			)}
 		</div>

@@ -365,15 +365,15 @@ export function MobileTradeView({ className, embedded }: Props) {
 				showLeverage={capabilities.isLeveraged}
 				onApply={async (mode: MarginMode, lev: number) => applyMarginAndLeverage(mode, lev)}
 			/>
-			<div className={cn("shrink-0 px-4 py-2 border-b border-stroke-weak/60 bg-surface", embedded && "hidden")}>
-				<div className="flex items-center justify-between">
+			<div className={cn("shrink-0 border-b border-stroke-weak/60 bg-surface px-4 py-2", embedded && "hidden")}>
+				<div className="flex min-w-0 items-center justify-between gap-2">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
-					<div className="text-right">
-						<div className={cn("text-sm font-semibold tabular-nums", priceColorClass)}>
+					<div className="shrink-0 text-right">
+						<div className={cn("whitespace-nowrap text-sm font-semibold tabular-nums", priceColorClass)}>
 							{formatPrice(markPx || null, { szDecimals: market?.szDecimals })}
 						</div>
 						{typeof change24h === "number" && (
-							<div className={cn("text-xs tabular-nums", getValueColorClass(change24h))}>
+							<div className={cn("whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
 								{change24h >= 0 ? "+" : ""}
 								{change24h.toFixed(2)}%
 							</div>
@@ -583,10 +583,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 								value={marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
 							/>
 						)}
-						<div className={cn("flex items-center justify-between", embedded ? "py-1.5" : "py-2.5")}>
-							<span className="text-fg-muted">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
+						<div className={cn("flex min-w-0 items-center justify-between gap-2", embedded ? "py-1.5" : "py-2.5")}>
+							<span className="min-w-0 truncate text-fg-muted">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
 							{embedded && !isConnected ? (
-								<span className="inline-flex items-center gap-1">
+								<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
 									<span className="tabular-nums text-error">{slippagePercent}%</span>
 									<PencilIcon className="size-2.5 text-fg-muted" />
 								</span>
@@ -594,7 +594,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 								<button
 									type="button"
 									onClick={openSettingsDialog}
-									className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
+									className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
 								>
 									<span className="tabular-nums text-error">{slippagePercent}%</span>
 									<PencilIcon className="size-2.5 text-fg-muted" />
@@ -656,9 +656,9 @@ export function MobileTradeView({ className, embedded }: Props) {
 
 function SummaryRow({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
 	return (
-		<div className="flex items-center justify-between py-1.5">
-			<span className="text-fg-muted">{label}</span>
-			<span className={cn("tabular-nums", valueClass ?? "text-fg")}>{value}</span>
+		<div className="flex min-w-0 items-center justify-between gap-2 py-1.5">
+			<span className="min-w-0 truncate text-fg-muted">{label}</span>
+			<span className={cn("shrink-0 whitespace-nowrap text-right tabular-nums", valueClass ?? "text-fg")}>{value}</span>
 		</div>
 	);
 }
