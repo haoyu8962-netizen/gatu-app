@@ -416,45 +416,50 @@ export function TradePanel() {
 					onSwapClick={() => swapTargetToken && openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken)}
 				/>
 
-				<div className="flex flex-col gap-3 pt-5 pb-1">
-					{validation.errors.length > 0 && isConnected && availableBalance > 0 && (
-						<div className="text-xs text-error">{validation.errors.join(" • ")}</div>
-					)}
+				<div className="flex flex-col gap-4 pt-5 pb-1">
+					<div className="flex flex-col gap-3">
+						{validation.errors.length > 0 && isConnected && availableBalance > 0 && (
+							<div className="text-xs text-error">{validation.errors.join(" • ")}</div>
+						)}
 
-					{approvalError && <div className="text-xs text-error">{approvalError}</div>}
+						{approvalError && <div className="text-xs text-error">{approvalError}</div>}
 
-					{tradeRestricted ? (
-						<Button
-							variant="filled"
-							size="xs"
-							intent="neutral"
-							disabled
-							className="w-full px-3 py-2 text-sm font-semibold"
-							aria-label={t`Trading is not available in your region`}
-						>
-							{t`Trading is not available in your region`}
-						</Button>
-					) : (
-						<Button
-							variant="filled"
-							size="xs"
-							intent={buttonContent.variant === "buy" ? "brand" : buttonContent.variant === "sell" ? "error" : "brand"}
-							onClick={buttonContent.action}
-							disabled={buttonContent.disabled}
-							className={cn(
-								"w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
-								buttonContent.variant === "buy" && "bg-success text-background hover:opacity-90",
-								buttonContent.variant === "sell" && "text-background",
-							)}
-							aria-label={buttonContent.text}
-							iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
-						>
-							{buttonContent.text}
-						</Button>
-					)}
+						{tradeRestricted ? (
+							<Button
+								variant="filled"
+								size="xs"
+								intent="neutral"
+								disabled
+								className="w-full px-3 py-2 text-sm font-semibold"
+								aria-label={t`Trading is not available in your region`}
+							>
+								{t`Trading is not available in your region`}
+							</Button>
+						) : (
+							<Button
+								variant="filled"
+								size="xs"
+								intent={
+									buttonContent.variant === "buy" ? "brand" : buttonContent.variant === "sell" ? "error" : "brand"
+								}
+								onClick={buttonContent.action}
+								disabled={buttonContent.disabled}
+								className={cn(
+									"w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
+									buttonContent.variant === "buy" && "bg-success text-background hover:opacity-90",
+									buttonContent.variant === "sell" && "text-background",
+								)}
+								aria-label={buttonContent.text}
+								iconLeft={
+									isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined
+								}
+							>
+								{buttonContent.text}
+							</Button>
+						)}
+					</div>
+					{renderSummary()}
 				</div>
-
-				{renderSummary()}
 			</div>
 
 			{activeModal === "wallet" && (
