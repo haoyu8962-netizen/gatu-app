@@ -92,10 +92,6 @@ msgstr "Cuenta"
 msgid "Account and wallet"
 msgstr "Cuenta y monedero"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "Account Balances"
-msgstr "Saldos de cuenta"
-
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Equity"
 msgstr "Patrimonio de la cuenta"
@@ -222,7 +218,6 @@ msgstr "Activo"
 #~ msgid "Assets"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -236,7 +231,7 @@ msgstr "Disponible"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Available funds are in Spot"
-msgstr ""
+msgstr "Fondos disponibles en Spot"
 
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -277,7 +272,6 @@ msgstr "Saldo disponible para operar"
 #~ msgid "Balance:"
 #~ msgstr ""
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "Saldos"
@@ -591,7 +585,6 @@ msgstr "Conecta tu monedero para transferir fondos por bridge"
 #~ msgid "Connect your wallet to start trading on Hyperliquid"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "Conecta tu billetera para ver saldos."
@@ -1085,7 +1078,6 @@ msgstr "Error al habilitar trading"
 msgid "Failed to load balances"
 msgstr "No se pudieron cargar los saldos"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Failed to load balances."
 msgstr "Error al cargar saldos."
@@ -1232,7 +1224,7 @@ msgstr "Historial de funding"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
-msgstr ""
+msgstr "Los fondos están en la cuenta Spot"
 
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1268,7 +1260,6 @@ msgstr "GTC (Good Til Cancel)"
 msgid "H"
 msgstr "H"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr "Ocultar pequeños"
@@ -1802,7 +1793,6 @@ msgstr "Sin saldo en Hyperliquid. Deposita primero."
 msgid "No balances found"
 msgstr "No se encontraron saldos"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "No se encontraron saldos. Deposita fondos para comenzar a operar."
@@ -1953,6 +1943,7 @@ msgstr "Interés abierto"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Open Orders"
 msgstr "Órdenes abiertas"
 
@@ -2043,8 +2034,8 @@ msgid "orders"
 msgstr "órdenes"
 
 #: src/config/trade.ts
-msgid "Orders"
-msgstr "Órdenes"
+#~ msgid "Orders"
+#~ msgstr "Órdenes"
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -2126,7 +2117,6 @@ msgstr "pendiente"
 msgid "Perp"
 msgstr "Perp"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Perpetuals"
 msgstr "Perpetuos"
@@ -2141,7 +2131,7 @@ msgstr "Perpetuos"
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Perps / Spot"
-msgstr ""
+msgstr "Perps / Spot"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
@@ -2150,7 +2140,7 @@ msgstr "Cuenta Perps"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Equity"
-msgstr ""
+msgstr "Equidad de perpetuos"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
@@ -2159,7 +2149,7 @@ msgstr "Resumen de Perps"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Withdrawable"
-msgstr ""
+msgstr "Retirable de perpetuos"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -2234,7 +2224,7 @@ msgstr "Portafolio"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Portfolio Margin"
-msgstr ""
+msgstr "Margen de cartera"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2600,7 +2590,6 @@ msgstr "Vender"
 msgid "Sell Short"
 msgstr "Vender corto"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send"
@@ -2628,11 +2617,11 @@ msgstr "enviado a Hyperliquid"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Account Balances"
-msgstr ""
+msgstr "Saldos de cuentas separadas"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Separate Accounts"
-msgstr ""
+msgstr "Cuentas separadas"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Set"
@@ -2847,7 +2836,6 @@ msgstr "Origen"
 #~ msgstr "spot"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -2862,7 +2850,7 @@ msgstr "Cuenta Spot"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Spot Available"
-msgstr ""
+msgstr "Disponible en Spot"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
@@ -2936,7 +2924,6 @@ msgstr "Soporte"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
@@ -3171,12 +3158,10 @@ msgstr "Tiempo en vigor"
 msgid "To"
 msgstr "Para"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr "A Perp"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr "A Spot"
@@ -3195,7 +3180,6 @@ msgstr "Cambiar modo de tamaño"
 msgid "TOKEN"
 msgstr "TOKEN"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -3257,6 +3241,7 @@ msgstr "Operar"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Trade History"
 msgstr "Historial de operaciones"
 
@@ -3271,7 +3256,6 @@ msgstr "operaciones"
 
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/config/trade.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "Operaciones"
@@ -3401,7 +3385,7 @@ msgstr "Tipo"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Unified Account"
-msgstr ""
+msgstr "Cuenta unificada"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3562,7 +3546,7 @@ msgstr "Retirar"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Withdrawable"
-msgstr ""
+msgstr "Retirable"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"

@@ -1,18 +1,13 @@
 import { t } from "@lingui/core/macro";
-import { useEffect, useState } from "react";
-import type { MobilePositionsTabValue } from "@/config/trade";
+import { useState } from "react";
 import { cn } from "@/lib/cn";
-import { usePositionsActiveTab } from "@/stores/use-global-settings-store";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileChartView } from "./mobile-chart-view";
 import { MobileMarketBar } from "./mobile-market-bar";
-import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { MobilePositionsView } from "./mobile-positions-view";
 import { MobileTradeView } from "./mobile-trade-view";
 
 type TopView = "chart" | "book" | "trades";
-
-const MARKETS_PAGE_SCROLL_TABS: readonly MobilePositionsTabValue[] = ["positions", "orders", "balances", "twap"];
 
 interface Props {
 	/** Trade page is a fixed order-form ∥ orderbook split; Markets page is chart/book/trades data only. */
@@ -24,39 +19,22 @@ export function MobileTradeLayout({ showOrderForm = true }: Props) {
 }
 
 function TradeOrderView() {
-	const activeDataTab = usePositionsActiveTab() as MobilePositionsTabValue;
-	const [dataPanelNeedsPageScroll, setDataPanelNeedsPageScroll] = useState(false);
-	const dataScrollMode: MobileDataScrollMode = dataPanelNeedsPageScroll ? "page" : "contained";
-	const isPageScroll = dataScrollMode === "page";
-
-	useEffect(() => {
-		void activeDataTab;
-		setDataPanelNeedsPageScroll(false);
-	}, [activeDataTab]);
-
 	return (
 		<div
 			className={cn(
-				"grid h-full min-h-0 bg-background [overflow-anchor:none]",
-				isPageScroll
-					? "grid-rows-[57px_minmax(420px,52dvh)_auto] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-					: "grid-rows-[57px_minmax(0,2.4fr)_minmax(0,0.8fr)] overflow-hidden",
+				"h-full min-h-0 bg-background [overflow-anchor:none]",
+				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
 			<MobileMarketBar className="h-[57px] min-h-[57px]" />
 
-			<div className="w-full min-w-0 min-h-0 overflow-hidden flex items-stretch">
+			<div className="w-full min-w-0 h-[52dvh] min-h-[420px] overflow-hidden flex items-stretch">
 				<MobileTradeView embedded className="flex-[1.2] min-h-0 min-w-0 border-r border-stroke-weak/60" />
 				<MobileBookView compact inTabLayout view="book" className="flex-1 min-h-0 min-w-0 self-stretch" />
 			</div>
 
-			<div
-				className={cn(
-					"w-full min-w-0 flex flex-col border-t border-stroke-weak/60",
-					isPageScroll ? "min-h-0 overflow-visible" : "min-h-0 overflow-hidden",
-				)}
-			>
-				<MobilePositionsView scrollMode={dataScrollMode} onNeedsPageScrollChange={setDataPanelNeedsPageScroll} />
+			<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
+				<MobilePositionsView scrollMode="page" />
 			</div>
 		</div>
 	);
@@ -64,16 +42,6 @@ function TradeOrderView() {
 
 function MarketsDataView() {
 	const [topView, setTopView] = useState<TopView>("chart");
-	const activeDataTab = usePositionsActiveTab() as MobilePositionsTabValue;
-	const [dataPanelNeedsPageScroll, setDataPanelNeedsPageScroll] = useState(false);
-	const prefersPageScroll = MARKETS_PAGE_SCROLL_TABS.includes(activeDataTab);
-	const dataScrollMode: MobileDataScrollMode = dataPanelNeedsPageScroll || prefersPageScroll ? "page" : "contained";
-	const isPageScroll = dataScrollMode === "page";
-
-	useEffect(() => {
-		void activeDataTab;
-		setDataPanelNeedsPageScroll(false);
-	}, [activeDataTab]);
 
 	const tabs: { value: TopView; label: string }[] = [
 		{ value: "chart", label: t`Chart` },
@@ -86,10 +54,8 @@ function MarketsDataView() {
 	return (
 		<div
 			className={cn(
-				"grid h-full min-h-0 bg-background [overflow-anchor:none]",
-				isPageScroll
-					? "grid-rows-[57px_35px_minmax(320px,45dvh)_auto] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-					: "grid-rows-[57px_35px_minmax(0,1.4fr)_minmax(0,1fr)] overflow-hidden",
+				"h-full min-h-0 bg-background [overflow-anchor:none]",
+				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
 			<MobileMarketBar className="h-[57px] min-h-[57px]" />
@@ -113,18 +79,13 @@ function MarketsDataView() {
 				})}
 			</div>
 
-			<div className="min-h-0 flex flex-col overflow-hidden">
+			<div className="h-[45dvh] min-h-[320px] flex flex-col overflow-hidden">
 				{topView === "chart" && <MobileChartView />}
 				{topView !== "chart" && <MobileBookView inTabLayout view={bookView} className="flex-1 min-h-0" />}
 			</div>
 
-			<div
-				className={cn(
-					"w-full min-w-0 flex flex-col border-t border-stroke-weak/60",
-					isPageScroll ? "min-h-0 overflow-visible" : "min-h-0 overflow-hidden",
-				)}
-			>
-				<MobilePositionsView scrollMode={dataScrollMode} onNeedsPageScrollChange={setDataPanelNeedsPageScroll} />
+			<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
+				<MobilePositionsView scrollMode="page" />
 			</div>
 		</div>
 	);

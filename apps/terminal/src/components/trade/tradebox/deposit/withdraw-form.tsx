@@ -28,9 +28,22 @@ interface Props {
 	validation: { valid: boolean; error: string | null };
 	isPending: boolean;
 	onSubmit: () => void;
+	spotAvailable?: number;
+	showSpotFundsNotice?: boolean;
+	onTransferClick?: () => void;
 }
 
-export function WithdrawForm({ amount, onAmountChange, available, validation, isPending, onSubmit }: Props) {
+export function WithdrawForm({
+	amount,
+	onAmountChange,
+	available,
+	validation,
+	isPending,
+	onSubmit,
+	spotAvailable = 0,
+	showSpotFundsNotice = false,
+	onTransferClick,
+}: Props) {
 	const availableNum = toNumberOrZero(available);
 	const amountNum = toNumber(amount);
 	const netReceived = amountNum !== null && amountNum > 0 ? Math.max(amountNum - WITHDRAWAL_FEE_USD, 0) : null;
@@ -65,6 +78,26 @@ export function WithdrawForm({ amount, onAmountChange, available, validation, is
 					{validation.error || " "}
 				</p>
 			</div>
+
+			{showSpotFundsNotice && (
+				<div className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+					<div className="tabular-nums">
+						<Trans>Funds are in Spot account</Trans>: {formatNumber(spotAvailable, 2)} USDC
+					</div>
+					{onTransferClick ? (
+						<Button
+							variant="link"
+							intent="brand"
+							size="xxs"
+							className="mt-1 h-auto p-0"
+							onClick={onTransferClick}
+							disabled={isPending}
+						>
+							<Trans>Perps / Spot</Trans>
+						</Button>
+					) : null}
+				</div>
+			)}
 
 			<div className="rounded-8 border border-stroke-weak/40 bg-surface p-3 space-y-2 text-xs">
 				<InfoRow

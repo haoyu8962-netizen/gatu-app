@@ -2,6 +2,7 @@ import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import type {
 	AccountAbstraction,
+	MarginSummary,
 	SpotAvailableAfterMaintenance,
 	SpotBalance,
 } from "@/hooks/trade/use-account-balances";
@@ -53,11 +54,89 @@ export function getSpotBalance(balances: SpotBalance[] | null | undefined, coin:
 }
 
 export function isQuoteBalanceSharedWithPerps(accountAbstraction: AccountAbstraction | null | undefined): boolean {
-	return (
-		accountAbstraction === "unifiedAccount" ||
-		accountAbstraction === "portfolioMargin" ||
-		accountAbstraction === "dexAbstraction"
-	);
+	return accountAbstraction === "unifiedAccount" || accountAbstraction === "portfolioMargin";
+}
+
+export type BalanceAccountMode = "unified" | "portfolioMargin" | "separate";
+
+export interface AccountBalanceSummary {
+	mode: BalanceAccountMode;
+	usesSpotStateForPerps: boolean;
+	accountEquity: number;
+	balance: number;
+	available: number;
+	withdrawable: number;
+	spotUsdcTotal: number;
+	spotUsdcAvailable: number;
+	spotUsdcHold: number;
+	spotAccountValue: number;
+	perpAccountValue: number;
+	perpWithdrawable: number;
+	perpMarginUsed: number;
+	perpTotalRawUsd: number;
+	hasSpotFundsWhenPerpWithdrawableZero: boolean;
+}
+
+function getBalanceMode(accountAbstraction: AccountAbstraction | null | undefined): BalanceAccountMode {
+	if (accountAbstraction === "unifiedAccount") return "unified";
+	if (accountAbstraction === "portfolioMargin") return "portfolioMargin";
+	return "separate";
+}
+
+export function getSpotAccountValue(spotBalances: SpotBalance[] | null | undefined): number {
+	return (spotBalances ?? [])
+		.reduce((sum, balance) => {
+			const usdValue = balance.coin === DEFAULT_QUOTE_TOKEN ? balance.total : balance.entryNtl;
+			return sum.plus(toSafeBig(usdValue));
+		}, Big(0))
+		.toNumber();
+}
+
+export function getAccountBalanceSummary({
+	accountAbstraction,
+	marginSummary,
+	perpSummary,
+	withdrawable,
+	spotBalances,
+	spotAvailableAfterMaintenance,
+}: {
+	accountAbstraction: AccountAbstraction | null | undefined;
+	marginSummary: MarginSummary | null | undefined;
+	perpSummary: PerpSummary | null | undefined;
+	withdrawable: string | number | null | undefined;
+	spotBalances: SpotBalance[] | null | undefined;
+	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null;
+}): AccountBalanceSummary {
+	const mode = getBalanceMode(accountAbstraction);
+	const usesSpotStateForPerps = isQuoteBalanceSharedWithPerps(accountAbstraction);
+	const usdcBalance = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
+	const spotUsdcTotal = toSafeBig(usdcBalance?.total).toNumber();
+	const spotUsdcHold = toSafeBig(usdcBalance?.hold).toNumber();
+	const spotUsdcAvailable = getSpotAvailable(usdcBalance, spotAvailableAfterMaintenance);
+	const spotAccountValue = getSpotAccountValue(spotBalances);
+
+	const perpAccountValue = toSafeBig(marginSummary?.accountValue ?? perpSummary?.accountValue).toNumber();
+	const perpWithdrawable = toSafeBig(withdrawable).toNumber();
+	const perpMarginUsed = toSafeBig(marginSummary?.totalMarginUsed ?? perpSummary?.totalMarginUsed).toNumber();
+	const perpTotalRawUsd = toSafeBig(marginSummary?.totalRawUsd).toNumber();
+
+	return {
+		mode,
+		usesSpotStateForPerps,
+		accountEquity: usesSpotStateForPerps ? spotAccountValue : perpAccountValue,
+		balance: usesSpotStateForPerps ? spotAccountValue : perpTotalRawUsd,
+		available: usesSpotStateForPerps ? spotUsdcAvailable : perpWithdrawable,
+		withdrawable: usesSpotStateForPerps ? spotUsdcAvailable : perpWithdrawable,
+		spotUsdcTotal,
+		spotUsdcAvailable,
+		spotUsdcHold,
+		spotAccountValue,
+		perpAccountValue,
+		perpWithdrawable,
+		perpMarginUsed,
+		perpTotalRawUsd,
+		hasSpotFundsWhenPerpWithdrawableZero: perpWithdrawable <= 0 && spotUsdcAvailable > 0,
+	};
 }
 
 export function getPerpAvailable(

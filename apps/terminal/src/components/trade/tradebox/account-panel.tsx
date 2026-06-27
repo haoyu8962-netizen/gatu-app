@@ -3,6 +3,7 @@ import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -10,7 +11,7 @@ import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { useDepositModalActions } from "@/stores/use-global-modal-store";
+import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 
 type SummaryRow = {
 	label: string;
@@ -20,10 +21,28 @@ type SummaryRow = {
 
 export function AccountPanel() {
 	const { open: openDepositModal } = useDepositModalActions();
+	const { open: openTransferModal } = useTransferModalActions();
 	const { isConnected, sessionMode } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
-	const { marginSummary, perpSummary, perpPositions, withdrawable, crossMaintenanceMarginUsed } =
-		useDefaultDexBalances();
+	const {
+		marginSummary,
+		perpSummary,
+		perpPositions,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		withdrawable,
+		crossMaintenanceMarginUsed,
+		isLoading,
+	} = useDefaultDexBalances();
+	const accountSummary = getAccountBalanceSummary({
+		accountAbstraction,
+		marginSummary,
+		perpSummary,
+		withdrawable,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+	});
 
 	let perpMetrics = null;
 	if (marginSummary && perpSummary) {
@@ -51,9 +70,10 @@ export function AccountPanel() {
 	}
 
 	const hasPerpData = isConnected && perpMetrics !== null;
-	const hasWithdrawableData = isConnected && marginSummary !== null;
-	const withdrawableDisplay = hasWithdrawableData ? formatUSD(withdrawable) : FALLBACK_VALUE_PLACEHOLDER;
+	const hasBalanceData = isConnected && !isLoading;
 	const hasWalletAccess = sessionMode === "wallet";
+	const usesUnifiedBalance = accountSummary.usesSpotStateForPerps;
+	const showSpotFundsNotice = !usesUnifiedBalance && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 
 	const perpRows: SummaryRow[] = perpMetrics
 		? [
@@ -95,15 +115,51 @@ export function AccountPanel() {
 				<div className="text-xs text-fg-muted text-center py-4">{t`Connect wallet to view account`}</div>
 			) : (
 				<div className="p-2 overflow-y-auto">
-					<p className="text-xs font-medium text-fg mb-1">{t`Account Equity`}</p>
+					<p className="text-xs font-medium text-fg mb-1">
+						{usesUnifiedBalance ? t`Account Equity` : t`Separate Account Balances`}
+					</p>
 					<InfoRowGroup className="divide-y-0">
-						<InfoRow label={t`Available`} value={withdrawableDisplay} valueClassName="tabular-nums" />
 						<InfoRow
-							label={t`Perps`}
-							value={hasPerpData ? formatUSD(perpMetrics.accountValue) : FALLBACK_VALUE_PLACEHOLDER}
+							label={usesUnifiedBalance ? t`Equity` : t`Perps Equity`}
+							value={hasBalanceData ? formatUSD(accountSummary.accountEquity) : FALLBACK_VALUE_PLACEHOLDER}
 							valueClassName="tabular-nums"
 						/>
+						<InfoRow
+							label={usesUnifiedBalance ? t`Available` : t`Perps Withdrawable`}
+							value={hasBalanceData ? formatUSD(accountSummary.available) : FALLBACK_VALUE_PLACEHOLDER}
+							valueClassName="tabular-nums"
+						/>
+						{usesUnifiedBalance ? (
+							<InfoRow
+								label={t`Withdrawable`}
+								value={hasBalanceData ? formatUSD(accountSummary.withdrawable) : FALLBACK_VALUE_PLACEHOLDER}
+								valueClassName="tabular-nums"
+							/>
+						) : (
+							<InfoRow
+								label={t`Spot Available`}
+								value={hasBalanceData ? formatUSD(accountSummary.spotUsdcAvailable) : FALLBACK_VALUE_PLACEHOLDER}
+								valueClassName="tabular-nums"
+							/>
+						)}
 					</InfoRowGroup>
+
+					{showSpotFundsNotice && (
+						<div className="mt-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2 text-xs text-warning">
+							<div className="tabular-nums">
+								{t`Available funds are in Spot`}: {formatUSD(accountSummary.spotUsdcAvailable)}
+							</div>
+							<Button
+								variant="link"
+								intent="brand"
+								size="xxs"
+								className="mt-1 h-auto p-0"
+								onClick={() => openTransferModal("toPerp")}
+							>
+								{t`Perps / Spot`}
+							</Button>
+						</div>
+					)}
 
 					{hasPerpData && (
 						<>
@@ -119,7 +175,7 @@ export function AccountPanel() {
 					{tradeRestricted || !hasWalletAccess ? (
 						<p className="mt-4 text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 					) : (
-						<div className="grid grid-cols-3 gap-1 mt-4">
+						<div className="grid grid-cols-2 gap-1 mt-4">
 							<Button
 								variant="outline"
 								intent="neutral"
@@ -137,6 +193,15 @@ export function AccountPanel() {
 								iconLeft={<DownloadSimpleIcon className="size-4" />}
 							>
 								{t`Deposit`}
+							</Button>
+							<Button
+								variant="outline"
+								intent="neutral"
+								onClick={() => openTransferModal("toPerp")}
+								aria-label={t`Transfer between Perps and Spot`}
+								iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+							>
+								{t`Perps / Spot`}
 							</Button>
 							<Button
 								variant="outline"

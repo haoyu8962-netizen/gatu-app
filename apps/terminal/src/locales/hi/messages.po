@@ -92,10 +92,6 @@ msgstr "खाता"
 msgid "Account and wallet"
 msgstr "खाता और वॉलेट"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "Account Balances"
-msgstr "खाता शेष"
-
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Equity"
 msgstr "खाता इक्विटी"
@@ -222,7 +218,6 @@ msgstr "संपत्ति"
 #~ msgid "Assets"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -236,7 +231,7 @@ msgstr "उपलब्ध"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Available funds are in Spot"
-msgstr ""
+msgstr "उपलब्ध धन Spot में है"
 
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -277,7 +272,6 @@ msgstr "ट्रेड के लिए उपलब्ध बैलेंस"
 #~ msgid "Balance:"
 #~ msgstr ""
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "बैलेंस"
@@ -591,7 +585,6 @@ msgstr "फंड ब्रिज करने के लिए अपना व
 #~ msgid "Connect your wallet to start trading on Hyperliquid"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "शेष देखने के लिए अपना वॉलेट कनेक्ट करें।"
@@ -1085,7 +1078,6 @@ msgstr "ट्रेडिंग सक्षम करने में वि�
 msgid "Failed to load balances"
 msgstr "बैलेंस लोड करने में विफल"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Failed to load balances."
 msgstr "शेष लोड करने में विफल।"
@@ -1232,7 +1224,7 @@ msgstr "फंडिंग इतिहास"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
-msgstr ""
+msgstr "धन Spot खाते में है"
 
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1268,7 +1260,6 @@ msgstr "GTC (रद्द होने तक मान्य)"
 msgid "H"
 msgstr "H"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr "छोटे छिपाएं"
@@ -1802,7 +1793,6 @@ msgstr "Hyperliquid पर कोई बैलेंस नहीं। पह�
 msgid "No balances found"
 msgstr "कोई बैलेंस नहीं मिला"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "कोई शेष नहीं मिला। ट्रेडिंग शुरू करने के लिए धन जमा करें।"
@@ -1953,6 +1943,7 @@ msgstr "ओपन इंटरेस्ट"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Open Orders"
 msgstr "खुले ऑर्डर"
 
@@ -2043,8 +2034,8 @@ msgid "orders"
 msgstr "ऑर्डर"
 
 #: src/config/trade.ts
-msgid "Orders"
-msgstr "ऑर्डर"
+#~ msgid "Orders"
+#~ msgstr "ऑर्डर"
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -2126,7 +2117,6 @@ msgstr "लंबित"
 msgid "Perp"
 msgstr "Perp"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Perpetuals"
 msgstr "Perpetuals"
@@ -2141,7 +2131,7 @@ msgstr "Perpetuals"
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Perps / Spot"
-msgstr ""
+msgstr "Perps / Spot"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
@@ -2150,7 +2140,7 @@ msgstr "Perps खाता"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Equity"
-msgstr ""
+msgstr "Perps इक्विटी"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
@@ -2159,7 +2149,7 @@ msgstr "Perps अवलोकन"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Withdrawable"
-msgstr ""
+msgstr "Perps निकासी योग्य"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -2234,7 +2224,7 @@ msgstr "पोर्टफोलियो"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Portfolio Margin"
-msgstr ""
+msgstr "पोर्टफोलियो मार्जिन"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2600,7 +2590,6 @@ msgstr "बेचें"
 msgid "Sell Short"
 msgstr "शॉर्ट बेचें"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send"
@@ -2628,11 +2617,11 @@ msgstr "Hyperliquid को भेजा गया"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Account Balances"
-msgstr ""
+msgstr "अलग खातों की शेष राशि"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Separate Accounts"
-msgstr ""
+msgstr "अलग खाते"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Set"
@@ -2847,7 +2836,6 @@ msgstr "स्रोत"
 #~ msgstr "स्पॉट"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -2862,7 +2850,7 @@ msgstr "Spot खाता"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Spot Available"
-msgstr ""
+msgstr "Spot उपलब्ध"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
@@ -2936,7 +2924,6 @@ msgstr "सहायता"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
@@ -3171,12 +3158,10 @@ msgstr "Time In Force"
 msgid "To"
 msgstr "को"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr "Perp में"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr "Spot में"
@@ -3195,7 +3180,6 @@ msgstr "साइज मोड टॉगल करें"
 msgid "TOKEN"
 msgstr "टोकन"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -3257,6 +3241,7 @@ msgstr "ट्रेड"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Trade History"
 msgstr "ट्रेड इतिहास"
 
@@ -3271,7 +3256,6 @@ msgstr "ट्रेड"
 
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/config/trade.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "ट्रेड्स"
@@ -3401,7 +3385,7 @@ msgstr "प्रकार"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Unified Account"
-msgstr ""
+msgstr "एकीकृत खाता"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3562,7 +3546,7 @@ msgstr "निकासी"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Withdrawable"
-msgstr ""
+msgstr "निकासी योग्य"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"

@@ -92,10 +92,6 @@ msgstr "الحساب"
 msgid "Account and wallet"
 msgstr "الحساب والمحفظة"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "Account Balances"
-msgstr "أرصدة الحساب"
-
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Equity"
 msgstr "حقوق ملكية الحساب"
@@ -222,7 +218,6 @@ msgstr "الأصل"
 #~ msgid "Assets"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -236,7 +231,7 @@ msgstr "متاح"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Available funds are in Spot"
-msgstr ""
+msgstr "الأموال المتاحة في Spot"
 
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -277,7 +272,6 @@ msgstr "الرصيد المتاح للتداول"
 #~ msgid "Balance:"
 #~ msgstr ""
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "الأرصدة"
@@ -591,7 +585,6 @@ msgstr "اربط محفظتك لتحويل الأموال عبر الجسر"
 #~ msgid "Connect your wallet to start trading on Hyperliquid"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "اربط محفظتك لعرض الأرصدة."
@@ -1085,7 +1078,6 @@ msgstr "فشل تفعيل التداول"
 msgid "Failed to load balances"
 msgstr "فشل تحميل الأرصدة"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Failed to load balances."
 msgstr "فشل في تحميل الأرصدة."
@@ -1232,7 +1224,7 @@ msgstr "سجل التمويل"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
-msgstr ""
+msgstr "الأموال في حساب Spot"
 
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1268,7 +1260,6 @@ msgstr "GTC (ساري حتى الإلغاء)"
 msgid "H"
 msgstr "H"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr "إخفاء الصغيرة"
@@ -1802,7 +1793,6 @@ msgstr "لا يوجد رصيد على Hyperliquid. أودع أولاً."
 msgid "No balances found"
 msgstr "لم يُعثر على أرصدة"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "لم يتم العثور على أرصدة. أودع أموالاً لبدء التداول."
@@ -1953,6 +1943,7 @@ msgstr "العقود المفتوحة"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Open Orders"
 msgstr "الأوامر المفتوحة"
 
@@ -2043,8 +2034,8 @@ msgid "orders"
 msgstr "أوامر"
 
 #: src/config/trade.ts
-msgid "Orders"
-msgstr "الأوامر"
+#~ msgid "Orders"
+#~ msgstr "الأوامر"
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -2126,7 +2117,6 @@ msgstr "قيد الانتظار"
 msgid "Perp"
 msgstr "Perp"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Perpetuals"
 msgstr "العقود الدائمة"
@@ -2141,7 +2131,7 @@ msgstr "العقود الدائمة"
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Perps / Spot"
-msgstr ""
+msgstr "Perps / Spot"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
@@ -2150,7 +2140,7 @@ msgstr "حساب Perps"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Equity"
-msgstr ""
+msgstr "حقوق عقود Perps"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
@@ -2159,7 +2149,7 @@ msgstr "نظرة عامة على Perps"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Withdrawable"
-msgstr ""
+msgstr "قابل للسحب من Perps"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -2234,7 +2224,7 @@ msgstr "المحفظة"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Portfolio Margin"
-msgstr ""
+msgstr "هامش المحفظة"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2600,7 +2590,6 @@ msgstr "بيع"
 msgid "Sell Short"
 msgstr "بيع قصير"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send"
@@ -2628,11 +2617,11 @@ msgstr "تم الإرسال إلى Hyperliquid"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Account Balances"
-msgstr ""
+msgstr "أرصدة الحسابات المنفصلة"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Separate Accounts"
-msgstr ""
+msgstr "حسابات منفصلة"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Set"
@@ -2847,7 +2836,6 @@ msgstr "المصدر"
 #~ msgstr "فوري"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -2862,7 +2850,7 @@ msgstr "حساب Spot"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Spot Available"
-msgstr ""
+msgstr "المتاح في Spot"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
@@ -2936,7 +2924,6 @@ msgstr "الدعم"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
@@ -3171,12 +3158,10 @@ msgstr "مدة سريان الأمر"
 msgid "To"
 msgstr "إلى"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr "إلى Perp"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr "إلى Spot"
@@ -3195,7 +3180,6 @@ msgstr "تبديل وضع الحجم"
 msgid "TOKEN"
 msgstr "TOKEN"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -3257,6 +3241,7 @@ msgstr "تداول"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Trade History"
 msgstr "سجل التداول"
 
@@ -3271,7 +3256,6 @@ msgstr "صفقات"
 
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/config/trade.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "الصفقات"
@@ -3401,7 +3385,7 @@ msgstr "النوع"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Unified Account"
-msgstr ""
+msgstr "حساب موحّد"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3562,7 +3546,7 @@ msgstr "سحب"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Withdrawable"
-msgstr ""
+msgstr "قابل للسحب"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"

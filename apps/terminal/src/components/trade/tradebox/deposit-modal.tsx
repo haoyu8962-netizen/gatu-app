@@ -12,13 +12,19 @@ import { Trans } from "@lingui/react/macro";
 import { ArrowLineDownIcon, ArrowLineUpIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Suspense, useState } from "react";
 import { NETWORKS } from "@/config/networks";
+import { getAccountBalanceSummary } from "@/domain/trade/balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
-import { useDeposit, useExchange, useUserPositions } from "@/lib/hyperliquid";
+import { useDeposit, useExchange } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { toNumberOrZero } from "@/lib/trade/numbers";
 import { validateWithdraw } from "@/lib/trade/withdraw-validation";
-import { useDepositModalActions, useDepositModalOpen, useDepositModalTab } from "@/stores/use-global-modal-store";
+import {
+	useDepositModalActions,
+	useDepositModalOpen,
+	useDepositModalTab,
+	useTransferModalActions,
+} from "@/stores/use-global-modal-store";
 import { DepositForm } from "./deposit/deposit-form";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
 import { WithdrawForm } from "./deposit/withdraw-form";
@@ -34,6 +40,7 @@ export function DepositModal() {
 	const open = useDepositModalOpen();
 	const activeTab = useDepositModalTab();
 	const { close, setTab } = useDepositModalActions();
+	const { open: openTransferModal } = useTransferModalActions();
 
 	const [depositAmount, setDepositAmount] = useState("");
 	const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -53,10 +60,26 @@ export function DepositModal() {
 	} = useDeposit();
 
 	const { address } = useWalletSession();
-
-	const userPositions = useUserPositions();
-	const withdrawable = userPositions.withdrawable;
-	const withdrawableNum = toNumberOrZero(withdrawable);
+	const {
+		marginSummary,
+		perpSummary,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		withdrawable: perpWithdrawable,
+	} = useDefaultDexBalances();
+	const accountSummary = getAccountBalanceSummary({
+		accountAbstraction,
+		marginSummary,
+		perpSummary,
+		withdrawable: perpWithdrawable,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+	});
+	const withdrawable = String(accountSummary.withdrawable);
+	const withdrawableNum = accountSummary.withdrawable;
+	const showSpotFundsNotice =
+		!accountSummary.usesSpotStateForPerps && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 
 	const {
 		mutate: withdraw,
@@ -87,6 +110,10 @@ export function DepositModal() {
 		if (withdrawValidation.valid && address) {
 			withdraw({ destination: address, amount: withdrawAmount });
 		}
+	}
+
+	function handlePerpsSpotTransferClick() {
+		openTransferModal("toPerp");
 	}
 
 	if (!isArbitrum && activeTab === "deposit") {
@@ -214,7 +241,7 @@ export function DepositModal() {
 				<ModalContent className="space-y-4">
 					<SegmentedControls
 						value={activeTab}
-						onValueChange={(v) => setTab(v as "deposit" | "withdraw" | "bridge")}
+						onValueChange={(v: string) => setTab(v as "deposit" | "withdraw" | "bridge")}
 						fullWidth
 					>
 						<SegmentedControlItem value="deposit" icon={<ArrowLineDownIcon className="size-3" />}>
@@ -251,6 +278,9 @@ export function DepositModal() {
 									validation={withdrawValidation}
 									isPending={isWithdrawPending}
 									onSubmit={handleWithdrawSubmit}
+									spotAvailable={accountSummary.spotUsdcAvailable}
+									showSpotFundsNotice={showSpotFundsNotice}
+									onTransferClick={handlePerpsSpotTransferClick}
 								/>
 							))}
 

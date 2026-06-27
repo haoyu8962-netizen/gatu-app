@@ -2,9 +2,11 @@ import { create } from "zustand";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 
 type DepositTab = "deposit" | "withdraw" | "bridge";
+export type TransferDirection = "toSpot" | "toPerp";
 
 type GlobalModal =
 	| { type: "deposit"; tab: DepositTab }
+	| { type: "internalTransfer"; direction: TransferDirection }
 	| { type: "settings" }
 	| { type: "swap"; fromToken: string; toToken?: string }
 	| { type: "commandMenu" }
@@ -13,6 +15,11 @@ type GlobalModal =
 interface DepositActions {
 	open: (tab?: DepositTab) => void;
 	setTab: (tab: DepositTab) => void;
+	close: () => void;
+}
+
+interface TransferActions {
+	open: (direction?: TransferDirection) => void;
 	close: () => void;
 }
 
@@ -34,6 +41,7 @@ interface CommandMenuActions {
 interface GlobalModalState {
 	modal: GlobalModal;
 	depositActions: DepositActions;
+	transferActions: TransferActions;
 	settingsActions: SettingsActions;
 	swapActions: SwapActions;
 	commandMenuActions: CommandMenuActions;
@@ -47,6 +55,10 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 		depositActions: {
 			open: (tab = "deposit") => set({ modal: { type: "deposit", tab } }),
 			setTab: (tab) => set((state) => (state.modal?.type === "deposit" ? { modal: { type: "deposit", tab } } : state)),
+			close,
+		},
+		transferActions: {
+			open: (direction = "toPerp") => set({ modal: { type: "internalTransfer", direction } }),
 			close,
 		},
 		settingsActions: {
@@ -76,6 +88,16 @@ export function useDepositModalTab() {
 }
 export function useDepositModalActions() {
 	return useGlobalModalStore((s) => s.depositActions);
+}
+
+export function useTransferModalOpen() {
+	return useGlobalModalStore((s) => s.modal?.type === "internalTransfer");
+}
+export function useTransferModalDirection() {
+	return useGlobalModalStore((s) => (s.modal?.type === "internalTransfer" ? s.modal.direction : "toPerp"));
+}
+export function useTransferModalActions() {
+	return useGlobalModalStore((s) => s.transferActions);
 }
 
 export function useSettingsDialogOpen() {

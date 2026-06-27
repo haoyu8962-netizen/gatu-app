@@ -81,7 +81,8 @@ export function TradeFormFields({
 		baseToken,
 		capabilities,
 		availableBalance,
-		availableBalanceToken,
+		displayAvailableBalance,
+		displayAvailableBalanceToken,
 		maxSize,
 		sizeValue,
 		orderValue,
@@ -115,7 +116,7 @@ export function TradeFormFields({
 		if (!isConnected) return FALLBACK_VALUE_PLACEHOLDER;
 		const isBaseToken = isSpotMarket && side === "sell";
 		const decimals = isBaseToken ? szDecimals : 2;
-		return formatToken(availableBalance, { decimals, symbol: availableBalanceToken ?? undefined });
+		return formatToken(displayAvailableBalance, { decimals, symbol: displayAvailableBalanceToken ?? undefined });
 	}
 
 	return (
@@ -129,7 +130,7 @@ export function TradeFormFields({
 							</Tooltip>
 							<span>
 								{isConnected ? (
-									<span className={cn("tabular-nums", getValueColorClass(availableBalance))}>
+									<span className={cn("tabular-nums", getValueColorClass(displayAvailableBalance))}>
 										{formatAvailableBalance()}
 									</span>
 								) : null}
@@ -141,7 +142,7 @@ export function TradeFormFields({
 									{t`Swap`}
 								</Button>
 							) : null}
-							{isConnected && availableBalance <= 0 ? (
+							{isConnected && displayAvailableBalance <= 0 ? (
 								<Button variant="link" intent="brand" size="xxs" onClick={onDepositClick}>
 									{t`Deposit`}
 								</Button>
@@ -246,13 +247,13 @@ export function TradeFormFields({
 					</div>
 					<Slider
 						value={[sliderValue]}
-						onValueChange={(v) => {
-							const val = Array.isArray(v) ? v[0] : v;
+						onValueChange={(v: number[]) => {
+							const val = v[0] ?? 0;
 							setIsDraggingSlider(true);
 							setDragSliderValue(val);
 						}}
-						onValueCommitted={(v) => {
-							const val = Array.isArray(v) ? v[0] : v;
+						onValueCommitted={(v: number[]) => {
+							const val = v[0] ?? 0;
 							setIsDraggingSlider(false);
 							handleSizePercentApply(val);
 						}}
@@ -287,7 +288,7 @@ export function TradeFormFields({
 							<Checkbox
 								aria-label={t`Reduce Only`}
 								checked={triggerOrder || reduceOnly}
-								onCheckedChange={(checked) => setReduceOnly(checked === true)}
+								onCheckedChange={(checked: boolean | "indeterminate") => setReduceOnly(checked === true)}
 								disabled={isFormDisabled || triggerOrder}
 								label={t`Reduce Only`}
 							/>
@@ -296,7 +297,7 @@ export function TradeFormFields({
 							<Checkbox
 								aria-label={t`Take Profit / Stop Loss`}
 								checked={tpSlEnabled}
-								onCheckedChange={(checked) => setTpSlEnabled(checked === true)}
+								onCheckedChange={(checked: boolean | "indeterminate") => setTpSlEnabled(checked === true)}
 								disabled={isFormDisabled}
 								label={t`TP/SL`}
 							/>

@@ -7,7 +7,7 @@ gatu 是 TanStack Start + Nitro 的 **SSR 应用**,必须有常驻 Node 进程�
 ```
 Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai)
          → 反代 127.0.0.1:3000
-         → systemd gatu.service → node .output/server/index.mjs
+         → systemd gatu.service → node /opt/gatu/current/server/index.mjs
 ```
 
 > 行情 WebSocket、订单签名都由浏览器直连 Hyperliquid,**不经过本机**。
@@ -68,7 +68,7 @@ sudo apt-get update && sudo apt-get install -y caddy
 
 ```bash
 sudo useradd --system --create-home --shell /usr/sbin/nologin gatu
-sudo mkdir -p /opt/gatu/repo /opt/gatu/shared
+sudo mkdir -p /opt/gatu/repo /opt/gatu/shared /opt/gatu/releases
 sudo chown -R gatu:gatu /opt/gatu
 
 # 允许 gatu 免密重启/查看自己的服务（deploy.sh 需要）
@@ -125,7 +125,7 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```bash
 sudo cp /opt/gatu/repo/deploy/gatu.service /etc/systemd/system/gatu.service
 sudo systemctl daemon-reload
-sudo systemctl enable gatu          # 开机自启（先不 start，等首次构建出 .output）
+sudo systemctl enable gatu          # 开机自启（先不 start，等首次 deploy 创建 /opt/gatu/current）
 ```
 
 ## 8. 安装 Caddy 配置
@@ -142,13 +142,26 @@ sudo systemctl reload caddy         # Caddy 自动签发 app.gatu.ai 的证书
 sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh main
 ```
 
-脚本会:同步代码 → 注入 `.env.local` → `pnpm install` → 构建 → `systemctl restart gatu` → 健康检查。
+脚本会:同步代码 → 注入 `.env.local` → `pnpm install` → 构建 → 复制 `.output` 到
+`/opt/gatu/releases/<timestamp>-<commit>` → 合并上一版 `public/assets` 中的 hashed chunks →
+原子切换 `/opt/gatu/current` → `systemctl restart gatu` → 健康检查。
 末行打印 `OK — gatu serving on 127.0.0.1:3000 (commit …)` 即成功。
+
+> 重要:不要让 systemd 直接从 `/opt/gatu/repo/apps/terminal/.output` 运行。该目录会在构建时被覆盖,
+> 旧 Node 进程内存中的 SSR manifest 可能继续引用旧 hash,而磁盘静态资源已变成新 hash,从而导致
+> `Failed to fetch dynamically imported module: /assets/mobile-terminal-*.js`。`/opt/gatu/current`
+> release symlink 是为了避免这种 server manifest / assets 不一致。
+>
+> 另外,`/assets/*` 是 content-hashed + immutable 长缓存。用户可能在新版本发布后仍持有上一版
+> `trade-terminal-page-*.js`,再切到移动端时才请求上一版 `mobile-terminal-*.js`。因此 deploy
+> 会把上一版 hashed assets 带入新版 release,让旧客户端懒加载不会 404/HTML fallback。
 
 ## 10. 验证
 
 ```bash
 curl -I https://app.gatu.ai          # 期望 200，且证书有效
+asset="$(curl -fsS https://app.gatu.ai/builders-perp | grep -o '/assets/main-[^"]*\.js' | head -1)"
+curl -I "https://app.gatu.ai${asset}" # 期望 200 且 content-type 为 JavaScript
 sudo systemctl status gatu --no-pager
 ```
 
@@ -159,7 +172,7 @@ sudo systemctl status gatu --no-pager
 ## 日常运维
 
 ```bash
-# 更新上线（拉最新 main、重建、重启）
+# 更新上线（拉最新 main、重建、发布新 release、重启）
 sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh main
 
 # 实时日志 / 最近日志
@@ -170,12 +183,31 @@ journalctl -u gatu -n 100 --no-pager
 sudo systemctl restart gatu
 sudo systemctl stop gatu
 
-# 回滚到上一个提交
-sudo -u gatu git -C /opt/gatu/repo reset --hard <good-commit>
-sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh
+# 回滚到已有 release（不会重新构建）
+sudo -u gatu ls -1 /opt/gatu/releases
+sudo -u gatu ln -sfn /opt/gatu/releases/<release-dir> /opt/gatu/current.tmp
+sudo -u gatu mv -Tf /opt/gatu/current.tmp /opt/gatu/current
+sudo systemctl restart gatu
 ```
 
-> 更新时构建期间旧进程继续服务,只有 `restart` 那几秒短暂中断。
+> 更新时构建期间旧进程继续服务,旧 release 目录不会被覆盖。新 release 会携带上一版 hashed assets,
+> 所以刚发布后旧客户端仍能拉到上一版动态 chunk。只有 `restart` 那几秒短暂中断。
+> `deploy.sh` 的健康检查不仅访问 SSR HTML,还会拉取 HTML 中的 `main-*.js`、`trade-terminal-page-*.js`,
+> 以及交易页动态引用的 `mobile-terminal-*.js`;任何一个 hashed asset 返回 HTML/500/非 JavaScript
+> 都会失败并尝试回滚到上一个 release。
+
+### 已有服务器从旧部署模式迁移
+
+如果服务器之前的 `gatu.service` 仍使用 `/opt/gatu/repo/apps/terminal/.output`,先更新 systemd 单元:
+
+```bash
+sudo cp /opt/gatu/repo/deploy/gatu.service /etc/systemd/system/gatu.service
+sudo systemctl daemon-reload
+sudo -u gatu mkdir -p /opt/gatu/releases
+sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh test-pr102
+```
+
+`deploy.sh` 会拒绝继续运行旧 `WorkingDirectory`,避免再次原地覆盖运行中的 `.output`。
 
 ---
 
@@ -198,8 +230,10 @@ CSP 极易配错导致白屏。建议**上线稳定后**在 `Caddyfile` 的 `hea
 ```bash
 # 本地（已设好 VITE_* 的 apps/terminal/.env.local）
 NITRO_PRESET=node-server pnpm build
-rsync -az --delete apps/terminal/.output/ gatu@<host>:/opt/gatu/repo/apps/terminal/.output/
-ssh gatu@<host> 'sudo systemctl restart gatu'
+release="$(date -u +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
+ssh gatu@<host> "mkdir -p /opt/gatu/releases/${release}"
+rsync -az --delete apps/terminal/.output/ "gatu@<host>:/opt/gatu/releases/${release}/"
+ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && mv -Tf /opt/gatu/current.tmp /opt/gatu/current && sudo systemctl restart gatu"
 ```
 
 此时 EC2 上不需要 Node 构建内存、不需要 pnpm install,只需 Node 运行 + Caddy。

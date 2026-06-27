@@ -11,6 +11,7 @@ import {
 import { Skeleton } from "boneyard-js/react";
 import { Suspense, useState } from "react";
 import { UI_TEXT } from "@/config/ui-text";
+import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
@@ -19,7 +20,7 @@ import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { createLazyComponent } from "@/lib/lazy";
 import { toNumberOrZero } from "@/lib/trade/numbers";
-import { useDepositModalActions } from "@/stores/use-global-modal-store";
+import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
 const ACCOUNT_TEXT = UI_TEXT.ACCOUNT_PANEL;
@@ -33,12 +34,30 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const { address, isConnected, sessionMode } = useWalletSession();
 	const { disconnectWallet } = useDisconnectWallet();
 
-	const { marginSummary, perpSummary, perpPositions, withdrawable, crossMaintenanceMarginUsed, isLoading } =
-		useDefaultDexBalances();
+	const {
+		marginSummary,
+		perpSummary,
+		perpPositions,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		withdrawable,
+		crossMaintenanceMarginUsed,
+		isLoading,
+	} = useDefaultDexBalances();
+	const accountSummary = getAccountBalanceSummary({
+		accountAbstraction,
+		marginSummary,
+		perpSummary,
+		withdrawable,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+	});
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
 	const { open: openDepositModal } = useDepositModalActions();
+	const { open: openTransferModal } = useTransferModalActions();
 	const { tradeRestricted } = useGeoRestriction();
 	const hasWalletAccess = sessionMode === "wallet";
 
@@ -47,15 +66,23 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		copy(address);
 	}
 
-	const accountValue = toNumberOrZero(marginSummary?.accountValue);
-	const totalMarginUsed = toNumberOrZero(marginSummary?.totalMarginUsed);
-	const totalRawUsd = toNumberOrZero(marginSummary?.totalRawUsd);
 	const crossAccountValue = toNumberOrZero(perpSummary?.accountValue);
 	const crossNtlPos = toNumberOrZero(perpSummary?.totalNtlPos);
 	const maintenanceMargin = toNumberOrZero(crossMaintenanceMarginUsed);
-	const availableBalance = toNumberOrZero(withdrawable);
 	const marginRatio = crossAccountValue > 0 ? maintenanceMargin / crossAccountValue : 0;
 	const crossLeverage = crossAccountValue > 0 ? Math.abs(crossNtlPos) / crossAccountValue : 0;
+	const usesUnifiedBalance = accountSummary.usesSpotStateForPerps;
+	const accountModeLabel =
+		accountSummary.mode === "unified"
+			? t`Unified Account`
+			: accountSummary.mode === "portfolioMargin"
+				? t`Portfolio Margin`
+				: t`Separate Accounts`;
+	const balanceLabel = usesUnifiedBalance ? ACCOUNT_TEXT.BALANCE_LABEL : t`Spot Available`;
+	const balanceValue = usesUnifiedBalance ? accountSummary.balance : accountSummary.spotUsdcAvailable;
+	const availableLabel = usesUnifiedBalance ? ACCOUNT_TEXT.AVAILABLE_LABEL : t`Perps Withdrawable`;
+	const equityLabel = usesUnifiedBalance ? ACCOUNT_TEXT.EQUITY_LABEL : t`Perps Equity`;
+	const showSpotFundsNotice = !usesUnifiedBalance && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 
 	let unrealizedPnl = 0;
 	for (const pos of perpPositions) {
@@ -114,7 +141,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								</ButtonIcon>
 							</div>
 							<Badge tone="neutral" size="sm" className="mt-0.5">
-								{t`Cross Margin`}
+								{accountModeLabel}
 							</Badge>
 						</div>
 					</div>
@@ -138,8 +165,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					<div className="p-4 rounded-xs border border-stroke-weak/60 bg-surface">
 						<Skeleton name="account-equity" loading={isLoading}>
 							<div>
-								<div className="text-2xs uppercase font-medium text-fg-muted mb-1.5">{ACCOUNT_TEXT.EQUITY_LABEL}</div>
-								<div className="text-3xl font-bold tabular-nums text-fg">{formatUSD(accountValue)}</div>
+								<div className="text-2xs uppercase font-medium text-fg-muted mb-1.5">{equityLabel}</div>
+								<div className="text-3xl font-bold tabular-nums text-fg">{formatUSD(accountSummary.accountEquity)}</div>
 								<div
 									className={cn(
 										"text-sm tabular-nums mt-1.5 font-medium",
@@ -154,9 +181,13 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					</div>
 
 					<div className="grid grid-cols-2 gap-3">
-						<StatCard label={ACCOUNT_TEXT.BALANCE_LABEL} value={formatUSD(totalRawUsd)} isLoading={isLoading} />
-						<StatCard label={ACCOUNT_TEXT.AVAILABLE_LABEL} value={formatUSD(availableBalance)} isLoading={isLoading} />
-						<StatCard label={ACCOUNT_TEXT.MARGIN_USED_LABEL} value={formatUSD(totalMarginUsed)} isLoading={isLoading} />
+						<StatCard label={balanceLabel} value={formatUSD(balanceValue)} isLoading={isLoading} />
+						<StatCard label={availableLabel} value={formatUSD(accountSummary.available)} isLoading={isLoading} />
+						<StatCard
+							label={ACCOUNT_TEXT.MARGIN_USED_LABEL}
+							value={formatUSD(accountSummary.perpMarginUsed)}
+							isLoading={isLoading}
+						/>
 						<StatCard
 							label={ACCOUNT_TEXT.MARGIN_RATIO_LABEL}
 							value={formatPercent(marginRatio)}
@@ -171,10 +202,27 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						/>
 					</div>
 
+					{showSpotFundsNotice && (
+						<div className="rounded-xs border border-stroke-warning-weak bg-warning-soft p-3 text-sm text-warning">
+							<div className="tabular-nums">
+								{t`Available funds are in Spot`}: {formatUSD(accountSummary.spotUsdcAvailable)}
+							</div>
+							<Button
+								variant="link"
+								intent="brand"
+								size="xs"
+								className="mt-1 h-auto p-0"
+								onClick={() => openTransferModal("toPerp")}
+							>
+								{t`Perps / Spot`}
+							</Button>
+						</div>
+					)}
+
 					{tradeRestricted || !hasWalletAccess ? (
 						<p className="pt-2 text-center text-sm text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 					) : (
-						<div className="grid grid-cols-3 gap-2 pt-2">
+						<div className="grid grid-cols-2 gap-2 pt-2">
 							<Button
 								variant="outline"
 								intent="neutral"
@@ -192,6 +240,15 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								iconLeft={<DownloadSimpleIcon className="size-4" />}
 							>
 								{ACCOUNT_TEXT.DEPOSIT_LABEL}
+							</Button>
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="md"
+								onClick={() => openTransferModal("toPerp")}
+								iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+							>
+								{t`Perps / Spot`}
 							</Button>
 							<Button
 								variant="outline"

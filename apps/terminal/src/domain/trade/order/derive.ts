@@ -1,8 +1,10 @@
 import { getSideLabels, getSizeModeLabel, type SideLabels } from "@/config/ui-text";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import {
+	type AccountAbstraction,
 	getAvailableBalanceToken,
 	getSpotBalanceData,
+	isQuoteBalanceSharedWithPerps,
 	type SpotAvailableAfterMaintenance,
 	type SpotBalanceData,
 } from "@/domain/trade/balances";
@@ -21,6 +23,7 @@ export interface OrderEntryInputs {
 	sizeInput: string;
 	spotBalances: SpotBalance[] | null | undefined;
 	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null;
+	accountAbstraction?: AccountAbstraction | null;
 	/** Max trade sizes in base token: [long, short] */
 	maxTradeSzs: [number, number] | null;
 	/** Available to trade in quote token: [long, short] */
@@ -35,6 +38,8 @@ export interface OrderEntryDerived {
 	szDecimals: number;
 	availableBalance: number;
 	availableBalanceToken: string;
+	displayAvailableBalance: number;
+	displayAvailableBalanceToken: string;
 	spotBalance: SpotBalanceData;
 	maxSize: number;
 	sizeValue: number;
@@ -56,6 +61,17 @@ function getAvailableBalance(
 	return isBuy ? availableLong : availableShort;
 }
 
+function getDisplayAvailableBalance(
+	isSpotMarket: boolean,
+	accountAbstraction: AccountAbstraction | null | undefined,
+	spotBalance: SpotBalanceData,
+	availableBalance: number,
+): number {
+	if (isSpotMarket) return availableBalance;
+	if (isQuoteBalanceSharedWithPerps(accountAbstraction)) return spotBalance.quoteAvailable;
+	return availableBalance;
+}
+
 export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const isSpotMarket = inputs.market?.kind === "spot";
 	const isBuy = inputs.side === "buy";
@@ -69,7 +85,14 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const availableBalanceToken = getAvailableBalanceToken(inputs.market, inputs.side);
 
 	const [availableLong, availableShort] = inputs.availableToTrade ?? [0, 0];
-	const availableBalance = getAvailableBalance(isSpotMarket, isBuy, spotBalance, availableLong, availableShort);
+	const rawAvailableBalance = getAvailableBalance(isSpotMarket, isBuy, spotBalance, availableLong, availableShort);
+	const displayAvailableBalance = getDisplayAvailableBalance(
+		isSpotMarket,
+		inputs.accountAbstraction,
+		spotBalance,
+		rawAvailableBalance,
+	);
+	const availableBalance = rawAvailableBalance;
 
 	const maxSize = getMaxSizeForOrderEntry({
 		isConnected: inputs.isConnected,
@@ -100,6 +123,8 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		szDecimals,
 		availableBalance,
 		availableBalanceToken,
+		displayAvailableBalance,
+		displayAvailableBalanceToken: availableBalanceToken,
 		spotBalance,
 		maxSize,
 		sizeValue,

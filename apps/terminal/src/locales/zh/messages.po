@@ -92,10 +92,6 @@ msgstr "账户"
 msgid "Account and wallet"
 msgstr "账户与钱包"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "Account Balances"
-msgstr "账户余额"
-
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Account Equity"
 msgstr "账户权益"
@@ -222,7 +218,6 @@ msgstr "资产"
 #~ msgid "Assets"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -236,7 +231,7 @@ msgstr "可用"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Available funds are in Spot"
-msgstr ""
+msgstr "可用资金在现货账户"
 
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -277,7 +272,6 @@ msgstr "可用于交易的余额"
 #~ msgid "Balance:"
 #~ msgstr ""
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "余额"
@@ -591,7 +585,6 @@ msgstr "连接钱包以跨链转移资金"
 #~ msgid "Connect your wallet to start trading on Hyperliquid"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "连接钱包查看余额。"
@@ -1085,7 +1078,6 @@ msgstr "启用交易失败"
 msgid "Failed to load balances"
 msgstr "加载余额失败"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Failed to load balances."
 msgstr "加载余额失败。"
@@ -1232,7 +1224,7 @@ msgstr "资金费率历史"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
-msgstr ""
+msgstr "资金在现货账户"
 
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1268,7 +1260,6 @@ msgstr "GTC（撤销前有效）"
 msgid "H"
 msgstr "H"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr "隐藏小额"
@@ -1802,7 +1793,6 @@ msgstr "Hyperliquid 上无余额，请先充值。"
 msgid "No balances found"
 msgstr "未找到余额"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "未找到余额。存入资金开始交易。"
@@ -1953,8 +1943,9 @@ msgstr "未平仓量"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Open Orders"
-msgstr "未成交订单"
+msgstr "当前委托"
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Open positions count"
@@ -2013,7 +2004,7 @@ msgstr "委托已成交"
 #: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Order History"
-msgstr "订单历史"
+msgstr "委托历史"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Order Queue"
@@ -2043,8 +2034,8 @@ msgid "orders"
 msgstr "委托"
 
 #: src/config/trade.ts
-msgid "Orders"
-msgstr "委托"
+#~ msgid "Orders"
+#~ msgstr "委托"
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -2126,7 +2117,6 @@ msgstr "待处理"
 msgid "Perp"
 msgstr "永续"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Perpetuals"
 msgstr "永续合约"
@@ -2141,7 +2131,7 @@ msgstr "永续合约"
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Perps / Spot"
-msgstr ""
+msgstr "合约 / 现货"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
@@ -2150,7 +2140,7 @@ msgstr "合约账户"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Equity"
-msgstr ""
+msgstr "永续权益"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
@@ -2159,7 +2149,7 @@ msgstr "合约概览"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Withdrawable"
-msgstr ""
+msgstr "永续可提"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -2234,7 +2224,7 @@ msgstr "投资组合"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Portfolio Margin"
-msgstr ""
+msgstr "组合保证金"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2600,7 +2590,6 @@ msgstr "卖出"
 msgid "Sell Short"
 msgstr "卖出做空"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send"
@@ -2628,11 +2617,11 @@ msgstr "已发送至 Hyperliquid"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Account Balances"
-msgstr ""
+msgstr "分账户余额"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Separate Accounts"
-msgstr ""
+msgstr "分账户"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Set"
@@ -2847,7 +2836,6 @@ msgstr "来源"
 #~ msgstr "现货"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -2862,7 +2850,7 @@ msgstr "现货账户"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Spot Available"
-msgstr ""
+msgstr "现货可用"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
@@ -2936,7 +2924,6 @@ msgstr "支持"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
@@ -3171,12 +3158,10 @@ msgstr "订单有效期"
 msgid "To"
 msgstr "至"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr "至合约"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr "至现货"
@@ -3195,7 +3180,6 @@ msgstr "切换数量模式"
 msgid "TOKEN"
 msgstr "TOKEN"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -3257,8 +3241,9 @@ msgstr "交易"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Trade History"
-msgstr "交易历史"
+msgstr "成交历史"
 
 #. placeholder {0}: spotMarket.pairName
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -3271,7 +3256,6 @@ msgstr "成交"
 
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/config/trade.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "成交"
@@ -3401,7 +3385,7 @@ msgstr "类型"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Unified Account"
-msgstr ""
+msgstr "统一账户"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3562,7 +3546,7 @@ msgstr "提款"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Withdrawable"
-msgstr ""
+msgstr "可提"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"

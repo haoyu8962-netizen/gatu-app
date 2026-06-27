@@ -45,7 +45,7 @@ export function useOrderEntryData({
 	sizeInput,
 }: UseOrderEntryDataOptions): OrderEntryData {
 	const { isConnected } = useWalletSession();
-	const { spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
+	const { spotBalances, spotAvailableAfterMaintenance, accountAbstraction } = useDefaultDexBalances();
 	const {
 		displayLeverage: leverage,
 		currentLeverage,
@@ -76,6 +76,7 @@ export function useOrderEntryData({
 		sizeInput,
 		spotBalances,
 		spotAvailableAfterMaintenance,
+		accountAbstraction,
 		maxTradeSzs,
 		availableToTrade,
 	});

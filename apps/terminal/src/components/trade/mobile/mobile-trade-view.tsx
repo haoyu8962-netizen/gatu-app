@@ -381,7 +381,12 @@ export function MobileTradeView({ className, embedded }: Props) {
 					</div>
 				</div>
 			</div>
-			<div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div
+				className={cn(
+					"flex-1 min-h-0 flex flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+					embedded ? "overflow-visible overscroll-y-auto" : "overflow-y-auto overscroll-contain",
+				)}
+			>
 				<div
 					className={cn(
 						embedded ? "flex-1 min-h-min flex flex-col justify-between px-2 py-2 space-y-2" : "px-3 py-4 space-y-4",
