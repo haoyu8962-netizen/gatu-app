@@ -7,7 +7,7 @@ interface MobileChartViewProps {
 
 export function MobileChartView({ className }: MobileChartViewProps) {
 	return (
-		<div className={cn("flex flex-col flex-1 min-h-0", className)}>
+		<div data-testid="mobile-chart-view" className={cn("mobile-chart-view flex flex-col flex-1 min-h-0", className)}>
 			<ChartPanel yAxisInside />
 		</div>
 	);
