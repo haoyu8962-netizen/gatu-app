@@ -529,24 +529,24 @@ msgstr "Confirma la transacción en tu monedero"
 #~ msgstr "Conecta una billetera para gestionar posiciones."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same owner wallet used on desktop before importing phone access."
-msgstr "Conecta el mismo monedero propietario usado en el escritorio antes de importar el acceso del teléfono."
+#~ msgid "Connect the same owner wallet used on desktop before importing phone access."
+#~ msgstr "Conecta el mismo monedero propietario usado en el escritorio antes de importar el acceso del teléfono."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same wallet used on desktop before importing phone access."
-msgstr "Conecta el mismo monedero usado en el escritorio antes de importar el acceso del teléfono."
+#~ msgid "Connect the same wallet used on desktop before importing phone access."
+#~ msgstr "Conecta el mismo monedero usado en el escritorio antes de importar el acceso del teléfono."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same wallet used on desktop."
-msgstr "Conecta el mismo monedero usado en el escritorio."
+#~ msgid "Connect the same wallet used on desktop."
+#~ msgstr "Conecta el mismo monedero usado en el escritorio."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect to verify"
-msgstr "Conecta para verificar"
+#~ msgid "Connect to verify"
+#~ msgstr "Conecta para verificar"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect wallet"
-msgstr "Conectar monedero"
+#~ msgid "Connect wallet"
+#~ msgstr "Conectar monedero"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1278,6 +1278,10 @@ msgid "Import phone access"
 msgstr "Importar acceso del teléfono"
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
 msgid "Importing..."
 msgstr "Importando..."
 
@@ -1701,6 +1705,10 @@ msgstr "Minuto(s)"
 #~ msgid "Mock Wallet (Testing)"
 #~ msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Mode"
+msgstr ""
+
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More"
 #~ msgstr "Más"
@@ -1867,8 +1875,8 @@ msgstr "No hay par de trading disponible para <0/>/<1/>"
 #~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "No wallet connected"
-msgstr "No hay wallet conectada"
+#~ msgid "No wallet connected"
+#~ msgstr "No hay wallet conectada"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No wallets found"
@@ -1947,8 +1955,8 @@ msgid "Open terminal"
 msgstr "Abrir terminal"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Open the phone link and connect the same wallet you use on desktop to import."
-msgstr ""
+#~ msgid "Open the phone link and connect the same wallet you use on desktop to import."
+#~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Open the phone link, then enter the pairing code shown on desktop."
@@ -2043,8 +2051,8 @@ msgid "Owner account"
 msgstr "Cuenta propietaria"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Owner wallet"
-msgstr "Wallet propietaria"
+#~ msgid "Owner wallet"
+#~ msgstr "Wallet propietaria"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "P&L"
@@ -2136,6 +2144,10 @@ msgstr "Acceso del teléfono listo"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Phone access reset. The replacement key expires at {expiresAtLabel}."
 msgstr "Acceso del teléfono restablecido. La clave de reemplazo caduca el {expiresAtLabel}."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Phone import"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone link"
@@ -2312,6 +2324,10 @@ msgstr "Tasa"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Ready"
 #~ msgstr "Listo"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Ready to import"
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -3073,6 +3089,10 @@ msgid "This mobile link is damaged or incomplete. Scan or paste it again."
 msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "This phone link belongs to a different owner account."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
 #~ msgstr "Este enlace móvil no está aprobado en Hyperliquid."
 
@@ -3220,6 +3240,10 @@ msgstr "Operando"
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Trading is not available in your region"
 msgstr "El trading no está disponible en tu región"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Trading key"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading key approved"
@@ -3383,7 +3407,6 @@ msgid "Use phone link"
 msgstr "Usar enlace móvil"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/routes/mobile-agent-sync.tsx
 msgid "Using"
 msgstr "Usando"
 

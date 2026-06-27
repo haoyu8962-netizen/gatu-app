@@ -181,12 +181,12 @@ export async function createMobileAgentSyncUrl(
 	const ciphertext = await crypto.subtle.encrypt(
 		{
 			name: "AES-GCM",
-			iv: toArrayBuffer(base64UrlToBytes(envelopeWithoutCiphertext.cipher.iv)),
-			additionalData: toArrayBuffer(createEnvelopeAdditionalData(envelopeWithoutCiphertext)),
+			iv: toBufferSource(base64UrlToBytes(envelopeWithoutCiphertext.cipher.iv)),
+			additionalData: toBufferSource(createEnvelopeAdditionalData(envelopeWithoutCiphertext)),
 			tagLength: AES_GCM_TAG_LENGTH,
 		},
 		key,
-		toArrayBuffer(utf8Encode(canonicalJson(plaintext))),
+		toBufferSource(utf8Encode(canonicalJson(plaintext))),
 	);
 	const envelope: MobileSyncEnvelope = {
 		...envelopeWithoutCiphertext,
@@ -287,12 +287,12 @@ export async function decryptMobileAgentSyncEnvelope(
 		plaintextBytes = await crypto.subtle.decrypt(
 			{
 				name: "AES-GCM",
-				iv: toArrayBuffer(base64UrlToBytes(validEnvelope.cipher.iv)),
-				additionalData: toArrayBuffer(createEnvelopeAdditionalData(envelopeWithoutCiphertext)),
+				iv: toBufferSource(base64UrlToBytes(validEnvelope.cipher.iv)),
+				additionalData: toBufferSource(createEnvelopeAdditionalData(envelopeWithoutCiphertext)),
 				tagLength: AES_GCM_TAG_LENGTH,
 			},
 			key,
-			toArrayBuffer(base64UrlToBytes(validEnvelope.ciphertext)),
+			toBufferSource(base64UrlToBytes(validEnvelope.ciphertext)),
 		);
 	} catch (error) {
 		if (error instanceof MobileSyncError) throw error;
@@ -464,7 +464,7 @@ function importRawKey(keyBytes: Uint8Array, crypto: Crypto): Promise<CryptoKey> 
 	}
 	return crypto.subtle.importKey(
 		"raw",
-		toArrayBuffer(keyBytes),
+		toBufferSource(keyBytes),
 		{ name: "AES-GCM", length: AES_GCM_KEY_LENGTH },
 		false,
 		["encrypt", "decrypt"],
@@ -643,10 +643,10 @@ function utf8Decode(input: Uint8Array): string {
 	return new TextDecoder().decode(input);
 }
 
-function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+function toBufferSource(bytes: Uint8Array): Uint8Array {
 	const copy = new Uint8Array(bytes.byteLength);
 	copy.set(bytes);
-	return copy.buffer;
+	return copy;
 }
 
 function getCrypto(): Crypto {

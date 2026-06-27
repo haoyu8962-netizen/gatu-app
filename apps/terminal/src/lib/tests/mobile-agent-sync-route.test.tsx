@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { webcrypto } from "node:crypto";
 import {
 	act,
 	type ComponentPropsWithoutRef,
@@ -21,7 +22,6 @@ import {
 
 const NOW_MS = 1_779_364_227_000;
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
-const OTHER_USER_ADDRESS = "0x2222222222222222222222222222222222222222" as const;
 const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 
 const testState = vi.hoisted(() => ({
@@ -172,6 +172,11 @@ describe("MobileAgentSyncRoute", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		vi.stubGlobal("crypto", webcrypto);
+		Object.defineProperty(window, "crypto", {
+			value: webcrypto,
+			configurable: true,
+		});
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -188,6 +193,7 @@ describe("MobileAgentSyncRoute", () => {
 		window.sessionStorage.clear();
 		vi.clearAllMocks();
 		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
 		Reflect.deleteProperty(navigator, "clipboard");
 	});
 
@@ -216,7 +222,7 @@ describe("MobileAgentSyncRoute", () => {
 		expect(importButton?.disabled).toBe(true);
 	});
 
-	it("loads a phone-access hash, cleans the URL, persists the envelope, and stays disabled without a wallet", async () => {
+	it("loads a phone-access hash, cleans the URL, persists the envelope, and enables import without a wallet", async () => {
 		const sync = await createSyncFixture();
 		const url = new URL(sync.url);
 		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
@@ -231,12 +237,12 @@ describe("MobileAgentSyncRoute", () => {
 		expect(window.location.hash).toBe("");
 		expect(window.sessionStorage.getItem("gatu.mobile-sync.import-draft.v1")).not.toBeNull();
 		expect(container.textContent).toContain("Phone link loaded");
-		expect(container.textContent).toContain("No wallet connected");
+		expect(container.textContent).toContain("Phone import");
 
 		const importButton = [...container.querySelectorAll("button")].find((button) =>
 			button.textContent?.includes("Import phone access"),
 		);
-		expect(importButton?.disabled).toBe(true);
+		expect(importButton?.disabled).toBe(false);
 	});
 
 	it("uses mobile-friendly input attributes and text labels for the phone link step", async () => {
@@ -267,8 +273,8 @@ describe("MobileAgentSyncRoute", () => {
 		expect(phoneLinkInput?.inputMode).toBe("url");
 		expect(phoneLinkInput?.getAttribute("autocapitalize")).toBe("none");
 		expect(phoneLinkInput?.getAttribute("autocorrect")).toBe("off");
-		expect(container.textContent).toContain("Owner wallet");
-		expect(container.textContent).toContain("Connect to verify");
+		expect(container.textContent).toContain("Trading key");
+		expect(container.textContent).toContain("Ready to import");
 	});
 
 	it("loads a same-route phone-access hash after the empty route is already open", async () => {
@@ -613,7 +619,7 @@ describe("MobileAgentSyncRoute", () => {
 		expect(container.querySelector('input[placeholder="Paste link from desktop"]')).not.toBeNull();
 	});
 
-	it("keeps the loaded phone link while opening and closing the wallet modal", async () => {
+	it("does not require or render a wallet connection step after a phone link is loaded", async () => {
 		const sync = await createSyncFixture();
 		const url = new URL(sync.url);
 		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
@@ -625,31 +631,13 @@ describe("MobileAgentSyncRoute", () => {
 		});
 		await flushAsyncWork();
 
-		const connectWalletButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Connect wallet"),
-		);
-		act(() => {
-			connectWalletButton?.click();
-		});
-		await flushAsyncWork();
-
-		expect(container.textContent).toContain("Wallet modal");
 		expect(container.textContent).toContain("Phone link loaded");
-
-		const closeWalletButton = [...container.querySelectorAll("button")].find((button) =>
-			button.textContent?.includes("Close wallet"),
-		);
-		act(() => {
-			closeWalletButton?.click();
-		});
-		await flushAsyncWork();
-
+		expect(container.textContent).not.toContain("Connect wallet");
 		expect(container.textContent).not.toContain("Wallet modal");
-		expect(container.textContent).toContain("Phone link loaded");
+		expect(container.textContent).not.toContain("Connect to verify");
 	});
 
-	it("enables import once a link is loaded and the matching wallet is connected", async () => {
-		testState.address = USER_ADDRESS;
+	it("enables import once a valid link is loaded without a phone wallet", async () => {
 		const sync = await createSyncFixture();
 		const url = new URL(sync.url);
 		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
@@ -667,7 +655,7 @@ describe("MobileAgentSyncRoute", () => {
 		expect(importButton?.disabled).toBe(false);
 	});
 
-	it("does not import and prompts to connect a wallet when none is connected", async () => {
+	it("imports phone access when no wallet is connected on the phone", async () => {
 		const sync = await createSyncFixture();
 		const url = new URL(sync.url);
 		window.history.replaceState(null, "", `${url.pathname}${url.hash}`);
@@ -682,18 +670,16 @@ describe("MobileAgentSyncRoute", () => {
 		const importButton = [...container.querySelectorAll("button")].find((button) =>
 			button.textContent?.includes("Import phone access"),
 		);
-		expect(importButton?.disabled).toBe(true);
+		expect(importButton?.disabled).toBe(false);
 
 		act(() => {
 			importButton?.closest("form")?.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
 		});
 		await flushAsyncWork(60);
 
-		expect(testState.setAgent).not.toHaveBeenCalled();
-		expect(container.textContent).toContain(
-			"Connect the same owner wallet used on desktop before importing phone access.",
-		);
-		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).not.toBeNull();
+		expect(testState.setAgent).toHaveBeenCalledTimes(1);
+		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
+		expect(container.textContent).toContain("Phone access ready");
 	});
 
 	it("uses alert semantics and focuses an invalid link error", async () => {
@@ -726,25 +712,16 @@ describe("MobileAgentSyncRoute", () => {
 
 	it.each([
 		{
-			name: "wrong connected wallet",
-			address: OTHER_USER_ADDRESS,
-			syncOptions: {},
-			expectedMessage: "Connect the same wallet used on desktop.",
-		},
-		{
 			name: "wrong environment",
-			address: USER_ADDRESS,
 			syncOptions: { env: "Testnet" as const },
 			expectedMessage: "This link was created for a different network.",
 		},
 		{
 			name: "wrong origin",
-			address: USER_ADDRESS,
 			syncOptions: { appOrigin: "https://desktop.hypeterminal.test" },
 			expectedMessage: "This link was created for a different site.",
 		},
-	])("shows a clear import error for $name", async ({ address, expectedMessage, syncOptions }) => {
-		testState.address = address;
+	])("shows a clear import error for $name", async ({ expectedMessage, syncOptions }) => {
 		const sync = await createSyncFixture(syncOptions);
 		saveMobileSyncDraft(sync.envelope, sync.encodedKey, {
 			storage: window.sessionStorage,
@@ -774,7 +751,6 @@ describe("MobileAgentSyncRoute", () => {
 	});
 
 	it("imports phone access and lands the agent after a successful import", async () => {
-		testState.address = USER_ADDRESS;
 		const sync = await createSyncFixture();
 		saveMobileSyncDraft(sync.envelope, sync.encodedKey, {
 			storage: window.sessionStorage,

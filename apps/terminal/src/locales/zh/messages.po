@@ -529,24 +529,24 @@ msgstr "在钱包中确认交易"
 #~ msgstr "连接钱包以管理仓位。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same owner wallet used on desktop before importing phone access."
-msgstr "导入手机访问权限前，请连接与桌面端相同的所有者钱包。"
+#~ msgid "Connect the same owner wallet used on desktop before importing phone access."
+#~ msgstr "导入手机访问权限前，请连接与桌面端相同的所有者钱包。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same wallet used on desktop before importing phone access."
-msgstr "导入手机访问权限前，请连接与桌面端相同的钱包。"
+#~ msgid "Connect the same wallet used on desktop before importing phone access."
+#~ msgstr "导入手机访问权限前，请连接与桌面端相同的钱包。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same wallet used on desktop."
-msgstr "请连接与桌面端相同的钱包。"
+#~ msgid "Connect the same wallet used on desktop."
+#~ msgstr "请连接与桌面端相同的钱包。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect to verify"
-msgstr "连接以验证"
+#~ msgid "Connect to verify"
+#~ msgstr "连接以验证"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect wallet"
-msgstr "连接钱包"
+#~ msgid "Connect wallet"
+#~ msgstr "连接钱包"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1278,6 +1278,10 @@ msgid "Import phone access"
 msgstr "导入手机访问权限"
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
 msgid "Importing..."
 msgstr "导入中…"
 
@@ -1701,6 +1705,10 @@ msgstr "分钟"
 #~ msgid "Mock Wallet (Testing)"
 #~ msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Mode"
+msgstr ""
+
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More"
 #~ msgstr "更多"
@@ -1867,8 +1875,8 @@ msgstr "<0/>/<1/> 暂无可用交易对"
 #~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "No wallet connected"
-msgstr "未连接钱包"
+#~ msgid "No wallet connected"
+#~ msgstr "未连接钱包"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No wallets found"
@@ -1947,8 +1955,8 @@ msgid "Open terminal"
 msgstr "打开终端"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Open the phone link and connect the same wallet you use on desktop to import."
-msgstr ""
+#~ msgid "Open the phone link and connect the same wallet you use on desktop to import."
+#~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Open the phone link, then enter the pairing code shown on desktop."
@@ -2043,8 +2051,8 @@ msgid "Owner account"
 msgstr "所有者账户"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Owner wallet"
-msgstr "所有者钱包"
+#~ msgid "Owner wallet"
+#~ msgstr "所有者钱包"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "P&L"
@@ -2136,6 +2144,10 @@ msgstr "手机访问已就绪"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Phone access reset. The replacement key expires at {expiresAtLabel}."
 msgstr "手机访问已重置。替换密钥将于 {expiresAtLabel} 过期。"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Phone import"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone link"
@@ -2312,6 +2324,10 @@ msgstr "费率"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Ready"
 #~ msgstr "就绪"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Ready to import"
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -3073,6 +3089,10 @@ msgid "This mobile link is damaged or incomplete. Scan or paste it again."
 msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "This phone link belongs to a different owner account."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
 #~ msgstr "此手机链接未在 Hyperliquid 上获得授权。"
 
@@ -3220,6 +3240,10 @@ msgstr "交易中"
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Trading is not available in your region"
 msgstr "您所在的地区暂不支持交易"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Trading key"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading key approved"
@@ -3383,7 +3407,6 @@ msgid "Use phone link"
 msgstr "使用手机链接"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/routes/mobile-agent-sync.tsx
 msgid "Using"
 msgstr "使用中"
 
