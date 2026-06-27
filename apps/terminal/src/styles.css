@@ -555,6 +555,12 @@
     --price-flash-color: var(--market-down);
   }
 
+  @media (max-width: 767px) {
+    .mobile-terminal {
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
   @keyframes mobile-price-color-change {
     0% {
       color: var(--price-flash-color);

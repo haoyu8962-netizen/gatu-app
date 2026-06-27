@@ -1,4 +1,3 @@
-import { Skeleton } from "boneyard-js/react";
 import { useEffect, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { get24hChange } from "@/domain/market";
@@ -24,7 +23,7 @@ interface Props {
 }
 
 export function MobileMarketBar({ className }: Props) {
-	const { data: market, isLoading } = useSelectedMarketInfo();
+	const { data: market } = useSelectedMarketInfo();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { resetPrices } = useOrderEntryActions();
@@ -66,7 +65,7 @@ export function MobileMarketBar({ className }: Props) {
 				className,
 			)}
 		>
-			<div className="min-w-0 px-2 py-1.5 min-[390px]:px-2.5 flex items-center justify-between gap-1.5 min-[390px]:gap-2">
+			<div className="h-full min-w-0 px-2 py-1.5 min-[390px]:px-2.5 flex items-center justify-between gap-1.5 min-[390px]:gap-2">
 				<div className="flex items-center gap-1.5 min-[390px]:gap-2 min-w-0">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					{hasLeverage && (
@@ -76,28 +75,35 @@ export function MobileMarketBar({ className }: Props) {
 					)}
 				</div>
 
-				<Skeleton name="market-price" loading={isLoading}>
-					<div className="grid w-[102px] min-[390px]:w-[132px] min-[400px]:w-[148px] grid-cols-[1fr_0px] min-[390px]:grid-cols-[1fr_32px] items-center shrink-0">
+				<div data-boneyard="market-price" className="relative shrink-0">
+					<div className="grid w-[102px] min-[390px]:w-[132px] min-[400px]:w-[148px] grid-cols-[1fr_0px] min-[390px]:grid-cols-[1fr_32px] items-center">
 						<div className="min-w-0 text-right">
 							<span
 								key={priceFlash.sequence}
 								data-direction={priceFlash.direction ?? undefined}
 								className={cn(
-									"block font-sans text-lg leading-7 font-medium text-fg tabular-nums",
+									"block h-7 font-sans text-lg leading-7 font-medium text-fg tabular-nums",
 									priceFlash.direction && "use-color-change",
 								)}
 							>
 								{priceText}
 							</span>
-							{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER && (
-								<div className={cn("font-sans text-2xs leading-4 tabular-nums", changeColorClass)}>
-									{changeAmountText} / {changePercentText}
-								</div>
-							)}
+							<div
+								className={cn(
+									"h-4 font-sans text-2xs leading-4 tabular-nums",
+									changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
+										? "invisible text-fg-muted"
+										: changeColorClass,
+								)}
+							>
+								{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
+									? `${changeAmountText} / ${changePercentText}`
+									: "0.00 / 0.00%"}
+							</div>
 						</div>
 						<div className="h-8 w-0 min-[390px]:w-8" aria-hidden="true" />
 					</div>
-				</Skeleton>
+				</div>
 			</div>
 		</div>
 	);

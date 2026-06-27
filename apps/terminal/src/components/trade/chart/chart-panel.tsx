@@ -31,6 +31,7 @@ export function ChartPanel({ yAxisInside = false }: Props) {
 
 	return (
 		<div className="h-full flex flex-col overflow-hidden">
+			{!selectedMarket && <ChartLoadingFallback />}
 			{chartType === "default" && selectedMarket && (
 				<ClientOnly>
 					<Suspense fallback={<ChartLoadingFallback />}>

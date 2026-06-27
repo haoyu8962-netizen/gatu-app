@@ -37,13 +37,13 @@ function TradeOrderView() {
 	return (
 		<div
 			className={cn(
-				"grid h-full min-h-0 bg-background",
+				"grid h-full min-h-0 bg-background [overflow-anchor:none]",
 				isPageScroll
-					? "grid-rows-[minmax(57px,auto)_minmax(420px,52dvh)_auto] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-					: "grid-rows-[minmax(57px,auto)_minmax(0,2.4fr)_minmax(0,0.8fr)] overflow-hidden",
+					? "grid-rows-[57px_minmax(420px,52dvh)_auto] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					: "grid-rows-[57px_minmax(0,2.4fr)_minmax(0,0.8fr)] overflow-hidden",
 			)}
 		>
-			<MobileMarketBar />
+			<MobileMarketBar className="h-[57px] min-h-[57px]" />
 
 			<div className="w-full min-w-0 min-h-0 overflow-hidden flex items-stretch">
 				<MobileTradeView embedded className="flex-[1.2] min-h-0 min-w-0 border-r border-stroke-weak/60" />
@@ -86,15 +86,15 @@ function MarketsDataView() {
 	return (
 		<div
 			className={cn(
-				"grid h-full min-h-0 bg-background",
+				"grid h-full min-h-0 bg-background [overflow-anchor:none]",
 				isPageScroll
-					? "grid-rows-[minmax(57px,auto)_auto_minmax(320px,45dvh)_auto] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-					: "grid-rows-[minmax(57px,auto)_auto_minmax(0,1.4fr)_minmax(0,1fr)] overflow-hidden",
+					? "grid-rows-[57px_35px_minmax(320px,45dvh)_auto] overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					: "grid-rows-[57px_35px_minmax(0,1.4fr)_minmax(0,1fr)] overflow-hidden",
 			)}
 		>
-			<MobileMarketBar />
+			<MobileMarketBar className="h-[57px] min-h-[57px]" />
 
-			<div className="shrink-0 flex">
+			<div className="h-[35px] min-h-[35px] shrink-0 flex overflow-hidden">
 				{tabs.map((tab) => {
 					const active = topView === tab.value;
 					return (

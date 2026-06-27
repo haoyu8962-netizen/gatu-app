@@ -18,7 +18,13 @@ export function MobileTerminal({ className }: Props) {
 	const { setMobileActiveTab } = useGlobalSettingsActions();
 
 	return (
-		<div className={cn("h-dvh w-full flex flex-col bg-background text-fg font-sans", "overflow-hidden", className)}>
+		<div
+			className={cn(
+				"mobile-terminal h-dvh w-full flex flex-col bg-background text-fg font-sans",
+				"overflow-hidden",
+				className,
+			)}
+		>
 			<MobileHeader />
 			<GeoRestrictionBanner />
 			<OfflineBanner />
