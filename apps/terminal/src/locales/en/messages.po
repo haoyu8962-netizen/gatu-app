@@ -233,6 +233,11 @@ msgstr "Asset"
 msgid "Available"
 msgstr "Available"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Available funds are in Spot"
+msgstr "Available funds are in Spot"
+
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -750,8 +755,8 @@ msgid "Cross Leverage"
 msgstr "Cross Leverage"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Cross Margin"
-msgstr "Cross Margin"
+#~ msgid "Cross Margin"
+#~ msgstr "Cross Margin"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Margin Ratio"
@@ -986,6 +991,7 @@ msgstr "Entry Price"
 msgid "Environment"
 msgstr "Environment"
 
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "Equity"
@@ -1223,6 +1229,10 @@ msgstr "Funding History"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding Payments"
 #~ msgstr "Funding Payments"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Funds are in Spot account"
+msgstr "Funds are in Spot account"
 
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -2122,16 +2132,34 @@ msgid "Perpetuals"
 msgstr "Perpetuals"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Perps"
-msgstr "Perps"
+#~ msgid "Perps"
+#~ msgstr "Perps"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Perps / Spot"
+msgstr "Perps / Spot"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
 msgstr "Perps Account"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Perps Equity"
+msgstr "Perps Equity"
+
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
 msgstr "Perps Overview"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Perps Withdrawable"
+msgstr "Perps Withdrawable"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -2203,6 +2231,10 @@ msgstr "PNL"
 #: src/config/nav.tsx
 msgid "Portfolio"
 msgstr "Portfolio"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Portfolio Margin"
+msgstr "Portfolio Margin"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2594,6 +2626,14 @@ msgstr "Sending..."
 msgid "sent to Hyperliquid"
 msgstr "sent to Hyperliquid"
 
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Separate Account Balances"
+msgstr "Separate Account Balances"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Separate Accounts"
+msgstr "Separate Accounts"
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Set"
 msgstr "Set"
@@ -2818,6 +2858,11 @@ msgstr "Spot"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Spot Account"
 msgstr "Spot Account"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Spot Available"
+msgstr "Spot Available"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
@@ -3275,6 +3320,10 @@ msgstr "Transaction was rejected"
 msgid "Transfer"
 msgstr "Transfer"
 
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfer between Perps and Spot"
+msgstr "Transfer between Perps and Spot"
+
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
 msgstr "Transfer failed"
@@ -3349,6 +3398,10 @@ msgstr "Type"
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Unable to close position."
 #~ msgstr "Unable to close position."
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Unified Account"
+msgstr "Unified Account"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3506,6 +3559,10 @@ msgstr "will arrive in {0}"
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "Withdraw"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Withdrawable"
+msgstr "Withdrawable"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"

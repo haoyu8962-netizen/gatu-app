@@ -233,6 +233,11 @@ msgstr "资产"
 msgid "Available"
 msgstr "可用"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Available funds are in Spot"
+msgstr ""
+
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -750,8 +755,8 @@ msgid "Cross Leverage"
 msgstr "全仓杠杆"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Cross Margin"
-msgstr "全仓保证金"
+#~ msgid "Cross Margin"
+#~ msgstr "全仓保证金"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Margin Ratio"
@@ -986,6 +991,7 @@ msgstr "开仓价格"
 msgid "Environment"
 msgstr "环境"
 
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "净值"
@@ -1223,6 +1229,10 @@ msgstr "资金费率历史"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding Payments"
 #~ msgstr "资金费用"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Funds are in Spot account"
+msgstr ""
 
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -2122,16 +2132,34 @@ msgid "Perpetuals"
 msgstr "永续合约"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Perps"
-msgstr "永续合约"
+#~ msgid "Perps"
+#~ msgstr "永续合约"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Perps / Spot"
+msgstr ""
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
 msgstr "合约账户"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Perps Equity"
+msgstr ""
+
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
 msgstr "合约概览"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Perps Withdrawable"
+msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -2203,6 +2231,10 @@ msgstr "盈亏"
 #: src/config/nav.tsx
 msgid "Portfolio"
 msgstr "投资组合"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Portfolio Margin"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2594,6 +2626,14 @@ msgstr "发送中..."
 msgid "sent to Hyperliquid"
 msgstr "已发送至 Hyperliquid"
 
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Separate Account Balances"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Separate Accounts"
+msgstr ""
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Set"
 msgstr "设置"
@@ -2818,6 +2858,11 @@ msgstr "现货"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Spot Account"
 msgstr "现货账户"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Spot Available"
+msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
@@ -3275,6 +3320,10 @@ msgstr "交易被拒绝"
 msgid "Transfer"
 msgstr "划转"
 
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfer between Perps and Spot"
+msgstr ""
+
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
 msgstr "划转失败"
@@ -3349,6 +3398,10 @@ msgstr "类型"
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Unable to close position."
 #~ msgstr "无法平仓。"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Unified Account"
+msgstr ""
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3506,6 +3559,10 @@ msgstr "将在{0}后到账"
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "提款"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Withdrawable"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"

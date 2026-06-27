@@ -233,6 +233,11 @@ msgstr "संपत्ति"
 msgid "Available"
 msgstr "उपलब्ध"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Available funds are in Spot"
+msgstr ""
+
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -750,8 +755,8 @@ msgid "Cross Leverage"
 msgstr "क्रॉस लीवरेज"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Cross Margin"
-msgstr "क्रॉस मार्जिन"
+#~ msgid "Cross Margin"
+#~ msgstr "क्रॉस मार्जिन"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Margin Ratio"
@@ -986,6 +991,7 @@ msgstr "एंट्री कीमत"
 msgid "Environment"
 msgstr "एनवायरनमेंट"
 
+#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "इक्विटी"
@@ -1223,6 +1229,10 @@ msgstr "फंडिंग इतिहास"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding Payments"
 #~ msgstr "फंडिंग भुगतान"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Funds are in Spot account"
+msgstr ""
 
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -2122,16 +2132,34 @@ msgid "Perpetuals"
 msgstr "Perpetuals"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Perps"
-msgstr "परप्स"
+#~ msgid "Perps"
+#~ msgstr "परप्स"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Perps / Spot"
+msgstr ""
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
 msgstr "Perps खाता"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Perps Equity"
+msgstr ""
+
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
 msgstr "Perps अवलोकन"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Perps Withdrawable"
+msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -2203,6 +2231,10 @@ msgstr "PNL"
 #: src/config/nav.tsx
 msgid "Portfolio"
 msgstr "पोर्टफोलियो"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Portfolio Margin"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2594,6 +2626,14 @@ msgstr "भेजा जा रहा है..."
 msgid "sent to Hyperliquid"
 msgstr "Hyperliquid को भेजा गया"
 
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Separate Account Balances"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Separate Accounts"
+msgstr ""
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Set"
 msgstr "सेट करें"
@@ -2818,6 +2858,11 @@ msgstr "स्पॉट"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Spot Account"
 msgstr "Spot खाता"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Spot Available"
+msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
@@ -3275,6 +3320,10 @@ msgstr "लेन-देन अस्वीकार कर दिया गय�
 msgid "Transfer"
 msgstr "ट्रांसफ़र"
 
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfer between Perps and Spot"
+msgstr ""
+
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
 msgstr "ट्रांसफ़र विफल रहा"
@@ -3349,6 +3398,10 @@ msgstr "प्रकार"
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Unable to close position."
 #~ msgstr "पोजीशन बंद करने में असमर्थ।"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Unified Account"
+msgstr ""
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3506,6 +3559,10 @@ msgstr "{0} में पहुँचेगा"
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "निकासी"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Withdrawable"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"

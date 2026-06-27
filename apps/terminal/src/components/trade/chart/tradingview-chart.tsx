@@ -24,6 +24,9 @@ import {
 } from "./constants";
 import { createDatafeed } from "./datafeed";
 
+const CHART_READY_TIMEOUT_MS = 12_000;
+const MAX_CHART_INIT_ATTEMPTS = 2;
+
 interface Props {
 	symbol?: string;
 	interval?: string;
@@ -66,21 +69,62 @@ export function TradingViewChart({
 	useEffect(() => {
 		if (!containerRef.current) return;
 		let disposed = false;
+		let readyTimeout: ReturnType<typeof setTimeout> | null = null;
 		chartReadyRef.current = false;
 
-		const initWidget = async () => {
+		const clearReadyTimeout = () => {
+			if (readyTimeout) {
+				clearTimeout(readyTimeout);
+				readyTimeout = null;
+			}
+		};
+
+		const removeWidget = () => {
+			clearReadyTimeout();
+			if (widgetRef.current) {
+				widgetRef.current.remove();
+				widgetRef.current = null;
+			}
+			chartReadyRef.current = false;
+			appliedSymbolRef.current = null;
+			appliedIntervalRef.current = null;
+			if (cssUrlRef.current) {
+				URL.revokeObjectURL(cssUrlRef.current);
+				cssUrlRef.current = null;
+			}
+		};
+
+		const handleFinalFailure = (reason: string, attempt: number, error?: unknown) => {
+			if (disposed) return;
+			console.warn("[TradingViewChart] TradingView failed to initialize; switching to default chart.", {
+				attempt,
+				error,
+				maxAttempts: MAX_CHART_INIT_ATTEMPTS,
+				reason,
+			});
+			onSwitchToDefaultRef.current?.();
+		};
+
+		const scheduleReadyTimeout = (widget: IChartingLibraryWidget, attempt: number) => {
+			clearReadyTimeout();
+			readyTimeout = setTimeout(() => {
+				if (disposed || chartReadyRef.current || widgetRef.current !== widget) return;
+				removeWidget();
+				if (attempt < MAX_CHART_INIT_ATTEMPTS) {
+					void initWidget(attempt + 1);
+					return;
+				}
+				handleFinalFailure("ready-timeout", attempt);
+			}, CHART_READY_TIMEOUT_MS);
+		};
+
+		const initWidget = async (attempt = 1) => {
 			try {
 				await loadTradingViewScript();
 
 				if (disposed || !containerRef.current || !window.TradingView) return;
 
-				if (widgetRef.current) {
-					widgetRef.current.remove();
-				}
-
-				if (cssUrlRef.current) {
-					URL.revokeObjectURL(cssUrlRef.current);
-				}
+				removeWidget();
 
 				const overrides = buildChartOverrides();
 				const loadingColors = getLoadingScreenColors();
@@ -123,9 +167,11 @@ export function TradingViewChart({
 				widgetRef.current = widget;
 				appliedSymbolRef.current = initialSymbol;
 				appliedIntervalRef.current = initialInterval;
+				scheduleReadyTimeout(widget, attempt);
 
 				widget.onChartReady(() => {
 					if (disposed || widgetRef.current !== widget) return;
+					clearReadyTimeout();
 					chartReadyRef.current = true;
 					applySymbolRef.current();
 				});
@@ -166,8 +212,14 @@ export function TradingViewChart({
 						btn.appendChild(tvLabel);
 					});
 				}
-			} catch {
-				// widgetRef stays null on failure; source toggle then shows default chart
+			} catch (error) {
+				if (disposed) return;
+				removeWidget();
+				if (attempt < MAX_CHART_INIT_ATTEMPTS) {
+					void initWidget(attempt + 1);
+					return;
+				}
+				handleFinalFailure("exception", attempt, error);
 			}
 		};
 
@@ -175,17 +227,8 @@ export function TradingViewChart({
 
 		return () => {
 			disposed = true;
-			if (widgetRef.current) {
-				widgetRef.current.remove();
-				widgetRef.current = null;
-			}
-			chartReadyRef.current = false;
-			appliedSymbolRef.current = null;
-			appliedIntervalRef.current = null;
-			if (cssUrlRef.current) {
-				URL.revokeObjectURL(cssUrlRef.current);
-				cssUrlRef.current = null;
-			}
+			clearReadyTimeout();
+			removeWidget();
 		};
 	}, [theme]);
 

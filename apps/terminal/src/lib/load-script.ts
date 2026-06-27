@@ -55,14 +55,22 @@ export function loadScript(src: string, options: LoadScriptOptions = {}): Promis
 		}
 
 		if (script?.getAttribute("data-loaded") === "true") {
-			resolve();
-			return;
+			if (!options.isReady || safeCheckReady(options.isReady)) {
+				resolve();
+				return;
+			}
+			script.remove();
+			script = null;
 		}
 		const readyState = (script as (HTMLScriptElement & { readyState?: string }) | null)?.readyState;
 		if (readyState === "complete" || readyState === "loaded") {
-			script?.setAttribute("data-loaded", "true");
-			resolve();
-			return;
+			if (!options.isReady || safeCheckReady(options.isReady)) {
+				script?.setAttribute("data-loaded", "true");
+				resolve();
+				return;
+			}
+			script?.remove();
+			script = null;
 		}
 
 		const cleanup = () => {
