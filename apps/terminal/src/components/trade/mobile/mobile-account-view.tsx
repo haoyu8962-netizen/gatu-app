@@ -30,7 +30,7 @@ interface MobileAccountViewProps {
 }
 
 export function MobileAccountView({ className }: MobileAccountViewProps) {
-	const { address, isConnected } = useWalletSession();
+	const { address, isConnected, sessionMode } = useWalletSession();
 	const { disconnectWallet } = useDisconnectWallet();
 
 	const { marginSummary, perpSummary, perpPositions, withdrawable, crossMaintenanceMarginUsed, isLoading } =
@@ -40,6 +40,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const { copied, copy } = useCopyToClipboard();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { tradeRestricted } = useGeoRestriction();
+	const hasWalletAccess = sessionMode === "wallet";
 
 	function handleCopyAddress() {
 		if (!address) return;
@@ -170,7 +171,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						/>
 					</div>
 
-					{tradeRestricted ? (
+					{tradeRestricted || !hasWalletAccess ? (
 						<p className="pt-2 text-center text-sm text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 					) : (
 						<div className="grid grid-cols-3 gap-2 pt-2">

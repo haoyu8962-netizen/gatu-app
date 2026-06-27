@@ -5,7 +5,7 @@ import { Trans } from "@lingui/react/macro";
 import { CheckCircleIcon, DeviceMobileIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { type ChangeEvent, type FormEvent, forwardRef, useCallback, useEffect, useRef, useState } from "react";
-import { useAgentWalletActions, useHyperliquid } from "@/lib/hyperliquid";
+import { setActiveAgentOwner, useAgentWalletActions, useHyperliquid } from "@/lib/hyperliquid";
 import {
 	clearMobileSyncDraft,
 	isMobileSyncEnvelopeExpired,
@@ -205,6 +205,7 @@ function MobileAgentSyncRoute() {
 			const { privateKey, publicKey, ...metadata } = record;
 
 			setAgent(imported.env, imported.userAddress, privateKey, publicKey, metadata);
+			setActiveAgentOwner(imported.env, imported.userAddress);
 			clearMobileSyncDraft();
 			setSync(null);
 			setEnvelopeSource(null);

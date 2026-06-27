@@ -65,7 +65,7 @@ import { TwapOrderSummary } from "./twap-order-summary";
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 export function TradePanel() {
-	const { address, isConnected } = useWalletSession();
+	const { address, isConnected, sessionMode } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const switchChain = useSwitchChain();
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
@@ -311,6 +311,7 @@ export function TradePanel() {
 		isSwitchingChain: switchChain.isPending,
 		switchChain: (chainId) => switchChain.mutate({ chainId }),
 		availableBalance,
+		canDeposit: sessionMode === "wallet",
 		validation,
 		isAgentLoading,
 		registerStatus,

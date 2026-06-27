@@ -27,6 +27,7 @@ const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 const testState = vi.hoisted(() => ({
 	address: undefined as string | undefined,
 	setAgent: vi.fn(),
+	setActiveAgentOwner: vi.fn(),
 }));
 
 function renderChildren(children: ReactNode) {
@@ -131,6 +132,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	setActiveAgentOwner: testState.setActiveAgentOwner,
 	useAgentWalletActions: () => ({ setAgent: testState.setAgent }),
 	useHyperliquid: () => ({
 		env: "Mainnet",
@@ -182,6 +184,7 @@ describe("MobileAgentSyncRoute", () => {
 		root = createRoot(container);
 		testState.address = undefined;
 		testState.setAgent.mockReset();
+		testState.setActiveAgentOwner.mockReset();
 		vi.spyOn(Date, "now").mockReturnValue(NOW_MS);
 		window.sessionStorage.clear();
 		window.history.replaceState(null, "", MOBILE_SYNC_ROUTE_PATH);
@@ -678,6 +681,8 @@ describe("MobileAgentSyncRoute", () => {
 		await flushAsyncWork(60);
 
 		expect(testState.setAgent).toHaveBeenCalledTimes(1);
+		expect(testState.setActiveAgentOwner).toHaveBeenCalledTimes(1);
+		expect(testState.setActiveAgentOwner).toHaveBeenCalledWith("Mainnet", USER_ADDRESS.toLowerCase());
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).toBeNull();
 		expect(container.textContent).toContain("Phone access ready");
 	});
@@ -746,6 +751,7 @@ describe("MobileAgentSyncRoute", () => {
 		await flushAsyncWork(80);
 
 		expect(testState.setAgent).not.toHaveBeenCalled();
+		expect(testState.setActiveAgentOwner).not.toHaveBeenCalled();
 		expect(container.textContent).toContain(expectedMessage);
 		expect(window.sessionStorage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY)).not.toBeNull();
 	});
@@ -777,6 +783,8 @@ describe("MobileAgentSyncRoute", () => {
 		await flushAsyncWork(60);
 
 		expect(testState.setAgent).toHaveBeenCalledTimes(1);
+		expect(testState.setActiveAgentOwner).toHaveBeenCalledTimes(1);
+		expect(testState.setActiveAgentOwner).toHaveBeenCalledWith("Mainnet", USER_ADDRESS.toLowerCase());
 		const [env, userAddress, privateKey, publicKey, metadata] = testState.setAgent.mock.calls[0];
 		expect(env).toBe("Mainnet");
 		expect(userAddress).toBe(USER_ADDRESS.toLowerCase());

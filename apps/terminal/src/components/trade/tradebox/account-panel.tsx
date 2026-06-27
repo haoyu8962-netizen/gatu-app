@@ -20,7 +20,7 @@ type SummaryRow = {
 
 export function AccountPanel() {
 	const { open: openDepositModal } = useDepositModalActions();
-	const { isConnected } = useWalletSession();
+	const { isConnected, sessionMode } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
 	const { marginSummary, perpSummary, perpPositions, withdrawable, crossMaintenanceMarginUsed } =
 		useDefaultDexBalances();
@@ -53,6 +53,7 @@ export function AccountPanel() {
 	const hasPerpData = isConnected && perpMetrics !== null;
 	const hasWithdrawableData = isConnected && marginSummary !== null;
 	const withdrawableDisplay = hasWithdrawableData ? formatUSD(withdrawable) : FALLBACK_VALUE_PLACEHOLDER;
+	const hasWalletAccess = sessionMode === "wallet";
 
 	const perpRows: SummaryRow[] = perpMetrics
 		? [
@@ -115,7 +116,7 @@ export function AccountPanel() {
 						</>
 					)}
 
-					{tradeRestricted ? (
+					{tradeRestricted || !hasWalletAccess ? (
 						<p className="mt-4 text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 					) : (
 						<div className="grid grid-cols-3 gap-1 mt-4">

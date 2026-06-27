@@ -25,7 +25,7 @@ const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 export function UserMenu() {
-	const { ready, authenticated, login, displayAddress } = useWalletSession();
+	const { ready, authenticated, isConnected, login, displayAddress, sessionMode } = useWalletSession();
 	const { disconnectWallet } = useDisconnectWallet();
 	const { data: ensName } = useEnsName({ address: displayAddress });
 	const { open: openDepositModal } = useDepositModalActions();
@@ -38,7 +38,7 @@ export function UserMenu() {
 		setMounted(true);
 	}, []);
 
-	if (!mounted || !ready) {
+	if (!mounted || (!ready && !isConnected)) {
 		return (
 			<Button
 				variant="outline"
@@ -57,7 +57,7 @@ export function UserMenu() {
 		);
 	}
 
-	if (!authenticated) {
+	if (!authenticated && !isConnected) {
 		return (
 			<Button
 				variant="outline"
@@ -76,6 +76,7 @@ export function UserMenu() {
 	}
 
 	const displayLabel = ensName ?? (displayAddress ? shortenAddress(displayAddress) : "");
+	const hasWalletAccess = sessionMode === "wallet";
 
 	const actionItems = [
 		...(displayAddress
@@ -91,7 +92,7 @@ export function UserMenu() {
 					},
 				]
 			: []),
-		...(tradeRestricted
+		...(tradeRestricted || !hasWalletAccess
 			? []
 			: [
 					{
@@ -100,11 +101,15 @@ export function UserMenu() {
 						onSelect: () => openDepositModal("deposit"),
 					},
 				]),
-		{
-			label: t`Link mobile device`,
-			icon: <DeviceMobileIcon className="size-3.5" />,
-			onSelect: () => setMobileSyncOpen(true),
-		},
+		...(hasWalletAccess
+			? [
+					{
+						label: t`Link mobile device`,
+						icon: <DeviceMobileIcon className="size-3.5" />,
+						onSelect: () => setMobileSyncOpen(true),
+					},
+				]
+			: []),
 	];
 
 	return (

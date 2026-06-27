@@ -34,7 +34,7 @@ function getScopeAccentClass(scope: string): string {
 export function TopNav() {
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
-	const { isConnected } = useWalletSession();
+	const { isConnected, sessionMode } = useWalletSession();
 	const { scope } = useExchangeScope();
 	const isTestnet = useIsTestnet();
 	const { tradeRestricted } = useGeoRestriction();
@@ -88,7 +88,7 @@ export function TopNav() {
 			</div>
 
 			<div className="flex items-center gap-2 min-h-8">
-				{isConnected && !tradeRestricted && (
+				{isConnected && sessionMode === "wallet" && !tradeRestricted && (
 					<Button
 						variant="filled"
 						intent="brand"

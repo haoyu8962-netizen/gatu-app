@@ -40,7 +40,7 @@ export function MobileNavDrawer() {
 	const [open, setOpen] = useState(false);
 	const [walletOpen, setWalletOpen] = useState(false);
 	const { scope } = useExchangeScope();
-	const { isConnected } = useWalletSession();
+	const { isConnected, sessionMode } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
@@ -131,7 +131,7 @@ export function MobileNavDrawer() {
 								<Trans>Connect Wallet</Trans>
 							</Button>
 						)}
-						{isConnected && !tradeRestricted && (
+						{isConnected && sessionMode === "wallet" && !tradeRestricted && (
 							<Button
 								variant="filled"
 								intent="brand"

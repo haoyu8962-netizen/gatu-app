@@ -69,7 +69,7 @@ interface Props {
 }
 
 export function MobileTradeView({ className, embedded }: Props) {
-	const { address, isConnected } = useWalletSession();
+	const { address, isConnected, sessionMode } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
 
@@ -314,6 +314,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 		needsChainSwitch,
 		isSwitchingChain,
 		availableBalance,
+		canDeposit: sessionMode === "wallet",
 		needsApproval: validation.needsApproval,
 		canSubmit: validation.canSubmit,
 		isRegistering,
@@ -662,6 +663,7 @@ interface MobileButtonContentInput {
 	needsChainSwitch: boolean;
 	isSwitchingChain: boolean;
 	availableBalance: number;
+	canDeposit: boolean;
 	needsApproval: boolean;
 	canSubmit: boolean;
 	isRegistering: boolean;
@@ -696,8 +698,8 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 	if (input.availableBalance <= 0) {
 		return {
 			text: ORDER_TEXT.BUTTON_DEPOSIT,
-			action: input.onDeposit,
-			disabled: false,
+			action: input.canDeposit ? input.onDeposit : () => {},
+			disabled: !input.canDeposit,
 			variant: "cyan",
 		};
 	}

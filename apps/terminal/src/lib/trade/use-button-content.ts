@@ -10,6 +10,7 @@ interface ButtonContentInput {
 	isSwitchingChain: boolean;
 	switchChain: (chainId: number) => void;
 	availableBalance: number;
+	canDeposit: boolean;
 	validation: FormValidationResult;
 	isAgentLoading: boolean;
 	registerStatus: RegistrationStatus;
@@ -70,8 +71,8 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		if (input.availableBalance <= 0) {
 			return {
 				text: t`Deposit`,
-				action: input.onDeposit,
-				disabled: false,
+				action: input.canDeposit ? input.onDeposit : () => {},
+				disabled: !input.canDeposit,
 				variant: "cyan",
 			};
 		}
@@ -87,6 +88,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.isSwitchingChain,
 		input.switchChain,
 		input.availableBalance,
+		input.canDeposit,
 		input.validation.needsApproval,
 		input.validation.canSubmit,
 		registerText,
