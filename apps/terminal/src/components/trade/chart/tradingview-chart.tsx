@@ -1,12 +1,16 @@
-import { useEffect, useRef } from "react";
+import { t } from "@lingui/core/macro";
+import { useEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
+import { priceScaleFromMid } from "@/lib/chart/symbol";
 import {
 	buildChartOverrides,
 	generateChartCssUrl,
 	getLoadingScreenColors,
 	getToolbarBgColor,
 } from "@/lib/chart/theme-colors";
+import { cn } from "@/lib/cn";
+import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import type { IChartingLibraryWidget, ResolutionString } from "@/types/charting_library";
 import {
 	CHART_CUSTOM_FONT_FAMILY,
@@ -27,18 +31,25 @@ import { createDatafeed } from "./datafeed";
 const CHART_READY_TIMEOUT_MS = 12_000;
 const MAX_CHART_INIT_ATTEMPTS = 2;
 
+function priceScaleFromSzDecimals(szDecimals: number): number {
+	const decimals = Math.min(Math.max(6 - szDecimals, 2), 8);
+	return 10 ** decimals;
+}
+
 interface Props {
 	symbol?: string;
+	market?: UnifiedMarketInfo;
 	interval?: string;
 	theme?: "light" | "dark";
-	onSwitchToDefault?: () => void;
+	yAxisInside?: boolean;
 }
 
 export function TradingViewChart({
 	symbol = DEFAULT_CHART_SYMBOL,
+	market,
 	interval = DEFAULT_CHART_INTERVAL,
 	theme = DEFAULT_CHART_THEME,
-	onSwitchToDefault,
+	yAxisInside = false,
 }: Props) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
@@ -46,13 +57,17 @@ export function TradingViewChart({
 	const chartReadyRef = useRef(false);
 	const targetSymbolRef = useRef(symbol);
 	const targetIntervalRef = useRef(interval);
+	const marketRef = useRef(market);
 	const appliedSymbolRef = useRef<string | null>(null);
 	const appliedIntervalRef = useRef<string | null>(null);
-	const onSwitchToDefaultRef = useRef(onSwitchToDefault);
 	const applySymbolRef = useRef<() => void>(() => {});
+	const [isSwitchingSymbol, setIsSwitchingSymbol] = useState(false);
+	const [initError, setInitError] = useState<string | null>(null);
+	const [retryNonce, setRetryNonce] = useState(0);
 	targetSymbolRef.current = symbol;
 	targetIntervalRef.current = interval;
-	onSwitchToDefaultRef.current = onSwitchToDefault;
+	marketRef.current = market;
+
 	applySymbolRef.current = () => {
 		const widget = widgetRef.current;
 		if (!widget || !chartReadyRef.current) return;
@@ -63,14 +78,38 @@ export function TradingViewChart({
 
 		appliedSymbolRef.current = nextSymbol;
 		appliedIntervalRef.current = nextInterval;
-		widget.setSymbol(nextSymbol, nextInterval as ResolutionString, () => {});
+		setInitError(null);
+		setIsSwitchingSymbol(true);
+		widget.setSymbol(nextSymbol, nextInterval as ResolutionString, () => {
+			if (
+				widgetRef.current === widget &&
+				targetSymbolRef.current === nextSymbol &&
+				targetIntervalRef.current === nextInterval
+			) {
+				setIsSwitchingSymbol(false);
+			}
+		});
 	};
 
 	useEffect(() => {
+		void retryNonce;
 		if (!containerRef.current) return;
 		let disposed = false;
 		let readyTimeout: ReturnType<typeof setTimeout> | null = null;
 		chartReadyRef.current = false;
+
+		function isSelectedMarketCoin(coin: string): boolean | undefined {
+			const currentMarket = marketRef.current;
+			return currentMarket?.name === coin ? true : undefined;
+		}
+
+		function getSelectedMarketPriceScale(coin: string): number | undefined {
+			const currentMarket = marketRef.current;
+			if (currentMarket?.name !== coin) return undefined;
+			if (currentMarket.markPx) return priceScaleFromMid(currentMarket.markPx);
+
+			return priceScaleFromSzDecimals(currentMarket.szDecimals);
+		}
 
 		const clearReadyTimeout = () => {
 			if (readyTimeout) {
@@ -96,13 +135,13 @@ export function TradingViewChart({
 
 		const handleFinalFailure = (reason: string, attempt: number, error?: unknown) => {
 			if (disposed) return;
-			console.warn("[TradingViewChart] TradingView failed to initialize; switching to default chart.", {
+			console.warn("[TradingViewChart] TradingView failed to initialize.", {
 				attempt,
 				error,
 				maxAttempts: MAX_CHART_INIT_ATTEMPTS,
 				reason,
 			});
-			onSwitchToDefaultRef.current?.();
+			setInitError(reason);
 		};
 
 		const scheduleReadyTimeout = (widget: IChartingLibraryWidget, attempt: number) => {
@@ -138,11 +177,16 @@ export function TradingViewChart({
 
 				const initialSymbol = targetSymbolRef.current;
 				const initialInterval = targetIntervalRef.current;
+				setInitError(null);
+				setIsSwitchingSymbol(false);
 
 				const widget = new window.TradingView.widget({
 					container: containerRef.current,
 					library_path: CHART_LIBRARY_PATH,
-					datafeed: createDatafeed(),
+					datafeed: createDatafeed({
+						getPriceScale: getSelectedMarketPriceScale,
+						isKnownCoin: isSelectedMarketCoin,
+					}),
 					symbol: initialSymbol,
 					interval: initialInterval as ResolutionString,
 					locale: CHART_LOCALE,
@@ -175,43 +219,6 @@ export function TradingViewChart({
 					chartReadyRef.current = true;
 					applySymbolRef.current();
 				});
-
-				if (onSwitchToDefaultRef.current) {
-					widget.headerReady().then(() => {
-						if (disposed || widgetRef.current !== widget) return;
-
-						const btn = widget.createButton({ align: "right", useTradingViewStyle: false });
-						btn.style.cssText =
-							"display:inline-flex;align-items:center;gap:6px;padding:0 4px;cursor:default;height:100%;";
-
-						const tvLabel = document.createElement("span");
-						tvLabel.textContent = "TradingView";
-						tvLabel.dataset.htActive = "true";
-						tvLabel.style.cssText = "font-size:12px;color:var(--tv-fg,inherit);";
-
-						const sep = document.createElement("span");
-						sep.style.cssText =
-							"display:inline-block;width:1px;height:12px;background:var(--tv-color-toolbar-divider-background,rgba(128,128,128,0.3));align-self:center;flex-shrink:0;";
-
-						const defaultLabel = document.createElement("span");
-						defaultLabel.textContent = "Default";
-						defaultLabel.style.cssText =
-							"font-size:12px;font-weight:400;color:var(--tv-muted-fg,rgba(128,128,128,0.8));cursor:pointer;";
-						defaultLabel.addEventListener("pointerover", () => {
-							defaultLabel.style.color = "var(--tv-fg,inherit)";
-						});
-						defaultLabel.addEventListener("pointerout", () => {
-							defaultLabel.style.color = "var(--tv-muted-fg,rgba(128,128,128,0.8))";
-						});
-						defaultLabel.addEventListener("click", () => {
-							onSwitchToDefaultRef.current?.();
-						});
-
-						btn.appendChild(defaultLabel);
-						btn.appendChild(sep);
-						btn.appendChild(tvLabel);
-					});
-				}
 			} catch (error) {
 				if (disposed) return;
 				removeWidget();
@@ -230,7 +237,7 @@ export function TradingViewChart({
 			clearReadyTimeout();
 			removeWidget();
 		};
-	}, [theme]);
+	}, [theme, retryNonce]);
 
 	useEffect(() => {
 		targetSymbolRef.current = symbol;
@@ -239,8 +246,33 @@ export function TradingViewChart({
 	}, [symbol, interval]);
 
 	return (
-		<div className="relative w-full h-full" style={{ minHeight: CHART_MIN_HEIGHT_PX }}>
+		<div
+			className={cn("relative w-full h-full", yAxisInside && "[--tv-y-axis-inside:1]")}
+			style={{ minHeight: CHART_MIN_HEIGHT_PX }}
+		>
 			<div ref={containerRef} className="w-full h-full" />
+			{isSwitchingSymbol && !initError && (
+				<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-surface/80 backdrop-blur-[1px]">
+					<span className="rounded-xs border border-stroke-weak bg-background/90 px-2 py-1 text-xs font-medium text-fg shadow-sm">
+						{t`Loading...`}
+					</span>
+				</div>
+			)}
+			{initError && (
+				<div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface px-4 text-center">
+					<p className="text-sm font-medium text-fg">{t`Something went wrong`}</p>
+					<button
+						type="button"
+						className="rounded-xs border border-stroke-weak px-3 py-1.5 text-xs font-medium text-fg hover:bg-fill-hover"
+						onClick={() => {
+							setInitError(null);
+							setRetryNonce((value) => value + 1);
+						}}
+					>
+						{t`Retry`}
+					</button>
+				</div>
+			)}
 		</div>
 	);
 }

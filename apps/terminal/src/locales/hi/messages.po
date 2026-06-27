@@ -1475,6 +1475,7 @@ msgstr "TWAP ऑर्डर लोड हो रहे हैं..."
 msgid "Loading wallet..."
 msgstr "वॉलेट लोड हो रहा है..."
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
@@ -2421,6 +2422,7 @@ msgstr "रीसेट होगा"
 msgid "Resetting..."
 msgstr "रीसेट हो रहा है..."
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2800,9 +2802,9 @@ msgstr "स्लिपेज"
 msgid "Slippage tolerance"
 msgstr "Slippage सहनशीलता"
 
-#: src/lib/errors.ts
-#~ msgid "Something went wrong"
-#~ msgstr "कुछ गलत हो गया"
+#: src/components/trade/chart/tradingview-chart.tsx
+msgid "Something went wrong"
+msgstr "कुछ गलत हो गया"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"

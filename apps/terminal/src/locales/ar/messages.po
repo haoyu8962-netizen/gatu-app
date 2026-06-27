@@ -1475,6 +1475,7 @@ msgstr "جارٍ تحميل أوامر TWAP..."
 msgid "Loading wallet..."
 msgstr "جاري تحميل المحفظة..."
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
@@ -2421,6 +2422,7 @@ msgstr "تُعاد التعيين خلال"
 msgid "Resetting..."
 msgstr "جارٍ إعادة التعيين..."
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2800,9 +2802,9 @@ msgstr "الانزلاق"
 msgid "Slippage tolerance"
 msgstr "حدّ تحمّل الانزلاق السعري"
 
-#: src/lib/errors.ts
-#~ msgid "Something went wrong"
-#~ msgstr "حدث خطأ ما"
+#: src/components/trade/chart/tradingview-chart.tsx
+msgid "Something went wrong"
+msgstr "حدث خطأ ما"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"

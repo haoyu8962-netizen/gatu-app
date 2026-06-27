@@ -118,7 +118,12 @@ const configuration: DatafeedConfiguration = {
 	supports_timescale_marks: false,
 };
 
-export function createDatafeed(): IBasicDataFeed {
+interface DatafeedOptions {
+	getPriceScale?: (coin: string) => number | undefined;
+	isKnownCoin?: (coin: string) => boolean | undefined;
+}
+
+export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 	const store = getCandleStore();
 	const listenerToStream = new Map<string, string>();
 
@@ -136,12 +141,13 @@ export function createDatafeed(): IBasicDataFeed {
 				const coin = coinFromSymbolName(symbolName);
 				const displayName = symbolFromCoin(coin);
 
-				if (!(await isKnownCoin(coin))) {
+				const knownByCaller = options.isKnownCoin?.(coin);
+				if (knownByCaller !== true && !(await isKnownCoin(coin))) {
 					onError(t`Unknown symbol: ${symbolName}`);
 					return;
 				}
 
-				const pricescale = await inferPriceScale(coin);
+				const pricescale = options.getPriceScale?.(coin) ?? (await inferPriceScale(coin));
 
 				const symbolInfo: LibrarySymbolInfo = {
 					name: displayName,

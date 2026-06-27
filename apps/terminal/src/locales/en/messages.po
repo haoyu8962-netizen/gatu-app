@@ -1475,6 +1475,7 @@ msgstr "Loading TWAP orders..."
 msgid "Loading wallet..."
 msgstr "Loading wallet..."
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
@@ -2421,6 +2422,7 @@ msgstr "Resets in"
 msgid "Resetting..."
 msgstr "Resetting..."
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2800,9 +2802,9 @@ msgstr "Slippage"
 msgid "Slippage tolerance"
 msgstr "Slippage tolerance"
 
-#: src/lib/errors.ts
-#~ msgid "Something went wrong"
-#~ msgstr "Something went wrong"
+#: src/components/trade/chart/tradingview-chart.tsx
+msgid "Something went wrong"
+msgstr "Something went wrong"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"

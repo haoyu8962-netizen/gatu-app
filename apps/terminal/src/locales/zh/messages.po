@@ -1475,6 +1475,7 @@ msgstr "加载 TWAP 订单中..."
 msgid "Loading wallet..."
 msgstr "加载钱包中..."
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
@@ -2421,6 +2422,7 @@ msgstr "重置倒计时"
 msgid "Resetting..."
 msgstr "正在重置…"
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2800,9 +2802,9 @@ msgstr "滑点"
 msgid "Slippage tolerance"
 msgstr "滑点容忍度"
 
-#: src/lib/errors.ts
-#~ msgid "Something went wrong"
-#~ msgstr "出错了"
+#: src/components/trade/chart/tradingview-chart.tsx
+msgid "Something went wrong"
+msgstr "出错了"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
