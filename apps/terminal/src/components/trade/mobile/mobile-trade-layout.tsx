@@ -79,9 +79,21 @@ function MarketsDataView() {
 				})}
 			</div>
 
-			<div className="h-[45dvh] min-h-[320px] flex flex-col overflow-hidden">
-				{topView === "chart" && <MobileChartView />}
-				{topView !== "chart" && <MobileBookView inTabLayout view={bookView} className="flex-1 min-h-0" />}
+			<div className="relative h-[45dvh] min-h-[320px] overflow-hidden">
+				<div
+					aria-hidden={topView !== "chart"}
+					className={cn(
+						"absolute inset-0 flex min-h-0 flex-col",
+						topView === "chart" ? "z-10 opacity-100 pointer-events-auto" : "z-0 opacity-0 pointer-events-none",
+					)}
+				>
+					<MobileChartView />
+				</div>
+				{topView !== "chart" && (
+					<div className="absolute inset-0 z-10 flex min-h-0 flex-col bg-background">
+						<MobileBookView inTabLayout view={bookView} className="flex-1 min-h-0" />
+					</div>
+				)}
 			</div>
 
 			<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">

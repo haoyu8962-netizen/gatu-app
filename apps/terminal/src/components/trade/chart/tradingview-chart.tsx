@@ -30,10 +30,16 @@ import { createDatafeed } from "./datafeed";
 
 const CHART_READY_TIMEOUT_MS = 12_000;
 const MAX_CHART_INIT_ATTEMPTS = 2;
+const SYMBOL_SWITCH_TIMEOUT_MS = 8_000;
+const MAX_SYMBOL_SWITCH_RETRIES = 1;
 
 function priceScaleFromSzDecimals(szDecimals: number): number {
 	const decimals = Math.min(Math.max(6 - szDecimals, 2), 8);
 	return 10 ** decimals;
+}
+
+function symbolSwitchKey(symbol: string, interval: string): string {
+	return `${symbol}\u0000${interval}`;
 }
 
 interface Props {
@@ -60,6 +66,10 @@ export function TradingViewChart({
 	const marketRef = useRef(market);
 	const appliedSymbolRef = useRef<string | null>(null);
 	const appliedIntervalRef = useRef<string | null>(null);
+	const pendingSymbolRef = useRef<string | null>(null);
+	const pendingIntervalRef = useRef<string | null>(null);
+	const symbolSwitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const symbolSwitchRetryRef = useRef<{ key: string; count: number }>({ key: "", count: 0 });
 	const applySymbolRef = useRef<() => void>(() => {});
 	const [isSwitchingSymbol, setIsSwitchingSymbol] = useState(false);
 	const [initError, setInitError] = useState<string | null>(null);
@@ -68,29 +78,98 @@ export function TradingViewChart({
 	targetIntervalRef.current = interval;
 	marketRef.current = market;
 
+	const clearSymbolSwitchTimeout = () => {
+		if (symbolSwitchTimeoutRef.current) {
+			clearTimeout(symbolSwitchTimeoutRef.current);
+			symbolSwitchTimeoutRef.current = null;
+		}
+	};
+
+	const clearPendingSymbolSwitch = () => {
+		clearSymbolSwitchTimeout();
+		pendingSymbolRef.current = null;
+		pendingIntervalRef.current = null;
+	};
+
 	applySymbolRef.current = () => {
 		const widget = widgetRef.current;
 		if (!widget || !chartReadyRef.current) return;
 
 		const nextSymbol = targetSymbolRef.current;
 		const nextInterval = targetIntervalRef.current;
-		if (appliedSymbolRef.current === nextSymbol && appliedIntervalRef.current === nextInterval) return;
+		const pendingMatches = pendingSymbolRef.current === nextSymbol && pendingIntervalRef.current === nextInterval;
+		if (pendingMatches) return;
+		if (
+			!pendingSymbolRef.current &&
+			appliedSymbolRef.current === nextSymbol &&
+			appliedIntervalRef.current === nextInterval
+		) {
+			return;
+		}
 
-		appliedSymbolRef.current = nextSymbol;
-		appliedIntervalRef.current = nextInterval;
+		const key = symbolSwitchKey(nextSymbol, nextInterval);
+		clearPendingSymbolSwitch();
+		pendingSymbolRef.current = nextSymbol;
+		pendingIntervalRef.current = nextInterval;
 		setInitError(null);
 		setIsSwitchingSymbol(true);
-		widget.setSymbol(nextSymbol, nextInterval as ResolutionString, () => {
+
+		symbolSwitchTimeoutRef.current = setTimeout(() => {
 			if (
-				widgetRef.current === widget &&
-				targetSymbolRef.current === nextSymbol &&
-				targetIntervalRef.current === nextInterval
+				widgetRef.current !== widget ||
+				pendingSymbolRef.current !== nextSymbol ||
+				pendingIntervalRef.current !== nextInterval
 			) {
-				setIsSwitchingSymbol(false);
+				return;
 			}
-		});
+
+			console.warn("[TradingViewChart] TradingView symbol switch timed out.", {
+				symbol: nextSymbol,
+				interval: nextInterval,
+			});
+			clearPendingSymbolSwitch();
+			setIsSwitchingSymbol(false);
+
+			if (symbolSwitchRetryRef.current.key !== key) {
+				symbolSwitchRetryRef.current = { key, count: 0 };
+			}
+
+			if (symbolSwitchRetryRef.current.count < MAX_SYMBOL_SWITCH_RETRIES) {
+				symbolSwitchRetryRef.current = { key, count: symbolSwitchRetryRef.current.count + 1 };
+				setRetryNonce((value) => value + 1);
+				return;
+			}
+
+			setInitError("symbol-timeout");
+		}, SYMBOL_SWITCH_TIMEOUT_MS);
+
+		try {
+			widget.setSymbol(nextSymbol, nextInterval as ResolutionString, () => {
+				if (
+					widgetRef.current === widget &&
+					targetSymbolRef.current === nextSymbol &&
+					targetIntervalRef.current === nextInterval
+				) {
+					appliedSymbolRef.current = nextSymbol;
+					appliedIntervalRef.current = nextInterval;
+					clearPendingSymbolSwitch();
+					symbolSwitchRetryRef.current = { key, count: 0 };
+					setIsSwitchingSymbol(false);
+				}
+			});
+		} catch (error) {
+			console.warn("[TradingViewChart] TradingView symbol switch failed.", {
+				error,
+				symbol: nextSymbol,
+				interval: nextInterval,
+			});
+			clearPendingSymbolSwitch();
+			setIsSwitchingSymbol(false);
+			setInitError("symbol-exception");
+		}
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: switch cleanup only reads refs; adding the helper would recreate the widget on every render.
 	useEffect(() => {
 		void retryNonce;
 		if (!containerRef.current) return;
@@ -120,6 +199,7 @@ export function TradingViewChart({
 
 		const removeWidget = () => {
 			clearReadyTimeout();
+			clearPendingSymbolSwitch();
 			if (widgetRef.current) {
 				widgetRef.current.remove();
 				widgetRef.current = null;
@@ -127,6 +207,7 @@ export function TradingViewChart({
 			chartReadyRef.current = false;
 			appliedSymbolRef.current = null;
 			appliedIntervalRef.current = null;
+			symbolSwitchRetryRef.current = { key: "", count: 0 };
 			if (cssUrlRef.current) {
 				URL.revokeObjectURL(cssUrlRef.current);
 				cssUrlRef.current = null;
