@@ -24,6 +24,7 @@ import {
 	DEFAULT_CHART_INTERVAL,
 	DEFAULT_CHART_SYMBOL,
 	DEFAULT_CHART_THEME,
+	QUOTE_ASSET,
 	TIMEZONE,
 } from "./constants";
 import { createDatafeed } from "./datafeed";
@@ -42,6 +43,15 @@ function symbolSwitchKey(symbol: string, interval: string): string {
 	return `${symbol}\u0000${interval}`;
 }
 
+function getChartDisplaySymbol(market: UnifiedMarketInfo): string {
+	if (market.kind === "spot") return market.pairName;
+	if (market.kind === "builderPerp") {
+		const quoteToken = market.quoteToken?.displayName ?? market.quoteToken?.name ?? QUOTE_ASSET;
+		return `${market.name}/${quoteToken}`;
+	}
+	return `${market.name}/${QUOTE_ASSET}`;
+}
+
 interface Props {
 	symbol?: string;
 	market?: UnifiedMarketInfo;
@@ -57,6 +67,7 @@ export function TradingViewChart({
 	theme = DEFAULT_CHART_THEME,
 	yAxisInside = false,
 }: Props) {
+	const widgetSymbol = market ? getChartDisplaySymbol(market) : symbol;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const cssUrlRef = useRef<string | null>(null);
@@ -74,7 +85,7 @@ export function TradingViewChart({
 	const [isSwitchingSymbol, setIsSwitchingSymbol] = useState(false);
 	const [initError, setInitError] = useState<string | null>(null);
 	const [retryNonce, setRetryNonce] = useState(0);
-	targetSymbolRef.current = symbol;
+	targetSymbolRef.current = widgetSymbol;
 	targetIntervalRef.current = interval;
 	marketRef.current = market;
 
@@ -191,6 +202,19 @@ export function TradingViewChart({
 			return priceScaleFromSzDecimals(currentMarket.szDecimals);
 		}
 
+		function getSelectedMarketSymbolInfo(symbolName: string, coin: string) {
+			const currentMarket = marketRef.current;
+			if (!currentMarket) return undefined;
+			const name = getChartDisplaySymbol(currentMarket);
+			if (symbolName !== name && coin !== currentMarket.name) return undefined;
+			return {
+				name,
+				ticker: currentMarket.name,
+				description: currentMarket.pairName ?? name,
+				pricescale: getSelectedMarketPriceScale(coin),
+			};
+		}
+
 		const clearReadyTimeout = () => {
 			if (readyTimeout) {
 				clearTimeout(readyTimeout);
@@ -267,6 +291,7 @@ export function TradingViewChart({
 					library_path: CHART_LIBRARY_PATH,
 					datafeed: createDatafeed({
 						getPriceScale: getSelectedMarketPriceScale,
+						getSymbolInfo: getSelectedMarketSymbolInfo,
 						isKnownCoin: isSelectedMarketCoin,
 					}),
 					symbol: initialSymbol,
@@ -322,10 +347,10 @@ export function TradingViewChart({
 	}, [theme, retryNonce]);
 
 	useEffect(() => {
-		targetSymbolRef.current = symbol;
+		targetSymbolRef.current = widgetSymbol;
 		targetIntervalRef.current = interval;
 		applySymbolRef.current();
-	}, [symbol, interval]);
+	}, [widgetSymbol, interval]);
 
 	return (
 		<div

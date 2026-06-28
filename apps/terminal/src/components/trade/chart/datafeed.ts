@@ -1,7 +1,7 @@
 import { t } from "@lingui/core/macro";
 import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
-import { resolutionToInterval } from "@/lib/chart/resolution";
+import { type CandleInterval, resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
 import { coinFromSymbolName, inferPriceScaleFromMids, symbolFromCoin } from "@/lib/chart/symbol";
 import { getInfoClient } from "@/lib/hyperliquid";
@@ -51,6 +51,23 @@ async function getMeta(): Promise<MetaResponse> {
 
 const allMidsCache = new Map<string, { value: AllMidsResponse; fetchedAt: number }>();
 const allMidsPromise = new Map<string, Promise<AllMidsResponse>>();
+const DAY_MS = 24 * 60 * 60 * 1000;
+const HISTORY_FALLBACK_MAX_REQUEST_AGE_MS = 7 * DAY_MS;
+const HISTORY_FALLBACK_LOOKBACK_MS_BY_INTERVAL: Partial<Record<CandleInterval, number>> = {
+	"1m": 14 * DAY_MS,
+	"3m": 30 * DAY_MS,
+	"5m": 45 * DAY_MS,
+	"15m": 90 * DAY_MS,
+	"30m": 120 * DAY_MS,
+	"1h": 180 * DAY_MS,
+	"2h": 365 * DAY_MS,
+	"4h": 365 * DAY_MS,
+	"8h": 365 * DAY_MS,
+	"12h": 365 * DAY_MS,
+	"1d": 730 * DAY_MS,
+	"1w": 730 * DAY_MS,
+	"1M": 730 * DAY_MS,
+};
 
 function getDexForCoin(coin: string): string | undefined {
 	const separatorIdx = coin.indexOf(":");
@@ -110,6 +127,35 @@ function cacheKey(symbol: LibrarySymbolInfo, resolution: ResolutionString): stri
 	return `${symbol.ticker ?? symbol.name}:${resolution as string}`;
 }
 
+async function fetchBars(coin: string, interval: CandleInterval, fromMs: number, toMs: number) {
+	const candles = await getInfoClient().candleSnapshot({
+		coin,
+		interval,
+		startTime: fromMs,
+		endTime: toMs,
+	});
+	return filterAndSortBars(candles.map(candleSnapshotToBar), fromMs, toMs);
+}
+
+async function fetchPreviousBars(coin: string, interval: CandleInterval, beforeMs: number) {
+	if (beforeMs <= 0) return null;
+	const lookbackMs = HISTORY_FALLBACK_LOOKBACK_MS_BY_INTERVAL[interval] ?? 180 * DAY_MS;
+	const fromMs = Math.max(0, beforeMs - lookbackMs);
+	if (fromMs >= beforeMs) return null;
+
+	const bars = await fetchBars(coin, interval, fromMs, beforeMs);
+	return bars.length > 0 ? bars : null;
+}
+
+function limitBarsToCountBack(bars: Bar[], countBack: number) {
+	const limit = Math.max(1, countBack || bars.length);
+	return bars.length > limit ? bars.slice(-limit) : bars;
+}
+
+function shouldFetchPreviousBars(periodParams: PeriodParams, toMs: number) {
+	return periodParams.firstDataRequest && Date.now() - toMs <= HISTORY_FALLBACK_MAX_REQUEST_AGE_MS;
+}
+
 const configuration: DatafeedConfiguration = {
 	exchanges: [{ value: EXCHANGE, name: EXCHANGE, desc: EXCHANGE }],
 	supported_resolutions: SUPPORTED_RESOLUTIONS,
@@ -121,13 +167,29 @@ const configuration: DatafeedConfiguration = {
 interface DatafeedOptions {
 	getPriceScale?: (coin: string) => number | undefined;
 	isKnownCoin?: (coin: string) => boolean | undefined;
+	getSymbolInfo?: (
+		symbolName: string,
+		coin: string,
+	) =>
+		| {
+				name: string;
+				ticker: string;
+				description?: string;
+				pricescale?: number;
+		  }
+		| undefined;
 }
 
 export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 	const store = getCandleStore();
 	const listenerToStream = new Map<string, string>();
+	const symbolToCoin = new Map<string, string>();
 	const resolveAsync = (callback: () => void) => {
 		setTimeout(callback, 0);
+	};
+	const coinFromLibrarySymbol = (symbol: LibrarySymbolInfo) => {
+		const symbolName = symbol.ticker ?? symbol.name;
+		return symbolToCoin.get(symbolName) ?? coinFromSymbolName(symbolName);
 	};
 
 	return {
@@ -141,21 +203,30 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 			void extension;
 
 			void (async () => {
+				const rawSymbolName = symbolName.trim();
 				const coin = coinFromSymbolName(symbolName);
-				const displayName = symbolFromCoin(coin);
+				const resolvedSymbol = options.getSymbolInfo?.(rawSymbolName, coin);
+				const displayName = resolvedSymbol?.name ?? symbolFromCoin(coin);
+				const apiTicker = resolvedSymbol?.ticker ?? coin;
+				if (resolvedSymbol) {
+					symbolToCoin.set(rawSymbolName, apiTicker);
+					symbolToCoin.set(displayName, apiTicker);
+					symbolToCoin.set(apiTicker, apiTicker);
+				}
 
-				const knownByCaller = options.isKnownCoin?.(coin);
-				if (knownByCaller !== true && !(await isKnownCoin(coin))) {
+				const knownByCaller = resolvedSymbol ? true : options.isKnownCoin?.(apiTicker);
+				if (knownByCaller !== true && !(await isKnownCoin(apiTicker))) {
 					resolveAsync(() => onError(t`Unknown symbol: ${symbolName}`));
 					return;
 				}
 
-				const pricescale = options.getPriceScale?.(coin) ?? (await inferPriceScale(coin));
+				const pricescale =
+					resolvedSymbol?.pricescale ?? options.getPriceScale?.(apiTicker) ?? (await inferPriceScale(apiTicker));
 
 				const symbolInfo: LibrarySymbolInfo = {
 					name: displayName,
-					ticker: coin,
-					description: displayName,
+					ticker: apiTicker,
+					description: resolvedSymbol?.description ?? displayName,
 					type: CHART_DATAFEED_CONFIG.SYMBOL_TYPE,
 					session: SESSION_24X7,
 					timezone: TIMEZONE,
@@ -190,7 +261,7 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 					return;
 				}
 
-				const coin = coinFromSymbolName(symbolInfo.ticker ?? symbolInfo.name);
+				const coin = coinFromLibrarySymbol(symbolInfo);
 				const fromMs = Math.max(0, Math.floor(periodParams.from * 1000));
 				const toMs = Math.max(0, Math.floor(periodParams.to * 1000));
 
@@ -199,21 +270,24 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 					return;
 				}
 
-				const candles = await getInfoClient().candleSnapshot({
-					coin,
-					interval,
-					startTime: fromMs,
-					endTime: toMs,
-				});
-
-				const bars = filterAndSortBars(candles.map(candleSnapshotToBar), fromMs, toMs);
+				const bars = await fetchBars(coin, interval, fromMs, toMs);
+				const key = cacheKey(symbolInfo, resolution);
 
 				if (bars.length === 0) {
+					const fallbackBars = shouldFetchPreviousBars(periodParams, toMs)
+						? await fetchPreviousBars(coin, interval, fromMs)
+						: null;
+					const limitedFallbackBars = fallbackBars ? limitBarsToCountBack(fallbackBars, periodParams.countBack) : null;
+					const fallbackLastBar = limitedFallbackBars?.at(-1);
+					if (limitedFallbackBars && fallbackLastBar) {
+						store.getState().setLastBar(key, fallbackLastBar);
+						onResult(limitedFallbackBars, { noData: false });
+						return;
+					}
 					onResult([], { noData: true });
 					return;
 				}
 
-				const key = cacheKey(symbolInfo, resolution);
 				const lastBar = bars[bars.length - 1];
 				store.getState().setLastBar(key, lastBar);
 
@@ -238,7 +312,7 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 				store.getState().unsubscribe(existingStreamKey, listenerGuid);
 			}
 
-			const coin = coinFromSymbolName(symbolInfo.ticker ?? symbolInfo.name);
+			const coin = coinFromLibrarySymbol(symbolInfo);
 			const symbolCacheKey = cacheKey(symbolInfo, resolution);
 			const key = streamKey(coin, interval);
 
