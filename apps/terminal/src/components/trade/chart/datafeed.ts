@@ -126,6 +126,9 @@ interface DatafeedOptions {
 export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 	const store = getCandleStore();
 	const listenerToStream = new Map<string, string>();
+	const resolveAsync = (callback: () => void) => {
+		setTimeout(callback, 0);
+	};
 
 	return {
 		onReady: (callback: OnReadyCallback) => {
@@ -143,7 +146,7 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 
 				const knownByCaller = options.isKnownCoin?.(coin);
 				if (knownByCaller !== true && !(await isKnownCoin(coin))) {
-					onError(t`Unknown symbol: ${symbolName}`);
+					resolveAsync(() => onError(t`Unknown symbol: ${symbolName}`));
 					return;
 				}
 
@@ -167,9 +170,9 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 					data_status: CHART_DATAFEED_CONFIG.DATA_STATUS,
 				};
 
-				onResolve(symbolInfo);
+				resolveAsync(() => onResolve(symbolInfo));
 			})().catch((error) => {
-				onError(error instanceof Error ? error.message : String(error));
+				resolveAsync(() => onError(error instanceof Error ? error.message : String(error)));
 			});
 		},
 

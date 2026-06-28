@@ -127,8 +127,6 @@ export function TradingViewChart({
 				symbol: nextSymbol,
 				interval: nextInterval,
 			});
-			clearPendingSymbolSwitch();
-			setIsSwitchingSymbol(false);
 
 			if (symbolSwitchRetryRef.current.key !== key) {
 				symbolSwitchRetryRef.current = { key, count: 0 };
@@ -136,10 +134,13 @@ export function TradingViewChart({
 
 			if (symbolSwitchRetryRef.current.count < MAX_SYMBOL_SWITCH_RETRIES) {
 				symbolSwitchRetryRef.current = { key, count: symbolSwitchRetryRef.current.count + 1 };
-				setRetryNonce((value) => value + 1);
+				clearPendingSymbolSwitch();
+				applySymbolRef.current();
 				return;
 			}
 
+			clearPendingSymbolSwitch();
+			setIsSwitchingSymbol(false);
 			setInitError("symbol-timeout");
 		}, SYMBOL_SWITCH_TIMEOUT_MS);
 
@@ -333,7 +334,7 @@ export function TradingViewChart({
 		>
 			<div ref={containerRef} className="w-full h-full" />
 			{isSwitchingSymbol && !initError && (
-				<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-surface/80 backdrop-blur-[1px]">
+				<div className="pointer-events-none absolute right-2 top-2 z-10">
 					<span className="rounded-xs border border-stroke-weak bg-background/90 px-2 py-1 text-xs font-medium text-fg shadow-sm">
 						{t`Loading...`}
 					</span>

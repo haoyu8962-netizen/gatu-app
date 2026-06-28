@@ -5,6 +5,11 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradingViewChart } from "@/components/trade/chart/tradingview-chart";
 
+vi.mock("@lingui/core/macro", () => ({
+	t: (strings: TemplateStringsArray, ...values: unknown[]) =>
+		strings.reduce((result, part, index) => `${result}${part}${values[index] ?? ""}`, ""),
+}));
+
 vi.mock("@/lib/chart/load-tradingview", () => ({
 	loadTradingViewScript: vi.fn(async () => {}),
 }));
@@ -75,6 +80,7 @@ describe("TradingViewChart", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		vi.useRealTimers();
 		vi.restoreAllMocks();
 		delete (window as { TradingView?: unknown }).TradingView;
 	});
@@ -98,5 +104,34 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledTimes(1);
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
+	});
+
+	it("retries a slow symbol switch without rebuilding the widget", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		expect(widget).toBeDefined();
+		widget?.setSymbol.mockImplementation(() => {});
+		vi.useFakeTimers();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		expect(widget?.setSymbol).toHaveBeenCalledTimes(1);
+
+		await act(async () => {
+			vi.advanceTimersByTime(8_000);
+			await Promise.resolve();
+		});
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		expect(widget?.remove).not.toHaveBeenCalled();
+		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
 	});
 });
