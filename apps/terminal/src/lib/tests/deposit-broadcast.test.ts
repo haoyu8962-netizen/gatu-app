@@ -1,6 +1,6 @@
 import type { Hash, PublicClient } from "viem";
 import { describe, expect, it, vi } from "vitest";
-import { waitForBroadcastedTransaction } from "@/lib/hyperliquid/use-deposit";
+import { waitForBroadcastedTransaction, waitForWalletTransactionHash } from "@/lib/hyperliquid/use-deposit";
 
 vi.mock("@lingui/core/macro", () => ({
 	t: (strings: TemplateStringsArray, ...values: unknown[]) =>
@@ -43,6 +43,14 @@ describe("deposit broadcast confirmation", () => {
 
 		await expect(waitForBroadcastedTransaction(publicClient, HASH, { timeoutMs: 0 })).rejects.toThrow(
 			"Transaction was not broadcast. Please retry.",
+		);
+	});
+
+	it("times out when the wallet does not return a transaction hash", async () => {
+		const never = new Promise<Hash>(() => {});
+
+		await expect(waitForWalletTransactionHash(never, 0)).rejects.toThrow(
+			"Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice.",
 		);
 	});
 });

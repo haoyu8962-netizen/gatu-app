@@ -3500,6 +3500,11 @@ msgstr "Wallet ({0})"
 msgid "Wallet client not ready"
 msgstr "Cliente de billetera no está listo"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx

@@ -10,6 +10,11 @@ const ERROR_PATTERNS = [
 		pattern: /selected wallet does not match/i,
 		message: () => t`Selected wallet does not match the connected account. Reconnect your wallet and try again.`,
 	},
+	{
+		pattern: /wallet did not return a transaction hash/i,
+		message: () =>
+			t`Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice.`,
+	},
 	{ pattern: /not broadcast/i, message: () => t`Transaction was not broadcast. Please retry.` },
 	{
 		pattern: /deposit transaction was broadcast but confirmation timed out/i,

@@ -33,6 +33,12 @@ describe("errors", () => {
 		);
 	});
 
+	it("formats deposit wallet response timeouts without truncating the retry warning", () => {
+		expect(formatTransferError(new Error("Wallet did not return a transaction hash."))).toBe(
+			"Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice.",
+		);
+	});
+
 	it("formats deposit confirmation timeouts", () => {
 		expect(formatTransferError(new Error("Deposit transaction was broadcast but confirmation timed out."))).toBe(
 			"Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.",

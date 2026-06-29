@@ -5,7 +5,12 @@ import { erc20Abi, formatUnits, parseUnits } from "viem";
 import { arbitrum } from "viem/chains";
 import { useChainId, usePublicClient, useReadContract, useSwitchChain, useWalletClient } from "wagmi";
 import { ARBITRUM_CHAIN_ID, CONTRACTS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
-import { DEPOSIT_BROADCAST_TIMEOUT_MS, DEPOSIT_CONFIRMATION_TIMEOUT_MS, DEPOSIT_POLL_INTERVAL_MS } from "@/config/time";
+import {
+	DEPOSIT_BROADCAST_TIMEOUT_MS,
+	DEPOSIT_CONFIRMATION_TIMEOUT_MS,
+	DEPOSIT_POLL_INTERVAL_MS,
+	DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
+} from "@/config/time";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
 
@@ -70,6 +75,26 @@ function toError(error: unknown): Error {
 
 function sleep(ms: number) {
 	return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+export function waitForWalletTransactionHash<T>(
+	promise: Promise<T>,
+	timeoutMs = DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
+): Promise<T> {
+	let timeoutId: ReturnType<typeof setTimeout> | undefined;
+	const timeout = new Promise<never>((_, reject) => {
+		timeoutId = setTimeout(() => {
+			reject(
+				new Error(
+					t`Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice.`,
+				),
+			);
+		}, timeoutMs);
+	});
+
+	return Promise.race([promise, timeout]).finally(() => {
+		if (timeoutId) clearTimeout(timeoutId);
+	});
 }
 
 function getReadyDepositContext({
@@ -204,20 +229,22 @@ export function useDeposit(): UseDepositResult {
 			try {
 				const ready = getReadyDepositContext({ address, publicClient, walletClient });
 
-				const hash = await ready.walletClient.writeContract({
-					account: ready.address,
-					chain: arbitrum,
-					address: CONTRACTS.arbitrum.usdc,
-					abi: erc20Abi,
-					functionName: "transfer",
-					args: [CONTRACTS.arbitrum.bridge2, parseUnits(amount, USDC_DECIMALS)],
-				});
-
-				if (operationIdRef.current !== operationId) return;
-				await waitForBroadcastedTransaction(ready.publicClient, hash);
+				const hash = await waitForWalletTransactionHash(
+					ready.walletClient.writeContract({
+						account: ready.address,
+						chain: arbitrum,
+						address: CONTRACTS.arbitrum.usdc,
+						abi: erc20Abi,
+						functionName: "transfer",
+						args: [CONTRACTS.arbitrum.bridge2, parseUnits(amount, USDC_DECIMALS)],
+					}),
+				);
 
 				if (operationIdRef.current !== operationId) return;
 				setState({ status: "confirming", error: null, hash });
+				await waitForBroadcastedTransaction(ready.publicClient, hash);
+
+				if (operationIdRef.current !== operationId) return;
 				await waitForConfirmedReceipt(ready.publicClient, hash);
 
 				if (operationIdRef.current !== operationId) return;
