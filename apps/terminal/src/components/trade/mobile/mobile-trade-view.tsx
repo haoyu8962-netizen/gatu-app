@@ -384,12 +384,12 @@ export function MobileTradeView({ className, embedded }: Props) {
 			<div
 				className={cn(
 					"flex-1 min-h-0 flex flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-					embedded ? "overflow-visible overscroll-y-auto" : "overflow-y-auto overscroll-contain",
+					embedded ? "overflow-y-auto overscroll-y-contain" : "overflow-y-auto overscroll-contain",
 				)}
 			>
 				<div
 					className={cn(
-						embedded ? "flex-1 min-h-min flex flex-col justify-between px-2 py-2 space-y-2" : "px-3 py-4 space-y-4",
+						embedded ? "flex-1 min-h-min flex flex-col justify-between px-2 py-1.5 space-y-1.5" : "px-3 py-4 space-y-4",
 					)}
 				>
 					<TradeHeader
@@ -571,19 +571,22 @@ export function MobileTradeView({ className, embedded }: Props) {
 									liqPrice ? formatPrice(liqPrice, { szDecimals: market?.szDecimals }) : FALLBACK_VALUE_PLACEHOLDER
 								}
 								valueClass="text-error"
+								compact={embedded}
 							/>
 						)}
 						<SummaryRow
 							label={ORDER_TEXT.SUMMARY_ORDER_VALUE}
 							value={orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
+							compact={embedded}
 						/>
 						{capabilities.isLeveraged && (
 							<SummaryRow
 								label={ORDER_TEXT.SUMMARY_MARGIN_REQ}
 								value={marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
+								compact={embedded}
 							/>
 						)}
-						<div className={cn("flex min-w-0 items-center justify-between gap-2", embedded ? "py-1.5" : "py-2.5")}>
+						<div className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-2.5")}>
 							<span className="min-w-0 truncate text-fg-muted">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
 							{embedded && !isConnected ? (
 								<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
@@ -605,6 +608,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 							label={ORDER_TEXT.SUMMARY_FEE}
 							value={orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
 							valueClass="text-fg-muted"
+							compact={embedded}
 						/>
 					</div>
 				</div>
@@ -654,9 +658,19 @@ export function MobileTradeView({ className, embedded }: Props) {
 	);
 }
 
-function SummaryRow({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
+function SummaryRow({
+	label,
+	value,
+	valueClass,
+	compact,
+}: {
+	label: string;
+	value: string;
+	valueClass?: string;
+	compact?: boolean;
+}) {
 	return (
-		<div className="flex min-w-0 items-center justify-between gap-2 py-1.5">
+		<div className={cn("flex min-w-0 items-center justify-between", compact ? "gap-1 py-1" : "gap-2 py-1.5")}>
 			<span className="min-w-0 truncate text-fg-muted">{label}</span>
 			<span className={cn("shrink-0 whitespace-nowrap text-right tabular-nums", valueClass ?? "text-fg")}>{value}</span>
 		</div>
