@@ -5,7 +5,7 @@ import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
 import { priceScaleFromMid } from "@/lib/chart/symbol";
 import {
 	buildChartOverrides,
-	generateChartCssUrl,
+	getChartCssUrl,
 	getLoadingScreenColors,
 	getToolbarBgColor,
 } from "@/lib/chart/theme-colors";
@@ -70,7 +70,6 @@ export function TradingViewChart({
 	const widgetSymbol = market ? getChartDisplaySymbol(market) : symbol;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
-	const cssUrlRef = useRef<string | null>(null);
 	const chartReadyRef = useRef(false);
 	const targetSymbolRef = useRef(symbol);
 	const targetIntervalRef = useRef(interval);
@@ -82,7 +81,6 @@ export function TradingViewChart({
 	const symbolSwitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const symbolSwitchRetryRef = useRef<{ key: string; count: number }>({ key: "", count: 0 });
 	const applySymbolRef = useRef<() => void>(() => {});
-	const [isSwitchingSymbol, setIsSwitchingSymbol] = useState(false);
 	const [initError, setInitError] = useState<string | null>(null);
 	const [retryNonce, setRetryNonce] = useState(0);
 	targetSymbolRef.current = widgetSymbol;
@@ -100,6 +98,10 @@ export function TradingViewChart({
 		clearSymbolSwitchTimeout();
 		pendingSymbolRef.current = null;
 		pendingIntervalRef.current = null;
+	};
+
+	const finishSymbolSwitch = () => {
+		clearPendingSymbolSwitch();
 	};
 
 	applySymbolRef.current = () => {
@@ -123,7 +125,6 @@ export function TradingViewChart({
 		pendingSymbolRef.current = nextSymbol;
 		pendingIntervalRef.current = nextInterval;
 		setInitError(null);
-		setIsSwitchingSymbol(true);
 
 		symbolSwitchTimeoutRef.current = setTimeout(() => {
 			if (
@@ -150,8 +151,7 @@ export function TradingViewChart({
 				return;
 			}
 
-			clearPendingSymbolSwitch();
-			setIsSwitchingSymbol(false);
+			finishSymbolSwitch();
 			setInitError("symbol-timeout");
 		}, SYMBOL_SWITCH_TIMEOUT_MS);
 
@@ -164,9 +164,8 @@ export function TradingViewChart({
 				) {
 					appliedSymbolRef.current = nextSymbol;
 					appliedIntervalRef.current = nextInterval;
-					clearPendingSymbolSwitch();
 					symbolSwitchRetryRef.current = { key, count: 0 };
-					setIsSwitchingSymbol(false);
+					finishSymbolSwitch();
 				}
 			});
 		} catch (error) {
@@ -175,8 +174,7 @@ export function TradingViewChart({
 				symbol: nextSymbol,
 				interval: nextInterval,
 			});
-			clearPendingSymbolSwitch();
-			setIsSwitchingSymbol(false);
+			finishSymbolSwitch();
 			setInitError("symbol-exception");
 		}
 	};
@@ -233,10 +231,6 @@ export function TradingViewChart({
 			appliedSymbolRef.current = null;
 			appliedIntervalRef.current = null;
 			symbolSwitchRetryRef.current = { key: "", count: 0 };
-			if (cssUrlRef.current) {
-				URL.revokeObjectURL(cssUrlRef.current);
-				cssUrlRef.current = null;
-			}
 		};
 
 		const handleFinalFailure = (reason: string, attempt: number, error?: unknown) => {
@@ -274,17 +268,11 @@ export function TradingViewChart({
 				const overrides = buildChartOverrides();
 				const loadingColors = getLoadingScreenColors();
 				const toolbarBg = getToolbarBgColor();
-				const customCssUrl = await generateChartCssUrl();
-				if (disposed || !containerRef.current || !window.TradingView) {
-					URL.revokeObjectURL(customCssUrl);
-					return;
-				}
-				cssUrlRef.current = customCssUrl;
+				const customCssUrl = getChartCssUrl(theme);
 
 				const initialSymbol = targetSymbolRef.current;
 				const initialInterval = targetIntervalRef.current;
 				setInitError(null);
-				setIsSwitchingSymbol(false);
 
 				const widget = new window.TradingView.widget({
 					container: containerRef.current,
@@ -358,13 +346,6 @@ export function TradingViewChart({
 			style={{ minHeight: CHART_MIN_HEIGHT_PX }}
 		>
 			<div ref={containerRef} className="w-full h-full" />
-			{isSwitchingSymbol && !initError && (
-				<div className="pointer-events-none absolute right-2 top-2 z-10">
-					<span className="rounded-xs border border-stroke-weak bg-background/90 px-2 py-1 text-xs font-medium text-fg shadow-sm">
-						{t`Loading...`}
-					</span>
-				</div>
-			)}
 			{initError && (
 				<div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface px-4 text-center">
 					<p className="text-sm font-medium text-fg">{t`Something went wrong`}</p>

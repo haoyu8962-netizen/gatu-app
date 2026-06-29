@@ -16,7 +16,7 @@ vi.mock("@/lib/chart/load-tradingview", () => ({
 
 vi.mock("@/lib/chart/theme-colors", () => ({
 	buildChartOverrides: () => ({}),
-	generateChartCssUrl: vi.fn(async () => "blob:chart-css"),
+	getChartCssUrl: vi.fn((theme: "light" | "dark") => `/tradingview-theme-${theme}.css`),
 	getLoadingScreenColors: () => ({}),
 	getToolbarBgColor: () => "#000",
 }));
@@ -74,7 +74,6 @@ describe("TradingViewChart", () => {
 			configurable: true,
 			value: { widget: widgetConstructor },
 		});
-		vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
 	});
 
 	afterEach(() => {
@@ -106,6 +105,19 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
 	});
 
+	it("uses a same-origin static stylesheet instead of a blob URL", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledWith(
+			expect.objectContaining({
+				custom_css_url: "/tradingview-theme-dark.css",
+			}),
+		);
+	});
+
 	it("retries a slow symbol switch without rebuilding the widget", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
@@ -133,5 +145,25 @@ describe("TradingViewChart", () => {
 		expect(widgetConstructor).toHaveBeenCalledTimes(1);
 		expect(widget?.remove).not.toHaveBeenCalled();
 		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
+	});
+
+	it("keeps the chart visible while a symbol switch is pending", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		expect(widget).toBeDefined();
+		widget?.setSymbol.mockImplementation(() => {});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(container.textContent).not.toContain("Loading...");
+		expect(container.textContent).not.toContain("ETH");
+		expect(widget?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
 	});
 });

@@ -42,7 +42,8 @@ export const CHART_LOCALE = "en";
 export const CHART_CUSTOM_FONT_FAMILY = "'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif";
 
 export const CHART_ENABLED_FEATURES = [
-	"iframe_loading_same_origin",
+	// Avoid TradingView's blob iframe path while keeping the main document's frame-ancestors policy strict.
+	"iframe_loading_compatibility_mode",
 	"side_toolbar_in_fullscreen_mode",
 	"header_in_fullscreen_mode",
 	"hide_last_na_study_output",

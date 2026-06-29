@@ -1475,7 +1475,6 @@ msgstr "Loading TWAP orders..."
 msgid "Loading wallet..."
 msgstr "Loading wallet..."
 
-#: src/components/trade/chart/tradingview-chart.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
