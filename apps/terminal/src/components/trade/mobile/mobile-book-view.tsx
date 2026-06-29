@@ -6,7 +6,7 @@ import { UI_TEXT } from "@/config/ui-text";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
-import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
+import { type SubEvent, type SubParams, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import {
 	type BookLevel,
@@ -24,10 +24,77 @@ import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 const ORDERBOOK_TEXT = UI_TEXT.ORDERBOOK;
 const DEFAULT_LEVEL_COUNT = 12;
 const COMPACT_LEVEL_COUNT = 5;
+const MAX_LEVEL_COUNT = 24;
 const ORDERBOOK_ROW_HEIGHT_PX = 20;
-const ORDERBOOK_ROW_GAP_PX = 1;
+const COMPACT_ORDERBOOK_ROW_GAP_PX = 1;
+const SPLIT_ORDERBOOK_ROW_GAP_PX = 0;
 const ORDERBOOK_LADDER_VERTICAL_PADDING_PX = 8;
 const PLACEHOLDER_ROW_KEYS = Array.from({ length: 64 }, (_, index) => `placeholder-${index}`);
+const ORDERBOOK_SUBSCRIPTION_KEEP_ALIVE_MS = 10_000;
+const ORDERBOOK_SNAPSHOT_CACHE_TTL_MS = 10_000;
+const ORDERBOOK_SNAPSHOT_CACHE_MAX_KEYS = 12;
+
+type L2BookEvent = SubEvent<"l2Book">;
+type L2BookParams = SubParams<"l2Book">;
+type CachedOrderbookSnapshot = { key: string; data: L2BookEvent; savedAt: number };
+
+const DISABLED_L2_BOOK_PARAMS: L2BookParams = { coin: "", nSigFigs: 5 };
+const orderbookSnapshotCache = new Map<string, CachedOrderbookSnapshot>();
+
+function getOrderbookSnapshotCacheKey(params: L2BookParams | null): string | null {
+	if (!params?.coin) return null;
+	return [params.coin, params.nSigFigs ?? "default", params.mantissa ?? "default"].join(":");
+}
+
+function readOrderbookSnapshotCache(key: string | null): CachedOrderbookSnapshot | null {
+	if (!key) return null;
+	const snapshot = orderbookSnapshotCache.get(key);
+	if (!snapshot) return null;
+	if (Date.now() - snapshot.savedAt > ORDERBOOK_SNAPSHOT_CACHE_TTL_MS) {
+		orderbookSnapshotCache.delete(key);
+		return null;
+	}
+	return snapshot;
+}
+
+function writeOrderbookSnapshotCache(key: string, data: L2BookEvent): CachedOrderbookSnapshot {
+	const snapshot = { key, data, savedAt: Date.now() };
+	orderbookSnapshotCache.delete(key);
+	orderbookSnapshotCache.set(key, snapshot);
+
+	for (const [cachedKey, cachedSnapshot] of orderbookSnapshotCache) {
+		if (
+			orderbookSnapshotCache.size <= ORDERBOOK_SNAPSHOT_CACHE_MAX_KEYS &&
+			Date.now() - cachedSnapshot.savedAt <= ORDERBOOK_SNAPSHOT_CACHE_TTL_MS
+		) {
+			break;
+		}
+		orderbookSnapshotCache.delete(cachedKey);
+	}
+
+	return snapshot;
+}
+
+function useWarmBoolean(enabled: boolean, keepAliveMs: number) {
+	const [isWarm, setIsWarm] = useState(enabled);
+
+	useEffect(() => {
+		if (enabled) {
+			setIsWarm(true);
+			return;
+		}
+
+		if (keepAliveMs <= 0) {
+			setIsWarm(false);
+			return;
+		}
+
+		const timeout = setTimeout(() => setIsWarm(false), keepAliveMs);
+		return () => clearTimeout(timeout);
+	}, [enabled, keepAliveMs]);
+
+	return enabled || isWarm;
+}
 
 type View = "book" | "trades";
 
@@ -57,29 +124,55 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 		[priceGroupingOptions, selectedOptionKey],
 	);
 	const priceDecimals = selectedOption?.decimals ?? szDecimalsToPriceDecimals(szDecimals);
-
-	const { data: book, status: bookStatus } = useSubscription(
-		"l2Book",
-		{
+	const subscriptionParams = useMemo<L2BookParams | null>(() => {
+		if (!name || !selectedOption) return null;
+		return {
 			coin: name,
-			nSigFigs: selectedOption?.nSigFigs ?? 5,
-			mantissa: selectedOption?.mantissa,
-		},
+			nSigFigs: selectedOption.nSigFigs,
+			mantissa: selectedOption.mantissa,
+		};
+	}, [name, selectedOption]);
+	const bookCacheKey = useMemo(() => getOrderbookSnapshotCacheKey(subscriptionParams), [subscriptionParams]);
+	const keepSubscriptionWarm = useWarmBoolean(view === "book", ORDERBOOK_SUBSCRIPTION_KEEP_ALIVE_MS);
+	const subscriptionEnabled = keepSubscriptionWarm && !!selectedMarket && !!subscriptionParams;
+
+	const { data: liveBook, status: bookStatus } = useSubscription(
+		"l2Book",
+		subscriptionParams ?? DISABLED_L2_BOOK_PARAMS,
 		{
-			enabled: view === "book" && !!selectedMarket && !!name,
+			enabled: subscriptionEnabled,
 		},
 	);
+	const [cachedSnapshot, setCachedSnapshot] = useState<CachedOrderbookSnapshot | null>(() =>
+		readOrderbookSnapshotCache(bookCacheKey),
+	);
+
+	useEffect(() => {
+		setCachedSnapshot(readOrderbookSnapshotCache(bookCacheKey));
+	}, [bookCacheKey]);
+
+	useEffect(() => {
+		if (!bookCacheKey || !liveBook) return;
+		const snapshot = writeOrderbookSnapshotCache(bookCacheKey, liveBook);
+		setCachedSnapshot(snapshot);
+	}, [bookCacheKey, liveBook]);
+
+	const cachedBook = cachedSnapshot?.key === bookCacheKey ? cachedSnapshot.data : undefined;
+	const book = liveBook ?? (bookStatus === "error" ? undefined : cachedBook);
 
 	const bids = useMemo(() => processLevels(book?.levels[0]), [book?.levels]);
 	const asks = useMemo(() => processLevels(book?.levels[1]), [book?.levels]);
 	const levelCount = compact ? COMPACT_LEVEL_COUNT : DEFAULT_LEVEL_COUNT;
-	const [askLevelCount, askLadderRef] = useOrderbookLadderRows(levelCount, view === "book" && asks.length > 0);
-	const [bidLevelCount, bidLadderRef] = useOrderbookLadderRows(levelCount, view === "book" && bids.length > 0);
+	const rowGapPx = compact ? COMPACT_ORDERBOOK_ROW_GAP_PX : SPLIT_ORDERBOOK_ROW_GAP_PX;
+	const [askLevelCount, askLadderRef] = useOrderbookLadderRows(levelCount, view === "book", rowGapPx);
+	const [bidLevelCount, bidLadderRef] = useOrderbookLadderRows(levelCount, view === "book", rowGapPx);
+	const visibleAsks = useMemo(() => asks.slice(0, askLevelCount), [asks, askLevelCount]);
+	const visibleBids = useMemo(() => bids.slice(0, bidLevelCount), [bids, bidLevelCount]);
 
 	const maxTotal = useMemo(() => {
-		const totals = [...asks, ...bids].map((r) => r.total);
+		const totals = [...visibleAsks, ...visibleBids].map((r) => r.total);
 		return totals.length > 0 ? Math.max(...totals) : 0;
-	}, [asks, bids]);
+	}, [visibleAsks, visibleBids]);
 
 	const bestBid = bids[0]?.price;
 	const bestAsk = asks[0]?.price;
@@ -190,8 +283,8 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 			{view === "book" ? (
 				compact ? (
 					<CompactOrderbook
-						asks={asks}
-						bids={bids}
+						asks={visibleAsks}
+						bids={visibleBids}
 						askLevelCount={askLevelCount}
 						bidLevelCount={bidLevelCount}
 						askLadderRef={askLadderRef}
@@ -210,8 +303,8 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 					/>
 				) : (
 					<SplitOrderbook
-						asks={asks}
-						bids={bids}
+						asks={visibleAsks}
+						bids={visibleBids}
 						askLevelCount={askLevelCount}
 						bidLevelCount={bidLevelCount}
 						askLadderRef={askLadderRef}
@@ -277,6 +370,14 @@ function CompactOrderbook({
 	priceGroupingOptions,
 	setSelectedOptionKey,
 }: CompactOrderbookProps) {
+	const hasAsks = asks.length > 0;
+	const hasBids = bids.length > 0;
+	const showError = bookStatus === "error" && !hasAsks && !hasBids;
+
+	if (showError) {
+		return <OrderbookStatus bookStatus={bookStatus} />;
+	}
+
 	return (
 		<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
 			<div className="shrink-0 grid uppercase tracking-wider text-fg-muted border-b border-stroke-weak/40 grid-cols-2 gap-1 px-1.5 py-1.5 text-2xs">
@@ -285,32 +386,34 @@ function CompactOrderbook({
 			</div>
 
 			<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-				{bookStatus !== "error" && asks.length > 0 ? (
-					<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-px py-1 overflow-hidden">
-						{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
-							(key) => (
-								<OrderbookPlaceholderRow key={`ask-${key}`} />
-							),
-						)}
-						{asks
-							.slice(0, askLevelCount)
-							.reverse()
-							.map((level, index) => (
-								<OrderbookRow
-									key={`ask-${level.price}-${index}`}
-									level={level}
-									side="ask"
-									maxTotal={maxTotal}
-									priceDecimals={priceDecimals}
-									showInQuote={showOrderbookInQuote}
-									szDecimals={szDecimals}
-									compact
-								/>
-							))}
-					</div>
-				) : (
-					<OrderbookStatus bookStatus={bookStatus} />
-				)}
+				<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-px py-1 overflow-hidden">
+					{hasAsks ? (
+						<>
+							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
+								(key) => (
+									<OrderbookPlaceholderRow key={`ask-${key}`} />
+								),
+							)}
+							{asks
+								.slice(0, askLevelCount)
+								.reverse()
+								.map((level, index) => (
+									<OrderbookRow
+										key={`ask-${level.price}-${index}`}
+										level={level}
+										side="ask"
+										maxTotal={maxTotal}
+										priceDecimals={priceDecimals}
+										showInQuote={showOrderbookInQuote}
+										szDecimals={szDecimals}
+										compact
+									/>
+								))}
+						</>
+					) : (
+						<OrderbookSkeletonRows rows={askLevelCount} align="end" />
+					)}
+				</div>
 
 				<div className="shrink-0 flex items-center justify-center border-y border-stroke-weak/40 bg-surface py-1.5 px-2 gap-1.5">
 					<span className="font-bold tabular-nums text-warning text-sm">
@@ -319,27 +422,31 @@ function CompactOrderbook({
 					<MidTrendIcon direction={midDirection} className="size-4" />
 				</div>
 
-				{bookStatus !== "error" && bids.length > 0 ? (
-					<div ref={bidLadderRef} className="flex-1 min-h-0 flex flex-col gap-px py-1 overflow-hidden">
-						{bids.slice(0, bidLevelCount).map((level, index) => (
-							<OrderbookRow
-								key={`bid-${level.price}-${index}`}
-								level={level}
-								side="bid"
-								maxTotal={maxTotal}
-								priceDecimals={priceDecimals}
-								showInQuote={showOrderbookInQuote}
-								szDecimals={szDecimals}
-								compact
-							/>
-						))}
-						{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - Math.min(bids.length, bidLevelCount))).map(
-							(key) => (
-								<OrderbookPlaceholderRow key={`bid-${key}`} />
-							),
-						)}
-					</div>
-				) : null}
+				<div ref={bidLadderRef} className="flex-1 min-h-0 flex flex-col gap-px py-1 overflow-hidden">
+					{hasBids ? (
+						<>
+							{bids.slice(0, bidLevelCount).map((level, index) => (
+								<OrderbookRow
+									key={`bid-${level.price}-${index}`}
+									level={level}
+									side="bid"
+									maxTotal={maxTotal}
+									priceDecimals={priceDecimals}
+									showInQuote={showOrderbookInQuote}
+									szDecimals={szDecimals}
+									compact
+								/>
+							))}
+							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - Math.min(bids.length, bidLevelCount))).map(
+								(key) => (
+									<OrderbookPlaceholderRow key={`bid-${key}`} />
+								),
+							)}
+						</>
+					) : (
+						<OrderbookSkeletonRows rows={bidLevelCount} />
+					)}
+				</div>
 			</div>
 
 			<div className="shrink-0 border-t border-stroke-weak/40 flex items-center justify-between text-fg-muted px-2 py-1.5 text-2xs">
@@ -381,6 +488,7 @@ function SplitOrderbook({
 	spreadText,
 }: SplitOrderbookProps) {
 	const hasBook = bookStatus !== "error" && asks.length > 0 && bids.length > 0;
+	const showError = bookStatus === "error" && asks.length === 0 && bids.length === 0;
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -401,48 +509,60 @@ function SplitOrderbook({
 				</div>
 			</div>
 
-			{hasBook ? (
+			{showError ? (
+				<OrderbookStatus bookStatus={bookStatus} />
+			) : (
 				<div className="grid flex-1 min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px overflow-hidden">
 					<div ref={bidLadderRef} className="min-h-0 overflow-hidden py-1">
-						{bids.slice(0, bidLevelCount).map((level, index) => (
-							<SplitOrderbookRow
-								key={`bid-${level.price}-${index}`}
-								level={level}
-								side="bid"
-								maxTotal={maxTotal}
-								priceDecimals={priceDecimals}
-								showInQuote={showOrderbookInQuote}
-								szDecimals={szDecimals}
-							/>
-						))}
-						{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - Math.min(bids.length, bidLevelCount))).map(
-							(key) => (
-								<OrderbookPlaceholderRow key={`bid-${key}`} />
-							),
+						{hasBook ? (
+							<>
+								{bids.slice(0, bidLevelCount).map((level, index) => (
+									<SplitOrderbookRow
+										key={`bid-${level.price}-${index}`}
+										level={level}
+										side="bid"
+										maxTotal={maxTotal}
+										priceDecimals={priceDecimals}
+										showInQuote={showOrderbookInQuote}
+										szDecimals={szDecimals}
+									/>
+								))}
+								{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - Math.min(bids.length, bidLevelCount))).map(
+									(key) => (
+										<OrderbookPlaceholderRow key={`bid-${key}`} />
+									),
+								)}
+							</>
+						) : (
+							<OrderbookSkeletonRows rows={bidLevelCount} />
 						)}
 					</div>
 
 					<div ref={askLadderRef} className="min-h-0 overflow-hidden py-1">
-						{asks.slice(0, askLevelCount).map((level, index) => (
-							<SplitOrderbookRow
-								key={`ask-${level.price}-${index}`}
-								level={level}
-								side="ask"
-								maxTotal={maxTotal}
-								priceDecimals={priceDecimals}
-								showInQuote={showOrderbookInQuote}
-								szDecimals={szDecimals}
-							/>
-						))}
-						{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
-							(key) => (
-								<OrderbookPlaceholderRow key={`ask-${key}`} />
-							),
+						{hasBook ? (
+							<>
+								{asks.slice(0, askLevelCount).map((level, index) => (
+									<SplitOrderbookRow
+										key={`ask-${level.price}-${index}`}
+										level={level}
+										side="ask"
+										maxTotal={maxTotal}
+										priceDecimals={priceDecimals}
+										showInQuote={showOrderbookInQuote}
+										szDecimals={szDecimals}
+									/>
+								))}
+								{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
+									(key) => (
+										<OrderbookPlaceholderRow key={`ask-${key}`} />
+									),
+								)}
+							</>
+						) : (
+							<OrderbookSkeletonRows rows={askLevelCount} />
 						)}
 					</div>
 				</div>
-			) : (
-				<OrderbookStatus bookStatus={bookStatus} />
 			)}
 		</div>
 	);
@@ -459,6 +579,42 @@ function OrderbookStatus({ bookStatus }: { bookStatus: string }) {
 					<span className="text-sm">{ORDERBOOK_TEXT.WAITING}</span>
 				</div>
 			)}
+		</div>
+	);
+}
+
+function OrderbookSkeletonRows({ rows, align }: { rows: number; align?: "end" }) {
+	return (
+		<>
+			{PLACEHOLDER_ROW_KEYS.slice(0, rows).map((key, index) => (
+				<OrderbookSkeletonRow key={key} index={index} align={align} />
+			))}
+		</>
+	);
+}
+
+function OrderbookSkeletonRow({ index, align }: { index: number; align?: "end" }) {
+	const firstWidth = 42 + ((index * 17) % 22);
+	const secondWidth = 32 + ((index * 13) % 26);
+
+	return (
+		<div className="h-5 shrink-0 px-2 py-1">
+			<div className="grid h-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1">
+				<div
+					className={cn(
+						"h-2 self-center rounded-xs bg-fill-weak/60",
+						align === "end" ? "justify-self-end" : "justify-self-start",
+					)}
+					style={{ width: `${firstWidth}%` }}
+				/>
+				<div
+					className={cn(
+						"h-2 self-center rounded-xs bg-fill-weak/50",
+						align === "end" ? "justify-self-end" : "justify-self-start",
+					)}
+					style={{ width: `${secondWidth}%` }}
+				/>
+			</div>
 		</div>
 	);
 }
@@ -519,7 +675,7 @@ function SplitOrderbookRow({ level, side, maxTotal, priceDecimals, showInQuote, 
 	);
 }
 
-function useOrderbookLadderRows(defaultRows: number, enabled: boolean) {
+function useOrderbookLadderRows(defaultRows: number, enabled: boolean, rowGapPx: number) {
 	const ladderRef = useRef<HTMLDivElement>(null);
 	const [rows, setRows] = useState(defaultRows);
 
@@ -533,7 +689,7 @@ function useOrderbookLadderRows(defaultRows: number, enabled: boolean) {
 		if (!el) return;
 
 		function updateRows(height: number) {
-			setRows(getRowsForLadderHeight(height));
+			setRows(getRowsForLadderHeight(height, rowGapPx));
 		}
 
 		updateRows(el.getBoundingClientRect().height);
@@ -542,21 +698,19 @@ function useOrderbookLadderRows(defaultRows: number, enabled: boolean) {
 
 		const observer = new ResizeObserver(([entry]) => {
 			if (!entry) return;
-			updateRows(entry.contentRect.height);
+			updateRows(entry.target.getBoundingClientRect().height);
 		});
 		observer.observe(el);
 		return () => observer.disconnect();
-	}, [defaultRows, enabled]);
+	}, [defaultRows, enabled, rowGapPx]);
 
 	return [rows, ladderRef] as const;
 }
 
-function getRowsForLadderHeight(height: number): number {
+function getRowsForLadderHeight(height: number, rowGapPx: number): number {
 	const availableHeight = Math.max(0, height - ORDERBOOK_LADDER_VERTICAL_PADDING_PX);
-	return Math.max(
-		1,
-		Math.floor((availableHeight + ORDERBOOK_ROW_GAP_PX) / (ORDERBOOK_ROW_HEIGHT_PX + ORDERBOOK_ROW_GAP_PX)),
-	);
+	const rows = Math.floor((availableHeight + rowGapPx) / (ORDERBOOK_ROW_HEIGHT_PX + rowGapPx));
+	return Math.min(MAX_LEVEL_COUNT, Math.max(1, rows));
 }
 
 function OrderbookPlaceholderRow() {
