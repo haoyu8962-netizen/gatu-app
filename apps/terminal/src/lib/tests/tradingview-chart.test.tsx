@@ -16,7 +16,7 @@ vi.mock("@/lib/chart/load-tradingview", () => ({
 
 vi.mock("@/lib/chart/theme-colors", () => ({
 	buildChartOverrides: () => ({}),
-	getChartCssUrl: vi.fn((theme: "light" | "dark") => `/tradingview-theme-${theme}.css`),
+	getChartCssUrl: vi.fn(() => "/tradingview-theme.css"),
 	getLoadingScreenColors: () => ({}),
 	getToolbarBgColor: () => "#000",
 }));
@@ -26,16 +26,26 @@ vi.mock("@/components/trade/chart/datafeed", () => ({
 }));
 
 type MockWidget = {
+	applyOverrides: ReturnType<typeof vi.fn>;
+	changeTheme: ReturnType<typeof vi.fn>;
 	createButton: ReturnType<typeof vi.fn>;
+	getTheme: ReturnType<typeof vi.fn>;
 	headerReady: ReturnType<typeof vi.fn>;
 	onChartReady: ReturnType<typeof vi.fn>;
 	remove: ReturnType<typeof vi.fn>;
 	setSymbol: ReturnType<typeof vi.fn>;
 };
 
-function createMockWidget(): MockWidget {
+function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidget {
+	let currentTheme = options.theme ?? "dark";
+
 	return {
+		applyOverrides: vi.fn(),
+		changeTheme: vi.fn(async (nextTheme: "light" | "dark") => {
+			currentTheme = nextTheme;
+		}),
 		createButton: vi.fn(() => document.createElement("button")),
+		getTheme: vi.fn(() => currentTheme),
 		headerReady: vi.fn(async () => {}),
 		onChartReady: vi.fn((callback: () => void) => {
 			queueMicrotask(callback);
@@ -64,9 +74,9 @@ describe("TradingViewChart", () => {
 		document.body.appendChild(container);
 		root = createRoot(container);
 		widgets = [];
-		widgetConstructor = vi.fn(function Widget(this: unknown, _options: unknown) {
+		widgetConstructor = vi.fn(function Widget(this: unknown, options: unknown) {
 			void this;
-			const widget = createMockWidget();
+			const widget = createMockWidget(options as { theme?: "light" | "dark" });
 			widgets.push(widget);
 			return widget;
 		});
@@ -105,7 +115,68 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
 	});
 
-	it("uses a same-origin static stylesheet instead of a blob URL", async () => {
+	it("changes the TradingView theme without rebuilding the iframe", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		const widget = widgets[0];
+		expect(widget).toBeDefined();
+		expect(widget?.changeTheme).not.toHaveBeenCalled();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light" }));
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		expect(widget?.remove).not.toHaveBeenCalled();
+		expect(widget?.setSymbol).not.toHaveBeenCalled();
+		expect(widget?.changeTheme).toHaveBeenCalledTimes(1);
+		expect(widget?.changeTheme).toHaveBeenCalledWith("light");
+		expect(widget?.applyOverrides).toHaveBeenCalledTimes(1);
+	});
+
+	it("ignores a stale async theme switch result", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		const pendingThemeSwitches: Array<() => void> = [];
+		widget?.changeTheme.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					pendingThemeSwitches.push(resolve);
+				}),
+		);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "light" }));
+		});
+		await flushChartEffects();
+
+		expect(widget?.changeTheme).toHaveBeenCalledTimes(1);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widget?.changeTheme).toHaveBeenCalledTimes(1);
+
+		await act(async () => {
+			pendingThemeSwitches[0]?.();
+			await Promise.resolve();
+		});
+
+		expect(widget?.applyOverrides).not.toHaveBeenCalled();
+	});
+
+	it("uses a same-origin theme-aware static stylesheet instead of a blob URL", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
 		});
@@ -113,9 +184,10 @@ describe("TradingViewChart", () => {
 
 		expect(widgetConstructor).toHaveBeenCalledWith(
 			expect.objectContaining({
-				custom_css_url: "/tradingview-theme-dark.css",
+				custom_css_url: "/tradingview-theme.css",
 			}),
 		);
+		expect(widgetConstructor.mock.calls[0]?.[0]).not.toHaveProperty("toolbar_bg");
 	});
 
 	it("retries a slow symbol switch without rebuilding the widget", async () => {

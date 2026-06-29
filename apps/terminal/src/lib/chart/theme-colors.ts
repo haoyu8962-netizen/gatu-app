@@ -277,6 +277,6 @@ export function getCustomThemeColors(): CustomThemeColors {
 	};
 }
 
-export function getChartCssUrl(theme: "light" | "dark"): string {
-	return theme === "dark" ? "/tradingview-theme-dark.css" : "/tradingview-theme-light.css";
+export function getChartCssUrl(_theme: "light" | "dark"): string {
+	return "/tradingview-theme.css";
 }

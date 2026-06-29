@@ -3,12 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
 import { priceScaleFromMid } from "@/lib/chart/symbol";
-import {
-	buildChartOverrides,
-	getChartCssUrl,
-	getLoadingScreenColors,
-	getToolbarBgColor,
-} from "@/lib/chart/theme-colors";
+import { buildChartOverrides, getChartCssUrl, getLoadingScreenColors } from "@/lib/chart/theme-colors";
 import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import type { IChartingLibraryWidget, ResolutionString } from "@/types/charting_library";
@@ -73,18 +68,23 @@ export function TradingViewChart({
 	const chartReadyRef = useRef(false);
 	const targetSymbolRef = useRef(symbol);
 	const targetIntervalRef = useRef(interval);
+	const targetThemeRef = useRef(theme);
 	const marketRef = useRef(market);
 	const appliedSymbolRef = useRef<string | null>(null);
 	const appliedIntervalRef = useRef<string | null>(null);
+	const appliedThemeRef = useRef<"light" | "dark" | null>(null);
 	const pendingSymbolRef = useRef<string | null>(null);
 	const pendingIntervalRef = useRef<string | null>(null);
 	const symbolSwitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const symbolSwitchRetryRef = useRef<{ key: string; count: number }>({ key: "", count: 0 });
+	const themeSwitchSequenceRef = useRef(0);
 	const applySymbolRef = useRef<() => void>(() => {});
+	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
 	const [initError, setInitError] = useState<string | null>(null);
 	const [retryNonce, setRetryNonce] = useState(0);
 	targetSymbolRef.current = widgetSymbol;
 	targetIntervalRef.current = interval;
+	targetThemeRef.current = theme;
 	marketRef.current = market;
 
 	const clearSymbolSwitchTimeout = () => {
@@ -179,6 +179,30 @@ export function TradingViewChart({
 		}
 	};
 
+	applyThemeRef.current = (nextTheme) => {
+		const widget = widgetRef.current;
+		if (!widget || !chartReadyRef.current) return;
+
+		const sequence = themeSwitchSequenceRef.current + 1;
+		themeSwitchSequenceRef.current = sequence;
+		if (appliedThemeRef.current === nextTheme && widget.getTheme() === nextTheme) return;
+
+		void widget
+			.changeTheme(nextTheme)
+			.then(() => {
+				if (widgetRef.current !== widget || themeSwitchSequenceRef.current !== sequence) return;
+				appliedThemeRef.current = nextTheme;
+				widget.applyOverrides(buildChartOverrides());
+			})
+			.catch((error) => {
+				if (widgetRef.current !== widget || themeSwitchSequenceRef.current !== sequence) return;
+				console.warn("[TradingViewChart] TradingView theme switch failed.", {
+					error,
+					theme: nextTheme,
+				});
+			});
+	};
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: switch cleanup only reads refs; adding the helper would recreate the widget on every render.
 	useEffect(() => {
 		void retryNonce;
@@ -230,7 +254,9 @@ export function TradingViewChart({
 			chartReadyRef.current = false;
 			appliedSymbolRef.current = null;
 			appliedIntervalRef.current = null;
+			appliedThemeRef.current = null;
 			symbolSwitchRetryRef.current = { key: "", count: 0 };
+			themeSwitchSequenceRef.current += 1;
 		};
 
 		const handleFinalFailure = (reason: string, attempt: number, error?: unknown) => {
@@ -267,8 +293,8 @@ export function TradingViewChart({
 
 				const overrides = buildChartOverrides();
 				const loadingColors = getLoadingScreenColors();
-				const toolbarBg = getToolbarBgColor();
-				const customCssUrl = getChartCssUrl(theme);
+				const initialTheme = targetThemeRef.current;
+				const customCssUrl = getChartCssUrl(initialTheme);
 
 				const initialSymbol = targetSymbolRef.current;
 				const initialInterval = targetIntervalRef.current;
@@ -287,7 +313,7 @@ export function TradingViewChart({
 					locale: CHART_LOCALE,
 					fullscreen: CHART_WIDGET_DEFAULTS.FULLSCREEN,
 					autosize: CHART_WIDGET_DEFAULTS.AUTOSIZE,
-					theme: theme,
+					theme: initialTheme,
 					timezone: TIMEZONE,
 					debug: CHART_WIDGET_DEFAULTS.DEBUG,
 					custom_font_family: CHART_CUSTOM_FONT_FAMILY,
@@ -296,7 +322,6 @@ export function TradingViewChart({
 					disabled_features: CHART_DISABLED_FEATURES,
 					overrides: overrides,
 					loading_screen: loadingColors,
-					toolbar_bg: toolbarBg,
 					custom_css_url: customCssUrl,
 					studies_overrides: {},
 					favorites: {
@@ -306,12 +331,14 @@ export function TradingViewChart({
 				widgetRef.current = widget;
 				appliedSymbolRef.current = initialSymbol;
 				appliedIntervalRef.current = initialInterval;
+				appliedThemeRef.current = initialTheme;
 				scheduleReadyTimeout(widget, attempt);
 
 				widget.onChartReady(() => {
 					if (disposed || widgetRef.current !== widget) return;
 					clearReadyTimeout();
 					chartReadyRef.current = true;
+					applyThemeRef.current(targetThemeRef.current);
 					applySymbolRef.current();
 				});
 			} catch (error) {
@@ -332,13 +359,18 @@ export function TradingViewChart({
 			clearReadyTimeout();
 			removeWidget();
 		};
-	}, [theme, retryNonce]);
+	}, [retryNonce]);
 
 	useEffect(() => {
 		targetSymbolRef.current = widgetSymbol;
 		targetIntervalRef.current = interval;
 		applySymbolRef.current();
 	}, [widgetSymbol, interval]);
+
+	useEffect(() => {
+		targetThemeRef.current = theme;
+		applyThemeRef.current(theme);
+	}, [theme]);
 
 	return (
 		<div
