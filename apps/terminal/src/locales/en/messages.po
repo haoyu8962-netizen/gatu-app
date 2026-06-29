@@ -921,8 +921,8 @@ msgid "Edit TP/SL"
 msgstr "Edit TP/SL"
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Embedded wallet is not ready. Try again in a moment."
-msgstr "Embedded wallet is not ready. Try again in a moment."
+#~ msgid "Embedded wallet is not ready. Try again in a moment."
+#~ msgstr "Embedded wallet is not ready. Try again in a moment."
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enable"
@@ -1075,6 +1075,10 @@ msgstr "Failed to close position"
 msgid "Failed to copy"
 msgstr "Failed to copy"
 
+#: src/components/trade/header/user-menu.tsx
+msgid "Failed to create embedded wallet or open deposit flow"
+msgstr "Failed to create embedded wallet or open deposit flow"
+
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to enable trading"
@@ -1131,8 +1135,8 @@ msgstr "Failed to load trades."
 #~ msgstr "Failed to load TWAP history."
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Failed to open deposit flow"
-msgstr "Failed to open deposit flow"
+#~ msgid "Failed to open deposit flow"
+#~ msgstr "Failed to open deposit flow"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Failed to place limit close order"

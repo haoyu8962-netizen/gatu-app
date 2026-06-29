@@ -921,8 +921,8 @@ msgid "Edit TP/SL"
 msgstr "编辑 TP/SL"
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Embedded wallet is not ready. Try again in a moment."
-msgstr "内嵌钱包尚未就绪，请稍后重试。"
+#~ msgid "Embedded wallet is not ready. Try again in a moment."
+#~ msgstr "内嵌钱包尚未就绪，请稍后重试。"
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enable"
@@ -1075,6 +1075,10 @@ msgstr "平仓失败"
 msgid "Failed to copy"
 msgstr "复制失败"
 
+#: src/components/trade/header/user-menu.tsx
+msgid "Failed to create embedded wallet or open deposit flow"
+msgstr "无法创建内嵌钱包或打开存款流程"
+
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to enable trading"
@@ -1131,8 +1135,8 @@ msgstr "加载成交记录失败。"
 #~ msgstr "加载 TWAP 历史失败。"
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Failed to open deposit flow"
-msgstr "无法打开存款流程"
+#~ msgid "Failed to open deposit flow"
+#~ msgstr "无法打开存款流程"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Failed to place limit close order"

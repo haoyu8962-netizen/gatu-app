@@ -921,8 +921,8 @@ msgid "Edit TP/SL"
 msgstr "تعديل TP/SL"
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Embedded wallet is not ready. Try again in a moment."
-msgstr "المحفظة المدمجة غير جاهزة. حاول مرة أخرى بعد قليل."
+#~ msgid "Embedded wallet is not ready. Try again in a moment."
+#~ msgstr "المحفظة المدمجة غير جاهزة. حاول مرة أخرى بعد قليل."
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enable"
@@ -1075,6 +1075,10 @@ msgstr "فشل إغلاق المركز"
 msgid "Failed to copy"
 msgstr "فشل النسخ"
 
+#: src/components/trade/header/user-menu.tsx
+msgid "Failed to create embedded wallet or open deposit flow"
+msgstr "تعذر إنشاء المحفظة المدمجة أو فتح مسار الإيداع"
+
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to enable trading"
@@ -1131,8 +1135,8 @@ msgstr "فشل في تحميل الصفقات."
 #~ msgstr "فشل في تحميل سجل TWAP."
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Failed to open deposit flow"
-msgstr "تعذر فتح مسار الإيداع"
+#~ msgid "Failed to open deposit flow"
+#~ msgstr "تعذر فتح مسار الإيداع"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Failed to place limit close order"
