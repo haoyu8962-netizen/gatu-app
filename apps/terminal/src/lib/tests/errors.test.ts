@@ -39,6 +39,14 @@ describe("errors", () => {
 		);
 	});
 
+	it("formats invisible wallet transaction hashes without saying the hash was never returned", () => {
+		expect(
+			formatTransferError(new Error("Wallet returned a transaction hash, but it is not visible on Arbitrum yet.")),
+		).toBe(
+			"Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice.",
+		);
+	});
+
 	it("formats wallet connection failures separately from broadcast failures", () => {
 		expect(formatTransferError(new Error("Failed to connect to MetaMask"))).toBe(
 			"Wallet connection failed. Unlock your wallet, approve the connection, then retry.",

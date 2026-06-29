@@ -52,6 +52,7 @@ type ReadyWalletClient = WalletClient<Transport, typeof arbitrum, Account>;
 
 interface ReadyDepositContext {
 	address: `0x${string}`;
+	provider: Eip1193Provider;
 	publicClient: PublicClient;
 	walletClient: ReadyWalletClient;
 }
@@ -305,19 +306,37 @@ async function getReadyDepositContext({
 		transport: custom(provider),
 	});
 
-	return { address, publicClient, walletClient: walletClient as ReadyWalletClient };
+	return { address, provider, publicClient, walletClient: walletClient as ReadyWalletClient };
+}
+
+async function providerHasTransaction(provider: Eip1193Provider | undefined, hash: Hash) {
+	if (!provider) return false;
+
+	try {
+		const receipt = await provider.request({ method: "eth_getTransactionReceipt", params: [hash] });
+		if (receipt) return true;
+	} catch {}
+
+	try {
+		const transaction = await provider.request({ method: "eth_getTransactionByHash", params: [hash] });
+		return !!transaction;
+	} catch {
+		return false;
+	}
 }
 
 export async function waitForBroadcastedTransaction(
 	publicClient: PublicClient,
 	hash: Hash,
-	options: { timeoutMs?: number; pollingIntervalMs?: number } = {},
+	options: { provider?: Eip1193Provider; timeoutMs?: number; pollingIntervalMs?: number } = {},
 ) {
 	const timeoutMs = options.timeoutMs ?? DEPOSIT_BROADCAST_TIMEOUT_MS;
 	const pollingIntervalMs = options.pollingIntervalMs ?? DEPOSIT_POLL_INTERVAL_MS;
 	const deadline = Date.now() + timeoutMs;
 
 	while (true) {
+		if (await providerHasTransaction(options.provider, hash)) return;
+
 		try {
 			const receipt = await publicClient.getTransactionReceipt({ hash });
 			if (receipt) return;
@@ -333,7 +352,9 @@ export async function waitForBroadcastedTransaction(
 		await sleep(Math.min(pollingIntervalMs, remainingMs));
 	}
 
-	throw new Error(t`Transaction was not broadcast. Please retry.`);
+	throw new Error(
+		t`Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice.`,
+	);
 }
 
 async function waitForConfirmedReceipt(publicClient: PublicClient, hash: Hash) {
@@ -455,7 +476,7 @@ export function useDeposit(): UseDepositResult {
 
 				if (operationIdRef.current !== operationId) return;
 				setState({ status: "confirming", error: null, hash });
-				await waitForBroadcastedTransaction(ready.publicClient, hash);
+				await waitForBroadcastedTransaction(ready.publicClient, hash, { provider: ready.provider });
 
 				if (operationIdRef.current !== operationId) return;
 				await waitForConfirmedReceipt(ready.publicClient, hash);

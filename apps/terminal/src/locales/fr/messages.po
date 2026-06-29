@@ -3298,7 +3298,6 @@ msgid "Transaction reverted on Arbitrum"
 msgstr ""
 
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction was not broadcast. Please retry."
 msgstr "La transaction n'a pas été diffusée. Réessayez."
 
@@ -3543,6 +3542,11 @@ msgstr "Le portefeuille n'est pas connecté à Arbitrum. Changez de réseau dans
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "Portefeuille non connecté"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
+msgstr "Le portefeuille a renvoyé un hash de transaction, mais il n'est pas encore visible sur Arbitrum. Vérifiez l'activité du portefeuille ou Arbiscan avant de réessayer afin d'éviter d'envoyer le dépôt deux fois."
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect pairing ready"

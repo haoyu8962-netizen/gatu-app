@@ -3298,7 +3298,6 @@ msgid "Transaction reverted on Arbitrum"
 msgstr ""
 
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction was not broadcast. Please retry."
 msgstr "लेनदेन प्रसारित नहीं हुआ। कृपया पुनः प्रयास करें।"
 
@@ -3543,6 +3542,11 @@ msgstr "वॉलेट Arbitrum से कनेक्ट नहीं है�
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "वॉलेट कनेक्ट नहीं है"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
+msgstr "वॉलेट ने लेनदेन हैश लौटाया है, लेकिन वह अभी Arbitrum पर दिखाई नहीं दे रहा है। जमा दो बार भेजने से बचने के लिए दोबारा प्रयास करने से पहले वॉलेट गतिविधि या Arbiscan जांचें."
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect pairing ready"

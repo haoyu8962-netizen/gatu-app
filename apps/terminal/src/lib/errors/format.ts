@@ -25,6 +25,11 @@ const ERROR_PATTERNS = [
 		message: () =>
 			t`Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice.`,
 	},
+	{
+		pattern: /wallet returned a transaction hash.*not visible on arbitrum/i,
+		message: () =>
+			t`Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice.`,
+	},
 	{ pattern: /not broadcast/i, message: () => t`Transaction was not broadcast. Please retry.` },
 	{
 		pattern: /deposit transaction was broadcast but confirmation timed out/i,
