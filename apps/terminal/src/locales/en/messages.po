@@ -3292,6 +3292,7 @@ msgid "Transaction reverted on Arbitrum"
 msgstr "Transaction reverted on Arbitrum"
 
 #: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction was not broadcast. Please retry."
 msgstr "Transaction was not broadcast. Please retry."
 
