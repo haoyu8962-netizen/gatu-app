@@ -10,14 +10,18 @@ import {
 	SpinnerGapIcon,
 	WalletIcon,
 } from "@phosphor-icons/react";
+import { useDepositAddress } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useEnsName } from "wagmi";
+import { ARBITRUM_CHAIN_ID, CONTRACTS } from "@/config/contracts";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
+import { getPrivyEmailAddress, getPrivyEmbeddedWalletAddress, isPrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { MobileAgentSyncModal } from "../components/mobile-agent-sync-modal";
 
@@ -25,12 +29,17 @@ const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 export function UserMenu() {
-	const { ready, authenticated, isConnected, login, displayAddress, sessionMode } = useWalletSession();
+	const { ready, authenticated, isConnected, login, displayAddress, sessionMode, user } = useWalletSession();
 	const { disconnectWallet } = useDisconnectWallet();
-	const { data: ensName } = useEnsName({ address: displayAddress });
+	const emailAddress = getPrivyEmailAddress(user);
+	const embeddedWalletAddress = getPrivyEmbeddedWalletAddress(user);
+	const shouldUseEmbeddedDeposit = !!embeddedWalletAddress && (!!emailAddress || isPrivyEmbeddedWallet(user?.wallet));
+	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
+	const { createDepositAddress } = useDepositAddress();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { tradeRestricted } = useGeoRestriction();
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
+	const [depositAddressPending, setDepositAddressPending] = useState(false);
 	const [mounted, setMounted] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
 
@@ -75,8 +84,32 @@ export function UserMenu() {
 		);
 	}
 
-	const displayLabel = ensName ?? (displayAddress ? shortenAddress(displayAddress) : "");
+	const displayLabel = emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : "");
 	const hasWalletAccess = sessionMode === "wallet";
+
+	async function handleDepositSelect() {
+		if (!shouldUseEmbeddedDeposit) {
+			openDepositModal("deposit");
+			return;
+		}
+		if (!embeddedWalletAddress) {
+			toast.error(t`Embedded wallet is not ready. Try again in a moment.`);
+			return;
+		}
+
+		setDepositAddressPending(true);
+		try {
+			await createDepositAddress({
+				destinationAddress: embeddedWalletAddress,
+				destinationChain: `eip155:${ARBITRUM_CHAIN_ID}`,
+				destinationCurrency: CONTRACTS.arbitrum.usdc,
+			});
+		} catch {
+			toast.error(t`Failed to open deposit flow`);
+		} finally {
+			setDepositAddressPending(false);
+		}
+	}
 
 	const actionItems = [
 		...(displayAddress
@@ -96,9 +129,15 @@ export function UserMenu() {
 			? []
 			: [
 					{
-						label: t`Add funds`,
-						icon: <PlusCircleIcon className="size-3.5" />,
-						onSelect: () => openDepositModal("deposit"),
+						label: depositAddressPending ? t`Preparing deposit...` : t`Deposit`,
+						icon: depositAddressPending ? (
+							<SpinnerGapIcon className="size-3.5 animate-spin" />
+						) : (
+							<PlusCircleIcon className="size-3.5" />
+						),
+						onSelect: () => {
+							void handleDepositSelect();
+						},
 					},
 				]),
 		...(hasWalletAccess

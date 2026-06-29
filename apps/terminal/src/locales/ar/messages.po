@@ -129,8 +129,8 @@ msgid "Add {0} to favorites"
 msgstr "إضافة {0} إلى المفضلة"
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Add funds"
-msgstr "إضافة أموال"
+#~ msgid "Add funds"
+#~ msgstr "إضافة أموال"
 
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Add to favorites"
@@ -789,6 +789,7 @@ msgid "Default"
 msgstr "افتراضي"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -918,6 +919,10 @@ msgstr "يستخدم كل مركز الهامش المخصص له فقط. إذا
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "تعديل TP/SL"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Embedded wallet is not ready. Try again in a moment."
+msgstr "المحفظة المدمجة غير جاهزة. حاول مرة أخرى بعد قليل."
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enable"
@@ -1124,6 +1129,10 @@ msgstr "فشل في تحميل الصفقات."
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Failed to load TWAP history."
 #~ msgstr "فشل في تحميل سجل TWAP."
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Failed to open deposit flow"
+msgstr "تعذر فتح مسار الإيداع"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Failed to place limit close order"
@@ -2272,6 +2281,10 @@ msgstr "مراكز"
 #: src/config/trade.ts
 msgid "Positions"
 msgstr "المراكز"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Preparing deposit..."
+msgstr "جارٍ تحضير الإيداع..."
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."

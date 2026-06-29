@@ -6,13 +6,18 @@ import {
 	useHyperliquid,
 	useHyperliquidOptional,
 } from "@/lib/hyperliquid";
+import { getPrivyEmailAddress, getPrivyEmbeddedWalletAddress, isPrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
 
 export function useWalletSession() {
 	const { ready, authenticated, login, logout, user } = usePrivy();
-	const { address: walletAddress, isConnected: walletConnected, isConnecting } = useConnection();
+	const { address: connectedWalletAddress, isConnected: walletConnected, isConnecting } = useConnection();
 	const hyperliquid = useHyperliquidOptional();
 
-	const hasWalletSession = ready && authenticated && walletConnected && !!walletAddress;
+	const embeddedWalletAddress = ready && authenticated ? getPrivyEmbeddedWalletAddress(user) : undefined;
+	const shouldUseEmbeddedWallet =
+		!!embeddedWalletAddress && (!!getPrivyEmailAddress(user) || isPrivyEmbeddedWallet(user?.wallet));
+	const walletAddress = shouldUseEmbeddedWallet ? embeddedWalletAddress : connectedWalletAddress;
+	const hasWalletSession = ready && authenticated && !!walletAddress;
 	const agentAddress =
 		hyperliquid?.sessionMode === "agent-only" && hyperliquid.clientKey !== "disconnected"
 			? (hyperliquid.clientKey as `0x${string}`)
@@ -31,6 +36,8 @@ export function useWalletSession() {
 		address,
 		displayAddress,
 		walletAddress,
+		connectedWalletAddress,
+		embeddedWalletAddress,
 		walletConnected,
 		isConnected: !!address,
 		isConnecting,
@@ -40,7 +47,7 @@ export function useWalletSession() {
 
 export function useDisconnectWallet() {
 	const { logout, user } = usePrivy();
-	const { address: walletAddress } = useConnection();
+	const { walletAddress } = useWalletSession();
 	const disconnect = useDisconnect();
 	const { clientKey, env, sessionMode } = useHyperliquid();
 	const { clearAgent } = useAgentWalletActions();

@@ -129,8 +129,8 @@ msgid "Add {0} to favorites"
 msgstr "Add {0} to favorites"
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Add funds"
-msgstr "Add funds"
+#~ msgid "Add funds"
+#~ msgstr "Add funds"
 
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Add to favorites"
@@ -789,6 +789,7 @@ msgid "Default"
 msgstr "Default"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -918,6 +919,10 @@ msgstr "Each position uses only its allocated margin. If the margin ratio reache
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "Edit TP/SL"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Embedded wallet is not ready. Try again in a moment."
+msgstr "Embedded wallet is not ready. Try again in a moment."
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enable"
@@ -1124,6 +1129,10 @@ msgstr "Failed to load trades."
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Failed to load TWAP history."
 #~ msgstr "Failed to load TWAP history."
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Failed to open deposit flow"
+msgstr "Failed to open deposit flow"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Failed to place limit close order"
@@ -2272,6 +2281,10 @@ msgstr "positions"
 #: src/config/trade.ts
 msgid "Positions"
 msgstr "Positions"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Preparing deposit..."
+msgstr "Preparing deposit..."
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."

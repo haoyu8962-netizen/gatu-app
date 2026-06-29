@@ -129,8 +129,8 @@ msgid "Add {0} to favorites"
 msgstr "{0} को पसंदीदा में जोड़ें"
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Add funds"
-msgstr "धन जोड़ें"
+#~ msgid "Add funds"
+#~ msgstr "धन जोड़ें"
 
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Add to favorites"
@@ -789,6 +789,7 @@ msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -918,6 +919,10 @@ msgstr "प्रत्येक पोज़िशन केवल अपने
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "TP/SL संपादित करें"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Embedded wallet is not ready. Try again in a moment."
+msgstr "एम्बेडेड वॉलेट अभी तैयार नहीं है। कुछ देर बाद फिर कोशिश करें।"
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enable"
@@ -1124,6 +1129,10 @@ msgstr "ट्रेड लोड करने में विफल।"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Failed to load TWAP history."
 #~ msgstr "TWAP इतिहास लोड करने में विफल।"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Failed to open deposit flow"
+msgstr "जमा प्रक्रिया खोलने में विफल"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Failed to place limit close order"
@@ -2272,6 +2281,10 @@ msgstr "पोज़िशन"
 #: src/config/trade.ts
 msgid "Positions"
 msgstr "पोज़िशन"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Preparing deposit..."
+msgstr "जमा की तैयारी हो रही है..."
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."

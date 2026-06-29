@@ -1,5 +1,13 @@
 import type { ConnectedWallet, User } from "@privy-io/react-auth";
 
+interface WalletIdentity {
+	address?: string;
+	chainType?: string;
+	connectorType?: string;
+	walletClientType?: string;
+	type?: string;
+}
+
 function normalizeAddress(address: string | null | undefined): string | null {
 	return address ? address.toLowerCase() : null;
 }
@@ -10,6 +18,30 @@ export function hasSameWalletAddress(a: string | null | undefined, b: string | n
 	return !!normalizedA && !!normalizedB && normalizedA === normalizedB;
 }
 
+export function isPrivyEmbeddedWallet(wallet: WalletIdentity | null | undefined): boolean {
+	if (!wallet || wallet.chainType === "solana") return false;
+	return (
+		wallet.walletClientType === "privy" || wallet.walletClientType === "privy-v2" || wallet.connectorType === "embedded"
+	);
+}
+
+export function getPrivyEmailAddress(user: User | null | undefined): string | undefined {
+	return (
+		user?.email?.address ??
+		user?.linkedAccounts?.find((account) => account.type === "email" && "address" in account)?.address
+	);
+}
+
+export function getPrivyEmbeddedWalletAddress(user: User | null | undefined): `0x${string}` | undefined {
+	if (isPrivyEmbeddedWallet(user?.wallet)) return user?.wallet?.address as `0x${string}`;
+
+	const embeddedWallet = user?.linkedAccounts?.find(
+		(account) => account.type === "wallet" && isPrivyEmbeddedWallet(account),
+	);
+	if (!embeddedWallet || !("address" in embeddedWallet)) return undefined;
+	return embeddedWallet.address as `0x${string}`;
+}
+
 export function selectPrivyWagmiWallet({
 	wallets,
 	user,
@@ -18,6 +50,19 @@ export function selectPrivyWagmiWallet({
 	user: User | null;
 }): ConnectedWallet | undefined {
 	if (wallets.length === 0) return undefined;
+
+	const embeddedWalletAddress = getPrivyEmbeddedWalletAddress(user);
+	const shouldPreferEmbeddedWallet =
+		!!embeddedWalletAddress && (!!getPrivyEmailAddress(user) || isPrivyEmbeddedWallet(user?.wallet));
+	if (shouldPreferEmbeddedWallet) {
+		return (
+			wallets.find(
+				(wallet) => isPrivyEmbeddedWallet(wallet) && hasSameWalletAddress(wallet.address, embeddedWalletAddress),
+			) ??
+			wallets.find((wallet) => hasSameWalletAddress(wallet.address, embeddedWalletAddress)) ??
+			wallets.find(isPrivyEmbeddedWallet)
+		);
+	}
 
 	const userWalletAddress = user?.wallet?.address;
 	if (userWalletAddress) {

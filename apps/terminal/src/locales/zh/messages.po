@@ -129,8 +129,8 @@ msgid "Add {0} to favorites"
 msgstr "将 {0} 加入自选"
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Add funds"
-msgstr "添加资金"
+#~ msgid "Add funds"
+#~ msgstr "添加资金"
 
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Add to favorites"
@@ -789,6 +789,7 @@ msgid "Default"
 msgstr "默认"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -918,6 +919,10 @@ msgstr "每个仓位仅使用其分配的保证金。若保证金率达到 100%�
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "编辑 TP/SL"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Embedded wallet is not ready. Try again in a moment."
+msgstr "内嵌钱包尚未就绪，请稍后重试。"
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enable"
@@ -1124,6 +1129,10 @@ msgstr "加载成交记录失败。"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Failed to load TWAP history."
 #~ msgstr "加载 TWAP 历史失败。"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Failed to open deposit flow"
+msgstr "无法打开存款流程"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Failed to place limit close order"
@@ -2272,6 +2281,10 @@ msgstr "仓位"
 #: src/config/trade.ts
 msgid "Positions"
 msgstr "持仓"
+
+#: src/components/trade/header/user-menu.tsx
+msgid "Preparing deposit..."
+msgstr "正在准备存款..."
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."

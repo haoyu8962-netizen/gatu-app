@@ -7,7 +7,9 @@ export const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID as string | undefi
 // existing agent layer (packages/hl-react/src/signing) depends on.
 export const privyConfig: PrivyClientConfig = {
 	embeddedWallets: {
-		createOnLogin: "users-without-wallets",
+		ethereum: {
+			createOnLogin: "users-without-wallets",
+		},
 		showWalletUIs: true,
 	},
 	loginMethods: ["wallet", "email"],
