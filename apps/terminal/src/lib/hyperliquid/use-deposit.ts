@@ -1,9 +1,10 @@
 import { t } from "@lingui/core/macro";
+import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { Account, Hash, PublicClient, Transport, WalletClient } from "viem";
-import { erc20Abi, formatUnits, parseUnits } from "viem";
+import { createWalletClient, custom, erc20Abi, formatUnits, parseUnits } from "viem";
 import { arbitrum } from "viem/chains";
-import { useChainId, usePublicClient, useReadContract, useSwitchChain, useWalletClient } from "wagmi";
+import { useChainId, usePublicClient, useReadContract, useSwitchChain } from "wagmi";
 import { ARBITRUM_CHAIN_ID, CONTRACTS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import {
 	DEPOSIT_BROADCAST_TIMEOUT_MS,
@@ -77,6 +78,21 @@ function sleep(ms: number) {
 	return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
+function getWalletChainId(wallet: ConnectedWallet): number | null {
+	const rawChainId = wallet.chainId.split(":").pop();
+	if (!rawChainId) return null;
+	const chainId = Number(rawChainId);
+	return Number.isFinite(chainId) ? chainId : null;
+}
+
+function selectDepositWallet(
+	wallets: ConnectedWallet[],
+	address: `0x${string}` | undefined,
+): ConnectedWallet | undefined {
+	if (!address) return undefined;
+	return wallets.find((wallet) => hasSameWalletAddress(wallet.address, address));
+}
+
 export function waitForWalletTransactionHash<T>(
 	promise: Promise<T>,
 	timeoutMs = DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
@@ -97,21 +113,33 @@ export function waitForWalletTransactionHash<T>(
 	});
 }
 
-function getReadyDepositContext({
+async function getReadyDepositContext({
 	address,
 	publicClient,
-	walletClient,
+	wallet,
 }: {
 	address: `0x${string}` | undefined;
 	publicClient: PublicClient | undefined;
-	walletClient: WalletClient | undefined;
-}): ReadyDepositContext {
+	wallet: ConnectedWallet | undefined;
+}): Promise<ReadyDepositContext> {
 	if (!address) throw new Error(t`Wallet not connected`);
 	if (!publicClient) throw new Error(t`No response from exchange`);
-	if (!walletClient?.account?.address) throw new Error(t`Wallet client not ready`);
-	if (!hasSameWalletAddress(walletClient.account.address, address)) {
+	if (!wallet) throw new Error(t`Wallet client not ready`);
+	if (!hasSameWalletAddress(wallet.address, address)) {
 		throw new Error(t`Selected wallet does not match the connected account. Reconnect your wallet and try again.`);
 	}
+
+	if (getWalletChainId(wallet) !== ARBITRUM_CHAIN_ID) {
+		await wallet.switchChain(ARBITRUM_CHAIN_ID);
+	}
+
+	const provider = await wallet.getEthereumProvider();
+	const walletClient = createWalletClient({
+		account: address,
+		chain: arbitrum,
+		transport: custom(provider),
+	});
+
 	return { address, publicClient, walletClient: walletClient as ReadyWalletClient };
 }
 
@@ -206,14 +234,12 @@ function useUsdcBalance(address: `0x${string}` | undefined, enabled: boolean) {
 }
 
 export function useDeposit(): UseDepositResult {
-	const { address } = useWalletSession();
+	const { walletAddress } = useWalletSession();
 	const chain = useArbitrumChain();
-	const { balanceRaw, balance, refetch } = useUsdcBalance(address, chain.isArbitrum && !!address);
+	const { wallets } = useWallets();
+	const depositWallet = useMemo(() => selectDepositWallet(wallets, walletAddress), [wallets, walletAddress]);
+	const { balanceRaw, balance, refetch } = useUsdcBalance(walletAddress, chain.isArbitrum && !!walletAddress);
 	const publicClient = usePublicClient({ chainId: ARBITRUM_CHAIN_ID });
-	const { data: walletClient } = useWalletClient({
-		chainId: ARBITRUM_CHAIN_ID,
-		query: { enabled: chain.isArbitrum && !!address },
-	});
 
 	const [state, setState] = useState<DepositState>(createIdleState);
 	const operationIdRef = useRef(0);
@@ -227,7 +253,7 @@ export function useDeposit(): UseDepositResult {
 			setState({ status: "pending", error: null, hash: undefined });
 
 			try {
-				const ready = getReadyDepositContext({ address, publicClient, walletClient });
+				const ready = await getReadyDepositContext({ address: walletAddress, publicClient, wallet: depositWallet });
 
 				const hash = await waitForWalletTransactionHash(
 					ready.walletClient.writeContract({
@@ -255,7 +281,7 @@ export function useDeposit(): UseDepositResult {
 				setState((previous) => ({ status: "error", error: toError(error), hash: previous.hash }));
 			}
 		},
-		[address, publicClient, walletClient, refetch],
+		[depositWallet, publicClient, refetch, walletAddress],
 	);
 
 	const reset = useCallback(() => {
