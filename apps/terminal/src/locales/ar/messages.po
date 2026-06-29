@@ -204,6 +204,11 @@ msgstr "سيتم إلغاء أي جزء لا يُنفَّذ فورًا."
 msgid "Approve in wallet..."
 msgstr "وافق في المحفظة..."
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Arbitrum network switch was rejected."
+msgstr "تم رفض التبديل إلى شبكة Arbitrum."
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2574,8 +2579,9 @@ msgstr "محدد"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
-msgstr ""
+msgstr "المحفظة المحددة لا تطابق الحساب المتصل. أعد توصيل المحفظة ثم أعد المحاولة."
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
@@ -3294,7 +3300,7 @@ msgstr ""
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction was not broadcast. Please retry."
-msgstr ""
+msgstr "لم يتم بث المعاملة. يرجى إعادة المحاولة."
 
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
@@ -3385,6 +3391,11 @@ msgstr "النوع"
 #~ msgid "Unable to close position."
 #~ msgstr "تعذر إغلاق المركز."
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
+msgstr "تعذّر تبديل المحفظة إلى Arbitrum. بدّل الشبكة من داخل المحفظة ثم أعد المحاولة."
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Unified Account"
 msgstr "حساب موحّد"
@@ -3397,6 +3408,10 @@ msgstr "خطأ غير معروف"
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "رمز غير معروف: {symbolName}"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unlock your wallet and try again."
+msgstr "افتح قفل محفظتك ثم أعد المحاولة."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -3502,12 +3517,29 @@ msgstr "عميل المحفظة غير جاهز"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
+msgstr "فشل الاتصال بالمحفظة. افتح قفل المحفظة ووافق على الاتصال ثم أعد المحاولة."
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection request was rejected."
+msgstr "تم رفض طلب الاتصال بالمحفظة."
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
-msgstr ""
+msgstr "لم تُرجع المحفظة تجزئة معاملة. تحقق من نشاط المحفظة قبل إعادة المحاولة لتجنب إرسال الإيداع مرتين."
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
+msgstr "المحفظة غير متصلة بشبكة Arbitrum. بدّل الشبكة من داخل المحفظة ثم أعد المحاولة."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "المحفظة غير متصلة"

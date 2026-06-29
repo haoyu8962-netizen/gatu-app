@@ -4,6 +4,16 @@ const ERROR_MESSAGE_TRUNCATE_LIMIT = 100;
 
 const ERROR_PATTERNS = [
 	{ pattern: /user rejected/i, message: () => t`Transaction was rejected` },
+	{ pattern: /wallet connection request was rejected/i, message: () => t`Wallet connection request was rejected.` },
+	{
+		pattern: /wallet connection failed|failed to connect|restore.*session|unlock your wallet/i,
+		message: () => t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`,
+	},
+	{ pattern: /arbitrum network switch was rejected/i, message: () => t`Arbitrum network switch was rejected.` },
+	{
+		pattern: /unable to switch wallet to arbitrum|wallet is not connected to arbitrum/i,
+		message: () => t`Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry.`,
+	},
 	{ pattern: /insufficient funds/i, message: () => t`Insufficient funds for gas` },
 	{ pattern: /must deposit before performing actions/i, message: () => t`No balance on Hyperliquid. Deposit first.` },
 	{

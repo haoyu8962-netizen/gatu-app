@@ -39,6 +39,24 @@ describe("errors", () => {
 		);
 	});
 
+	it("formats wallet connection failures separately from broadcast failures", () => {
+		expect(formatTransferError(new Error("Failed to connect to MetaMask"))).toBe(
+			"Wallet connection failed. Unlock your wallet, approve the connection, then retry.",
+		);
+		expect(formatTransferError(new Error("Wallet connection request was rejected."))).toBe(
+			"Wallet connection request was rejected.",
+		);
+	});
+
+	it("formats Arbitrum chain switch failures", () => {
+		expect(formatTransferError(new Error("Arbitrum network switch was rejected."))).toBe(
+			"Arbitrum network switch was rejected.",
+		);
+		expect(formatTransferError(new Error("Wallet is not connected to Arbitrum."))).toBe(
+			"Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry.",
+		);
+	});
+
 	it("formats deposit confirmation timeouts", () => {
 		expect(formatTransferError(new Error("Deposit transaction was broadcast but confirmation timed out."))).toBe(
 			"Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.",

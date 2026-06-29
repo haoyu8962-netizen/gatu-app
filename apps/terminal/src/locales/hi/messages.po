@@ -204,6 +204,11 @@ msgstr "जो भी हिस्सा तुरंत भरा नहीं 
 msgid "Approve in wallet..."
 msgstr "वॉलेट में स्वीकृत करें..."
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Arbitrum network switch was rejected."
+msgstr "Arbitrum नेटवर्क स्विच अस्वीकार कर दिया गया।"
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2574,8 +2579,9 @@ msgstr "चयनित"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
-msgstr ""
+msgstr "चयनित वॉलेट कनेक्टेड खाते से मेल नहीं खाता। वॉलेट दोबारा कनेक्ट करें और फिर से प्रयास करें।"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
@@ -3294,7 +3300,7 @@ msgstr ""
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction was not broadcast. Please retry."
-msgstr ""
+msgstr "लेनदेन प्रसारित नहीं हुआ। कृपया पुनः प्रयास करें।"
 
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
@@ -3385,6 +3391,11 @@ msgstr "प्रकार"
 #~ msgid "Unable to close position."
 #~ msgstr "पोजीशन बंद करने में असमर्थ।"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
+msgstr "वॉलेट को Arbitrum पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और फिर से प्रयास करें।"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Unified Account"
 msgstr "एकीकृत खाता"
@@ -3397,6 +3408,10 @@ msgstr "अज्ञात त्रुटि"
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "अज्ञात प्रतीक: {symbolName}"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unlock your wallet and try again."
+msgstr "अपना वॉलेट अनलॉक करें और फिर से प्रयास करें।"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -3502,12 +3517,29 @@ msgstr "वॉलेट क्लाइंट तैयार नहीं ह�
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
+msgstr "वॉलेट कनेक्शन विफल रहा। अपना वॉलेट अनलॉक करें, कनेक्शन स्वीकार करें, फिर पुनः प्रयास करें।"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection request was rejected."
+msgstr "वॉलेट कनेक्शन अनुरोध अस्वीकार कर दिया गया।"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
-msgstr ""
+msgstr "वॉलेट ने ट्रांज़ैक्शन हैश वापस नहीं किया। दोबारा जमा भेजने से बचने के लिए पुनः प्रयास करने से पहले वॉलेट गतिविधि जांचें।"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
+msgstr "वॉलेट Arbitrum से कनेक्ट नहीं है। अपने वॉलेट में नेटवर्क बदलें और फिर से प्रयास करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "वॉलेट कनेक्ट नहीं है"

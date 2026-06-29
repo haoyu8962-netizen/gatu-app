@@ -204,6 +204,11 @@ msgstr "未立即成交的部分将被取消。"
 msgid "Approve in wallet..."
 msgstr "在钱包中授权…"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Arbitrum network switch was rejected."
+msgstr "已拒绝切换到 Arbitrum 网络。"
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2574,8 +2579,9 @@ msgstr "已选择"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
-msgstr ""
+msgstr "所选钱包与当前连接账户不一致。请重新连接钱包后重试。"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
@@ -3294,7 +3300,7 @@ msgstr ""
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction was not broadcast. Please retry."
-msgstr ""
+msgstr "交易未广播。请重试。"
 
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
@@ -3385,6 +3391,11 @@ msgstr "类型"
 #~ msgid "Unable to close position."
 #~ msgstr "无法平仓。"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
+msgstr "无法将钱包切换到 Arbitrum。请在钱包中切换网络后重试。"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Unified Account"
 msgstr "统一账户"
@@ -3397,6 +3408,10 @@ msgstr "未知错误"
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "未知交易对: {symbolName}"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unlock your wallet and try again."
+msgstr "请解锁钱包后重试。"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -3502,12 +3517,29 @@ msgstr "钱包客户端未就绪"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
+msgstr "钱包连接失败。请解锁钱包，批准连接后重试。"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection request was rejected."
+msgstr "钱包连接请求已被拒绝。"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
-msgstr ""
+msgstr "钱包没有返回交易哈希。重试前请先检查钱包活动，避免重复发送充值交易。"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
+msgstr "钱包未连接到 Arbitrum。请在钱包中切换网络后重试。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "钱包未连接"

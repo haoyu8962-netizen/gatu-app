@@ -204,6 +204,11 @@ msgstr "Any portion that is not immediately filled will be canceled."
 msgid "Approve in wallet..."
 msgstr "Approve in wallet..."
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Arbitrum network switch was rejected."
+msgstr "Arbitrum network switch was rejected."
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2574,6 +2579,7 @@ msgstr "selected"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 msgstr "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 
@@ -3385,6 +3391,11 @@ msgstr "Type"
 #~ msgid "Unable to close position."
 #~ msgstr "Unable to close position."
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
+msgstr "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Unified Account"
 msgstr "Unified Account"
@@ -3397,6 +3408,10 @@ msgstr "Unknown error"
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "Unknown symbol: {symbolName}"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unlock your wallet and try again."
+msgstr "Unlock your wallet and try again."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -3502,12 +3517,29 @@ msgstr "Wallet client not ready"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
+msgstr "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection request was rejected."
+msgstr "Wallet connection request was rejected."
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
 msgstr "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
+msgstr "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "Wallet not connected"

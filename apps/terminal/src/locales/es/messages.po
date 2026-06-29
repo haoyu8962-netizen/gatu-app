@@ -204,6 +204,11 @@ msgstr "Cualquier parte que no se ejecute de inmediato se cancelará."
 msgid "Approve in wallet..."
 msgstr "Aprobar en el monedero..."
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Arbitrum network switch was rejected."
+msgstr "Se rechazó el cambio a la red Arbitrum."
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2574,8 +2579,9 @@ msgstr "seleccionado"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
-msgstr ""
+msgstr "La billetera seleccionada no coincide con la cuenta conectada. Reconecta tu billetera y vuelve a intentarlo."
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
@@ -3294,7 +3300,7 @@ msgstr ""
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction was not broadcast. Please retry."
-msgstr ""
+msgstr "La transacción no se transmitió. Vuelve a intentarlo."
 
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
@@ -3385,6 +3391,11 @@ msgstr "Tipo"
 #~ msgid "Unable to close position."
 #~ msgstr "No se puede cerrar la posición."
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
+msgstr "No se pudo cambiar la billetera a Arbitrum. Cambia la red en tu billetera y vuelve a intentarlo."
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Unified Account"
 msgstr "Cuenta unificada"
@@ -3397,6 +3408,10 @@ msgstr "Error desconocido"
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "Símbolo desconocido: {symbolName}"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unlock your wallet and try again."
+msgstr "Desbloquea tu billetera y vuelve a intentarlo."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -3502,12 +3517,29 @@ msgstr "Cliente de billetera no está listo"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
+msgstr "La conexión de la billetera falló. Desbloquea tu billetera, aprueba la conexión y vuelve a intentarlo."
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection request was rejected."
+msgstr "Se rechazó la solicitud de conexión de la billetera."
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
-msgstr ""
+msgstr "La billetera no devolvió un hash de transacción. Revisa la actividad de tu billetera antes de reintentar para evitar enviar el depósito dos veces."
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
+msgstr "La billetera no está conectada a Arbitrum. Cambia la red en tu billetera y vuelve a intentarlo."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "Billetera no conectada"
