@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { Hash, PublicClient, WalletClient } from "viem";
+import type { Account, Hash, PublicClient, Transport, WalletClient } from "viem";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
-import { useChainId, usePublicClient, useReadContract, useSwitchChain, useWalletClient, useWriteContract } from "wagmi";
+import { arbitrum } from "viem/chains";
+import { useChainId, usePublicClient, useReadContract, useSwitchChain, useWalletClient } from "wagmi";
 import { ARBITRUM_CHAIN_ID, CONTRACTS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
-import { DEPOSIT_CONFIRMATION_TIMEOUT_MS, DEPOSIT_POLL_INTERVAL_MS } from "@/config/time";
+import { DEPOSIT_BROADCAST_TIMEOUT_MS, DEPOSIT_CONFIRMATION_TIMEOUT_MS, DEPOSIT_POLL_INTERVAL_MS } from "@/config/time";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
 
@@ -35,6 +36,14 @@ interface DepositState {
 	hash: Hash | undefined;
 }
 
+type ReadyWalletClient = WalletClient<Transport, typeof arbitrum, Account>;
+
+interface ReadyDepositContext {
+	address: `0x${string}`;
+	publicClient: PublicClient;
+	walletClient: ReadyWalletClient;
+}
+
 function validateAmount(amount: string, balanceRaw: bigint | undefined): ValidationResult {
 	const trimmed = amount.trim();
 	if (!trimmed) return { valid: false, error: null };
@@ -59,7 +68,11 @@ function toError(error: unknown): Error {
 	return new Error(typeof error === "string" ? error : t`Unknown error`);
 }
 
-function assertReadyToDeposit({
+function sleep(ms: number) {
+	return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+function getReadyDepositContext({
 	address,
 	publicClient,
 	walletClient,
@@ -67,13 +80,42 @@ function assertReadyToDeposit({
 	address: `0x${string}` | undefined;
 	publicClient: PublicClient | undefined;
 	walletClient: WalletClient | undefined;
-}) {
+}): ReadyDepositContext {
 	if (!address) throw new Error(t`Wallet not connected`);
 	if (!publicClient) throw new Error(t`No response from exchange`);
 	if (!walletClient?.account?.address) throw new Error(t`Wallet client not ready`);
 	if (!hasSameWalletAddress(walletClient.account.address, address)) {
 		throw new Error(t`Selected wallet does not match the connected account. Reconnect your wallet and try again.`);
 	}
+	return { address, publicClient, walletClient: walletClient as ReadyWalletClient };
+}
+
+export async function waitForBroadcastedTransaction(
+	publicClient: PublicClient,
+	hash: Hash,
+	options: { timeoutMs?: number; pollingIntervalMs?: number } = {},
+) {
+	const timeoutMs = options.timeoutMs ?? DEPOSIT_BROADCAST_TIMEOUT_MS;
+	const pollingIntervalMs = options.pollingIntervalMs ?? DEPOSIT_POLL_INTERVAL_MS;
+	const deadline = Date.now() + timeoutMs;
+
+	while (true) {
+		try {
+			const receipt = await publicClient.getTransactionReceipt({ hash });
+			if (receipt) return;
+		} catch {}
+
+		try {
+			const transaction = await publicClient.getTransaction({ hash });
+			if (transaction) return;
+		} catch {}
+
+		const remainingMs = deadline - Date.now();
+		if (remainingMs <= 0) break;
+		await sleep(Math.min(pollingIntervalMs, remainingMs));
+	}
+
+	throw new Error(t`Transaction was not broadcast. Please retry.`);
 }
 
 async function waitForConfirmedReceipt(publicClient: PublicClient, hash: Hash) {
@@ -148,7 +190,6 @@ export function useDeposit(): UseDepositResult {
 		query: { enabled: chain.isArbitrum && !!address },
 	});
 
-	const { mutateAsync: write, reset: resetWrite } = useWriteContract();
 	const [state, setState] = useState<DepositState>(createIdleState);
 	const operationIdRef = useRef(0);
 
@@ -161,20 +202,23 @@ export function useDeposit(): UseDepositResult {
 			setState({ status: "pending", error: null, hash: undefined });
 
 			try {
-				assertReadyToDeposit({ address, publicClient, walletClient });
+				const ready = getReadyDepositContext({ address, publicClient, walletClient });
 
-				const hash = await write({
-					account: address,
+				const hash = await ready.walletClient.writeContract({
+					account: ready.address,
+					chain: arbitrum,
 					address: CONTRACTS.arbitrum.usdc,
 					abi: erc20Abi,
 					functionName: "transfer",
 					args: [CONTRACTS.arbitrum.bridge2, parseUnits(amount, USDC_DECIMALS)],
-					chainId: ARBITRUM_CHAIN_ID,
 				});
 
 				if (operationIdRef.current !== operationId) return;
+				await waitForBroadcastedTransaction(ready.publicClient, hash);
+
+				if (operationIdRef.current !== operationId) return;
 				setState({ status: "confirming", error: null, hash });
-				await waitForConfirmedReceipt(publicClient, hash);
+				await waitForConfirmedReceipt(ready.publicClient, hash);
 
 				if (operationIdRef.current !== operationId) return;
 				setState({ status: "success", error: null, hash });
@@ -184,14 +228,13 @@ export function useDeposit(): UseDepositResult {
 				setState((previous) => ({ status: "error", error: toError(error), hash: previous.hash }));
 			}
 		},
-		[address, publicClient, walletClient, write, refetch],
+		[address, publicClient, walletClient, refetch],
 	);
 
 	const reset = useCallback(() => {
 		operationIdRef.current += 1;
-		resetWrite();
 		setState(createIdleState());
-	}, [resetWrite]);
+	}, []);
 
 	return {
 		...chain,
