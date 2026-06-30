@@ -55,6 +55,7 @@ function installStorage() {
 
 describe("mobile agent lifecycle", () => {
 	afterEach(() => {
+		vi.useRealTimers();
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
 	});
@@ -124,6 +125,8 @@ describe("mobile agent lifecycle", () => {
 	});
 
 	it("persists mobile metadata and clears local storage on reset", async () => {
+		vi.useFakeTimers();
+		vi.setSystemTime(NOW_MS);
 		installStorage();
 		const approval = createMobileAgentApproval(NOW_MS, OLD_PRIVATE_KEY);
 		const metadata = createMobileAgentStorageMetadata({
@@ -150,6 +153,7 @@ describe("mobile agent lifecycle", () => {
 
 		removeAgentFromStorage("Mainnet", USER_ADDRESS);
 		expect(readAgentFromStorage("Mainnet", USER_ADDRESS)).toBeNull();
+		vi.useRealTimers();
 	});
 
 	it("reports remote verification failures for expired or wrong-name agents", () => {

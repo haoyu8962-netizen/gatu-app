@@ -42,6 +42,7 @@ export function useWalletSession() {
 		isConnected: !!address,
 		isConnecting,
 		sessionMode,
+		hasWalletAccess: sessionMode === "wallet" && !!walletAddress,
 	};
 }
 

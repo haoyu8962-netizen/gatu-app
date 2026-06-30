@@ -107,7 +107,7 @@ describe("trade balances", () => {
 		expect(isQuoteBalanceSharedWithPerps(null)).toBe(false);
 	});
 
-	it("uses spot clearinghouse USDC for unified account equity, available, and withdrawable", () => {
+	it("uses spot clearinghouse USDC for unified account equity and available", () => {
 		const summary = getAccountBalanceSummary({
 			accountAbstraction: "unifiedAccount",
 			marginSummary: { accountValue: "0", totalMarginUsed: "0", totalRawUsd: "0" } as never,
@@ -119,9 +119,24 @@ describe("trade balances", () => {
 		expect(summary.usesSpotStateForPerps).toBe(true);
 		expect(summary.accountEquity).toBeCloseTo(567.680532);
 		expect(summary.available).toBeCloseTo(567.680532);
-		expect(summary.withdrawable).toBeCloseTo(567.680532);
+		expect(summary.withdrawable).toBe(0);
 		expect(summary.perpAccountValue).toBe(0);
 		expect(summary.perpWithdrawable).toBe(0);
+	});
+
+	it("uses maintenance-adjusted spot USDC for unified account withdrawable", () => {
+		const summary = getAccountBalanceSummary({
+			accountAbstraction: "unifiedAccount",
+			marginSummary: { accountValue: "0", totalMarginUsed: "0", totalRawUsd: "0" } as never,
+			perpSummary: { accountValue: "0", totalMarginUsed: "0" },
+			withdrawable: "0",
+			spotBalances: [usdcBalance],
+			spotAvailableAfterMaintenance: maintenanceAvailable,
+		});
+
+		expect(summary.available).toBeCloseTo(4947.18019669);
+		expect(summary.withdrawable).toBeCloseTo(4947.18019669);
+		expect(summary.spotUsdcWithdrawable).toBeCloseTo(4947.18019669);
 	});
 
 	it("keeps standard or unknown accounts separated and flags funds sitting in spot", () => {

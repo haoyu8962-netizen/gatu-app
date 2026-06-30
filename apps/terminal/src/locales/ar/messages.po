@@ -519,6 +519,10 @@ msgstr "أكّد المعاملة في محفظتك"
 #~ msgid "Confirmation screen coming in next slice"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+msgstr "تم التأكيد على Arbitrum. عادةً ما يصل رصيد Hyperliquid خلال دقيقة."
+
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Connect"
@@ -582,13 +586,25 @@ msgstr "اربط محفظتك قبل إعادة تعيين وصول الهاتف
 msgid "Connect your wallet to bridge funds"
 msgstr "اربط محفظتك لتحويل الأموال عبر الجسر"
 
+#: src/components/trade/tradebox/deposit/shared-ui.tsx
+msgid "Connect your wallet to manage funds"
+msgstr "وصّل محفظتك لإدارة الأموال"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Connect your wallet to register a builder code"
 #~ msgstr ""
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Connect your wallet to send funds."
+msgstr "وصّل محفظتك لإرسال الأموال."
+
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Connect your wallet to start trading on Hyperliquid"
 #~ msgstr ""
+
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Connect your wallet to transfer funds."
+msgstr "وصّل محفظتك لتحويل الأموال."
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
@@ -629,8 +645,8 @@ msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "اربط محفظتك لعرض حسابك ومراكزك وبدء التداول."
 
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-msgid "Connect your wallet to withdraw funds"
-msgstr "اربط محفظتك لسحب الأموال"
+#~ msgid "Connect your wallet to withdraw funds"
+#~ msgstr "اربط محفظتك لسحب الأموال"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Connected"
@@ -806,8 +822,8 @@ msgid "Deposit"
 msgstr "إيداع"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Deposit complete"
-msgstr "اكتمل الإيداع"
+#~ msgid "Deposit complete"
+#~ msgstr "اكتمل الإيداع"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
@@ -824,6 +840,10 @@ msgstr "فشل الإيداع"
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Deposit on Hyperliquid"
 #~ msgstr "إيداع في Hyperliquid"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Deposit submitted"
+msgstr "تم إرسال الإيداع"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
@@ -2636,8 +2656,8 @@ msgid "Sending..."
 msgstr "جارٍ الإرسال..."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "sent to Hyperliquid"
-msgstr "تم الإرسال إلى Hyperliquid"
+#~ msgid "sent to Hyperliquid"
+#~ msgstr "تم الإرسال إلى Hyperliquid"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Account Balances"

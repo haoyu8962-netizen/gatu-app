@@ -44,7 +44,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
 
-	const { address } = useWalletSession();
+	const { hasWalletAccess, walletAddress } = useWalletSession();
 	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer");
 	const { perpSummary, spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
 
@@ -54,7 +54,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 			? getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed)
 			: getSpotAvailable(spotUsdcBal, spotAvailableAfterMaintenance);
 
-	const isValidAmount = isAmountWithinBalance(amount, availableBalanceValue) && !!address;
+	const isValidAmount = isAmountWithinBalance(amount, availableBalanceValue) && hasWalletAccess && !!walletAddress;
 
 	const fromLabel = direction === "toSpot" ? t`Perp` : t`Spot`;
 	const toLabel = direction === "toSpot" ? t`Spot` : t`Perp`;
@@ -65,7 +65,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 	}
 
 	async function handleTransfer() {
-		if (!isValidAmount || isPending || !address) return;
+		if (!isValidAmount || isPending || !walletAddress) return;
 
 		setError(null);
 		try {
@@ -95,6 +95,13 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 
 			<ModalContent>
 				<div className="space-y-4">
+					{!hasWalletAccess && (
+						<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+							<WarningCircleIcon className="size-3.5 shrink-0" />
+							<span className="flex-1">{t`Connect your wallet to transfer funds.`}</span>
+						</div>
+					)}
+
 					<div className="flex items-center justify-center gap-3 py-2">
 						<div className="flex flex-col items-center">
 							<span

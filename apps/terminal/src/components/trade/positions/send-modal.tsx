@@ -18,6 +18,7 @@ import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
 import { type BalanceRow, getPerpAvailable, getSpotAvailable, getSpotAvailableValue } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
@@ -70,6 +71,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset");
 	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend");
 	const { perpSummary, spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
+	const { hasWalletAccess } = useWalletSession();
 
 	const isPending = isSendAssetPending || isSpotSendPending;
 
@@ -113,7 +115,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 
 	const isValidDestination = isAddress(destination);
 	const isValidAmount = isAmountWithinBalance(amount, availableBalance);
-	const canSend = isValidDestination && isValidAmount && !!tokenId && !isPending;
+	const canSend = hasWalletAccess && isValidDestination && isValidAmount && !!tokenId && !isPending;
 
 	function handleAccountTypeChange(value: string | null) {
 		if (!value) return;
@@ -189,6 +191,13 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 
 			<ModalContent>
 				<div className="space-y-4">
+					{!hasWalletAccess && (
+						<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+							<WarningCircleIcon className="size-3.5 shrink-0" />
+							<span className="flex-1">{t`Connect your wallet to send funds.`}</span>
+						</div>
+					)}
+
 					<TextInput
 						placeholder={t`Destination address`}
 						value={destination}

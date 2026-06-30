@@ -519,6 +519,10 @@ msgstr "अपने वॉलेट में लेनदेन की पु�
 #~ msgid "Confirmation screen coming in next slice"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+msgstr "Arbitrum पर पुष्टि हो गई। Hyperliquid क्रेडिट आम तौर पर एक मिनट के भीतर आ जाता है।"
+
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Connect"
@@ -582,13 +586,25 @@ msgstr "मोबाइल एक्सेस रीसेट करने स�
 msgid "Connect your wallet to bridge funds"
 msgstr "फंड ब्रिज करने के लिए अपना वॉलेट कनेक्ट करें"
 
+#: src/components/trade/tradebox/deposit/shared-ui.tsx
+msgid "Connect your wallet to manage funds"
+msgstr "धन प्रबंधित करने के लिए अपना वॉलेट कनेक्ट करें"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Connect your wallet to register a builder code"
 #~ msgstr ""
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Connect your wallet to send funds."
+msgstr "धन भेजने के लिए अपना वॉलेट कनेक्ट करें।"
+
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Connect your wallet to start trading on Hyperliquid"
 #~ msgstr ""
+
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Connect your wallet to transfer funds."
+msgstr "धन ट्रांसफ़र करने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
@@ -629,8 +645,8 @@ msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "अपना खाता, पोज़िशन देखने और ट्रेडिंग शुरू करने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-msgid "Connect your wallet to withdraw funds"
-msgstr "फंड निकालने के लिए अपना वॉलेट कनेक्ट करें"
+#~ msgid "Connect your wallet to withdraw funds"
+#~ msgstr "फंड निकालने के लिए अपना वॉलेट कनेक्ट करें"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Connected"
@@ -806,8 +822,8 @@ msgid "Deposit"
 msgstr "जमा करें"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Deposit complete"
-msgstr "डिपॉज़िट पूर्ण"
+#~ msgid "Deposit complete"
+#~ msgstr "डिपॉज़िट पूर्ण"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
@@ -824,6 +840,10 @@ msgstr "डिपॉज़िट विफल"
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Deposit on Hyperliquid"
 #~ msgstr "Hyperliquid पर जमा करें"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Deposit submitted"
+msgstr "जमा सबमिट हो गया"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
@@ -2636,8 +2656,8 @@ msgid "Sending..."
 msgstr "भेजा जा रहा है..."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "sent to Hyperliquid"
-msgstr "Hyperliquid को भेजा गया"
+#~ msgid "sent to Hyperliquid"
+#~ msgstr "Hyperliquid को भेजा गया"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Account Balances"

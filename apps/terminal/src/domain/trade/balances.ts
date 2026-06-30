@@ -66,6 +66,7 @@ export interface AccountBalanceSummary {
 	balance: number;
 	available: number;
 	withdrawable: number;
+	spotUsdcWithdrawable: number;
 	spotUsdcTotal: number;
 	spotUsdcAvailable: number;
 	spotUsdcHold: number;
@@ -113,6 +114,9 @@ export function getAccountBalanceSummary({
 	const spotUsdcTotal = toSafeBig(usdcBalance?.total).toNumber();
 	const spotUsdcHold = toSafeBig(usdcBalance?.hold).toNumber();
 	const spotUsdcAvailable = getSpotAvailable(usdcBalance, spotAvailableAfterMaintenance);
+	const spotUsdcWithdrawable = toSafeBig(
+		getSpotWithdrawableValue(usdcBalance, spotAvailableAfterMaintenance),
+	).toNumber();
 	const spotAccountValue = getSpotAccountValue(spotBalances);
 
 	const perpAccountValue = toSafeBig(marginSummary?.accountValue ?? perpSummary?.accountValue).toNumber();
@@ -126,7 +130,8 @@ export function getAccountBalanceSummary({
 		accountEquity: usesSpotStateForPerps ? spotAccountValue : perpAccountValue,
 		balance: usesSpotStateForPerps ? spotAccountValue : perpTotalRawUsd,
 		available: usesSpotStateForPerps ? spotUsdcAvailable : perpWithdrawable,
-		withdrawable: usesSpotStateForPerps ? spotUsdcAvailable : perpWithdrawable,
+		withdrawable: usesSpotStateForPerps ? spotUsdcWithdrawable : perpWithdrawable,
+		spotUsdcWithdrawable,
 		spotUsdcTotal,
 		spotUsdcAvailable,
 		spotUsdcHold,
@@ -165,6 +170,17 @@ function getAvailableAfterMaintenanceValue(
 	const tokenKey = String(token);
 	const match = spotAvailableAfterMaintenance?.find(([availableToken]) => String(availableToken) === tokenKey);
 	return match?.[1] ?? null;
+}
+
+function getSpotWithdrawableValue(
+	balance: SpotBalance | null | undefined,
+	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null,
+): string {
+	const availableAfterMaintenance = getAvailableAfterMaintenanceValue(balance?.token, spotAvailableAfterMaintenance);
+	if (availableAfterMaintenance == null) return "0";
+
+	const available = toSafeBig(availableAfterMaintenance);
+	return available.gt(0) ? available.toString() : "0";
 }
 
 export function getSpotAvailableValue(

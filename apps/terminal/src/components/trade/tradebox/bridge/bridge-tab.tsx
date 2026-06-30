@@ -14,7 +14,7 @@ import { SuccessScreen } from "./success-screen";
 import type { BridgeScreen } from "./types";
 
 export function BridgeTab() {
-	const { address } = useWalletSession();
+	const { walletAddress, hasWalletAccess } = useWalletSession();
 	const [screen, setScreen] = useState<BridgeScreen>("select");
 	const [selectedToken, setSelectedToken] = useState<BridgeToken | null>(null);
 	const [usdInput, setUsdInput] = useState("");
@@ -26,7 +26,7 @@ export function BridgeTab() {
 		initLiFi();
 	}, []);
 
-	if (!address) {
+	if (!hasWalletAccess || !walletAddress) {
 		return <BridgeWalletNotConnected />;
 	}
 
@@ -83,7 +83,7 @@ export function BridgeTab() {
 	if (bridge.status === "success" && bridge.receivedAmount) {
 		return (
 			<SuccessScreen
-				address={address}
+				address={walletAddress}
 				receivedAmount={bridge.receivedAmount}
 				txHash={bridge.txHash}
 				startTime={bridge.startTime}
@@ -97,7 +97,12 @@ export function BridgeTab() {
 
 	if (screen === "executing") {
 		return (
-			<ExecutingScreen address={address} statusText={bridge.statusText} txHash={bridge.txHash} onDone={resetToSelect} />
+			<ExecutingScreen
+				address={walletAddress}
+				statusText={bridge.statusText}
+				txHash={bridge.txHash}
+				onDone={resetToSelect}
+			/>
 		);
 	}
 
@@ -106,7 +111,7 @@ export function BridgeTab() {
 			<ConfirmationScreen
 				token={selectedToken}
 				tokenAmount={tokenAmount}
-				address={address}
+				address={walletAddress}
 				onBack={handleBackFromConfirm}
 				onConfirm={handleConfirm}
 			/>
@@ -124,5 +129,5 @@ export function BridgeTab() {
 		);
 	}
 
-	return <AssetSelectionScreen address={address} onSelect={handleTokenSelect} />;
+	return <AssetSelectionScreen address={walletAddress} onSelect={handleTokenSelect} />;
 }

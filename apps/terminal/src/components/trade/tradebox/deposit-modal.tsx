@@ -59,7 +59,7 @@ export function DepositModal() {
 		reset: resetDeposit,
 	} = useDeposit();
 
-	const { address } = useWalletSession();
+	const { walletAddress, hasWalletAccess } = useWalletSession();
 	const {
 		marginSummary,
 		perpSummary,
@@ -91,6 +91,8 @@ export function DepositModal() {
 
 	const depositValidation = validateDeposit(depositAmount);
 	const withdrawValidation = validateWithdraw(withdrawAmount, withdrawableNum);
+	const canUseFundsActions = hasWalletAccess && !!walletAddress;
+	const isDepositPending = depositStatus === "pending" || depositStatus === "confirming";
 
 	function handleClose() {
 		resetDeposit();
@@ -101,14 +103,14 @@ export function DepositModal() {
 	}
 
 	function handleDepositSubmit() {
-		if (depositValidation.valid) {
+		if (depositValidation.valid && canUseFundsActions && !isDepositPending) {
 			deposit(depositAmount);
 		}
 	}
 
 	function handleWithdrawSubmit() {
-		if (withdrawValidation.valid && address) {
-			withdraw({ destination: address, amount: withdrawAmount });
+		if (withdrawValidation.valid && walletAddress) {
+			withdraw({ destination: walletAddress, amount: withdrawAmount });
 		}
 	}
 
@@ -116,7 +118,7 @@ export function DepositModal() {
 		openTransferModal("toPerp");
 	}
 
-	if (!isArbitrum && activeTab === "deposit") {
+	if (canUseFundsActions && !isArbitrum && activeTab === "deposit") {
 		return (
 			<WrongNetworkScreen
 				open={open}
@@ -133,11 +135,11 @@ export function DepositModal() {
 			<StatusScreen
 				title={<Trans>Deposit</Trans>}
 				icon="success"
-				heading={<Trans>Deposit complete</Trans>}
+				heading={<Trans>Deposit submitted</Trans>}
 				description={
 					<>
 						<span className="tabular-nums font-medium text-success">{depositAmount} USDC</span>{" "}
-						<Trans>sent to Hyperliquid</Trans>
+						<Trans>confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute.</Trans>
 					</>
 				}
 				txHash={depositHash}
@@ -256,19 +258,22 @@ export function DepositModal() {
 					</SegmentedControls>
 
 					<div className={`flex flex-col ${DEPOSIT_TAB_MIN_HEIGHT}`}>
-						{activeTab === "deposit" && (
-							<DepositForm
-								amount={depositAmount}
-								onAmountChange={setDepositAmount}
-								balance={depositBalance}
-								validation={depositValidation}
-								isPending={false}
-								onSubmit={handleDepositSubmit}
-							/>
-						)}
+						{activeTab === "deposit" &&
+							(canUseFundsActions ? (
+								<DepositForm
+									amount={depositAmount}
+									onAmountChange={setDepositAmount}
+									balance={depositBalance}
+									validation={depositValidation}
+									isPending={isDepositPending}
+									onSubmit={handleDepositSubmit}
+								/>
+							) : (
+								<WalletNotConnected />
+							))}
 
 						{activeTab === "withdraw" &&
-							(!address ? (
+							(!canUseFundsActions ? (
 								<WalletNotConnected />
 							) : (
 								<WithdrawForm
@@ -285,9 +290,7 @@ export function DepositModal() {
 							))}
 
 						{activeTab === "bridge" && (
-							<Suspense fallback={null}>
-								<LazyBridgeTab />
-							</Suspense>
+							<Suspense fallback={null}>{canUseFundsActions ? <LazyBridgeTab /> : <WalletNotConnected />}</Suspense>
 						)}
 					</div>
 				</ModalContent>

@@ -451,13 +451,16 @@ export function useDeposit(): UseDepositResult {
 
 	const [state, setState] = useState<DepositState>(createIdleState);
 	const operationIdRef = useRef(0);
+	const inFlightRef = useRef(false);
 
 	const validate = useCallback((amount: string) => validateAmount(amount, balanceRaw), [balanceRaw]);
 
 	const deposit = useCallback(
 		async (amount: string) => {
+			if (inFlightRef.current) return;
 			const operationId = operationIdRef.current + 1;
 			operationIdRef.current = operationId;
+			inFlightRef.current = true;
 			setState({ status: "pending", error: null, hash: undefined });
 
 			try {
@@ -487,6 +490,10 @@ export function useDeposit(): UseDepositResult {
 			} catch (error) {
 				if (operationIdRef.current !== operationId) return;
 				setState((previous) => ({ status: "error", error: toError(error), hash: previous.hash }));
+			} finally {
+				if (operationIdRef.current === operationId) {
+					inFlightRef.current = false;
+				}
 			}
 		},
 		[depositWallet, publicClient, refetch, walletAddress],
@@ -494,6 +501,7 @@ export function useDeposit(): UseDepositResult {
 
 	const reset = useCallback(() => {
 		operationIdRef.current += 1;
+		inFlightRef.current = false;
 		setState(createIdleState());
 	}, []);
 

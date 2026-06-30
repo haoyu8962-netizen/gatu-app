@@ -519,6 +519,10 @@ msgstr "Confirm transaction in your wallet"
 #~ msgid "Confirmation screen coming in next slice"
 #~ msgstr "Confirmation screen coming in next slice"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+msgstr "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Connect"
@@ -582,13 +586,25 @@ msgstr "Connect your wallet before resetting mobile access."
 msgid "Connect your wallet to bridge funds"
 msgstr "Connect your wallet to bridge funds"
 
+#: src/components/trade/tradebox/deposit/shared-ui.tsx
+msgid "Connect your wallet to manage funds"
+msgstr "Connect your wallet to manage funds"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Connect your wallet to register a builder code"
 #~ msgstr "Connect your wallet to register a builder code"
 
+#: src/components/trade/positions/send-modal.tsx
+msgid "Connect your wallet to send funds."
+msgstr "Connect your wallet to send funds."
+
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Connect your wallet to start trading on Hyperliquid"
 #~ msgstr "Connect your wallet to start trading on Hyperliquid"
+
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Connect your wallet to transfer funds."
+msgstr "Connect your wallet to transfer funds."
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
@@ -629,8 +645,8 @@ msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "Connect your wallet to view your account, positions, and start trading."
 
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-msgid "Connect your wallet to withdraw funds"
-msgstr "Connect your wallet to withdraw funds"
+#~ msgid "Connect your wallet to withdraw funds"
+#~ msgstr "Connect your wallet to withdraw funds"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Connected"
@@ -806,8 +822,8 @@ msgid "Deposit"
 msgstr "Deposit"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Deposit complete"
-msgstr "Deposit complete"
+#~ msgid "Deposit complete"
+#~ msgstr "Deposit complete"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
@@ -824,6 +840,10 @@ msgstr "Deposit failed"
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Deposit on Hyperliquid"
 #~ msgstr "Deposit on Hyperliquid"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Deposit submitted"
+msgstr "Deposit submitted"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
@@ -2636,8 +2656,8 @@ msgid "Sending..."
 msgstr "Sending..."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "sent to Hyperliquid"
-msgstr "sent to Hyperliquid"
+#~ msgid "sent to Hyperliquid"
+#~ msgstr "sent to Hyperliquid"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Separate Account Balances"

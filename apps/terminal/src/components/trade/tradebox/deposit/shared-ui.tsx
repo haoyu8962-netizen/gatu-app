@@ -118,7 +118,7 @@ export function WalletNotConnected() {
 					<Trans>Wallet not connected</Trans>
 				</p>
 				<p className="text-xs text-fg">
-					<Trans>Connect your wallet to withdraw funds</Trans>
+					<Trans>Connect your wallet to manage funds</Trans>
 				</p>
 			</div>
 		</div>

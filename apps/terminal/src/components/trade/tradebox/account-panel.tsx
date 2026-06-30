@@ -149,15 +149,17 @@ export function AccountPanel() {
 							<div className="tabular-nums">
 								{t`Available funds are in Spot`}: {formatUSD(accountSummary.spotUsdcAvailable)}
 							</div>
-							<Button
-								variant="link"
-								intent="brand"
-								size="xxs"
-								className="mt-1 h-auto p-0"
-								onClick={() => openTransferModal("toPerp")}
-							>
-								{t`Perps / Spot`}
-							</Button>
+							{hasWalletAccess && (
+								<Button
+									variant="link"
+									intent="brand"
+									size="xxs"
+									className="mt-1 h-auto p-0"
+									onClick={() => openTransferModal("toPerp")}
+								>
+									{t`Perps / Spot`}
+								</Button>
+							)}
 						</div>
 					)}
 
