@@ -47,7 +47,7 @@ export function toHyperliquidWallet(
 					message: params.message,
 				});
 			},
-			getAddresses: () => client.getAddresses(),
+			getAddresses: () => Promise.resolve([account]),
 			getChainId: () => client.getChainId(),
 		} satisfies AbstractViemJsonRpcAccount;
 	}

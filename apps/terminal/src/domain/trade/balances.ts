@@ -212,7 +212,7 @@ export function getSpotBalanceData(
 		};
 	}
 
-	if (market.kind === "builderPerp") {
+	if (market.kind === "perp" || market.kind === "builderPerp") {
 		const quoteBalance = getSpotBalance(spotBalances, quoteName);
 		return {
 			baseAvailable: 0,

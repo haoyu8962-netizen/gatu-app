@@ -83,16 +83,18 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		: { baseToken: "", quoteToken: "" };
 	const spotBalance = getSpotBalanceData(inputs.spotBalances, inputs.market, inputs.spotAvailableAfterMaintenance);
 	const availableBalanceToken = getAvailableBalanceToken(inputs.market, inputs.side);
+	const usesSharedQuoteBalance =
+		!isSpotMarket && isQuoteBalanceSharedWithPerps(inputs.accountAbstraction) && spotBalance.quoteAvailable > 0;
 
 	const [availableLong, availableShort] = inputs.availableToTrade ?? [0, 0];
 	const rawAvailableBalance = getAvailableBalance(isSpotMarket, isBuy, spotBalance, availableLong, availableShort);
+	const availableBalance = usesSharedQuoteBalance ? spotBalance.quoteAvailable : rawAvailableBalance;
 	const displayAvailableBalance = getDisplayAvailableBalance(
 		isSpotMarket,
 		inputs.accountAbstraction,
 		spotBalance,
-		rawAvailableBalance,
+		availableBalance,
 	);
-	const availableBalance = rawAvailableBalance;
 
 	const maxSize = getMaxSizeForOrderEntry({
 		isConnected: inputs.isConnected,
@@ -102,6 +104,7 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		spotBalance,
 		szDecimals,
 		maxTradeSzs: inputs.maxTradeSzs,
+		sharedQuoteAvailable: usesSharedQuoteBalance ? spotBalance.quoteAvailable : undefined,
 	});
 
 	const sizeValue = getSizeValueFromInput({
