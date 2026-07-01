@@ -42,6 +42,39 @@ export function getPrivyEmbeddedWalletAddress(user: User | null | undefined): `0
 	return embeddedWallet.address as `0x${string}`;
 }
 
+export function getPrivyRecentLoginMethod(): string | undefined {
+	if (typeof window === "undefined") return undefined;
+
+	try {
+		const configuredAppId = import.meta.env.VITE_PRIVY_APP_ID as string | undefined;
+		if (configuredAppId) {
+			const value = window.localStorage.getItem(`privy:${configuredAppId}:recent-login-method`);
+			if (value) return value;
+		}
+
+		for (let i = 0; i < window.localStorage.length; i += 1) {
+			const key = window.localStorage.key(i);
+			if (!key?.startsWith("privy:") || !key.endsWith(":recent-login-method")) continue;
+			const value = window.localStorage.getItem(key);
+			if (value) return value;
+		}
+	} catch {}
+
+	return undefined;
+}
+
+export function shouldUsePrivyEmbeddedWallet(user: User | null | undefined): boolean {
+	const embeddedWalletAddress = getPrivyEmbeddedWalletAddress(user);
+	if (!embeddedWalletAddress) return false;
+	if (isPrivyEmbeddedWallet(user?.wallet)) return true;
+
+	const recentLoginMethod = getPrivyRecentLoginMethod();
+	if (recentLoginMethod === "email") return !!getPrivyEmailAddress(user);
+	if (recentLoginMethod === "wallet") return false;
+
+	return !user?.wallet?.address && !!getPrivyEmailAddress(user);
+}
+
 export function selectPrivyWagmiWallet({
 	wallets,
 	user,
@@ -52,9 +85,7 @@ export function selectPrivyWagmiWallet({
 	if (wallets.length === 0) return undefined;
 
 	const embeddedWalletAddress = getPrivyEmbeddedWalletAddress(user);
-	const shouldPreferEmbeddedWallet =
-		!!embeddedWalletAddress && (!!getPrivyEmailAddress(user) || isPrivyEmbeddedWallet(user?.wallet));
-	if (shouldPreferEmbeddedWallet) {
+	if (shouldUsePrivyEmbeddedWallet(user)) {
 		return (
 			wallets.find(
 				(wallet) => isPrivyEmbeddedWallet(wallet) && hasSameWalletAddress(wallet.address, embeddedWalletAddress),

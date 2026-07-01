@@ -52,10 +52,9 @@ export function GlobalSettingsModal() {
 		setLocalSlippageInput(null);
 	}
 
-	function handleSlippageSliderChange(value: number | readonly number[]) {
-		const nextValue = Array.isArray(value) ? value[0] : value;
-		if (typeof nextValue === "number" && nextValue !== slippagePercent) {
-			setMarketOrderSlippagePercent(nextValue);
+	function handleSlippageSliderChange(value: number) {
+		if (value !== slippagePercent) {
+			setMarketOrderSlippagePercent(value);
 		}
 	}
 
@@ -104,7 +103,7 @@ export function GlobalSettingsModal() {
 								</div>
 							</div>
 							<Slider
-								value={[slippagePercent]}
+								value={slippagePercent}
 								onValueChange={handleSlippageSliderChange}
 								min={MARKET_ORDER_SLIPPAGE_MIN_PERCENT}
 								max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}

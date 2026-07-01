@@ -2,10 +2,12 @@ import { HyperliquidProvider, PERSISTED_QUERY_PREFIX } from "@gatu/hl-react";
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { PrivyProvider } from "@privy-io/react-auth";
+import { SmartWalletsProvider } from "@privy-io/react-auth/smart-wallets";
 import { WagmiProvider } from "@privy-io/wagmi";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
 import { APP_NAME, RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { PRIVY_APP_ID, privyConfig } from "@/config/privy";
@@ -79,23 +81,28 @@ function ClientProviders({ children, queryClient }: { children: React.ReactNode;
 
 	return (
 		<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={privyConfig}>
-			<PersistQueryClientProvider
-				client={queryClient}
-				persistOptions={{
-					persister,
-					maxAge: RQ_CACHE_MAX_AGE_MS,
-					buster: RQ_CACHE_BUSTER,
-					dehydrateOptions: {
-						shouldDehydrateQuery: (query) => query.queryKey[0] === PERSISTED_QUERY_PREFIX,
-					},
-				}}
-			>
-				<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
-					<I18nProvider i18n={i18n}>
-						<HyperliquidBridge>{children}</HyperliquidBridge>
-					</I18nProvider>
-				</WagmiProvider>
-			</PersistQueryClientProvider>
+			<SmartWalletsProvider>
+				<PersistQueryClientProvider
+					client={queryClient}
+					persistOptions={{
+						persister,
+						maxAge: RQ_CACHE_MAX_AGE_MS,
+						buster: RQ_CACHE_BUSTER,
+						dehydrateOptions: {
+							shouldDehydrateQuery: (query) => query.queryKey[0] === PERSISTED_QUERY_PREFIX,
+						},
+					}}
+				>
+					<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
+						<I18nProvider i18n={i18n}>
+							<HyperliquidBridge>
+								<EmbeddedDepositAutoBridge />
+								{children}
+							</HyperliquidBridge>
+						</I18nProvider>
+					</WagmiProvider>
+				</PersistQueryClientProvider>
+			</SmartWalletsProvider>
 		</PrivyProvider>
 	);
 }

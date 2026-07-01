@@ -3,6 +3,7 @@ import type { Chain } from "viem";
 import { http } from "wagmi";
 import {
 	arbitrum,
+	arbitrumSepolia,
 	aurora,
 	avalanche,
 	base,
@@ -24,8 +25,9 @@ import {
 } from "wagmi/chains";
 
 // All chains supported for LiFi bridging — wagmi requires these upfront
-const BRIDGE_CHAINS = [
+export const BRIDGE_CHAINS = [
 	arbitrum,
+	arbitrumSepolia,
 	mainnet,
 	polygon,
 	optimism,

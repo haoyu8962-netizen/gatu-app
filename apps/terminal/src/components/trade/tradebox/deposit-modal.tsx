@@ -8,23 +8,34 @@ import {
 	SegmentedControlItem,
 	SegmentedControls,
 } from "@gatu/ui";
+import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ArrowLineDownIcon, ArrowLineUpIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { isAddress } from "viem";
+import { arbitrum, arbitrumSepolia } from "viem/chains";
+import { WITHDRAWAL_FEE_USD } from "@/config/contracts";
 import { NETWORKS } from "@/config/networks";
+import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
-import { useDeposit, useExchange } from "@/lib/hyperliquid";
+import { formatNumber } from "@/lib/format";
+import { useExchange } from "@/lib/hyperliquid";
+import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
+import { toSafeBig } from "@/lib/trade/numbers";
 import { validateWithdraw } from "@/lib/trade/withdraw-validation";
+import { getPrivyEmailAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
 import {
 	useDepositModalActions,
 	useDepositModalOpen,
 	useDepositModalTab,
 	useTransferModalActions,
 } from "@/stores/use-global-modal-store";
+import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { DepositForm } from "./deposit/deposit-form";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
 import { WithdrawForm } from "./deposit/withdraw-form";
@@ -36,6 +47,11 @@ const ARBITRUM_NETWORK = NETWORKS[0];
 
 const DEPOSIT_TAB_MIN_HEIGHT = "min-h-72";
 
+function normalizeError(error: unknown): Error {
+	if (error instanceof Error) return error;
+	return new Error(typeof error === "string" ? error : t`Unknown error`);
+}
+
 export function DepositModal() {
 	const open = useDepositModalOpen();
 	const activeTab = useDepositModalTab();
@@ -44,22 +60,49 @@ export function DepositModal() {
 
 	const [depositAmount, setDepositAmount] = useState("");
 	const [withdrawAmount, setWithdrawAmount] = useState("");
+	const [withdrawDestination, setWithdrawDestination] = useState("");
+	const isTestnet = useIsTestnet();
+	const depositTxChain = isTestnet ? arbitrumSepolia : arbitrum;
+
+	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress } = useWalletSession();
+	const {
+		emailAddress: emailWalletAddress,
+		embeddedWalletAddress: ensuredEmbeddedWalletAddress,
+		shouldUseEmbeddedWallet: shouldUseEmailEmbeddedWallet,
+		needsEmbeddedWallet,
+		isCreatingEmbeddedWallet,
+		embeddedWalletError,
+		ensureEmailEmbeddedWallet,
+	} = useEmailEmbeddedWallet();
+	const emailAddress = getPrivyEmailAddress(user) ?? emailWalletAddress;
+	const depositEmbeddedWalletAddress = embeddedWalletAddress ?? ensuredEmbeddedWalletAddress;
+	const isEmbeddedDeposit = !!emailAddress && (shouldUsePrivyEmbeddedWallet(user) || shouldUseEmailEmbeddedWallet);
+	const depositMode = isEmbeddedDeposit ? "smart" : "wallet";
 
 	const {
-		isArbitrum,
-		switchToArbitrum,
-		isSwitching,
-		switchError,
 		balance: depositBalance,
+		maxAmount: maxDepositAmount,
+		maxDepositRaw,
+		balanceStatus: depositBalanceStatus,
+		balanceError: depositBalanceError,
 		status: depositStatus,
 		error: depositError,
 		hash: depositHash,
+		isArbitrum,
+		isSwitching,
 		deposit,
+		switchError,
+		switchToArbitrum,
 		validate: validateDeposit,
 		reset: resetDeposit,
-	} = useDeposit();
+		networkName: depositNetworkName,
+		smartDepositEnabled,
+	} = useDeposit({
+		balancePollIntervalMs: isEmbeddedDeposit ? DEPOSIT_BALANCE_REFRESH_MS : undefined,
+		mode: depositMode,
+		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
+	});
 
-	const { walletAddress, hasWalletAccess } = useWalletSession();
 	const {
 		marginSummary,
 		perpSummary,
@@ -89,45 +132,68 @@ export function DepositModal() {
 		reset: resetWithdraw,
 	} = useExchange("withdraw3");
 
-	const depositValidation = validateDeposit(depositAmount);
+	const baseDepositValidation = validateDeposit(depositAmount);
+	const embeddedWalletValidationError =
+		isEmbeddedDeposit && embeddedWalletError
+			? formatTransferError(normalizeError(embeddedWalletError))
+			: isEmbeddedDeposit && (needsEmbeddedWallet || isCreatingEmbeddedWallet || !depositEmbeddedWalletAddress)
+				? t`Creating your wallet. Please wait...`
+				: null;
+	const depositValidation = embeddedWalletValidationError
+		? { valid: false, error: embeddedWalletValidationError }
+		: isEmbeddedDeposit && !smartDepositEnabled
+			? { valid: false, error: t`Smart wallet deposits are not enabled for this network.` }
+			: baseDepositValidation;
 	const withdrawValidation = validateWithdraw(withdrawAmount, withdrawableNum);
 	const canUseFundsActions = hasWalletAccess && !!walletAddress;
+	const canUseDeposit = canUseFundsActions || isEmbeddedDeposit;
+	const showBridgeTab = !isEmbeddedDeposit;
+	const visibleTab = showBridgeTab || activeTab !== "bridge" ? activeTab : "deposit";
 	const isDepositPending = depositStatus === "pending" || depositStatus === "confirming";
+	const requiresWithdrawDestination = isEmbeddedDeposit;
+	const normalizedWithdrawDestination = withdrawDestination.trim();
+	const isWithdrawDestinationValid =
+		!requiresWithdrawDestination || (!!normalizedWithdrawDestination && isAddress(normalizedWithdrawDestination));
+	const withdrawDestinationError =
+		requiresWithdrawDestination && normalizedWithdrawDestination && !isAddress(normalizedWithdrawDestination)
+			? t`Invalid destination address`
+			: null;
+	const canSubmitWithdraw = withdrawValidation.valid && isWithdrawDestinationValid;
+
+	useEffect(() => {
+		if (!open || visibleTab !== "deposit" || !needsEmbeddedWallet) return;
+		void ensureEmailEmbeddedWallet().catch(() => {});
+	}, [ensureEmailEmbeddedWallet, needsEmbeddedWallet, open, visibleTab]);
+
+	function handleDepositRetry() {
+		resetDeposit();
+	}
 
 	function handleClose() {
 		resetDeposit();
 		resetWithdraw();
 		setDepositAmount("");
 		setWithdrawAmount("");
+		setWithdrawDestination("");
 		close();
 	}
 
 	function handleDepositSubmit() {
-		if (depositValidation.valid && canUseFundsActions && !isDepositPending) {
+		if (depositValidation.valid && canUseDeposit && !isDepositPending) {
 			deposit(depositAmount);
 		}
 	}
 
 	function handleWithdrawSubmit() {
-		if (withdrawValidation.valid && walletAddress) {
-			withdraw({ destination: walletAddress, amount: withdrawAmount });
+		if (!canSubmitWithdraw || !walletAddress) return;
+		const destination = requiresWithdrawDestination ? normalizedWithdrawDestination : walletAddress;
+		if (destination) {
+			withdraw({ destination, amount: withdrawAmount });
 		}
 	}
 
 	function handlePerpsSpotTransferClick() {
 		openTransferModal("toPerp");
-	}
-
-	if (canUseFundsActions && !isArbitrum && activeTab === "deposit") {
-		return (
-			<WrongNetworkScreen
-				open={open}
-				onClose={handleClose}
-				onSwitch={switchToArbitrum}
-				isSwitching={isSwitching}
-				error={switchError}
-			/>
-		);
 	}
 
 	if (depositStatus === "success") {
@@ -143,6 +209,7 @@ export function DepositModal() {
 					</>
 				}
 				txHash={depositHash}
+				txChain={depositTxChain}
 				onClose={handleClose}
 			>
 				<Button onClick={handleClose} className="w-full">
@@ -160,13 +227,14 @@ export function DepositModal() {
 				heading={<Trans>Deposit failed</Trans>}
 				description={formatTransferError(depositError)}
 				txHash={depositHash}
+				txChain={depositTxChain}
 				onClose={handleClose}
 			>
 				<div className="flex w-full gap-2">
 					<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
 						<Trans>Cancel</Trans>
 					</Button>
-					<Button onClick={resetDeposit} className="flex-1">
+					<Button onClick={handleDepositRetry} className="flex-1">
 						<Trans>Retry</Trans>
 					</Button>
 				</div>
@@ -184,22 +252,45 @@ export function DepositModal() {
 				}
 				description={<span className="tabular-nums">{depositAmount} USDC → Hyperliquid</span>}
 				txHash={depositStatus === "confirming" ? depositHash : undefined}
+				txChain={depositTxChain}
 				closable={false}
 			/>
 		);
 	}
 
+	if (canUseFundsActions && depositMode === "wallet" && visibleTab === "deposit" && !isArbitrum) {
+		return (
+			<WrongNetworkScreen
+				open
+				onClose={handleClose}
+				onSwitch={switchToArbitrum}
+				isSwitching={isSwitching}
+				error={switchError}
+			/>
+		);
+	}
+
 	if (isWithdrawSuccess) {
+		const withdrawNetReceived = Math.max(toSafeBig(withdrawAmount).minus(WITHDRAWAL_FEE_USD).toNumber(), 0);
+
 		return (
 			<StatusScreen
 				title={<Trans>Withdraw</Trans>}
 				icon="success"
 				heading={<Trans>Withdrawal submitted</Trans>}
 				description={
-					<>
-						<span className="tabular-nums font-medium text-success">${withdrawAmount}</span>{" "}
-						<Trans>will arrive in {ARBITRUM_NETWORK.estimatedWithdrawTime}</Trans>
-					</>
+					<div className="space-y-1">
+						<div>
+							<Trans>Net received</Trans>:{" "}
+							<span className="tabular-nums font-medium text-success">${formatNumber(withdrawNetReceived, 2)}</span>
+						</div>
+						<div className="text-fg-muted">
+							<Trans>Network fee</Trans>: <span className="tabular-nums">${formatNumber(WITHDRAWAL_FEE_USD, 2)}</span>
+						</div>
+						<div className="text-fg-muted">
+							<Trans>will arrive in {ARBITRUM_NETWORK.estimatedWithdrawTime}</Trans>
+						</div>
+					</div>
 				}
 				onClose={handleClose}
 			>
@@ -242,7 +333,7 @@ export function DepositModal() {
 
 				<ModalContent className="space-y-4">
 					<SegmentedControls
-						value={activeTab}
+						value={visibleTab}
 						onValueChange={(v: string) => setTab(v as "deposit" | "withdraw" | "bridge")}
 						fullWidth
 					>
@@ -252,35 +343,51 @@ export function DepositModal() {
 						<SegmentedControlItem value="withdraw" icon={<ArrowLineUpIcon className="size-3" />}>
 							<Trans>Withdraw</Trans>
 						</SegmentedControlItem>
-						<SegmentedControlItem value="bridge" icon={<ArrowsLeftRightIcon className="size-3" />}>
-							<Trans>Bridge</Trans>
-						</SegmentedControlItem>
+						{showBridgeTab ? (
+							<SegmentedControlItem value="bridge" icon={<ArrowsLeftRightIcon className="size-3" />}>
+								<Trans>Bridge</Trans>
+							</SegmentedControlItem>
+						) : null}
 					</SegmentedControls>
 
 					<div className={`flex flex-col ${DEPOSIT_TAB_MIN_HEIGHT}`}>
-						{activeTab === "deposit" &&
-							(canUseFundsActions ? (
+						{visibleTab === "deposit" &&
+							(canUseDeposit ? (
 								<DepositForm
 									amount={depositAmount}
 									onAmountChange={setDepositAmount}
 									balance={depositBalance}
+									maxAmount={maxDepositAmount}
+									maxDepositRaw={maxDepositRaw}
+									balanceStatus={depositBalanceStatus}
+									balanceError={depositBalanceError}
 									validation={depositValidation}
 									isPending={isDepositPending}
 									onSubmit={handleDepositSubmit}
+									networkName={depositNetworkName}
+									smartDepositEnabled={smartDepositEnabled}
+									autoBridgeEnabled={isEmbeddedDeposit}
+									fundingAddress={isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined}
+									onDone={handleClose}
 								/>
 							) : (
 								<WalletNotConnected />
 							))}
 
-						{activeTab === "withdraw" &&
+						{visibleTab === "withdraw" &&
 							(!canUseFundsActions ? (
 								<WalletNotConnected />
 							) : (
 								<WithdrawForm
 									amount={withdrawAmount}
 									onAmountChange={setWithdrawAmount}
+									destination={withdrawDestination}
+									onDestinationChange={setWithdrawDestination}
+									destinationRequired={requiresWithdrawDestination}
+									destinationError={withdrawDestinationError}
 									available={withdrawable}
 									validation={withdrawValidation}
+									canSubmit={canSubmitWithdraw}
 									isPending={isWithdrawPending}
 									onSubmit={handleWithdrawSubmit}
 									spotAvailable={accountSummary.spotUsdcAvailable}
@@ -289,7 +396,7 @@ export function DepositModal() {
 								/>
 							))}
 
-						{activeTab === "bridge" && (
+						{visibleTab === "bridge" && showBridgeTab && (
 							<Suspense fallback={null}>{canUseFundsActions ? <LazyBridgeTab /> : <WalletNotConnected />}</Suspense>
 						)}
 					</div>

@@ -43,6 +43,43 @@ function emailUser({
 	} as User;
 }
 
+function externalWalletUserWithLinkedEmail({
+	email = "trader@example.com",
+	walletAddress,
+	embeddedAddress,
+}: {
+	email?: string;
+	walletAddress: string;
+	embeddedAddress: string;
+}): User {
+	return {
+		email: { address: email },
+		linkedAccounts: [
+			{ address: email, type: "email" },
+			{
+				address: embeddedAddress,
+				chainType: "ethereum",
+				connectorType: "embedded",
+				type: "wallet",
+				walletClientType: "privy",
+			},
+			{
+				address: walletAddress,
+				chainType: "ethereum",
+				connectorType: "injected",
+				type: "wallet",
+				walletClientType: "metamask",
+			},
+		],
+		wallet: {
+			address: walletAddress,
+			chainType: "ethereum",
+			connectorType: "injected",
+			walletClientType: "metamask",
+		},
+	} as User;
+}
+
 describe("selectPrivyWagmiWallet", () => {
 	it("selects the wallet matching the Privy user wallet address", () => {
 		const wallets = [
@@ -88,6 +125,23 @@ describe("selectPrivyWagmiWallet", () => {
 				user: emailUser({ embeddedAddress: "0x2222222222222222222222222222222222222222" }),
 			}),
 		).toBe(wallets[1]);
+	});
+
+	it("does not prefer embedded wallets for external wallet users with a linked email", () => {
+		const wallets = [
+			wallet("0x1111111111111111111111111111111111111111", "metamask", "injected"),
+			wallet("0x2222222222222222222222222222222222222222", "privy", "embedded"),
+		];
+
+		expect(
+			selectPrivyWagmiWallet({
+				wallets,
+				user: externalWalletUserWithLinkedEmail({
+					walletAddress: "0x1111111111111111111111111111111111111111",
+					embeddedAddress: "0x2222222222222222222222222222222222222222",
+				}),
+			}),
+		).toBe(wallets[0]);
 	});
 
 	it("falls back to the first wallet when the user wallet is not connected", () => {

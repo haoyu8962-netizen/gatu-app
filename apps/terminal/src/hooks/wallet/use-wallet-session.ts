@@ -6,7 +6,7 @@ import {
 	useHyperliquid,
 	useHyperliquidOptional,
 } from "@/lib/hyperliquid";
-import { getPrivyEmailAddress, getPrivyEmbeddedWalletAddress, isPrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
+import { getPrivyEmbeddedWalletAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
 
 export function useWalletSession() {
 	const { ready, authenticated, login, logout, user } = usePrivy();
@@ -14,8 +14,7 @@ export function useWalletSession() {
 	const hyperliquid = useHyperliquidOptional();
 
 	const embeddedWalletAddress = ready && authenticated ? getPrivyEmbeddedWalletAddress(user) : undefined;
-	const shouldUseEmbeddedWallet =
-		!!embeddedWalletAddress && (!!getPrivyEmailAddress(user) || isPrivyEmbeddedWallet(user?.wallet));
+	const shouldUseEmbeddedWallet = ready && authenticated && shouldUsePrivyEmbeddedWallet(user);
 	const walletAddress = shouldUseEmbeddedWallet ? embeddedWalletAddress : connectedWalletAddress;
 	const hasWalletSession = ready && authenticated && !!walletAddress;
 	const agentAddress =

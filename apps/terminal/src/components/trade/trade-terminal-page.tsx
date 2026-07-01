@@ -3,7 +3,6 @@ import {
 	APP_HEADER_OFFSET_CLASS,
 	APP_HEADER_PLUS_BANNER_OFFSET_CLASS,
 	MOBILE_BOTTOM_NAV_HEIGHT_PX,
-	MOBILE_BREAKPOINT_PX,
 } from "@/config/layout";
 import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -13,16 +12,11 @@ import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { GeoRestrictionBanner } from "./geo/geo-restriction-banner";
 import { TopNav } from "./header/top-nav";
 import { MainWorkspace } from "./layout/main-workspace";
+import { MobileTerminal } from "./mobile/mobile-terminal";
 import { TestnetBanner } from "./testnet-banner";
-
-const MobileTerminal = createLazyComponent(() => import("./mobile/mobile-terminal"), "MobileTerminal");
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 const FooterBar = createLazyComponent(() => import("./footer/footer-bar"), "FooterBar");
-
-if (typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT_PX) {
-	MobileTerminal.preload();
-}
 
 export function TradeTerminalPage() {
 	const isMobile = useIsMobile();

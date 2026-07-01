@@ -1,11 +1,12 @@
 import { t } from "@lingui/core/macro";
 import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
-import { useCallback, useMemo, useRef, useState } from "react";
-import type { Account, Hash, PublicClient, Transport, WalletClient } from "viem";
-import { createWalletClient, custom, erc20Abi, formatUnits, parseUnits } from "viem";
-import { arbitrum } from "viem/chains";
-import { useChainId, usePublicClient, useReadContract } from "wagmi";
-import { ARBITRUM_CHAIN_ID, CONTRACTS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
+import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Account, Chain, Hash, Hex, PublicClient, Transport, WalletClient } from "viem";
+import { createWalletClient, custom, encodeFunctionData, erc20Abi, formatUnits, parseUnits } from "viem";
+import { arbitrum, arbitrumSepolia } from "viem/chains";
+import { useChainId, usePublicClient } from "wagmi";
+import { BRIDGE2_ABI, DEPOSIT_NETWORKS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import {
 	DEPOSIT_BROADCAST_TIMEOUT_MS,
 	DEPOSIT_CONFIRMATION_TIMEOUT_MS,
@@ -14,8 +15,13 @@ import {
 } from "@/config/time";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
+import { useIsTestnet } from "@/stores/use-global-settings-store";
 
 export type DepositStatus = "idle" | "pending" | "confirming" | "success" | "error";
+type BalanceStatus = "idle" | "loading" | "success" | "error";
+type DepositMode = "wallet" | "smart";
+type DepositNetwork = keyof typeof DEPOSIT_NETWORKS;
+type DepositNetworkConfig = (typeof DEPOSIT_NETWORKS)[DepositNetwork];
 
 interface ValidationResult {
 	valid: boolean;
@@ -27,7 +33,14 @@ export interface UseDepositResult {
 	switchToArbitrum: () => void;
 	isSwitching: boolean;
 	switchError: Error | null;
+	networkName: string;
+	smartDepositEnabled: boolean;
 	balance: string;
+	balanceRaw: bigint | undefined;
+	maxAmount: string;
+	maxDepositRaw: bigint | undefined;
+	balanceStatus: BalanceStatus;
+	balanceError: Error | null;
 	status: DepositStatus;
 	error: Error | null;
 	hash: Hash | undefined;
@@ -36,10 +49,23 @@ export interface UseDepositResult {
 	reset: () => void;
 }
 
+interface UseDepositOptions {
+	balanceEnabled?: boolean;
+	balancePollIntervalMs?: number;
+	mode?: DepositMode;
+	walletAddress?: `0x${string}`;
+}
+
 interface DepositState {
 	status: DepositStatus;
 	error: Error | null;
 	hash: Hash | undefined;
+}
+
+interface UsdcBalanceState {
+	status: BalanceStatus;
+	raw: bigint | undefined;
+	error: Error | null;
 }
 
 interface ArbitrumSwitchState {
@@ -48,7 +74,7 @@ interface ArbitrumSwitchState {
 	error: Error | null;
 }
 
-type ReadyWalletClient = WalletClient<Transport, typeof arbitrum, Account>;
+type ReadyWalletClient = WalletClient<Transport, Chain, Account>;
 
 interface ReadyDepositContext {
 	address: `0x${string}`;
@@ -66,28 +92,45 @@ interface ProviderRpcErrorLike {
 	message?: string;
 }
 
-const ARBITRUM_CHAIN_ID_HEX = `0x${ARBITRUM_CHAIN_ID.toString(16)}` as const;
-const ARBITRUM_ADD_CHAIN_PARAMS = {
-	chainId: ARBITRUM_CHAIN_ID_HEX,
-	chainName: "Arbitrum One",
-	nativeCurrency: {
-		name: "Ether",
-		symbol: "ETH",
-		decimals: 18,
-	},
-	rpcUrls: ["https://arb1.arbitrum.io/rpc"],
-	blockExplorerUrls: ["https://arbiscan.io"],
+const BALANCE_OF_SELECTOR = "0x70a08231";
+const PERMIT_DEADLINE_SECONDS = 20 * 60;
+const DEPOSIT_CHAINS = {
+	mainnet: arbitrum,
+	testnet: arbitrumSepolia,
 } as const;
+const USDC_PERMIT_ABI = [
+	...erc20Abi,
+	{
+		type: "function",
+		name: "nonces",
+		stateMutability: "view",
+		inputs: [{ name: "owner", type: "address" }],
+		outputs: [{ name: "", type: "uint256" }],
+	},
+] as const;
 
-function validateAmount(amount: string, balanceRaw: bigint | undefined): ValidationResult {
+function getDepositNetwork(isTestnet: boolean): DepositNetwork {
+	return isTestnet ? "testnet" : "mainnet";
+}
+
+function getDepositConfig(network: DepositNetwork): DepositNetworkConfig {
+	return DEPOSIT_NETWORKS[network];
+}
+
+function getDepositChain(network: DepositNetwork): Chain {
+	return DEPOSIT_CHAINS[network];
+}
+
+function validateAmount(amount: string, maxDepositRaw: bigint | undefined): ValidationResult {
 	const trimmed = amount.trim();
 	if (!trimmed) return { valid: false, error: null };
+	if (maxDepositRaw === undefined) return { valid: false, error: null };
 
 	try {
 		const raw = parseUnits(trimmed, USDC_DECIMALS);
 		if (raw === 0n) return { valid: false, error: null };
 		if (raw < MIN_DEPOSIT_USDC) return { valid: false, error: t`Minimum deposit is 5 USDC` };
-		if (balanceRaw !== undefined && raw > balanceRaw) return { valid: false, error: t`Insufficient balance` };
+		if (raw > maxDepositRaw) return { valid: false, error: t`Insufficient balance` };
 		return { valid: true, error: null };
 	} catch {
 		return { valid: false, error: t`Invalid amount` };
@@ -102,9 +145,20 @@ function createArbitrumSwitchState(key = ""): ArbitrumSwitchState {
 	return { key, confirmedChainId: null, error: null };
 }
 
+function createIdleBalanceState(): UsdcBalanceState {
+	return { status: "idle", raw: undefined, error: null };
+}
+
 function toError(error: unknown): Error {
 	if (error instanceof Error) return error;
 	return new Error(typeof error === "string" ? error : t`Unknown error`);
+}
+
+function toBigInt(value: unknown): bigint {
+	if (typeof value === "bigint") return value;
+	if (typeof value === "number" && Number.isSafeInteger(value)) return BigInt(value);
+	if (typeof value === "string") return BigInt(value);
+	throw new Error(t`Unable to prepare USDC permit`);
 }
 
 function getProviderRpcError(error: unknown): ProviderRpcErrorLike {
@@ -139,13 +193,52 @@ function createWalletConnectionError(error: unknown): Error {
 	return new Error(message || t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`);
 }
 
-function createChainSwitchError(error: unknown): Error {
+function createChainSwitchError(config: DepositNetworkConfig, error: unknown): Error {
 	if (isUserRejectedRequest(error)) return new Error(t`Arbitrum network switch was rejected.`);
-	return new Error(t`Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry.`);
+	return new Error(t`Unable to switch wallet to ${config.chainName}. Switch networks in your wallet and retry.`);
 }
 
 function sleep(ms: number) {
 	return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+function toChainHex(chainId: number): `0x${string}` {
+	return `0x${chainId.toString(16)}` as const;
+}
+
+function encodeBalanceOf(address: `0x${string}`): `0x${string}` {
+	return `${BALANCE_OF_SELECTOR}${address.slice(2).padStart(64, "0")}` as `0x${string}`;
+}
+
+async function readDepositUsdcBalance(
+	config: DepositNetworkConfig,
+	address: `0x${string}`,
+	signal?: AbortSignal,
+): Promise<bigint> {
+	const response = await fetch(config.rpcUrl, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify({
+			jsonrpc: "2.0",
+			id: 1,
+			method: "eth_call",
+			params: [
+				{
+					to: config.usdc,
+					data: encodeBalanceOf(address),
+				},
+				"latest",
+			],
+		}),
+		signal,
+	});
+
+	if (!response.ok) throw new Error(t`Unable to load Arbitrum USDC balance`);
+
+	const payload = (await response.json()) as { result?: string; error?: { message?: string } };
+	if (payload.error) throw new Error(payload.error.message || t`Unable to load Arbitrum USDC balance`);
+	if (!payload.result) throw new Error(t`Unable to load Arbitrum USDC balance`);
+	return BigInt(payload.result);
 }
 
 function getWalletChainId(wallet: ConnectedWallet): number | null {
@@ -214,44 +307,60 @@ async function getProviderChainId(provider: Eip1193Provider): Promise<string> {
 	}
 }
 
-async function requestArbitrumSwitch(provider: Eip1193Provider) {
+function getAddChainParams(config: DepositNetworkConfig) {
+	return {
+		chainId: toChainHex(config.chainId),
+		chainName: config.chainName,
+		nativeCurrency: {
+			name: "Ether",
+			symbol: "ETH",
+			decimals: 18,
+		},
+		rpcUrls: [config.rpcUrl],
+		blockExplorerUrls: [config.blockExplorerUrl],
+	} as const;
+}
+
+async function requestDepositChainSwitch(provider: Eip1193Provider, config: DepositNetworkConfig) {
+	const chainId = toChainHex(config.chainId);
 	try {
 		await provider.request({
 			method: "wallet_switchEthereumChain",
-			params: [{ chainId: ARBITRUM_CHAIN_ID_HEX }],
+			params: [{ chainId }],
 		});
 	} catch (error) {
-		if (!isUnknownChainError(error)) throw createChainSwitchError(error);
+		if (!isUnknownChainError(error)) throw createChainSwitchError(config, error);
 
 		try {
 			await provider.request({
 				method: "wallet_addEthereumChain",
-				params: [ARBITRUM_ADD_CHAIN_PARAMS],
+				params: [getAddChainParams(config)],
 			});
 		} catch (addError) {
-			throw createChainSwitchError(addError);
+			throw createChainSwitchError(config, addError);
 		}
 
 		try {
 			await provider.request({
 				method: "wallet_switchEthereumChain",
-				params: [{ chainId: ARBITRUM_CHAIN_ID_HEX }],
+				params: [{ chainId }],
 			});
 		} catch (switchError) {
-			throw createChainSwitchError(switchError);
+			throw createChainSwitchError(config, switchError);
 		}
 	}
 }
 
-async function ensureArbitrumChain(provider: Eip1193Provider) {
-	const chainId = await getProviderChainId(provider);
-	if (chainId !== ARBITRUM_CHAIN_ID_HEX) {
-		await requestArbitrumSwitch(provider);
+async function ensureDepositChain(provider: Eip1193Provider, config: DepositNetworkConfig) {
+	const chainId = toChainHex(config.chainId);
+	const currentChainId = await getProviderChainId(provider);
+	if (currentChainId !== chainId) {
+		await requestDepositChainSwitch(provider, config);
 	}
 
 	const nextChainId = await getProviderChainId(provider);
-	if (nextChainId !== ARBITRUM_CHAIN_ID_HEX) {
-		throw new Error(t`Wallet is not connected to Arbitrum. Switch networks in your wallet and retry.`);
+	if (nextChainId !== chainId) {
+		throw new Error(t`Wallet is not connected to ${config.chainName}. Switch networks in your wallet and retry.`);
 	}
 }
 
@@ -275,12 +384,16 @@ export function waitForWalletTransactionHash<T>(
 	});
 }
 
-async function getReadyDepositContext({
+async function getReadyWalletDepositContext({
 	address,
+	chain,
+	config,
 	publicClient,
 	wallet,
 }: {
 	address: `0x${string}` | undefined;
+	chain: Chain;
+	config: DepositNetworkConfig;
 	publicClient: PublicClient | undefined;
 	wallet: ConnectedWallet | undefined;
 }): Promise<ReadyDepositContext> {
@@ -293,20 +406,124 @@ async function getReadyDepositContext({
 
 	const provider = await getDepositProvider(wallet);
 	await ensureProviderAccount(provider, address);
-	if (getWalletChainId(wallet) !== ARBITRUM_CHAIN_ID) {
-		await ensureArbitrumChain(provider);
+	if (getWalletChainId(wallet) !== config.chainId) {
+		await ensureDepositChain(provider, config);
 	} else {
 		const providerChainId = await getProviderChainId(provider);
-		if (providerChainId !== ARBITRUM_CHAIN_ID_HEX) await ensureArbitrumChain(provider);
+		if (providerChainId !== toChainHex(config.chainId)) await ensureDepositChain(provider, config);
 	}
 
 	const walletClient = createWalletClient({
 		account: address,
-		chain: arbitrum,
+		chain,
 		transport: custom(provider),
 	});
 
 	return { address, provider, publicClient, walletClient: walletClient as ReadyWalletClient };
+}
+
+async function getReadyPermitSignerContext({
+	address,
+	chain,
+	publicClient,
+	wallet,
+}: {
+	address: `0x${string}` | undefined;
+	chain: Chain;
+	publicClient: PublicClient | undefined;
+	wallet: ConnectedWallet | undefined;
+}): Promise<ReadyDepositContext> {
+	if (!address) throw new Error(t`Wallet not connected`);
+	if (!publicClient) throw new Error(t`No response from exchange`);
+	if (!wallet) throw new Error(t`Wallet client not ready`);
+	if (!hasSameWalletAddress(wallet.address, address)) {
+		throw new Error(t`Selected wallet does not match the connected account. Reconnect your wallet and try again.`);
+	}
+
+	const provider = await getDepositProvider(wallet);
+	await ensureProviderAccount(provider, address);
+
+	const walletClient = createWalletClient({
+		account: address,
+		chain,
+		transport: custom(provider),
+	});
+
+	return { address, provider, publicClient, walletClient: walletClient as ReadyWalletClient };
+}
+
+function splitPermitSignature(signature: Hex) {
+	const normalized = signature.slice(2);
+	if (normalized.length !== 130) throw new Error(t`Unable to prepare USDC permit`);
+	let v = Number.parseInt(normalized.slice(128, 130), 16);
+	if (v < 27) v += 27;
+
+	return {
+		r: BigInt(`0x${normalized.slice(0, 64)}`),
+		s: BigInt(`0x${normalized.slice(64, 128)}`),
+		v,
+	};
+}
+
+async function createBridge2PermitCall({
+	amountRaw,
+	config,
+	context,
+}: {
+	amountRaw: bigint;
+	config: DepositNetworkConfig;
+	context: ReadyDepositContext;
+}): Promise<Hex> {
+	const nonce = toBigInt(
+		await context.publicClient.readContract({
+			address: config.usdc,
+			abi: USDC_PERMIT_ABI,
+			functionName: "nonces",
+			args: [context.address],
+		}),
+	);
+	const deadline = BigInt(Math.floor(Date.now() / 1000) + PERMIT_DEADLINE_SECONDS);
+	const permitSignature = await context.walletClient.signTypedData({
+		account: context.address,
+		domain: {
+			name: config.usdcPermitName,
+			version: config.usdcPermitVersion,
+			chainId: config.chainId,
+			verifyingContract: config.usdc,
+		},
+		types: {
+			Permit: [
+				{ name: "owner", type: "address" },
+				{ name: "spender", type: "address" },
+				{ name: "value", type: "uint256" },
+				{ name: "nonce", type: "uint256" },
+				{ name: "deadline", type: "uint256" },
+			],
+		},
+		primaryType: "Permit",
+		message: {
+			owner: context.address,
+			spender: config.bridge2,
+			value: amountRaw,
+			nonce,
+			deadline,
+		},
+	});
+
+	return encodeFunctionData({
+		abi: BRIDGE2_ABI,
+		functionName: "batchedDepositWithPermit",
+		args: [
+			[
+				{
+					user: context.address,
+					usd: amountRaw,
+					deadline,
+					signature: splitPermitSignature(permitSignature),
+				},
+			],
+		],
+	});
 }
 
 async function providerHasTransaction(provider: Eip1193Provider | undefined, hash: Hash) {
@@ -390,13 +607,19 @@ async function waitForConfirmedReceipt(publicClient: PublicClient, hash: Hash) {
 	}
 }
 
-function useArbitrumChain(wallet: ConnectedWallet | undefined, address: `0x${string}` | undefined) {
+function useDepositChain(
+	wallet: ConnectedWallet | undefined,
+	address: `0x${string}` | undefined,
+	config: DepositNetworkConfig,
+	enabled: boolean,
+) {
 	const chainId = useChainId();
-	const walletKey = `${address ?? ""}:${wallet?.address ?? ""}:${wallet?.chainId ?? ""}`;
+	const walletKey = `${address ?? ""}:${wallet?.address ?? ""}:${wallet?.chainId ?? ""}:${config.chainId}`;
 	const [switchState, setSwitchState] = useState<ArbitrumSwitchState>(createArbitrumSwitchState);
 	const [isSwitching, setIsSwitching] = useState(false);
 
 	const switchToArbitrum = useCallback(() => {
+		if (!enabled) return;
 		if (!address || !wallet) {
 			setSwitchState({ ...createArbitrumSwitchState(walletKey), error: new Error(t`Wallet not connected`) });
 			return;
@@ -407,53 +630,152 @@ function useArbitrumChain(wallet: ConnectedWallet | undefined, address: `0x${str
 		void (async () => {
 			const provider = await getDepositProvider(wallet);
 			await ensureProviderAccount(provider, address);
-			await ensureArbitrumChain(provider);
-			setSwitchState({ key: walletKey, confirmedChainId: ARBITRUM_CHAIN_ID, error: null });
+			await ensureDepositChain(provider, config);
+			setSwitchState({ key: walletKey, confirmedChainId: config.chainId, error: null });
 		})()
 			.catch((error) => setSwitchState({ ...createArbitrumSwitchState(walletKey), error: toError(error) }))
 			.finally(() => setIsSwitching(false));
-	}, [address, wallet, walletKey]);
+	}, [address, config, enabled, wallet, walletKey]);
+
+	if (!enabled) {
+		return {
+			isArbitrum: true,
+			switchToArbitrum,
+			isSwitching,
+			switchError: null,
+		};
+	}
 
 	const walletChainId = wallet ? getWalletChainId(wallet) : null;
 	const confirmedChainId = switchState.key === walletKey ? switchState.confirmedChainId : null;
 	const effectiveChainId = confirmedChainId ?? walletChainId ?? chainId;
 
 	return {
-		isArbitrum: effectiveChainId === ARBITRUM_CHAIN_ID,
+		isArbitrum: effectiveChainId === config.chainId,
 		switchToArbitrum,
 		isSwitching,
 		switchError: switchState.key === walletKey ? switchState.error : null,
 	};
 }
 
-function useUsdcBalance(address: `0x${string}` | undefined, enabled: boolean) {
-	const { data: balanceRaw, refetch } = useReadContract({
-		address: CONTRACTS.arbitrum.usdc,
-		abi: erc20Abi,
-		functionName: "balanceOf",
-		args: address ? [address] : undefined,
-		chainId: ARBITRUM_CHAIN_ID,
-		query: { enabled },
-	});
+function useDepositUsdcBalance(
+	config: DepositNetworkConfig,
+	address: `0x${string}` | undefined,
+	enabled: boolean,
+	pollIntervalMs?: number,
+) {
+	const [state, setState] = useState<UsdcBalanceState>(createIdleBalanceState);
+	const requestIdRef = useRef(0);
 
-	const balance = useMemo(() => (balanceRaw ? formatUnits(balanceRaw, USDC_DECIMALS) : "0"), [balanceRaw]);
+	const refetch = useCallback(async () => {
+		if (!enabled || !address) {
+			setState(createIdleBalanceState());
+			return;
+		}
 
-	return { balanceRaw, balance, refetch };
+		const requestId = requestIdRef.current + 1;
+		requestIdRef.current = requestId;
+		const abortController = new AbortController();
+
+		setState((previous) => ({ status: "loading", raw: previous.raw, error: null }));
+
+		try {
+			const raw = await readDepositUsdcBalance(config, address, abortController.signal);
+			if (requestIdRef.current !== requestId) return;
+			setState({ status: "success", raw, error: null });
+		} catch (error) {
+			if (abortController.signal.aborted || requestIdRef.current !== requestId) return;
+			setState((previous) => ({ status: "error", raw: previous.raw, error: toError(error) }));
+		}
+	}, [address, config, enabled]);
+
+	useEffect(() => {
+		if (!enabled || !address) {
+			requestIdRef.current += 1;
+			setState(createIdleBalanceState());
+			return;
+		}
+
+		const requestId = requestIdRef.current + 1;
+		requestIdRef.current = requestId;
+		const abortController = new AbortController();
+
+		setState({ status: "loading", raw: undefined, error: null });
+
+		void readDepositUsdcBalance(config, address, abortController.signal)
+			.then((raw) => {
+				if (requestIdRef.current !== requestId) return;
+				setState({ status: "success", raw, error: null });
+			})
+			.catch((error) => {
+				if (abortController.signal.aborted || requestIdRef.current !== requestId) return;
+				setState({ status: "error", raw: undefined, error: toError(error) });
+			});
+
+		return () => {
+			abortController.abort();
+		};
+	}, [address, config, enabled]);
+
+	useEffect(() => {
+		if (!enabled || !address || !pollIntervalMs) return;
+
+		const interval = window.setInterval(() => {
+			void refetch();
+		}, pollIntervalMs);
+
+		return () => window.clearInterval(interval);
+	}, [address, enabled, pollIntervalMs, refetch]);
+
+	const balance = useMemo(() => (state.raw !== undefined ? formatUnits(state.raw, USDC_DECIMALS) : "0"), [state.raw]);
+	const maxDepositRaw = state.raw;
+	const maxAmount = useMemo(
+		() => (maxDepositRaw !== undefined ? formatUnits(maxDepositRaw, USDC_DECIMALS) : "0"),
+		[maxDepositRaw],
+	);
+
+	return {
+		balanceRaw: state.raw,
+		maxDepositRaw,
+		balance,
+		maxAmount,
+		status: state.status,
+		error: state.error,
+		refetch,
+	};
 }
 
-export function useDeposit(): UseDepositResult {
-	const { walletAddress } = useWalletSession();
+export function useDeposit({
+	balanceEnabled = true,
+	balancePollIntervalMs,
+	mode = "wallet",
+	walletAddress: walletAddressOverride,
+}: UseDepositOptions = {}): UseDepositResult {
+	const network = getDepositNetwork(useIsTestnet());
+	const depositConfig = getDepositConfig(network);
+	const depositChain = getDepositChain(network);
+	const { walletAddress: sessionWalletAddress } = useWalletSession();
+	const walletAddress = walletAddressOverride ?? sessionWalletAddress;
 	const { wallets } = useWallets();
+	const { getClientForChain } = useSmartWallets();
 	const depositWallet = useMemo(() => selectDepositWallet(wallets, walletAddress), [wallets, walletAddress]);
-	const chain = useArbitrumChain(depositWallet, walletAddress);
-	const { balanceRaw, balance, refetch } = useUsdcBalance(walletAddress, chain.isArbitrum && !!walletAddress);
-	const publicClient = usePublicClient({ chainId: ARBITRUM_CHAIN_ID });
+	const chain = useDepositChain(depositWallet, walletAddress, depositConfig, mode === "wallet");
+	const {
+		balanceRaw,
+		maxDepositRaw,
+		balance,
+		maxAmount,
+		status: balanceStatus,
+		error: balanceError,
+		refetch,
+	} = useDepositUsdcBalance(depositConfig, walletAddress, balanceEnabled && !!walletAddress, balancePollIntervalMs);
+	const publicClient = usePublicClient({ chainId: depositConfig.chainId });
 
 	const [state, setState] = useState<DepositState>(createIdleState);
 	const operationIdRef = useRef(0);
 	const inFlightRef = useRef(false);
 
-	const validate = useCallback((amount: string) => validateAmount(amount, balanceRaw), [balanceRaw]);
+	const validate = useCallback((amount: string) => validateAmount(amount, maxDepositRaw), [maxDepositRaw]);
 
 	const deposit = useCallback(
 		async (amount: string) => {
@@ -464,25 +786,67 @@ export function useDeposit(): UseDepositResult {
 			setState({ status: "pending", error: null, hash: undefined });
 
 			try {
-				const ready = await getReadyDepositContext({ address: walletAddress, publicClient, wallet: depositWallet });
+				const amountRaw = parseUnits(amount, USDC_DECIMALS);
+				let hash: Hash;
+				let provider: Eip1193Provider | undefined;
 
-				const hash = await waitForWalletTransactionHash(
-					ready.walletClient.writeContract({
-						account: ready.address,
-						chain: arbitrum,
-						address: CONTRACTS.arbitrum.usdc,
-						abi: erc20Abi,
-						functionName: "transfer",
-						args: [CONTRACTS.arbitrum.bridge2, parseUnits(amount, USDC_DECIMALS)],
-					}),
-				);
+				if (mode === "smart") {
+					if (!depositConfig.smartDepositEnabled) {
+						throw new Error(t`Smart wallet deposits are not enabled for this network.`);
+					}
+
+					const ready = await getReadyPermitSignerContext({
+						address: walletAddress,
+						chain: depositChain,
+						publicClient,
+						wallet: depositWallet,
+					});
+					const data = await createBridge2PermitCall({
+						amountRaw,
+						config: depositConfig,
+						context: ready,
+					});
+					const smartClient = await getClientForChain({ id: depositConfig.chainId });
+					if (!smartClient) throw new Error(t`Smart wallet client not ready`);
+
+					hash = (await waitForWalletTransactionHash(
+						smartClient.sendTransaction(
+							{
+								to: depositConfig.bridge2,
+								data,
+								value: 0n,
+							},
+							{ uiOptions: { showWalletUIs: false } },
+						),
+					)) as Hash;
+				} else {
+					const ready = await getReadyWalletDepositContext({
+						address: walletAddress,
+						chain: depositChain,
+						config: depositConfig,
+						publicClient,
+						wallet: depositWallet,
+					});
+					provider = ready.provider;
+					hash = await waitForWalletTransactionHash(
+						ready.walletClient.writeContract({
+							account: ready.address,
+							chain: depositChain,
+							address: depositConfig.usdc,
+							abi: erc20Abi,
+							functionName: "transfer",
+							args: [depositConfig.bridge2, amountRaw],
+						}),
+					);
+				}
 
 				if (operationIdRef.current !== operationId) return;
 				setState({ status: "confirming", error: null, hash });
-				await waitForBroadcastedTransaction(ready.publicClient, hash, { provider: ready.provider });
+				if (!publicClient) throw new Error(t`No response from exchange`);
+				await waitForBroadcastedTransaction(publicClient, hash, { provider });
 
 				if (operationIdRef.current !== operationId) return;
-				await waitForConfirmedReceipt(ready.publicClient, hash);
+				await waitForConfirmedReceipt(publicClient, hash);
 
 				if (operationIdRef.current !== operationId) return;
 				setState({ status: "success", error: null, hash });
@@ -496,7 +860,7 @@ export function useDeposit(): UseDepositResult {
 				}
 			}
 		},
-		[depositWallet, publicClient, refetch, walletAddress],
+		[depositChain, depositConfig, depositWallet, getClientForChain, mode, publicClient, refetch, walletAddress],
 	);
 
 	const reset = useCallback(() => {
@@ -507,7 +871,14 @@ export function useDeposit(): UseDepositResult {
 
 	return {
 		...chain,
+		networkName: depositConfig.displayName,
+		smartDepositEnabled: depositConfig.smartDepositEnabled,
 		balance,
+		balanceRaw,
+		maxAmount,
+		maxDepositRaw,
+		balanceStatus,
+		balanceError,
 		status: state.status,
 		error: state.error,
 		hash: state.hash,

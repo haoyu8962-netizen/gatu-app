@@ -175,7 +175,6 @@ msgstr "ALO (Add Liquidity Only)"
 
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Amount"
 msgstr "Amount"
@@ -216,6 +215,8 @@ msgstr "Arbitrum network switch was rejected."
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/components/trade/tradebox/deposit/asset-select.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Asset"
 msgstr "Asset"
 
@@ -223,15 +224,24 @@ msgstr "Asset"
 #~ msgid "Assets"
 #~ msgstr "Assets"
 
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Automatic USDC deposit failed"
+msgstr "Automatic USDC deposit failed"
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 msgid "Available"
 msgstr "Available"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}."
+msgstr "Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -441,6 +451,10 @@ msgstr "Change leverage"
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "Chart"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Checking..."
+#~ msgstr "Checking..."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Clipboard does not contain a pairing code."
@@ -673,6 +687,7 @@ msgid "Continue"
 msgstr "Continue"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Copied"
 msgstr "Copied"
 
@@ -696,6 +711,10 @@ msgstr "Copy Address"
 #~ msgid "Copy code"
 #~ msgstr "Copy code"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Copy embedded wallet address"
+msgstr "Copy embedded wallet address"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Copy link"
 #~ msgstr "Copy link"
@@ -707,6 +726,10 @@ msgstr "Copy phone link"
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Could not create wallet"
 #~ msgstr "Could not create wallet"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Could not create your embedded wallet. Please retry."
+#~ msgstr "Could not create your embedded wallet. Please retry."
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Could not fetch your token balances"
@@ -749,9 +772,17 @@ msgstr "Create secure phone access for trading from this account."
 msgid "Created"
 msgstr "Created"
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Creating deposit wallet"
+#~ msgstr "Creating deposit wallet"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Creating link..."
 msgstr "Creating link..."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Creating your wallet. Please wait..."
+msgstr "Creating your wallet. Please wait..."
 
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -813,13 +844,25 @@ msgstr "Default"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Deposit"
 msgstr "Deposit"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Deposit address"
+#~ msgstr "Deposit address"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Deposit address unavailable"
+#~ msgstr "Deposit address unavailable"
+
+#: src/components/trade/tradebox/deposit/amount-input.tsx
+msgid "Deposit amount"
+msgstr "Amount"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "Deposit complete"
@@ -859,6 +902,15 @@ msgstr "Deposit transaction was broadcast but confirmation timed out. Check Arbi
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Deposit USDC from Arbitrum"
+msgstr "Deposit USDC from Arbitrum"
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Depositing USDC to Hyperliquid..."
+msgstr "Depositing USDC to Hyperliquid..."
+
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposits and withdrawals are not allowed."
@@ -875,8 +927,13 @@ msgid "Destination"
 msgstr "Destination"
 
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
 msgstr "Destination address"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
+msgstr "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Direct"
@@ -925,6 +982,8 @@ msgstr "Docs"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "Done"
 
@@ -1039,7 +1098,7 @@ msgstr "Est. P&L at Limit"
 #~ msgstr "Est. time"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Estimated time"
 msgstr "Estimated time"
@@ -1096,8 +1155,8 @@ msgid "Failed to copy"
 msgstr "Failed to copy"
 
 #: src/components/trade/header/user-menu.tsx
-msgid "Failed to create embedded wallet or open deposit flow"
-msgstr "Failed to create embedded wallet or open deposit flow"
+#~ msgid "Failed to create embedded wallet or open deposit flow"
+#~ msgstr "Failed to create embedded wallet or open deposit flow"
 
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
@@ -1231,7 +1290,6 @@ msgid "Frequency"
 msgstr "Frequency"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "From"
 msgstr "From"
 
@@ -1250,6 +1308,11 @@ msgstr "Funding"
 #: src/components/trade/market-overview.tsx
 msgid "FUNDING"
 msgstr "FUNDING"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Funding chain"
+msgstr "Funding chain"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/config/trade.ts
@@ -1320,6 +1383,11 @@ msgstr "Import phone access"
 msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
 msgstr "Import the trading key from your desktop. No wallet connection is required on this phone."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+msgstr "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Importing..."
 msgstr "Importing..."
@@ -1370,6 +1438,10 @@ msgstr "Insufficient funds for gas"
 #: src/lib/trade/withdraw-validation.ts
 msgid "Invalid amount"
 msgstr "Invalid amount"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Invalid destination address"
+msgstr "Invalid destination address"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Invalid Ethereum address"
@@ -1513,6 +1585,7 @@ msgstr "Loading TWAP orders..."
 msgid "Loading wallet..."
 msgstr "Loading wallet..."
 
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
@@ -1675,6 +1748,7 @@ msgstr "Markets"
 #~ msgstr "Master"
 
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 msgid "Max"
 msgstr "Max"
 
@@ -1714,7 +1788,7 @@ msgstr "Min order ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "Min order $10"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Minimum"
 msgstr "Minimum"
 
@@ -1776,15 +1850,19 @@ msgstr "Move USDC between your Perp and Spot accounts."
 #~ msgid "Must be signed by main wallet (not agent/API wallet)"
 #~ msgstr "Must be signed by main wallet (not agent/API wallet)"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Net received"
 msgstr "Net received"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Network"
 msgstr "Network"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Network fee"
 msgstr "Network fee"
@@ -1876,6 +1954,8 @@ msgid "No order history found."
 msgstr "No order history found."
 
 #: src/hooks/trade/use-order-submit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "No response from exchange"
 msgstr "No response from exchange"
@@ -2242,6 +2322,10 @@ msgstr "Platform"
 #~ msgid "Please enter an address"
 #~ msgstr "Please enter an address"
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Please wait while Privy creates your embedded wallet."
+#~ msgstr "Please wait while Privy creates your embedded wallet."
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -2306,9 +2390,13 @@ msgstr "positions"
 msgid "Positions"
 msgstr "Positions"
 
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Preparing automatic USDC deposit..."
+msgstr "Preparing automatic USDC deposit..."
+
 #: src/components/trade/header/user-menu.tsx
-msgid "Preparing deposit..."
-msgstr "Preparing deposit..."
+#~ msgid "Preparing deposit..."
+#~ msgstr "Preparing deposit..."
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."
@@ -2358,7 +2446,7 @@ msgstr "Processing"
 #~ msgid "Processing deposit"
 #~ msgstr "Processing deposit"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Processing..."
 msgstr "Processing..."
@@ -2400,6 +2488,10 @@ msgstr "Ready to import"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"
 msgstr "Recent Trades"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Reconnect or refresh after your embedded wallet is ready."
+#~ msgstr "Reconnect or refresh after your embedded wallet is ready."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Recovered after reload. Expires {expiresAtLabel}."
@@ -2470,6 +2562,10 @@ msgstr "Resetting..."
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Retry"
 msgstr "Retry"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Retry wallet creation"
+#~ msgstr "Retry wallet creation"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
@@ -2617,6 +2713,7 @@ msgstr "selected"
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 msgstr "Selected wallet does not match the connected account. Reconnect your wallet and try again."
 
@@ -2643,6 +2740,10 @@ msgstr "Send"
 msgid "Send failed"
 msgstr "Send failed"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Send native USDC to this address. It will be deposited to Hyperliquid automatically."
+#~ msgstr "Send native USDC to this address. It will be deposited to Hyperliquid automatically."
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "Send Tokens"
@@ -2650,6 +2751,14 @@ msgstr "Send Tokens"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send tokens to another account on the Hyperliquid L1."
 msgstr "Send tokens to another account on the Hyperliquid L1."
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Send USDC on Arbitrum One to this address."
+#~ msgstr "Send USDC on Arbitrum One to this address."
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Send USDC on Arbitrum One to this address. It will be deposited to Hyperliquid automatically."
+#~ msgstr "Send USDC on Arbitrum One to this address. It will be deposited to Hyperliquid automatically."
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
@@ -2843,6 +2952,21 @@ msgstr "Slippage"
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Slippage tolerance"
 msgstr "Slippage tolerance"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Smart wallet client not ready"
+msgstr "Smart wallet client not ready"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#~ msgid "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."
+#~ msgstr "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Smart wallet deposits are not enabled for this network."
+msgstr "Smart wallet deposits are not enabled for this network."
 
 #: src/components/trade/chart/tradingview-chart.tsx
 msgid "Something went wrong"
@@ -3427,8 +3551,25 @@ msgstr "Type"
 #~ msgid "Unable to close position."
 #~ msgstr "Unable to close position."
 
-#: src/lib/errors/format.ts
+#: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to load Arbitrum USDC balance"
+msgstr "Unable to load Arbitrum USDC balance"
+
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to prepare USDC permit"
+msgstr "Unable to prepare USDC permit"
+
+#. placeholder {0}: config.chainName
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
+msgstr "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
+
+#: src/lib/errors/format.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 
@@ -3436,6 +3577,7 @@ msgstr "Unable to switch wallet to Arbitrum. Switch networks in your wallet and 
 msgid "Unified Account"
 msgstr "Unified Account"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
@@ -3488,6 +3630,18 @@ msgstr "USD Value"
 msgid "USDC"
 msgstr "USDC"
 
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "USDC deposit submitted to Hyperliquid"
+msgstr "USDC deposit submitted to Hyperliquid"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "USDC received. Depositing to Hyperliquid..."
+#~ msgstr "USDC received. Depositing to Hyperliquid..."
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "USDC will be sent to this Arbitrum address."
+msgstr "USDC will be sent to this Arbitrum address."
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Use a different phone link"
 msgstr "Use a different phone link"
@@ -3529,9 +3683,17 @@ msgstr "Volume"
 #~ msgid "waiting"
 #~ msgstr "waiting"
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Waiting for at least 5 USDC to arrive."
+#~ msgstr "Waiting for at least 5 USDC to arrive."
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Waiting for chain confirmation"
 msgstr "Waiting for chain confirmation"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Waiting for native USDC to arrive on Arbitrum."
+msgstr "Waiting for native USDC to arrive on Arbitrum."
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -3547,6 +3709,7 @@ msgstr "Waiting for trades..."
 msgid "Wallet ({0})"
 msgstr "Wallet ({0})"
 
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet client not ready"
 msgstr "Wallet client not ready"
@@ -3568,13 +3731,19 @@ msgstr "Wallet connection request was rejected."
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
 msgstr "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
 
+#. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
-msgstr "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
+msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
+msgstr "Wallet is not connected to {0}. Switch networks in your wallet and retry."
+
+#: src/lib/hyperliquid/use-deposit.ts
+#~ msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
+#~ msgstr "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
@@ -3584,6 +3753,10 @@ msgstr "Wallet not connected"
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
 msgstr "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Wallet USDC"
+#~ msgstr "Wallet USDC"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect pairing ready"
@@ -3623,6 +3796,10 @@ msgstr "will arrive in {0}"
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "Withdraw"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdraw to Arbitrum"
+msgstr "Withdraw to Arbitrum"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Withdrawable"

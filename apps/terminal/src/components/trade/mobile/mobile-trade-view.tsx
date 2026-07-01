@@ -454,16 +454,12 @@ export function MobileTradeView({ className, embedded }: Props) {
 						<div className={cn(embedded ? "space-y-1.5" : "space-y-2")}>
 							<Slider
 								thumbSize={sliderThumbSize}
-								value={[sliderValue]}
-								onValueChange={(v: number | readonly number[]) => {
-									const val = Array.isArray(v) ? v[0] : v;
-									if (typeof val !== "number") return;
+								value={sliderValue}
+								onValueChange={(val: number) => {
 									setIsDraggingSlider(true);
 									setDragSliderValue(val);
 								}}
-								onValueCommitted={(v: number | readonly number[]) => {
-									const val = Array.isArray(v) ? v[0] : v;
-									if (typeof val !== "number") return;
+								onValueCommitted={(val: number) => {
 									setIsDraggingSlider(false);
 									applySizeFromPercent(val);
 								}}

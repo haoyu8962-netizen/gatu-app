@@ -23,12 +23,15 @@ const walletConnectConnectSources = [
 	"https://pulse.walletconnect.org",
 ] as const;
 
+const smartWalletConnectSources = ["https://rpc.zerodev.app"] as const;
+
 const bridgeConnectSources = [
 	"https://li.quest",
 	"https://api.tenderly.co",
 	"https://gas.api.infura.io",
 	"https://ethereum-rpc.publicnode.com",
 	"https://arb1.arbitrum.io",
+	"https://sepolia-rollup.arbitrum.io",
 	"https://eth.merkle.io",
 	"https://polygon-rpc.com",
 	"https://mainnet.optimism.io",
@@ -71,6 +74,7 @@ export const cspDirectives: Record<string, string> = {
 		...hyperliquidConnectSources,
 		...privyConnectSources,
 		...walletConnectConnectSources,
+		...smartWalletConnectSources,
 		...bridgeConnectSources,
 	].join(" "),
 	"worker-src": "'self' blob:",

@@ -7,6 +7,7 @@ import {
 	WalletIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
+import type { Chain } from "viem";
 import { NETWORKS, type NetworkId } from "@/config/networks";
 import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";
@@ -16,16 +17,17 @@ interface NetworkSelectProps {
 	value: NetworkId;
 	onChange: (value: NetworkId) => void;
 	disabled?: boolean;
+	displayName?: string;
 }
 
-export function NetworkSelect({ label, value, onChange, disabled }: NetworkSelectProps) {
+export function NetworkSelect({ label, value, onChange, disabled, displayName }: NetworkSelectProps) {
 	return (
 		<Select
 			label={label as string}
 			value={value}
 			onValueChange={(v) => v && onChange(v as NetworkId)}
 			disabled={disabled}
-			options={NETWORKS.map((n) => ({ value: n.id, label: n.name }))}
+			options={NETWORKS.map((n) => ({ value: n.id, label: displayName && n.id === value ? displayName : n.name }))}
 		/>
 	);
 }
@@ -36,6 +38,7 @@ interface StatusScreenProps {
 	heading: React.ReactNode;
 	description?: React.ReactNode;
 	txHash?: string;
+	txChain?: Chain;
 	children?: React.ReactNode;
 	onClose?: () => void;
 	closable?: boolean;
@@ -47,11 +50,12 @@ export function StatusScreen({
 	heading,
 	description,
 	txHash,
+	txChain,
 	children,
 	onClose,
 	closable = true,
 }: StatusScreenProps) {
-	const explorerUrl = txHash ? getExplorerTxUrl(txHash) : null;
+	const explorerUrl = txHash ? getExplorerTxUrl(txHash, txChain) : null;
 
 	return (
 		<Modal open onOpenChange={closable ? onClose : undefined}>
