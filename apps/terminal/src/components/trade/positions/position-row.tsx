@@ -171,6 +171,7 @@ export function PositionRow({
 				<AssetBadge
 					coin={p.coin}
 					side={isLong ? "buy" : "sell"}
+					fit
 					onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
 					aria-label={
 						isLong
