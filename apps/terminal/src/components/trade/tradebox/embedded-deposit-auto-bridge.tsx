@@ -10,6 +10,8 @@ import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { getPrivyEmailAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
 
 const AUTO_BRIDGE_TOAST_ID = "embedded-deposit-auto-bridge";
+const AUTO_BRIDGE_RETRY_DELAY_MS = 30_000;
+const AUTO_BRIDGE_MAX_RETRY_DELAY_MS = 5 * 60_000;
 
 export function EmbeddedDepositAutoBridge() {
 	const { user, embeddedWalletAddress } = useWalletSession();
@@ -26,12 +28,17 @@ export function EmbeddedDepositAutoBridge() {
 	const depositEmbeddedWalletAddress = embeddedWalletAddress ?? ensuredEmbeddedWalletAddress;
 	const isEmbeddedDeposit = !!emailAddress && (shouldUsePrivyEmbeddedWallet(user) || shouldUseEmailEmbeddedWallet);
 	const attemptKeyRef = useRef<string | null>(null);
+	const lastEligibleKeyRef = useRef<string | null>(null);
+	const retryKeyRef = useRef<string | null>(null);
+	const retryCountRef = useRef(0);
+	const retryTimeoutRef = useRef<number | null>(null);
 
 	const {
 		maxDepositRaw,
 		status: depositStatus,
 		error: depositError,
 		deposit,
+		reset: resetDeposit,
 		smartDepositEnabled,
 	} = useDeposit({
 		balanceEnabled: isEmbeddedDeposit && !!depositEmbeddedWalletAddress,
@@ -45,26 +52,95 @@ export function EmbeddedDepositAutoBridge() {
 		void ensureEmailEmbeddedWallet().catch(() => {});
 	}, [ensureEmailEmbeddedWallet, isCreatingEmbeddedWallet, isEmbeddedDeposit, needsEmbeddedWallet]);
 
-	const shouldDeposit =
+	const eligibleDepositKey =
 		isEmbeddedDeposit &&
 		smartDepositEnabled &&
-		!!depositEmbeddedWalletAddress &&
 		!needsEmbeddedWallet &&
 		!isCreatingEmbeddedWallet &&
 		!embeddedWalletError &&
-		depositStatus === "idle" &&
+		depositEmbeddedWalletAddress &&
 		maxDepositRaw !== undefined &&
-		maxDepositRaw >= MIN_DEPOSIT_USDC;
+		maxDepositRaw >= MIN_DEPOSIT_USDC
+			? `${depositEmbeddedWalletAddress}:${maxDepositRaw.toString()}`
+			: null;
 
 	useEffect(() => {
-		if (!shouldDeposit || maxDepositRaw === undefined || !depositEmbeddedWalletAddress) return;
+		return () => {
+			if (retryTimeoutRef.current) window.clearTimeout(retryTimeoutRef.current);
+		};
+	}, []);
 
-		const attemptKey = `${depositEmbeddedWalletAddress}:${maxDepositRaw.toString()}`;
-		if (attemptKeyRef.current === attemptKey) return;
+	useEffect(() => {
+		if (lastEligibleKeyRef.current !== eligibleDepositKey) {
+			lastEligibleKeyRef.current = eligibleDepositKey;
+			retryCountRef.current = 0;
+		}
 
-		attemptKeyRef.current = attemptKey;
+		if (retryTimeoutRef.current && retryKeyRef.current !== eligibleDepositKey) {
+			window.clearTimeout(retryTimeoutRef.current);
+			retryTimeoutRef.current = null;
+			retryKeyRef.current = null;
+			retryCountRef.current = 0;
+		}
+
+		if (!eligibleDepositKey || maxDepositRaw === undefined) {
+			attemptKeyRef.current = null;
+			if (retryTimeoutRef.current) {
+				window.clearTimeout(retryTimeoutRef.current);
+				retryTimeoutRef.current = null;
+			}
+			retryKeyRef.current = null;
+			retryCountRef.current = 0;
+			if (depositStatus === "success" || depositStatus === "error") resetDeposit();
+			return;
+		}
+
+		if (depositStatus === "pending" || depositStatus === "confirming") return;
+
+		if (depositStatus === "success") {
+			if (retryTimeoutRef.current) {
+				window.clearTimeout(retryTimeoutRef.current);
+				retryTimeoutRef.current = null;
+			}
+			retryKeyRef.current = null;
+			retryCountRef.current = 0;
+
+			if (attemptKeyRef.current !== eligibleDepositKey) {
+				attemptKeyRef.current = null;
+				resetDeposit();
+			}
+			return;
+		}
+
+		if (depositStatus === "error") {
+			if (attemptKeyRef.current !== eligibleDepositKey) {
+				attemptKeyRef.current = null;
+				resetDeposit();
+				return;
+			}
+
+			if (!retryTimeoutRef.current) {
+				retryKeyRef.current = eligibleDepositKey;
+				const retryDelay = Math.min(
+					AUTO_BRIDGE_RETRY_DELAY_MS * 2 ** Math.min(retryCountRef.current, 3),
+					AUTO_BRIDGE_MAX_RETRY_DELAY_MS,
+				);
+				retryCountRef.current += 1;
+				retryTimeoutRef.current = window.setTimeout(() => {
+					retryTimeoutRef.current = null;
+					retryKeyRef.current = null;
+					attemptKeyRef.current = null;
+					resetDeposit();
+				}, retryDelay);
+			}
+			return;
+		}
+
+		if (attemptKeyRef.current === eligibleDepositKey) return;
+
+		attemptKeyRef.current = eligibleDepositKey;
 		deposit(formatUnits(maxDepositRaw, USDC_DECIMALS));
-	}, [deposit, depositEmbeddedWalletAddress, maxDepositRaw, shouldDeposit]);
+	}, [deposit, depositStatus, eligibleDepositKey, maxDepositRaw, resetDeposit]);
 
 	useEffect(() => {
 		if (!isEmbeddedDeposit) return;

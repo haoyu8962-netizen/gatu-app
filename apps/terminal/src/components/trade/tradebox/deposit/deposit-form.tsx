@@ -58,10 +58,7 @@ export function DepositForm({
 			};
 		}
 		if (balanceStatus === "loading") {
-			return {
-				tone: "muted" as const,
-				text: <Trans>Waiting for native USDC to arrive on Arbitrum.</Trans>,
-			};
+			return null;
 		}
 		if (balanceStatus === "error") {
 			return {
@@ -82,10 +79,7 @@ export function DepositForm({
 				),
 			};
 		}
-		return {
-			tone: "success" as const,
-			text: <Trans>Detected {balance} USDC. Depositing to Hyperliquid automatically...</Trans>,
-		};
+		return null;
 	})();
 	const fundingAddressPanel = fundingAddress ? (
 		<div className="flex min-h-10 items-center justify-center gap-2 rounded-xs bg-fill-weak px-3 py-2">

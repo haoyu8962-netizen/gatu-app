@@ -326,6 +326,14 @@ msgstr "Bridge failed"
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
+msgstr "Bridge2 deposit was not credited. Check Arbiscan before retrying."
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Bridge2 rejected the USDC permit. Retrying automatically."
+msgstr "Bridge2 rejected the USDC permit. Retrying automatically."
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Bridging in progress"
 #~ msgstr "Bridging in progress"
@@ -932,8 +940,8 @@ msgid "Destination address"
 msgstr "Destination address"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
-msgstr "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
+#~ msgid "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
+#~ msgstr "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Direct"
@@ -3692,8 +3700,8 @@ msgid "Waiting for chain confirmation"
 msgstr "Waiting for chain confirmation"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Waiting for native USDC to arrive on Arbitrum."
-msgstr "Waiting for native USDC to arrive on Arbitrum."
+#~ msgid "Waiting for native USDC to arrive on Arbitrum."
+#~ msgstr "Waiting for native USDC to arrive on Arbitrum."
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -3743,6 +3751,7 @@ msgstr "Wallet is not connected to {0}. Switch networks in your wallet and retry
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts

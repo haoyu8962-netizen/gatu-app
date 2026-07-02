@@ -2,8 +2,16 @@ import { t } from "@lingui/core/macro";
 import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
 import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Account, Chain, Hash, Hex, PublicClient, Transport, WalletClient } from "viem";
-import { createWalletClient, custom, encodeFunctionData, erc20Abi, formatUnits, parseUnits } from "viem";
+import type { Account, Chain, Hash, Hex, PublicClient, TransactionReceipt, Transport, WalletClient } from "viem";
+import {
+	createWalletClient,
+	custom,
+	decodeEventLog,
+	encodeFunctionData,
+	erc20Abi,
+	formatUnits,
+	parseUnits,
+} from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { useChainId, usePublicClient } from "wagmi";
 import { BRIDGE2_ABI, DEPOSIT_NETWORKS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
@@ -526,6 +534,51 @@ async function createBridge2PermitCall({
 	});
 }
 
+function assertSmartBridge2DepositReceipt({
+	amountRaw,
+	config,
+	receipt,
+	user,
+}: {
+	amountRaw: bigint;
+	config: DepositNetworkConfig;
+	receipt: TransactionReceipt;
+	user: `0x${string}`;
+}) {
+	let hasMatchingDeposit = false;
+	let hasMatchingFailedPermit = false;
+
+	for (const log of receipt.logs) {
+		if (!hasSameWalletAddress(log.address, config.bridge2)) continue;
+
+		try {
+			const event = decodeEventLog({
+				abi: BRIDGE2_ABI,
+				data: log.data,
+				topics: log.topics,
+			});
+
+			if (event.eventName === "Deposit") {
+				const args = event.args as { user?: string; usd?: bigint | number | string };
+				if (hasSameWalletAddress(args.user, user) && args.usd !== undefined && toBigInt(args.usd) === amountRaw) {
+					hasMatchingDeposit = true;
+				}
+			}
+
+			if (event.eventName === "FailedPermitDeposit") {
+				const args = event.args as { user?: string; usd?: bigint | number | string };
+				if (hasSameWalletAddress(args.user, user) && args.usd !== undefined && toBigInt(args.usd) === amountRaw) {
+					hasMatchingFailedPermit = true;
+				}
+			}
+		} catch {}
+	}
+
+	if (hasMatchingDeposit) return;
+	if (hasMatchingFailedPermit) throw new Error(t`Bridge2 rejected the USDC permit. Retrying automatically.`);
+	throw new Error(t`Bridge2 deposit was not credited. Check Arbiscan before retrying.`);
+}
+
 async function providerHasTransaction(provider: Eip1193Provider | undefined, hash: Hash) {
 	if (!provider) return false;
 
@@ -789,6 +842,7 @@ export function useDeposit({
 				const amountRaw = parseUnits(amount, USDC_DECIMALS);
 				let hash: Hash;
 				let provider: Eip1193Provider | undefined;
+				let smartDepositUser: `0x${string}` | undefined;
 
 				if (mode === "smart") {
 					if (!depositConfig.smartDepositEnabled) {
@@ -801,6 +855,7 @@ export function useDeposit({
 						publicClient,
 						wallet: depositWallet,
 					});
+					smartDepositUser = ready.address;
 					const data = await createBridge2PermitCall({
 						amountRaw,
 						config: depositConfig,
@@ -846,7 +901,16 @@ export function useDeposit({
 				await waitForBroadcastedTransaction(publicClient, hash, { provider });
 
 				if (operationIdRef.current !== operationId) return;
-				await waitForConfirmedReceipt(publicClient, hash);
+				const receipt = await waitForConfirmedReceipt(publicClient, hash);
+				if (mode === "smart") {
+					if (!smartDepositUser) throw new Error(t`Wallet not connected`);
+					assertSmartBridge2DepositReceipt({
+						amountRaw,
+						config: depositConfig,
+						receipt,
+						user: smartDepositUser,
+					});
+				}
 
 				if (operationIdRef.current !== operationId) return;
 				setState({ status: "success", error: null, hash });

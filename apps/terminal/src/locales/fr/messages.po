@@ -326,6 +326,14 @@ msgstr "Échec du bridge"
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "Transférez des USDC depuis Arbitrum ou d'autres chaînes vers votre compte Hyperliquid."
 
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
+msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Bridge2 rejected the USDC permit. Retrying automatically."
+msgstr ""
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Bridging in progress"
 #~ msgstr ""
@@ -932,8 +940,8 @@ msgid "Destination address"
 msgstr "Adresse de destination"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
-msgstr "{balance} USDC détectés. Dépôt automatique vers Hyperliquid..."
+#~ msgid "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
+#~ msgstr "{balance} USDC détectés. Dépôt automatique vers Hyperliquid..."
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Direct"
@@ -3692,8 +3700,8 @@ msgid "Waiting for chain confirmation"
 msgstr "En attente de confirmation on-chain"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Waiting for native USDC to arrive on Arbitrum."
-msgstr "En attente de l'arrivée de l'USDC natif sur Arbitrum."
+#~ msgid "Waiting for native USDC to arrive on Arbitrum."
+#~ msgstr "En attente de l'arrivée de l'USDC natif sur Arbitrum."
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -3743,6 +3751,7 @@ msgstr ""
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
