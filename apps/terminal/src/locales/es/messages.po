@@ -3174,6 +3174,7 @@ msgid "Switch to {displayName} market, short position"
 msgstr "Cambiar al mercado {displayName}, posición corta"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Switch to Arbitrum"
@@ -3823,8 +3824,8 @@ msgid "Withdrawal submitted"
 msgstr "Retiro enviado"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-msgid "Wrong network"
-msgstr "Red incorrecta"
+#~ msgid "Wrong network"
+#~ msgstr "Red incorrecta"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Wrong QR type"

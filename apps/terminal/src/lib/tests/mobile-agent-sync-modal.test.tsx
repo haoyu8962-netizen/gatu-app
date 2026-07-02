@@ -273,9 +273,9 @@ describe("MobileAgentSyncModal", () => {
 					dark: "#111827",
 					light: "#FFFFFF",
 				},
-				errorCorrectionLevel: "M",
+				errorCorrectionLevel: "L",
 				margin: 1,
-				width: 224,
+				width: 320,
 			}),
 		);
 		expect(PHONE_LINK).toContain("#ht-mobile-sync=");

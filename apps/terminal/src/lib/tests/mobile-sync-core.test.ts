@@ -13,7 +13,6 @@ import {
 	MOBILE_SYNC_PAYLOAD_TTL_MS,
 	MOBILE_SYNC_ROUTE_PATH,
 	type MobileAgentSyncPlaintext,
-	type MobileSyncEnvelope,
 	MobileSyncError,
 	parseMobileSyncUrl,
 	readAndClearMobileSyncEnvelope,
@@ -61,6 +60,7 @@ describe("mobile sync core", () => {
 		expect(JSON.stringify(sync.envelope).toLowerCase()).not.toContain(USER_ADDRESS.toLowerCase());
 		expect(sync.url).not.toContain(AGENT_PRIVATE_KEY);
 		expect(sync.url.toLowerCase()).not.toContain(USER_ADDRESS.toLowerCase());
+		expect(sync.url.length).toBeLessThan(560);
 		expect(sync.agentName).toBe(createMobileAgentName(sync.agentValidUntilMs));
 
 		const imported = await importMobileAgentSyncUrl(sync.url, {
@@ -228,47 +228,51 @@ describe("mobile sync core", () => {
 		});
 	});
 
-	it("rejects mismatched envelope/plaintext fields and agent private keys", async () => {
+	it("rejects stale plaintext versions, invalid agent keys, and overlong validity", async () => {
 		const sync = await createSyncFixture();
 		const plaintext: MobileAgentSyncPlaintext = {
-			v: 1,
-			type: "gatu.mobile-agent",
-			syncId: sync.syncId,
+			v: 2,
 			issuerOrigin: APP_ORIGIN,
 			env: "Mainnet",
 			userAddress: USER_ADDRESS,
-			agentAddress: USER_ADDRESS,
 			agentPrivateKey: AGENT_PRIVATE_KEY,
-			agentNameBase: MOBILE_AGENT_NAME_BASE,
-			agentName: sync.agentName,
 			agentValidUntilMs: sync.agentValidUntilMs,
-			createdAtMs: NOW_MS,
-			expiresAtMs: sync.expiresAtMs,
 		};
 
 		expect(() =>
-			validateMobileAgentSyncPlaintext(plaintext, sync.envelope, {
+			validateMobileAgentSyncPlaintext({ ...plaintext, v: 1 }, sync.envelope, {
 				currentOrigin: APP_ORIGIN,
 				nowMs: NOW_MS,
 			}),
 		).toThrow(MobileSyncError);
 
-		const mismatchedEnvelope: MobileSyncEnvelope = { ...sync.envelope, syncId: "AAAAAAAAAAAAAAAAAAAAAA" };
 		expect(() =>
-			validateMobileAgentSyncPlaintext({ ...plaintext, agentAddress: sync.agentAddress }, mismatchedEnvelope, {
+			validateMobileAgentSyncPlaintext({ ...plaintext, agentPrivateKey: `0x${"ff".repeat(32)}` }, sync.envelope, {
 				currentOrigin: APP_ORIGIN,
 				nowMs: NOW_MS,
 			}),
+		).toThrow(MobileSyncError);
+
+		expect(() =>
+			validateMobileAgentSyncPlaintext(
+				{
+					...plaintext,
+					agentValidUntilMs: sync.envelope.createdAtMs + MOBILE_AGENT_VALIDITY_MS + MOBILE_SYNC_PAYLOAD_TTL_MS + 1,
+				},
+				sync.envelope,
+				{ currentOrigin: APP_ORIGIN, nowMs: NOW_MS },
+			),
 		).toThrow(MobileSyncError);
 	});
 
-	it("rejects malformed envelopes", async () => {
-		const sync = await createSyncFixture();
-
-		expect(() =>
-			parseMobileSyncUrl(
-				`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}#${MOBILE_SYNC_FRAGMENT_KEY}=${btoa(JSON.stringify({ ...sync.envelope, cipher: { ...sync.envelope.cipher, iv: "short" } }))}&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${VALID_KEY}`,
-			),
-		).toThrow(MobileSyncError);
+	it("rejects malformed and legacy-format envelopes", () => {
+		// truncated binary payloads and a v1-era JSON envelope ("eyJ2IjoxfQ" = base64url of {"v":1})
+		for (const encoded of ["Ag", "eyJ2IjoxfQ", "A".repeat(80)]) {
+			expect(() =>
+				parseMobileSyncUrl(
+					`${APP_ORIGIN}${MOBILE_SYNC_ROUTE_PATH}#${MOBILE_SYNC_FRAGMENT_KEY}=${encoded}&${MOBILE_SYNC_KEY_FRAGMENT_KEY}=${VALID_KEY}`,
+				),
+			).toThrow(MobileSyncError);
+		}
 	});
 });

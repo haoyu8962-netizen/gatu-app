@@ -3174,6 +3174,7 @@ msgid "Switch to {displayName} market, short position"
 msgstr "التبديل إلى سوق {displayName}، مركز Short"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Switch to Arbitrum"
@@ -3823,8 +3824,8 @@ msgid "Withdrawal submitted"
 msgstr "تم إرسال السحب"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-msgid "Wrong network"
-msgstr "شبكة خاطئة"
+#~ msgid "Wrong network"
+#~ msgstr "شبكة خاطئة"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Wrong QR type"

@@ -71,9 +71,9 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 			try {
 				const QRCode = await import("qrcode");
 				const dataUrl = await QRCode.toDataURL(qrText, {
-					errorCorrectionLevel: "M",
+					errorCorrectionLevel: "L",
 					margin: 1,
-					width: 224,
+					width: 320,
 					color: {
 						dark: "#111827",
 						light: "#FFFFFF",
@@ -345,13 +345,13 @@ function ReadySyncPanel({
 				{showQr && (
 					<div className="mt-3 flex justify-center rounded-8 border border-stroke-weak bg-white p-3">
 						{qrDataUrl ? (
-							<img src={qrDataUrl} alt={t`Phone link QR`} className="size-56 max-w-full" />
+							<img src={qrDataUrl} alt={t`Phone link QR`} className="size-80 max-w-full" />
 						) : qrError ? (
-							<div className="flex h-56 w-56 items-center justify-center text-center text-xs font-semibold text-error">
+							<div className="flex h-80 w-80 items-center justify-center text-center text-xs font-semibold text-error">
 								{qrError}
 							</div>
 						) : (
-							<div className="flex h-56 w-56 items-center justify-center">
+							<div className="flex h-80 w-80 items-center justify-center">
 								<SpinnerGapIcon className="size-5 animate-spin text-brand" aria-hidden />
 							</div>
 						)}
