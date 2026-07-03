@@ -57,7 +57,6 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		tokenUsdPrices: allMidsEvent?.mids,
-		allowSpotStateForPerps: dex === "",
 	});
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);

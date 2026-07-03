@@ -18,7 +18,7 @@ import { WITHDRAWAL_FEE_USD } from "@/config/contracts";
 import { NETWORKS } from "@/config/networks";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
@@ -110,7 +110,8 @@ export function DepositModal() {
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		withdrawable: perpWithdrawable,
-	} = useDefaultDexBalances();
+		dex,
+	} = useSelectedDexBalances();
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,
@@ -122,7 +123,7 @@ export function DepositModal() {
 	const withdrawable = String(accountSummary.withdrawable);
 	const withdrawableNum = accountSummary.withdrawable;
 	const showSpotFundsNotice =
-		!accountSummary.usesSpotStateForPerps && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
+		dex === "" && !accountSummary.usesSpotStateForPerps && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 
 	const {
 		mutate: withdraw,

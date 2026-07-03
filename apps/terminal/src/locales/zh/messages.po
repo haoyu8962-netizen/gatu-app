@@ -128,6 +128,11 @@ msgstr "添加"
 msgid "Add {0} to favorites"
 msgstr "将 {0} 加入自选"
 
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Add funds"
 #~ msgstr "添加资金"
@@ -901,6 +906,10 @@ msgstr "充值成功"
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
 msgstr "充值交易已广播，但确认超时。请先在 Arbiscan 上检查后再重试。"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
+msgstr ""
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3459,6 +3468,7 @@ msgstr "TradingView"
 msgid "Transaction breakdown"
 msgstr "交易明细"
 
+#: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction reverted on Arbitrum"
 msgstr ""

@@ -75,7 +75,7 @@ describe("order entry balances", () => {
 		expect(derived.maxSize).toBe(0);
 	});
 
-	it("keeps builder perp order availability isolated from unified spot balances", () => {
+	it("uses spot clearinghouse USDC for unified builder perp order availability", () => {
 		const derived = deriveOrderEntry({
 			isConnected: true,
 			market: builderPerpMarket,
@@ -85,6 +85,25 @@ describe("order entry balances", () => {
 			sizeInput: "",
 			spotBalances: [usdcBalance],
 			accountAbstraction: "unifiedAccount",
+			maxTradeSzs: [0, 0],
+			availableToTrade: [0, 0],
+		});
+
+		expect(derived.availableBalance).toBeCloseTo(549.99);
+		expect(derived.displayAvailableBalance).toBeCloseTo(549.99);
+		expect(derived.maxSize).toBeCloseTo(5.49);
+	});
+
+	it("keeps standard builder perp order availability isolated from spot balances", () => {
+		const derived = deriveOrderEntry({
+			isConnected: true,
+			market: builderPerpMarket,
+			side: "buy",
+			conversionPrice: 100,
+			sizeMode: "base",
+			sizeInput: "",
+			spotBalances: [usdcBalance],
+			accountAbstraction: "disabled",
 			maxTradeSzs: [0, 0],
 			availableToTrade: [0, 0],
 		});

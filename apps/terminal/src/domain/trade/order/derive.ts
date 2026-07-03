@@ -75,7 +75,7 @@ function getDisplayAvailableBalance(
 
 export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const isSpotMarket = inputs.market?.kind === "spot";
-	const isMainPerpMarket = inputs.market?.kind === "perp";
+	const isPerpMarket = inputs.market?.kind === "perp" || inputs.market?.kind === "builderPerp";
 	const isBuy = inputs.side === "buy";
 	const capabilities = getMarketCapabilities(inputs.market);
 	const szDecimals = inputs.market?.szDecimals ?? 0;
@@ -86,7 +86,7 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const spotBalance = getSpotBalanceData(inputs.spotBalances, inputs.market, inputs.spotAvailableAfterMaintenance);
 	const availableBalanceToken = getAvailableBalanceToken(inputs.market, inputs.side);
 	const usesSharedQuoteBalance =
-		isMainPerpMarket && isQuoteBalanceSharedWithPerps(inputs.accountAbstraction) && spotBalance.quoteAvailable > 0;
+		isPerpMarket && isQuoteBalanceSharedWithPerps(inputs.accountAbstraction) && spotBalance.quoteAvailable > 0;
 
 	const [availableLong, availableShort] = inputs.availableToTrade ?? [0, 0];
 	const rawAvailableBalance = getAvailableBalance(isSpotMarket, isBuy, spotBalance, availableLong, availableShort);
@@ -96,7 +96,7 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		inputs.accountAbstraction,
 		spotBalance,
 		availableBalance,
-		isMainPerpMarket,
+		isPerpMarket,
 	);
 
 	const maxSize = getMaxSizeForOrderEntry({
