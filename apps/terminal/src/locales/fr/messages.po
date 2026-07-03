@@ -483,6 +483,7 @@ msgstr "Graphique"
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Close"
 msgstr "Fermer"
 

@@ -110,10 +110,10 @@ export function AssetDisplay({
 	}
 
 	return (
-		<span className={cn("inline-flex items-center gap-1", className)}>
+		<span className={cn("inline-flex min-w-0 items-center gap-1", className)}>
 			{icon}
 			{subtitle ? (
-				<span className="flex flex-col items-start">
+				<span className="flex min-w-0 flex-col items-start">
 					<span className={nameClassName}>{name}</span>
 					<span className={subtitleClassName}>{subtitle}</span>
 				</span>

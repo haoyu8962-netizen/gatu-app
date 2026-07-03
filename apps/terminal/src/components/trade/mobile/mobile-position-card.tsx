@@ -119,8 +119,8 @@ export function MobilePositionCard({
 
 	return (
 		<div className="rounded-xs border border-stroke-weak bg-surface overflow-hidden">
-			<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
-				<div className="flex items-center gap-2">
+			<div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-stroke-weak">
+				<div className="flex min-w-0 flex-1 items-center gap-2">
 					<AssetBadge
 						coin={p.coin}
 						side={isLong ? "buy" : "sell"}
@@ -130,13 +130,14 @@ export function MobilePositionCard({
 								? t`Switch to ${displayName} market, long position`
 								: t`Switch to ${displayName} market, short position`
 						}
-						nameClassName="text-sm"
+						className="min-w-0 overflow-hidden"
+						nameClassName="min-w-0 truncate text-sm"
 					/>
-					<span className={cn("text-2xs font-medium uppercase", isLong ? "text-success" : "text-error")}>
+					<span className={cn("shrink-0 text-2xs font-medium uppercase", isLong ? "text-success" : "text-error")}>
 						{isLong ? t`Long` : t`Short`}
 					</span>
 				</div>
-				<div className={cn("text-xs tabular-nums font-medium", pnlClass)}>
+				<div className={cn("shrink-0 text-right text-xs tabular-nums font-medium", pnlClass)}>
 					{formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })}
 					<span className="text-2xs ml-1 font-normal text-fg-muted">{formatPercent(p.returnOnEquity, 1)}</span>
 				</div>
