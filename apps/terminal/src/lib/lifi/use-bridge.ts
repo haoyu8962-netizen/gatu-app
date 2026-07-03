@@ -89,6 +89,22 @@ function getAllProcessDetails(route: RouteExtended): ProcessDetail[] {
 	return details;
 }
 
+function isRouteDone(route: RouteExtended): boolean {
+	let hasProcess = false;
+	for (const step of route.steps) {
+		if (!step.execution) continue;
+		for (const process of step.execution.process) {
+			hasProcess = true;
+			if (process.status !== "DONE") return false;
+		}
+	}
+	return hasProcess;
+}
+
+function getRouteToAmount(route: RouteExtended, fallback: string): string {
+	return route.steps.at(-1)?.execution?.toAmount ?? fallback;
+}
+
 export function useBridgeExecutor() {
 	const [state, setState] = useState<BridgeState>(INITIAL_STATE);
 	const executingRef = useRef(false);
@@ -109,6 +125,8 @@ export function useBridgeExecutor() {
 			processDetails: [],
 		});
 
+		let routeMarkedDone = false;
+
 		try {
 			const route = convertQuoteToRoute(quote.step);
 
@@ -116,16 +134,31 @@ export function useBridgeExecutor() {
 				updateRouteHook(updatedRoute) {
 					const txHash = getLastTxHash(updatedRoute);
 					const statusText = getProcessStatusText(updatedRoute);
+					const processDetails = getAllProcessDetails(updatedRoute);
+					if (isRouteDone(updatedRoute)) {
+						routeMarkedDone = true;
+						setState({
+							status: "success",
+							statusText: "Bridge complete",
+							error: null,
+							txHash,
+							receivedAmount: getRouteToAmount(updatedRoute, quote.toAmount),
+							startTime: startedAt,
+							endTime: Date.now(),
+							processDetails,
+						});
+						return;
+					}
 					setState((prev) => ({
 						...prev,
 						statusText,
 						txHash: txHash ?? prev.txHash,
-						processDetails: getAllProcessDetails(updatedRoute),
+						processDetails,
 					}));
 				},
 			});
 
-			const toAmount = result.steps.at(-1)?.execution?.toAmount ?? quote.toAmount;
+			const toAmount = getRouteToAmount(result, quote.toAmount);
 
 			setState({
 				status: "success",
@@ -139,6 +172,7 @@ export function useBridgeExecutor() {
 			});
 			return "success";
 		} catch (err) {
+			if (routeMarkedDone) return "success";
 			const message = err instanceof Error ? err.message : "Bridge failed";
 			const isUserRejection =
 				message.includes("rejected") ||
