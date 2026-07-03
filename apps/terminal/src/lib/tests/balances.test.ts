@@ -124,7 +124,7 @@ describe("trade balances", () => {
 		expect(summary.perpWithdrawable).toBe(0);
 	});
 
-	it("uses maintenance-adjusted spot USDC for unified account withdrawable", () => {
+	it("keeps unified withdrawable initial-margin constrained while available tracks maintenance", () => {
 		const summary = getAccountBalanceSummary({
 			accountAbstraction: "unifiedAccount",
 			marginSummary: { accountValue: "0", totalMarginUsed: "0", totalRawUsd: "0" } as never,
@@ -135,8 +135,23 @@ describe("trade balances", () => {
 		});
 
 		expect(summary.available).toBeCloseTo(4947.18019669);
-		expect(summary.withdrawable).toBeCloseTo(4947.18019669);
-		expect(summary.spotUsdcWithdrawable).toBeCloseTo(4947.18019669);
+		expect(summary.withdrawable).toBeCloseTo(4964.51352969);
+		expect(summary.spotUsdcWithdrawable).toBeCloseTo(4964.51352969);
+	});
+
+	it("reports zero unified withdrawable when the L1 holds the full unified margin", () => {
+		const fullyHeld: SpotBalance = { coin: "USDC", token: 0, total: "488.239063", hold: "488.239063", entryNtl: "0" };
+		const summary = getAccountBalanceSummary({
+			accountAbstraction: "unifiedAccount",
+			marginSummary: { accountValue: "0", totalMarginUsed: "0", totalRawUsd: "0" } as never,
+			perpSummary: { accountValue: "0", totalMarginUsed: "0" },
+			withdrawable: "0",
+			spotBalances: [fullyHeld],
+			spotAvailableAfterMaintenance: [[0, "363.646903"]],
+		});
+
+		expect(summary.withdrawable).toBe(0);
+		expect(summary.available).toBeCloseTo(363.646903);
 	});
 
 	it("keeps standard or unknown accounts separated and flags funds sitting in spot", () => {

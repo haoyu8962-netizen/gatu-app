@@ -130,7 +130,10 @@ export function getAccountBalanceSummary({
 	const spotUsdcTotal = toSafeBig(usdcBalance?.total).toNumber();
 	const spotUsdcHold = toSafeBig(usdcBalance?.hold).toNumber();
 	const spotUsdcAvailable = getSpotAvailable(usdcBalance, spotAvailableAfterMaintenance);
-	const spotUsdcWithdrawable = toSafeBig(getSpotAvailableValue(usdcBalance, spotAvailableAfterMaintenance)).toNumber();
+	// Withdrawable is initial-margin constrained: the L1 locks unified-margin USDC via `hold`,
+	// so total - hold matches the official app. The maintenance-adjusted value
+	// (tokenToAvailableAfterMaintenance) is the distance to liquidation, not what can leave.
+	const spotUsdcWithdrawable = getAvailableFromTotals(usdcBalance?.total, usdcBalance?.hold);
 	const spotAccountValue = getSpotAccountValue(spotBalances, tokenUsdPrices);
 
 	const perpAccountValue = toSafeBig(marginSummary?.accountValue ?? perpSummary?.accountValue).toNumber();
