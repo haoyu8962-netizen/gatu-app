@@ -93,8 +93,8 @@ msgid "Account and wallet"
 msgstr "Cuenta y monedero"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Account Equity"
-msgstr "Patrimonio de la cuenta"
+#~ msgid "Account Equity"
+#~ msgstr "Patrimonio de la cuenta"
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
@@ -231,7 +231,6 @@ msgstr "Error en el depósito automático de USDC"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
@@ -244,7 +243,6 @@ msgid "Available {balance} USDC is below the minimum deposit. Send at least {min
 msgstr "{balance} USDC disponibles está por debajo del depósito mínimo. Envía al menos {minimumDeposit}."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Available funds are in Spot"
 msgstr "Fondos disponibles en Spot"
 
@@ -274,7 +272,6 @@ msgstr "De nuevo en línea"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Balance"
 msgstr "Saldo"
@@ -1081,7 +1078,6 @@ msgstr "Precio de entrada"
 msgid "Environment"
 msgstr "Entorno"
 
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "Patrimonio"
@@ -2254,7 +2250,6 @@ msgstr "Perpetuos"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Perps / Spot"
 msgstr "Perps / Spot"
@@ -2264,7 +2259,6 @@ msgid "Perps Account"
 msgstr "Cuenta Perps"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Equity"
 msgstr "Equidad de perpetuos"
 
@@ -2273,7 +2267,6 @@ msgid "Perps Overview"
 msgstr "Resumen de Perps"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Withdrawable"
 msgstr "Retirable de perpetuos"
 
@@ -2355,6 +2348,10 @@ msgstr "Portafolio"
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Portfolio Margin"
 msgstr "Margen de cartera"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Portfolio Value"
+msgstr "Valor de la cartera"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2777,8 +2774,8 @@ msgstr "Enviando..."
 #~ msgstr "enviado a Hyperliquid"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Separate Account Balances"
-msgstr "Saldos de cuentas separadas"
+#~ msgid "Separate Account Balances"
+#~ msgstr "Saldos de cuentas separadas"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Separate Accounts"
@@ -3024,7 +3021,6 @@ msgid "Spot Account"
 msgstr "Cuenta Spot"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Spot Available"
 msgstr "Disponible en Spot"
 
@@ -3501,6 +3497,12 @@ msgstr "Transferir USDC"
 msgid "Transferring..."
 msgstr "Transfiriendo..."
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfers between Spot and Perps are unavailable in unified account mode."
+msgstr "Las transferencias entre Spot y Perps no están disponibles en el modo de cuenta unificada."
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -3812,8 +3814,8 @@ msgid "Withdraw to Arbitrum"
 msgstr "Retirar a Arbitrum"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Withdrawable"
-msgstr "Retirable"
+#~ msgid "Withdrawable"
+#~ msgstr "Retirable"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"

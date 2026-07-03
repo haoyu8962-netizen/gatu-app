@@ -115,6 +115,7 @@ export function getAccountBalanceSummary({
 	spotBalances,
 	spotAvailableAfterMaintenance,
 	tokenUsdPrices,
+	allowSpotStateForPerps,
 }: {
 	accountAbstraction: AccountAbstraction | null | undefined;
 	marginSummary: MarginSummary | null | undefined;
@@ -123,9 +124,10 @@ export function getAccountBalanceSummary({
 	spotBalances: SpotBalance[] | null | undefined;
 	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null;
 	tokenUsdPrices?: TokenUsdPrices;
+	allowSpotStateForPerps?: boolean;
 }): AccountBalanceSummary {
 	const mode = getBalanceMode(accountAbstraction);
-	const usesSpotStateForPerps = isQuoteBalanceSharedWithPerps(accountAbstraction);
+	const usesSpotStateForPerps = (allowSpotStateForPerps ?? true) && isQuoteBalanceSharedWithPerps(accountAbstraction);
 	const usdcBalance = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
 	const spotUsdcTotal = toSafeBig(usdcBalance?.total).toNumber();
 	const spotUsdcHold = toSafeBig(usdcBalance?.hold).toNumber();

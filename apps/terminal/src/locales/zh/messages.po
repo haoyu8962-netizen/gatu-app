@@ -93,8 +93,8 @@ msgid "Account and wallet"
 msgstr "账户与钱包"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Account Equity"
-msgstr "账户权益"
+#~ msgid "Account Equity"
+#~ msgstr "账户权益"
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
@@ -231,7 +231,6 @@ msgstr "USDC 自动存款失败"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
@@ -244,7 +243,6 @@ msgid "Available {balance} USDC is below the minimum deposit. Send at least {min
 msgstr "可用 {balance} USDC 低于最低存款金额。请至少发送 {minimumDeposit}。"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Available funds are in Spot"
 msgstr "可用资金在现货账户"
 
@@ -274,7 +272,6 @@ msgstr "已恢复在线"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Balance"
 msgstr "余额"
@@ -1081,7 +1078,6 @@ msgstr "开仓价格"
 msgid "Environment"
 msgstr "环境"
 
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "净值"
@@ -2254,7 +2250,6 @@ msgstr "永续合约"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Perps / Spot"
 msgstr "合约 / 现货"
@@ -2264,7 +2259,6 @@ msgid "Perps Account"
 msgstr "合约账户"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Equity"
 msgstr "永续权益"
 
@@ -2273,7 +2267,6 @@ msgid "Perps Overview"
 msgstr "合约概览"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Withdrawable"
 msgstr "永续可提"
 
@@ -2355,6 +2348,10 @@ msgstr "投资组合"
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Portfolio Margin"
 msgstr "组合保证金"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Portfolio Value"
+msgstr "投资组合价值"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2777,8 +2774,8 @@ msgstr "发送中..."
 #~ msgstr "已发送至 Hyperliquid"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Separate Account Balances"
-msgstr "分账户余额"
+#~ msgid "Separate Account Balances"
+#~ msgstr "分账户余额"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Separate Accounts"
@@ -3024,7 +3021,6 @@ msgid "Spot Account"
 msgstr "现货账户"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 msgid "Spot Available"
 msgstr "现货可用"
 
@@ -3501,6 +3497,12 @@ msgstr "划转 USDC"
 msgid "Transferring..."
 msgstr "划转中..."
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfers between Spot and Perps are unavailable in unified account mode."
+msgstr "启用统一账户后，现货与合约之间的划转不可用。"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -3812,8 +3814,8 @@ msgid "Withdraw to Arbitrum"
 msgstr "提现至 Arbitrum"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Withdrawable"
-msgstr "可提"
+#~ msgid "Withdrawable"
+#~ msgstr "可提"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"

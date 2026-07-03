@@ -1,15 +1,13 @@
-import { Button } from "@gatu/ui";
+import { Button, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
-import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
-import { getAccountBalanceSummary } from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
+import { useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
-import { useSubscription } from "@/lib/hyperliquid";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
@@ -25,32 +23,12 @@ export function AccountPanel() {
 	const { open: openTransferModal } = useTransferModalActions();
 	const { isConnected, sessionMode } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
-	const {
-		marginSummary,
-		perpSummary,
-		perpPositions,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		accountAbstraction,
-		withdrawable,
-		crossMaintenanceMarginUsed,
-		isLoading,
-	} = useDefaultDexBalances();
-	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
-	const accountSummary = getAccountBalanceSummary({
-		accountAbstraction,
-		marginSummary,
-		perpSummary,
-		withdrawable,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		tokenUsdPrices: allMidsEvent?.mids,
-	});
+	const { marginSummary, perpPositions, accountAbstraction, crossMaintenanceMarginUsed } = useSelectedDexBalances();
 
 	let perpMetrics = null;
-	if (marginSummary && perpSummary) {
-		const crossAccountValue = toNumberOrZero(perpSummary.accountValue);
-		const crossTotalNtlPos = toNumberOrZero(perpSummary.totalNtlPos);
+	if (marginSummary) {
+		const accountValue = toNumberOrZero(marginSummary.accountValue);
+		const totalNtlPos = toNumberOrZero(marginSummary.totalNtlPos);
 		const maintenanceMargin = toNumberOrZero(crossMaintenanceMarginUsed);
 
 		let unrealizedPnl = 0;
@@ -58,13 +36,11 @@ export function AccountPanel() {
 			unrealizedPnl += toNumberOrZero(pos.position.unrealizedPnl);
 		}
 
-		const balance = crossAccountValue - unrealizedPnl;
-		const marginRatio = crossAccountValue > 0 ? maintenanceMargin / crossAccountValue : 0;
-		const crossLeverage = crossAccountValue > 0 ? Math.abs(crossTotalNtlPos) / crossAccountValue : 0;
+		const marginRatio = accountValue > 0 ? maintenanceMargin / accountValue : 0;
+		const crossLeverage = accountValue > 0 ? Math.abs(totalNtlPos) / accountValue : 0;
 
 		perpMetrics = {
-			accountValue: crossAccountValue,
-			balance,
+			accountValue,
 			unrealizedPnl,
 			marginRatio,
 			crossLeverage,
@@ -73,16 +49,16 @@ export function AccountPanel() {
 	}
 
 	const hasPerpData = isConnected && perpMetrics !== null;
-	const hasBalanceData = isConnected && !isLoading;
 	const hasWalletAccess = sessionMode === "wallet";
-	const usesUnifiedBalance = accountSummary.usesSpotStateForPerps;
-	const showSpotFundsNotice = !usesUnifiedBalance && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
+	const internalTransferDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
+		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+		: null;
 
 	const perpRows: SummaryRow[] = perpMetrics
 		? [
 				{
-					label: t`Balance`,
-					value: formatUSD(perpMetrics.balance),
+					label: t`Portfolio Value`,
+					value: formatUSD(perpMetrics.accountValue),
 					valueClassName: "tabular-nums",
 				},
 				{
@@ -118,57 +94,9 @@ export function AccountPanel() {
 				<div className="text-xs text-fg-muted text-center py-4">{t`Connect wallet to view account`}</div>
 			) : (
 				<div className="p-2 overflow-y-auto">
-					<p className="text-xs font-medium text-fg mb-1">
-						{usesUnifiedBalance ? t`Account Equity` : t`Separate Account Balances`}
-					</p>
-					<InfoRowGroup className="divide-y-0">
-						<InfoRow
-							label={usesUnifiedBalance ? t`Equity` : t`Perps Equity`}
-							value={hasBalanceData ? formatUSD(accountSummary.accountEquity) : FALLBACK_VALUE_PLACEHOLDER}
-							valueClassName="tabular-nums"
-						/>
-						<InfoRow
-							label={usesUnifiedBalance ? t`Available` : t`Perps Withdrawable`}
-							value={hasBalanceData ? formatUSD(accountSummary.available) : FALLBACK_VALUE_PLACEHOLDER}
-							valueClassName="tabular-nums"
-						/>
-						{usesUnifiedBalance ? (
-							<InfoRow
-								label={t`Withdrawable`}
-								value={hasBalanceData ? formatUSD(accountSummary.withdrawable) : FALLBACK_VALUE_PLACEHOLDER}
-								valueClassName="tabular-nums"
-							/>
-						) : (
-							<InfoRow
-								label={t`Spot Available`}
-								value={hasBalanceData ? formatUSD(accountSummary.spotUsdcAvailable) : FALLBACK_VALUE_PLACEHOLDER}
-								valueClassName="tabular-nums"
-							/>
-						)}
-					</InfoRowGroup>
-
-					{showSpotFundsNotice && (
-						<div className="mt-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2 text-xs text-warning">
-							<div className="tabular-nums">
-								{t`Available funds are in Spot`}: {formatUSD(accountSummary.spotUsdcAvailable)}
-							</div>
-							{hasWalletAccess && (
-								<Button
-									variant="link"
-									intent="brand"
-									size="xxs"
-									className="mt-1 h-auto p-0"
-									onClick={() => openTransferModal("toPerp")}
-								>
-									{t`Perps / Spot`}
-								</Button>
-							)}
-						</div>
-					)}
-
 					{hasPerpData && (
 						<>
-							<p className="text-xs font-medium text-fg mt-3 mb-1">{t`Perps Overview`}</p>
+							<p className="text-xs font-medium text-fg mb-1">{t`Perps Overview`}</p>
 							<InfoRowGroup className="divide-y-0">
 								{perpRows.map((row) => (
 									<InfoRow key={row.label} label={row.label} value={row.value} valueClassName={row.valueClassName} />
@@ -199,15 +127,21 @@ export function AccountPanel() {
 							>
 								{t`Deposit`}
 							</Button>
-							<Button
-								variant="outline"
-								intent="neutral"
-								onClick={() => openTransferModal("toPerp")}
-								aria-label={t`Transfer between Perps and Spot`}
-								iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-							>
-								{t`Perps / Spot`}
-							</Button>
+							<Tooltip content={internalTransferDisabledReason} side="top">
+								<span className="inline-flex w-full">
+									<Button
+										variant="outline"
+										intent="neutral"
+										onClick={() => openTransferModal("toPerp")}
+										aria-label={t`Transfer between Perps and Spot`}
+										iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+										disabled={!!internalTransferDisabledReason}
+										className="w-full"
+									>
+										{t`Perps / Spot`}
+									</Button>
+								</span>
+							</Tooltip>
 							<Button
 								variant="outline"
 								intent="neutral"

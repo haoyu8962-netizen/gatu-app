@@ -1,8 +1,10 @@
 import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent, WebData3WsEvent } from "@nktkas/hyperliquid";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { getPositionDex } from "@/domain/market";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { getAccountLedgerRefreshKey, useHyperliquid, useSubscription } from "@/lib/hyperliquid";
+import { getAccountLedgerRefreshKey, useHyperliquid, useInfo, useSubscription } from "@/lib/hyperliquid";
+import { useSelectedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
 type RawSpotState = SpotStateWsEvent["spotState"] & {
@@ -22,6 +24,7 @@ export type AccountAbstraction =
 	| null;
 
 export interface AccountBalances {
+	dex: string;
 	marginSummary: MarginSummary | null;
 	perpSummary: PerpSummary | null;
 	perpPositions: PerpPosition[];
@@ -39,6 +42,10 @@ const EMPTY_PERP_POSITIONS: PerpPosition[] = [];
 const EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE: SpotAvailableAfterMaintenance = [];
 const MAINNET_INFO_URL = "https://api.hyperliquid.xyz/info";
 const TESTNET_INFO_URL = "https://api.hyperliquid-testnet.xyz/info";
+
+function normalizeDex(dex: string | null | undefined): string {
+	return dex ?? "";
+}
 
 function normalizeAccountAbstraction(value: unknown): AccountAbstraction {
 	if (value && typeof value === "object" && "abstraction" in value) {
@@ -164,18 +171,29 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	};
 }
 
-export function useDefaultDexBalances(): AccountBalances {
+export function useDexBalances(dex: string | null | undefined): AccountBalances {
 	const { clearinghouseStates, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, isLoading, hasError } =
 		useAllDexsAccountState();
+	const { address, isConnected } = useWalletSession();
+	const enabled = isConnected && !!address;
 
-	const mainDex = clearinghouseStates.find(([dex]) => dex === "")?.[1];
-	const marginSummary = mainDex?.marginSummary ?? null;
-	const perpSummary = mainDex?.crossMarginSummary ?? null;
-	const perpPositions = mainDex?.assetPositions ?? EMPTY_PERP_POSITIONS;
-	const withdrawable = mainDex?.withdrawable ?? "0";
-	const crossMaintenanceMarginUsed = mainDex?.crossMaintenanceMarginUsed ?? "0";
+	const selectedDex = normalizeDex(dex);
+	const clearinghouseParams = selectedDex ? { user: address ?? "", dex: selectedDex } : { user: address ?? "" };
+	const { data: infoDexState, status: infoDexStatus } = useInfo("clearinghouseState", clearinghouseParams, {
+		enabled,
+		staleTime: 10_000,
+		retry: 1,
+	});
+	const wsDexState = clearinghouseStates.find(([entryDex]) => entryDex === selectedDex)?.[1];
+	const dexState = wsDexState ?? infoDexState;
+	const marginSummary = dexState?.marginSummary ?? null;
+	const perpSummary = dexState?.crossMarginSummary ?? null;
+	const perpPositions = dexState?.assetPositions ?? EMPTY_PERP_POSITIONS;
+	const withdrawable = dexState?.withdrawable ?? "0";
+	const crossMaintenanceMarginUsed = dexState?.crossMaintenanceMarginUsed ?? "0";
 
 	return {
+		dex: selectedDex,
 		marginSummary,
 		perpSummary,
 		perpPositions,
@@ -184,9 +202,18 @@ export function useDefaultDexBalances(): AccountBalances {
 		accountAbstraction,
 		withdrawable,
 		crossMaintenanceMarginUsed,
-		isLoading,
-		hasError,
+		isLoading: enabled && !dexState ? isLoading || infoDexStatus === "pending" : isLoading,
+		hasError: hasError || (!dexState && infoDexStatus === "error"),
 	};
+}
+
+export function useDefaultDexBalances(): AccountBalances {
+	return useDexBalances("");
+}
+
+export function useSelectedDexBalances(): AccountBalances {
+	const { data: market } = useSelectedMarketInfo();
+	return useDexBalances(market ? getPositionDex(market) : "");
 }
 
 export { useDefaultDexBalances as useAccountBalances };

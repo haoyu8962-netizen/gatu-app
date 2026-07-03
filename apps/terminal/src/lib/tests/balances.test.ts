@@ -124,6 +124,24 @@ describe("trade balances", () => {
 		expect(summary.perpWithdrawable).toBe(0);
 	});
 
+	it("can keep builder perp dex balances isolated from unified spot balances", () => {
+		const summary = getAccountBalanceSummary({
+			accountAbstraction: "unifiedAccount",
+			marginSummary: { accountValue: "0", totalMarginUsed: "0", totalRawUsd: "0" } as never,
+			perpSummary: { accountValue: "0", totalMarginUsed: "0" },
+			withdrawable: "0",
+			spotBalances: [settledSpotUsdcBalance],
+			allowSpotStateForPerps: false,
+		});
+
+		expect(summary.usesSpotStateForPerps).toBe(false);
+		expect(summary.accountEquity).toBe(0);
+		expect(summary.available).toBe(0);
+		expect(summary.withdrawable).toBe(0);
+		expect(summary.spotUsdcAvailable).toBeCloseTo(567.680532);
+		expect(summary.hasSpotFundsWhenPerpWithdrawableZero).toBe(true);
+	});
+
 	it("keeps unified withdrawable initial-margin constrained while available tracks maintenance", () => {
 		const summary = getAccountBalanceSummary({
 			accountAbstraction: "unifiedAccount",

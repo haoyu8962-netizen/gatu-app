@@ -3,6 +3,10 @@ import { deriveOrderEntry } from "@/domain/trade/order/derive";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
 
 vi.mock("@lingui/core/macro", () => ({
+	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
+		if (typeof strings === "string") return strings;
+		return { id: strings.reduce((text, part, index) => `${text}${part}${values[index] ?? ""}`, "") };
+	},
 	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
 		if (typeof strings === "string") return strings;
 		return strings.reduce((text, part, index) => `${text}${part}${values[index] ?? ""}`, "");
@@ -22,6 +26,14 @@ const perpMarket = {
 	name: "SOL",
 	pairName: "SOL-USDC",
 	szDecimals: 4,
+} as never;
+
+const builderPerpMarket = {
+	kind: "builderPerp",
+	name: "xyz:MU",
+	pairName: "MU-USDC",
+	szDecimals: 2,
+	dex: "xyz",
 } as never;
 
 describe("order entry balances", () => {
@@ -54,6 +66,25 @@ describe("order entry balances", () => {
 			sizeInput: "",
 			spotBalances: [usdcBalance],
 			accountAbstraction: "disabled",
+			maxTradeSzs: [0, 0],
+			availableToTrade: [0, 0],
+		});
+
+		expect(derived.availableBalance).toBe(0);
+		expect(derived.displayAvailableBalance).toBe(0);
+		expect(derived.maxSize).toBe(0);
+	});
+
+	it("keeps builder perp order availability isolated from unified spot balances", () => {
+		const derived = deriveOrderEntry({
+			isConnected: true,
+			market: builderPerpMarket,
+			side: "buy",
+			conversionPrice: 100,
+			sizeMode: "base",
+			sizeInput: "",
+			spotBalances: [usdcBalance],
+			accountAbstraction: "unifiedAccount",
 			maxTradeSzs: [0, 0],
 			availableToTrade: [0, 0],
 		});

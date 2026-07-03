@@ -1,4 +1,4 @@
-import { Badge, Button, ButtonIcon } from "@gatu/ui";
+import { Badge, Button, ButtonIcon, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import {
 	ArrowsLeftRightIcon,
@@ -12,8 +12,8 @@ import { Skeleton } from "boneyard-js/react";
 import { Suspense, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { UI_TEXT } from "@/config/ui-text";
-import { getAccountBalanceSummary } from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { getAccountBalanceSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
+import { useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -46,7 +46,8 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		withdrawable,
 		crossMaintenanceMarginUsed,
 		isLoading,
-	} = useDefaultDexBalances();
+		dex,
+	} = useSelectedDexBalances();
 	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
@@ -56,6 +57,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		tokenUsdPrices: allMidsEvent?.mids,
+		allowSpotStateForPerps: dex === "",
 	});
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
@@ -70,23 +72,28 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		copy(address);
 	}
 
-	const crossAccountValue = toNumberOrZero(perpSummary?.accountValue);
-	const crossNtlPos = toNumberOrZero(perpSummary?.totalNtlPos);
+	const crossAccountValue = toNumberOrZero(marginSummary?.accountValue);
+	const crossNtlPos = toNumberOrZero(marginSummary?.totalNtlPos);
 	const maintenanceMargin = toNumberOrZero(crossMaintenanceMarginUsed);
 	const marginRatio = crossAccountValue > 0 ? maintenanceMargin / crossAccountValue : 0;
 	const crossLeverage = crossAccountValue > 0 ? Math.abs(crossNtlPos) / crossAccountValue : 0;
 	const usesUnifiedBalance = accountSummary.usesSpotStateForPerps;
+	const isMainDex = dex === "";
+	const showsSpotBalance = !usesUnifiedBalance && isMainDex;
 	const accountModeLabel =
 		accountSummary.mode === "unified"
 			? t`Unified Account`
 			: accountSummary.mode === "portfolioMargin"
 				? t`Portfolio Margin`
 				: t`Separate Accounts`;
-	const balanceLabel = usesUnifiedBalance ? ACCOUNT_TEXT.BALANCE_LABEL : t`Spot Available`;
-	const balanceValue = usesUnifiedBalance ? accountSummary.balance : accountSummary.spotUsdcAvailable;
+	const balanceLabel = showsSpotBalance ? t`Spot Available` : ACCOUNT_TEXT.BALANCE_LABEL;
+	const balanceValue = showsSpotBalance ? accountSummary.spotUsdcAvailable : accountSummary.balance;
 	const availableLabel = usesUnifiedBalance ? ACCOUNT_TEXT.AVAILABLE_LABEL : t`Perps Withdrawable`;
 	const equityLabel = usesUnifiedBalance ? ACCOUNT_TEXT.EQUITY_LABEL : t`Perps Equity`;
-	const showSpotFundsNotice = !usesUnifiedBalance && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
+	const showSpotFundsNotice = showsSpotBalance && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
+	const internalTransferDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
+		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+		: null;
 
 	let unrealizedPnl = 0;
 	for (const pos of perpPositions) {
@@ -247,15 +254,21 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 							>
 								{ACCOUNT_TEXT.DEPOSIT_LABEL}
 							</Button>
-							<Button
-								variant="outline"
-								intent="neutral"
-								size="md"
-								onClick={() => openTransferModal("toPerp")}
-								iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-							>
-								{t`Perps / Spot`}
-							</Button>
+							<Tooltip content={internalTransferDisabledReason} side="top">
+								<span className="inline-flex w-full">
+									<Button
+										variant="outline"
+										intent="neutral"
+										size="md"
+										onClick={() => openTransferModal("toPerp")}
+										iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+										disabled={!!internalTransferDisabledReason}
+										className="w-full"
+									>
+										{t`Perps / Spot`}
+									</Button>
+								</span>
+							</Tooltip>
 							<Button
 								variant="outline"
 								intent="neutral"

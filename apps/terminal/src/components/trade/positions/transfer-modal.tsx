@@ -5,7 +5,12 @@ import { useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
-import { getPerpAvailable, getSpotAvailable, getSpotBalance } from "@/domain/trade/balances";
+import {
+	getPerpAvailable,
+	getSpotAvailable,
+	getSpotBalance,
+	isQuoteBalanceSharedWithPerps,
+} from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -46,26 +51,34 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 
 	const { hasWalletAccess, walletAddress } = useWalletSession();
 	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer");
-	const { perpSummary, spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
+	const { perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction } = useDefaultDexBalances();
 
 	const spotUsdcBal = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
+	const internalTransfersDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
+		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+		: null;
 	const availableBalanceValue =
 		direction === "toSpot"
 			? getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed)
 			: getSpotAvailable(spotUsdcBal, spotAvailableAfterMaintenance);
 
-	const isValidAmount = isAmountWithinBalance(amount, availableBalanceValue) && hasWalletAccess && !!walletAddress;
+	const isValidAmount =
+		!internalTransfersDisabledReason &&
+		isAmountWithinBalance(amount, availableBalanceValue) &&
+		hasWalletAccess &&
+		!!walletAddress;
 
 	const fromLabel = direction === "toSpot" ? t`Perp` : t`Spot`;
 	const toLabel = direction === "toSpot" ? t`Spot` : t`Perp`;
 
 	function handleFlip() {
+		if (internalTransfersDisabledReason) return;
 		setDirection((prev) => (prev === "toSpot" ? "toPerp" : "toSpot"));
 		setAmount("");
 	}
 
 	async function handleTransfer() {
-		if (!isValidAmount || isPending || !walletAddress) return;
+		if (!isValidAmount || isPending || !walletAddress || internalTransfersDisabledReason) return;
 
 		setError(null);
 		try {
@@ -101,6 +114,12 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 							<span className="flex-1">{t`Connect your wallet to transfer funds.`}</span>
 						</div>
 					)}
+					{internalTransfersDisabledReason && (
+						<div className="flex items-center gap-2 rounded-8 border border-stroke-info-weak bg-info-soft p-2.5 text-xs text-info">
+							<WarningCircleIcon className="size-3.5 shrink-0" />
+							<span className="flex-1">{internalTransfersDisabledReason}</span>
+						</div>
+					)}
 
 					<div className="flex items-center justify-center gap-3 py-2">
 						<div className="flex flex-col items-center">
@@ -117,6 +136,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 							type="button"
 							onClick={handleFlip}
 							aria-label={t`Flip transfer direction`}
+							disabled={!!internalTransfersDisabledReason}
 							className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-brand"
 						>
 							<ArrowsLeftRightIcon className="size-4" />
@@ -147,6 +167,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 						placeholder="0.00"
 						value={amount}
 						onChange={(e) => handleAmountChange(e.target.value)}
+						disabled={!!internalTransfersDisabledReason}
 						className={cn(
 							"w-full tabular-nums",
 							exceedsBalance(amount, availableBalanceValue) &&

@@ -11,6 +11,7 @@ import {
 	getPerpBalanceRows,
 	getSpotBalanceRows,
 	getTotalUsdValue,
+	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -85,6 +86,7 @@ export function BalancesTab() {
 		[accountAbstraction, spotBalances, spotAvailableAfterMaintenance, mids],
 	);
 	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
+	const internalTransfersEnabled = !isQuoteBalanceSharedWithPerps(accountAbstraction);
 
 	function getPnl(row: BalanceRow): { pnl: number; pnlPercent: number } | null {
 		if (row.type === "perp") return null;
@@ -133,7 +135,7 @@ export function BalancesTab() {
 	function renderBalanceRow(row: BalanceRow, index: number) {
 		const token = getToken(row.asset);
 		const decimals = row.type === "perp" ? 2 : (token?.szDecimals ?? 2);
-		const canTransfer = row.asset === DEFAULT_QUOTE_TOKEN && parseFloat(row.available) > 0;
+		const canTransfer = internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && parseFloat(row.available) > 0;
 		const canSwap = row.type === "spot" && parseFloat(row.available) > 0;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
 		const pnlData = getPnl(row);
