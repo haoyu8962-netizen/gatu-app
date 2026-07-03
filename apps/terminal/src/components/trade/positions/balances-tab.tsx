@@ -63,18 +63,26 @@ export function BalancesTab() {
 		accountType: "spot",
 	});
 
-	const { perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, isLoading, hasError } =
-		useDefaultDexBalances();
+	const {
+		perpSummary,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		withdrawable,
+		isLoading,
+		hasError,
+	} = useDefaultDexBalances();
 	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const mids = allMidsEvent?.mids;
 
 	const perpBalances = useMemo(
-		() => getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction),
-		[accountAbstraction, perpSummary, spotBalances, spotAvailableAfterMaintenance],
+		() =>
+			getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable),
+		[accountAbstraction, perpSummary, spotBalances, spotAvailableAfterMaintenance, withdrawable],
 	);
 	const spotBalanceRows = useMemo(
-		() => getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction),
-		[accountAbstraction, spotBalances, spotAvailableAfterMaintenance],
+		() => getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction, mids),
+		[accountAbstraction, spotBalances, spotAvailableAfterMaintenance, mids],
 	);
 	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
 

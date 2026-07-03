@@ -2,13 +2,14 @@ import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
-import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
+import { useSubscription } from "@/lib/hyperliquid";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
@@ -35,6 +36,7 @@ export function AccountPanel() {
 		crossMaintenanceMarginUsed,
 		isLoading,
 	} = useDefaultDexBalances();
+	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,
@@ -42,6 +44,7 @@ export function AccountPanel() {
 		withdrawable,
 		spotBalances,
 		spotAvailableAfterMaintenance,
+		tokenUsdPrices: allMidsEvent?.mids,
 	});
 
 	let perpMetrics = null;

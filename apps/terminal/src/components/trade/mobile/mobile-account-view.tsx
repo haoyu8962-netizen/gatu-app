@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { Suspense, useState } from "react";
+import { HL_ALL_DEXS } from "@/config/app";
 import { UI_TEXT } from "@/config/ui-text";
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
@@ -18,6 +19,7 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
+import { useSubscription } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
@@ -45,6 +47,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		crossMaintenanceMarginUsed,
 		isLoading,
 	} = useDefaultDexBalances();
+	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,
@@ -52,6 +55,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		withdrawable,
 		spotBalances,
 		spotAvailableAfterMaintenance,
+		tokenUsdPrices: allMidsEvent?.mids,
 	});
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);

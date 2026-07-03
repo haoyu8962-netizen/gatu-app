@@ -119,7 +119,7 @@ describe("trade balances", () => {
 		expect(summary.usesSpotStateForPerps).toBe(true);
 		expect(summary.accountEquity).toBeCloseTo(567.680532);
 		expect(summary.available).toBeCloseTo(567.680532);
-		expect(summary.withdrawable).toBe(0);
+		expect(summary.withdrawable).toBeCloseTo(567.680532);
 		expect(summary.perpAccountValue).toBe(0);
 		expect(summary.perpWithdrawable).toBe(0);
 	});
@@ -162,6 +162,46 @@ describe("trade balances", () => {
 		expect(standard.hasSpotFundsWhenPerpWithdrawableZero).toBe(true);
 		expect(unknown.usesSpotStateForPerps).toBe(false);
 		expect(unknown.hasSpotFundsWhenPerpWithdrawableZero).toBe(true);
+	});
+
+	it("uses the API withdrawable for perp available and derives the open-order hold", () => {
+		const perpRows = getPerpBalanceRows(
+			{ accountValue: "1620.34", totalMarginUsed: "1564.34" },
+			undefined,
+			undefined,
+			undefined,
+			"40",
+		);
+
+		expect(perpRows).toEqual([
+			expect.objectContaining({
+				asset: "USDC",
+				type: "perp",
+				available: "40",
+				inOrder: "16",
+				total: "1620.34",
+			}),
+		]);
+	});
+
+	it("values non-USDC spot balances at current mid price with entryNtl fallback", () => {
+		const hypeBalance: SpotBalance = { coin: "HYPE", token: 150, total: "10", hold: "0", entryNtl: "200" };
+
+		const pricedRows = getSpotBalanceRows([hypeBalance], undefined, undefined, { HYPE: "30" });
+		expect(pricedRows[0]).toMatchObject({ asset: "HYPE", usdValue: "300", entryNtl: "200" });
+
+		const unpricedRows = getSpotBalanceRows([hypeBalance]);
+		expect(unpricedRows[0]).toMatchObject({ asset: "HYPE", usdValue: "200" });
+
+		const summary = getAccountBalanceSummary({
+			accountAbstraction: "unifiedAccount",
+			marginSummary: { accountValue: "0", totalMarginUsed: "0", totalRawUsd: "0" } as never,
+			perpSummary: { accountValue: "0", totalMarginUsed: "0" },
+			withdrawable: "0",
+			spotBalances: [settledSpotUsdcBalance, hypeBalance],
+			tokenUsdPrices: { HYPE: "30" },
+		});
+		expect(summary.accountEquity).toBeCloseTo(867.680532);
 	});
 
 	it("uses maintenance-adjusted available values for spot order-entry balances", () => {

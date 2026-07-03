@@ -53,6 +53,20 @@ export function getSpotBalance(balances: SpotBalance[] | null | undefined, coin:
 	return balances.find((balance) => balance.coin === coin) ?? null;
 }
 
+/** Mid prices keyed by coin, as delivered by the allMids subscription. */
+export type TokenUsdPrices = Record<string, string> | null | undefined;
+
+function getSpotUsdValue(balance: SpotBalance, tokenUsdPrices?: TokenUsdPrices): string {
+	if (balance.coin === DEFAULT_QUOTE_TOKEN) return balance.total ?? "0";
+
+	const price = toBig(tokenUsdPrices?.[balance.coin]);
+	if (price?.gt(0)) {
+		return toSafeBig(balance.total).times(price).toString();
+	}
+
+	return balance.entryNtl ?? "0";
+}
+
 export function isQuoteBalanceSharedWithPerps(accountAbstraction: AccountAbstraction | null | undefined): boolean {
 	return accountAbstraction === "unifiedAccount" || accountAbstraction === "portfolioMargin";
 }
@@ -84,12 +98,12 @@ function getBalanceMode(accountAbstraction: AccountAbstraction | null | undefine
 	return "separate";
 }
 
-export function getSpotAccountValue(spotBalances: SpotBalance[] | null | undefined): number {
+export function getSpotAccountValue(
+	spotBalances: SpotBalance[] | null | undefined,
+	tokenUsdPrices?: TokenUsdPrices,
+): number {
 	return (spotBalances ?? [])
-		.reduce((sum, balance) => {
-			const usdValue = balance.coin === DEFAULT_QUOTE_TOKEN ? balance.total : balance.entryNtl;
-			return sum.plus(toSafeBig(usdValue));
-		}, Big(0))
+		.reduce((sum, balance) => sum.plus(toSafeBig(getSpotUsdValue(balance, tokenUsdPrices))), Big(0))
 		.toNumber();
 }
 
@@ -100,6 +114,7 @@ export function getAccountBalanceSummary({
 	withdrawable,
 	spotBalances,
 	spotAvailableAfterMaintenance,
+	tokenUsdPrices,
 }: {
 	accountAbstraction: AccountAbstraction | null | undefined;
 	marginSummary: MarginSummary | null | undefined;
@@ -107,6 +122,7 @@ export function getAccountBalanceSummary({
 	withdrawable: string | number | null | undefined;
 	spotBalances: SpotBalance[] | null | undefined;
 	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null;
+	tokenUsdPrices?: TokenUsdPrices;
 }): AccountBalanceSummary {
 	const mode = getBalanceMode(accountAbstraction);
 	const usesSpotStateForPerps = isQuoteBalanceSharedWithPerps(accountAbstraction);
@@ -114,10 +130,8 @@ export function getAccountBalanceSummary({
 	const spotUsdcTotal = toSafeBig(usdcBalance?.total).toNumber();
 	const spotUsdcHold = toSafeBig(usdcBalance?.hold).toNumber();
 	const spotUsdcAvailable = getSpotAvailable(usdcBalance, spotAvailableAfterMaintenance);
-	const spotUsdcWithdrawable = toSafeBig(
-		getSpotWithdrawableValue(usdcBalance, spotAvailableAfterMaintenance),
-	).toNumber();
-	const spotAccountValue = getSpotAccountValue(spotBalances);
+	const spotUsdcWithdrawable = toSafeBig(getSpotAvailableValue(usdcBalance, spotAvailableAfterMaintenance)).toNumber();
+	const spotAccountValue = getSpotAccountValue(spotBalances, tokenUsdPrices);
 
 	const perpAccountValue = toSafeBig(marginSummary?.accountValue ?? perpSummary?.accountValue).toNumber();
 	const perpWithdrawable = toSafeBig(withdrawable).toNumber();
@@ -170,17 +184,6 @@ function getAvailableAfterMaintenanceValue(
 	const tokenKey = String(token);
 	const match = spotAvailableAfterMaintenance?.find(([availableToken]) => String(availableToken) === tokenKey);
 	return match?.[1] ?? null;
-}
-
-function getSpotWithdrawableValue(
-	balance: SpotBalance | null | undefined,
-	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null,
-): string {
-	const availableAfterMaintenance = getAvailableAfterMaintenanceValue(balance?.token, spotAvailableAfterMaintenance);
-	if (availableAfterMaintenance == null) return "0";
-
-	const available = toSafeBig(availableAfterMaintenance);
-	return available.gt(0) ? available.toString() : "0";
 }
 
 export function getSpotAvailableValue(
@@ -257,6 +260,7 @@ export function getPerpBalanceRows(
 	spotBalances?: SpotBalance[] | null,
 	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null,
 	accountAbstraction?: AccountAbstraction | null,
+	withdrawable?: string | number | null,
 ): BalanceRow[] {
 	if (isQuoteBalanceSharedWithPerps(accountAbstraction)) {
 		const quoteBalance = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
@@ -279,12 +283,23 @@ export function getPerpBalanceRows(
 	const perpAccountValue = toBig(perpSummary?.accountValue);
 	if (!perpAccountValue?.gt(0)) return [];
 
+	// The API's withdrawable already accounts for margin held by open orders, which
+	// totalMarginUsed (position margin only) does not. The difference between account
+	// value and (position margin + withdrawable) is the amount sitting in open orders.
+	const availableValue =
+		withdrawable == null
+			? Big(getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed))
+			: toSafeBig(withdrawable);
+	const available = availableValue.gt(0) ? availableValue.toString() : "0";
+	const orderHold = perpAccountValue.minus(toSafeBig(perpSummary?.totalMarginUsed)).minus(availableValue);
+	const inOrder = withdrawable == null || orderHold.lt(0) ? "0" : orderHold.toString();
+
 	return [
 		{
 			asset: DEFAULT_QUOTE_TOKEN,
 			type: "perp",
-			available: String(getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed)),
-			inOrder: perpSummary?.totalMarginUsed?.toString() ?? "0",
+			available,
+			inOrder,
 			total: perpSummary?.accountValue?.toString() ?? "0",
 			usdValue: perpSummary?.accountValue?.toString() ?? "0",
 			entryNtl: perpSummary?.accountValue?.toString() ?? "0",
@@ -296,6 +311,7 @@ export function getSpotBalanceRows(
 	spotBalances: SpotBalance[] | null | undefined,
 	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null,
 	accountAbstraction?: AccountAbstraction | null,
+	tokenUsdPrices?: TokenUsdPrices,
 ): BalanceRow[] {
 	const rows: BalanceRow[] = [];
 	const shouldHideSharedQuote = isQuoteBalanceSharedWithPerps(accountAbstraction);
@@ -306,18 +322,14 @@ export function getSpotBalanceRows(
 		const total = toBig(balance.total);
 		if (!total || total.eq(0)) continue;
 
-		const available = getSpotAvailableValue(balance, spotAvailableAfterMaintenance);
-		const entryNtl = balance.entryNtl ?? "0";
-		const usdValue = balance.coin === DEFAULT_QUOTE_TOKEN ? balance.total : entryNtl;
-
 		rows.push({
 			asset: balance.coin,
 			type: "spot",
-			available,
+			available: getSpotAvailableValue(balance, spotAvailableAfterMaintenance),
 			inOrder: balance.hold ?? "0",
 			total: balance.total ?? "0",
-			usdValue,
-			entryNtl,
+			usdValue: getSpotUsdValue(balance, tokenUsdPrices),
+			entryNtl: balance.entryNtl ?? "0",
 		});
 	}
 
@@ -330,10 +342,12 @@ export function getBalanceRows(
 	spotBalances: SpotBalance[] | null | undefined,
 	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null,
 	accountAbstraction?: AccountAbstraction | null,
+	withdrawable?: string | number | null,
+	tokenUsdPrices?: TokenUsdPrices,
 ): BalanceRow[] {
 	return [
-		...getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction),
-		...getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction),
+		...getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable),
+		...getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction, tokenUsdPrices),
 	];
 }
 
