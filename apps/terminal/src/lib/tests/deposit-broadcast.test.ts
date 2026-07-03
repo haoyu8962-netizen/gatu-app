@@ -1,8 +1,14 @@
 import type { Hash, PublicClient } from "viem";
 import { describe, expect, it, vi } from "vitest";
-import { waitForBroadcastedTransaction, waitForWalletTransactionHash } from "@/lib/hyperliquid/use-deposit";
+import {
+	waitForBroadcastedTransaction,
+	waitForConfirmedReceipt,
+	waitForWalletTransactionHash,
+} from "@/lib/hyperliquid/use-deposit";
 
 vi.mock("@lingui/core/macro", () => ({
+	msg: (strings: TemplateStringsArray, ...values: unknown[]) =>
+		strings.reduce((result, part, index) => `${result}${part}${values[index] ?? ""}`, ""),
 	t: (strings: TemplateStringsArray, ...values: unknown[]) =>
 		strings.reduce((result, part, index) => `${result}${part}${values[index] ?? ""}`, ""),
 }));
@@ -35,7 +41,22 @@ describe("deposit broadcast confirmation", () => {
 		expect(publicClient.getTransaction).toHaveBeenCalledWith({ hash: HASH });
 	});
 
-	it("accepts a transaction visible through the wallet provider before public RPC propagation", async () => {
+	it("does not accept a wallet-provider receipt as publicly broadcast", async () => {
+		const publicClient = createPublicClientMock({
+			getTransactionReceipt: vi.fn().mockRejectedValue(new Error("not found")),
+			getTransaction: vi.fn().mockRejectedValue(new Error("not found")),
+		});
+		const provider = {
+			request: vi.fn().mockResolvedValue({ status: "0x1", blockNumber: "0x1", logs: [] }),
+		};
+
+		await expect(waitForBroadcastedTransaction(publicClient, HASH, { provider, timeoutMs: 0 })).rejects.toThrow(
+			"Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice.",
+		);
+		expect(provider.request).not.toHaveBeenCalled();
+	});
+
+	it("does not accept a wallet-local pending transaction as publicly broadcast", async () => {
 		const publicClient = createPublicClientMock({
 			getTransactionReceipt: vi.fn().mockRejectedValue(new Error("not found")),
 			getTransaction: vi.fn().mockRejectedValue(new Error("not found")),
@@ -48,12 +69,10 @@ describe("deposit broadcast confirmation", () => {
 			}),
 		};
 
-		await expect(
-			waitForBroadcastedTransaction(publicClient, HASH, { provider, timeoutMs: 0 }),
-		).resolves.toBeUndefined();
-		expect(provider.request).toHaveBeenCalledWith({ method: "eth_getTransactionByHash", params: [HASH] });
-		expect(publicClient.getTransactionReceipt).not.toHaveBeenCalled();
-		expect(publicClient.getTransaction).not.toHaveBeenCalled();
+		await expect(waitForBroadcastedTransaction(publicClient, HASH, { provider, timeoutMs: 0 })).rejects.toThrow(
+			"Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice.",
+		);
+		expect(provider.request).not.toHaveBeenCalled();
 	});
 
 	it("fails with a retry-safe message when the wallet hash is not visible on Arbitrum", async () => {
@@ -73,5 +92,47 @@ describe("deposit broadcast confirmation", () => {
 		await expect(waitForWalletTransactionHash(never, 0)).rejects.toThrow(
 			"Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice.",
 		);
+	});
+
+	it("does not confirm through the wallet provider when the public RPC fails", async () => {
+		const publicClient = createPublicClientMock({
+			getTransactionReceipt: vi.fn().mockRejectedValue(new Error("HTTP request failed.")),
+			getTransaction: vi.fn(),
+		});
+		const provider = {
+			request: vi.fn().mockResolvedValue({ status: "0x1", blockNumber: "0x1", logs: [] }),
+		};
+
+		await expect(waitForConfirmedReceipt(publicClient, HASH, { provider, timeoutMs: 0 })).rejects.toThrow(
+			"Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying.",
+		);
+		expect(provider.request).toHaveBeenCalledWith({ method: "eth_getTransactionReceipt", params: [HASH] });
+		expect(publicClient.getTransactionReceipt).toHaveBeenCalledWith({ hash: HASH });
+	});
+
+	it("reports RPC confirmation failures after a broadcasted transaction", async () => {
+		const publicClient = createPublicClientMock({
+			getTransactionReceipt: vi.fn().mockRejectedValue(new Error("HTTP request failed.")),
+			getTransaction: vi.fn().mockRejectedValue(new Error("HTTP request failed.")),
+		});
+
+		await expect(waitForConfirmedReceipt(publicClient, HASH, { timeoutMs: 0 })).rejects.toThrow(
+			"Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying.",
+		);
+	});
+
+	it("reports reverted receipts from the wallet provider", async () => {
+		const publicClient = createPublicClientMock({
+			getTransactionReceipt: vi.fn(),
+			getTransaction: vi.fn(),
+		});
+		const provider = {
+			request: vi.fn().mockResolvedValue({ status: "0x0", blockNumber: "0x1", logs: [] }),
+		};
+
+		await expect(waitForConfirmedReceipt(publicClient, HASH, { provider, timeoutMs: 0 })).rejects.toThrow(
+			"Transaction reverted on Arbitrum",
+		);
+		expect(publicClient.getTransactionReceipt).toHaveBeenCalledWith({ hash: HASH });
 	});
 });

@@ -221,6 +221,8 @@ export function DepositModal() {
 	}
 
 	if (depositStatus === "error") {
+		const hasSubmittedDeposit = !!depositHash;
+
 		return (
 			<StatusScreen
 				title={<Trans>Deposit</Trans>}
@@ -231,14 +233,20 @@ export function DepositModal() {
 				txChain={depositTxChain}
 				onClose={handleClose}
 			>
-				<div className="flex w-full gap-2">
-					<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
-						<Trans>Cancel</Trans>
+				{hasSubmittedDeposit ? (
+					<Button onClick={handleClose} className="w-full">
+						<Trans>Close</Trans>
 					</Button>
-					<Button onClick={handleDepositRetry} className="flex-1">
-						<Trans>Retry</Trans>
-					</Button>
-				</div>
+				) : (
+					<div className="flex w-full gap-2">
+						<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
+							<Trans>Cancel</Trans>
+						</Button>
+						<Button onClick={handleDepositRetry} className="flex-1">
+							<Trans>Retry</Trans>
+						</Button>
+					</div>
+				)}
 			</StatusScreen>
 		);
 	}

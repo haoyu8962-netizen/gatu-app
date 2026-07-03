@@ -26,7 +26,7 @@ export function WrongNetworkScreen({ open, onClose, onSwitch, isSwitching, error
 						</div>
 						<div className="space-y-1">
 							<p className="text-sm font-medium">
-								<Trans>Wrong network</Trans>
+								<Trans>Switch to Arbitrum</Trans>
 							</p>
 							<p className="text-xs text-fg">
 								<Trans>Switch to Arbitrum to deposit USDC to Hyperliquid</Trans>

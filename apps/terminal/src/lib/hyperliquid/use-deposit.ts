@@ -82,6 +82,11 @@ interface ArbitrumSwitchState {
 	error: Error | null;
 }
 
+interface ProviderChainState {
+	key: string;
+	chainId: number | null;
+}
+
 type ReadyWalletClient = WalletClient<Transport, Chain, Account>;
 
 interface ReadyDepositContext {
@@ -93,6 +98,16 @@ interface ReadyDepositContext {
 
 interface Eip1193Provider {
 	request(args: { method: string; params?: unknown[] | Record<string, unknown> }): Promise<unknown>;
+	on?(event: "chainChanged", listener: (chainId: string) => void): void;
+	removeListener?(event: "chainChanged", listener: (chainId: string) => void): void;
+}
+
+interface RpcTransactionLike {
+	blockNumber?: unknown;
+}
+
+interface RpcTransactionReceiptLike {
+	status?: unknown;
 }
 
 interface ProviderRpcErrorLike {
@@ -102,6 +117,8 @@ interface ProviderRpcErrorLike {
 
 const BALANCE_OF_SELECTOR = "0x70a08231";
 const PERMIT_DEADLINE_SECONDS = 20 * 60;
+const GAS_BUFFER_NUMERATOR = 12n;
+const GAS_BUFFER_DENOMINATOR = 10n;
 const DEPOSIT_CHAINS = {
 	mainnet: arbitrum,
 	testnet: arbitrumSepolia,
@@ -153,6 +170,10 @@ function createArbitrumSwitchState(key = ""): ArbitrumSwitchState {
 	return { key, confirmedChainId: null, error: null };
 }
 
+function createProviderChainState(key = ""): ProviderChainState {
+	return { key, chainId: null };
+}
+
 function createIdleBalanceState(): UsdcBalanceState {
 	return { status: "idle", raw: undefined, error: null };
 }
@@ -191,6 +212,24 @@ function isUnknownChainError(error: unknown) {
 	return code === 4902 || /unrecognized chain|unknown chain|add ethereum chain/i.test(getProviderErrorMessage(error));
 }
 
+function isNetworkRequestError(error: unknown) {
+	return /http request failed|failed to fetch|fetch failed|network error/i.test(toError(error).message);
+}
+
+function isInsufficientGasError(error: unknown) {
+	return /insufficient funds|not enough.*gas|gas required exceeds allowance|exceeds.*balance|prefund/i.test(
+		toError(error).message,
+	);
+}
+
+function isRevertedReceipt(receipt: RpcTransactionReceiptLike) {
+	return receipt.status === "reverted" || receipt.status === "0x0" || receipt.status === 0;
+}
+
+function isPendingTransaction(transaction: RpcTransactionLike | null) {
+	return !!transaction && transaction.blockNumber === null;
+}
+
 function createWalletConnectionError(error: unknown): Error {
 	const message = getProviderErrorMessage(error);
 	if (isUserRejectedRequest(error)) return new Error(t`Wallet connection request was rejected.`);
@@ -212,6 +251,13 @@ function sleep(ms: number) {
 
 function toChainHex(chainId: number): `0x${string}` {
 	return `0x${chainId.toString(16)}` as const;
+}
+
+function parseChainId(chainId: unknown): number | null {
+	if (typeof chainId === "number" && Number.isFinite(chainId)) return chainId;
+	if (typeof chainId !== "string" || !chainId) return null;
+	const parsed = chainId.startsWith("0x") ? Number.parseInt(chainId, 16) : Number(chainId);
+	return Number.isFinite(parsed) ? parsed : null;
 }
 
 function encodeBalanceOf(address: `0x${string}`): `0x${string}` {
@@ -372,6 +418,62 @@ async function ensureDepositChain(provider: Eip1193Provider, config: DepositNetw
 	}
 }
 
+async function switchDepositWalletChain(
+	wallet: ConnectedWallet,
+	provider: Eip1193Provider,
+	config: DepositNetworkConfig,
+) {
+	try {
+		await wallet.switchChain(config.chainId);
+		return;
+	} catch (error) {
+		if (!isUnknownChainError(error)) throw createChainSwitchError(config, error);
+	}
+
+	await requestDepositChainSwitch(provider, config);
+}
+
+async function getDepositProviderForChain(wallet: ConnectedWallet, config: DepositNetworkConfig) {
+	const provider = await getDepositProvider(wallet);
+	const providerChainId = await getProviderChainId(provider);
+	if (providerChainId === toChainHex(config.chainId)) return provider;
+
+	await switchDepositWalletChain(wallet, provider, config);
+
+	const nextProvider = await getDepositProvider(wallet);
+	await ensureDepositChain(nextProvider, config);
+	return nextProvider;
+}
+
+async function assertWalletCanPayDepositGas(
+	context: ReadyDepositContext,
+	config: DepositNetworkConfig,
+	amountRaw: bigint,
+) {
+	try {
+		const [gas, gasPrice, balance] = await Promise.all([
+			context.publicClient.estimateContractGas({
+				account: context.address,
+				address: config.usdc,
+				abi: erc20Abi,
+				functionName: "transfer",
+				args: [config.bridge2, amountRaw],
+			}),
+			context.publicClient.getGasPrice(),
+			context.publicClient.getBalance({ address: context.address }),
+		]);
+		const bufferedGas = (gas * GAS_BUFFER_NUMERATOR + GAS_BUFFER_DENOMINATOR - 1n) / GAS_BUFFER_DENOMINATOR;
+		if (balance < bufferedGas * gasPrice) {
+			throw new Error(t`Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry.`);
+		}
+	} catch (error) {
+		if (isInsufficientGasError(error)) {
+			throw new Error(t`Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry.`);
+		}
+		throw error;
+	}
+}
+
 export function waitForWalletTransactionHash<T>(
 	promise: Promise<T>,
 	timeoutMs = DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
@@ -412,14 +514,8 @@ async function getReadyWalletDepositContext({
 		throw new Error(t`Selected wallet does not match the connected account. Reconnect your wallet and try again.`);
 	}
 
-	const provider = await getDepositProvider(wallet);
+	const provider = await getDepositProviderForChain(wallet, config);
 	await ensureProviderAccount(provider, address);
-	if (getWalletChainId(wallet) !== config.chainId) {
-		await ensureDepositChain(provider, config);
-	} else {
-		const providerChainId = await getProviderChainId(provider);
-		if (providerChainId !== toChainHex(config.chainId)) await ensureDepositChain(provider, config);
-	}
 
 	const walletClient = createWalletClient({
 		account: address,
@@ -579,20 +675,16 @@ function assertSmartBridge2DepositReceipt({
 	throw new Error(t`Bridge2 deposit was not credited. Check Arbiscan before retrying.`);
 }
 
-async function providerHasTransaction(provider: Eip1193Provider | undefined, hash: Hash) {
-	if (!provider) return false;
+async function getProviderTransactionReceipt(provider: Eip1193Provider | undefined, hash: Hash) {
+	if (!provider) return null;
+	const receipt = await provider.request({ method: "eth_getTransactionReceipt", params: [hash] });
+	return receipt && typeof receipt === "object" ? (receipt as TransactionReceipt) : null;
+}
 
-	try {
-		const receipt = await provider.request({ method: "eth_getTransactionReceipt", params: [hash] });
-		if (receipt) return true;
-	} catch {}
-
-	try {
-		const transaction = await provider.request({ method: "eth_getTransactionByHash", params: [hash] });
-		return !!transaction;
-	} catch {
-		return false;
-	}
+async function getProviderTransaction(provider: Eip1193Provider | undefined, hash: Hash) {
+	if (!provider) return null;
+	const transaction = await provider.request({ method: "eth_getTransactionByHash", params: [hash] });
+	return transaction && typeof transaction === "object" ? (transaction as RpcTransactionLike) : null;
 }
 
 export async function waitForBroadcastedTransaction(
@@ -605,8 +697,6 @@ export async function waitForBroadcastedTransaction(
 	const deadline = Date.now() + timeoutMs;
 
 	while (true) {
-		if (await providerHasTransaction(options.provider, hash)) return;
-
 		try {
 			const receipt = await publicClient.getTransactionReceipt({ hash });
 			if (receipt) return;
@@ -627,37 +717,70 @@ export async function waitForBroadcastedTransaction(
 	);
 }
 
-async function waitForConfirmedReceipt(publicClient: PublicClient, hash: Hash) {
-	try {
-		const receipt = await publicClient.waitForTransactionReceipt({
-			hash,
-			pollingInterval: DEPOSIT_POLL_INTERVAL_MS,
-			timeout: DEPOSIT_CONFIRMATION_TIMEOUT_MS,
-		});
+export async function waitForConfirmedReceipt(
+	publicClient: PublicClient,
+	hash: Hash,
+	options: { provider?: Eip1193Provider; timeoutMs?: number; pollingIntervalMs?: number } = {},
+) {
+	const timeoutMs = options.timeoutMs ?? DEPOSIT_CONFIRMATION_TIMEOUT_MS;
+	const pollingIntervalMs = options.pollingIntervalMs ?? DEPOSIT_POLL_INTERVAL_MS;
+	const deadline = Date.now() + timeoutMs;
+	let lastError: Error | null = null;
 
-		if (receipt.status === "reverted") {
-			throw new Error(t`Transaction reverted on Arbitrum`);
+	while (true) {
+		let publicReceipt: TransactionReceipt | null = null;
+		try {
+			publicReceipt = await publicClient.getTransactionReceipt({ hash });
+		} catch (error) {
+			lastError = toError(error);
 		}
 
-		return receipt;
-	} catch (error) {
-		if (/timed out|timeout/i.test(toError(error).message)) {
-			let transaction: Awaited<ReturnType<PublicClient["getTransaction"]>> | null = null;
-			try {
-				transaction = await publicClient.getTransaction({ hash });
-			} catch {}
-
-			if (transaction && transaction.blockNumber === null) {
-				throw new Error(
-					t`Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry.`,
-				);
-			}
-
-			throw new Error(t`Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.`);
+		if (publicReceipt) {
+			if (isRevertedReceipt(publicReceipt)) throw new Error(t`Transaction reverted on Arbitrum`);
+			return publicReceipt;
 		}
 
-		throw error;
+		const remainingMs = deadline - Date.now();
+		if (remainingMs <= 0) break;
+		await sleep(Math.min(pollingIntervalMs, remainingMs));
 	}
+
+	let providerReceipt: TransactionReceipt | null = null;
+	try {
+		providerReceipt = await getProviderTransactionReceipt(options.provider, hash);
+	} catch (error) {
+		lastError = toError(error);
+	}
+	if (providerReceipt && isRevertedReceipt(providerReceipt)) throw new Error(t`Transaction reverted on Arbitrum`);
+
+	let transaction: RpcTransactionLike | null = null;
+	try {
+		transaction = await publicClient.getTransaction({ hash });
+	} catch (error) {
+		lastError = toError(error);
+	}
+
+	if (!transaction) {
+		try {
+			transaction = await getProviderTransaction(options.provider, hash);
+		} catch (error) {
+			lastError = toError(error);
+		}
+	}
+
+	if (isPendingTransaction(transaction)) {
+		throw new Error(
+			t`Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry.`,
+		);
+	}
+
+	if (lastError && isNetworkRequestError(lastError)) {
+		throw new Error(
+			t`Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying.`,
+		);
+	}
+
+	throw new Error(t`Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.`);
 }
 
 function useDepositChain(
@@ -669,7 +792,42 @@ function useDepositChain(
 	const chainId = useChainId();
 	const walletKey = `${address ?? ""}:${wallet?.address ?? ""}:${wallet?.chainId ?? ""}:${config.chainId}`;
 	const [switchState, setSwitchState] = useState<ArbitrumSwitchState>(createArbitrumSwitchState);
+	const [providerChainState, setProviderChainState] = useState<ProviderChainState>(createProviderChainState);
 	const [isSwitching, setIsSwitching] = useState(false);
+
+	useEffect(() => {
+		if (!enabled || !address || !wallet) {
+			setProviderChainState(createProviderChainState());
+			return;
+		}
+
+		let cancelled = false;
+		let provider: Eip1193Provider | undefined;
+		let chainChangedHandler: ((nextChainId: string) => void) | undefined;
+
+		void (async () => {
+			try {
+				provider = await getDepositProvider(wallet);
+				const rawChainId = await provider.request({ method: "eth_chainId" });
+				if (cancelled) return;
+
+				setProviderChainState({ key: walletKey, chainId: parseChainId(rawChainId) });
+				chainChangedHandler = (nextChainId: string) => {
+					setProviderChainState({ key: walletKey, chainId: parseChainId(nextChainId) });
+				};
+				provider.on?.("chainChanged", chainChangedHandler);
+			} catch {
+				if (!cancelled) setProviderChainState(createProviderChainState(walletKey));
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+			if (provider && chainChangedHandler) {
+				provider.removeListener?.("chainChanged", chainChangedHandler);
+			}
+		};
+	}, [address, enabled, wallet, walletKey]);
 
 	const switchToArbitrum = useCallback(() => {
 		if (!enabled) return;
@@ -683,7 +841,11 @@ function useDepositChain(
 		void (async () => {
 			const provider = await getDepositProvider(wallet);
 			await ensureProviderAccount(provider, address);
-			await ensureDepositChain(provider, config);
+			await switchDepositWalletChain(wallet, provider, config);
+			const nextProvider = await getDepositProvider(wallet);
+			await ensureDepositChain(nextProvider, config);
+			const rawChainId = await nextProvider.request({ method: "eth_chainId" });
+			setProviderChainState({ key: walletKey, chainId: parseChainId(rawChainId) });
 			setSwitchState({ key: walletKey, confirmedChainId: config.chainId, error: null });
 		})()
 			.catch((error) => setSwitchState({ ...createArbitrumSwitchState(walletKey), error: toError(error) }))
@@ -701,7 +863,8 @@ function useDepositChain(
 
 	const walletChainId = wallet ? getWalletChainId(wallet) : null;
 	const confirmedChainId = switchState.key === walletKey ? switchState.confirmedChainId : null;
-	const effectiveChainId = confirmedChainId ?? walletChainId ?? chainId;
+	const providerChainId = providerChainState.key === walletKey ? providerChainState.chainId : null;
+	const effectiveChainId = confirmedChainId ?? providerChainId ?? chainId ?? walletChainId;
 
 	return {
 		isArbitrum: effectiveChainId === config.chainId,
@@ -883,6 +1046,11 @@ export function useDeposit({
 						wallet: depositWallet,
 					});
 					provider = ready.provider;
+					await assertWalletCanPayDepositGas(ready, depositConfig, amountRaw);
+					const nonce = await ready.publicClient.getTransactionCount({
+						address: ready.address,
+						blockTag: "pending",
+					});
 					hash = await waitForWalletTransactionHash(
 						ready.walletClient.writeContract({
 							account: ready.address,
@@ -891,6 +1059,7 @@ export function useDeposit({
 							abi: erc20Abi,
 							functionName: "transfer",
 							args: [depositConfig.bridge2, amountRaw],
+							nonce,
 						}),
 					);
 				}
@@ -901,7 +1070,7 @@ export function useDeposit({
 				await waitForBroadcastedTransaction(publicClient, hash, { provider });
 
 				if (operationIdRef.current !== operationId) return;
-				const receipt = await waitForConfirmedReceipt(publicClient, hash);
+				const receipt = await waitForConfirmedReceipt(publicClient, hash, { provider });
 				if (mode === "smart") {
 					if (!smartDepositUser) throw new Error(t`Wallet not connected`);
 					assertSmartBridge2DepositReceipt({
