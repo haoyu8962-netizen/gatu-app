@@ -130,10 +130,40 @@ process.stdout.write(match[0]);
 NODE
 }
 
+extract_js_assets() {
+	local file="$1"
+	node - "$file" <<'NODE'
+const fs = require("node:fs");
+const [file] = process.argv.slice(2);
+const text = fs.readFileSync(file, "utf8");
+const matches = text.match(/\/?assets\/[^"'<>\s]+\.js/g) || [];
+const assets = new Set(matches.map((asset) => (asset.startsWith("/") ? asset : `/${asset}`)));
+for (const asset of assets) {
+	process.stdout.write(`${asset}\n`);
+}
+NODE
+}
+
+fetch_referenced_js_assets() {
+	local base_url="$1"
+	local file="$2"
+	local tmpdir="$3"
+	local asset
+
+	while IFS= read -r asset; do
+		if [ -z "$asset" ]; then
+			continue
+		fi
+		if ! fetch_js_asset "$base_url" "$asset" "$tmpdir"; then
+			return 1
+		fi
+	done < <(extract_js_assets "$file")
+}
+
 health_check() {
 	local port="$1"
 	local base_url="http://127.0.0.1:${port}"
-	local tmpdir html_file trade_file main_asset trade_asset mobile_asset
+	local tmpdir html_file trade_file main_asset trade_asset
 	tmpdir="$(mktemp -d)"
 	html_file="${tmpdir}/builders-perp.html"
 	trade_file="${tmpdir}/trade-terminal-page.js"
@@ -143,20 +173,12 @@ health_check() {
 			main_asset="$(extract_asset "$html_file" '/assets/main-[^"'"'"'"'"'"'"'"'"'<>\s]+\.js' || true)"
 			trade_asset="$(extract_asset "$html_file" '/assets/trade-terminal-page-[^"'"'"'"'"'"'"'"'"'<>\s]+\.js' || true)"
 			if [ -n "$main_asset" ] && [ -n "$trade_asset" ]; then
-				if fetch_js_asset "$base_url" "$main_asset" "$tmpdir" &&
-					fetch_js_asset "$base_url" "$trade_asset" "$tmpdir"; then
+				if fetch_referenced_js_assets "$base_url" "$html_file" "$tmpdir"; then
 					if ! curl -fsS -o "$trade_file" "${base_url}${trade_asset}"; then
 						rm -rf "$tmpdir"
 						return 1
 					fi
-					mobile_asset="$(extract_asset "$trade_file" 'assets/mobile-terminal-[^"'"'"'"'"'"'"'"'"'<>\s]+\.js' || true)"
-					if [ -z "$mobile_asset" ]; then
-						echo "ERROR: trade terminal chunk does not reference a mobile-terminal asset." >&2
-						rm -rf "$tmpdir"
-						return 1
-					fi
-					mobile_asset="/${mobile_asset}"
-					if fetch_js_asset "$base_url" "$mobile_asset" "$tmpdir"; then
+					if fetch_referenced_js_assets "$base_url" "$trade_file" "$tmpdir"; then
 						rm -rf "$tmpdir"
 						return 0
 					fi
