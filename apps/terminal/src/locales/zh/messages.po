@@ -1399,6 +1399,10 @@ msgstr "HIP-3"
 msgid "Hour(s)"
 msgstr "小时"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
+msgstr "多头支付空头的小时费率（如果为负，则空头支付多头）。资金费没有关联费用，是用户之间的点对点转移，以将价格推向现货价格。详见文档。"
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
@@ -1727,6 +1731,10 @@ msgstr "标记价"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Mark Price"
 msgstr "标记价格"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details."
+msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和触发止盈/止损订单。预言机价格：用于资金费用支付的参考价格。详情请参阅 HIP-3 部署者的文档。"
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -3572,6 +3580,10 @@ msgstr "TWAP 订单价值过小。最小为 ${min}，即每分钟 ${TWAP_MIN_NOT
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "TWAP Orders"
 msgstr "TWAP 订单"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Two-sided open interest: the sum of long and short positions on this contract."
+msgstr "双边开放利益：该合约上的多头和空头头寸之和。"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx

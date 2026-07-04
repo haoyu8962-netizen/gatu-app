@@ -1,3 +1,4 @@
+import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
@@ -6,7 +7,13 @@ import { get24hChange, getOiUsd } from "@/domain/market";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { cn } from "@/lib/cn";
 import { formatClockDuration, formatNumber, formatPercent, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
-import { type SpotMarketInfo, type UnifiedMarketInfo, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
+import {
+	type SpotMarketInfo,
+	type SubParams,
+	type UnifiedMarketInfo,
+	useSelectedMarketInfo,
+	useSubscription,
+} from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
@@ -28,8 +35,11 @@ interface Props {
 
 interface DetailCellProps {
 	label: ReactNode;
+	tooltipContent?: ReactNode;
 	value: ReactNode;
 }
+
+type AllMidsParams = SubParams<"allMids">;
 
 export function MobileMarketBar({ className }: Props) {
 	const { data: market } = useSelectedMarketInfo();
@@ -48,6 +58,8 @@ export function MobileMarketBar({ className }: Props) {
 	const isSpot = market?.kind === "spot";
 	const perpCoin = market?.name ?? "";
 	const spotCoin = getSpotSubscriptionCoin(market);
+	const midsCoin = getAllMidsCoin(market);
+	const { data: allMidsEvent } = useSubscription("allMids", getAllMidsParams(market), { enabled: !!midsCoin });
 	const { data: perpCtxEvent } = useSubscription(
 		"activeAssetCtx",
 		{ coin: perpCoin },
@@ -62,15 +74,24 @@ export function MobileMarketBar({ className }: Props) {
 	const [priceFlash, setPriceFlash] = useState<PriceFlashState>({ sequence: 0, direction: null });
 	const previousMidPxRef = useRef<number | undefined>(undefined);
 
+	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
+	const perpCtx = isSpot ? undefined : perpCtxEvent?.ctx;
+	const midsPrice = midsCoin ? allMidsEvent?.mids?.[midsCoin] : undefined;
+	const marketMarkPx = perpCtx?.markPx ?? market?.markPx;
+	const displayPrice = midPx ?? midsPrice ?? liveCtx?.markPx ?? marketMarkPx;
+	const displayPriceNumber = toBig(displayPrice)?.toNumber();
+
 	useEffect(() => {
 		const previous = previousMidPxRef.current;
-		previousMidPxRef.current = midPx;
-		if (typeof midPx !== "number" || typeof previous !== "number" || midPx === previous) return;
+		previousMidPxRef.current = displayPriceNumber;
+		if (typeof displayPriceNumber !== "number" || typeof previous !== "number" || displayPriceNumber === previous) {
+			return;
+		}
 		setPriceFlash((state) => ({
 			sequence: state.sequence + 1,
-			direction: midPx > previous ? "up" : "down",
+			direction: displayPriceNumber > previous ? "up" : "down",
 		}));
-	}, [midPx]);
+	}, [displayPriceNumber]);
 
 	useEffect(() => {
 		if (!expanded) return;
@@ -79,20 +100,17 @@ export function MobileMarketBar({ className }: Props) {
 		return () => clearInterval(id);
 	}, [expanded]);
 
-	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
-	const perpCtx = isSpot ? undefined : perpCtxEvent?.ctx;
 	const prevDayPx = liveCtx?.prevDayPx ?? market?.prevDayPx;
 	const priceDecimals = getPriceDecimals(market);
-	const marketMarkPx = perpCtx?.markPx ?? market?.markPx;
 	const oraclePx = perpCtx?.oraclePx ?? market?.oraclePx;
 	const dayNtlVlm = liveCtx?.dayNtlVlm ?? market?.dayNtlVlm;
 	const openInterest = perpCtx?.openInterest ?? market?.openInterest;
 	const funding = perpCtx?.funding ?? market?.funding;
 	const fundingNum = toBig(funding)?.toNumber() ?? 0;
-	const change24h = get24hChange(prevDayPx, midPx);
-	const changeAmount = getPriceChangeAmount(midPx, prevDayPx);
+	const change24h = get24hChange(prevDayPx, displayPrice);
+	const changeAmount = getPriceChangeAmount(displayPrice, prevDayPx);
 	const changeColorClass = getPriceChangeColorClass(change24h);
-	const priceText = formatDisplayPrice(midPx, priceDecimals);
+	const priceText = formatDisplayPrice(displayPrice, priceDecimals);
 	const changeAmountText = formatSignedFixed(changeAmount, priceDecimals);
 	const changePercentText = formatSignedPercent(change24h);
 	const oiUsd = getOiUsd(openInterest, marketMarkPx);
@@ -160,16 +178,22 @@ export function MobileMarketBar({ className }: Props) {
 											{t`Mark`}/{t`ORACLE`}
 										</>
 									}
+									tooltipContent={t`Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details.`}
 									value={`${formatDisplayPrice(marketMarkPx, priceDecimals)} / ${formatDisplayPrice(oraclePx, priceDecimals)}`}
 								/>
 								<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
-								<DetailCell label={t`OPEN INT`} value={formatUSD(oiUsd, { compact: false })} />
+								<DetailCell
+									label={t`OPEN INT`}
+									tooltipContent={t`Two-sided open interest: the sum of long and short positions on this contract.`}
+									value={formatUSD(oiUsd, { compact: false })}
+								/>
 								<DetailCell
 									label={
 										<>
 											{t`FUNDING`}/{t`Resets in`}
 										</>
 									}
+									tooltipContent={t`Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details.`}
 									value={
 										<span className="inline-flex items-center gap-2">
 											<span className={getPriceChangeColorClass(fundingNum)}>
@@ -194,10 +218,33 @@ export function MobileMarketBar({ className }: Props) {
 	);
 }
 
-function DetailCell({ label, value }: DetailCellProps) {
+function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 	return (
 		<div className="min-w-0">
-			<div className="truncate text-2xs font-medium leading-4 text-fg-muted">{label}</div>
+			<div className="truncate text-2xs font-medium leading-4 text-fg-muted">
+				{tooltipContent ? (
+					<Tooltip
+						content={<div className="leading-4 break-words">{tooltipContent}</div>}
+						side="bottom"
+						align="start"
+						sideOffset={4}
+						arrow={false}
+						collisionBoundary={getTooltipCollisionBoundary()}
+						collisionPadding={8}
+						collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "none" }}
+						className="box-border w-[min(20rem,calc(100vw-2rem))] max-w-[var(--available-width)] text-2xs"
+					>
+						<button
+							type="button"
+							className="max-w-full cursor-help truncate border-0 bg-transparent p-0 text-left text-current underline decoration-dashed underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						>
+							{label}
+						</button>
+					</Tooltip>
+				) : (
+					label
+				)}
+			</div>
 			<div
 				className="truncate text-xs font-semibold leading-5 text-fg tabular-nums"
 				title={typeof value === "string" ? value : undefined}
@@ -211,6 +258,22 @@ function DetailCell({ label, value }: DetailCellProps) {
 function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string {
 	if (market?.kind !== "spot") return "";
 	return `@${(market as SpotMarketInfo).index}`;
+}
+
+function getTooltipCollisionBoundary(): HTMLElement | undefined {
+	if (typeof document === "undefined") return undefined;
+	return document.body;
+}
+
+function getAllMidsCoin(market: UnifiedMarketInfo | undefined): string {
+	if (!market) return "";
+	if (market.kind === "spot") return `@${(market as SpotMarketInfo).index}`;
+	return market.name;
+}
+
+function getAllMidsParams(market: UnifiedMarketInfo | undefined): AllMidsParams {
+	if (market?.kind !== "builderPerp") return undefined;
+	return { dex: market.dex };
 }
 
 function getPriceDecimals(market: UnifiedMarketInfo | undefined): number {

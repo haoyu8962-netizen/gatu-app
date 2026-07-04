@@ -1399,6 +1399,10 @@ msgstr "HIP-3"
 msgid "Hour(s)"
 msgstr "घंटे"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
+msgstr "लॉन्ग द्वारा शॉर्ट को चुकाई जाने वाली प्रति घंटे की दर (यदि नकारात्मक हो, तो शॉर्ट लॉन्ग को भुगतान करते हैं)। फंडिंग से कोई अतिरिक्त शुल्क नहीं जुड़ा है; यह कीमत को स्पॉट कीमत की ओर ले जाने के लिए उपयोगकर्ताओं के बीच पीयर-टू-पीयर ट्रांसफर है। विवरण के लिए दस्तावेज़ देखें।"
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
@@ -1727,6 +1731,10 @@ msgstr "मार्क"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Mark Price"
 msgstr "Mark प्राइस"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details."
+msgstr "मार्क प्राइस: मार्जिन गणना, अवास्तविक PnL, लिक्विडेशन और TP/SL ऑर्डर ट्रिगर करने के लिए उपयोग होता है। ऑरेकल प्राइस: फंडिंग भुगतान के लिए संदर्भ कीमत। विवरण के लिए HIP-3 डिप्लॉयर के दस्तावेज़ देखें।"
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -3572,6 +3580,10 @@ msgstr "TWAP ऑर्डर मूल्य बहुत छोटा है।
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "TWAP Orders"
 msgstr "TWAP ऑर्डर"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Two-sided open interest: the sum of long and short positions on this contract."
+msgstr "दो-तरफ़ा ओपन इंटरेस्ट: इस कॉन्ट्रैक्ट पर लॉन्ग और शॉर्ट पोज़िशन का योग।"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx

@@ -1399,6 +1399,10 @@ msgstr "HIP-3"
 msgid "Hour(s)"
 msgstr "Hour(s)"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
+msgstr "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
@@ -1727,6 +1731,10 @@ msgstr "Mark"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Mark Price"
 msgstr "Mark Price"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details."
+msgstr "Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details."
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -3572,6 +3580,10 @@ msgstr "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "TWAP Orders"
 msgstr "TWAP Orders"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Two-sided open interest: the sum of long and short positions on this contract."
+msgstr "Two-sided open interest: the sum of long and short positions on this contract."
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx

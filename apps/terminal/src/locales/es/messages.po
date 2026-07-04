@@ -1399,6 +1399,10 @@ msgstr "HIP-3"
 msgid "Hour(s)"
 msgstr "Hora(s)"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
+msgstr "Tasa horaria que los largos pagan a los cortos (si es negativa, los cortos pagan a los largos). La financiación no tiene comisiones asociadas; es una transferencia punto a punto entre usuarios para acercar el precio al precio spot. Consulta la documentación para más detalles."
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
@@ -1727,6 +1731,10 @@ msgstr "Marca"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Mark Price"
 msgstr "Precio Mark"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details."
+msgstr "Precio de marca: se usa para calcular margen, PnL no realizado, liquidaciones y activar órdenes TP/SL. Precio de oráculo: precio de referencia para pagos de financiación. Consulta la documentación del deployer HIP-3 para más detalles."
 
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -3572,6 +3580,10 @@ msgstr "El valor de la orden TWAP es demasiado pequeño. El mínimo es ${min}, q
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "TWAP Orders"
 msgstr "Órdenes TWAP"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Two-sided open interest: the sum of long and short positions on this contract."
+msgstr "Interés abierto bilateral: suma de las posiciones largas y cortas de este contrato."
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
