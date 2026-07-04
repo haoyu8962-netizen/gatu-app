@@ -64,6 +64,8 @@ msgstr "Variation 24h"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "24H VOL"
 msgstr "24H VOL"
 
@@ -503,6 +505,10 @@ msgstr "Fermeture..."
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Collapse account panel"
 #~ msgstr "Réduire le panneau du compte"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Collapse market details"
+msgstr ""
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Coming soon"
@@ -1134,6 +1140,10 @@ msgstr "Exécution"
 #~ msgid "Expand account panel"
 #~ msgstr "Développer le panneau du compte"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Expand market details"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAtLabel}"
 msgstr "Expire {expiresAtLabel}"
@@ -1320,6 +1330,7 @@ msgid "Funding"
 msgstr "Financement"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "FUNDING"
 msgstr "FUNDING"
 
@@ -1701,6 +1712,8 @@ msgstr "Marge req."
 msgid "Margin Used"
 msgstr "Marge utilisée"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Mark"
@@ -2065,6 +2078,7 @@ msgid "Open command menu"
 msgstr "Ouvrir le menu de commandes"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "OPEN INT"
 msgstr "OPEN INT"
 
@@ -2108,6 +2122,7 @@ msgstr "Ouvrir le terminal"
 #~ msgstr ""
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/config/ui-text.ts
 msgid "ORACLE"
 msgstr "ORACLE"
@@ -2563,6 +2578,7 @@ msgid "Reset phone access"
 msgstr "Réinitialiser l'accès téléphone"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "Réinitialisation dans"
 

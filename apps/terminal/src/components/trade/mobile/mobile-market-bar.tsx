@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { t } from "@lingui/core/macro";
+import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { get24hChange } from "@/domain/market";
+import { get24hChange, getOiUsd } from "@/domain/market";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { cn } from "@/lib/cn";
-import { formatNumber } from "@/lib/format";
-import { useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { formatClockDuration, formatNumber, formatPercent, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
+import { type SpotMarketInfo, type UnifiedMarketInfo, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
@@ -12,6 +14,8 @@ import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { TokenSelector } from "../chart/token-selector";
 
 type PriceDirection = "up" | "down";
+
+const HOUR_MS = 3_600_000;
 
 interface PriceFlashState {
 	sequence: number;
@@ -27,6 +31,8 @@ export function MobileMarketBar({ className }: Props) {
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { resetPrices } = useOrderEntryActions();
+	const [expanded, setExpanded] = useState(false);
+	const [fundingRemaining, setFundingRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
 
 	function handleMarketChange(name: string) {
 		setSelectedMarket(scope, name);
@@ -34,7 +40,19 @@ export function MobileMarketBar({ className }: Props) {
 	}
 
 	const { midPx } = useOrderbookMidPrice(market?.name);
-	const prevDayPx = market?.prevDayPx;
+	const isSpot = market?.kind === "spot";
+	const perpCoin = market?.name ?? "";
+	const spotCoin = getSpotSubscriptionCoin(market);
+	const { data: perpCtxEvent } = useSubscription(
+		"activeAssetCtx",
+		{ coin: perpCoin },
+		{ enabled: !!perpCoin && !isSpot },
+	);
+	const { data: spotCtxEvent } = useSubscription(
+		"activeSpotAssetCtx",
+		{ coin: spotCoin },
+		{ enabled: !!spotCoin && isSpot },
+	);
 
 	const [priceFlash, setPriceFlash] = useState<PriceFlashState>({ sequence: 0, direction: null });
 	const previousMidPxRef = useRef<number | undefined>(undefined);
@@ -49,14 +67,28 @@ export function MobileMarketBar({ className }: Props) {
 		}));
 	}, [midPx]);
 
+	useEffect(() => {
+		const id = setInterval(() => setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS)), 1000);
+		return () => clearInterval(id);
+	}, []);
+
+	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
+	const perpCtx = isSpot ? undefined : perpCtxEvent?.ctx;
+	const prevDayPx = liveCtx?.prevDayPx ?? market?.prevDayPx;
+	const priceDecimals = getPriceDecimals(market);
+	const marketMarkPx = perpCtx?.markPx ?? market?.markPx;
+	const oraclePx = perpCtx?.oraclePx ?? market?.oraclePx;
+	const dayNtlVlm = liveCtx?.dayNtlVlm ?? market?.dayNtlVlm;
+	const openInterest = perpCtx?.openInterest ?? market?.openInterest;
+	const funding = perpCtx?.funding ?? market?.funding;
+	const fundingNum = toBig(funding)?.toNumber() ?? 0;
 	const change24h = get24hChange(prevDayPx, midPx);
 	const changeAmount = getPriceChangeAmount(midPx, prevDayPx);
 	const changeColorClass = getPriceChangeColorClass(change24h);
-	const priceText = formatNumber(midPx, 2);
-	const changeAmountText = formatSignedFixed(changeAmount, PRICE_DECIMALS);
+	const priceText = formatDisplayPrice(midPx, priceDecimals);
+	const changeAmountText = formatSignedFixed(changeAmount, priceDecimals);
 	const changePercentText = formatSignedPercent(change24h);
-	const maxLeverage = market && "maxLeverage" in market ? market.maxLeverage : undefined;
-	const hasLeverage = typeof maxLeverage === "number" && maxLeverage > 0;
+	const oiUsd = getOiUsd(openInterest, marketMarkPx);
 
 	return (
 		<div
@@ -65,51 +97,126 @@ export function MobileMarketBar({ className }: Props) {
 				className,
 			)}
 		>
-			<div className="h-full min-w-0 px-2 py-1.5 min-[390px]:px-2.5 flex items-center justify-between gap-1.5 min-[390px]:gap-2">
-				<div className="flex items-center gap-1.5 min-[390px]:gap-2 min-w-0">
-					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
-					{hasLeverage && (
-						<span className="shrink-0 rounded-xs bg-fill-weak px-1.5 py-1 text-xs font-medium leading-none tabular-nums text-fg-muted">
-							{maxLeverage}x
-						</span>
-					)}
-				</div>
+			<div className="min-w-0 px-2 py-1.5 min-[390px]:px-2.5">
+				<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(6.75rem,auto)_2rem] items-center gap-1.5 min-[390px]:gap-2">
+					<div className="flex min-w-0 items-center gap-1.5 min-[390px]:gap-2">
+						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
+					</div>
 
-				<div data-boneyard="market-price" className="relative shrink-0">
-					<div className="grid w-[102px] min-[390px]:w-[132px] min-[400px]:w-[148px] grid-cols-[1fr_0px] min-[390px]:grid-cols-[1fr_32px] items-center">
-						<div className="min-w-0 text-right">
+					<div data-boneyard="market-price" className="min-w-0 text-left">
+						<div className="flex min-w-0 flex-col items-start gap-1">
 							<span
 								key={priceFlash.sequence}
 								data-direction={priceFlash.direction ?? undefined}
 								className={cn(
-									"block h-7 font-sans text-lg leading-7 font-medium text-fg tabular-nums",
+									"block truncate font-sans text-base leading-none font-normal text-fg tabular-nums",
 									priceFlash.direction && "use-color-change",
 								)}
+								title={priceText}
 							>
 								{priceText}
 							</span>
 							<div
 								className={cn(
-									"h-4 font-sans text-2xs leading-4 tabular-nums",
+									"truncate font-sans text-xs leading-none tabular-nums",
 									changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
 										? "invisible text-fg-muted"
 										: changeColorClass,
 								)}
+								title={`${changeAmountText} / ${changePercentText}`}
 							>
 								{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
 									? `${changeAmountText} / ${changePercentText}`
 									: "0.00 / 0.00%"}
 							</div>
 						</div>
-						<div className="h-8 w-0 min-[390px]:w-8" aria-hidden="true" />
 					</div>
+
+					<button
+						type="button"
+						onClick={() => setExpanded((value) => !value)}
+						className="flex size-8 shrink-0 items-center justify-center rounded-xs border border-stroke-weak bg-fill-weak text-icon hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						aria-expanded={expanded}
+						aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
+					>
+						{expanded ? <CaretUpIcon className="size-4" /> : <CaretDownIcon className="size-4" />}
+					</button>
 				</div>
+
+				{expanded && (
+					<div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2 pb-0.5">
+						{!isSpot && (
+							<>
+								<DetailCell
+									label={
+										<>
+											{t`Mark`}/{t`ORACLE`}
+										</>
+									}
+									value={`${formatDisplayPrice(marketMarkPx, priceDecimals)} / ${formatDisplayPrice(oraclePx, priceDecimals)}`}
+								/>
+								<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
+								<DetailCell label={t`OPEN INT`} value={formatUSD(oiUsd, { compact: false })} />
+								<DetailCell
+									label={
+										<>
+											{t`FUNDING`}/{t`Resets in`}
+										</>
+									}
+									value={
+										<span className="inline-flex items-center gap-2">
+											<span className={getPriceChangeColorClass(fundingNum)}>
+												{formatPercent(fundingNum, { minimumFractionDigits: 4, signDisplay: "exceptZero" })}
+											</span>
+											<span>{formatClockDuration(fundingRemaining)}</span>
+										</span>
+									}
+								/>
+							</>
+						)}
+						{isSpot && (
+							<>
+								<DetailCell label={t`Mark`} value={formatDisplayPrice(marketMarkPx ?? midPx, priceDecimals)} />
+								<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
+							</>
+						)}
+					</div>
+				)}
 			</div>
 		</div>
 	);
 }
 
-const PRICE_DECIMALS = 2;
+function DetailCell({ label, value }: { label: ReactNode; value: ReactNode }) {
+	return (
+		<div className="min-w-0">
+			<div className="truncate text-2xs font-medium leading-4 text-fg-muted">{label}</div>
+			<div
+				className="truncate text-xs font-semibold leading-5 text-fg tabular-nums"
+				title={typeof value === "string" ? value : undefined}
+			>
+				{value}
+			</div>
+		</div>
+	);
+}
+
+function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string {
+	if (market?.kind !== "spot") return "";
+	return `@${(market as SpotMarketInfo).index}`;
+}
+
+function getPriceDecimals(market: UnifiedMarketInfo | undefined): number {
+	if (!market) return 2;
+	return szDecimalsToPriceDecimals(market.szDecimals);
+}
+
+function formatDisplayPrice(value: string | number | null | undefined, decimals: number): string {
+	return formatNumber(value, {
+		minimumFractionDigits: decimals,
+		maximumFractionDigits: decimals,
+	});
+}
 
 function getPriceChangeAmount(
 	price: string | number | null | undefined,

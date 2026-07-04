@@ -64,6 +64,8 @@ msgstr "24h बदलाव"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "24H VOL"
 msgstr "24H VOL"
 
@@ -503,6 +505,10 @@ msgstr "बंद हो रहा है..."
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Collapse account panel"
 #~ msgstr "खाता पैनल छोटा करें"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Collapse market details"
+msgstr ""
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Coming soon"
@@ -1134,6 +1140,10 @@ msgstr "निष्पादन"
 #~ msgid "Expand account panel"
 #~ msgstr "खाता पैनल विस्तृत करें"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Expand market details"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAtLabel}"
 msgstr "{expiresAtLabel} को समाप्त होगा"
@@ -1320,6 +1330,7 @@ msgid "Funding"
 msgstr "फंडिंग"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "FUNDING"
 msgstr "फंडिंग"
 
@@ -1701,6 +1712,8 @@ msgstr "मार्जिन आवश्यक"
 msgid "Margin Used"
 msgstr "उपयोग किया गया मार्जिन"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Mark"
@@ -2065,6 +2078,7 @@ msgid "Open command menu"
 msgstr "कमांड मेन्यू खोलें"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "OPEN INT"
 msgstr "OPEN INT"
 
@@ -2108,6 +2122,7 @@ msgstr "टर्मिनल खोलें"
 #~ msgstr ""
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/config/ui-text.ts
 msgid "ORACLE"
 msgstr "ऑरेकल"
@@ -2563,6 +2578,7 @@ msgid "Reset phone access"
 msgstr "फ़ोन एक्सेस रीसेट करें"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "रीसेट होगा"
 

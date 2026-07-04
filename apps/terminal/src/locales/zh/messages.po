@@ -64,6 +64,8 @@ msgstr "24h 涨跌"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "24H VOL"
 msgstr "24H VOL"
 
@@ -503,6 +505,10 @@ msgstr "平仓中..."
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Collapse account panel"
 #~ msgstr "收起账户面板"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Collapse market details"
+msgstr ""
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Coming soon"
@@ -1134,6 +1140,10 @@ msgstr "执行"
 #~ msgid "Expand account panel"
 #~ msgstr "展开账户面板"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Expand market details"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAtLabel}"
 msgstr "{expiresAtLabel} 到期"
@@ -1320,6 +1330,7 @@ msgid "Funding"
 msgstr "资金费率"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "FUNDING"
 msgstr "资金费率"
 
@@ -1701,6 +1712,8 @@ msgstr "保证金要求"
 msgid "Margin Used"
 msgstr "已用保证金"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Mark"
@@ -2065,6 +2078,7 @@ msgid "Open command menu"
 msgstr "打开命令菜单"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "OPEN INT"
 msgstr "持仓量"
 
@@ -2108,6 +2122,7 @@ msgstr "打开终端"
 #~ msgstr ""
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/config/ui-text.ts
 msgid "ORACLE"
 msgstr "预言机"
@@ -2563,6 +2578,7 @@ msgid "Reset phone access"
 msgstr "重置手机访问"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "重置倒计时"
 
