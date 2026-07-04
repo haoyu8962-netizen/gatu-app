@@ -7,7 +7,11 @@ import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { TOKEN_SELECTOR_TRIGGER_CLASSNAME, TokenSelectorTriggerContent } from "./token-selector-trigger";
+import {
+	MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME,
+	TOKEN_SELECTOR_TRIGGER_CLASSNAME,
+	TokenSelectorTriggerContent,
+} from "./token-selector-trigger";
 
 const TokenSelectorPopup = createLazyComponent(() => import("./token-selector-popup"), "TokenSelectorPopup");
 const MARKET_METADATA_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
@@ -76,7 +80,7 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 					role="combobox"
 					aria-expanded={open}
 					aria-label={t`Select token`}
-					className={TOKEN_SELECTOR_TRIGGER_CLASSNAME}
+					className={MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME}
 					onPointerEnter={preloadPopup}
 					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}

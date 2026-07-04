@@ -26,6 +26,11 @@ interface Props {
 	className?: string;
 }
 
+interface DetailCellProps {
+	label: ReactNode;
+	value: ReactNode;
+}
+
 export function MobileMarketBar({ className }: Props) {
 	const { data: market } = useSelectedMarketInfo();
 	const { scope } = useExchangeScope();
@@ -68,9 +73,11 @@ export function MobileMarketBar({ className }: Props) {
 	}, [midPx]);
 
 	useEffect(() => {
+		if (!expanded) return;
+		setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS));
 		const id = setInterval(() => setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS)), 1000);
 		return () => clearInterval(id);
-	}, []);
+	}, [expanded]);
 
 	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
 	const perpCtx = isSpot ? undefined : perpCtxEvent?.ctx;
@@ -187,7 +194,7 @@ export function MobileMarketBar({ className }: Props) {
 	);
 }
 
-function DetailCell({ label, value }: { label: ReactNode; value: ReactNode }) {
+function DetailCell({ label, value }: DetailCellProps) {
 	return (
 		<div className="min-w-0">
 			<div className="truncate text-2xs font-medium leading-4 text-fg-muted">{label}</div>

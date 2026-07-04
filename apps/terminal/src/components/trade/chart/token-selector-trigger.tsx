@@ -4,6 +4,9 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { AssetDisplay } from "../components/asset-display";
 
 export const TOKEN_SELECTOR_TRIGGER_CLASSNAME =
+	"inline-flex items-center gap-1 max-w-full min-w-0 px-2 py-1.5 rounded-8 border border-stroke-weak/50 bg-surface/80 hover:bg-fill-hover transition-colors cursor-pointer leading-none";
+
+export const MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME =
 	"inline-flex items-center gap-1 max-w-full min-w-0 px-2 py-1.5 rounded-8 bg-surface/80 hover:bg-fill-hover transition-colors cursor-pointer leading-none";
 
 function getMarketKindBadgeLabel(market: UnifiedMarketInfo | undefined): string {
