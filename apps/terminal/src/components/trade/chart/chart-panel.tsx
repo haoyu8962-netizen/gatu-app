@@ -1,5 +1,5 @@
 import { ClientOnly } from "@tanstack/react-router";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
@@ -15,25 +15,17 @@ export function ChartPanel({ yAxisInside = false }: Props) {
 	useRenderCommitTrack("chart");
 	const theme = useTheme();
 	const { data: selectedMarket } = useSelectedMarketInfo();
-	const [lastResolvedMarket, setLastResolvedMarket] = useState(selectedMarket);
 	const chartTheme = theme === "dark" ? "dark" : "light";
-	const chartMarket = selectedMarket ?? lastResolvedMarket;
-
-	useEffect(() => {
-		if (selectedMarket) {
-			setLastResolvedMarket(selectedMarket);
-		}
-	}, [selectedMarket]);
 
 	return (
 		<div className="h-full flex flex-col overflow-hidden">
-			{!chartMarket && <ChartLoadingFallback />}
-			{chartMarket && (
+			{!selectedMarket && <ChartLoadingFallback />}
+			{selectedMarket && (
 				<ClientOnly>
 					<Suspense fallback={<ChartLoadingFallback />}>
 						<TradingViewChart
-							symbol={chartMarket.name}
-							market={chartMarket}
+							symbol={selectedMarket.name}
+							market={selectedMarket}
 							theme={chartTheme}
 							yAxisInside={yAxisInside}
 						/>

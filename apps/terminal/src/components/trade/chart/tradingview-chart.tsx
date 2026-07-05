@@ -152,7 +152,7 @@ export function TradingViewChart({
 			}
 
 			finishSymbolSwitch();
-			setInitError("symbol-timeout");
+			setRetryNonce((value) => value + 1);
 		}, SYMBOL_SWITCH_TIMEOUT_MS);
 
 		try {
@@ -175,7 +175,7 @@ export function TradingViewChart({
 				interval: nextInterval,
 			});
 			finishSymbolSwitch();
-			setInitError("symbol-exception");
+			setRetryNonce((value) => value + 1);
 		}
 	};
 

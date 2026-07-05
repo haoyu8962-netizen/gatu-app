@@ -238,4 +238,38 @@ describe("TradingViewChart", () => {
 		expect(container.textContent).not.toContain("ETH");
 		expect(widget?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
 	});
+
+	it("rebuilds the widget instead of showing an error after a stalled symbol switch", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		expect(widget).toBeDefined();
+		widget?.setSymbol.mockImplementation(() => {});
+		vi.useFakeTimers();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		await act(async () => {
+			vi.advanceTimersByTime(8_000);
+			await Promise.resolve();
+		});
+
+		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
+
+		await act(async () => {
+			vi.advanceTimersByTime(8_000);
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widget?.remove).toHaveBeenCalledTimes(1);
+		expect(container.textContent).not.toContain("Something went wrong");
+	});
 });
