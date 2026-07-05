@@ -104,7 +104,7 @@ export function MobilePositionsView({ className, scrollMode = "contained" }: Pro
 							const loading = isTabLoading(tab.value);
 
 							return (
-								<TabsTrigger key={tab.value} value={tab.value} className="shrink-0 px-1 text-[10px] leading-7">
+								<TabsTrigger key={tab.value} value={tab.value} className="shrink-0 px-1 text-3xs leading-7">
 									<span>{i18n._(tab.label)}</span>
 									{loading ? (
 										<Spinner className="size-3 shrink-0" />

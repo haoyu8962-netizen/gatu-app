@@ -489,6 +489,10 @@ msgstr "चार्ट"
 msgid "Close"
 msgstr "बंद करें"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Close navigation"
+msgstr ""
+
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Close position"
 #~ msgstr "पोजीशन बंद करें"
@@ -1786,6 +1790,7 @@ msgstr "बाज़ार"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/nav.tsx
 msgid "Markets"
 msgstr "मार्केट"
@@ -2113,6 +2118,10 @@ msgstr "OPEN INT"
 msgid "Open Interest"
 msgstr "ओपन इंटरेस्ट"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Open navigation"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
@@ -2372,6 +2381,7 @@ msgid "Placed"
 msgstr "लगाया गया"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Platform"
 msgstr "प्लेटफ़ॉर्म"
 
@@ -2489,6 +2499,10 @@ msgstr "मूल्य"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Price grouping"
 msgstr "प्राइस ग्रुपिंग"
+
+#: src/components/trade/mobile/mobile-bottom-nav.tsx
+msgid "Primary navigation"
+msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Privacy Policy"
@@ -2868,6 +2882,7 @@ msgstr "{p}% पर सेट करें"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
 msgid "Settings"
 msgstr "सेटिंग्स"
@@ -3395,6 +3410,10 @@ msgstr "Perp में"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr "Spot में"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Toggle display units"
+msgstr ""
 
 #: src/components/ui/sidebar.tsx
 #: src/components/ui/sidebar.tsx

@@ -489,6 +489,10 @@ msgstr "Gráfico"
 msgid "Close"
 msgstr "Cerrar"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Close navigation"
+msgstr ""
+
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Close position"
 #~ msgstr "Cerrar posición"
@@ -1786,6 +1790,7 @@ msgstr "mercados"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/nav.tsx
 msgid "Markets"
 msgstr "Mercados"
@@ -2113,6 +2118,10 @@ msgstr "OPEN INT"
 msgid "Open Interest"
 msgstr "Interés abierto"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Open navigation"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
@@ -2372,6 +2381,7 @@ msgid "Placed"
 msgstr "Colocada"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Platform"
 msgstr "Plataforma"
 
@@ -2489,6 +2499,10 @@ msgstr "Precio"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Price grouping"
 msgstr "Agrupación de precios"
+
+#: src/components/trade/mobile/mobile-bottom-nav.tsx
+msgid "Primary navigation"
+msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Privacy Policy"
@@ -2868,6 +2882,7 @@ msgstr "Establecer en {p}%"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
 msgid "Settings"
 msgstr "Configuración"
@@ -3395,6 +3410,10 @@ msgstr "A Perp"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr "A Spot"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Toggle display units"
+msgstr ""
 
 #: src/components/ui/sidebar.tsx
 #: src/components/ui/sidebar.tsx

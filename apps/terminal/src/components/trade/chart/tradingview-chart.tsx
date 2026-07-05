@@ -162,11 +162,6 @@ export function TradingViewChart({
 				return;
 			}
 
-			console.warn("[TradingViewChart] TradingView symbol switch timed out.", {
-				symbol: nextSymbol,
-				interval: nextInterval,
-			});
-
 			finishSymbolSwitch();
 			setRetryNonce((value) => value + 1);
 		}, SYMBOL_SWITCH_TIMEOUT_MS);
@@ -179,12 +174,7 @@ export function TradingViewChart({
 				symbolChanged.unsubscribe(null, completeSymbolSwitch);
 			};
 			widget.setSymbol(nextSymbol, nextInterval as ResolutionString, completeSymbolSwitch);
-		} catch (error) {
-			console.warn("[TradingViewChart] TradingView symbol switch failed.", {
-				error,
-				symbol: nextSymbol,
-				interval: nextInterval,
-			});
+		} catch {
 			finishSymbolSwitch();
 			setRetryNonce((value) => value + 1);
 		}
@@ -205,13 +195,7 @@ export function TradingViewChart({
 				appliedThemeRef.current = nextTheme;
 				widget.applyOverrides(buildChartOverrides());
 			})
-			.catch((error) => {
-				if (widgetRef.current !== widget || themeSwitchSequenceRef.current !== sequence) return;
-				console.warn("[TradingViewChart] TradingView theme switch failed.", {
-					error,
-					theme: nextTheme,
-				});
-			});
+			.catch(() => undefined);
 	};
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: switch cleanup only reads refs; adding the helper would recreate the widget on every render.
@@ -278,14 +262,8 @@ export function TradingViewChart({
 			themeSwitchSequenceRef.current += 1;
 		};
 
-		const handleFinalFailure = (reason: string, attempt: number, error?: unknown) => {
+		const handleFinalFailure = (reason: string) => {
 			if (disposed) return;
-			console.warn("[TradingViewChart] TradingView failed to initialize.", {
-				attempt,
-				error,
-				maxAttempts: MAX_CHART_INIT_ATTEMPTS,
-				reason,
-			});
 			setInitError(reason);
 		};
 
@@ -298,7 +276,7 @@ export function TradingViewChart({
 					void initWidget(attempt + 1);
 					return;
 				}
-				handleFinalFailure("ready-timeout", attempt);
+				handleFinalFailure("ready-timeout");
 			}, CHART_READY_TIMEOUT_MS);
 		};
 
@@ -360,14 +338,14 @@ export function TradingViewChart({
 					applyThemeRef.current(targetThemeRef.current);
 					applySymbolRef.current();
 				});
-			} catch (error) {
+			} catch {
 				if (disposed) return;
 				removeWidget();
 				if (attempt < MAX_CHART_INIT_ATTEMPTS) {
 					void initWidget(attempt + 1);
 					return;
 				}
-				handleFinalFailure("exception", attempt, error);
+				handleFinalFailure("exception");
 			}
 		};
 

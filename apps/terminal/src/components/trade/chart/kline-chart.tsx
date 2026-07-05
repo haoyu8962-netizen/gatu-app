@@ -33,12 +33,6 @@ function delay(ms: number) {
 	return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-function logRecoverableCandleFetchFailure(label: string, err: unknown) {
-	if (import.meta.env.DEV) {
-		console.warn(`kline ${label} candle fetch failed`, err);
-	}
-}
-
 async function fetchCandlesWithRetry(params: CandleSnapshotParams, shouldContinue: () => boolean) {
 	let lastError: unknown;
 
@@ -125,8 +119,7 @@ export function KlineChart({
 					() => !disposed && chartRef.current === chart,
 				)
 					.then((candles) => callback(candlesToKLineData(candles), candles.length > 0))
-					.catch((err) => {
-						logRecoverableCandleFetchFailure("forward-load", err);
+					.catch(() => {
 						callback([], false);
 					});
 			}
@@ -153,8 +146,7 @@ export function KlineChart({
 					chart.applyNewData(candlesToKLineData(candles), true);
 				}
 			})
-			.catch((err) => {
-				logRecoverableCandleFetchFailure("initial", err);
+			.catch(() => {
 				if (chartRef.current === chart) {
 					chart.applyNewData([], false);
 				}
@@ -217,7 +209,7 @@ export function KlineChart({
 							chart.applyNewData(candlesToKLineData(candles), true);
 						}
 					})
-					.catch((err) => logRecoverableCandleFetchFailure("tab-restore", err));
+					.catch(() => undefined);
 			}
 		}
 

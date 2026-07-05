@@ -1,4 +1,5 @@
 import { Badge, Button, ButtonIcon, Divider, Drawer, DrawerContent } from "@gatu/ui";
+import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
 	DownloadSimpleIcon,
@@ -56,7 +57,7 @@ export function MobileNavDrawer() {
 				intent="neutral"
 				size="md"
 				className="touch-target"
-				aria-label="Open navigation"
+				aria-label={t`Open navigation`}
 				onClick={() => setOpen(true)}
 			>
 				<ListIcon className="size-4" />
@@ -72,13 +73,13 @@ export function MobileNavDrawer() {
 								<span className="text-fg">tu</span>
 							</span>
 						</div>
-						<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label="Close navigation" onClick={close}>
+						<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label={t`Close navigation`} onClick={close}>
 							<XIcon className="size-4" />
 						</ButtonIcon>
 					</div>
 
 					<div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
-						<nav className="p-2 flex flex-col" aria-label="Markets">
+						<nav className="p-2 flex flex-col" aria-label={t`Markets`}>
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
 								<Trans>Markets</Trans>
 							</p>
@@ -100,7 +101,7 @@ export function MobileNavDrawer() {
 
 						<Divider className="mx-3" />
 
-						<nav className="p-2 flex flex-col" aria-label="Platform">
+						<nav className="p-2 flex flex-col" aria-label={t`Platform`}>
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
 								<Trans>Platform</Trans>
 							</p>
@@ -151,7 +152,7 @@ export function MobileNavDrawer() {
 								variant="ghost"
 								intent="neutral"
 								size="md"
-								aria-label="Settings"
+								aria-label={t`Settings`}
 								onClick={() => {
 									openSettingsDialog();
 									close();

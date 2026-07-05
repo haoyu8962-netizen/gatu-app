@@ -1,4 +1,5 @@
 import { Button, Dropdown, type DropdownItem } from "@gatu/ui";
+import { t } from "@lingui/core/macro";
 import { ArrowsClockwiseIcon, ArrowsLeftRightIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -258,7 +259,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 							size="sm"
 							onClick={() => setShowOrderbookInQuote(!showOrderbookInQuote)}
 							className="min-h-11"
-							aria-label="Toggle display units"
+							aria-label={t`Toggle display units`}
 							iconRight={<ArrowsLeftRightIcon className="size-3" />}
 						>
 							{showOrderbookInQuote ? quoteToken : baseToken}
