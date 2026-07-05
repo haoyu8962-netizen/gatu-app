@@ -280,7 +280,6 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 					const limitedFallbackBars = fallbackBars ? limitBarsToCountBack(fallbackBars, periodParams.countBack) : null;
 					const fallbackLastBar = limitedFallbackBars?.at(-1);
 					if (limitedFallbackBars && fallbackLastBar) {
-						store.getState().setLastBar(key, fallbackLastBar);
 						onResult(limitedFallbackBars, { noData: false });
 						return;
 					}
@@ -319,16 +318,14 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 			listenerToStream.set(listenerGuid, key);
 
 			const wrappedOnTick = (bar: Bar) => {
+				const lastBar = store.getState().getLastBar(symbolCacheKey);
+				if (lastBar && bar.time < lastBar.time) return;
+
 				store.getState().setLastBar(symbolCacheKey, bar);
 				onTick(bar);
 			};
 
 			store.getState().subscribe(key, coin, interval, listenerGuid, wrappedOnTick, onResetCacheNeededCallback);
-
-			const cached = store.getState().getLastBar(symbolCacheKey);
-			if (cached) {
-				onTick(cached);
-			}
 		},
 
 		unsubscribeBars: (listenerGuid: string) => {
