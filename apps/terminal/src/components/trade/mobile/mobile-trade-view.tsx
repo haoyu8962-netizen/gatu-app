@@ -169,7 +169,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const estimatedFee = orderValue * feeRate;
 	const marginRequired = capabilities.isLeveraged && leverage > 0 ? orderValue / leverage : 0;
 
-	const liqPrice = capabilities.isLeveraged ? getLiquidationInfo({ price, sizeValue, leverage, side }).liqPrice : null;
+	const liquidationInfo = capabilities.isLeveraged ? getLiquidationInfo({ price, sizeValue, leverage, side }) : null;
+	const liqPrice = liquidationInfo?.liqPrice ?? null;
+	const liqWarning = liquidationInfo?.liqWarning ?? false;
+	const liqValueClass = getLiquidationValueClass(liqPrice, liqWarning);
 
 	const baseInput = {
 		isConnected,
@@ -566,7 +569,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 								value={
 									liqPrice ? formatPrice(liqPrice, { szDecimals: market?.szDecimals }) : FALLBACK_VALUE_PLACEHOLDER
 								}
-								valueClass="text-error"
+								valueClass={liqValueClass}
 								compact={embedded}
 							/>
 						)}
@@ -671,6 +674,12 @@ function SummaryRow({
 			<span className={cn("shrink-0 whitespace-nowrap text-right tabular-nums", valueClass ?? "text-fg")}>{value}</span>
 		</div>
 	);
+}
+
+function getLiquidationValueClass(liqPrice: number | null, liqWarning: boolean) {
+	if (!liqPrice) return "text-fg-muted";
+	if (liqWarning) return "text-error";
+	return "text-fg";
 }
 
 interface MobileButtonContentInput {

@@ -408,7 +408,7 @@ function createMarketDetailTooltip(id: string, content: ReactNode, position: Too
 		<div
 			id={id}
 			role="tooltip"
-			className="fixed z-tooltip box-border rounded-xs border border-stroke-weak bg-overlay px-3 py-2 text-2xs leading-4 text-fg shadow-overlay"
+			className="fixed z-[var(--z-tooltip)] box-border rounded-xs border border-stroke-weak bg-overlay px-3 py-2 text-2xs leading-4 text-fg shadow-overlay"
 			style={{ left: position.left, top: position.top, width: position.width }}
 		>
 			{content}

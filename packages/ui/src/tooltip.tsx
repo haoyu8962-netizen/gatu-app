@@ -82,7 +82,7 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 						collisionBoundary={collisionBoundary}
 						collisionPadding={collisionPadding}
 						collisionAvoidance={collisionAvoidance}
-						className="z-tooltip"
+						className="z-[var(--z-tooltip)]"
 					>
 						<BaseTooltip.Popup ref={ref} className={cn(tooltipPopupVariants(), className)}>
 							{content}

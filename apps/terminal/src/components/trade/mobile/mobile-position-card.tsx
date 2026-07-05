@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
+import { formatLiquidationPrice, formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
 import { isPositive, toBig } from "@/lib/trade/numbers";
@@ -167,7 +167,7 @@ export function MobilePositionCard({
 				/>
 				<MetricCell
 					label={t`Liq`}
-					value={formatPrice(p.liquidationPx, { szDecimals })}
+					value={formatLiquidationPrice(p.liquidationPx, szDecimals)}
 					valueClass={liqIsNear ? "text-error" : undefined}
 				/>
 				<MetricCell label={t`Funding`} value={fundingValue} valueClass={fundingClass} />
