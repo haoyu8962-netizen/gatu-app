@@ -82,6 +82,52 @@ describe("TradingView datafeed", () => {
 		);
 	});
 
+	it("uses market metadata for HIP-3 display symbols while mapping to the API ticker", async () => {
+		const datafeed = createDatafeed({
+			getSymbolInfo: (symbolName, coin) =>
+				symbolName === "xyz:KR200/USDC" || coin === "xyz:KR200"
+					? {
+							name: "xyz:KR200/USDC",
+							ticker: "xyz:KR200",
+							description: "KR200-USDC",
+							pricescale: 100,
+						}
+					: undefined,
+		});
+
+		const symbol = await new Promise<LibrarySymbolInfo>((resolve, reject) => {
+			datafeed.resolveSymbol("HYPERLIQUID:xyz:KR200/USDC", resolve, reject, {});
+		});
+
+		expect(symbol.name).toBe("xyz:KR200/USDC");
+		expect(symbol.ticker).toBe("xyz:KR200");
+		expect(symbol.description).toBe("KR200-USDC");
+		expect(symbol.pricescale).toBe(100);
+
+		infoClient.candleSnapshot.mockResolvedValueOnce([]);
+		await new Promise<void>((resolve, reject) => {
+			datafeed.getBars(
+				symbol,
+				"60" as ResolutionString,
+				{
+					countBack: 100,
+					firstDataRequest: false,
+					from: Date.UTC(2026, 5, 27) / 1000,
+					to: Date.UTC(2026, 5, 28) / 1000,
+				},
+				() => resolve(),
+				reject,
+			);
+		});
+
+		expect(infoClient.candleSnapshot).toHaveBeenCalledWith(
+			expect.objectContaining({
+				coin: "xyz:KR200",
+				interval: "1h",
+			}),
+		);
+	});
+
 	it("returns older bars when the requested range is empty but older candles exist", async () => {
 		vi.useFakeTimers({ now: Date.UTC(2026, 5, 28) });
 		const dayMs = 24 * 60 * 60 * 1000;

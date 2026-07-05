@@ -103,7 +103,7 @@ async function isKnownCoin(coin: string): Promise<boolean> {
 	if (coin.startsWith("@")) return true;
 
 	// HIP-3 markets use dex:coin format (e.g., xyz:XYZ100)
-	if (coin.includes(":")) return true;
+	if (coin.includes(":") && !coin.includes("/") && !coin.includes("-")) return true;
 
 	// Perp markets - check against meta
 	try {

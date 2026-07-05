@@ -1,22 +1,37 @@
 import { CHART_DEFAULT_PRICESCALE, CHART_QUOTE_ASSET } from "@/config/chart";
 
-export function coinFromSymbolName(symbolName: string): string {
-	const trimmed = symbolName.trim();
+const QUOTE_SUFFIXES = ["USDC", "USDH", "USDT"];
 
-	const colonIdx = trimmed.indexOf(":");
-	if (colonIdx === -1) return trimmed;
+function stripExchangePrefix(symbolName: string): string {
+	const colonIdx = symbolName.indexOf(":");
+	if (colonIdx === -1) return symbolName;
 
-	const beforeColon = trimmed.slice(0, colonIdx);
-
+	const beforeColon = symbolName.slice(0, colonIdx);
 	const isExchangePrefix =
 		beforeColon.toLowerCase() === "hyperliquid" ||
 		(beforeColon === beforeColon.toUpperCase() && beforeColon.length > 4);
 
-	if (isExchangePrefix) {
-		return trimmed.slice(colonIdx + 1).trim();
+	if (!isExchangePrefix) return symbolName;
+
+	return symbolName.slice(colonIdx + 1).trim();
+}
+
+function stripQuoteSuffix(symbolName: string): string {
+	const slashIdx = symbolName.indexOf("/");
+	if (slashIdx > 0) return symbolName.slice(0, slashIdx).trim();
+
+	const upperSymbol = symbolName.toUpperCase();
+	for (const quote of QUOTE_SUFFIXES) {
+		const suffix = `-${quote}`;
+		if (upperSymbol.endsWith(suffix)) return symbolName.slice(0, -suffix.length).trim();
 	}
 
-	return trimmed;
+	return symbolName;
+}
+
+export function coinFromSymbolName(symbolName: string): string {
+	const trimmed = symbolName.trim();
+	return stripQuoteSuffix(stripExchangePrefix(trimmed));
 }
 
 export function symbolFromCoin(coin: string): string {
