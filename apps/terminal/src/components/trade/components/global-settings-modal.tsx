@@ -60,13 +60,9 @@ export function GlobalSettingsModal() {
 
 	function handleLanguageChange(value: string | null) {
 		if (!value || value === i18n.locale) return;
-		dynamicActivate(value as LocaleCode)
-			.then((activated) => {
-				if (activated) window.location.reload();
-			})
-			.catch(() => {
-				toast.error(t`Failed to change language`);
-			});
+		dynamicActivate(value as LocaleCode).catch(() => {
+			toast.error(t`Failed to change language`);
+		});
 	}
 
 	function handleNumberFormatChange(value: string | null) {
@@ -145,7 +141,7 @@ export function GlobalSettingsModal() {
 						<SettingRow label={t`Environment`} hint={t`Page reloads when changed`}>
 							<SegmentedControls
 								value={network}
-								onValueChange={(value) => setNetwork(value as "mainnet" | "testnet")}
+								onValueChange={(value: string) => setNetwork(value as "mainnet" | "testnet")}
 								size="xxs"
 							>
 								<SegmentedControlItem value="mainnet">{t`Mainnet`}</SegmentedControlItem>

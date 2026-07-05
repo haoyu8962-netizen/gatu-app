@@ -14,13 +14,9 @@ export function LanguageSwitcher() {
 		active: i18n.locale === code,
 		onSelect: () => {
 			if (i18n.locale === code) return;
-			dynamicActivate(code)
-				.then((activated) => {
-					if (activated) window.location.reload();
-				})
-				.catch(() => {
-					toast.error(t`Failed to change language`);
-				});
+			dynamicActivate(code).catch(() => {
+				toast.error(t`Failed to change language`);
+			});
 		},
 	}));
 
