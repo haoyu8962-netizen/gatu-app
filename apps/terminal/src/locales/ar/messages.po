@@ -704,6 +704,8 @@ msgid "Continue"
 msgstr "متابعة"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Copied"
 msgstr "تم النسخ"
@@ -739,6 +741,11 @@ msgstr "نسخ عنوان المحفظة المضمنة"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Copy phone link"
 msgstr "نسخ رابط الهاتف"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Copy token address"
+msgstr "نسخ عنوان الرمز"
 
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Could not create wallet"
@@ -1752,6 +1759,11 @@ msgstr "سعر العلامة: يُستخدم لحسابات الهامش، وا
 msgid "Market"
 msgstr "السوق"
 
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Market Cap"
+msgstr "القيمة السوقية"
+
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Market Close"
 msgstr "إغلاق بسعر السوق"
@@ -1864,6 +1876,12 @@ msgstr ""
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "More details"
 msgstr "مزيد من التفاصيل"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "More Info"
+msgstr "مزيد من المعلومات"
 
 #: src/components/trade/chart/kline-toolbar.tsx
 msgid "More intervals"
@@ -2116,6 +2134,11 @@ msgstr "فتح الطرفية"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Open the phone link, then enter the pairing code shown on desktop."
 #~ msgstr "افتح رابط الهاتف، ثم أدخل رمز الاقتران الظاهر على سطح المكتب."
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Open token in explorer"
+msgstr "فتح الرمز في المستكشف"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open wallet"
@@ -3384,8 +3407,8 @@ msgid "Toggle size mode"
 msgstr "تبديل وضع الحجم"
 
 #: src/components/trade/market-overview.tsx
-msgid "TOKEN"
-msgstr "TOKEN"
+#~ msgid "TOKEN"
+#~ msgstr "TOKEN"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx

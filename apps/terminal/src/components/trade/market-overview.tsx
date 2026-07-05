@@ -1,9 +1,10 @@
 import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowSquareOutIcon, FireIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CheckIcon, CopyIcon, FireIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { get24hChange, getOiUsd } from "@/domain/market";
+import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
+import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
 import { formatClockDuration, formatPercent, formatUSD, shortenAddress } from "@/lib/format";
 import {
@@ -62,8 +63,13 @@ function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | nu
 	const baseToken = market.tokensInfo[0];
 	if (!baseToken) return null;
 	const tokenId = (baseToken as { tokenId?: string }).tokenId;
-	if (!tokenId || !tokenId.startsWith("0x")) return null;
+	if (!tokenId?.startsWith("0x")) return null;
 	return tokenId;
+}
+
+function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string | number | null | undefined {
+	if (market?.kind !== "spot") return null;
+	return (market as SpotMarketInfo).circulatingSupply;
 }
 
 function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string {
@@ -74,6 +80,7 @@ function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string 
 export function MarketOverview() {
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
 	const { midPx } = useOrderbookMidPrice(selectedMarketInfo?.name);
+	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 
 	const isSpot = selectedMarketInfo?.kind === "spot";
 	const perpCoin = selectedMarketInfo?.name ?? "";
@@ -103,6 +110,11 @@ export function MarketOverview() {
 	const change24h = get24hChange(prevDayForChange, midPx);
 	const oiUsd = getOiUsd(perpCtx?.openInterest, perpCtx?.markPx);
 	const spotTokenAddress = getSpotTokenAddress(selectedMarketInfo);
+	const spotPrice = isSpot ? (spotCtxEvent?.ctx?.markPx ?? selectedMarketInfo?.markPx ?? midPx) : undefined;
+	const spotCirculatingSupply = isSpot
+		? (spotCtxEvent?.ctx?.circulatingSupply ?? getSpotCirculatingSupply(selectedMarketInfo))
+		: null;
+	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotPrice);
 
 	const heroPrice = midPx != null ? formatUSD(midPx, { compact: false }) : "—";
 	const changePct = change24h !== null ? formatPercent(change24h / 100, { signDisplay: "exceptZero" }) : "—";
@@ -177,25 +189,59 @@ export function MarketOverview() {
 							compactDisplay: "short",
 						})}
 					/>
-				</>
-			)}
-			{spotTokenAddress && (
-				<>
 					<StatDivider />
-					<div className="flex items-center gap-1.5 whitespace-nowrap px-1.5 py-px">
-						<span className="text-2xs text-fg-muted/80 uppercase tracking-wide">{t`TOKEN`}</span>
-						<a
-							href={getExplorerTokenUrl(spotTokenAddress)}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="inline-flex items-center gap-0.5 font-sans text-xs font-medium tabular-nums text-fg hover:text-brand transition-colors"
-						>
-							{shortenAddress(spotTokenAddress, 4, 4)}
-							<ArrowSquareOutIcon className="size-2.5 shrink-0 text-icon" aria-hidden="true" />
-						</a>
-					</div>
+					<StatBlock
+						layout="inline"
+						label={t`Market Cap`}
+						value={formatUSD(spotMarketCap, {
+							notation: "compact",
+							compactDisplay: "short",
+						})}
+					/>
+					<StatDivider />
+					{createSpotTokenInfoInline(spotTokenAddress, copiedSpotTokenAddress, copySpotTokenAddress)}
 				</>
 			)}
+		</div>
+	);
+}
+
+function createSpotTokenInfoInline(address: string | null, copied: boolean, onCopy: (value: string) => void) {
+	function handleCopy() {
+		if (!address) return;
+		onCopy(address);
+	}
+
+	if (!address) {
+		return (
+			<div className="flex items-center gap-1.5 whitespace-nowrap px-1.5 py-px">
+				<span className="text-2xs text-fg-muted/80 uppercase tracking-wide">{t`More Info`}</span>
+				<span className="font-sans text-xs font-medium tabular-nums text-fg">—</span>
+			</div>
+		);
+	}
+
+	return (
+		<div className="flex items-center gap-1.5 whitespace-nowrap px-1.5 py-px">
+			<span className="text-2xs text-fg-muted/80 uppercase tracking-wide">{t`More Info`}</span>
+			<a
+				href={getExplorerTokenUrl(address)}
+				target="_blank"
+				rel="noopener noreferrer"
+				className="inline-flex items-center gap-0.5 font-sans text-xs font-medium tabular-nums text-fg transition-colors hover:text-brand"
+				aria-label={t`Open token in explorer`}
+			>
+				{shortenAddress(address, 4, 4)}
+				<ArrowSquareOutIcon className="size-2.5 shrink-0 text-brand" aria-hidden="true" />
+			</a>
+			<button
+				type="button"
+				onClick={handleCopy}
+				aria-label={copied ? t`Copied` : t`Copy token address`}
+				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+			>
+				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+			</button>
 		</div>
 	);
 }

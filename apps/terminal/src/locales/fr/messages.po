@@ -704,6 +704,8 @@ msgid "Continue"
 msgstr "Continuer"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Copied"
 msgstr "Copié"
@@ -739,6 +741,11 @@ msgstr "Copier l'adresse du portefeuille intégré"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Copy phone link"
 msgstr "Copier le lien mobile"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Copy token address"
+msgstr "Copier l’adresse du jeton"
 
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Could not create wallet"
@@ -1752,6 +1759,11 @@ msgstr "Prix de marque : utilisé pour les calculs de marge, le PnL non réalis�
 msgid "Market"
 msgstr "Marché"
 
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Market Cap"
+msgstr "Capitalisation"
+
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Market Close"
 msgstr "Clôture au marché"
@@ -1864,6 +1876,12 @@ msgstr ""
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "More details"
 msgstr "Plus de détails"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "More Info"
+msgstr "Plus d’infos"
 
 #: src/components/trade/chart/kline-toolbar.tsx
 msgid "More intervals"
@@ -2116,6 +2134,11 @@ msgstr "Ouvrir le terminal"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Open the phone link, then enter the pairing code shown on desktop."
 #~ msgstr "Ouvrez le lien téléphone, puis saisissez le code d'appairage affiché sur le bureau."
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Open token in explorer"
+msgstr "Ouvrir le jeton dans l’explorateur"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open wallet"
@@ -3384,8 +3407,8 @@ msgid "Toggle size mode"
 msgstr "Basculer le mode de taille"
 
 #: src/components/trade/market-overview.tsx
-msgid "TOKEN"
-msgstr "TOKEN"
+#~ msgid "TOKEN"
+#~ msgstr "TOKEN"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx

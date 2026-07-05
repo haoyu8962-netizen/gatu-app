@@ -2,6 +2,7 @@ export {
 	exceedsBalance,
 	get24hChange,
 	getAvgPrice,
+	getMarketCapUsd,
 	getOiUsd,
 	getPercent,
 	getRiskRewardRatio,

@@ -1,13 +1,22 @@
-import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { ArrowSquareOutIcon, CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
+import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { get24hChange, getOiUsd } from "@/domain/market";
+import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
+import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
-import { formatClockDuration, formatNumber, formatPercent, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import {
+	formatClockDuration,
+	formatNumber,
+	formatPercent,
+	formatUSD,
+	shortenAddress,
+	szDecimalsToPriceDecimals,
+} from "@/lib/format";
+import {
+	getExplorerTokenUrl,
 	type SpotMarketInfo,
 	type SubParams,
 	type UnifiedMarketInfo,
@@ -23,6 +32,10 @@ import { TokenSelector } from "../chart/token-selector";
 type PriceDirection = "up" | "down";
 
 const HOUR_MS = 3_600_000;
+const TOOLTIP_WIDTH_PX = 320;
+const TOOLTIP_VIEWPORT_PADDING_PX = 16;
+const TOOLTIP_SIDE_OFFSET_PX = 4;
+const TOOLTIP_ESTIMATED_HEIGHT_PX = 144;
 
 interface PriceFlashState {
 	sequence: number;
@@ -39,6 +52,12 @@ interface DetailCellProps {
 	value: ReactNode;
 }
 
+interface TooltipPosition {
+	left: number;
+	top: number;
+	width: number;
+}
+
 type AllMidsParams = SubParams<"allMids">;
 
 export function MobileMarketBar({ className }: Props) {
@@ -46,6 +65,7 @@ export function MobileMarketBar({ className }: Props) {
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { resetPrices } = useOrderEntryActions();
+	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 	const [expanded, setExpanded] = useState(false);
 	const [fundingRemaining, setFundingRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
 
@@ -106,6 +126,10 @@ export function MobileMarketBar({ className }: Props) {
 	const dayNtlVlm = liveCtx?.dayNtlVlm ?? market?.dayNtlVlm;
 	const openInterest = perpCtx?.openInterest ?? market?.openInterest;
 	const funding = perpCtx?.funding ?? market?.funding;
+	const spotMarkPx = isSpot ? (spotCtxEvent?.ctx?.markPx ?? market?.markPx ?? midPx ?? midsPrice) : undefined;
+	const spotCirculatingSupply = isSpot
+		? (spotCtxEvent?.ctx?.circulatingSupply ?? getSpotCirculatingSupply(market))
+		: null;
 	const fundingNum = toBig(funding)?.toNumber() ?? 0;
 	const change24h = get24hChange(prevDayPx, displayPrice);
 	const changeAmount = getPriceChangeAmount(displayPrice, prevDayPx);
@@ -114,6 +138,8 @@ export function MobileMarketBar({ className }: Props) {
 	const changeAmountText = formatSignedFixed(changeAmount, priceDecimals);
 	const changePercentText = formatSignedPercent(change24h);
 	const oiUsd = getOiUsd(openInterest, marketMarkPx);
+	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotMarkPx);
+	const spotTokenAddress = getSpotTokenAddress(market);
 
 	return (
 		<div
@@ -123,7 +149,7 @@ export function MobileMarketBar({ className }: Props) {
 			)}
 		>
 			<div className="min-w-0 px-2 py-1.5 min-[390px]:px-2.5">
-				<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(6.75rem,auto)_2rem] items-center gap-1.5 min-[390px]:gap-2">
+				<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(7.5rem,auto)_2rem] items-center gap-1.5 min-[390px]:gap-2">
 					<div className="flex min-w-0 items-center gap-1.5 min-[390px]:gap-2">
 						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					</div>
@@ -169,7 +195,7 @@ export function MobileMarketBar({ className }: Props) {
 				</div>
 
 				{expanded && (
-					<div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2 pb-0.5">
+					<div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2 pb-0.5 pl-8">
 						{!isSpot && (
 							<>
 								<DetailCell
@@ -207,8 +233,13 @@ export function MobileMarketBar({ className }: Props) {
 						)}
 						{isSpot && (
 							<>
-								<DetailCell label={t`Mark`} value={formatDisplayPrice(marketMarkPx ?? midPx, priceDecimals)} />
+								<DetailCell label={t`Mark`} value={formatDisplayPrice(spotMarkPx, priceDecimals)} />
 								<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
+								<DetailCell label={t`Market Cap`} value={formatUSD(spotMarketCap, { compact: false })} />
+								<DetailCell
+									label={t`More Info`}
+									value={createSpotTokenInfo(spotTokenAddress, copiedSpotTokenAddress, copySpotTokenAddress)}
+								/>
 							</>
 						)}
 					</div>
@@ -218,29 +249,140 @@ export function MobileMarketBar({ className }: Props) {
 	);
 }
 
+function createSpotTokenInfo(address: string | null, copied: boolean, onCopy: (value: string) => void) {
+	if (!address) return FALLBACK_VALUE_PLACEHOLDER;
+
+	function handleCopy() {
+		if (!address) return;
+		onCopy(address);
+	}
+
+	return (
+		<span className="inline-flex min-w-0 max-w-full items-center gap-1">
+			<span className="min-w-0 truncate font-mono tabular-nums" title={address}>
+				{shortenAddress(address, 4, 4)}
+			</span>
+			<a
+				href={getExplorerTokenUrl(address)}
+				target="_blank"
+				rel="noopener noreferrer"
+				aria-label={t`Open token in explorer`}
+				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+			>
+				<ArrowSquareOutIcon className="size-3.5" aria-hidden="true" />
+			</a>
+			<button
+				type="button"
+				onClick={handleCopy}
+				aria-label={copied ? t`Copied` : t`Copy token address`}
+				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+			>
+				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+			</button>
+		</span>
+	);
+}
+
 function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
+	const triggerRef = useRef<HTMLButtonElement>(null);
+	const tooltipId = useId();
+	const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition | null>(null);
+
+	function openTooltip() {
+		const trigger = triggerRef.current;
+		if (!trigger || typeof window === "undefined") return;
+
+		const rect = trigger.getBoundingClientRect();
+		const maxWidth = Math.max(0, window.innerWidth - TOOLTIP_VIEWPORT_PADDING_PX * 2);
+		const width = Math.min(TOOLTIP_WIDTH_PX, maxWidth);
+		const left = Math.min(
+			Math.max(TOOLTIP_VIEWPORT_PADDING_PX, rect.left),
+			Math.max(TOOLTIP_VIEWPORT_PADDING_PX, window.innerWidth - width - TOOLTIP_VIEWPORT_PADDING_PX),
+		);
+		const belowTop = rect.bottom + TOOLTIP_SIDE_OFFSET_PX;
+		const aboveTop = rect.top - TOOLTIP_ESTIMATED_HEIGHT_PX - TOOLTIP_SIDE_OFFSET_PX;
+		const top =
+			belowTop + TOOLTIP_ESTIMATED_HEIGHT_PX > window.innerHeight - TOOLTIP_VIEWPORT_PADDING_PX
+				? Math.max(TOOLTIP_VIEWPORT_PADDING_PX, aboveTop)
+				: belowTop;
+
+		setTooltipPosition({
+			left,
+			top,
+			width,
+		});
+	}
+
+	function closeTooltip() {
+		setTooltipPosition(null);
+	}
+
+	function handlePointerEnter(event: PointerEvent<HTMLButtonElement>) {
+		if (!isHoverPointer(event.pointerType)) return;
+		openTooltip();
+	}
+
+	function handlePointerLeave(event: PointerEvent<HTMLButtonElement>) {
+		if (!isHoverPointer(event.pointerType)) return;
+		closeTooltip();
+	}
+
+	function handleTooltipClick() {
+		if (tooltipPosition) {
+			closeTooltip();
+			return;
+		}
+		openTooltip();
+	}
+
+	useEffect(() => {
+		if (!tooltipPosition || typeof document === "undefined" || typeof window === "undefined") return;
+
+		function closeOpenTooltip() {
+			setTooltipPosition(null);
+		}
+
+		function handlePointerDown(event: globalThis.PointerEvent) {
+			const trigger = triggerRef.current;
+			if (trigger?.contains(event.target as Node)) return;
+			closeOpenTooltip();
+		}
+
+		function handleKeyDown(event: KeyboardEvent) {
+			if (event.key === "Escape") closeOpenTooltip();
+		}
+
+		document.addEventListener("pointerdown", handlePointerDown, true);
+		document.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("scroll", closeOpenTooltip, true);
+		window.addEventListener("resize", closeOpenTooltip);
+		return () => {
+			document.removeEventListener("pointerdown", handlePointerDown, true);
+			document.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("scroll", closeOpenTooltip, true);
+			window.removeEventListener("resize", closeOpenTooltip);
+		};
+	}, [tooltipPosition]);
+
 	return (
 		<div className="min-w-0">
 			<div className="truncate text-2xs font-medium leading-4 text-fg-muted">
 				{tooltipContent ? (
-					<Tooltip
-						content={<div className="leading-4 break-words">{tooltipContent}</div>}
-						side="bottom"
-						align="start"
-						sideOffset={4}
-						arrow={false}
-						collisionBoundary={getTooltipCollisionBoundary()}
-						collisionPadding={8}
-						collisionAvoidance={{ side: "flip", align: "shift", fallbackAxisSide: "none" }}
-						className="box-border w-[min(20rem,calc(100vw-2rem))] max-w-[var(--available-width)] text-2xs"
-					>
+					<>
 						<button
+							ref={triggerRef}
 							type="button"
+							onPointerEnter={handlePointerEnter}
+							onPointerLeave={handlePointerLeave}
+							onBlur={closeTooltip}
+							onClick={handleTooltipClick}
+							aria-describedby={tooltipPosition ? tooltipId : undefined}
 							className="max-w-full cursor-help truncate border-0 bg-transparent p-0 text-left text-current underline decoration-dashed underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
 							{label}
 						</button>
-					</Tooltip>
+						{tooltipPosition && createMarketDetailTooltip(tooltipId, tooltipContent, tooltipPosition)}
+					</>
 				) : (
 					label
 				)}
@@ -255,14 +397,43 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 	);
 }
 
+function isHoverPointer(pointerType: string): boolean {
+	return pointerType === "mouse" || pointerType === "pen";
+}
+
+function createMarketDetailTooltip(id: string, content: ReactNode, position: TooltipPosition) {
+	if (typeof document === "undefined") return null;
+
+	return createPortal(
+		<div
+			id={id}
+			role="tooltip"
+			className="fixed z-tooltip box-border rounded-xs border border-stroke-weak bg-overlay px-3 py-2 text-2xs leading-4 text-fg shadow-overlay"
+			style={{ left: position.left, top: position.top, width: position.width }}
+		>
+			{content}
+		</div>,
+		document.body,
+	);
+}
+
+function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string | number | null | undefined {
+	if (market?.kind !== "spot") return null;
+	return (market as SpotMarketInfo).circulatingSupply;
+}
+
+function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | null {
+	if (market?.kind !== "spot") return null;
+	const baseToken = market.tokensInfo[0];
+	if (!baseToken) return null;
+	const tokenId = (baseToken as { tokenId?: string }).tokenId;
+	if (!tokenId?.startsWith("0x")) return null;
+	return tokenId;
+}
+
 function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string {
 	if (market?.kind !== "spot") return "";
 	return `@${(market as SpotMarketInfo).index}`;
-}
-
-function getTooltipCollisionBoundary(): HTMLElement | undefined {
-	if (typeof document === "undefined") return undefined;
-	return document.body;
 }
 
 function getAllMidsCoin(market: UnifiedMarketInfo | undefined): string {
