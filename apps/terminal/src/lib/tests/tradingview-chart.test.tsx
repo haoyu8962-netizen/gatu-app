@@ -4,6 +4,11 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradingViewChart } from "@/components/trade/chart/tradingview-chart";
+import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
+
+const testState = vi.hoisted(() => ({
+	datafeedOptions: [] as unknown[],
+}));
 
 vi.mock("@lingui/core/macro", () => ({
 	t: (strings: TemplateStringsArray, ...values: unknown[]) =>
@@ -22,10 +27,14 @@ vi.mock("@/lib/chart/theme-colors", () => ({
 }));
 
 vi.mock("@/components/trade/chart/datafeed", () => ({
-	createDatafeed: () => ({}),
+	createDatafeed: (options: unknown) => {
+		testState.datafeedOptions.push(options);
+		return {};
+	},
 }));
 
 type MockWidget = {
+	activeChart: ReturnType<typeof vi.fn>;
 	applyOverrides: ReturnType<typeof vi.fn>;
 	changeTheme: ReturnType<typeof vi.fn>;
 	createButton: ReturnType<typeof vi.fn>;
@@ -36,10 +45,35 @@ type MockWidget = {
 	setSymbol: ReturnType<typeof vi.fn>;
 };
 
+function createMockSubscription() {
+	const callbacks: Array<() => void> = [];
+	return {
+		callbacks,
+		subscribe: vi.fn((_obj: object | null, callback: () => void, singleshot?: boolean) => {
+			const wrapped = singleshot
+				? () => {
+						const index = callbacks.indexOf(wrapped);
+						if (index >= 0) callbacks.splice(index, 1);
+						callback();
+					}
+				: callback;
+			callbacks.push(wrapped);
+		}),
+		unsubscribe: vi.fn((_obj: object | null, callback: () => void) => {
+			const index = callbacks.indexOf(callback);
+			if (index >= 0) callbacks.splice(index, 1);
+		}),
+	};
+}
+
 function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidget {
 	let currentTheme = options.theme ?? "dark";
+	const symbolChanged = createMockSubscription();
 
 	return {
+		activeChart: vi.fn(() => ({
+			onSymbolChanged: vi.fn(() => symbolChanged),
+		})),
 		applyOverrides: vi.fn(),
 		changeTheme: vi.fn(async (nextTheme: "light" | "dark") => {
 			currentTheme = nextTheme;
@@ -70,6 +104,7 @@ describe("TradingViewChart", () => {
 	let widgetConstructor: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
+		testState.datafeedOptions = [];
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -190,7 +225,61 @@ describe("TradingViewChart", () => {
 		expect(widgetConstructor.mock.calls[0]?.[0]).not.toHaveProperty("toolbar_bg");
 	});
 
-	it("retries a slow symbol switch without rebuilding the widget", async () => {
+	it("keeps resolved spot symbol mappings stable across market changes", async () => {
+		const spotMarket = {
+			kind: "spot",
+			name: "@235",
+			pairName: "ETH/USDH",
+			markPx: "68.7000",
+			szDecimals: 5,
+		} as unknown as UnifiedMarketInfo;
+		const perpMarket = {
+			kind: "perp",
+			name: "BTC",
+			pairName: "BTC-USDC",
+			markPx: "100000",
+			szDecimals: 5,
+		} as unknown as UnifiedMarketInfo;
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "@235",
+					market: spotMarket,
+					interval: "60",
+					theme: "dark",
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: "BTC",
+					market: perpMarket,
+					interval: "60",
+					theme: "dark",
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		const options = testState.datafeedOptions[0] as {
+			getSymbolInfo: (
+				symbolName: string,
+				coin: string,
+			) => { name: string; ticker: string; pricescale?: number } | undefined;
+		};
+
+		expect(options.getSymbolInfo("ETH/USDH", "ETH")).toMatchObject({
+			name: "ETH/USDH",
+			ticker: "@235",
+			pricescale: 100,
+		});
+	});
+
+	it("rebuilds a stalled symbol switch without showing an error", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
 		});
@@ -210,13 +299,14 @@ describe("TradingViewChart", () => {
 		expect(widget?.setSymbol).toHaveBeenCalledTimes(1);
 
 		await act(async () => {
-			vi.advanceTimersByTime(8_000);
+			vi.advanceTimersByTime(4_000);
 			await Promise.resolve();
 		});
+		await flushChartEffects();
 
-		expect(widgetConstructor).toHaveBeenCalledTimes(1);
-		expect(widget?.remove).not.toHaveBeenCalled();
-		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widget?.remove).toHaveBeenCalledTimes(1);
+		expect(container.textContent).not.toContain("Something went wrong");
 	});
 
 	it("keeps the chart visible while a symbol switch is pending", async () => {
@@ -239,7 +329,7 @@ describe("TradingViewChart", () => {
 		expect(widget?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
 	});
 
-	it("rebuilds the widget instead of showing an error after a stalled symbol switch", async () => {
+	it("accepts TradingView chart events as symbol switch completion", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
 		});
@@ -255,21 +345,17 @@ describe("TradingViewChart", () => {
 		});
 		await flushChartEffects();
 
-		await act(async () => {
-			vi.advanceTimersByTime(8_000);
-			await Promise.resolve();
-		});
-
-		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
+		const symbolChanged = widget?.activeChart.mock.results[0]?.value.onSymbolChanged();
+		symbolChanged?.callbacks[0]?.();
 
 		await act(async () => {
-			vi.advanceTimersByTime(8_000);
+			vi.advanceTimersByTime(4_000);
 			await Promise.resolve();
 		});
 		await flushChartEffects();
 
-		expect(widgetConstructor).toHaveBeenCalledTimes(2);
-		expect(widget?.remove).toHaveBeenCalledTimes(1);
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		expect(widget?.remove).not.toHaveBeenCalled();
 		expect(container.textContent).not.toContain("Something went wrong");
 	});
 });

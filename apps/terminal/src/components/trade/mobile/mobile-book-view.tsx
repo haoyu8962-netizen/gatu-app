@@ -419,7 +419,9 @@ function CompactOrderbook({
 
 				<div className="shrink-0 flex items-center justify-center border-y border-stroke-weak/40 bg-surface py-1.5 px-2 gap-1.5">
 					<span className="font-bold tabular-nums text-warning text-sm">
-						{typeof mid === "number" && Number.isFinite(mid) ? formatNumber(mid, 2) : FALLBACK_VALUE_PLACEHOLDER}
+						{typeof mid === "number" && Number.isFinite(mid)
+							? formatNumber(mid, priceDecimals)
+							: FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 					<MidTrendIcon direction={midDirection} className="size-4" />
 				</div>

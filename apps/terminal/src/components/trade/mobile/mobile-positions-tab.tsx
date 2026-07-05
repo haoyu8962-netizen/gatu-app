@@ -13,7 +13,7 @@ import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
-import { useGlobalSettingsActions, useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
+import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "../positions/position-dialog-types";
@@ -21,6 +21,7 @@ import { PositionLimitCloseModal } from "../positions/position-limit-close-modal
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 type CloseIntent = "close" | "reverse";
 
@@ -33,13 +34,13 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const slippageBps = useMarketOrderSlippageBps();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
-	const { setMobileActiveTab } = useGlobalSettingsActions();
+	const { setActiveTab } = useMobileTerminalTab();
 	const { setSide } = useOrderEntryActions();
 
 	function handleSelectMarket(name: string, side: Side) {
 		setSelectedMarket(scope, name);
 		setSide(side);
-		setMobileActiveTab("trade");
+		setActiveTab("trade");
 	}
 	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
 	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionData | null>(null);
@@ -170,7 +171,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 					intent="neutral"
 					size="sm"
 					iconLeft={<TrendUpIcon className="size-4" />}
-					onClick={() => setMobileActiveTab("trade")}
+					onClick={() => setActiveTab("trade")}
 				>
 					{t`Go to Trade`}
 				</Button>

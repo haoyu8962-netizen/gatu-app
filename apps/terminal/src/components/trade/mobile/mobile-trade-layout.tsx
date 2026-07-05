@@ -3,22 +3,21 @@ import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileChartView } from "./mobile-chart-view";
-import { MobileMarketBar } from "./mobile-market-bar";
 import { MobilePositionsView } from "./mobile-positions-view";
 import { MobileTradeView } from "./mobile-trade-view";
 
 type TopView = "chart" | "book" | "trades";
 
 interface Props {
-	/** Trade page is a fixed order-form ∥ orderbook split; Markets page is chart/book/trades data only. */
+	active?: boolean;
 	showOrderForm?: boolean;
 }
 
-export function MobileTradeLayout({ showOrderForm = true }: Props) {
-	return showOrderForm ? <TradeOrderView /> : <MarketsDataView />;
+export function MobileTradeLayout({ active = true, showOrderForm = true }: Props) {
+	return showOrderForm ? <TradeOrderView active={active} /> : <MarketsDataView active={active} />;
 }
 
-function TradeOrderView() {
+function TradeOrderView({ active }: { active: boolean }) {
 	return (
 		<div
 			className={cn(
@@ -26,21 +25,21 @@ function TradeOrderView() {
 				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
-			<MobileMarketBar className="min-h-[57px]" />
-
 			<div className="w-full min-w-0 h-[52dvh] min-h-[420px] overflow-hidden flex items-stretch">
 				<MobileTradeView embedded className="flex-[1.2] min-h-0 min-w-0 border-r border-stroke-weak/60" />
-				<MobileBookView compact inTabLayout view="book" className="flex-1 min-h-0 min-w-0 self-stretch" />
+				{active && <MobileBookView compact inTabLayout view="book" className="flex-1 min-h-0 min-w-0 self-stretch" />}
 			</div>
 
-			<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
-				<MobilePositionsView scrollMode="page" />
-			</div>
+			{active && (
+				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
+					<MobilePositionsView scrollMode="page" />
+				</div>
+			)}
 		</div>
 	);
 }
 
-function MarketsDataView() {
+function MarketsDataView({ active }: { active: boolean }) {
 	const [topView, setTopView] = useState<TopView>("chart");
 
 	const tabs: { value: TopView; label: string }[] = [
@@ -58,8 +57,6 @@ function MarketsDataView() {
 				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
-			<MobileMarketBar className="min-h-[57px]" />
-
 			<div className="h-[35px] min-h-[35px] shrink-0 flex overflow-hidden">
 				{tabs.map((tab) => {
 					const active = topView === tab.value;
@@ -89,16 +86,18 @@ function MarketsDataView() {
 				>
 					<MobileChartView />
 				</div>
-				{topView !== "chart" && (
+				{topView !== "chart" && active && (
 					<div className="absolute inset-0 z-10 flex min-h-0 flex-col bg-background">
 						<MobileBookView inTabLayout view={bookView} className="flex-1 min-h-0" />
 					</div>
 				)}
 			</div>
 
-			<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
-				<MobilePositionsView scrollMode="page" />
-			</div>
+			{active && (
+				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
+					<MobilePositionsView scrollMode="page" />
+				</div>
+			)}
 		</div>
 	);
 }

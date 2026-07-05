@@ -19,12 +19,12 @@ import {
 } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
-import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
 	className?: string;
@@ -37,14 +37,14 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 	const { address, isConnected } = useWalletSession();
 	const { scope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
-	const { setMobileActiveTab } = useGlobalSettingsActions();
+	const { setActiveTab } = useMobileTerminalTab();
 	const { setSide } = useOrderEntryActions();
 	const markets = useMarkets();
 
 	function handleSelectMarket(name: string, side: Side) {
 		setSelectedMarket(scope, name);
 		setSide(side);
-		setMobileActiveTab("trade");
+		setActiveTab("trade");
 	}
 
 	const {
