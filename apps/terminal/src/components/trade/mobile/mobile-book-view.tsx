@@ -40,6 +40,12 @@ const ORDERBOOK_SNAPSHOT_CACHE_MAX_KEYS = 12;
 type L2BookEvent = SubEvent<"l2Book">;
 type L2BookParams = SubParams<"l2Book">;
 type CachedOrderbookSnapshot = { key: string; data: L2BookEvent; savedAt: number };
+type VisibleOrderbookSnapshot = {
+	key: string;
+	data: L2BookEvent;
+	priceDecimals: number;
+	szDecimals: number;
+};
 
 const DISABLED_L2_BOOK_PARAMS: L2BookParams = { coin: "", nSigFigs: DEFAULT_L2_BOOK_N_SIG_FIGS };
 const orderbookSnapshotCache = new Map<string, CachedOrderbookSnapshot>();
@@ -169,7 +175,28 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 	}, [bookCacheKey, liveBook]);
 
 	const cachedBook = cachedSnapshot?.key === bookCacheKey ? cachedSnapshot.data : freshCachedSnapshot?.data;
-	const book = liveBook ?? cachedBook;
+	const currentSnapshot = useMemo<VisibleOrderbookSnapshot | null>(() => {
+		if (!bookCacheKey) return null;
+		const data = liveBook ?? cachedBook;
+		if (!data) return null;
+		return { key: bookCacheKey, data, priceDecimals, szDecimals };
+	}, [bookCacheKey, cachedBook, liveBook, priceDecimals, szDecimals]);
+	const [visibleSnapshot, setVisibleSnapshot] = useState<VisibleOrderbookSnapshot | null>(() => {
+		const snapshot = readOrderbookSnapshotCache(bookCacheKey);
+		if (!snapshot) return null;
+		return { key: snapshot.key, data: snapshot.data, priceDecimals, szDecimals };
+	});
+
+	useEffect(() => {
+		if (!currentSnapshot) return;
+		setVisibleSnapshot(currentSnapshot);
+	}, [currentSnapshot]);
+
+	const displaySnapshot = currentSnapshot ?? (bookStatus === "error" ? null : visibleSnapshot);
+	const isTransitioningBook = !!displaySnapshot && displaySnapshot.key !== bookCacheKey;
+	const book = displaySnapshot?.data;
+	const displayPriceDecimals = displaySnapshot?.priceDecimals ?? priceDecimals;
+	const displaySzDecimals = displaySnapshot?.szDecimals ?? szDecimals;
 
 	const bids = useMemo(() => processLevels(book?.levels[0]), [book?.levels]);
 	const asks = useMemo(() => processLevels(book?.levels[1]), [book?.levels]);
@@ -193,18 +220,25 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 	}, [bestBid, bestAsk]);
 
 	const [midDirection, setMidDirection] = useState<"up" | "down" | "flat">("flat");
-	const lastMidRef = useRef<number | undefined>(undefined);
+	const lastMidRef = useRef<{ key: string | null; value: number | undefined }>({ key: null, value: undefined });
 
 	useEffect(() => {
 		if (typeof mid !== "number" || !Number.isFinite(mid)) return;
+		const key = displaySnapshot?.key ?? null;
 		const last = lastMidRef.current;
-		if (typeof last === "number" && Number.isFinite(last)) {
-			if (mid > last) setMidDirection("up");
-			else if (mid < last) setMidDirection("down");
+		if (last.key !== key) {
+			setMidDirection("flat");
+			lastMidRef.current = { key, value: mid };
+			return;
+		}
+
+		if (typeof last.value === "number" && Number.isFinite(last.value)) {
+			if (mid > last.value) setMidDirection("up");
+			else if (mid < last.value) setMidDirection("down");
 			else setMidDirection("flat");
 		}
-		lastMidRef.current = mid;
-	}, [mid]);
+		lastMidRef.current = { key, value: mid };
+	}, [displaySnapshot?.key, mid]);
 
 	const spread = useMemo(() => {
 		if (!Number.isFinite(bestBid) || !Number.isFinite(bestAsk)) return undefined;
@@ -301,10 +335,11 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 						askLadderRef={askLadderRef}
 						bidLadderRef={bidLadderRef}
 						bookStatus={bookStatus}
+						isTransitioning={isTransitioningBook}
 						maxTotal={maxTotal}
-						priceDecimals={priceDecimals}
+						priceDecimals={displayPriceDecimals}
 						showOrderbookInQuote={showOrderbookInQuote}
-						szDecimals={szDecimals}
+						szDecimals={displaySzDecimals}
 						mid={mid}
 						midDirection={midDirection}
 						spreadText={spreadText}
@@ -321,10 +356,11 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 						askLadderRef={askLadderRef}
 						bidLadderRef={bidLadderRef}
 						bookStatus={bookStatus}
+						isTransitioning={isTransitioningBook}
 						maxTotal={maxTotal}
-						priceDecimals={priceDecimals}
+						priceDecimals={displayPriceDecimals}
 						showOrderbookInQuote={showOrderbookInQuote}
-						szDecimals={szDecimals}
+						szDecimals={displaySzDecimals}
 						spreadText={spreadText}
 					/>
 				)
@@ -347,6 +383,7 @@ interface OrderbookLayoutProps {
 	askLadderRef: RefObject<HTMLDivElement | null>;
 	bidLadderRef: RefObject<HTMLDivElement | null>;
 	bookStatus: string;
+	isTransitioning: boolean;
 	maxTotal: number;
 	priceDecimals: number;
 	showOrderbookInQuote: boolean;
@@ -370,6 +407,7 @@ function CompactOrderbook({
 	askLadderRef,
 	bidLadderRef,
 	bookStatus,
+	isTransitioning,
 	maxTotal,
 	priceDecimals,
 	showOrderbookInQuote,
@@ -396,7 +434,10 @@ function CompactOrderbook({
 				<div className="text-right">{ORDERBOOK_TEXT.HEADER_SIZE}</div>
 			</div>
 
-			<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+			<div
+				aria-busy={isTransitioning}
+				className={cn("flex-1 min-h-0 flex flex-col overflow-hidden", isTransitioning && "pointer-events-none")}
+			>
 				<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-px py-1 overflow-hidden">
 					{hasAsks ? (
 						<>
@@ -494,6 +535,7 @@ function SplitOrderbook({
 	askLadderRef,
 	bidLadderRef,
 	bookStatus,
+	isTransitioning,
 	maxTotal,
 	priceDecimals,
 	showOrderbookInQuote,
@@ -526,7 +568,13 @@ function SplitOrderbook({
 			{showError ? (
 				<OrderbookStatus bookStatus={bookStatus} />
 			) : (
-				<div className="grid flex-1 min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px overflow-hidden">
+				<div
+					aria-busy={isTransitioning}
+					className={cn(
+						"grid flex-1 min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px overflow-hidden",
+						isTransitioning && "pointer-events-none",
+					)}
+				>
 					<div ref={bidLadderRef} className="min-h-0 overflow-hidden py-1">
 						{hasBids ? (
 							<>
