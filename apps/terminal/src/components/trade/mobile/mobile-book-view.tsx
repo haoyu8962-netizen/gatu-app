@@ -49,13 +49,20 @@ function getOrderbookSnapshotCacheKey(params: L2BookParams | null): string | nul
 	return [params.coin, params.nSigFigs ?? "default", params.mantissa ?? "default"].join(":");
 }
 
-function readOrderbookSnapshotCache(key: string | null): CachedOrderbookSnapshot | null {
+function getFreshOrderbookSnapshotCache(key: string | null): CachedOrderbookSnapshot | null {
 	if (!key) return null;
 	const snapshot = orderbookSnapshotCache.get(key);
 	if (!snapshot) return null;
 	if (Date.now() - snapshot.savedAt > ORDERBOOK_SNAPSHOT_CACHE_TTL_MS) {
-		orderbookSnapshotCache.delete(key);
 		return null;
+	}
+	return snapshot;
+}
+
+function readOrderbookSnapshotCache(key: string | null): CachedOrderbookSnapshot | null {
+	const snapshot = getFreshOrderbookSnapshotCache(key);
+	if (!snapshot && key) {
+		orderbookSnapshotCache.delete(key);
 	}
 	return snapshot;
 }
@@ -149,6 +156,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 	const [cachedSnapshot, setCachedSnapshot] = useState<CachedOrderbookSnapshot | null>(() =>
 		readOrderbookSnapshotCache(bookCacheKey),
 	);
+	const freshCachedSnapshot = useMemo(() => getFreshOrderbookSnapshotCache(bookCacheKey), [bookCacheKey]);
 
 	useEffect(() => {
 		setCachedSnapshot(readOrderbookSnapshotCache(bookCacheKey));
@@ -160,7 +168,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 		setCachedSnapshot(snapshot);
 	}, [bookCacheKey, liveBook]);
 
-	const cachedBook = cachedSnapshot?.key === bookCacheKey ? cachedSnapshot.data : undefined;
+	const cachedBook = cachedSnapshot?.key === bookCacheKey ? cachedSnapshot.data : freshCachedSnapshot?.data;
 	const book = liveBook ?? cachedBook;
 
 	const bids = useMemo(() => processLevels(book?.levels[0]), [book?.levels]);
