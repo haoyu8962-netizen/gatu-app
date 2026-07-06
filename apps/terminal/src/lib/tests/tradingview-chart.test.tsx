@@ -279,7 +279,7 @@ describe("TradingViewChart", () => {
 		});
 	});
 
-	it("rebuilds a stalled symbol switch without showing an error", async () => {
+	it("keeps the existing widget when a symbol switch stalls", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
 		});
@@ -300,12 +300,25 @@ describe("TradingViewChart", () => {
 
 		await act(async () => {
 			vi.advanceTimersByTime(4_000);
+			vi.runOnlyPendingTimers();
 			await Promise.resolve();
 		});
 		await flushChartEffects();
 
-		expect(widgetConstructor).toHaveBeenCalledTimes(2);
-		expect(widget?.remove).toHaveBeenCalledTimes(1);
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		expect(widget?.remove).not.toHaveBeenCalled();
+		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
+		expect(widget?.setSymbol).toHaveBeenLastCalledWith("ETH", "60", expect.any(Function));
+		await act(async () => {
+			vi.advanceTimersByTime(4_000);
+			vi.runOnlyPendingTimers();
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		expect(widget?.remove).not.toHaveBeenCalled();
+		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
 		expect(container.textContent).not.toContain("Something went wrong");
 	});
 

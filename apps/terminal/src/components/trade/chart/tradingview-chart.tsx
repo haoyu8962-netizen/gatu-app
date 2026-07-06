@@ -26,6 +26,7 @@ import { createDatafeed } from "./datafeed";
 
 const CHART_READY_TIMEOUT_MS = 12_000;
 const MAX_CHART_INIT_ATTEMPTS = 2;
+const MAX_SYMBOL_SWITCH_ATTEMPTS = 2;
 const SYMBOL_SWITCH_TIMEOUT_MS = 4_000;
 
 function priceScaleFromSzDecimals(szDecimals: number): number {
@@ -78,7 +79,10 @@ export function TradingViewChart({
 	const appliedThemeRef = useRef<"light" | "dark" | null>(null);
 	const pendingSymbolRef = useRef<string | null>(null);
 	const pendingIntervalRef = useRef<string | null>(null);
+	const symbolSwitchAttemptRef = useRef(0);
+	const symbolSwitchTargetRef = useRef<string | null>(null);
 	const symbolSwitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const symbolSwitchRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const symbolSwitchCleanupRef = useRef<(() => void) | null>(null);
 	const themeSwitchSequenceRef = useRef(0);
 	const marketBySymbolRef = useRef(new Map<string, UnifiedMarketInfo>());
@@ -101,6 +105,10 @@ export function TradingViewChart({
 			clearTimeout(symbolSwitchTimeoutRef.current);
 			symbolSwitchTimeoutRef.current = null;
 		}
+		if (symbolSwitchRetryTimeoutRef.current) {
+			clearTimeout(symbolSwitchRetryTimeoutRef.current);
+			symbolSwitchRetryTimeoutRef.current = null;
+		}
 	};
 
 	const clearSymbolSwitchListeners = () => {
@@ -118,6 +126,14 @@ export function TradingViewChart({
 
 	const finishSymbolSwitch = () => {
 		clearPendingSymbolSwitch();
+	};
+
+	const completeSymbolSwitch = (nextSymbol: string, nextInterval: string) => {
+		appliedSymbolRef.current = nextSymbol;
+		appliedIntervalRef.current = nextInterval;
+		symbolSwitchAttemptRef.current = 0;
+		symbolSwitchTargetRef.current = null;
+		finishSymbolSwitch();
 	};
 
 	applySymbolRef.current = () => {
@@ -141,15 +157,20 @@ export function TradingViewChart({
 		pendingIntervalRef.current = nextInterval;
 		setInitError(null);
 
-		const completeSymbolSwitch = () => {
+		const switchTarget = `${nextSymbol}\u0000${nextInterval}`;
+		if (symbolSwitchTargetRef.current !== switchTarget) {
+			symbolSwitchTargetRef.current = switchTarget;
+			symbolSwitchAttemptRef.current = 0;
+		}
+		symbolSwitchAttemptRef.current += 1;
+
+		const handleSymbolSwitchComplete = () => {
 			if (
 				widgetRef.current === widget &&
 				targetSymbolRef.current === nextSymbol &&
 				targetIntervalRef.current === nextInterval
 			) {
-				appliedSymbolRef.current = nextSymbol;
-				appliedIntervalRef.current = nextInterval;
-				finishSymbolSwitch();
+				completeSymbolSwitch(nextSymbol, nextInterval);
 			}
 		};
 
@@ -163,20 +184,34 @@ export function TradingViewChart({
 			}
 
 			finishSymbolSwitch();
-			setRetryNonce((value) => value + 1);
+			if (symbolSwitchAttemptRef.current < MAX_SYMBOL_SWITCH_ATTEMPTS) {
+				symbolSwitchRetryTimeoutRef.current = setTimeout(() => {
+					if (
+						widgetRef.current === widget &&
+						targetSymbolRef.current === nextSymbol &&
+						targetIntervalRef.current === nextInterval
+					) {
+						applySymbolRef.current();
+					}
+				}, 0);
+				return;
+			}
+			symbolSwitchAttemptRef.current = 0;
+			symbolSwitchTargetRef.current = null;
 		}, SYMBOL_SWITCH_TIMEOUT_MS);
 
 		try {
 			const chart = widget.activeChart();
 			const symbolChanged = chart.onSymbolChanged();
-			symbolChanged.subscribe(null, completeSymbolSwitch, true);
+			symbolChanged.subscribe(null, handleSymbolSwitchComplete, true);
 			symbolSwitchCleanupRef.current = () => {
-				symbolChanged.unsubscribe(null, completeSymbolSwitch);
+				symbolChanged.unsubscribe(null, handleSymbolSwitchComplete);
 			};
-			widget.setSymbol(nextSymbol, nextInterval as ResolutionString, completeSymbolSwitch);
+			widget.setSymbol(nextSymbol, nextInterval as ResolutionString, handleSymbolSwitchComplete);
 		} catch {
 			finishSymbolSwitch();
-			setRetryNonce((value) => value + 1);
+			symbolSwitchAttemptRef.current = 0;
+			symbolSwitchTargetRef.current = null;
 		}
 	};
 
