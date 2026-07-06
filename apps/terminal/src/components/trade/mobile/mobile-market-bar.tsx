@@ -23,6 +23,7 @@ import {
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
+import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
 import { toBig } from "@/lib/trade/numbers";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
@@ -62,15 +63,17 @@ type AllMidsParams = SubParams<"allMids">;
 
 export function MobileMarketBar({ className }: Props) {
 	const { data: market } = useSelectedMarketInfo();
-	const { scope } = useExchangeScope();
+	const { scope, setMobileScope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { resetPrices } = useOrderEntryActions();
 	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 	const [expanded, setExpanded] = useState(false);
 	const [fundingRemaining, setFundingRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
 
-	function handleMarketChange(name: string) {
-		setSelectedMarket(scope, name);
+	function handleMarketChange(name: string, nextMarket?: UnifiedMarketInfo) {
+		const nextScope = nextMarket ? getExchangeScopeForMarket(nextMarket) : scope;
+		setMobileScope(nextScope, nextMarket ? getExchangeDexForMarket(nextMarket) : undefined);
+		setSelectedMarket(nextScope, name);
 		resetPrices();
 	}
 

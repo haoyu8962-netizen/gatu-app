@@ -11,7 +11,6 @@ import {
 	WalletIcon,
 	XIcon,
 } from "@phosphor-icons/react";
-import { Link } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
 import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
@@ -21,7 +20,6 @@ import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { ThemeToggle } from "../header/theme-toggle";
-import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
@@ -41,12 +39,11 @@ function ScopeIcon({ scope }: { scope: string }) {
 export function MobileNavDrawer() {
 	const [open, setOpen] = useState(false);
 	const [walletOpen, setWalletOpen] = useState(false);
-	const { scope } = useExchangeScope();
+	const { scope, setMobileScope } = useExchangeScope();
 	const { isConnected, sessionMode } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
-	const { activeTab } = useMobileTerminalTab();
 
 	function close() {
 		setOpen(false);
@@ -86,22 +83,22 @@ export function MobileNavDrawer() {
 								<Trans>Markets</Trans>
 							</p>
 							{SCOPE_NAV_ITEMS.map((item) => (
-								<Link
+								<button
 									key={item.scope}
-									to={item.to}
-									state={(previous) => ({
-										...previous,
-										displayedContent: activeTab,
-									})}
-									onClick={close}
+									type="button"
+									aria-pressed={scope === item.scope}
+									onClick={() => {
+										setMobileScope(item.scope);
+										close();
+									}}
 									className={cn(
-										"flex items-center gap-3 px-3 py-2.5 rounded-xs text-sm transition-colors duration-150",
+										"flex items-center gap-3 px-3 py-2.5 rounded-xs text-left text-sm transition-colors duration-150",
 										scope === item.scope ? item.activeClass : "text-fg-muted hover:text-fg hover:bg-fill-hover",
 									)}
 								>
 									<ScopeIcon scope={item.scope} />
 									{item.label}
-								</Link>
+								</button>
 							))}
 						</nav>
 

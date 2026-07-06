@@ -2,6 +2,7 @@ import { Button, SearchInput, TableHead, TableHeader, TableRow, tableVariants } 
 import { t } from "@lingui/core/macro";
 import { ArrowDownIcon, ArrowsDownUpIcon, ArrowUpIcon } from "@phosphor-icons/react";
 import { flexRender } from "@tanstack/react-table";
+import type { ChangeEvent } from "react";
 import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
@@ -95,8 +96,8 @@ export function TokenSelectorContent({
 		{ value: "spot", label: t`Spot` },
 		{ value: "hip3", label: t`HIP-3` },
 	];
-	const showScopeTabs = exchangeScope === "all";
-	const showSubcategoryTabs = !exchangeDex && subcategories.length > 0;
+	const showScopeTabs = mobile || exchangeScope === "all";
+	const showSubcategoryTabs = (mobile || !exchangeDex) && subcategories.length > 0;
 	const showSelectorFilters = showScopeTabs || showSubcategoryTabs;
 
 	return (
@@ -108,7 +109,7 @@ export function TokenSelectorContent({
 				<SearchInput
 					placeholder={t`Search markets...`}
 					value={search}
-					onChange={(e) => setSearch(e.target.value)}
+					onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
 					onClear={() => setSearch("")}
 					size={mobile ? "md" : "sm"}
 					aria-labelledby={headingId}

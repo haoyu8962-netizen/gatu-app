@@ -20,7 +20,14 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD } from "@/lib/format";
-import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import {
+	type UnifiedMarketInfo,
+	useAgentRegistration,
+	useAgentStatus,
+	useExchange,
+	useSelectedMarketInfo,
+} from "@/lib/hyperliquid";
+import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
 import { createLazyComponent } from "@/lib/lazy";
 import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
@@ -76,11 +83,13 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
 
 	const { data: market } = useSelectedMarketInfo();
-	const { scope } = useExchangeScope();
+	const { scope, setMobileScope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 
-	function handleMarketChange(marketName: string) {
-		setSelectedMarket(scope, marketName);
+	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
+		const nextScope = nextMarket ? getExchangeScopeForMarket(nextMarket) : scope;
+		setMobileScope(nextScope, nextMarket ? getExchangeDexForMarket(nextMarket) : undefined);
+		setSelectedMarket(nextScope, marketName);
 	}
 
 	const { isReady: isAgentApproved } = useAgentStatus();

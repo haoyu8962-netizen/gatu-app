@@ -1,5 +1,6 @@
 import { useId } from "react";
-import { useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketActions } from "@/stores/use-market-store";
 import { TokenSelectorContent } from "../chart/token-selector-content";
@@ -9,16 +10,23 @@ import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 export function MobileMarketsView() {
 	const headingId = useId();
 	const { data: market } = useSelectedMarketInfo();
-	const { scope } = useExchangeScope();
+	const { scope, setMobileScope } = useExchangeScope();
 	const { setSelectedMarket } = useMarketActions();
 	const { setActiveTab } = useMobileTerminalTab();
 
-	function handleSelectMarket(name: string) {
-		setSelectedMarket(scope, name);
+	function handleSelectMarket(name: string, nextMarket?: UnifiedMarketInfo) {
+		const nextScope = nextMarket ? getExchangeScopeForMarket(nextMarket) : scope;
+		setMobileScope(nextScope, nextMarket ? getExchangeDexForMarket(nextMarket) : undefined);
+		setSelectedMarket(nextScope, name);
 		setActiveTab("trade");
 	}
 
-	const ts = useTokenSelector({ value: market?.name ?? "", onValueChange: handleSelectMarket, open: true });
+	const ts = useTokenSelector({
+		value: market?.name ?? "",
+		onValueChange: handleSelectMarket,
+		open: true,
+		mobile: true,
+	});
 
 	return (
 		<div className="flex flex-col h-full min-h-0 bg-background">

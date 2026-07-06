@@ -18,9 +18,10 @@ export interface Subcategory {
 
 export interface UseTokenSelectorOptions {
 	value: string;
-	onValueChange: (value: string) => void;
+	onValueChange: (value: string, market?: MarketRow) => void;
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
+	mobile?: boolean;
 }
 
 export interface UseTokenSelectorReturn {
@@ -96,10 +97,12 @@ export function useTokenSelector({
 	onValueChange,
 	open: controlledOpen,
 	onOpenChange,
+	mobile = false,
 }: UseTokenSelectorOptions): UseTokenSelectorReturn {
+	const { scope: exchangeScope, dex: exchangeDex } = useExchangeScope();
 	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-	const [localScope, setLocalScope] = useState<MarketScope>("all");
-	const [localSubcategory, setLocalSubcategory] = useState<string>("all");
+	const [localScope, setLocalScope] = useState<MarketScope>(() => mapExchangeToMarketScope(exchangeScope));
+	const [localSubcategory, setLocalSubcategory] = useState<string>(() => exchangeDex ?? "all");
 	const [search, setSearch] = useState("");
 	const [deferredSearch, setDeferredSearch] = useState("");
 	const [isPending, startTransition] = useTransition();
@@ -107,12 +110,13 @@ export function useTokenSelector({
 	const [highlightedIndex, setHighlightedIndex] = useState(-1);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const hasInitializedRef = useRef(false);
+	const previousExchangeScopeRef = useRef(exchangeScope);
 	const open = controlledOpen ?? uncontrolledOpen;
 	const setOpen = onOpenChange ?? setUncontrolledOpen;
 
-	const { scope: exchangeScope, dex: exchangeDex } = useExchangeScope();
-	const scope = exchangeScope !== "all" ? mapExchangeToMarketScope(exchangeScope) : localScope;
-	const subcategory = exchangeDex ?? localSubcategory;
+	const routeLockedScope = !mobile && exchangeScope !== "all";
+	const scope = routeLockedScope ? mapExchangeToMarketScope(exchangeScope) : localScope;
+	const subcategory = routeLockedScope ? (exchangeDex ?? localSubcategory) : localSubcategory;
 
 	function handleSearchChange(value: string) {
 		setSearch(value);
@@ -134,6 +138,27 @@ export function useTokenSelector({
 		() => computeSubcategories(scope, spotMarkets, builderPerpMarkets),
 		[scope, spotMarkets, builderPerpMarkets],
 	);
+
+	useEffect(() => {
+		if (!mobile || !open) return;
+		setLocalScope(mapExchangeToMarketScope(exchangeScope));
+		setLocalSubcategory(exchangeDex ?? "all");
+	}, [mobile, open, exchangeScope, exchangeDex]);
+
+	useEffect(() => {
+		if (mobile) return;
+		if (previousExchangeScopeRef.current === exchangeScope) return;
+		previousExchangeScopeRef.current = exchangeScope;
+
+		if (exchangeScope === "all") {
+			setLocalScope("all");
+			setLocalSubcategory("all");
+			return;
+		}
+
+		setLocalScope(mapExchangeToMarketScope(exchangeScope));
+		setLocalSubcategory(exchangeDex ?? "all");
+	}, [mobile, exchangeScope, exchangeDex]);
 
 	function handleScopeSelect(newScope: MarketScope) {
 		setLocalScope(newScope);
@@ -312,7 +337,8 @@ export function useTokenSelector({
 	}
 
 	function handleSelect(name: string) {
-		onValueChange(name);
+		const market = markets.find((row) => row.name === name);
+		onValueChange(name, market);
 		setOpen(false);
 		setSearch("");
 		setDeferredSearch("");

@@ -18,7 +18,7 @@ const MARKET_METADATA_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
 
 export type TokenSelectorProps = {
 	selectedMarket: UnifiedMarketInfo | undefined;
-	onValueChange: (value: string) => void;
+	onValueChange: (value: string, market?: UnifiedMarketInfo) => void;
 };
 
 export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorProps) {
@@ -50,13 +50,14 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 	useEffect(() => {
 		if (hasOpened || typeof window === "undefined") return;
 
-		if ("requestIdleCallback" in window) {
-			const idleId = window.requestIdleCallback(() => preloadPopup(), { timeout: 2_000 });
-			return () => window.cancelIdleCallback(idleId);
+		const browserWindow = window;
+		if (browserWindow.requestIdleCallback) {
+			const idleId = browserWindow.requestIdleCallback(() => preloadPopup(), { timeout: 2_000 });
+			return () => browserWindow.cancelIdleCallback(idleId);
 		}
 
-		const timeoutId = window.setTimeout(preloadPopup, 1_000);
-		return () => window.clearTimeout(timeoutId);
+		const timeoutId = browserWindow.setTimeout(preloadPopup, 1_000);
+		return () => browserWindow.clearTimeout(timeoutId);
 	}, [hasOpened, preloadPopup]);
 
 	const popup =
