@@ -1,11 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useConnection, useDisconnect } from "wagmi";
-import {
-	clearActiveAgentOwner,
-	useAgentWalletActions,
-	useHyperliquid,
-	useHyperliquidOptional,
-} from "@/lib/hyperliquid";
+import { clearActiveAgentOwner, useHyperliquid, useHyperliquidOptional } from "@/lib/hyperliquid";
 import { getPrivyEmbeddedWalletAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
 
 export function useWalletSession() {
@@ -49,18 +44,9 @@ export function useDisconnectWallet() {
 	const { logout, user } = usePrivy();
 	const { walletAddress } = useWalletSession();
 	const disconnect = useDisconnect();
-	const { clientKey, env, sessionMode } = useHyperliquid();
-	const { clearAgent } = useAgentWalletActions();
+	const { sessionMode } = useHyperliquid();
 
 	async function disconnectWallet() {
-		const sessionAddress = clientKey !== "disconnected" ? (clientKey as `0x${string}`) : undefined;
-		const addressToClear =
-			walletAddress ??
-			(user?.wallet?.address as `0x${string}` | undefined) ??
-			(sessionMode === "agent-only" ? sessionAddress : undefined);
-		if (addressToClear) {
-			clearAgent(env, addressToClear);
-		}
 		clearActiveAgentOwner();
 
 		if (sessionMode === "agent-only" && !walletAddress && !user?.wallet?.address) {
