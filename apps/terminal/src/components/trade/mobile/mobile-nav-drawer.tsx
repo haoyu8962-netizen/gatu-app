@@ -21,6 +21,7 @@ import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { ThemeToggle } from "../header/theme-toggle";
+import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
@@ -45,6 +46,7 @@ export function MobileNavDrawer() {
 	const { tradeRestricted } = useGeoRestriction();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
+	const { activeTab } = useMobileTerminalTab();
 
 	function close() {
 		setOpen(false);
@@ -87,6 +89,10 @@ export function MobileNavDrawer() {
 								<Link
 									key={item.scope}
 									to={item.to}
+									state={(previous) => ({
+										...previous,
+										displayedContent: activeTab,
+									})}
 									onClick={close}
 									className={cn(
 										"flex items-center gap-3 px-3 py-2.5 rounded-xs text-sm transition-colors duration-150",
