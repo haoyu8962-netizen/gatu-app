@@ -16,10 +16,12 @@ import {
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
+import { zeroAddress } from "viem";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { formatTransferError } from "@/lib/errors/format";
 import { shortenAddress } from "@/lib/format";
-import { useAgentWalletActions, useAgentWalletStorage, useExchange, useHyperliquid } from "@/lib/hyperliquid";
+import { useAgentWalletActions, useAgentWalletStorage, useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 import { createMobileAgentSyncUrl } from "@/lib/mobile-sync/sync-core";
 
 interface MobileAgentSyncModalProps {
@@ -40,12 +42,62 @@ type ResetState =
 	| { status: "success"; agentAddress: string; expiresAtMs: number }
 	| { status: "error"; message: string };
 
+function normalizeError(error: unknown): Error {
+	return error instanceof Error ? error : new Error(String(error));
+}
+
+function parseNumeric(value: unknown): number | null {
+	if (typeof value !== "string" && typeof value !== "number") return null;
+	const numeric = Number(value);
+	return Number.isFinite(numeric) ? numeric : null;
+}
+
+function hasNonZeroNumeric(value: unknown): boolean {
+	const numeric = parseNumeric(value);
+	return numeric !== null && numeric !== 0;
+}
+
+function hasPositiveNumeric(value: unknown): boolean {
+	const numeric = parseNumeric(value);
+	return numeric !== null && numeric > 0;
+}
+
+function hasHyperliquidAccountFunding(clearinghouseState: unknown, spotState: unknown): boolean {
+	const clearinghouse = clearinghouseState as
+		| {
+				assetPositions?: unknown[];
+				marginSummary?: { accountValue?: unknown; totalRawUsd?: unknown; totalNtlPos?: unknown };
+				withdrawable?: unknown;
+		  }
+		| undefined;
+	const spot = spotState as { balances?: Array<{ total?: unknown; hold?: unknown }> } | undefined;
+
+	return (
+		hasNonZeroNumeric(clearinghouse?.marginSummary?.accountValue) ||
+		hasNonZeroNumeric(clearinghouse?.marginSummary?.totalRawUsd) ||
+		hasNonZeroNumeric(clearinghouse?.marginSummary?.totalNtlPos) ||
+		hasNonZeroNumeric(clearinghouse?.withdrawable) ||
+		(clearinghouse?.assetPositions?.length ?? 0) > 0 ||
+		(spot?.balances ?? []).some((balance) => hasPositiveNumeric(balance.total) || hasPositiveNumeric(balance.hold))
+	);
+}
+
 export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModalProps) {
 	const { address } = useWalletSession();
 	const { env } = useHyperliquid();
 	const localAgent = useAgentWalletStorage(env, address);
 	const { clearAgent } = useAgentWalletActions();
 	const approveAgent = useExchange("approveAgent");
+	const clearinghouseStateQuery = useInfo(
+		"clearinghouseState",
+		{ user: address ?? zeroAddress },
+		{ enabled: open && !!address, staleTime: 10_000 },
+	);
+	const spotStateQuery = useInfo(
+		"spotClearinghouseState",
+		{ user: address ?? zeroAddress },
+		{ enabled: open && !!address, staleTime: 10_000 },
+	);
 	const { copied: copiedPhoneLink, copy: copyPhoneLink } = useCopyToClipboard(1500);
 	const [syncState, setSyncState] = useState<SyncState>({ status: "idle" });
 	const [resetState, setResetState] = useState<ResetState>({ status: "idle" });
@@ -113,11 +165,28 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 			return;
 		}
 
-		const approval = createMobileAgentApproval();
 		resetSyncState();
 		setSyncState({ status: "approving" });
 
 		try {
+			const [clearinghouseResult, spotResult] = await Promise.all([
+				clearinghouseStateQuery.refetch(),
+				spotStateQuery.refetch(),
+			]);
+			const hasFunding = hasHyperliquidAccountFunding(
+				clearinghouseResult.data ?? clearinghouseStateQuery.data,
+				spotResult.data ?? spotStateQuery.data,
+			);
+
+			if (!hasFunding) {
+				setSyncState({
+					status: "error",
+					message: t`No balance on Hyperliquid. Deposit first.`,
+				});
+				return;
+			}
+
+			const approval = createMobileAgentApproval();
 			await approveAgent.mutateAsync({
 				agentAddress: approval.publicKey,
 				agentName: approval.agentName,
@@ -144,7 +213,7 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 		} catch (error) {
 			setSyncState({
 				status: "error",
-				message: error instanceof Error ? error.message : t`Could not link mobile device.`,
+				message: formatTransferError(normalizeError(error)),
 			});
 		}
 	}

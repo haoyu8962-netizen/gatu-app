@@ -16,8 +16,14 @@ const testState = vi.hoisted(() => ({
 	address: "0x1111111111111111111111111111111111111111" as string | undefined,
 	approveAgent: vi.fn(),
 	clearAgent: vi.fn(),
+	clearinghouseState: {
+		assetPositions: [],
+		marginSummary: { accountValue: "1", totalNtlPos: "0", totalRawUsd: "1" },
+		withdrawable: "1",
+	},
 	createMobileAgentSyncUrl: vi.fn(),
 	qrToDataUrl: vi.fn(),
+	spotState: { balances: [] as Array<{ hold?: string; total?: string }> },
 	writeClipboard: vi.fn(),
 }));
 
@@ -110,6 +116,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useAgentWalletStorage: () => null,
 	useExchange: () => ({ mutateAsync: testState.approveAgent }),
 	useHyperliquid: () => ({ env: "Mainnet" }),
+	useInfo: (method: string) => {
+		const data = method === "spotClearinghouseState" ? testState.spotState : testState.clearinghouseState;
+		return {
+			data,
+			refetch: vi.fn().mockResolvedValue({ data }),
+		};
+	},
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -161,6 +174,11 @@ describe("MobileAgentSyncModal", () => {
 		testState.approveAgent.mockReset();
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.clearAgent.mockReset();
+		testState.clearinghouseState = {
+			assetPositions: [],
+			marginSummary: { accountValue: "1", totalNtlPos: "0", totalRawUsd: "1" },
+			withdrawable: "1",
+		};
 		testState.createMobileAgentSyncUrl.mockReset();
 		testState.createMobileAgentSyncUrl.mockResolvedValue({
 			agentAddress: AGENT_ADDRESS,
@@ -173,6 +191,7 @@ describe("MobileAgentSyncModal", () => {
 		});
 		testState.qrToDataUrl.mockReset();
 		testState.qrToDataUrl.mockResolvedValue("data:image/png;base64,phone-link-qr");
+		testState.spotState = { balances: [] };
 		testState.writeClipboard.mockReset();
 		testState.writeClipboard.mockResolvedValue(undefined);
 		vi.spyOn(Date, "now").mockReturnValue(1_779_364_227_000);
@@ -223,6 +242,50 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.textContent).toContain("Expires");
 		expect(getButton(container, "Copy phone link")).toBeDefined();
 		expect(getButton(container, "Show QR")).toBeDefined();
+	});
+
+	it("blocks phone link approval when the Hyperliquid account has no funds", async () => {
+		testState.clearinghouseState = {
+			assetPositions: [],
+			marginSummary: { accountValue: "0.0", totalNtlPos: "0.0", totalRawUsd: "0.0" },
+			withdrawable: "0.0",
+		};
+		testState.spotState = { balances: [] };
+		const { MobileAgentSyncModal } = await import("@/components/trade/components/mobile-agent-sync-modal");
+
+		act(() => {
+			root.render(createElement(MobileAgentSyncModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		act(() => {
+			getButton(container, "Create phone link").click();
+		});
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("No balance on Hyperliquid. Deposit first.");
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(testState.createMobileAgentSyncUrl).not.toHaveBeenCalled();
+	});
+
+	it("shows a readable message when approveAgent returns a must-deposit error", async () => {
+		testState.approveAgent.mockRejectedValue(new Error("Must deposit before performing actions. User: 0xabc"));
+		const { MobileAgentSyncModal } = await import("@/components/trade/components/mobile-agent-sync-modal");
+
+		act(() => {
+			root.render(createElement(MobileAgentSyncModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		act(() => {
+			getButton(container, "Create phone link").click();
+		});
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("No balance on Hyperliquid. Deposit first.");
+		expect(testState.approveAgent).toHaveBeenCalledWith({
+			agentAddress: AGENT_ADDRESS,
+			agentName: AGENT_NAME,
+		});
+		expect(testState.createMobileAgentSyncUrl).not.toHaveBeenCalled();
 	});
 
 	it("copies the full phone link from the ready state", async () => {

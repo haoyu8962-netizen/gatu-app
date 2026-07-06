@@ -768,8 +768,8 @@ msgid "Could not import phone access."
 msgstr "Impossible d'importer l'accès mobile."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not link mobile device."
-msgstr "Impossible de lier l'appareil mobile."
+#~ msgid "Could not link mobile device."
+#~ msgstr "Impossible de lier l'appareil mobile."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
@@ -1957,6 +1957,7 @@ msgstr "Aucun ordre TWAP actif."
 msgid "No balance"
 msgstr "Pas de solde"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/lib/errors/format.ts
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "Aucun solde sur Hyperliquid. Déposez d'abord."

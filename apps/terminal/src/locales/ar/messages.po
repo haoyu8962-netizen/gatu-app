@@ -768,8 +768,8 @@ msgid "Could not import phone access."
 msgstr "تعذّر استيراد وصول الهاتف."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not link mobile device."
-msgstr "تعذّر ربط الجهاز المحمول."
+#~ msgid "Could not link mobile device."
+#~ msgstr "تعذّر ربط الجهاز المحمول."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
@@ -1957,6 +1957,7 @@ msgstr "لا توجد أوامر TWAP نشطة."
 msgid "No balance"
 msgstr "لا يوجد رصيد"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/lib/errors/format.ts
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "لا يوجد رصيد على Hyperliquid. أودع أولاً."

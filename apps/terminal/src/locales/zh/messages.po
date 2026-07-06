@@ -768,8 +768,8 @@ msgid "Could not import phone access."
 msgstr "无法导入手机访问权限。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not link mobile device."
-msgstr "无法关联移动设备。"
+#~ msgid "Could not link mobile device."
+#~ msgstr "无法关联移动设备。"
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
@@ -1957,6 +1957,7 @@ msgstr "没有进行中的 TWAP 委托。"
 msgid "No balance"
 msgstr "无余额"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/lib/errors/format.ts
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "Hyperliquid 上无余额，请先充值。"
