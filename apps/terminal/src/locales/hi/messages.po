@@ -1789,8 +1789,6 @@ msgid "markets"
 msgstr "बाज़ार"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/nav.tsx
 msgid "Markets"
 msgstr "मार्केट"

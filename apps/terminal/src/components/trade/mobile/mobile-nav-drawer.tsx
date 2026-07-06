@@ -1,45 +1,20 @@
-import { Badge, Button, ButtonIcon, Divider, Drawer, DrawerContent } from "@gatu/ui";
+import { Badge, Button, ButtonIcon, Drawer, DrawerContent } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import {
-	DownloadSimpleIcon,
-	GearIcon,
-	HammerIcon,
-	ListIcon,
-	TerminalIcon,
-	TrendUpIcon,
-	WalletIcon,
-	XIcon,
-} from "@phosphor-icons/react";
+import { DownloadSimpleIcon, GearIcon, ListIcon, WalletIcon, XIcon } from "@phosphor-icons/react";
 import { Suspense, useState } from "react";
-import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
+import { STATIC_NAV_ITEMS } from "@/config/nav";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
-import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { ThemeToggle } from "../header/theme-toggle";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
-function ScopeIcon({ scope }: { scope: string }) {
-	switch (scope) {
-		case "perp":
-			return <TrendUpIcon className="size-4 shrink-0" />;
-		case "spot":
-			return <WalletIcon className="size-4 shrink-0" />;
-		case "builders-perp":
-			return <HammerIcon className="size-4 shrink-0" />;
-		default:
-			return <TerminalIcon className="size-4 shrink-0" />;
-	}
-}
-
 export function MobileNavDrawer() {
 	const [open, setOpen] = useState(false);
 	const [walletOpen, setWalletOpen] = useState(false);
-	const { scope, setMobileScope } = useExchangeScope();
 	const { isConnected, sessionMode } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
 	const { open: openDepositModal } = useDepositModalActions();
@@ -78,32 +53,6 @@ export function MobileNavDrawer() {
 					</div>
 
 					<div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
-						<nav className="p-2 flex flex-col" aria-label={t`Markets`}>
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
-								<Trans>Markets</Trans>
-							</p>
-							{SCOPE_NAV_ITEMS.map((item) => (
-								<button
-									key={item.scope}
-									type="button"
-									aria-pressed={scope === item.scope}
-									onClick={() => {
-										setMobileScope(item.scope);
-										close();
-									}}
-									className={cn(
-										"flex items-center gap-3 px-3 py-2.5 rounded-xs text-left text-sm transition-colors duration-150",
-										scope === item.scope ? item.activeClass : "text-fg-muted hover:text-fg hover:bg-fill-hover",
-									)}
-								>
-									<ScopeIcon scope={item.scope} />
-									{item.label}
-								</button>
-							))}
-						</nav>
-
-						<Divider className="mx-3" />
-
 						<nav className="p-2 flex flex-col" aria-label={t`Platform`}>
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
 								<Trans>Platform</Trans>
