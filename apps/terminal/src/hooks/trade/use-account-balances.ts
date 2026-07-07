@@ -112,11 +112,6 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		{ enabled, refreshKey: ledgerRefreshKey },
 	);
 
-	const { data: spotEvent, status: spotStatus } = useSubscription(
-		"spotState",
-		{ user: address ?? "0x0" },
-		{ enabled, refreshKey: ledgerRefreshKey },
-	);
 	const { data: webData3Event, status: webData3Status } = useSubscription(
 		"webData3",
 		{ user: address ?? "0x0" },
@@ -128,6 +123,16 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		ledgerRefreshKey,
 	);
 
+	const accountAbstraction =
+		infoAccountAbstraction ?? normalizeAccountAbstraction(webData3Event?.userState.abstraction) ?? null;
+	const spotStateSubscription =
+		accountAbstraction === "portfolioMargin"
+			? { user: address ?? "0x0", isPortfolioMargin: true }
+			: { user: address ?? "0x0" };
+	const { data: spotEvent, status: spotStatus } = useSubscription("spotState", spotStateSubscription, {
+		enabled,
+		refreshKey: ledgerRefreshKey,
+	});
 	const spotState = spotEvent?.spotState as RawSpotState | undefined;
 	const spotAvailableAfterMaintenance = useMemo(
 		() => spotState?.tokenToAvailableAfterMaintenance ?? EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
@@ -147,8 +152,6 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 
 	const clearinghouseStates = clearinghouseEvent?.clearinghouseStates ?? [];
 	const spotBalances = spotState?.balances ?? EMPTY_SPOT_BALANCES;
-	const accountAbstraction =
-		infoAccountAbstraction ?? normalizeAccountAbstraction(webData3Event?.userState.abstraction) ?? null;
 	const accountAbstractionLoading =
 		accountAbstraction === null &&
 		(accountAbstractionStatus === "pending" || webData3Status === "subscribing" || webData3Status === "idle");

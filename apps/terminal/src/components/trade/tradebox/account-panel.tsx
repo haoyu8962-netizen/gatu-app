@@ -4,7 +4,7 @@ import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phos
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { HL_ALL_DEXS } from "@/config/app";
 import { getAccountBalanceSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
-import { useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -25,35 +25,29 @@ export function AccountPanel() {
 	const { open: openTransferModal } = useTransferModalActions();
 	const { isConnected, sessionMode } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
-	const {
-		marginSummary,
-		perpSummary,
-		perpPositions,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		accountAbstraction,
-		withdrawable,
-		crossMaintenanceMarginUsed,
-	} = useSelectedDexBalances();
+	const selectedBalances = useSelectedDexBalances();
+	const defaultBalances = useDefaultDexBalances();
+	const accountAbstraction = selectedBalances.accountAbstraction;
+	const summaryBalances = isQuoteBalanceSharedWithPerps(accountAbstraction) ? defaultBalances : selectedBalances;
 	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
-		marginSummary,
-		perpSummary,
-		withdrawable,
-		spotBalances,
-		spotAvailableAfterMaintenance,
+		marginSummary: summaryBalances.marginSummary,
+		perpSummary: summaryBalances.perpSummary,
+		withdrawable: summaryBalances.withdrawable,
+		spotBalances: summaryBalances.spotBalances,
+		spotAvailableAfterMaintenance: summaryBalances.spotAvailableAfterMaintenance,
 		tokenUsdPrices: allMidsEvent?.mids,
 	});
 
 	let perpMetrics = null;
-	if (marginSummary || accountSummary.accountEquity > 0) {
+	if (summaryBalances.marginSummary || accountSummary.accountEquity > 0) {
 		const accountValue = accountSummary.accountEquity;
-		const totalNtlPos = toNumberOrZero(marginSummary?.totalNtlPos);
-		const maintenanceMargin = toNumberOrZero(crossMaintenanceMarginUsed);
+		const totalNtlPos = toNumberOrZero(summaryBalances.marginSummary?.totalNtlPos);
+		const maintenanceMargin = toNumberOrZero(summaryBalances.crossMaintenanceMarginUsed);
 
 		let unrealizedPnl = 0;
-		for (const pos of perpPositions) {
+		for (const pos of summaryBalances.perpPositions) {
 			unrealizedPnl += toNumberOrZero(pos.position.unrealizedPnl);
 		}
 

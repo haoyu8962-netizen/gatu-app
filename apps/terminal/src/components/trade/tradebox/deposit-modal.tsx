@@ -17,8 +17,8 @@ import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { WITHDRAWAL_FEE_USD } from "@/config/contracts";
 import { NETWORKS } from "@/config/networks";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
-import { getAccountBalanceSummary } from "@/domain/trade/balances";
-import { useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import { getAccountBalanceSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
+import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
@@ -103,15 +103,18 @@ export function DepositModal() {
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
 	});
 
+	const selectedBalances = useSelectedDexBalances();
+	const defaultBalances = useDefaultDexBalances();
+	const accountAbstraction = selectedBalances.accountAbstraction;
+	const summaryBalances = isQuoteBalanceSharedWithPerps(accountAbstraction) ? defaultBalances : selectedBalances;
 	const {
 		marginSummary,
 		perpSummary,
 		spotBalances,
 		spotAvailableAfterMaintenance,
-		accountAbstraction,
 		withdrawable: perpWithdrawable,
-		dex,
-	} = useSelectedDexBalances();
+	} = summaryBalances;
+	const dex = selectedBalances.dex;
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,

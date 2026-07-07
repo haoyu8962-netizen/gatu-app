@@ -13,7 +13,7 @@ import { Suspense, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { UI_TEXT } from "@/config/ui-text";
 import { getAccountBalanceSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
-import { useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -36,18 +36,21 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const { address, isConnected, sessionMode } = useWalletSession();
 	const { disconnectWallet } = useDisconnectWallet();
 
+	const selectedBalances = useSelectedDexBalances();
+	const defaultBalances = useDefaultDexBalances();
+	const accountAbstraction = selectedBalances.accountAbstraction;
+	const summaryBalances = isQuoteBalanceSharedWithPerps(accountAbstraction) ? defaultBalances : selectedBalances;
 	const {
 		marginSummary,
 		perpSummary,
 		perpPositions,
 		spotBalances,
 		spotAvailableAfterMaintenance,
-		accountAbstraction,
 		withdrawable,
 		crossMaintenanceMarginUsed,
 		isLoading,
-		dex,
-	} = useSelectedDexBalances();
+	} = summaryBalances;
+	const dex = selectedBalances.dex;
 	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
