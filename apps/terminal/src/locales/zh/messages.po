@@ -98,6 +98,15 @@ msgstr "账户与钱包"
 #~ msgid "Account Equity"
 #~ msgstr "账户权益"
 
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Account mode"
+msgstr "账户模式"
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Account mode updated"
+msgstr "账户模式已更新"
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
 #~ msgstr ""
@@ -147,9 +156,14 @@ msgstr ""
 msgid "Add TP/SL"
 msgstr "添加 TP/SL"
 
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
-#~ msgid "Advanced order types"
-#~ msgstr ""
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Advanced"
+msgstr "专业"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Advanced order types"
+msgstr "专业委托类型"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -1271,6 +1285,11 @@ msgstr "反向开仓失败"
 #~ msgid "Failed to switch margin mode"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Failed to update account mode"
+msgstr "账户模式更新失败"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
 msgstr "更新 TP/SL 委托失败"
@@ -1533,6 +1552,7 @@ msgstr "杠杆"
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
 msgstr "限价"
 
@@ -1583,6 +1603,7 @@ msgstr "清算价"
 msgid "Liquidated"
 msgstr "已强平"
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "加载中"
@@ -1761,6 +1782,7 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
@@ -2203,6 +2225,10 @@ msgstr "订单队列"
 msgid "Order submitted"
 msgstr "委托已提交"
 
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Order type"
+msgstr "订单类型"
+
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
@@ -2409,11 +2435,13 @@ msgstr "盈亏"
 #~ msgid "Popular"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Portfolio"
 msgstr "投资组合"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Portfolio Margin"
 msgstr "组合保证金"
 
@@ -2572,7 +2600,7 @@ msgstr "最近成交"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Reconnect wallet"
-msgstr ""
+msgstr "重新连接钱包"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Recovered after reload. Expires {expiresAtLabel}."
@@ -2681,10 +2709,9 @@ msgstr "运行时长"
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "已保存的手机链接无效。请重新粘贴链接。"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Scale"
-msgstr "区间挂单"
+msgstr "分段订单"
 
 #: src/lib/errors/definitions/scale.ts
 msgid "Scale level below min notional"
@@ -2849,6 +2876,14 @@ msgstr "发送中..."
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "sent to Hyperliquid"
 #~ msgstr "已发送至 Hyperliquid"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Separate"
+msgstr "分离"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Separate Account"
+msgstr "分离账户"
 
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Separate Account Balances"
@@ -3136,7 +3171,6 @@ msgstr "状态"
 #~ msgid "Stop"
 #~ msgstr "止损"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Limit"
 msgstr "止损限价"
@@ -3146,7 +3180,6 @@ msgstr "止损限价"
 msgid "Stop Loss"
 msgstr "止损"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Market"
 msgstr "止损市价"
@@ -3610,7 +3643,6 @@ msgstr "重试"
 msgid "Try Again"
 msgstr "重试"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/lib/trade/order-types.ts
@@ -3671,7 +3703,13 @@ msgstr ""
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "无法将钱包切换到 Arbitrum。请在钱包中切换网络后重试。"
 
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Unified"
+msgstr "统一"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified Account"
 msgstr "统一账户"
 
@@ -3828,7 +3866,7 @@ msgstr "钱包连接请求已被拒绝。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Wallet connection unavailable"
-msgstr ""
+msgstr "钱包连接不可用"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts

@@ -64,7 +64,7 @@ export function DepositModal() {
 	const isTestnet = useIsTestnet();
 	const depositTxChain = isTestnet ? arbitrumSepolia : arbitrum;
 
-	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress } = useWalletSession();
+	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress, login } = useWalletSession();
 	const {
 		emailAddress: emailWalletAddress,
 		embeddedWalletAddress: ensuredEmbeddedWalletAddress,
@@ -93,6 +93,8 @@ export function DepositModal() {
 		deposit,
 		switchError,
 		switchToArbitrum,
+		walletProviderStatus,
+		walletProviderError,
 		validate: validateDeposit,
 		reset: resetDeposit,
 		networkName: depositNetworkName,
@@ -154,6 +156,8 @@ export function DepositModal() {
 	const showBridgeTab = !isEmbeddedDeposit;
 	const visibleTab = showBridgeTab || activeTab !== "bridge" ? activeTab : "deposit";
 	const isDepositPending = depositStatus === "pending" || depositStatus === "confirming";
+	const walletDepositProviderUnavailable =
+		canUseFundsActions && depositMode === "wallet" && visibleTab === "deposit" && walletProviderStatus === "error";
 	const requiresWithdrawDestination = isEmbeddedDeposit;
 	const normalizedWithdrawDestination = withdrawDestination.trim();
 	const isWithdrawDestinationValid =
@@ -270,7 +274,40 @@ export function DepositModal() {
 		);
 	}
 
-	if (canUseFundsActions && depositMode === "wallet" && visibleTab === "deposit" && !isArbitrum) {
+	if (walletDepositProviderUnavailable) {
+		return (
+			<StatusScreen
+				title={<Trans>Deposit</Trans>}
+				icon="error"
+				heading={<Trans>Wallet connection unavailable</Trans>}
+				description={formatTransferError(walletProviderError)}
+				onClose={handleClose}
+			>
+				<div className="flex w-full gap-2">
+					<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
+						<Trans>Cancel</Trans>
+					</Button>
+					<Button
+						onClick={() => {
+							handleClose();
+							login();
+						}}
+						className="flex-1"
+					>
+						<Trans>Reconnect wallet</Trans>
+					</Button>
+				</div>
+			</StatusScreen>
+		);
+	}
+
+	if (
+		canUseFundsActions &&
+		depositMode === "wallet" &&
+		visibleTab === "deposit" &&
+		walletProviderStatus === "ready" &&
+		!isArbitrum
+	) {
 		return (
 			<WrongNetworkScreen
 				open

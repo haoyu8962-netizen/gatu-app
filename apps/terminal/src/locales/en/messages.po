@@ -98,6 +98,15 @@ msgstr "Account and wallet"
 #~ msgid "Account Equity"
 #~ msgstr "Account Equity"
 
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Account mode"
+msgstr "Account mode"
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Account mode updated"
+msgstr "Account mode updated"
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
 #~ msgstr "Accounts"
@@ -147,9 +156,14 @@ msgstr "Add a small amount of Arbitrum ETH to this wallet to pay network fees, t
 msgid "Add TP/SL"
 msgstr "Add TP/SL"
 
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
-#~ msgid "Advanced order types"
-#~ msgstr "Advanced order types"
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Advanced"
+msgstr "Advanced"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Advanced order types"
+msgstr "Advanced order types"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -1271,6 +1285,11 @@ msgstr "Failed to reverse position"
 #~ msgid "Failed to switch margin mode"
 #~ msgstr "Failed to switch margin mode"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Failed to update account mode"
+msgstr "Failed to update account mode"
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
 msgstr "Failed to update TP/SL orders"
@@ -1533,6 +1552,7 @@ msgstr "Leverage"
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
 msgstr "Limit"
 
@@ -1583,6 +1603,7 @@ msgstr "Liq. Price"
 msgid "Liquidated"
 msgstr "Liquidated"
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "Loading"
@@ -1761,6 +1782,7 @@ msgstr "Mark price: used for margin calculations, unrealized PnL, liquidations, 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
@@ -2203,6 +2225,10 @@ msgstr "Order Queue"
 msgid "Order submitted"
 msgstr "Order submitted"
 
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Order type"
+msgstr "Order type"
+
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
@@ -2409,11 +2435,13 @@ msgstr "PNL"
 #~ msgid "Popular"
 #~ msgstr "Popular"
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Portfolio"
 msgstr "Portfolio"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Portfolio Margin"
 msgstr "Portfolio Margin"
 
@@ -2681,7 +2709,6 @@ msgstr "Runtime"
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "Saved phone link was invalid. Paste the link again."
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Scale"
 msgstr "Scale"
@@ -2849,6 +2876,14 @@ msgstr "Sending..."
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "sent to Hyperliquid"
 #~ msgstr "sent to Hyperliquid"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Separate"
+msgstr "Separate"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Separate Account"
+msgstr "Separate Account"
 
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Separate Account Balances"
@@ -3136,7 +3171,6 @@ msgstr "Status"
 #~ msgid "Stop"
 #~ msgstr "Stop"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Limit"
 msgstr "Stop Limit"
@@ -3146,7 +3180,6 @@ msgstr "Stop Limit"
 msgid "Stop Loss"
 msgstr "Stop Loss"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Market"
 msgstr "Stop Market"
@@ -3610,7 +3643,6 @@ msgstr "Try again"
 msgid "Try Again"
 msgstr "Try Again"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/lib/trade/order-types.ts
@@ -3671,7 +3703,13 @@ msgstr "Unable to switch wallet to {0}. Switch networks in your wallet and retry
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Unified"
+msgstr "Unified"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified Account"
 msgstr "Unified Account"
 

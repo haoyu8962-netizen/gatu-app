@@ -6,7 +6,8 @@ const ERROR_PATTERNS = [
 	{ pattern: /user rejected/i, message: () => t`Transaction was rejected` },
 	{ pattern: /wallet connection request was rejected/i, message: () => t`Wallet connection request was rejected.` },
 	{
-		pattern: /wallet connection failed|failed to connect|restore.*session|unlock your wallet/i,
+		pattern:
+			/wallet connection failed|failed to connect|restore.*session|unlock your wallet|wallet client not ready|wallet provider unavailable/i,
 		message: () => t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`,
 	},
 	{ pattern: /arbitrum network switch was rejected/i, message: () => t`Arbitrum network switch was rejected.` },

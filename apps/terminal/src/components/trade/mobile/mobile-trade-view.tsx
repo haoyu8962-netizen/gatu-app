@@ -2,6 +2,7 @@ import { Button, buttonVariants, Checkbox, Slider } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
@@ -14,6 +15,10 @@ import { getLiquidationInfo } from "@/domain/trade/order/metrics";
 import { getSliderValue } from "@/domain/trade/order/size";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
+import {
+	type SelectableAccountAbstraction,
+	useAccountAbstractionControl,
+} from "@/hooks/trade/use-account-abstraction-control";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
@@ -94,6 +99,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 
 	const { isReady: isAgentApproved } = useAgentStatus();
 	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
+	const accountModeControl = useAccountAbstractionControl();
 
 	const canApprove = !!walletClient && !!address;
 	const isRegistering =
@@ -259,6 +265,16 @@ export function MobileTradeView({ className, embedded }: Props) {
 		}
 	}
 
+	async function handleAccountModeChange(nextAccountMode: SelectableAccountAbstraction) {
+		if (nextAccountMode === accountModeControl.accountAbstraction) return;
+		try {
+			await accountModeControl.setAccountAbstraction(nextAccountMode);
+			toast.success(t`Account mode updated`);
+		} catch (error) {
+			toast.error(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
+		}
+	}
+
 	async function handleSubmit() {
 		if (tradeRestricted) return;
 		if (!isConnected || !address) return;
@@ -417,8 +433,14 @@ export function MobileTradeView({ className, embedded }: Props) {
 						leverage={leverage}
 						onMarginLeverageClick={() => setShowMarginDialog(true)}
 						isLeveraged={capabilities.isLeveraged}
+						accountMode={accountModeControl.accountAbstraction}
+						isAccountModeLoading={accountModeControl.isLoading}
+						isAccountModeUpdating={accountModeControl.isUpdating}
+						canChangeAccountMode={capabilities.isLeveraged && accountModeControl.canSet}
+						onAccountModeChange={handleAccountModeChange}
 						hideAlgoOrders
 						compact={embedded}
+						layout="mobile"
 					/>
 
 					<div className={cn("flex items-center justify-end", embedded ? "text-2xs" : "text-xs")}>

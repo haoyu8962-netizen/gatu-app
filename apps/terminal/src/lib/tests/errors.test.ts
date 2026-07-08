@@ -51,6 +51,9 @@ describe("errors", () => {
 		expect(formatTransferError(new Error("Failed to connect to MetaMask"))).toBe(
 			"Wallet connection failed. Unlock your wallet, approve the connection, then retry.",
 		);
+		expect(formatTransferError(new Error("Wallet client not ready"))).toBe(
+			"Wallet connection failed. Unlock your wallet, approve the connection, then retry.",
+		);
 		expect(formatTransferError(new Error("Wallet connection request was rejected."))).toBe(
 			"Wallet connection request was rejected.",
 		);

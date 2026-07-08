@@ -30,6 +30,7 @@ type BalanceStatus = "idle" | "loading" | "success" | "error";
 type DepositMode = "wallet" | "smart";
 type DepositNetwork = keyof typeof DEPOSIT_NETWORKS;
 type DepositNetworkConfig = (typeof DEPOSIT_NETWORKS)[DepositNetwork];
+type WalletProviderStatus = "idle" | "loading" | "ready" | "error";
 
 interface ValidationResult {
 	valid: boolean;
@@ -41,6 +42,8 @@ export interface UseDepositResult {
 	switchToArbitrum: () => void;
 	isSwitching: boolean;
 	switchError: Error | null;
+	walletProviderStatus: WalletProviderStatus;
+	walletProviderError: Error | null;
 	networkName: string;
 	smartDepositEnabled: boolean;
 	balance: string;
@@ -85,6 +88,8 @@ interface ArbitrumSwitchState {
 interface ProviderChainState {
 	key: string;
 	chainId: number | null;
+	status: WalletProviderStatus;
+	error: Error | null;
 }
 
 type ReadyWalletClient = WalletClient<Transport, Chain, Account>;
@@ -170,8 +175,12 @@ function createArbitrumSwitchState(key = ""): ArbitrumSwitchState {
 	return { key, confirmedChainId: null, error: null };
 }
 
-function createProviderChainState(key = ""): ProviderChainState {
-	return { key, chainId: null };
+function createProviderChainState(
+	key = "",
+	status: WalletProviderStatus = "idle",
+	error: Error | null = null,
+): ProviderChainState {
+	return { key, chainId: null, status, error };
 }
 
 function createIdleBalanceState(): UsdcBalanceState {
@@ -797,7 +806,11 @@ function useDepositChain(
 
 	useEffect(() => {
 		if (!enabled || !address || !wallet) {
-			setProviderChainState(createProviderChainState());
+			setProviderChainState(
+				enabled && address
+					? createProviderChainState(walletKey, "error", new Error(t`Wallet client not ready`))
+					: createProviderChainState(),
+			);
 			return;
 		}
 
@@ -805,19 +818,21 @@ function useDepositChain(
 		let provider: Eip1193Provider | undefined;
 		let chainChangedHandler: ((nextChainId: string) => void) | undefined;
 
+		setProviderChainState(createProviderChainState(walletKey, "loading"));
+
 		void (async () => {
 			try {
 				provider = await getDepositProvider(wallet);
 				const rawChainId = await provider.request({ method: "eth_chainId" });
 				if (cancelled) return;
 
-				setProviderChainState({ key: walletKey, chainId: parseChainId(rawChainId) });
+				setProviderChainState({ key: walletKey, chainId: parseChainId(rawChainId), status: "ready", error: null });
 				chainChangedHandler = (nextChainId: string) => {
-					setProviderChainState({ key: walletKey, chainId: parseChainId(nextChainId) });
+					setProviderChainState({ key: walletKey, chainId: parseChainId(nextChainId), status: "ready", error: null });
 				};
 				provider.on?.("chainChanged", chainChangedHandler);
-			} catch {
-				if (!cancelled) setProviderChainState(createProviderChainState(walletKey));
+			} catch (error) {
+				if (!cancelled) setProviderChainState(createProviderChainState(walletKey, "error", toError(error)));
 			}
 		})();
 
@@ -845,7 +860,7 @@ function useDepositChain(
 			const nextProvider = await getDepositProvider(wallet);
 			await ensureDepositChain(nextProvider, config);
 			const rawChainId = await nextProvider.request({ method: "eth_chainId" });
-			setProviderChainState({ key: walletKey, chainId: parseChainId(rawChainId) });
+			setProviderChainState({ key: walletKey, chainId: parseChainId(rawChainId), status: "ready", error: null });
 			setSwitchState({ key: walletKey, confirmedChainId: config.chainId, error: null });
 		})()
 			.catch((error) => setSwitchState({ ...createArbitrumSwitchState(walletKey), error: toError(error) }))
@@ -858,19 +873,28 @@ function useDepositChain(
 			switchToArbitrum,
 			isSwitching,
 			switchError: null,
+			walletProviderStatus: "idle" as const,
+			walletProviderError: null,
 		};
 	}
 
 	const walletChainId = wallet ? getWalletChainId(wallet) : null;
 	const confirmedChainId = switchState.key === walletKey ? switchState.confirmedChainId : null;
-	const providerChainId = providerChainState.key === walletKey ? providerChainState.chainId : null;
+	const currentProviderChainState = providerChainState.key === walletKey ? providerChainState : null;
+	const providerChainId = currentProviderChainState?.chainId ?? null;
 	const effectiveChainId = confirmedChainId ?? providerChainId ?? chainId ?? walletChainId;
+	const walletProviderStatus =
+		!address || !wallet ? "error" : (currentProviderChainState?.status ?? ("loading" as WalletProviderStatus));
+	const walletProviderError =
+		!address || !wallet ? new Error(t`Wallet client not ready`) : (currentProviderChainState?.error ?? null);
 
 	return {
 		isArbitrum: effectiveChainId === config.chainId,
 		switchToArbitrum,
 		isSwitching,
 		switchError: switchState.key === walletKey ? switchState.error : null,
+		walletProviderStatus,
+		walletProviderError,
 	};
 }
 

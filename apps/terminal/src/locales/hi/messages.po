@@ -98,6 +98,15 @@ msgstr "खाता और वॉलेट"
 #~ msgid "Account Equity"
 #~ msgstr "खाता इक्विटी"
 
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Account mode"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Account mode updated"
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
 #~ msgstr ""
@@ -147,9 +156,14 @@ msgstr ""
 msgid "Add TP/SL"
 msgstr "TP/SL जोड़ें"
 
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
-#~ msgid "Advanced order types"
-#~ msgstr ""
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Advanced"
+msgstr ""
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Advanced order types"
+msgstr ""
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -1271,6 +1285,11 @@ msgstr "पोज़िशन रिवर्स करने में वि�
 #~ msgid "Failed to switch margin mode"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Failed to update account mode"
+msgstr ""
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
 msgstr "TP/SL ऑर्डर अपडेट करने में विफल"
@@ -1533,6 +1552,7 @@ msgstr "Leverage"
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
 msgstr "लिमिट"
 
@@ -1583,6 +1603,7 @@ msgstr "लिक्विडेशन प्राइस"
 msgid "Liquidated"
 msgstr "लिक्विडेट हो गया"
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "लोड हो रहा है"
@@ -1761,6 +1782,7 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
@@ -2203,6 +2225,10 @@ msgstr "ऑर्डर कतार"
 msgid "Order submitted"
 msgstr "ऑर्डर सबमिट किया गया"
 
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Order type"
+msgstr ""
+
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
@@ -2409,11 +2435,13 @@ msgstr "PNL"
 #~ msgid "Popular"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Portfolio"
 msgstr "पोर्टफोलियो"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Portfolio Margin"
 msgstr "पोर्टफोलियो मार्जिन"
 
@@ -2681,7 +2709,6 @@ msgstr "रनटाइम"
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "सहेजा गया फ़ोन लिंक अमान्य था। लिंक फिर से पेस्ट करें।"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Scale"
 msgstr "Scale"
@@ -2849,6 +2876,14 @@ msgstr "भेजा जा रहा है..."
 #: src/components/trade/tradebox/deposit-modal.tsx
 #~ msgid "sent to Hyperliquid"
 #~ msgstr "Hyperliquid को भेजा गया"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Separate"
+msgstr ""
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Separate Account"
+msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Separate Account Balances"
@@ -3136,7 +3171,6 @@ msgstr "स्थिति"
 #~ msgid "Stop"
 #~ msgstr "स्टॉप"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Limit"
 msgstr "Stop Limit"
@@ -3146,7 +3180,6 @@ msgstr "Stop Limit"
 msgid "Stop Loss"
 msgstr "Stop Loss"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Market"
 msgstr "Stop Market"
@@ -3610,7 +3643,6 @@ msgstr "फिर से प्रयास करें"
 msgid "Try Again"
 msgstr "फिर से प्रयास करें"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/lib/trade/order-types.ts
@@ -3671,7 +3703,13 @@ msgstr ""
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "वॉलेट को Arbitrum पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और फिर से प्रयास करें।"
 
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Unified"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified Account"
 msgstr "एकीकृत खाता"
 

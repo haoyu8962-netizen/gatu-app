@@ -1,11 +1,14 @@
 import { Dropdown } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { PencilSimpleIcon } from "@phosphor-icons/react";
-import type { OrderType } from "@/config/trade";
+import { CaretDownIcon, SpinnerGapIcon } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
+import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import type { SideLabels } from "@/config/ui-text";
+import type { SelectableAccountAbstraction } from "@/hooks/trade/use-account-abstraction-control";
+import { cn } from "@/lib/cn";
 import type { MarketKind } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { getAdvancedOrderLabel, getTabsOrderType } from "@/lib/trade/order-types";
+import { getAdvancedOrderLabel, getAdvancedOrderTypeLabel, getTabsOrderType } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
 import { SideToggle } from "./side-toggle";
 
@@ -20,8 +23,14 @@ interface Props {
 	leverage?: number;
 	onMarginLeverageClick?: () => void;
 	isLeveraged?: boolean;
+	accountMode?: SelectableAccountAbstraction | null;
+	isAccountModeLoading?: boolean;
+	isAccountModeUpdating?: boolean;
+	canChangeAccountMode?: boolean;
+	onAccountModeChange?: (mode: SelectableAccountAbstraction) => void;
 	hideAlgoOrders?: boolean;
 	compact?: boolean;
+	layout?: "desktop" | "mobile";
 }
 
 export function TradeHeader({
@@ -35,11 +44,17 @@ export function TradeHeader({
 	leverage,
 	onMarginLeverageClick,
 	isLeveraged,
+	accountMode,
+	isAccountModeLoading,
+	isAccountModeUpdating,
+	canChangeAccountMode,
+	onAccountModeChange,
 	hideAlgoOrders,
 	compact,
+	layout = "desktop",
 }: Props) {
 	const tabsOrderType = getTabsOrderType(orderType);
-
+	const orderTypeIndex = tabsOrderType === "market" ? 0 : tabsOrderType === "limit" ? 1 : 2;
 	const orderTypeLabel =
 		tabsOrderType === "advanced"
 			? getAdvancedOrderLabel(orderType, t`Other`)
@@ -48,59 +63,190 @@ export function TradeHeader({
 				: t`Limit`;
 
 	const isSpot = marketKind === "spot";
-	const orderTypeItems = [
+	const advancedOrderTypeItems = ADVANCED_ORDER_TYPES.filter((type) => {
+		if (isSpot && !SPOT_ALLOWED_TYPES.includes(type)) return false;
+		if (hideAlgoOrders && (type === "twap" || type === "scale")) return false;
+		return true;
+	}).map((type) => ({
+		label: getAdvancedOrderTypeLabel(type),
+		active: orderType === type,
+		onSelect: () => onOrderTypeChange(type),
+	}));
+	const mobileOrderTypeItems = [
 		{ label: t`Market`, active: orderType === "market", onSelect: () => onOrderTypeChange("market") },
 		{ label: t`Limit`, active: orderType === "limit", onSelect: () => onOrderTypeChange("limit") },
-		...(!isSpot
-			? [
-					{
-						label: t`Stop Market`,
-						active: orderType === "stopMarket",
-						onSelect: () => onOrderTypeChange("stopMarket" as OrderType),
-					},
-					{
-						label: t`Stop Limit`,
-						active: orderType === "stopLimit",
-						onSelect: () => onOrderTypeChange("stopLimit" as OrderType),
-					},
-				]
-			: []),
-		...(!hideAlgoOrders
-			? [
-					{ label: t`TWAP`, active: orderType === "twap", onSelect: () => onOrderTypeChange("twap" as OrderType) },
-					{ label: t`Scale`, active: orderType === "scale", onSelect: () => onOrderTypeChange("scale" as OrderType) },
-				]
-			: []),
+		...advancedOrderTypeItems,
 	];
 
 	const marginLabel = marginMode === "isolated" ? t`Isolated` : t`Cross`;
+	const accountModeLabel =
+		accountMode === "portfolioMargin"
+			? t`Portfolio`
+			: accountMode === "unifiedAccount"
+				? t`Unified`
+				: accountMode === "disabled"
+					? t`Separate`
+					: isAccountModeLoading
+						? t`Loading`
+						: t`Unified`;
+	const accountModeItems = [
+		{
+			label: t`Separate Account`,
+			active: accountMode === "disabled",
+			onSelect: () => onAccountModeChange?.("disabled"),
+		},
+		{
+			label: t`Unified Account`,
+			active: accountMode === "unifiedAccount",
+			onSelect: () => onAccountModeChange?.("unifiedAccount"),
+		},
+		{
+			label: t`Portfolio Margin`,
+			active: accountMode === "portfolioMargin",
+			onSelect: () => onAccountModeChange?.("portfolioMargin"),
+		},
+	];
+	const controlButtonClass = cn(
+		"min-w-0 rounded-8 bg-fill-weak px-2.5 py-1.5 text-xs font-semibold text-fg transition-colors",
+		"hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+		"disabled:cursor-not-allowed disabled:text-fg-disabled",
+		compact && "px-2 py-1 text-2xs",
+	);
+	const mobileControlClass = cn(
+		"flex h-9 min-w-0 items-center justify-center gap-1 rounded-none border-b border-stroke-weak bg-surface px-2 text-xs font-semibold text-fg",
+		"transition-colors hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+		"disabled:cursor-not-allowed disabled:text-fg-disabled",
+	);
+
+	if (layout === "mobile") {
+		return (
+			<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-3"}>
+				<div className={cn("grid min-w-0 overflow-hidden bg-surface", isLeveraged ? "grid-cols-3" : "grid-cols-1")}>
+					<Dropdown
+						trigger={
+							<span className="inline-flex min-w-0 items-center justify-center gap-1">
+								<span className="truncate">{orderTypeLabel}</span>
+								<CaretDownIcon className="size-3 shrink-0 text-fg-muted" />
+							</span>
+						}
+						items={mobileOrderTypeItems}
+						size="sm"
+						align="start"
+						hideCaret
+						triggerVariant="minimal"
+						triggerAriaLabel={t`Order type`}
+						triggerClassName={cn(mobileControlClass, "w-full")}
+						className="min-w-0"
+					/>
+					{isLeveraged && (
+						<>
+							<button type="button" onClick={onMarginLeverageClick} className={mobileControlClass}>
+								<span className="truncate">{marginLabel}</span>
+								<CaretDownIcon className="size-3 shrink-0 text-fg-muted" />
+							</button>
+							<button type="button" onClick={onMarginLeverageClick} className={mobileControlClass}>
+								<span className="truncate tabular-nums">{leverage ?? 1}x</span>
+								<CaretDownIcon className="size-3 shrink-0 text-fg-muted" />
+							</button>
+						</>
+					)}
+				</div>
+
+				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} />
+			</div>
+		);
+	}
 
 	return (
 		<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-4"}>
-			<div className="flex items-center justify-between">
-				<Dropdown
-					trigger={<span className="flex items-center gap-0.5 font-semibold text-fg">{orderTypeLabel}</span>}
-					items={orderTypeItems}
-					size="sm"
-					align="start"
-					triggerVariant="minimal"
-					className="inline-flex"
-				/>
-				{isLeveraged && (
-					<button
-						type="button"
-						onClick={onMarginLeverageClick}
-						className="inline-flex items-center gap-1 text-xs text-fg-muted hover:text-fg transition-colors cursor-pointer"
-					>
-						<span>
-							{marginLabel} · {leverage ?? 1}x
-						</span>
-						<PencilSimpleIcon className="size-3" />
+			{isLeveraged && (
+				<div className={cn("grid min-w-0 grid-cols-3", compact ? "gap-1.5" : "gap-2.5")}>
+					<button type="button" onClick={onMarginLeverageClick} className={controlButtonClass}>
+						<span className="block truncate">{marginLabel}</span>
 					</button>
-				)}
+					<button type="button" onClick={onMarginLeverageClick} className={controlButtonClass}>
+						<span className="block truncate tabular-nums">{leverage ?? 1}x</span>
+					</button>
+					<Dropdown
+						trigger={
+							<span className="flex min-w-0 items-center justify-center gap-1">
+								{isAccountModeUpdating && <SpinnerGapIcon className="size-3 shrink-0 animate-spin" />}
+								<span className="truncate">{accountModeLabel}</span>
+							</span>
+						}
+						items={accountModeItems}
+						disabled={!canChangeAccountMode || isAccountModeUpdating}
+						size={compact ? "xxs" : "sm"}
+						align="end"
+						hideCaret
+						triggerAriaLabel={t`Account mode`}
+						triggerClassName={cn(controlButtonClass, "w-full border-0 shadow-none")}
+						popupClassName="min-w-44"
+						className="min-w-0"
+					/>
+				</div>
+			)}
+
+			<div className="relative grid min-w-0 grid-cols-3">
+				<div
+					className="pointer-events-none absolute bottom-0 left-0 z-10 h-px w-1/3 bg-brand transition-transform duration-300 ease-out motion-reduce:transition-none"
+					style={{ transform: `translateX(${orderTypeIndex * 100}%)` }}
+				/>
+				<OrderTypeTabButton active={tabsOrderType === "market"} onClick={() => onOrderTypeChange("market")}>
+					{t`Market`}
+				</OrderTypeTabButton>
+				<OrderTypeTabButton active={tabsOrderType === "limit"} onClick={() => onOrderTypeChange("limit")}>
+					{t`Limit`}
+				</OrderTypeTabButton>
+				<Dropdown
+					trigger={
+						<span className="inline-flex min-w-0 items-center justify-center gap-1">
+							<span className="truncate">
+								{tabsOrderType === "advanced" ? getAdvancedOrderLabel(orderType, t`Advanced`) : t`Advanced`}
+							</span>
+							<CaretDownIcon className="size-3 shrink-0 text-fg-muted" />
+						</span>
+					}
+					items={advancedOrderTypeItems}
+					disabled={advancedOrderTypeItems.length === 0}
+					size="sm"
+					align="end"
+					hideCaret
+					triggerVariant="minimal"
+					triggerAriaLabel={t`Advanced order types`}
+					triggerClassName={cn(
+						orderTypeTabClass(tabsOrderType === "advanced"),
+						"w-full rounded-none hover:text-fg data-[popup-open]:text-fg",
+					)}
+					className="min-w-0"
+				/>
 			</div>
 
 			<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} />
 		</div>
+	);
+}
+
+function orderTypeTabClass(active: boolean) {
+	return cn(
+		"min-w-0 border-b border-stroke-weak px-3 py-2 text-xs font-semibold transition-colors",
+		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+		active ? "text-fg" : "text-fg-muted hover:text-fg",
+	);
+}
+
+function OrderTypeTabButton({
+	active,
+	onClick,
+	children,
+}: {
+	active: boolean;
+	onClick: () => void;
+	children: ReactNode;
+}) {
+	return (
+		<button type="button" aria-pressed={active} onClick={onClick} className={orderTypeTabClass(active)}>
+			<span className="block truncate">{children}</span>
+		</button>
 	);
 }

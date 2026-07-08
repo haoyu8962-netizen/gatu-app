@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useExchange, useHyperliquid, useHyperliquidClients } from "@/lib/hyperliquid";
+import { readAccountModePreference } from "./use-account-abstraction-control";
 import { useUserAbstraction } from "./use-account-balances";
 
 const TARGET_ABSTRACTION = "unifiedAccount";
@@ -30,8 +31,7 @@ function writeStorage(key: string, value: string): void {
 	}
 }
 
-function shouldSkipAutoSet(value: string | null): boolean {
-	if (value === "success") return true;
+function shouldSkipAfterFailure(value: string | null): boolean {
 	if (!value?.startsWith("failed:")) return false;
 
 	const timestamp = Number(value.slice("failed:".length));
@@ -52,9 +52,11 @@ export function useDefaultUnifiedAccount() {
 		if (status !== "success") return;
 		if (accountAbstraction === TARGET_ABSTRACTION || accountAbstraction === "portfolioMargin") return;
 		if (setAbstraction.isPending || inFlightRef.current) return;
+		const userPreference = readAccountModePreference(isTestnet, address);
+		if (userPreference && userPreference !== TARGET_ABSTRACTION) return;
 
 		const storageKey = getStorageKey(isTestnet, address);
-		if (shouldSkipAutoSet(readStorage(storageKey))) return;
+		if (shouldSkipAfterFailure(readStorage(storageKey))) return;
 
 		inFlightRef.current = true;
 		void setAbstraction
@@ -63,7 +65,6 @@ export function useDefaultUnifiedAccount() {
 				abstraction: TARGET_ABSTRACTION,
 			})
 			.then(() => {
-				writeStorage(storageKey, "success");
 				void queryClient.invalidateQueries({ queryKey: ["hl", "userAbstraction"] });
 				void queryClient.invalidateQueries({ queryKey: ["hl", "info", "clearinghouseState"] });
 			})

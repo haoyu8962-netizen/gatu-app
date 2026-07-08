@@ -2,6 +2,7 @@ import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
@@ -9,6 +10,10 @@ import { getPositionDex } from "@/domain/market";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
+import {
+	type SelectableAccountAbstraction,
+	useAccountAbstractionControl,
+} from "@/hooks/trade/use-account-abstraction-control";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
@@ -77,6 +82,7 @@ export function TradePanel() {
 	const { isReady: isAgentReady, isLoading: isAgentLoading } = useAgentStatus();
 	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
 	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit();
+	const accountModeControl = useAccountAbstractionControl();
 	const { tradeRestricted } = useGeoRestriction();
 
 	const slippageBps = useMarketOrderSlippageBps();
@@ -256,6 +262,16 @@ export function TradePanel() {
 		await applyMarginAndLeverage(mode, leverageValue);
 	}
 
+	async function handleAccountModeChange(nextAccountMode: SelectableAccountAbstraction) {
+		if (nextAccountMode === accountModeControl.accountAbstraction) return;
+		try {
+			await accountModeControl.setAccountAbstraction(nextAccountMode);
+			toast.success(t`Account mode updated`);
+		} catch (error) {
+			toast.error(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
+		}
+	}
+
 	function handleRegister() {
 		if (tradeRestricted) return;
 		if (isRegistering) return;
@@ -406,6 +422,11 @@ export function TradePanel() {
 					leverage={leverage}
 					onMarginLeverageClick={() => setActiveModal("marginMode")}
 					isLeveraged={capabilities.isLeveraged}
+					accountMode={accountModeControl.accountAbstraction}
+					isAccountModeLoading={accountModeControl.isLoading}
+					isAccountModeUpdating={accountModeControl.isUpdating}
+					canChangeAccountMode={capabilities.isLeveraged && accountModeControl.canSet}
+					onAccountModeChange={handleAccountModeChange}
 				/>
 
 				<TradeFormFields
