@@ -4,6 +4,7 @@ import {
 	APP_HEADER_PLUS_BANNER_OFFSET_CLASS,
 	MOBILE_BOTTOM_NAV_HEIGHT_PX,
 } from "@/config/layout";
+import { useDefaultUnifiedAccount } from "@/hooks/trade/use-default-unified-account";
 import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
@@ -21,6 +22,7 @@ const FooterBar = createLazyComponent(() => import("./footer/footer-bar"), "Foot
 export function TradeTerminalPage() {
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
+	useDefaultUnifiedAccount();
 
 	return (
 		<>

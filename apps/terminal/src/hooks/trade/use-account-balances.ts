@@ -79,7 +79,7 @@ async function fetchUserAbstraction(
 	return normalizeAccountAbstraction(await response.json());
 }
 
-function useUserAbstraction(user: string | undefined, enabled: boolean, refreshKey: string | undefined) {
+export function useUserAbstraction(user: string | undefined, enabled: boolean, refreshKey: string | undefined) {
 	const { isTestnet } = useHyperliquid();
 
 	return useQuery({
@@ -107,12 +107,6 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	const { data: ledgerEvent } = useSubscription("userNonFundingLedgerUpdates", { user: address ?? "" }, { enabled });
 	const ledgerRefreshKey = getAccountLedgerRefreshKey(ledgerEvent);
 
-	const { data: clearinghouseEvent, status: perpStatus } = useSubscription(
-		"allDexsClearinghouseState",
-		{ user: address ?? "" },
-		{ enabled, refreshKey: ledgerRefreshKey },
-	);
-
 	const { data: webData3Event, status: webData3Status } = useSubscription(
 		"webData3",
 		{ user: address ?? "0x0" },
@@ -126,6 +120,12 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 
 	const accountAbstraction =
 		infoAccountAbstraction ?? normalizeAccountAbstraction(webData3Event?.userState.abstraction) ?? null;
+	const accountRefreshKey = [ledgerRefreshKey, accountAbstraction].filter(Boolean).join(":") || undefined;
+	const { data: clearinghouseEvent, status: perpStatus } = useSubscription(
+		"allDexsClearinghouseState",
+		{ user: address ?? "" },
+		{ enabled, refreshKey: accountRefreshKey },
+	);
 	const spotStateSubscription =
 		accountAbstraction === "portfolioMargin"
 			? { user: address ?? "0x0", isPortfolioMargin: true }
