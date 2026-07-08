@@ -37,8 +37,6 @@ function SortIcon({ columnId, sorting }: { columnId: string; sorting: { id: stri
 interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	scope: MarketScope;
-	exchangeScope: string;
-	exchangeDex: string | undefined;
 	subcategory: string;
 	subcategories: { value: string; label: string }[];
 	search: string;
@@ -64,8 +62,6 @@ interface Props {
 export function TokenSelectorContent({
 	selectedMarket,
 	scope,
-	exchangeScope,
-	exchangeDex,
 	subcategory,
 	subcategories,
 	search,
@@ -96,8 +92,8 @@ export function TokenSelectorContent({
 		{ value: "spot", label: t`Spot` },
 		{ value: "hip3", label: t`HIP-3` },
 	];
-	const showScopeTabs = mobile || exchangeScope === "all";
-	const showSubcategoryTabs = (mobile || !exchangeDex) && subcategories.length > 0;
+	const showScopeTabs = true;
+	const showSubcategoryTabs = subcategories.length > 0;
 	const showSelectorFilters = showScopeTabs || showSubcategoryTabs;
 
 	return (

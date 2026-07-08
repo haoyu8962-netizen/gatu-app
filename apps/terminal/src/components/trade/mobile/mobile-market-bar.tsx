@@ -4,6 +4,7 @@ import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState }
 import { createPortal } from "react-dom";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
@@ -23,11 +24,7 @@ import {
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
 import { toBig } from "@/lib/trade/numbers";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
-import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { TokenSelector } from "../chart/token-selector";
 
 type PriceDirection = "up" | "down";
@@ -63,18 +60,13 @@ type AllMidsParams = SubParams<"allMids">;
 
 export function MobileMarketBar({ className }: Props) {
 	const { data: market } = useSelectedMarketInfo();
-	const { scope, setMobileScope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
-	const { resetPrices } = useOrderEntryActions();
+	const navigateToMarket = useMarketNavigation();
 	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 	const [expanded, setExpanded] = useState(false);
 	const [fundingRemaining, setFundingRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
 
 	function handleMarketChange(name: string, nextMarket?: UnifiedMarketInfo) {
-		const nextScope = nextMarket ? getExchangeScopeForMarket(nextMarket) : scope;
-		setMobileScope(nextScope, nextMarket ? getExchangeDexForMarket(nextMarket) : undefined);
-		setSelectedMarket(nextScope, name);
-		resetPrices();
+		navigateToMarket(name, nextMarket);
 	}
 
 	const { midPx } = useOrderbookMidPrice(market?.name);

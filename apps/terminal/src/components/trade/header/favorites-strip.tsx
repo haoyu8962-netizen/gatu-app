@@ -2,16 +2,17 @@ import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { StarIcon, XIcon } from "@phosphor-icons/react";
 import { get24hChange } from "@/domain/market";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { cn } from "@/lib/cn";
 import { formatPercent } from "@/lib/format";
-import { useMarketsInfo } from "@/lib/hyperliquid";
+import { useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { useExchangeScope } from "@/providers/exchange-scope";
 import { useFavoriteMarkets, useMarketActions, useSelectedMarket } from "@/stores/use-market-store";
 
 export function FavoritesStrip() {
 	const favorites = useFavoriteMarkets();
-	const selectedMarket = useSelectedMarket();
+	const { data: selectedMarket } = useSelectedMarketInfo();
+	const selectedMarketName = useSelectedMarket();
 
 	if (favorites.length === 0) {
 		return (
@@ -26,7 +27,7 @@ export function FavoritesStrip() {
 		<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
 			<StarIcon weight="fill" className="size-3 shrink-0 text-yellow" />
 			{favorites.map((name) => (
-				<FavoriteChip key={name} name={name} isActive={name === selectedMarket} />
+				<FavoriteChip key={name} name={name} isActive={name === (selectedMarket?.name ?? selectedMarketName)} />
 			))}
 		</div>
 	);
@@ -38,22 +39,22 @@ interface FavoriteChipProps {
 }
 
 function FavoriteChip({ name, isActive }: FavoriteChipProps) {
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket, toggleFavoriteMarket } = useMarketActions();
+	const { toggleFavoriteMarket } = useMarketActions();
 	const { getMarketInfo } = useMarketsInfo();
+	const navigateToMarket = useMarketNavigation();
 
 	const market = getMarketInfo(name);
 	const displayName = market?.pairName ?? name;
 	const changePct = get24hChange(market?.prevDayPx, market?.markPx);
 
 	function handleClick() {
-		setSelectedMarket(scope, name);
+		navigateToMarket(name, market);
 	}
 
 	function handleKeyDown(e: React.KeyboardEvent) {
 		if (e.key === "Enter" || e.key === " ") {
 			e.preventDefault();
-			setSelectedMarket(scope, name);
+			navigateToMarket(name, market);
 		}
 	}
 

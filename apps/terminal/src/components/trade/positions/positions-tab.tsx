@@ -5,15 +5,14 @@ import { toast } from "sonner";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
-import { useExchangeScope } from "@/providers/exchange-scope";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
-import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
 import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "./position-dialog-types";
@@ -35,12 +34,11 @@ type CloseIntent = "close" | "reverse";
 export function PositionsTab() {
 	const { address, isConnected } = useWalletSession();
 	const slippageBps = useMarketOrderSlippageBps();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const navigateToMarket = useMarketNavigation();
 	const { setSide } = useOrderEntryActions();
 
 	function handleSelectMarket(name: string, side: Side) {
-		setSelectedMarket(scope, name);
+		navigateToMarket(name);
 		setSide(side);
 	}
 	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);

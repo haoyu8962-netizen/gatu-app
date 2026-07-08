@@ -20,6 +20,7 @@ import {
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -32,7 +33,6 @@ import {
 	useExchange,
 	useSelectedMarketInfo,
 } from "@/lib/hyperliquid";
-import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
 import { createLazyComponent } from "@/lib/lazy";
 import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
@@ -48,10 +48,8 @@ import {
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
-import { useMarketActions } from "@/stores/use-market-store";
 import {
 	useOrderEntryActions,
 	useOrderSide,
@@ -88,13 +86,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
 
 	const { data: market } = useSelectedMarketInfo();
-	const { scope, setMobileScope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const navigateToMarket = useMarketNavigation();
 
 	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
-		const nextScope = nextMarket ? getExchangeScopeForMarket(nextMarket) : scope;
-		setMobileScope(nextScope, nextMarket ? getExchangeDexForMarket(nextMarket) : undefined);
-		setSelectedMarket(nextScope, marketName);
+		navigateToMarket(marketName, nextMarket);
 	}
 
 	const { isReady: isAgentApproved } = useAgentStatus();

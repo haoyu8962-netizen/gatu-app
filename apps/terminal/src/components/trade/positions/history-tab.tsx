@@ -4,6 +4,7 @@ import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";
@@ -11,8 +12,6 @@ import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
 import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
 import {
@@ -30,8 +29,7 @@ import {
 
 export function HistoryTab() {
 	const { address, isConnected } = useWalletSession();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
 	const {
 		data: fillsEvent,
@@ -134,7 +132,7 @@ export function HistoryTab() {
 												<AssetBadge
 													coin={fill.coin}
 													side={fill.side === "B" ? "buy" : "sell"}
-													onClick={() => setSelectedMarket(scope, fill.coin)}
+													onClick={() => navigateToMarket(fill.coin)}
 													aria-label={t`Switch to ${fill.coin} market`}
 												/>
 											</TableCell>

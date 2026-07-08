@@ -6,16 +6,16 @@ import { useMemo } from "react";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { getAvgPrice } from "@/domain/market";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration, formatNumber, formatPrice } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
 	className?: string;
@@ -24,8 +24,8 @@ interface Props {
 
 export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 	const { address, isConnected } = useWalletSession();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const navigateToMarket = useMarketNavigation();
+	const { setActiveTab } = useMobileTerminalTab();
 	const { data: twapStatesEvent } = useSubscription(
 		"twapStates",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
@@ -44,6 +44,11 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 	const headerCount = isConnected ? `${activeOrders.length}` : FALLBACK_VALUE_PLACEHOLDER;
 	const twapStatesStatus = twapStatesEvent ? "active" : "loading";
 	const isPageScroll = scrollMode === "page";
+
+	function handleSelectMarket(name: string) {
+		navigateToMarket(name, undefined, { displayedContent: "trade" });
+		setActiveTab("trade");
+	}
 
 	if (!isConnected) {
 		return (
@@ -86,7 +91,7 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 										<AssetBadge
 											coin={state.coin}
 											side={isBuy ? "buy" : "sell"}
-											onClick={() => setSelectedMarket(scope, state.coin)}
+											onClick={() => handleSelectMarket(state.coin)}
 											nameClassName="text-sm"
 										/>
 										<span className={cn("text-2xs font-medium uppercase", isBuy ? "text-success" : "text-error")}>

@@ -1,8 +1,6 @@
 import { useId } from "react";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
 import { TokenSelectorContent } from "../chart/token-selector-content";
 import { useTokenSelector } from "../chart/use-token-selector";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
@@ -10,14 +8,11 @@ import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 export function MobileMarketsView() {
 	const headingId = useId();
 	const { data: market } = useSelectedMarketInfo();
-	const { scope, setMobileScope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
 	const { setActiveTab } = useMobileTerminalTab();
+	const navigateToMarket = useMarketNavigation();
 
 	function handleSelectMarket(name: string, nextMarket?: UnifiedMarketInfo) {
-		const nextScope = nextMarket ? getExchangeScopeForMarket(nextMarket) : scope;
-		setMobileScope(nextScope, nextMarket ? getExchangeDexForMarket(nextMarket) : undefined);
-		setSelectedMarket(nextScope, name);
+		navigateToMarket(name, nextMarket, { displayedContent: "trade" });
 		setActiveTab("trade");
 	}
 
@@ -33,8 +28,6 @@ export function MobileMarketsView() {
 			<TokenSelectorContent
 				selectedMarket={market}
 				scope={ts.scope}
-				exchangeScope={ts.exchangeScope}
-				exchangeDex={ts.exchangeDex}
 				subcategory={ts.subcategory}
 				subcategories={ts.subcategories}
 				search={ts.search}

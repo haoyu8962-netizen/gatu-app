@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
 import { CommandDialog, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { KIND_LABELS, marketSearchConfig } from "@/config/search";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/format";
 import { type UnifiedMarketInfo, useMarketsInfo } from "@/lib/hyperliquid";
 import { createSearcher } from "@/lib/search";
-import { useExchangeScope } from "@/providers/exchange-scope";
 import { useCommandMenuActions, useCommandMenuOpen } from "@/stores/use-global-modal-store";
-import { useMarketActions } from "@/stores/use-market-store";
 import { AssetDisplay } from "./asset-display";
 
 const COMMAND_DIALOG_MAX_WIDTH_CLASS = "sm:max-w-[30rem]";
@@ -16,9 +15,8 @@ const COMMAND_LIST_HEIGHT_CLASS = "h-[22.5rem] max-h-[22.5rem]";
 export function CommandMenu() {
 	const open = useCommandMenuOpen();
 	const { close } = useCommandMenuActions();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
 	const { markets } = useMarketsInfo();
+	const navigateToMarket = useMarketNavigation();
 
 	const [query, setQuery] = useState("");
 	const searcher = useMemo(() => createSearcher(markets, marketSearchConfig), [markets]);
@@ -27,7 +25,7 @@ export function CommandMenu() {
 	const displayItems = query ? results.map((r) => r.item) : markets;
 
 	function handleSelect(market: UnifiedMarketInfo) {
-		setSelectedMarket(scope, market.name);
+		navigateToMarket(market.name, market);
 		close();
 		setQuery("");
 	}

@@ -4,10 +4,9 @@ import { Suspense, useCallback, useState } from "react";
 import { useDefaultLayout } from "react-resizable-panels";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { PANEL_LAYOUT } from "@/config/layout";
-import { useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
 import { TokenSelector } from "../chart/token-selector";
 import { FavoritesStrip } from "../header/favorites-strip";
 import { MarketOverview } from "../market-overview";
@@ -20,8 +19,7 @@ const { id, analysis, sidebar } = PANEL_LAYOUT.MAIN;
 export function MainWorkspace() {
 	const { defaultLayout, onLayoutChanged } = useDefaultLayout({ id });
 	const { data: selectedMarket } = useSelectedMarketInfo();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const navigateToMarket = useMarketNavigation();
 	const [marketBodyMinHeightPx, setMarketBodyMinHeightPx] = useState<number>(PANEL_LAYOUT.ANALYSIS.minHeightPx);
 	const marketBodyHeight = `max(calc(100dvh - 9.375rem), ${marketBodyMinHeightPx}px)`;
 
@@ -29,8 +27,8 @@ export function MainWorkspace() {
 		setMarketBodyMinHeightPx(Math.max(PANEL_LAYOUT.ANALYSIS.minHeightPx, Math.ceil(heightPx)));
 	}, []);
 
-	function handleMarketChange(marketName: string) {
-		setSelectedMarket(scope, marketName);
+	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
+		navigateToMarket(marketName, nextMarket);
 	}
 
 	return (

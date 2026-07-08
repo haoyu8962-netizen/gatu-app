@@ -5,14 +5,18 @@ import { DownloadSimpleIcon, GearIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
+import { DEFAULT_SELECTED_MARKETS } from "@/config/markets";
 import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { useMarketsInfo } from "@/lib/hyperliquid";
+import { getTradePathForMarket, getTradePathForMarketName } from "@/lib/hyperliquid/market-route";
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { useSelectedMarkets } from "@/stores/use-market-store";
 import { LanguageSwitcher } from "./language-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -36,6 +40,8 @@ export function TopNav() {
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { isConnected, sessionMode } = useWalletSession();
 	const { scope } = useExchangeScope();
+	const selectedMarkets = useSelectedMarkets();
+	const { getMarketInfo } = useMarketsInfo();
 	const isTestnet = useIsTestnet();
 	const { tradeRestricted } = useGeoRestriction();
 
@@ -63,7 +69,7 @@ export function TopNav() {
 					{SCOPE_NAV_ITEMS.map((item) => (
 						<Link
 							key={item.scope}
-							to={item.to}
+							to={getScopeNavTarget(item, selectedMarkets[item.scope], getMarketInfo)}
 							className={cn(
 								"px-2.5 py-1 rounded-8 transition-colors duration-150",
 								scope === item.scope ? item.activeClass : "text-fg-muted hover:text-fg",
@@ -117,6 +123,17 @@ export function TopNav() {
 			</div>
 		</header>
 	);
+}
+
+function getScopeNavTarget(
+	item: (typeof SCOPE_NAV_ITEMS)[number],
+	selectedMarketName: string | undefined,
+	getMarketInfo: ReturnType<typeof useMarketsInfo>["getMarketInfo"],
+) {
+	if (item.scope === "all") return item.to;
+	const marketName = selectedMarketName ?? DEFAULT_SELECTED_MARKETS[item.scope];
+	const market = getMarketInfo(marketName);
+	return market ? getTradePathForMarket(market) : getTradePathForMarketName(marketName);
 }
 
 function UserMenuSkeleton() {

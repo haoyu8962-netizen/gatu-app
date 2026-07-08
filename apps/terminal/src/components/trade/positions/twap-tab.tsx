@@ -5,13 +5,12 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { HL_ALL_DEXS } from "@/config/app";
 import { getAvgPrice } from "@/domain/market";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration, formatNumber, formatPrice } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
 import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
 import {
@@ -29,8 +28,7 @@ import {
 
 export function TwapTab() {
 	const { address, isConnected } = useWalletSession();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const navigateToMarket = useMarketNavigation();
 	const { data: twapStatesEvent } = useSubscription(
 		"twapStates",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
@@ -134,7 +132,7 @@ export function TwapTab() {
 												<AssetBadge
 													coin={state.coin}
 													side={isBuy ? "buy" : "sell"}
-													onClick={() => setSelectedMarket(scope, state.coin)}
+													onClick={() => navigateToMarket(state.coin)}
 													aria-label={
 														isBuy
 															? t`Switch to ${state.coin} market, buy TWAP`

@@ -26,8 +26,6 @@ export function TokenSelectorPopup({
 }: TokenSelectorPopupProps) {
 	const {
 		scope,
-		exchangeScope,
-		exchangeDex,
 		subcategory,
 		subcategories,
 		search,
@@ -59,8 +57,6 @@ export function TokenSelectorPopup({
 		<TokenSelectorContent
 			selectedMarket={selectedMarket}
 			scope={scope}
-			exchangeScope={exchangeScope}
-			exchangeDex={exchangeDex}
 			subcategory={subcategory}
 			subcategories={subcategories}
 			search={search}

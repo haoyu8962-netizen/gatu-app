@@ -5,6 +5,7 @@ import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
@@ -18,8 +19,6 @@ import {
 	type OpenOrder,
 } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
@@ -35,14 +34,13 @@ type CancelScope = "row" | "all";
 
 export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) {
 	const { address, isConnected } = useWalletSession();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const { setSide } = useOrderEntryActions();
 	const markets = useMarkets();
 
 	function handleSelectMarket(name: string, side: Side) {
-		setSelectedMarket(scope, name);
+		navigateToMarket(name, undefined, { displayedContent: "trade" });
 		setSide(side);
 		setActiveTab("trade");
 	}

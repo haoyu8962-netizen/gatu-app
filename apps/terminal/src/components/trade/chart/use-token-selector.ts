@@ -28,8 +28,6 @@ export interface UseTokenSelectorReturn {
 	open: boolean;
 	setOpen: (open: boolean) => void;
 	scope: MarketScope;
-	exchangeScope: ExchangeScope;
-	exchangeDex: string | undefined;
 	subcategory: string;
 	subcategories: Subcategory[];
 	search: string;
@@ -97,7 +95,6 @@ export function useTokenSelector({
 	onValueChange,
 	open: controlledOpen,
 	onOpenChange,
-	mobile = false,
 }: UseTokenSelectorOptions): UseTokenSelectorReturn {
 	const { scope: exchangeScope, dex: exchangeDex } = useExchangeScope();
 	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
@@ -110,13 +107,13 @@ export function useTokenSelector({
 	const [highlightedIndex, setHighlightedIndex] = useState(-1);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const hasInitializedRef = useRef(false);
-	const previousExchangeScopeRef = useRef(exchangeScope);
+	const exchangeKey = `${exchangeScope}:${exchangeDex ?? ""}`;
+	const previousExchangeKeyRef = useRef(exchangeKey);
 	const open = controlledOpen ?? uncontrolledOpen;
 	const setOpen = onOpenChange ?? setUncontrolledOpen;
 
-	const routeLockedScope = !mobile && exchangeScope !== "all";
-	const scope = routeLockedScope ? mapExchangeToMarketScope(exchangeScope) : localScope;
-	const subcategory = routeLockedScope ? (exchangeDex ?? localSubcategory) : localSubcategory;
+	const scope = localScope;
+	const subcategory = localSubcategory;
 
 	function handleSearchChange(value: string) {
 		setSearch(value);
@@ -140,15 +137,16 @@ export function useTokenSelector({
 	);
 
 	useEffect(() => {
-		if (!mobile || !open) return;
+		if (!open) return;
 		setLocalScope(mapExchangeToMarketScope(exchangeScope));
 		setLocalSubcategory(exchangeDex ?? "all");
-	}, [mobile, open, exchangeScope, exchangeDex]);
+		previousExchangeKeyRef.current = exchangeKey;
+	}, [open, exchangeScope, exchangeDex, exchangeKey]);
 
 	useEffect(() => {
-		if (mobile) return;
-		if (previousExchangeScopeRef.current === exchangeScope) return;
-		previousExchangeScopeRef.current = exchangeScope;
+		if (open) return;
+		if (previousExchangeKeyRef.current === exchangeKey) return;
+		previousExchangeKeyRef.current = exchangeKey;
 
 		if (exchangeScope === "all") {
 			setLocalScope("all");
@@ -158,7 +156,7 @@ export function useTokenSelector({
 
 		setLocalScope(mapExchangeToMarketScope(exchangeScope));
 		setLocalSubcategory(exchangeDex ?? "all");
-	}, [mobile, exchangeScope, exchangeDex]);
+	}, [open, exchangeScope, exchangeDex, exchangeKey]);
 
 	function handleScopeSelect(newScope: MarketScope) {
 		setLocalScope(newScope);
@@ -363,8 +361,6 @@ export function useTokenSelector({
 		open,
 		setOpen: handleOpenChange,
 		scope,
-		exchangeScope,
-		exchangeDex,
 		subcategory,
 		subcategories,
 		search,

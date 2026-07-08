@@ -193,25 +193,28 @@ export function useMarketsInfo(): UseMarketsInfoReturn {
 }
 
 export function useSelectedMarketInfo() {
+	const { routeMarketName } = useExchangeScope();
 	const selectedMarketName = useSelectedMarket();
 	const { getMarketInfo, isLoading, error } = useMarketsInfo();
 
-	const market = getMarketInfo(selectedMarketName);
+	const routeMarket = routeMarketName ? getMarketInfo(routeMarketName) : undefined;
+	const market = routeMarketName ? routeMarket : getMarketInfo(selectedMarketName);
+	const cacheMarketName = market?.name ?? selectedMarketName;
 
 	useEffect(() => {
-		if (!selectedMarketName || !market || market.name !== selectedMarketName) return;
+		if (!cacheMarketName || !market || market.name !== cacheMarketName) return;
 		const liveMark = market.markPx;
 		if (!liveMark) return;
-		saveLastMark(selectedMarketName, liveMark, market.oraclePx);
-	}, [selectedMarketName, market]);
+		saveLastMark(cacheMarketName, liveMark, market.oraclePx);
+	}, [cacheMarketName, market]);
 
 	const data = useMemo(() => {
 		if (!market) return undefined;
 		if (market.markPx) return market;
-		const cached = selectedMarketName ? loadLastMark(selectedMarketName) : null;
+		const cached = cacheMarketName ? loadLastMark(cacheMarketName) : null;
 		if (!cached) return market;
 		return { ...market, markPx: cached.markPx, oraclePx: market.oraclePx ?? cached.oraclePx };
-	}, [market, selectedMarketName]);
+	}, [market, cacheMarketName]);
 
 	return {
 		data,

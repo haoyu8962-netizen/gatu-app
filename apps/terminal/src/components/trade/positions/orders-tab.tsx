@@ -3,6 +3,7 @@ import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/format";
@@ -15,8 +16,6 @@ import {
 	type OpenOrder,
 } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
@@ -37,12 +36,11 @@ type CancelScope = "row" | "selected" | "all";
 
 export function OrdersTab() {
 	const { address, isConnected } = useWalletSession();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const navigateToMarket = useMarketNavigation();
 	const { setSide } = useOrderEntryActions();
 
 	function handleSelectMarket(name: string, side: Side) {
-		setSelectedMarket(scope, name);
+		navigateToMarket(name);
 		setSide(side);
 	}
 	const {
