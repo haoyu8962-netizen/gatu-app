@@ -407,6 +407,7 @@ msgstr "شراء طويل"
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -868,6 +869,7 @@ msgstr "افتراضي"
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2568,6 +2570,10 @@ msgstr "الصفقات الأخيرة"
 #~ msgid "Reconnect or refresh after your embedded wallet is ready."
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Reconnect wallet"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Recovered after reload. Expires {expiresAtLabel}."
 msgstr "تم الاسترداد بعد إعادة التحميل. ينتهي في {expiresAtLabel}."
@@ -3803,6 +3809,8 @@ msgstr "المحفظة ({0})"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet client not ready"
 msgstr "عميل المحفظة غير جاهز"
 
@@ -3817,6 +3825,10 @@ msgstr "فشل الاتصال بالمحفظة. افتح قفل المحفظة �
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet connection request was rejected."
 msgstr "تم رفض طلب الاتصال بالمحفظة."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Wallet connection unavailable"
+msgstr ""
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts

@@ -199,7 +199,7 @@ describe("trade balances", () => {
 
 	it("uses the API withdrawable for perp available and derives the open-order hold", () => {
 		const perpRows = getPerpBalanceRows(
-			{ accountValue: "1620.34", totalMarginUsed: "1564.34" },
+			{ accountValue: "1620.34", totalMarginUsed: "1564.34", totalNtlPos: "7821.7" },
 			undefined,
 			undefined,
 			undefined,
@@ -215,6 +215,28 @@ describe("trade balances", () => {
 				total: "1620.34",
 			}),
 		]);
+	});
+
+	it("does not report the 10% transfer floor as an open-order hold above 10x leverage", () => {
+		const perpRows = getPerpBalanceRows(
+			{ accountValue: "60", totalMarginUsed: "50", totalNtlPos: "1000" },
+			undefined,
+			undefined,
+			undefined,
+			"0",
+		);
+
+		expect(perpRows[0]).toMatchObject({ available: "0", inOrder: "0" });
+
+		const withOrders = getPerpBalanceRows(
+			{ accountValue: "200", totalMarginUsed: "50", totalNtlPos: "1000" },
+			undefined,
+			undefined,
+			undefined,
+			"70",
+		);
+
+		expect(withOrders[0]).toMatchObject({ available: "70", inOrder: "30" });
 	});
 
 	it("values non-USDC spot balances at current mid price with entryNtl fallback", () => {

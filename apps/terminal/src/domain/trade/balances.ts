@@ -47,6 +47,7 @@ export interface BalanceRow {
 export interface PerpSummary {
 	accountValue?: string | number | null;
 	totalMarginUsed?: string | number | null;
+	totalNtlPos?: string | number | null;
 }
 
 export function getSpotBalance(balances: SpotBalance[] | null | undefined, coin: string): SpotBalance | null {
@@ -323,14 +324,19 @@ export function getPerpBalanceRows(
 	if (!perpAccountValue?.gt(0)) return [];
 
 	// The API's withdrawable already accounts for margin held by open orders, which
-	// totalMarginUsed (position margin only) does not. The difference between account
-	// value and (position margin + withdrawable) is the amount sitting in open orders.
+	// totalMarginUsed (position margin only) does not. Transfers are additionally floored
+	// at 10% of open notional (transfer_margin_required = max(initial_margin, 0.1 * ntl),
+	// see trading/margining), so subtract that floor too or the remainder shows up as a
+	// phantom order hold for >10x-leverage positions.
 	const availableValue =
 		withdrawable == null
 			? Big(getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed))
 			: toSafeBig(withdrawable);
 	const available = availableValue.gt(0) ? availableValue.toString() : "0";
-	const orderHold = perpAccountValue.minus(toSafeBig(perpSummary?.totalMarginUsed)).minus(availableValue);
+	const positionMargin = toSafeBig(perpSummary?.totalMarginUsed);
+	const transferFloor = toSafeBig(perpSummary?.totalNtlPos).abs().times("0.1");
+	const transferMarginRequired = transferFloor.gt(positionMargin) ? transferFloor : positionMargin;
+	const orderHold = perpAccountValue.minus(transferMarginRequired).minus(availableValue);
 	const inOrder = withdrawable == null || orderHold.lt(0) ? "0" : orderHold.toString();
 
 	return [
