@@ -61,18 +61,6 @@ function getAvailableBalance(
 	return isBuy ? availableLong : availableShort;
 }
 
-function getDisplayAvailableBalance(
-	isSpotMarket: boolean,
-	accountAbstraction: AccountAbstraction | null | undefined,
-	spotBalance: SpotBalanceData,
-	availableBalance: number,
-	allowSharedQuoteBalance: boolean,
-): number {
-	if (isSpotMarket) return availableBalance;
-	if (allowSharedQuoteBalance && isQuoteBalanceSharedWithPerps(accountAbstraction)) return spotBalance.quoteAvailable;
-	return availableBalance;
-}
-
 export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const isSpotMarket = inputs.market?.kind === "spot";
 	const isPerpMarket = inputs.market?.kind === "perp" || inputs.market?.kind === "builderPerp";
@@ -88,16 +76,15 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const usesSharedQuoteBalance =
 		isPerpMarket && isQuoteBalanceSharedWithPerps(inputs.accountAbstraction) && spotBalance.quoteAvailable > 0;
 
+	// activeAssetData.availableToTrade is the exchange's own "can open with this much" figure and
+	// already accounts for unified-account shared collateral plus caps the UI cannot derive. The
+	// shared spot balance (maintenance-adjusted) is only a stand-in while that subscription has no
+	// data yet — letting it override the official figure overstates what an order can actually use.
 	const [availableLong, availableShort] = inputs.availableToTrade ?? [0, 0];
 	const rawAvailableBalance = getAvailableBalance(isSpotMarket, isBuy, spotBalance, availableLong, availableShort);
-	const availableBalance = usesSharedQuoteBalance ? spotBalance.quoteAvailable : rawAvailableBalance;
-	const displayAvailableBalance = getDisplayAvailableBalance(
-		isSpotMarket,
-		inputs.accountAbstraction,
-		spotBalance,
-		availableBalance,
-		isPerpMarket,
-	);
+	const availableBalance =
+		usesSharedQuoteBalance && inputs.availableToTrade == null ? spotBalance.quoteAvailable : rawAvailableBalance;
+	const displayAvailableBalance = availableBalance;
 
 	const maxSize = getMaxSizeForOrderEntry({
 		isConnected: inputs.isConnected,
