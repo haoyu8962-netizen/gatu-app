@@ -143,6 +143,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 		capabilities,
 		szDecimals,
 		availableBalance,
+		isAvailabilityLoading,
 		availableBalanceToken,
 		spotBalance,
 		maxSize,
@@ -326,6 +327,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 		needsChainSwitch,
 		isSwitchingChain,
 		availableBalance,
+		isBalanceLoading: isAvailabilityLoading,
 		canDeposit: sessionMode === "wallet",
 		needsApproval: validation.needsApproval,
 		canSubmit: validation.canSubmit,
@@ -696,6 +698,7 @@ interface MobileButtonContentInput {
 	needsChainSwitch: boolean;
 	isSwitchingChain: boolean;
 	availableBalance: number;
+	isBalanceLoading: boolean;
 	canDeposit: boolean;
 	needsApproval: boolean;
 	canSubmit: boolean;
@@ -725,6 +728,14 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 			text: input.isSwitchingChain ? ORDER_TEXT.BUTTON_SWITCHING : ORDER_TEXT.BUTTON_SWITCH_CHAIN,
 			action: input.onSwitchChain,
 			disabled: input.isSwitchingChain,
+			variant: "cyan",
+		};
+	}
+	if (input.isBalanceLoading) {
+		return {
+			text: ORDER_TEXT.BUTTON_LOADING,
+			action: () => {},
+			disabled: true,
 			variant: "cyan",
 		};
 	}

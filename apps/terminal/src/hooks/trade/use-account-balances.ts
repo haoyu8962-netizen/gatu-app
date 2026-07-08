@@ -25,6 +25,7 @@ export type AccountAbstraction =
 
 export interface AccountBalances {
 	dex: string;
+	allDexClearinghouseStates: AllDexsAccountState["clearinghouseStates"];
 	marginSummary: MarginSummary | null;
 	perpSummary: PerpSummary | null;
 	perpPositions: PerpPosition[];
@@ -197,6 +198,7 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 
 	return {
 		dex: selectedDex,
+		allDexClearinghouseStates: clearinghouseStates,
 		marginSummary,
 		perpSummary,
 		perpPositions,

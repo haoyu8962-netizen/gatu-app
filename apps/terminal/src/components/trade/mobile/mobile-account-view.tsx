@@ -12,7 +12,7 @@ import { Skeleton } from "boneyard-js/react";
 import { Suspense, useState } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { UI_TEXT } from "@/config/ui-text";
-import { getAccountBalanceSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
+import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
@@ -21,7 +21,6 @@ import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { useSubscription } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
@@ -39,17 +38,10 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const selectedBalances = useSelectedDexBalances();
 	const defaultBalances = useDefaultDexBalances();
 	const accountAbstraction = selectedBalances.accountAbstraction;
-	const summaryBalances = isQuoteBalanceSharedWithPerps(accountAbstraction) ? defaultBalances : selectedBalances;
-	const {
-		marginSummary,
-		perpSummary,
-		perpPositions,
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		withdrawable,
-		crossMaintenanceMarginUsed,
-		isLoading,
-	} = summaryBalances;
+	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(accountAbstraction);
+	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
+	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, withdrawable, isLoading } =
+		summaryBalances;
 	const dex = selectedBalances.dex;
 	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const accountSummary = getAccountBalanceSummary({
@@ -74,11 +66,13 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		copy(address);
 	}
 
-	const crossAccountValue = toNumberOrZero(marginSummary?.accountValue);
-	const crossNtlPos = toNumberOrZero(marginSummary?.totalNtlPos);
-	const maintenanceMargin = toNumberOrZero(crossMaintenanceMarginUsed);
-	const marginRatio = crossAccountValue > 0 ? maintenanceMargin / crossAccountValue : 0;
-	const crossLeverage = crossAccountValue > 0 ? Math.abs(crossNtlPos) / crossAccountValue : 0;
+	const riskSummary = usesSharedQuoteBalance
+		? getPerpRiskSummary(selectedBalances.allDexClearinghouseStates.map(([, state]) => state))
+		: getPerpRiskSummary([summaryBalances]);
+	const maintenanceMargin = riskSummary.crossMaintenanceMarginUsed;
+	const marginRatio = accountSummary.accountEquity > 0 ? maintenanceMargin / accountSummary.accountEquity : 0;
+	const crossLeverage =
+		accountSummary.accountEquity > 0 ? Math.abs(riskSummary.totalNtlPos) / accountSummary.accountEquity : 0;
 	const usesUnifiedBalance = accountSummary.usesSpotStateForPerps;
 	const isMainDex = dex === "";
 	const showsSpotBalance = !usesUnifiedBalance && isMainDex;
@@ -96,11 +90,6 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const internalTransferDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
 		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
 		: null;
-
-	let unrealizedPnl = 0;
-	for (const pos of perpPositions) {
-		unrealizedPnl += toNumberOrZero(pos.position.unrealizedPnl);
-	}
 
 	if (!isConnected) {
 		return (
@@ -183,11 +172,11 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								<div
 									className={cn(
 										"text-sm tabular-nums mt-1.5 font-medium",
-										unrealizedPnl >= 0 ? "text-success" : "text-error",
+										riskSummary.unrealizedPnl >= 0 ? "text-success" : "text-error",
 									)}
 								>
-									{unrealizedPnl >= 0 ? "+" : ""}
-									{formatUSD(unrealizedPnl)} {ACCOUNT_TEXT.UNREALIZED_LABEL}
+									{riskSummary.unrealizedPnl >= 0 ? "+" : ""}
+									{formatUSD(riskSummary.unrealizedPnl)} {ACCOUNT_TEXT.UNREALIZED_LABEL}
 								</div>
 							</div>
 						</Skeleton>

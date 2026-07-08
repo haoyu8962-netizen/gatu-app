@@ -1629,6 +1629,7 @@ msgstr "वॉलेट लोड हो रहा है..."
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
+#: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
 

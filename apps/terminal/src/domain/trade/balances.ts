@@ -3,6 +3,7 @@ import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import type {
 	AccountAbstraction,
 	MarginSummary,
+	PerpPosition,
 	SpotAvailableAfterMaintenance,
 	SpotBalance,
 } from "@/hooks/trade/use-account-balances";
@@ -92,10 +93,43 @@ export interface AccountBalanceSummary {
 	hasSpotFundsWhenPerpWithdrawableZero: boolean;
 }
 
+export interface PerpRiskSummary {
+	totalNtlPos: number;
+	totalMarginUsed: number;
+	crossMaintenanceMarginUsed: number;
+	unrealizedPnl: number;
+}
+
+interface PerpRiskState {
+	marginSummary?: MarginSummary | null;
+	crossMaintenanceMarginUsed?: string | number | null;
+	assetPositions?: PerpPosition[] | null;
+}
+
 function getBalanceMode(accountAbstraction: AccountAbstraction | null | undefined): BalanceAccountMode {
 	if (accountAbstraction === "unifiedAccount") return "unified";
 	if (accountAbstraction === "portfolioMargin") return "portfolioMargin";
 	return "separate";
+}
+
+export function getPerpRiskSummary(states: PerpRiskState[]): PerpRiskSummary {
+	return states.reduce<PerpRiskSummary>(
+		(summary, state) => {
+			summary.totalNtlPos += toSafeBig(state.marginSummary?.totalNtlPos).toNumber();
+			summary.totalMarginUsed += toSafeBig(state.marginSummary?.totalMarginUsed).toNumber();
+			summary.crossMaintenanceMarginUsed += toSafeBig(state.crossMaintenanceMarginUsed).toNumber();
+			for (const pos of state.assetPositions ?? []) {
+				summary.unrealizedPnl += toSafeBig(pos.position.unrealizedPnl).toNumber();
+			}
+			return summary;
+		},
+		{
+			totalNtlPos: 0,
+			totalMarginUsed: 0,
+			crossMaintenanceMarginUsed: 0,
+			unrealizedPnl: 0,
+		},
+	);
 }
 
 export function getSpotAccountValue(

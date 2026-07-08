@@ -1629,6 +1629,7 @@ msgstr "加载钱包中..."
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
+#: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "加载中..."
 

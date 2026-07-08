@@ -3,14 +3,13 @@ import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { HL_ALL_DEXS } from "@/config/app";
-import { getAccountBalanceSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
+import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { useSubscription } from "@/lib/hyperliquid";
-import { toNumberOrZero } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 
@@ -28,7 +27,8 @@ export function AccountPanel() {
 	const selectedBalances = useSelectedDexBalances();
 	const defaultBalances = useDefaultDexBalances();
 	const accountAbstraction = selectedBalances.accountAbstraction;
-	const summaryBalances = isQuoteBalanceSharedWithPerps(accountAbstraction) ? defaultBalances : selectedBalances;
+	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(accountAbstraction);
+	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
 	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
@@ -43,20 +43,18 @@ export function AccountPanel() {
 	let perpMetrics = null;
 	if (summaryBalances.marginSummary || accountSummary.accountEquity > 0) {
 		const accountValue = accountSummary.accountEquity;
-		const totalNtlPos = toNumberOrZero(summaryBalances.marginSummary?.totalNtlPos);
-		const maintenanceMargin = toNumberOrZero(summaryBalances.crossMaintenanceMarginUsed);
-
-		let unrealizedPnl = 0;
-		for (const pos of summaryBalances.perpPositions) {
-			unrealizedPnl += toNumberOrZero(pos.position.unrealizedPnl);
-		}
+		const riskSummary = usesSharedQuoteBalance
+			? getPerpRiskSummary(selectedBalances.allDexClearinghouseStates.map(([, state]) => state))
+			: getPerpRiskSummary([summaryBalances]);
+		const totalNtlPos = riskSummary.totalNtlPos;
+		const maintenanceMargin = riskSummary.crossMaintenanceMarginUsed;
 
 		const marginRatio = accountValue > 0 ? maintenanceMargin / accountValue : 0;
 		const crossLeverage = accountValue > 0 ? Math.abs(totalNtlPos) / accountValue : 0;
 
 		perpMetrics = {
 			accountValue,
-			unrealizedPnl,
+			unrealizedPnl: riskSummary.unrealizedPnl,
 			marginRatio,
 			crossLeverage,
 			maintenanceMargin,

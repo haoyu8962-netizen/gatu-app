@@ -8,6 +8,7 @@ import { useAssetLeverage } from "./use-asset-leverage";
 
 interface OrderEntryData extends OrderEntryDerived {
 	isConnected: boolean;
+	isAvailabilityLoading: boolean;
 
 	getSizeForPercent: (pct: number) => string;
 	convertSizeForModeToggle: () => string;
@@ -45,7 +46,12 @@ export function useOrderEntryData({
 	sizeInput,
 }: UseOrderEntryDataOptions): OrderEntryData {
 	const { isConnected } = useWalletSession();
-	const { spotBalances, spotAvailableAfterMaintenance, accountAbstraction } = useDefaultDexBalances();
+	const {
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		isLoading: accountBalancesLoading,
+	} = useDefaultDexBalances();
 	const {
 		displayLeverage: leverage,
 		currentLeverage,
@@ -63,6 +69,7 @@ export function useOrderEntryData({
 		switchModeError,
 		isOnlyIsolated,
 		allowsCrossMargin,
+		subscriptionStatus,
 	} = useAssetLeverage();
 
 	const conversionPrice = markPx > 0 ? markPx : 0;
@@ -105,6 +112,7 @@ export function useOrderEntryData({
 
 	return {
 		isConnected,
+		isAvailabilityLoading: accountBalancesLoading || subscriptionStatus === "loading",
 		...derived,
 		getSizeForPercent,
 		convertSizeForModeToggle,
