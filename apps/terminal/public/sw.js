@@ -29,7 +29,7 @@ self.addEventListener("fetch", (event) => {
 	if (request.method !== "GET") return;
 
 	if (url.pathname.startsWith("/charting_library/")) {
-		event.respondWith(cacheFirst(request, CHARTING_CACHE));
+		event.respondWith(chartingLibraryResponse(request, url));
 		return;
 	}
 
@@ -56,6 +56,28 @@ async function cacheFirst(request, cacheName) {
 		cache.put(request, response.clone());
 	}
 	return response;
+}
+
+function chartingLibraryResponse(request, url) {
+	if (url.pathname.endsWith("/sameorigin.html") || url.pathname.endsWith("/charting_library.js")) {
+		return staleWhileRevalidateDocument(request, CHARTING_CACHE);
+	}
+
+	return cacheFirst(request, CHARTING_CACHE);
+}
+
+async function staleWhileRevalidateDocument(request, cacheName) {
+	const cache = await caches.open(cacheName);
+	const cached = await cache.match(request);
+	const fetched = fetch(request)
+		.then(async (response) => {
+			if (response.ok) {
+				await cache.put(request, response.clone());
+			}
+			return response;
+		})
+		.catch((error) => cached || Promise.reject(error));
+	return cached || fetched;
 }
 
 async function staleWhileRevalidate(request, cacheName) {

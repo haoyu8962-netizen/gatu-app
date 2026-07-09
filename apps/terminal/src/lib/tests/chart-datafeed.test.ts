@@ -28,7 +28,7 @@ describe("TradingView datafeed", () => {
 		vi.useRealTimers();
 	});
 
-	it("uses market metadata for spot display symbols while mapping to the API ticker", async () => {
+	it("uses canonical spot symbols while preserving display metadata", async () => {
 		const datafeed = createDatafeed({
 			getSymbolInfo: (symbolName, coin) =>
 				symbolName === "ETH/USDH" || coin === "@235"
@@ -42,21 +42,13 @@ describe("TradingView datafeed", () => {
 		});
 
 		const symbol = await new Promise<LibrarySymbolInfo>((resolve, reject) => {
-			datafeed.resolveSymbol("ETH/USDH", resolve, reject, {});
+			datafeed.resolveSymbol("@235", resolve, reject, {});
 		});
 
 		expect(symbol.name).toBe("ETH/USDH");
 		expect(symbol.ticker).toBe("@235");
 		expect(symbol.description).toBe("ETH/USDH");
 		expect(symbol.pricescale).toBe(100);
-
-		const symbolFromTicker = await new Promise<LibrarySymbolInfo>((resolve, reject) => {
-			datafeed.resolveSymbol("@235", resolve, reject, {});
-		});
-
-		expect(symbolFromTicker.name).toBe("ETH/USDH");
-		expect(symbolFromTicker.ticker).toBe("@235");
-		expect(symbolFromTicker.description).toBe("ETH/USDH");
 
 		infoClient.candleSnapshot.mockResolvedValueOnce([]);
 		await new Promise<void>((resolve, reject) => {
@@ -82,12 +74,12 @@ describe("TradingView datafeed", () => {
 		);
 	});
 
-	it("uses market metadata for HIP-3 display symbols while mapping to the API ticker", async () => {
+	it("uses canonical HIP-3 symbols while preserving display metadata", async () => {
 		const datafeed = createDatafeed({
 			getSymbolInfo: (symbolName, coin) =>
 				symbolName === "xyz:KR200/USDC" || coin === "xyz:KR200"
 					? {
-							name: "xyz:KR200/USDC",
+							name: "KR200-USDC",
 							ticker: "xyz:KR200",
 							description: "KR200-USDC",
 							pricescale: 100,
@@ -96,10 +88,10 @@ describe("TradingView datafeed", () => {
 		});
 
 		const symbol = await new Promise<LibrarySymbolInfo>((resolve, reject) => {
-			datafeed.resolveSymbol("HYPERLIQUID:xyz:KR200/USDC", resolve, reject, {});
+			datafeed.resolveSymbol("xyz:KR200", resolve, reject, {});
 		});
 
-		expect(symbol.name).toBe("xyz:KR200/USDC");
+		expect(symbol.name).toBe("KR200-USDC");
 		expect(symbol.ticker).toBe("xyz:KR200");
 		expect(symbol.description).toBe("KR200-USDC");
 		expect(symbol.pricescale).toBe(100);

@@ -183,13 +183,12 @@ interface DatafeedOptions {
 export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 	const store = getCandleStore();
 	const listenerToStream = new Map<string, string>();
-	const symbolToCoin = new Map<string, string>();
 	const resolveAsync = (callback: () => void) => {
 		setTimeout(callback, 0);
 	};
 	const coinFromLibrarySymbol = (symbol: LibrarySymbolInfo) => {
 		const symbolName = symbol.ticker ?? symbol.name;
-		return symbolToCoin.get(symbolName) ?? coinFromSymbolName(symbolName);
+		return coinFromSymbolName(symbolName);
 	};
 
 	return {
@@ -208,11 +207,6 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 				const resolvedSymbol = options.getSymbolInfo?.(rawSymbolName, coin);
 				const displayName = resolvedSymbol?.name ?? symbolFromCoin(coin);
 				const apiTicker = resolvedSymbol?.ticker ?? coin;
-				if (resolvedSymbol) {
-					symbolToCoin.set(rawSymbolName, apiTicker);
-					symbolToCoin.set(displayName, apiTicker);
-					symbolToCoin.set(apiTicker, apiTicker);
-				}
 
 				const knownByCaller = resolvedSymbol ? true : options.isKnownCoin?.(apiTicker);
 				if (knownByCaller !== true && !(await isKnownCoin(apiTicker))) {

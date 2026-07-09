@@ -150,6 +150,31 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
 	});
 
+	it("does not destroy the widget when TradingView readiness is delayed", async () => {
+		vi.useFakeTimers();
+		widgetConstructor.mockImplementation(function Widget(this: unknown, options: unknown) {
+			void this;
+			const widget = createMockWidget(options as { theme?: "light" | "dark" });
+			widget.onChartReady.mockImplementation(() => {});
+			widgets.push(widget);
+			return widget;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		await act(async () => {
+			vi.advanceTimersByTime(60_000);
+			await Promise.resolve();
+		});
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+		expect(container.textContent).not.toContain("Something went wrong");
+	});
+
 	it("changes the TradingView theme without rebuilding the iframe", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
@@ -225,7 +250,7 @@ describe("TradingViewChart", () => {
 		expect(widgetConstructor.mock.calls[0]?.[0]).not.toHaveProperty("toolbar_bg");
 	});
 
-	it("keeps resolved spot symbol mappings stable across market changes", async () => {
+	it("uses canonical market symbols for TradingView while preserving display metadata", async () => {
 		const spotMarket = {
 			kind: "spot",
 			name: "@235",
@@ -253,6 +278,12 @@ describe("TradingViewChart", () => {
 		});
 		await flushChartEffects();
 
+		expect(widgetConstructor).toHaveBeenCalledWith(
+			expect.objectContaining({
+				symbol: "@235",
+			}),
+		);
+
 		act(() => {
 			root.render(
 				createElement(TradingViewChart, {
@@ -265,6 +296,8 @@ describe("TradingViewChart", () => {
 		});
 		await flushChartEffects();
 
+		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("BTC", "60", expect.any(Function));
+
 		const options = testState.datafeedOptions[0] as {
 			getSymbolInfo: (
 				symbolName: string,
@@ -272,6 +305,11 @@ describe("TradingViewChart", () => {
 			) => { name: string; ticker: string; pricescale?: number } | undefined;
 		};
 
+		expect(options.getSymbolInfo("@235", "@235")).toMatchObject({
+			name: "ETH/USDH",
+			ticker: "@235",
+			pricescale: 100,
+		});
 		expect(options.getSymbolInfo("ETH/USDH", "ETH")).toMatchObject({
 			name: "ETH/USDH",
 			ticker: "@235",
@@ -319,7 +357,8 @@ describe("TradingViewChart", () => {
 		expect(widgetConstructor).toHaveBeenCalledTimes(1);
 		expect(widget?.remove).not.toHaveBeenCalled();
 		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
-		expect(container.textContent).not.toContain("Something went wrong");
+		expect(container.textContent).toContain("Something went wrong");
+		expect(container.textContent).toContain("Retry");
 	});
 
 	it("keeps the chart visible while a symbol switch is pending", async () => {

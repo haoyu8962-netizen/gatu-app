@@ -1648,6 +1648,7 @@ msgstr "Loading TWAP orders..."
 msgid "Loading wallet..."
 msgstr "Loading wallet..."
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts

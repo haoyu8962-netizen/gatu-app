@@ -2,7 +2,7 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
-import { coinFromSymbolName, priceScaleFromMid } from "@/lib/chart/symbol";
+import { priceScaleFromMid } from "@/lib/chart/symbol";
 import { buildChartOverrides, getChartCssUrl, getLoadingScreenColors } from "@/lib/chart/theme-colors";
 import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
@@ -24,30 +24,36 @@ import {
 } from "./constants";
 import { createDatafeed } from "./datafeed";
 
-const CHART_READY_TIMEOUT_MS = 12_000;
-const MAX_CHART_INIT_ATTEMPTS = 2;
 const MAX_SYMBOL_SWITCH_ATTEMPTS = 2;
 const SYMBOL_SWITCH_TIMEOUT_MS = 4_000;
+const CHART_READY_SOFT_TIMEOUT_MS = 45_000;
 
 function priceScaleFromSzDecimals(szDecimals: number): number {
 	const decimals = Math.min(Math.max(6 - szDecimals, 2), 8);
 	return 10 ** decimals;
 }
 
-function getChartDisplaySymbol(market: UnifiedMarketInfo): string {
-	if (market.kind === "spot") return market.pairName;
+function getChartSymbol(market: UnifiedMarketInfo): string {
+	return market.name;
+}
+
+function getChartDisplayName(market: UnifiedMarketInfo): string {
+	return market.pairName ?? market.name;
+}
+
+function getLegacyChartDisplaySymbol(market: UnifiedMarketInfo): string {
 	if (market.kind === "builderPerp") {
 		const quoteToken = market.quoteToken?.displayName ?? market.quoteToken?.name ?? QUOTE_ASSET;
 		return `${market.name}/${quoteToken}`;
 	}
-	return `${market.name}/${QUOTE_ASSET}`;
+	return getChartDisplayName(market);
 }
 
 function getChartMarketKeys(market: UnifiedMarketInfo): string[] {
 	const keys = new Set<string>();
 	keys.add(market.name);
 	keys.add(market.pairName);
-	keys.add(getChartDisplaySymbol(market));
+	keys.add(getLegacyChartDisplaySymbol(market));
 	return Array.from(keys);
 }
 
@@ -66,7 +72,7 @@ export function TradingViewChart({
 	theme = DEFAULT_CHART_THEME,
 	yAxisInside = false,
 }: Props) {
-	const widgetSymbol = market ? getChartDisplaySymbol(market) : symbol;
+	const widgetSymbol = market ? getChartSymbol(market) : symbol;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const chartReadyRef = useRef(false);
@@ -89,6 +95,7 @@ export function TradingViewChart({
 	const applySymbolRef = useRef<() => void>(() => {});
 	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
 	const [initError, setInitError] = useState<string | null>(null);
+	const [showReadyPrompt, setShowReadyPrompt] = useState(false);
 	const [retryNonce, setRetryNonce] = useState(0);
 	targetSymbolRef.current = widgetSymbol;
 	targetIntervalRef.current = interval;
@@ -198,6 +205,7 @@ export function TradingViewChart({
 			}
 			symbolSwitchAttemptRef.current = 0;
 			symbolSwitchTargetRef.current = null;
+			setInitError("symbol-switch-timeout");
 		}, SYMBOL_SWITCH_TIMEOUT_MS);
 
 		try {
@@ -238,16 +246,26 @@ export function TradingViewChart({
 		void retryNonce;
 		if (!containerRef.current) return;
 		let disposed = false;
-		let readyTimeout: ReturnType<typeof setTimeout> | null = null;
+		let readyPromptTimeout: ReturnType<typeof setTimeout> | null = null;
 		chartReadyRef.current = false;
 
+		const clearReadyPromptTimeout = () => {
+			if (readyPromptTimeout) {
+				clearTimeout(readyPromptTimeout);
+				readyPromptTimeout = null;
+			}
+		};
+
+		const scheduleReadyPrompt = (widget: IChartingLibraryWidget) => {
+			clearReadyPromptTimeout();
+			readyPromptTimeout = setTimeout(() => {
+				if (disposed || chartReadyRef.current || widgetRef.current !== widget) return;
+				setShowReadyPrompt(true);
+			}, CHART_READY_SOFT_TIMEOUT_MS);
+		};
+
 		function getMarketForChartSymbol(symbolName: string, coin: string): UnifiedMarketInfo | undefined {
-			return (
-				marketBySymbolRef.current.get(symbolName) ??
-				marketBySymbolRef.current.get(coin) ??
-				marketBySymbolRef.current.get(coinFromSymbolName(symbolName)) ??
-				marketRef.current
-			);
+			return marketBySymbolRef.current.get(coin) ?? marketBySymbolRef.current.get(symbolName) ?? marketRef.current;
 		}
 
 		function isSelectedMarketCoin(coin: string): boolean | undefined {
@@ -266,25 +284,25 @@ export function TradingViewChart({
 		function getSelectedMarketSymbolInfo(symbolName: string, coin: string) {
 			const currentMarket = getMarketForChartSymbol(symbolName, coin);
 			if (!currentMarket) return undefined;
-			const name = getChartDisplaySymbol(currentMarket);
-			if (symbolName !== name && coin !== currentMarket.name) return undefined;
+			const displayName = getChartDisplayName(currentMarket);
+			if (
+				symbolName !== currentMarket.name &&
+				coin !== currentMarket.name &&
+				symbolName !== currentMarket.pairName &&
+				symbolName !== getLegacyChartDisplaySymbol(currentMarket)
+			) {
+				return undefined;
+			}
 			return {
-				name,
+				name: displayName,
 				ticker: currentMarket.name,
-				description: currentMarket.pairName ?? name,
+				description: displayName,
 				pricescale: getSelectedMarketPriceScale(currentMarket.name),
 			};
 		}
 
-		const clearReadyTimeout = () => {
-			if (readyTimeout) {
-				clearTimeout(readyTimeout);
-				readyTimeout = null;
-			}
-		};
-
 		const removeWidget = () => {
-			clearReadyTimeout();
+			clearReadyPromptTimeout();
 			clearPendingSymbolSwitch();
 			if (widgetRef.current) {
 				widgetRef.current.remove();
@@ -302,20 +320,7 @@ export function TradingViewChart({
 			setInitError(reason);
 		};
 
-		const scheduleReadyTimeout = (widget: IChartingLibraryWidget, attempt: number) => {
-			clearReadyTimeout();
-			readyTimeout = setTimeout(() => {
-				if (disposed || chartReadyRef.current || widgetRef.current !== widget) return;
-				removeWidget();
-				if (attempt < MAX_CHART_INIT_ATTEMPTS) {
-					void initWidget(attempt + 1);
-					return;
-				}
-				handleFinalFailure("ready-timeout");
-			}, CHART_READY_TIMEOUT_MS);
-		};
-
-		const initWidget = async (attempt = 1) => {
+		const initWidget = async () => {
 			try {
 				await loadTradingViewScript();
 
@@ -331,6 +336,7 @@ export function TradingViewChart({
 				const initialSymbol = targetSymbolRef.current;
 				const initialInterval = targetIntervalRef.current;
 				setInitError(null);
+				setShowReadyPrompt(false);
 
 				const widget = new window.TradingView.widget({
 					container: containerRef.current,
@@ -364,22 +370,20 @@ export function TradingViewChart({
 				appliedSymbolRef.current = initialSymbol;
 				appliedIntervalRef.current = initialInterval;
 				appliedThemeRef.current = initialTheme;
-				scheduleReadyTimeout(widget, attempt);
+				scheduleReadyPrompt(widget);
 
 				widget.onChartReady(() => {
 					if (disposed || widgetRef.current !== widget) return;
-					clearReadyTimeout();
+					clearReadyPromptTimeout();
 					chartReadyRef.current = true;
+					setInitError(null);
+					setShowReadyPrompt(false);
 					applyThemeRef.current(targetThemeRef.current);
 					applySymbolRef.current();
 				});
 			} catch {
 				if (disposed) return;
 				removeWidget();
-				if (attempt < MAX_CHART_INIT_ATTEMPTS) {
-					void initWidget(attempt + 1);
-					return;
-				}
 				handleFinalFailure("exception");
 			}
 		};
@@ -388,7 +392,7 @@ export function TradingViewChart({
 
 		return () => {
 			disposed = true;
-			clearReadyTimeout();
+			clearReadyPromptTimeout();
 			removeWidget();
 		};
 	}, [retryNonce]);
@@ -410,14 +414,15 @@ export function TradingViewChart({
 			style={{ minHeight: CHART_MIN_HEIGHT_PX }}
 		>
 			<div ref={containerRef} className="w-full h-full" />
-			{initError && (
+			{(initError || showReadyPrompt) && (
 				<div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface px-4 text-center">
-					<p className="text-sm font-medium text-fg">{t`Something went wrong`}</p>
+					<p className="text-sm font-medium text-fg">{initError ? t`Something went wrong` : t`Loading...`}</p>
 					<button
 						type="button"
 						className="rounded-xs border border-stroke-weak px-3 py-1.5 text-xs font-medium text-fg hover:bg-fill-hover"
 						onClick={() => {
 							setInitError(null);
+							setShowReadyPrompt(false);
 							setRetryNonce((value) => value + 1);
 						}}
 					>
