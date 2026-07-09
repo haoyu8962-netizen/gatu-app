@@ -9,7 +9,7 @@ const TOKEN_SELECTOR_POPOVER_WIDTH = "w-[min(44rem,calc(100vw-1rem))]";
 
 export type TokenSelectorPopupProps = {
 	selectedMarket: UnifiedMarketInfo | undefined;
-	onValueChange: (value: string) => void;
+	onValueChange: (value: string, market?: UnifiedMarketInfo) => void;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	mobile?: boolean;
@@ -26,8 +26,6 @@ export function TokenSelectorPopup({
 }: TokenSelectorPopupProps) {
 	const {
 		scope,
-		exchangeScope,
-		exchangeDex,
 		subcategory,
 		subcategories,
 		search,
@@ -52,14 +50,13 @@ export function TokenSelectorPopup({
 		onValueChange,
 		open,
 		onOpenChange,
+		mobile,
 	});
 
 	const content = (
 		<TokenSelectorContent
 			selectedMarket={selectedMarket}
 			scope={scope}
-			exchangeScope={exchangeScope}
-			exchangeDex={exchangeDex}
 			subcategory={subcategory}
 			subcategories={subcategories}
 			search={search}

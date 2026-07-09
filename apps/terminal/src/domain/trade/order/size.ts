@@ -18,6 +18,7 @@ interface OrderEntryMaxSizeInput {
 	spotBalance: SpotBalanceData;
 	szDecimals: number;
 	maxTradeSzs: [number, number] | null;
+	sharedQuoteAvailable?: number;
 }
 
 interface SizeValueInput {
@@ -80,7 +81,14 @@ export function getMaxSizeForOrderEntry(input: OrderEntryMaxSizeInput): number {
 	}
 
 	const maxTradeSize = input.maxTradeSzs?.[isBuy ? 0 : 1] ?? 0;
-	return maxTradeSize > 0 ? maxTradeSize : 0;
+	if (maxTradeSize > 0) return maxTradeSize;
+
+	const sharedQuote = toBig(input.sharedQuoteAvailable);
+	const px = toBig(input.price);
+	if (!sharedQuote || !px || sharedQuote.lte(0) || px.lte(0)) return 0;
+	const size = sharedQuote.div(px).toNumber();
+	const floored = floorToDecimals(size, input.szDecimals);
+	return Number.isFinite(floored) ? floored : 0;
 }
 
 export function getMaxSize(input: MaxSizeInput): number {

@@ -87,6 +87,17 @@ export function useSub<TData>(
 		return () => store.getState().releaseSubscription(key);
 	}, [dropOversizedPayload, enabled, key, pauseWhenHidden, payloadLimitBytes, stalenessThresholdMs, store, throttleMs]);
 
+	if (!enabled) {
+		return {
+			data: undefined,
+			status: "idle",
+			error: undefined,
+			isStale: false,
+			unsubscribe: async () => store.getState().releaseSubscription(key),
+			failureSignal: undefined,
+		};
+	}
+
 	return {
 		data: entry?.data as TData | undefined,
 		status: entry?.status ?? "idle",

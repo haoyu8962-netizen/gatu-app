@@ -2,7 +2,6 @@ import { Button, Checkbox, Slider, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";
-import { useConnection } from "wagmi";
 import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
@@ -10,6 +9,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD, SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { getSliderValue } from "@/domain/trade/order/size";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
@@ -62,7 +62,7 @@ export function TradeFormFields({
 	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
 	const [dragSliderValue, setDragSliderValue] = useState(0);
 
-	const { isConnected } = useConnection();
+	const { isConnected } = useWalletSession();
 	const { data: market } = useSelectedMarketInfo();
 
 	const side = useOrderSide();
@@ -81,7 +81,8 @@ export function TradeFormFields({
 		baseToken,
 		capabilities,
 		availableBalance,
-		availableBalanceToken,
+		displayAvailableBalance,
+		displayAvailableBalanceToken,
 		maxSize,
 		sizeValue,
 		orderValue,
@@ -115,7 +116,7 @@ export function TradeFormFields({
 		if (!isConnected) return FALLBACK_VALUE_PLACEHOLDER;
 		const isBaseToken = isSpotMarket && side === "sell";
 		const decimals = isBaseToken ? szDecimals : 2;
-		return formatToken(availableBalance, { decimals, symbol: availableBalanceToken ?? undefined });
+		return formatToken(displayAvailableBalance, { decimals, symbol: displayAvailableBalanceToken ?? undefined });
 	}
 
 	return (
@@ -129,7 +130,7 @@ export function TradeFormFields({
 							</Tooltip>
 							<span>
 								{isConnected ? (
-									<span className={cn("tabular-nums", getValueColorClass(availableBalance))}>
+									<span className={cn("tabular-nums", getValueColorClass(displayAvailableBalance))}>
 										{formatAvailableBalance()}
 									</span>
 								) : null}
@@ -141,7 +142,7 @@ export function TradeFormFields({
 									{t`Swap`}
 								</Button>
 							) : null}
-							{isConnected && availableBalance <= 0 ? (
+							{isConnected && displayAvailableBalance <= 0 ? (
 								<Button variant="link" intent="brand" size="xxs" onClick={onDepositClick}>
 									{t`Deposit`}
 								</Button>
@@ -245,14 +246,12 @@ export function TradeFormFields({
 						</Button>
 					</div>
 					<Slider
-						value={[sliderValue]}
-						onValueChange={(v) => {
-							const val = Array.isArray(v) ? v[0] : v;
+						value={sliderValue}
+						onValueChange={(val: number) => {
 							setIsDraggingSlider(true);
 							setDragSliderValue(val);
 						}}
-						onValueCommitted={(v) => {
-							const val = Array.isArray(v) ? v[0] : v;
+						onValueCommitted={(val: number) => {
 							setIsDraggingSlider(false);
 							handleSizePercentApply(val);
 						}}
@@ -287,7 +286,7 @@ export function TradeFormFields({
 							<Checkbox
 								aria-label={t`Reduce Only`}
 								checked={triggerOrder || reduceOnly}
-								onCheckedChange={(checked) => setReduceOnly(checked === true)}
+								onCheckedChange={(checked: boolean | "indeterminate") => setReduceOnly(checked === true)}
 								disabled={isFormDisabled || triggerOrder}
 								label={t`Reduce Only`}
 							/>
@@ -296,7 +295,7 @@ export function TradeFormFields({
 							<Checkbox
 								aria-label={t`Take Profit / Stop Loss`}
 								checked={tpSlEnabled}
-								onCheckedChange={(checked) => setTpSlEnabled(checked === true)}
+								onCheckedChange={(checked: boolean | "indeterminate") => setTpSlEnabled(checked === true)}
 								disabled={isFormDisabled}
 								label={t`TP/SL`}
 							/>

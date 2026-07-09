@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 
+import { useSubscription } from "@gatu/hl-react/hooks/useSubscription";
 import { useSub } from "@gatu/hl-react/hooks/utils/useSub";
-import { HyperliquidStoreContext } from "@gatu/hl-react/provider";
+import { HyperliquidContext, type HyperliquidContextValue, HyperliquidStoreContext } from "@gatu/hl-react/provider";
 import { createHyperliquidStore, getStoreInternals, type HyperliquidStore } from "@gatu/hl-react/store";
+import type { SubscriptionClient } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -40,6 +42,25 @@ describe("useSub hook surface", () => {
 
 	function Wrapper({ children }: { children: ReactNode }) {
 		return createElement(HyperliquidStoreContext.Provider, { value: store }, children);
+	}
+
+	function FullWrapper({ children, subscription }: { children: ReactNode; subscription: SubscriptionClient }) {
+		const value: HyperliquidContextValue = {
+			info: {} as HyperliquidContextValue["info"],
+			subscription,
+			env: "Testnet",
+			isTestnet: true,
+			builderConfig: { b: "0x0000000000000000000000000000000000000000", f: 0 },
+			agentName: "test",
+			clientKey: "0x0000000000000000000000000000000000000000",
+			sessionMode: "wallet",
+		};
+
+		return createElement(
+			HyperliquidStoreContext.Provider,
+			{ value: store },
+			createElement(HyperliquidContext.Provider, { value }, children),
+		);
 	}
 
 	it("acquires on mount and releases on unmount", async () => {
@@ -156,6 +177,45 @@ describe("useSub hook surface", () => {
 
 		act(() => {
 			root.render(createElement(Wrapper, null, null));
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+	});
+
+	it("uses refreshKey to resubscribe without changing SDK params", async () => {
+		const unsubscribes: Array<ReturnType<typeof vi.fn>> = [];
+		const l2Book = vi.fn(async () => {
+			const unsubscribe = vi.fn(async () => {});
+			unsubscribes.push(unsubscribe);
+			return {
+				unsubscribe,
+				failureSignal: new AbortController().signal,
+			};
+		});
+		const subscription = { l2Book } as unknown as SubscriptionClient;
+
+		function Consumer({ refreshKey }: { refreshKey: string }) {
+			useSubscription("l2Book", { coin: "ETH" }, { refreshKey });
+			return null;
+		}
+
+		act(() => {
+			root.render(createElement(FullWrapper, { subscription }, createElement(Consumer, { refreshKey: "ledger-a" })));
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		expect(l2Book).toHaveBeenCalledTimes(1);
+
+		act(() => {
+			root.render(createElement(FullWrapper, { subscription }, createElement(Consumer, { refreshKey: "ledger-b" })));
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		expect(unsubscribes[0]).toHaveBeenCalledTimes(1);
+		expect(l2Book).toHaveBeenCalledTimes(2);
+		expect(l2Book.mock.calls.map(([params]) => params)).toEqual([{ coin: "ETH" }, { coin: "ETH" }]);
+
+		act(() => {
+			root.render(createElement(FullWrapper, { subscription }, null));
 		});
 		await act(() => vi.advanceTimersByTimeAsync(0));
 	});

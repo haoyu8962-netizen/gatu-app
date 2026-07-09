@@ -10,6 +10,7 @@ import { useAssetLeverage } from "@/hooks/trade/use-asset-leverage";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
+import { TradingActionButton } from "../components/trading-action-button";
 import { LeverageSlider } from "./leverage-slider";
 
 const LEVERAGE_INPUT_WIDTH_COMPACT = "w-12";
@@ -185,46 +186,49 @@ function LeverageEditor({
 					>
 						<Trans>Cancel</Trans>
 					</Button>
-					<Button
+					<TradingActionButton
 						variant="outline"
 						intent="brand"
 						size={compact ? "sm" : "lg"}
 						onClick={handleConfirm}
 						disabled={isUpdating}
-						className="flex-1"
+						containerClassName="flex-1"
+						className="w-full"
 					>
 						{isUpdating && <SpinnerGapIcon className={cn(iconSize, "animate-spin")} />}
 						<Trans>Retry</Trans>
-					</Button>
+					</TradingActionButton>
 				</div>
 			)}
 
 			{!updateError && compact && (
-				<Button
+				<TradingActionButton
 					variant="outline"
 					intent="brand"
 					size="sm"
 					onClick={handleConfirm}
 					disabled={!isDirty || isUpdating || showSuccess}
+					containerClassName="w-full"
 					className="w-full"
 				>
 					{isUpdating && <SpinnerGapIcon className="size-3 animate-spin" />}
 					<Trans>Confirm</Trans>
-				</Button>
+				</TradingActionButton>
 			)}
 
 			{!updateError && !compact && (
-				<Button
+				<TradingActionButton
 					variant="outline"
 					intent="brand"
 					size="lg"
 					onClick={handleConfirm}
 					disabled={!isDirty || isUpdating || showSuccess}
+					containerClassName="w-full"
 					className="w-full"
 				>
 					{isUpdating && <SpinnerGapIcon className="size-4 animate-spin" />}
 					<Trans>Confirm</Trans>
-				</Button>
+				</TradingActionButton>
 			)}
 		</div>
 	);

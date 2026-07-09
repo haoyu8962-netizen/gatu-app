@@ -10,15 +10,20 @@ const AGENT_PRIVATE_KEY = `0x${"ab".repeat(32)}`;
 const AGENT_NAME = "hype-mobile-1779365227000";
 const AGENT_VALID_UNTIL_MS = 1_779_365_227_000;
 const EXPIRES_AT_MS = 1_779_364_827_000;
-const PAIRING_CODE = "ABCD-1234-EF56-7890";
-const PHONE_LINK = "https://app.hypeterminal.test/mobile-agent-sync#ht-mobile-sync=encoded-envelope";
+const PHONE_LINK = "https://app.hypeterminal.test/mobile-agent-sync#ht-mobile-sync=encoded-envelope&k=encoded-key";
 
 const testState = vi.hoisted(() => ({
 	address: "0x1111111111111111111111111111111111111111" as string | undefined,
 	approveAgent: vi.fn(),
 	clearAgent: vi.fn(),
+	clearinghouseState: {
+		assetPositions: [],
+		marginSummary: { accountValue: "1", totalNtlPos: "0", totalRawUsd: "1" },
+		withdrawable: "1",
+	},
 	createMobileAgentSyncUrl: vi.fn(),
 	qrToDataUrl: vi.fn(),
+	spotState: { balances: [] as Array<{ hold?: string; total?: string }> },
 	writeClipboard: vi.fn(),
 }));
 
@@ -35,6 +40,10 @@ vi.mock("@lingui/react/macro", () => ({
 }));
 
 vi.mock("@lingui/core/macro", () => ({
+	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
+		if (typeof strings === "string") return strings;
+		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
+	},
 	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
 		if (typeof strings === "string") return strings;
 		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
@@ -45,7 +54,6 @@ vi.mock("@phosphor-icons/react", () => ({
 	CheckIcon: Icon,
 	CopyIcon: Icon,
 	DeviceMobileIcon: Icon,
-	KeyIcon: Icon,
 	QrCodeIcon: Icon,
 	ShieldCheckIcon: Icon,
 	SpinnerGapIcon: Icon,
@@ -108,6 +116,17 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useAgentWalletStorage: () => null,
 	useExchange: () => ({ mutateAsync: testState.approveAgent }),
 	useHyperliquid: () => ({ env: "Mainnet" }),
+	useInfo: (method: string) => {
+		const data = method === "spotClearinghouseState" ? testState.spotState : testState.clearinghouseState;
+		return {
+			data,
+			refetch: vi.fn().mockResolvedValue({ data }),
+		};
+	},
+}));
+
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({
+	useWalletSession: () => ({ address: testState.address, isConnected: !!testState.address }),
 }));
 
 vi.mock("wagmi", () => ({
@@ -155,18 +174,24 @@ describe("MobileAgentSyncModal", () => {
 		testState.approveAgent.mockReset();
 		testState.approveAgent.mockResolvedValue(undefined);
 		testState.clearAgent.mockReset();
+		testState.clearinghouseState = {
+			assetPositions: [],
+			marginSummary: { accountValue: "1", totalNtlPos: "0", totalRawUsd: "1" },
+			withdrawable: "1",
+		};
 		testState.createMobileAgentSyncUrl.mockReset();
 		testState.createMobileAgentSyncUrl.mockResolvedValue({
 			agentAddress: AGENT_ADDRESS,
 			agentName: AGENT_NAME,
 			agentValidUntilMs: AGENT_VALID_UNTIL_MS,
+			encodedKey: "encoded-key",
 			expiresAtMs: EXPIRES_AT_MS,
-			pairingCode: PAIRING_CODE,
 			syncId: "sync-id",
 			url: PHONE_LINK,
 		});
 		testState.qrToDataUrl.mockReset();
 		testState.qrToDataUrl.mockResolvedValue("data:image/png;base64,phone-link-qr");
+		testState.spotState = { balances: [] };
 		testState.writeClipboard.mockReset();
 		testState.writeClipboard.mockResolvedValue(undefined);
 		vi.spyOn(Date, "now").mockReturnValue(1_779_364_227_000);
@@ -188,7 +213,7 @@ describe("MobileAgentSyncModal", () => {
 		Reflect.deleteProperty(navigator, "clipboard");
 	});
 
-	it("creates a phone link after wallet approval and shows the pairing code, expiry, and copy actions", async () => {
+	it("creates a phone link after wallet approval and shows the link, expiry, and copy actions", async () => {
 		const { MobileAgentSyncModal } = await import("@/components/trade/components/mobile-agent-sync-modal");
 
 		act(() => {
@@ -214,14 +239,56 @@ describe("MobileAgentSyncModal", () => {
 			userAddress: USER_ADDRESS,
 		});
 		expect(container.textContent).toContain("Phone link ready");
-		expect(container.textContent).toContain(PAIRING_CODE);
 		expect(container.textContent).toContain("Expires");
-		expect(getButton(container, "Copy code")).toBeDefined();
 		expect(getButton(container, "Copy phone link")).toBeDefined();
 		expect(getButton(container, "Show QR")).toBeDefined();
 	});
 
-	it("copies the pairing code and the full phone link from the ready state", async () => {
+	it("blocks phone link approval when the Hyperliquid account has no funds", async () => {
+		testState.clearinghouseState = {
+			assetPositions: [],
+			marginSummary: { accountValue: "0.0", totalNtlPos: "0.0", totalRawUsd: "0.0" },
+			withdrawable: "0.0",
+		};
+		testState.spotState = { balances: [] };
+		const { MobileAgentSyncModal } = await import("@/components/trade/components/mobile-agent-sync-modal");
+
+		act(() => {
+			root.render(createElement(MobileAgentSyncModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		act(() => {
+			getButton(container, "Create phone link").click();
+		});
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("No balance on Hyperliquid. Deposit first.");
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(testState.createMobileAgentSyncUrl).not.toHaveBeenCalled();
+	});
+
+	it("shows a readable message when approveAgent returns a must-deposit error", async () => {
+		testState.approveAgent.mockRejectedValue(new Error("Must deposit before performing actions. User: 0xabc"));
+		const { MobileAgentSyncModal } = await import("@/components/trade/components/mobile-agent-sync-modal");
+
+		act(() => {
+			root.render(createElement(MobileAgentSyncModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		act(() => {
+			getButton(container, "Create phone link").click();
+		});
+		await flushAsyncWork();
+
+		expect(container.textContent).toContain("No balance on Hyperliquid. Deposit first.");
+		expect(testState.approveAgent).toHaveBeenCalledWith({
+			agentAddress: AGENT_ADDRESS,
+			agentName: AGENT_NAME,
+		});
+		expect(testState.createMobileAgentSyncUrl).not.toHaveBeenCalled();
+	});
+
+	it("copies the full phone link from the ready state", async () => {
 		const { MobileAgentSyncModal } = await import("@/components/trade/components/mobile-agent-sync-modal");
 
 		act(() => {
@@ -233,20 +300,14 @@ describe("MobileAgentSyncModal", () => {
 		await flushAsyncWork();
 
 		act(() => {
-			getButton(container, "Copy code").click();
-		});
-		await flushAsyncWork();
-
-		expect(testState.writeClipboard).toHaveBeenCalledWith(PAIRING_CODE);
-		expect(container.textContent).toContain("Copied");
-
-		act(() => {
 			getButton(container, "Copy phone link").click();
 		});
 		await flushAsyncWork();
 
 		expect(testState.writeClipboard).toHaveBeenCalledWith(PHONE_LINK);
+		expect(container.textContent).toContain("Copied");
 		expect(PHONE_LINK).toContain("#ht-mobile-sync=");
+		expect(PHONE_LINK).toContain("&k=");
 	});
 
 	it("renders a scannable QR for the full fragment phone link", async () => {
@@ -263,7 +324,10 @@ describe("MobileAgentSyncModal", () => {
 		act(() => {
 			getButton(container, "Show QR").click();
 		});
-		await flushAsyncWork(10);
+		for (let i = 0; i < 20 && testState.qrToDataUrl.mock.calls.length === 0; i += 1) {
+			await flushAsyncWork();
+		}
+		await flushAsyncWork();
 
 		expect(testState.qrToDataUrl).toHaveBeenCalledWith(
 			PHONE_LINK,
@@ -272,9 +336,9 @@ describe("MobileAgentSyncModal", () => {
 					dark: "#111827",
 					light: "#FFFFFF",
 				},
-				errorCorrectionLevel: "M",
+				errorCorrectionLevel: "L",
 				margin: 1,
-				width: 224,
+				width: 320,
 			}),
 		);
 		expect(PHONE_LINK).toContain("#ht-mobile-sync=");
@@ -301,7 +365,6 @@ describe("MobileAgentSyncModal", () => {
 		await flushAsyncWork(10);
 
 		expect(container.textContent).toContain("Phone link ready");
-		expect(container.textContent).toContain(PAIRING_CODE);
 		expect(container.querySelector('img[alt="Phone link QR"]')).not.toBeNull();
 
 		act(() => {
@@ -311,7 +374,6 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		expect(container.textContent).not.toContain("Phone link ready");
-		expect(container.textContent).not.toContain(PAIRING_CODE);
 		expect(container.querySelector('img[alt="Phone link QR"]')).toBeNull();
 		expect(container.textContent).toContain("Create phone access");
 	});

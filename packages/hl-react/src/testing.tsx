@@ -32,6 +32,7 @@ export function MockHyperliquidProvider({ children, value = {} }: MockHyperliqui
 		builderConfig: { b: "0x0000000000000000000000000000000000000000", f: 0 } as BuilderConfig,
 		agentName: "test",
 		clientKey: "mock",
+		sessionMode: "wallet",
 		...value,
 	};
 

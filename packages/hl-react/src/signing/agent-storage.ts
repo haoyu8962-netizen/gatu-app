@@ -40,7 +40,12 @@ export function readAgentFromStorage(env: HyperliquidEnv, userAddress: string): 
 		if (!raw) return null;
 
 		const parsed = JSON.parse(raw);
-		return agentWalletSchema.parse(parsed);
+		const agent = agentWalletSchema.parse(parsed);
+		if (agent.agentValidUntilMs && agent.agentValidUntilMs <= Date.now()) {
+			localStorage.removeItem(key);
+			return null;
+		}
+		return agent;
 	} catch {
 		return null;
 	}

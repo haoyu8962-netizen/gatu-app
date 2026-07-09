@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	clearMobileSyncDraft,
-	readMobileSyncDraft,
-	saveMobileSyncDraft,
-	updateMobileSyncPairingCodeDraft,
-} from "../mobile-sync/draft-storage";
+import { clearMobileSyncDraft, readMobileSyncDraft, saveMobileSyncDraft } from "../mobile-sync/draft-storage";
 import {
 	createMobileAgentSyncUrl,
 	MOBILE_SYNC_CLOCK_SKEW_MS,
@@ -45,11 +40,11 @@ async function createSyncFixture() {
 }
 
 describe("mobile sync draft storage", () => {
-	it("persists only the encrypted envelope metadata and optional pairing code draft", async () => {
+	it("persists the encrypted envelope metadata and the embedded key, and survives a reload", async () => {
 		const sync = await createSyncFixture();
 		const storage = createMemoryStorage();
 
-		expect(saveMobileSyncDraft(sync.envelope, "ABCD-1234", { storage, nowMs: NOW_MS })).toBe(true);
+		expect(saveMobileSyncDraft(sync.envelope, sync.encodedKey, { storage, nowMs: NOW_MS })).toBe(true);
 
 		const rawStoredValue = storage.getItem("gatu.mobile-sync.import-draft.v1");
 		expect(rawStoredValue).not.toContain(AGENT_PRIVATE_KEY);
@@ -61,24 +56,7 @@ describe("mobile sync draft storage", () => {
 				syncId: sync.syncId,
 				createdAtMs: NOW_MS,
 				expiresAtMs: sync.expiresAtMs,
-				pairingCodeDraft: "ABCD-1234",
-			},
-		});
-	});
-
-	it("updates the pairing-code draft without losing the envelope", async () => {
-		const sync = await createSyncFixture();
-		const storage = createMemoryStorage();
-
-		saveMobileSyncDraft(sync.envelope, "", { storage, nowMs: NOW_MS });
-		updateMobileSyncPairingCodeDraft(sync.envelope, "FFFF-EEEE-DDDD-CCCC", { storage, nowMs: NOW_MS + 1 });
-
-		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS })).toMatchObject({
-			status: "found",
-			draft: {
-				syncId: sync.syncId,
-				pairingCodeDraft: "FFFF-EEEE-DDDD-CCCC",
-				storedAtMs: NOW_MS + 1,
+				encodedKey: sync.encodedKey,
 			},
 		});
 	});
@@ -87,7 +65,7 @@ describe("mobile sync draft storage", () => {
 		const sync = await createSyncFixture();
 		const storage = createMemoryStorage();
 
-		saveMobileSyncDraft(sync.envelope, "", { storage, nowMs: NOW_MS });
+		saveMobileSyncDraft(sync.envelope, sync.encodedKey, { storage, nowMs: NOW_MS });
 		expect(
 			readMobileSyncDraft({
 				storage,
@@ -105,7 +83,7 @@ describe("mobile sync draft storage", () => {
 		const sync = await createSyncFixture();
 		const storage = createMemoryStorage();
 
-		saveMobileSyncDraft(sync.envelope, "", { storage, nowMs: NOW_MS });
+		saveMobileSyncDraft(sync.envelope, sync.encodedKey, { storage, nowMs: NOW_MS });
 		expect(clearMobileSyncDraft({ storage })).toBe(true);
 		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS })).toEqual({ status: "empty" });
 	});

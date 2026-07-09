@@ -10,14 +10,15 @@ import {
 	SpinnerGapIcon,
 	WalletIcon,
 } from "@phosphor-icons/react";
-import { usePrivy } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
-import { useConnection, useEnsName } from "wagmi";
+import { useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
+import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { MobileAgentSyncModal } from "../components/mobile-agent-sync-modal";
 
@@ -25,9 +26,10 @@ const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 export function UserMenu() {
-	const { ready, authenticated, login, logout, user } = usePrivy();
-	const { address } = useConnection();
-	const { data: ensName } = useEnsName({ address });
+	const { ready, authenticated, isConnected, login, displayAddress, sessionMode, user } = useWalletSession();
+	const { disconnectWallet } = useDisconnectWallet();
+	const emailAddress = getPrivyEmailAddress(user);
+	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
 	const { open: openDepositModal } = useDepositModalActions();
 	const { tradeRestricted } = useGeoRestriction();
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
@@ -38,7 +40,7 @@ export function UserMenu() {
 		setMounted(true);
 	}, []);
 
-	if (!mounted || !ready) {
+	if (!mounted || (!ready && !isConnected)) {
 		return (
 			<Button
 				variant="outline"
@@ -57,7 +59,7 @@ export function UserMenu() {
 		);
 	}
 
-	if (!authenticated) {
+	if (!authenticated && !isConnected) {
 		return (
 			<Button
 				variant="outline"
@@ -75,8 +77,8 @@ export function UserMenu() {
 		);
 	}
 
-	const displayAddress = address ?? (user?.wallet?.address as `0x${string}` | undefined);
-	const displayLabel = ensName ?? (displayAddress ? shortenAddress(displayAddress) : "");
+	const displayLabel = emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : "");
+	const hasWalletAccess = sessionMode === "wallet";
 
 	const actionItems = [
 		...(displayAddress
@@ -92,20 +94,26 @@ export function UserMenu() {
 					},
 				]
 			: []),
-		...(tradeRestricted
+		...(tradeRestricted || !hasWalletAccess
 			? []
 			: [
 					{
-						label: t`Add funds`,
+						label: t`Deposit`,
 						icon: <PlusCircleIcon className="size-3.5" />,
-						onSelect: () => openDepositModal("deposit"),
+						onSelect: () => {
+							openDepositModal("deposit");
+						},
 					},
 				]),
-		{
-			label: t`Link mobile device`,
-			icon: <DeviceMobileIcon className="size-3.5" />,
-			onSelect: () => setMobileSyncOpen(true),
-		},
+		...(hasWalletAccess
+			? [
+					{
+						label: t`Link mobile device`,
+						icon: <DeviceMobileIcon className="size-3.5" />,
+						onSelect: () => setMobileSyncOpen(true),
+					},
+				]
+			: []),
 	];
 
 	return (
@@ -143,7 +151,9 @@ export function UserMenu() {
 								label: t`Disconnect`,
 								icon: <SignOutIcon className="size-3.5" />,
 								danger: true,
-								onSelect: () => logout(),
+								onSelect: () => {
+									void disconnectWallet();
+								},
 							},
 						],
 					},

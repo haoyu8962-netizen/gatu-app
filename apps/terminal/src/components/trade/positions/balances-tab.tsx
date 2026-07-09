@@ -2,7 +2,6 @@ import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, 
 import { t } from "@lingui/core/macro";
 import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
-import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
@@ -12,8 +11,10 @@ import {
 	getPerpBalanceRows,
 	getSpotBalanceRows,
 	getTotalUsdValue,
+	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSubscription } from "@/lib/hyperliquid";
@@ -41,7 +42,7 @@ import { TransferModal } from "./transfer-modal";
 type TransferDirection = "toSpot" | "toPerp";
 
 export function BalancesTab() {
-	const { isConnected } = useConnection();
+	const { isConnected } = useWalletSession();
 	const { getToken } = useSpotTokens();
 	const hideSmallBalances = useHideSmallBalances();
 	const { setHideSmallBalances } = useGlobalSettingsActions();
@@ -63,20 +64,29 @@ export function BalancesTab() {
 		accountType: "spot",
 	});
 
-	const { perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, isLoading, hasError } =
-		useDefaultDexBalances();
+	const {
+		perpSummary,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		withdrawable,
+		isLoading,
+		hasError,
+	} = useDefaultDexBalances();
 	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
 	const mids = allMidsEvent?.mids;
 
 	const perpBalances = useMemo(
-		() => getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction),
-		[accountAbstraction, perpSummary, spotBalances, spotAvailableAfterMaintenance],
+		() =>
+			getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable),
+		[accountAbstraction, perpSummary, spotBalances, spotAvailableAfterMaintenance, withdrawable],
 	);
 	const spotBalanceRows = useMemo(
-		() => getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction),
-		[accountAbstraction, spotBalances, spotAvailableAfterMaintenance],
+		() => getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction, mids),
+		[accountAbstraction, spotBalances, spotAvailableAfterMaintenance, mids],
 	);
 	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
+	const internalTransfersEnabled = !isQuoteBalanceSharedWithPerps(accountAbstraction);
 
 	function getPnl(row: BalanceRow): { pnl: number; pnlPercent: number } | null {
 		if (row.type === "perp") return null;
@@ -125,7 +135,7 @@ export function BalancesTab() {
 	function renderBalanceRow(row: BalanceRow, index: number) {
 		const token = getToken(row.asset);
 		const decimals = row.type === "perp" ? 2 : (token?.szDecimals ?? 2);
-		const canTransfer = row.asset === DEFAULT_QUOTE_TOKEN && parseFloat(row.available) > 0;
+		const canTransfer = internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && parseFloat(row.available) > 0;
 		const canSwap = row.type === "spot" && parseFloat(row.available) > 0;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
 		const pnlData = getPnl(row);

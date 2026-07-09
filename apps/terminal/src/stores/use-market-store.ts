@@ -74,8 +74,13 @@ const useMarketStore = create<MarketStore>()(
 );
 
 export function useSelectedMarket(): string {
-	const { scope } = useExchangeScope();
-	return useMarketStore((state) => state.selectedMarkets[scope] ?? DEFAULT_MARKET_NAME);
+	const { marketName, scope } = useExchangeScope();
+	const storedMarket = useMarketStore((state) => state.selectedMarkets[scope] ?? DEFAULT_MARKET_NAME);
+	return marketName ?? storedMarket;
+}
+
+export function useSelectedMarkets() {
+	return useMarketStore((state) => state.selectedMarkets);
 }
 
 export function useFavoriteMarkets() {

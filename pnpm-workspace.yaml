@@ -1,3 +1,6 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+overrides:
+  "@noble/hashes": "1.8.0"

@@ -36,6 +36,7 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 	};
 
 	const { data: quote, isLoading: quoteLoading, isError: quoteError, dataUpdatedAt } = useBridgeQuote(quoteParams);
+	const showQuoteError = quoteError && !quote;
 
 	const usdDisplay = (() => {
 		try {
@@ -136,7 +137,7 @@ export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConf
 				</Collapsible>
 			) : null}
 
-			{quoteError ? (
+			{showQuoteError ? (
 				<div className="flex items-center gap-2 rounded-8 border border-stroke-error-strong/30 bg-error-soft p-2.5">
 					<WarningCircleIcon className="size-4 text-error shrink-0" />
 					<span className="text-xs text-error">

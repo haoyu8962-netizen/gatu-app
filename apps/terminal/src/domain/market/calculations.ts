@@ -49,3 +49,10 @@ export function getOiUsd(openInterest: Numeric, markPx: Numeric): number | null 
 	if (!oi || !px) return null;
 	return oi.times(px).toNumber();
 }
+
+export function getMarketCapUsd(circulatingSupply: Numeric, price: Numeric): string | null {
+	const supply = toBig(circulatingSupply);
+	const px = toBig(price);
+	if (!supply || !px) return null;
+	return supply.times(px).toFixed();
+}

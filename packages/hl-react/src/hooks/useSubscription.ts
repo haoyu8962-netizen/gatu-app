@@ -14,10 +14,13 @@ export function useSubscription<M extends SubMethod>(
 	options: SubscriptionOptions = {},
 ): SubscriptionResult<SubEvent<M>> {
 	const { subscription } = useHyperliquid();
-	const key = serializeKey(subscriptionKeys.method(method, params));
+	const { refreshKey, ...subscriptionOptions } = options;
+	const baseKey = subscriptionKeys.method(method, params);
+	const key =
+		refreshKey == null ? serializeKey(baseKey) : serializeKey([...baseKey, { refreshKey }] as readonly unknown[]);
 
 	const defaultThrottle = getDefaultThrottle(method);
-	const mergedOptions = defaultThrottle ? { throttleMs: defaultThrottle, ...options } : options;
+	const mergedOptions = defaultThrottle ? { throttleMs: defaultThrottle, ...subscriptionOptions } : subscriptionOptions;
 
 	const accConfig = getAccumulateConfig(method);
 	const bufferRef = useRef<RingBuffer<unknown> | null>(null);
@@ -34,7 +37,8 @@ export function useSubscription<M extends SubMethod>(
 
 			if (accConfig) {
 				const wrappedListener = (event: SubEvent<M>) => {
-					const buffer = bufferRef.current!;
+					const buffer = bufferRef.current;
+					if (!buffer) return;
 					if (accConfig.isSnapshot(event)) {
 						buffer.clear();
 					}

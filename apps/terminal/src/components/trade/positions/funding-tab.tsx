@@ -1,15 +1,14 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { useConnection } from "wagmi";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
 import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
 import {
@@ -26,9 +25,8 @@ import {
 } from "./positions-panel-table-styles";
 
 export function FundingTab() {
-	const { address, isConnected } = useConnection();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const { address, isConnected } = useWalletSession();
+	const navigateToMarket = useMarketNavigation();
 	const {
 		data: fundingEvent,
 		status,
@@ -122,7 +120,7 @@ export function FundingTab() {
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 												<AssetBadge
 													coin={update.coin}
-													onClick={() => setSelectedMarket(scope, update.coin)}
+													onClick={() => navigateToMarket(update.coin)}
 													aria-label={t`Switch to ${update.coin} market`}
 												/>
 											</TableCell>

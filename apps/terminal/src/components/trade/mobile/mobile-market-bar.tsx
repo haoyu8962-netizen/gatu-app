@@ -1,18 +1,39 @@
-import { Skeleton } from "boneyard-js/react";
-import { useEffect, useRef, useState } from "react";
+import { t } from "@lingui/core/macro";
+import { ArrowSquareOutIcon, CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
+import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { get24hChange } from "@/domain/market";
+import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
+import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
-import { formatNumber } from "@/lib/format";
-import { useSelectedMarketInfo } from "@/lib/hyperliquid";
+import {
+	formatClockDuration,
+	formatNumber,
+	formatPercent,
+	formatUSD,
+	shortenAddress,
+	szDecimalsToPriceDecimals,
+} from "@/lib/format";
+import {
+	getExplorerTokenUrl,
+	type SpotMarketInfo,
+	type SubParams,
+	type UnifiedMarketInfo,
+	useSelectedMarketInfo,
+	useSubscription,
+} from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
-import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { TokenSelector } from "../chart/token-selector";
 
 type PriceDirection = "up" | "down";
+
+const HOUR_MS = 3_600_000;
+const TOOLTIP_WIDTH_PX = 320;
+const TOOLTIP_VIEWPORT_PADDING_PX = 16;
+const TOOLTIP_SIDE_OFFSET_PX = 4;
+const TOOLTIP_ESTIMATED_HEIGHT_PX = 144;
 
 interface PriceFlashState {
 	sequence: number;
@@ -23,41 +44,97 @@ interface Props {
 	className?: string;
 }
 
-export function MobileMarketBar({ className }: Props) {
-	const { data: market, isLoading } = useSelectedMarketInfo();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
-	const { resetPrices } = useOrderEntryActions();
+interface DetailCellProps {
+	label: ReactNode;
+	tooltipContent?: ReactNode;
+	value: ReactNode;
+}
 
-	function handleMarketChange(name: string) {
-		setSelectedMarket(scope, name);
-		resetPrices();
+interface TooltipPosition {
+	left: number;
+	top: number;
+	width: number;
+}
+
+type AllMidsParams = SubParams<"allMids">;
+
+export function MobileMarketBar({ className }: Props) {
+	const { data: market } = useSelectedMarketInfo();
+	const navigateToMarket = useMarketNavigation();
+	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
+	const [expanded, setExpanded] = useState(false);
+	const [fundingRemaining, setFundingRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
+
+	function handleMarketChange(name: string, nextMarket?: UnifiedMarketInfo) {
+		navigateToMarket(name, nextMarket);
 	}
 
 	const { midPx } = useOrderbookMidPrice(market?.name);
-	const prevDayPx = market?.prevDayPx;
+	const isSpot = market?.kind === "spot";
+	const perpCoin = market?.name ?? "";
+	const spotCoin = getSpotSubscriptionCoin(market);
+	const midsCoin = getAllMidsCoin(market);
+	const { data: allMidsEvent } = useSubscription("allMids", getAllMidsParams(market), { enabled: !!midsCoin });
+	const { data: perpCtxEvent } = useSubscription(
+		"activeAssetCtx",
+		{ coin: perpCoin },
+		{ enabled: !!perpCoin && !isSpot },
+	);
+	const { data: spotCtxEvent } = useSubscription(
+		"activeSpotAssetCtx",
+		{ coin: spotCoin },
+		{ enabled: !!spotCoin && isSpot },
+	);
 
 	const [priceFlash, setPriceFlash] = useState<PriceFlashState>({ sequence: 0, direction: null });
 	const previousMidPxRef = useRef<number | undefined>(undefined);
 
+	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
+	const perpCtx = isSpot ? undefined : perpCtxEvent?.ctx;
+	const midsPrice = midsCoin ? allMidsEvent?.mids?.[midsCoin] : undefined;
+	const marketMarkPx = perpCtx?.markPx ?? market?.markPx;
+	const displayPrice = midPx ?? midsPrice ?? liveCtx?.markPx ?? marketMarkPx;
+	const displayPriceNumber = toBig(displayPrice)?.toNumber();
+
 	useEffect(() => {
 		const previous = previousMidPxRef.current;
-		previousMidPxRef.current = midPx;
-		if (typeof midPx !== "number" || typeof previous !== "number" || midPx === previous) return;
+		previousMidPxRef.current = displayPriceNumber;
+		if (typeof displayPriceNumber !== "number" || typeof previous !== "number" || displayPriceNumber === previous) {
+			return;
+		}
 		setPriceFlash((state) => ({
 			sequence: state.sequence + 1,
-			direction: midPx > previous ? "up" : "down",
+			direction: displayPriceNumber > previous ? "up" : "down",
 		}));
-	}, [midPx]);
+	}, [displayPriceNumber]);
 
-	const change24h = get24hChange(prevDayPx, midPx);
-	const changeAmount = getPriceChangeAmount(midPx, prevDayPx);
+	useEffect(() => {
+		if (!expanded) return;
+		setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS));
+		const id = setInterval(() => setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS)), 1000);
+		return () => clearInterval(id);
+	}, [expanded]);
+
+	const prevDayPx = liveCtx?.prevDayPx ?? market?.prevDayPx;
+	const priceDecimals = getPriceDecimals(market);
+	const oraclePx = perpCtx?.oraclePx ?? market?.oraclePx;
+	const dayNtlVlm = liveCtx?.dayNtlVlm ?? market?.dayNtlVlm;
+	const openInterest = perpCtx?.openInterest ?? market?.openInterest;
+	const funding = perpCtx?.funding ?? market?.funding;
+	const spotMarkPx = isSpot ? (spotCtxEvent?.ctx?.markPx ?? market?.markPx ?? midPx ?? midsPrice) : undefined;
+	const spotCirculatingSupply = isSpot
+		? (spotCtxEvent?.ctx?.circulatingSupply ?? getSpotCirculatingSupply(market))
+		: null;
+	const fundingNum = toBig(funding)?.toNumber() ?? 0;
+	const change24h = get24hChange(prevDayPx, displayPrice);
+	const changeAmount = getPriceChangeAmount(displayPrice, prevDayPx);
 	const changeColorClass = getPriceChangeColorClass(change24h);
-	const priceText = formatNumber(midPx, 2);
-	const changeAmountText = formatSignedFixed(changeAmount, PRICE_DECIMALS);
+	const priceText = formatDisplayPrice(displayPrice, priceDecimals);
+	const changeAmountText = formatSignedFixed(changeAmount, priceDecimals);
 	const changePercentText = formatSignedPercent(change24h);
-	const maxLeverage = market && "maxLeverage" in market ? market.maxLeverage : undefined;
-	const hasLeverage = typeof maxLeverage === "number" && maxLeverage > 0;
+	const oiUsd = getOiUsd(openInterest, marketMarkPx);
+	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotMarkPx);
+	const spotTokenAddress = getSpotTokenAddress(market);
 
 	return (
 		<div
@@ -66,44 +143,316 @@ export function MobileMarketBar({ className }: Props) {
 				className,
 			)}
 		>
-			<div className="min-w-0 px-2 py-1.5 min-[390px]:px-2.5 flex items-center justify-between gap-1.5 min-[390px]:gap-2">
-				<div className="flex items-center gap-1.5 min-[390px]:gap-2 min-w-0">
-					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
-					{hasLeverage && (
-						<span className="shrink-0 rounded-xs bg-fill-weak px-1.5 py-1 text-xs font-medium leading-none tabular-nums text-fg-muted">
-							{maxLeverage}x
-						</span>
-					)}
-				</div>
+			<div className="min-w-0 px-2 py-1.5 min-[390px]:px-2.5">
+				<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(7.5rem,auto)_2rem] items-center gap-1.5 min-[390px]:gap-2">
+					<div className="flex min-w-0 items-center gap-1.5 min-[390px]:gap-2">
+						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
+					</div>
 
-				<Skeleton name="market-price" loading={isLoading}>
-					<div className="grid w-[102px] min-[390px]:w-[132px] min-[400px]:w-[148px] grid-cols-[1fr_0px] min-[390px]:grid-cols-[1fr_32px] items-center shrink-0">
-						<div className="min-w-0 text-right">
+					<div data-boneyard="market-price" className="min-w-0 text-left">
+						<div className="flex min-w-0 flex-col items-start gap-1">
 							<span
 								key={priceFlash.sequence}
 								data-direction={priceFlash.direction ?? undefined}
 								className={cn(
-									"block font-sans text-lg leading-7 font-medium text-fg tabular-nums",
+									"block truncate font-sans text-base leading-none font-normal text-fg tabular-nums",
 									priceFlash.direction && "use-color-change",
 								)}
+								title={priceText}
 							>
 								{priceText}
 							</span>
-							{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER && (
-								<div className={cn("font-sans text-2xs leading-4 tabular-nums", changeColorClass)}>
-									{changeAmountText} / {changePercentText}
-								</div>
-							)}
+							<div
+								className={cn(
+									"truncate font-sans text-xs leading-none tabular-nums",
+									changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
+										? "invisible text-fg-muted"
+										: changeColorClass,
+								)}
+								title={`${changeAmountText} / ${changePercentText}`}
+							>
+								{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
+									? `${changeAmountText} / ${changePercentText}`
+									: "0.00 / 0.00%"}
+							</div>
 						</div>
-						<div className="h-8 w-0 min-[390px]:w-8" aria-hidden="true" />
 					</div>
-				</Skeleton>
+
+					<button
+						type="button"
+						onClick={() => setExpanded((value) => !value)}
+						className="flex size-8 shrink-0 items-center justify-center rounded-xs border border-stroke-weak bg-fill-weak text-icon hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						aria-expanded={expanded}
+						aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
+					>
+						{expanded ? <CaretUpIcon className="size-4" /> : <CaretDownIcon className="size-4" />}
+					</button>
+				</div>
+
+				{expanded && (
+					<div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2 pb-0.5 pl-8">
+						{!isSpot && (
+							<>
+								<DetailCell
+									label={
+										<>
+											{t`Mark`}/{t`ORACLE`}
+										</>
+									}
+									tooltipContent={t`Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details.`}
+									value={`${formatDisplayPrice(marketMarkPx, priceDecimals)} / ${formatDisplayPrice(oraclePx, priceDecimals)}`}
+								/>
+								<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
+								<DetailCell
+									label={t`OPEN INT`}
+									tooltipContent={t`Two-sided open interest: the sum of long and short positions on this contract.`}
+									value={formatUSD(oiUsd, { compact: false })}
+								/>
+								<DetailCell
+									label={
+										<>
+											{t`FUNDING`}/{t`Resets in`}
+										</>
+									}
+									tooltipContent={t`Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details.`}
+									value={
+										<span className="inline-flex items-center gap-2">
+											<span className={getPriceChangeColorClass(fundingNum)}>
+												{formatPercent(fundingNum, { minimumFractionDigits: 4, signDisplay: "exceptZero" })}
+											</span>
+											<span>{formatClockDuration(fundingRemaining)}</span>
+										</span>
+									}
+								/>
+							</>
+						)}
+						{isSpot && (
+							<>
+								<DetailCell label={t`Mark`} value={formatDisplayPrice(spotMarkPx, priceDecimals)} />
+								<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
+								<DetailCell label={t`Market Cap`} value={formatUSD(spotMarketCap, { compact: false })} />
+								<DetailCell
+									label={t`More Info`}
+									value={createSpotTokenInfo(spotTokenAddress, copiedSpotTokenAddress, copySpotTokenAddress)}
+								/>
+							</>
+						)}
+					</div>
+				)}
 			</div>
 		</div>
 	);
 }
 
-const PRICE_DECIMALS = 2;
+function createSpotTokenInfo(address: string | null, copied: boolean, onCopy: (value: string) => void) {
+	if (!address) return FALLBACK_VALUE_PLACEHOLDER;
+
+	function handleCopy() {
+		if (!address) return;
+		onCopy(address);
+	}
+
+	return (
+		<span className="inline-flex min-w-0 max-w-full items-center gap-1">
+			<span className="min-w-0 truncate font-mono tabular-nums" title={address}>
+				{shortenAddress(address, 4, 4)}
+			</span>
+			<a
+				href={getExplorerTokenUrl(address)}
+				target="_blank"
+				rel="noopener noreferrer"
+				aria-label={t`Open token in explorer`}
+				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+			>
+				<ArrowSquareOutIcon className="size-3.5" aria-hidden="true" />
+			</a>
+			<button
+				type="button"
+				onClick={handleCopy}
+				aria-label={copied ? t`Copied` : t`Copy token address`}
+				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+			>
+				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+			</button>
+		</span>
+	);
+}
+
+function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
+	const triggerRef = useRef<HTMLButtonElement>(null);
+	const tooltipId = useId();
+	const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition | null>(null);
+
+	function openTooltip() {
+		const trigger = triggerRef.current;
+		if (!trigger || typeof window === "undefined") return;
+
+		const rect = trigger.getBoundingClientRect();
+		const maxWidth = Math.max(0, window.innerWidth - TOOLTIP_VIEWPORT_PADDING_PX * 2);
+		const width = Math.min(TOOLTIP_WIDTH_PX, maxWidth);
+		const left = Math.min(
+			Math.max(TOOLTIP_VIEWPORT_PADDING_PX, rect.left),
+			Math.max(TOOLTIP_VIEWPORT_PADDING_PX, window.innerWidth - width - TOOLTIP_VIEWPORT_PADDING_PX),
+		);
+		const belowTop = rect.bottom + TOOLTIP_SIDE_OFFSET_PX;
+		const aboveTop = rect.top - TOOLTIP_ESTIMATED_HEIGHT_PX - TOOLTIP_SIDE_OFFSET_PX;
+		const top =
+			belowTop + TOOLTIP_ESTIMATED_HEIGHT_PX > window.innerHeight - TOOLTIP_VIEWPORT_PADDING_PX
+				? Math.max(TOOLTIP_VIEWPORT_PADDING_PX, aboveTop)
+				: belowTop;
+
+		setTooltipPosition({
+			left,
+			top,
+			width,
+		});
+	}
+
+	function closeTooltip() {
+		setTooltipPosition(null);
+	}
+
+	function handlePointerEnter(event: PointerEvent<HTMLButtonElement>) {
+		if (!isHoverPointer(event.pointerType)) return;
+		openTooltip();
+	}
+
+	function handlePointerLeave(event: PointerEvent<HTMLButtonElement>) {
+		if (!isHoverPointer(event.pointerType)) return;
+		closeTooltip();
+	}
+
+	function handleTooltipClick() {
+		if (tooltipPosition) {
+			closeTooltip();
+			return;
+		}
+		openTooltip();
+	}
+
+	useEffect(() => {
+		if (!tooltipPosition || typeof document === "undefined" || typeof window === "undefined") return;
+
+		function closeOpenTooltip() {
+			setTooltipPosition(null);
+		}
+
+		function handlePointerDown(event: globalThis.PointerEvent) {
+			const trigger = triggerRef.current;
+			if (trigger?.contains(event.target as Node)) return;
+			closeOpenTooltip();
+		}
+
+		function handleKeyDown(event: KeyboardEvent) {
+			if (event.key === "Escape") closeOpenTooltip();
+		}
+
+		document.addEventListener("pointerdown", handlePointerDown, true);
+		document.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("scroll", closeOpenTooltip, true);
+		window.addEventListener("resize", closeOpenTooltip);
+		return () => {
+			document.removeEventListener("pointerdown", handlePointerDown, true);
+			document.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("scroll", closeOpenTooltip, true);
+			window.removeEventListener("resize", closeOpenTooltip);
+		};
+	}, [tooltipPosition]);
+
+	return (
+		<div className="min-w-0">
+			<div className="truncate text-2xs font-medium leading-4 text-fg-muted">
+				{tooltipContent ? (
+					<>
+						<button
+							ref={triggerRef}
+							type="button"
+							onPointerEnter={handlePointerEnter}
+							onPointerLeave={handlePointerLeave}
+							onBlur={closeTooltip}
+							onClick={handleTooltipClick}
+							aria-describedby={tooltipPosition ? tooltipId : undefined}
+							className="max-w-full cursor-help truncate border-0 bg-transparent p-0 text-left text-current underline decoration-dashed underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						>
+							{label}
+						</button>
+						{tooltipPosition && createMarketDetailTooltip(tooltipId, tooltipContent, tooltipPosition)}
+					</>
+				) : (
+					label
+				)}
+			</div>
+			<div
+				className="truncate text-xs font-semibold leading-5 text-fg tabular-nums"
+				title={typeof value === "string" ? value : undefined}
+			>
+				{value}
+			</div>
+		</div>
+	);
+}
+
+function isHoverPointer(pointerType: string): boolean {
+	return pointerType === "mouse" || pointerType === "pen";
+}
+
+function createMarketDetailTooltip(id: string, content: ReactNode, position: TooltipPosition) {
+	if (typeof document === "undefined") return null;
+
+	return createPortal(
+		<div
+			id={id}
+			role="tooltip"
+			className="fixed z-[var(--z-tooltip)] box-border rounded-xs border border-stroke-weak bg-overlay px-3 py-2 text-2xs leading-4 text-fg shadow-overlay"
+			style={{ left: position.left, top: position.top, width: position.width }}
+		>
+			{content}
+		</div>,
+		document.body,
+	);
+}
+
+function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string | number | null | undefined {
+	if (market?.kind !== "spot") return null;
+	return (market as SpotMarketInfo).circulatingSupply;
+}
+
+function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | null {
+	if (market?.kind !== "spot") return null;
+	const baseToken = market.tokensInfo[0];
+	if (!baseToken) return null;
+	const tokenId = (baseToken as { tokenId?: string }).tokenId;
+	if (!tokenId?.startsWith("0x")) return null;
+	return tokenId;
+}
+
+function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string {
+	if (market?.kind !== "spot") return "";
+	return `@${(market as SpotMarketInfo).index}`;
+}
+
+function getAllMidsCoin(market: UnifiedMarketInfo | undefined): string {
+	if (!market) return "";
+	if (market.kind === "spot") return `@${(market as SpotMarketInfo).index}`;
+	return market.name;
+}
+
+function getAllMidsParams(market: UnifiedMarketInfo | undefined): AllMidsParams {
+	if (market?.kind !== "builderPerp") return undefined;
+	return { dex: market.dex };
+}
+
+function getPriceDecimals(market: UnifiedMarketInfo | undefined): number {
+	if (!market) return 2;
+	return szDecimalsToPriceDecimals(market.szDecimals);
+}
+
+function formatDisplayPrice(value: string | number | null | undefined, decimals: number): string {
+	return formatNumber(value, {
+		minimumFractionDigits: decimals,
+		maximumFractionDigits: decimals,
+	});
+}
 
 function getPriceChangeAmount(
 	price: string | number | null | undefined,

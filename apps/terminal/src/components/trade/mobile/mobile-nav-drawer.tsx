@@ -1,44 +1,21 @@
-import { Badge, Button, ButtonIcon, Divider, Drawer, DrawerContent } from "@gatu/ui";
+import { Badge, Button, ButtonIcon, Drawer, DrawerContent } from "@gatu/ui";
+import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import {
-	DownloadSimpleIcon,
-	GearIcon,
-	HammerIcon,
-	ListIcon,
-	TerminalIcon,
-	TrendUpIcon,
-	WalletIcon,
-	XIcon,
-} from "@phosphor-icons/react";
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { useConnection } from "wagmi";
-import { SCOPE_NAV_ITEMS, STATIC_NAV_ITEMS } from "@/config/nav";
+import { DownloadSimpleIcon, GearIcon, ListIcon, WalletIcon, XIcon } from "@phosphor-icons/react";
+import { Suspense, useState } from "react";
+import { STATIC_NAV_ITEMS } from "@/config/nav";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
-import { cn } from "@/lib/cn";
-import { useExchangeScope } from "@/providers/exchange-scope";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { createLazyComponent } from "@/lib/lazy";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
-import { WalletModal } from "../components/wallet-modal";
 import { ThemeToggle } from "../header/theme-toggle";
 
-function ScopeIcon({ scope }: { scope: string }) {
-	switch (scope) {
-		case "perp":
-			return <TrendUpIcon className="size-4 shrink-0" />;
-		case "spot":
-			return <WalletIcon className="size-4 shrink-0" />;
-		case "builders-perp":
-			return <HammerIcon className="size-4 shrink-0" />;
-		default:
-			return <TerminalIcon className="size-4 shrink-0" />;
-	}
-}
+const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 export function MobileNavDrawer() {
 	const [open, setOpen] = useState(false);
 	const [walletOpen, setWalletOpen] = useState(false);
-	const { scope } = useExchangeScope();
-	const { isConnected } = useConnection();
+	const { isConnected, sessionMode } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
@@ -54,7 +31,7 @@ export function MobileNavDrawer() {
 				intent="neutral"
 				size="md"
 				className="touch-target"
-				aria-label="Open navigation"
+				aria-label={t`Open navigation`}
 				onClick={() => setOpen(true)}
 			>
 				<ListIcon className="size-4" />
@@ -70,35 +47,13 @@ export function MobileNavDrawer() {
 								<span className="text-fg">tu</span>
 							</span>
 						</div>
-						<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label="Close navigation" onClick={close}>
+						<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label={t`Close navigation`} onClick={close}>
 							<XIcon className="size-4" />
 						</ButtonIcon>
 					</div>
 
 					<div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
-						<nav className="p-2 flex flex-col" aria-label="Markets">
-							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
-								<Trans>Markets</Trans>
-							</p>
-							{SCOPE_NAV_ITEMS.map((item) => (
-								<Link
-									key={item.scope}
-									to={item.to}
-									onClick={close}
-									className={cn(
-										"flex items-center gap-3 px-3 py-2.5 rounded-xs text-sm transition-colors duration-150",
-										scope === item.scope ? item.activeClass : "text-fg-muted hover:text-fg hover:bg-fill-hover",
-									)}
-								>
-									<ScopeIcon scope={item.scope} />
-									{item.label}
-								</Link>
-							))}
-						</nav>
-
-						<Divider className="mx-3" />
-
-						<nav className="p-2 flex flex-col" aria-label="Platform">
+						<nav className="p-2 flex flex-col" aria-label={t`Platform`}>
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
 								<Trans>Platform</Trans>
 							</p>
@@ -129,7 +84,7 @@ export function MobileNavDrawer() {
 								<Trans>Connect Wallet</Trans>
 							</Button>
 						)}
-						{isConnected && !tradeRestricted && (
+						{isConnected && sessionMode === "wallet" && !tradeRestricted && (
 							<Button
 								variant="filled"
 								intent="brand"
@@ -149,7 +104,7 @@ export function MobileNavDrawer() {
 								variant="ghost"
 								intent="neutral"
 								size="md"
-								aria-label="Settings"
+								aria-label={t`Settings`}
 								onClick={() => {
 									openSettingsDialog();
 									close();
@@ -163,7 +118,11 @@ export function MobileNavDrawer() {
 				</DrawerContent>
 			</Drawer>
 
-			<WalletModal open={walletOpen} onOpenChange={setWalletOpen} />
+			{walletOpen && (
+				<Suspense fallback={null}>
+					<WalletModal open onOpenChange={setWalletOpen} />
+				</Suspense>
+			)}
 		</>
 	);
 }

@@ -3,9 +3,10 @@ import { t } from "@lingui/core/macro";
 import { ListIcon, ListNumbersIcon, XIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
-import { useConnection } from "wagmi";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
 import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
@@ -18,13 +19,11 @@ import {
 	type OpenOrder,
 } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useGlobalSettingsActions } from "@/stores/use-global-settings-store";
-import { useMarketActions } from "@/stores/use-market-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
 	className?: string;
@@ -34,17 +33,16 @@ interface Props {
 type CancelScope = "row" | "all";
 
 export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) {
-	const { address, isConnected } = useConnection();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
-	const { setMobileActiveTab } = useGlobalSettingsActions();
+	const { address, isConnected } = useWalletSession();
+	const navigateToMarket = useMarketNavigation();
+	const { setActiveTab } = useMobileTerminalTab();
 	const { setSide } = useOrderEntryActions();
 	const markets = useMarkets();
 
 	function handleSelectMarket(name: string, side: Side) {
-		setSelectedMarket(scope, name);
+		navigateToMarket(name, undefined, { displayedContent: "trade" });
 		setSide(side);
-		setMobileActiveTab("trade");
+		setActiveTab("trade");
 	}
 
 	const {

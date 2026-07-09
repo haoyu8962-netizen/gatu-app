@@ -1,20 +1,20 @@
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
-import { useConnection } from "wagmi";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { getExplorerTxUrl } from "@/lib/explorer";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
 	className?: string;
@@ -22,10 +22,15 @@ interface Props {
 }
 
 export function MobileHistoryTab({ className, scrollMode = "contained" }: Props) {
-	const { address, isConnected } = useConnection();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const { address, isConnected } = useWalletSession();
+	const navigateToMarket = useMarketNavigation();
+	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
+
+	function handleSelectMarket(name: string) {
+		navigateToMarket(name, undefined, { displayedContent: "trade" });
+		setActiveTab("trade");
+	}
 	const {
 		data: fillsEvent,
 		status,
@@ -90,7 +95,7 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 										<AssetBadge
 											coin={fill.coin}
 											side={isBuy ? "buy" : "sell"}
-											onClick={() => setSelectedMarket(scope, fill.coin)}
+											onClick={() => handleSelectMarket(fill.coin)}
 											nameClassName="text-sm"
 										/>
 										<span

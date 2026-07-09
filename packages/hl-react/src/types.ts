@@ -34,6 +34,7 @@ export interface SubscriptionOptions {
 	maxPayloadBytes?: number;
 	dropOversizedPayload?: boolean;
 	pauseWhenHidden?: boolean;
+	refreshKey?: string | number | null;
 }
 
 export type SubscriptionResult<TData> = {

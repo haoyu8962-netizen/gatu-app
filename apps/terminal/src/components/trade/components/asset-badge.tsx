@@ -15,6 +15,12 @@ interface Props {
 	className?: string;
 	nameClassName?: string;
 	subtitleClassName?: string;
+	/**
+	 * Size the pill to its content width and keep the name on one line, instead of letting a
+	 * narrow (min-w-0) table cell compress it below content width. Opt-in so truncating usages
+	 * (e.g. the mobile position card) keep their `max-w-full` + `truncate` behavior.
+	 */
+	fit?: boolean;
 }
 
 const sideDotClass: Record<Side, string> = {
@@ -23,7 +29,9 @@ const sideDotClass: Record<Side, string> = {
 };
 
 const pillClass =
-	"inline-flex items-center gap-1.5 rounded-full border border-stroke-weak bg-fill-weak px-1.5 py-0.5 leading-none max-w-full";
+	"inline-flex items-center gap-1.5 rounded-full border border-stroke-weak bg-fill-weak px-1.5 py-0.5 leading-none";
+
+const pillWidthClass = (fit?: boolean) => (fit ? "w-max shrink-0" : "max-w-full");
 
 export function AssetBadge({
 	coin,
@@ -36,6 +44,7 @@ export function AssetBadge({
 	className,
 	nameClassName,
 	subtitleClassName,
+	fit,
 }: Props) {
 	const display = (
 		<AssetDisplay
@@ -44,7 +53,7 @@ export function AssetBadge({
 			variant={variant}
 			subtitle={subtitle}
 			iconClassName="size-4"
-			nameClassName={cn("text-xs font-semibold leading-none text-fg", nameClassName)}
+			nameClassName={cn("text-xs font-semibold leading-none text-fg", fit && "whitespace-nowrap", nameClassName)}
 			subtitleClassName={cn("text-2xs leading-none text-fg-muted", subtitleClassName)}
 		/>
 	);
@@ -55,7 +64,7 @@ export function AssetBadge({
 
 	if (!onClick) {
 		return (
-			<span className={cn(pillClass, className)}>
+			<span className={cn(pillClass, pillWidthClass(fit), className)}>
 				{sideDot}
 				{display}
 			</span>
@@ -70,6 +79,7 @@ export function AssetBadge({
 			aria-label={ariaLabel}
 			className={cn(
 				pillClass,
+				pillWidthClass(fit),
 				"h-auto min-h-0 font-normal text-fg",
 				"hover:bg-fill-hover active:bg-fill-press",
 				className,

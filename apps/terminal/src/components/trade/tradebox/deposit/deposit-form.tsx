@@ -1,102 +1,227 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { ArrowLineDownIcon, ClockIcon, SpinnerGapIcon, WalletIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { CheckIcon, CopyIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { formatUnits } from "viem";
-import { InfoRow } from "@/components/ui/info-row";
-import { NumberInput } from "@/components/ui/number-input";
+import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
-import { NETWORKS } from "@/config/networks";
-import { cn } from "@/lib/cn";
+import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { AmountInput } from "./amount-input";
+import { AssetSelect } from "./asset-select";
 import { NetworkSelect } from "./shared-ui";
-
-const ARBITRUM_NETWORK = NETWORKS[0];
+import { UnitDepositInfo } from "./unit-deposit-info";
 
 interface Props {
 	amount: string;
 	onAmountChange: (value: string) => void;
 	balance: string;
+	maxAmount: string;
+	maxDepositRaw: bigint | undefined;
+	balanceStatus: "idle" | "loading" | "success" | "error";
+	balanceError: Error | null;
 	validation: { valid: boolean; error: string | null };
 	isPending: boolean;
 	onSubmit: () => void;
+	networkName: string;
+	smartDepositEnabled: boolean;
+	autoBridgeEnabled?: boolean;
+	fundingAddress?: `0x${string}`;
+	onDone?: () => void;
 }
 
-export function DepositForm({ amount, onAmountChange, balance, validation, isPending, onSubmit }: Props) {
+export function DepositForm({
+	amount,
+	onAmountChange,
+	balance,
+	maxAmount,
+	maxDepositRaw,
+	balanceStatus,
+	balanceError,
+	validation,
+	isPending,
+	onSubmit,
+	networkName,
+	smartDepositEnabled,
+	autoBridgeEnabled = false,
+	fundingAddress,
+	onDone,
+}: Props) {
+	const { copied, copy } = useCopyToClipboard(1500);
+	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
+	const canSubmitBridgeDeposit =
+		fundingAddress && smartDepositEnabled && maxDepositRaw !== undefined && maxDepositRaw >= MIN_DEPOSIT_USDC;
+	const embeddedDepositStatus = (() => {
+		if (!smartDepositEnabled) {
+			return {
+				tone: "error" as const,
+				text: <Trans>Smart wallet deposits are not enabled for this network.</Trans>,
+			};
+		}
+		if (balanceStatus === "loading") {
+			return null;
+		}
+		if (balanceStatus === "error") {
+			return {
+				tone: "error" as const,
+				text: balanceError?.message || t`Unable to load Arbitrum USDC balance`,
+			};
+		}
+		if (maxDepositRaw === undefined || maxDepositRaw === 0n) {
+			return null;
+		}
+		if (maxDepositRaw < MIN_DEPOSIT_USDC) {
+			return {
+				tone: "error" as const,
+				text: (
+					<Trans>
+						Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}.
+					</Trans>
+				),
+			};
+		}
+		return null;
+	})();
+	const fundingAddressPanel = fundingAddress ? (
+		<div className="flex min-h-10 items-center justify-center gap-2 rounded-xs bg-fill-weak px-3 py-2">
+			<span className="min-w-0 break-all text-center font-mono text-xs font-medium tabular-nums text-fg">
+				{fundingAddress}
+			</span>
+			<Button
+				type="button"
+				variant="ghost"
+				intent="neutral"
+				size="xs"
+				onClick={() => copy(fundingAddress)}
+				aria-label={copied ? t`Copied` : t`Copy embedded wallet address`}
+				className="shrink-0"
+			>
+				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+			</Button>
+		</div>
+	) : null;
+
+	if (fundingAddress && autoBridgeEnabled) {
+		return (
+			<div className="flex flex-1 flex-col gap-4">
+				<div className="flex flex-col items-center gap-3 pt-1">
+					<div className="flex size-12 items-center justify-center rounded-full border border-stroke-brand-strong/40 bg-brand-soft">
+						<img src={USDC_ICON_URL} alt="USDC" className="size-8 rounded-full" />
+					</div>
+					<h3 className="text-base font-semibold text-fg">
+						<Trans>Deposit USDC from Arbitrum</Trans>
+					</h3>
+				</div>
+
+				<div className="space-y-2">
+					<AssetSelect />
+					<NetworkSelect
+						label={<Trans>Funding chain</Trans>}
+						value="arbitrum"
+						onChange={() => {}}
+						disabled
+						displayName={networkName}
+					/>
+
+					{fundingAddressPanel}
+				</div>
+
+				{embeddedDepositStatus ? (
+					<div
+						className={
+							embeddedDepositStatus.tone === "error"
+								? "rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error"
+								: embeddedDepositStatus.tone === "success"
+									? "rounded-xs border border-stroke-success-strong/50 bg-success-soft px-3 py-2 text-center text-xs leading-relaxed text-success"
+									: "rounded-xs border border-stroke-weak/50 bg-fill-weaker px-3 py-2 text-center text-xs leading-relaxed text-fg-muted"
+						}
+					>
+						{embeddedDepositStatus.text}
+					</div>
+				) : null}
+
+				<Button variant="filled" intent="brand" onClick={onDone} className="w-full">
+					<Trans>Done</Trans>
+				</Button>
+
+				<div className="rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error">
+					<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
+					<Trans>
+						Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
+						networks. Minimum deposit is {minimumDeposit}.
+					</Trans>
+				</div>
+			</div>
+		);
+	}
+
+	if (fundingAddress && !canSubmitBridgeDeposit) {
+		return (
+			<div className="flex flex-1 flex-col gap-4">
+				<div className="flex flex-col items-center gap-3 pt-1">
+					<div className="flex size-12 items-center justify-center rounded-full border border-stroke-brand-strong/40 bg-brand-soft">
+						<img src={USDC_ICON_URL} alt="USDC" className="size-8 rounded-full" />
+					</div>
+					<h3 className="text-base font-semibold text-fg">
+						<Trans>Deposit USDC from Arbitrum</Trans>
+					</h3>
+				</div>
+
+				<div className="space-y-2">
+					<AssetSelect />
+					<NetworkSelect
+						label={<Trans>Funding chain</Trans>}
+						value="arbitrum"
+						onChange={() => {}}
+						disabled
+						displayName={networkName}
+					/>
+
+					{fundingAddressPanel}
+				</div>
+
+				<Button variant="filled" intent="brand" onClick={onDone} className="w-full">
+					<Trans>Done</Trans>
+				</Button>
+
+				<div className="rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error">
+					<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
+					<Trans>
+						Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
+						networks. Minimum deposit is {minimumDeposit}.
+					</Trans>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex flex-1 flex-col gap-2">
-			<NetworkSelect label={<Trans>From</Trans>} value="arbitrum" onChange={() => {}} disabled />
+			{fundingAddressPanel}
 
-			<div>
-				<NumberInput
-					label={t`Amount`}
-					labelValue={
-						<>
-							Available:{" "}
-							<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-								{balance} USDC
-							</span>
-						</>
-					}
-					onLabelValueClick={() => onAmountChange(balance)}
-					placeholder="0.00"
-					value={amount}
-					onChange={(e) => onAmountChange(e.target.value)}
-					className={cn(
-						"w-full tabular-nums",
-						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",
-					)}
-				/>
-				<p className={cn("h-4 text-xs flex items-center gap-1", validation.error ? "text-error" : "invisible")}>
-					<WarningCircleIcon className="size-3" />
-					{validation.error || " "}
-				</p>
-			</div>
-
-			<div className="rounded-8 border border-stroke-weak/40 bg-surface p-3 space-y-2 text-xs">
-				<InfoRow
-					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<WalletIcon className="size-3" />
-							<Trans>Minimum</Trans>
-						</>
-					}
-					value={`${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`}
-				/>
-				<InfoRow
-					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<ClockIcon className="size-3" />
-							<Trans>Estimated time</Trans>
-						</>
-					}
-					value={ARBITRUM_NETWORK.estimatedDepositTime}
-					valueClassName="font-medium"
+			<div className="grid grid-cols-2 gap-2">
+				<AssetSelect />
+				<NetworkSelect
+					label={<Trans>Network</Trans>}
+					value="arbitrum"
+					onChange={() => {}}
+					disabled
+					displayName={networkName}
 				/>
 			</div>
 
-			<Button
-				variant="filled"
-				intent="neutral"
-				onClick={onSubmit}
-				disabled={!validation.valid || isPending}
-				className="mt-auto w-full"
-			>
-				{isPending ? (
-					<>
-						<SpinnerGapIcon className="size-4 animate-spin" />
-						<Trans>Processing...</Trans>
-					</>
-				) : (
-					<>
-						<ArrowLineDownIcon className="size-4" />
-						<Trans>Deposit</Trans>
-					</>
-				)}
-			</Button>
+			<UnitDepositInfo networkName={networkName} />
+
+			<AmountInput
+				amount={amount}
+				onAmountChange={onAmountChange}
+				balance={balance}
+				maxAmount={maxAmount}
+				balanceStatus={balanceStatus}
+				balanceError={balanceError}
+				validation={validation}
+				isPending={isPending}
+				onSubmit={onSubmit}
+			/>
 		</div>
 	);
 }

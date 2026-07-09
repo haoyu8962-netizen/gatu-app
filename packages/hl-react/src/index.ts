@@ -6,6 +6,7 @@ export {
 	WebSocketTransport,
 	type WebSocketTransportOptions,
 } from "@nktkas/hyperliquid";
+export { getAccountLedgerRefreshKey } from "./account/ledger-refresh";
 export { type Position, type UserPositions, useUserPositions } from "./account/use-user-positions";
 export {
 	calculateAssetId,
@@ -54,6 +55,16 @@ export type {
 export type { HyperliquidContextValue, HyperliquidProviderProps } from "./provider";
 export { HyperliquidProvider, useConfig, useHyperliquid, useHyperliquidOptional } from "./provider";
 export { createKey, infoKeys, serializeKey, subscriptionKeys } from "./query/keys";
+export {
+	type AgentOwner,
+	clearActiveAgentOwner,
+	getActiveAgentOwner,
+	type ResolvedSession,
+	resolveSession,
+	type SessionMode,
+	setActiveAgentOwner,
+	useActiveAgentOwner,
+} from "./signing/agent-session";
 export {
 	readAgentFromStorage,
 	removeAgentFromStorage,

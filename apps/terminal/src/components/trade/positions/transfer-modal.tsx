@@ -2,17 +2,20 @@ import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup,
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import { useConnection } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
-import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
-import { getPerpAvailable, getSpotAvailable, getSpotBalance } from "@/domain/trade/balances";
+import { DEFAULT_QUOTE_TOKEN, USDC_TRANSFER_DECIMALS } from "@/config/app";
+import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
+import {
+	getPerpAvailable,
+	getSpotAvailable,
+	getSpotBalance,
+	isQuoteBalanceSharedWithPerps,
+} from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useExchange } from "@/lib/hyperliquid";
-import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
-import { formatTokenId } from "@/lib/trade/token-id";
 
 type TransferDirection = "toSpot" | "toPerp";
 
@@ -46,44 +49,40 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
 
-	const { address } = useConnection();
-	const { getToken } = useSpotTokens();
-	const { mutateAsync: sendAsset, isPending } = useExchange("sendAsset");
-	const { perpSummary, spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
-
-	const usdcTokenInfo = getToken(DEFAULT_QUOTE_TOKEN);
-	const usdcTokenId = usdcTokenInfo ? formatTokenId(usdcTokenInfo) : "";
-
-	const usdcDecimals = getTokenTransferDecimals(usdcTokenInfo);
+	const { hasWalletAccess, walletAddress } = useWalletSession();
+	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer");
+	const { perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction } = useDefaultDexBalances();
 
 	const spotUsdcBal = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
+	const internalTransfersDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
+		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+		: null;
 	const availableBalanceValue =
 		direction === "toSpot"
 			? getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed)
 			: getSpotAvailable(spotUsdcBal, spotAvailableAfterMaintenance);
 
-	const isValidAmount = isAmountWithinBalance(amount, availableBalanceValue) && !!address && !!usdcTokenId;
+	const isValidAmount =
+		!internalTransfersDisabledReason &&
+		isAmountWithinBalance(amount, availableBalanceValue) &&
+		hasWalletAccess &&
+		!!walletAddress;
 
 	const fromLabel = direction === "toSpot" ? t`Perp` : t`Spot`;
 	const toLabel = direction === "toSpot" ? t`Spot` : t`Perp`;
 
 	function handleFlip() {
+		if (internalTransfersDisabledReason) return;
 		setDirection((prev) => (prev === "toSpot" ? "toPerp" : "toSpot"));
 		setAmount("");
 	}
 
 	async function handleTransfer() {
-		if (!isValidAmount || isPending || !address) return;
+		if (!isValidAmount || isPending || !walletAddress || internalTransfersDisabledReason) return;
 
 		setError(null);
 		try {
-			await sendAsset({
-				destination: address,
-				sourceDex: direction === "toSpot" ? "" : "spot",
-				destinationDex: direction === "toSpot" ? "spot" : "",
-				token: usdcTokenId,
-				amount: amount,
-			});
+			await usdClassTransfer({ amount, toPerp: direction === "toPerp" });
 			setAmount("");
 			onOpenChange(false);
 		} catch (err) {
@@ -93,11 +92,11 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 	}
 
 	function handleAmountChange(value: string) {
-		setAmount(limitDecimalInput(value, usdcDecimals));
+		setAmount(limitDecimalInput(value, USDC_TRANSFER_DECIMALS));
 	}
 
 	function handleMaxClick() {
-		setAmount(floorToString(availableBalanceValue, usdcDecimals));
+		setAmount(floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS));
 	}
 
 	return (
@@ -109,6 +108,19 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 
 			<ModalContent>
 				<div className="space-y-4">
+					{!hasWalletAccess && (
+						<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+							<WarningCircleIcon className="size-3.5 shrink-0" />
+							<span className="flex-1">{t`Connect your wallet to transfer funds.`}</span>
+						</div>
+					)}
+					{internalTransfersDisabledReason && (
+						<div className="flex items-center gap-2 rounded-8 border border-stroke-info-weak bg-info-soft p-2.5 text-xs text-info">
+							<WarningCircleIcon className="size-3.5 shrink-0" />
+							<span className="flex-1">{internalTransfersDisabledReason}</span>
+						</div>
+					)}
+
 					<div className="flex items-center justify-center gap-3 py-2">
 						<div className="flex flex-col items-center">
 							<span
@@ -124,6 +136,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 							type="button"
 							onClick={handleFlip}
 							aria-label={t`Flip transfer direction`}
+							disabled={!!internalTransfersDisabledReason}
 							className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-brand"
 						>
 							<ArrowsLeftRightIcon className="size-4" />
@@ -146,7 +159,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 							<>
 								{t`Available`}:{" "}
 								<span className="underline decoration-dashed underline-offset-2 decoration-stroke-weak">
-									{floorToString(availableBalanceValue, usdcDecimals)} USDC
+									{floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS)} USDC
 								</span>
 							</>
 						}
@@ -154,6 +167,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 						placeholder="0.00"
 						value={amount}
 						onChange={(e) => handleAmountChange(e.target.value)}
+						disabled={!!internalTransfersDisabledReason}
 						className={cn(
 							"w-full tabular-nums",
 							exceedsBalance(amount, availableBalanceValue) &&

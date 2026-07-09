@@ -3,32 +3,25 @@ import {
 	createMobileAgentRevocationApproval,
 	isStoredMobileAgent,
 } from "@gatu/hl-react/signing/mobile-agent";
-import {
-	AdaptiveModal,
-	Button,
-	ModalContent,
-	ModalDescription,
-	ModalFooter,
-	ModalHeader,
-	ModalTitle,
-} from "@gatu/ui";
+import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
 	CheckIcon,
 	CopyIcon,
 	DeviceMobileIcon,
-	KeyIcon,
 	QrCodeIcon,
 	ShieldCheckIcon,
 	SpinnerGapIcon,
 	WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { useConnection } from "wagmi";
+import { zeroAddress } from "viem";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { formatTransferError } from "@/lib/errors/format";
 import { shortenAddress } from "@/lib/format";
-import { useAgentWalletActions, useAgentWalletStorage, useExchange, useHyperliquid } from "@/lib/hyperliquid";
+import { useAgentWalletActions, useAgentWalletStorage, useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
 import { createMobileAgentSyncUrl } from "@/lib/mobile-sync/sync-core";
 
 interface MobileAgentSyncModalProps {
@@ -40,7 +33,7 @@ type SyncState =
 	| { status: "idle" }
 	| { status: "approving" }
 	| { status: "creating" }
-	| { status: "ready"; url: string; pairingCode: string; agentAddress: string; expiresAtMs: number }
+	| { status: "ready"; url: string; agentAddress: string; expiresAtMs: number }
 	| { status: "error"; message: string };
 
 type ResetState =
@@ -49,14 +42,63 @@ type ResetState =
 	| { status: "success"; agentAddress: string; expiresAtMs: number }
 	| { status: "error"; message: string };
 
+function normalizeError(error: unknown): Error {
+	return error instanceof Error ? error : new Error(String(error));
+}
+
+function parseNumeric(value: unknown): number | null {
+	if (typeof value !== "string" && typeof value !== "number") return null;
+	const numeric = Number(value);
+	return Number.isFinite(numeric) ? numeric : null;
+}
+
+function hasNonZeroNumeric(value: unknown): boolean {
+	const numeric = parseNumeric(value);
+	return numeric !== null && numeric !== 0;
+}
+
+function hasPositiveNumeric(value: unknown): boolean {
+	const numeric = parseNumeric(value);
+	return numeric !== null && numeric > 0;
+}
+
+function hasHyperliquidAccountFunding(clearinghouseState: unknown, spotState: unknown): boolean {
+	const clearinghouse = clearinghouseState as
+		| {
+				assetPositions?: unknown[];
+				marginSummary?: { accountValue?: unknown; totalRawUsd?: unknown; totalNtlPos?: unknown };
+				withdrawable?: unknown;
+		  }
+		| undefined;
+	const spot = spotState as { balances?: Array<{ total?: unknown; hold?: unknown }> } | undefined;
+
+	return (
+		hasNonZeroNumeric(clearinghouse?.marginSummary?.accountValue) ||
+		hasNonZeroNumeric(clearinghouse?.marginSummary?.totalRawUsd) ||
+		hasNonZeroNumeric(clearinghouse?.marginSummary?.totalNtlPos) ||
+		hasNonZeroNumeric(clearinghouse?.withdrawable) ||
+		(clearinghouse?.assetPositions?.length ?? 0) > 0 ||
+		(spot?.balances ?? []).some((balance) => hasPositiveNumeric(balance.total) || hasPositiveNumeric(balance.hold))
+	);
+}
+
 export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModalProps) {
-	const { address } = useConnection();
+	const { address } = useWalletSession();
 	const { env } = useHyperliquid();
 	const localAgent = useAgentWalletStorage(env, address);
 	const { clearAgent } = useAgentWalletActions();
 	const approveAgent = useExchange("approveAgent");
+	const clearinghouseStateQuery = useInfo(
+		"clearinghouseState",
+		{ user: address ?? zeroAddress },
+		{ enabled: open && !!address, staleTime: 10_000 },
+	);
+	const spotStateQuery = useInfo(
+		"spotClearinghouseState",
+		{ user: address ?? zeroAddress },
+		{ enabled: open && !!address, staleTime: 10_000 },
+	);
 	const { copied: copiedPhoneLink, copy: copyPhoneLink } = useCopyToClipboard(1500);
-	const { copied: copiedPairingCode, copy: copyPairingCode } = useCopyToClipboard(1500);
 	const [syncState, setSyncState] = useState<SyncState>({ status: "idle" });
 	const [resetState, setResetState] = useState<ResetState>({ status: "idle" });
 	const [showQr, setShowQr] = useState(false);
@@ -81,9 +123,9 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 			try {
 				const QRCode = await import("qrcode");
 				const dataUrl = await QRCode.toDataURL(qrText, {
-					errorCorrectionLevel: "M",
+					errorCorrectionLevel: "L",
 					margin: 1,
-					width: 224,
+					width: 320,
 					color: {
 						dark: "#111827",
 						light: "#FFFFFF",
@@ -123,11 +165,28 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 			return;
 		}
 
-		const approval = createMobileAgentApproval();
 		resetSyncState();
 		setSyncState({ status: "approving" });
 
 		try {
+			const [clearinghouseResult, spotResult] = await Promise.all([
+				clearinghouseStateQuery.refetch(),
+				spotStateQuery.refetch(),
+			]);
+			const hasFunding = hasHyperliquidAccountFunding(
+				clearinghouseResult.data ?? clearinghouseStateQuery.data,
+				spotResult.data ?? spotStateQuery.data,
+			);
+
+			if (!hasFunding) {
+				setSyncState({
+					status: "error",
+					message: t`No balance on Hyperliquid. Deposit first.`,
+				});
+				return;
+			}
+
+			const approval = createMobileAgentApproval();
 			await approveAgent.mutateAsync({
 				agentAddress: approval.publicKey,
 				agentName: approval.agentName,
@@ -148,14 +207,13 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 			setSyncState({
 				status: "ready",
 				url: syncUrl.url,
-				pairingCode: syncUrl.pairingCode,
 				agentAddress: syncUrl.agentAddress,
 				expiresAtMs: syncUrl.expiresAtMs,
 			});
 		} catch (error) {
 			setSyncState({
 				status: "error",
-				message: error instanceof Error ? error.message : t`Could not link mobile device.`,
+				message: formatTransferError(normalizeError(error)),
 			});
 		}
 	}
@@ -258,12 +316,10 @@ export function MobileAgentSyncModal({ open, onOpenChange }: MobileAgentSyncModa
 					<ReadySyncPanel
 						state={syncState}
 						copiedPhoneLink={copiedPhoneLink}
-						copiedPairingCode={copiedPairingCode}
 						showQr={showQr}
 						qrDataUrl={qrDataUrl}
 						qrError={qrError}
 						onCopyPhoneLink={() => copyPhoneLink(syncState.url)}
-						onCopyPairingCode={() => copyPairingCode(syncState.pairingCode)}
 						onReveal={() => setShowQr(true)}
 					/>
 				)}
@@ -310,22 +366,18 @@ function getPrimaryButtonLabel(status: SyncState["status"]): string {
 function ReadySyncPanel({
 	state,
 	copiedPhoneLink,
-	copiedPairingCode,
 	showQr,
 	qrDataUrl,
 	qrError,
 	onCopyPhoneLink,
-	onCopyPairingCode,
 	onReveal,
 }: {
 	state: Extract<SyncState, { status: "ready" }>;
 	copiedPhoneLink: boolean;
-	copiedPairingCode: boolean;
 	showQr: boolean;
 	qrDataUrl: string | null;
 	qrError: string | null;
 	onCopyPhoneLink: () => void;
-	onCopyPairingCode: () => void;
 	onReveal: () => void;
 }) {
 	const expiresAtLabel = new Date(state.expiresAtMs).toLocaleTimeString([], {
@@ -349,31 +401,6 @@ function ReadySyncPanel({
 
 			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
 				<div className="flex items-center justify-between gap-3">
-					<div className="flex min-w-0 items-center gap-2">
-						<KeyIcon className="size-4 shrink-0 text-icon" aria-hidden />
-						<p className="truncate text-xs font-semibold text-fg-muted">
-							<Trans>Pairing code</Trans>
-						</p>
-					</div>
-					<Button
-						type="button"
-						variant="outline"
-						intent="neutral"
-						size="sm"
-						onClick={onCopyPairingCode}
-						iconLeft={copiedPairingCode ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
-						className="shrink-0"
-					>
-						{copiedPairingCode ? <Trans>Copied</Trans> : <Trans>Copy code</Trans>}
-					</Button>
-				</div>
-				<p className="mt-2 select-all rounded-8 border border-stroke-weak bg-background px-3 py-2 text-center font-mono text-base font-semibold tracking-[0.12em] text-fg">
-					{state.pairingCode}
-				</p>
-			</div>
-
-			<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
-				<div className="flex items-center justify-between gap-3">
 					<div className="min-w-0">
 						<p className="text-sm font-semibold text-fg">
 							<Trans>Scan on your phone</Trans>
@@ -387,13 +414,13 @@ function ReadySyncPanel({
 				{showQr && (
 					<div className="mt-3 flex justify-center rounded-8 border border-stroke-weak bg-white p-3">
 						{qrDataUrl ? (
-							<img src={qrDataUrl} alt={t`Phone link QR`} className="size-56 max-w-full" />
+							<img src={qrDataUrl} alt={t`Phone link QR`} className="size-80 max-w-full" />
 						) : qrError ? (
-							<div className="flex h-56 w-56 items-center justify-center text-center text-xs font-semibold text-error">
+							<div className="flex h-80 w-80 items-center justify-center text-center text-xs font-semibold text-error">
 								{qrError}
 							</div>
 						) : (
-							<div className="flex h-56 w-56 items-center justify-center">
+							<div className="flex h-80 w-80 items-center justify-center">
 								<SpinnerGapIcon className="size-5 animate-spin text-brand" aria-hidden />
 							</div>
 						)}

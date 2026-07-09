@@ -1,8 +1,9 @@
 import { Button, buttonVariants, Checkbox, Slider } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, useEffect, useState } from "react";
-import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
+import { type ChangeEvent, Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useSwitchChain, useWalletClient } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -14,12 +15,25 @@ import { getLiquidationInfo } from "@/domain/trade/order/metrics";
 import { getSliderValue } from "@/domain/trade/order/size";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
+import {
+	type SelectableAccountAbstraction,
+	useAccountAbstractionControl,
+} from "@/hooks/trade/use-account-abstraction-control";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD } from "@/lib/format";
-import { useAgentRegistration, useAgentStatus, useExchange, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import {
+	type UnifiedMarketInfo,
+	useAgentRegistration,
+	useAgentStatus,
+	useExchange,
+	useSelectedMarketInfo,
+} from "@/lib/hyperliquid";
+import { createLazyComponent } from "@/lib/lazy";
 import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
@@ -34,10 +48,8 @@ import {
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
-import { useMarketActions } from "@/stores/use-market-store";
 import {
 	useOrderEntryActions,
 	useOrderSide,
@@ -51,7 +63,6 @@ import {
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
-import { WalletModal } from "../components/wallet-modal";
 import { MarginModeModal } from "../tradebox/margin-mode-modal";
 import { OrderToast } from "../tradebox/order-toast";
 import { TpSlSection } from "../tradebox/tp-sl-section";
@@ -60,6 +71,7 @@ import { TradeHeader } from "../tradebox/trade-header";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
 const ORDER_TEXT = UI_TEXT.ORDER_ENTRY;
+const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 interface Props {
 	className?: string;
@@ -67,22 +79,22 @@ interface Props {
 }
 
 export function MobileTradeView({ className, embedded }: Props) {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected, sessionMode } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
 
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
 
 	const { data: market } = useSelectedMarketInfo();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const navigateToMarket = useMarketNavigation();
 
-	function handleMarketChange(marketName: string) {
-		setSelectedMarket(scope, marketName);
+	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
+		navigateToMarket(marketName, nextMarket);
 	}
 
 	const { isReady: isAgentApproved } = useAgentStatus();
 	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
+	const accountModeControl = useAccountAbstractionControl();
 
 	const canApprove = !!walletClient && !!address;
 	const isRegistering =
@@ -132,6 +144,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 		capabilities,
 		szDecimals,
 		availableBalance,
+		isAvailabilityLoading,
 		availableBalanceToken,
 		spotBalance,
 		maxSize,
@@ -167,7 +180,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const estimatedFee = orderValue * feeRate;
 	const marginRequired = capabilities.isLeveraged && leverage > 0 ? orderValue / leverage : 0;
 
-	const liqPrice = capabilities.isLeveraged ? getLiquidationInfo({ price, sizeValue, leverage, side }).liqPrice : null;
+	const liquidationInfo = capabilities.isLeveraged ? getLiquidationInfo({ price, sizeValue, leverage, side }) : null;
+	const liqPrice = liquidationInfo?.liqPrice ?? null;
+	const liqWarning = liquidationInfo?.liqWarning ?? false;
+	const liqValueClass = getLiquidationValueClass(liqPrice, liqWarning);
 
 	const baseInput = {
 		isConnected,
@@ -232,6 +248,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 	async function handleApprove() {
 		if (tradeRestricted) return;
 		if (isRegistering) return;
+		if (!isConnected || !address) {
+			setWalletModalOpen(true);
+			return;
+		}
 		setApprovalError(null);
 		try {
 			await registerAgent();
@@ -240,8 +260,19 @@ export function MobileTradeView({ className, embedded }: Props) {
 		}
 	}
 
+	async function handleAccountModeChange(nextAccountMode: SelectableAccountAbstraction) {
+		if (nextAccountMode === accountModeControl.accountAbstraction) return;
+		try {
+			await accountModeControl.setAccountAbstraction(nextAccountMode);
+			toast.success(t`Account mode updated`);
+		} catch (error) {
+			toast.error(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
+		}
+	}
+
 	async function handleSubmit() {
 		if (tradeRestricted) return;
+		if (!isConnected || !address) return;
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
@@ -307,6 +338,8 @@ export function MobileTradeView({ className, embedded }: Props) {
 		needsChainSwitch,
 		isSwitchingChain,
 		availableBalance,
+		isBalanceLoading: isAvailabilityLoading,
+		canDeposit: sessionMode === "wallet",
 		needsApproval: validation.needsApproval,
 		canSubmit: validation.canSubmit,
 		isRegistering,
@@ -357,15 +390,15 @@ export function MobileTradeView({ className, embedded }: Props) {
 				showLeverage={capabilities.isLeveraged}
 				onApply={async (mode: MarginMode, lev: number) => applyMarginAndLeverage(mode, lev)}
 			/>
-			<div className={cn("shrink-0 px-4 py-2 border-b border-stroke-weak/60 bg-surface", embedded && "hidden")}>
-				<div className="flex items-center justify-between">
+			<div className={cn("shrink-0 border-b border-stroke-weak/60 bg-surface px-4 py-2", embedded && "hidden")}>
+				<div className="flex min-w-0 items-center justify-between gap-2">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
-					<div className="text-right">
-						<div className={cn("text-sm font-semibold tabular-nums", priceColorClass)}>
+					<div className="shrink-0 text-right">
+						<div className={cn("whitespace-nowrap text-sm font-semibold tabular-nums", priceColorClass)}>
 							{formatPrice(markPx || null, { szDecimals: market?.szDecimals })}
 						</div>
 						{typeof change24h === "number" && (
-							<div className={cn("text-xs tabular-nums", getValueColorClass(change24h))}>
+							<div className={cn("whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
 								{change24h >= 0 ? "+" : ""}
 								{change24h.toFixed(2)}%
 							</div>
@@ -373,10 +406,15 @@ export function MobileTradeView({ className, embedded }: Props) {
 					</div>
 				</div>
 			</div>
-			<div className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div
+				className={cn(
+					"flex-1 min-h-0 flex flex-col [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+					embedded ? "overflow-y-auto overscroll-y-contain" : "overflow-y-auto overscroll-contain",
+				)}
+			>
 				<div
 					className={cn(
-						embedded ? "flex-1 min-h-min flex flex-col justify-between px-2 py-2 space-y-2" : "px-3 py-4 space-y-4",
+						embedded ? "flex-1 min-h-min flex flex-col justify-between px-2 py-1.5 space-y-1.5" : "px-3 py-4 space-y-4",
 					)}
 				>
 					<TradeHeader
@@ -390,8 +428,14 @@ export function MobileTradeView({ className, embedded }: Props) {
 						leverage={leverage}
 						onMarginLeverageClick={() => setShowMarginDialog(true)}
 						isLeveraged={capabilities.isLeveraged}
+						accountMode={accountModeControl.accountAbstraction}
+						isAccountModeLoading={accountModeControl.isLoading}
+						isAccountModeUpdating={accountModeControl.isUpdating}
+						canChangeAccountMode={capabilities.isLeveraged && accountModeControl.canSet}
+						onAccountModeChange={handleAccountModeChange}
 						hideAlgoOrders
 						compact={embedded}
+						layout="mobile"
 					/>
 
 					<div className={cn("flex items-center justify-end", embedded ? "text-2xs" : "text-xs")}>
@@ -441,16 +485,12 @@ export function MobileTradeView({ className, embedded }: Props) {
 						<div className={cn(embedded ? "space-y-1.5" : "space-y-2")}>
 							<Slider
 								thumbSize={sliderThumbSize}
-								value={[sliderValue]}
-								onValueChange={(v: number | readonly number[]) => {
-									const val = Array.isArray(v) ? v[0] : v;
-									if (typeof val !== "number") return;
+								value={sliderValue}
+								onValueChange={(val: number) => {
 									setIsDraggingSlider(true);
 									setDragSliderValue(val);
 								}}
-								onValueCommitted={(v: number | readonly number[]) => {
-									const val = Array.isArray(v) ? v[0] : v;
-									if (typeof val !== "number") return;
+								onValueCommitted={(val: number) => {
 									setIsDraggingSlider(false);
 									applySizeFromPercent(val);
 								}}
@@ -557,23 +597,26 @@ export function MobileTradeView({ className, embedded }: Props) {
 								value={
 									liqPrice ? formatPrice(liqPrice, { szDecimals: market?.szDecimals }) : FALLBACK_VALUE_PLACEHOLDER
 								}
-								valueClass="text-error"
+								valueClass={liqValueClass}
+								compact={embedded}
 							/>
 						)}
 						<SummaryRow
 							label={ORDER_TEXT.SUMMARY_ORDER_VALUE}
 							value={orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
+							compact={embedded}
 						/>
 						{capabilities.isLeveraged && (
 							<SummaryRow
 								label={ORDER_TEXT.SUMMARY_MARGIN_REQ}
 								value={marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
+								compact={embedded}
 							/>
 						)}
-						<div className={cn("flex items-center justify-between", embedded ? "py-1.5" : "py-2.5")}>
-							<span className="text-fg-muted">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
+						<div className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-2.5")}>
+							<span className="min-w-0 truncate text-fg-muted">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
 							{embedded && !isConnected ? (
-								<span className="inline-flex items-center gap-1">
+								<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
 									<span className="tabular-nums text-error">{slippagePercent}%</span>
 									<PencilIcon className="size-2.5 text-fg-muted" />
 								</span>
@@ -581,7 +624,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 								<button
 									type="button"
 									onClick={openSettingsDialog}
-									className="inline-flex cursor-pointer items-center gap-1 hover:opacity-80"
+									className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
 								>
 									<span className="tabular-nums text-error">{slippagePercent}%</span>
 									<PencilIcon className="size-2.5 text-fg-muted" />
@@ -592,6 +635,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 							label={ORDER_TEXT.SUMMARY_FEE}
 							value={orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
 							valueClass="text-fg-muted"
+							compact={embedded}
 						/>
 					</div>
 				</div>
@@ -631,19 +675,39 @@ export function MobileTradeView({ className, embedded }: Props) {
 				{!embedded && <MobileBottomNavSpacer />}
 			</div>
 
-			<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
+			{walletModalOpen && (
+				<Suspense fallback={null}>
+					<WalletModal open onOpenChange={setWalletModalOpen} />
+				</Suspense>
+			)}
 			<OrderToast />
 		</div>
 	);
 }
 
-function SummaryRow({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
+function SummaryRow({
+	label,
+	value,
+	valueClass,
+	compact,
+}: {
+	label: string;
+	value: string;
+	valueClass?: string;
+	compact?: boolean;
+}) {
 	return (
-		<div className="flex items-center justify-between py-1.5">
-			<span className="text-fg-muted">{label}</span>
-			<span className={cn("tabular-nums", valueClass ?? "text-fg")}>{value}</span>
+		<div className={cn("flex min-w-0 items-center justify-between", compact ? "gap-1 py-1" : "gap-2 py-1.5")}>
+			<span className="min-w-0 truncate text-fg-muted">{label}</span>
+			<span className={cn("shrink-0 whitespace-nowrap text-right tabular-nums", valueClass ?? "text-fg")}>{value}</span>
 		</div>
 	);
+}
+
+function getLiquidationValueClass(liqPrice: number | null, liqWarning: boolean) {
+	if (!liqPrice) return "text-fg-muted";
+	if (liqWarning) return "text-error";
+	return "text-fg";
 }
 
 interface MobileButtonContentInput {
@@ -651,6 +715,8 @@ interface MobileButtonContentInput {
 	needsChainSwitch: boolean;
 	isSwitchingChain: boolean;
 	availableBalance: number;
+	isBalanceLoading: boolean;
+	canDeposit: boolean;
 	needsApproval: boolean;
 	canSubmit: boolean;
 	isRegistering: boolean;
@@ -682,11 +748,19 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 			variant: "cyan",
 		};
 	}
+	if (input.isBalanceLoading) {
+		return {
+			text: ORDER_TEXT.BUTTON_LOADING,
+			action: () => {},
+			disabled: true,
+			variant: "cyan",
+		};
+	}
 	if (input.availableBalance <= 0) {
 		return {
 			text: ORDER_TEXT.BUTTON_DEPOSIT,
-			action: input.onDeposit,
-			disabled: false,
+			action: input.canDeposit ? input.onDeposit : () => {},
+			disabled: !input.canDeposit,
 			variant: "cyan",
 		};
 	}

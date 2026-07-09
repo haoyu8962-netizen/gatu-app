@@ -4,23 +4,23 @@ import { ChartLineIcon, ListChecksIcon, TrendUpIcon } from "@phosphor-icons/reac
 import { Skeleton } from "boneyard-js/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useConnection } from "wagmi";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useGlobalSettingsActions, useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
-import { useMarketActions } from "@/stores/use-market-store";
+import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "../positions/position-dialog-types";
 import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 type CloseIntent = "close" | "reverse";
 
@@ -29,17 +29,16 @@ interface Props {
 }
 
 export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const slippageBps = useMarketOrderSlippageBps();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
-	const { setMobileActiveTab } = useGlobalSettingsActions();
+	const navigateToMarket = useMarketNavigation();
+	const { setActiveTab } = useMobileTerminalTab();
 	const { setSide } = useOrderEntryActions();
 
 	function handleSelectMarket(name: string, side: Side) {
-		setSelectedMarket(scope, name);
+		navigateToMarket(name, undefined, { displayedContent: "trade" });
 		setSide(side);
-		setMobileActiveTab("trade");
+		setActiveTab("trade");
 	}
 	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
 	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionData | null>(null);
@@ -170,7 +169,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 					intent="neutral"
 					size="sm"
 					iconLeft={<TrendUpIcon className="size-4" />}
-					onClick={() => setMobileActiveTab("trade")}
+					onClick={() => setActiveTab("trade")}
 				>
 					{t`Go to Trade`}
 				</Button>

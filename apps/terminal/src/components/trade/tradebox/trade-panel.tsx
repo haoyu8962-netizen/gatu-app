@@ -1,20 +1,27 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
-import { useConnection, useSwitchChain, useWalletClient } from "wagmi";
+import { Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { useSwitchChain, useWalletClient } from "wagmi";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
 import { getPositionDex } from "@/domain/market";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
+import {
+	type SelectableAccountAbstraction,
+	useAccountAbstractionControl,
+} from "@/hooks/trade/use-account-abstraction-control";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useAgentRegistration, useAgentStatus, useSelectedMarketInfo, useUserPositions } from "@/lib/hyperliquid";
+import { createLazyComponent } from "@/lib/lazy";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
@@ -52,7 +59,6 @@ import {
 	useTwapRandomize,
 } from "@/stores/use-order-entry-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
-import { WalletModal } from "../components/wallet-modal";
 import { MarginModeModal } from "./margin-mode-modal";
 import { OrderSummary } from "./order-summary";
 import { OrderToast } from "./order-toast";
@@ -61,8 +67,10 @@ import { TradeFormFields } from "./trade-form-fields";
 import { TradeHeader } from "./trade-header";
 import { TwapOrderSummary } from "./twap-order-summary";
 
+const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
+
 export function TradePanel() {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected, sessionMode } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const switchChain = useSwitchChain();
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
@@ -74,6 +82,7 @@ export function TradePanel() {
 	const { isReady: isAgentReady, isLoading: isAgentLoading } = useAgentStatus();
 	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
 	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit();
+	const accountModeControl = useAccountAbstractionControl();
 	const { tradeRestricted } = useGeoRestriction();
 
 	const slippageBps = useMarketOrderSlippageBps();
@@ -90,6 +99,7 @@ export function TradePanel() {
 		spotBalance,
 		capabilities,
 		availableBalance,
+		isAvailabilityLoading,
 		maxSize,
 		sizeValue,
 		orderValue,
@@ -252,9 +262,23 @@ export function TradePanel() {
 		await applyMarginAndLeverage(mode, leverageValue);
 	}
 
+	async function handleAccountModeChange(nextAccountMode: SelectableAccountAbstraction) {
+		if (nextAccountMode === accountModeControl.accountAbstraction) return;
+		try {
+			await accountModeControl.setAccountAbstraction(nextAccountMode);
+			toast.success(t`Account mode updated`);
+		} catch (error) {
+			toast.error(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
+		}
+	}
+
 	function handleRegister() {
 		if (tradeRestricted) return;
 		if (isRegistering) return;
+		if (!isConnected || !address) {
+			setActiveModal("wallet");
+			return;
+		}
 		setApprovalError(null);
 
 		registerAgent().catch((error: unknown) => {
@@ -266,6 +290,7 @@ export function TradePanel() {
 
 	async function handleSubmit() {
 		if (tradeRestricted) return;
+		if (!isConnected || !address) return;
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
@@ -303,6 +328,8 @@ export function TradePanel() {
 		isSwitchingChain: switchChain.isPending,
 		switchChain: (chainId) => switchChain.mutate({ chainId }),
 		availableBalance,
+		isBalanceLoading: isAvailabilityLoading,
+		canDeposit: sessionMode === "wallet",
 		validation,
 		isAgentLoading,
 		registerStatus,
@@ -395,6 +422,11 @@ export function TradePanel() {
 					leverage={leverage}
 					onMarginLeverageClick={() => setActiveModal("marginMode")}
 					isLeveraged={capabilities.isLeveraged}
+					accountMode={accountModeControl.accountAbstraction}
+					isAccountModeLoading={accountModeControl.isLoading}
+					isAccountModeUpdating={accountModeControl.isUpdating}
+					canChangeAccountMode={capabilities.isLeveraged && accountModeControl.canSet}
+					onAccountModeChange={handleAccountModeChange}
 				/>
 
 				<TradeFormFields
@@ -407,48 +439,57 @@ export function TradePanel() {
 					onSwapClick={() => swapTargetToken && openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken)}
 				/>
 
-				<div className="flex flex-col gap-3 pt-5 pb-1">
-					{validation.errors.length > 0 && isConnected && availableBalance > 0 && (
-						<div className="text-xs text-error">{validation.errors.join(" • ")}</div>
-					)}
+				<div className="flex flex-col gap-4 pt-5 pb-1">
+					<div className="flex flex-col gap-3">
+						{validation.errors.length > 0 && isConnected && availableBalance > 0 && (
+							<div className="text-xs text-error">{validation.errors.join(" • ")}</div>
+						)}
 
-					{approvalError && <div className="text-xs text-error">{approvalError}</div>}
+						{approvalError && <div className="text-xs text-error">{approvalError}</div>}
 
-					{tradeRestricted ? (
-						<Button
-							variant="filled"
-							size="xs"
-							intent="neutral"
-							disabled
-							className="w-full px-3 py-2 text-sm font-semibold"
-							aria-label={t`Trading is not available in your region`}
-						>
-							{t`Trading is not available in your region`}
-						</Button>
-					) : (
-						<Button
-							variant="filled"
-							size="xs"
-							intent={buttonContent.variant === "buy" ? "brand" : buttonContent.variant === "sell" ? "error" : "brand"}
-							onClick={buttonContent.action}
-							disabled={buttonContent.disabled}
-							className={cn(
-								"w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
-								buttonContent.variant === "buy" && "bg-success text-background hover:opacity-90",
-								buttonContent.variant === "sell" && "text-background",
-							)}
-							aria-label={buttonContent.text}
-							iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
-						>
-							{buttonContent.text}
-						</Button>
-					)}
+						{tradeRestricted ? (
+							<Button
+								variant="filled"
+								size="xs"
+								intent="neutral"
+								disabled
+								className="w-full px-3 py-2 text-sm font-semibold"
+								aria-label={t`Trading is not available in your region`}
+							>
+								{t`Trading is not available in your region`}
+							</Button>
+						) : (
+							<Button
+								variant="filled"
+								size="xs"
+								intent={
+									buttonContent.variant === "buy" ? "brand" : buttonContent.variant === "sell" ? "error" : "brand"
+								}
+								onClick={buttonContent.action}
+								disabled={buttonContent.disabled}
+								className={cn(
+									"w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
+									buttonContent.variant === "buy" && "bg-success text-background hover:opacity-90",
+									buttonContent.variant === "sell" && "text-background",
+								)}
+								aria-label={buttonContent.text}
+								iconLeft={
+									isSubmitting || isRegistering ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined
+								}
+							>
+								{buttonContent.text}
+							</Button>
+						)}
+					</div>
+					{renderSummary()}
 				</div>
-
-				{renderSummary()}
 			</div>
 
-			<WalletModal open={activeModal === "wallet"} onOpenChange={(open) => setActiveModal(open ? "wallet" : null)} />
+			{activeModal === "wallet" && (
+				<Suspense fallback={null}>
+					<WalletModal open onOpenChange={(open) => setActiveModal(open ? "wallet" : null)} />
+				</Suspense>
+			)}
 
 			<OrderToast />
 		</div>

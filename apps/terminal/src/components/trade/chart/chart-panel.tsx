@@ -1,17 +1,11 @@
 import { ClientOnly } from "@tanstack/react-router";
-import { Suspense, useState } from "react";
-import { getPositionDex } from "@/domain/market";
-import { useIntentScriptLoader } from "@/hooks/ui/use-intent-script-loader";
-import { TRADINGVIEW_SCRIPT_SRC } from "@/lib/chart/load-tradingview";
+import { Suspense } from "react";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { useTheme } from "@/stores/use-global-settings-store";
 
 const TradingViewChart = createLazyComponent(() => import("./tradingview-chart"), "TradingViewChart");
-const KlineChart = createLazyComponent(() => import("./kline-chart"), "KlineChart");
-
-type ChartType = "default" | "tradingview";
 
 interface Props {
 	yAxisInside?: boolean;
@@ -21,37 +15,19 @@ export function ChartPanel({ yAxisInside = false }: Props) {
 	useRenderCommitTrack("chart");
 	const theme = useTheme();
 	const { data: selectedMarket } = useSelectedMarketInfo();
-	const [chartType, setChartType] = useState<ChartType>("tradingview");
 	const chartTheme = theme === "dark" ? "dark" : "light";
-	const { intentHandlers: tradingViewIntentHandlers } = useIntentScriptLoader({
-		src: TRADINGVIEW_SCRIPT_SRC,
-		isReady: () => typeof window !== "undefined" && Boolean(window.TradingView),
-		onIntent: () => TradingViewChart.preload?.(),
-	});
 
 	return (
 		<div className="h-full flex flex-col overflow-hidden">
-			{chartType === "default" && selectedMarket && (
-				<ClientOnly>
-					<Suspense fallback={<ChartLoadingFallback />}>
-						<KlineChart
-							symbol={selectedMarket.name}
-							positionDex={getPositionDex(selectedMarket)}
-							theme={chartTheme}
-							yAxisInside={yAxisInside}
-							onChartSourceChange={setChartType}
-							tradingViewIntentHandlers={tradingViewIntentHandlers}
-						/>
-					</Suspense>
-				</ClientOnly>
-			)}
-			{chartType === "tradingview" && selectedMarket && (
+			{!selectedMarket && <ChartLoadingFallback />}
+			{selectedMarket && (
 				<ClientOnly>
 					<Suspense fallback={<ChartLoadingFallback />}>
 						<TradingViewChart
 							symbol={selectedMarket.name}
+							market={selectedMarket}
 							theme={chartTheme}
-							onSwitchToDefault={() => setChartType("default")}
+							yAxisInside={yAxisInside}
 						/>
 					</Suspense>
 				</ClientOnly>

@@ -145,4 +145,31 @@ describe("store staleness integration", () => {
 
 		expect(store.getState().subscriptions[key]).toBeUndefined();
 	});
+
+	it("unsubscribes a pending subscription exactly once after release", async () => {
+		const store = createHyperliquidStore({ ssr: false });
+		const unsubscribe = vi.fn(async () => {});
+		const controller = new AbortController();
+		let resolveSubscription:
+			| ((subscription: { unsubscribe: () => Promise<void>; failureSignal: AbortSignal }) => void)
+			| undefined;
+		const subscribe = vi.fn(
+			() =>
+				new Promise<{ unsubscribe: () => Promise<void>; failureSignal: AbortSignal }>((resolve) => {
+					resolveSubscription = resolve;
+				}),
+		);
+
+		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "PENDING" }]);
+		store.getState().acquireSubscription(key, subscribe);
+		store.getState().releaseSubscription(key);
+
+		expect(store.getState().subscriptions[key]).toBeUndefined();
+		expect(unsubscribe).not.toHaveBeenCalled();
+
+		resolveSubscription?.({ unsubscribe, failureSignal: controller.signal });
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
+	});
 });

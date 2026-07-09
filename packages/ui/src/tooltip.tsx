@@ -3,6 +3,10 @@ import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 import { cn } from "./utils";
 
+type TooltipPositionerProps = React.ComponentProps<typeof BaseTooltip.Positioner>;
+const DEFAULT_TOOLTIP_SIDE: NonNullable<TooltipPositionerProps["side"]> = "top";
+const DEFAULT_TOOLTIP_ALIGN: NonNullable<TooltipPositionerProps["align"]> = "center";
+
 const tooltipPopupVariants = cva([
 	"bg-overlay text-fg border border-stroke-weak",
 	"text-xs font-normal",
@@ -26,9 +30,13 @@ const tooltipArrowVariants = cva([
 interface TooltipProps extends VariantProps<typeof tooltipPopupVariants> {
 	children: React.ReactElement;
 	content: React.ReactNode;
-	side?: "top" | "bottom" | "left" | "right";
-	align?: "start" | "center" | "end";
-	sideOffset?: number;
+	side?: TooltipPositionerProps["side"];
+	align?: TooltipPositionerProps["align"];
+	sideOffset?: TooltipPositionerProps["sideOffset"];
+	alignOffset?: TooltipPositionerProps["alignOffset"];
+	collisionBoundary?: TooltipPositionerProps["collisionBoundary"];
+	collisionPadding?: TooltipPositionerProps["collisionPadding"];
+	collisionAvoidance?: TooltipPositionerProps["collisionAvoidance"];
 	open?: boolean;
 	defaultOpen?: boolean;
 	onOpenChange?: (open: boolean) => void;
@@ -43,9 +51,13 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 		{
 			children,
 			content,
-			side = "top",
-			align = "center",
+			side = DEFAULT_TOOLTIP_SIDE,
+			align = DEFAULT_TOOLTIP_ALIGN,
 			sideOffset = 8,
+			alignOffset,
+			collisionBoundary,
+			collisionPadding,
+			collisionAvoidance,
 			open,
 			defaultOpen,
 			onOpenChange,
@@ -62,7 +74,16 @@ const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 			<BaseTooltip.Root open={open} defaultOpen={defaultOpen} onOpenChange={onOpenChange}>
 				<BaseTooltip.Trigger delay={delay} closeDelay={closeDelay} render={children} />
 				<BaseTooltip.Portal>
-					<BaseTooltip.Positioner side={side} align={align} sideOffset={sideOffset} className="z-tooltip">
+					<BaseTooltip.Positioner
+						side={side}
+						align={align}
+						sideOffset={sideOffset}
+						alignOffset={alignOffset}
+						collisionBoundary={collisionBoundary}
+						collisionPadding={collisionPadding}
+						collisionAvoidance={collisionAvoidance}
+						className="z-[var(--z-tooltip)]"
+					>
 						<BaseTooltip.Popup ref={ref} className={cn(tooltipPopupVariants(), className)}>
 							{content}
 							{arrow && <BaseTooltip.Arrow className={cn(tooltipArrowVariants())} />}

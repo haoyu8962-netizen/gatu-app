@@ -1,5 +1,6 @@
 import { Avatar } from "@gatu/ui";
 import type { ReactNode } from "react";
+import { BUILDER_DEX_SEPARATOR, getIconUrlFromMarketName } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import type { SpotToken, UnifiedMarket } from "@/lib/hyperliquid/markets";
 import { useMarkets } from "@/lib/hyperliquid/markets/use-markets";
@@ -32,8 +33,28 @@ function resolveName(
 	return coin;
 }
 
-function resolveIconUrl(market: UnifiedMarket | undefined, token: SpotToken | undefined): string | undefined {
-	return market?.iconUrl ?? token?.iconUrl;
+function getBuilderBaseIconUrl(coin: string): string | undefined {
+	if (!coin.includes(BUILDER_DEX_SEPARATOR)) return undefined;
+	const base = coin.split(BUILDER_DEX_SEPARATOR).pop();
+	if (!base || base === coin) return undefined;
+	return getIconUrlFromMarketName(base, "perp");
+}
+
+function uniqueUrls(urls: (string | undefined)[]): string[] {
+	return Array.from(new Set(urls.filter((url): url is string => !!url)));
+}
+
+function resolveIconUrls(
+	market: UnifiedMarket | undefined,
+	token: SpotToken | undefined,
+	coin: string,
+	iconUrlOverride: string | undefined,
+): string[] {
+	const namespacedBuilderIcon = coin.includes(BUILDER_DEX_SEPARATOR)
+		? getIconUrlFromMarketName(coin, "builderPerp")
+		: undefined;
+	const baseBuilderIcon = getBuilderBaseIconUrl(market?.name ?? coin);
+	return uniqueUrls([iconUrlOverride, market?.iconUrl, token?.iconUrl, namespacedBuilderIcon, baseBuilderIcon]);
 }
 
 function getFallbackText(name: string): string {
@@ -59,11 +80,19 @@ export function AssetDisplay({
 	const showIcon = !hideIcon;
 	const showName = !hideName;
 	const name = resolveName(market, token, coin, variant);
-	const iconUrl = iconUrlOverride ?? resolveIconUrl(market, token);
+	const iconUrls = resolveIconUrls(market, token, coin, iconUrlOverride);
+	const [iconUrl, ...fallbackIconUrls] = iconUrls;
 	const fallbackText = getFallbackText(name);
 
 	const icon = (
-		<Avatar className={cn("size-4", iconClassName)} size="sm" src={iconUrl} alt={name} initials={fallbackText} />
+		<Avatar
+			className={cn("size-4", iconClassName)}
+			size="sm"
+			src={iconUrl}
+			fallbackSrcs={fallbackIconUrls}
+			alt={name}
+			initials={fallbackText}
+		/>
 	);
 
 	if (showIcon && !showName) {
@@ -81,10 +110,10 @@ export function AssetDisplay({
 	}
 
 	return (
-		<span className={cn("inline-flex items-center gap-1", className)}>
+		<span className={cn("inline-flex min-w-0 items-center gap-1", className)}>
 			{icon}
 			{subtitle ? (
-				<span className="flex flex-col items-start">
+				<span className="flex min-w-0 flex-col items-start">
 					<span className={nameClassName}>{name}</span>
 					<span className={subtitleClassName}>{subtitle}</span>
 				</span>

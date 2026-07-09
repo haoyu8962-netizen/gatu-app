@@ -1,12 +1,11 @@
-import { useEffect, useRef } from "react";
+import { t } from "@lingui/core/macro";
+import { useEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
-import {
-	buildChartOverrides,
-	generateChartCssUrl,
-	getLoadingScreenColors,
-	getToolbarBgColor,
-} from "@/lib/chart/theme-colors";
+import { coinFromSymbolName, priceScaleFromMid } from "@/lib/chart/symbol";
+import { buildChartOverrides, getChartCssUrl, getLoadingScreenColors } from "@/lib/chart/theme-colors";
+import { cn } from "@/lib/cn";
+import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import type { IChartingLibraryWidget, ResolutionString } from "@/types/charting_library";
 import {
 	CHART_CUSTOM_FONT_FAMILY,
@@ -20,69 +19,333 @@ import {
 	DEFAULT_CHART_INTERVAL,
 	DEFAULT_CHART_SYMBOL,
 	DEFAULT_CHART_THEME,
+	QUOTE_ASSET,
 	TIMEZONE,
 } from "./constants";
 import { createDatafeed } from "./datafeed";
 
+const CHART_READY_TIMEOUT_MS = 12_000;
+const MAX_CHART_INIT_ATTEMPTS = 2;
+const MAX_SYMBOL_SWITCH_ATTEMPTS = 2;
+const SYMBOL_SWITCH_TIMEOUT_MS = 4_000;
+
+function priceScaleFromSzDecimals(szDecimals: number): number {
+	const decimals = Math.min(Math.max(6 - szDecimals, 2), 8);
+	return 10 ** decimals;
+}
+
+function getChartDisplaySymbol(market: UnifiedMarketInfo): string {
+	if (market.kind === "spot") return market.pairName;
+	if (market.kind === "builderPerp") {
+		const quoteToken = market.quoteToken?.displayName ?? market.quoteToken?.name ?? QUOTE_ASSET;
+		return `${market.name}/${quoteToken}`;
+	}
+	return `${market.name}/${QUOTE_ASSET}`;
+}
+
+function getChartMarketKeys(market: UnifiedMarketInfo): string[] {
+	const keys = new Set<string>();
+	keys.add(market.name);
+	keys.add(market.pairName);
+	keys.add(getChartDisplaySymbol(market));
+	return Array.from(keys);
+}
+
 interface Props {
 	symbol?: string;
+	market?: UnifiedMarketInfo;
 	interval?: string;
 	theme?: "light" | "dark";
-	onSwitchToDefault?: () => void;
+	yAxisInside?: boolean;
 }
 
 export function TradingViewChart({
 	symbol = DEFAULT_CHART_SYMBOL,
+	market,
 	interval = DEFAULT_CHART_INTERVAL,
 	theme = DEFAULT_CHART_THEME,
-	onSwitchToDefault,
+	yAxisInside = false,
 }: Props) {
+	const widgetSymbol = market ? getChartDisplaySymbol(market) : symbol;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
-	const cssUrlRef = useRef<string | null>(null);
 	const chartReadyRef = useRef(false);
-	const onSwitchToDefaultRef = useRef(onSwitchToDefault);
-	onSwitchToDefaultRef.current = onSwitchToDefault;
+	const targetSymbolRef = useRef(symbol);
+	const targetIntervalRef = useRef(interval);
+	const targetThemeRef = useRef(theme);
+	const marketRef = useRef(market);
+	const appliedSymbolRef = useRef<string | null>(null);
+	const appliedIntervalRef = useRef<string | null>(null);
+	const appliedThemeRef = useRef<"light" | "dark" | null>(null);
+	const pendingSymbolRef = useRef<string | null>(null);
+	const pendingIntervalRef = useRef<string | null>(null);
+	const symbolSwitchAttemptRef = useRef(0);
+	const symbolSwitchTargetRef = useRef<string | null>(null);
+	const symbolSwitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const symbolSwitchRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const symbolSwitchCleanupRef = useRef<(() => void) | null>(null);
+	const themeSwitchSequenceRef = useRef(0);
+	const marketBySymbolRef = useRef(new Map<string, UnifiedMarketInfo>());
+	const applySymbolRef = useRef<() => void>(() => {});
+	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
+	const [initError, setInitError] = useState<string | null>(null);
+	const [retryNonce, setRetryNonce] = useState(0);
+	targetSymbolRef.current = widgetSymbol;
+	targetIntervalRef.current = interval;
+	targetThemeRef.current = theme;
+	marketRef.current = market;
+	if (market) {
+		for (const key of getChartMarketKeys(market)) {
+			marketBySymbolRef.current.set(key, market);
+		}
+	}
 
+	const clearSymbolSwitchTimeout = () => {
+		if (symbolSwitchTimeoutRef.current) {
+			clearTimeout(symbolSwitchTimeoutRef.current);
+			symbolSwitchTimeoutRef.current = null;
+		}
+		if (symbolSwitchRetryTimeoutRef.current) {
+			clearTimeout(symbolSwitchRetryTimeoutRef.current);
+			symbolSwitchRetryTimeoutRef.current = null;
+		}
+	};
+
+	const clearSymbolSwitchListeners = () => {
+		const cleanup = symbolSwitchCleanupRef.current;
+		symbolSwitchCleanupRef.current = null;
+		cleanup?.();
+	};
+
+	const clearPendingSymbolSwitch = () => {
+		clearSymbolSwitchTimeout();
+		clearSymbolSwitchListeners();
+		pendingSymbolRef.current = null;
+		pendingIntervalRef.current = null;
+	};
+
+	const finishSymbolSwitch = () => {
+		clearPendingSymbolSwitch();
+	};
+
+	const completeSymbolSwitch = (nextSymbol: string, nextInterval: string) => {
+		appliedSymbolRef.current = nextSymbol;
+		appliedIntervalRef.current = nextInterval;
+		symbolSwitchAttemptRef.current = 0;
+		symbolSwitchTargetRef.current = null;
+		finishSymbolSwitch();
+	};
+
+	applySymbolRef.current = () => {
+		const widget = widgetRef.current;
+		if (!widget || !chartReadyRef.current) return;
+
+		const nextSymbol = targetSymbolRef.current;
+		const nextInterval = targetIntervalRef.current;
+		const pendingMatches = pendingSymbolRef.current === nextSymbol && pendingIntervalRef.current === nextInterval;
+		if (pendingMatches) return;
+		if (
+			!pendingSymbolRef.current &&
+			appliedSymbolRef.current === nextSymbol &&
+			appliedIntervalRef.current === nextInterval
+		) {
+			return;
+		}
+
+		clearPendingSymbolSwitch();
+		pendingSymbolRef.current = nextSymbol;
+		pendingIntervalRef.current = nextInterval;
+		setInitError(null);
+
+		const switchTarget = `${nextSymbol}\u0000${nextInterval}`;
+		if (symbolSwitchTargetRef.current !== switchTarget) {
+			symbolSwitchTargetRef.current = switchTarget;
+			symbolSwitchAttemptRef.current = 0;
+		}
+		symbolSwitchAttemptRef.current += 1;
+
+		const handleSymbolSwitchComplete = () => {
+			if (
+				widgetRef.current === widget &&
+				targetSymbolRef.current === nextSymbol &&
+				targetIntervalRef.current === nextInterval
+			) {
+				completeSymbolSwitch(nextSymbol, nextInterval);
+			}
+		};
+
+		symbolSwitchTimeoutRef.current = setTimeout(() => {
+			if (
+				widgetRef.current !== widget ||
+				pendingSymbolRef.current !== nextSymbol ||
+				pendingIntervalRef.current !== nextInterval
+			) {
+				return;
+			}
+
+			finishSymbolSwitch();
+			if (symbolSwitchAttemptRef.current < MAX_SYMBOL_SWITCH_ATTEMPTS) {
+				symbolSwitchRetryTimeoutRef.current = setTimeout(() => {
+					if (
+						widgetRef.current === widget &&
+						targetSymbolRef.current === nextSymbol &&
+						targetIntervalRef.current === nextInterval
+					) {
+						applySymbolRef.current();
+					}
+				}, 0);
+				return;
+			}
+			symbolSwitchAttemptRef.current = 0;
+			symbolSwitchTargetRef.current = null;
+		}, SYMBOL_SWITCH_TIMEOUT_MS);
+
+		try {
+			const chart = widget.activeChart();
+			const symbolChanged = chart.onSymbolChanged();
+			symbolChanged.subscribe(null, handleSymbolSwitchComplete, true);
+			symbolSwitchCleanupRef.current = () => {
+				symbolChanged.unsubscribe(null, handleSymbolSwitchComplete);
+			};
+			widget.setSymbol(nextSymbol, nextInterval as ResolutionString, handleSymbolSwitchComplete);
+		} catch {
+			finishSymbolSwitch();
+			symbolSwitchAttemptRef.current = 0;
+			symbolSwitchTargetRef.current = null;
+		}
+	};
+
+	applyThemeRef.current = (nextTheme) => {
+		const widget = widgetRef.current;
+		if (!widget || !chartReadyRef.current) return;
+
+		const sequence = themeSwitchSequenceRef.current + 1;
+		themeSwitchSequenceRef.current = sequence;
+		if (appliedThemeRef.current === nextTheme && widget.getTheme() === nextTheme) return;
+
+		void widget
+			.changeTheme(nextTheme)
+			.then(() => {
+				if (widgetRef.current !== widget || themeSwitchSequenceRef.current !== sequence) return;
+				appliedThemeRef.current = nextTheme;
+				widget.applyOverrides(buildChartOverrides());
+			})
+			.catch(() => undefined);
+	};
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: switch cleanup only reads refs; adding the helper would recreate the widget on every render.
 	useEffect(() => {
+		void retryNonce;
 		if (!containerRef.current) return;
 		let disposed = false;
+		let readyTimeout: ReturnType<typeof setTimeout> | null = null;
 		chartReadyRef.current = false;
 
-		const initWidget = async () => {
+		function getMarketForChartSymbol(symbolName: string, coin: string): UnifiedMarketInfo | undefined {
+			return (
+				marketBySymbolRef.current.get(symbolName) ??
+				marketBySymbolRef.current.get(coin) ??
+				marketBySymbolRef.current.get(coinFromSymbolName(symbolName)) ??
+				marketRef.current
+			);
+		}
+
+		function isSelectedMarketCoin(coin: string): boolean | undefined {
+			const currentMarket = getMarketForChartSymbol(coin, coin);
+			return currentMarket?.name === coin ? true : undefined;
+		}
+
+		function getSelectedMarketPriceScale(coin: string): number | undefined {
+			const currentMarket = getMarketForChartSymbol(coin, coin);
+			if (currentMarket?.name !== coin) return undefined;
+			if (currentMarket.markPx) return priceScaleFromMid(currentMarket.markPx);
+
+			return priceScaleFromSzDecimals(currentMarket.szDecimals);
+		}
+
+		function getSelectedMarketSymbolInfo(symbolName: string, coin: string) {
+			const currentMarket = getMarketForChartSymbol(symbolName, coin);
+			if (!currentMarket) return undefined;
+			const name = getChartDisplaySymbol(currentMarket);
+			if (symbolName !== name && coin !== currentMarket.name) return undefined;
+			return {
+				name,
+				ticker: currentMarket.name,
+				description: currentMarket.pairName ?? name,
+				pricescale: getSelectedMarketPriceScale(currentMarket.name),
+			};
+		}
+
+		const clearReadyTimeout = () => {
+			if (readyTimeout) {
+				clearTimeout(readyTimeout);
+				readyTimeout = null;
+			}
+		};
+
+		const removeWidget = () => {
+			clearReadyTimeout();
+			clearPendingSymbolSwitch();
+			if (widgetRef.current) {
+				widgetRef.current.remove();
+				widgetRef.current = null;
+			}
+			chartReadyRef.current = false;
+			appliedSymbolRef.current = null;
+			appliedIntervalRef.current = null;
+			appliedThemeRef.current = null;
+			themeSwitchSequenceRef.current += 1;
+		};
+
+		const handleFinalFailure = (reason: string) => {
+			if (disposed) return;
+			setInitError(reason);
+		};
+
+		const scheduleReadyTimeout = (widget: IChartingLibraryWidget, attempt: number) => {
+			clearReadyTimeout();
+			readyTimeout = setTimeout(() => {
+				if (disposed || chartReadyRef.current || widgetRef.current !== widget) return;
+				removeWidget();
+				if (attempt < MAX_CHART_INIT_ATTEMPTS) {
+					void initWidget(attempt + 1);
+					return;
+				}
+				handleFinalFailure("ready-timeout");
+			}, CHART_READY_TIMEOUT_MS);
+		};
+
+		const initWidget = async (attempt = 1) => {
 			try {
 				await loadTradingViewScript();
 
 				if (disposed || !containerRef.current || !window.TradingView) return;
 
-				if (widgetRef.current) {
-					widgetRef.current.remove();
-				}
-
-				if (cssUrlRef.current) {
-					URL.revokeObjectURL(cssUrlRef.current);
-				}
+				removeWidget();
 
 				const overrides = buildChartOverrides();
 				const loadingColors = getLoadingScreenColors();
-				const toolbarBg = getToolbarBgColor();
-				const customCssUrl = await generateChartCssUrl();
-				if (disposed || !containerRef.current || !window.TradingView) {
-					URL.revokeObjectURL(customCssUrl);
-					return;
-				}
-				cssUrlRef.current = customCssUrl;
+				const initialTheme = targetThemeRef.current;
+				const customCssUrl = getChartCssUrl(initialTheme);
+
+				const initialSymbol = targetSymbolRef.current;
+				const initialInterval = targetIntervalRef.current;
+				setInitError(null);
 
 				const widget = new window.TradingView.widget({
 					container: containerRef.current,
 					library_path: CHART_LIBRARY_PATH,
-					datafeed: createDatafeed(),
-					symbol: symbol,
-					interval: interval as ResolutionString,
+					datafeed: createDatafeed({
+						getPriceScale: getSelectedMarketPriceScale,
+						getSymbolInfo: getSelectedMarketSymbolInfo,
+						isKnownCoin: isSelectedMarketCoin,
+					}),
+					symbol: initialSymbol,
+					interval: initialInterval as ResolutionString,
 					locale: CHART_LOCALE,
 					fullscreen: CHART_WIDGET_DEFAULTS.FULLSCREEN,
 					autosize: CHART_WIDGET_DEFAULTS.AUTOSIZE,
-					theme: theme,
+					theme: initialTheme,
 					timezone: TIMEZONE,
 					debug: CHART_WIDGET_DEFAULTS.DEBUG,
 					custom_font_family: CHART_CUSTOM_FONT_FAMILY,
@@ -91,7 +354,6 @@ export function TradingViewChart({
 					disabled_features: CHART_DISABLED_FEATURES,
 					overrides: overrides,
 					loading_screen: loadingColors,
-					toolbar_bg: toolbarBg,
 					custom_css_url: customCssUrl,
 					studies_overrides: {},
 					favorites: {
@@ -99,50 +361,26 @@ export function TradingViewChart({
 					},
 				});
 				widgetRef.current = widget;
+				appliedSymbolRef.current = initialSymbol;
+				appliedIntervalRef.current = initialInterval;
+				appliedThemeRef.current = initialTheme;
+				scheduleReadyTimeout(widget, attempt);
 
 				widget.onChartReady(() => {
 					if (disposed || widgetRef.current !== widget) return;
+					clearReadyTimeout();
 					chartReadyRef.current = true;
+					applyThemeRef.current(targetThemeRef.current);
+					applySymbolRef.current();
 				});
-
-				if (onSwitchToDefaultRef.current) {
-					widget.headerReady().then(() => {
-						if (disposed || widgetRef.current !== widget) return;
-
-						const btn = widget.createButton({ align: "right", useTradingViewStyle: false });
-						btn.style.cssText =
-							"display:inline-flex;align-items:center;gap:6px;padding:0 4px;cursor:default;height:100%;";
-
-						const tvLabel = document.createElement("span");
-						tvLabel.textContent = "TradingView";
-						tvLabel.dataset.htActive = "true";
-						tvLabel.style.cssText = "font-size:12px;color:var(--tv-fg,inherit);";
-
-						const sep = document.createElement("span");
-						sep.style.cssText =
-							"display:inline-block;width:1px;height:12px;background:var(--tv-color-toolbar-divider-background,rgba(128,128,128,0.3));align-self:center;flex-shrink:0;";
-
-						const defaultLabel = document.createElement("span");
-						defaultLabel.textContent = "Default";
-						defaultLabel.style.cssText =
-							"font-size:12px;font-weight:400;color:var(--tv-muted-fg,rgba(128,128,128,0.8));cursor:pointer;";
-						defaultLabel.addEventListener("pointerover", () => {
-							defaultLabel.style.color = "var(--tv-fg,inherit)";
-						});
-						defaultLabel.addEventListener("pointerout", () => {
-							defaultLabel.style.color = "var(--tv-muted-fg,rgba(128,128,128,0.8))";
-						});
-						defaultLabel.addEventListener("click", () => {
-							onSwitchToDefaultRef.current?.();
-						});
-
-						btn.appendChild(defaultLabel);
-						btn.appendChild(sep);
-						btn.appendChild(tvLabel);
-					});
-				}
 			} catch {
-				// widgetRef stays null on failure; source toggle then shows default chart
+				if (disposed) return;
+				removeWidget();
+				if (attempt < MAX_CHART_INIT_ATTEMPTS) {
+					void initWidget(attempt + 1);
+					return;
+				}
+				handleFinalFailure("exception");
 			}
 		};
 
@@ -150,21 +388,43 @@ export function TradingViewChart({
 
 		return () => {
 			disposed = true;
-			if (widgetRef.current) {
-				widgetRef.current.remove();
-				widgetRef.current = null;
-			}
-			chartReadyRef.current = false;
-			if (cssUrlRef.current) {
-				URL.revokeObjectURL(cssUrlRef.current);
-				cssUrlRef.current = null;
-			}
+			clearReadyTimeout();
+			removeWidget();
 		};
-	}, [symbol, interval, theme]);
+	}, [retryNonce]);
+
+	useEffect(() => {
+		targetSymbolRef.current = widgetSymbol;
+		targetIntervalRef.current = interval;
+		applySymbolRef.current();
+	}, [widgetSymbol, interval]);
+
+	useEffect(() => {
+		targetThemeRef.current = theme;
+		applyThemeRef.current(theme);
+	}, [theme]);
 
 	return (
-		<div className="relative w-full h-full" style={{ minHeight: CHART_MIN_HEIGHT_PX }}>
+		<div
+			className={cn("relative w-full h-full", yAxisInside && "[--tv-y-axis-inside:1]")}
+			style={{ minHeight: CHART_MIN_HEIGHT_PX }}
+		>
 			<div ref={containerRef} className="w-full h-full" />
+			{initError && (
+				<div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface px-4 text-center">
+					<p className="text-sm font-medium text-fg">{t`Something went wrong`}</p>
+					<button
+						type="button"
+						className="rounded-xs border border-stroke-weak px-3 py-1.5 text-xs font-medium text-fg hover:bg-fill-hover"
+						onClick={() => {
+							setInitError(null);
+							setRetryNonce((value) => value + 1);
+						}}
+					>
+						{t`Retry`}
+					</button>
+				</div>
+			)}
 		</div>
 	);
 }

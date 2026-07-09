@@ -56,10 +56,9 @@ export const POSITIONS_TABS = [
 
 export const MOBILE_POSITIONS_TABS = [
 	{ value: "positions", label: msg`Positions` },
-	{ value: "orders", label: msg`Orders` },
-	{ value: "balances", label: msg`Balances` },
+	{ value: "orders", label: msg`Open Orders` },
 	{ value: "twap", label: msg`TWAP` },
-	{ value: "history", label: msg`Trades` },
+	{ value: "history", label: msg`Trade History` },
 	{ value: "orders-history", label: msg`Order History` },
 	{ value: "funding", label: msg`Funding` },
 ] as const;

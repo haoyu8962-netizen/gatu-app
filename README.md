@@ -99,6 +99,7 @@ Commit types: `feat`, `fix`, `refactor`, `perf`, `style`, `test`, `build`, `ci`,
 - **[packages/hl-react/README.md](packages/hl-react/README.md)** — hook taxonomy, transport layer, agent-wallet lifecycle, WS reliability internals
 - **[packages/ui/README.md](packages/ui/README.md)** — design tokens, component inventory, CVA patterns
 - **[packages/hyperliquid-api/SKILL.md](packages/hyperliquid-api/SKILL.md)** — Agent Skill for AI tools working with the Hyperliquid API
+- **[docs/runtime-guardrails.md](docs/runtime-guardrails.md)** — runtime boundaries for wallet/agent state, funding, TradingView, mobile layout, market mapping, and WS subscriptions
 
 ## License
 

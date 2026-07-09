@@ -1,4 +1,4 @@
-import { Button } from "@gatu/ui";
+import { Button, TextInput } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import {
@@ -24,13 +24,36 @@ const ARBITRUM_NETWORK = NETWORKS[0];
 interface Props {
 	amount: string;
 	onAmountChange: (value: string) => void;
+	destination: string;
+	onDestinationChange: (value: string) => void;
+	destinationRequired: boolean;
+	destinationError: string | null;
 	available: string;
 	validation: { valid: boolean; error: string | null };
+	canSubmit: boolean;
 	isPending: boolean;
 	onSubmit: () => void;
+	spotAvailable?: number;
+	showSpotFundsNotice?: boolean;
+	onTransferClick?: () => void;
 }
 
-export function WithdrawForm({ amount, onAmountChange, available, validation, isPending, onSubmit }: Props) {
+export function WithdrawForm({
+	amount,
+	onAmountChange,
+	destination,
+	onDestinationChange,
+	destinationRequired,
+	destinationError,
+	available,
+	validation,
+	canSubmit,
+	isPending,
+	onSubmit,
+	spotAvailable = 0,
+	showSpotFundsNotice = false,
+	onTransferClick,
+}: Props) {
 	const availableNum = toNumberOrZero(available);
 	const amountNum = toNumber(amount);
 	const netReceived = amountNum !== null && amountNum > 0 ? Math.max(amountNum - WITHDRAWAL_FEE_USD, 0) : null;
@@ -65,6 +88,50 @@ export function WithdrawForm({ amount, onAmountChange, available, validation, is
 					{validation.error || " "}
 				</p>
 			</div>
+
+			{destinationRequired && (
+				<div>
+					<TextInput
+						placeholder={t`Destination address`}
+						value={destination}
+						onChange={(e) => onDestinationChange(e.target.value)}
+						autoComplete="off"
+						spellCheck={false}
+						disabled={isPending}
+						className={cn(
+							"font-mono text-xs tabular-nums",
+							destinationError && "border-stroke-error-strong focus-visible:border-stroke-error-strong",
+						)}
+					/>
+					<p className={cn("h-4 text-xs flex items-center gap-1", destinationError ? "text-error" : "invisible")}>
+						<WarningCircleIcon className="size-3" />
+						{destinationError || " "}
+					</p>
+					<p className="text-2xs text-fg-muted">
+						<Trans>USDC will be sent to this Arbitrum address.</Trans>
+					</p>
+				</div>
+			)}
+
+			{showSpotFundsNotice && (
+				<div className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+					<div className="tabular-nums">
+						<Trans>Funds are in Spot account</Trans>: {formatNumber(spotAvailable, 2)} USDC
+					</div>
+					{onTransferClick ? (
+						<Button
+							variant="link"
+							intent="brand"
+							size="xxs"
+							className="mt-1 h-auto p-0"
+							onClick={onTransferClick}
+							disabled={isPending}
+						>
+							<Trans>Perps / Spot</Trans>
+						</Button>
+					) : null}
+				</div>
+			)}
 
 			<div className="rounded-8 border border-stroke-weak/40 bg-surface p-3 space-y-2 text-xs">
 				<InfoRow
@@ -107,7 +174,7 @@ export function WithdrawForm({ amount, onAmountChange, available, validation, is
 				variant="filled"
 				intent="neutral"
 				onClick={onSubmit}
-				disabled={!validation.valid || isPending}
+				disabled={!canSubmit || isPending}
 				className="mt-auto w-full"
 			>
 				{isPending ? (
@@ -118,7 +185,7 @@ export function WithdrawForm({ amount, onAmountChange, available, validation, is
 				) : (
 					<>
 						<ArrowLineUpIcon className="size-4" />
-						<Trans>Withdraw</Trans>
+						{destinationRequired ? <Trans>Withdraw to Arbitrum</Trans> : <Trans>Withdraw</Trans>}
 					</>
 				)}
 			</Button>

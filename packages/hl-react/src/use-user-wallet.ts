@@ -1,5 +1,6 @@
 import type { Address, WalletClient } from "viem";
 import { useConnection, useWalletClient } from "wagmi";
+import { useHyperliquid } from "./provider";
 
 export interface UseUserWalletResult {
 	address: Address | undefined;
@@ -9,13 +10,16 @@ export interface UseUserWalletResult {
 }
 
 export function useUserWallet(): UseUserWalletResult {
-	const { address, isConnected, isConnecting } = useConnection();
+	const { clientKey } = useHyperliquid();
+	const { isConnected, isConnecting } = useConnection();
 	const { data: walletClient } = useWalletClient();
+	const hasUserSession = clientKey !== "disconnected";
+	const address = hasUserSession ? (clientKey as Address) : undefined;
 
 	return {
 		address,
-		walletClient,
-		isConnected,
+		walletClient: hasUserSession ? walletClient : undefined,
+		isConnected: hasUserSession && isConnected,
 		isConnecting,
 	};
 }

@@ -64,6 +64,8 @@ msgstr "تغيّر 24h"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "24H VOL"
 msgstr "24H VOL"
 
@@ -92,13 +94,18 @@ msgstr "الحساب"
 msgid "Account and wallet"
 msgstr "الحساب والمحفظة"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "Account Balances"
-msgstr "أرصدة الحساب"
-
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Account Equity"
-msgstr "حقوق ملكية الحساب"
+#~ msgid "Account Equity"
+#~ msgstr "حقوق ملكية الحساب"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Account mode"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Account mode updated"
+msgstr ""
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
@@ -132,9 +139,14 @@ msgstr "إضافة"
 msgid "Add {0} to favorites"
 msgstr "إضافة {0} إلى المفضلة"
 
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
-msgid "Add funds"
-msgstr "إضافة أموال"
+#~ msgid "Add funds"
+#~ msgstr "إضافة أموال"
 
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Add to favorites"
@@ -144,9 +156,14 @@ msgstr "إضافة أموال"
 msgid "Add TP/SL"
 msgstr "إضافة TP/SL"
 
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
-#~ msgid "Advanced order types"
-#~ msgstr ""
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Advanced"
+msgstr ""
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Advanced order types"
+msgstr ""
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -179,7 +196,6 @@ msgstr "ALO (إضافة سيولة فقط)"
 
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Amount"
 msgstr "المبلغ"
@@ -208,6 +224,11 @@ msgstr "سيتم إلغاء أي جزء لا يُنفَّذ فورًا."
 msgid "Approve in wallet..."
 msgstr "وافق في المحفظة..."
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Arbitrum network switch was rejected."
+msgstr "تم رفض التبديل إلى شبكة Arbitrum."
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -215,6 +236,8 @@ msgstr "وافق في المحفظة..."
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/components/trade/tradebox/deposit/asset-select.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Asset"
 msgstr "الأصل"
 
@@ -222,15 +245,27 @@ msgstr "الأصل"
 #~ msgid "Assets"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Automatic USDC deposit failed"
+msgstr "فشل الإيداع التلقائي لـ USDC"
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 msgid "Available"
 msgstr "متاح"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}."
+msgstr "الرصيد المتاح {balance} USDC أقل من الحد الأدنى للإيداع. أرسل {minimumDeposit} على الأقل."
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Available funds are in Spot"
+msgstr "الأموال المتاحة في Spot"
 
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -258,7 +293,6 @@ msgstr "عاد الاتصال"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Balance"
 msgstr "الرصيد"
@@ -271,7 +305,6 @@ msgstr "الرصيد المتاح للتداول"
 #~ msgid "Balance:"
 #~ msgstr ""
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "الأرصدة"
@@ -310,6 +343,14 @@ msgstr "فشل الجسر"
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "قم بتحويل USDC من Arbitrum أو سلاسل أخرى إلى حساب Hyperliquid الخاص بك."
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
+msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Bridge2 rejected the USDC permit. Retrying automatically."
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Bridging in progress"
@@ -380,6 +421,7 @@ msgstr "شراء طويل"
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -437,25 +479,34 @@ msgstr "تغيير الرافعة المالية"
 msgid "Chart"
 msgstr "الرسم البياني"
 
-#: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard does not contain a pairing code."
-msgstr "لا تحتوي الحافظة على رمز اقتران."
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Checking..."
+#~ msgstr "جارٍ التحقق..."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
-msgstr "اللصق من الحافظة غير متاح. الصق من قائمة لوحة المفاتيح أو أدخل الرمز يدويًا."
+#~ msgid "Clipboard does not contain a pairing code."
+#~ msgstr "لا تحتوي الحافظة على رمز اقتران."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
-msgstr "تم حظر اللصق من الحافظة. الصق من قائمة لوحة المفاتيح أو أدخل الرمز يدويًا."
+#~ msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
+#~ msgstr "اللصق من الحافظة غير متاح. الصق من قائمة لوحة المفاتيح أو أدخل الرمز يدويًا."
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
+#~ msgstr "تم حظر اللصق من الحافظة. الصق من قائمة لوحة المفاتيح أو أدخل الرمز يدويًا."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Close"
 msgstr "إغلاق"
+
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Close navigation"
+msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Close position"
@@ -473,6 +524,10 @@ msgstr "جاري الإغلاق..."
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Collapse account panel"
 #~ msgstr "طي لوحة الحساب"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Collapse market details"
+msgstr ""
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Coming soon"
@@ -514,6 +569,10 @@ msgstr "أكّد المعاملة في محفظتك"
 #~ msgid "Confirmation screen coming in next slice"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+msgstr "تم التأكيد على Arbitrum. عادةً ما يصل رصيد Hyperliquid خلال دقيقة."
+
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Connect"
@@ -528,24 +587,24 @@ msgstr "أكّد المعاملة في محفظتك"
 #~ msgstr "قم بتوصيل المحفظة لإدارة المراكز."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same owner wallet used on desktop before importing phone access."
-msgstr "اربط نفس المحفظة المالكة المستخدمة على سطح المكتب قبل استيراد وصول الهاتف."
+#~ msgid "Connect the same owner wallet used on desktop before importing phone access."
+#~ msgstr "اربط نفس المحفظة المالكة المستخدمة على سطح المكتب قبل استيراد وصول الهاتف."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same wallet used on desktop before importing phone access."
-msgstr "اربط نفس المحفظة المستخدمة على سطح المكتب قبل استيراد وصول الهاتف."
+#~ msgid "Connect the same wallet used on desktop before importing phone access."
+#~ msgstr "اربط نفس المحفظة المستخدمة على سطح المكتب قبل استيراد وصول الهاتف."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same wallet used on desktop."
-msgstr "اربط نفس المحفظة المستخدمة على سطح المكتب."
+#~ msgid "Connect the same wallet used on desktop."
+#~ msgstr "اربط نفس المحفظة المستخدمة على سطح المكتب."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect to verify"
-msgstr "اتصل للتحقق"
+#~ msgid "Connect to verify"
+#~ msgstr "اتصل للتحقق"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect wallet"
-msgstr "ربط المحفظة"
+#~ msgid "Connect wallet"
+#~ msgstr "ربط المحفظة"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -577,15 +636,26 @@ msgstr "اربط محفظتك قبل إعادة تعيين وصول الهاتف
 msgid "Connect your wallet to bridge funds"
 msgstr "اربط محفظتك لتحويل الأموال عبر الجسر"
 
+#: src/components/trade/tradebox/deposit/shared-ui.tsx
+msgid "Connect your wallet to manage funds"
+msgstr "وصّل محفظتك لإدارة الأموال"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Connect your wallet to register a builder code"
 #~ msgstr ""
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Connect your wallet to send funds."
+msgstr "وصّل محفظتك لإرسال الأموال."
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Connect your wallet to start trading on Hyperliquid"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Connect your wallet to transfer funds."
+msgstr "وصّل محفظتك لتحويل الأموال."
+
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "اربط محفظتك لعرض الأرصدة."
@@ -625,8 +695,8 @@ msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "اربط محفظتك لعرض حسابك ومراكزك وبدء التداول."
 
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-msgid "Connect your wallet to withdraw funds"
-msgstr "اربط محفظتك لسحب الأموال"
+#~ msgid "Connect your wallet to withdraw funds"
+#~ msgstr "اربط محفظتك لسحب الأموال"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Connected"
@@ -653,7 +723,9 @@ msgid "Continue"
 msgstr "متابعة"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Copied"
 msgstr "تم النسخ"
 
@@ -674,8 +746,12 @@ msgid "Copy Address"
 msgstr "نسخ العنوان"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Copy code"
-msgstr "نسخ الرمز"
+#~ msgid "Copy code"
+#~ msgstr "نسخ الرمز"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Copy embedded wallet address"
+msgstr "نسخ عنوان المحفظة المضمنة"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Copy link"
@@ -685,9 +761,18 @@ msgstr "نسخ الرمز"
 msgid "Copy phone link"
 msgstr "نسخ رابط الهاتف"
 
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Copy token address"
+msgstr "نسخ عنوان الرمز"
+
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Could not create wallet"
 #~ msgstr "تعذر إنشاء المحفظة"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Could not create your embedded wallet. Please retry."
+#~ msgstr "تعذر إنشاء محفظتك المضمنة. يرجى إعادة المحاولة."
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Could not fetch your token balances"
@@ -698,8 +783,8 @@ msgid "Could not import phone access."
 msgstr "تعذّر استيراد وصول الهاتف."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not link mobile device."
-msgstr "تعذّر ربط الجهاز المحمول."
+#~ msgid "Could not link mobile device."
+#~ msgstr "تعذّر ربط الجهاز المحمول."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
@@ -730,9 +815,17 @@ msgstr "أنشئ وصولاً آمنًا للهاتف للتداول من هذا
 msgid "Created"
 msgstr "تم الإنشاء"
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Creating deposit wallet"
+#~ msgstr "جارٍ إنشاء محفظة الإيداع"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Creating link..."
 msgstr "جارٍ إنشاء الرابط..."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Creating your wallet. Please wait..."
+msgstr "جارٍ إنشاء محفظتك. يرجى الانتظار..."
 
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -750,8 +843,8 @@ msgid "Cross Leverage"
 msgstr "الرافعة المتقاطعة"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Cross Margin"
-msgstr "هامش المحفظة"
+#~ msgid "Cross Margin"
+#~ msgstr "هامش المحفظة"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Margin Ratio"
@@ -786,6 +879,7 @@ msgid "Default"
 msgstr "افتراضي"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -793,7 +887,8 @@ msgstr "افتراضي"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -801,9 +896,21 @@ msgstr "افتراضي"
 msgid "Deposit"
 msgstr "إيداع"
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Deposit address"
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Deposit address unavailable"
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit/amount-input.tsx
+msgid "Deposit amount"
+msgstr "المبلغ"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Deposit complete"
-msgstr "اكتمل الإيداع"
+#~ msgid "Deposit complete"
+#~ msgstr "اكتمل الإيداع"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
@@ -821,9 +928,36 @@ msgstr "فشل الإيداع"
 #~ msgid "Deposit on Hyperliquid"
 #~ msgstr "إيداع في Hyperliquid"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Deposit submitted"
+msgstr "تم إرسال الإيداع"
+
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
 msgstr "تم الإيداع بنجاح"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
+msgstr "تم بث معاملة الإيداع، لكن انتهت مهلة التأكيد. تحقق من Arbiscan قبل إعادة المحاولة."
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
+msgstr ""
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
+msgstr "تم إرسال معاملة الإيداع لكنها لم تُؤكَّد على Arbitrum. قد يكون رقم nonce في محفظتك غير متزامن مع الشبكة. امسح النشاط المعلّق أو أعد ضبط بيانات nonce في المحفظة، ثم أعد المحاولة."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Deposit USDC from Arbitrum"
+msgstr "إيداع USDC من Arbitrum"
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Depositing USDC to Hyperliquid..."
+msgstr "جارٍ إيداع USDC في Hyperliquid..."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -841,8 +975,13 @@ msgid "Destination"
 msgstr "الوجهة"
 
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
 msgstr "عنوان الوجهة"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
+#~ msgstr "تم رصد {balance} USDC. جارٍ الإيداع في Hyperliquid تلقائيًا..."
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Direct"
@@ -891,6 +1030,8 @@ msgstr "المستندات"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "تم"
 
@@ -905,6 +1046,10 @@ msgstr "يستخدم كل مركز الهامش المخصص له فقط. إذا
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "تعديل TP/SL"
+
+#: src/components/trade/header/user-menu.tsx
+#~ msgid "Embedded wallet is not ready. Try again in a moment."
+#~ msgstr "المحفظة المدمجة غير جاهزة. حاول مرة أخرى بعد قليل."
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enable"
@@ -947,12 +1092,12 @@ msgid "Enter size"
 msgstr "أدخل الحجم"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the 16-character pairing code."
-msgstr "أدخل رمز الاقتران المكوّن من 16 حرفًا."
+#~ msgid "Enter the 16-character pairing code."
+#~ msgstr "أدخل رمز الاقتران المكوّن من 16 حرفًا."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the desktop code"
-msgstr "أدخل رمز سطح المكتب"
+#~ msgid "Enter the desktop code"
+#~ msgstr "أدخل رمز سطح المكتب"
 
 #: src/lib/errors/definitions/tpsl.ts
 msgid "Enter TP or SL price"
@@ -1000,7 +1145,7 @@ msgstr "الربح/الخسارة التقديري عند السعر المحد�
 #~ msgstr ""
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Estimated time"
 msgstr "الوقت المقدّر"
@@ -1021,6 +1166,10 @@ msgstr "التنفيذ"
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Expand account panel"
 #~ msgstr "توسيع لوحة الحساب"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Expand market details"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAtLabel}"
@@ -1056,6 +1205,10 @@ msgstr "فشل إغلاق المركز"
 msgid "Failed to copy"
 msgstr "فشل النسخ"
 
+#: src/components/trade/header/user-menu.tsx
+#~ msgid "Failed to create embedded wallet or open deposit flow"
+#~ msgstr "تعذر إنشاء المحفظة المدمجة أو فتح مسار الإيداع"
+
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to enable trading"
@@ -1069,7 +1222,6 @@ msgstr "فشل تفعيل التداول"
 msgid "Failed to load balances"
 msgstr "فشل تحميل الأرصدة"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Failed to load balances."
 msgstr "فشل في تحميل الأرصدة."
@@ -1112,6 +1264,10 @@ msgstr "فشل في تحميل الصفقات."
 #~ msgid "Failed to load TWAP history."
 #~ msgstr "فشل في تحميل سجل TWAP."
 
+#: src/components/trade/header/user-menu.tsx
+#~ msgid "Failed to open deposit flow"
+#~ msgstr "تعذر فتح مسار الإيداع"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Failed to place limit close order"
 msgstr "فشل وضع أمر إغلاق محدد"
@@ -1128,6 +1284,11 @@ msgstr "فشل عكس المركز"
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Failed to switch margin mode"
 #~ msgstr ""
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Failed to update account mode"
+msgstr ""
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
@@ -1185,7 +1346,6 @@ msgid "Frequency"
 msgstr "التكرار"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "From"
 msgstr "من"
 
@@ -1202,8 +1362,14 @@ msgid "Funding"
 msgstr "التمويل"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "FUNDING"
 msgstr "FUNDING"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Funding chain"
+msgstr "شبكة الإيداع"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/config/trade.ts
@@ -1213,6 +1379,10 @@ msgstr "سجل التمويل"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding Payments"
 #~ msgstr "مدفوعات التمويل"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Funds are in Spot account"
+msgstr "الأموال في حساب Spot"
 
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1248,7 +1418,6 @@ msgstr "GTC (ساري حتى الإلغاء)"
 msgid "H"
 msgstr "H"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr "إخفاء الصغيرة"
@@ -1262,10 +1431,23 @@ msgstr "HIP-3"
 msgid "Hour(s)"
 msgstr "ساعة/ساعات"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
+msgstr "المعدل الساعي الذي يدفعه أصحاب المراكز الطويلة لأصحاب المراكز القصيرة (إذا كان سالبًا، يدفع أصحاب المراكز القصيرة لأصحاب المراكز الطويلة). لا توجد رسوم مرتبطة بالتمويل؛ فهو تحويل مباشر بين المستخدمين لدفع السعر نحو السعر الفوري. راجع الوثائق للمزيد من التفاصيل."
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
 msgstr "استيراد وصول الهاتف"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
+msgstr ""
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+msgstr "مهم: يمكن لهذا العنوان استقبال USDC الأصلي على Arbitrum فقط. لا ترسل USDC.e أو أصولاً من شبكات أخرى. الحد الأدنى للإيداع هو {minimumDeposit}."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Importing..."
@@ -1318,6 +1500,10 @@ msgstr "أموال غير كافية لرسوم الغاز"
 msgid "Invalid amount"
 msgstr "مبلغ غير صالح"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Invalid destination address"
+msgstr "عنوان الوجهة غير صالح"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Invalid Ethereum address"
 #~ msgstr ""
@@ -1364,6 +1550,7 @@ msgstr "الرافعة المالية"
 #~ msgstr "محدد"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
@@ -1416,6 +1603,7 @@ msgstr "سعر التصفية"
 msgid "Liquidated"
 msgstr "تمت التصفية"
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "جارٍ التحميل"
@@ -1460,7 +1648,9 @@ msgstr "جارٍ تحميل أوامر TWAP..."
 msgid "Loading wallet..."
 msgstr "جاري تحميل المحفظة..."
 
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/config/ui-text.ts
+#: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
@@ -1561,6 +1751,8 @@ msgstr "الهامش المطلوب"
 msgid "Margin Used"
 msgstr "الهامش المستخدم"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Mark"
@@ -1575,6 +1767,10 @@ msgstr "السعر المرجعي"
 msgid "Mark Price"
 msgstr "سعر العلامة"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details."
+msgstr "سعر العلامة: يُستخدم لحسابات الهامش، والأرباح والخسائر غير المحققة، والتصفية، وتشغيل أوامر جني الربح/إيقاف الخسارة. سعر الأوراكل: سعر مرجعي لمدفوعات التمويل. راجع وثائق ناشر HIP-3 للمزيد من التفاصيل."
+
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -1588,8 +1784,14 @@ msgstr "سعر العلامة"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
 msgstr "السوق"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Market Cap"
+msgstr "القيمة السوقية"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Market Close"
@@ -1612,7 +1814,6 @@ msgid "markets"
 msgstr "أسواق"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/nav.tsx
 msgid "Markets"
 msgstr "الأسواق"
@@ -1622,6 +1823,7 @@ msgstr "الأسواق"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 msgid "Max"
 msgstr "الأقصى"
 
@@ -1661,7 +1863,7 @@ msgstr "أدنى أمر ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "الحد الأدنى $10"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Minimum"
 msgstr "الحد الأدنى"
 
@@ -1691,6 +1893,10 @@ msgstr "دقيقة/دقائق"
 #~ msgid "Mock Wallet (Testing)"
 #~ msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Mode"
+msgstr ""
+
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More"
 #~ msgstr "المزيد"
@@ -1698,6 +1904,12 @@ msgstr "دقيقة/دقائق"
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "More details"
 msgstr "مزيد من التفاصيل"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "More Info"
+msgstr "مزيد من المعلومات"
 
 #: src/components/trade/chart/kline-toolbar.tsx
 msgid "More intervals"
@@ -1719,15 +1931,19 @@ msgstr "نقل USDC بين حسابي Perp وSpot الخاصين بك."
 #~ msgid "Must be signed by main wallet (not agent/API wallet)"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Net received"
 msgstr "الصافي المستلم"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Network"
 msgstr "الشبكة"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Network fee"
 msgstr "رسوم الشبكة"
@@ -1766,6 +1982,7 @@ msgstr "لا توجد أوامر TWAP نشطة."
 msgid "No balance"
 msgstr "لا يوجد رصيد"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/lib/errors/format.ts
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "لا يوجد رصيد على Hyperliquid. أودع أولاً."
@@ -1774,7 +1991,6 @@ msgstr "لا يوجد رصيد على Hyperliquid. أودع أولاً."
 msgid "No balances found"
 msgstr "لم يُعثر على أرصدة"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "لم يتم العثور على أرصدة. أودع أموالاً لبدء التداول."
@@ -1820,6 +2036,9 @@ msgid "No order history found."
 msgstr "لم يُعثر على سجل أوامر."
 
 #: src/hooks/trade/use-order-submit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "No response from exchange"
 msgstr "لا توجد استجابة من المنصة"
 
@@ -1856,8 +2075,8 @@ msgstr "لا يوجد زوج تداول متاح لـ <0/>/<1/>"
 #~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "No wallet connected"
-msgstr "لا توجد محفظة متصلة"
+#~ msgid "No wallet connected"
+#~ msgstr "لا توجد محفظة متصلة"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No wallets found"
@@ -1914,6 +2133,7 @@ msgid "Open command menu"
 msgstr "فتح قائمة الأوامر"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "OPEN INT"
 msgstr "OPEN INT"
 
@@ -1922,7 +2142,12 @@ msgstr "OPEN INT"
 msgid "Open Interest"
 msgstr "العقود المفتوحة"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Open navigation"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "الأوامر المفتوحة"
@@ -1936,8 +2161,17 @@ msgid "Open terminal"
 msgstr "فتح الطرفية"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Open the phone link, then enter the pairing code shown on desktop."
-msgstr "افتح رابط الهاتف، ثم أدخل رمز الاقتران الظاهر على سطح المكتب."
+#~ msgid "Open the phone link and connect the same wallet you use on desktop to import."
+#~ msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "Open the phone link, then enter the pairing code shown on desktop."
+#~ msgstr "افتح رابط الهاتف، ثم أدخل رمز الاقتران الظاهر على سطح المكتب."
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Open token in explorer"
+msgstr "فتح الرمز في المستكشف"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open wallet"
@@ -1952,6 +2186,7 @@ msgstr "افتح رابط الهاتف، ثم أدخل رمز الاقتران �
 #~ msgstr ""
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/config/ui-text.ts
 msgid "ORACLE"
 msgstr "أوراكل"
@@ -1990,6 +2225,10 @@ msgstr "قائمة الأوامر"
 msgid "Order submitted"
 msgstr "تم إرسال الأمر"
 
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Order type"
+msgstr ""
+
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
@@ -2010,8 +2249,8 @@ msgid "orders"
 msgstr "أوامر"
 
 #: src/config/trade.ts
-msgid "Orders"
-msgstr "الأوامر"
+#~ msgid "Orders"
+#~ msgstr "الأوامر"
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -2028,8 +2267,8 @@ msgid "Owner account"
 msgstr "حساب المالك"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Owner wallet"
-msgstr "محفظة المالك"
+#~ msgid "Owner wallet"
+#~ msgstr "محفظة المالك"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "P&L"
@@ -2050,16 +2289,16 @@ msgstr "تُعاد تحميل الصفحة عند التغيير"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code"
-msgstr "رمز الاقتران"
+#~ msgid "Pairing code"
+#~ msgstr "رمز الاقتران"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code does not match this link."
-msgstr "رمز الاقتران لا يطابق هذا الرابط."
+#~ msgid "Pairing code does not match this link."
+#~ msgstr "رمز الاقتران لا يطابق هذا الرابط."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Paste code"
-msgstr "لصق الرمز"
+#~ msgid "Paste code"
+#~ msgstr "لصق الرمز"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Paste link from desktop"
@@ -2093,22 +2332,36 @@ msgstr "قيد الانتظار"
 msgid "Perp"
 msgstr "Perp"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Perpetuals"
 msgstr "العقود الدائمة"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Perps"
-msgstr "العقود الدائمة"
+#~ msgid "Perps"
+#~ msgstr "العقود الدائمة"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Perps / Spot"
+msgstr "Perps / Spot"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
 msgstr "حساب Perps"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Perps Equity"
+msgstr "حقوق عقود Perps"
+
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
 msgstr "نظرة عامة على Perps"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Perps Withdrawable"
+msgstr "قابل للسحب من Perps"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -2121,6 +2374,10 @@ msgstr "وصول الهاتف جاهز"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Phone access reset. The replacement key expires at {expiresAtLabel}."
 msgstr "تمت إعادة تعيين وصول الهاتف. ينتهي المفتاح البديل في {expiresAtLabel}."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Phone import"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone link"
@@ -2152,12 +2409,17 @@ msgid "Placed"
 msgstr "تم الوضع"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Platform"
 msgstr "المنصة"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Please enter an address"
 #~ msgstr ""
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Please wait while Privy creates your embedded wallet."
+#~ msgstr "يرجى الانتظار بينما ينشئ Privy محفظتك المضمنة."
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2173,9 +2435,19 @@ msgstr "الربح والخسارة"
 #~ msgid "Popular"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Portfolio"
 msgstr "المحفظة"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Portfolio Margin"
+msgstr "هامش المحفظة"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Portfolio Value"
+msgstr "قيمة المحفظة"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2219,6 +2491,14 @@ msgstr "مراكز"
 msgid "Positions"
 msgstr "المراكز"
 
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Preparing automatic USDC deposit..."
+msgstr "جارٍ تحضير إيداع USDC تلقائي..."
+
+#: src/components/trade/header/user-menu.tsx
+#~ msgid "Preparing deposit..."
+#~ msgstr "جارٍ تحضير الإيداع..."
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."
 msgstr "جارٍ تجهيز عرض السعر..."
@@ -2250,6 +2530,10 @@ msgstr "السعر"
 msgid "Price grouping"
 msgstr "تجميع الأسعار"
 
+#: src/components/trade/mobile/mobile-bottom-nav.tsx
+msgid "Primary navigation"
+msgstr ""
+
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Privacy Policy"
 msgstr "سياسة الخصوصية"
@@ -2264,10 +2548,10 @@ msgid "Processing"
 msgstr "جارٍ المعالجة"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Processing deposit"
-msgstr "جارٍ معالجة الإيداع"
+#~ msgid "Processing deposit"
+#~ msgstr "جارٍ معالجة الإيداع"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Processing..."
 msgstr "جارٍ المعالجة..."
@@ -2295,8 +2579,12 @@ msgid "Rate"
 msgstr "المعدل"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Ready"
-msgstr "جاهز"
+#~ msgid "Ready"
+#~ msgstr "جاهز"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Ready to import"
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -2305,6 +2593,14 @@ msgstr "جاهز"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"
 msgstr "الصفقات الأخيرة"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Reconnect or refresh after your embedded wallet is ready."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Reconnect wallet"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Recovered after reload. Expires {expiresAtLabel}."
@@ -2361,6 +2657,7 @@ msgid "Reset phone access"
 msgstr "إعادة تعيين وصول الهاتف"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "تُعاد التعيين خلال"
 
@@ -2368,12 +2665,17 @@ msgstr "تُعاد التعيين خلال"
 msgid "Resetting..."
 msgstr "جارٍ إعادة التعيين..."
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Retry"
 msgstr "إعادة المحاولة"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Retry wallet creation"
+#~ msgstr "إعادة محاولة إنشاء المحفظة"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
@@ -2403,10 +2705,10 @@ msgid "Runtime"
 msgstr "مدة التشغيل"
 
 #: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "كان رابط الهاتف المحفوظ غير صالح. الصق الرابط مجدداً."
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Scale"
 msgstr "تدرّج"
@@ -2517,6 +2819,13 @@ msgstr "اختر الرموز للمبادلة"
 msgid "selected"
 msgstr "محدد"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
+msgstr "المحفظة المحددة لا تطابق الحساب المتصل. أعد توصيل المحفظة ثم أعد المحاولة."
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
 #~ msgstr "بيع"
@@ -2531,7 +2840,6 @@ msgstr "بيع"
 msgid "Sell Short"
 msgstr "بيع قصير"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send"
@@ -2541,6 +2849,10 @@ msgstr "إرسال"
 msgid "Send failed"
 msgstr "فشل الإرسال"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Send native USDC to this address. It will be deposited to Hyperliquid automatically."
+#~ msgstr "أرسل USDC الأصلي إلى هذا العنوان. سيتم إيداعه في Hyperliquid تلقائيًا."
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "إرسال الرموز"
@@ -2549,13 +2861,37 @@ msgstr "إرسال الرموز"
 msgid "Send tokens to another account on the Hyperliquid L1."
 msgstr "أرسل الرموز إلى حساب آخر على Hyperliquid L1."
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Send USDC on Arbitrum One to this address."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Send USDC on Arbitrum One to this address. It will be deposited to Hyperliquid automatically."
+#~ msgstr "أرسل USDC على Arbitrum One إلى هذا العنوان. سيتم إيداعه تلقائيًا في Hyperliquid."
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
 msgstr "جارٍ الإرسال..."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "sent to Hyperliquid"
-msgstr "تم الإرسال إلى Hyperliquid"
+#~ msgid "sent to Hyperliquid"
+#~ msgstr "تم الإرسال إلى Hyperliquid"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Separate"
+msgstr ""
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Separate Account"
+msgstr ""
+
+#: src/components/trade/tradebox/account-panel.tsx
+#~ msgid "Separate Account Balances"
+#~ msgstr "أرصدة الحسابات المنفصلة"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Separate Accounts"
+msgstr "حسابات منفصلة"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Set"
@@ -2587,6 +2923,7 @@ msgstr "تعيين إلى {p}%"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
 msgid "Settings"
 msgstr "الإعدادات"
@@ -2734,9 +3071,24 @@ msgstr "الانزلاق"
 msgid "Slippage tolerance"
 msgstr "حدّ تحمّل الانزلاق السعري"
 
-#: src/lib/errors.ts
-#~ msgid "Something went wrong"
-#~ msgstr "حدث خطأ ما"
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Smart wallet client not ready"
+msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#~ msgid "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Smart wallet deposits are not enabled for this network."
+msgstr "إيداعات المحفظة الذكية غير مفعلة لهذه الشبكة."
+
+#: src/components/trade/chart/tradingview-chart.tsx
+msgid "Something went wrong"
+msgstr "حدث خطأ ما"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
@@ -2770,11 +3122,9 @@ msgstr "المصدر"
 #~ msgstr "فوري"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/nav.tsx
 msgid "Spot"
 msgstr "فوري"
@@ -2782,6 +3132,10 @@ msgstr "فوري"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Spot Account"
 msgstr "حساب Spot"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Spot Available"
+msgstr "المتاح في Spot"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
@@ -2817,7 +3171,6 @@ msgstr "الحالة"
 #~ msgid "Stop"
 #~ msgstr "إيقاف"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Limit"
 msgstr "Stop Limit"
@@ -2827,7 +3180,6 @@ msgstr "Stop Limit"
 msgid "Stop Loss"
 msgstr "وقف الخسارة"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Market"
 msgstr "Stop Market"
@@ -2855,7 +3207,6 @@ msgstr "الدعم"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
@@ -2929,6 +3280,7 @@ msgstr "التبديل إلى سوق {displayName}، مركز Long"
 msgid "Switch to {displayName} market, short position"
 msgstr "التبديل إلى سوق {displayName}، مركز Short"
 
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
@@ -3049,8 +3401,16 @@ msgid "This mobile link expired."
 msgstr "انتهت صلاحية رابط الجوال هذا."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This phone link is not approved on Hyperliquid."
-msgstr "رابط الهاتف هذا غير معتمد على Hyperliquid."
+msgid "This mobile link is damaged or incomplete. Scan or paste it again."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This phone link belongs to a different owner account."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "This phone link is not approved on Hyperliquid."
+#~ msgstr "رابط الهاتف هذا غير معتمد على Hyperliquid."
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
@@ -3082,15 +3442,17 @@ msgstr "مدة سريان الأمر"
 msgid "To"
 msgstr "إلى"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr "إلى Perp"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr "إلى Spot"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Toggle display units"
+msgstr ""
 
 #: src/components/ui/sidebar.tsx
 #: src/components/ui/sidebar.tsx
@@ -3103,10 +3465,9 @@ msgid "Toggle size mode"
 msgstr "تبديل وضع الحجم"
 
 #: src/components/trade/market-overview.tsx
-msgid "TOKEN"
-msgstr "TOKEN"
+#~ msgid "TOKEN"
+#~ msgstr "TOKEN"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -3168,6 +3529,7 @@ msgstr "تداول"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Trade History"
 msgstr "سجل التداول"
 
@@ -3182,7 +3544,6 @@ msgstr "صفقات"
 
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/config/trade.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "الصفقات"
@@ -3197,6 +3558,10 @@ msgstr "التداول"
 msgid "Trading is not available in your region"
 msgstr "التداول غير متاح في منطقتك"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Trading key"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading key approved"
 msgstr "تمت الموافقة على مفتاح التداول"
@@ -3209,6 +3574,15 @@ msgstr "TradingView"
 msgid "Transaction breakdown"
 msgstr "تفاصيل المعاملة"
 
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Transaction reverted on Arbitrum"
+msgstr ""
+
+#: src/lib/errors/format.ts
+msgid "Transaction was not broadcast. Please retry."
+msgstr "لم يتم بث المعاملة. يرجى إعادة المحاولة."
+
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
 msgstr "تم رفض المعاملة"
@@ -3218,6 +3592,10 @@ msgstr "تم رفض المعاملة"
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 msgid "Transfer"
 msgstr "تحويل"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfer between Perps and Spot"
+msgstr ""
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
@@ -3234,6 +3612,12 @@ msgstr "تحويل USDC"
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transferring..."
 msgstr "جارٍ التحويل..."
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfers between Spot and Perps are unavailable in unified account mode."
+msgstr "لا تتوفر التحويلات بين Spot وPerps في وضع الحساب الموحد."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -3259,7 +3643,6 @@ msgstr "حاول مرة أخرى"
 msgid "Try Again"
 msgstr "حاول مرة أخرى"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/lib/trade/order-types.ts
@@ -3278,6 +3661,10 @@ msgstr "قيمة أمر TWAP صغيرة جدًا. الحد الأدنى ${min}،
 msgid "TWAP Orders"
 msgstr "أوامر TWAP"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Two-sided open interest: the sum of long and short positions on this contract."
+msgstr "الفائدة المفتوحة ثنائية الجانب: مجموع المراكز الطويلة والقصيرة على هذا العقد."
+
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -3294,13 +3681,51 @@ msgstr "النوع"
 #~ msgid "Unable to close position."
 #~ msgstr "تعذر إغلاق المركز."
 
+#: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to load Arbitrum USDC balance"
+msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to prepare USDC permit"
+msgstr ""
+
+#. placeholder {0}: config.chainName
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
+msgstr ""
+
 #: src/lib/errors/format.ts
+msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
+msgstr "تعذّر تبديل المحفظة إلى Arbitrum. بدّل الشبكة من داخل المحفظة ثم أعد المحاولة."
+
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Unified"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Unified Account"
+msgstr "حساب موحّد"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
 msgstr "خطأ غير معروف"
 
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "رمز غير معروف: {symbolName}"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unlock your wallet and try again."
+msgstr "افتح قفل محفظتك ثم أعد المحاولة."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -3341,6 +3766,18 @@ msgstr "القيمة بالدولار"
 msgid "USDC"
 msgstr "USDC"
 
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "USDC deposit submitted to Hyperliquid"
+msgstr "تم إرسال إيداع USDC إلى Hyperliquid"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "USDC received. Depositing to Hyperliquid..."
+#~ msgstr "تم استلام USDC. جارٍ الإيداع في Hyperliquid..."
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "USDC will be sent to this Arbitrum address."
+msgstr "سيتم إرسال USDC إلى عنوان Arbitrum هذا."
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Use a different phone link"
 msgstr "استخدم رابط هاتف مختلف"
@@ -3350,7 +3787,6 @@ msgid "Use phone link"
 msgstr "استخدم رابط الهاتف"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/routes/mobile-agent-sync.tsx
 msgid "Using"
 msgstr "قيد الاستخدام"
 
@@ -3383,6 +3819,18 @@ msgstr "الحجم"
 #~ msgid "waiting"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Waiting for at least 5 USDC to arrive."
+#~ msgstr "بانتظار وصول 5 USDC على الأقل."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Waiting for chain confirmation"
+msgstr "بانتظار التأكيد على الشبكة"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Waiting for native USDC to arrive on Arbitrum."
+#~ msgstr "بانتظار وصول USDC الأصلي على Arbitrum."
+
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Waiting for order book..."
@@ -3397,15 +3845,61 @@ msgstr "في انتظار الصفقات..."
 msgid "Wallet ({0})"
 msgstr "المحفظة ({0})"
 
-#: src/hooks/hyperliquid/use-trading-agent.ts
-#~ msgid "Wallet client not ready"
-#~ msgstr "عميل المحفظة غير جاهز"
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet client not ready"
+msgstr "عميل المحفظة غير جاهز"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
+msgstr "فشل الاتصال بالمحفظة. افتح قفل المحفظة ووافق على الاتصال ثم أعد المحاولة."
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection request was rejected."
+msgstr "تم رفض طلب الاتصال بالمحفظة."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Wallet connection unavailable"
+msgstr ""
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
+msgstr "لم تُرجع المحفظة تجزئة معاملة. تحقق من نشاط المحفظة قبل إعادة المحاولة لتجنب إرسال الإيداع مرتين."
+
+#. placeholder {0}: config.chainName
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
+msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+#~ msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
+#~ msgstr "المحفظة غير متصلة بشبكة Arbitrum. بدّل الشبكة من داخل المحفظة ثم أعد المحاولة."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "المحفظة غير متصلة"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
+msgstr "أعادت المحفظة تجزئة معاملة، لكنها غير ظاهرة على Arbitrum بعد. تحقق من نشاط المحفظة أو Arbiscan قبل إعادة المحاولة لتجنب إرسال الإيداع مرتين."
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Wallet USDC"
+#~ msgstr "USDC في المحفظة"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect pairing ready"
@@ -3446,6 +3940,14 @@ msgstr "ستصل خلال {0}"
 msgid "Withdraw"
 msgstr "سحب"
 
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdraw to Arbitrum"
+msgstr "السحب إلى Arbitrum"
+
+#: src/components/trade/tradebox/account-panel.tsx
+#~ msgid "Withdrawable"
+#~ msgstr "قابل للسحب"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"
 msgstr "فشل السحب"
@@ -3455,8 +3957,8 @@ msgid "Withdrawal submitted"
 msgstr "تم إرسال السحب"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-msgid "Wrong network"
-msgstr "شبكة خاطئة"
+#~ msgid "Wrong network"
+#~ msgstr "شبكة خاطئة"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Wrong QR type"

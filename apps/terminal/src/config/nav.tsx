@@ -4,6 +4,8 @@ import { Trans } from "@lingui/react/macro";
 import type { Icon } from "@phosphor-icons/react";
 import { ChartBarIcon, CurrencyCircleDollarIcon, TrendUpIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
+import { getTradePathForMarketName } from "@/lib/hyperliquid/market-route";
+import { DEFAULT_SELECTED_MARKETS } from "./markets";
 
 export type MobileTab = "markets" | "trade" | "account";
 
@@ -38,19 +40,19 @@ export const SCOPE_NAV_ITEMS: readonly ScopeNavItem[] = [
 	{
 		scope: "perp",
 		label: <Trans>Perp</Trans>,
-		to: "/perp",
+		to: getTradePathForMarketName(DEFAULT_SELECTED_MARKETS.perp),
 		activeClass: "text-scope-perp font-medium bg-scope-perp/10",
 	},
 	{
 		scope: "spot",
 		label: <Trans>Spot</Trans>,
-		to: "/spot",
+		to: getTradePathForMarketName(DEFAULT_SELECTED_MARKETS.spot),
 		activeClass: "text-scope-spot font-medium bg-scope-spot/10",
 	},
 	{
 		scope: "builders-perp",
 		label: <Trans>HIP-3</Trans>,
-		to: "/builders-perp",
+		to: getTradePathForMarketName(DEFAULT_SELECTED_MARKETS["builders-perp"]),
 		activeClass: "text-scope-builders font-medium bg-scope-builders/10",
 	},
 ] as const;

@@ -63,8 +63,7 @@ let activationSeq = 0;
  * catalog — callers must handle it (and keep the previous locale).
  *
  * Returns `true` only when THIS call actually activated + persisted `locale`; returns `false` if a
- * newer switch superseded it (rapid switching) or persistence failed. Switchers reload the page only
- * on `true`, so a stale/superseded request never reloads into the wrong language.
+ * newer switch superseded it (rapid switching) or persistence failed.
  */
 export async function dynamicActivate(locale: string): Promise<boolean> {
 	const seq = ++activationSeq;

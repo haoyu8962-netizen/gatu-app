@@ -8,8 +8,10 @@ Wants=network-online.target
 Type=simple
 User=gatu
 Group=gatu
-# Run the self-contained Nitro node-server output (proven to need no monorepo deps).
-WorkingDirectory=/opt/gatu/repo/apps/terminal/.output
+# Run the immutable Nitro release pointed to by /opt/gatu/current. The deploy
+# script builds in the repo, copies .output to /opt/gatu/releases/<stamp>-<sha>,
+# then atomically switches this symlink before restarting the service.
+WorkingDirectory=/opt/gatu/current
 # Runtime-only env: PORT, HOST, IPDATA_API_KEY. NOT the VITE_* vars (those are baked
 # into the client bundle at build time and are not read here).
 EnvironmentFile=/opt/gatu/shared/.env.runtime

@@ -1,6 +1,5 @@
 import type { Address, Hex } from "viem";
 import { type PrivateKeyAccount, privateKeyToAccount } from "viem/accounts";
-import { useConnection } from "wagmi";
 import { LRU } from "../lru";
 import { useHyperliquid } from "../provider";
 import { useAgentWalletStorage } from "./agent-storage";
@@ -30,8 +29,8 @@ export interface UseAgentWalletResult {
 }
 
 export function useAgentWallet(): UseAgentWalletResult {
-	const { env } = useHyperliquid();
-	const { address: userAddress } = useConnection();
+	const { env, clientKey } = useHyperliquid();
+	const userAddress = clientKey === "disconnected" ? undefined : (clientKey as Address);
 	const { isReady } = useAgentStatus();
 
 	const agentWallet = useAgentWalletStorage(env, userAddress);

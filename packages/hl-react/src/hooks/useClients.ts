@@ -1,5 +1,5 @@
 import type { ExchangeClient, InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
-import { useConnection, useWalletClient } from "wagmi";
+import { useWalletClient } from "wagmi";
 import { createExchangeClient, getTradingClient } from "../clients";
 import { useHyperliquid } from "../provider";
 import { useAgentWallet } from "../signing/use-agent-wallet";
@@ -15,18 +15,19 @@ export interface HyperliquidClients {
 }
 
 export function useHyperliquidClients(): HyperliquidClients {
-	const { info, subscription, isTestnet } = useHyperliquid();
+	const { info, subscription, isTestnet, clientKey, sessionMode } = useHyperliquid();
 	const { signer, isReady: agentReady } = useAgentWallet();
-	const { address } = useConnection();
 	const { data: walletClient } = useWalletClient();
+	const hasUserSession = clientKey !== "disconnected";
+	const address = hasUserSession ? (clientKey as `0x${string}`) : undefined;
 
 	const trading = (() => {
-		if (!signer || !agentReady) return null;
+		if (!hasUserSession || !signer || !agentReady) return null;
 		return getTradingClient(signer, isTestnet);
 	})();
 
 	const user = (() => {
-		if (!walletClient || !address) return null;
+		if (sessionMode !== "wallet" || !walletClient || !address) return null;
 		const wallet = toHyperliquidWallet(walletClient, address);
 		if (!wallet) return null;
 		return createExchangeClient(wallet, isTestnet, `user:${isTestnet}:${address.toLowerCase()}`);

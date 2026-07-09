@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useConnection } from "wagmi";
 import { DEFAULT_MAX_LEVERAGE } from "@/config/trade";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import {
 	getMarketCapabilities,
 	useExchange,
@@ -46,7 +46,7 @@ function getDefaultLeverage(maxLeverage: number): number {
 }
 
 export function useAssetLeverage(): UseAssetLeverageReturn {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const { data: market } = useSelectedMarketInfo();
 
 	const storedMarginMode = useMarginMode();

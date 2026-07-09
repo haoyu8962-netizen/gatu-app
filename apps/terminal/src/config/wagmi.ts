@@ -3,6 +3,7 @@ import type { Chain } from "viem";
 import { http } from "wagmi";
 import {
 	arbitrum,
+	arbitrumSepolia,
 	aurora,
 	avalanche,
 	base,
@@ -22,11 +23,11 @@ import {
 	scroll,
 	zkSync,
 } from "wagmi/chains";
-import type { MockWalletConfig } from "@/lib/wallet-utils";
 
 // All chains supported for LiFi bridging — wagmi requires these upfront
-const BRIDGE_CHAINS = [
+export const BRIDGE_CHAINS = [
 	arbitrum,
+	arbitrumSepolia,
 	mainnet,
 	polygon,
 	optimism,
@@ -68,14 +69,3 @@ export const config = createConfig({
 	chains: BRIDGE_CHAINS,
 	transports: BRIDGE_TRANSPORTS,
 });
-
-// Retained as data for the dev-only mock wallet section in wallet-modal.tsx. With Privy
-// driving connectors these are no longer registered as wagmi connectors.
-export const MOCK_WALLETS: MockWalletConfig[] = import.meta.env.DEV
-	? [
-			{
-				name: "Mock Wallet",
-				address: "0x5b5d51203a0f9079f8aeb098a6523a13f298c060",
-			},
-		]
-	: [];

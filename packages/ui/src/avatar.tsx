@@ -47,27 +47,44 @@ const iconSizes: Record<string, number> = {
 
 interface AvatarProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof avatarVariants> {
 	src?: string;
+	fallbackSrcs?: string[];
 	alt?: string;
 	initials?: string;
 	status?: AvatarStatus;
 }
 
 const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(
-	({ className, size: sizeProp, src, alt, initials, status, ...props }, ref) => {
+	({ className, size: sizeProp, src, fallbackSrcs, alt, initials, status, ...props }, ref) => {
 		const size = sizeProp ?? DEFAULT_SIZE;
+		const fallbackKey = fallbackSrcs?.join("\0") ?? "";
+		const imageSources = Array.from(
+			new Set([src, ...(fallbackSrcs ?? [])].filter((source): source is string => !!source)),
+		);
+		const [imgIndex, setImgIndex] = React.useState(0);
 		const [imgError, setImgError] = React.useState(false);
 		React.useEffect(() => {
+			void src;
+			void fallbackKey;
+			setImgIndex(0);
 			setImgError(false);
-		}, [src]);
-		const showImage = src && !imgError;
+		}, [src, fallbackKey]);
+		const imageSrc = imageSources[imgIndex];
+		const showImage = imageSrc && !imgError;
 		const showInitials = !showImage && initials;
 		const showIcon = !showImage && !initials;
+		const handleImageError = () => {
+			if (imgIndex < imageSources.length - 1) {
+				setImgIndex((index) => index + 1);
+				return;
+			}
+			setImgError(true);
+		};
 
 		return (
 			<div className={cn(avatarVariants({ size, className }))} ref={ref} {...props}>
 				<div className="size-full rounded-full overflow-hidden flex items-center justify-center">
 					{showImage && (
-						<img src={src} alt={alt || ""} className="size-full object-cover" onError={() => setImgError(true)} />
+						<img src={imageSrc} alt={alt || ""} className="size-full object-cover" onError={handleImageError} />
 					)}
 					{showInitials && (
 						<div

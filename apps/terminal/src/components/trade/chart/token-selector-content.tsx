@@ -2,6 +2,7 @@ import { Button, SearchInput, TableHead, TableHeader, TableRow, tableVariants } 
 import { t } from "@lingui/core/macro";
 import { ArrowDownIcon, ArrowsDownUpIcon, ArrowUpIcon } from "@phosphor-icons/react";
 import { flexRender } from "@tanstack/react-table";
+import type { ChangeEvent } from "react";
 import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
@@ -36,8 +37,6 @@ function SortIcon({ columnId, sorting }: { columnId: string; sorting: { id: stri
 interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	scope: MarketScope;
-	exchangeScope: string;
-	exchangeDex: string | undefined;
 	subcategory: string;
 	subcategories: { value: string; label: string }[];
 	search: string;
@@ -63,8 +62,6 @@ interface Props {
 export function TokenSelectorContent({
 	selectedMarket,
 	scope,
-	exchangeScope,
-	exchangeDex,
 	subcategory,
 	subcategories,
 	search,
@@ -95,8 +92,8 @@ export function TokenSelectorContent({
 		{ value: "spot", label: t`Spot` },
 		{ value: "hip3", label: t`HIP-3` },
 	];
-	const showScopeTabs = exchangeScope === "all";
-	const showSubcategoryTabs = !exchangeDex && subcategories.length > 0;
+	const showScopeTabs = true;
+	const showSubcategoryTabs = subcategories.length > 0;
 	const showSelectorFilters = showScopeTabs || showSubcategoryTabs;
 
 	return (
@@ -108,7 +105,7 @@ export function TokenSelectorContent({
 				<SearchInput
 					placeholder={t`Search markets...`}
 					value={search}
-					onChange={(e) => setSearch(e.target.value)}
+					onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
 					onClear={() => setSearch("")}
 					size={mobile ? "md" : "sm"}
 					aria-labelledby={headingId}

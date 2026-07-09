@@ -33,21 +33,23 @@ export function PriceInputWithPercent({
 	referencePrice,
 }: Props) {
 	return (
-		<div className="space-y-1.5">
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-1.5">
+		<div className="min-w-0 space-y-1.5">
+			<div className="flex min-w-0 items-center justify-between gap-2">
+				<div className="flex min-w-0 items-center gap-1.5">
 					<FieldLabel>{label}</FieldLabel>
 					<Icon className="size-3 text-fg-muted" />
 				</div>
 				{pnlValue !== null && (
-					<span className={cn("text-xs tabular-nums", getValueColorClass(pnlValue))}>
+					<span
+						className={cn("shrink-0 whitespace-nowrap text-right text-xs tabular-nums", getValueColorClass(pnlValue))}
+					>
 						{formatUSD(pnlValue, { signDisplay: "exceptZero" })}
 					</span>
 				)}
 			</div>
 			<div
 				className={cn(
-					"flex items-center rounded-8 border bg-background overflow-hidden transition-[border-color,box-shadow]",
+					"rounded-8 flex min-w-0 items-center overflow-hidden border bg-background transition-[border-color,box-shadow]",
 					error
 						? "border-stroke-error-strong ring-[2px] ring-stroke-error-strong/20"
 						: "border-stroke-weak focus-within:border-stroke-focus focus-within:ring-[2px] focus-within:ring-stroke-focus/20",
@@ -57,17 +59,17 @@ export function PriceInputWithPercent({
 					placeholder={t`Price`}
 					value={value}
 					onChange={(e) => onChange(e.target.value)}
-					className="flex-1 border-0 focus-visible:ring-0 focus-visible:border-transparent tabular-nums bg-transparent"
+					className="min-w-0 flex-1 border-0 bg-transparent tabular-nums focus-visible:border-transparent focus-visible:ring-0"
 					disabled={disabled}
 				/>
-				<div className="flex items-center gap-0.5 px-1.5 border-l border-stroke-weak/40">
+				<div className="flex shrink-0 items-center gap-0.5 border-l border-stroke-weak/40 px-1.5">
 					{percentOptions.map((p) => (
 						<button
 							key={p}
 							type="button"
 							onClick={() => onPercentClick(p)}
 							disabled={disabled || !isPositive(referencePrice)}
-							className="px-1.5 py-1 text-xs font-medium text-fg-muted hover:text-fg hover:bg-fill-weak rounded-xs transition-colors disabled:opacity-50"
+							className="rounded-xs px-1.5 py-1 text-xs font-medium text-fg-muted transition-colors hover:bg-fill-weak hover:text-fg disabled:opacity-50"
 							aria-label={t`Set to ${p}%`}
 						>
 							{p}%

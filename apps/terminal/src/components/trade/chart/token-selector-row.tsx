@@ -81,7 +81,12 @@ export function TokenSelectorRow({
 			style={{ height: `${height}px`, transform: `translateY(${top}px)` }}
 		>
 			<div className="flex-1 min-w-0 flex items-center gap-2">
-				<AssetDisplay coin={market.name} hideName iconClassName={cn("shrink-0", mobile ? "size-6" : "size-5")} />
+				<AssetDisplay
+					coin={market.name}
+					iconUrl={market.iconUrl}
+					hideName
+					iconClassName={cn("shrink-0", mobile ? "size-6" : "size-5")}
+				/>
 				<div className="min-w-0 flex-1">
 					<div className="flex min-w-0 items-center gap-1">
 						<span

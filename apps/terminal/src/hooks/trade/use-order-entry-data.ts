@@ -1,6 +1,6 @@
-import { useConnection } from "wagmi";
 import { deriveOrderEntry, type OrderEntryDerived } from "@/domain/trade/order/derive";
 import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle } from "@/domain/trade/order/size";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
 import { useDefaultDexBalances } from "./use-account-balances";
@@ -8,6 +8,7 @@ import { useAssetLeverage } from "./use-asset-leverage";
 
 interface OrderEntryData extends OrderEntryDerived {
 	isConnected: boolean;
+	isAvailabilityLoading: boolean;
 
 	getSizeForPercent: (pct: number) => string;
 	convertSizeForModeToggle: () => string;
@@ -44,8 +45,13 @@ export function useOrderEntryData({
 	sizeMode,
 	sizeInput,
 }: UseOrderEntryDataOptions): OrderEntryData {
-	const { isConnected } = useConnection();
-	const { spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
+	const { isConnected } = useWalletSession();
+	const {
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		isLoading: accountBalancesLoading,
+	} = useDefaultDexBalances();
 	const {
 		displayLeverage: leverage,
 		currentLeverage,
@@ -63,6 +69,7 @@ export function useOrderEntryData({
 		switchModeError,
 		isOnlyIsolated,
 		allowsCrossMargin,
+		subscriptionStatus,
 	} = useAssetLeverage();
 
 	const conversionPrice = markPx > 0 ? markPx : 0;
@@ -76,6 +83,7 @@ export function useOrderEntryData({
 		sizeInput,
 		spotBalances,
 		spotAvailableAfterMaintenance,
+		accountAbstraction,
 		maxTradeSzs,
 		availableToTrade,
 	});
@@ -104,6 +112,7 @@ export function useOrderEntryData({
 
 	return {
 		isConnected,
+		isAvailabilityLoading: accountBalancesLoading || subscriptionStatus === "loading",
 		...derived,
 		getSizeForPercent,
 		convertSizeForModeToggle,

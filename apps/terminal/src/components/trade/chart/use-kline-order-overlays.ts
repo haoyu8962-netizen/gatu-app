@@ -1,8 +1,8 @@
 import Big from "big.js";
 import type { Chart } from "klinecharts";
 import { type RefObject, useEffect } from "react";
-import { useConnection } from "wagmi";
 import { HL_ALL_DEXS } from "@/config/app";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { TRANSPARENT_OVERLAY_STYLES } from "@/lib/chart/kline-styles";
 import { ORDER_LINE_NAME } from "@/lib/chart/order-line-overlay";
 import { useSubscription } from "@/lib/hyperliquid";
@@ -14,7 +14,7 @@ interface Params {
 }
 
 export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 
 	const { data: openOrdersEvent } = useSubscription(
 		"openOrders",

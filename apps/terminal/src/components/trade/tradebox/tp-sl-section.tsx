@@ -75,35 +75,35 @@ export function TpSlSection({
 
 	if (compact) {
 		return (
-			<div className="rounded-8 border border-stroke-weak/50 bg-surface p-2.5">
-				<div className="grid grid-cols-2 gap-2">
-					<div>
+			<div className="rounded-8 min-w-0 border border-stroke-weak/50 bg-surface p-2.5">
+				<div className="grid min-w-0 grid-cols-2 gap-2">
+					<div className="min-w-0">
 						<NumberInput
 							label={t`Take Profit`}
 							placeholder={t`TP Price`}
 							value={tpPrice}
 							onChange={(e) => onTpPriceChange(e.target.value)}
 							className={cn(
-								"text-xs bg-background tabular-nums",
+								"w-full box-border bg-background text-xs tabular-nums",
 								!!tpError && "border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 							disabled={disabled}
 						/>
-						{tpError && <div className="text-xs text-error mt-1">{tpError}</div>}
+						{tpError && <div className="mt-1 text-xs text-error">{tpError}</div>}
 					</div>
-					<div>
+					<div className="min-w-0">
 						<NumberInput
 							label={t`Stop Loss`}
 							placeholder={t`SL Price`}
 							value={slPrice}
 							onChange={(e) => onSlPriceChange(e.target.value)}
 							className={cn(
-								"text-xs bg-background tabular-nums",
+								"w-full box-border bg-background text-xs tabular-nums",
 								!!slError && "border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 							disabled={disabled}
 						/>
-						{slError && <div className="text-xs text-error mt-1">{slError}</div>}
+						{slError && <div className="mt-1 text-xs text-error">{slError}</div>}
 					</div>
 				</div>
 			</div>
@@ -111,7 +111,7 @@ export function TpSlSection({
 	}
 
 	return (
-		<div className="space-y-4 py-1">
+		<div className="min-w-0 space-y-4 py-1">
 			<PriceInputWithPercent
 				label={t`Take Profit`}
 				icon={TrendUpIcon}
@@ -139,12 +139,12 @@ export function TpSlSection({
 			/>
 
 			{riskRewardDisplay && (
-				<div className="rounded-8 border border-stroke-weak/40 bg-surface p-2.5 space-y-2">
-					<div className="flex items-center justify-between">
-						<span className="text-xs text-fg">{t`Risk/Reward`}</span>
+				<div className="rounded-8 space-y-2 border border-stroke-weak/40 bg-surface p-2.5">
+					<div className="flex min-w-0 items-center justify-between gap-2">
+						<span className="min-w-0 truncate text-xs text-fg">{t`Risk/Reward`}</span>
 						<span
 							className={cn(
-								"text-xs font-semibold tabular-nums",
+								"shrink-0 whitespace-nowrap text-xs font-semibold tabular-nums",
 								riskRewardDisplay.rrDisplay.isFavorable ? "text-success" : "text-warning",
 							)}
 						>
@@ -165,11 +165,11 @@ export function TpSlSection({
 							}}
 						/>
 					</div>
-					<div className="flex items-center justify-between text-xs">
-						<span className="tabular-nums text-error">
+					<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+						<span className="whitespace-nowrap tabular-nums text-error">
 							{formatUSD(riskRewardDisplay.slPnl, { signDisplay: "exceptZero" })}
 						</span>
-						<span className="tabular-nums text-success">
+						<span className="whitespace-nowrap tabular-nums text-success">
 							{formatUSD(riskRewardDisplay.tpPnl, { signDisplay: "exceptZero" })}
 						</span>
 					</div>

@@ -64,6 +64,8 @@ msgstr "24h 涨跌"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "24H VOL"
 msgstr "24H VOL"
 
@@ -92,13 +94,18 @@ msgstr "账户"
 msgid "Account and wallet"
 msgstr "账户与钱包"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "Account Balances"
-msgstr "账户余额"
-
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Account Equity"
-msgstr "账户权益"
+#~ msgid "Account Equity"
+#~ msgstr "账户权益"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Account mode"
+msgstr "账户模式"
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Account mode updated"
+msgstr "账户模式已更新"
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
@@ -132,9 +139,14 @@ msgstr "添加"
 msgid "Add {0} to favorites"
 msgstr "将 {0} 加入自选"
 
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
-msgid "Add funds"
-msgstr "添加资金"
+#~ msgid "Add funds"
+#~ msgstr "添加资金"
 
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Add to favorites"
@@ -144,9 +156,14 @@ msgstr "添加资金"
 msgid "Add TP/SL"
 msgstr "添加 TP/SL"
 
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
-#~ msgid "Advanced order types"
-#~ msgstr ""
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Advanced"
+msgstr "专业"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Advanced order types"
+msgstr "专业委托类型"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -179,7 +196,6 @@ msgstr "ALO（仅添加流动性）"
 
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Amount"
 msgstr "数量"
@@ -208,6 +224,11 @@ msgstr "未立即成交的部分将被取消。"
 msgid "Approve in wallet..."
 msgstr "在钱包中授权…"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Arbitrum network switch was rejected."
+msgstr "已拒绝切换到 Arbitrum 网络。"
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -215,6 +236,8 @@ msgstr "在钱包中授权…"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/components/trade/tradebox/deposit/asset-select.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Asset"
 msgstr "资产"
 
@@ -222,15 +245,27 @@ msgstr "资产"
 #~ msgid "Assets"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Automatic USDC deposit failed"
+msgstr "USDC 自动存款失败"
+
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 msgid "Available"
 msgstr "可用"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Available {balance} USDC is below the minimum deposit. Send at least {minimumDeposit}."
+msgstr "可用 {balance} USDC 低于最低存款金额。请至少发送 {minimumDeposit}。"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Available funds are in Spot"
+msgstr "可用资金在现货账户"
 
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -258,7 +293,6 @@ msgstr "已恢复在线"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Balance"
 msgstr "余额"
@@ -271,7 +305,6 @@ msgstr "可用于交易的余额"
 #~ msgid "Balance:"
 #~ msgstr ""
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "余额"
@@ -310,6 +343,14 @@ msgstr "跨链失败"
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Bridge USDC from Arbitrum or other chains to your Hyperliquid account."
 #~ msgstr "从 Arbitrum 或其他链桥接 USDC 到您的 Hyperliquid 账户。"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
+msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Bridge2 rejected the USDC permit. Retrying automatically."
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Bridging in progress"
@@ -380,6 +421,7 @@ msgstr "买入做多"
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -437,25 +479,34 @@ msgstr "调整杠杆"
 msgid "Chart"
 msgstr "图表"
 
-#: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard does not contain a pairing code."
-msgstr "剪贴板中没有配对码。"
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Checking..."
+#~ msgstr "检查中..."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
-msgstr "无法从剪贴板粘贴。请从键盘菜单粘贴或手动输入配对码。"
+#~ msgid "Clipboard does not contain a pairing code."
+#~ msgstr "剪贴板中没有配对码。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
-msgstr "剪贴板粘贴被阻止。请从键盘菜单粘贴或手动输入配对码。"
+#~ msgid "Clipboard paste is not available. Paste from the keyboard menu or type the code manually."
+#~ msgstr "无法从剪贴板粘贴。请从键盘菜单粘贴或手动输入配对码。"
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
+#~ msgstr "剪贴板粘贴被阻止。请从键盘菜单粘贴或手动输入配对码。"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Close"
 msgstr "关闭"
+
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Close navigation"
+msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Close position"
@@ -473,6 +524,10 @@ msgstr "平仓中..."
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Collapse account panel"
 #~ msgstr "收起账户面板"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Collapse market details"
+msgstr ""
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Coming soon"
@@ -514,6 +569,10 @@ msgstr "在钱包中确认交易"
 #~ msgid "Confirmation screen coming in next slice"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
+msgstr "已在 Arbitrum 确认。Hyperliquid 通常会在一分钟内入账。"
+
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Connect"
@@ -528,24 +587,24 @@ msgstr "在钱包中确认交易"
 #~ msgstr "连接钱包以管理仓位。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same owner wallet used on desktop before importing phone access."
-msgstr "导入手机访问权限前，请连接与桌面端相同的所有者钱包。"
+#~ msgid "Connect the same owner wallet used on desktop before importing phone access."
+#~ msgstr "导入手机访问权限前，请连接与桌面端相同的所有者钱包。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same wallet used on desktop before importing phone access."
-msgstr "导入手机访问权限前，请连接与桌面端相同的钱包。"
+#~ msgid "Connect the same wallet used on desktop before importing phone access."
+#~ msgstr "导入手机访问权限前，请连接与桌面端相同的钱包。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect the same wallet used on desktop."
-msgstr "请连接与桌面端相同的钱包。"
+#~ msgid "Connect the same wallet used on desktop."
+#~ msgstr "请连接与桌面端相同的钱包。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect to verify"
-msgstr "连接以验证"
+#~ msgid "Connect to verify"
+#~ msgstr "连接以验证"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Connect wallet"
-msgstr "连接钱包"
+#~ msgid "Connect wallet"
+#~ msgstr "连接钱包"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -577,15 +636,26 @@ msgstr "重置移动访问权限前请先连接钱包。"
 msgid "Connect your wallet to bridge funds"
 msgstr "连接钱包以跨链转移资金"
 
+#: src/components/trade/tradebox/deposit/shared-ui.tsx
+msgid "Connect your wallet to manage funds"
+msgstr "连接钱包以管理资金"
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Connect your wallet to register a builder code"
 #~ msgstr ""
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Connect your wallet to send funds."
+msgstr "连接钱包以发送资金。"
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Connect your wallet to start trading on Hyperliquid"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+msgid "Connect your wallet to transfer funds."
+msgstr "连接钱包以划转资金。"
+
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "连接钱包查看余额。"
@@ -625,8 +695,8 @@ msgid "Connect your wallet to view your account, positions, and start trading."
 msgstr "连接钱包以查看账户、仓位并开始交易。"
 
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
-msgid "Connect your wallet to withdraw funds"
-msgstr "连接钱包以提取资金"
+#~ msgid "Connect your wallet to withdraw funds"
+#~ msgstr "连接钱包以提取资金"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Connected"
@@ -653,7 +723,9 @@ msgid "Continue"
 msgstr "继续"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Copied"
 msgstr "已复制"
 
@@ -674,8 +746,12 @@ msgid "Copy Address"
 msgstr "复制地址"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Copy code"
-msgstr "复制代码"
+#~ msgid "Copy code"
+#~ msgstr "复制代码"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Copy embedded wallet address"
+msgstr "复制内嵌钱包地址"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Copy link"
@@ -685,9 +761,18 @@ msgstr "复制代码"
 msgid "Copy phone link"
 msgstr "复制手机链接"
 
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Copy token address"
+msgstr "复制代币地址"
+
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Could not create wallet"
 #~ msgstr "无法创建钱包"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Could not create your embedded wallet. Please retry."
+#~ msgstr "无法创建内嵌钱包。请重试。"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Could not fetch your token balances"
@@ -698,8 +783,8 @@ msgid "Could not import phone access."
 msgstr "无法导入手机访问权限。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not link mobile device."
-msgstr "无法关联移动设备。"
+#~ msgid "Could not link mobile device."
+#~ msgstr "无法关联移动设备。"
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
@@ -730,9 +815,17 @@ msgstr "为通过此账户进行交易创建安全的手机访问权限。"
 msgid "Created"
 msgstr "已创建"
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Creating deposit wallet"
+#~ msgstr "正在创建存款钱包"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Creating link..."
 msgstr "创建链接中…"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Creating your wallet. Please wait..."
+msgstr "正在创建你的钱包，请稍候..."
 
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -750,8 +843,8 @@ msgid "Cross Leverage"
 msgstr "全仓杠杆"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Cross Margin"
-msgstr "全仓保证金"
+#~ msgid "Cross Margin"
+#~ msgstr "全仓保证金"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Margin Ratio"
@@ -786,6 +879,7 @@ msgid "Default"
 msgstr "默认"
 
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -793,7 +887,8 @@ msgstr "默认"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -801,9 +896,21 @@ msgstr "默认"
 msgid "Deposit"
 msgstr "存款"
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Deposit address"
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Deposit address unavailable"
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit/amount-input.tsx
+msgid "Deposit amount"
+msgstr "金额"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Deposit complete"
-msgstr "充值完成"
+#~ msgid "Deposit complete"
+#~ msgstr "充值完成"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit failed"
@@ -821,9 +928,36 @@ msgstr "充值失败"
 #~ msgid "Deposit on Hyperliquid"
 #~ msgstr "在 Hyperliquid 存款"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Deposit submitted"
+msgstr "存款已提交"
+
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Deposit successful"
 msgstr "充值成功"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying."
+msgstr "充值交易已广播，但确认超时。请先在 Arbiscan 上检查后再重试。"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
+msgstr ""
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
+msgstr "充值交易已提交，但未在 Arbitrum 上确认。你的钱包 nonce 可能与链上状态不同步。请在钱包中清除待处理活动或重置 nonce 数据后重试。"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Deposit USDC from Arbitrum"
+msgstr "从 Arbitrum 存入 USDC"
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Depositing USDC to Hyperliquid..."
+msgstr "正在将 USDC 存入 Hyperliquid..."
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -841,8 +975,13 @@ msgid "Destination"
 msgstr "目标"
 
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Destination address"
 msgstr "目标地址"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Detected {balance} USDC. Depositing to Hyperliquid automatically..."
+#~ msgstr "已检测到 {balance} USDC，正在自动存入 Hyperliquid..."
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Direct"
@@ -891,6 +1030,8 @@ msgstr "文档"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "完成"
 
@@ -905,6 +1046,10 @@ msgstr "每个仓位仅使用其分配的保证金。若保证金率达到 100%�
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "编辑 TP/SL"
+
+#: src/components/trade/header/user-menu.tsx
+#~ msgid "Embedded wallet is not ready. Try again in a moment."
+#~ msgstr "内嵌钱包尚未就绪，请稍后重试。"
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enable"
@@ -947,12 +1092,12 @@ msgid "Enter size"
 msgstr "输入数量"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the 16-character pairing code."
-msgstr "请输入 16 位配对码。"
+#~ msgid "Enter the 16-character pairing code."
+#~ msgstr "请输入 16 位配对码。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Enter the desktop code"
-msgstr "输入桌面端代码"
+#~ msgid "Enter the desktop code"
+#~ msgstr "输入桌面端代码"
 
 #: src/lib/errors/definitions/tpsl.ts
 msgid "Enter TP or SL price"
@@ -1000,7 +1145,7 @@ msgstr "限价预估盈亏"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Estimated time"
 msgstr "预计时间"
@@ -1021,6 +1166,10 @@ msgstr "执行"
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Expand account panel"
 #~ msgstr "展开账户面板"
+
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Expand market details"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAtLabel}"
@@ -1056,6 +1205,10 @@ msgstr "平仓失败"
 msgid "Failed to copy"
 msgstr "复制失败"
 
+#: src/components/trade/header/user-menu.tsx
+#~ msgid "Failed to create embedded wallet or open deposit flow"
+#~ msgstr "无法创建内嵌钱包或打开存款流程"
+
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to enable trading"
@@ -1069,7 +1222,6 @@ msgstr "启用交易失败"
 msgid "Failed to load balances"
 msgstr "加载余额失败"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Failed to load balances."
 msgstr "加载余额失败。"
@@ -1112,6 +1264,10 @@ msgstr "加载成交记录失败。"
 #~ msgid "Failed to load TWAP history."
 #~ msgstr "加载 TWAP 历史失败。"
 
+#: src/components/trade/header/user-menu.tsx
+#~ msgid "Failed to open deposit flow"
+#~ msgstr "无法打开存款流程"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Failed to place limit close order"
 msgstr "限价平仓委托下单失败"
@@ -1128,6 +1284,11 @@ msgstr "反向开仓失败"
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Failed to switch margin mode"
 #~ msgstr ""
+
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+msgid "Failed to update account mode"
+msgstr "账户模式更新失败"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
@@ -1185,7 +1346,6 @@ msgid "Frequency"
 msgstr "频率"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "From"
 msgstr "从"
 
@@ -1202,8 +1362,14 @@ msgid "Funding"
 msgstr "资金费率"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "FUNDING"
 msgstr "资金费率"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Funding chain"
+msgstr "充值链"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/config/trade.ts
@@ -1213,6 +1379,10 @@ msgstr "资金费率历史"
 #: src/components/trade/positions/funding-tab.tsx
 #~ msgid "Funding Payments"
 #~ msgstr "资金费用"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Funds are in Spot account"
+msgstr "资金在现货账户"
 
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -1248,7 +1418,6 @@ msgstr "GTC（撤销前有效）"
 msgid "H"
 msgstr "H"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr "隐藏小额"
@@ -1262,10 +1431,23 @@ msgstr "HIP-3"
 msgid "Hour(s)"
 msgstr "小时"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
+msgstr "多头支付空头的小时费率（如果为负，则空头支付多头）。资金费没有关联费用，是用户之间的点对点转移，以将价格推向现货价格。详见文档。"
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import phone access"
 msgstr "导入手机访问权限"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
+msgstr ""
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
+msgstr "重要：此地址只能接收 Arbitrum 网络的原生 USDC。请勿发送 USDC.e 或其他网络的资产。最低存款金额为 {minimumDeposit}。"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Importing..."
@@ -1318,6 +1500,10 @@ msgstr "Gas 余额不足"
 msgid "Invalid amount"
 msgstr "金额无效"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Invalid destination address"
+msgstr "目的地址无效"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Invalid Ethereum address"
 #~ msgstr ""
@@ -1364,6 +1550,7 @@ msgstr "杠杆"
 #~ msgstr "限价"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
@@ -1416,6 +1603,7 @@ msgstr "清算价"
 msgid "Liquidated"
 msgstr "已强平"
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "加载中"
@@ -1460,7 +1648,9 @@ msgstr "加载 TWAP 订单中..."
 msgid "Loading wallet..."
 msgstr "加载钱包中..."
 
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/config/ui-text.ts
+#: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
@@ -1561,6 +1751,8 @@ msgstr "保证金要求"
 msgid "Margin Used"
 msgstr "已用保证金"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Mark"
@@ -1575,6 +1767,10 @@ msgstr "标记价"
 msgid "Mark Price"
 msgstr "标记价格"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details."
+msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和触发止盈/止损订单。预言机价格：用于资金费用支付的参考价格。详情请参阅 HIP-3 部署者的文档。"
+
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -1588,8 +1784,14 @@ msgstr "标记价格"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
 msgstr "市场"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Market Cap"
+msgstr "市场总值"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Market Close"
@@ -1612,7 +1814,6 @@ msgid "markets"
 msgstr "个市场"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/nav.tsx
 msgid "Markets"
 msgstr "市场"
@@ -1622,6 +1823,7 @@ msgstr "市场"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 msgid "Max"
 msgstr "最大"
 
@@ -1661,7 +1863,7 @@ msgstr "最小委托 ${ORDER_MIN_NOTIONAL_USD}"
 msgid "Min order $10"
 msgstr "最小订单 $10"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Minimum"
 msgstr "最小"
 
@@ -1691,6 +1893,10 @@ msgstr "分钟"
 #~ msgid "Mock Wallet (Testing)"
 #~ msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Mode"
+msgstr ""
+
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More"
 #~ msgstr "更多"
@@ -1698,6 +1904,12 @@ msgstr "分钟"
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "More details"
 msgstr "更多详情"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "More Info"
+msgstr "更多信息"
 
 #: src/components/trade/chart/kline-toolbar.tsx
 msgid "More intervals"
@@ -1719,15 +1931,19 @@ msgstr "在合约账户与现货账户之间划转 USDC。"
 #~ msgid "Must be signed by main wallet (not agent/API wallet)"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Net received"
 msgstr "实际到账"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Network"
 msgstr "网络"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Network fee"
 msgstr "网络费用"
@@ -1766,6 +1982,7 @@ msgstr "没有进行中的 TWAP 委托。"
 msgid "No balance"
 msgstr "无余额"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/lib/errors/format.ts
 msgid "No balance on Hyperliquid. Deposit first."
 msgstr "Hyperliquid 上无余额，请先充值。"
@@ -1774,7 +1991,6 @@ msgstr "Hyperliquid 上无余额，请先充值。"
 msgid "No balances found"
 msgstr "未找到余额"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "未找到余额。存入资金开始交易。"
@@ -1820,6 +2036,9 @@ msgid "No order history found."
 msgstr "未找到订单历史。"
 
 #: src/hooks/trade/use-order-submit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "No response from exchange"
 msgstr "交易所无响应"
 
@@ -1856,8 +2075,8 @@ msgstr "<0/>/<1/> 暂无可用交易对"
 #~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "No wallet connected"
-msgstr "未连接钱包"
+#~ msgid "No wallet connected"
+#~ msgstr "未连接钱包"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No wallets found"
@@ -1914,6 +2133,7 @@ msgid "Open command menu"
 msgstr "打开命令菜单"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "OPEN INT"
 msgstr "持仓量"
 
@@ -1922,10 +2142,15 @@ msgstr "持仓量"
 msgid "Open Interest"
 msgstr "未平仓量"
 
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Open navigation"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Open Orders"
-msgstr "未成交订单"
+msgstr "当前委托"
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Open positions count"
@@ -1936,8 +2161,17 @@ msgid "Open terminal"
 msgstr "打开终端"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Open the phone link, then enter the pairing code shown on desktop."
-msgstr "打开手机链接，然后输入桌面端显示的配对码。"
+#~ msgid "Open the phone link and connect the same wallet you use on desktop to import."
+#~ msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "Open the phone link, then enter the pairing code shown on desktop."
+#~ msgstr "打开手机链接，然后输入桌面端显示的配对码。"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Open token in explorer"
+msgstr "在浏览器中打开代币"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open wallet"
@@ -1952,6 +2186,7 @@ msgstr "打开手机链接，然后输入桌面端显示的配对码。"
 #~ msgstr ""
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/config/ui-text.ts
 msgid "ORACLE"
 msgstr "预言机"
@@ -1980,7 +2215,7 @@ msgstr "委托已成交"
 #: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Order History"
-msgstr "订单历史"
+msgstr "委托历史"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Order Queue"
@@ -1989,6 +2224,10 @@ msgstr "订单队列"
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Order submitted"
 msgstr "委托已提交"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Order type"
+msgstr "订单类型"
 
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
@@ -2010,8 +2249,8 @@ msgid "orders"
 msgstr "委托"
 
 #: src/config/trade.ts
-msgid "Orders"
-msgstr "委托"
+#~ msgid "Orders"
+#~ msgstr "委托"
 
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -2028,8 +2267,8 @@ msgid "Owner account"
 msgstr "所有者账户"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Owner wallet"
-msgstr "所有者钱包"
+#~ msgid "Owner wallet"
+#~ msgstr "所有者钱包"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "P&L"
@@ -2050,16 +2289,16 @@ msgstr "更改后页面将重新加载"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code"
-msgstr "配对码"
+#~ msgid "Pairing code"
+#~ msgstr "配对码"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Pairing code does not match this link."
-msgstr "配对码与此链接不匹配。"
+#~ msgid "Pairing code does not match this link."
+#~ msgstr "配对码与此链接不匹配。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Paste code"
-msgstr "粘贴配对码"
+#~ msgid "Paste code"
+#~ msgstr "粘贴配对码"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Paste link from desktop"
@@ -2093,22 +2332,36 @@ msgstr "待处理"
 msgid "Perp"
 msgstr "永续"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Perpetuals"
 msgstr "永续合约"
 
 #: src/components/trade/tradebox/account-panel.tsx
-msgid "Perps"
-msgstr "永续合约"
+#~ msgid "Perps"
+#~ msgstr "永续合约"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Perps / Spot"
+msgstr "合约 / 现货"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
 msgstr "合约账户"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Perps Equity"
+msgstr "永续权益"
+
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
 msgstr "合约概览"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Perps Withdrawable"
+msgstr "永续可提"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -2121,6 +2374,10 @@ msgstr "手机访问已就绪"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Phone access reset. The replacement key expires at {expiresAtLabel}."
 msgstr "手机访问已重置。替换密钥将于 {expiresAtLabel} 过期。"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Phone import"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone link"
@@ -2152,12 +2409,17 @@ msgid "Placed"
 msgstr "已提交"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Platform"
 msgstr "平台"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Please enter an address"
 #~ msgstr ""
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Please wait while Privy creates your embedded wallet."
+#~ msgstr "请稍候，Privy 正在创建你的内嵌钱包。"
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2173,9 +2435,19 @@ msgstr "盈亏"
 #~ msgid "Popular"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Portfolio"
 msgstr "投资组合"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Portfolio Margin"
+msgstr "组合保证金"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Portfolio Value"
+msgstr "投资组合价值"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2219,6 +2491,14 @@ msgstr "仓位"
 msgid "Positions"
 msgstr "持仓"
 
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Preparing automatic USDC deposit..."
+msgstr "正在准备 USDC 自动存款..."
+
+#: src/components/trade/header/user-menu.tsx
+#~ msgid "Preparing deposit..."
+#~ msgstr "正在准备存款..."
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Preparing your quote..."
 msgstr "正在准备报价…"
@@ -2250,6 +2530,10 @@ msgstr "价格"
 msgid "Price grouping"
 msgstr "价格合并"
 
+#: src/components/trade/mobile/mobile-bottom-nav.tsx
+msgid "Primary navigation"
+msgstr ""
+
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Privacy Policy"
 msgstr "隐私政策"
@@ -2264,10 +2548,10 @@ msgid "Processing"
 msgstr "处理中"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Processing deposit"
-msgstr "正在处理充值"
+#~ msgid "Processing deposit"
+#~ msgstr "正在处理充值"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Processing..."
 msgstr "处理中…"
@@ -2295,8 +2579,12 @@ msgid "Rate"
 msgstr "费率"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Ready"
-msgstr "就绪"
+#~ msgid "Ready"
+#~ msgstr "就绪"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Ready to import"
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -2305,6 +2593,14 @@ msgstr "就绪"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"
 msgstr "最近成交"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Reconnect or refresh after your embedded wallet is ready."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Reconnect wallet"
+msgstr "重新连接钱包"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Recovered after reload. Expires {expiresAtLabel}."
@@ -2361,6 +2657,7 @@ msgid "Reset phone access"
 msgstr "重置手机访问"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
 msgstr "重置倒计时"
 
@@ -2368,12 +2665,17 @@ msgstr "重置倒计时"
 msgid "Resetting..."
 msgstr "正在重置…"
 
+#: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Retry"
 msgstr "重试"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Retry wallet creation"
+#~ msgstr "重试创建钱包"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
@@ -2403,13 +2705,13 @@ msgid "Runtime"
 msgstr "运行时长"
 
 #: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "已保存的手机链接无效。请重新粘贴链接。"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Scale"
-msgstr "区间挂单"
+msgstr "分段订单"
 
 #: src/lib/errors/definitions/scale.ts
 msgid "Scale level below min notional"
@@ -2517,6 +2819,13 @@ msgstr "选择要兑换的代币"
 msgid "selected"
 msgstr "已选择"
 
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Selected wallet does not match the connected account. Reconnect your wallet and try again."
+msgstr "所选钱包与当前连接账户不一致。请重新连接钱包后重试。"
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "sell"
 #~ msgstr "卖出"
@@ -2531,7 +2840,6 @@ msgstr "卖出"
 msgid "Sell Short"
 msgstr "卖出做空"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send"
@@ -2541,6 +2849,10 @@ msgstr "发送"
 msgid "Send failed"
 msgstr "发送失败"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Send native USDC to this address. It will be deposited to Hyperliquid automatically."
+#~ msgstr "向此地址发送 Arbitrum 原生 USDC，到账后会自动存入 Hyperliquid。"
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Send Tokens"
 msgstr "发送代币"
@@ -2549,13 +2861,37 @@ msgstr "发送代币"
 msgid "Send tokens to another account on the Hyperliquid L1."
 msgstr "向 Hyperliquid L1 上的另一账户发送代币。"
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Send USDC on Arbitrum One to this address."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Send USDC on Arbitrum One to this address. It will be deposited to Hyperliquid automatically."
+#~ msgstr "请在 Arbitrum One 上向此地址发送 USDC。到账后会自动存入 Hyperliquid。"
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Sending..."
 msgstr "发送中..."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
-msgid "sent to Hyperliquid"
-msgstr "已发送至 Hyperliquid"
+#~ msgid "sent to Hyperliquid"
+#~ msgstr "已发送至 Hyperliquid"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Separate"
+msgstr "分离"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Separate Account"
+msgstr "分离账户"
+
+#: src/components/trade/tradebox/account-panel.tsx
+#~ msgid "Separate Account Balances"
+#~ msgstr "分账户余额"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Separate Accounts"
+msgstr "分账户"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Set"
@@ -2587,6 +2923,7 @@ msgstr "设为{p}%"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
 msgid "Settings"
 msgstr "设置"
@@ -2734,9 +3071,24 @@ msgstr "滑点"
 msgid "Slippage tolerance"
 msgstr "滑点容忍度"
 
-#: src/lib/errors.ts
-#~ msgid "Something went wrong"
-#~ msgstr "出错了"
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Smart wallet client not ready"
+msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#~ msgid "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Smart wallet deposits are not enabled for this network."
+msgstr "当前网络未启用智能钱包存款。"
+
+#: src/components/trade/chart/tradingview-chart.tsx
+msgid "Something went wrong"
+msgstr "出错了"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
@@ -2770,11 +3122,9 @@ msgstr "来源"
 #~ msgstr "现货"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/account-panel.tsx
 #: src/config/nav.tsx
 msgid "Spot"
 msgstr "现货"
@@ -2782,6 +3132,10 @@ msgstr "现货"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Spot Account"
 msgstr "现货账户"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Spot Available"
+msgstr "现货可用"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
@@ -2817,7 +3171,6 @@ msgstr "状态"
 #~ msgid "Stop"
 #~ msgstr "止损"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Limit"
 msgstr "止损限价"
@@ -2827,7 +3180,6 @@ msgstr "止损限价"
 msgid "Stop Loss"
 msgstr "止损"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/lib/trade/order-types.ts
 msgid "Stop Market"
 msgstr "止损市价"
@@ -2855,7 +3207,6 @@ msgstr "支持"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
@@ -2929,6 +3280,7 @@ msgstr "切换至{displayName}市场，多头仓位"
 msgid "Switch to {displayName} market, short position"
 msgstr "切换至{displayName}市场，空头仓位"
 
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
@@ -3049,8 +3401,16 @@ msgid "This mobile link expired."
 msgstr "此手机链接已过期。"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This phone link is not approved on Hyperliquid."
-msgstr "此手机链接未在 Hyperliquid 上获得授权。"
+msgid "This mobile link is damaged or incomplete. Scan or paste it again."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This phone link belongs to a different owner account."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "This phone link is not approved on Hyperliquid."
+#~ msgstr "此手机链接未在 Hyperliquid 上获得授权。"
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
@@ -3082,15 +3442,17 @@ msgstr "订单有效期"
 msgid "To"
 msgstr "至"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr "至合约"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
 msgstr "至现货"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Toggle display units"
+msgstr ""
 
 #: src/components/ui/sidebar.tsx
 #: src/components/ui/sidebar.tsx
@@ -3103,10 +3465,9 @@ msgid "Toggle size mode"
 msgstr "切换数量模式"
 
 #: src/components/trade/market-overview.tsx
-msgid "TOKEN"
-msgstr "TOKEN"
+#~ msgid "TOKEN"
+#~ msgstr "TOKEN"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -3168,8 +3529,9 @@ msgstr "交易"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/config/trade.ts
+#: src/config/trade.ts
 msgid "Trade History"
-msgstr "交易历史"
+msgstr "成交历史"
 
 #. placeholder {0}: spotMarket.pairName
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -3182,7 +3544,6 @@ msgstr "成交"
 
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
-#: src/config/trade.ts
 #: src/config/ui-text.ts
 msgid "Trades"
 msgstr "成交"
@@ -3197,6 +3558,10 @@ msgstr "交易中"
 msgid "Trading is not available in your region"
 msgstr "您所在的地区暂不支持交易"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Trading key"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading key approved"
 msgstr "交易密钥已授权"
@@ -3209,6 +3574,15 @@ msgstr "TradingView"
 msgid "Transaction breakdown"
 msgstr "交易明细"
 
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Transaction reverted on Arbitrum"
+msgstr ""
+
+#: src/lib/errors/format.ts
+msgid "Transaction was not broadcast. Please retry."
+msgstr "交易未广播。请重试。"
+
 #: src/lib/errors/format.ts
 msgid "Transaction was rejected"
 msgstr "交易被拒绝"
@@ -3218,6 +3592,10 @@ msgstr "交易被拒绝"
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 msgid "Transfer"
 msgstr "划转"
+
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfer between Perps and Spot"
+msgstr ""
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
@@ -3234,6 +3612,12 @@ msgstr "划转 USDC"
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transferring..."
 msgstr "划转中..."
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+msgid "Transfers between Spot and Perps are unavailable in unified account mode."
+msgstr "启用统一账户后，现货与合约之间的划转不可用。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -3259,7 +3643,6 @@ msgstr "重试"
 msgid "Try Again"
 msgstr "重试"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/trade.ts
 #: src/config/trade.ts
 #: src/lib/trade/order-types.ts
@@ -3278,6 +3661,10 @@ msgstr "TWAP 订单价值过小。最小为 ${min}，即每分钟 ${TWAP_MIN_NOT
 msgid "TWAP Orders"
 msgstr "TWAP 订单"
 
+#: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "Two-sided open interest: the sum of long and short positions on this contract."
+msgstr "双边开放利益：该合约上的多头和空头头寸之和。"
+
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -3294,13 +3681,51 @@ msgstr "类型"
 #~ msgid "Unable to close position."
 #~ msgstr "无法平仓。"
 
+#: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to load Arbitrum USDC balance"
+msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to prepare USDC permit"
+msgstr ""
+
+#. placeholder {0}: config.chainName
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
+msgstr ""
+
 #: src/lib/errors/format.ts
+msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
+msgstr "无法将钱包切换到 Arbitrum。请在钱包中切换网络后重试。"
+
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Unified"
+msgstr "统一"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Unified Account"
+msgstr "统一账户"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Unknown error"
 msgstr "未知错误"
 
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "未知交易对: {symbolName}"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Unlock your wallet and try again."
+msgstr "请解锁钱包后重试。"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -3341,6 +3766,18 @@ msgstr "美元价值"
 msgid "USDC"
 msgstr "USDC"
 
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "USDC deposit submitted to Hyperliquid"
+msgstr "USDC 存款已提交到 Hyperliquid"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "USDC received. Depositing to Hyperliquid..."
+#~ msgstr "已收到 USDC，正在存入 Hyperliquid..."
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "USDC will be sent to this Arbitrum address."
+msgstr "USDC 将发送到此 Arbitrum 地址。"
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Use a different phone link"
 msgstr "使用其他手机链接"
@@ -3350,7 +3787,6 @@ msgid "Use phone link"
 msgstr "使用手机链接"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/routes/mobile-agent-sync.tsx
 msgid "Using"
 msgstr "使用中"
 
@@ -3383,6 +3819,18 @@ msgstr "成交量"
 #~ msgid "waiting"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Waiting for at least 5 USDC to arrive."
+#~ msgstr "正在等待至少 5 USDC 到账。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Waiting for chain confirmation"
+msgstr "等待链上确认"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Waiting for native USDC to arrive on Arbitrum."
+#~ msgstr "正在等待 Arbitrum 原生 USDC 到账。"
+
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Waiting for order book..."
@@ -3397,15 +3845,61 @@ msgstr "等待成交记录..."
 msgid "Wallet ({0})"
 msgstr "钱包（{0}）"
 
-#: src/hooks/hyperliquid/use-trading-agent.ts
-#~ msgid "Wallet client not ready"
-#~ msgstr "钱包客户端未就绪"
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet client not ready"
+msgstr "钱包客户端未就绪"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection failed. Unlock your wallet, approve the connection, then retry."
+msgstr "钱包连接失败。请解锁钱包，批准连接后重试。"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet connection request was rejected."
+msgstr "钱包连接请求已被拒绝。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Wallet connection unavailable"
+msgstr "钱包连接不可用"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
+msgstr "钱包没有返回交易哈希。重试前请先检查钱包活动，避免重复发送充值交易。"
+
+#. placeholder {0}: config.chainName
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
+msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+#~ msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
+#~ msgstr "钱包未连接到 Arbitrum。请在钱包中切换网络后重试。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "钱包未连接"
+
+#: src/lib/errors/format.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Wallet returned a transaction hash, but it is not visible on Arbitrum yet. Check your wallet activity or Arbiscan before retrying to avoid sending the deposit twice."
+msgstr "钱包已返回交易哈希，但该交易暂时还无法在 Arbitrum 上查到。请先检查钱包活动或 Arbiscan，避免重复发送同一笔存款。"
+
+#: src/components/trade/tradebox/deposit/deposit-address.tsx
+#~ msgid "Wallet USDC"
+#~ msgstr "钱包 USDC"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect pairing ready"
@@ -3446,6 +3940,14 @@ msgstr "将在{0}后到账"
 msgid "Withdraw"
 msgstr "提款"
 
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdraw to Arbitrum"
+msgstr "提现至 Arbitrum"
+
+#: src/components/trade/tradebox/account-panel.tsx
+#~ msgid "Withdrawable"
+#~ msgstr "可提"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"
 msgstr "提现失败"
@@ -3455,8 +3957,8 @@ msgid "Withdrawal submitted"
 msgstr "提现已提交"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-msgid "Wrong network"
-msgstr "网络错误"
+#~ msgid "Wrong network"
+#~ msgstr "网络错误"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Wrong QR type"

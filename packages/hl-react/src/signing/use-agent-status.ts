@@ -1,6 +1,5 @@
 import type { ExtraAgentsResponse, MaxBuilderFeeResponse } from "@nktkas/hyperliquid";
 import { type Address, zeroAddress } from "viem";
-import { useConnection } from "wagmi";
 import { useInfo } from "../hooks/useInfo";
 import { useHyperliquid } from "../provider";
 import { useAgentWalletStorage } from "./agent-storage";
@@ -44,8 +43,8 @@ function deriveRequirements(
 }
 
 export function useAgentStatus(): UseAgentStatusResult {
-	const { env, builderConfig } = useHyperliquid();
-	const { address } = useConnection();
+	const { env, builderConfig, clientKey } = useHyperliquid();
+	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
 
 	const localAgent = useAgentWalletStorage(env, address);
 	const hasBuilderConfig = !!builderConfig?.b;

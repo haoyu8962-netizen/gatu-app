@@ -1,11 +1,11 @@
 import { type MarketKind, useInfo } from "@gatu/hl-react";
-import { useConnection } from "wagmi";
 import {
 	ORDER_FEE_RATE_MAKER,
 	ORDER_FEE_RATE_SPOT_MAKER,
 	ORDER_FEE_RATE_SPOT_TAKER,
 	ORDER_FEE_RATE_TAKER,
 } from "@/config/trade";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 
 interface FeeRates {
 	takerRate: number;
@@ -22,7 +22,7 @@ function getDefaults(marketKind?: MarketKind): FeeRates {
 }
 
 export function useFeeRates(marketKind?: MarketKind): FeeRates {
-	const { address, isConnected } = useConnection();
+	const { address, isConnected } = useWalletSession();
 	const defaults = getDefaults(marketKind);
 	const user = address ?? "";
 

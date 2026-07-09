@@ -49,8 +49,7 @@ function RootComponent() {
 }
 
 // Gates first render until the persisted language's catalog is active, so the page renders ONCE in
-// the persisted locale — no flash of English / LTR→RTL jump while the lazy catalog loads. Language
-// changes apply via a full reload (see the switchers), so the app is never remounted mid-session.
+// the persisted locale — no flash of English / LTR→RTL jump while the lazy catalog loads.
 function I18nReadyGate({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) {
 	const [ready, setReady] = useState(() => i18n.locale === getPersistedLocale());
 	useEffect(() => {

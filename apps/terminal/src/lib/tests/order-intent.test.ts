@@ -1,6 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildOrderPlan, type EntryOrderIntent } from "@/domain/trade/order-intent";
 import { buildOrders, type OrderBuildParams } from "@/domain/trade/orders";
+
+vi.mock("@lingui/core/macro", () => ({
+	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
+		if (typeof strings === "string") return strings;
+		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
+	},
+	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
+		if (typeof strings === "string") return strings;
+		return strings.reduce((message, part, index) => `${message}${part}${values[index] ?? ""}`, "");
+	},
+}));
 
 function entry(overrides: Partial<EntryOrderIntent>): EntryOrderIntent {
 	return {

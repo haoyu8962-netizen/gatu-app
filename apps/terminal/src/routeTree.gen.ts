@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TradeRouteImport } from './routes/trade'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SpotRouteImport } from './routes/spot'
@@ -19,9 +20,17 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as BuildersPerpRouteImport } from './routes/builders-perp'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TradeIndexRouteImport } from './routes/trade.index'
 import { Route as BuildersPerpIndexRouteImport } from './routes/builders-perp.index'
+import { Route as TradeSymbolRouteImport } from './routes/trade.$symbol'
 import { Route as BuildersPerpDexRouteImport } from './routes/builders-perp.$dex'
+import { Route as TradeBaseQuoteRouteImport } from './routes/trade.$base.$quote'
 
+const TradeRoute = TradeRouteImport.update({
+  id: '/trade',
+  path: '/trade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
@@ -72,15 +81,30 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TradeIndexRoute = TradeIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TradeRoute,
+} as any)
 const BuildersPerpIndexRoute = BuildersPerpIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => BuildersPerpRoute,
 } as any)
+const TradeSymbolRoute = TradeSymbolRouteImport.update({
+  id: '/$symbol',
+  path: '/$symbol',
+  getParentRoute: () => TradeRoute,
+} as any)
 const BuildersPerpDexRoute = BuildersPerpDexRouteImport.update({
   id: '/$dex',
   path: '/$dex',
   getParentRoute: () => BuildersPerpRoute,
+} as any)
+const TradeBaseQuoteRoute = TradeBaseQuoteRouteImport.update({
+  id: '/$base/$quote',
+  path: '/$base/$quote',
+  getParentRoute: () => TradeRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -94,8 +118,12 @@ export interface FileRoutesByFullPath {
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/trade': typeof TradeRouteWithChildren
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
+  '/trade/$symbol': typeof TradeSymbolRoute
   '/builders-perp/': typeof BuildersPerpIndexRoute
+  '/trade/': typeof TradeIndexRoute
+  '/trade/$base/$quote': typeof TradeBaseQuoteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -108,7 +136,10 @@ export interface FileRoutesByTo {
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
+  '/trade/$symbol': typeof TradeSymbolRoute
   '/builders-perp': typeof BuildersPerpIndexRoute
+  '/trade': typeof TradeIndexRoute
+  '/trade/$base/$quote': typeof TradeBaseQuoteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,8 +153,12 @@ export interface FileRoutesById {
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
+  '/trade': typeof TradeRouteWithChildren
   '/builders-perp/$dex': typeof BuildersPerpDexRoute
+  '/trade/$symbol': typeof TradeSymbolRoute
   '/builders-perp/': typeof BuildersPerpIndexRoute
+  '/trade/': typeof TradeIndexRoute
+  '/trade/$base/$quote': typeof TradeBaseQuoteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -138,8 +173,12 @@ export interface FileRouteTypes {
     | '/spot'
     | '/support'
     | '/terms'
+    | '/trade'
     | '/builders-perp/$dex'
+    | '/trade/$symbol'
     | '/builders-perp/'
+    | '/trade/'
+    | '/trade/$base/$quote'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -152,7 +191,10 @@ export interface FileRouteTypes {
     | '/support'
     | '/terms'
     | '/builders-perp/$dex'
+    | '/trade/$symbol'
     | '/builders-perp'
+    | '/trade'
+    | '/trade/$base/$quote'
   id:
     | '__root__'
     | '/'
@@ -165,8 +207,12 @@ export interface FileRouteTypes {
     | '/spot'
     | '/support'
     | '/terms'
+    | '/trade'
     | '/builders-perp/$dex'
+    | '/trade/$symbol'
     | '/builders-perp/'
+    | '/trade/'
+    | '/trade/$base/$quote'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -180,10 +226,18 @@ export interface RootRouteChildren {
   SpotRoute: typeof SpotRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
+  TradeRoute: typeof TradeRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trade': {
+      id: '/trade'
+      path: '/trade'
+      fullPath: '/trade'
+      preLoaderRoute: typeof TradeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -254,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trade/': {
+      id: '/trade/'
+      path: '/'
+      fullPath: '/trade/'
+      preLoaderRoute: typeof TradeIndexRouteImport
+      parentRoute: typeof TradeRoute
+    }
     '/builders-perp/': {
       id: '/builders-perp/'
       path: '/'
@@ -261,12 +322,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuildersPerpIndexRouteImport
       parentRoute: typeof BuildersPerpRoute
     }
+    '/trade/$symbol': {
+      id: '/trade/$symbol'
+      path: '/$symbol'
+      fullPath: '/trade/$symbol'
+      preLoaderRoute: typeof TradeSymbolRouteImport
+      parentRoute: typeof TradeRoute
+    }
     '/builders-perp/$dex': {
       id: '/builders-perp/$dex'
       path: '/$dex'
       fullPath: '/builders-perp/$dex'
       preLoaderRoute: typeof BuildersPerpDexRouteImport
       parentRoute: typeof BuildersPerpRoute
+    }
+    '/trade/$base/$quote': {
+      id: '/trade/$base/$quote'
+      path: '/$base/$quote'
+      fullPath: '/trade/$base/$quote'
+      preLoaderRoute: typeof TradeBaseQuoteRouteImport
+      parentRoute: typeof TradeRoute
     }
   }
 }
@@ -285,6 +360,20 @@ const BuildersPerpRouteWithChildren = BuildersPerpRoute._addFileChildren(
   BuildersPerpRouteChildren,
 )
 
+interface TradeRouteChildren {
+  TradeSymbolRoute: typeof TradeSymbolRoute
+  TradeIndexRoute: typeof TradeIndexRoute
+  TradeBaseQuoteRoute: typeof TradeBaseQuoteRoute
+}
+
+const TradeRouteChildren: TradeRouteChildren = {
+  TradeSymbolRoute: TradeSymbolRoute,
+  TradeIndexRoute: TradeIndexRoute,
+  TradeBaseQuoteRoute: TradeBaseQuoteRoute,
+}
+
+const TradeRouteWithChildren = TradeRoute._addFileChildren(TradeRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
@@ -296,6 +385,7 @@ const rootRouteChildren: RootRouteChildren = {
   SpotRoute: SpotRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
+  TradeRoute: TradeRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

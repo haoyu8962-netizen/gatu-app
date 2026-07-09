@@ -1,18 +1,18 @@
 import { t } from "@lingui/core/macro";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
-import { useConnection } from "wagmi";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { getSideLabel } from "@/lib/trade/open-orders";
-import { useExchangeScope } from "@/providers/exchange-scope";
-import { useMarketActions } from "@/stores/use-market-store";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
 	className?: string;
@@ -20,9 +20,9 @@ interface Props {
 }
 
 export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: Props) {
-	const { address, isConnected } = useConnection();
-	const { scope } = useExchangeScope();
-	const { setSelectedMarket } = useMarketActions();
+	const { address, isConnected } = useWalletSession();
+	const navigateToMarket = useMarketNavigation();
+	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
 	const {
 		data: historicalOrdersEvent,
@@ -38,6 +38,11 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 
 	const headerCount = isConnected ? `${orders.length}` : FALLBACK_VALUE_PLACEHOLDER;
 	const isPageScroll = scrollMode === "page";
+
+	function handleSelectMarket(name: string) {
+		navigateToMarket(name, undefined, { displayedContent: "trade" });
+		setActiveTab("trade");
+	}
 
 	if (!isConnected) {
 		return (
@@ -88,7 +93,7 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 										<AssetBadge
 											coin={order.coin}
 											side={isLong ? "buy" : "sell"}
-											onClick={() => setSelectedMarket(scope, order.coin)}
+											onClick={() => handleSelectMarket(order.coin)}
 											nameClassName="text-sm"
 										/>
 										<span className={cn("text-2xs font-medium uppercase", isLong ? "text-success" : "text-error")}>

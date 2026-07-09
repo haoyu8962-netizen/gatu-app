@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { MOBILE_NAV_ITEMS, type MobileTab } from "@/config/nav";
@@ -24,7 +25,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 				"pb-[env(safe-area-inset-bottom)]",
 				className,
 			)}
-			aria-label="Primary navigation"
+			aria-label={t`Primary navigation`}
 		>
 			<div className="flex items-stretch">
 				{MOBILE_NAV_ITEMS.map((item) => {

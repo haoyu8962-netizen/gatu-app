@@ -1,35 +1,39 @@
-import { Suspense } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { Suspense, useEffect } from "react";
 import {
 	APP_HEADER_OFFSET_CLASS,
 	APP_HEADER_PLUS_BANNER_OFFSET_CLASS,
 	MOBILE_BOTTOM_NAV_HEIGHT_PX,
-	MOBILE_BREAKPOINT_PX,
 } from "@/config/layout";
+import { DEFAULT_SELECTED_MARKETS } from "@/config/markets";
+import { useDefaultUnifiedAccount } from "@/hooks/trade/use-default-unified-account";
 import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
+import { useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { getTradePathForMarketName } from "@/lib/hyperliquid/market-route";
+import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
 import { createLazyComponent } from "@/lib/lazy";
+import { useExchangeScope } from "@/providers/exchange-scope";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { useMarketActions } from "@/stores/use-market-store";
 import { GeoRestrictionBanner } from "./geo/geo-restriction-banner";
 import { TopNav } from "./header/top-nav";
 import { MainWorkspace } from "./layout/main-workspace";
+import { MobileTerminal } from "./mobile/mobile-terminal";
 import { TestnetBanner } from "./testnet-banner";
-
-const MobileTerminal = createLazyComponent(() => import("./mobile/mobile-terminal"), "MobileTerminal");
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 const FooterBar = createLazyComponent(() => import("./footer/footer-bar"), "FooterBar");
 
-if (typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT_PX) {
-	MobileTerminal.preload();
-}
-
 export function TradeTerminalPage() {
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
+	useDefaultUnifiedAccount();
 
 	return (
 		<>
+			<RouteMarketSync />
 			<TabTitleSync />
 			{isMobile ? (
 				<Suspense fallback={<MobileLoadingFallback />}>
@@ -57,6 +61,54 @@ export function TradeTerminalPage() {
 			</Suspense>
 		</>
 	);
+}
+
+function RouteMarketSync() {
+	const { routeMarketName, setScope } = useExchangeScope();
+	const navigate = useNavigate();
+	const { data: selectedMarket, error, isLoading } = useSelectedMarketInfo();
+	const { markets } = useMarketsInfo();
+	const { setSelectedMarket } = useMarketActions();
+	const selectedMarketName = selectedMarket?.name;
+	const selectedMarketPairName = selectedMarket?.pairName;
+	const selectedMarketScope = selectedMarket ? getExchangeScopeForMarket(selectedMarket) : undefined;
+	const selectedMarketDex = selectedMarket ? getExchangeDexForMarket(selectedMarket) : undefined;
+
+	useEffect(() => {
+		if (!routeMarketName) return;
+
+		if (!selectedMarketName || !selectedMarketScope) {
+			if (isLoading || error || markets.length === 0) return;
+			const fallbackMarket = DEFAULT_SELECTED_MARKETS.perp;
+			setScope("perp", undefined, fallbackMarket);
+			void navigate({
+				to: getTradePathForMarketName(fallbackMarket),
+				replace: true,
+				resetScroll: false,
+			});
+			return;
+		}
+
+		if (routeMarketName !== selectedMarketName && routeMarketName !== selectedMarketPairName) return;
+
+		setScope(selectedMarketScope, selectedMarketDex, selectedMarketName);
+		setSelectedMarket(selectedMarketScope, selectedMarketName);
+		setSelectedMarket("all", selectedMarketName);
+	}, [
+		routeMarketName,
+		selectedMarketName,
+		selectedMarketPairName,
+		selectedMarketScope,
+		selectedMarketDex,
+		isLoading,
+		error,
+		markets.length,
+		navigate,
+		setScope,
+		setSelectedMarket,
+	]);
+
+	return null;
 }
 
 function MobileLoadingFallback() {

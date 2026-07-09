@@ -6,11 +6,13 @@ export {
 	assertExchange,
 	type BuilderConfig,
 	calculateAssetId,
+	clearActiveAgentOwner,
 	createExchangeClient,
 	createKey,
 	type ExchangeMethod,
 	type ExchangeParams,
 	type ExchangeResponse,
+	getAccountLedgerRefreshKey,
 	getAssetIdKind,
 	getExplorerTokenUrl,
 	getExplorerTxUrl,
@@ -65,6 +67,7 @@ export {
 	type SubscriptionResult,
 	type SubscriptionStatus,
 	serializeKey,
+	setActiveAgentOwner,
 	subscriptionKeys,
 	type UseAgentRegistrationResult,
 	type UseAgentStatusResult,
@@ -98,10 +101,7 @@ export {
 
 export type { MarketKind } from "@/domain/market";
 
-import {
-	getInfoClient as getInfoClientBase,
-	getSubscriptionClient as getSubscriptionClientBase,
-} from "@gatu/hl-react";
+import { getInfoClient as getInfoClientBase, getSubscriptionClient as getSubscriptionClientBase } from "@gatu/hl-react";
 import { isTestnet } from "@/lib/network";
 
 export function getInfoClient() {

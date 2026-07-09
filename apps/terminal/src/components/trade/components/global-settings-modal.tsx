@@ -52,22 +52,17 @@ export function GlobalSettingsModal() {
 		setLocalSlippageInput(null);
 	}
 
-	function handleSlippageSliderChange(value: number | readonly number[]) {
-		const nextValue = Array.isArray(value) ? value[0] : value;
-		if (typeof nextValue === "number" && nextValue !== slippagePercent) {
-			setMarketOrderSlippagePercent(nextValue);
+	function handleSlippageSliderChange(value: number) {
+		if (value !== slippagePercent) {
+			setMarketOrderSlippagePercent(value);
 		}
 	}
 
 	function handleLanguageChange(value: string | null) {
 		if (!value || value === i18n.locale) return;
-		dynamicActivate(value as LocaleCode)
-			.then((activated) => {
-				if (activated) window.location.reload();
-			})
-			.catch(() => {
-				toast.error(t`Failed to change language`);
-			});
+		dynamicActivate(value as LocaleCode).catch(() => {
+			toast.error(t`Failed to change language`);
+		});
 	}
 
 	function handleNumberFormatChange(value: string | null) {
@@ -104,7 +99,7 @@ export function GlobalSettingsModal() {
 								</div>
 							</div>
 							<Slider
-								value={[slippagePercent]}
+								value={slippagePercent}
 								onValueChange={handleSlippageSliderChange}
 								min={MARKET_ORDER_SLIPPAGE_MIN_PERCENT}
 								max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
@@ -146,7 +141,7 @@ export function GlobalSettingsModal() {
 						<SettingRow label={t`Environment`} hint={t`Page reloads when changed`}>
 							<SegmentedControls
 								value={network}
-								onValueChange={(value) => setNetwork(value as "mainnet" | "testnet")}
+								onValueChange={(value: string) => setNetwork(value as "mainnet" | "testnet")}
 								size="xxs"
 							>
 								<SegmentedControlItem value="mainnet">{t`Mainnet`}</SegmentedControlItem>

@@ -1,43 +1,24 @@
+import { createMobileAgentWalletRecord } from "@gatu/hl-react/signing/mobile-agent";
 import { Button, TextInput } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import {
-	CheckCircleIcon,
-	CopyIcon,
-	DeviceMobileIcon,
-	KeyIcon,
-	SpinnerGapIcon,
-	WalletIcon,
-	WarningCircleIcon,
-} from "@phosphor-icons/react";
+import { CheckCircleIcon, DeviceMobileIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-	type ChangeEvent,
-	type FormEvent,
-	forwardRef,
-	useCallback,
-	useEffect,
-	useLayoutEffect,
-	useRef,
-	useState,
-} from "react";
-import { useConnection } from "wagmi";
-import { WalletModal } from "@/components/trade/components/wallet-modal";
-import { shortenAddress } from "@/lib/format";
-import { useAgentWalletActions, useHyperliquid } from "@/lib/hyperliquid";
+import { type ChangeEvent, type FormEvent, forwardRef, useCallback, useEffect, useRef, useState } from "react";
+import { setActiveAgentOwner, useAgentWalletActions, useHyperliquid } from "@/lib/hyperliquid";
 import {
 	clearMobileSyncDraft,
 	isMobileSyncEnvelopeExpired,
 	readMobileSyncDraft,
 	saveMobileSyncDraft,
-	updateMobileSyncPairingCodeDraft,
 } from "@/lib/mobile-sync/draft-storage";
-import { isMobileSyncImportError, verifyImportedMobileAgent } from "@/lib/mobile-sync/import-verification";
 import {
+	decodeSyncKey,
 	decryptMobileAgentSyncEnvelope,
 	isMobileSyncError,
 	MOBILE_SYNC_ROUTE_PATH,
 	type MobileSyncEnvelope,
+	type ParsedMobileSync,
 	parseMobileSyncUrl,
 	readAndClearMobileSyncEnvelope,
 } from "@/lib/mobile-sync/sync-core";
@@ -62,95 +43,91 @@ type ImportStatus =
 type EnvelopeSource = "url" | "stored" | "manual";
 
 function MobileAgentSyncRoute() {
-	const { address } = useConnection();
-	const { env, info } = useHyperliquid();
+	const { env } = useHyperliquid();
 	const { setAgent } = useAgentWalletActions();
-	const [envelope, setEnvelope] = useState<MobileSyncEnvelope | null>(null);
+	const [sync, setSync] = useState<ParsedMobileSync | null>(null);
 	const [envelopeSource, setEnvelopeSource] = useState<EnvelopeSource | null>(null);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const [linkInput, setLinkInput] = useState("");
-	const [pairingCode, setPairingCode] = useState("");
 	const [showLinkInput, setShowLinkInput] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [status, setStatus] = useState<ImportStatus>({ state: "idle" });
-	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const errorAlertRef = useRef<HTMLDivElement | null>(null);
-	const pairingCodeInputRef = useRef<HTMLInputElement | null>(null);
-	const pairingCodeSelectionRef = useRef<number | null>(null);
 
-	const clearExpiredEnvelope = useCallback(() => {
+	const clearExpiredSync = useCallback(() => {
 		clearMobileSyncDraft();
-		setEnvelope(null);
+		setSync(null);
 		setEnvelopeSource(null);
 		setLoadError(t`This mobile link expired.`);
 		setSubmitError(null);
-		setPairingCode("");
 		setStatus({ state: "idle" });
 		setShowLinkInput(true);
 	}, []);
 
-	const clearInvalidEnvelope = useCallback((message: string) => {
+	const clearInvalidSync = useCallback((message: string) => {
 		clearMobileSyncDraft();
-		setEnvelope(null);
+		setSync(null);
 		setEnvelopeSource(null);
 		setLoadError(message);
 		setSubmitError(null);
-		setPairingCode("");
 		setStatus({ state: "idle" });
 		setShowLinkInput(true);
 	}, []);
 
-	const loadEnvelope = useCallback(
-		(nextEnvelope: MobileSyncEnvelope, source: EnvelopeSource) => {
-			if (isMobileSyncEnvelopeExpired(nextEnvelope)) {
-				clearExpiredEnvelope();
+	const loadSync = useCallback(
+		(next: ParsedMobileSync, source: EnvelopeSource) => {
+			if (isMobileSyncEnvelopeExpired(next.envelope)) {
+				clearExpiredSync();
 				return;
 			}
 
-			setEnvelope(nextEnvelope);
+			setSync(next);
 			setEnvelopeSource(source);
 			setLoadError(null);
 			setSubmitError(null);
-			setPairingCode("");
 			setStatus({ state: "idle" });
 			setShowLinkInput(false);
-			saveMobileSyncDraft(nextEnvelope);
+			saveMobileSyncDraft(next.envelope, next.encodedKey);
 		},
-		[clearExpiredEnvelope],
+		[clearExpiredSync],
 	);
 
 	const restoreStoredDraft = useCallback(() => {
 		const storedDraft = readMobileSyncDraft();
 		if (storedDraft.status === "found") {
-			setEnvelope(storedDraft.draft.envelope);
-			setEnvelopeSource("stored");
-			setPairingCode(storedDraft.draft.pairingCodeDraft);
-			setLoadError(null);
-			setShowLinkInput(false);
+			try {
+				const keyBytes = decodeSyncKey(storedDraft.draft.encodedKey);
+				setSync({ envelope: storedDraft.draft.envelope, keyBytes, encodedKey: storedDraft.draft.encodedKey });
+				setEnvelopeSource("stored");
+				setLoadError(null);
+				setShowLinkInput(false);
+			} catch {
+				clearInvalidSync(t`Saved phone link was invalid. Paste the link again.`);
+			}
 			return;
 		}
 		if (storedDraft.status === "expired") {
-			clearInvalidEnvelope(t`This mobile link expired.`);
+			clearInvalidSync(t`This mobile link expired.`);
 			return;
 		}
 		if (storedDraft.status === "invalid") {
-			clearInvalidEnvelope(t`Saved phone link was invalid. Paste the link again.`);
+			clearInvalidSync(t`Saved phone link was invalid. Paste the link again.`);
 		}
-	}, [clearInvalidEnvelope]);
+	}, [clearInvalidSync]);
 
 	const processLocationSyncHash = useCallback(() => {
 		if (window.location.hash) {
 			try {
-				const nextEnvelope = readAndClearMobileSyncEnvelope();
-				loadEnvelope(nextEnvelope, "url");
+				const next = readAndClearMobileSyncEnvelope();
+				loadSync(next, "url");
 			} catch (error) {
-				clearInvalidEnvelope(getMobileSyncImportErrorMessage(error));
+				clearInvalidSync(getMobileSyncImportErrorMessage(error));
 			}
 			return;
 		}
 
 		restoreStoredDraft();
-	}, [clearInvalidEnvelope, loadEnvelope, restoreStoredDraft]);
+	}, [clearInvalidSync, loadSync, restoreStoredDraft]);
 
 	useEffect(() => {
 		processLocationSyncHash();
@@ -170,27 +147,17 @@ function MobileAgentSyncRoute() {
 	}, [processLocationSyncHash]);
 
 	useEffect(() => {
-		if (!envelope || loadError || status.state === "success") return;
+		if (!sync || loadError || status.state === "success") return;
 
-		const expiresInMs = envelope.expiresAtMs - Date.now();
+		const expiresInMs = sync.envelope.expiresAtMs - Date.now();
 		if (expiresInMs <= 0) {
-			clearExpiredEnvelope();
+			clearExpiredSync();
 			return;
 		}
 
-		const timeoutId = window.setTimeout(clearExpiredEnvelope, expiresInMs + 1);
+		const timeoutId = window.setTimeout(clearExpiredSync, expiresInMs + 1);
 		return () => window.clearTimeout(timeoutId);
-	}, [clearExpiredEnvelope, envelope, loadError, status.state]);
-
-	useLayoutEffect(() => {
-		const nextSelectionStart = pairingCodeSelectionRef.current;
-		pairingCodeSelectionRef.current = null;
-		if (nextSelectionStart === null) return;
-
-		const input = pairingCodeInputRef.current;
-		if (!input || document.activeElement !== input) return;
-		input.setSelectionRange(nextSelectionStart, nextSelectionStart);
-	});
+	}, [clearExpiredSync, sync, loadError, status.state]);
 
 	useEffect(() => {
 		if (!loadError && !submitError) return;
@@ -201,16 +168,15 @@ function MobileAgentSyncRoute() {
 		event.preventDefault();
 
 		try {
-			const nextEnvelope = parseMobileSyncUrl(linkInput.trim());
+			const next = parseMobileSyncUrl(linkInput.trim());
 			setLinkInput("");
-			loadEnvelope(nextEnvelope, "manual");
+			loadSync(next, "manual");
 		} catch (error) {
 			clearMobileSyncDraft();
-			setEnvelope(null);
+			setSync(null);
 			setEnvelopeSource(null);
 			setLoadError(getMobileSyncImportErrorMessage(error));
 			setSubmitError(null);
-			setPairingCode("");
 			setStatus({ state: "idle" });
 			setShowLinkInput(true);
 		}
@@ -218,38 +184,31 @@ function MobileAgentSyncRoute() {
 
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
-		if (!envelope || status.state === "importing") return;
+		if (!sync || status.state === "importing") return;
 
 		setSubmitError(null);
-		if (!address) {
-			setSubmitError(t`Connect the same wallet used on desktop before importing phone access.`);
-			setStatus({ state: "idle" });
-			return;
-		}
-
-		const ownerAddress = address;
 		setStatus({ state: "importing" });
 
 		try {
-			const imported = await decryptMobileAgentSyncEnvelope(envelope, pairingCode, {
+			const imported = await decryptMobileAgentSyncEnvelope(sync.envelope, sync.keyBytes, {
 				currentOrigin: window.location.origin,
 				expectedEnv: env,
-				expectedUserAddress: ownerAddress,
 			});
-			const extraAgents = await info.extraAgents({ user: ownerAddress });
-			const verifiedAgent = verifyImportedMobileAgent({
-				imported,
-				extraAgents,
-				expectedEnv: env,
-				expectedUserAddress: ownerAddress,
+			const record = createMobileAgentWalletRecord({
+				privateKey: imported.agentPrivateKey,
+				publicKey: imported.agentAddress,
+				agentName: imported.agentName,
+				agentValidUntilMs: imported.agentValidUntilMs,
+				importedAtMs: imported.importedAtMs,
+				syncId: imported.syncId,
 			});
-			const { privateKey, publicKey, ...metadata } = verifiedAgent;
+			const { privateKey, publicKey, ...metadata } = record;
 
 			setAgent(imported.env, imported.userAddress, privateKey, publicKey, metadata);
+			setActiveAgentOwner(imported.env, imported.userAddress);
 			clearMobileSyncDraft();
-			setEnvelope(null);
+			setSync(null);
 			setEnvelopeSource(null);
-			setPairingCode("");
 			setStatus({
 				state: "success",
 				userAddress: imported.userAddress,
@@ -263,234 +222,149 @@ function MobileAgentSyncRoute() {
 
 	function handleResetLink() {
 		clearMobileSyncDraft();
-		setEnvelope(null);
+		setSync(null);
 		setEnvelopeSource(null);
 		setLoadError(null);
 		setLinkInput("");
-		setPairingCode("");
 		setSubmitError(null);
 		setStatus({ state: "idle" });
 		setShowLinkInput(false);
 	}
 
-	async function handlePastePairingCode() {
-		if (!navigator.clipboard?.readText) {
-			setSubmitError(t`Clipboard paste is not available. Paste from the keyboard menu or type the code manually.`);
-			return;
-		}
-
-		try {
-			const clipboardText = await navigator.clipboard.readText();
-			const nextPairingCode = formatPairingCodeInput(clipboardText);
-			if (nextPairingCode.replace(/[\s-]/g, "").length !== 16) {
-				setSubmitError(t`Clipboard does not contain a pairing code.`);
-				return;
-			}
-			setPairingCode(nextPairingCode);
-			updateMobileSyncPairingCodeDraft(envelope, nextPairingCode);
-			setSubmitError(null);
-		} catch {
-			setSubmitError(t`Clipboard paste was blocked. Paste from the keyboard menu or type the code manually.`);
-		}
-	}
-
 	const isImporting = status.state === "importing";
-	const pairingCodeReady = pairingCode.replace(/[\s-]/g, "").length === 16;
-	const pairingCodeDisabled = !envelope || !!loadError || isImporting || status.state === "success";
-	const importDisabled =
-		!address || !envelope || !!loadError || isImporting || status.state === "success" || !pairingCodeReady;
-	const needsPastedLink = !envelope || !!loadError;
+	const hasValidCredential = !!sync && !loadError && !isMobileSyncEnvelopeExpired(sync.envelope);
+	const importDisabled = !hasValidCredential || isImporting || status.state === "success";
+	const needsPastedLink = !sync || !!loadError;
 	const showPhoneLinkForm = needsPastedLink || showLinkInput;
 	const handleLinkInputChange = (event: ChangeEvent<HTMLInputElement>) => setLinkInput(event.target.value);
-	const handlePairingCodeChange = (event: ChangeEvent<HTMLInputElement>) => {
-		pairingCodeSelectionRef.current = getFormattedPairingCodeCaretIndex(
-			event.target.value,
-			event.target.selectionStart ?? event.target.value.length,
-		);
-		const nextPairingCode = formatPairingCodeInput(event.target.value);
-		setPairingCode(nextPairingCode);
-		updateMobileSyncPairingCodeDraft(envelope, nextPairingCode);
-		setSubmitError(null);
-	};
 
 	return (
-		<>
-			<main className="min-h-[100dvh] bg-background px-4 py-5 text-fg sm:px-6">
-				<div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] w-full max-w-md flex-col justify-center">
-					<div className="rounded-12 border border-stroke-weak bg-overlay shadow-overlay">
-						<div className="border-b border-stroke-weak p-4">
-							<div className="flex items-center gap-2">
-								<DeviceMobileIcon className="size-5 text-brand" weight="duotone" aria-hidden />
-								<h1 className="text-base font-semibold text-fg">
-									<Trans>Import phone access</Trans>
-								</h1>
-							</div>
-							<p className="mt-1 text-xs text-fg-muted">
-								<Trans>Open the phone link, then enter the pairing code shown on desktop.</Trans>
-							</p>
+		<main className="min-h-[100dvh] bg-background px-4 py-5 text-fg sm:px-6">
+			<div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] w-full max-w-md flex-col justify-center">
+				<div className="rounded-12 border border-stroke-weak bg-overlay shadow-overlay">
+					<div className="border-b border-stroke-weak p-4">
+						<div className="flex items-center gap-2">
+							<DeviceMobileIcon className="size-5 text-brand" weight="duotone" aria-hidden />
+							<h1 className="text-base font-semibold text-fg">
+								<Trans>Import phone access</Trans>
+							</h1>
+						</div>
+						<p className="mt-1 text-xs text-fg-muted">
+							<Trans>Import the trading key from your desktop. No wallet connection is required on this phone.</Trans>
+						</p>
+					</div>
+
+					<div className="space-y-4 p-4">
+						<div className="flex items-center justify-between gap-3 rounded-8 border border-stroke-weak bg-fill-weak px-3 py-2 text-xs">
+							<span className="text-fg-muted">
+								<Trans>Mode</Trans>
+							</span>
+							<span className="min-w-0 truncate font-medium text-fg">
+								<Trans>Phone import</Trans>
+								<span className="text-fg-muted"> · {env}</span>
+							</span>
 						</div>
 
-						<div className="space-y-4 p-4">
-							<div className="flex items-center justify-between gap-3 rounded-8 border border-stroke-weak bg-fill-weak px-3 py-2 text-xs">
-								<span className="text-fg-muted">
-									<Trans>Using</Trans>
-								</span>
-								<span className="min-w-0 truncate font-medium text-fg">
-									{address ? (
-										<>
-											<span className="font-mono">{shortenAddress(address)}</span>
-											<span className="text-fg-muted"> · {env}</span>
-										</>
-									) : (
-										<Trans>No wallet connected</Trans>
-									)}
-								</span>
-							</div>
+						{sync && !loadError && (
+							<LoadedLinkPanel envelope={sync.envelope} env={env} source={envelopeSource} onReset={handleResetLink} />
+						)}
+						{loadError && <ErrorCallout ref={errorAlertRef} message={loadError} />}
+						{submitError && !loadError && <ErrorCallout ref={errorAlertRef} message={submitError} />}
+						{submitError && loadError && <ErrorCallout message={submitError} />}
 
-							{envelope && !loadError && (
-								<LoadedLinkPanel
-									envelope={envelope}
-									env={env}
-									connectedAddress={address}
-									pairingCodeReady={pairingCodeReady}
-									source={envelopeSource}
-									onReset={handleResetLink}
-								/>
-							)}
-							{!address && <ConnectWalletCallout onConnect={() => setWalletModalOpen(true)} />}
-							{loadError && <ErrorCallout ref={errorAlertRef} message={loadError} />}
-							{submitError && !loadError && <ErrorCallout ref={errorAlertRef} message={submitError} />}
-							{submitError && loadError && <ErrorCallout message={submitError} />}
+						{status.state === "success" ? (
+							<SuccessPanel userAddress={status.userAddress} agentAddress={status.agentAddress} />
+						) : (
+							<div className="space-y-3">
+								{sync && !loadError && !showLinkInput && (
+									<Button
+										type="button"
+										variant="outline"
+										intent="neutral"
+										size="sm"
+										className="w-full"
+										onClick={() => setShowLinkInput(true)}
+									>
+										<Trans>Use a different phone link</Trans>
+									</Button>
+								)}
 
-							{status.state === "success" ? (
-								<SuccessPanel userAddress={status.userAddress} agentAddress={status.agentAddress} />
-							) : (
-								<div className="space-y-3">
-									{envelope && !loadError && !showLinkInput && (
-										<Button
-											type="button"
-											variant="outline"
-											intent="neutral"
-											size="sm"
-											className="w-full"
-											onClick={() => setShowLinkInput(true)}
-										>
-											<Trans>Use a different phone link</Trans>
-										</Button>
-									)}
-
-									{showPhoneLinkForm && (
-										<form className="space-y-3" onSubmit={handleLoadPastedLink}>
-											<TextInput
-												label={t`Phone link`}
-												value={linkInput}
-												onChange={handleLinkInputChange}
-												placeholder={t`Paste link from desktop`}
-												autoCapitalize="none"
-												autoCorrect="off"
-												inputMode="url"
-												type="url"
-											/>
-											<Button
-												type="submit"
-												variant="outline"
-												intent="neutral"
-												size="md"
-												className="w-full"
-												disabled={!linkInput.trim()}
-											>
-												<Trans>Use phone link</Trans>
-											</Button>
-											{envelope && !loadError && (
-												<Button
-													type="button"
-													variant="ghost"
-													intent="neutral"
-													size="sm"
-													className="w-full"
-													onClick={() => {
-														setShowLinkInput(false);
-														setLinkInput("");
-													}}
-												>
-													<Trans>Cancel</Trans>
-												</Button>
-											)}
-										</form>
-									)}
-
-									<form className="space-y-3" onSubmit={handleSubmit}>
-										<div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-											<TextInput
-												ref={pairingCodeInputRef}
-												label={t`Pairing code`}
-												value={pairingCode}
-												onChange={handlePairingCodeChange}
-												placeholder="0000-0000-0000-0000"
-												autoComplete="one-time-code"
-												autoCapitalize="characters"
-												autoCorrect="off"
-												inputMode="text"
-												pattern="[0-9A-Fa-f\\s-]*"
-												maxLength={19}
-												spellCheck={false}
-												iconLeft={<KeyIcon className="size-4" aria-hidden />}
-												disabled={pairingCodeDisabled}
-											/>
-											<Button
-												type="button"
-												variant="outline"
-												intent="neutral"
-												size="md"
-												className="sm:w-auto"
-												disabled={pairingCodeDisabled}
-												iconLeft={<CopyIcon className="size-4" aria-hidden />}
-												onClick={handlePastePairingCode}
-											>
-												<Trans>Paste code</Trans>
-											</Button>
-										</div>
+								{showPhoneLinkForm && (
+									<form className="space-y-3" onSubmit={handleLoadPastedLink}>
+										<TextInput
+											label={t`Phone link`}
+											value={linkInput}
+											onChange={handleLinkInputChange}
+											placeholder={t`Paste link from desktop`}
+											autoCapitalize="none"
+											autoCorrect="off"
+											inputMode="url"
+											type="url"
+										/>
 										<Button
 											type="submit"
-											variant="filled"
-											intent="brand"
+											variant="outline"
+											intent="neutral"
 											size="md"
 											className="w-full"
-											disabled={importDisabled}
-											iconLeft={
-												isImporting ? (
-													<SpinnerGapIcon className="size-4 animate-spin" aria-hidden />
-												) : (
-													<DeviceMobileIcon className="size-4" aria-hidden />
-												)
-											}
+											disabled={!linkInput.trim()}
 										>
-											{isImporting ? <Trans>Importing...</Trans> : <Trans>Import phone access</Trans>}
+											<Trans>Use phone link</Trans>
 										</Button>
+										{sync && !loadError && (
+											<Button
+												type="button"
+												variant="ghost"
+												intent="neutral"
+												size="sm"
+												className="w-full"
+												onClick={() => {
+													setShowLinkInput(false);
+													setLinkInput("");
+												}}
+											>
+												<Trans>Cancel</Trans>
+											</Button>
+										)}
 									</form>
-								</div>
-							)}
-						</div>
+								)}
+
+								<form className="space-y-3" onSubmit={handleSubmit}>
+									<Button
+										type="submit"
+										variant="filled"
+										intent="brand"
+										size="md"
+										className="w-full"
+										disabled={importDisabled}
+										iconLeft={
+											isImporting ? (
+												<SpinnerGapIcon className="size-4 animate-spin" aria-hidden />
+											) : (
+												<DeviceMobileIcon className="size-4" aria-hidden />
+											)
+										}
+									>
+										{isImporting ? <Trans>Importing...</Trans> : <Trans>Import phone access</Trans>}
+									</Button>
+								</form>
+							</div>
+						)}
 					</div>
 				</div>
-			</main>
-			<WalletModal open={walletModalOpen} onOpenChange={setWalletModalOpen} />
-		</>
+			</div>
+		</main>
 	);
 }
 
 function LoadedLinkPanel({
 	envelope,
 	env,
-	connectedAddress,
-	pairingCodeReady,
 	source,
 	onReset,
 }: {
 	envelope: MobileSyncEnvelope;
 	env: string;
-	connectedAddress: string | undefined;
-	pairingCodeReady: boolean;
 	source: EnvelopeSource | null;
 	onReset: () => void;
 }) {
@@ -530,16 +404,7 @@ function LoadedLinkPanel({
 			<div className="grid gap-2 text-xs">
 				<RequirementRow label={t`Sync ID`} value={syncPreview} complete />
 				<RequirementRow label={t`Network`} value={env} complete />
-				<RequirementRow
-					label={t`Owner wallet`}
-					value={connectedAddress ? shortenAddress(connectedAddress) : t`Connect to verify`}
-					complete={!!connectedAddress}
-				/>
-				<RequirementRow
-					label={t`Pairing code`}
-					value={pairingCodeReady ? t`Ready` : t`Enter the desktop code`}
-					complete={pairingCodeReady}
-				/>
+				<RequirementRow label={t`Trading key`} value={t`Ready to import`} complete />
 			</div>
 		</div>
 	);
@@ -576,30 +441,6 @@ const ErrorCallout = forwardRef<HTMLDivElement, { message: string }>(function Er
 	);
 });
 
-function ConnectWalletCallout({ onConnect }: { onConnect: () => void }) {
-	return (
-		<div className="space-y-3 rounded-8 border border-stroke-warning-strong/25 bg-warning-soft p-3 text-xs">
-			<div className="flex items-start gap-2">
-				<WarningCircleIcon className="mt-0.5 size-4 shrink-0 text-warning" weight="fill" aria-hidden />
-				<p className="text-warning">
-					<Trans>Connect the same owner wallet used on desktop before importing phone access.</Trans>
-				</p>
-			</div>
-			<Button
-				type="button"
-				variant="outline"
-				intent="neutral"
-				size="sm"
-				className="w-full"
-				iconLeft={<WalletIcon className="size-3.5" aria-hidden />}
-				onClick={onConnect}
-			>
-				<Trans>Connect wallet</Trans>
-			</Button>
-		</div>
-	);
-}
-
 function SuccessPanel({ userAddress, agentAddress }: { userAddress: string; agentAddress: string }) {
 	return (
 		<div className="space-y-3">
@@ -632,30 +473,11 @@ function SuccessPanel({ userAddress, agentAddress }: { userAddress: string; agen
 	);
 }
 
-function formatPairingCodeInput(value: string): string {
-	const cleaned = value
-		.toUpperCase()
-		.replace(/[^0-9A-F]/g, "")
-		.slice(0, 16);
-	return cleaned.replace(/(.{4})(?=.)/g, "$1-");
-}
-
-function getFormattedPairingCodeCaretIndex(value: string, selectionStart: number): number {
-	const hexBeforeSelection = value
-		.slice(0, selectionStart)
-		.toUpperCase()
-		.replace(/[^0-9A-F]/g, "")
-		.slice(0, 16).length;
-	if (hexBeforeSelection <= 0) return 0;
-	return hexBeforeSelection + Math.floor((hexBeforeSelection - 1) / 4);
-}
-
 function getMobileSyncImportErrorMessage(error: unknown): string {
 	if (isMobileSyncError(error)) {
 		switch (error.code) {
-			case "invalid_pairing_code":
-				return t`Enter the 16-character pairing code.`;
 			case "missing_sync_fragment":
+			case "missing_sync_key":
 				return t`No mobile link found.`;
 			case "sync_payload_in_query":
 			case "sync_payload_in_path":
@@ -668,18 +490,14 @@ function getMobileSyncImportErrorMessage(error: unknown): string {
 			case "expired_payload":
 				return t`This mobile link expired.`;
 			case "decrypt_failed":
-				return t`Pairing code does not match this link.`;
+				return t`This mobile link is damaged or incomplete. Scan or paste it again.`;
 			case "origin_mismatch":
 				return t`This link was created for a different site.`;
 			case "env_mismatch":
 				return t`This link was created for a different network.`;
 			case "account_mismatch":
-				return t`Connect the same wallet used on desktop.`;
+				return t`This phone link belongs to a different owner account.`;
 		}
-	}
-
-	if (isMobileSyncImportError(error)) {
-		return t`This phone link is not approved on Hyperliquid.`;
 	}
 
 	if (error instanceof TypeError) {

@@ -77,6 +77,24 @@ describe("agent snapshot cache", () => {
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
 	});
 
+	it("clears expired mobile agent keys on read", async () => {
+		const store = installDom();
+		store.set(
+			"hyperliquid_agent_Mainnet_0x1234",
+			JSON.stringify({
+				privateKey: VALID_PRIVATE_KEY,
+				publicKey: VALID_PUBLIC_KEY,
+				source: "mobile-sync",
+				agentValidUntilMs: 1,
+			}),
+		);
+
+		const { readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+
+		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
+		expect(store.has("hyperliquid_agent_Mainnet_0x1234")).toBe(false);
+	});
+
 	it("LRU cap (4) evicts the oldest (env,address) pair on the 5th unique read", async () => {
 		installDom();
 

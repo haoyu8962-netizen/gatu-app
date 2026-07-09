@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { zeroAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { useConnection } from "wagmi";
 import { useExchange } from "../hooks/useExchange";
 import { useHyperliquid } from "../provider";
 import { useAgentWalletActions } from "./agent-storage";
@@ -12,6 +11,8 @@ import type { RegistrationStatus } from "./types";
 import { useAgentStatus } from "./use-agent-status";
 
 export type RegistrationStep = "fee" | "agent" | null;
+
+const WALLET_APPROVAL_TIMEOUT_MS = 60_000;
 
 export interface UseAgentRegistrationResult {
 	register: () => Promise<Address>;
@@ -32,9 +33,22 @@ function deriveRegistrationStatus(
 	return "verifying";
 }
 
+function withWalletApprovalTimeout<T>(promise: Promise<T>): Promise<T> {
+	let timeoutId: ReturnType<typeof setTimeout> | undefined;
+	const timeout = new Promise<never>((_, reject) => {
+		timeoutId = setTimeout(() => {
+			reject(new Error("Wallet approval timed out. Check your wallet and try again."));
+		}, WALLET_APPROVAL_TIMEOUT_MS);
+	});
+
+	return Promise.race([promise, timeout]).finally(() => {
+		if (timeoutId) clearTimeout(timeoutId);
+	});
+}
+
 export function useAgentRegistration(): UseAgentRegistrationResult {
-	const { env, agentName, builderConfig } = useHyperliquid();
-	const { address } = useConnection();
+	const { env, agentName, builderConfig, clientKey } = useHyperliquid();
+	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
 	const addressRef = useRef(address);
 	addressRef.current = address;
 
@@ -60,49 +74,66 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	const registration = useMutation({
 		mutationKey: ["hl", "registration", address],
 		mutationFn: async (): Promise<Address> => {
-			const startAddress = address;
-			if (!startAddress) throw new Error("No wallet connected");
+			try {
+				const startAddress = address;
+				if (!startAddress) throw new Error("No wallet connected");
 
-			function assertSameWallet() {
-				if (addressRef.current !== startAddress) {
-					throw new Error("Wallet changed during registration");
+				function assertSameWallet() {
+					if (addressRef.current !== startAddress) {
+						throw new Error("Wallet changed during registration");
+					}
 				}
-			}
 
-			let requirements = await agentStatus.refetch();
-			assertSameWallet();
-
-			if (requirements.needsBuilderFee && builderConfig?.b && builderConfig?.f !== undefined) {
-				safeSetStep("fee");
-				await approveBuilderFee.mutateAsync({
-					builder: builderConfig.b,
-					maxFeeRate: convertFeeToPercentageString(builderConfig.f),
-				});
-				assertSameWallet();
-				requirements = await agentStatus.refetch();
-				assertSameWallet();
-			}
-
-			if (requirements.needsAgent) {
-				safeSetStep("agent");
-
-				const privateKey = generatePrivateKey();
-				const account = privateKeyToAccount(privateKey);
-				const publicKey = account.address;
-
-				await approveAgent.mutateAsync({ agentAddress: publicKey, agentName });
+				let requirements = await agentStatus.refetch();
 				assertSameWallet();
 
-				clearAgent(env, startAddress);
-				setAgent(env, startAddress, privateKey, publicKey);
-				await agentStatus.refetch();
+				if (requirements.needsBuilderFee && builderConfig?.b && builderConfig?.f !== undefined) {
+					safeSetStep("fee");
+					await withWalletApprovalTimeout(
+						approveBuilderFee.mutateAsync({
+							builder: builderConfig.b,
+							maxFeeRate: convertFeeToPercentageString(builderConfig.f),
+						}),
+					);
+					assertSameWallet();
+					requirements = await agentStatus.refetch();
+					assertSameWallet();
+				}
 
+				if (requirements.needsAgent) {
+					safeSetStep("agent");
+
+					const privateKey = generatePrivateKey();
+					const account = privateKeyToAccount(privateKey);
+					const publicKey = account.address;
+
+					const approveAgentPromise = approveAgent.mutateAsync({ agentAddress: publicKey, agentName });
+					try {
+						await withWalletApprovalTimeout(approveAgentPromise);
+					} catch (error) {
+						approveAgentPromise
+							.then(async () => {
+								if (addressRef.current !== startAddress) return;
+								clearAgent(env, startAddress);
+								setAgent(env, startAddress, privateKey, publicKey);
+								await agentStatus.refetch();
+							})
+							.catch(() => {});
+						throw error;
+					}
+					assertSameWallet();
+
+					clearAgent(env, startAddress);
+					setAgent(env, startAddress, privateKey, publicKey);
+					await agentStatus.refetch();
+
+					return publicKey;
+				}
+
+				return agentStatus.agentAddress ?? zeroAddress;
+			} finally {
 				safeSetStep(null);
-				return publicKey;
 			}
-
-			safeSetStep(null);
-			return agentStatus.agentAddress ?? zeroAddress;
 		},
 	});
 

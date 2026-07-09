@@ -42,6 +42,10 @@ export const CHART_LOCALE = "en";
 export const CHART_CUSTOM_FONT_FAMILY = "'IBM Plex Sans Variable', ui-sans-serif, system-ui, sans-serif";
 
 export const CHART_ENABLED_FEATURES = [
+	// Load the chart from a real same-origin iframe (charting_library/sameorigin.html) instead of
+	// TradingView's about:blank injection (compatibility_mode), whose injection timing intermittently
+	// leaves onChartReady unfired in production. Still avoids the blob iframe path; frame-ancestors stays strict.
+	"iframe_loading_same_origin",
 	"side_toolbar_in_fullscreen_mode",
 	"header_in_fullscreen_mode",
 	"hide_last_na_study_output",
