@@ -150,6 +150,37 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
 	});
 
+	it("does not show a fatal chart error when TradingView symbol switching is slow", async () => {
+		vi.useFakeTimers();
+		widgetConstructor.mockImplementation(function Widget(this: unknown, options: unknown) {
+			void this;
+			const widget = createMockWidget(options as { theme?: "light" | "dark" });
+			widget.setSymbol.mockImplementation(() => {});
+			widgets.push(widget);
+			return widget;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		await act(async () => {
+			vi.advanceTimersByTime(30_000);
+			await Promise.resolve();
+		});
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+		expect(widgets[0]?.setSymbol).toHaveBeenCalledTimes(1);
+		expect(container.textContent).not.toContain("Something went wrong");
+	});
+
 	it("does not destroy the widget when TradingView readiness is delayed", async () => {
 		vi.useFakeTimers();
 		widgetConstructor.mockImplementation(function Widget(this: unknown, options: unknown) {
@@ -337,28 +368,17 @@ describe("TradingViewChart", () => {
 		expect(widget?.setSymbol).toHaveBeenCalledTimes(1);
 
 		await act(async () => {
-			vi.advanceTimersByTime(4_000);
-			vi.runOnlyPendingTimers();
+			vi.advanceTimersByTime(30_000);
 			await Promise.resolve();
 		});
 		await flushChartEffects();
 
 		expect(widgetConstructor).toHaveBeenCalledTimes(1);
 		expect(widget?.remove).not.toHaveBeenCalled();
-		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
+		expect(widget?.setSymbol).toHaveBeenCalledTimes(1);
 		expect(widget?.setSymbol).toHaveBeenLastCalledWith("ETH", "60", expect.any(Function));
-		await act(async () => {
-			vi.advanceTimersByTime(4_000);
-			vi.runOnlyPendingTimers();
-			await Promise.resolve();
-		});
-		await flushChartEffects();
-
-		expect(widgetConstructor).toHaveBeenCalledTimes(1);
-		expect(widget?.remove).not.toHaveBeenCalled();
-		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
-		expect(container.textContent).toContain("Something went wrong");
-		expect(container.textContent).toContain("Retry");
+		expect(container.textContent).not.toContain("Something went wrong");
+		expect(container.textContent).not.toContain("Retry");
 	});
 
 	it("keeps the chart visible while a symbol switch is pending", async () => {

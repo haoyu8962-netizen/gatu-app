@@ -2,7 +2,12 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { CHART_MIN_HEIGHT_PX } from "@/config/chart";
 import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
-import { priceScaleFromMid } from "@/lib/chart/symbol";
+import {
+	getChartApiSymbol,
+	getChartMarketKeys,
+	getChartPriceScale,
+	getChartSymbolInfo,
+} from "@/lib/chart/market-symbol";
 import { buildChartOverrides, getChartCssUrl, getLoadingScreenColors } from "@/lib/chart/theme-colors";
 import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
@@ -19,43 +24,11 @@ import {
 	DEFAULT_CHART_INTERVAL,
 	DEFAULT_CHART_SYMBOL,
 	DEFAULT_CHART_THEME,
-	QUOTE_ASSET,
 	TIMEZONE,
 } from "./constants";
 import { createDatafeed } from "./datafeed";
 
-const MAX_SYMBOL_SWITCH_ATTEMPTS = 2;
-const SYMBOL_SWITCH_TIMEOUT_MS = 4_000;
 const CHART_READY_SOFT_TIMEOUT_MS = 45_000;
-
-function priceScaleFromSzDecimals(szDecimals: number): number {
-	const decimals = Math.min(Math.max(6 - szDecimals, 2), 8);
-	return 10 ** decimals;
-}
-
-function getChartSymbol(market: UnifiedMarketInfo): string {
-	return market.name;
-}
-
-function getChartDisplayName(market: UnifiedMarketInfo): string {
-	return market.pairName ?? market.name;
-}
-
-function getLegacyChartDisplaySymbol(market: UnifiedMarketInfo): string {
-	if (market.kind === "builderPerp") {
-		const quoteToken = market.quoteToken?.displayName ?? market.quoteToken?.name ?? QUOTE_ASSET;
-		return `${market.name}/${quoteToken}`;
-	}
-	return getChartDisplayName(market);
-}
-
-function getChartMarketKeys(market: UnifiedMarketInfo): string[] {
-	const keys = new Set<string>();
-	keys.add(market.name);
-	keys.add(market.pairName);
-	keys.add(getLegacyChartDisplaySymbol(market));
-	return Array.from(keys);
-}
 
 interface Props {
 	symbol?: string;
@@ -72,7 +45,7 @@ export function TradingViewChart({
 	theme = DEFAULT_CHART_THEME,
 	yAxisInside = false,
 }: Props) {
-	const widgetSymbol = market ? getChartSymbol(market) : symbol;
+	const widgetSymbol = market ? getChartApiSymbol(market) : symbol;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const chartReadyRef = useRef(false);
@@ -85,10 +58,6 @@ export function TradingViewChart({
 	const appliedThemeRef = useRef<"light" | "dark" | null>(null);
 	const pendingSymbolRef = useRef<string | null>(null);
 	const pendingIntervalRef = useRef<string | null>(null);
-	const symbolSwitchAttemptRef = useRef(0);
-	const symbolSwitchTargetRef = useRef<string | null>(null);
-	const symbolSwitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-	const symbolSwitchRetryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const symbolSwitchCleanupRef = useRef<(() => void) | null>(null);
 	const themeSwitchSequenceRef = useRef(0);
 	const marketBySymbolRef = useRef(new Map<string, UnifiedMarketInfo>());
@@ -107,17 +76,6 @@ export function TradingViewChart({
 		}
 	}
 
-	const clearSymbolSwitchTimeout = () => {
-		if (symbolSwitchTimeoutRef.current) {
-			clearTimeout(symbolSwitchTimeoutRef.current);
-			symbolSwitchTimeoutRef.current = null;
-		}
-		if (symbolSwitchRetryTimeoutRef.current) {
-			clearTimeout(symbolSwitchRetryTimeoutRef.current);
-			symbolSwitchRetryTimeoutRef.current = null;
-		}
-	};
-
 	const clearSymbolSwitchListeners = () => {
 		const cleanup = symbolSwitchCleanupRef.current;
 		symbolSwitchCleanupRef.current = null;
@@ -125,7 +83,6 @@ export function TradingViewChart({
 	};
 
 	const clearPendingSymbolSwitch = () => {
-		clearSymbolSwitchTimeout();
 		clearSymbolSwitchListeners();
 		pendingSymbolRef.current = null;
 		pendingIntervalRef.current = null;
@@ -138,8 +95,6 @@ export function TradingViewChart({
 	const completeSymbolSwitch = (nextSymbol: string, nextInterval: string) => {
 		appliedSymbolRef.current = nextSymbol;
 		appliedIntervalRef.current = nextInterval;
-		symbolSwitchAttemptRef.current = 0;
-		symbolSwitchTargetRef.current = null;
 		finishSymbolSwitch();
 	};
 
@@ -164,13 +119,6 @@ export function TradingViewChart({
 		pendingIntervalRef.current = nextInterval;
 		setInitError(null);
 
-		const switchTarget = `${nextSymbol}\u0000${nextInterval}`;
-		if (symbolSwitchTargetRef.current !== switchTarget) {
-			symbolSwitchTargetRef.current = switchTarget;
-			symbolSwitchAttemptRef.current = 0;
-		}
-		symbolSwitchAttemptRef.current += 1;
-
 		const handleSymbolSwitchComplete = () => {
 			if (
 				widgetRef.current === widget &&
@@ -180,33 +128,6 @@ export function TradingViewChart({
 				completeSymbolSwitch(nextSymbol, nextInterval);
 			}
 		};
-
-		symbolSwitchTimeoutRef.current = setTimeout(() => {
-			if (
-				widgetRef.current !== widget ||
-				pendingSymbolRef.current !== nextSymbol ||
-				pendingIntervalRef.current !== nextInterval
-			) {
-				return;
-			}
-
-			finishSymbolSwitch();
-			if (symbolSwitchAttemptRef.current < MAX_SYMBOL_SWITCH_ATTEMPTS) {
-				symbolSwitchRetryTimeoutRef.current = setTimeout(() => {
-					if (
-						widgetRef.current === widget &&
-						targetSymbolRef.current === nextSymbol &&
-						targetIntervalRef.current === nextInterval
-					) {
-						applySymbolRef.current();
-					}
-				}, 0);
-				return;
-			}
-			symbolSwitchAttemptRef.current = 0;
-			symbolSwitchTargetRef.current = null;
-			setInitError("symbol-switch-timeout");
-		}, SYMBOL_SWITCH_TIMEOUT_MS);
 
 		try {
 			const chart = widget.activeChart();
@@ -218,8 +139,6 @@ export function TradingViewChart({
 			widget.setSymbol(nextSymbol, nextInterval as ResolutionString, handleSymbolSwitchComplete);
 		} catch {
 			finishSymbolSwitch();
-			symbolSwitchAttemptRef.current = 0;
-			symbolSwitchTargetRef.current = null;
 		}
 	};
 
@@ -276,29 +195,16 @@ export function TradingViewChart({
 		function getSelectedMarketPriceScale(coin: string): number | undefined {
 			const currentMarket = getMarketForChartSymbol(coin, coin);
 			if (currentMarket?.name !== coin) return undefined;
-			if (currentMarket.markPx) return priceScaleFromMid(currentMarket.markPx);
-
-			return priceScaleFromSzDecimals(currentMarket.szDecimals);
+			return getChartPriceScale(currentMarket);
 		}
 
 		function getSelectedMarketSymbolInfo(symbolName: string, coin: string) {
 			const currentMarket = getMarketForChartSymbol(symbolName, coin);
 			if (!currentMarket) return undefined;
-			const displayName = getChartDisplayName(currentMarket);
-			if (
-				symbolName !== currentMarket.name &&
-				coin !== currentMarket.name &&
-				symbolName !== currentMarket.pairName &&
-				symbolName !== getLegacyChartDisplaySymbol(currentMarket)
-			) {
+			if (coin !== currentMarket.name && !getChartMarketKeys(currentMarket).includes(symbolName)) {
 				return undefined;
 			}
-			return {
-				name: displayName,
-				ticker: currentMarket.name,
-				description: displayName,
-				pricescale: getSelectedMarketPriceScale(currentMarket.name),
-			};
+			return getChartSymbolInfo(currentMarket);
 		}
 
 		const removeWidget = () => {

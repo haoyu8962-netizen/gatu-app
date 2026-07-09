@@ -12,6 +12,7 @@ export type StreamRuntime = {
 	promise?: Promise<ISubscription | undefined>;
 	reconnectTimer?: ReturnType<typeof setTimeout>;
 	cooldownTimer?: ReturnType<typeof setTimeout>;
+	releaseTimer?: ReturnType<typeof setTimeout>;
 	reconnectAttempts: number;
 	detachFailureListener?: () => void;
 	coin: string;
