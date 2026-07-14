@@ -1,5 +1,5 @@
 import { Badge, Button, ButtonIcon, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import {
 	ArrowsLeftRightIcon,
 	CopyIcon,
@@ -32,6 +32,7 @@ interface MobileAccountViewProps {
 }
 
 export function MobileAccountView({ className }: MobileAccountViewProps) {
+	const { t } = useLingui();
 	const { address, isConnected, sessionMode } = useWalletSession();
 	const { disconnectWallet } = useDisconnectWallet();
 

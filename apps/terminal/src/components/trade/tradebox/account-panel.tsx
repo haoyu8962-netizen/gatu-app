@@ -1,5 +1,5 @@
 import { Button, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -20,6 +20,7 @@ type SummaryRow = {
 };
 
 export function AccountPanel() {
+	const { t } = useLingui();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
 	const { isConnected, sessionMode } = useWalletSession();

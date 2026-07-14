@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
@@ -33,6 +33,7 @@ export function TwapOrderSummary({
 	baseToken,
 	szDecimals,
 }: Props) {
+	const { t } = useLingui();
 	const minutes = Math.max(0, Math.round(twapMinutesNum ?? 0));
 	const numberOfOrders = minutes > 0 ? Math.floor((minutes * 60) / TWAP_SUBORDER_INTERVAL_SECONDS) + 1 : 0;
 	const sizePerSuborder = numberOfOrders > 0 ? sizeValue / numberOfOrders : 0;

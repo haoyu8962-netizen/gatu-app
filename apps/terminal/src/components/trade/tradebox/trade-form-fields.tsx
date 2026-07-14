@@ -1,5 +1,5 @@
-import { Button, Checkbox, Slider, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { Button, Slider, Tooltip } from "@gatu/ui";
+import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import { labelTypographyClass } from "@/components/ui/field-label";
@@ -38,6 +38,7 @@ import { TradeFormScale } from "./trade-form-scale";
 import { TradeFormTif } from "./trade-form-tif";
 import { TradeFormTpSl } from "./trade-form-tp-sl";
 import { TradeFormTwap } from "./trade-form-twap";
+import { TradeOptionCheckboxes } from "./trade-option-checkboxes";
 
 interface Props {
 	price: number;
@@ -58,6 +59,7 @@ export function TradeFormFields({
 	onDepositClick,
 	onSwapClick,
 }: Props) {
+	const { t } = useLingui();
 	const sizeFieldId = useId();
 	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
 	const [dragSliderValue, setDragSliderValue] = useState(0);
@@ -281,27 +283,29 @@ export function TradeFormFields({
 
 			{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl) || showTif) && (
 				<div className="space-y-3.5 py-0.5">
-					<div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-xs">
-						{capabilities.hasReduceOnly && (
-							<Checkbox
-								aria-label={t`Reduce Only`}
-								checked={triggerOrder || reduceOnly}
-								onCheckedChange={(checked: boolean | "indeterminate") => setReduceOnly(checked === true)}
-								disabled={isFormDisabled || triggerOrder}
-								label={t`Reduce Only`}
-							/>
-						)}
-						{capabilities.hasTpSl && canUseTpSl && (
-							<Checkbox
-								aria-label={t`Take Profit / Stop Loss`}
-								checked={tpSlEnabled}
-								onCheckedChange={(checked: boolean | "indeterminate") => setTpSlEnabled(checked === true)}
-								disabled={isFormDisabled}
-								label={t`TP/SL`}
-							/>
-						)}
+					<TradeOptionCheckboxes
+						className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-xs"
+						reduceOnly={
+							capabilities.hasReduceOnly
+								? {
+										checked: triggerOrder || reduceOnly,
+										disabled: isFormDisabled || triggerOrder,
+										onCheckedChange: setReduceOnly,
+									}
+								: undefined
+						}
+						tpSl={
+							capabilities.hasTpSl && canUseTpSl
+								? {
+										checked: tpSlEnabled,
+										disabled: isFormDisabled,
+										onCheckedChange: setTpSlEnabled,
+									}
+								: undefined
+						}
+					>
 						{showTif && <TradeFormTif orderType={orderType} disabled={isFormDisabled} />}
-					</div>
+					</TradeOptionCheckboxes>
 
 					{capabilities.hasTpSl && canUseTpSl && tpSlEnabled && (
 						<TradeFormTpSl referencePrice={price} size={sizeValue} szDecimals={szDecimals} disabled={isFormDisabled} />

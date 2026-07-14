@@ -1,8 +1,7 @@
-import { Button, buttonVariants, Checkbox, Slider } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { Button, buttonVariants, Slider } from "@gatu/ui";
+import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, Suspense, useEffect, useState } from "react";
-import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
@@ -15,10 +14,7 @@ import { getLiquidationInfo } from "@/domain/trade/order/metrics";
 import { getSliderValue } from "@/domain/trade/order/size";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
-import {
-	type SelectableAccountAbstraction,
-	useAccountAbstractionControl,
-} from "@/hooks/trade/use-account-abstraction-control";
+import { useAccountAbstractionControl } from "@/hooks/trade/use-account-abstraction-control";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
@@ -68,6 +64,7 @@ import { OrderToast } from "../tradebox/order-toast";
 import { TpSlSection } from "../tradebox/tp-sl-section";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
 import { TradeHeader } from "../tradebox/trade-header";
+import { TradeOptionCheckboxes } from "../tradebox/trade-option-checkboxes";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
 const ORDER_TEXT = UI_TEXT.ORDER_ENTRY;
@@ -79,6 +76,7 @@ interface Props {
 }
 
 export function MobileTradeView({ className, embedded }: Props) {
+	const { t } = useLingui();
 	const { address, isConnected, sessionMode } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
@@ -260,16 +258,6 @@ export function MobileTradeView({ className, embedded }: Props) {
 		}
 	}
 
-	async function handleAccountModeChange(nextAccountMode: SelectableAccountAbstraction) {
-		if (nextAccountMode === accountModeControl.accountAbstraction) return;
-		try {
-			await accountModeControl.setAccountAbstraction(nextAccountMode);
-			toast.success(t`Account mode updated`);
-		} catch (error) {
-			toast.error(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
-		}
-	}
-
 	async function handleSubmit() {
 		if (tradeRestricted) return;
 		if (!isConnected || !address) return;
@@ -429,10 +417,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 						onMarginLeverageClick={() => setShowMarginDialog(true)}
 						isLeveraged={capabilities.isLeveraged}
 						accountMode={accountModeControl.accountAbstraction}
-						isAccountModeLoading={accountModeControl.isLoading}
 						isAccountModeUpdating={accountModeControl.isUpdating}
-						canChangeAccountMode={capabilities.isLeveraged && accountModeControl.canSet}
-						onAccountModeChange={handleAccountModeChange}
 						hideAlgoOrders
 						compact={embedded}
 						layout="mobile"
@@ -555,24 +540,19 @@ export function MobileTradeView({ className, embedded }: Props) {
 					)}
 
 					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
-						<div className={cn("flex items-center", embedded ? "gap-2 text-2xs" : "gap-4")}>
-							{capabilities.hasReduceOnly && (
-								<Checkbox
-									checked={reduceOnly}
-									onCheckedChange={(checked: boolean | "indeterminate") => setReduceOnly(checked === true)}
-									disabled={isFormDisabled}
-									label={ORDER_TEXT.REDUCE_ONLY_LABEL}
-								/>
-							)}
-							{capabilities.hasTpSl && canUseTpSl && (
-								<Checkbox
-									checked={tpSlEnabled}
-									onCheckedChange={(checked: boolean | "indeterminate") => setTpSlEnabled(checked === true)}
-									disabled={isFormDisabled}
-									label={ORDER_TEXT.TPSL_LABEL}
-								/>
-							)}
-						</div>
+						<TradeOptionCheckboxes
+							className={cn("flex items-center", embedded ? "gap-2 text-2xs" : "gap-4")}
+							reduceOnly={
+								capabilities.hasReduceOnly
+									? { checked: reduceOnly, disabled: isFormDisabled, onCheckedChange: setReduceOnly }
+									: undefined
+							}
+							tpSl={
+								capabilities.hasTpSl && canUseTpSl
+									? { checked: tpSlEnabled, disabled: isFormDisabled, onCheckedChange: setTpSlEnabled }
+									: undefined
+							}
+						/>
 					)}
 
 					{tpSlEnabled && canUseTpSl && (

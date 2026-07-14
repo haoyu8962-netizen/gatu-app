@@ -2,7 +2,7 @@ import { Button, ButtonIcon, Divider } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon } from "@phosphor-icons/react";
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
 import { DEFAULT_SELECTED_MARKETS } from "@/config/markets";
@@ -12,11 +12,12 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useMarketsInfo } from "@/lib/hyperliquid";
 import { getTradePathForMarket, getTradePathForMarketName } from "@/lib/hyperliquid/market-route";
+import { getExchangeDexForMarket } from "@/lib/hyperliquid/market-scope";
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
-import { useSelectedMarkets } from "@/stores/use-market-store";
+import { useMarketActions, useSelectedMarkets } from "@/stores/use-market-store";
 import { LanguageSwitcher } from "./language-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -36,22 +37,42 @@ function getScopeAccentClass(scope: string): string {
 }
 
 export function TopNav() {
+	const navigate = useNavigate();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { isConnected, sessionMode } = useWalletSession();
-	const { scope } = useExchangeScope();
+	const { marketName, scope, setScope } = useExchangeScope();
 	const selectedMarkets = useSelectedMarkets();
+	const { setSelectedMarket } = useMarketActions();
 	const { getMarketInfo } = useMarketsInfo();
 	const isTestnet = useIsTestnet();
 	const { tradeRestricted } = useGeoRestriction();
 
 	const accentClass = getScopeAccentClass(scope);
+	const currentMarketName = marketName ?? selectedMarkets[scope] ?? selectedMarkets.all;
+
+	function handleScopeNavigation(item: (typeof SCOPE_NAV_ITEMS)[number]) {
+		const targetMarketName =
+			item.scope === "all" ? currentMarketName : (selectedMarkets[item.scope] ?? DEFAULT_SELECTED_MARKETS[item.scope]);
+		const targetMarket = getMarketInfo(targetMarketName);
+		const resolvedMarketName = targetMarket?.name ?? targetMarketName;
+		const targetPath = targetMarket ? getTradePathForMarket(targetMarket) : getTradePathForMarketName(targetMarketName);
+
+		setScope(
+			item.scope,
+			item.scope === "builders-perp" && targetMarket ? getExchangeDexForMarket(targetMarket) : undefined,
+			resolvedMarketName,
+		);
+		setSelectedMarket(item.scope, resolvedMarketName);
+		setSelectedMarket("all", resolvedMarketName);
+		void navigate({ to: targetPath, resetScroll: false });
+	}
 
 	return (
 		<header
 			className={cn(
 				APP_HEADER_HEIGHT_CLASS,
-				"fixed left-0 right-0 z-40 border-b border-stroke-weak px-3 flex items-center justify-between bg-background transition-colors duration-300 ease-in-out",
+				"fixed left-0 right-0 z-40 border-b border-stroke-weak px-3 flex items-center justify-between bg-background transition-[border-color] duration-300 ease-in-out",
 				isTestnet ? "top-8" : "top-0",
 				accentClass,
 			)}
@@ -67,16 +88,18 @@ export function TopNav() {
 				<Divider orientation="vertical" className="my-2 hidden lg:block" />
 				<nav className="hidden lg:flex items-center text-xs tracking-wide">
 					{SCOPE_NAV_ITEMS.map((item) => (
-						<Link
+						<button
 							key={item.scope}
-							to={getScopeNavTarget(item, selectedMarkets[item.scope], getMarketInfo)}
+							type="button"
+							onClick={() => handleScopeNavigation(item)}
+							aria-pressed={scope === item.scope}
 							className={cn(
-								"px-2.5 py-1 rounded-8 transition-colors duration-150",
+								"cursor-pointer px-2.5 py-1 rounded-8 transition-colors duration-150",
 								scope === item.scope ? item.activeClass : "text-fg-muted hover:text-fg",
 							)}
 						>
 							{item.label}
-						</Link>
+						</button>
 					))}
 					<Divider orientation="vertical" className="my-2 mx-1" />
 					{STATIC_NAV_ITEMS.map((item) => (
@@ -123,17 +146,6 @@ export function TopNav() {
 			</div>
 		</header>
 	);
-}
-
-function getScopeNavTarget(
-	item: (typeof SCOPE_NAV_ITEMS)[number],
-	selectedMarketName: string | undefined,
-	getMarketInfo: ReturnType<typeof useMarketsInfo>["getMarketInfo"],
-) {
-	if (item.scope === "all") return item.to;
-	const marketName = selectedMarketName ?? DEFAULT_SELECTED_MARKETS[item.scope];
-	const market = getMarketInfo(marketName);
-	return market ? getTradePathForMarket(market) : getTradePathForMarketName(marketName);
 }
 
 function UserMenuSkeleton() {

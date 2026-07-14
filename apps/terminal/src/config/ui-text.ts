@@ -8,8 +8,8 @@ export interface SideLabels {
 	sellAria: string;
 }
 
-// Getters (not eager values): t`` is evaluated on access — i.e. at render — so these stay
-// reactive to locale changes. Eager `t` at module load would freeze to the load-time locale.
+// Getters avoid freezing translations at module initialization. React consumers must still
+// subscribe with useLingui so a locale change causes another render and reevaluates each getter.
 export function getSideLabels(isSpotMarket: boolean): SideLabels {
 	if (isSpotMarket) {
 		return { buy: t`Buy`, sell: t`Sell`, buyAria: t`Buy`, sellAria: t`Sell` };

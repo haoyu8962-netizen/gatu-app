@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { memo, useMemo } from "react";
 import { getBaseQuoteFromPairName } from "@/domain/market";
@@ -50,6 +50,7 @@ const TradeRow = memo(function TradeRow({ trade, szDecimals, showInQuote, compac
 });
 
 export function TradesPanel({ compact = false }: { compact?: boolean }) {
+	const { t } = useLingui();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const subscriptionCoin = selectedMarket?.name ?? "";
 	const params = useMemo(() => ({ coin: subscriptionCoin }), [subscriptionCoin]);

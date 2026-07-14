@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import type { RegistrationStatus } from "@/lib/hyperliquid";
@@ -25,24 +25,21 @@ interface ButtonContentInput {
 	onSubmit: () => void;
 }
 
-function getRegisterText(isLoading: boolean, registerStatus: RegistrationStatus, canApprove: boolean): string {
-	if (isLoading) return t`Loading...`;
-	if (!canApprove) return t`Loading...`;
-	if (registerStatus === "approving_fee" || registerStatus === "approving_agent") return t`Sign in wallet...`;
-	if (registerStatus === "verifying") return t`Verifying...`;
-	return t`Enable Trading`;
-}
-
 export function useButtonContent(input: ButtonContentInput): ButtonContent {
+	const { t } = useLingui();
 	const isRegistering =
 		input.registerStatus === "approving_fee" ||
 		input.registerStatus === "approving_agent" ||
 		input.registerStatus === "verifying";
 
-	const registerText = useMemo(
-		() => getRegisterText(input.isAgentLoading, input.registerStatus, input.canApprove),
-		[input.isAgentLoading, input.registerStatus, input.canApprove],
-	);
+	const registerText = useMemo(() => {
+		if (input.isAgentLoading || !input.canApprove) return t`Loading...`;
+		if (input.registerStatus === "approving_fee" || input.registerStatus === "approving_agent") {
+			return t`Sign in wallet...`;
+		}
+		if (input.registerStatus === "verifying") return t`Verifying...`;
+		return t`Enable Trading`;
+	}, [input.isAgentLoading, input.registerStatus, input.canApprove, t]);
 
 	return useMemo<ButtonContent>(() => {
 		if (!input.isConnected) {
@@ -112,6 +109,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.side,
 		input.sideLabel,
 		input.isSubmitting,
+		t,
 	]);
 }
 

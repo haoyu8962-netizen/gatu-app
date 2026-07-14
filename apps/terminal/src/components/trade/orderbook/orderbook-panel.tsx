@@ -1,5 +1,5 @@
 import { Dropdown, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { BookBookmarkIcon, ListDashesIcon } from "@phosphor-icons/react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { getBaseQuoteFromPairName, getPercent } from "@/domain/market";
@@ -14,6 +14,7 @@ import { TradesPanel } from "./trades-panel";
 import { useOrderbookRows } from "./use-orderbook-rows";
 
 export function OrderbookPanel() {
+	const { t } = useLingui();
 	useRenderCommitTrack("orderbook");
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const { showOrderbookInQuote } = useGlobalSettings();

@@ -1,5 +1,5 @@
 import { Dropdown } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
@@ -24,10 +24,8 @@ interface Props {
 	onMarginLeverageClick?: () => void;
 	isLeveraged?: boolean;
 	accountMode?: SelectableAccountAbstraction | null;
-	isAccountModeLoading?: boolean;
 	isAccountModeUpdating?: boolean;
-	canChangeAccountMode?: boolean;
-	onAccountModeChange?: (mode: SelectableAccountAbstraction) => void;
+	onAccountModeClick?: () => void;
 	hideAlgoOrders?: boolean;
 	compact?: boolean;
 	layout?: "desktop" | "mobile";
@@ -45,14 +43,13 @@ export function TradeHeader({
 	onMarginLeverageClick,
 	isLeveraged,
 	accountMode,
-	isAccountModeLoading,
 	isAccountModeUpdating,
-	canChangeAccountMode,
-	onAccountModeChange,
+	onAccountModeClick,
 	hideAlgoOrders,
 	compact,
 	layout = "desktop",
 }: Props) {
+	const { t } = useLingui();
 	const tabsOrderType = getTabsOrderType(orderType);
 	const orderTypeIndex = tabsOrderType === "market" ? 0 : tabsOrderType === "limit" ? 1 : 2;
 	const orderTypeLabel =
@@ -86,29 +83,10 @@ export function TradeHeader({
 				? t`Unified`
 				: accountMode === "disabled"
 					? t`Separate`
-					: isAccountModeLoading
-						? t`Loading`
-						: t`Unified`;
-	const accountModeItems = [
-		{
-			label: t`Separate Account`,
-			active: accountMode === "disabled",
-			onSelect: () => onAccountModeChange?.("disabled"),
-		},
-		{
-			label: t`Unified Account`,
-			active: accountMode === "unifiedAccount",
-			onSelect: () => onAccountModeChange?.("unifiedAccount"),
-		},
-		{
-			label: t`Portfolio Margin`,
-			active: accountMode === "portfolioMargin",
-			onSelect: () => onAccountModeChange?.("portfolioMargin"),
-		},
-	];
+					: t`Unified`;
 	const controlButtonClass = cn(
-		"min-w-0 rounded-8 bg-fill-weak px-2.5 py-1.5 text-xs font-semibold text-fg transition-colors",
-		"hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+		"group min-w-0 cursor-pointer rounded-8 bg-fill-weak px-2.5 py-1.5 text-xs font-semibold text-fg transition-colors",
+		"hover:bg-fill-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
 		compact && "px-2 py-1 text-2xs",
 	);
@@ -161,29 +139,38 @@ export function TradeHeader({
 		<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-4"}>
 			{isLeveraged && (
 				<div className={cn("grid min-w-0 grid-cols-3", compact ? "gap-1.5" : "gap-2.5")}>
-					<button type="button" onClick={onMarginLeverageClick} className={controlButtonClass}>
+					<button
+						type="button"
+						onClick={onMarginLeverageClick}
+						className={controlButtonClass}
+						aria-haspopup="dialog"
+						title={marginLabel}
+					>
 						<span className="block truncate">{marginLabel}</span>
 					</button>
-					<button type="button" onClick={onMarginLeverageClick} className={controlButtonClass}>
+					<button
+						type="button"
+						onClick={onMarginLeverageClick}
+						className={controlButtonClass}
+						aria-haspopup="dialog"
+						title={`${leverage ?? 1}x`}
+					>
 						<span className="block truncate tabular-nums">{leverage ?? 1}x</span>
 					</button>
-					<Dropdown
-						trigger={
-							<span className="flex min-w-0 items-center justify-center gap-1">
-								{isAccountModeUpdating && <SpinnerGapIcon className="size-3 shrink-0 animate-spin" />}
-								<span className="truncate">{accountModeLabel}</span>
-							</span>
-						}
-						items={accountModeItems}
-						disabled={!canChangeAccountMode || isAccountModeUpdating}
-						size={compact ? "xxs" : "sm"}
-						align="end"
-						hideCaret
-						triggerAriaLabel={t`Account mode`}
-						triggerClassName={cn(controlButtonClass, "w-full border-0 shadow-none")}
-						popupClassName="min-w-44"
-						className="min-w-0"
-					/>
+					<button
+						type="button"
+						onClick={onAccountModeClick}
+						disabled={isAccountModeUpdating}
+						className={cn(controlButtonClass, "w-full")}
+						aria-label={t`Account mode`}
+						aria-haspopup="dialog"
+						title={accountModeLabel}
+					>
+						<span className="flex min-w-0 items-center justify-center gap-1">
+							{isAccountModeUpdating && <SpinnerGapIcon className="size-3 shrink-0 animate-spin" />}
+							<span className="truncate">{accountModeLabel}</span>
+						</span>
+					</button>
 				</div>
 			)}
 

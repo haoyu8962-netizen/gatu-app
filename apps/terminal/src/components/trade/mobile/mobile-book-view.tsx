@@ -1,5 +1,5 @@
 import { Button, Dropdown, type DropdownItem } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ArrowsClockwiseIcon, ArrowsLeftRightIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -124,6 +124,7 @@ interface MobileBookViewProps {
 }
 
 export function MobileBookView({ className, compact, inTabLayout, view: viewProp }: MobileBookViewProps) {
+	const { t } = useLingui();
 	const [internalView, setView] = useState<View>("book");
 	const view = viewProp ?? internalView;
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);

@@ -1,5 +1,5 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -59,6 +59,7 @@ import {
 	useTwapRandomize,
 } from "@/stores/use-order-entry-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
+import { AccountModeModal } from "./account-mode-modal";
 import { MarginModeModal } from "./margin-mode-modal";
 import { OrderSummary } from "./order-summary";
 import { OrderToast } from "./order-toast";
@@ -70,6 +71,7 @@ import { TwapOrderSummary } from "./twap-order-summary";
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 export function TradePanel() {
+	const { t } = useLingui();
 	const { address, isConnected, sessionMode } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
 	const switchChain = useSwitchChain();
@@ -264,12 +266,8 @@ export function TradePanel() {
 
 	async function handleAccountModeChange(nextAccountMode: SelectableAccountAbstraction) {
 		if (nextAccountMode === accountModeControl.accountAbstraction) return;
-		try {
-			await accountModeControl.setAccountAbstraction(nextAccountMode);
-			toast.success(t`Account mode updated`);
-		} catch (error) {
-			toast.error(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
-		}
+		await accountModeControl.setAccountAbstraction(nextAccountMode);
+		toast.success(t`Account mode updated`);
 	}
 
 	function handleRegister() {
@@ -409,6 +407,16 @@ export function TradePanel() {
 				showLeverage={capabilities.isLeveraged}
 				onApply={handleMarginApply}
 			/>
+			<AccountModeModal
+				open={activeModal === "accountMode"}
+				onOpenChange={(open) => setActiveModal(open ? "accountMode" : null)}
+				currentMode={accountModeControl.accountAbstraction}
+				isLoading={accountModeControl.isLoading}
+				isUpdating={accountModeControl.isUpdating}
+				canChange={capabilities.isLeveraged && accountModeControl.canSet}
+				onConnect={() => setActiveModal("wallet")}
+				onApply={handleAccountModeChange}
+			/>
 
 			<div className="flex flex-col gap-5 px-3 py-3">
 				<TradeHeader
@@ -423,10 +431,8 @@ export function TradePanel() {
 					onMarginLeverageClick={() => setActiveModal("marginMode")}
 					isLeveraged={capabilities.isLeveraged}
 					accountMode={accountModeControl.accountAbstraction}
-					isAccountModeLoading={accountModeControl.isLoading}
 					isAccountModeUpdating={accountModeControl.isUpdating}
-					canChangeAccountMode={capabilities.isLeveraged && accountModeControl.canSet}
-					onAccountModeChange={handleAccountModeChange}
+					onAccountModeClick={() => setActiveModal("accountMode")}
 				/>
 
 				<TradeFormFields

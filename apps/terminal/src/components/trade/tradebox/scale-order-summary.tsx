@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { cn } from "@/lib/cn";
@@ -37,6 +37,7 @@ export function ScaleOrderSummary({
 	szDecimals,
 	marketKind = "perp",
 }: Props) {
+	const { t } = useLingui();
 	const isLeveraged = marketKind !== "spot";
 
 	return (

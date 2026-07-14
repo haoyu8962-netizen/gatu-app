@@ -15,7 +15,7 @@ import { useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
-import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
@@ -26,8 +26,10 @@ const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 export function UserMenu() {
-	const { ready, authenticated, isConnected, login, displayAddress, sessionMode, user } = useWalletSession();
+	const { ready, authenticated, isConnected, isConnecting, login, displayAddress, sessionMode, hasWalletAccess, user } =
+		useWalletSession();
 	const { disconnectWallet } = useDisconnectWallet();
+	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
 	const emailAddress = getPrivyEmailAddress(user);
 	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
 	const { open: openDepositModal } = useDepositModalActions();
@@ -40,7 +42,10 @@ export function UserMenu() {
 		setMounted(true);
 	}, []);
 
-	if (!mounted || (!ready && !isConnected)) {
+	const walletSessionLoading =
+		sessionMode !== "agent-only" && (!ready || !walletsReady || isConnecting || isReconnecting);
+
+	if (!mounted || walletSessionLoading) {
 		return (
 			<Button
 				variant="outline"
@@ -77,8 +82,25 @@ export function UserMenu() {
 		);
 	}
 
+	if (authenticated && sessionMode !== "agent-only" && !hasWalletAccess) {
+		return (
+			<Button
+				variant="outline"
+				intent="neutral"
+				size="sm"
+				onClick={() => void reconnectWallet()}
+				iconLeft={<WalletIcon className="size-3.5" />}
+				className={cn(
+					APP_BAR_BUTTON_HEIGHT_CLASS,
+					"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+				)}
+			>
+				<Trans>Reconnect wallet</Trans>
+			</Button>
+		);
+	}
+
 	const displayLabel = emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : "");
-	const hasWalletAccess = sessionMode === "wallet";
 
 	const actionItems = [
 		...(displayAddress

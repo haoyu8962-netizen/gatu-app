@@ -2633,7 +2633,7 @@ msgstr "Recommandé uniquement aux traders automatisés. Chaque DEX possède un 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "Reconnect wallet"
-msgstr ""
+msgstr "Reconnecter le portefeuille"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Recovered after reload. Expires {expiresAtLabel}."
@@ -3265,10 +3265,9 @@ msgstr "Échange en cours..."
 #~ msgid "Switch between mainnet and testnet. Page will reload."
 #~ msgstr ""
 
-#. placeholder {0}: getModeLabel(selectedMode)
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Switch to {0}"
-msgstr "Passer à {0}"
+#~ msgid "Switch to {0}"
+#~ msgstr "Passer à {0}"
 
 #. placeholder {0}: fill.coin
 #. placeholder {0}: update.coin
@@ -3317,6 +3316,10 @@ msgstr "Passer au marché {displayName}, position Long"
 #: src/components/trade/positions/position-row.tsx
 msgid "Switch to {displayName} market, short position"
 msgstr "Passer au marché {displayName}, position Short"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switch to {selectedModeLabel}"
+msgstr "Passer à {selectedModeLabel}"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx

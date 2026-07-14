@@ -3265,10 +3265,9 @@ msgstr "兑换中..."
 #~ msgid "Switch between mainnet and testnet. Page will reload."
 #~ msgstr ""
 
-#. placeholder {0}: getModeLabel(selectedMode)
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Switch to {0}"
-msgstr "切换到 {0}"
+#~ msgid "Switch to {0}"
+#~ msgstr "切换到 {0}"
 
 #. placeholder {0}: fill.coin
 #. placeholder {0}: update.coin
@@ -3317,6 +3316,10 @@ msgstr "切换至{displayName}市场，多头仓位"
 #: src/components/trade/positions/position-row.tsx
 msgid "Switch to {displayName} market, short position"
 msgstr "切换至{displayName}市场，空头仓位"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switch to {selectedModeLabel}"
+msgstr "切换到 {selectedModeLabel}"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx

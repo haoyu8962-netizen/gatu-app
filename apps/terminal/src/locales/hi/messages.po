@@ -2633,7 +2633,7 @@ msgstr "केवल स्वचालित ट्रेडरों के �
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "Reconnect wallet"
-msgstr ""
+msgstr "वॉलेट फिर से कनेक्ट करें"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Recovered after reload. Expires {expiresAtLabel}."
@@ -3265,10 +3265,9 @@ msgstr "स्वैप किया जा रहा है..."
 #~ msgid "Switch between mainnet and testnet. Page will reload."
 #~ msgstr ""
 
-#. placeholder {0}: getModeLabel(selectedMode)
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Switch to {0}"
-msgstr "{0} पर स्विच करें"
+#~ msgid "Switch to {0}"
+#~ msgstr "{0} पर स्विच करें"
 
 #. placeholder {0}: fill.coin
 #. placeholder {0}: update.coin
@@ -3317,6 +3316,10 @@ msgstr "{displayName} मार्केट पर स्विच करें,
 #: src/components/trade/positions/position-row.tsx
 msgid "Switch to {displayName} market, short position"
 msgstr "{displayName} मार्केट पर स्विच करें, Short पोज़िशन"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switch to {selectedModeLabel}"
+msgstr "{selectedModeLabel} पर स्विच करें"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx

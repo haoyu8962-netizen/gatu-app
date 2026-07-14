@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { PencilIcon } from "@phosphor-icons/react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
@@ -44,6 +44,7 @@ export function OrderSummary({
 	orderType,
 	marketKind = "perp",
 }: Props) {
+	const { t } = useLingui();
 	const isLeveraged = marketKind !== "spot";
 	const showSlippage = isMarketExecutionOrderType(orderType);
 

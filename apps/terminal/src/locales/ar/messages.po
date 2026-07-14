@@ -2633,7 +2633,7 @@ msgstr "يوصى به فقط للمتداولين الآليين. لكل DEX ر�
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "Reconnect wallet"
-msgstr ""
+msgstr "إعادة توصيل المحفظة"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Recovered after reload. Expires {expiresAtLabel}."
@@ -3265,10 +3265,9 @@ msgstr "جارٍ المبادلة..."
 #~ msgid "Switch between mainnet and testnet. Page will reload."
 #~ msgstr ""
 
-#. placeholder {0}: getModeLabel(selectedMode)
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Switch to {0}"
-msgstr "التبديل إلى {0}"
+#~ msgid "Switch to {0}"
+#~ msgstr "التبديل إلى {0}"
 
 #. placeholder {0}: fill.coin
 #. placeholder {0}: update.coin
@@ -3317,6 +3316,10 @@ msgstr "التبديل إلى سوق {displayName}، مركز Long"
 #: src/components/trade/positions/position-row.tsx
 msgid "Switch to {displayName} market, short position"
 msgstr "التبديل إلى سوق {displayName}، مركز Short"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switch to {selectedModeLabel}"
+msgstr "التبديل إلى {selectedModeLabel}"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
