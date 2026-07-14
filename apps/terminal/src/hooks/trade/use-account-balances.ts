@@ -1,4 +1,9 @@
-import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent, WebData3WsEvent } from "@nktkas/hyperliquid";
+import type {
+	AllDexsClearinghouseStateWsEvent,
+	SpotStateWsEvent,
+	SpotStateWsParameters,
+	WebData3WsEvent,
+} from "@nktkas/hyperliquid";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { getPositionDex } from "@/domain/market";
@@ -10,11 +15,12 @@ type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStat
 type RawSpotState = SpotStateWsEvent["spotState"] & {
 	tokenToAvailableAfterMaintenance?: Array<[number | string, string]>;
 };
+type RawSpotBalance = NonNullable<SpotStateWsEvent["spotState"]["balances"]>[number];
 
 export type MarginSummary = RawClearinghouseState["marginSummary"];
 export type PerpSummary = RawClearinghouseState["crossMarginSummary"];
 export type PerpPosition = RawClearinghouseState["assetPositions"][number];
-export type SpotBalance = Extract<NonNullable<SpotStateWsEvent["spotState"]["balances"]>[number], { token: number }>;
+export type SpotBalance = Extract<RawSpotBalance, { token: number }>;
 export type SpotAvailableAfterMaintenance = NonNullable<RawSpotState["tokenToAvailableAfterMaintenance"]>;
 export type AccountAbstraction =
 	| NonNullable<WebData3WsEvent["userState"]["abstraction"]>
@@ -43,6 +49,10 @@ const EMPTY_PERP_POSITIONS: PerpPosition[] = [];
 const EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE: SpotAvailableAfterMaintenance = [];
 const MAINNET_INFO_URL = "https://api.hyperliquid.xyz/info";
 const TESTNET_INFO_URL = "https://api.hyperliquid-testnet.xyz/info";
+
+function isTokenSpotBalance(balance: RawSpotBalance): balance is SpotBalance {
+	return "token" in balance && typeof balance.token === "number";
+}
 
 function normalizeDex(dex: string | null | undefined): string {
 	return dex ?? "";
@@ -126,10 +136,10 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		{ user: address ?? "" },
 		{ enabled, refreshKey: accountRefreshKey },
 	);
-	const spotStateSubscription =
-		accountAbstraction === "portfolioMargin"
-			? { user: address ?? "0x0", isPortfolioMargin: true }
-			: { user: address ?? "0x0" };
+	const spotStateSubscription: SpotStateWsParameters = {
+		user: address ?? "0x0",
+		...(accountAbstraction === "portfolioMargin" ? { ignorePortfolioMargin: false } : {}),
+	};
 	const { data: spotEvent, status: spotStatus } = useSubscription("spotState", spotStateSubscription, {
 		enabled,
 		refreshKey: ledgerRefreshKey,
@@ -138,6 +148,10 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	const spotAvailableAfterMaintenance = useMemo(
 		() => spotState?.tokenToAvailableAfterMaintenance ?? EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
 		[spotState?.tokenToAvailableAfterMaintenance],
+	);
+	const spotBalances = useMemo(
+		() => (spotState?.balances ?? EMPTY_SPOT_BALANCES).filter(isTokenSpotBalance),
+		[spotState?.balances],
 	);
 
 	if (!enabled) {
@@ -152,7 +166,6 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	}
 
 	const clearinghouseStates = clearinghouseEvent?.clearinghouseStates ?? [];
-	const spotBalances = (spotState?.balances ?? EMPTY_SPOT_BALANCES) as SpotBalance[];
 	const accountAbstractionLoading =
 		accountAbstraction === null &&
 		(accountAbstractionStatus === "pending" || webData3Status === "subscribing" || webData3Status === "idle");

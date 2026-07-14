@@ -9,7 +9,7 @@ export interface MonitoredWebSocket {
 	readonly readyState: number;
 	addEventListener(type: SocketEventName, listener: EventListener): void;
 	removeEventListener(type: SocketEventName, listener: EventListener): void;
-	close(code?: number, reason?: string, permanently?: boolean): void;
+	reconnect(): void;
 }
 
 type VisibilityState = "visible" | "hidden";
@@ -59,7 +59,7 @@ export function createWsTransportMonitor(
 		reconnectRequested = true;
 		disconnectedAfterOpen = hasOpened;
 		try {
-			socket.close(undefined, undefined, false);
+			socket.reconnect();
 		} catch {
 			reconnectRequested = false;
 		}

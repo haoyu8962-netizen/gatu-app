@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 class FakeSocket extends EventTarget {
 	readyState: number;
-	close = vi.fn((_code?: number, _reason?: string, _permanently?: boolean) => {
+	reconnect = vi.fn(() => {
 		this.readyState = 2;
 		this.dispatchEvent(new Event("close"));
 	});
@@ -80,18 +80,18 @@ describe("WebSocket transport monitor", () => {
 		const unsubscribe = monitor.subscribeReconnect(listener);
 
 		await vi.advanceTimersByTimeAsync(900);
-		expect(socket.close).not.toHaveBeenCalled();
+		expect(socket.reconnect).not.toHaveBeenCalled();
 
 		socket.message();
 		await vi.advanceTimersByTimeAsync(900);
-		expect(socket.close).not.toHaveBeenCalled();
+		expect(socket.reconnect).not.toHaveBeenCalled();
 
 		await vi.advanceTimersByTimeAsync(100);
-		expect(socket.close).toHaveBeenCalledTimes(1);
-		expect(socket.close).toHaveBeenCalledWith(undefined, undefined, false);
+		expect(socket.reconnect).toHaveBeenCalledTimes(1);
+		expect(socket.reconnect).toHaveBeenCalledWith();
 
 		await vi.advanceTimersByTimeAsync(2_000);
-		expect(socket.close).toHaveBeenCalledTimes(1);
+		expect(socket.reconnect).toHaveBeenCalledTimes(1);
 
 		socket.open();
 		expect(listener).toHaveBeenCalledWith(1);
@@ -114,8 +114,8 @@ describe("WebSocket transport monitor", () => {
 		visibilityListener?.("hidden");
 		visibilityListener?.("visible");
 
-		expect(socket.close).toHaveBeenCalledTimes(1);
-		expect(socket.close).toHaveBeenCalledWith(undefined, undefined, false);
+		expect(socket.reconnect).toHaveBeenCalledTimes(1);
+		expect(socket.reconnect).toHaveBeenCalledWith();
 		unsubscribe();
 	});
 });

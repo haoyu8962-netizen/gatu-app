@@ -31,7 +31,6 @@ describe("TradingView datafeed", () => {
 		subscriptionClient.unsubscribe.mockResolvedValue(undefined);
 		subscriptionClient.candle.mockResolvedValue({
 			unsubscribe: subscriptionClient.unsubscribe,
-			failureSignal: new AbortController().signal,
 		});
 	});
 

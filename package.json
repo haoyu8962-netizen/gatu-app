@@ -3,6 +3,9 @@
 	"private": true,
 	"type": "module",
 	"packageManager": "pnpm@10.21.0",
+	"engines": {
+		"node": ">=22.12.0"
+	},
 	"scripts": {
 		"dev": "pnpm --filter @gatu/terminal dev",
 		"build": "pnpm --filter @gatu/terminal build",

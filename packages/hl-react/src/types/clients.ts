@@ -33,16 +33,12 @@ type ExchangeClientMethods = {
 
 export type ExchangeMethod = keyof ExchangeClientMethods & string;
 
-export type ExchangeParams<M extends ExchangeMethod> = ExchangeClientMethods[M] extends {
-	(params: infer P, ...args: any[]): Promise<unknown>;
-	(...args: any[]): Promise<unknown>;
-}
-	? P | undefined
-	: ExchangeClientMethods[M] extends (params: infer P, ...args: any[]) => Promise<unknown>
-		? P
-		: ExchangeClientMethods[M] extends (...args: any[]) => Promise<unknown>
-			? undefined
-			: never;
+export type ExchangeParams<M extends ExchangeMethod> = Parameters<ExchangeClientMethods[M]> extends [
+	infer P,
+	...unknown[],
+]
+	? P
+	: undefined;
 
 export type ExchangeResponse<M extends ExchangeMethod> = ExchangeClientMethods[M] extends (
 	...args: never[]

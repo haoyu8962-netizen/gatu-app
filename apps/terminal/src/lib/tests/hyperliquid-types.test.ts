@@ -7,8 +7,10 @@ import type {
 	InfoClient,
 	L2BookWsEvent,
 	L2BookWsParameters,
+	NoopParameters,
 	OrderParameters,
 	OrderSuccessResponse,
+	SpotStateWsParameters,
 	SubscriptionClient,
 	TradesWsEvent,
 	TradesWsParameters,
@@ -65,9 +67,10 @@ describe("ExchangeClient mapped types", () => {
 		expectTypeOf<CancelParameters>().toMatchTypeOf<ExchangeParams<"cancel">>();
 	});
 
-	it("resolves params as undefined for no-params method", () => {
+	it("requires the nonce params introduced for noop", () => {
 		type NoopParams = ExchangeParams<"noop">;
-		expectTypeOf<undefined>().toMatchTypeOf<NoopParams>();
+		expectTypeOf<NoopParams>().toEqualTypeOf<NoopParameters>();
+		expectTypeOf<undefined>().not.toMatchTypeOf<NoopParams>();
 	});
 
 	it("resolves response type correctly", () => {
@@ -86,6 +89,7 @@ describe("SubscriptionClient mapped types", () => {
 		expectTypeOf<SubParams<"l2Book">>().toEqualTypeOf<L2BookWsParameters>();
 		expectTypeOf<SubParams<"trades">>().toEqualTypeOf<TradesWsParameters>();
 		expectTypeOf<SubParams<"userFills">>().toEqualTypeOf<UserFillsWsParameters>();
+		expectTypeOf<SubParams<"spotState">>().toEqualTypeOf<SpotStateWsParameters>();
 	});
 
 	it("resolves params as undefined for no-params method", () => {
