@@ -639,7 +639,7 @@ async function createBridge2PermitCall({
 	});
 }
 
-function assertSmartBridge2DepositReceipt({
+export function assertSmartBridge2DepositReceipt({
 	amountRaw,
 	config,
 	receipt,
@@ -650,37 +650,52 @@ function assertSmartBridge2DepositReceipt({
 	receipt: TransactionReceipt;
 	user: `0x${string}`;
 }) {
-	let hasMatchingDeposit = false;
+	let hasMatchingTransfer = false;
 	let hasMatchingFailedPermit = false;
 
 	for (const log of receipt.logs) {
-		if (!hasSameWalletAddress(log.address, config.bridge2)) continue;
+		if (hasSameWalletAddress(log.address, config.bridge2)) {
+			try {
+				const event = decodeEventLog({
+					abi: BRIDGE2_ABI,
+					data: log.data,
+					topics: log.topics,
+				});
 
-		try {
-			const event = decodeEventLog({
-				abi: BRIDGE2_ABI,
-				data: log.data,
-				topics: log.topics,
-			});
-
-			if (event.eventName === "Deposit") {
-				const args = event.args as { user?: string; usd?: bigint | number | string };
-				if (hasSameWalletAddress(args.user, user) && args.usd !== undefined && toBigInt(args.usd) === amountRaw) {
-					hasMatchingDeposit = true;
+				if (event.eventName === "FailedPermitDeposit") {
+					const args = event.args as { user?: string; usd?: bigint | number | string };
+					if (hasSameWalletAddress(args.user, user) && args.usd !== undefined && toBigInt(args.usd) === amountRaw) {
+						hasMatchingFailedPermit = true;
+					}
 				}
-			}
+			} catch {}
+		}
 
-			if (event.eventName === "FailedPermitDeposit") {
-				const args = event.args as { user?: string; usd?: bigint | number | string };
-				if (hasSameWalletAddress(args.user, user) && args.usd !== undefined && toBigInt(args.usd) === amountRaw) {
-					hasMatchingFailedPermit = true;
+		if (hasSameWalletAddress(log.address, config.usdc)) {
+			try {
+				const event = decodeEventLog({
+					abi: erc20Abi,
+					data: log.data,
+					topics: log.topics,
+				});
+
+				if (event.eventName === "Transfer") {
+					const args = event.args as { from?: string; to?: string; value?: bigint | number | string };
+					if (
+						hasSameWalletAddress(args.from, user) &&
+						hasSameWalletAddress(args.to, config.bridge2) &&
+						args.value !== undefined &&
+						toBigInt(args.value) === amountRaw
+					) {
+						hasMatchingTransfer = true;
+					}
 				}
-			}
-		} catch {}
+			} catch {}
+		}
 	}
 
-	if (hasMatchingDeposit) return;
-	if (hasMatchingFailedPermit) throw new Error(t`Bridge2 rejected the USDC permit. Retrying automatically.`);
+	if (hasMatchingFailedPermit) throw new Error(t`Bridge2 deposit was not credited. Check Arbiscan before retrying.`);
+	if (hasMatchingTransfer) return;
 	throw new Error(t`Bridge2 deposit was not credited. Check Arbiscan before retrying.`);
 }
 

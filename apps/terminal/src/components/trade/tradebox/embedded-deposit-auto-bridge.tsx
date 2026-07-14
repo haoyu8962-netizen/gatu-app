@@ -37,6 +37,7 @@ export function EmbeddedDepositAutoBridge() {
 		maxDepositRaw,
 		status: depositStatus,
 		error: depositError,
+		hash: depositHash,
 		deposit,
 		reset: resetDeposit,
 		smartDepositEnabled,
@@ -113,6 +114,15 @@ export function EmbeddedDepositAutoBridge() {
 		}
 
 		if (depositStatus === "error") {
+			if (depositHash) {
+				if (retryTimeoutRef.current) {
+					window.clearTimeout(retryTimeoutRef.current);
+					retryTimeoutRef.current = null;
+				}
+				retryKeyRef.current = null;
+				return;
+			}
+
 			if (attemptKeyRef.current !== eligibleDepositKey) {
 				attemptKeyRef.current = null;
 				resetDeposit();
@@ -140,7 +150,7 @@ export function EmbeddedDepositAutoBridge() {
 
 		attemptKeyRef.current = eligibleDepositKey;
 		deposit(formatUnits(maxDepositRaw, USDC_DECIMALS));
-	}, [deposit, depositStatus, eligibleDepositKey, maxDepositRaw, resetDeposit]);
+	}, [deposit, depositHash, depositStatus, eligibleDepositKey, maxDepositRaw, resetDeposit]);
 
 	useEffect(() => {
 		if (!isEmbeddedDeposit) return;

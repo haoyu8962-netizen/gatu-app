@@ -20,7 +20,7 @@ import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import { getAccountBalanceSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
 import { useExchange } from "@/lib/hyperliquid";
@@ -64,7 +64,8 @@ export function DepositModal() {
 	const isTestnet = useIsTestnet();
 	const depositTxChain = isTestnet ? arbitrumSepolia : arbitrum;
 
-	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress, login } = useWalletSession();
+	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress } = useWalletSession();
+	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
 	const {
 		emailAddress: emailWalletAddress,
 		embeddedWalletAddress: ensuredEmbeddedWalletAddress,
@@ -186,6 +187,11 @@ export function DepositModal() {
 		close();
 	}
 
+	function handleReconnectWallet() {
+		handleClose();
+		void reconnectWallet();
+	}
+
 	function handleDepositSubmit() {
 		if (depositValidation.valid && canUseDeposit && !isDepositPending) {
 			deposit(depositAmount);
@@ -287,13 +293,7 @@ export function DepositModal() {
 					<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
 						<Trans>Cancel</Trans>
 					</Button>
-					<Button
-						onClick={() => {
-							handleClose();
-							login();
-						}}
-						className="flex-1"
-					>
+					<Button onClick={handleReconnectWallet} disabled={!walletsReady || isReconnecting} className="flex-1">
 						<Trans>Reconnect wallet</Trans>
 					</Button>
 				</div>
@@ -420,12 +420,12 @@ export function DepositModal() {
 									onDone={handleClose}
 								/>
 							) : (
-								<WalletNotConnected />
+								<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
 							))}
 
 						{visibleTab === "withdraw" &&
 							(!canUseFundsActions ? (
-								<WalletNotConnected />
+								<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
 							) : (
 								<WithdrawForm
 									amount={withdrawAmount}
@@ -446,7 +446,16 @@ export function DepositModal() {
 							))}
 
 						{visibleTab === "bridge" && showBridgeTab && (
-							<Suspense fallback={null}>{canUseFundsActions ? <LazyBridgeTab /> : <WalletNotConnected />}</Suspense>
+							<Suspense fallback={null}>
+								{canUseFundsActions ? (
+									<LazyBridgeTab />
+								) : (
+									<WalletNotConnected
+										onConnect={handleReconnectWallet}
+										isConnecting={!walletsReady || isReconnecting}
+									/>
+								)}
+							</Suspense>
 						)}
 					</div>
 				</ModalContent>

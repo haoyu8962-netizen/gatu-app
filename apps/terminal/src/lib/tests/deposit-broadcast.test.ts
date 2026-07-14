@@ -1,6 +1,9 @@
-import type { Hash, PublicClient } from "viem";
+import type { Hash, PublicClient, TransactionReceipt } from "viem";
+import { encodeAbiParameters, encodeEventTopics, erc20Abi } from "viem";
 import { describe, expect, it, vi } from "vitest";
+import { BRIDGE2_ABI, DEPOSIT_NETWORKS } from "@/config/contracts";
 import {
+	assertSmartBridge2DepositReceipt,
 	waitForBroadcastedTransaction,
 	waitForConfirmedReceipt,
 	waitForWalletTransactionHash,
@@ -14,6 +17,37 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 const HASH = "0x0000000000000000000000000000000000000000000000000000000000000001" as Hash;
+const USER = "0x1111111111111111111111111111111111111111" as const;
+const AMOUNT_RAW = 5_000_000n;
+
+function createReceipt(
+	logs: Array<{ address: `0x${string}`; data: `0x${string}`; topics: readonly `0x${string}`[] }>,
+): TransactionReceipt {
+	return { logs } as unknown as TransactionReceipt;
+}
+
+function createUsdcTransferLog() {
+	return {
+		address: DEPOSIT_NETWORKS.mainnet.usdc,
+		data: encodeAbiParameters([{ type: "uint256" }], [AMOUNT_RAW]),
+		topics: encodeEventTopics({
+			abi: erc20Abi,
+			eventName: "Transfer",
+			args: { from: USER, to: DEPOSIT_NETWORKS.mainnet.bridge2 },
+		}),
+	};
+}
+
+function createFailedPermitLog() {
+	return {
+		address: DEPOSIT_NETWORKS.mainnet.bridge2,
+		data: encodeAbiParameters([{ type: "address" }, { type: "uint64" }, { type: "uint32" }], [USER, AMOUNT_RAW, 1]),
+		topics: encodeEventTopics({
+			abi: BRIDGE2_ABI,
+			eventName: "FailedPermitDeposit",
+		}),
+	};
+}
 
 function createPublicClientMock(overrides: Partial<PublicClient>): PublicClient {
 	return overrides as PublicClient;
@@ -134,5 +168,40 @@ describe("deposit broadcast confirmation", () => {
 			"Transaction reverted on Arbitrum",
 		);
 		expect(publicClient.getTransactionReceipt).toHaveBeenCalledWith({ hash: HASH });
+	});
+});
+
+describe("smart Bridge2 receipt validation", () => {
+	it("accepts the matching USDC transfer emitted by transferFrom", () => {
+		expect(() =>
+			assertSmartBridge2DepositReceipt({
+				amountRaw: AMOUNT_RAW,
+				config: DEPOSIT_NETWORKS.mainnet,
+				receipt: createReceipt([createUsdcTransferLog()]),
+				user: USER,
+			}),
+		).not.toThrow();
+	});
+
+	it("rejects a matching FailedPermitDeposit even if a transfer log is present", () => {
+		expect(() =>
+			assertSmartBridge2DepositReceipt({
+				amountRaw: AMOUNT_RAW,
+				config: DEPOSIT_NETWORKS.mainnet,
+				receipt: createReceipt([createUsdcTransferLog(), createFailedPermitLog()]),
+				user: USER,
+			}),
+		).toThrow("Bridge2 deposit was not credited");
+	});
+
+	it("rejects a successful receipt without the expected USDC transfer", () => {
+		expect(() =>
+			assertSmartBridge2DepositReceipt({
+				amountRaw: AMOUNT_RAW,
+				config: DEPOSIT_NETWORKS.mainnet,
+				receipt: createReceipt([]),
+				user: USER,
+			}),
+		).toThrow("Bridge2 deposit was not credited");
 	});
 });

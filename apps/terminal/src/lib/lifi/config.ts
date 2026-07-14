@@ -8,6 +8,15 @@ import { config as wagmiConfig } from "@/config/wagmi";
 const wc = wagmiConfig as unknown as WagmiConfig;
 let lifiInitialized = false;
 
+async function getActiveWalletClient(chainId?: number): Promise<Client> {
+	const account = getAccount(wc);
+	if (!account.isConnected || !account.address) {
+		throw new Error("Wallet connection unavailable. Reconnect your wallet and try again.");
+	}
+
+	return getConnectorClient(wc, { account: account.address, chainId }) as Promise<Client>;
+}
+
 export function initLiFi() {
 	if (lifiInitialized) return;
 
@@ -15,14 +24,14 @@ export function initLiFi() {
 		integrator: LIFI_INTEGRATOR,
 		providers: [
 			EVM({
-				getWalletClient: async () => {
-					const account = getAccount(wc);
-					return getConnectorClient(wc, { account: account.address }) as Promise<Client>;
-				},
+				getWalletClient: () => getActiveWalletClient(),
 				switchChain: async (chainId: number) => {
-					await switchChain(wc, { chainId });
 					const account = getAccount(wc);
-					return getConnectorClient(wc, { account: account.address, chainId }) as Promise<Client>;
+					if (!account.isConnected || !account.address) {
+						throw new Error("Wallet connection unavailable. Reconnect your wallet and try again.");
+					}
+					await switchChain(wc, { chainId });
+					return getActiveWalletClient(chainId);
 				},
 			}),
 		],

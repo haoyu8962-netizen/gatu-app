@@ -1,4 +1,4 @@
-import { Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle, Select } from "@gatu/ui";
+import { Button, Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle, Select } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import {
 	ArrowSquareOutIcon,
@@ -25,7 +25,7 @@ export function NetworkSelect({ label, value, onChange, disabled, displayName }:
 		<Select
 			label={label as string}
 			value={value}
-			onValueChange={(v) => v && onChange(v as NetworkId)}
+			onValueChange={(v: string) => v && onChange(v as NetworkId)}
 			disabled={disabled}
 			options={NETWORKS.map((n) => ({ value: n.id, label: displayName && n.id === value ? displayName : n.name }))}
 		/>
@@ -111,7 +111,12 @@ export function StatusScreen({
 	);
 }
 
-export function WalletNotConnected() {
+interface WalletNotConnectedProps {
+	onConnect?: () => void;
+	isConnecting?: boolean;
+}
+
+export function WalletNotConnected({ onConnect, isConnecting = false }: WalletNotConnectedProps) {
 	return (
 		<div className="flex flex-col items-center gap-4 py-8">
 			<div className="flex size-12 items-center justify-center rounded-full bg-surface border border-stroke-weak/40">
@@ -125,6 +130,12 @@ export function WalletNotConnected() {
 					<Trans>Connect your wallet to manage funds</Trans>
 				</p>
 			</div>
+			{onConnect ? (
+				<Button onClick={onConnect} disabled={isConnecting} className="min-w-36">
+					{isConnecting ? <SpinnerGapIcon className="size-4 animate-spin" /> : <WalletIcon className="size-4" />}
+					<Trans>Reconnect wallet</Trans>
+				</Button>
+			) : null}
 		</div>
 	);
 }
