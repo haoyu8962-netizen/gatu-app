@@ -68,7 +68,7 @@ High-frequency trading operations that use a "phantom agent" construction. **No 
 | Chain ID | 1337 |
 | Domain Name | "Exchange" |
 | Serialization | Msgpack binary → keccak256 hash |
-| Signed By | Agent wallet (PrivateKeySigner or local account) |
+| Signed By | Agent wallet (viem or ethers local account) |
 | Network | None required (Hyperliquid API only) |
 
 ### Methods Using L1 Signing
@@ -96,10 +96,10 @@ High-frequency trading operations that use a "phantom agent" construction. **No 
 
 ```typescript
 import { ExchangeClient, HttpTransport } from "@nktkas/hyperliquid";
-import { PrivateKeySigner } from "@nktkas/hyperliquid/signing";
+import { privateKeyToAccount } from "viem/accounts";
 
 // Agent wallet signs with chainId 1337 automatically
-const agentSigner = new PrivateKeySigner("0x...");
+const agentSigner = privateKeyToAccount("0x...");
 const client = new ExchangeClient({
   transport: new HttpTransport(),
   wallet: agentSigner,
@@ -353,7 +353,7 @@ Solution: Two-wallet pattern
 │                                                                          │
 │  ┌──────────────────────┐         ┌──────────────────────┐              │
 │  │   Master Wallet      │         │    Agent Wallet      │              │
-│  │   (Browser/wagmi)    │         │    (PrivateKeySigner)│              │
+│  │   (Browser/wagmi)    │         │  (viem local account)│              │
 │  ├──────────────────────┤         ├──────────────────────┤              │
 │  │ • approveAgent       │────────▶│ • order              │              │
 │  │ • approveBuilderFee  │  signs  │ • cancel             │              │
@@ -420,7 +420,7 @@ const exchange = useMemo(() => {
 
 | Signing Type | Implementation |
 |--------------|----------------|
-| **L1 Actions** | `PrivateKeySigner` (agent wallet, stored locally) |
+| **L1 Actions** | viem local account (agent wallet, stored locally) |
 | **User-Signed** | `walletClient.signTypedData()` via SDK's AbstractWallet adapter |
 | **Arbitrum EVM** | `useSignTypedData()` + `useWriteContract()` from wagmi |
 

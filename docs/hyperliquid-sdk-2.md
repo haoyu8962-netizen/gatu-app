@@ -810,33 +810,33 @@ Use these utilities when:
 ```ts
 import {
   createL1ActionHash,
-  PrivateKeySigner,
   signL1Action,
-  signMultiSigAction,
+  signMultiSigL1,
+  signMultiSigUserSigned,
   signUserSignedAction,
 } from "@nktkas/hyperliquid/signing";
 ```
 
-## PrivateKeySigner
+## Local Private-Key Wallet
 
-Lightweight signer that doesn't require viem or ethers.
+Version 0.32 removed the built-in `PrivateKeySigner`. Use a viem or ethers local account instead.
 
 ```ts
-import { PrivateKeySigner } from "@nktkas/hyperliquid/signing";
+import { privateKeyToAccount } from "viem/accounts";
 
-const signer = new PrivateKeySigner("0xabc123...");
-console.log(signer.address); // "0x..."
+const signer = privateKeyToAccount("0xabc123...");
+console.log(signer.address);
 ```
 
 Use with `ExchangeClient`:
 
 ```ts
 import { ExchangeClient, HttpTransport } from "@nktkas/hyperliquid";
-import { PrivateKeySigner } from "@nktkas/hyperliquid/signing";
+import { privateKeyToAccount } from "viem/accounts";
 
 const client = new ExchangeClient({
   transport: new HttpTransport(),
-  wallet: new PrivateKeySigner("0x..."),
+  wallet: privateKeyToAccount("0x..."),
 });
 ```
 
@@ -872,7 +872,7 @@ const response = await fetch("https://api.hyperliquid.xyz/exchange", {
 
 * **Type:** `AbstractWallet`
 
-Wallet to sign (viem, ethers, or PrivateKeySigner).
+Wallet to sign (viem or ethers).
 
 #### action (required)
 
@@ -954,7 +954,7 @@ const signature = await signUserSignedAction({
 
 * **Type:** `AbstractWallet`
 
-Wallet to sign (viem, ethers, or PrivateKeySigner).
+Wallet to sign (viem or ethers).
 
 #### action (required)
 
@@ -968,52 +968,35 @@ Action object with `signatureChainId` field.
 
 EIP-712 types for the action. Import from `@nktkas/hyperliquid/api/exchange` (e.g., `ApproveAgentTypes`).
 
-## signMultiSigAction
+## Multi-Sig Signing
 
-Signs a multi-signature action. Requires signatures from multiple signers collected beforehand.
+Version 0.33 replaced `signMultiSigAction` with two helpers that construct the wrapper and return its outer signature. Use `signMultiSigL1` for L1 actions and `signMultiSigUserSigned` for EIP-712 user-signed actions.
 
 ```ts
-import { signL1Action, signMultiSigAction } from "@nktkas/hyperliquid/signing";
+import { signMultiSigL1 } from "@nktkas/hyperliquid/signing";
 import { privateKeyToAccount } from "viem/accounts";
 
-const multiSigUser = "0x..."; // multi-sig account address
-const signerKeys = ["0x...", "0x..."]; // private keys of all signers
-const leader = privateKeyToAccount(signerKeys[0] as `0x${string}`);
-
-const action = {
-  type: "scheduleCancel",
-  time: Date.now() + 10000,
-};
+const signers = [
+  privateKeyToAccount("0x..."),
+  privateKeyToAccount("0x..."),
+] as const;
 const nonce = Date.now();
 
-// Collect signatures from all signers
-const signatures = await Promise.all(
-  signerKeys.map((key) =>
-    signL1Action({
-      wallet: privateKeyToAccount(key as `0x${string}`),
-      action: [multiSigUser.toLowerCase(), leader.address.toLowerCase(), action],
-      nonce,
-      isTestnet: false,
-    })
-  ),
-);
-
-// Sign the multi-sig wrapper
-const multiSigAction = {
-  type: "multiSig",
+const { action, signature } = await signMultiSigL1({
+  signers,
+  multiSigUser: "0x...",
   signatureChainId: "0x66eee",
-  signatures,
-  payload: {
-    multiSigUser,
-    outerSigner: leader.address,
-    action,
+  action: {
+    type: "cancel",
+    cancels: [{ a: 0, o: 12345 }],
   },
-};
-
-const signature = await signMultiSigAction({
-  wallet: leader,
-  action: multiSigAction,
   nonce,
+});
+
+await fetch("https://api.hyperliquid.xyz/exchange", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ action, signature, nonce }),
 });
 ```
 
@@ -1052,10 +1035,6 @@ const wallet = privateKeyToAccount("0x...");
 // ethers
 import { Wallet } from "ethers";
 const wallet = new Wallet("0x...");
-
-// SDK (no viem or ethers dependency)
-import { PrivateKeySigner } from "@nktkas/hyperliquid/signing";
-const wallet = new PrivateKeySigner("0x...");
 ```
 
 
@@ -1162,40 +1141,25 @@ const subscription = await trades({ transport }, { coin: "BTC" }, (data) => {
 | `@nktkas/hyperliquid/api/exchange`     | Exchange API functions (`order`, `cancel`, `withdraw3`, etc.)      |
 | `@nktkas/hyperliquid/api/subscription` | Subscription functions (`candle`, `trades`, `l2Book`, etc.)        |
 
-## Valibot Schemas
+## Request Schemas and Response Types
 
-These exports also include [valibot](https://valibot.dev) schemas for every API method:
-
-```ts
-import { ClearinghouseStateRequest, ClearinghouseStateResponse } from "@nktkas/hyperliquid/api/info";
-import { OrderRequest, OrderResponse } from "@nktkas/hyperliquid/api/exchange";
-```
-
-### Available Schemas
-
-Each method exports:
-
-* `*Request` - full request schema (with `type`, `nonce`, `signature` for exchange)
-* `*Response` - response schema from API
-
-### Use Cases
-
-**TypeScript types:**
+Request exports remain runtime [Valibot](https://valibot.dev) schemas. Response exports are TypeScript types only as of version 0.32.
 
 ```ts
-import { ClearinghouseStateResponse } from "@nktkas/hyperliquid/api/info";
-import * as v from "valibot";
-
-type State = v.InferOutput<typeof ClearinghouseStateResponse>;
-```
-
-**Runtime validation:**
-
-```ts
+import { ClearinghouseStateRequest } from "@nktkas/hyperliquid/api/info";
 import { OrderRequest } from "@nktkas/hyperliquid/api/exchange";
+import type { ClearinghouseStateResponse } from "@nktkas/hyperliquid/api/info";
+import type { OrderResponse } from "@nktkas/hyperliquid/api/exchange";
+```
+
+Use request schemas for runtime validation and response types for compile-time checking:
+
+```ts
+import { HttpTransport, InfoClient } from "@nktkas/hyperliquid";
+import { OrderRequest } from "@nktkas/hyperliquid/api/exchange";
+import type { ClearinghouseStateResponse } from "@nktkas/hyperliquid/api/info";
 import * as v from "valibot";
 
-// Validate data before sending
 const validated = v.parse(OrderRequest, {
   action: {
     type: "order",
@@ -1205,155 +1169,13 @@ const validated = v.parse(OrderRequest, {
   nonce: Date.now(),
   signature: { r: "0x...", s: "0x...", v: 27 },
 });
+
+const infoClient = new InfoClient({ transport: new HttpTransport() });
+const state: ClearinghouseStateResponse = await infoClient.clearinghouseState({
+  user: "0x...",
+});
 ```
 
-**Field descriptions:**
-
-Schemas include descriptions for all fields via `v.description()`, useful for generating documentation or exploring the API structure.
-
-
-# CLI
-
-Command-line interface for interacting with Hyperliquid API without writing code.
-
-## Usage
-
-```sh
-npx @nktkas/hyperliquid <endpoint> <method> [options]
-```
-
-### endpoint
-
-* **Type:** `"info"` | `"exchange"`
-
-API endpoint to use:
-
-* `info` - query market data and account state
-* `exchange` - execute trading operations (requires `--private-key`)
-
-### method
-
-Method name matching the SDK client methods (e.g., `allMids`, `order`, `cancel`).
-
-Run `npx @nktkas/hyperliquid --help` for the full list.
-
-### --testnet
-
-Use testnet instead of mainnet.
-
-```sh
-npx @nktkas/hyperliquid info allMids --testnet
-```
-
-### --timeout
-
-* **Type:** `number`
-* **Default:** `10000`
-
-Request timeout in milliseconds.
-
-```sh
-npx @nktkas/hyperliquid info allMids --timeout 5000
-```
-
-### --private-key
-
-* **Type:** `` `0x${string}` ``
-
-Private key for exchange operations. Required for `exchange` endpoint.
-
-```sh
-npx @nktkas/hyperliquid exchange cancel --private-key 0x... --cancels '[{"a":0,"o":12345}]'
-```
-
-> \[!WARNING] Passing private keys via command line is insecure. Use environment variables:
->
-> ```sh
-> npx @nktkas/hyperliquid exchange cancel --private-key $PRIVATE_KEY --cancels '[{"a":0,"o":12345}]'
-> ```
-
-### --vault
-
-* **Type:** `` `0x${string}` ``
-
-Vault address for trading on behalf of a vault.
-
-```sh
-npx @nktkas/hyperliquid exchange order --private-key 0x... --vault 0x... --orders '[...]'
-```
-
-### --offline
-
-Generate request payload without sending. Useful for debugging or signing transactions offline.
-
-```sh
-npx @nktkas/hyperliquid exchange order --private-key 0x... --offline --orders '[...]'
-```
-
-## Examples
-
-### Info Endpoint
-
-```sh
-# Get all mid prices
-npx @nktkas/hyperliquid info allMids
-
-# Get ETH order book
-npx @nktkas/hyperliquid info l2Book --coin ETH --nSigFigs 3
-
-# Get user portfolio
-npx @nktkas/hyperliquid info portfolio --user 0x...
-
-# Get candle data
-npx @nktkas/hyperliquid info candleSnapshot --coin BTC --interval 1h --startTime 1700000000000
-```
-
-### Exchange Endpoint
-
-```sh
-# Place limit order
-npx @nktkas/hyperliquid exchange order --private-key 0x... \
-  --orders '[{"a":0,"b":true,"p":"30000","s":"0.1","r":false,"t":{"limit":{"tif":"Gtc"}}}]'
-
-# Cancel order
-npx @nktkas/hyperliquid exchange cancel --private-key 0x... \
-  --cancels '[{"a":0,"o":12345}]'
-
-# Update leverage
-npx @nktkas/hyperliquid exchange updateLeverage --private-key 0x... \
-  --asset 0 --isCross true --leverage 5
-
-# Withdraw funds
-npx @nktkas/hyperliquid exchange withdraw3 --private-key 0x... \
-  --destination 0x... --amount 100.5
-```
-
-## JSON Arguments
-
-Some methods require JSON arguments. Escape quotes properly for your shell:
-
-```sh
-# Bash/Zsh
---orders '[{"a":0,"b":true}]'
-
-# PowerShell
---orders '[{\"a\":0,\"b\":true}]'
-
-# Windows CMD
---orders "[{\"a\":0,\"b\":true}]"
-```
-
-## Output
-
-CLI outputs JSON to stdout. Format with [jq](https://jqlang.org/) or PowerShell:
-
-```sh
-# jq (cross-platform)
-npx @nktkas/hyperliquid info allMids | jq .
-
-# PowerShell (Windows)
-npx @nktkas/hyperliquid info allMids | ConvertFrom-Json | ConvertTo-Json -Depth 10
-```
 
 
 # FAQ
@@ -1432,4 +1254,3 @@ const client = new ExchangeClient({
 L1 actions use chain ID `1337` (dev network, not in wallets by default) and sign an action hash instead of readable order details. Users will see `Agent { source: "a", connectionId: "0x..." }` - not useful.
 
 **Solution:** Use [Agent Wallet](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/nonces-and-api-wallets#api-wallets) for trading. Master account signs once to approve the agent.
-

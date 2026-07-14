@@ -33,7 +33,7 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | `ExchangeClient` | Signed actions (orders, transfers) | Yes |
 | `SubscriptionClient` | Real-time WebSocket streams | No |
 
-**Wallet options:** `privateKeyToAccount("0x...")` (viem), `new Wallet("0x...")` (ethers), `new PrivateKeySigner("0x...")` (built-in, no deps)
+**Wallet options:** `privateKeyToAccount("0x...")` (viem) or `new Wallet("0x...")` (ethers)
 
 ---
 
@@ -266,16 +266,17 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 `ExchangeClient` handles signing automatically. For custom wallet integrations:
 
 ```typescript
-import { signL1Action, signUserSignedAction, signMultiSigAction, PrivateKeySigner } from "@nktkas/hyperliquid/signing";
+import { signL1Action, signMultiSigL1, signMultiSigUserSigned, signUserSignedAction } from "@nktkas/hyperliquid/signing";
 ```
 
 | Function | Use for |
 |----------|---------|
 | `signL1Action` | Orders, cancels, leverage, TWAP, vault ops |
 | `signUserSignedAction` | Withdraw, usdSend, spotSend, approveAgent (EIP-712) |
-| `signMultiSigAction` | Multi-sig operations |
+| `signMultiSigL1` | Multi-sig L1 operations |
+| `signMultiSigUserSigned` | Multi-sig user-signed operations |
 
-**Params:** `{wallet, action, nonce, isTestnet?, vaultAddress?, expiresAfter?}`
+Use the helper-specific parameter types exported by the SDK. Multi-sig helpers accept an ordered `signers` tuple and construct the wire wrapper internally.
 
 ---
 

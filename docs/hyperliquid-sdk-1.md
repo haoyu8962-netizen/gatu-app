@@ -170,24 +170,7 @@ If you're not using a package manager, you can use the SDK via an ESM-compatible
 ## Platform Requirements
 
 {% hint style="info" %}
-Node.js Requires **Node.js 20** or higher.
-
-Node.js 22+ includes native WebSocket support. For earlier versions, install the `ws` package if you plan to use `WebSocketTransport`:
-
-```sh
-npm install ws
-```
-
-```ts
-import WebSocket from "ws";
-import * as hl from "@nktkas/hyperliquid";
-
-const transport = new hl.WebSocketTransport({
-  reconnect: {
-    WebSocket, // Pass WebSocket class from ws package
-  },
-});
-```
+Node.js requires **Node.js 22.12** or higher. The SDK is ESM-only and uses the native WebSocket implementation available in supported Node.js releases.
 
 {% endhint %}
 
@@ -833,19 +816,22 @@ await subscription.unsubscribe();
 
 ### Subscription Object
 
-Each subscription returns an object with:
-
-* `unsubscribe()` - Stop receiving updates
-* `failureSignal` - [AbortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) that aborts if resubscription fails after reconnect
+Each subscription returns an object with `unsubscribe()` to stop receiving updates. Handle a confirmed subscription failure through the `onError` subscription option:
 
 ```ts
-const subscription = await client.trades({ coin: "BTC" }, (data) => {
-  console.log(data);
-});
+const subscription = await client.trades(
+  { coin: "BTC" },
+  (data) => {
+    console.log(data);
+  },
+  {
+    onError: (error) => {
+      console.error("Subscription failed:", error);
+    },
+  },
+);
 
-subscription.failureSignal.addEventListener("abort", (event) => {
-  console.error("Subscription failed:", event.target.reason);
-});
+await subscription.unsubscribe();
 ```
 
 ### Parameters
@@ -870,12 +856,12 @@ const client = new SubscriptionClient({
 ```
 Error
 ├─ HyperliquidError (SDK)
+│  ├─ ValidationError
 │  ├─ TransportError
 │  │  ├─ HttpRequestError
 │  │  └─ WebSocketRequestError
 │  ├─ ApiRequestError
 │  └─ AbstractWalletError
-└─ ValiError (valibot)
 ```
 
 ## HyperliquidError
@@ -910,7 +896,8 @@ try {
 } catch (error) {
   if (error instanceof HttpRequestError) {
     console.log(error.response); // Response object
-    console.log(error.body); // Response body text
+    console.log(error.request); // Original request payload, when available
+    console.log(error.message); // Status and response detail
   }
 }
 ```
@@ -972,10 +959,10 @@ try {
 
 ## Validation Errors
 
-Request parameters are validated before sending. Invalid parameters throw [`ValiError`](https://valibot.dev/api/ValiError/) from [valibot](https://valibot.dev/).
+Request parameters are validated before sending. Invalid parameters throw the SDK's `ValidationError`, whose `cause` contains the underlying Valibot issues.
 
 ```ts
-import * as v from "valibot";
+import { ValidationError } from "@nktkas/hyperliquid";
 
 try {
   await client.order({
@@ -986,8 +973,8 @@ try {
     grouping: "na",
   });
 } catch (error) {
-  if (error instanceof v.ValiError) {
-    console.log(error.issues); // Validation issues
+  if (error instanceof ValidationError) {
+    console.log(error.cause.issues); // Validation issues
   }
 }
 ```
@@ -1000,16 +987,16 @@ import {
   ApiRequestError,
   HttpRequestError,
   HyperliquidError,
+  ValidationError,
   WebSocketRequestError,
 } from "@nktkas/hyperliquid";
-import * as v from "valibot";
 
 try {
   const result = await client.order({ ... });
 } catch (error) {
-  if (error instanceof v.ValiError) {
+  if (error instanceof ValidationError) {
     // Invalid parameters (before request)
-    console.error("Validation failed:", error.issues);
+    console.error("Validation failed:", error.cause.issues);
   } else if (error instanceof ApiRequestError) {
     // API returned an error
     console.error("API error:", error.message);
@@ -1046,16 +1033,6 @@ try {
 {"openapi":"3.1.1","info":{"title":"Hyperliquid API - info/activeAssetData","version":"1.0.0"},"tags":[{"name":"activeAssetData"}],"servers":[{"url":"https://api.hyperliquid.xyz","description":"Mainnet"},{"url":"https://api.hyperliquid-testnet.xyz","description":"Testnet"}],"paths":{"/info":{"post":{"tags":["activeAssetData"],"description":"Request user active asset data.","requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"type":{"description":"Type of request.","enum":["activeAssetData"]},"coin":{"type":"string","description":"Asset symbol (e.g., BTC)."},"user":{"type":"string","pattern":"^0[xX][0-9a-fA-F]+$","minLength":42,"maxLength":42,"description":"User address."}},"required":["type","coin","user"],"description":"Request user active asset data."}}},"required":true},"responses":{"200":{"description":"User active asset data.","content":{"application/json":{"schema":{"type":"object","properties":{"user":{"type":"string","pattern":"^0[xX][0-9a-fA-F]+$","minLength":42,"maxLength":42,"description":"User address."},"coin":{"type":"string","description":"Asset symbol (e.g., BTC)."},"leverage":{"oneOf":[{"type":"object","properties":{"type":{"description":"Leverage type.","enum":["isolated"]},"value":{"type":"number","minimum":1,"description":"Leverage value used."},"rawUsd":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Amount of USD used (1 = $1)."}},"required":["type","value","rawUsd"]},{"type":"object","properties":{"type":{"description":"Leverage type.","enum":["cross"]},"value":{"type":"number","minimum":1,"description":"Leverage value used."}},"required":["type","value"]}],"description":"Leverage configuration."},"maxTradeSzs":{"type":"array","items":[{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"},{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"}],"minItems":2,"description":"Maximum trade size range [min, max]."},"availableToTrade":{"type":"array","items":[{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"},{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"}],"minItems":2,"description":"Available to trade range [min, max]."},"markPx":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Mark price."}},"required":["user","coin","leverage","maxTradeSzs","availableToTrade","markPx"],"description":"User active asset data."}}}},"422":{"description":"Failed to deserialize the JSON body into the target type","content":{"text/plain":{"schema":{"type":"string"}}}},"500":{"description":"Internal Server Error","content":{"application/json":{"schema":{"type":"null"}}}}}}}}}
 ```
 
-
-# alignedQuoteTokenInfo
-
-## POST /info
-
-> Request supply, rate, and pending payment information for an aligned quote token.
-
-```json
-{"openapi":"3.1.1","info":{"title":"Hyperliquid API - info/alignedQuoteTokenInfo","version":"1.0.0"},"tags":[{"name":"alignedQuoteTokenInfo"}],"servers":[{"url":"https://api.hyperliquid.xyz","description":"Mainnet"},{"url":"https://api.hyperliquid-testnet.xyz","description":"Testnet"}],"paths":{"/info":{"post":{"tags":["alignedQuoteTokenInfo"],"description":"Request supply, rate, and pending payment information for an aligned quote token.","requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"type":{"description":"Type of request.","enum":["alignedQuoteTokenInfo"]},"token":{"type":"number","minimum":0,"description":"Token index."}},"required":["type","token"],"description":"Request supply, rate, and pending payment information for an aligned quote token."}}},"required":true},"responses":{"200":{"description":"Supply, rate, and pending payment information for an aligned quote token.","content":{"application/json":{"schema":{"type":"object","properties":{"isAligned":{"type":"boolean","description":"Whether the token is aligned."},"firstAlignedTime":{"type":"number","minimum":0,"description":"Timestamp (in ms since epoch) when the token was first aligned."},"evmMintedSupply":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Total EVM minted supply."},"dailyAmountOwed":{"type":"array","items":{"type":"array","items":[{"type":"string","format":"date"},{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$"}],"minItems":2},"description":"Daily amount owed as an array of [date, amount] tuples."},"predictedRate":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Predicted rate."}},"required":["isAligned","firstAlignedTime","evmMintedSupply","dailyAmountOwed","predictedRate"],"description":"Supply, rate, and pending payment information for an aligned quote token."}}}},"422":{"description":"Failed to deserialize the JSON body into the target type","content":{"text/plain":{"schema":{"type":"string"}}}},"500":{"description":"Internal Server Error","content":{"application/json":{"schema":{"type":"null"}}}}}}}}}
-```
 
 
 # allMids
