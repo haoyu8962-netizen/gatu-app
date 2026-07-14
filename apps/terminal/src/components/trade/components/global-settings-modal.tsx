@@ -10,8 +10,7 @@ import {
 	Slider,
 	Toggle,
 } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
+import { useLingui } from "@lingui/react/macro";
 import type { ChangeEvent, ReactNode } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -30,7 +29,8 @@ import {
 export function GlobalSettingsModal() {
 	const open = useSettingsDialogOpen();
 	const { close } = useSettingsDialogActions();
-	const { i18n } = useLingui();
+	const { i18n, t } = useLingui();
+	const activeLocale = i18n.locale;
 	const slippagePercent = useMarketOrderSlippagePercent();
 	const { showOrderbookInQuote, numberFormatLocale } = useGlobalSettings();
 	const { setShowOrderbookInQuote, setNumberFormatLocale, setMarketOrderSlippagePercent, setNetwork } =
@@ -59,7 +59,7 @@ export function GlobalSettingsModal() {
 	}
 
 	function handleLanguageChange(value: string | null) {
-		if (!value || value === i18n.locale) return;
+		if (!value || value === activeLocale) return;
 		dynamicActivate(value as LocaleCode).catch(() => {
 			toast.error(t`Failed to change language`);
 		});
@@ -119,7 +119,7 @@ export function GlobalSettingsModal() {
 						</SettingRow>
 						<SettingRow label={t`Display language`}>
 							<Select
-								value={i18n.locale}
+								value={activeLocale}
 								onValueChange={handleLanguageChange}
 								options={languageOptions}
 								size="xs"

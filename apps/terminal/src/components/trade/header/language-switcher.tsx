@@ -1,19 +1,19 @@
 import { Dropdown } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react";
+import { useLingui } from "@lingui/react/macro";
 import { GlobeIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { localeList } from "@/config/i18n";
 import { dynamicActivate } from "@/lib/i18n";
 
 export function LanguageSwitcher() {
-	const { i18n } = useLingui();
+	const { i18n, t } = useLingui();
+	const activeLocale = i18n.locale;
 
 	const items = localeList.map(({ code, name }) => ({
 		label: name,
-		active: i18n.locale === code,
+		active: activeLocale === code,
 		onSelect: () => {
-			if (i18n.locale === code) return;
+			if (activeLocale === code) return;
 			dynamicActivate(code).catch(() => {
 				toast.error(t`Failed to change language`);
 			});
