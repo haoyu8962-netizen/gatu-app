@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { CrosshairIcon } from "@phosphor-icons/react";
 import type React from "react";
 import { szDecimalsToPriceDecimals } from "@/lib/format";
@@ -14,9 +14,14 @@ interface Props extends Omit<React.ComponentPropsWithoutRef<typeof NumberInput>,
 }
 
 export function PriceInput({ midPrice, szDecimals, onMidClick, labelValue, ...props }: Props) {
+	const { t } = useLingui();
 	const hasMid = midPrice != null && midPrice > 0 && onMidClick != null;
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? PRICE_INPUT_DEFAULT_DECIMALS);
 	const formattedMid = midPrice != null && midPrice > 0 ? toFixed(midPrice, priceDecimals) : undefined;
+	function handleMidClick() {
+		if (!onMidClick || !formattedMid) return;
+		onMidClick(formattedMid);
+	}
 
 	return (
 		<NumberInput
@@ -30,7 +35,7 @@ export function PriceInput({ midPrice, szDecimals, onMidClick, labelValue, ...pr
 					</span>
 				) : undefined
 			}
-			onMaxClick={hasMid ? () => onMidClick(formattedMid!) : undefined}
+			onMaxClick={hasMid ? handleMidClick : undefined}
 		/>
 	);
 }

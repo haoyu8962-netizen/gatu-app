@@ -23,15 +23,16 @@ describe("createWsReconnectTrigger SDK coupling", () => {
 	// was called non-permanently. Surfaces any SDK breakage in tests rather
 	// than silently in production.
 	it("invokes socket.close(undefined, undefined, false) against a real WebSocketTransport", async () => {
-		const { WebSocketTransport } = await import("@nktkas/hyperliquid");
 		const { createWsReconnectTrigger, getWsTransport } = await import("@gatu/hl-react/clients");
 
 		// Retrieve the module-cached transport the trigger will target.
 		const transport = getWsTransport(true);
-		expect(transport).toBeInstanceOf(WebSocketTransport);
-		const socket = (transport as WebSocketTransport).socket as {
-			close: (code?: number, reason?: string, permanent?: boolean) => void;
-		};
+		expect(transport.constructor.name).toBe("WebSocketTransport");
+		const socket = (
+			transport as unknown as {
+				socket: { close: (code?: number, reason?: string, permanent?: boolean) => void };
+			}
+		).socket;
 		expect(typeof socket?.close).toBe("function");
 		const spy = vi.spyOn(socket, "close").mockImplementation(() => {});
 

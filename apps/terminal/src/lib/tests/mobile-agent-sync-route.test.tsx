@@ -10,7 +10,7 @@ import {
 	forwardRef,
 	type ReactNode,
 } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MOBILE_SYNC_DRAFT_STORAGE_KEY, saveMobileSyncDraft } from "../mobile-sync/draft-storage";
 import {
@@ -19,6 +19,7 @@ import {
 	MOBILE_SYNC_PAYLOAD_TTL_MS,
 	MOBILE_SYNC_ROUTE_PATH,
 } from "../mobile-sync/sync-core";
+import { createI18nRoot } from "./harness/react";
 
 const NOW_MS = 1_779_364_227_000;
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111" as const;
@@ -181,7 +182,7 @@ describe("MobileAgentSyncRoute", () => {
 		});
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createRoot(container);
+		root = createI18nRoot(container);
 		testState.address = undefined;
 		testState.setAgent.mockReset();
 		testState.setActiveAgentOwner.mockReset();

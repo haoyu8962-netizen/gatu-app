@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 
 import { act, createElement, Fragment, type ReactNode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createI18nRoot } from "./harness/react";
 
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
 const AGENT_ADDRESS = "0x2222222222222222222222222222222222222222";
@@ -169,7 +170,7 @@ describe("MobileAgentSyncModal", () => {
 	beforeEach(() => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
-		root = createRoot(container);
+		root = createI18nRoot(container);
 		testState.address = USER_ADDRESS;
 		testState.approveAgent.mockReset();
 		testState.approveAgent.mockResolvedValue(undefined);

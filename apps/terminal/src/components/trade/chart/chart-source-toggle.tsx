@@ -1,5 +1,5 @@
 import { Divider } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { cn } from "@/lib/cn";
 
 export type ChartSource = "default" | "tradingview";
@@ -24,6 +24,8 @@ export function ChartSourceToggle({
 	tradingViewIntentHandlers,
 	className,
 }: ChartSourceToggleProps) {
+	const { t } = useLingui();
+
 	function handleDefaultClick() {
 		onValueChange("default");
 	}

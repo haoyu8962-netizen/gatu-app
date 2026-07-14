@@ -1,8 +1,10 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 
 function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
+	const { t } = useLingui();
+
 	return (
 		<SpinnerGapIcon
 			role="status"

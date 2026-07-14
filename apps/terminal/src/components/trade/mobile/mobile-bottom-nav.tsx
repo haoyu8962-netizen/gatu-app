@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { MOBILE_NAV_ITEMS, type MobileTab } from "@/config/nav";
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function MobileBottomNav({ activeTab, onTabChange, badges, className }: Props) {
-	const { i18n } = useLingui();
+	const { _ } = useLingui();
 
 	return (
 		<nav
@@ -25,7 +25,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 				"pb-[env(safe-area-inset-bottom)]",
 				className,
 			)}
-			aria-label={t`Primary navigation`}
+			aria-label={_(msg`Primary navigation`)}
 		>
 			<div className="flex items-stretch">
 				{MOBILE_NAV_ITEMS.map((item) => {
@@ -48,7 +48,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 								isActive ? "text-brand" : "text-fg",
 							)}
 							aria-current={isActive ? "page" : undefined}
-							aria-label={i18n._(item.label)}
+							aria-label={_(item.label)}
 						>
 							<span className="relative">
 								<Icon className="size-5" />
@@ -66,7 +66,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 									</span>
 								)}
 							</span>
-							<span className="text-xs font-medium tracking-wide">{i18n._(item.label)}</span>
+							<span className="text-xs font-medium tracking-wide">{_(item.label)}</span>
 						</button>
 					);
 				})}

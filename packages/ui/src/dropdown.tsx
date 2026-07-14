@@ -140,6 +140,7 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 				key={index}
 				disabled={item.disabled}
 				onClick={item.onSelect}
+				aria-current={item.active ? "true" : undefined}
 				className={cn(
 					dropdownItemVariants({
 						size: itemSize,
