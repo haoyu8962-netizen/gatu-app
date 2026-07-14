@@ -38,7 +38,9 @@ export type CandleStoreState = {
 		onResetCache: () => void,
 	) => void;
 	unsubscribe: (streamKey: string, listenerId: string) => void;
+	invalidateStream: (streamKey: string) => void;
 	setLastBar: (cacheKey: string, bar: Bar) => void;
+	clearLastBar: (cacheKey: string) => void;
 	getLastBar: (cacheKey: string) => Bar | undefined;
 };
 
@@ -287,6 +289,16 @@ export function createCandleStore(): CandleStore {
 				}
 			},
 
+			invalidateStream: (key) => {
+				set((state) => {
+					const stream = state.streams[key];
+					if (!stream || stream.lastBar === undefined) return state;
+					return {
+						streams: { ...state.streams, [key]: { ...stream, lastBar: undefined } },
+					};
+				});
+			},
+
 			setLastBar: (cacheKey, bar) => {
 				set((state) => {
 					const existing = state.lastBarCache[cacheKey];
@@ -298,6 +310,15 @@ export function createCandleStore(): CandleStore {
 
 					const nextCache = { ...state.lastBarCache, [cacheKey]: bar };
 					touchCacheKey(cacheKey, nextCache);
+					return { lastBarCache: nextCache };
+				});
+			},
+
+			clearLastBar: (cacheKey) => {
+				set((state) => {
+					if (!(cacheKey in state.lastBarCache)) return state;
+					const { [cacheKey]: _, ...nextCache } = state.lastBarCache;
+					cacheLru.delete(cacheKey);
 					return { lastBarCache: nextCache };
 				});
 			},

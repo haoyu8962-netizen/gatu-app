@@ -101,7 +101,11 @@ export {
 
 export type { MarketKind } from "@/domain/market";
 
-import { getInfoClient as getInfoClientBase, getSubscriptionClient as getSubscriptionClientBase } from "@gatu/hl-react";
+import {
+	getInfoClient as getInfoClientBase,
+	getSubscriptionClient as getSubscriptionClientBase,
+	subscribeWsReconnect as subscribeWsReconnectBase,
+} from "@gatu/hl-react";
 import { isTestnet } from "@/lib/network";
 
 export function getInfoClient() {
@@ -110,6 +114,10 @@ export function getInfoClient() {
 
 export function getSubscriptionClient() {
 	return getSubscriptionClientBase(isTestnet());
+}
+
+export function subscribeWsReconnect(listener: (generation: number) => void) {
+	return subscribeWsReconnectBase(isTestnet(), listener);
 }
 
 export { MarketsInfoProvider } from "./hooks/MarketsInfoProvider";

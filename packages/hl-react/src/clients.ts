@@ -12,6 +12,7 @@ import {
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import type { PrivateKeyAccount } from "viem/accounts";
 import { getSdkReconnectionDelayMs } from "./internal/websocket/reliability";
+import { createWsTransportMonitor, type WsTransportMonitor } from "./internal/websocket/transport-monitor";
 import { LRU } from "./lru";
 import { createL1AgentWallet } from "./signing/l1-agent-wallet";
 
@@ -63,6 +64,16 @@ export function createWsReconnectTrigger(isTestnet: boolean): () => void {
 	const socket = transport.socket;
 	if (!socket || typeof socket.close !== "function") return () => {};
 	return () => socket.close(undefined, undefined, false);
+}
+
+function getWsTransportMonitor(isTestnet: boolean): WsTransportMonitor | undefined {
+	const transport = getWsTransport(isTestnet);
+	if (!(transport instanceof WebSocketTransport)) return undefined;
+	return getOrCreate(`ws-monitor:${isTestnet}`, () => createWsTransportMonitor(transport.socket));
+}
+
+export function subscribeWsReconnect(isTestnet: boolean, listener: (generation: number) => void): () => void {
+	return getWsTransportMonitor(isTestnet)?.subscribeReconnect(listener) ?? (() => {});
 }
 
 export function getInfoClient(isTestnet: boolean): InfoClient {

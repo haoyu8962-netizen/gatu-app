@@ -178,11 +178,22 @@ interface DatafeedOptions {
 				pricescale?: number;
 		  }
 		| undefined;
+	onRealtimeReset?: () => void;
 }
 
-export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
+type ActiveRealtimeSubscription = {
+	streamKey: string;
+	cacheKey: string;
+	onResetCache: () => void;
+};
+
+export interface ChartDatafeed extends IBasicDataFeed {
+	resetRealtimeCache(): void;
+}
+
+export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 	const store = getCandleStore();
-	const listenerToStream = new Map<string, string>();
+	const realtimeSubscriptions = new Map<string, ActiveRealtimeSubscription>();
 	const resolveAsync = (callback: () => void) => {
 		setTimeout(callback, 0);
 	};
@@ -191,7 +202,21 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 		return coinFromSymbolName(symbolName);
 	};
 
+	const resetSubscription = (subscription: ActiveRealtimeSubscription) => {
+		store.getState().invalidateStream(subscription.streamKey);
+		store.getState().clearLastBar(subscription.cacheKey);
+		subscription.onResetCache();
+	};
+
 	return {
+		resetRealtimeCache: () => {
+			if (realtimeSubscriptions.size === 0) return;
+			for (const subscription of [...realtimeSubscriptions.values()]) {
+				resetSubscription(subscription);
+			}
+			options.onRealtimeReset?.();
+		},
+
 		onReady: (callback: OnReadyCallback) => {
 			setTimeout(() => callback(configuration), 0);
 		},
@@ -300,16 +325,21 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 			const interval = resolutionToInterval(resolution);
 			if (!interval) return;
 
-			const existingStreamKey = listenerToStream.get(listenerGuid);
-			if (existingStreamKey) {
-				store.getState().unsubscribe(existingStreamKey, listenerGuid);
+			const existingSubscription = realtimeSubscriptions.get(listenerGuid);
+			if (existingSubscription) {
+				store.getState().unsubscribe(existingSubscription.streamKey, listenerGuid);
 			}
 
 			const coin = coinFromLibrarySymbol(symbolInfo);
 			const symbolCacheKey = cacheKey(symbolInfo, resolution);
 			const key = streamKey(coin, interval);
 
-			listenerToStream.set(listenerGuid, key);
+			const realtimeSubscription: ActiveRealtimeSubscription = {
+				streamKey: key,
+				cacheKey: symbolCacheKey,
+				onResetCache: onResetCacheNeededCallback,
+			};
+			realtimeSubscriptions.set(listenerGuid, realtimeSubscription);
 
 			const wrappedOnTick = (bar: Bar) => {
 				const lastBar = store.getState().getLastBar(symbolCacheKey);
@@ -319,14 +349,18 @@ export function createDatafeed(options: DatafeedOptions = {}): IBasicDataFeed {
 				onTick(bar);
 			};
 
-			store.getState().subscribe(key, coin, interval, listenerGuid, wrappedOnTick, onResetCacheNeededCallback);
+			store.getState().subscribe(key, coin, interval, listenerGuid, wrappedOnTick, () => {
+				if (realtimeSubscriptions.get(listenerGuid) !== realtimeSubscription) return;
+				resetSubscription(realtimeSubscription);
+				options.onRealtimeReset?.();
+			});
 		},
 
 		unsubscribeBars: (listenerGuid: string) => {
-			const key = listenerToStream.get(listenerGuid);
-			if (key) {
-				store.getState().unsubscribe(key, listenerGuid);
-				listenerToStream.delete(listenerGuid);
+			const subscription = realtimeSubscriptions.get(listenerGuid);
+			if (subscription) {
+				store.getState().unsubscribe(subscription.streamKey, listenerGuid);
+				realtimeSubscriptions.delete(listenerGuid);
 			}
 		},
 

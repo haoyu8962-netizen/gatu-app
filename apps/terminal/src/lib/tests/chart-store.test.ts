@@ -292,8 +292,67 @@ describe("chart candle store subscriptions", () => {
 
 		expect(ticks).toEqual([expectedBar({ time: 300_000 })]);
 		expect(reset).toHaveBeenCalledTimes(1);
+		expect(testState.unsubscribe).toHaveBeenCalledTimes(1);
 		expect(store.getState().streams["BTC:5m"]?.status).toBe("error");
 
 		store.getState().unsubscribe("BTC:5m", "listener");
+	});
+
+	it("removes an aborted SDK subscription before retrying it", async () => {
+		vi.useFakeTimers();
+		vi.spyOn(Math, "random").mockReturnValue(0);
+		const firstController = new AbortController();
+		const secondController = new AbortController();
+		const firstUnsubscribe = vi.fn().mockResolvedValue(undefined);
+		const secondUnsubscribe = vi.fn().mockResolvedValue(undefined);
+		let attempt = 0;
+
+		testState.candle.mockImplementation(
+			async (_params: { coin: string; interval: string }, listener: CandleListener): Promise<ISubscription> => {
+				testState.listener = listener;
+				attempt += 1;
+				return attempt === 1
+					? { unsubscribe: firstUnsubscribe, failureSignal: firstController.signal }
+					: { unsubscribe: secondUnsubscribe, failureSignal: secondController.signal };
+			},
+		);
+
+		const store = createCandleStore();
+		store.getState().subscribe("HYPE:1m", "HYPE", "1m", "listener", vi.fn(), vi.fn());
+		await flushMicrotasks();
+
+		firstController.abort(new Error("resubscribe failed"));
+		await flushMicrotasks();
+
+		expect(firstUnsubscribe).toHaveBeenCalledTimes(1);
+		await vi.advanceTimersByTimeAsync(250);
+		await flushMicrotasks();
+
+		expect(testState.candle).toHaveBeenCalledTimes(2);
+		expect(store.getState().streams["HYPE:1m"]?.status).toBe("active");
+
+		store.getState().unsubscribe("HYPE:1m", "listener");
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(secondUnsubscribe).toHaveBeenCalledTimes(1);
+
+		vi.restoreAllMocks();
+		vi.useRealTimers();
+	});
+
+	it("drops stale stream and history bars before a REST backfill", async () => {
+		const store = createCandleStore();
+		store.getState().subscribe("HYPE:1h", "HYPE", "1h", "listener", vi.fn(), vi.fn());
+		await flushAsyncWork();
+
+		testState.listener?.(nextCandle({ t: 3_600_000, c: "65" }));
+		store.getState().setLastBar("HYPE:60", expectedBar({ time: 3_600_000, close: 65 }));
+
+		store.getState().invalidateStream("HYPE:1h");
+		store.getState().clearLastBar("HYPE:60");
+
+		expect(store.getState().streams["HYPE:1h"]?.lastBar).toBeUndefined();
+		expect(store.getState().getLastBar("HYPE:60")).toBeUndefined();
+
+		store.getState().unsubscribe("HYPE:1h", "listener");
 	});
 });

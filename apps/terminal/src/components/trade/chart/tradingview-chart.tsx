@@ -10,7 +10,7 @@ import {
 } from "@/lib/chart/market-symbol";
 import { buildChartOverrides, getChartCssUrl, getLoadingScreenColors } from "@/lib/chart/theme-colors";
 import { cn } from "@/lib/cn";
-import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
+import { subscribeWsReconnect, type UnifiedMarketInfo } from "@/lib/hyperliquid";
 import type { IChartingLibraryWidget, ResolutionString } from "@/types/charting_library";
 import {
 	CHART_CUSTOM_FONT_FAMILY,
@@ -26,7 +26,7 @@ import {
 	DEFAULT_CHART_THEME,
 	TIMEZONE,
 } from "./constants";
-import { createDatafeed } from "./datafeed";
+import { type ChartDatafeed, createDatafeed } from "./datafeed";
 
 const CHART_READY_SOFT_TIMEOUT_MS = 45_000;
 const SYMBOL_SWITCH_RETRY_TIMEOUT_MS = 8_000;
@@ -52,7 +52,10 @@ export function TradingViewChart({
 	const widgetSymbol = market ? getChartApiSymbol(market) : symbol;
 	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
+	const datafeedRef = useRef<ChartDatafeed | null>(null);
 	const chartReadyRef = useRef(false);
+	const pendingDataResetRef = useRef(false);
+	const scheduledDataResetWidgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const targetSymbolRef = useRef(symbol);
 	const targetIntervalRef = useRef(interval);
 	const targetThemeRef = useRef(theme);
@@ -71,6 +74,7 @@ export function TradingViewChart({
 	const marketBySymbolRef = useRef(new Map<string, UnifiedMarketInfo>());
 	const applySymbolRef = useRef<() => void>(() => {});
 	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
+	const requestDataResetRef = useRef<() => void>(() => {});
 	const [initError, setInitError] = useState<string | null>(null);
 	const [showReadyPrompt, setShowReadyPrompt] = useState(false);
 	const [retryNonce, setRetryNonce] = useState(0);
@@ -235,6 +239,38 @@ export function TradingViewChart({
 			.catch(() => undefined);
 	};
 
+	requestDataResetRef.current = () => {
+		const widget = widgetRef.current;
+		if (!widget || scheduledDataResetWidgetRef.current === widget) return;
+		scheduledDataResetWidgetRef.current = widget;
+
+		queueMicrotask(() => {
+			if (scheduledDataResetWidgetRef.current === widget) {
+				scheduledDataResetWidgetRef.current = null;
+			}
+			if (widgetRef.current !== widget) return;
+			if (!chartReadyRef.current) {
+				pendingDataResetRef.current = true;
+				return;
+			}
+
+			try {
+				pendingDataResetRef.current = false;
+				widget.activeChart().resetData();
+			} catch {
+				pendingDataResetRef.current = true;
+			}
+		});
+	};
+
+	useEffect(
+		() =>
+			subscribeWsReconnect(() => {
+				datafeedRef.current?.resetRealtimeCache();
+			}),
+		[],
+	);
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: switch cleanup only reads refs; adding the helper would recreate the widget on every render.
 	useEffect(() => {
 		void retryNonce;
@@ -289,7 +325,10 @@ export function TradingViewChart({
 				widgetRef.current.remove();
 				widgetRef.current = null;
 			}
+			datafeedRef.current = null;
 			chartReadyRef.current = false;
+			pendingDataResetRef.current = false;
+			scheduledDataResetWidgetRef.current = null;
 			appliedSymbolRef.current = null;
 			appliedIntervalRef.current = null;
 			appliedThemeRef.current = null;
@@ -319,14 +358,18 @@ export function TradingViewChart({
 				setInitError(null);
 				setShowReadyPrompt(false);
 
+				const datafeed = createDatafeed({
+					getPriceScale: getSelectedMarketPriceScale,
+					getSymbolInfo: getSelectedMarketSymbolInfo,
+					isKnownCoin: isSelectedMarketCoin,
+					onRealtimeReset: () => requestDataResetRef.current(),
+				});
+				datafeedRef.current = datafeed;
+
 				const widget = new window.TradingView.widget({
 					container: containerRef.current,
 					library_path: CHART_LIBRARY_PATH,
-					datafeed: createDatafeed({
-						getPriceScale: getSelectedMarketPriceScale,
-						getSymbolInfo: getSelectedMarketSymbolInfo,
-						isKnownCoin: isSelectedMarketCoin,
-					}),
+					datafeed,
 					symbol: initialSymbol,
 					interval: initialInterval as ResolutionString,
 					locale: CHART_LOCALE,
@@ -359,6 +402,7 @@ export function TradingViewChart({
 					chartReadyRef.current = true;
 					setInitError(null);
 					setShowReadyPrompt(false);
+					if (pendingDataResetRef.current) requestDataResetRef.current();
 					applyThemeRef.current(targetThemeRef.current);
 					applySymbolRef.current();
 				});

@@ -377,6 +377,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 							if (!runtime) return;
 							runtime.subscription = undefined;
 							detachFailureListener(runtime);
+							void subscription.unsubscribe().catch(() => {});
 
 							const reason = subscription.failureSignal.reason ?? new Error("Subscription failed");
 							set((state) => {
@@ -485,7 +486,7 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			runtime.promise = undefined;
 
 			const runUnsubscribe = async (subscription?: ISubscription) => {
-				if (!subscription || subscription.failureSignal.aborted) return;
+				if (!subscription) return;
 				await subscription.unsubscribe().catch(() => {});
 			};
 

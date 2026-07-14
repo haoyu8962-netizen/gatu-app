@@ -52,7 +52,7 @@ export function detachFailureListener(runtime: StreamRuntime): void {
 }
 
 export function runUnsubscribe(subscription?: ISubscription): void {
-	if (!subscription || subscription.failureSignal.aborted) return;
+	if (!subscription) return;
 	void subscription.unsubscribe().catch(() => {});
 }
 
@@ -138,6 +138,7 @@ export function startSubscription(ctx: SubscribeContext): void {
 				if (ctx.runtime.get(ctx.key) !== owner || owner.subscription !== subscription) return;
 				owner.subscription = undefined;
 				detachFailureListener(owner);
+				runUnsubscribe(subscription);
 
 				const reason = subscription.failureSignal.reason ?? new Error("Subscription failed");
 				ctx.onError(reason);

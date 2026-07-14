@@ -18,7 +18,13 @@ export {
 	parseAssetId,
 } from "./asset-id";
 export { getMarketCapabilities, type MarketCapabilities } from "./capabilities";
-export { createExchangeClient, getInfoClient, getSubscriptionClient, initializeClients } from "./clients";
+export {
+	createExchangeClient,
+	getInfoClient,
+	getSubscriptionClient,
+	initializeClients,
+	subscribeWsReconnect,
+} from "./clients";
 export { assertExchange, MissingTransportError, MissingWalletError, ProviderNotFoundError } from "./errors";
 export { getExplorerTokenUrl, getExplorerTxUrl } from "./explorer";
 export { type ApiStatus, type ApiStatusResult, useApiStatus } from "./hooks/useApiStatus";

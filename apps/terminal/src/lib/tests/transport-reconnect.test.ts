@@ -75,8 +75,9 @@ describe("store reconnect with fake subscriptions", () => {
 		const store = createHyperliquidStore({ ssr: false });
 
 		const failureController = new AbortController();
+		const unsubscribe = vi.fn().mockResolvedValue(undefined);
 		store.getState().acquireSubscription("test:reconnect", async () => ({
-			unsubscribe: async () => {},
+			unsubscribe,
 			failureSignal: failureController.signal,
 		}));
 
@@ -87,6 +88,7 @@ describe("store reconnect with fake subscriptions", () => {
 		await new Promise<void>((r) => setTimeout(r, 0));
 
 		expect(store.getState().subscriptions["test:reconnect"].status).toBe("error");
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
 
 		store.getState().releaseSubscription("test:reconnect");
 	});

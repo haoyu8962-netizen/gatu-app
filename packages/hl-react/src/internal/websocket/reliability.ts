@@ -28,6 +28,12 @@ export const WS_RELIABILITY_LIMITS = {
 	cache: {
 		maxChartLastBarEntries: 256,
 	},
+	transport: {
+		// The SDK pings every 30s. A 45s all-message silence therefore means
+		// neither market data nor the expected pong reached this client.
+		inactivityThresholdMs: 45_000,
+		checkIntervalMs: 5_000,
+	},
 	staleness: {
 		checkIntervalMs: 5_000,
 		defaultThresholdMs: 30_000,

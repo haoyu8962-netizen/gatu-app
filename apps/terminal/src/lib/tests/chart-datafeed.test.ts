@@ -8,6 +8,11 @@ const infoClient = vi.hoisted(() => ({
 	meta: vi.fn(),
 }));
 
+const subscriptionClient = vi.hoisted(() => ({
+	candle: vi.fn(),
+	unsubscribe: vi.fn(),
+}));
+
 vi.mock("@lingui/core/macro", () => ({
 	t: (strings: TemplateStringsArray, ...values: unknown[]) =>
 		strings.reduce((result, part, index) => `${result}${part}${values[index] ?? ""}`, ""),
@@ -15,6 +20,7 @@ vi.mock("@lingui/core/macro", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getInfoClient: () => infoClient,
+	getSubscriptionClient: () => subscriptionClient,
 }));
 
 describe("TradingView datafeed", () => {
@@ -22,6 +28,11 @@ describe("TradingView datafeed", () => {
 		vi.clearAllMocks();
 		infoClient.allMids.mockResolvedValue({});
 		infoClient.meta.mockResolvedValue({ universe: [] });
+		subscriptionClient.unsubscribe.mockResolvedValue(undefined);
+		subscriptionClient.candle.mockResolvedValue({
+			unsubscribe: subscriptionClient.unsubscribe,
+			failureSignal: new AbortController().signal,
+		});
 	});
 
 	afterEach(() => {
@@ -218,5 +229,30 @@ describe("TradingView datafeed", () => {
 		expect(result.meta).toEqual({ noData: true });
 
 		vi.useRealTimers();
+	});
+
+	it("invalidates realtime caches before requesting a TradingView data reset", async () => {
+		vi.useFakeTimers();
+		const onRealtimeReset = vi.fn();
+		const onResetCache = vi.fn();
+		const datafeed = createDatafeed({ onRealtimeReset });
+
+		datafeed.subscribeBars(
+			{ name: "HYPE-USDC", ticker: "HYPE" } as LibrarySymbolInfo,
+			"60" as ResolutionString,
+			vi.fn(),
+			"hype-listener",
+			onResetCache,
+		);
+		await Promise.resolve();
+		await Promise.resolve();
+
+		datafeed.resetRealtimeCache();
+
+		expect(onResetCache).toHaveBeenCalledTimes(1);
+		expect(onRealtimeReset).toHaveBeenCalledTimes(1);
+
+		datafeed.unsubscribeBars("hype-listener");
+		await vi.advanceTimersByTimeAsync(5_000);
 	});
 });

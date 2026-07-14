@@ -9,6 +9,17 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 
 const testState = vi.hoisted(() => ({
 	datafeedOptions: [] as unknown[],
+	datafeedResets: [] as ReturnType<typeof vi.fn>[],
+	reconnectListener: undefined as ((generation: number) => void) | undefined,
+}));
+
+vi.mock("@/lib/hyperliquid", () => ({
+	subscribeWsReconnect: (listener: (generation: number) => void) => {
+		testState.reconnectListener = listener;
+		return () => {
+			if (testState.reconnectListener === listener) testState.reconnectListener = undefined;
+		};
+	},
 }));
 
 vi.mock("@/lib/chart/load-tradingview", () => ({
@@ -23,9 +34,11 @@ vi.mock("@/lib/chart/theme-colors", () => ({
 }));
 
 vi.mock("@/components/trade/chart/datafeed", () => ({
-	createDatafeed: (options: unknown) => {
+	createDatafeed: (options: { onRealtimeReset?: () => void }) => {
 		testState.datafeedOptions.push(options);
-		return {};
+		const resetRealtimeCache = vi.fn(() => options.onRealtimeReset?.());
+		testState.datafeedResets.push(resetRealtimeCache);
+		return { resetRealtimeCache };
 	},
 }));
 
@@ -39,6 +52,7 @@ type MockWidget = {
 	headerReady: ReturnType<typeof vi.fn>;
 	onChartReady: ReturnType<typeof vi.fn>;
 	remove: ReturnType<typeof vi.fn>;
+	resetData: ReturnType<typeof vi.fn>;
 	setSymbol: ReturnType<typeof vi.fn>;
 };
 
@@ -67,6 +81,7 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 	let currentTheme = options.theme ?? "dark";
 	let currentSymbol = (options as { symbol?: string }).symbol ?? "BTC";
 	const symbolChanged = createMockSubscription();
+	const resetData = vi.fn();
 
 	return {
 		__setActiveSymbol: (symbol: string) => {
@@ -74,6 +89,7 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 		},
 		activeChart: vi.fn(() => ({
 			onSymbolChanged: vi.fn(() => symbolChanged),
+			resetData,
 			symbol: vi.fn(() => currentSymbol),
 		})),
 		applyOverrides: vi.fn(),
@@ -87,6 +103,7 @@ function createMockWidget(options: { theme?: "light" | "dark" } = {}): MockWidge
 			queueMicrotask(callback);
 		}),
 		remove: vi.fn(),
+		resetData,
 		setSymbol: vi.fn((symbol: string, _interval: string, callback: () => void) => {
 			currentSymbol = symbol;
 			callback();
@@ -113,6 +130,8 @@ describe("TradingViewChart", () => {
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		testState.datafeedOptions = [];
+		testState.datafeedResets = [];
+		testState.reconnectListener = undefined;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -156,6 +175,24 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledTimes(1);
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
+	});
+
+	it("backfills TradingView data after a shared WebSocket reconnect without rebuilding the widget", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "HYPE", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(testState.reconnectListener).toBeTypeOf("function");
+		expect(testState.datafeedResets).toHaveLength(1);
+
+		act(() => testState.reconnectListener?.(1));
+		await flushChartEffects();
+
+		expect(testState.datafeedResets[0]).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.resetData).toHaveBeenCalledTimes(1);
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+		expect(widgetConstructor).toHaveBeenCalledTimes(1);
 	});
 
 	it("defers symbol switching while the chart is inactive", async () => {
