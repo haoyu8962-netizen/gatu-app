@@ -382,6 +382,13 @@ export function TradingViewChart({
 		targetSymbolRef.current = widgetSymbol;
 		targetIntervalRef.current = interval;
 		if (!active) {
+			// A cancelled in-flight setSymbol may still land inside the hidden iframe, so the
+			// applied bookkeeping can no longer be trusted; drop it to force a verified re-apply
+			// (with watchdog) on the next activation even when the target loops back.
+			if (pendingSymbolRef.current !== null) {
+				appliedSymbolRef.current = null;
+				appliedIntervalRef.current = null;
+			}
 			cancelSymbolSwitchRef.current();
 			return;
 		}

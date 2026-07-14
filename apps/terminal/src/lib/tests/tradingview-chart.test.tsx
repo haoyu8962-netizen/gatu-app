@@ -455,6 +455,42 @@ describe("TradingViewChart", () => {
 		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
 	});
 
+	it("re-applies with verification when the target loops back after an inactive cancel", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { active: true, symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const widget = widgets[0];
+		expect(widget).toBeDefined();
+		widget?.setSymbol.mockImplementation(() => {});
+		vi.useFakeTimers();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { active: true, symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		expect(widget?.setSymbol).toHaveBeenCalledTimes(1);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { active: false, symbol: "ETH", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { active: false, symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { active: true, symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(widget?.setSymbol).toHaveBeenCalledTimes(2);
+		expect(widget?.setSymbol).toHaveBeenLastCalledWith("BTC", "60", expect.any(Function));
+	});
+
 	it("shows a retry prompt when TradingView never applies the requested symbol", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));

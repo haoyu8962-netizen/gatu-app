@@ -102,10 +102,17 @@ msgstr "账户与钱包"
 msgid "Account mode"
 msgstr "账户模式"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Account mode updated"
 msgstr "账户模式已更新"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Account type"
+msgstr "账户类型"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Account value must be below $25M to use portfolio margin while it is in beta."
+msgstr "投资组合保证金测试版要求账户价值低于 2500 万美元。"
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
@@ -345,12 +352,13 @@ msgstr "跨链失败"
 #~ msgstr "从 Arbitrum 或其他链桥接 USDC 到您的 Hyperliquid 账户。"
 
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
 msgstr ""
 
 #: src/lib/hyperliquid/use-deposit.ts
-msgid "Bridge2 rejected the USDC permit. Retrying automatically."
-msgstr ""
+#~ msgid "Bridge2 rejected the USDC permit. Retrying automatically."
+#~ msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Bridging in progress"
@@ -419,6 +427,7 @@ msgstr "买入做多"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -573,10 +582,9 @@ msgstr "在钱包中确认交易"
 msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
 msgstr "已在 Arbitrum 确认。Hyperliquid 通常会在一分钟内入账。"
 
-#: src/components/trade/components/wallet-modal.tsx
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Connect"
-#~ msgstr ""
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Connect"
+msgstr "连接"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Connect a wallet to manage orders."
@@ -850,6 +858,8 @@ msgstr "全仓杠杆"
 msgid "Cross Margin Ratio"
 msgstr "全仓保证金率"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Current"
 msgstr "当前"
@@ -877,6 +887,10 @@ msgstr "当前"
 #: src/components/trade/chart/chart-source-toggle.tsx
 msgid "Default"
 msgstr "默认"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
+msgstr "默认账户设置。每种抵押资产都有单独余额。永续只能使用结算资产作为抵押品，同一抵押资产的全仓仓位之间共享保证金。"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -1285,8 +1299,7 @@ msgstr "反向开仓失败"
 #~ msgid "Failed to switch margin mode"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/trade-panel.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Failed to update account mode"
 msgstr "账户模式更新失败"
 
@@ -1336,6 +1349,10 @@ msgstr "按 {0} 筛选"
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Flip transfer direction"
 msgstr "切换划转方向"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
+msgstr "适合希望获得更高灵活性和资金效率的高级用户。现货和永续交易完全统一，符合条件的抵押资产（如 HYPE 和 BTC）可直接用作永续抵押品，无需转换为结算资产。"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Format for numbers and dates"
@@ -1603,7 +1620,6 @@ msgstr "清算价"
 msgid "Liquidated"
 msgstr "已强平"
 
-#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "加载中"
@@ -1651,7 +1667,6 @@ msgstr "加载钱包中..."
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/config/ui-text.ts
-#: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
@@ -1716,6 +1731,10 @@ msgstr "管理 {0} 空头仓位的 TP/SL"
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #~ msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
 #~ msgstr ""
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Manual"
+msgstr "手动"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -2441,8 +2460,11 @@ msgstr "盈亏"
 msgid "Portfolio"
 msgstr "投资组合"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Portfolio margin"
+msgstr "投资组合保证金"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 msgid "Portfolio Margin"
 msgstr "组合保证金"
 
@@ -2595,11 +2617,21 @@ msgstr ""
 msgid "Recent Trades"
 msgstr "最近成交"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Recommended"
+msgstr "推荐"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Recommended only for automated traders. Every DEX has a separate balance, and cross margin applies separately within each DEX."
+msgstr "仅建议自动化交易者使用。每个 DEX 都有独立余额，全仓保证金也分别在各 DEX 内生效。"
+
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Reconnect or refresh after your embedded wallet is ready."
 #~ msgstr ""
 
+#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "Reconnect wallet"
 msgstr "重新连接钱包"
 
@@ -2612,8 +2644,8 @@ msgstr "重新加载后已恢复。将于 {expiresAtLabel} 过期。"
 #~ msgstr ""
 
 #: src/components/trade/positions/twap-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-option-checkboxes.tsx
+#: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
 msgid "Reduce Only"
 msgstr "只减仓"
@@ -2883,8 +2915,8 @@ msgid "Separate"
 msgstr "分离"
 
 #: src/components/trade/tradebox/trade-header.tsx
-msgid "Separate Account"
-msgstr "分离账户"
+#~ msgid "Separate Account"
+#~ msgstr "分离账户"
 
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Separate Account Balances"
@@ -3233,6 +3265,11 @@ msgstr "兑换中..."
 #~ msgid "Switch between mainnet and testnet. Page will reload."
 #~ msgstr ""
 
+#. placeholder {0}: getModeLabel(selectedMode)
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Switch to {0}"
+msgstr "切换到 {0}"
+
 #. placeholder {0}: fill.coin
 #. placeholder {0}: update.coin
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -3304,6 +3341,7 @@ msgstr "切换到浅色模式"
 msgid "Switch to Mainnet"
 msgstr "切换至主网"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
@@ -3327,7 +3365,7 @@ msgstr "同步 ID"
 msgid "Take Profit"
 msgstr "止盈"
 
-#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-option-checkboxes.tsx
 msgid "Take Profit / Stop Loss"
 msgstr "止盈 / 止损"
 
@@ -3511,7 +3549,7 @@ msgstr "止盈价"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
 msgid "TP/SL"
 msgstr "止盈止损"
@@ -3709,8 +3747,12 @@ msgstr "无法将钱包切换到 Arbitrum。请在钱包中切换网络后重试
 msgid "Unified"
 msgstr "统一"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Unified account"
+msgstr "统一账户"
+
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified Account"
 msgstr "统一账户"
 
