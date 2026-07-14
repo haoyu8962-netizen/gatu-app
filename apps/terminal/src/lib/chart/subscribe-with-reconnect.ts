@@ -114,37 +114,30 @@ export function startSubscription(ctx: SubscribeContext): void {
 	}
 
 	ctx.onConnecting();
+	const owner = entry;
 
-	entry.promise = getSubscriptionClient()
+	owner.promise = getSubscriptionClient()
 		.candle({ coin: entry.coin, interval: entry.interval }, (event) => {
+			if (ctx.runtime.get(ctx.key) !== owner) return;
 			const bar = candleEventToBar(event);
 			if (!bar) return;
 			ctx.onCandle(bar);
 		})
 		.then((subscription) => {
-			const entry = ctx.runtime.get(ctx.key);
-			if (!entry) {
+			if (ctx.runtime.get(ctx.key) !== owner) {
 				runUnsubscribe(subscription);
 				return subscription;
 			}
 
-			entry.promise = undefined;
-
-			if (!ctx.hasListeners()) {
-				runUnsubscribe(subscription);
-				ctx.runtime.delete(ctx.key);
-				return subscription;
-			}
-
-			entry.subscription = subscription;
-			entry.reconnectAttempts = 0;
-			detachFailureListener(entry);
+			owner.promise = undefined;
+			owner.subscription = subscription;
+			owner.reconnectAttempts = 0;
+			detachFailureListener(owner);
 
 			const onFailure = () => {
-				const entry = ctx.runtime.get(ctx.key);
-				if (!entry) return;
-				entry.subscription = undefined;
-				detachFailureListener(entry);
+				if (ctx.runtime.get(ctx.key) !== owner || owner.subscription !== subscription) return;
+				owner.subscription = undefined;
+				detachFailureListener(owner);
 
 				const reason = subscription.failureSignal.reason ?? new Error("Subscription failed");
 				ctx.onError(reason);
@@ -153,7 +146,7 @@ export function startSubscription(ctx: SubscribeContext): void {
 			};
 
 			subscription.failureSignal.addEventListener("abort", onFailure, { once: true });
-			entry.detachFailureListener = () => {
+			owner.detachFailureListener = () => {
 				subscription.failureSignal.removeEventListener("abort", onFailure);
 			};
 
@@ -162,14 +155,11 @@ export function startSubscription(ctx: SubscribeContext): void {
 			return subscription;
 		})
 		.catch((error) => {
-			const entry = ctx.runtime.get(ctx.key);
-			if (!entry) {
-				return undefined;
-			}
+			if (ctx.runtime.get(ctx.key) !== owner) return undefined;
 
-			entry.promise = undefined;
-			entry.subscription = undefined;
-			detachFailureListener(entry);
+			owner.promise = undefined;
+			owner.subscription = undefined;
+			detachFailureListener(owner);
 
 			ctx.onError(error);
 			ctx.onResetListeners();

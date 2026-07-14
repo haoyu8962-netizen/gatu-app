@@ -29,8 +29,11 @@ import {
 import { createDatafeed } from "./datafeed";
 
 const CHART_READY_SOFT_TIMEOUT_MS = 45_000;
+const SYMBOL_SWITCH_RETRY_TIMEOUT_MS = 8_000;
+const SYMBOL_SWITCH_MAX_RETRIES = 1;
 
 interface Props {
+	active?: boolean;
 	symbol?: string;
 	market?: UnifiedMarketInfo;
 	interval?: string;
@@ -39,6 +42,7 @@ interface Props {
 }
 
 export function TradingViewChart({
+	active = true,
 	symbol = DEFAULT_CHART_SYMBOL,
 	market,
 	interval = DEFAULT_CHART_INTERVAL,
@@ -52,13 +56,17 @@ export function TradingViewChart({
 	const targetSymbolRef = useRef(symbol);
 	const targetIntervalRef = useRef(interval);
 	const targetThemeRef = useRef(theme);
+	const activeRef = useRef(active);
 	const marketRef = useRef(market);
 	const appliedSymbolRef = useRef<string | null>(null);
 	const appliedIntervalRef = useRef<string | null>(null);
 	const appliedThemeRef = useRef<"light" | "dark" | null>(null);
 	const pendingSymbolRef = useRef<string | null>(null);
 	const pendingIntervalRef = useRef<string | null>(null);
+	const symbolSwitchRetryCountRef = useRef(0);
+	const symbolSwitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const symbolSwitchCleanupRef = useRef<(() => void) | null>(null);
+	const cancelSymbolSwitchRef = useRef<() => void>(() => {});
 	const themeSwitchSequenceRef = useRef(0);
 	const marketBySymbolRef = useRef(new Map<string, UnifiedMarketInfo>());
 	const applySymbolRef = useRef<() => void>(() => {});
@@ -69,6 +77,7 @@ export function TradingViewChart({
 	targetSymbolRef.current = widgetSymbol;
 	targetIntervalRef.current = interval;
 	targetThemeRef.current = theme;
+	activeRef.current = active;
 	marketRef.current = market;
 	if (market) {
 		for (const key of getChartMarketKeys(market)) {
@@ -76,7 +85,15 @@ export function TradingViewChart({
 		}
 	}
 
+	const clearSymbolSwitchTimeout = () => {
+		if (symbolSwitchTimeoutRef.current) {
+			clearTimeout(symbolSwitchTimeoutRef.current);
+			symbolSwitchTimeoutRef.current = null;
+		}
+	};
+
 	const clearSymbolSwitchListeners = () => {
+		clearSymbolSwitchTimeout();
 		const cleanup = symbolSwitchCleanupRef.current;
 		symbolSwitchCleanupRef.current = null;
 		cleanup?.();
@@ -86,7 +103,9 @@ export function TradingViewChart({
 		clearSymbolSwitchListeners();
 		pendingSymbolRef.current = null;
 		pendingIntervalRef.current = null;
+		symbolSwitchRetryCountRef.current = 0;
 	};
+	cancelSymbolSwitchRef.current = clearPendingSymbolSwitch;
 
 	const finishSymbolSwitch = () => {
 		clearPendingSymbolSwitch();
@@ -98,9 +117,27 @@ export function TradingViewChart({
 		finishSymbolSwitch();
 	};
 
+	const isChartSymbolApplied = (actualSymbol: string | undefined, nextSymbol: string) => {
+		if (!actualSymbol) return false;
+		if (actualSymbol === nextSymbol) return true;
+
+		const targetMarket = marketBySymbolRef.current.get(nextSymbol);
+		if (!targetMarket) return false;
+		return getChartMarketKeys(targetMarket).includes(actualSymbol);
+	};
+
+	const getActiveChartSymbol = (widget: IChartingLibraryWidget) => {
+		try {
+			return widget.activeChart().symbol();
+		} catch {
+			return undefined;
+		}
+	};
+
 	applySymbolRef.current = () => {
 		const widget = widgetRef.current;
 		if (!widget || !chartReadyRef.current) return;
+		if (!activeRef.current) return;
 
 		const nextSymbol = targetSymbolRef.current;
 		const nextInterval = targetIntervalRef.current;
@@ -119,27 +156,65 @@ export function TradingViewChart({
 		pendingIntervalRef.current = nextInterval;
 		setInitError(null);
 
-		const handleSymbolSwitchComplete = () => {
+		const handleSymbolSwitchComplete = (actualSymbol = getActiveChartSymbol(widget)) => {
 			if (
 				widgetRef.current === widget &&
 				targetSymbolRef.current === nextSymbol &&
-				targetIntervalRef.current === nextInterval
+				targetIntervalRef.current === nextInterval &&
+				isChartSymbolApplied(actualSymbol, nextSymbol)
 			) {
 				completeSymbolSwitch(nextSymbol, nextInterval);
 			}
 		};
+		const handleSymbolChanged = () => handleSymbolSwitchComplete();
 
-		try {
-			const chart = widget.activeChart();
-			const symbolChanged = chart.onSymbolChanged();
-			symbolChanged.subscribe(null, handleSymbolSwitchComplete, true);
-			symbolSwitchCleanupRef.current = () => {
-				symbolChanged.unsubscribe(null, handleSymbolSwitchComplete);
-			};
-			widget.setSymbol(nextSymbol, nextInterval as ResolutionString, handleSymbolSwitchComplete);
-		} catch {
-			finishSymbolSwitch();
-		}
+		const scheduleSymbolSwitchRetry = () => {
+			clearSymbolSwitchTimeout();
+			symbolSwitchTimeoutRef.current = setTimeout(() => {
+				if (
+					widgetRef.current !== widget ||
+					targetSymbolRef.current !== nextSymbol ||
+					targetIntervalRef.current !== nextInterval ||
+					pendingSymbolRef.current !== nextSymbol ||
+					pendingIntervalRef.current !== nextInterval
+				) {
+					return;
+				}
+
+				if (isChartSymbolApplied(getActiveChartSymbol(widget), nextSymbol)) {
+					completeSymbolSwitch(nextSymbol, nextInterval);
+					return;
+				}
+
+				if (symbolSwitchRetryCountRef.current < SYMBOL_SWITCH_MAX_RETRIES) {
+					symbolSwitchRetryCountRef.current += 1;
+					tryApplySymbol();
+					return;
+				}
+
+				finishSymbolSwitch();
+				setInitError("symbol-switch");
+			}, SYMBOL_SWITCH_RETRY_TIMEOUT_MS);
+		};
+
+		const tryApplySymbol = () => {
+			clearSymbolSwitchListeners();
+			try {
+				const chart = widget.activeChart();
+				const symbolChanged = chart.onSymbolChanged();
+				symbolChanged.subscribe(null, handleSymbolChanged);
+				symbolSwitchCleanupRef.current = () => {
+					symbolChanged.unsubscribe(null, handleSymbolChanged);
+				};
+				scheduleSymbolSwitchRetry();
+				widget.setSymbol(nextSymbol, nextInterval as ResolutionString, () => handleSymbolSwitchComplete());
+			} catch {
+				finishSymbolSwitch();
+				setInitError("symbol-switch");
+			}
+		};
+
+		tryApplySymbol();
 	};
 
 	applyThemeRef.current = (nextTheme) => {
@@ -306,8 +381,12 @@ export function TradingViewChart({
 	useEffect(() => {
 		targetSymbolRef.current = widgetSymbol;
 		targetIntervalRef.current = interval;
+		if (!active) {
+			cancelSymbolSwitchRef.current();
+			return;
+		}
 		applySymbolRef.current();
-	}, [widgetSymbol, interval]);
+	}, [widgetSymbol, interval, active]);
 
 	useEffect(() => {
 		targetThemeRef.current = theme;

@@ -94,7 +94,7 @@ function MarketsDataView({ active, showMarketBar }: { active: boolean; showMarke
 						topView === "chart" ? "z-10 opacity-100 pointer-events-auto" : "z-0 opacity-0 pointer-events-none",
 					)}
 				>
-					<MobileChartView />
+					<MobileChartView active={active && topView === "chart"} />
 				</div>
 				{topView !== "chart" && active && (
 					<div className="absolute inset-0 z-10 flex min-h-0 flex-col bg-background">

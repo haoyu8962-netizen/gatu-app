@@ -149,7 +149,7 @@ describe("chart candle store subscriptions", () => {
 		vi.useRealTimers();
 	});
 
-	it("unsubscribes a pending candle subscription when the last listener leaves before it resolves", async () => {
+	it("releases a pending candle subscription after the grace period when no listener returns", async () => {
 		vi.useFakeTimers();
 		let resolveSubscription: ((subscription: ISubscription) => void) | undefined;
 		testState.candle.mockImplementation(
@@ -168,6 +168,7 @@ describe("chart candle store subscriptions", () => {
 
 		expect(store.getState().streams["SOL:1m"]?.listeners.size).toBe(0);
 		expect(testState.unsubscribe).not.toHaveBeenCalled();
+		if (!testState.controller) throw new Error("missing controller");
 
 		resolveSubscription?.({
 			unsubscribe: testState.unsubscribe,
@@ -175,11 +176,102 @@ describe("chart candle store subscriptions", () => {
 		});
 		await flushMicrotasks();
 
-		expect(testState.unsubscribe).toHaveBeenCalledTimes(1);
+		expect(testState.unsubscribe).not.toHaveBeenCalled();
 
 		await vi.advanceTimersByTimeAsync(5_000);
 
+		expect(testState.unsubscribe).toHaveBeenCalledTimes(1);
 		expect(store.getState().streams["SOL:1m"]).toBeUndefined();
+
+		vi.useRealTimers();
+	});
+
+	it("isolates a stale pending subscription from a new stream with the same key", async () => {
+		vi.useFakeTimers();
+		const pending: Array<{
+			listener: CandleListener;
+			resolve: (subscription: ISubscription) => void;
+		}> = [];
+		testState.candle.mockImplementation(
+			(_params: { coin: string; interval: string }, listener: CandleListener): Promise<ISubscription> =>
+				new Promise((resolve) => pending.push({ listener, resolve })),
+		);
+
+		const store = createCandleStore();
+		const ticks: Bar[] = [];
+		store.getState().subscribe("ETH:1m", "ETH", "1m", "listener-a", vi.fn(), vi.fn());
+		store.getState().unsubscribe("ETH:1m", "listener-a");
+
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(store.getState().streams["ETH:1m"]).toBeUndefined();
+
+		store.getState().subscribe("ETH:1m", "ETH", "1m", "listener-b", (bar) => ticks.push(bar), vi.fn());
+		expect(testState.candle).toHaveBeenCalledTimes(2);
+
+		const staleController = new AbortController();
+		const staleUnsubscribe = vi.fn().mockResolvedValue(undefined);
+		pending[0]?.resolve({ unsubscribe: staleUnsubscribe, failureSignal: staleController.signal });
+		await flushMicrotasks();
+
+		expect(staleUnsubscribe).toHaveBeenCalledTimes(1);
+		pending[0]?.listener(nextCandle({ t: 120_000 }));
+		expect(ticks).toEqual([]);
+
+		const currentController = new AbortController();
+		const currentUnsubscribe = vi.fn().mockResolvedValue(undefined);
+		pending[1]?.resolve({ unsubscribe: currentUnsubscribe, failureSignal: currentController.signal });
+		await flushMicrotasks();
+		pending[1]?.listener(nextCandle({ t: 180_000 }));
+
+		expect(ticks).toEqual([expectedBar({ time: 180_000 })]);
+		expect(store.getState().streams["ETH:1m"]?.status).toBe("active");
+
+		store.getState().unsubscribe("ETH:1m", "listener-b");
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(currentUnsubscribe).toHaveBeenCalledTimes(1);
+
+		vi.useRealTimers();
+	});
+
+	it("reuses a pending subscription that resolves during the release grace period", async () => {
+		vi.useFakeTimers();
+		let resolveSubscription: ((subscription: ISubscription) => void) | undefined;
+		let candleListener: CandleListener | undefined;
+		testState.candle.mockImplementation(
+			(_params: { coin: string; interval: string }, listener: CandleListener): Promise<ISubscription> => {
+				candleListener = listener;
+				return new Promise((resolve) => {
+					resolveSubscription = resolve;
+				});
+			},
+		);
+
+		const store = createCandleStore();
+		const ticks: Bar[] = [];
+		const unsubscribe = vi.fn().mockResolvedValue(undefined);
+		const controller = new AbortController();
+
+		store.getState().subscribe("SOL:1m", "SOL", "1m", "listener-a", vi.fn(), vi.fn());
+		store.getState().unsubscribe("SOL:1m", "listener-a");
+		resolveSubscription?.({ unsubscribe, failureSignal: controller.signal });
+		await flushMicrotasks();
+
+		expect(unsubscribe).not.toHaveBeenCalled();
+		expect(store.getState().streams["SOL:1m"]?.listeners.size).toBe(0);
+
+		await vi.advanceTimersByTimeAsync(1_000);
+		store.getState().subscribe("SOL:1m", "SOL", "1m", "listener-b", (bar) => ticks.push(bar), vi.fn());
+		await flushMicrotasks();
+		await vi.advanceTimersByTimeAsync(5_000);
+
+		expect(testState.candle).toHaveBeenCalledTimes(1);
+		expect(unsubscribe).not.toHaveBeenCalled();
+		candleListener?.(nextCandle({ t: 240_000 }));
+		expect(ticks).toEqual([expectedBar({ time: 240_000 })]);
+
+		store.getState().unsubscribe("SOL:1m", "listener-b");
+		await vi.advanceTimersByTimeAsync(5_000);
+		expect(unsubscribe).toHaveBeenCalledTimes(1);
 
 		vi.useRealTimers();
 	});

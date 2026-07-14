@@ -8,10 +8,11 @@ import { useTheme } from "@/stores/use-global-settings-store";
 const TradingViewChart = createLazyComponent(() => import("./tradingview-chart"), "TradingViewChart");
 
 interface Props {
+	active?: boolean;
 	yAxisInside?: boolean;
 }
 
-export function ChartPanel({ yAxisInside = false }: Props) {
+export function ChartPanel({ active = true, yAxisInside = false }: Props) {
 	useRenderCommitTrack("chart");
 	const theme = useTheme();
 	const { data: selectedMarket } = useSelectedMarketInfo();
@@ -31,6 +32,7 @@ export function ChartPanel({ yAxisInside = false }: Props) {
 				<ClientOnly>
 					<Suspense fallback={<ChartLoadingFallback />}>
 						<TradingViewChart
+							active={active}
 							symbol={chartMarket.name}
 							market={chartMarket}
 							theme={chartTheme}
