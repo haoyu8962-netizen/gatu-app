@@ -1,6 +1,6 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
+import { Trans } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
 import { Suspense, useEffect, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
@@ -32,7 +32,7 @@ interface Props {
 }
 
 export function MobilePositionsView({ className, scrollMode = "contained" }: Props) {
-	const { i18n } = useLingui();
+	const { _ } = useLingui();
 	const storedActiveTab = usePositionsActiveTab();
 	const activeTab = resolveMobilePositionsTab(storedActiveTab);
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
@@ -105,7 +105,7 @@ export function MobilePositionsView({ className, scrollMode = "contained" }: Pro
 
 							return (
 								<TabsTrigger key={tab.value} value={tab.value} className="shrink-0 px-1 text-3xs leading-7">
-									<span>{i18n._(tab.label)}</span>
+									<span>{_(tab.label)}</span>
 									{loading ? (
 										<Spinner className="size-3 shrink-0" />
 									) : typeof count === "number" && count > 0 ? (
@@ -159,9 +159,11 @@ function EmptyState() {
 				<div className="size-10 rounded-full flex items-center justify-center bg-surface">
 					<WalletIcon className="size-5 text-fg-muted" />
 				</div>
-				<p className="text-xs text-fg-muted max-w-xs text-pretty">{t`Connect wallet to view positions`}</p>
+				<p className="text-xs text-fg-muted max-w-xs text-pretty">
+					<Trans>Connect wallet to view positions</Trans>
+				</p>
 				<Button variant="outline" intent="brand" size="sm" onClick={() => setWalletModalOpen(true)}>
-					{t`Connect Wallet`}
+					<Trans>Connect Wallet</Trans>
 				</Button>
 			</div>
 			{walletModalOpen && (

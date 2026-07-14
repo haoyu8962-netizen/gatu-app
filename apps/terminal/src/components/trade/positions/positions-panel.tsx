@@ -24,7 +24,7 @@ const PositionsTab = createLazyComponent(() => import("./positions-tab"), "Posit
 const TwapTab = createLazyComponent(() => import("./twap-tab"), "TwapTab");
 
 export function PositionsPanel() {
-	const { i18n } = useLingui();
+	const { _ } = useLingui();
 	useRenderCommitTrack("positions-table");
 	const activeTab = usePositionsActiveTab();
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
@@ -96,7 +96,7 @@ export function PositionsPanel() {
 									value={tab.value}
 									className="inline-flex items-center gap-1 whitespace-nowrap"
 								>
-									<span>{i18n._(tab.label)}</span>
+									<span>{_(tab.label)}</span>
 									{typeof count === "number" ? <span className="text-fg-muted">({count})</span> : null}
 								</TabsTrigger>
 							);
