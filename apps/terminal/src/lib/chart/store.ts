@@ -5,7 +5,6 @@ import type { CandleInterval } from "./resolution";
 import {
 	clearCooldownTimer,
 	clearReconnectTimer,
-	detachFailureListener,
 	runUnsubscribe,
 	type StreamRuntime,
 	type StreamStatus,
@@ -106,7 +105,6 @@ export function createCandleStore(): CandleStore {
 			clearReleaseTimer(runtimeEntry);
 			clearReconnectTimer(runtimeEntry);
 			clearCooldownTimer(runtimeEntry);
-			detachFailureListener(runtimeEntry);
 
 			const subscription = runtimeEntry.subscription;
 			runtimeEntry.subscription = undefined;

@@ -14,7 +14,7 @@ type RawSpotState = SpotStateWsEvent["spotState"] & {
 export type MarginSummary = RawClearinghouseState["marginSummary"];
 export type PerpSummary = RawClearinghouseState["crossMarginSummary"];
 export type PerpPosition = RawClearinghouseState["assetPositions"][number];
-export type SpotBalance = NonNullable<SpotStateWsEvent["spotState"]["balances"]>[number];
+export type SpotBalance = Extract<NonNullable<SpotStateWsEvent["spotState"]["balances"]>[number], { token: number }>;
 export type SpotAvailableAfterMaintenance = NonNullable<RawSpotState["tokenToAvailableAfterMaintenance"]>;
 export type AccountAbstraction =
 	| NonNullable<WebData3WsEvent["userState"]["abstraction"]>
@@ -152,7 +152,7 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	}
 
 	const clearinghouseStates = clearinghouseEvent?.clearinghouseStates ?? [];
-	const spotBalances = spotState?.balances ?? EMPTY_SPOT_BALANCES;
+	const spotBalances = (spotState?.balances ?? EMPTY_SPOT_BALANCES) as SpotBalance[];
 	const accountAbstractionLoading =
 		accountAbstraction === null &&
 		(accountAbstractionStatus === "pending" || webData3Status === "subscribing" || webData3Status === "idle");

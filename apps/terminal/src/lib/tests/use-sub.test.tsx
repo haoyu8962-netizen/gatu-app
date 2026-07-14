@@ -10,13 +10,10 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 function createFakeSubscription() {
-	const failureController = new AbortController();
 	return {
 		subscribe: async () => ({
 			unsubscribe: async () => {},
-			failureSignal: failureController.signal,
 		}),
-		failureController,
 	};
 }
 
@@ -183,12 +180,11 @@ describe("useSub hook surface", () => {
 
 	it("uses refreshKey to resubscribe without changing SDK params", async () => {
 		const unsubscribes: Array<ReturnType<typeof vi.fn>> = [];
-		const l2Book = vi.fn(async () => {
+		const l2Book = vi.fn(async (..._args: unknown[]) => {
 			const unsubscribe = vi.fn(async () => {});
 			unsubscribes.push(unsubscribe);
 			return {
 				unsubscribe,
-				failureSignal: new AbortController().signal,
 			};
 		});
 		const subscription = { l2Book } as unknown as SubscriptionClient;
@@ -199,14 +195,22 @@ describe("useSub hook surface", () => {
 		}
 
 		act(() => {
-			root.render(createElement(FullWrapper, { subscription }, createElement(Consumer, { refreshKey: "ledger-a" })));
+			root.render(
+				<FullWrapper subscription={subscription}>
+					<Consumer refreshKey="ledger-a" />
+				</FullWrapper>,
+			);
 		});
 		await act(() => vi.advanceTimersByTimeAsync(0));
 
 		expect(l2Book).toHaveBeenCalledTimes(1);
 
 		act(() => {
-			root.render(createElement(FullWrapper, { subscription }, createElement(Consumer, { refreshKey: "ledger-b" })));
+			root.render(
+				<FullWrapper subscription={subscription}>
+					<Consumer refreshKey="ledger-b" />
+				</FullWrapper>,
+			);
 		});
 		await act(() => vi.advanceTimersByTimeAsync(0));
 
@@ -215,7 +219,7 @@ describe("useSub hook surface", () => {
 		expect(l2Book.mock.calls.map(([params]) => params)).toEqual([{ coin: "ETH" }, { coin: "ETH" }]);
 
 		act(() => {
-			root.render(createElement(FullWrapper, { subscription }, null));
+			root.render(<FullWrapper subscription={subscription}>{null}</FullWrapper>);
 		});
 		await act(() => vi.advanceTimersByTimeAsync(0));
 	});

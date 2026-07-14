@@ -34,7 +34,7 @@ function createUsdcTransferLog() {
 			abi: erc20Abi,
 			eventName: "Transfer",
 			args: { from: USER, to: DEPOSIT_NETWORKS.mainnet.bridge2 },
-		}),
+		}) as readonly `0x${string}`[],
 	};
 }
 
@@ -45,7 +45,7 @@ function createFailedPermitLog() {
 		topics: encodeEventTopics({
 			abi: BRIDGE2_ABI,
 			eventName: "FailedPermitDeposit",
-		}),
+		}) as readonly `0x${string}`[],
 	};
 }
 

@@ -7,10 +7,12 @@ type CandleListener = (event: CandleWsEvent) => void;
 
 const testState = vi.hoisted(() => ({
 	candle: vi.fn(),
-	controller: undefined as AbortController | undefined,
 	listener: undefined as CandleListener | undefined,
+	onError: undefined as ((error: unknown) => void) | undefined,
 	unsubscribe: vi.fn(),
 }));
+
+type CandleSubscribeOptions = { onError?: (error: unknown) => void };
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getSubscriptionClient: () => ({
@@ -61,16 +63,17 @@ describe("chart candle store subscriptions", () => {
 		testState.candle.mockReset();
 		testState.unsubscribe.mockReset();
 		testState.unsubscribe.mockResolvedValue(undefined);
-		testState.controller = new AbortController();
 		testState.listener = undefined;
+		testState.onError = undefined;
 		testState.candle.mockImplementation(
-			async (_params: { coin: string; interval: string }, listener: CandleListener): Promise<ISubscription> => {
+			async (
+				_params: { coin: string; interval: string },
+				listener: CandleListener,
+				options?: CandleSubscribeOptions,
+			): Promise<ISubscription> => {
 				testState.listener = listener;
-				if (!testState.controller) throw new Error("missing controller");
-				return {
-					unsubscribe: testState.unsubscribe,
-					failureSignal: testState.controller.signal,
-				};
+				testState.onError = options?.onError;
+				return { unsubscribe: testState.unsubscribe };
 			},
 		);
 
@@ -91,7 +94,11 @@ describe("chart candle store subscriptions", () => {
 		await flushMicrotasks();
 
 		expect(testState.candle).toHaveBeenCalledTimes(1);
-		expect(testState.candle).toHaveBeenCalledWith({ coin: "ETH", interval: "1m" }, expect.any(Function));
+		expect(testState.candle).toHaveBeenCalledWith(
+			{ coin: "ETH", interval: "1m" },
+			expect.any(Function),
+			expect.objectContaining({ onError: expect.any(Function) }),
+		);
 
 		testState.listener?.(nextCandle());
 		await flushMicrotasks();
@@ -155,7 +162,6 @@ describe("chart candle store subscriptions", () => {
 		testState.candle.mockImplementation(
 			(_params: { coin: string; interval: string }, listener: CandleListener): Promise<ISubscription> => {
 				testState.listener = listener;
-				if (!testState.controller) throw new Error("missing controller");
 				return new Promise((resolve) => {
 					resolveSubscription = resolve;
 				});
@@ -168,12 +174,8 @@ describe("chart candle store subscriptions", () => {
 
 		expect(store.getState().streams["SOL:1m"]?.listeners.size).toBe(0);
 		expect(testState.unsubscribe).not.toHaveBeenCalled();
-		if (!testState.controller) throw new Error("missing controller");
 
-		resolveSubscription?.({
-			unsubscribe: testState.unsubscribe,
-			failureSignal: testState.controller.signal,
-		});
+		resolveSubscription?.({ unsubscribe: testState.unsubscribe });
 		await flushMicrotasks();
 
 		expect(testState.unsubscribe).not.toHaveBeenCalled();
@@ -208,18 +210,16 @@ describe("chart candle store subscriptions", () => {
 		store.getState().subscribe("ETH:1m", "ETH", "1m", "listener-b", (bar) => ticks.push(bar), vi.fn());
 		expect(testState.candle).toHaveBeenCalledTimes(2);
 
-		const staleController = new AbortController();
 		const staleUnsubscribe = vi.fn().mockResolvedValue(undefined);
-		pending[0]?.resolve({ unsubscribe: staleUnsubscribe, failureSignal: staleController.signal });
+		pending[0]?.resolve({ unsubscribe: staleUnsubscribe });
 		await flushMicrotasks();
 
 		expect(staleUnsubscribe).toHaveBeenCalledTimes(1);
 		pending[0]?.listener(nextCandle({ t: 120_000 }));
 		expect(ticks).toEqual([]);
 
-		const currentController = new AbortController();
 		const currentUnsubscribe = vi.fn().mockResolvedValue(undefined);
-		pending[1]?.resolve({ unsubscribe: currentUnsubscribe, failureSignal: currentController.signal });
+		pending[1]?.resolve({ unsubscribe: currentUnsubscribe });
 		await flushMicrotasks();
 		pending[1]?.listener(nextCandle({ t: 180_000 }));
 
@@ -249,11 +249,10 @@ describe("chart candle store subscriptions", () => {
 		const store = createCandleStore();
 		const ticks: Bar[] = [];
 		const unsubscribe = vi.fn().mockResolvedValue(undefined);
-		const controller = new AbortController();
 
 		store.getState().subscribe("SOL:1m", "SOL", "1m", "listener-a", vi.fn(), vi.fn());
 		store.getState().unsubscribe("SOL:1m", "listener-a");
-		resolveSubscription?.({ unsubscribe, failureSignal: controller.signal });
+		resolveSubscription?.({ unsubscribe });
 		await flushMicrotasks();
 
 		expect(unsubscribe).not.toHaveBeenCalled();
@@ -287,33 +286,35 @@ describe("chart candle store subscriptions", () => {
 		testState.listener?.(nextCandle({ t: 300_000 }));
 		await flushAsyncWork();
 
-		testState.controller?.abort(new Error("socket dropped"));
+		testState.onError?.(new Error("socket dropped"));
 		await flushAsyncWork();
 
 		expect(ticks).toEqual([expectedBar({ time: 300_000 })]);
 		expect(reset).toHaveBeenCalledTimes(1);
-		expect(testState.unsubscribe).toHaveBeenCalledTimes(1);
+		expect(testState.unsubscribe).not.toHaveBeenCalled();
 		expect(store.getState().streams["BTC:5m"]?.status).toBe("error");
 
 		store.getState().unsubscribe("BTC:5m", "listener");
 	});
 
-	it("removes an aborted SDK subscription before retrying it", async () => {
+	it("retries after the SDK reports a subscription failure", async () => {
 		vi.useFakeTimers();
 		vi.spyOn(Math, "random").mockReturnValue(0);
-		const firstController = new AbortController();
-		const secondController = new AbortController();
 		const firstUnsubscribe = vi.fn().mockResolvedValue(undefined);
 		const secondUnsubscribe = vi.fn().mockResolvedValue(undefined);
+		const onErrors: Array<((error: unknown) => void) | undefined> = [];
 		let attempt = 0;
 
 		testState.candle.mockImplementation(
-			async (_params: { coin: string; interval: string }, listener: CandleListener): Promise<ISubscription> => {
+			async (
+				_params: { coin: string; interval: string },
+				listener: CandleListener,
+				options?: CandleSubscribeOptions,
+			): Promise<ISubscription> => {
 				testState.listener = listener;
+				onErrors.push(options?.onError);
 				attempt += 1;
-				return attempt === 1
-					? { unsubscribe: firstUnsubscribe, failureSignal: firstController.signal }
-					: { unsubscribe: secondUnsubscribe, failureSignal: secondController.signal };
+				return attempt === 1 ? { unsubscribe: firstUnsubscribe } : { unsubscribe: secondUnsubscribe };
 			},
 		);
 
@@ -321,10 +322,10 @@ describe("chart candle store subscriptions", () => {
 		store.getState().subscribe("HYPE:1m", "HYPE", "1m", "listener", vi.fn(), vi.fn());
 		await flushMicrotasks();
 
-		firstController.abort(new Error("resubscribe failed"));
+		onErrors[0]?.(new Error("resubscribe failed"));
 		await flushMicrotasks();
 
-		expect(firstUnsubscribe).toHaveBeenCalledTimes(1);
+		expect(firstUnsubscribe).not.toHaveBeenCalled();
 		await vi.advanceTimersByTimeAsync(250);
 		await flushMicrotasks();
 

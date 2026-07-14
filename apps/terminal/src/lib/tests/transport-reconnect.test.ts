@@ -19,10 +19,10 @@ describe("createWsReconnectTrigger SDK coupling", () => {
 	// Regression guard: if @nktkas/hyperliquid ever hides or renames
 	// WebSocketTransport.socket, the guard in clients.ts silently returns a
 	// no-op. Observable-behavior check: construct a real transport, spy on the
-	// underlying socket's close method, invoke the trigger, and assert close
-	// was called non-permanently. Surfaces any SDK breakage in tests rather
-	// than silently in production.
-	it("invokes socket.close(undefined, undefined, false) against a real WebSocketTransport", async () => {
+	// underlying socket's reconnect method, invoke the trigger, and assert it
+	// was called. Surfaces any SDK breakage in tests rather than silently in
+	// production.
+	it("invokes socket.reconnect() against a real WebSocketTransport", async () => {
 		const { createWsReconnectTrigger, getWsTransport } = await import("@gatu/hl-react/clients");
 
 		// Retrieve the module-cached transport the trigger will target.
@@ -30,17 +30,17 @@ describe("createWsReconnectTrigger SDK coupling", () => {
 		expect(transport.constructor.name).toBe("WebSocketTransport");
 		const socket = (
 			transport as unknown as {
-				socket: { close: (code?: number, reason?: string, permanent?: boolean) => void };
+				socket: { reconnect: () => void };
 			}
 		).socket;
-		expect(typeof socket?.close).toBe("function");
-		const spy = vi.spyOn(socket, "close").mockImplementation(() => {});
+		expect(typeof socket?.reconnect).toBe("function");
+		const spy = vi.spyOn(socket, "reconnect").mockImplementation(() => {});
 
 		try {
 			const trigger = createWsReconnectTrigger(true);
 			trigger();
 			expect(spy).toHaveBeenCalledTimes(1);
-			expect(spy).toHaveBeenCalledWith(undefined, undefined, false);
+			expect(spy).toHaveBeenCalledWith();
 		} finally {
 			spy.mockRestore();
 		}
@@ -52,10 +52,8 @@ describe("store reconnect with fake subscriptions", () => {
 		const { createHyperliquidStore } = await import("@gatu/hl-react/store");
 		const store = createHyperliquidStore({ ssr: false });
 
-		const failureController = new AbortController();
 		store.getState().acquireSubscription("test:key", async () => ({
 			unsubscribe: async () => {},
-			failureSignal: failureController.signal,
 		}));
 
 		await new Promise<void>((r) => setTimeout(r, 0));
@@ -74,21 +72,21 @@ describe("store reconnect with fake subscriptions", () => {
 		const { createHyperliquidStore } = await import("@gatu/hl-react/store");
 		const store = createHyperliquidStore({ ssr: false });
 
-		const failureController = new AbortController();
+		let reportError: ((error: unknown) => void) | undefined;
 		const unsubscribe = vi.fn().mockResolvedValue(undefined);
-		store.getState().acquireSubscription("test:reconnect", async () => ({
-			unsubscribe,
-			failureSignal: failureController.signal,
-		}));
+		store.getState().acquireSubscription("test:reconnect", async (failureOptions) => {
+			reportError = failureOptions?.onError;
+			return { unsubscribe };
+		});
 
 		await new Promise<void>((r) => setTimeout(r, 0));
 		expect(store.getState().subscriptions["test:reconnect"].status).toBe("active");
 
-		failureController.abort(new Error("Connection lost"));
+		reportError?.(new Error("Connection lost"));
 		await new Promise<void>((r) => setTimeout(r, 0));
 
 		expect(store.getState().subscriptions["test:reconnect"].status).toBe("error");
-		expect(unsubscribe).toHaveBeenCalledTimes(1);
+		expect(unsubscribe).not.toHaveBeenCalled();
 
 		store.getState().releaseSubscription("test:reconnect");
 	});
@@ -99,21 +97,17 @@ describe("store reconnect with fake subscriptions", () => {
 
 		const key = "test:retry-then-success";
 		let attempt = 0;
-		let currentController = new AbortController();
 
-		const subscribe = async () => {
+		const subscribe = async (failureOptions?: { onError?: (error: unknown) => void }) => {
 			attempt += 1;
 			if (attempt <= 2) {
 				const err = new Error(`attempt ${attempt} failed`);
-				// Fire the failure signal on next tick so the store transitions
+				// Report the failure on next tick so the store transitions
 				// active -> error -> schedules reconnect, just like a real
 				// post-open disconnect.
-				const controller = new AbortController();
-				setTimeout(() => controller.abort(err), 0);
-				return { unsubscribe: async () => {}, failureSignal: controller.signal };
+				setTimeout(() => failureOptions?.onError?.(err), 0);
 			}
-			currentController = new AbortController();
-			return { unsubscribe: async () => {}, failureSignal: currentController.signal };
+			return { unsubscribe: async () => {} };
 		};
 
 		store.getState().acquireSubscription(key, subscribe);

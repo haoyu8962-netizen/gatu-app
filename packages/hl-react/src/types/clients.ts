@@ -62,14 +62,17 @@ export type SubMethod = keyof SubClientMethods & string;
 
 type SubOptionalParamsMethods = "allMids" | "assetCtxs";
 
-type LastParam<T extends (...args: any[]) => any> = Parameters<T> extends [...infer _Rest, infer L] ? L : never;
-
 export type SubParams<M extends SubMethod> = M extends SubOptionalParamsMethods
-	? Parameters<SubClientMethods[M]> extends [infer P, any]
+	? Parameters<SubClientMethods[M]> extends [infer P, any, ...any[]]
 		? P | undefined
 		: undefined
-	: Parameters<SubClientMethods[M]> extends [infer P, any]
+	: Parameters<SubClientMethods[M]> extends [infer P, any, ...any[]]
 		? P
 		: undefined;
 
-export type SubEvent<M extends SubMethod> = LastParam<SubClientMethods[M]> extends (data: infer E) => void ? E : never;
+type SubListener<M extends SubMethod> = Extract<
+	Parameters<SubClientMethods[M]>[0] | Parameters<SubClientMethods[M]>[1],
+	(data: any) => void
+>;
+
+export type SubEvent<M extends SubMethod> = SubListener<M> extends (data: infer E) => void ? E : never;

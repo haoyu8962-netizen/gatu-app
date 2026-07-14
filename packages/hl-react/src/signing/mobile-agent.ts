@@ -138,7 +138,9 @@ export function findApprovedMobileAgent(
 	return (
 		extraAgents.find(
 			(agent) =>
-				agent.address.toLowerCase() === normalizedAddress && agent.validUntil > nowMs && isMobileAgentName(agent.name),
+				agent.address.toLowerCase() === normalizedAddress &&
+				(agent.validUntil ?? Number.POSITIVE_INFINITY) > nowMs &&
+				isMobileAgentName(agent.name),
 		) ?? null
 	);
 }
@@ -161,7 +163,7 @@ export function verifyMobileAgent(
 	if (!remoteAgent) {
 		return { status: "stale", reason: "missing_remote", localAgent };
 	}
-	if (remoteAgent.validUntil <= nowMs) {
+	if ((remoteAgent.validUntil ?? Number.POSITIVE_INFINITY) <= nowMs) {
 		return { status: "stale", reason: "expired_remote", localAgent };
 	}
 	if (!isMobileAgentName(remoteAgent.name)) {

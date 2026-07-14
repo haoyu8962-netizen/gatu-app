@@ -89,7 +89,6 @@ describe("SubscriptionClient mapped types", () => {
 	});
 
 	it("resolves params as undefined for no-params method", () => {
-		expectTypeOf<SubParams<"explorerBlock">>().toEqualTypeOf<undefined>();
 		expectTypeOf<SubParams<"spotAssetCtxs">>().toEqualTypeOf<undefined>();
 	});
 
@@ -105,7 +104,6 @@ describe("SubscriptionClient mapped types", () => {
 	});
 
 	it("resolves event type for no-params method", () => {
-		expectTypeOf<SubEvent<"explorerBlock">>().not.toBeNever();
 		expectTypeOf<SubEvent<"spotAssetCtxs">>().not.toBeNever();
 	});
 

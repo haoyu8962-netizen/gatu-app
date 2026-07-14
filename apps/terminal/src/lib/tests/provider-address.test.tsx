@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, createElement } from "react";
+import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 
@@ -49,11 +49,9 @@ describe("HyperliquidProvider userAddress prop", () => {
 		const root = createRoot(container);
 		act(() => {
 			root.render(
-				createElement(
-					HyperliquidProvider,
-					{ env: "Testnet", userAddress: undefined, builderConfig: TEST_BUILDER_CONFIG },
-					createElement(Consumer),
-				),
+				<HyperliquidProvider env="Testnet" userAddress={undefined} builderConfig={TEST_BUILDER_CONFIG}>
+					<Consumer />
+				</HyperliquidProvider>,
 			);
 		});
 
@@ -76,11 +74,9 @@ describe("HyperliquidProvider userAddress prop", () => {
 		const root = createRoot(container);
 		act(() => {
 			root.render(
-				createElement(
-					HyperliquidProvider,
-					{ env: "Testnet", userAddress: testAddress, builderConfig: TEST_BUILDER_CONFIG },
-					createElement(Consumer),
-				),
+				<HyperliquidProvider env="Testnet" userAddress={testAddress} builderConfig={TEST_BUILDER_CONFIG}>
+					<Consumer />
+				</HyperliquidProvider>,
 			);
 		});
 

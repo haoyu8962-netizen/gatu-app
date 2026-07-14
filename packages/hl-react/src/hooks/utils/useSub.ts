@@ -8,11 +8,11 @@ import {
 	getStalenessThresholdForKey,
 } from "../../internal/websocket/reliability";
 import { useHyperliquidStoreApi } from "../../provider";
-import type { SubscriptionOptions, SubscriptionResult } from "../../types";
+import type { SubscribeFailureOptions, SubscriptionOptions, SubscriptionResult } from "../../types";
 
 export function useSub<TData>(
 	key: string,
-	subscribe: (listener: (data: TData) => void) => Promise<ISubscription>,
+	subscribe: (listener: (data: TData) => void, failureOptions?: SubscribeFailureOptions) => Promise<ISubscription>,
 	options: SubscriptionOptions = {},
 ): SubscriptionResult<TData> {
 	const {
@@ -59,11 +59,11 @@ export function useSub<TData>(
 			const updater = createThrottledUpdater<TData>((data) => state.setSubscriptionData(key, data), throttleMs);
 			state.acquireSubscription(
 				key,
-				() =>
+				(failureOptions) =>
 					subscribeRef.current((data) => {
 						if (shouldDropPayload(data)) return;
 						updater.add(data);
-					}),
+					}, failureOptions),
 				stalenessThresholdMs,
 				pauseWhenHidden,
 			);
@@ -76,11 +76,11 @@ export function useSub<TData>(
 
 		state.acquireSubscription(
 			key,
-			() =>
+			(failureOptions) =>
 				subscribeRef.current((data) => {
 					if (shouldDropPayload(data)) return;
 					state.setSubscriptionData(key, data);
-				}),
+				}, failureOptions),
 			stalenessThresholdMs,
 			pauseWhenHidden,
 		);
@@ -94,7 +94,6 @@ export function useSub<TData>(
 			error: undefined,
 			isStale: false,
 			unsubscribe: async () => store.getState().releaseSubscription(key),
-			failureSignal: undefined,
 		};
 	}
 
@@ -104,6 +103,5 @@ export function useSub<TData>(
 		error: entry?.error,
 		isStale: entry?.isStale ?? false,
 		unsubscribe: async () => store.getState().releaseSubscription(key),
-		failureSignal: entry?.failureSignal,
 	};
 }

@@ -14,7 +14,6 @@ export type StreamRuntime = {
 	cooldownTimer?: ReturnType<typeof setTimeout>;
 	releaseTimer?: ReturnType<typeof setTimeout>;
 	reconnectAttempts: number;
-	detachFailureListener?: () => void;
 	coin: string;
 	interval: CandleInterval;
 };
@@ -44,11 +43,6 @@ export function clearCooldownTimer(runtime: StreamRuntime): void {
 		clearTimeout(runtime.cooldownTimer);
 		runtime.cooldownTimer = undefined;
 	}
-}
-
-export function detachFailureListener(runtime: StreamRuntime): void {
-	runtime.detachFailureListener?.();
-	runtime.detachFailureListener = undefined;
 }
 
 export function runUnsubscribe(subscription?: ISubscription): void {
@@ -116,13 +110,30 @@ export function startSubscription(ctx: SubscribeContext): void {
 	ctx.onConnecting();
 	const owner = entry;
 
+	// The SDK fires onError at most once, only after a confirmed subscription fails, and
+	// removes the subscription itself — identity guards keep stale epochs from acting.
+	let activeSubscription: ISubscription | undefined;
+	const onSubscriptionError = (error: unknown) => {
+		if (ctx.runtime.get(ctx.key) !== owner) return;
+		if (!activeSubscription || owner.subscription !== activeSubscription) return;
+		owner.subscription = undefined;
+
+		ctx.onError(error ?? new Error("Subscription failed"));
+		ctx.onResetListeners();
+		scheduleReconnect(ctx);
+	};
+
 	owner.promise = getSubscriptionClient()
-		.candle({ coin: entry.coin, interval: entry.interval }, (event) => {
-			if (ctx.runtime.get(ctx.key) !== owner) return;
-			const bar = candleEventToBar(event);
-			if (!bar) return;
-			ctx.onCandle(bar);
-		})
+		.candle(
+			{ coin: entry.coin, interval: entry.interval },
+			(event) => {
+				if (ctx.runtime.get(ctx.key) !== owner) return;
+				const bar = candleEventToBar(event);
+				if (!bar) return;
+				ctx.onCandle(bar);
+			},
+			{ onError: onSubscriptionError },
+		)
 		.then((subscription) => {
 			if (ctx.runtime.get(ctx.key) !== owner) {
 				runUnsubscribe(subscription);
@@ -131,25 +142,8 @@ export function startSubscription(ctx: SubscribeContext): void {
 
 			owner.promise = undefined;
 			owner.subscription = subscription;
+			activeSubscription = subscription;
 			owner.reconnectAttempts = 0;
-			detachFailureListener(owner);
-
-			const onFailure = () => {
-				if (ctx.runtime.get(ctx.key) !== owner || owner.subscription !== subscription) return;
-				owner.subscription = undefined;
-				detachFailureListener(owner);
-				runUnsubscribe(subscription);
-
-				const reason = subscription.failureSignal.reason ?? new Error("Subscription failed");
-				ctx.onError(reason);
-				ctx.onResetListeners();
-				scheduleReconnect(ctx);
-			};
-
-			subscription.failureSignal.addEventListener("abort", onFailure, { once: true });
-			owner.detachFailureListener = () => {
-				subscription.failureSignal.removeEventListener("abort", onFailure);
-			};
 
 			ctx.onActive();
 
@@ -160,7 +154,6 @@ export function startSubscription(ctx: SubscribeContext): void {
 
 			owner.promise = undefined;
 			owner.subscription = undefined;
-			detachFailureListener(owner);
 
 			ctx.onError(error);
 			ctx.onResetListeners();

@@ -49,6 +49,7 @@ describe("debug snapshot", () => {
 		store.getState().setSubscriptionData(key2, [{ px: "100", sz: "1" }]);
 
 		const snapshot = window.__hl_debug?.();
+		if (!snapshot) throw new Error("debug snapshot unavailable");
 
 		expect(snapshot).toHaveProperty("subscriptions");
 		expect(snapshot).toHaveProperty("counters");
@@ -94,6 +95,7 @@ describe("debug snapshot", () => {
 		await vi.advanceTimersByTimeAsync(25_000);
 
 		const snapshot = window.__hl_debug?.();
+		if (!snapshot) throw new Error("debug snapshot unavailable");
 		expect(snapshot.subscriptions[key]?.isStale).toBe(true);
 
 		store.getState().releaseSubscription(key);

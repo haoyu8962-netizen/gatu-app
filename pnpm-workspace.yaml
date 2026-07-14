@@ -1,6 +1,10 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - apps/*
+  - packages/*
 
 overrides:
-  "@noble/hashes": "1.8.0"
+  '@noble/hashes': 1.8.0
+  '@tanstack/query-core': 5.90.16
+
+patchedDependencies:
+  '@tanstack/start-plugin-core@1.132.0': patches/@tanstack__start-plugin-core@1.132.0.patch

@@ -10,7 +10,7 @@ import {
 } from "./internal/websocket/reliability";
 import { createStalenessWatchdog, type StalenessWatchdog } from "./internal/websocket/staleness";
 import { getVisibilityState, subscribeVisibility } from "./internal/websocket/visibility";
-import type { HyperliquidConfig, SubscriptionStatus, WebSocketStatus } from "./types";
+import type { HyperliquidConfig, SubscribeFailureOptions, SubscriptionStatus, WebSocketStatus } from "./types";
 
 export type HyperliquidStoreState = {
 	config: HyperliquidConfig;
@@ -20,7 +20,7 @@ export type HyperliquidStoreState = {
 	setConfig: (config: HyperliquidConfig) => void;
 	acquireSubscription: (
 		key: string,
-		subscribe: () => Promise<ISubscription>,
+		subscribe: (failureOptions?: SubscribeFailureOptions) => Promise<ISubscription>,
 		stalenessThresholdMs?: number,
 		pauseWhenHidden?: boolean,
 	) => void;
@@ -35,7 +35,6 @@ type SubscriptionEntry = {
 	status: SubscriptionStatus;
 	data?: unknown;
 	error?: unknown;
-	failureSignal?: AbortSignal;
 	isStale?: boolean;
 };
 
@@ -46,7 +45,6 @@ export type SubscriptionRuntime = {
 	reconnectTimer?: ReturnType<typeof setTimeout>;
 	cooldownTimer?: ReturnType<typeof setTimeout>;
 	reconnectAttempts: number;
-	detachFailureListener?: () => void;
 	detachStaleness?: () => void;
 	pauseWhenHidden?: boolean;
 };
@@ -94,11 +92,6 @@ function clearCooldownTimer(runtime: SubscriptionRuntime): void {
 		clearTimeout(runtime.cooldownTimer);
 		runtime.cooldownTimer = undefined;
 	}
-}
-
-function detachFailureListener(runtime: SubscriptionRuntime): void {
-	runtime.detachFailureListener?.();
-	runtime.detachFailureListener = undefined;
 }
 
 export type ChaosState = {
@@ -284,7 +277,6 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 							...current,
 							status: "error",
 							error: new Error("Reconnect cooldown active"),
-							failureSignal: undefined,
 						};
 						return setSubscriptionEntry(state, key, nextEntry);
 					});
@@ -353,7 +345,30 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					return;
 				}
 
-				runtime.promise = subscribe()
+				// The SDK invokes onError at most once, only after a confirmed subscription fails,
+				// and removes the subscription itself — so no manual unsubscribe/detach here.
+				let activeSubscription: ISubscription | undefined;
+				const onSubscriptionError = (error: unknown) => {
+					const runtime = subscriptionRuntime.get(key);
+					if (!runtime || !activeSubscription || runtime.subscription !== activeSubscription) return;
+					runtime.subscription = undefined;
+
+					const reason = error ?? new Error("Subscription failed");
+					set((state) => {
+						const current = state.subscriptions[key];
+						if (!current) return state;
+						const nextEntry: SubscriptionEntry = {
+							...current,
+							status: "error",
+							error: reason,
+						};
+						return setSubscriptionEntry(state, key, nextEntry);
+					});
+
+					scheduleReconnect();
+				};
+
+				runtime.promise = subscribe({ onError: onSubscriptionError })
 					.then((subscription) => {
 						const runtime = subscriptionRuntime.get(key);
 						if (!runtime) {
@@ -369,52 +384,19 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 						}
 
 						runtime.subscription = subscription;
+						activeSubscription = subscription;
 						runtime.reconnectAttempts = 0;
-						detachFailureListener(runtime);
-
-						const onFailure = () => {
-							const runtime = subscriptionRuntime.get(key);
-							if (!runtime) return;
-							runtime.subscription = undefined;
-							detachFailureListener(runtime);
-							void subscription.unsubscribe().catch(() => {});
-
-							const reason = subscription.failureSignal.reason ?? new Error("Subscription failed");
-							set((state) => {
-								const current = state.subscriptions[key];
-								if (!current) return state;
-								const nextEntry: SubscriptionEntry = {
-									...current,
-									status: "error",
-									error: reason,
-									failureSignal: undefined,
-								};
-								return setSubscriptionEntry(state, key, nextEntry);
-							});
-
-							scheduleReconnect();
-						};
-
-						subscription.failureSignal.addEventListener("abort", onFailure, { once: true });
-						runtime.detachFailureListener = () => {
-							subscription.failureSignal.removeEventListener("abort", onFailure);
-						};
 
 						set((state) => {
 							const current = state.subscriptions[key];
 							if (!current) return state;
-							if (
-								current.status === "active" &&
-								current.error === undefined &&
-								current.failureSignal === subscription.failureSignal
-							) {
+							if (current.status === "active" && current.error === undefined) {
 								return state;
 							}
 							const nextEntry: SubscriptionEntry = {
 								...current,
 								status: "active",
 								error: undefined,
-								failureSignal: subscription.failureSignal,
 							};
 							return setSubscriptionEntry(state, key, nextEntry);
 						});
@@ -429,7 +411,6 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 
 						runtime.promise = undefined;
 						runtime.subscription = undefined;
-						detachFailureListener(runtime);
 
 						set((state) => {
 							const current = state.subscriptions[key];
@@ -438,7 +419,6 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 								...current,
 								status: "error",
 								error,
-								failureSignal: undefined,
 							};
 							return setSubscriptionEntry(state, key, nextEntry);
 						});
@@ -463,7 +443,6 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 
 			clearReconnectTimer(runtime);
 			clearCooldownTimer(runtime);
-			detachFailureListener(runtime);
 			runtime.detachStaleness?.();
 			watchdog.unregister(key);
 

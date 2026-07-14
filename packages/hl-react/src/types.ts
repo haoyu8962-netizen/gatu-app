@@ -18,11 +18,20 @@ type AnyMethod = (...args: unknown[]) => unknown;
 
 export type InferData<TMethod extends AnyMethod> = Awaited<ReturnType<TMethod>>;
 export type InferParams<TMethod extends AnyMethod> = Exclude<Parameters<TMethod>[0], AbortSignal>;
-export type InferSubListener<TMethod extends AnyMethod> = Extract<Parameters<TMethod>[number], (data: unknown) => void>;
+export type InferSubListener<TMethod extends AnyMethod> = Extract<
+	Parameters<TMethod>[0] | Parameters<TMethod>[1],
+	// biome-ignore lint/suspicious/noExplicitAny: listener parameter types vary per subscription; `any` keeps the Extract bivariant.
+	(data: any) => void
+>;
 export type InferSubEvent<TMethod extends AnyMethod> = InferSubListener<TMethod> extends (data: infer D) => void
 	? D
 	: never;
 export type InferSubParams<TMethod extends AnyMethod> = Exclude<Parameters<TMethod>[0], InferSubListener<TMethod>>;
+
+/** Failure hooks forwarded to the SDK's subscribe options (v0.33+ replaces `failureSignal`). */
+export type SubscribeFailureOptions = {
+	onError?: (error: unknown) => void;
+};
 
 export type SubscriptionStatus = "idle" | "subscribing" | "active" | "error";
 export type WebSocketStatus = "idle" | "connecting" | "open" | "error";
@@ -43,7 +52,6 @@ export type SubscriptionResult<TData> = {
 	error: unknown;
 	isStale: boolean;
 	unsubscribe: (() => Promise<void>) | undefined;
-	failureSignal: AbortSignal | undefined;
 };
 
 export type HyperliquidConfig = {
