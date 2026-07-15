@@ -33,6 +33,7 @@ export interface AccountBalances {
 	accountAbstraction: AccountAbstraction;
 	withdrawable: string;
 	crossMaintenanceMarginUsed: string;
+	isSpotStateLoading: boolean;
 	isLoading: boolean;
 	hasError: boolean;
 }
@@ -99,6 +100,7 @@ export interface AllDexsAccountState {
 	spotBalances: SpotBalance[];
 	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance;
 	accountAbstraction: AccountAbstraction;
+	isSpotStateLoading: boolean;
 	isLoading: boolean;
 	hasError: boolean;
 }
@@ -129,7 +131,11 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		{ user: address ?? "" },
 		{ enabled, refreshKey: accountRefreshKey },
 	);
-	const { data: spotEvent, status: spotStatus } = useSubscription(
+	const {
+		data: spotEvent,
+		status: spotStatus,
+		isStale: isSpotStateStale,
+	} = useSubscription(
 		"spotState",
 		{ user: address ?? "0x0" },
 		{
@@ -150,6 +156,7 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 			spotBalances: EMPTY_SPOT_BALANCES,
 			spotAvailableAfterMaintenance: EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
 			accountAbstraction: null,
+			isSpotStateLoading: false,
 			isLoading: false,
 			hasError: false,
 		};
@@ -160,12 +167,9 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		accountAbstraction === null &&
 		(accountAbstractionStatus === "pending" || webData3Status === "subscribing" || webData3Status === "idle");
 
+	const isSpotStateLoading = spotStatus !== "active" || !spotState || isSpotStateStale;
 	const isLoading =
-		perpStatus === "subscribing" ||
-		perpStatus === "idle" ||
-		spotStatus === "subscribing" ||
-		spotStatus === "idle" ||
-		accountAbstractionLoading;
+		perpStatus === "subscribing" || perpStatus === "idle" || accountAbstractionLoading || isSpotStateLoading;
 	const hasError = perpStatus === "error" || spotStatus === "error";
 
 	return {
@@ -173,14 +177,22 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
+		isSpotStateLoading,
 		isLoading,
 		hasError,
 	};
 }
 
 export function useDexBalances(dex: string | null | undefined): AccountBalances {
-	const { clearinghouseStates, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, isLoading, hasError } =
-		useAllDexsAccountState();
+	const {
+		clearinghouseStates,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		accountAbstraction,
+		isSpotStateLoading,
+		isLoading,
+		hasError,
+	} = useAllDexsAccountState();
 	const { address, isConnected } = useWalletSession();
 	const enabled = isConnected && !!address;
 
@@ -210,6 +222,7 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 		accountAbstraction,
 		withdrawable,
 		crossMaintenanceMarginUsed,
+		isSpotStateLoading,
 		isLoading: enabled && !dexState ? isLoading || infoDexStatus === "pending" : isLoading,
 		hasError: hasError || (!dexState && infoDexStatus === "error"),
 	};

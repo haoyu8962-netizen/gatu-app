@@ -1,10 +1,8 @@
 import { getSideLabels, getSizeModeLabel, type SideLabels } from "@/config/ui-text";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import {
-	type AccountAbstraction,
 	getAvailableBalanceToken,
 	getSpotBalanceData,
-	isQuoteBalanceSharedWithPerps,
 	type SpotAvailableAfterMaintenance,
 	type SpotBalanceData,
 } from "@/domain/trade/balances";
@@ -23,7 +21,6 @@ export interface OrderEntryInputs {
 	sizeInput: string;
 	spotBalances: SpotBalance[] | null | undefined;
 	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null;
-	accountAbstraction?: AccountAbstraction | null;
 	/** Max trade sizes in base token: [long, short] */
 	maxTradeSzs: [number, number] | null;
 	/** Available to trade in quote token: [long, short] */
@@ -63,7 +60,6 @@ function getAvailableBalance(
 
 export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	const isSpotMarket = inputs.market?.kind === "spot";
-	const isPerpMarket = inputs.market?.kind === "perp" || inputs.market?.kind === "builderPerp";
 	const isBuy = inputs.side === "buy";
 	const capabilities = getMarketCapabilities(inputs.market);
 	const szDecimals = inputs.market?.szDecimals ?? 0;
@@ -73,17 +69,10 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		: { baseToken: "", quoteToken: "" };
 	const spotBalance = getSpotBalanceData(inputs.spotBalances, inputs.market, inputs.spotAvailableAfterMaintenance);
 	const availableBalanceToken = getAvailableBalanceToken(inputs.market, inputs.side);
-	const usesSharedQuoteBalance =
-		isPerpMarket && isQuoteBalanceSharedWithPerps(inputs.accountAbstraction) && spotBalance.quoteAvailable > 0;
-
-	// activeAssetData.availableToTrade is the exchange's own "can open with this much" figure and
-	// already accounts for unified-account shared collateral plus caps the UI cannot derive. The
-	// shared spot balance (maintenance-adjusted) is only a stand-in while that subscription has no
-	// data yet — letting it override the official figure overstates what an order can actually use.
+	// Perp availability is authoritative per user, coin, and direction. Shared collateral is not a
+	// substitute because it does not include market-specific caps or the current position state.
 	const [availableLong, availableShort] = inputs.availableToTrade ?? [0, 0];
-	const rawAvailableBalance = getAvailableBalance(isSpotMarket, isBuy, spotBalance, availableLong, availableShort);
-	const availableBalance =
-		usesSharedQuoteBalance && inputs.availableToTrade == null ? spotBalance.quoteAvailable : rawAvailableBalance;
+	const availableBalance = getAvailableBalance(isSpotMarket, isBuy, spotBalance, availableLong, availableShort);
 	const displayAvailableBalance = availableBalance;
 
 	const maxSize = getMaxSizeForOrderEntry({
@@ -94,7 +83,6 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		spotBalance,
 		szDecimals,
 		maxTradeSzs: inputs.maxTradeSzs,
-		sharedQuoteAvailable: usesSharedQuoteBalance ? spotBalance.quoteAvailable : undefined,
 	});
 
 	const sizeValue = getSizeValueFromInput({

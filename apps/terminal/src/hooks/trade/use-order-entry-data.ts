@@ -46,12 +46,7 @@ export function useOrderEntryData({
 	sizeInput,
 }: UseOrderEntryDataOptions): OrderEntryData {
 	const { isConnected } = useWalletSession();
-	const {
-		spotBalances,
-		spotAvailableAfterMaintenance,
-		accountAbstraction,
-		isLoading: accountBalancesLoading,
-	} = useDefaultDexBalances();
+	const { spotBalances, spotAvailableAfterMaintenance, isSpotStateLoading } = useDefaultDexBalances();
 	const {
 		displayLeverage: leverage,
 		currentLeverage,
@@ -73,6 +68,10 @@ export function useOrderEntryData({
 	} = useAssetLeverage();
 
 	const conversionPrice = markPx > 0 ? markPx : 0;
+	const isSpotMarket = market?.kind === "spot";
+	const isPerpMarket = market?.kind === "perp" || market?.kind === "builderPerp";
+	const isAvailabilityLoading =
+		isConnected && ((isSpotMarket && isSpotStateLoading) || (isPerpMarket && subscriptionStatus !== "success"));
 
 	const derived = deriveOrderEntry({
 		isConnected,
@@ -83,7 +82,6 @@ export function useOrderEntryData({
 		sizeInput,
 		spotBalances,
 		spotAvailableAfterMaintenance,
-		accountAbstraction,
 		maxTradeSzs,
 		availableToTrade,
 	});
@@ -112,7 +110,7 @@ export function useOrderEntryData({
 
 	return {
 		isConnected,
-		isAvailabilityLoading: accountBalancesLoading || subscriptionStatus === "loading",
+		isAvailabilityLoading,
 		...derived,
 		getSizeForPercent,
 		convertSizeForModeToggle,

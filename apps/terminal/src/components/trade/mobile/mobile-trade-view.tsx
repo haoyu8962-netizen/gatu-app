@@ -342,7 +342,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 		onSubmit: handleSubmit,
 	});
 
-	const isFormDisabled = !isConnected || availableBalance <= 0;
+	const isFormDisabled = !isConnected || isAvailabilityLoading || availableBalance <= 0;
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
 	const sizePercentDisabled = isFormDisabled || maxSize <= 0;
 	const entryInputSize = embedded ? "lg" : "xl";
@@ -350,7 +350,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const sliderThumbSize = embedded ? "md" : "lg";
 
 	function formatAvailableBalance(): string {
-		if (!isConnected) return FALLBACK_VALUE_PLACEHOLDER;
+		if (!isConnected || isAvailabilityLoading) return FALLBACK_VALUE_PLACEHOLDER;
 		const decimals = isSpotMarket && side === "sell" ? szDecimals : 2;
 		return formatToken(availableBalance, decimals);
 	}

@@ -80,6 +80,7 @@ export function TradeFormFields({
 
 	const {
 		isSpotMarket,
+		isAvailabilityLoading,
 		baseToken,
 		capabilities,
 		availableBalance,
@@ -94,7 +95,7 @@ export function TradeFormFields({
 
 	const { setSize, setLimitPrice, setTriggerPrice, setReduceOnly, setTpSlEnabled } = useOrderEntryActions();
 
-	const isFormDisabled = !isConnected || availableBalance <= 0;
+	const isFormDisabled = !isConnected || isAvailabilityLoading || availableBalance <= 0;
 
 	const triggerOrder = isTriggerOrderType(orderType);
 	const twapOrder = isTwapOrderType(orderType);
@@ -115,7 +116,7 @@ export function TradeFormFields({
 	}
 
 	function formatAvailableBalance(): string {
-		if (!isConnected) return FALLBACK_VALUE_PLACEHOLDER;
+		if (!isConnected || isAvailabilityLoading) return FALLBACK_VALUE_PLACEHOLDER;
 		const isBaseToken = isSpotMarket && side === "sell";
 		const decimals = isBaseToken ? szDecimals : 2;
 		return formatToken(displayAvailableBalance, { decimals, symbol: displayAvailableBalanceToken ?? undefined });
@@ -144,7 +145,7 @@ export function TradeFormFields({
 									{t`Swap`}
 								</Button>
 							) : null}
-							{isConnected && displayAvailableBalance <= 0 ? (
+							{isConnected && !isAvailabilityLoading && displayAvailableBalance <= 0 ? (
 								<Button variant="link" intent="brand" size="xxs" onClick={onDepositClick}>
 									{t`Deposit`}
 								</Button>

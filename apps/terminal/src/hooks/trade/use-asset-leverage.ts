@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_MAX_LEVERAGE } from "@/config/trade";
+import { getAssetAvailabilityStatus } from "@/domain/trade/order/availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import {
 	getMarketCapabilities,
@@ -60,11 +61,25 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const baseToken = market ? market.name : undefined;
 	const assetId = market?.assetId;
 
-	const { data: activeAssetData, status: subscriptionStatus } = useSubscription(
+	const {
+		data: activeAssetData,
+		status: subscriptionStatus,
+		isStale,
+	} = useSubscription(
 		"activeAssetData",
 		{ coin: baseToken ?? "", user: address ?? "" },
 		{ enabled: isConnected && !!address && !!baseToken && isPerpMarket },
 	);
+	const normalizedStatus = getAssetAvailabilityStatus({
+		isConnected,
+		isPerpMarket,
+		coin: baseToken,
+		user: address,
+		data: activeAssetData,
+		subscriptionStatus,
+		isStale,
+	});
+	const currentActiveAssetData = normalizedStatus === "success" ? activeAssetData : undefined;
 
 	const userPositions = useUserPositions();
 
@@ -204,7 +219,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	}
 
 	function computeMaxTradeSzs(): [number, number] | null {
-		const raw = activeAssetData?.maxTradeSzs;
+		const raw = currentActiveAssetData?.maxTradeSzs;
 		if (!raw) return null;
 		const long = toNumber(raw[0]);
 		const short = toNumber(raw[1]);
@@ -213,22 +228,13 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const maxTradeSzs = computeMaxTradeSzs();
 
 	function computeAvailableToTrade(): [number, number] | null {
-		const raw = activeAssetData?.availableToTrade;
+		const raw = currentActiveAssetData?.availableToTrade;
 		if (!raw) return null;
 		const long = toNumber(raw[0]);
 		const short = toNumber(raw[1]);
 		return long !== null && short !== null ? [long, short] : null;
 	}
 	const availableToTrade = computeAvailableToTrade();
-
-	function computeNormalizedStatus(): "idle" | "loading" | "success" | "error" {
-		if (!isConnected || !baseToken) return "idle";
-		if (subscriptionStatus === "subscribing") return "loading";
-		if (subscriptionStatus === "error") return "error";
-		if (subscriptionStatus === "active") return "success";
-		return "idle";
-	}
-	const normalizedStatus = computeNormalizedStatus();
 
 	const isUpdating = isPending && operationTypeRef.current === "leverage";
 	const isSwitchingMode = isPending && operationTypeRef.current === "mode";
