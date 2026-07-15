@@ -34,7 +34,10 @@ vi.mock("@/lib/chart/theme-colors", () => ({
 }));
 
 vi.mock("@/components/trade/chart/datafeed", () => ({
-	createDatafeed: (options: { onRealtimeReset?: () => void }) => {
+	createDatafeed: (options: {
+		onRealtimeReset?: () => void;
+		getSymbolInfo?: (symbolName: string, coin: string) => { ticker: string } | undefined;
+	}) => {
 		testState.datafeedOptions.push(options);
 		const resetRealtimeCache = vi.fn(() => options.onRealtimeReset?.());
 		testState.datafeedResets.push(resetRealtimeCache);
@@ -175,6 +178,29 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledTimes(1);
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
+	});
+
+	it("resolves TradingView HIP-3 display variants to the canonical market ticker", async () => {
+		const market = {
+			kind: "builderPerp",
+			name: "xyz:CXMT",
+			pairName: "CXMT-USDC",
+			quoteToken: { displayName: "USDC", name: "USDC" },
+			szDecimals: 2,
+			markPx: "12.34",
+		} as UnifiedMarketInfo;
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: market.name, market, interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const options = testState.datafeedOptions[0] as {
+			getSymbolInfo?: (symbolName: string, coin: string) => { ticker: string } | undefined;
+		};
+		expect(options.getSymbolInfo?.("HYPERLIQUID:CXMT-USDC", "CXMT")?.ticker).toBe("xyz:CXMT");
+		expect(options.getSymbolInfo?.("XYZ:CXMT", "XYZ:CXMT")?.ticker).toBe("xyz:CXMT");
+		expect(options.getSymbolInfo?.("CXMT", "CXMT")).toBeUndefined();
 	});
 
 	it("backfills TradingView data after a shared WebSocket reconnect without rebuilding the widget", async () => {

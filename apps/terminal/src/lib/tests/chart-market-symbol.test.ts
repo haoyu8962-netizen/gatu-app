@@ -3,8 +3,10 @@ import {
 	getChartApiSymbol,
 	getChartDisplayName,
 	getChartMarketKeys,
+	getChartMarketLookupKey,
 	getChartSymbolInfo,
 	getLegacyChartDisplaySymbol,
+	isChartMarketSymbol,
 } from "@/lib/chart/market-symbol";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 
@@ -19,7 +21,7 @@ describe("chart market symbol helpers", () => {
 
 		expect(getChartApiSymbol(market)).toBe("@235");
 		expect(getChartDisplayName(market)).toBe("ETH/USDH");
-		expect(getChartMarketKeys(market)).toEqual(["@235", "ETH/USDH"]);
+		expect(getChartMarketKeys(market)).toEqual(["@235", "Hyperliquid:@235", "ETH/USDH", "Hyperliquid:ETH/USDH"]);
 		expect(getChartSymbolInfo(market)).toMatchObject({
 			description: "ETH/USDH",
 			name: "ETH/USDH",
@@ -39,7 +41,18 @@ describe("chart market symbol helpers", () => {
 		expect(getChartApiSymbol(market)).toBe("xyz:SILVER");
 		expect(getChartDisplayName(market)).toBe("SILVER-USDC");
 		expect(getLegacyChartDisplaySymbol(market)).toBe("xyz:SILVER/USDC");
-		expect(getChartMarketKeys(market)).toEqual(["xyz:SILVER", "SILVER-USDC", "xyz:SILVER/USDC"]);
+		expect(getChartMarketKeys(market)).toEqual([
+			"xyz:SILVER",
+			"Hyperliquid:xyz:SILVER",
+			"SILVER-USDC",
+			"Hyperliquid:SILVER-USDC",
+			"xyz:SILVER/USDC",
+			"Hyperliquid:xyz:SILVER/USDC",
+		]);
+		expect(getChartMarketLookupKey(" Hyperliquid:xyz:SILVER ")).toBe("HYPERLIQUID:XYZ:SILVER");
+		expect(isChartMarketSymbol(market, "HYPERLIQUID:SILVER-USDC")).toBe(true);
+		expect(isChartMarketSymbol(market, "XYZ:SILVER")).toBe(true);
+		expect(isChartMarketSymbol(market, "SILVER")).toBe(false);
 		expect(getChartSymbolInfo(market)).toMatchObject({
 			description: "SILVER-USDC",
 			name: "SILVER-USDC",

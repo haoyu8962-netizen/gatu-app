@@ -1,4 +1,4 @@
-import { CHART_DEFAULT_PRICESCALE, CHART_QUOTE_ASSET } from "@/config/chart";
+import { CHART_DEFAULT_PRICESCALE, CHART_EXCHANGE, CHART_QUOTE_ASSET } from "@/config/chart";
 
 const QUOTE_SUFFIXES = ["USDC", "USDH", "USDT"];
 
@@ -7,11 +7,7 @@ function stripExchangePrefix(symbolName: string): string {
 	if (colonIdx === -1) return symbolName;
 
 	const beforeColon = symbolName.slice(0, colonIdx);
-	const isExchangePrefix =
-		beforeColon.toLowerCase() === "hyperliquid" ||
-		(beforeColon === beforeColon.toUpperCase() && beforeColon.length > 4);
-
-	if (!isExchangePrefix) return symbolName;
+	if (beforeColon.toLowerCase() !== CHART_EXCHANGE.toLowerCase()) return symbolName;
 
 	return symbolName.slice(colonIdx + 1).trim();
 }
@@ -32,6 +28,18 @@ function stripQuoteSuffix(symbolName: string): string {
 export function coinFromSymbolName(symbolName: string): string {
 	const trimmed = symbolName.trim();
 	return stripQuoteSuffix(stripExchangePrefix(trimmed));
+}
+
+export function normalizeChartSymbolKey(symbolName: string): string {
+	return symbolName.trim().toUpperCase();
+}
+
+export function isChartDisplaySymbolName(symbolName: string): boolean {
+	const withoutExchange = stripExchangePrefix(symbolName.trim());
+	if (withoutExchange.includes("/")) return true;
+
+	const upperSymbol = withoutExchange.toUpperCase();
+	return QUOTE_SUFFIXES.some((quote) => upperSymbol.endsWith(`-${quote}`));
 }
 
 export function symbolFromCoin(coin: string): string {

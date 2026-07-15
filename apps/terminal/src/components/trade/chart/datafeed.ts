@@ -3,7 +3,13 @@ import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
 import { type CandleInterval, resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
-import { coinFromSymbolName, inferPriceScaleFromMids, symbolFromCoin } from "@/lib/chart/symbol";
+import {
+	coinFromSymbolName,
+	inferPriceScaleFromMids,
+	isChartDisplaySymbolName,
+	normalizeChartSymbolKey,
+	symbolFromCoin,
+} from "@/lib/chart/symbol";
 import { getInfoClient } from "@/lib/hyperliquid";
 import type {
 	Bar,
@@ -99,18 +105,16 @@ async function getAllMids(dex?: string): Promise<AllMidsResponse> {
 }
 
 async function isKnownCoin(coin: string): Promise<boolean> {
-	// Spot markets use @id format (e.g., @232)
-	if (coin.startsWith("@")) return true;
-
-	// HIP-3 markets use dex:coin format (e.g., xyz:XYZ100)
-	if (coin.includes(":") && !coin.includes("/") && !coin.includes("-")) return true;
+	// Structured spot and HIP-3 symbols must be resolved from the application's market metadata.
+	// Their shape alone does not prove that Hyperliquid accepts the coin.
+	if (coin.startsWith("@") || coin.includes(":")) return false;
 
 	// Perp markets - check against meta
 	try {
 		const meta = await getMeta();
 		return meta.universe.some((asset) => asset.name === coin && !(asset.isDelisted ?? false));
 	} catch {
-		return true;
+		return false;
 	}
 }
 
@@ -194,12 +198,31 @@ export interface ChartDatafeed extends IBasicDataFeed {
 export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 	const store = getCandleStore();
 	const realtimeSubscriptions = new Map<string, ActiveRealtimeSubscription>();
+	const resolvedCoinBySymbol = new Map<string, string>();
 	const resolveAsync = (callback: () => void) => {
 		setTimeout(callback, 0);
 	};
-	const coinFromLibrarySymbol = (symbol: LibrarySymbolInfo) => {
-		const symbolName = symbol.ticker ?? symbol.name;
-		return coinFromSymbolName(symbolName);
+	const rememberResolvedCoin = (rawSymbolName: string, symbolInfo: LibrarySymbolInfo) => {
+		const apiTicker = symbolInfo.ticker;
+		if (!apiTicker) return;
+
+		for (const symbolName of [
+			rawSymbolName,
+			symbolInfo.name,
+			apiTicker,
+			`${EXCHANGE}:${symbolInfo.name}`,
+			`${EXCHANGE}:${apiTicker}`,
+		]) {
+			resolvedCoinBySymbol.set(normalizeChartSymbolKey(symbolName), apiTicker);
+		}
+	};
+	const coinFromLibrarySymbol = (symbol: LibrarySymbolInfo): string | undefined => {
+		for (const symbolName of [symbol.ticker, symbol.name]) {
+			if (!symbolName) continue;
+			const coin = resolvedCoinBySymbol.get(normalizeChartSymbolKey(symbolName));
+			if (coin) return coin;
+		}
+		return undefined;
 	};
 
 	const resetSubscription = (subscription: ActiveRealtimeSubscription) => {
@@ -230,11 +253,16 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 				const rawSymbolName = symbolName.trim();
 				const coin = coinFromSymbolName(symbolName);
 				const resolvedSymbol = options.getSymbolInfo?.(rawSymbolName, coin);
+				if (!resolvedSymbol && isChartDisplaySymbolName(rawSymbolName)) {
+					resolveAsync(() => onError(t`Unknown symbol: ${symbolName}`));
+					return;
+				}
 				const displayName = resolvedSymbol?.name ?? symbolFromCoin(coin);
 				const apiTicker = resolvedSymbol?.ticker ?? coin;
 
 				const knownByCaller = resolvedSymbol ? true : options.isKnownCoin?.(apiTicker);
-				if (knownByCaller !== true && !(await isKnownCoin(apiTicker))) {
+				const knownCoin = knownByCaller ?? (await isKnownCoin(apiTicker));
+				if (!knownCoin) {
 					resolveAsync(() => onError(t`Unknown symbol: ${symbolName}`));
 					return;
 				}
@@ -260,6 +288,7 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 					data_status: CHART_DATAFEED_CONFIG.DATA_STATUS,
 				};
 
+				rememberResolvedCoin(rawSymbolName, symbolInfo);
 				resolveAsync(() => onResolve(symbolInfo));
 			})().catch((error) => {
 				resolveAsync(() => onError(error instanceof Error ? error.message : String(error)));
@@ -281,6 +310,10 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 				}
 
 				const coin = coinFromLibrarySymbol(symbolInfo);
+				if (!coin) {
+					onError(t`Unknown symbol: ${symbolInfo.ticker ?? symbolInfo.name}`);
+					return;
+				}
 				const fromMs = Math.max(0, Math.floor(periodParams.from * 1000));
 				const toMs = Math.max(0, Math.floor(periodParams.to * 1000));
 
@@ -331,6 +364,7 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 			}
 
 			const coin = coinFromLibrarySymbol(symbolInfo);
+			if (!coin) return;
 			const symbolCacheKey = cacheKey(symbolInfo, resolution);
 			const key = streamKey(coin, interval);
 

@@ -5,8 +5,10 @@ import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
 import {
 	getChartApiSymbol,
 	getChartMarketKeys,
+	getChartMarketLookupKey,
 	getChartPriceScale,
 	getChartSymbolInfo,
+	isChartMarketSymbol,
 } from "@/lib/chart/market-symbol";
 import { buildChartOverrides, getChartCssUrl, getLoadingScreenColors } from "@/lib/chart/theme-colors";
 import { cn } from "@/lib/cn";
@@ -60,7 +62,6 @@ export function TradingViewChart({
 	const targetIntervalRef = useRef(interval);
 	const targetThemeRef = useRef(theme);
 	const activeRef = useRef(active);
-	const marketRef = useRef(market);
 	const appliedSymbolRef = useRef<string | null>(null);
 	const appliedIntervalRef = useRef<string | null>(null);
 	const appliedThemeRef = useRef<"light" | "dark" | null>(null);
@@ -82,10 +83,9 @@ export function TradingViewChart({
 	targetIntervalRef.current = interval;
 	targetThemeRef.current = theme;
 	activeRef.current = active;
-	marketRef.current = market;
 	if (market) {
 		for (const key of getChartMarketKeys(market)) {
-			marketBySymbolRef.current.set(key, market);
+			marketBySymbolRef.current.set(getChartMarketLookupKey(key), market);
 		}
 	}
 
@@ -125,9 +125,9 @@ export function TradingViewChart({
 		if (!actualSymbol) return false;
 		if (actualSymbol === nextSymbol) return true;
 
-		const targetMarket = marketBySymbolRef.current.get(nextSymbol);
+		const targetMarket = marketBySymbolRef.current.get(getChartMarketLookupKey(nextSymbol));
 		if (!targetMarket) return false;
-		return getChartMarketKeys(targetMarket).includes(actualSymbol);
+		return isChartMarketSymbol(targetMarket, actualSymbol);
 	};
 
 	const getActiveChartSymbol = (widget: IChartingLibraryWidget) => {
@@ -295,7 +295,10 @@ export function TradingViewChart({
 		};
 
 		function getMarketForChartSymbol(symbolName: string, coin: string): UnifiedMarketInfo | undefined {
-			return marketBySymbolRef.current.get(coin) ?? marketBySymbolRef.current.get(symbolName) ?? marketRef.current;
+			return (
+				marketBySymbolRef.current.get(getChartMarketLookupKey(coin)) ??
+				marketBySymbolRef.current.get(getChartMarketLookupKey(symbolName))
+			);
 		}
 
 		function isSelectedMarketCoin(coin: string): boolean | undefined {
@@ -312,9 +315,6 @@ export function TradingViewChart({
 		function getSelectedMarketSymbolInfo(symbolName: string, coin: string) {
 			const currentMarket = getMarketForChartSymbol(symbolName, coin);
 			if (!currentMarket) return undefined;
-			if (coin !== currentMarket.name && !getChartMarketKeys(currentMarket).includes(symbolName)) {
-				return undefined;
-			}
 			return getChartSymbolInfo(currentMarket);
 		}
 

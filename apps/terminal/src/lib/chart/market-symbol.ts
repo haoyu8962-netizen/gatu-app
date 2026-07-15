@@ -1,6 +1,6 @@
-import { CHART_QUOTE_ASSET } from "@/config/chart";
+import { CHART_EXCHANGE, CHART_QUOTE_ASSET } from "@/config/chart";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
-import { priceScaleFromMid } from "./symbol";
+import { normalizeChartSymbolKey, priceScaleFromMid } from "./symbol";
 
 export type ChartSymbolInfo = {
 	name: string;
@@ -33,9 +33,20 @@ export function getLegacyChartDisplaySymbol(market: UnifiedMarketInfo): string {
 export function getChartMarketKeys(market: UnifiedMarketInfo): string[] {
 	const keys = new Set<string>();
 	for (const key of [market.name, market.pairName, getLegacyChartDisplaySymbol(market)]) {
-		if (key) keys.add(key);
+		if (!key) continue;
+		keys.add(key);
+		keys.add(`${CHART_EXCHANGE}:${key}`);
 	}
 	return Array.from(keys);
+}
+
+export function getChartMarketLookupKey(symbolName: string): string {
+	return normalizeChartSymbolKey(symbolName);
+}
+
+export function isChartMarketSymbol(market: UnifiedMarketInfo, symbolName: string): boolean {
+	const lookupKey = getChartMarketLookupKey(symbolName);
+	return getChartMarketKeys(market).some((key) => getChartMarketLookupKey(key) === lookupKey);
 }
 
 export function getChartPriceScale(market: UnifiedMarketInfo): number {
