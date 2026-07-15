@@ -1,15 +1,15 @@
 @import url("/tradingview-theme.css");
 
 :root {
-	--tv-bg: #1d1e26;
+	--tv-bg: #0f1a1f;
 	--tv-fg: #ffffff;
 	--tv-muted-fg: #ffffff;
 	--tv-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--tv-toolbar-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--tv-accent: #b2bcf1;
 
-	--tv-color-platform-background: #1d1e26;
-	--tv-color-pane-background: #1d1e26;
+	--tv-color-platform-background: #0f1a1f;
+	--tv-color-pane-background: #0f1a1f;
 
 	--tv-color-toolbar-button-background-hover: rgba(255, 255, 255, 0.06);
 	--tv-color-toolbar-button-background-expanded: rgba(255, 255, 255, 0.08);
@@ -28,9 +28,9 @@
 
 	--tv-color-toolbar-divider-background: color-mix(in srgb, #ffffff1f 50%, transparent);
 	--tv-color-toolbar-save-layout-loader: #b2bcf1;
-	--tv-color-bar-mark-background-color: #1d1e26;
+	--tv-color-bar-mark-background-color: #0f1a1f;
 
-	--tv-color-popup-background: #1d1e26;
+	--tv-color-popup-background: #0f1a1f;
 	--tv-color-popup-element-text: #ffffff;
 	--tv-color-popup-element-text-hover: #ffffff;
 	--tv-color-popup-element-background-hover: rgba(255, 255, 255, 0.06);
@@ -49,19 +49,19 @@
 	--tv-color-dialog-header-separator: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--tv-color-scrollbar-thumb-background: color-mix(in srgb, #ffffff1f 60%, transparent);
 
-	--themed-color-bg: #1d1e26;
-	--themed-color-body-bg: #1d1e26;
-	--themed-color-main-background: #1d1e26;
-	--themed-color-chart-page-bg: #1d1e26;
-	--themed-color-pane-bg: #1d1e26;
-	--themed-color-dialog-background: #1d1e26;
-	--themed-color-popup-background: #1d1e26;
-	--themed-color-primary-popup: #1d1e26;
-	--themed-color-tree-bg: #1d1e26;
-	--themed-color-content-item-bg: #1d1e26;
-	--themed-color-properties-dialog-tab-bg: #1d1e26;
-	--themed-color-rename-input-background: #1d1e26;
-	--themed-color-indicators-hint-background: #1d1e26;
+	--themed-color-bg: #0f1a1f;
+	--themed-color-body-bg: #0f1a1f;
+	--themed-color-main-background: #0f1a1f;
+	--themed-color-chart-page-bg: #0f1a1f;
+	--themed-color-pane-bg: #0f1a1f;
+	--themed-color-dialog-background: #0f1a1f;
+	--themed-color-popup-background: #0f1a1f;
+	--themed-color-primary-popup: #0f1a1f;
+	--themed-color-tree-bg: #0f1a1f;
+	--themed-color-content-item-bg: #0f1a1f;
+	--themed-color-properties-dialog-tab-bg: #0f1a1f;
+	--themed-color-rename-input-background: #0f1a1f;
+	--themed-color-indicators-hint-background: #0f1a1f;
 
 	--themed-color-text: #ffffff;
 	--themed-color-text-primary: #ffffff;
@@ -104,12 +104,12 @@
 	--themed-color-item-row-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--themed-color-white-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 
-	--themed-color-input-bg: #1d1e26;
+	--themed-color-input-bg: #0f1a1f;
 	--themed-color-input-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--themed-color-input-text: #ffffff;
 	--themed-color-input-placeholder-text: #ffffff;
 	--themed-color-input-border-hover: #ffffff;
-	--themed-color-input-disabled-bg: #1d1e26;
+	--themed-color-input-disabled-bg: #0f1a1f;
 	--themed-color-input-disabled-border: rgba(255, 255, 255, 0.060784313725490195);
 	--themed-color-input-disabled-text: #ffffff;
 
@@ -118,7 +118,7 @@
 	--themed-color-hovered-button-background: rgba(255, 255, 255, 0.06);
 	--themed-color-item-row-bg-hover: rgba(255, 255, 255, 0.06);
 	--themed-color-container-hover-bg: rgba(255, 255, 255, 0.06);
-	--themed-color-button-bg: #1d1e26;
+	--themed-color-button-bg: #0f1a1f;
 	--themed-color-button-bg-hover: rgba(255, 255, 255, 0.06);
 	--themed-color-button-hover-bg: rgba(255, 255, 255, 0.06);
 	--themed-color-button-hover: rgba(255, 255, 255, 0.06);
@@ -144,12 +144,12 @@
 	--themed-color-scrollbar-default: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--themed-color-scrollbar-hover: #ffffff;
 	--themed-color-scrollbar-active: #ffffff;
-	--themed-color-scroll-bg: #1d1e26;
+	--themed-color-scroll-bg: #0f1a1f;
 	--themed-color-overlay-scroll-bar: color-mix(in srgb, #ffffff1f 60%, transparent);
 
-	--themed-color-common-tooltip-bg: #1d1e26;
+	--themed-color-common-tooltip-bg: #0f1a1f;
 	--themed-color-common-tooltip-text: #ffffff;
-	--themed-color-tooltip-background: #1d1e26;
+	--themed-color-tooltip-background: #0f1a1f;
 	--themed-color-tooltip-text: #ffffff;
 
 	--themed-color-checkbox: color-mix(in srgb, #ffffff1f 60%, transparent);
@@ -199,11 +199,11 @@
 	--themed-color-content-secondary-neutral-semi-bold: #ffffff;
 	--themed-color-content-disabled: rgba(255, 255, 255, 0.5);
 
-	--themed-color-container-fill-primary-neutral: #1d1e26;
-	--themed-color-container-fill-primary-neutral-light: #1d1e26;
-	--themed-color-container-fill-primary-neutral-extra-light: #1d1e26;
-	--themed-color-container-fill-secondary-neutral: #1d1e26;
-	--themed-color-container-fill-secondary-neutral-normal: #1d1e26;
+	--themed-color-container-fill-primary-neutral: #0f1a1f;
+	--themed-color-container-fill-primary-neutral-light: #0f1a1f;
+	--themed-color-container-fill-primary-neutral-extra-light: #0f1a1f;
+	--themed-color-container-fill-secondary-neutral: #0f1a1f;
+	--themed-color-container-fill-secondary-neutral-normal: #0f1a1f;
 	--themed-color-container-fill-secondary-neutral-semi-bold: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--themed-color-container-fill-primary-accent: rgba(178, 188, 241, 0.15);
 	--themed-color-container-fill-primary-accent-bold: #b2bcf1;

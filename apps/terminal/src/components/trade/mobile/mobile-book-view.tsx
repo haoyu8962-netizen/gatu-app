@@ -19,6 +19,7 @@ import {
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookRow } from "../orderbook/orderbook-row";
+import { OrderbookSizeCell } from "../orderbook/orderbook-size-cell";
 import { TradesPanel } from "../orderbook/trades-panel";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
@@ -27,10 +28,9 @@ const DEFAULT_LEVEL_COUNT = 12;
 const COMPACT_LEVEL_COUNT = 5;
 const MIN_LEVEL_COUNT = 3;
 const MAX_LEVEL_COUNT = 24;
-const ORDERBOOK_ROW_HEIGHT_PX = 20;
+const ORDERBOOK_ROW_HEIGHT_PX = 23;
 const DEFAULT_L2_BOOK_N_SIG_FIGS = 5;
-const COMPACT_ORDERBOOK_ROW_GAP_PX = 1;
-const SPLIT_ORDERBOOK_ROW_GAP_PX = 0;
+const ORDERBOOK_ROW_GAP_PX = 2;
 const ORDERBOOK_LADDER_VERTICAL_PADDING_PX = 8;
 const PLACEHOLDER_ROW_KEYS = Array.from({ length: 64 }, (_, index) => `placeholder-${index}`);
 const ORDERBOOK_SUBSCRIPTION_KEEP_ALIVE_MS = 10_000;
@@ -202,7 +202,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 	const bids = useMemo(() => processLevels(book?.levels[0]), [book?.levels]);
 	const asks = useMemo(() => processLevels(book?.levels[1]), [book?.levels]);
 	const levelCount = compact ? COMPACT_LEVEL_COUNT : DEFAULT_LEVEL_COUNT;
-	const rowGapPx = compact ? COMPACT_ORDERBOOK_ROW_GAP_PX : SPLIT_ORDERBOOK_ROW_GAP_PX;
+	const rowGapPx = ORDERBOOK_ROW_GAP_PX;
 	const [askLevelCount, askLadderRef] = useOrderbookLadderRows(levelCount, view === "book", rowGapPx);
 	const [bidLevelCount, bidLadderRef] = useOrderbookLadderRows(levelCount, view === "book", rowGapPx);
 	const visibleAsks = useMemo(() => asks.slice(0, askLevelCount), [asks, askLevelCount]);
@@ -439,7 +439,7 @@ function CompactOrderbook({
 				aria-busy={isTransitioning}
 				className={cn("flex-1 min-h-0 flex flex-col overflow-hidden", isTransitioning && "pointer-events-none")}
 			>
-				<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-px py-1 overflow-hidden">
+				<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-[2px] py-1 overflow-hidden">
 					{hasAsks ? (
 						<>
 							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
@@ -477,7 +477,7 @@ function CompactOrderbook({
 					<MidTrendIcon direction={midDirection} className="size-4" />
 				</div>
 
-				<div ref={bidLadderRef} className="flex-1 min-h-0 flex flex-col gap-px py-1 overflow-hidden">
+				<div ref={bidLadderRef} className="flex-1 min-h-0 flex flex-col gap-[2px] py-1 overflow-hidden">
 					{hasBids ? (
 						<>
 							{bids.slice(0, bidLevelCount).map((level, index) => (
@@ -576,7 +576,7 @@ function SplitOrderbook({
 						isTransitioning && "pointer-events-none",
 					)}
 				>
-					<div ref={bidLadderRef} className="min-h-0 overflow-hidden py-1">
+					<div ref={bidLadderRef} className="min-h-0 overflow-hidden py-1 flex flex-col gap-[2px]">
 						{hasBids ? (
 							<>
 								{bids.slice(0, bidLevelCount).map((level, index) => (
@@ -601,7 +601,7 @@ function SplitOrderbook({
 						)}
 					</div>
 
-					<div ref={askLadderRef} className="min-h-0 overflow-hidden py-1">
+					<div ref={askLadderRef} className="min-h-0 overflow-hidden py-1 flex flex-col gap-[2px]">
 						{hasAsks ? (
 							<>
 								{asks.slice(0, askLevelCount).map((level, index) => (
@@ -661,7 +661,7 @@ function OrderbookSkeletonRow({ index, align }: { index: number; align?: "end" }
 	const secondWidth = 32 + ((index * 13) % 26);
 
 	return (
-		<div className="h-5 shrink-0 px-2 py-1">
+		<div className="h-[23px] shrink-0 px-2 py-1">
 			<div className="grid h-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1">
 				<div
 					className={cn(
@@ -703,20 +703,22 @@ function SplitOrderbookRow({ level, side, maxTotal, priceDecimals, showInQuote, 
 			onClick={() => setSelectedPrice(level.price)}
 			className={cn(
 				"font-medium tabular-nums",
-				isAsk ? "text-left text-error hover:text-error" : "text-right text-success hover:text-success",
+				isAsk ? "text-left orderbook-price-ask" : "text-right orderbook-price-bid",
 			)}
 		>
 			{formatNumber(level.price, priceDecimals)}
 		</button>
 	);
 	const total = (
-		<div className={cn("truncate tabular-nums text-fg group-hover:text-fg", isAsk ? "text-right" : "text-left")}>
-			{formatNumber(totalValue, { decimals: totalDecimals, compact: true })}
-		</div>
+		<OrderbookSizeCell
+			className={cn("truncate tabular-nums orderbook-value-text", isAsk ? "text-right" : "text-left")}
+			displayValue={formatNumber(totalValue, { decimals: totalDecimals, compact: true })}
+			value={level.size}
+		/>
 	);
 
 	return (
-		<div className="relative h-5 shrink-0 hover:bg-fill-hover cursor-pointer group overflow-hidden">
+		<div className="relative h-[23px] shrink-0 hover:bg-fill-hover cursor-pointer group overflow-hidden">
 			<div
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
 				style={{ width: `${depthPct}%`, [isAsk ? "left" : "right"]: 0, [isAsk ? "right" : "left"]: "auto" }}
@@ -781,7 +783,7 @@ function getRowsForLadderHeight(height: number, rowGapPx: number, minRows: numbe
 }
 
 function OrderbookPlaceholderRow() {
-	return <div className="h-5 shrink-0" aria-hidden="true" />;
+	return <div className="h-[23px] shrink-0" aria-hidden="true" />;
 }
 
 function MidTrendIcon({ direction, className }: { direction: "up" | "down" | "flat"; className?: string }) {

@@ -3,6 +3,7 @@ import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import type { BookLevel } from "@/lib/trade/orderbook";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
+import { OrderbookSizeCell } from "./orderbook-size-cell";
 
 interface Props {
 	level: BookLevel;
@@ -35,10 +36,10 @@ function OrderbookRowComponent({
 	const totalText = formatNumber(totalValue, { decimals: displayDecimals, compact: true });
 
 	return (
-		<div className="relative h-5 shrink-0 hover:bg-fill-hover cursor-pointer group">
+		<div className="relative h-[23px] shrink-0 hover:bg-fill-hover cursor-pointer group">
 			<div
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
-				style={{ width: `${depthPct}%`, [isAsk ? "right" : "left"]: 0, [isAsk ? "left" : "right"]: "auto" }}
+				style={{ width: `${depthPct}%`, left: 0 }}
 			/>
 			<div
 				className={cn(
@@ -49,15 +50,12 @@ function OrderbookRowComponent({
 				<button
 					type="button"
 					onClick={() => setSelectedPrice(level.price)}
-					className={cn(
-						"text-left justify-start font-medium",
-						isAsk ? "text-error hover:text-error" : "text-success hover:text-success",
-					)}
+					className={cn("text-left justify-start font-medium", isAsk ? "orderbook-price-ask" : "orderbook-price-bid")}
 				>
 					{formatNumber(level.price, priceDecimals)}
 				</button>
-				<div className="text-right text-fg group-hover:text-fg">{sizeText}</div>
-				{!compact && <div className="text-right text-fg group-hover:text-fg">{totalText}</div>}
+				<OrderbookSizeCell className="text-right orderbook-value-text" displayValue={sizeText} value={level.size} />
+				{!compact && <div className="text-right orderbook-value-text">{totalText}</div>}
 			</div>
 		</div>
 	);

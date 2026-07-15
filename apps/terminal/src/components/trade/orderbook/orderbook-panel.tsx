@@ -138,7 +138,7 @@ export function OrderbookPanel() {
 				</div>
 
 				<div ref={orderbookContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
-					<div className="flex-1 min-h-0 flex flex-col justify-end">
+					<div className="flex-1 min-h-0 flex flex-col justify-end gap-[2px]">
 						{hasData && asks.length > 0 ? (
 							asksReversed.map((level) => (
 								<OrderbookRow
@@ -160,7 +160,7 @@ export function OrderbookPanel() {
 
 					<div
 						data-slot="orderbook-spread"
-						className="shrink-0 px-2 py-1.5 border-y border-stroke-weak flex items-center justify-between text-xs text-fg"
+						className="orderbook-spread-bg shrink-0 px-2 py-1.5 border-y border-stroke-weak flex items-center justify-between text-xs text-fg"
 					>
 						<span>{t`Spread`}</span>
 						<span className="tabular-nums font-medium text-fg-muted">
@@ -168,7 +168,7 @@ export function OrderbookPanel() {
 						</span>
 					</div>
 
-					<div className="flex-1 min-h-0 flex flex-col">
+					<div className="flex-1 min-h-0 flex flex-col gap-[2px]">
 						{hasData &&
 							bids.map((level) => (
 								<OrderbookRow

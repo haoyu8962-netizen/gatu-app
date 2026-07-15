@@ -188,6 +188,12 @@
     /* HyperTerminal Trading Extensions */
     --market-up: var(--text-success);
     --market-down: var(--text-error);
+    --orderbook-depth-bid: var(--text-success);
+    --orderbook-depth-ask: var(--text-error);
+    --orderbook-flash-bid: var(--text-success);
+    --orderbook-flash-ask: var(--text-error);
+    --orderbook-text: var(--text-strong);
+    --orderbook-spread-bg: var(--bg-alternate);
     --market-neutral: #8A919A;
     --scope-perp: #2563EB;
     --scope-spot: #0F766E;
@@ -200,11 +206,11 @@
     color-scheme: dark;
 
     /* Background */
-    --bg-base: #12131a;
-    --bg-raised: #1d1e26;
+    --bg-base: #0f1a1f;
+    --bg-raised: #0f1a1f;
     --bg-overlay: #292b33;
     --bg-sunken: #000000;
-    --bg-alternate: #1d1e26;
+    --bg-alternate: #0f1a1f;
     --bg-brand: #b2bcf1;
     --bg-inverse: #ffffff;
 
@@ -283,6 +289,12 @@
     /* HyperTerminal Trading Extensions (Dark) */
     --market-up: var(--text-success);
     --market-down: var(--text-error);
+    --orderbook-depth-bid: #1fa67d;
+    --orderbook-depth-ask: #ed7088;
+    --orderbook-flash-bid: #0a9981;
+    --orderbook-flash-ask: #ed7088;
+    --orderbook-text: #d2dad7;
+    --orderbook-spread-bg: #273035;
     --market-neutral: #6B7280;
     --scope-perp: #4F7DFF;
     --scope-spot: #2DD4BF;
@@ -513,16 +525,30 @@
   }
 
   .depth-bar-ask {
-    background: linear-gradient(90deg, transparent 0%, oklch(from var(--text-error) l c h / 0.18) 100%);
+    background-color: var(--orderbook-depth-ask);
+    opacity: 0.15;
   }
   .depth-bar-bid {
-    background: linear-gradient(90deg, oklch(from var(--text-success) l c h / 0.18) 0%, transparent 100%);
+    background-color: var(--orderbook-depth-bid);
+    opacity: 0.15;
   }
-  .dark .depth-bar-ask {
-    background: linear-gradient(90deg, transparent 0%, oklch(from var(--text-error) l c h / 0.25) 100%);
+
+  .orderbook-price-ask,
+  .orderbook-price-ask:hover {
+    color: var(--orderbook-depth-ask);
   }
-  .dark .depth-bar-bid {
-    background: linear-gradient(90deg, oklch(from var(--text-success) l c h / 0.25) 0%, transparent 100%);
+
+  .orderbook-price-bid,
+  .orderbook-price-bid:hover {
+    color: var(--orderbook-depth-bid);
+  }
+
+  .orderbook-value-text {
+    color: var(--orderbook-text);
+  }
+
+  .orderbook-spread-bg {
+    background-color: var(--orderbook-spread-bg);
   }
 
   .trade-row-buy,
@@ -555,6 +581,18 @@
     --price-flash-color: var(--market-down);
   }
 
+  .orderbook-color-change {
+    animation: orderbook-color-change 1.8s ease 0s 1 normal none;
+  }
+
+  .orderbook-color-change[data-direction="up"] {
+    --orderbook-flash-color: var(--orderbook-flash-bid);
+  }
+
+  .orderbook-color-change[data-direction="down"] {
+    --orderbook-flash-color: var(--orderbook-flash-ask);
+  }
+
   @media (max-width: 767px) {
     .mobile-terminal {
       font-variant-numeric: tabular-nums;
@@ -567,6 +605,21 @@
     }
 
     100% {
+    }
+  }
+
+  @keyframes orderbook-color-change {
+    0% {
+      color: var(--orderbook-flash-color);
+    }
+
+    100% {
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .orderbook-color-change {
+      animation: none;
     }
   }
 }

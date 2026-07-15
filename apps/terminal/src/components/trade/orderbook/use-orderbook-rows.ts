@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
-const ROW_HEIGHT = 19;
+const ROW_HEIGHT = 23;
+const ROW_GAP = 2;
 const MIN_ROWS_PER_SIDE = 3;
 const MAX_ROWS_PER_SIDE = 20;
 const SPREAD_SELECTOR = "[data-slot='orderbook-spread']";
@@ -16,7 +17,7 @@ export function useOrderbookRows() {
 			if (height === 0) return;
 			const spreadHeight = el.querySelector(SPREAD_SELECTOR)?.clientHeight ?? 0;
 			const availablePerSide = (height - spreadHeight) / 2;
-			const rows = Math.floor(availablePerSide / ROW_HEIGHT);
+			const rows = Math.floor((availablePerSide + ROW_GAP) / (ROW_HEIGHT + ROW_GAP));
 			setVisibleRows(Math.min(MAX_ROWS_PER_SIDE, Math.max(MIN_ROWS_PER_SIDE, rows)));
 		}
 
