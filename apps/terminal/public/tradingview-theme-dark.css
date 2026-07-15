@@ -2,6 +2,7 @@
 
 :root {
 	--tv-bg: #0f1a1f;
+	--tv-raised-bg: #1d1e26;
 	--tv-fg: #ffffff;
 	--tv-muted-fg: #ffffff;
 	--tv-border: color-mix(in srgb, #ffffff1f 60%, transparent);
@@ -30,7 +31,7 @@
 	--tv-color-toolbar-save-layout-loader: #b2bcf1;
 	--tv-color-bar-mark-background-color: #0f1a1f;
 
-	--tv-color-popup-background: #0f1a1f;
+	--tv-color-popup-background: var(--tv-raised-bg);
 	--tv-color-popup-element-text: #ffffff;
 	--tv-color-popup-element-text-hover: #ffffff;
 	--tv-color-popup-element-background-hover: rgba(255, 255, 255, 0.06);
@@ -54,14 +55,14 @@
 	--themed-color-main-background: #0f1a1f;
 	--themed-color-chart-page-bg: #0f1a1f;
 	--themed-color-pane-bg: #0f1a1f;
-	--themed-color-dialog-background: #0f1a1f;
-	--themed-color-popup-background: #0f1a1f;
-	--themed-color-primary-popup: #0f1a1f;
-	--themed-color-tree-bg: #0f1a1f;
-	--themed-color-content-item-bg: #0f1a1f;
-	--themed-color-properties-dialog-tab-bg: #0f1a1f;
-	--themed-color-rename-input-background: #0f1a1f;
-	--themed-color-indicators-hint-background: #0f1a1f;
+	--themed-color-dialog-background: var(--tv-raised-bg);
+	--themed-color-popup-background: var(--tv-raised-bg);
+	--themed-color-primary-popup: var(--tv-raised-bg);
+	--themed-color-tree-bg: var(--tv-raised-bg);
+	--themed-color-content-item-bg: var(--tv-raised-bg);
+	--themed-color-properties-dialog-tab-bg: var(--tv-raised-bg);
+	--themed-color-rename-input-background: var(--tv-raised-bg);
+	--themed-color-indicators-hint-background: var(--tv-raised-bg);
 
 	--themed-color-text: #ffffff;
 	--themed-color-text-primary: #ffffff;
@@ -104,12 +105,12 @@
 	--themed-color-item-row-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--themed-color-white-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 
-	--themed-color-input-bg: #0f1a1f;
+	--themed-color-input-bg: var(--tv-raised-bg);
 	--themed-color-input-border: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--themed-color-input-text: #ffffff;
 	--themed-color-input-placeholder-text: #ffffff;
 	--themed-color-input-border-hover: #ffffff;
-	--themed-color-input-disabled-bg: #0f1a1f;
+	--themed-color-input-disabled-bg: var(--tv-raised-bg);
 	--themed-color-input-disabled-border: rgba(255, 255, 255, 0.060784313725490195);
 	--themed-color-input-disabled-text: #ffffff;
 
@@ -118,7 +119,7 @@
 	--themed-color-hovered-button-background: rgba(255, 255, 255, 0.06);
 	--themed-color-item-row-bg-hover: rgba(255, 255, 255, 0.06);
 	--themed-color-container-hover-bg: rgba(255, 255, 255, 0.06);
-	--themed-color-button-bg: #0f1a1f;
+	--themed-color-button-bg: var(--tv-raised-bg);
 	--themed-color-button-bg-hover: rgba(255, 255, 255, 0.06);
 	--themed-color-button-hover-bg: rgba(255, 255, 255, 0.06);
 	--themed-color-button-hover: rgba(255, 255, 255, 0.06);
@@ -144,12 +145,12 @@
 	--themed-color-scrollbar-default: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--themed-color-scrollbar-hover: #ffffff;
 	--themed-color-scrollbar-active: #ffffff;
-	--themed-color-scroll-bg: #0f1a1f;
+	--themed-color-scroll-bg: var(--tv-raised-bg);
 	--themed-color-overlay-scroll-bar: color-mix(in srgb, #ffffff1f 60%, transparent);
 
-	--themed-color-common-tooltip-bg: #0f1a1f;
+	--themed-color-common-tooltip-bg: var(--tv-raised-bg);
 	--themed-color-common-tooltip-text: #ffffff;
-	--themed-color-tooltip-background: #0f1a1f;
+	--themed-color-tooltip-background: var(--tv-raised-bg);
 	--themed-color-tooltip-text: #ffffff;
 
 	--themed-color-checkbox: color-mix(in srgb, #ffffff1f 60%, transparent);
@@ -199,11 +200,11 @@
 	--themed-color-content-secondary-neutral-semi-bold: #ffffff;
 	--themed-color-content-disabled: rgba(255, 255, 255, 0.5);
 
-	--themed-color-container-fill-primary-neutral: #0f1a1f;
-	--themed-color-container-fill-primary-neutral-light: #0f1a1f;
-	--themed-color-container-fill-primary-neutral-extra-light: #0f1a1f;
-	--themed-color-container-fill-secondary-neutral: #0f1a1f;
-	--themed-color-container-fill-secondary-neutral-normal: #0f1a1f;
+	--themed-color-container-fill-primary-neutral: var(--tv-raised-bg);
+	--themed-color-container-fill-primary-neutral-light: var(--tv-raised-bg);
+	--themed-color-container-fill-primary-neutral-extra-light: var(--tv-raised-bg);
+	--themed-color-container-fill-secondary-neutral: var(--tv-raised-bg);
+	--themed-color-container-fill-secondary-neutral-normal: var(--tv-raised-bg);
 	--themed-color-container-fill-secondary-neutral-semi-bold: color-mix(in srgb, #ffffff1f 60%, transparent);
 	--themed-color-container-fill-primary-accent: rgba(178, 188, 241, 0.15);
 	--themed-color-container-fill-primary-accent-bold: #b2bcf1;

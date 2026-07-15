@@ -6,6 +6,12 @@ const MIN_ROWS_PER_SIDE = 3;
 const MAX_ROWS_PER_SIDE = 20;
 const SPREAD_SELECTOR = "[data-slot='orderbook-spread']";
 
+export function getVisibleOrderbookRowCount(containerHeight: number, spreadHeight: number): number {
+	const availablePerSide = (containerHeight - spreadHeight) / 2;
+	const rows = Math.floor((availablePerSide + ROW_GAP) / (ROW_HEIGHT + ROW_GAP));
+	return Math.min(MAX_ROWS_PER_SIDE, Math.max(MIN_ROWS_PER_SIDE, rows));
+}
+
 export function useOrderbookRows() {
 	const [visibleRows, setVisibleRows] = useState(MAX_ROWS_PER_SIDE);
 
@@ -16,9 +22,7 @@ export function useOrderbookRows() {
 			const height = el.clientHeight;
 			if (height === 0) return;
 			const spreadHeight = el.querySelector(SPREAD_SELECTOR)?.clientHeight ?? 0;
-			const availablePerSide = (height - spreadHeight) / 2;
-			const rows = Math.floor((availablePerSide + ROW_GAP) / (ROW_HEIGHT + ROW_GAP));
-			setVisibleRows(Math.min(MAX_ROWS_PER_SIDE, Math.max(MIN_ROWS_PER_SIDE, rows)));
+			setVisibleRows(getVisibleOrderbookRowCount(height, spreadHeight));
 		}
 
 		calculate(node);

@@ -70,6 +70,7 @@ export function OrderbookPanel() {
 
 	const szDecimals = selectedMarket?.szDecimals ?? 4;
 	const priceDecimals = selectedOption?.decimals ?? szDecimalsToPriceDecimals(szDecimals);
+	const flashResetKey = `${subscriptionParams.coin}:${getPriceGroupingKey(selectedOption)}`;
 
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
 	const toggleAssetDisplay = () => setShowOrderbookInQuote(!showOrderbookInQuote);
@@ -143,6 +144,7 @@ export function OrderbookPanel() {
 							asksReversed.map((level) => (
 								<OrderbookRow
 									key={`ask-${level.price}`}
+									flashResetKey={flashResetKey}
 									level={level}
 									side="ask"
 									maxTotal={maxTotal}
@@ -173,6 +175,7 @@ export function OrderbookPanel() {
 							bids.map((level) => (
 								<OrderbookRow
 									key={`bid-${level.price}`}
+									flashResetKey={flashResetKey}
 									level={level}
 									side="bid"
 									maxTotal={maxTotal}

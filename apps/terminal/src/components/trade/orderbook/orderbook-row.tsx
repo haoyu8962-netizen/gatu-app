@@ -6,6 +6,7 @@ import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookSizeCell } from "./orderbook-size-cell";
 
 interface Props {
+	flashResetKey: string;
 	level: BookLevel;
 	side: "ask" | "bid";
 	maxTotal: number;
@@ -16,6 +17,7 @@ interface Props {
 }
 
 function OrderbookRowComponent({
+	flashResetKey,
 	level,
 	side,
 	maxTotal,
@@ -54,7 +56,12 @@ function OrderbookRowComponent({
 				>
 					{formatNumber(level.price, priceDecimals)}
 				</button>
-				<OrderbookSizeCell className="text-right orderbook-value-text" displayValue={sizeText} value={level.size} />
+				<OrderbookSizeCell
+					className="text-right orderbook-value-text"
+					displayValue={sizeText}
+					resetKey={flashResetKey}
+					value={level.size}
+				/>
 				{!compact && <div className="text-right orderbook-value-text">{totalText}</div>}
 			</div>
 		</div>
@@ -63,6 +70,7 @@ function OrderbookRowComponent({
 
 function areEqual(prev: Props, next: Props): boolean {
 	return (
+		prev.flashResetKey === next.flashResetKey &&
 		prev.side === next.side &&
 		prev.maxTotal === next.maxTotal &&
 		prev.priceDecimals === next.priceDecimals &&

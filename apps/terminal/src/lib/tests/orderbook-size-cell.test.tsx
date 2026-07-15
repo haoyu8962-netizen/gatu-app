@@ -22,8 +22,8 @@ describe("OrderbookSizeCell", () => {
 		container.remove();
 	});
 
-	function render(value: number) {
-		act(() => root.render(<OrderbookSizeCell displayValue={value.toFixed(2)} value={value} />));
+	function render(value: number, resetKey = "ETH:5:default") {
+		act(() => root.render(<OrderbookSizeCell displayValue={value.toFixed(2)} resetKey={resetKey} value={value} />));
 		return container.querySelector<HTMLElement>('[data-slot="orderbook-size-value"]');
 	}
 
@@ -52,5 +52,13 @@ describe("OrderbookSizeCell", () => {
 		expect(firstDecrease?.dataset.direction).toBe("down");
 		expect(secondDecrease?.dataset.direction).toBe("down");
 		expect(secondDecrease).not.toBe(firstDecrease);
+	});
+
+	it("does not flash when the market or grouping identity changes", () => {
+		render(10);
+		const reset = render(20, "BTC:4:default");
+
+		expect(reset?.classList.contains("orderbook-color-change")).toBe(false);
+		expect(reset?.dataset.direction).toBeUndefined();
 	});
 });

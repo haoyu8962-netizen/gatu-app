@@ -19,7 +19,6 @@ import {
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookRow } from "../orderbook/orderbook-row";
-import { OrderbookSizeCell } from "../orderbook/orderbook-size-cell";
 import { TradesPanel } from "../orderbook/trades-panel";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
@@ -198,6 +197,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 	const book = displaySnapshot?.data;
 	const displayPriceDecimals = displaySnapshot?.priceDecimals ?? priceDecimals;
 	const displaySzDecimals = displaySnapshot?.szDecimals ?? szDecimals;
+	const flashResetKey = displaySnapshot?.key ?? bookCacheKey ?? "";
 
 	const bids = useMemo(() => processLevels(book?.levels[0]), [book?.levels]);
 	const asks = useMemo(() => processLevels(book?.levels[1]), [book?.levels]);
@@ -336,6 +336,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 						askLadderRef={askLadderRef}
 						bidLadderRef={bidLadderRef}
 						bookStatus={bookStatus}
+						flashResetKey={flashResetKey}
 						isTransitioning={isTransitioningBook}
 						maxTotal={maxTotal}
 						priceDecimals={displayPriceDecimals}
@@ -392,6 +393,7 @@ interface OrderbookLayoutProps {
 }
 
 interface CompactOrderbookProps extends OrderbookLayoutProps {
+	flashResetKey: string;
 	mid: number | undefined;
 	midDirection: "up" | "down" | "flat";
 	spreadText: string;
@@ -408,6 +410,7 @@ function CompactOrderbook({
 	askLadderRef,
 	bidLadderRef,
 	bookStatus,
+	flashResetKey,
 	isTransitioning,
 	maxTotal,
 	priceDecimals,
@@ -453,6 +456,7 @@ function CompactOrderbook({
 								.map((level, index) => (
 									<OrderbookRow
 										key={`ask-${level.price}-${index}`}
+										flashResetKey={flashResetKey}
 										level={level}
 										side="ask"
 										maxTotal={maxTotal}
@@ -483,6 +487,7 @@ function CompactOrderbook({
 							{bids.slice(0, bidLevelCount).map((level, index) => (
 								<OrderbookRow
 									key={`bid-${level.price}-${index}`}
+									flashResetKey={flashResetKey}
 									level={level}
 									side="bid"
 									maxTotal={maxTotal}
@@ -710,11 +715,9 @@ function SplitOrderbookRow({ level, side, maxTotal, priceDecimals, showInQuote, 
 		</button>
 	);
 	const total = (
-		<OrderbookSizeCell
-			className={cn("truncate tabular-nums orderbook-value-text", isAsk ? "text-right" : "text-left")}
-			displayValue={formatNumber(totalValue, { decimals: totalDecimals, compact: true })}
-			value={level.size}
-		/>
+		<div className={cn("truncate tabular-nums orderbook-value-text", isAsk ? "text-right" : "text-left")}>
+			{formatNumber(totalValue, { decimals: totalDecimals, compact: true })}
+		</div>
 	);
 
 	return (
