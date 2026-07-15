@@ -30,7 +30,7 @@ Vite config is in `vite.config.ts`. Notable bits:
 - `@vitejs/plugin-react` wired with `babel-plugin-react-compiler`
 - `@lingui/vite-plugin` + `@lingui/babel-plugin-lingui-macro` for i18n
 - `@tailwindcss/vite` for Tailwind v4
-- Manual chunking splits vendors: `vendor-radix`, `vendor-tanstack`, `vendor-charts`, `vendor-web3`, `vendor-klinecharts`
+- Manual chunking is limited to dependency groups that do not create cross-chunk cycles. Web3 dependencies are left to Rollup's dependency-aware chunking.
 - `rollup-plugin-visualizer` for bundle analysis
 
 ## Directory layout

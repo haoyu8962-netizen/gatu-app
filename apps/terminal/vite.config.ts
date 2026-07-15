@@ -17,7 +17,6 @@ function createManualChunks(id: string) {
     if (id.includes('@radix-ui')) return 'vendor-radix'
     if (id.includes('@tanstack')) return 'vendor-tanstack'
     if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts'
-    if (id.includes('viem') || id.includes('wagmi') || id.includes('@wagmi')) return 'vendor-web3'
     if (id.includes('klinecharts')) return 'vendor-klinecharts'
   }
 }

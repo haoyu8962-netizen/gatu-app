@@ -4,8 +4,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "lingui compile && NODE_OPTIONS=--max-old-space-size=8192 vite build",
-		"build:analyze": "ANALYZE=true lingui compile && NODE_OPTIONS=--max-old-space-size=8192 vite build",
+		"build": "lingui compile && NODE_OPTIONS=--max-old-space-size=8192 vite build && node ../../scripts/check-client-chunk-cycles.mjs .output/public/assets",
+		"build:analyze": "ANALYZE=true lingui compile && NODE_OPTIONS=--max-old-space-size=8192 vite build && node ../../scripts/check-client-chunk-cycles.mjs .output/public/assets",
 		"serve": "node ../../scripts/serve-nitro.mjs .output/server/index.mjs",
 		"serve:vite": "vite preview",
 		"test": "vitest run",
