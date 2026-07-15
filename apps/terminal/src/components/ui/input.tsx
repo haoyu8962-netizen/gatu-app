@@ -33,14 +33,12 @@ function getInputClassName(inputSize: InputSize, className?: string) {
 	return cn(inputBaseStyles, inputSizeStyles[inputSize], className);
 }
 
-function Input({
-	className,
-	type,
-	inputSize = "default",
-	...props
-}: React.ComponentProps<typeof BaseInput> & {
+type InputProps = Omit<React.ComponentProps<typeof BaseInput>, "className"> & {
+	className?: string;
 	inputSize?: InputSize;
-}) {
+};
+
+function Input({ className, type, inputSize = "default", ...props }: InputProps) {
 	return (
 		<BaseInput
 			type={type}

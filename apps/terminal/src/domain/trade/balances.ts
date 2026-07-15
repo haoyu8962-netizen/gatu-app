@@ -230,7 +230,8 @@ export function getSpotAvailableValue(
 	balance: SpotBalance | null | undefined,
 	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null,
 ): string {
-	const availableAfterMaintenance = getAvailableAfterMaintenanceValue(balance?.token, spotAvailableAfterMaintenance);
+	const token = balance && "token" in balance ? balance.token : undefined;
+	const availableAfterMaintenance = getAvailableAfterMaintenanceValue(token, spotAvailableAfterMaintenance);
 	if (availableAfterMaintenance != null) {
 		const available = toSafeBig(availableAfterMaintenance);
 		return available.gt(0) ? available.toString() : "0";

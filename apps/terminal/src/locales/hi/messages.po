@@ -484,6 +484,7 @@ msgstr "खुली पोज़िशन के साथ आइसोले�
 msgid "Change leverage"
 msgstr "लेवरेज बदलें"
 
+#: src/components/trade/chart/kline-toolbar.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "चार्ट"

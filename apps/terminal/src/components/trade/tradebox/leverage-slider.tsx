@@ -13,7 +13,9 @@ export function LeverageSlider({ value, onChange, max, disabled, className }: Pr
 		<Slider
 			className={className}
 			value={value}
-			onValueChange={(v) => onChange(v as number)}
+			onValueChange={(v) => {
+				if (typeof v === "number") onChange(v);
+			}}
 			min={1}
 			max={max}
 			step={1}

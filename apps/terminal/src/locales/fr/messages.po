@@ -484,6 +484,7 @@ msgstr "Impossible de passer en mode Isolé avec une position ouverte. Fermez d'
 msgid "Change leverage"
 msgstr "Modifier le levier"
 
+#: src/components/trade/chart/kline-toolbar.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "Graphique"

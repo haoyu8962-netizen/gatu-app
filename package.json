@@ -11,6 +11,7 @@
 		"build": "pnpm --filter @gatu/terminal build",
 		"serve": "pnpm --filter @gatu/terminal serve",
 		"test": "pnpm --filter @gatu/terminal test",
+		"typecheck": "pnpm --filter @gatu/hl-react typecheck && pnpm --filter @gatu/ui typecheck && pnpm --filter @gatu/terminal typecheck",
 		"diagnostics:browser": "node scripts/browser-diagnostics.js",
 		"validate:mobile-device": "node scripts/validate-mobile-phone-access-device-validation.js",
 		"test:mobile-device-validator": "node --test scripts/validate-mobile-phone-access-device-validation.test.js",

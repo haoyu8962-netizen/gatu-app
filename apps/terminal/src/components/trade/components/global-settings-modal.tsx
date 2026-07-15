@@ -52,7 +52,8 @@ export function GlobalSettingsModal() {
 		setLocalSlippageInput(null);
 	}
 
-	function handleSlippageSliderChange(value: number) {
+	function handleSlippageSliderChange(value: number | readonly number[]) {
+		if (typeof value !== "number") return;
 		if (value !== slippagePercent) {
 			setMarketOrderSlippagePercent(value);
 		}

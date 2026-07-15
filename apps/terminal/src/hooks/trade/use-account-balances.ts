@@ -1,9 +1,4 @@
-import type {
-	AllDexsClearinghouseStateWsEvent,
-	SpotStateWsEvent,
-	SpotStateWsParameters,
-	WebData3WsEvent,
-} from "@nktkas/hyperliquid";
+import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent, WebData3WsEvent } from "@nktkas/hyperliquid";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { getPositionDex } from "@/domain/market";
@@ -12,15 +7,13 @@ import { getAccountLedgerRefreshKey, useHyperliquid, useInfo, useSubscription } 
 import { useSelectedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
-type RawSpotState = SpotStateWsEvent["spotState"] & {
-	tokenToAvailableAfterMaintenance?: Array<[number | string, string]>;
-};
-type RawSpotBalance = NonNullable<SpotStateWsEvent["spotState"]["balances"]>[number];
+type RawSpotState = SpotStateWsEvent["spotState"];
 
 export type MarginSummary = RawClearinghouseState["marginSummary"];
 export type PerpSummary = RawClearinghouseState["crossMarginSummary"];
 export type PerpPosition = RawClearinghouseState["assetPositions"][number];
-export type SpotBalance = Extract<RawSpotBalance, { token: number }>;
+export type SpotBalance = RawSpotState["balances"][number];
+export type TokenSpotBalance = Extract<SpotBalance, { token: number }>;
 export type SpotAvailableAfterMaintenance = NonNullable<RawSpotState["tokenToAvailableAfterMaintenance"]>;
 export type AccountAbstraction =
 	| NonNullable<WebData3WsEvent["userState"]["abstraction"]>
@@ -50,7 +43,7 @@ const EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE: SpotAvailableAfterMaintenance = []
 const MAINNET_INFO_URL = "https://api.hyperliquid.xyz/info";
 const TESTNET_INFO_URL = "https://api.hyperliquid-testnet.xyz/info";
 
-function isTokenSpotBalance(balance: RawSpotBalance): balance is SpotBalance {
+export function isTokenSpotBalance(balance: SpotBalance): balance is TokenSpotBalance {
 	return "token" in balance && typeof balance.token === "number";
 }
 
@@ -136,23 +129,20 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		{ user: address ?? "" },
 		{ enabled, refreshKey: accountRefreshKey },
 	);
-	const spotStateSubscription: SpotStateWsParameters = {
-		user: address ?? "0x0",
-		...(accountAbstraction === "portfolioMargin" ? { ignorePortfolioMargin: false } : {}),
-	};
-	const { data: spotEvent, status: spotStatus } = useSubscription("spotState", spotStateSubscription, {
-		enabled,
-		refreshKey: ledgerRefreshKey,
-	});
-	const spotState = spotEvent?.spotState as RawSpotState | undefined;
+	const { data: spotEvent, status: spotStatus } = useSubscription(
+		"spotState",
+		{ user: address ?? "0x0" },
+		{
+			enabled,
+			refreshKey: ledgerRefreshKey,
+		},
+	);
+	const spotState = spotEvent?.spotState;
 	const spotAvailableAfterMaintenance = useMemo(
 		() => spotState?.tokenToAvailableAfterMaintenance ?? EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
 		[spotState?.tokenToAvailableAfterMaintenance],
 	);
-	const spotBalances = useMemo(
-		() => (spotState?.balances ?? EMPTY_SPOT_BALANCES).filter(isTokenSpotBalance),
-		[spotState?.balances],
-	);
+	const spotBalances = spotState?.balances ?? EMPTY_SPOT_BALANCES;
 
 	if (!enabled) {
 		return {

@@ -17,7 +17,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
 import { type BalanceRow, getPerpAvailable, getSpotAvailable, getSpotAvailableValue } from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { isTokenSpotBalance, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useExchange } from "@/lib/hyperliquid";
@@ -78,6 +78,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 	const availableSpotTokens = useMemo((): BalanceRow[] => {
 		if (!spotBalances?.length) return [];
 		return spotBalances
+			.filter(isTokenSpotBalance)
 			.filter((b) => {
 				const available = getSpotAvailable(b, spotAvailableAfterMaintenance);
 				return available > 0;

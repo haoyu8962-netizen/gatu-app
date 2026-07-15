@@ -29,6 +29,13 @@ const settledSpotUsdcBalance: SpotBalance = {
 	entryNtl: "0",
 };
 
+const outcomeBalance: SpotBalance = {
+	coin: "+42",
+	total: "2",
+	hold: "0.5",
+	entryNtl: "17.25",
+};
+
 describe("trade balances", () => {
 	it("uses tokenToAvailableAfterMaintenance for spot available balances when present", () => {
 		expect(getSpotAvailableValue(usdcBalance, maintenanceAvailable)).toBe("4947.18019669");
@@ -257,6 +264,29 @@ describe("trade balances", () => {
 			tokenUsdPrices: { HYPE: "30" },
 		});
 		expect(summary.accountEquity).toBeCloseTo(867.680532);
+	});
+
+	it("keeps outcome-market balances in account value and display rows", () => {
+		const rows = getSpotBalanceRows([outcomeBalance]);
+
+		expect(rows).toEqual([
+			expect.objectContaining({
+				asset: "+42",
+				available: "1.5",
+				total: "2",
+				usdValue: "17.25",
+			}),
+		]);
+
+		const summary = getAccountBalanceSummary({
+			accountAbstraction: "unifiedAccount",
+			marginSummary: { accountValue: "0", totalMarginUsed: "0", totalRawUsd: "0" } as never,
+			perpSummary: { accountValue: "0", totalMarginUsed: "0" },
+			withdrawable: "0",
+			spotBalances: [settledSpotUsdcBalance, outcomeBalance],
+		});
+
+		expect(summary.accountEquity).toBeCloseTo(584.930532);
 	});
 
 	it("uses maintenance-adjusted available values for spot order-entry balances", () => {

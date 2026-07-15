@@ -25,7 +25,9 @@ export function NetworkSelect({ label, value, onChange, disabled, displayName }:
 		<Select
 			label={label as string}
 			value={value}
-			onValueChange={(v: string) => v && onChange(v as NetworkId)}
+			onValueChange={(v) => {
+				if (v) onChange(v as NetworkId);
+			}}
 			disabled={disabled}
 			options={NETWORKS.map((n) => ({ value: n.id, label: displayName && n.id === value ? displayName : n.name }))}
 		/>

@@ -471,11 +471,13 @@ export function MobileTradeView({ className, embedded }: Props) {
 							<Slider
 								thumbSize={sliderThumbSize}
 								value={sliderValue}
-								onValueChange={(val: number) => {
+								onValueChange={(val) => {
+									if (typeof val !== "number") return;
 									setIsDraggingSlider(true);
 									setDragSliderValue(val);
 								}}
-								onValueCommitted={(val: number) => {
+								onValueCommitted={(val) => {
+									if (typeof val !== "number") return;
 									setIsDraggingSlider(false);
 									applySizeFromPercent(val);
 								}}

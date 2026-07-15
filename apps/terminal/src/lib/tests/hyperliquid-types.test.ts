@@ -10,6 +10,7 @@ import type {
 	NoopParameters,
 	OrderParameters,
 	OrderSuccessResponse,
+	ScheduleCancelParameters,
 	SpotStateWsParameters,
 	SubscriptionClient,
 	TradesWsEvent,
@@ -71,6 +72,14 @@ describe("ExchangeClient mapped types", () => {
 		type NoopParams = ExchangeParams<"noop">;
 		expectTypeOf<NoopParams>().toEqualTypeOf<NoopParameters>();
 		expectTypeOf<undefined>().not.toMatchTypeOf<NoopParams>();
+	});
+
+	it("preserves optional params for overloaded methods", () => {
+		expectTypeOf<ExchangeParams<"scheduleCancel">>().toEqualTypeOf<ScheduleCancelParameters | undefined>();
+	});
+
+	it("resolves params as undefined for opts-only methods", () => {
+		expectTypeOf<ExchangeParams<"claimRewards">>().toEqualTypeOf<undefined>();
 	});
 
 	it("resolves response type correctly", () => {

@@ -484,6 +484,7 @@ msgstr "Cannot switch to Isolated mode with an open position. Close your positio
 msgid "Change leverage"
 msgstr "Change leverage"
 
+#: src/components/trade/chart/kline-toolbar.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "Chart"

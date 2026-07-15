@@ -484,6 +484,7 @@ msgstr "لا يمكن التبديل إلى وضع الهامش المعزول �
 msgid "Change leverage"
 msgstr "تغيير الرافعة المالية"
 
+#: src/components/trade/chart/kline-toolbar.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "الرسم البياني"

@@ -25,7 +25,8 @@ function CommandDialog({
 	showCloseButton = true,
 	shouldFilter,
 	...props
-}: React.ComponentProps<typeof Modal> & {
+}: Omit<React.ComponentProps<typeof Modal>, "children"> & {
+	children?: React.ReactNode;
 	title?: string;
 	description?: string;
 	className?: string;

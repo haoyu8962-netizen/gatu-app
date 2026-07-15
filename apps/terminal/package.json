@@ -9,6 +9,7 @@
 		"serve": "node ../../scripts/serve-nitro.mjs .output/server/index.mjs",
 		"serve:vite": "vite preview",
 		"test": "vitest run",
+		"typecheck": "tsc --noEmit --pretty false",
 		"i18n:extract": "lingui extract",
 		"i18n:compile": "lingui compile",
 		"perf:bundle": "npx vite-bundle-visualizer",

@@ -249,11 +249,13 @@ export function TradeFormFields({
 					</div>
 					<Slider
 						value={sliderValue}
-						onValueChange={(val: number) => {
+						onValueChange={(val) => {
+							if (typeof val !== "number") return;
 							setIsDraggingSlider(true);
 							setDragSliderValue(val);
 						}}
-						onValueCommitted={(val: number) => {
+						onValueCommitted={(val) => {
+							if (typeof val !== "number") return;
 							setIsDraggingSlider(false);
 							handleSizePercentApply(val);
 						}}

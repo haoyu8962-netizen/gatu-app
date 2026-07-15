@@ -29,6 +29,9 @@
 		"./internal/circular-buffer/ring-buffer": "./src/internal/circular-buffer/ring-buffer.ts",
 		"./internal/circular-buffer/use-ring-buffer": "./src/internal/circular-buffer/use-ring-buffer.ts"
 	},
+	"scripts": {
+		"typecheck": "tsc --noEmit --pretty false"
+	},
 	"devDependencies": {
 		"@types/react": "19.2.0"
 	},
