@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_MAX_LEVERAGE } from "@/config/trade";
-import { getAssetAvailabilityStatus } from "@/domain/trade/order/availability";
+import { type AssetAvailabilityStatus, getAssetAvailabilityStatus } from "@/domain/trade/order/availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import {
 	getMarketCapabilities,
@@ -31,7 +31,7 @@ interface UseAssetLeverageReturn {
 	availableToTrade: [number, number] | null;
 	isUpdating: boolean;
 	updateError: Error | null;
-	subscriptionStatus: "idle" | "loading" | "success" | "error";
+	subscriptionStatus: AssetAvailabilityStatus;
 	marginMode: MarginMode;
 	hasPosition: boolean;
 	switchMarginMode: (mode: MarginMode) => Promise<void>;
@@ -79,7 +79,8 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		subscriptionStatus,
 		isStale,
 	});
-	const currentActiveAssetData = normalizedStatus === "success" ? activeAssetData : undefined;
+	const currentActiveAssetData =
+		normalizedStatus === "success" || normalizedStatus === "stale" ? activeAssetData : undefined;
 
 	const userPositions = useUserPositions();
 
@@ -89,14 +90,14 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const [pendingLeverage, setPendingLeverageState] = useState<number | null>(null);
 	const [disconnectedLeverage, setDisconnectedLeverage] = useState<number | null>(null);
 
-	const onChainLeverage = activeAssetData?.leverage?.value ?? null;
-	const onChainMarginMode = getMarginModeFromLeverage(activeAssetData?.leverage);
+	const onChainLeverage = currentActiveAssetData?.leverage?.value ?? null;
+	const onChainMarginMode = getMarginModeFromLeverage(currentActiveAssetData?.leverage);
 
 	function computeMarginMode(): MarginMode {
 		if (isOnlyIsolated) {
 			return "isolated";
 		}
-		if (isConnected && activeAssetData?.leverage) {
+		if (isConnected && currentActiveAssetData?.leverage) {
 			return onChainMarginMode;
 		}
 		return storedMarginMode;

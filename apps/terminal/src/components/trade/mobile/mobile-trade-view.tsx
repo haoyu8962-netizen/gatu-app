@@ -1,6 +1,6 @@
-import { Button, buttonVariants, Slider } from "@gatu/ui";
+import { Button, buttonVariants, Slider, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CaretDownIcon, PencilIcon, SpinnerGapIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, Suspense, useEffect, useState } from "react";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
@@ -143,6 +143,9 @@ export function MobileTradeView({ className, embedded }: Props) {
 		szDecimals,
 		availableBalance,
 		isAvailabilityLoading,
+		isAvailabilityBlocked,
+		isAvailabilityStale,
+		hasAvailabilityError,
 		availableBalanceToken,
 		spotBalance,
 		maxSize,
@@ -261,6 +264,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 	async function handleSubmit() {
 		if (tradeRestricted) return;
 		if (!isConnected || !address) return;
+		if (isAvailabilityBlocked) return;
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
@@ -326,7 +330,9 @@ export function MobileTradeView({ className, embedded }: Props) {
 		needsChainSwitch,
 		isSwitchingChain,
 		availableBalance,
-		isBalanceLoading: isAvailabilityLoading,
+		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale,
+		hasBalanceError: hasAvailabilityError,
+		balanceErrorLabel: t`Failed to load balances.`,
 		canDeposit: sessionMode === "wallet",
 		needsApproval: validation.needsApproval,
 		canSubmit: validation.canSubmit,
@@ -342,7 +348,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 		onSubmit: handleSubmit,
 	});
 
-	const isFormDisabled = !isConnected || isAvailabilityLoading || availableBalance <= 0;
+	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
 	const sizePercentDisabled = isFormDisabled || maxSize <= 0;
 	const entryInputSize = embedded ? "lg" : "xl";
@@ -350,7 +356,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const sliderThumbSize = embedded ? "md" : "lg";
 
 	function formatAvailableBalance(): string {
-		if (!isConnected || isAvailabilityLoading) return FALLBACK_VALUE_PLACEHOLDER;
+		if (!isConnected || isAvailabilityLoading || hasAvailabilityError) return FALLBACK_VALUE_PLACEHOLDER;
 		const decimals = isSpotMarket && side === "sell" ? szDecimals : 2;
 		return formatToken(availableBalance, decimals);
 	}
@@ -429,6 +435,19 @@ export function MobileTradeView({ className, embedded }: Props) {
 							{formatAvailableBalance()}
 						</span>
 						<span className="ml-1 text-2xs tabular-nums text-fg-muted">{availableBalanceToken}</span>
+						{isAvailabilityStale ? (
+							<Tooltip content={t`Loading...`} side="top">
+								<SpinnerGapIcon className="ml-1 size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
+							</Tooltip>
+						) : null}
+						{hasAvailabilityError ? (
+							<Tooltip content={t`Failed to load balances.`} side="top">
+								<WarningCircleIcon
+									className="ml-1 size-3 shrink-0 text-error"
+									aria-label={t`Failed to load balances.`}
+								/>
+							</Tooltip>
+						) : null}
 					</div>
 
 					<div className={cn(embedded ? "space-y-1.5" : "space-y-3")}>
@@ -699,6 +718,8 @@ interface MobileButtonContentInput {
 	availableBalance: number;
 	isBalanceLoading: boolean;
 	canDeposit: boolean;
+	hasBalanceError: boolean;
+	balanceErrorLabel: string;
 	needsApproval: boolean;
 	canSubmit: boolean;
 	isRegistering: boolean;
@@ -727,6 +748,14 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 			text: input.isSwitchingChain ? ORDER_TEXT.BUTTON_SWITCHING : ORDER_TEXT.BUTTON_SWITCH_CHAIN,
 			action: input.onSwitchChain,
 			disabled: input.isSwitchingChain,
+			variant: "cyan",
+		};
+	}
+	if (input.hasBalanceError) {
+		return {
+			text: input.balanceErrorLabel,
+			action: () => {},
+			disabled: true,
 			variant: "cyan",
 		};
 	}

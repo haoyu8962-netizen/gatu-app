@@ -1,6 +1,6 @@
 import { Button, Slider, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CaretDownIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useId, useState } from "react";
 import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
@@ -81,6 +81,9 @@ export function TradeFormFields({
 	const {
 		isSpotMarket,
 		isAvailabilityLoading,
+		isAvailabilityBlocked,
+		isAvailabilityStale,
+		hasAvailabilityError,
 		baseToken,
 		capabilities,
 		availableBalance,
@@ -95,7 +98,7 @@ export function TradeFormFields({
 
 	const { setSize, setLimitPrice, setTriggerPrice, setReduceOnly, setTpSlEnabled } = useOrderEntryActions();
 
-	const isFormDisabled = !isConnected || isAvailabilityLoading || availableBalance <= 0;
+	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
 
 	const triggerOrder = isTriggerOrderType(orderType);
 	const twapOrder = isTwapOrderType(orderType);
@@ -116,7 +119,7 @@ export function TradeFormFields({
 	}
 
 	function formatAvailableBalance(): string {
-		if (!isConnected || isAvailabilityLoading) return FALLBACK_VALUE_PLACEHOLDER;
+		if (!isConnected || isAvailabilityLoading || hasAvailabilityError) return FALLBACK_VALUE_PLACEHOLDER;
 		const isBaseToken = isSpotMarket && side === "sell";
 		const decimals = isBaseToken ? szDecimals : 2;
 		return formatToken(displayAvailableBalance, { decimals, symbol: displayAvailableBalanceToken ?? undefined });
@@ -131,11 +134,27 @@ export function TradeFormFields({
 							<Tooltip content={t`Balance available to trade`} side="top">
 								<span className="font-medium uppercase tracking-wider text-fg-muted cursor-default">{t`Available`}</span>
 							</Tooltip>
-							<span>
+							<span className="inline-flex min-w-0 items-center">
 								{isConnected ? (
 									<span className={cn("tabular-nums", getValueColorClass(displayAvailableBalance))}>
 										{formatAvailableBalance()}
 									</span>
+								) : null}
+								{isAvailabilityStale ? (
+									<Tooltip content={t`Loading...`} side="top">
+										<SpinnerGapIcon
+											className="ml-1 size-3 shrink-0 animate-spin text-warning"
+											aria-label={t`Loading...`}
+										/>
+									</Tooltip>
+								) : null}
+								{hasAvailabilityError ? (
+									<Tooltip content={t`Failed to load balances.`} side="top">
+										<WarningCircleIcon
+											className="ml-1 size-3 shrink-0 text-error"
+											aria-label={t`Failed to load balances.`}
+										/>
+									</Tooltip>
 								) : null}
 							</span>
 						</div>
@@ -145,7 +164,7 @@ export function TradeFormFields({
 									{t`Swap`}
 								</Button>
 							) : null}
-							{isConnected && !isAvailabilityLoading && displayAvailableBalance <= 0 ? (
+							{isConnected && !isAvailabilityBlocked && displayAvailableBalance <= 0 ? (
 								<Button variant="link" intent="brand" size="xxs" onClick={onDepositClick}>
 									{t`Deposit`}
 								</Button>

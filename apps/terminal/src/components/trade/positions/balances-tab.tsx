@@ -1,6 +1,6 @@
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon } from "@phosphor-icons/react";
+import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
@@ -70,6 +70,7 @@ export function BalancesTab() {
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		withdrawable,
+		isSpotStateStale,
 		isLoading,
 		hasError,
 	} = useDefaultDexBalances();
@@ -207,8 +208,8 @@ export function BalancesTab() {
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view balances.`}</Placeholder>;
-		if (isLoading) return <Placeholder>{t`Loading balances...`}</Placeholder>;
 		if (hasError) return <Placeholder variant="error">{t`Failed to load balances.`}</Placeholder>;
+		if (isLoading) return <Placeholder>{t`Loading balances...`}</Placeholder>;
 		if (balances.length === 0)
 			return <Placeholder>{t`No balances found. Deposit funds to start trading.`}</Placeholder>;
 		return null;
@@ -228,9 +229,12 @@ export function BalancesTab() {
 					}
 					className="gap-1.5 items-center"
 				/>
-				{isConnected && !isLoading ? (
-					<span className="tabular-nums text-3xs font-medium text-success">
-						{formatUSD(totalValue, { compact: true })}
+				{isConnected && !isLoading && !hasError ? (
+					<span className="inline-flex items-center gap-1 tabular-nums text-3xs font-medium text-success">
+						{isSpotStateStale ? (
+							<SpinnerGapIcon className="size-3 animate-spin text-warning" aria-label={t`Loading...`} />
+						) : null}
+						<span>{formatUSD(totalValue, { compact: true })}</span>
 					</span>
 				) : null}
 			</div>

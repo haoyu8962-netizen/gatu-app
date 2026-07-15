@@ -101,7 +101,10 @@ export function TradePanel() {
 		spotBalance,
 		capabilities,
 		availableBalance,
+		isAvailabilityBlocked,
 		isAvailabilityLoading,
+		isAvailabilityStale,
+		hasAvailabilityError,
 		maxSize,
 		sizeValue,
 		orderValue,
@@ -289,6 +292,7 @@ export function TradePanel() {
 	async function handleSubmit() {
 		if (tradeRestricted) return;
 		if (!isConnected || !address) return;
+		if (isAvailabilityBlocked) return;
 		if (!validation.canSubmit || isSubmitting) return;
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
@@ -326,7 +330,8 @@ export function TradePanel() {
 		isSwitchingChain: switchChain.isPending,
 		switchChain: (chainId) => switchChain.mutate({ chainId }),
 		availableBalance,
-		isBalanceLoading: isAvailabilityLoading,
+		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale,
+		hasBalanceError: hasAvailabilityError,
 		canDeposit: sessionMode === "wallet",
 		validation,
 		isAgentLoading,

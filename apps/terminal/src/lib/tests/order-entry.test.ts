@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { getAssetAvailabilityStatus } from "@/domain/trade/order/availability";
+import {
+	getAssetAvailabilityStatus,
+	getOrderAvailabilityFlags,
+	getOrderAvailabilityStatus,
+	getStreamAvailabilityStatus,
+} from "@/domain/trade/order/availability";
 import { deriveOrderEntry } from "@/domain/trade/order/derive";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
 
@@ -192,11 +197,92 @@ describe("active asset availability readiness", () => {
 		expect(getAssetAvailabilityStatus(baseInput)).toBe("success");
 	});
 
-	it("rejects stale or mismatched payloads", () => {
-		expect(getAssetAvailabilityStatus({ ...baseInput, isStale: true })).toBe("loading");
+	it("retains a matching stale payload without treating it as fresh", () => {
+		expect(getAssetAvailabilityStatus({ ...baseInput, isStale: true })).toBe("stale");
+	});
+
+	it("rejects mismatched payloads", () => {
 		expect(getAssetAvailabilityStatus({ ...baseInput, coin: "HYPE" })).toBe("loading");
 		expect(getAssetAvailabilityStatus({ ...baseInput, user: "0x0000000000000000000000000000000000000000" })).toBe(
 			"loading",
 		);
+	});
+
+	it("surfaces subscription errors", () => {
+		expect(getAssetAvailabilityStatus({ ...baseInput, subscriptionStatus: "error" })).toBe("error");
+	});
+
+	it.each([
+		["disconnected", { isConnected: false }],
+		["non-perp market", { isPerpMarket: false }],
+		["missing coin", { coin: undefined }],
+		["missing user", { user: undefined }],
+	] as const)("is idle when %s", (_label, override) => {
+		expect(getAssetAvailabilityStatus({ ...baseInput, ...override })).toBe("idle");
+	});
+
+	it("keeps coin identity matching case-sensitive", () => {
+		expect(getAssetAvailabilityStatus({ ...baseInput, coin: "XYZ:MU" })).toBe("loading");
+	});
+});
+
+describe("stream availability readiness", () => {
+	it("distinguishes loading, stale, success, and error", () => {
+		const baseInput = {
+			isConnected: true,
+			hasData: true,
+			subscriptionStatus: "active" as const,
+			isStale: false,
+		};
+
+		expect(getStreamAvailabilityStatus(baseInput)).toBe("success");
+		expect(getStreamAvailabilityStatus({ ...baseInput, isStale: true })).toBe("stale");
+		expect(getStreamAvailabilityStatus({ ...baseInput, hasData: false })).toBe("loading");
+		expect(getStreamAvailabilityStatus({ ...baseInput, subscriptionStatus: "subscribing" })).toBe("loading");
+		expect(getStreamAvailabilityStatus({ ...baseInput, subscriptionStatus: "error" })).toBe("error");
+		expect(getStreamAvailabilityStatus({ ...baseInput, isConnected: false })).toBe("idle");
+	});
+});
+
+describe("order availability routing", () => {
+	const baseInput = {
+		isConnected: true,
+		marketKind: "perp" as const,
+		spotStatus: "success" as const,
+		perpStatus: "success" as const,
+	};
+
+	it("treats an unresolved market as loading instead of zero availability", () => {
+		expect(getOrderAvailabilityStatus({ ...baseInput, marketKind: undefined })).toBe("loading");
+	});
+
+	it("treats an idle selected-market subscription as loading while connected", () => {
+		expect(getOrderAvailabilityStatus({ ...baseInput, perpStatus: "idle" })).toBe("loading");
+	});
+
+	it("routes spot and perp readiness independently", () => {
+		expect(
+			getOrderAvailabilityStatus({ ...baseInput, marketKind: "spot", spotStatus: "error", perpStatus: "success" }),
+		).toBe("error");
+		expect(
+			getOrderAvailabilityStatus({ ...baseInput, marketKind: "builderPerp", spotStatus: "error", perpStatus: "stale" }),
+		).toBe("stale");
+	});
+
+	it("does not block on market state while disconnected", () => {
+		expect(getOrderAvailabilityStatus({ ...baseInput, isConnected: false, marketKind: undefined })).toBe("idle");
+	});
+
+	it("blocks every connected state except fresh success", () => {
+		expect(getOrderAvailabilityFlags(true, "success")).toEqual({
+			isLoading: false,
+			isStale: false,
+			hasError: false,
+			isBlocked: false,
+		});
+		expect(getOrderAvailabilityFlags(true, "loading")).toMatchObject({ isLoading: true, isBlocked: true });
+		expect(getOrderAvailabilityFlags(true, "stale")).toMatchObject({ isStale: true, isBlocked: true });
+		expect(getOrderAvailabilityFlags(true, "error")).toMatchObject({ hasError: true, isBlocked: true });
+		expect(getOrderAvailabilityFlags(false, "idle")).toMatchObject({ isBlocked: false });
 	});
 });

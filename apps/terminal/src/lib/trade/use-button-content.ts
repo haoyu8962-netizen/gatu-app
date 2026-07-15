@@ -11,6 +11,7 @@ interface ButtonContentInput {
 	switchChain: (chainId: number) => void;
 	availableBalance: number;
 	isBalanceLoading?: boolean;
+	hasBalanceError?: boolean;
 	canDeposit: boolean;
 	validation: FormValidationResult;
 	isAgentLoading: boolean;
@@ -66,6 +67,14 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 				variant: "cyan",
 			};
 		}
+		if (input.hasBalanceError) {
+			return {
+				text: t`Failed to load balances.`,
+				action: () => {},
+				disabled: true,
+				variant: "cyan",
+			};
+		}
 		if (input.isBalanceLoading) {
 			return {
 				text: t`Loading...`,
@@ -95,6 +104,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.switchChain,
 		input.availableBalance,
 		input.isBalanceLoading,
+		input.hasBalanceError,
 		input.canDeposit,
 		input.validation.needsApproval,
 		input.validation.canSubmit,

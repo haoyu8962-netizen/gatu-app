@@ -1,3 +1,4 @@
+import { getOrderAvailabilityFlags, getOrderAvailabilityStatus } from "@/domain/trade/order/availability";
 import { deriveOrderEntry, type OrderEntryDerived } from "@/domain/trade/order/derive";
 import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle } from "@/domain/trade/order/size";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -9,6 +10,9 @@ import { useAssetLeverage } from "./use-asset-leverage";
 interface OrderEntryData extends OrderEntryDerived {
 	isConnected: boolean;
 	isAvailabilityLoading: boolean;
+	isAvailabilityBlocked: boolean;
+	isAvailabilityStale: boolean;
+	hasAvailabilityError: boolean;
 
 	getSizeForPercent: (pct: number) => string;
 	convertSizeForModeToggle: () => string;
@@ -46,7 +50,7 @@ export function useOrderEntryData({
 	sizeInput,
 }: UseOrderEntryDataOptions): OrderEntryData {
 	const { isConnected } = useWalletSession();
-	const { spotBalances, spotAvailableAfterMaintenance, isSpotStateLoading } = useDefaultDexBalances();
+	const { spotBalances, spotAvailableAfterMaintenance, spotStateStatus } = useDefaultDexBalances();
 	const {
 		displayLeverage: leverage,
 		currentLeverage,
@@ -68,10 +72,18 @@ export function useOrderEntryData({
 	} = useAssetLeverage();
 
 	const conversionPrice = markPx > 0 ? markPx : 0;
-	const isSpotMarket = market?.kind === "spot";
-	const isPerpMarket = market?.kind === "perp" || market?.kind === "builderPerp";
-	const isAvailabilityLoading =
-		isConnected && ((isSpotMarket && isSpotStateLoading) || (isPerpMarket && subscriptionStatus !== "success"));
+	const availabilityStatus = getOrderAvailabilityStatus({
+		isConnected,
+		marketKind: market?.kind,
+		spotStatus: spotStateStatus,
+		perpStatus: subscriptionStatus,
+	});
+	const {
+		isLoading: isAvailabilityLoading,
+		isStale: isAvailabilityStale,
+		hasError: hasAvailabilityError,
+		isBlocked: isAvailabilityBlocked,
+	} = getOrderAvailabilityFlags(isConnected, availabilityStatus);
 
 	const derived = deriveOrderEntry({
 		isConnected,
@@ -111,6 +123,9 @@ export function useOrderEntryData({
 	return {
 		isConnected,
 		isAvailabilityLoading,
+		isAvailabilityBlocked,
+		isAvailabilityStale,
+		hasAvailabilityError,
 		...derived,
 		getSizeForPercent,
 		convertSizeForModeToggle,
