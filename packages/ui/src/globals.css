@@ -119,6 +119,7 @@
 		--bg-base: #ffffff;
 		--bg-raised: #ffffff;
 		--bg-overlay: #ffffff;
+		--bg-modal: #ffffff;
 		--bg-sunken: #f5f6fa;
 		--bg-alternate: #f5f6fa;
 		--bg-brand: #4c64d9;
@@ -205,6 +206,7 @@
 		--bg-base: #12131a;
 		--bg-raised: #1d1e26;
 		--bg-overlay: #292b33;
+		--bg-modal: #292b33;
 		--bg-sunken: #0a0a0a;
 		--bg-alternate: #1d1e26;
 		--bg-brand: #b2bcf1;
@@ -305,6 +307,7 @@
 	--color-background: var(--bg-base);
 	--color-surface: var(--bg-raised);
 	--color-overlay: var(--bg-overlay);
+	--color-modal: var(--bg-modal);
 	--color-sunken: var(--bg-sunken);
 	--color-alternate: var(--bg-alternate);
 	--color-inverse-surface: var(--bg-inverse);

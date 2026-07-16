@@ -63,7 +63,7 @@ DrawerOverlay.displayName = "DrawerOverlay";
 
 const drawerContentVariants = cva(
 	[
-		"fixed z-50 flex flex-col bg-overlay border border-stroke-weak shadow-overlay",
+		"fixed z-50 flex flex-col bg-modal border border-stroke-weak shadow-overlay",
 		"transition-transform duration-200 ease-out motion-reduce:transition-none",
 	],
 	{

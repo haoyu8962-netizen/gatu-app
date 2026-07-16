@@ -12,6 +12,7 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 ## Trading terminal visual contract
 
 - The dark terminal and chart canvas use `#0F1A1F` (`rgb(15, 26, 31)`) as the main background.
+- Application modals and drawers use the dedicated `bg-modal` surface, which resolves to `#0F1A1F` in the terminal dark theme. Do not change `bg-overlay` to achieve this; tooltips, toasts, and selection indicators still depend on its raised contrast.
 - Raised or interactive TradingView layers use `#1D1E26`; do not flatten those layers into the canvas color.
 - TradingView theme CSS runs inside an iframe, so application CSS variables do not automatically inherit into it. Define its semantic background variables inside `tradingview-theme.css`.
 - Keep the single theme-aware TradingView stylesheet used by runtime theme switching; changing CSS URLs on theme changes would require rebuilding the iframe.
@@ -41,6 +42,8 @@ pnpm --dir apps/terminal exec vitest run \
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/chart-theme-colors.test.ts \
   src/lib/tests/tradingview-chart.test.tsx
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/modal-surface-contract.test.ts
 ```
 
 When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.

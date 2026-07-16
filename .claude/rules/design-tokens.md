@@ -29,11 +29,12 @@ Never cause **literal doubling** of the Tailwind property prefix. If a token is 
 - `bg-sunken` page/recessed background (light: `#f5f6fa`, dark: `#000000`)
 - `bg-background` default page background (light: `#ffffff`, shared dark default: `#12131a`)
 - `bg-surface` elevated surfaces, cards (light: `#ffffff`, shared dark default: `#1d1e26`)
-- `bg-overlay` overlays, modals (light: `#ffffff`, dark: `#292b33`)
+- `bg-overlay` lightweight raised overlays such as tooltips, toasts, and selection indicators (light: `#ffffff`, dark: `#292b33`)
+- `bg-modal` blocking modal and drawer surfaces (light: `#ffffff`, shared dark default: `#292b33`)
 - `bg-alternate` alternating rows (light: `#f5f6fa`, shared dark default: `#1d1e26`)
 - `bg-inverse-surface` inverse background
 
-> **Terminal dark-theme override**: `apps/terminal/src/styles.css` intentionally sets `bg-background`, `bg-surface`, and `bg-alternate` to `#0f1a1f` so the terminal, order book, and chart share one continuous background. Do not restore the shared defaults in the terminal without an explicit design change.
+> **Terminal dark-theme override**: `apps/terminal/src/styles.css` intentionally sets `bg-background`, `bg-surface`, `bg-alternate`, and `bg-modal` to `#0f1a1f` so the terminal, order book, chart, and blocking dialogs share one continuous background. `bg-overlay` remains a distinct raised color for tooltips, toasts, and selection indicators. Do not restore the shared defaults in the terminal without an explicit design change.
 
 > **Light mode gotcha**: `bg-background` and `bg-surface` are both `#ffffff` in light mode. Use `bg-sunken` as the container whenever you need a visually distinct inset (e.g. tab switchers, pill groups) so that `bg-surface` children appear elevated.
 

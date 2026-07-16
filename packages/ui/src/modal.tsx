@@ -27,7 +27,7 @@ function useMobile(): boolean {
 
 // ─── Modal (centered overlay) ─────────────────────────────────────────────────
 
-const modalPopupVariants = cva(["relative w-full bg-overlay shadow-overlay rounded-12", "flex flex-col outline-none"], {
+const modalPopupVariants = cva(["relative w-full bg-modal shadow-overlay rounded-12", "flex flex-col outline-none"], {
 	variants: {
 		size: {
 			sm: "max-w-sm",
