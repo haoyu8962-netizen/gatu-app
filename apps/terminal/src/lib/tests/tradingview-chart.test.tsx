@@ -447,6 +447,56 @@ describe("TradingViewChart", () => {
 		});
 	});
 
+	it("does not resolve PURR spot through a stale PURR perp mapping", async () => {
+		const perpMarket = {
+			kind: "perp",
+			name: "PURR",
+			pairName: "PURR-USDC",
+			routeName: "PURR",
+			markPx: "0.2",
+			szDecimals: 0,
+		} as UnifiedMarketInfo;
+		const spotMarket = {
+			kind: "spot",
+			name: "PURR/USDC",
+			pairName: "PURR/USDC",
+			routeName: "PURR/USDC",
+			markPx: "0.2",
+			szDecimals: 0,
+		} as UnifiedMarketInfo;
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: perpMarket.name,
+					market: perpMarket,
+					interval: "60",
+					theme: "dark",
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		const options = testState.datafeedOptions[0] as {
+			getSymbolInfo: (symbolName: string, coin: string) => { ticker: string } | undefined;
+		};
+		expect(options.getSymbolInfo("PURR", "PURR")?.ticker).toBe("PURR");
+
+		act(() => {
+			root.render(
+				createElement(TradingViewChart, {
+					symbol: spotMarket.name,
+					market: spotMarket,
+					interval: "60",
+					theme: "dark",
+				}),
+			);
+		});
+		await flushChartEffects();
+
+		expect(options.getSymbolInfo("PURR/USDC", "PURR")?.ticker).toBe("PURR/USDC");
+	});
+
 	it("retries a stalled symbol switch without rebuilding the widget", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));

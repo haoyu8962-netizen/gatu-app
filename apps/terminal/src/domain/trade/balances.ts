@@ -1,3 +1,4 @@
+import type { SpotMarket } from "@gatu/hl-react";
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import type {
@@ -57,6 +58,31 @@ export function getSpotBalance(balances: SpotBalance[] | null | undefined, coin:
 
 /** Mid prices keyed by coin, as delivered by the allMids subscription. */
 export type TokenUsdPrices = Record<string, string> | null | undefined;
+
+export function addSpotMarketPriceAliases(
+	tokenUsdPrices: TokenUsdPrices,
+	spotMarkets: readonly SpotMarket[],
+): TokenUsdPrices {
+	if (!tokenUsdPrices) return tokenUsdPrices;
+
+	const result = { ...tokenUsdPrices };
+	const aliasPriority = new Map<string, number>();
+
+	for (const market of spotMarkets) {
+		const baseToken = market.tokensInfo[0];
+		const quoteToken = market.tokensInfo[1];
+		const price = tokenUsdPrices[market.name];
+		if (!baseToken || !quoteToken || !price) continue;
+
+		const priority = quoteToken.name === DEFAULT_QUOTE_TOKEN ? 2 : 1;
+		if (priority < (aliasPriority.get(baseToken.name) ?? 0)) continue;
+
+		result[baseToken.name] = price;
+		aliasPriority.set(baseToken.name, priority);
+	}
+
+	return result;
+}
 
 function getSpotUsdValue(balance: SpotBalance, tokenUsdPrices?: TokenUsdPrices): string {
 	if (balance.coin === DEFAULT_QUOTE_TOKEN) return balance.total ?? "0";

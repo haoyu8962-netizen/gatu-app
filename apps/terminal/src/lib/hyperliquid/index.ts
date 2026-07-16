@@ -131,6 +131,7 @@ export {
 	useMarketsInfo,
 	useSelectedMarketInfo,
 } from "./hooks/useMarketsInfo";
+export { getMarketApiCoin, getSpotMarketApiCoin } from "./market-identity";
 export {
 	type BuilderPerpMarket,
 	type Markets,

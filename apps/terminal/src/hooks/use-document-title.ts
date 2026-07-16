@@ -1,12 +1,7 @@
 import { useEffect } from "react";
 import { SEO_DEFAULTS } from "@/config/seo";
 import { formatPrice } from "@/lib/format";
-import { type SpotMarketInfo, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
-
-function getSpotSubscriptionCoin(market: ReturnType<typeof useSelectedMarketInfo>["data"]): string {
-	if (market?.kind !== "spot") return "";
-	return `@${(market as SpotMarketInfo).index}`;
-}
+import { getMarketApiCoin, getSpotMarketApiCoin, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 
 export function TabTitleSync() {
 	useDocumentTitle();
@@ -17,8 +12,8 @@ export function useDocumentTitle() {
 	const { data: market } = useSelectedMarketInfo();
 
 	const isSpot = market?.kind === "spot";
-	const perpCoin = market?.name ?? "";
-	const spotCoin = getSpotSubscriptionCoin(market);
+	const perpCoin = getMarketApiCoin(market);
+	const spotCoin = getSpotMarketApiCoin(market);
 
 	const { data: perpCtxEvent } = useSubscription(
 		"activeAssetCtx",

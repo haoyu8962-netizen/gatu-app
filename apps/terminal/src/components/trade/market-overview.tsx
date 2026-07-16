@@ -9,6 +9,8 @@ import { cn } from "@/lib/cn";
 import { formatClockDuration, formatPercent, formatUSD, shortenAddress } from "@/lib/format";
 import {
 	getExplorerTokenUrl,
+	getMarketApiCoin,
+	getSpotMarketApiCoin,
 	type SpotMarketInfo,
 	type UnifiedMarketInfo,
 	useSelectedMarketInfo,
@@ -72,19 +74,14 @@ function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string
 	return (market as SpotMarketInfo).circulatingSupply;
 }
 
-function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string {
-	if (market?.kind !== "spot") return "";
-	return `@${(market as SpotMarketInfo).index}`;
-}
-
 export function MarketOverview() {
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
 	const { midPx } = useOrderbookMidPrice(selectedMarketInfo?.name);
 	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 
 	const isSpot = selectedMarketInfo?.kind === "spot";
-	const perpCoin = selectedMarketInfo?.name ?? "";
-	const spotCoin = getSpotSubscriptionCoin(selectedMarketInfo);
+	const perpCoin = getMarketApiCoin(selectedMarketInfo);
+	const spotCoin = getSpotMarketApiCoin(selectedMarketInfo);
 
 	const { data: perpCtxEvent } = useSubscription(
 		"activeAssetCtx",

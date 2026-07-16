@@ -39,6 +39,25 @@ interface StatsCache {
 	savedAt: number;
 }
 
+export function createMarketLookup(markets: readonly UnifiedMarketInfo[]) {
+	const byName = new Map<string, UnifiedMarketInfo>();
+	const pairNameCounts = new Map<string, number>();
+
+	for (const market of markets) {
+		byName.set(market.name, market);
+		pairNameCounts.set(market.pairName, (pairNameCounts.get(market.pairName) ?? 0) + 1);
+	}
+
+	const byPairName = new Map<string, UnifiedMarketInfo>();
+	for (const market of markets) {
+		if (pairNameCounts.get(market.pairName) === 1) {
+			byPairName.set(market.pairName, market);
+		}
+	}
+
+	return { byName, byPairName };
+}
+
 function loadStatsCache(): StatsCache | null {
 	if (typeof window === "undefined") return null;
 	try {
@@ -160,17 +179,7 @@ export function useMarketsInfoInternal(options: UseMarketsInfoOptions = {}) {
 		};
 	}, [markets.perp, markets.spot, markets.builderPerp, allDexsCtxs, spotCtxs]);
 
-	const marketLookup = useMemo(() => {
-		const byName = new Map<string, UnifiedMarketInfo>();
-		const byPairName = new Map<string, UnifiedMarketInfo>();
-
-		for (const market of result.markets) {
-			byName.set(market.name, market);
-			byPairName.set(market.pairName, market);
-		}
-
-		return { byName, byPairName };
-	}, [result.markets]);
+	const marketLookup = useMemo(() => createMarketLookup(result.markets), [result.markets]);
 
 	const getMarketInfo = useMemo(() => {
 		return (name: string): UnifiedMarketInfo | undefined => {

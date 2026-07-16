@@ -73,7 +73,8 @@ export function getTradeRouteMarketFromPath(pathname: string): TradeRouteMarket 
 
 export function getTradePathForMarket(market: UnifiedMarketInfo): string {
 	if (market.kind === "spot") {
-		const [baseToken, quoteToken] = market.pairName.split(SPOT_MARKET_NAME_SEPARATOR);
+		const routeName = market.routeName ?? market.pairName;
+		const [baseToken, quoteToken] = routeName.split(SPOT_MARKET_NAME_SEPARATOR);
 		if (baseToken && quoteToken) {
 			return `/trade/${encodeSegment(baseToken)}/${encodeSegment(quoteToken)}`;
 		}

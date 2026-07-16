@@ -61,6 +61,17 @@ describe("trade route market parsing", () => {
 		expect(getTradePathForMarket(market)).toBe(expected);
 	});
 
+	it("uses the canonical spot coin when a display pair is ambiguous", () => {
+		const market = {
+			kind: "spot",
+			name: "@43",
+			pairName: "MOG/USDC",
+			routeName: "@43",
+		} as UnifiedMarketInfo;
+
+		expect(getTradePathForMarket(market)).toBe("/trade/@43");
+	});
+
 	it.each([
 		["BTC", "/trade/BTC"],
 		["xyz:SILVER", "/trade/xyz:SILVER"],

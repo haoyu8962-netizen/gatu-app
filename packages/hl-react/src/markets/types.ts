@@ -15,6 +15,7 @@ interface BaseMarket {
 	kind: MarketKind;
 	shortName: string;
 	pairName: string;
+	routeName: string;
 	assetId: number;
 	ctxIndex: number;
 	iconUrl: string | undefined;

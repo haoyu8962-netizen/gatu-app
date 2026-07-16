@@ -3,7 +3,7 @@ import { t } from "@lingui/core/macro";
 import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import {
 	type BalanceRow,
@@ -14,10 +14,10 @@ import {
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
-import { useSubscription } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useSwapModalActions } from "@/stores/use-global-modal-store";
@@ -74,8 +74,7 @@ export function BalancesTab() {
 		isLoading,
 		hasError,
 	} = useDefaultDexBalances();
-	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
-	const mids = allMidsEvent?.mids;
+	const mids = useSpotTokenUsdPrices(isConnected);
 
 	const perpBalances = useMemo(
 		() =>

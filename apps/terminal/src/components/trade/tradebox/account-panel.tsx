@@ -2,14 +2,13 @@ import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
-import { HL_ALL_DEXS } from "@/config/app";
 import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
-import { useSubscription } from "@/lib/hyperliquid";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 
@@ -30,7 +29,7 @@ export function AccountPanel() {
 	const accountAbstraction = selectedBalances.accountAbstraction;
 	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(accountAbstraction);
 	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
-	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
+	const tokenUsdPrices = useSpotTokenUsdPrices(isConnected);
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary: summaryBalances.marginSummary,
@@ -38,7 +37,7 @@ export function AccountPanel() {
 		withdrawable: summaryBalances.withdrawable,
 		spotBalances: summaryBalances.spotBalances,
 		spotAvailableAfterMaintenance: summaryBalances.spotAvailableAfterMaintenance,
-		tokenUsdPrices: allMidsEvent?.mids,
+		tokenUsdPrices,
 	});
 
 	let perpMetrics = null;

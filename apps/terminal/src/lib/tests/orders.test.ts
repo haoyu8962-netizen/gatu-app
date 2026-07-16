@@ -42,6 +42,14 @@ describe("orders", () => {
 		expect(formatPriceForOrder(null)).toBe("0");
 	});
 
+	it("applies market-specific price decimal caps", () => {
+		expect(formatPriceForOrder("0.012345", { assetId: 0, szDecimals: 1 })).toBe("0.01235");
+		expect(formatPriceForOrder("0.012345", { assetId: 10000, szDecimals: 1 })).toBe("0.012345");
+		expect(formatPriceForOrder("0.00012345", { assetId: 0, szDecimals: 0 })).toBe("0.000123");
+		expect(formatPriceForOrder("0.00012345", { assetId: 10000, szDecimals: 0 })).toBe("0.00012345");
+		expect(formatPriceForOrder(123456, { assetId: 0, szDecimals: 5 })).toBe("123456");
+	});
+
 	it("formats order sizes using size decimals", () => {
 		expect(formatSizeForOrder(1.234567, 3)).toBe("1.234");
 		expect(formatSizeForOrder(1.2, 0)).toBe("1");

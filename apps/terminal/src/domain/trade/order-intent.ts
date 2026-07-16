@@ -39,6 +39,7 @@ export type EntryOrderIntent = {
 export type PositionTpSlIntent = {
 	kind: "positionTpsl";
 	assetId: number;
+	szDecimals: number;
 	isLong: boolean;
 	tpPriceNum: number | null;
 	slPriceNum: number | null;
@@ -137,11 +138,11 @@ function buildPositionTpSlPlan(intent: PositionTpSlIntent): OrderPlan {
 	const isBuy = !intent.isLong;
 
 	if (intent.tpPriceNum && isPositive(intent.tpPriceNum)) {
-		orders.push(buildPositionTpSlOrder(intent.assetId, isBuy, intent.tpPriceNum, "tp"));
+		orders.push(buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, intent.tpPriceNum, "tp"));
 	}
 
 	if (intent.slPriceNum && isPositive(intent.slPriceNum)) {
-		orders.push(buildPositionTpSlOrder(intent.assetId, isBuy, intent.slPriceNum, "sl"));
+		orders.push(buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, intent.slPriceNum, "sl"));
 	}
 
 	return {
@@ -168,7 +169,7 @@ function buildMarketClosePlan({
 			{
 				a: assetId,
 				b: side === "buy",
-				p: formatPriceForOrder(orderPrice),
+				p: formatPriceForOrder(orderPrice, { assetId, szDecimals }),
 				s: formatSizeForOrder(size, szDecimals),
 				r: true,
 				t: { limit: { tif: "FrontendMarket" } },
@@ -188,7 +189,7 @@ function buildLimitClosePlan({ assetId, size, szDecimals, isLong, price }: Limit
 			{
 				a: assetId,
 				b: side === "buy",
-				p: formatPriceForOrder(price),
+				p: formatPriceForOrder(price, { assetId, szDecimals }),
 				s: formatSizeForOrder(size, szDecimals),
 				r: true,
 				t: { limit: { tif: "Gtc" } },
@@ -209,7 +210,7 @@ function buildReversePlan({ assetId, size, szDecimals, isLong, markPx, slippageB
 			{
 				a: assetId,
 				b: side === "buy",
-				p: formatPriceForOrder(orderPrice),
+				p: formatPriceForOrder(orderPrice, { assetId, szDecimals }),
 				s: formatSizeForOrder(Big(size).times(2).toNumber(), szDecimals),
 				r: false,
 				t: { limit: { tif: "FrontendMarket" } },
@@ -223,11 +224,12 @@ function buildReversePlan({ assetId, size, szDecimals, isLong, markPx, slippageB
 
 function buildPositionTpSlOrder(
 	assetId: number,
+	szDecimals: number,
 	isBuy: boolean,
 	triggerPrice: number,
 	tpsl: "tp" | "sl",
 ): ExchangeOrder {
-	const triggerPx = formatPriceForOrder(triggerPrice);
+	const triggerPx = formatPriceForOrder(triggerPrice, { assetId, szDecimals });
 	return {
 		a: assetId,
 		b: isBuy,

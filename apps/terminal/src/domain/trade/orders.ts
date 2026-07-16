@@ -1,7 +1,9 @@
+import { isSpotAssetId } from "@gatu/hl-react";
 import Big from "big.js";
 import {
 	DEFAULT_LEVERAGE_FALLBACK,
 	type ExchangeOrder,
+	HL_PERP_PRICE_MAX_DECIMALS,
 	HL_PRICE_MAX_DECIMALS,
 	HL_PRICE_MAX_SIG_FIGS,
 	type LimitTif,
@@ -92,6 +94,7 @@ export function buildOrders(params: OrderBuildParams): OrderBuildResult {
 	} else if (isTriggerOrder) {
 		buildTriggerOrder(orders, {
 			assetId,
+			szDecimals,
 			isBuy,
 			formattedSize,
 			triggerPriceInput,
@@ -102,6 +105,7 @@ export function buildOrders(params: OrderBuildParams): OrderBuildResult {
 	} else {
 		buildStandardOrder(orders, {
 			assetId,
+			szDecimals,
 			isBuy,
 			orderType,
 			formattedSize,
@@ -113,10 +117,24 @@ export function buildOrders(params: OrderBuildParams): OrderBuildResult {
 		});
 
 		if (hasTp && tpPriceNum !== null) {
-			buildTpSlOrder(orders, { assetId, isBuy: !isBuy, formattedSize, triggerPrice: tpPriceNum, tpsl: "tp" });
+			buildTpSlOrder(orders, {
+				assetId,
+				szDecimals,
+				isBuy: !isBuy,
+				formattedSize,
+				triggerPrice: tpPriceNum,
+				tpsl: "tp",
+			});
 		}
 		if (hasSl && slPriceNum !== null) {
-			buildTpSlOrder(orders, { assetId, isBuy: !isBuy, formattedSize, triggerPrice: slPriceNum, tpsl: "sl" });
+			buildTpSlOrder(orders, {
+				assetId,
+				szDecimals,
+				isBuy: !isBuy,
+				formattedSize,
+				triggerPrice: slPriceNum,
+				tpsl: "sl",
+			});
 		}
 	}
 
@@ -147,7 +165,7 @@ function buildScaleOrders(orders: ExchangeOrder[], params: ScaleOrderParams): vo
 		orders.push({
 			a: params.assetId,
 			b: params.isBuy,
-			p: formatPriceForOrder(levelPrice),
+			p: formatPriceForOrder(levelPrice, params),
 			s: formatSizeForOrder(perLevelSize.toNumber(), params.szDecimals),
 			r: params.reduceOnly,
 			t: { limit: { tif: params.tif } },
@@ -157,6 +175,7 @@ function buildScaleOrders(orders: ExchangeOrder[], params: ScaleOrderParams): vo
 
 interface TriggerOrderParams {
 	assetId: number;
+	szDecimals: number;
 	isBuy: boolean;
 	formattedSize: string;
 	triggerPriceInput: string;
@@ -170,7 +189,7 @@ function buildTriggerOrder(orders: ExchangeOrder[], params: TriggerOrderParams):
 	if (!triggerBig || triggerBig.lte(0)) {
 		throw new Error("Trigger price must be greater than zero");
 	}
-	const triggerPx = formatPriceForOrder(triggerBig);
+	const triggerPx = formatPriceForOrder(triggerBig, params);
 
 	let orderPx = triggerPx;
 	if (params.usesLimitPriceForOrder) {
@@ -178,7 +197,7 @@ function buildTriggerOrder(orders: ExchangeOrder[], params: TriggerOrderParams):
 		if (!limitBig || limitBig.lte(0)) {
 			throw new Error("Limit price must be greater than zero");
 		}
-		orderPx = formatPriceForOrder(limitBig);
+		orderPx = formatPriceForOrder(limitBig, params);
 	}
 
 	orders.push({
@@ -199,6 +218,7 @@ function buildTriggerOrder(orders: ExchangeOrder[], params: TriggerOrderParams):
 
 interface StandardOrderParams {
 	assetId: number;
+	szDecimals: number;
 	isBuy: boolean;
 	orderType: OrderType;
 	formattedSize: string;
@@ -217,7 +237,7 @@ function buildStandardOrder(orders: ExchangeOrder[], params: StandardOrderParams
 		params.slippageBps,
 		params.price,
 	);
-	const formattedPrice = formatPriceForOrder(orderPrice);
+	const formattedPrice = formatPriceForOrder(orderPrice, params);
 
 	orders.push({
 		a: params.assetId,
@@ -231,6 +251,7 @@ function buildStandardOrder(orders: ExchangeOrder[], params: StandardOrderParams
 
 interface TpSlOrderParams {
 	assetId: number;
+	szDecimals: number;
 	isBuy: boolean;
 	formattedSize: string;
 	triggerPrice: number;
@@ -238,7 +259,7 @@ interface TpSlOrderParams {
 }
 
 function buildTpSlOrder(orders: ExchangeOrder[], params: TpSlOrderParams): void {
-	const triggerPx = formatPriceForOrder(params.triggerPrice);
+	const triggerPx = formatPriceForOrder(params.triggerPrice, params);
 	orders.push({
 		a: params.assetId,
 		b: params.isBuy,
@@ -274,12 +295,17 @@ export function getDefaultLeverage(maxLeverage: number): number {
 }
 
 /**
- * Format a price to Hyperliquid's tick rules: at most 5 significant figures, capped at
- * HL_PRICE_MAX_DECIMALS decimal places. Big.js based so the magnitude (via `.e`) and rounding (via
+ * Format a price to Hyperliquid's tick rules: at most 5 significant figures, capped by the
+ * market's `MAX_DECIMALS - szDecimals` rule when metadata is available. Big.js based so the magnitude (via `.e`) and rounding (via
  * `toFixed`) are exact — no `Math.log10`/`Math.round` float error — and it accepts a Big/string
  * directly so callers don't lose precision by converting to a number first.
  */
-export function formatPriceForOrder(value: Numeric): string {
+interface PriceFormatOptions {
+	assetId: number;
+	szDecimals: number;
+}
+
+export function formatPriceForOrder(value: Numeric, options?: PriceFormatOptions): string {
 	const price = toBig(value);
 	if (!price || price.lte(0)) return "0";
 
@@ -288,7 +314,13 @@ export function formatPriceForOrder(value: Numeric): string {
 	let decimals = price.gte(1)
 		? Math.max(0, HL_PRICE_MAX_SIG_FIGS - integerDigits)
 		: HL_PRICE_MAX_SIG_FIGS - integerDigits;
-	decimals = Math.min(decimals, HL_PRICE_MAX_DECIMALS);
+	const protocolMaxDecimals = options
+		? Math.max(
+				0,
+				(isSpotAssetId(options.assetId) ? HL_PRICE_MAX_DECIMALS : HL_PERP_PRICE_MAX_DECIMALS) - options.szDecimals,
+			)
+		: HL_PRICE_MAX_DECIMALS;
+	decimals = Math.min(decimals, protocolMaxDecimals);
 
 	const fixed = price.toFixed(decimals, Big.roundHalfUp);
 	if (decimals === 0) return fixed;

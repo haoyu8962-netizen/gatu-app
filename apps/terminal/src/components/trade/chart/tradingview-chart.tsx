@@ -296,8 +296,8 @@ export function TradingViewChart({
 
 		function getMarketForChartSymbol(symbolName: string, coin: string): UnifiedMarketInfo | undefined {
 			return (
-				marketBySymbolRef.current.get(getChartMarketLookupKey(coin)) ??
-				marketBySymbolRef.current.get(getChartMarketLookupKey(symbolName))
+				marketBySymbolRef.current.get(getChartMarketLookupKey(symbolName)) ??
+				marketBySymbolRef.current.get(getChartMarketLookupKey(coin))
 			);
 		}
 

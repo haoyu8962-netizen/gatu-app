@@ -57,6 +57,7 @@ export function TokenSelectorRow({
 
 	const isSpot = market.kind === "spot";
 	const isHip3 = market.kind === "builderPerp";
+	const spotApiToken = isSpot ? market.tokensInfo[0]?.name : undefined;
 
 	const oiValue = getOiUsd(market.openInterest, market.markPx);
 
@@ -126,6 +127,9 @@ export function TokenSelectorRow({
 					<div className={cn("flex items-center gap-1.5 text-fg", mobile ? "text-xs" : "text-2xs")}>
 						{getMaxLeverage(market) && <span>{getMaxLeverage(market)}x</span>}
 						{isSpot && <span className="text-brand">Spot</span>}
+						{spotApiToken && spotApiToken !== market.shortName && (
+							<span className="font-mono text-fg-muted">{spotApiToken}</span>
+						)}
 						{isHip3 && <span className="text-warning">{getDex(market)}</span>}
 					</div>
 				</div>

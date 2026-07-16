@@ -23,7 +23,7 @@ import {
 const META_STALE_TIME_MS = 30 * 60 * 1_000;
 const DEXS_STALE_TIME_MS = 5 * 60 * 1_000;
 
-interface CreateMarketsParams {
+export interface CreateMarketsParams {
 	perpMeta: MetaResponse | undefined;
 	spotMeta: SpotMetaResponse | undefined;
 	allPerpMetas: MetaResponse[] | undefined;
@@ -32,7 +32,7 @@ interface CreateMarketsParams {
 	error: Error | null;
 }
 
-function createMarkets(params: CreateMarketsParams): Markets {
+export function createMarkets(params: CreateMarketsParams): Markets {
 	const { perpMeta, spotMeta, allPerpMetas, perpDexs, isLoading, error } = params;
 
 	const perpMarkets: PerpMarket[] = [];
@@ -45,6 +45,7 @@ function createMarkets(params: CreateMarketsParams): Markets {
 				kind: "perp",
 				shortName: market.name,
 				pairName: getPerpDisplayName(market.name),
+				routeName: market.name,
 				assetId: getPerpAssetId(i),
 				ctxIndex: i,
 				iconUrl: getIconUrlFromMarketName(market.name, "perp"),
@@ -63,10 +64,11 @@ function createMarkets(params: CreateMarketsParams): Markets {
 			isWrapped: displayName !== token.name,
 		};
 	});
+	const spotTokenByIndex = new Map(spotTokens.map((token) => [token.index, token]));
 
 	if (spotMeta?.universe && spotTokens.length > 0) {
 		for (const pair of spotMeta.universe) {
-			const tokensInfo = pair.tokens.map((idx) => spotTokens[idx]).filter((t): t is SpotToken => !!t);
+			const tokensInfo = pair.tokens.map((idx) => spotTokenByIndex.get(idx)).filter((t): t is SpotToken => !!t);
 
 			if (tokensInfo.length < 2) continue;
 
@@ -78,12 +80,23 @@ function createMarkets(params: CreateMarketsParams): Markets {
 				kind: "spot",
 				shortName: baseToken.displayName,
 				pairName: displayName,
+				routeName: displayName,
 				assetId: getSpotAssetId(pair.index),
 				ctxIndex: pair.index,
 				tokensInfo,
 				szDecimals: baseToken.szDecimals,
 				iconUrl: getIconUrlFromMarketName(getUnderlyingAsset(baseToken) ?? baseToken.name, "spot"),
 			});
+		}
+	}
+
+	const spotPairNameCounts = new Map<string, number>();
+	for (const market of spotMarkets) {
+		spotPairNameCounts.set(market.pairName, (spotPairNameCounts.get(market.pairName) ?? 0) + 1);
+	}
+	for (const market of spotMarkets) {
+		if ((spotPairNameCounts.get(market.pairName) ?? 0) > 1) {
+			market.routeName = market.name;
 		}
 	}
 
@@ -95,7 +108,7 @@ function createMarkets(params: CreateMarketsParams): Markets {
 			if (!meta || !dexInfo) continue;
 
 			const dexName = dexInfo.name;
-			const quoteToken = spotTokens[meta.collateralToken];
+			const quoteToken = spotTokenByIndex.get(meta.collateralToken);
 
 			for (let assetIndex = 0; assetIndex < meta.universe.length; assetIndex++) {
 				const asset = meta.universe[assetIndex];
@@ -106,6 +119,7 @@ function createMarkets(params: CreateMarketsParams): Markets {
 					kind: "builderPerp",
 					shortName: getBuilderPerpShortName(asset.name),
 					pairName: getBuilderPerpDisplayName(asset.name, quoteToken?.displayName),
+					routeName: asset.name,
 					assetId: getBuilderPerpAssetId(dexIndex, assetIndex),
 					dex: dexName,
 					dexIndex,
@@ -127,7 +141,17 @@ function createMarkets(params: CreateMarketsParams): Markets {
 	const tokenByName = new Map<string, SpotToken>();
 	for (const token of spotTokens) {
 		tokenByName.set(token.name, token);
-		if (token.displayName !== token.name) {
+	}
+	const tokenDisplayNameCounts = new Map<string, number>();
+	for (const token of spotTokens) {
+		tokenDisplayNameCounts.set(token.displayName, (tokenDisplayNameCounts.get(token.displayName) ?? 0) + 1);
+	}
+	for (const token of spotTokens) {
+		if (
+			token.displayName !== token.name &&
+			!tokenByName.has(token.displayName) &&
+			tokenDisplayNameCounts.get(token.displayName) === 1
+		) {
 			tokenByName.set(token.displayName, token);
 		}
 	}

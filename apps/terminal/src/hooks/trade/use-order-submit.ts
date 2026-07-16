@@ -92,7 +92,7 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 
 		const szDecimals = market.szDecimals ?? 0;
 		const formattedSize = formatSizeForOrder(sizeValue, szDecimals);
-		const formattedPrice = formatPriceForOrder(price);
+		const formattedPrice = formatPriceForOrder(price, { assetId: market.assetId, szDecimals });
 
 		const hasTp = tpSlEnabled && canUseTpSl && isPositive(tpPriceNum);
 		const hasSl = tpSlEnabled && canUseTpSl && isPositive(slPriceNum);
@@ -103,8 +103,8 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 			size: formattedSize,
 			price: formattedPrice,
 			orderType: getQueueOrderType(input),
-			tpPrice: hasTp ? formatPriceForOrder(tpPriceNum ?? 0) : undefined,
-			slPrice: hasSl ? formatPriceForOrder(slPriceNum ?? 0) : undefined,
+			tpPrice: hasTp ? formatPriceForOrder(tpPriceNum ?? 0, { assetId: market.assetId, szDecimals }) : undefined,
+			slPrice: hasSl ? formatPriceForOrder(slPriceNum ?? 0, { assetId: market.assetId, szDecimals }) : undefined,
 			status: "pending",
 		});
 

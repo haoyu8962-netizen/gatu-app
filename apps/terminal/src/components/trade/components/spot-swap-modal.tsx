@@ -170,7 +170,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 		const order = {
 			a: spotMarket.assetId,
 			b: isBuying,
-			p: formatPriceForOrder(price),
+			p: formatPriceForOrder(price, { assetId: spotMarket.assetId, szDecimals }),
 			s: formatSizeForOrder(orderSize, szDecimals),
 			r: false,
 			t: { limit: { tif: "FrontendMarket" as const } },

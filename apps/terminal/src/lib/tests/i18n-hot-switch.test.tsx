@@ -69,6 +69,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useSubscription: () => ({ data: undefined, error: null, status: "idle" }),
 }));
 
+vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
+	useSpotTokenUsdPrices: () => undefined,
+}));
+
 vi.mock("@/lib/performance/render-profile", () => ({
 	useRenderCommitTrack: () => {},
 }));

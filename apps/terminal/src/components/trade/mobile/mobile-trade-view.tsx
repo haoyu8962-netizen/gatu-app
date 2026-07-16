@@ -298,7 +298,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 			market: baseToken,
 			side,
 			size: formatSizeForOrder(sizeValue, orderSzDecimals),
-			price: formatPriceForOrder(price),
+			price: formatPriceForOrder(price, { assetId: market.assetId, szDecimals: orderSzDecimals }),
 			orderType: isMarketExecution ? "market" : "limit",
 			status: "pending",
 		});

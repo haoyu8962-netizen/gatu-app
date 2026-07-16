@@ -24,8 +24,9 @@ export const LIQUIDATION_BUFFER_FACTOR = 0.9;
 export const LIQ_WARNING_THRESHOLD = 0.05;
 export const BPS_PER_UNIT = 10000;
 
-// HL tick-size protocol: prices must carry at most 5 significant figures and 8 decimals.
+// HL tick-size protocol: prices must carry at most 5 significant figures.
 export const HL_PRICE_MAX_SIG_FIGS = 5;
+export const HL_PERP_PRICE_MAX_DECIMALS = 6;
 export const HL_PRICE_MAX_DECIMALS = 8;
 /** Leverage ceiling below which `getDefaultLeverage` returns the max instead of halving. */
 export const DEFAULT_LEVERAGE_FALLBACK = 5;

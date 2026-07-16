@@ -18,6 +18,8 @@ import {
 } from "@/lib/format";
 import {
 	getExplorerTokenUrl,
+	getMarketApiCoin,
+	getSpotMarketApiCoin,
 	type SpotMarketInfo,
 	type SubParams,
 	type UnifiedMarketInfo,
@@ -71,8 +73,8 @@ export function MobileMarketBar({ className }: Props) {
 
 	const { midPx } = useOrderbookMidPrice(market?.name);
 	const isSpot = market?.kind === "spot";
-	const perpCoin = market?.name ?? "";
-	const spotCoin = getSpotSubscriptionCoin(market);
+	const perpCoin = getMarketApiCoin(market);
+	const spotCoin = getSpotMarketApiCoin(market);
 	const midsCoin = getAllMidsCoin(market);
 	const { data: allMidsEvent } = useSubscription("allMids", getAllMidsParams(market), { enabled: !!midsCoin });
 	const { data: perpCtxEvent } = useSubscription(
@@ -426,15 +428,8 @@ function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | nu
 	return tokenId;
 }
 
-function getSpotSubscriptionCoin(market: UnifiedMarketInfo | undefined): string {
-	if (market?.kind !== "spot") return "";
-	return `@${(market as SpotMarketInfo).index}`;
-}
-
 function getAllMidsCoin(market: UnifiedMarketInfo | undefined): string {
-	if (!market) return "";
-	if (market.kind === "spot") return `@${(market as SpotMarketInfo).index}`;
-	return market.name;
+	return getMarketApiCoin(market);
 }
 
 function getAllMidsParams(market: UnifiedMarketInfo | undefined): AllMidsParams {

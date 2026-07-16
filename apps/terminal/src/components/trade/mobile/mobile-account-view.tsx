@@ -10,16 +10,15 @@ import {
 } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { Suspense, useState } from "react";
-import { HL_ALL_DEXS } from "@/config/app";
 import { UI_TEXT } from "@/config/ui-text";
 import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
-import { useSubscription } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
@@ -44,7 +43,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, withdrawable, isLoading } =
 		summaryBalances;
 	const dex = selectedBalances.dex;
-	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: isConnected });
+	const tokenUsdPrices = useSpotTokenUsdPrices(isConnected);
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,
@@ -52,7 +51,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 		withdrawable,
 		spotBalances,
 		spotAvailableAfterMaintenance,
-		tokenUsdPrices: allMidsEvent?.mids,
+		tokenUsdPrices,
 	});
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);

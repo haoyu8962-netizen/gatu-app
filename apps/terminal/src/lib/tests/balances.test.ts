@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	addSpotMarketPriceAliases,
 	getAccountBalanceSummary,
 	getPerpBalanceRows,
 	getSpotAvailable,
@@ -264,6 +265,34 @@ describe("trade balances", () => {
 			tokenUsdPrices: { HYPE: "30" },
 		});
 		expect(summary.accountEquity).toBeCloseTo(867.680532);
+	});
+
+	it("maps canonical spot mids back to raw balance token names", () => {
+		const spotMarkets = [
+			{
+				kind: "spot",
+				name: "@142",
+				tokensInfo: [{ name: "UBTC" }, { name: "USDC" }],
+			},
+			{
+				kind: "spot",
+				name: "@107",
+				tokensInfo: [{ name: "HYPE" }, { name: "USDC" }],
+			},
+		] as never;
+		const prices = addSpotMarketPriceAliases({ HYPE: "31", "@107": "30", "@142": "50000" }, spotMarkets);
+		const rows = getSpotBalanceRows(
+			[
+				{ coin: "UBTC", token: 1, total: "0.1", hold: "0", entryNtl: "4000" },
+				{ coin: "HYPE", token: 150, total: "10", hold: "0", entryNtl: "200" },
+			],
+			undefined,
+			undefined,
+			prices,
+		);
+
+		expect(rows[0]?.usdValue).toBe("5000");
+		expect(rows[1]?.usdValue).toBe("300");
 	});
 
 	it("keeps outcome-market balances in account value and display rows", () => {
