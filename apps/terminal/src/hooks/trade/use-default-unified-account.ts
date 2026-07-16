@@ -57,7 +57,7 @@ export function useDefaultUnifiedAccount() {
 	const { isTestnet } = useHyperliquid();
 	const { user: userExchangeClient } = useHyperliquidClients();
 	const { address, hasWalletAccess } = useWalletSession();
-	const { data: accountAbstraction, status } = useUserAbstraction(address, hasWalletAccess, undefined);
+	const { data: accountAbstraction, status } = useUserAbstraction(address, hasWalletAccess);
 	const setAbstraction = useExchange("userSetAbstraction");
 	const inFlightRef = useRef(false);
 

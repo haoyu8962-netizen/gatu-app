@@ -85,11 +85,11 @@ async function fetchUserAbstraction(
 	return normalizeAccountAbstraction(await response.json());
 }
 
-export function useUserAbstraction(user: string | undefined, enabled: boolean, refreshKey: string | undefined) {
+export function useUserAbstraction(user: string | undefined, enabled: boolean) {
 	const { isTestnet } = useHyperliquid();
 
 	return useQuery({
-		queryKey: ["hl", "userAbstraction", isTestnet, user, refreshKey],
+		queryKey: ["hl", "userAbstraction", isTestnet, user],
 		queryFn: ({ signal }) => fetchUserAbstraction(user as string, isTestnet, signal),
 		enabled: enabled && !!user,
 		staleTime: 30_000,
@@ -120,11 +120,7 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		{ user: address ?? "0x0" },
 		{ enabled, refreshKey: ledgerRefreshKey },
 	);
-	const { data: infoAccountAbstraction, status: accountAbstractionStatus } = useUserAbstraction(
-		address,
-		enabled,
-		ledgerRefreshKey,
-	);
+	const { data: infoAccountAbstraction, status: accountAbstractionStatus } = useUserAbstraction(address, enabled);
 
 	const accountAbstraction =
 		infoAccountAbstraction ?? normalizeAccountAbstraction(webData3Event?.userState.abstraction) ?? null;

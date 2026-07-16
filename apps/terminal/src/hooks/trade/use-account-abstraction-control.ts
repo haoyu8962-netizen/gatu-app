@@ -46,7 +46,7 @@ export function useAccountAbstractionControl() {
 	const { isTestnet } = useHyperliquid();
 	const { user: userExchangeClient } = useHyperliquidClients();
 	const { address, hasWalletAccess } = useWalletSession();
-	const { data: accountAbstraction, fetchStatus } = useUserAbstraction(address, hasWalletAccess, undefined);
+	const { data: accountAbstraction, fetchStatus } = useUserAbstraction(address, hasWalletAccess);
 	const setAbstraction = useExchange("userSetAbstraction");
 
 	const canSet = hasWalletAccess && !!address && !!userExchangeClient;
