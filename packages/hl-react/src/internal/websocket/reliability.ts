@@ -36,22 +36,21 @@ export const WS_RELIABILITY_LIMITS = {
 	},
 	staleness: {
 		checkIntervalMs: 5_000,
-		defaultThresholdMs: 30_000,
 		perMethodThresholdMs: {
-			l2Book: 20_000,
-			trades: 20_000,
 			allMids: 20_000,
-			candle: 20_000,
 			activeAssetCtx: 20_000,
 			activeSpotAssetCtx: 20_000,
 			activeAssetData: 20_000,
 			allDexsAssetCtxs: 20_000,
 			spotAssetCtxs: 20_000,
 			assetCtxs: 20_000,
-			orderUpdates: 60_000,
 			webData2: 60_000,
 			webData3: 60_000,
 			allDexsClearinghouseState: 60_000,
+			spotState: 60_000,
+			clearinghouseState: 60_000,
+			openOrders: 60_000,
+			twapStates: 60_000,
 		},
 	},
 } as const;
@@ -73,11 +72,28 @@ const USER_STREAM_METHODS = new Set([
 	"userTwapSliceFills",
 ]);
 
+const NON_PERIODIC_METHODS = new Set([
+	"notification",
+	"bbo",
+	"l2Book",
+	"trades",
+	"candle",
+	"orderUpdates",
+	"userEvents",
+	"userFills",
+	"userFundings",
+	"userHistoricalOrders",
+	"userNonFundingLedgerUpdates",
+	"userTwapHistory",
+	"userTwapSliceFills",
+]);
+
 // Union of methods we explicitly classify. Anything outside this list falls
 // through to "market stream" behavior (pause-and-buffer on hidden). We emit a
 // one-shot dev warning so new SDK methods don't silently land on that path.
 const KNOWN_METHODS = new Set<string>([
 	...USER_STREAM_METHODS,
+	...NON_PERIODIC_METHODS,
 	...Object.keys(WS_RELIABILITY_LIMITS.staleness.perMethodThresholdMs),
 ]);
 const warnedUnknownMethods = new Set<string>();
@@ -145,12 +161,16 @@ export function getSdkReconnectionDelayMs(attempt: number): number {
 	return Math.min(baseDelayMs * 2 ** attempt, maxDelayMs);
 }
 
-export function getStalenessThresholdForKey(key: string): number {
+export function getSubscriptionMethodForKey(key: string): string | undefined {
 	const parsed = parseKey(key);
-	const fallback = WS_RELIABILITY_LIMITS.staleness.defaultThresholdMs;
-	if (!parsed || parsed.method === undefined) return fallback;
+	return parsed?.method;
+}
+
+export function getStalenessThresholdForKey(key: string): number | null {
+	const method = getSubscriptionMethodForKey(key);
+	if (!method) return null;
 	const table = WS_RELIABILITY_LIMITS.staleness.perMethodThresholdMs;
-	return table[parsed.method as keyof typeof table] ?? fallback;
+	return table[method as keyof typeof table] ?? null;
 }
 
 export function getPayloadLimitBytesForSubscriptionKey(key: string): number {

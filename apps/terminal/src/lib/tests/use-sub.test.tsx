@@ -87,7 +87,7 @@ describe("useSub hook surface", () => {
 	});
 
 	it("exposes isStale that flips with store state", async () => {
-		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "BTC" }]);
+		const key = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
 		const { subscribe } = createFakeSubscription();
 		let captured: { isStale: boolean; status: string } = { isStale: false, status: "idle" };
 
@@ -103,7 +103,7 @@ describe("useSub hook surface", () => {
 		await act(() => vi.advanceTimersByTimeAsync(0));
 
 		act(() => {
-			store.getState().setSubscriptionData(key, { levels: [] });
+			store.getState().setSubscriptionData(key, { mids: {} });
 		});
 		expect(captured.isStale).toBe(false);
 
@@ -112,7 +112,7 @@ describe("useSub hook surface", () => {
 		expect(captured.isStale).toBe(true);
 
 		act(() => {
-			store.getState().setSubscriptionData(key, { levels: [1] });
+			store.getState().setSubscriptionData(key, { mids: { BTC: "1" } });
 		});
 		expect(captured.isStale).toBe(false);
 

@@ -1,4 +1,4 @@
-import { isUserStreamKey } from "@gatu/hl-react/internal/websocket/reliability";
+import { getStalenessThresholdForKey, isUserStreamKey } from "@gatu/hl-react/internal/websocket/reliability";
 import { describe, expect, it } from "vitest";
 
 function key(method: string, params: Record<string, unknown> = {}) {
@@ -47,5 +47,35 @@ describe("isUserStreamKey", () => {
 		expect(isUserStreamKey("invalid")).toBe(false);
 		expect(isUserStreamKey("")).toBe(false);
 		expect(isUserStreamKey("{}")).toBe(false);
+	});
+});
+
+describe("getStalenessThresholdForKey", () => {
+	it("monitors streams with a periodic snapshot cadence", () => {
+		expect(getStalenessThresholdForKey(key("allMids"))).toBe(20_000);
+		expect(getStalenessThresholdForKey(key("webData3"))).toBe(60_000);
+		expect(getStalenessThresholdForKey(key("spotState"))).toBe(60_000);
+		expect(getStalenessThresholdForKey(key("allDexsClearinghouseState"))).toBe(60_000);
+		expect(getStalenessThresholdForKey(key("openOrders"))).toBe(60_000);
+	});
+
+	it("does not infer failure from silence on event-driven or change-driven streams", () => {
+		for (const method of [
+			"orderUpdates",
+			"userFills",
+			"userFundings",
+			"userHistoricalOrders",
+			"userNonFundingLedgerUpdates",
+			"l2Book",
+			"trades",
+			"candle",
+		]) {
+			expect(getStalenessThresholdForKey(key(method))).toBeNull();
+		}
+	});
+
+	it("does not assign a cadence to unknown or malformed subscription keys", () => {
+		expect(getStalenessThresholdForKey(key("futureMethod"))).toBeNull();
+		expect(getStalenessThresholdForKey("invalid")).toBeNull();
 	});
 });

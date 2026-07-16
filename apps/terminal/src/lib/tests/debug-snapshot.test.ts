@@ -36,8 +36,8 @@ describe("debug snapshot", () => {
 		const store = createHyperliquidStore({ ssr: false });
 		registerDebugSnapshot(store);
 
-		const key1 = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
-		const key2 = JSON.stringify(["hl", "subscription", "trades", { coin: "BTC" }]);
+		const key1 = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
+		const key2 = JSON.stringify(["hl", "subscription", "assetCtxs", { dex: "" }]);
 		const sub1 = createFakeSubscription();
 		const sub2 = createFakeSubscription();
 
@@ -54,6 +54,7 @@ describe("debug snapshot", () => {
 		expect(snapshot).toHaveProperty("subscriptions");
 		expect(snapshot).toHaveProperty("counters");
 		expect(snapshot).toHaveProperty("lastMessageAt");
+		expect(snapshot).toHaveProperty("recoveryEvents");
 		expect(snapshot).toHaveProperty("transportState");
 
 		expect(Object.keys(snapshot.subscriptions)).toHaveLength(2);
@@ -86,7 +87,7 @@ describe("debug snapshot", () => {
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		registerDebugSnapshot(store);
 
-		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
+		const key = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
 		const { subscribe } = createFakeSubscription();
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(0);
@@ -97,6 +98,27 @@ describe("debug snapshot", () => {
 		const snapshot = window.__hl_debug?.();
 		if (!snapshot) throw new Error("debug snapshot unavailable");
 		expect(snapshot.subscriptions[key]?.isStale).toBe(true);
+		expect(snapshot.recoveryEvents.at(-1)).toMatchObject({
+			cause: "stream-stale",
+			action: "resubscribe",
+			streams: [{ key, method: "allMids", thresholdMs: 20_000 }],
+		});
+
+		store.getState().releaseSubscription(key);
+	});
+
+	it("tracks the last payload time for streams that do not use silence-based staleness", async () => {
+		const store = createHyperliquidStore({ ssr: false });
+		registerDebugSnapshot(store);
+		const key = JSON.stringify(["hl", "subscription", "userNonFundingLedgerUpdates", { user: "0x1" }]);
+		const { subscribe } = createFakeSubscription();
+
+		store.getState().acquireSubscription(key, subscribe);
+		await vi.advanceTimersByTimeAsync(0);
+		store.getState().setSubscriptionData(key, { isSnapshot: true, nonFundingLedgerUpdates: [] });
+
+		expect(window.__hl_debug?.().lastMessageAt[key]).toBeTypeOf("number");
+		expect(window.__hl_debug?.().recoveryEvents).toEqual([]);
 
 		store.getState().releaseSubscription(key);
 	});
@@ -273,13 +295,13 @@ describe("chaos harness", () => {
 		store.getState().releaseSubscription(key);
 	});
 
-	it("full cycle: freeze → stale → triggerReconnect → unfreeze → markFresh clears isStale", async () => {
+	it("full cycle: freeze → stale → resubscribe → unfreeze → markFresh clears isStale", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		registerChaosHarness(store);
 
-		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
-		const { subscribe } = createFakeSubscription();
+		const key = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
+		const subscribe = vi.fn(async () => ({ unsubscribe: vi.fn(async () => {}) }));
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(0);
 
@@ -295,7 +317,8 @@ describe("chaos harness", () => {
 		await vi.advanceTimersByTimeAsync(25_000);
 
 		expect(store.getState().subscriptions[key]?.isStale).toBe(true);
-		expect(triggerReconnect).toHaveBeenCalled();
+		expect(triggerReconnect).not.toHaveBeenCalled();
+		expect(subscribe).toHaveBeenCalledTimes(2);
 		// Data remained at v:1 because the freeze dropped v:2.
 		expect(store.getState().subscriptions[key]?.data).toEqual({ v: 1 });
 

@@ -18,16 +18,21 @@ describe("store staleness integration", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 	});
 
-	it("marks subscription as stale when no data arrives within threshold", async () => {
+	it("resubscribes one stale periodic stream without reconnecting the shared socket", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createFakeSubscription();
+		const unsubscribes: Array<ReturnType<typeof vi.fn>> = [];
+		const subscribe = vi.fn(async () => {
+			const unsubscribe = vi.fn(async () => {});
+			unsubscribes.push(unsubscribe);
+			return { unsubscribe };
+		});
 
-		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
+		const key = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(0);
 
-		store.getState().setSubscriptionData(key, { levels: [] });
+		store.getState().setSubscriptionData(key, { mids: {} });
 		await vi.advanceTimersByTimeAsync(0);
 
 		expect(store.getState().subscriptions[key]?.isStale).toBeFalsy();
@@ -35,7 +40,9 @@ describe("store staleness integration", () => {
 		await vi.advanceTimersByTimeAsync(25_000);
 
 		expect(store.getState().subscriptions[key]?.isStale).toBe(true);
-		expect(triggerReconnect).toHaveBeenCalled();
+		expect(triggerReconnect).not.toHaveBeenCalled();
+		expect(subscribe).toHaveBeenCalledTimes(2);
+		expect(unsubscribes[0]).toHaveBeenCalledTimes(1);
 
 		store.getState().releaseSubscription(key);
 	});
@@ -43,41 +50,67 @@ describe("store staleness integration", () => {
 	it("clears isStale when fresh data arrives", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createFakeSubscription();
+		const subscribe = vi.fn(async () => ({ unsubscribe: vi.fn(async () => {}) }));
 
-		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
+		const key = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(0);
 
-		store.getState().setSubscriptionData(key, { levels: [] });
+		store.getState().setSubscriptionData(key, { mids: {} });
 		await vi.advanceTimersByTimeAsync(25_000);
 
 		expect(store.getState().subscriptions[key]?.isStale).toBe(true);
 
-		store.getState().setSubscriptionData(key, { levels: [1] });
+		store.getState().setSubscriptionData(key, { mids: { ETH: "1" } });
 		expect(store.getState().subscriptions[key]?.isStale).toBe(false);
+		expect(triggerReconnect).not.toHaveBeenCalled();
 
 		store.getState().releaseSubscription(key);
 	});
 
-	it("uses user stream threshold (60s) for orderUpdates", async () => {
+	it("does not stale event-driven streams after an initial snapshot or event", async () => {
+		const triggerReconnect = vi.fn();
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
+		const methods = [
+			"orderUpdates",
+			"userFills",
+			"userFundings",
+			"userHistoricalOrders",
+			"userNonFundingLedgerUpdates",
+			"l2Book",
+			"trades",
+		];
+		const keys = methods.map((method) => JSON.stringify(["hl", "subscription", method, {}]));
+
+		for (const key of keys) {
+			const { subscribe } = createFakeSubscription();
+			store.getState().acquireSubscription(key, subscribe);
+		}
+		await vi.advanceTimersByTimeAsync(0);
+
+		for (const key of keys) {
+			store.getState().setSubscriptionData(key, {});
+		}
+		await vi.advanceTimersByTimeAsync(5 * 60_000);
+
+		for (const key of keys) {
+			expect(store.getState().subscriptions[key]?.isStale).toBeFalsy();
+			store.getState().releaseSubscription(key);
+		}
+		expect(triggerReconnect).not.toHaveBeenCalled();
+	});
+
+	it("does not stale a periodic stream before its first payload", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const { subscribe } = createFakeSubscription();
+		const key = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
 
-		const key = JSON.stringify(["hl", "subscription", "orderUpdates", {}]);
 		store.getState().acquireSubscription(key, subscribe);
-		await vi.advanceTimersByTimeAsync(0);
-
-		store.getState().setSubscriptionData(key, []);
-		await vi.advanceTimersByTimeAsync(55_000);
+		await vi.advanceTimersByTimeAsync(2 * 60_000);
 
 		expect(store.getState().subscriptions[key]?.isStale).toBeFalsy();
-
-		await vi.advanceTimersByTimeAsync(10_000);
-
-		expect(store.getState().subscriptions[key]?.isStale).toBe(true);
-
+		expect(triggerReconnect).not.toHaveBeenCalled();
 		store.getState().releaseSubscription(key);
 	});
 
@@ -100,18 +133,20 @@ describe("store staleness integration", () => {
 		store.getState().releaseSubscription(key);
 	});
 
-	it("fires triggerReconnect once per stale key (aggregate-rule equivalent via socket coalescing)", async () => {
+	it("reconnects the shared socket once when multiple periodic streams become stale together", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 
 		const keys = [
-			JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]),
-			JSON.stringify(["hl", "subscription", "l2Book", { coin: "BTC" }]),
-			JSON.stringify(["hl", "subscription", "trades", { coin: "SOL" }]),
+			JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]),
+			JSON.stringify(["hl", "subscription", "assetCtxs", { dex: "" }]),
+			JSON.stringify(["hl", "subscription", "allDexsAssetCtxs", {}]),
 		];
+		const subscribeFns: Array<ReturnType<typeof vi.fn>> = [];
 
 		for (const key of keys) {
-			const { subscribe } = createFakeSubscription();
+			const subscribe = vi.fn(async () => ({ unsubscribe: vi.fn(async () => {}) }));
+			subscribeFns.push(subscribe);
 			store.getState().acquireSubscription(key, subscribe);
 		}
 		await vi.advanceTimersByTimeAsync(0);
@@ -123,7 +158,10 @@ describe("store staleness integration", () => {
 		triggerReconnect.mockClear();
 		await vi.advanceTimersByTimeAsync(25_000);
 
-		expect(triggerReconnect).toHaveBeenCalledTimes(3);
+		expect(triggerReconnect).toHaveBeenCalledTimes(1);
+		for (const subscribe of subscribeFns) {
+			expect(subscribe).toHaveBeenCalledTimes(1);
+		}
 
 		for (const key of keys) {
 			store.getState().releaseSubscription(key);
@@ -134,7 +172,7 @@ describe("store staleness integration", () => {
 		const store = createHyperliquidStore({ ssr: false });
 		const { subscribe } = createFakeSubscription();
 
-		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
+		const key = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(0);
 
