@@ -106,7 +106,7 @@ export type ChaosState = {
 
 export type WsRecoveryEvent = {
 	timestamp: number;
-	cause: "stream-stale" | "multiple-streams-stale" | "visibility-resume" | "network-resume";
+	cause: "stream-stale" | "multiple-streams-stale" | "network-resume";
 	action: "resubscribe" | "reconnect";
 	streams: Array<{
 		key: string;
@@ -228,8 +228,6 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			} else if (wasHidden) {
 				wasHidden = false;
 				flushVisibilityBuffer(store);
-				recordRecoveryEvent("visibility-resume", "reconnect", []);
-				triggerReconnect();
 			}
 		});
 

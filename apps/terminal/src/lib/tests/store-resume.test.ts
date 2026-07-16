@@ -16,21 +16,26 @@ describe("store-driven resume via singletons", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 	});
 
-	it("calls triggerReconnect when visibility goes hidden→visible", async () => {
+	it("flushes buffered data without reconnecting when visibility returns", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
 		const { subscribe } = createFakeSubscription();
 
-		store.getState().acquireSubscription("test:vis", subscribe);
+		store.getState().acquireSubscription("test:vis", subscribe, null, true);
 		await new Promise<void>((r) => setTimeout(r, 0));
+		store.getState().setSubscriptionData("test:vis", "visible-value");
 
 		Object.defineProperty(document, "hidden", { value: true, configurable: true });
 		document.dispatchEvent(new Event("visibilitychange"));
+		store.getState().setSubscriptionData("test:vis", "buffered-value");
+
+		expect(store.getState().subscriptions["test:vis"]?.data).toBe("visible-value");
 
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 		document.dispatchEvent(new Event("visibilitychange"));
 
-		expect(triggerReconnect).toHaveBeenCalledTimes(1);
+		expect(store.getState().subscriptions["test:vis"]?.data).toBe("buffered-value");
+		expect(triggerReconnect).not.toHaveBeenCalled();
 
 		store.getState().releaseSubscription("test:vis");
 	});

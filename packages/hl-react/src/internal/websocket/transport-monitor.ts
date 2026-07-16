@@ -115,7 +115,9 @@ export function createWsTransportMonitor(
 			}
 			if (!wasHidden) return;
 			wasHidden = false;
-			requestReconnect();
+			// Returning to the foreground does not imply a broken socket. The
+			// inactivity check will reconnect on its next tick if messages really
+			// stopped while the page was hidden.
 		});
 
 		detachNetwork = watchNetwork((state) => {
