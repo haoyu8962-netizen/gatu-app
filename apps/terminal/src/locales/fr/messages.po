@@ -100,11 +100,11 @@ msgstr "Compte et portefeuille"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
-msgstr ""
+msgstr "Mode de compte"
 
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Account mode updated"
-msgstr ""
+msgstr "Mode de compte mis à jour"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Account type"
@@ -166,11 +166,11 @@ msgstr "Ajouter TP/SL"
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Advanced"
-msgstr ""
+msgstr "Avancé"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Advanced order types"
-msgstr ""
+msgstr "Types d'ordres avancés"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -256,6 +256,8 @@ msgstr "Actif"
 msgid "Automatic USDC deposit failed"
 msgstr "Échec du dépôt automatique d'USDC"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -300,6 +302,7 @@ msgstr "De nouveau en ligne"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Balance"
 msgstr "Solde"
@@ -399,12 +402,12 @@ msgstr "Frais de builder"
 #~ msgstr "achat"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
-#: src/config/ui-text.ts
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy"
 msgstr "Acheter"
 
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy Long"
 msgstr "Acheter long"
 
@@ -620,6 +623,7 @@ msgstr "Connecter"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
@@ -847,6 +851,7 @@ msgstr "Croisé"
 msgid "Cross Account Leverage"
 msgstr "Levier du compte croisé"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Cross Leverage"
 msgstr "Effet de levier croisé"
@@ -890,12 +895,14 @@ msgid "Default"
 msgstr "Par défaut"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
-msgstr "Paramètre de compte par défaut. Chaque actif de garantie dispose d'un solde unique. Les perpétuels ne peuvent utiliser que l'actif de règlement comme garantie, et la marge croisée est partagée entre les positions croisées utilisant le même actif de garantie."
+#~ msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
+#~ msgstr "Paramètre de compte par défaut. Chaque actif de garantie dispose d'un solde unique. Les perpétuels ne peuvent utiliser que l'actif de règlement comme garantie, et la marge croisée est partagée entre les positions croisées utilisant le même actif de garantie."
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1007,6 +1014,7 @@ msgstr "Adresse de destination"
 #~ msgstr ""
 
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "Déconnecter"
 
@@ -1070,6 +1078,7 @@ msgstr "Modifier TP/SL"
 msgid "Enable"
 msgstr "Activer"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Enable Trading"
@@ -1136,10 +1145,12 @@ msgstr "Prix d'entrée"
 msgid "Environment"
 msgstr "Environnement"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "Capitaux propres"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
@@ -1224,6 +1235,7 @@ msgstr "Échec de la copie"
 #~ msgid "Failed to create embedded wallet or open deposit flow"
 #~ msgstr "Impossible de créer le portefeuille intégré ou d’ouvrir le flux de dépôt"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to enable trading"
@@ -1237,7 +1249,14 @@ msgstr "Échec de l'activation du trading"
 msgid "Failed to load balances"
 msgstr "Échec du chargement des soldes"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/lib/trade/use-button-content.ts
 msgid "Failed to load balances."
 msgstr "Échec du chargement des soldes."
 
@@ -1251,6 +1270,7 @@ msgstr "Échec du chargement de l'historique de financement."
 msgid "Failed to load open orders."
 msgstr "Échec du chargement des ordres ouverts."
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to load order book."
@@ -1583,6 +1603,7 @@ msgstr "Clôture limite"
 msgid "Limit close order placed"
 msgstr "Ordre de clôture limite placé"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
@@ -1611,6 +1632,7 @@ msgstr "Associer un appareil mobile"
 msgid "Liq"
 msgstr "Liq."
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 msgid "Liq. Price"
@@ -1666,7 +1688,16 @@ msgid "Loading wallet..."
 msgstr "Chargement du portefeuille..."
 
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
@@ -1674,7 +1705,7 @@ msgid "Loading..."
 msgstr "Chargement..."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
 msgstr "Achat"
 
@@ -1734,8 +1765,8 @@ msgstr "Gérer le TP/SL pour la position courte {0}"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Manual"
-msgstr "Manuel"
+#~ msgid "Manual"
+#~ msgstr "Manuel"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1758,16 +1789,19 @@ msgstr "Mode de marge"
 #~ msgid "Margin Mode"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
 msgstr "Ratio de marge"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
 msgid "Margin Req."
 msgstr "Marge req."
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Used"
 msgstr "Marge utilisée"
@@ -2212,6 +2246,7 @@ msgstr "Ouvrir le jeton dans l’explorateur"
 msgid "ORACLE"
 msgstr "ORACLE"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -2223,6 +2258,7 @@ msgstr "Carnet d'ordres"
 msgid "Order book in quote asset"
 msgstr "Carnet d'ordres en actif de cotation"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-order-submit.ts
 msgid "Order failed"
@@ -2248,8 +2284,9 @@ msgstr "Ordre soumis"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Order type"
-msgstr ""
+msgstr "Type d'ordre"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
@@ -2533,6 +2570,9 @@ msgstr "Préparation de votre devis..."
 
 #: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -2556,7 +2596,7 @@ msgstr "Regroupement des prix"
 
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 msgid "Primary navigation"
-msgstr ""
+msgstr "Navigation principale"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Privacy Policy"
@@ -2621,6 +2661,10 @@ msgstr "Transactions récentes"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Recommended"
 msgstr "Recommandé"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Recommended account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
+msgstr "Paramètre de compte recommandé. Chaque actif de garantie possède un solde unique. Les contrats perpétuels ne peuvent utiliser que l'actif de règlement comme garantie, et la marge croisée est partagée entre les positions utilisant le même actif de garantie."
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Recommended only for automated traders. Every DEX has a separate balance, and cross margin applies separately within each DEX."
@@ -2865,12 +2909,12 @@ msgstr "Le portefeuille sélectionné ne correspond pas au compte connecté. Rec
 #~ msgstr "vente"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
-#: src/config/ui-text.ts
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell"
 msgstr "Vendre"
 
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell Short"
 msgstr "Vendre short"
 
@@ -2911,9 +2955,10 @@ msgstr "Envoi en cours..."
 #~ msgid "sent to Hyperliquid"
 #~ msgstr "envoyé vers Hyperliquid"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Separate"
-msgstr ""
+msgstr "Séparé"
 
 #: src/components/trade/tradebox/trade-header.tsx
 #~ msgid "Separate Account"
@@ -2957,13 +3002,15 @@ msgstr "Régler sur {p}%"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-header.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
+#: src/lib/tests/tmp-stale-t-probe.test.tsx
 msgid "Settings"
 msgstr "Paramètres"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
 msgstr "Vente"
 
@@ -3039,14 +3086,17 @@ msgstr "Signez dans le portefeuille..."
 msgid "Signer not ready"
 msgstr "Signataire non prêt"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 msgid "Signing..."
 msgstr "Signature..."
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
@@ -3095,6 +3145,7 @@ msgstr "Prix SL"
 #~ msgid "SL trigger price"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 msgid "Slippage"
@@ -3175,6 +3226,7 @@ msgstr "Disponible Spot"
 #~ msgid "Spot: Max 1% (100 basis points)"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Spread"
@@ -3322,6 +3374,7 @@ msgstr "Passer au marché {displayName}, position Short"
 msgid "Switch to {selectedModeLabel}"
 msgstr "Passer à {selectedModeLabel}"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
@@ -3345,6 +3398,7 @@ msgstr "Passer en mode clair"
 msgid "Switch to Mainnet"
 msgstr "Passer sur le Mainnet"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
@@ -3495,7 +3549,7 @@ msgstr "Vers Spot"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Toggle display units"
-msgstr ""
+msgstr "Changer les unités d'affichage"
 
 #: src/components/ui/sidebar.tsx
 #: src/components/ui/sidebar.tsx
@@ -3511,6 +3565,8 @@ msgstr "Basculer le mode de taille"
 #~ msgid "TOKEN"
 #~ msgstr "TOKEN"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -3585,6 +3641,7 @@ msgstr "Trader via le marché Spot {0}"
 msgid "trades"
 msgstr "transactions"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -3638,7 +3695,7 @@ msgstr "Transférer"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Transfer between Perps and Spot"
-msgstr ""
+msgstr "Transférer entre perpétuels et spot"
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
@@ -3732,6 +3789,10 @@ msgstr "Type"
 msgid "Unable to load Arbitrum USDC balance"
 msgstr ""
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Unable to load the current account mode. Reconnect your wallet and try again."
+msgstr "Impossible de charger le mode de compte actuel. Reconnectez votre portefeuille et réessayez."
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to prepare USDC permit"
@@ -3747,11 +3808,13 @@ msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and r
 msgstr "Impossible de passer le portefeuille sur Arbitrum. Changez de réseau dans votre portefeuille puis réessayez."
 
 #: src/components/trade/tradebox/trade-header.tsx
+msgid "Unavailable"
+msgstr "Indisponible"
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified"
-msgstr ""
+msgstr "Unifié"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Unified account"
 msgstr "Compte unifié"
@@ -3766,6 +3829,12 @@ msgstr "Compte unifié"
 msgid "Unknown error"
 msgstr "Erreur inconnue"
 
+#. placeholder {0}: symbolInfo.ticker ?? symbolInfo.name
+#: src/components/trade/chart/datafeed.ts
+msgid "Unknown symbol: {0}"
+msgstr ""
+
+#: src/components/trade/chart/datafeed.ts
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "Symbole inconnu : {symbolName}"
@@ -3779,6 +3848,7 @@ msgstr "Déverrouillez votre portefeuille puis réessayez."
 msgid "Unrealized P&L"
 msgstr "P&L latent"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Unrealized PNL"
@@ -3878,6 +3948,7 @@ msgstr "En attente de confirmation on-chain"
 #~ msgid "Waiting for native USDC to arrive on Arbitrum."
 #~ msgstr "En attente de l'arrivée de l'USDC natif sur Arbitrum."
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Waiting for order book..."
@@ -3977,6 +4048,7 @@ msgstr "arrivera dans {0}"
 #~ msgid "will arrive in ~5 min"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx

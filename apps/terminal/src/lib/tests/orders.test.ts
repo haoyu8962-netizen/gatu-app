@@ -54,4 +54,13 @@ describe("orders", () => {
 		expect(formatSizeForOrder(1.234567, 3)).toBe("1.234");
 		expect(formatSizeForOrder(1.2, 0)).toBe("1");
 	});
+
+	it("keeps integer trailing zeros when size decimals are zero", () => {
+		expect(formatSizeForOrder(100, 0)).toBe("100");
+		expect(formatSizeForOrder(1000000, 0)).toBe("1000000");
+		expect(formatSizeForOrder(10, 0)).toBe("10");
+		expect(formatSizeForOrder(0, 0)).toBe("0");
+		expect(formatSizeForOrder(100, 2)).toBe("100");
+		expect(formatSizeForOrder(1.2, 2)).toBe("1.2");
+	});
 });

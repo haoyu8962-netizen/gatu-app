@@ -81,7 +81,9 @@ export function floorToDecimals(value: number, maxDecimals: number): number {
 }
 
 export function formatDecimalFloor(value: Numeric, maxDecimals: number): string {
-	return floorToString(value, maxDecimals).replace(/\.?0+$/, "");
+	const fixed = floorToString(value, maxDecimals);
+	if (!fixed.includes(".")) return fixed;
+	return fixed.replace(/\.?0+$/, "");
 }
 
 export function limitDecimalInput(input: string, maxDecimals: number): string {

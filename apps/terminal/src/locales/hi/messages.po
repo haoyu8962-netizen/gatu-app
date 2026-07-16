@@ -100,11 +100,11 @@ msgstr "खाता और वॉलेट"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
-msgstr ""
+msgstr "खाता मोड"
 
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Account mode updated"
-msgstr ""
+msgstr "खाता मोड अपडेट किया गया"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Account type"
@@ -166,11 +166,11 @@ msgstr "TP/SL जोड़ें"
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Advanced"
-msgstr ""
+msgstr "उन्नत"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Advanced order types"
-msgstr ""
+msgstr "उन्नत ऑर्डर प्रकार"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Agent"
@@ -256,6 +256,8 @@ msgstr "संपत्ति"
 msgid "Automatic USDC deposit failed"
 msgstr "USDC का स्वचालित जमा विफल रहा"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -300,6 +302,7 @@ msgstr "फिर ऑनलाइन"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Balance"
 msgstr "शेष"
@@ -399,12 +402,12 @@ msgstr "बिल्डर फ़ीस"
 #~ msgstr "खरीदें"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
-#: src/config/ui-text.ts
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy"
 msgstr "खरीदें"
 
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy Long"
 msgstr "लॉन्ग खरीदें"
 
@@ -620,6 +623,7 @@ msgstr "कनेक्ट करें"
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Connect Wallet"
@@ -847,6 +851,7 @@ msgstr "क्रॉस"
 msgid "Cross Account Leverage"
 msgstr "क्रॉस खाता लेवरेज"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Cross Leverage"
 msgstr "क्रॉस लीवरेज"
@@ -890,12 +895,14 @@ msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
-msgstr "डिफ़ॉल्ट खाता सेटिंग। हर collateral asset का एक ही बैलेंस होता है। Perps केवल settlement asset को collateral के रूप में इस्तेमाल कर सकते हैं, और cross margin उसी collateral asset का उपयोग करने वाली cross positions के बीच साझा होता है।"
+#~ msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
+#~ msgstr "डिफ़ॉल्ट खाता सेटिंग। हर collateral asset का एक ही बैलेंस होता है। Perps केवल settlement asset को collateral के रूप में इस्तेमाल कर सकते हैं, और cross margin उसी collateral asset का उपयोग करने वाली cross positions के बीच साझा होता है।"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1007,6 +1014,7 @@ msgstr "गंतव्य पता"
 #~ msgstr ""
 
 #: src/components/trade/header/user-menu.tsx
+#: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
 msgstr "डिस्कनेक्ट करें"
 
@@ -1070,6 +1078,7 @@ msgstr "TP/SL संपादित करें"
 msgid "Enable"
 msgstr "सक्षम करें"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 msgid "Enable Trading"
@@ -1136,10 +1145,12 @@ msgstr "एंट्री कीमत"
 msgid "Environment"
 msgstr "एनवायरनमेंट"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "इक्विटी"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
@@ -1224,6 +1235,7 @@ msgstr "कॉपी करने में विफल"
 #~ msgid "Failed to create embedded wallet or open deposit flow"
 #~ msgstr "एम्बेडेड वॉलेट बनाने या जमा प्रक्रिया खोलने में विफल"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to enable trading"
@@ -1237,7 +1249,14 @@ msgstr "ट्रेडिंग सक्षम करने में वि�
 msgid "Failed to load balances"
 msgstr "बैलेंस लोड करने में विफल"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/lib/trade/use-button-content.ts
 msgid "Failed to load balances."
 msgstr "शेष लोड करने में विफल।"
 
@@ -1251,6 +1270,7 @@ msgstr "फंडिंग इतिहास लोड करने में �
 msgid "Failed to load open orders."
 msgstr "खुले ऑर्डर लोड करने में विफल।"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Failed to load order book."
@@ -1583,6 +1603,7 @@ msgstr "Limit क्लोज़"
 msgid "Limit close order placed"
 msgstr "Limit क्लोज़ ऑर्डर लगाया गया"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
@@ -1611,6 +1632,7 @@ msgstr "मोबाइल डिवाइस लिंक करें"
 msgid "Liq"
 msgstr "लिक्विडेशन"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 msgid "Liq. Price"
@@ -1666,7 +1688,16 @@ msgid "Loading wallet..."
 msgstr "वॉलेट लोड हो रहा है..."
 
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
 #: src/lib/trade/use-button-content.ts
@@ -1674,7 +1705,7 @@ msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
 msgstr "लॉन्ग"
 
@@ -1734,8 +1765,8 @@ msgstr "{0} Short पोज़िशन के लिए TP/SL प्रबं�
 #~ msgstr ""
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Manual"
-msgstr "मैनुअल"
+#~ msgid "Manual"
+#~ msgstr "मैनुअल"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1758,16 +1789,19 @@ msgstr "Margin मोड"
 #~ msgid "Margin Mode"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
 msgstr "मार्जिन अनुपात"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
 msgid "Margin Req."
 msgstr "मार्जिन आवश्यक"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Used"
 msgstr "उपयोग किया गया मार्जिन"
@@ -2212,6 +2246,7 @@ msgstr "एक्सप्लोरर में टोकन खोलें"
 msgid "ORACLE"
 msgstr "ऑरेकल"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -2223,6 +2258,7 @@ msgstr "ऑर्डर बुक"
 msgid "Order book in quote asset"
 msgstr "क्वोट एसेट में ऑर्डर बुक"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-order-submit.ts
 msgid "Order failed"
@@ -2248,8 +2284,9 @@ msgstr "ऑर्डर सबमिट किया गया"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Order type"
-msgstr ""
+msgstr "ऑर्डर प्रकार"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
@@ -2533,6 +2570,9 @@ msgstr "आपका कोट तैयार किया जा रहा ह
 
 #: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -2556,7 +2596,7 @@ msgstr "प्राइस ग्रुपिंग"
 
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 msgid "Primary navigation"
-msgstr ""
+msgstr "प्राथमिक नेविगेशन"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Privacy Policy"
@@ -2621,6 +2661,10 @@ msgstr "हाल के ट्रेड"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Recommended"
 msgstr "अनुशंसित"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Recommended account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
+msgstr "अनुशंसित खाता सेटिंग। प्रत्येक कोलेटरल एसेट का एक ही बैलेंस होता है। परपेचुअल केवल सेटलमेंट एसेट को कोलेटरल के रूप में उपयोग कर सकते हैं और समान कोलेटरल एसेट वाली क्रॉस पोज़िशन के बीच मार्जिन साझा होता है।"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Recommended only for automated traders. Every DEX has a separate balance, and cross margin applies separately within each DEX."
@@ -2865,12 +2909,12 @@ msgstr "चयनित वॉलेट कनेक्टेड खाते �
 #~ msgstr "बेचें"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
-#: src/config/ui-text.ts
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell"
 msgstr "बेचें"
 
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell Short"
 msgstr "शॉर्ट बेचें"
 
@@ -2911,9 +2955,10 @@ msgstr "भेजा जा रहा है..."
 #~ msgid "sent to Hyperliquid"
 #~ msgstr "Hyperliquid को भेजा गया"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Separate"
-msgstr ""
+msgstr "अलग"
 
 #: src/components/trade/tradebox/trade-header.tsx
 #~ msgid "Separate Account"
@@ -2957,13 +3002,15 @@ msgstr "{p}% पर सेट करें"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-header.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
+#: src/lib/tests/tmp-stale-t-probe.test.tsx
 msgid "Settings"
 msgstr "सेटिंग्स"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/config/ui-text.ts
+#: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
 msgstr "शॉर्ट"
 
@@ -3039,14 +3086,17 @@ msgstr "वॉलेट में साइन करें..."
 msgid "Signer not ready"
 msgstr "साइनर तैयार नहीं"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 msgid "Signing..."
 msgstr "साइन हो रहा है..."
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
@@ -3095,6 +3145,7 @@ msgstr "SL मूल्य"
 #~ msgid "SL trigger price"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/config/ui-text.ts
 msgid "Slippage"
@@ -3175,6 +3226,7 @@ msgstr "Spot उपलब्ध"
 #~ msgid "Spot: Max 1% (100 basis points)"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Spread"
@@ -3322,6 +3374,7 @@ msgstr "{displayName} मार्केट पर स्विच करें,
 msgid "Switch to {selectedModeLabel}"
 msgstr "{selectedModeLabel} पर स्विच करें"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
@@ -3345,6 +3398,7 @@ msgstr "लाइट मोड में बदलें"
 msgid "Switch to Mainnet"
 msgstr "Mainnet पर स्विच करें"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/ui-text.ts
@@ -3495,7 +3549,7 @@ msgstr "Spot में"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 msgid "Toggle display units"
-msgstr ""
+msgstr "प्रदर्शन इकाइयाँ बदलें"
 
 #: src/components/ui/sidebar.tsx
 #: src/components/ui/sidebar.tsx
@@ -3511,6 +3565,8 @@ msgstr "साइज मोड टॉगल करें"
 #~ msgid "TOKEN"
 #~ msgstr "टोकन"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
@@ -3585,6 +3641,7 @@ msgstr "{0} Spot मार्केट के माध्यम से ट्�
 msgid "trades"
 msgstr "ट्रेड"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -3638,7 +3695,7 @@ msgstr "ट्रांसफ़र"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Transfer between Perps and Spot"
-msgstr ""
+msgstr "परपेचुअल और स्पॉट के बीच ट्रांसफ़र करें"
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Transfer failed"
@@ -3732,6 +3789,10 @@ msgstr "प्रकार"
 msgid "Unable to load Arbitrum USDC balance"
 msgstr ""
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Unable to load the current account mode. Reconnect your wallet and try again."
+msgstr "वर्तमान खाता मोड लोड नहीं हो सका। अपना वॉलेट दोबारा कनेक्ट करें और फिर कोशिश करें।"
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to prepare USDC permit"
@@ -3747,11 +3808,13 @@ msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and r
 msgstr "वॉलेट को Arbitrum पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और फिर से प्रयास करें।"
 
 #: src/components/trade/tradebox/trade-header.tsx
+msgid "Unavailable"
+msgstr "अनुपलब्ध"
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified"
-msgstr ""
+msgstr "एकीकृत"
 
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Unified account"
 msgstr "एकीकृत खाता"
@@ -3766,6 +3829,12 @@ msgstr "एकीकृत खाता"
 msgid "Unknown error"
 msgstr "अज्ञात त्रुटि"
 
+#. placeholder {0}: symbolInfo.ticker ?? symbolInfo.name
+#: src/components/trade/chart/datafeed.ts
+msgid "Unknown symbol: {0}"
+msgstr ""
+
+#: src/components/trade/chart/datafeed.ts
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {symbolName}"
 msgstr "अज्ञात प्रतीक: {symbolName}"
@@ -3779,6 +3848,7 @@ msgstr "अपना वॉलेट अनलॉक करें और फि�
 msgid "Unrealized P&L"
 msgstr "अवास्तविक P&L"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Unrealized PNL"
@@ -3878,6 +3948,7 @@ msgstr "ऑन-चेन पुष्टि की प्रतीक्षा �
 #~ msgid "Waiting for native USDC to arrive on Arbitrum."
 #~ msgstr "Arbitrum पर नेटिव USDC आने की प्रतीक्षा है।"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
 msgid "Waiting for order book..."
@@ -3977,6 +4048,7 @@ msgstr "{0} में पहुँचेगा"
 #~ msgid "will arrive in ~5 min"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
