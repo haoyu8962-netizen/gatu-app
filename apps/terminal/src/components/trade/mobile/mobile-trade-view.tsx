@@ -8,7 +8,6 @@ import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { SIZE_PERCENT_OPTIONS } from "@/config/trade";
-import { UI_TEXT } from "@/config/ui-text";
 import { get24hChange } from "@/domain/market";
 import { getLiquidationInfo } from "@/domain/trade/order/metrics";
 import { getSliderValue } from "@/domain/trade/order/size";
@@ -67,7 +66,6 @@ import { TradeHeader } from "../tradebox/trade-header";
 import { TradeOptionCheckboxes } from "../tradebox/trade-option-checkboxes";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
-const ORDER_TEXT = UI_TEXT.ORDER_ENTRY;
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 interface Props {
@@ -257,7 +255,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 		try {
 			await registerAgent();
 		} catch (error) {
-			setApprovalError(error instanceof Error ? error.message : ORDER_TEXT.APPROVAL_ERROR_FALLBACK);
+			setApprovalError(error instanceof Error ? error.message : t`Failed to enable trading`);
 		}
 	}
 
@@ -318,7 +316,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 		} catch (error) {
 			updateOrder(orderId, {
 				status: "failed",
-				error: error instanceof Error ? error.message : ORDER_TEXT.ORDER_ERROR_FALLBACK,
+				error: error instanceof Error ? error.message : t`Order failed`,
 			});
 		}
 	}
@@ -330,9 +328,8 @@ export function MobileTradeView({ className, embedded }: Props) {
 		needsChainSwitch,
 		isSwitchingChain,
 		availableBalance,
-		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale,
+		isBalanceLoading: isAvailabilityLoading,
 		hasBalanceError: hasAvailabilityError,
-		balanceErrorLabel: t`Failed to load balances.`,
 		canDeposit: sessionMode === "wallet",
 		needsApproval: validation.needsApproval,
 		canSubmit: validation.canSubmit,
@@ -341,6 +338,16 @@ export function MobileTradeView({ className, embedded }: Props) {
 		isSubmitting,
 		side,
 		sideLabel: sideLabels[side],
+		labels: {
+			connect: t`Connect Wallet`,
+			switching: t`Switching...`,
+			switchChain: t`Switch to Arbitrum`,
+			loading: t`Loading...`,
+			balanceError: t`Failed to load balances.`,
+			deposit: t`Deposit`,
+			signing: t`Signing...`,
+			enableTrading: t`Enable Trading`,
+		},
 		onConnect: () => setWalletModalOpen(true),
 		onSwitchChain: handleSwitchChain,
 		onDeposit: () => openDepositModal("deposit"),
@@ -430,7 +437,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 					/>
 
 					<div className={cn("flex items-center justify-end", embedded ? "text-2xs" : "text-xs")}>
-						<span className="text-fg-muted uppercase text-2xs font-medium">{ORDER_TEXT.AVAILABLE_LABEL} </span>
+						<span className="text-fg-muted uppercase text-2xs font-medium">{t`Available`} </span>
 						<span className={cn("tabular-nums font-semibold text-xs ml-1", getValueColorClass(availableBalance))}>
 							{formatAvailableBalance()}
 						</span>
@@ -451,7 +458,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 					</div>
 
 					<div className={cn(embedded ? "space-y-1.5" : "space-y-3")}>
-						<p className="text-2xs font-medium uppercase text-fg-muted">{ORDER_TEXT.SIZE_LABEL}</p>
+						<p className="text-2xs font-medium uppercase text-fg-muted">{t`Size`}</p>
 						<div className={cn("flex items-stretch", embedded ? "gap-1.5" : "gap-2")}>
 							<NumberInput
 								inputMode="decimal"
@@ -542,7 +549,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 					{usesLimitPrice && (
 						<div className={cn(embedded ? "space-y-1.5" : "space-y-2")}>
 							<PriceInput
-								label={ORDER_TEXT.LIMIT_PRICE_LABEL}
+								label={t`Limit Price`}
 								inputMode="decimal"
 								inputSize={entryInputSize}
 								placeholder="0.00"
@@ -594,7 +601,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 					<div className={cn("divide-y divide-stroke-weak/40", embedded ? "text-2xs" : "text-xs")}>
 						{capabilities.isLeveraged && (
 							<SummaryRow
-								label={ORDER_TEXT.SUMMARY_LIQ}
+								label={t`Liq. Price`}
 								value={
 									liqPrice ? formatPrice(liqPrice, { szDecimals: market?.szDecimals }) : FALLBACK_VALUE_PLACEHOLDER
 								}
@@ -603,19 +610,19 @@ export function MobileTradeView({ className, embedded }: Props) {
 							/>
 						)}
 						<SummaryRow
-							label={ORDER_TEXT.SUMMARY_ORDER_VALUE}
+							label={t`Order Value`}
 							value={orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
 							compact={embedded}
 						/>
 						{capabilities.isLeveraged && (
 							<SummaryRow
-								label={ORDER_TEXT.SUMMARY_MARGIN_REQ}
+								label={t`Margin Req.`}
 								value={marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
 								compact={embedded}
 							/>
 						)}
 						<div className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-2.5")}>
-							<span className="min-w-0 truncate text-fg-muted">{ORDER_TEXT.SUMMARY_SLIPPAGE}</span>
+							<span className="min-w-0 truncate text-fg-muted">{t`Slippage`}</span>
 							{embedded && !isConnected ? (
 								<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
 									<span className="tabular-nums text-error">{slippagePercent}%</span>
@@ -633,7 +640,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 							)}
 						</div>
 						<SummaryRow
-							label={ORDER_TEXT.SUMMARY_FEE}
+							label={t`Est. Fee`}
 							value={orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
 							valueClass="text-fg-muted"
 							compact={embedded}
@@ -717,9 +724,8 @@ interface MobileButtonContentInput {
 	isSwitchingChain: boolean;
 	availableBalance: number;
 	isBalanceLoading: boolean;
-	canDeposit: boolean;
 	hasBalanceError: boolean;
-	balanceErrorLabel: string;
+	canDeposit: boolean;
 	needsApproval: boolean;
 	canSubmit: boolean;
 	isRegistering: boolean;
@@ -727,6 +733,7 @@ interface MobileButtonContentInput {
 	isSubmitting: boolean;
 	side: Side;
 	sideLabel: string;
+	labels: MobileOrderButtonLabels;
 	onConnect: () => void;
 	onSwitchChain: () => void;
 	onDeposit: () => void;
@@ -734,10 +741,21 @@ interface MobileButtonContentInput {
 	onSubmit: () => void;
 }
 
+interface MobileOrderButtonLabels {
+	connect: string;
+	switching: string;
+	switchChain: string;
+	loading: string;
+	balanceError: string;
+	deposit: string;
+	signing: string;
+	enableTrading: string;
+}
+
 function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonContent {
 	if (!input.isConnected) {
 		return {
-			text: ORDER_TEXT.BUTTON_CONNECT,
+			text: input.labels.connect,
 			action: input.onConnect,
 			disabled: false,
 			variant: "cyan",
@@ -745,15 +763,23 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 	}
 	if (input.needsChainSwitch) {
 		return {
-			text: input.isSwitchingChain ? ORDER_TEXT.BUTTON_SWITCHING : ORDER_TEXT.BUTTON_SWITCH_CHAIN,
+			text: input.isSwitchingChain ? input.labels.switching : input.labels.switchChain,
 			action: input.onSwitchChain,
 			disabled: input.isSwitchingChain,
 			variant: "cyan",
 		};
 	}
+	if (input.needsApproval) {
+		return {
+			text: getApprovalButtonText(input.isRegistering, input.canApprove, input.labels),
+			action: input.onApprove,
+			disabled: input.isRegistering || !input.canApprove,
+			variant: "cyan",
+		};
+	}
 	if (input.hasBalanceError) {
 		return {
-			text: input.balanceErrorLabel,
+			text: input.labels.balanceError,
 			action: () => {},
 			disabled: true,
 			variant: "cyan",
@@ -761,7 +787,7 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 	}
 	if (input.isBalanceLoading) {
 		return {
-			text: ORDER_TEXT.BUTTON_LOADING,
+			text: input.labels.loading,
 			action: () => {},
 			disabled: true,
 			variant: "cyan",
@@ -769,17 +795,9 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 	}
 	if (input.availableBalance <= 0) {
 		return {
-			text: ORDER_TEXT.BUTTON_DEPOSIT,
+			text: input.labels.deposit,
 			action: input.canDeposit ? input.onDeposit : () => {},
 			disabled: !input.canDeposit,
-			variant: "cyan",
-		};
-	}
-	if (input.needsApproval) {
-		return {
-			text: getApprovalButtonText(input.isRegistering, input.canApprove),
-			action: input.onApprove,
-			disabled: input.isRegistering || !input.canApprove,
 			variant: "cyan",
 		};
 	}
@@ -791,8 +809,8 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 	};
 }
 
-function getApprovalButtonText(isRegistering: boolean, canApprove: boolean): string {
-	if (isRegistering) return ORDER_TEXT.BUTTON_SIGNING;
-	if (!canApprove) return ORDER_TEXT.BUTTON_LOADING;
-	return ORDER_TEXT.BUTTON_ENABLE_TRADING;
+function getApprovalButtonText(isRegistering: boolean, canApprove: boolean, labels: MobileOrderButtonLabels): string {
+	if (isRegistering) return labels.signing;
+	if (!canApprove) return labels.loading;
+	return labels.enableTrading;
 }

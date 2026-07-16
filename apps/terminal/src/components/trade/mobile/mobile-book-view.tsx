@@ -3,7 +3,6 @@ import { useLingui } from "@lingui/react/macro";
 import { ArrowsClockwiseIcon, ArrowsLeftRightIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { UI_TEXT } from "@/config/ui-text";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
@@ -22,7 +21,6 @@ import { OrderbookRow } from "../orderbook/orderbook-row";
 import { TradesPanel } from "../orderbook/trades-panel";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
-const ORDERBOOK_TEXT = UI_TEXT.ORDERBOOK;
 const DEFAULT_LEVEL_COUNT = 12;
 const COMPACT_LEVEL_COUNT = 5;
 const MIN_LEVEL_COUNT = 3;
@@ -281,7 +279,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 								onClick={() => setView("book")}
 								className={cn("min-h-11", view !== "book" && "opacity-60")}
 							>
-								{ORDERBOOK_TEXT.BOOK_LABEL}
+								{t`Order Book`}
 							</Button>
 							<Button
 								variant={view === "trades" ? "filled" : "ghost"}
@@ -290,7 +288,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 								onClick={() => setView("trades")}
 								className={cn("min-h-11", view !== "trades" && "opacity-60")}
 							>
-								{ORDERBOOK_TEXT.TRADES_LABEL}
+								{t`Trades`}
 							</Button>
 						</div>
 					)}
@@ -423,6 +421,7 @@ function CompactOrderbook({
 	priceGroupingOptions,
 	setSelectedOptionKey,
 }: CompactOrderbookProps) {
+	const { t } = useLingui();
 	const hasAsks = asks.length > 0;
 	const hasBids = bids.length > 0;
 	const showError = bookStatus === "error" && !hasAsks && !hasBids;
@@ -434,8 +433,8 @@ function CompactOrderbook({
 	return (
 		<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
 			<div className="shrink-0 grid uppercase tracking-wider text-fg-muted border-b border-stroke-weak/40 grid-cols-2 gap-1 px-1.5 py-1.5 text-2xs">
-				<div>{ORDERBOOK_TEXT.HEADER_PRICE}</div>
-				<div className="text-right">{ORDERBOOK_TEXT.HEADER_SIZE}</div>
+				<div>{t`Price`}</div>
+				<div className="text-right">{t`Size`}</div>
 			</div>
 
 			<div
@@ -548,6 +547,7 @@ function SplitOrderbook({
 	szDecimals,
 	spreadText,
 }: SplitOrderbookProps) {
+	const { t } = useLingui();
 	const hasAsks = asks.length > 0;
 	const hasBids = bids.length > 0;
 	const showError = bookStatus === "error" && !hasAsks && !hasBids;
@@ -556,17 +556,17 @@ function SplitOrderbook({
 		<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
 			<div className="shrink-0 border-b border-stroke-weak/40 bg-background">
 				<div className="flex items-center justify-between gap-2 px-3 py-1.5 text-2xs text-fg-muted">
-					<span>{ORDERBOOK_TEXT.SPREAD_LABEL}</span>
+					<span>{t`Spread`}</span>
 					<span className="tabular-nums text-warning">{spreadText}</span>
 				</div>
 				<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px px-2 pb-1.5 text-2xs uppercase tracking-wider text-fg-muted">
 					<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1">
-						<div>{ORDERBOOK_TEXT.HEADER_TOTAL}</div>
-						<div className="text-right">{ORDERBOOK_TEXT.HEADER_PRICE}</div>
+						<div>{t`Total`}</div>
+						<div className="text-right">{t`Price`}</div>
 					</div>
 					<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1">
-						<div>{ORDERBOOK_TEXT.HEADER_PRICE}</div>
-						<div className="text-right">{ORDERBOOK_TEXT.HEADER_TOTAL}</div>
+						<div>{t`Price`}</div>
+						<div className="text-right">{t`Total`}</div>
 					</div>
 				</div>
 			</div>
@@ -637,14 +637,16 @@ function SplitOrderbook({
 }
 
 function OrderbookStatus({ bookStatus }: { bookStatus: string }) {
+	const { t } = useLingui();
+
 	return (
 		<div className="flex-1 flex items-center justify-center">
 			{bookStatus === "error" ? (
-				<div className="text-sm text-error">{ORDERBOOK_TEXT.FAILED}</div>
+				<div className="text-sm text-error">{t`Failed to load order book.`}</div>
 			) : (
 				<div className="flex flex-col items-center gap-2 text-fg-muted">
 					<ArrowsClockwiseIcon className="size-5 animate-spin" />
-					<span className="text-sm">{ORDERBOOK_TEXT.WAITING}</span>
+					<span className="text-sm">{t`Waiting for order book...`}</span>
 				</div>
 			)}
 		</div>

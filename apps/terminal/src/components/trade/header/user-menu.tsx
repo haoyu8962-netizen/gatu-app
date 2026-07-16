@@ -1,6 +1,5 @@
-import { Button, Dropdown } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Button, ButtonIcon, Dropdown } from "@gatu/ui";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	CheckIcon,
 	CopyIcon,
@@ -26,6 +25,7 @@ const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 export function UserMenu() {
+	const { t } = useLingui();
 	const { ready, authenticated, isConnected, isConnecting, login, displayAddress, sessionMode, hasWalletAccess, user } =
 		useWalletSession();
 	const { disconnectWallet } = useDisconnectWallet();
@@ -84,19 +84,31 @@ export function UserMenu() {
 
 	if (authenticated && sessionMode !== "agent-only" && !hasWalletAccess) {
 		return (
-			<Button
-				variant="outline"
-				intent="neutral"
-				size="sm"
-				onClick={() => void reconnectWallet()}
-				iconLeft={<WalletIcon className="size-3.5" />}
-				className={cn(
-					APP_BAR_BUTTON_HEIGHT_CLASS,
-					"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
-				)}
-			>
-				<Trans>Reconnect wallet</Trans>
-			</Button>
+			<div className="flex shrink-0 items-center gap-1">
+				<Button
+					variant="outline"
+					intent="neutral"
+					size="sm"
+					onClick={() => void reconnectWallet()}
+					iconLeft={<WalletIcon className="size-3.5" />}
+					className={cn(
+						APP_BAR_BUTTON_HEIGHT_CLASS,
+						"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+					)}
+				>
+					<Trans>Reconnect wallet</Trans>
+				</Button>
+				<ButtonIcon
+					variant="ghost"
+					intent="error"
+					size="sm"
+					onClick={() => void disconnectWallet()}
+					aria-label={t`Disconnect`}
+					className={APP_BAR_BUTTON_HEIGHT_CLASS}
+				>
+					<SignOutIcon className="size-3.5" />
+				</ButtonIcon>
+			</div>
 		);
 	}
 

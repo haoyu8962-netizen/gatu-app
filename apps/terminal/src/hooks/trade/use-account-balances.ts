@@ -35,7 +35,6 @@ export interface AccountBalances {
 	withdrawable: string;
 	crossMaintenanceMarginUsed: string;
 	spotStateStatus: AssetAvailabilityStatus;
-	isSpotStateLoading: boolean;
 	isSpotStateStale: boolean;
 	isLoading: boolean;
 	hasError: boolean;
@@ -104,7 +103,6 @@ export interface AllDexsAccountState {
 	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance;
 	accountAbstraction: AccountAbstraction;
 	spotStateStatus: AssetAvailabilityStatus;
-	isSpotStateLoading: boolean;
 	isSpotStateStale: boolean;
 	isLoading: boolean;
 	hasError: boolean;
@@ -162,7 +160,6 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 			spotAvailableAfterMaintenance: EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
 			accountAbstraction: null,
 			spotStateStatus: "idle",
-			isSpotStateLoading: false,
 			isSpotStateStale: false,
 			isLoading: false,
 			hasError: false,
@@ -191,7 +188,6 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		spotStateStatus,
-		isSpotStateLoading,
 		isSpotStateStale: spotStateStatus === "stale",
 		isLoading,
 		hasError,
@@ -205,7 +201,6 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
 		spotStateStatus,
-		isSpotStateLoading,
 		isSpotStateStale,
 		isLoading,
 		hasError,
@@ -240,7 +235,6 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 		withdrawable,
 		crossMaintenanceMarginUsed,
 		spotStateStatus,
-		isSpotStateLoading,
 		isSpotStateStale,
 		isLoading: enabled && !dexState ? isLoading || infoDexStatus === "pending" : isLoading,
 		hasError: hasError || (!dexState && infoDexStatus === "error"),

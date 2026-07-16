@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
 	getAssetAvailabilityStatus,
 	getOrderAvailabilityFlags,
@@ -7,17 +7,6 @@ import {
 } from "@/domain/trade/order/availability";
 import { deriveOrderEntry } from "@/domain/trade/order/derive";
 import type { SpotBalance } from "@/hooks/trade/use-account-balances";
-
-vi.mock("@lingui/core/macro", () => ({
-	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
-		if (typeof strings === "string") return strings;
-		return { id: strings.reduce((text, part, index) => `${text}${part}${values[index] ?? ""}`, "") };
-	},
-	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
-		if (typeof strings === "string") return strings;
-		return strings.reduce((text, part, index) => `${text}${part}${values[index] ?? ""}`, "");
-	},
-}));
 
 const usdcBalance: SpotBalance = {
 	coin: "USDC",
@@ -273,7 +262,7 @@ describe("order availability routing", () => {
 		expect(getOrderAvailabilityStatus({ ...baseInput, isConnected: false, marketKind: undefined })).toBe("idle");
 	});
 
-	it("blocks every connected state except fresh success", () => {
+	it("allows matching stale data but blocks unavailable connected states", () => {
 		expect(getOrderAvailabilityFlags(true, "success")).toEqual({
 			isLoading: false,
 			isStale: false,
@@ -281,8 +270,9 @@ describe("order availability routing", () => {
 			isBlocked: false,
 		});
 		expect(getOrderAvailabilityFlags(true, "loading")).toMatchObject({ isLoading: true, isBlocked: true });
-		expect(getOrderAvailabilityFlags(true, "stale")).toMatchObject({ isStale: true, isBlocked: true });
+		expect(getOrderAvailabilityFlags(true, "stale")).toMatchObject({ isStale: true, isBlocked: false });
 		expect(getOrderAvailabilityFlags(true, "error")).toMatchObject({ hasError: true, isBlocked: true });
+		expect(getOrderAvailabilityFlags(true, "idle")).toMatchObject({ isBlocked: true });
 		expect(getOrderAvailabilityFlags(false, "idle")).toMatchObject({ isBlocked: false });
 	});
 });

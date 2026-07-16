@@ -8,19 +8,14 @@ export interface SideLabels {
 	sellAria: string;
 }
 
-// Getters avoid freezing translations at module initialization. React consumers must still
-// subscribe with useLingui so a locale change causes another render and reevaluates each getter.
-export function getSideLabels(isSpotMarket: boolean): SideLabels {
-	if (isSpotMarket) {
-		return { buy: t`Buy`, sell: t`Sell`, buyAria: t`Buy`, sellAria: t`Sell` };
-	}
-	return { buy: t`Long`, sell: t`Short`, buyAria: t`Buy Long`, sellAria: t`Sell Short` };
-}
-
 export function getSizeModeLabel(sizeMode: SizeMode, baseToken: string, quoteToken: string): string {
 	return sizeMode === "base" ? baseToken || "---" : quoteToken;
 }
 
+/**
+ * @deprecated Module-level translated getters can be cached by React Compiler. React components
+ * must call `useLingui()` and translate during render instead of reading this object.
+ */
 export const UI_TEXT = {
 	TOP_NAV: {
 		get SETTINGS_ARIA() {

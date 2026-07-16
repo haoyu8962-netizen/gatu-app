@@ -34,14 +34,14 @@ export function AccountModeModal({
 	onApply,
 }: Props) {
 	const { t } = useLingui();
-	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction>(currentMode ?? "unifiedAccount");
+	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(currentMode);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const accountModeOptions: AccountModeOption[] = [
 		{
 			id: "unifiedAccount",
 			label: t`Unified account`,
 			badge: t`Recommended`,
-			description: t`Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset.`,
+			description: t`Recommended account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset.`,
 		},
 		{
 			id: "portfolioMargin",
@@ -50,22 +50,22 @@ export function AccountModeModal({
 		},
 		{
 			id: "disabled",
-			label: t`Manual`,
+			label: t`Separate`,
 			description: t`Recommended only for automated traders. Every DEX has a separate balance, and cross margin applies separately within each DEX.`,
 		},
 	];
-	const selectedModeLabel =
-		accountModeOptions.find((option) => option.id === selectedMode)?.label ?? t`Unified account`;
+	const selectedModeLabel = accountModeOptions.find((option) => option.id === selectedMode)?.label;
 
 	useEffect(() => {
 		if (open) {
-			setSelectedMode(currentMode ?? "unifiedAccount");
+			setSelectedMode(currentMode);
 			setSubmitError(null);
 		}
 	}, [currentMode, open]);
 
-	const isDirty = selectedMode !== currentMode;
+	const isDirty = selectedMode !== null && selectedMode !== currentMode;
 	const isBusy = !!isLoading || !!isUpdating;
+	const isModeUnavailable = !!canChange && !isLoading && currentMode === null;
 
 	async function handleApply() {
 		if (!canChange) {
@@ -73,7 +73,7 @@ export function AccountModeModal({
 			onConnect?.();
 			return;
 		}
-		if (!isDirty || isBusy) return;
+		if (!selectedMode || !isDirty || isBusy || isModeUnavailable) return;
 
 		setSubmitError(null);
 		try {
@@ -104,15 +104,15 @@ export function AccountModeModal({
 									key={option.id}
 									type="button"
 									onClick={() => setSelectedMode(option.id)}
-									disabled={isBusy}
+									disabled={isBusy || isModeUnavailable}
 									aria-pressed={isSelected}
 									className={cn(
 										"w-full rounded-xs border px-3 py-3 text-left transition-colors",
 										"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 										isSelected
-											? "border-brand bg-brand/10 text-fg"
+											? "border-stroke-selected bg-brand-soft text-fg"
 											: "border-stroke-weak bg-fill-weak/40 text-fg hover:bg-fill-hover",
-										isBusy && "cursor-not-allowed opacity-70",
+										(isBusy || isModeUnavailable) && "cursor-not-allowed opacity-70",
 									)}
 								>
 									<span className="flex min-w-0 items-center gap-2">
@@ -132,12 +132,17 @@ export function AccountModeModal({
 					<p className="text-2xs leading-relaxed text-fg-muted">
 						<Trans>Account value must be below $25M to use portfolio margin while it is in beta.</Trans>
 					</p>
+					{isModeUnavailable && (
+						<p className="text-xs text-error">
+							<Trans>Unable to load the current account mode. Reconnect your wallet and try again.</Trans>
+						</p>
+					)}
 
 					{submitError && <p className="text-xs text-error">{submitError}</p>}
 				</ModalContent>
 
 				<ModalFooter>
-					<Button type="button" variant="ghost" intent="neutral" onClick={() => onOpenChange(false)} disabled={isBusy}>
+					<Button type="button" variant="ghost" intent="neutral" onClick={() => onOpenChange(false)}>
 						<Trans>Cancel</Trans>
 					</Button>
 					<Button
@@ -145,14 +150,16 @@ export function AccountModeModal({
 						variant="filled"
 						intent="brand"
 						onClick={handleApply}
-						disabled={canChange ? isBusy || !isDirty : false}
+						disabled={canChange ? isBusy || isModeUnavailable || !isDirty : false}
 						iconLeft={isUpdating ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
 					>
 						{!canChange ? (
 							<Trans>Connect</Trans>
+						) : isLoading ? (
+							<Trans>Loading...</Trans>
 						) : isUpdating ? (
 							<Trans>Switching...</Trans>
-						) : isDirty ? (
+						) : isDirty && selectedModeLabel ? (
 							<Trans>Switch to {selectedModeLabel}</Trans>
 						) : (
 							<Trans>Current</Trans>

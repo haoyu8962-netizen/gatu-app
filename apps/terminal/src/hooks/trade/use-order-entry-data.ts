@@ -1,3 +1,5 @@
+import { useLingui } from "@lingui/react/macro";
+import type { SideLabels } from "@/config/ui-text";
 import { getOrderAvailabilityFlags, getOrderAvailabilityStatus } from "@/domain/trade/order/availability";
 import { deriveOrderEntry, type OrderEntryDerived } from "@/domain/trade/order/derive";
 import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle } from "@/domain/trade/order/size";
@@ -13,6 +15,7 @@ interface OrderEntryData extends OrderEntryDerived {
 	isAvailabilityBlocked: boolean;
 	isAvailabilityStale: boolean;
 	hasAvailabilityError: boolean;
+	sideLabels: SideLabels;
 
 	getSizeForPercent: (pct: number) => string;
 	convertSizeForModeToggle: () => string;
@@ -49,6 +52,7 @@ export function useOrderEntryData({
 	sizeMode,
 	sizeInput,
 }: UseOrderEntryDataOptions): OrderEntryData {
+	const { t } = useLingui();
 	const { isConnected } = useWalletSession();
 	const { spotBalances, spotAvailableAfterMaintenance, spotStateStatus } = useDefaultDexBalances();
 	const {
@@ -72,6 +76,7 @@ export function useOrderEntryData({
 	} = useAssetLeverage();
 
 	const conversionPrice = markPx > 0 ? markPx : 0;
+	const isSpotMarket = market?.kind === "spot";
 	const availabilityStatus = getOrderAvailabilityStatus({
 		isConnected,
 		marketKind: market?.kind,
@@ -84,6 +89,9 @@ export function useOrderEntryData({
 		hasError: hasAvailabilityError,
 		isBlocked: isAvailabilityBlocked,
 	} = getOrderAvailabilityFlags(isConnected, availabilityStatus);
+	const sideLabels: SideLabels = isSpotMarket
+		? { buy: t`Buy`, sell: t`Sell`, buyAria: t`Buy`, sellAria: t`Sell` }
+		: { buy: t`Long`, sell: t`Short`, buyAria: t`Buy Long`, sellAria: t`Sell Short` };
 
 	const derived = deriveOrderEntry({
 		isConnected,
@@ -127,6 +135,7 @@ export function useOrderEntryData({
 		isAvailabilityStale,
 		hasAvailabilityError,
 		...derived,
+		sideLabels,
 		getSizeForPercent,
 		convertSizeForModeToggle,
 		leverage,

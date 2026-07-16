@@ -46,7 +46,7 @@ export function useAccountAbstractionControl() {
 	const { isTestnet } = useHyperliquid();
 	const { user: userExchangeClient } = useHyperliquidClients();
 	const { address, hasWalletAccess } = useWalletSession();
-	const { data: accountAbstraction, status } = useUserAbstraction(address, hasWalletAccess, undefined);
+	const { data: accountAbstraction, fetchStatus } = useUserAbstraction(address, hasWalletAccess, undefined);
 	const setAbstraction = useExchange("userSetAbstraction");
 
 	const canSet = hasWalletAccess && !!address && !!userExchangeClient;
@@ -72,7 +72,7 @@ export function useAccountAbstractionControl() {
 
 	return {
 		accountAbstraction: selectedAccountAbstraction,
-		isLoading: status === "pending",
+		isLoading: fetchStatus === "fetching",
 		isUpdating: setAbstraction.isPending,
 		canSet,
 		setAccountAbstraction,

@@ -1,6 +1,5 @@
 import { Button, ButtonIcon, Divider } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon, GearIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
@@ -37,6 +36,7 @@ function getScopeAccentClass(scope: string): string {
 }
 
 export function TopNav() {
+	const { t } = useLingui();
 	const navigate = useNavigate();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();

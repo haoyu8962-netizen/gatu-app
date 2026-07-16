@@ -5,12 +5,13 @@ import {
 	CopyIcon,
 	DownloadSimpleIcon,
 	SignOutIcon,
+	SpinnerGapIcon,
 	UploadSimpleIcon,
 	WalletIcon,
+	WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { Suspense, useState } from "react";
-import { UI_TEXT } from "@/config/ui-text";
 import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
@@ -23,7 +24,6 @@ import { createLazyComponent } from "@/lib/lazy";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
-const ACCOUNT_TEXT = UI_TEXT.ACCOUNT_PANEL;
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
 interface MobileAccountViewProps {
@@ -40,8 +40,16 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const accountAbstraction = selectedBalances.accountAbstraction;
 	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(accountAbstraction);
 	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
-	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, withdrawable, isLoading } =
-		summaryBalances;
+	const {
+		marginSummary,
+		perpSummary,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		withdrawable,
+		isSpotStateStale,
+		isLoading,
+		hasError,
+	} = summaryBalances;
 	const dex = selectedBalances.dex;
 	const tokenUsdPrices = useSpotTokenUsdPrices(isConnected);
 	const accountSummary = getAccountBalanceSummary({
@@ -82,10 +90,10 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 			: accountSummary.mode === "portfolioMargin"
 				? t`Portfolio Margin`
 				: t`Separate Accounts`;
-	const balanceLabel = showsSpotBalance ? t`Spot Available` : ACCOUNT_TEXT.BALANCE_LABEL;
+	const balanceLabel = showsSpotBalance ? t`Spot Available` : t`Balance`;
 	const balanceValue = showsSpotBalance ? accountSummary.spotUsdcAvailable : accountSummary.balance;
-	const availableLabel = usesUnifiedBalance ? ACCOUNT_TEXT.AVAILABLE_LABEL : t`Perps Withdrawable`;
-	const equityLabel = usesUnifiedBalance ? ACCOUNT_TEXT.EQUITY_LABEL : t`Perps Equity`;
+	const availableLabel = usesUnifiedBalance ? t`Available` : t`Perps Withdrawable`;
+	const equityLabel = usesUnifiedBalance ? t`Equity` : t`Perps Equity`;
 	const showSpotFundsNotice = showsSpotBalance && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 	const internalTransferDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
 		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
@@ -142,9 +150,14 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									<CopyIcon className={cn("size-3.5", copied && "text-success")} />
 								</ButtonIcon>
 							</div>
-							<Badge tone="neutral" size="sm" className="mt-0.5">
-								{accountModeLabel}
-							</Badge>
+							<div className="mt-0.5 flex items-center gap-1.5">
+								<Badge tone="neutral" size="sm">
+									{accountModeLabel}
+								</Badge>
+								{isSpotStateStale && !hasError ? (
+									<SpinnerGapIcon className="size-3.5 animate-spin text-warning" aria-label={t`Loading...`} />
+								) : null}
+							</div>
 						</div>
 					</div>
 					<ButtonIcon
@@ -164,6 +177,16 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 
 			<div className="flex-1 min-h-0 overflow-y-auto">
 				<div className="p-2 space-y-4">
+					{hasError ? (
+						<div
+							role="alert"
+							className="flex items-center gap-2 rounded-xs border border-stroke-error-weak bg-error-soft px-3 py-2 text-xs text-error"
+						>
+							<WarningCircleIcon className="size-4 shrink-0" />
+							<span>{t`Failed to load balances.`}</span>
+						</div>
+					) : null}
+
 					<div className="p-4 rounded-xs border border-stroke-weak/60 bg-surface">
 						<Skeleton name="account-equity" loading={isLoading}>
 							<div>
@@ -176,7 +199,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									)}
 								>
 									{riskSummary.unrealizedPnl >= 0 ? "+" : ""}
-									{formatUSD(riskSummary.unrealizedPnl)} {ACCOUNT_TEXT.UNREALIZED_LABEL}
+									{formatUSD(riskSummary.unrealizedPnl)} {t`Unrealized PNL`}
 								</div>
 							</div>
 						</Skeleton>
@@ -185,23 +208,15 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					<div className="grid grid-cols-2 gap-3">
 						<StatCard label={balanceLabel} value={formatUSD(balanceValue)} isLoading={isLoading} />
 						<StatCard label={availableLabel} value={formatUSD(accountSummary.available)} isLoading={isLoading} />
+						<StatCard label={t`Margin Used`} value={formatUSD(accountSummary.perpMarginUsed)} isLoading={isLoading} />
 						<StatCard
-							label={ACCOUNT_TEXT.MARGIN_USED_LABEL}
-							value={formatUSD(accountSummary.perpMarginUsed)}
-							isLoading={isLoading}
-						/>
-						<StatCard
-							label={ACCOUNT_TEXT.MARGIN_RATIO_LABEL}
+							label={t`Margin Ratio`}
 							value={formatPercent(marginRatio)}
 							valueClass={marginRatio > 0.8 ? "text-error" : marginRatio > 0.5 ? "text-warning" : ""}
 							isLoading={isLoading}
 						/>
 						<StatCard label={t`Maintenance Margin`} value={formatUSD(maintenanceMargin)} isLoading={isLoading} />
-						<StatCard
-							label={ACCOUNT_TEXT.CROSS_LEVERAGE_LABEL}
-							value={`${crossLeverage.toFixed(2)}x`}
-							isLoading={isLoading}
-						/>
+						<StatCard label={t`Cross Leverage`} value={`${crossLeverage.toFixed(2)}x`} isLoading={isLoading} />
 					</div>
 
 					{showSpotFundsNotice && (
@@ -234,7 +249,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								onClick={() => openDepositModal("withdraw")}
 								iconLeft={<UploadSimpleIcon className="size-4" />}
 							>
-								{ACCOUNT_TEXT.WITHDRAW_LABEL}
+								{t`Withdraw`}
 							</Button>
 							<Button
 								variant="outline"
@@ -243,7 +258,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 								onClick={() => openDepositModal("deposit")}
 								iconLeft={<DownloadSimpleIcon className="size-4" />}
 							>
-								{ACCOUNT_TEXT.DEPOSIT_LABEL}
+								{t`Deposit`}
 							</Button>
 							<Tooltip content={internalTransferDisabledReason} side="top">
 								<span className="inline-flex w-full">

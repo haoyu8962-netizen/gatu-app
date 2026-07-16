@@ -2,8 +2,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useExchange, useHyperliquid, useHyperliquidClients } from "@/lib/hyperliquid";
-import { readAccountModePreference } from "./use-account-abstraction-control";
-import { useUserAbstraction } from "./use-account-balances";
+import { readAccountModePreference, type SelectableAccountAbstraction } from "./use-account-abstraction-control";
+import { type AccountAbstraction, useUserAbstraction } from "./use-account-balances";
 
 const TARGET_ABSTRACTION = "unifiedAccount";
 const AUTO_SET_STORAGE_PREFIX = "gatu:auto-unified-account";
@@ -38,6 +38,20 @@ function shouldSkipAfterFailure(value: string | null): boolean {
 	return Number.isFinite(timestamp) && Date.now() - timestamp < FAILED_ATTEMPT_COOLDOWN_MS;
 }
 
+export function shouldDefaultToUnifiedAccount(
+	accountAbstraction: AccountAbstraction,
+	userPreference: SelectableAccountAbstraction | null,
+): boolean {
+	if (
+		accountAbstraction === TARGET_ABSTRACTION ||
+		accountAbstraction === "portfolioMargin" ||
+		accountAbstraction === "disabled"
+	) {
+		return false;
+	}
+	return userPreference === null || userPreference === TARGET_ABSTRACTION;
+}
+
 export function useDefaultUnifiedAccount() {
 	const queryClient = useQueryClient();
 	const { isTestnet } = useHyperliquid();
@@ -50,10 +64,9 @@ export function useDefaultUnifiedAccount() {
 	useEffect(() => {
 		if (!hasWalletAccess || !address || !userExchangeClient) return;
 		if (status !== "success") return;
-		if (accountAbstraction === TARGET_ABSTRACTION || accountAbstraction === "portfolioMargin") return;
 		if (setAbstraction.isPending || inFlightRef.current) return;
 		const userPreference = readAccountModePreference(isTestnet, address);
-		if (userPreference && userPreference !== TARGET_ABSTRACTION) return;
+		if (!shouldDefaultToUnifiedAccount(accountAbstraction ?? null, userPreference)) return;
 
 		const storageKey = getStorageKey(isTestnet, address);
 		if (shouldSkipAfterFailure(readStorage(storageKey))) return;

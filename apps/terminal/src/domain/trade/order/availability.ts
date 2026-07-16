@@ -85,10 +85,12 @@ export function getOrderAvailabilityFlags(
 	isConnected: boolean,
 	status: AssetAvailabilityStatus,
 ): OrderAvailabilityFlags {
+	const hasUsableSnapshot = status === "success" || status === "stale";
+
 	return {
 		isLoading: status === "loading",
 		isStale: status === "stale",
 		hasError: status === "error",
-		isBlocked: isConnected && status !== "success",
+		isBlocked: isConnected && !hasUsableSnapshot,
 	};
 }

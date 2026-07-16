@@ -24,25 +24,6 @@ const zhMessages: Messages = Object.fromEntries(
 	}).map(([message, translation]) => [getMessageId(message), translation]),
 );
 
-vi.mock("@lingui/react/macro", async () => {
-	const [{ createHash: hash }, linguiReact] = await Promise.all([import("node:crypto"), import("@lingui/react")]);
-	return {
-		Trans: linguiReact.Trans,
-		useLingui: () => {
-			const context = linguiReact.useLingui();
-			const translate = context.i18n._.bind(context.i18n);
-			return {
-				...context,
-				t: (strings: TemplateStringsArray, ...values: unknown[]) => {
-					const message = strings.reduce((result, part, index) => `${result}${part}${values[index] ?? ""}`, "");
-					const id = hash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
-					return translate({ id, message });
-				},
-			};
-		},
-	};
-});
-
 vi.mock("@/lib/i18n", () => ({
 	dynamicActivate: vi.fn(async () => {}),
 }));

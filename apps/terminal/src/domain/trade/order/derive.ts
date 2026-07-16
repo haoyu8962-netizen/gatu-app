@@ -1,4 +1,4 @@
-import { getSideLabels, getSizeModeLabel, type SideLabels } from "@/config/ui-text";
+import { getSizeModeLabel } from "@/config/ui-text";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import {
 	getAvailableBalanceToken,
@@ -41,7 +41,6 @@ export interface OrderEntryDerived {
 	maxSize: number;
 	sizeValue: number;
 	orderValue: number;
-	sideLabels: SideLabels;
 	sizeModeLabel: string;
 }
 
@@ -93,7 +92,6 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 	});
 
 	const orderValue = getOrderValue(sizeValue, inputs.conversionPrice);
-	const sideLabels = getSideLabels(isSpotMarket);
 	const sizeModeLabel = getSizeModeLabel(inputs.sizeMode, baseToken, quoteToken);
 
 	return {
@@ -110,7 +108,6 @@ export function deriveOrderEntry(inputs: OrderEntryInputs): OrderEntryDerived {
 		maxSize,
 		sizeValue,
 		orderValue,
-		sideLabels,
 		sizeModeLabel,
 	};
 }

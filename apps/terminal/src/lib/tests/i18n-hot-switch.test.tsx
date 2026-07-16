@@ -43,24 +43,6 @@ function activateLocale(locale: "en" | "zh") {
 	i18n.loadAndActivate({ locale, messages: locale === "zh" ? zhMessages : {} });
 }
 
-vi.mock("@lingui/react/macro", async () => {
-	const [{ createHash: hash }, linguiReact] = await Promise.all([import("node:crypto"), import("@lingui/react")]);
-	return {
-		useLingui: () => {
-			const context = linguiReact.useLingui();
-			const translate = context.i18n._.bind(context.i18n);
-			return {
-				...context,
-				t: (strings: TemplateStringsArray, ...values: unknown[]) => {
-					const message = strings.reduce((result, part, index) => `${result}${part}${values[index] ?? ""}`, "");
-					const id = hash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
-					return translate({ id, message });
-				},
-			};
-		},
-	};
-});
-
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://example.test/tx/${hash}`,
 	useSelectedMarketInfo: () => ({

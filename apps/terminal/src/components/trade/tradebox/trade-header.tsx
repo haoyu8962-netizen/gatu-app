@@ -24,6 +24,7 @@ interface Props {
 	onMarginLeverageClick?: () => void;
 	isLeveraged?: boolean;
 	accountMode?: SelectableAccountAbstraction | null;
+	isAccountModeLoading?: boolean;
 	isAccountModeUpdating?: boolean;
 	onAccountModeClick?: () => void;
 	hideAlgoOrders?: boolean;
@@ -43,6 +44,7 @@ export function TradeHeader({
 	onMarginLeverageClick,
 	isLeveraged,
 	accountMode,
+	isAccountModeLoading,
 	isAccountModeUpdating,
 	onAccountModeClick,
 	hideAlgoOrders,
@@ -83,7 +85,9 @@ export function TradeHeader({
 				? t`Unified`
 				: accountMode === "disabled"
 					? t`Separate`
-					: t`Unified`;
+					: isAccountModeLoading
+						? t`Loading...`
+						: t`Unavailable`;
 	const controlButtonClass = cn(
 		"group min-w-0 cursor-pointer rounded-8 bg-fill-weak px-2.5 py-1.5 text-xs font-semibold text-fg transition-colors",
 		"hover:bg-fill-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
@@ -160,14 +164,16 @@ export function TradeHeader({
 					<button
 						type="button"
 						onClick={onAccountModeClick}
-						disabled={isAccountModeUpdating}
+						disabled={isAccountModeLoading || isAccountModeUpdating}
 						className={cn(controlButtonClass, "w-full")}
 						aria-label={t`Account mode`}
 						aria-haspopup="dialog"
 						title={accountModeLabel}
 					>
 						<span className="flex min-w-0 items-center justify-center gap-1">
-							{isAccountModeUpdating && <SpinnerGapIcon className="size-3 shrink-0 animate-spin" />}
+							{(isAccountModeLoading || isAccountModeUpdating) && (
+								<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
+							)}
 							<span className="truncate">{accountModeLabel}</span>
 						</span>
 					</button>

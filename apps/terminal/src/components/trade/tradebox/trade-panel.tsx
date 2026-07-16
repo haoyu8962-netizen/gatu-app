@@ -103,7 +103,6 @@ export function TradePanel() {
 		availableBalance,
 		isAvailabilityBlocked,
 		isAvailabilityLoading,
-		isAvailabilityStale,
 		hasAvailabilityError,
 		maxSize,
 		sizeValue,
@@ -330,7 +329,7 @@ export function TradePanel() {
 		isSwitchingChain: switchChain.isPending,
 		switchChain: (chainId) => switchChain.mutate({ chainId }),
 		availableBalance,
-		isBalanceLoading: isAvailabilityLoading || isAvailabilityStale,
+		isBalanceLoading: isAvailabilityLoading,
 		hasBalanceError: hasAvailabilityError,
 		canDeposit: sessionMode === "wallet",
 		validation,
@@ -436,6 +435,7 @@ export function TradePanel() {
 					onMarginLeverageClick={() => setActiveModal("marginMode")}
 					isLeveraged={capabilities.isLeveraged}
 					accountMode={accountModeControl.accountAbstraction}
+					isAccountModeLoading={accountModeControl.isLoading}
 					isAccountModeUpdating={accountModeControl.isUpdating}
 					onAccountModeClick={() => setActiveModal("accountMode")}
 				/>
