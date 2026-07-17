@@ -2,7 +2,6 @@ export const SEO_DEFAULTS = {
 	siteName: "gatu",
 	siteUrl: "https://gatu.ai",
 	appUrl: "https://app.gatu.ai",
-	githubUrl: "https://github.com/zora4523-bot/gatu",
 	defaultTitle: "gatu — Open-source trading terminal for Hyperliquid",
 	defaultDescription:
 		"Open-source trading terminal for Hyperliquid. Perp, spot, and builder DEXs with sub-second charts, deep order books, and every order type — wallet-native, no signup.",

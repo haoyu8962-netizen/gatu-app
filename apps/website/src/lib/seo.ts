@@ -73,7 +73,6 @@ export function organizationSchema() {
 		name: SEO_DEFAULTS.siteName,
 		url: SEO_DEFAULTS.siteUrl,
 		logo: new URL("/favicon.svg", SEO_DEFAULTS.siteUrl).toString(),
-		sameAs: [SEO_DEFAULTS.githubUrl],
 	};
 }
 
@@ -99,7 +98,6 @@ export function softwareApplicationSchema() {
 		offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
 		isAccessibleForFree: true,
 		image: new URL(SEO_DEFAULTS.ogImage, SEO_DEFAULTS.siteUrl).toString(),
-		sameAs: [SEO_DEFAULTS.githubUrl],
 	};
 }
 
