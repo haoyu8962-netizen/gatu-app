@@ -142,7 +142,9 @@ Top-level: `format.ts`, `cn.ts`, `i18n.ts`, `seo.ts`, `errors.ts`, `explorer.ts`
 
 App-level tokens extend the `@gatu/ui` base. `@source "../../../packages/ui/src"` tells Tailwind to scan the UI package for class usage.
 
-See `.claude/rules/design-tokens.md` for the token taxonomy (`bg-bg-sunken`, `text-text-strong`, `bg-market-up`, etc.) — **never use hex literals**.
+See `.claude/rules/design-tokens.md` for the token taxonomy (`bg-background`, `bg-modal`, `text-fg`, `bg-market-up`, etc.) — **never use hex literals** in components.
+
+The terminal dark theme intentionally overrides `bg-background`, `bg-surface`, `bg-alternate`, and `bg-modal` to `#0f1a1f`. Blocking modals and drawers must use `bg-modal`; lightweight raised layers such as tooltips, toasts, and selection indicators remain on `bg-overlay`.
 
 ## Testing
 
