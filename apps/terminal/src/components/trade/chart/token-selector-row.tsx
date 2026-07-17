@@ -10,7 +10,7 @@ import {
 	isTokenInCategory,
 } from "@/domain/market";
 import { cn } from "@/lib/cn";
-import { formatNumber, formatPercent, formatPrice, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
+import { formatNumber, formatPercent, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetDisplay } from "../components/asset-display";
 import { getMarketSelectorPairName } from "./token-selector-categories";
@@ -68,6 +68,10 @@ export function TokenSelectorRow({
 			? `${spotBaseToken.displayName ?? spotBaseToken.name}/${spotQuoteToken.displayName ?? spotQuoteToken.name}`
 			: null;
 	const displayPairName = !mobile && spotPairName ? spotPairName : getMarketSelectorPairName(market);
+	const priceText = formatNumber(market.markPx, {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: szDecimalsToPriceDecimals(szDecimals),
+	});
 	const changePercent = get24hChange(market.prevDayPx, market.markPx);
 	const priceChange = get24hPriceChange(market.prevDayPx, market.markPx);
 	const changeClass = cn(
@@ -92,6 +96,21 @@ export function TokenSelectorRow({
 		minimumFractionDigits: 0,
 		maximumFractionDigits: 0,
 	});
+	const mobileOiText = formatUSD(oiValue, {
+		compact: true,
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 2,
+	});
+	const volumeText = formatUSD(market.dayNtlVlm, {
+		compact: false,
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
+	});
+	const mobileVolumeText = formatUSD(market.dayNtlVlm, {
+		compact: true,
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 2,
+	});
 	const eightHourFunding = getEightHourFundingRate(market.funding);
 	const spotMarketCap = isSpot ? getMarketCapUsd(market.circulatingSupply, market.markPx) : null;
 	const tableLayout: MarketTableLayout = showSpotMarketCap ? "spot" : "default";
@@ -103,6 +122,14 @@ export function TokenSelectorRow({
 					maximumFractionDigits: 0,
 				})} ${spotQuoteToken.displayName ?? spotQuoteToken.name}`
 			: "--";
+	const mobileSpotMarketCapText =
+		spotMarketCap === null
+			? "--"
+			: formatUSD(spotMarketCap, {
+					compact: true,
+					minimumFractionDigits: 0,
+					maximumFractionDigits: 2,
+				});
 	const favoriteButton = (
 		<button
 			type="button"
@@ -124,6 +151,75 @@ export function TokenSelectorRow({
 			/>
 		</button>
 	);
+	const secondaryMobileMetric = showSpotMarketCap
+		? { text: mobileSpotMarketCapText, title: spotMarketCapText }
+		: showDerivativesMetrics && !isSpot
+			? { text: mobileOiText, title: oiText }
+			: { text: "--", title: undefined };
+
+	if (mobile) {
+		return (
+			<div
+				data-index={market.name}
+				onClick={() => onSelect(market.name)}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") onSelect(market.name);
+				}}
+				role="option"
+				aria-selected={isSelected}
+				tabIndex={-1}
+				className={cn(
+					"absolute top-0 left-0 grid w-full cursor-pointer grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-b border-stroke-weak px-2 py-1.5 transition-colors hover:bg-fill-hover",
+					isSelected && !isHighlighted && "bg-surface",
+					isHighlighted && "bg-fill-hover",
+				)}
+				style={{ height: `${height}px`, transform: `translateY(${top}px)` }}
+			>
+				<div className="flex min-w-0 items-center gap-1.5">
+					<AssetDisplay coin={market.name} iconUrl={market.iconUrl} hideName iconClassName="size-5 shrink-0" />
+					<div className="min-w-0 flex-1">
+						<div className="flex min-w-0 items-center gap-0.5">
+							<span title={displayPairName} className="min-w-0 truncate text-xs font-semibold tracking-tight">
+								{displayPairName}
+							</span>
+							{isTokenInCategory(market.shortName, "new") ? (
+								<Badge tone="neutral" size="sm" className="shrink-0 px-1 py-0 text-xs">
+									{t`NEW`}
+								</Badge>
+							) : null}
+							{favoriteButton}
+						</div>
+						<div className="flex min-w-0 items-center gap-1.5 text-2xs leading-4 text-fg-muted">
+							{getMaxLeverage(market) ? <span>{getMaxLeverage(market)}x</span> : null}
+							{isSpot ? <span className="text-brand">{t`Spot`}</span> : null}
+							{spotApiToken && spotApiToken !== market.shortName ? (
+								<span className="truncate font-mono">{spotApiToken}</span>
+							) : null}
+							{isHip3 ? <span className="truncate text-warning">{getDex(market)}</span> : null}
+						</div>
+					</div>
+				</div>
+
+				<div className="flex min-w-0 flex-col items-end text-right text-2xs leading-4 tabular-nums">
+					<span className="w-full truncate font-medium text-fg" title={volumeText}>
+						{mobileVolumeText}
+					</span>
+					<span className="w-full truncate text-fg-muted" title={secondaryMobileMetric.title}>
+						{secondaryMobileMetric.text}
+					</span>
+				</div>
+
+				<div className="flex min-w-0 flex-col items-end text-right leading-4 tabular-nums">
+					<span className="w-full truncate text-xs font-medium text-fg" title={priceText}>
+						{priceText}
+					</span>
+					<span className={cn(changeClass, "w-full truncate text-2xs")} title={changeText}>
+						{changeText}
+					</span>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div
@@ -191,14 +287,7 @@ export function TokenSelectorRow({
 				</div>
 			</div>
 			<div className={cn("text-right", getMarketTableColumnClass("price", mobile, tableLayout))}>
-				<span className="font-medium tabular-nums text-xs">
-					{mobile
-						? formatPrice(market.markPx, { szDecimals })
-						: formatNumber(market.markPx, {
-								minimumFractionDigits: 0,
-								maximumFractionDigits: szDecimalsToPriceDecimals(szDecimals),
-							})}
-				</span>
+				<span className="font-medium tabular-nums text-xs">{priceText}</span>
 			</div>
 			<div className={cn("text-right", getMarketTableColumnClass("24h-change", mobile, tableLayout))}>
 				<span className={cn(changeClass, "whitespace-nowrap")} title={changeText}>
@@ -223,13 +312,7 @@ export function TokenSelectorRow({
 				</div>
 			) : null}
 			<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("volume", mobile, tableLayout))}>
-				<span className="text-xs font-medium tabular-nums">
-					{formatUSD(market.dayNtlVlm, {
-						compact: false,
-						minimumFractionDigits: 0,
-						maximumFractionDigits: 0,
-					})}
-				</span>
+				<span className="text-xs font-medium tabular-nums">{volumeText}</span>
 			</div>
 			{showSpotMarketCap ? (
 				<div className={cn("hidden text-right lg:block", getMarketTableColumnClass("market-cap", mobile, tableLayout))}>

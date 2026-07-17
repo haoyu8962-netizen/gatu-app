@@ -77,7 +77,7 @@ export function TokenSelector({ selectedMarket, onValueChange }: Props) {
 
 	if (isMobile) {
 		return (
-			<Drawer side="bottom" open={open} onOpenChange={handleOpenChange}>
+			<Drawer side="bottom" modal="trap-focus" open={open} onOpenChange={handleOpenChange}>
 				<DrawerTrigger
 					role="combobox"
 					aria-expanded={open}

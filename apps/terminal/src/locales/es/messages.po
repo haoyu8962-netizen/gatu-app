@@ -192,7 +192,6 @@ msgstr "Tipos de orden avanzados"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "All"
 msgstr "Todos"
@@ -516,6 +515,7 @@ msgstr "Gráfico"
 #~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
 #~ msgstr "Se bloqueó pegar desde el portapapeles. Pega desde el menú del teclado o escribe el código manualmente."
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -1490,7 +1490,6 @@ msgid "Hide small"
 msgstr "Ocultar pequeños"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
@@ -1880,6 +1879,7 @@ msgstr "Precio de marca: se usa para calcular margen, PnL no realizado, liquidac
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2057,6 +2057,7 @@ msgstr "Comisión de red"
 msgid "New"
 msgstr "Nuevo"
 
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 msgid "NEW"
 msgstr "NUEVO"
@@ -2437,7 +2438,6 @@ msgstr "pendiente"
 #~ msgstr "perp"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/config/nav.tsx
@@ -2630,7 +2630,6 @@ msgstr "Preparando tu cotización..."
 #~ msgid "Previous"
 #~ msgstr "Anterior"
 
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -3252,6 +3251,7 @@ msgstr "Pronto"
 #~ msgstr "Ordenar por {headerLabel}"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
 msgstr "Ordenar por {sortLabel}"
 
@@ -3271,7 +3271,7 @@ msgstr "Origen"
 #~ msgstr "spot"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/positions/balances-tab.tsx

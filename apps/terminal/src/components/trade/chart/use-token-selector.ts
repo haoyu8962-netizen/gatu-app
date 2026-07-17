@@ -3,7 +3,6 @@ import { getCoreRowModel, getSortedRowModel, type Row, type SortingState, useRea
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { TOKEN_SELECTOR_OVERSCAN, TOKEN_SELECTOR_ROW_HEIGHT_PX } from "@/config/layout";
-import { PERP_CATEGORIES } from "@/config/markets";
 import { marketSearchConfig } from "@/config/search";
 import type { ExchangeScope } from "@/domain/market";
 import { useMarketsInfo } from "@/lib/hyperliquid";
@@ -19,7 +18,6 @@ import {
 import { type MarketRow, type MarketScope, TOKEN_SELECTOR_COLUMNS } from "./token-selector-columns";
 
 const PERP_ANNOTATIONS_STALE_TIME_MS = 5 * 60 * 1_000;
-const MOBILE_MARKET_SCOPES = new Set<MarketScope>(["all", "perp", "spot", "hip3"]);
 
 const TRADITIONAL_FINANCE_SUBCATEGORIES: Subcategory[] = [
 	{ value: "all", label: "All" },
@@ -101,31 +99,11 @@ type MarketsInfo = ReturnType<typeof useMarketsInfo>;
 
 function computeSubcategories(
 	scope: MarketScope,
-	spotMarkets: MarketsInfo["spotMarkets"],
 	builderPerpMarkets: MarketsInfo["builderPerpMarkets"],
-	mobile: boolean,
 ): Subcategory[] {
 	if (scope === "traditional") return TRADITIONAL_FINANCE_SUBCATEGORIES;
-	if (scope === "perp") return mobile ? PERP_CATEGORIES : [];
-
-	if (scope === "spot") {
-		if (!mobile) return DESKTOP_SPOT_QUOTE_SUBCATEGORIES;
-		const quoteTokens = new Map<string, string>();
-		for (const market of spotMarkets) {
-			const quoteToken = market.tokensInfo[1];
-			const displayName = quoteToken?.displayName ?? quoteToken?.name;
-			if (displayName && !quoteTokens.has(displayName)) {
-				quoteTokens.set(displayName, displayName);
-			}
-		}
-		return [
-			{ value: "all", label: "All" },
-			...Array.from(quoteTokens.entries()).map(([name, displayName]) => ({
-				value: name,
-				label: displayName,
-			})),
-		];
-	}
+	if (scope === "perp") return [];
+	if (scope === "spot") return DESKTOP_SPOT_QUOTE_SUBCATEGORIES;
 
 	if (scope === "hip3") {
 		const dexNames = Object.keys(builderPerpMarkets).filter((k) => k !== "all");
@@ -140,7 +118,6 @@ export function useTokenSelector({
 	onValueChange,
 	open: controlledOpen,
 	onOpenChange,
-	mobile = false,
 }: UseTokenSelectorOptions): UseTokenSelectorReturn {
 	const { scope: exchangeScope, dex: exchangeDex } = useExchangeScope();
 	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
@@ -169,9 +146,8 @@ export function useTokenSelector({
 		}
 	}
 
-	const { markets, spotMarkets, builderPerpMarkets, isLoading } = useMarketsInfo();
+	const { markets, builderPerpMarkets, isLoading } = useMarketsInfo();
 	const { data: perpAnnotations, isLoading: annotationsLoading } = useInfo("perpConciseAnnotations", undefined, {
-		enabled: !mobile,
 		staleTime: PERP_ANNOTATIONS_STALE_TIME_MS,
 	});
 
@@ -181,20 +157,8 @@ export function useTokenSelector({
 	const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
 	const isFavorite = useCallback((name: string) => favoriteSet.has(name), [favoriteSet]);
 
-	const subcategories = useMemo(
-		() => computeSubcategories(scope, spotMarkets, builderPerpMarkets, mobile),
-		[scope, spotMarkets, builderPerpMarkets, mobile],
-	);
-	const selectorMarkets = useMemo(
-		() => createMarketRows(markets, mobile ? undefined : perpAnnotations),
-		[markets, mobile, perpAnnotations],
-	);
-
-	useEffect(() => {
-		if (!mobile || MOBILE_MARKET_SCOPES.has(localScope)) return;
-		setLocalScope(mapExchangeToMarketScope(exchangeScope));
-		setLocalSubcategory(exchangeDex ?? "all");
-	}, [mobile, localScope, exchangeScope, exchangeDex]);
+	const subcategories = useMemo(() => computeSubcategories(scope, builderPerpMarkets), [scope, builderPerpMarkets]);
+	const selectorMarkets = useMemo(() => createMarketRows(markets, perpAnnotations), [markets, perpAnnotations]);
 
 	useEffect(() => {
 		if (!open) return;

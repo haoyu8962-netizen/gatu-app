@@ -1,6 +1,6 @@
 import { Button, SearchInput } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ArrowDownIcon, ArrowsDownUpIcon, ArrowUpIcon } from "@phosphor-icons/react";
+import { ArrowDownIcon, ArrowsDownUpIcon, ArrowUpIcon, XIcon } from "@phosphor-icons/react";
 import type { ChangeEvent } from "react";
 import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
@@ -40,6 +40,7 @@ interface Props {
 	highlightedIndex: number;
 	headingId: string;
 	mobile?: boolean;
+	onClose?: () => void;
 }
 
 export function TokenSelectorContent({
@@ -66,28 +67,22 @@ export function TokenSelectorContent({
 	highlightedIndex,
 	headingId,
 	mobile,
+	onClose,
 }: Props) {
 	const { t } = useLingui();
 	useRenderCommitTrack("token-search");
 	const headerGroup = table.getHeaderGroups()[0];
-	const marketScopes: { value: MarketScope; label: string }[] = mobile
-		? [
-				{ value: "all", label: t`All` },
-				{ value: "perp", label: t`Perp` },
-				{ value: "spot", label: t`Spot` },
-				{ value: "hip3", label: t`HIP-3` },
-			]
-		: [
-				{ value: "favorites", label: t`Favorites` },
-				{ value: "all", label: t`All` },
-				{ value: "perp", label: t`Perp` },
-				{ value: "spot", label: t`Spot` },
-				{ value: "crypto", label: t`Crypto` },
-				{ value: "traditional", label: t`Traditional Finance` },
-				{ value: "hip3", label: t`HIP-3` },
-				{ value: "popular", label: t`Popular` },
-				{ value: "prelaunch", label: t`Pre-launch` },
-			];
+	const marketScopes: { value: MarketScope; label: string }[] = [
+		{ value: "favorites", label: t`Favorites` },
+		{ value: "all", label: t`All` },
+		{ value: "perp", label: t`Perp` },
+		{ value: "spot", label: t`Spot` },
+		{ value: "crypto", label: t`Crypto` },
+		{ value: "traditional", label: t`Traditional Finance` },
+		{ value: "hip3", label: t`HIP-3` },
+		{ value: "popular", label: t`Popular` },
+		{ value: "prelaunch", label: t`Pre-launch` },
+	];
 	const showScopeTabs = true;
 	const showSubcategoryTabs = subcategories.length > 0;
 	const showSelectorFilters = showScopeTabs || showSubcategoryTabs;
@@ -96,7 +91,7 @@ export function TokenSelectorContent({
 	function getColumnSortLabel(columnId: string): string {
 		switch (columnId) {
 			case "price":
-				return mobile ? t`Price` : t`Last Price`;
+				return t`Last Price`;
 			case "24h-change":
 				return t`24h Change`;
 			case "oi":
@@ -143,12 +138,47 @@ export function TokenSelectorContent({
 		}
 	}
 
+	function renderMobileSortHeader(columnId: string) {
+		const sortLabel = getColumnSortLabel(columnId);
+		return (
+			<button
+				type="button"
+				onClick={() => handleSort(columnId)}
+				title={sortLabel}
+				className="flex w-full min-w-0 cursor-pointer items-center justify-end gap-0.5 rounded-4 leading-4 transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+				aria-label={t`Sort by ${sortLabel}`}
+			>
+				<span className="min-w-0 truncate">{sortLabel}</span>
+				<span className="inline-flex shrink-0 text-fg-muted">
+					<SortIcon columnId={columnId} sorting={sorting} />
+				</span>
+			</button>
+		);
+	}
+
 	return (
 		<div className={cn("flex flex-col", mobile ? "h-full min-h-0" : "max-h-144")}>
-			<div className="border-b border-stroke-weak shrink-0 px-2 pt-3 pb-2 space-y-2">
-				<h2 id={headingId} className="text-sm font-semibold text-fg tracking-tight">
-					{t`Select market`}
-				</h2>
+			<div
+				className={cn(
+					"shrink-0 space-y-2 border-b border-stroke-weak px-2 pt-3 pb-2",
+					mobile && onClose && "pt-[calc(0.75rem+env(safe-area-inset-top))]",
+				)}
+			>
+				<div className="flex items-center justify-between gap-3">
+					<h2 id={headingId} className="text-sm font-semibold tracking-tight text-fg">
+						{t`Select market`}
+					</h2>
+					{onClose ? (
+						<button
+							type="button"
+							onClick={onClose}
+							className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-8 text-icon transition-colors hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							aria-label={t`Close`}
+						>
+							<XIcon className="size-4" />
+						</button>
+					) : null}
+				</div>
 				<SearchInput
 					placeholder={t`Search markets...`}
 					value={search}
@@ -162,7 +192,7 @@ export function TokenSelectorContent({
 			{showSelectorFilters ? (
 				<div className="border-b border-stroke-weak bg-background p-2 shrink-0">
 					{showScopeTabs ? (
-						<div className="overflow-x-auto scrollbar-none">
+						<div className="overflow-x-auto overscroll-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 							<div className="flex w-max min-w-full flex-nowrap items-center gap-0.5">
 								{marketScopes.map((s) => {
 									const isSelected = scope === s.value;
@@ -174,7 +204,6 @@ export function TokenSelectorContent({
 											onClick={() => handleScopeSelect(s.value)}
 											className={cn(
 												"shrink-0 cursor-pointer px-2 py-1 text-xs no-underline",
-												mobile && "uppercase tracking-wider",
 												isSelected
 													? "bg-brand-soft text-brand hover:bg-brand-soft hover:text-brand"
 													: "text-fg hover:bg-transparent",
@@ -189,7 +218,7 @@ export function TokenSelectorContent({
 						</div>
 					) : null}
 					{showSubcategoryTabs ? (
-						<div className="mt-1.5 flex items-center gap-0.5 overflow-x-auto pt-1.5 scrollbar-none">
+						<div className="mt-1.5 flex items-center gap-0.5 overflow-x-auto overscroll-none pt-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 							{subcategories.map((sub) => {
 								const isSelected = subcategory === sub.value;
 								const label = getSubcategoryLabel(sub.value, sub.label);
@@ -217,64 +246,78 @@ export function TokenSelectorContent({
 				</div>
 			) : null}
 			<div className="shrink-0 border-b border-stroke-weak bg-background">
-				<div className="flex h-9 w-full items-center px-2 text-3xs font-semibold uppercase tracking-widest text-fg-muted">
-					<div
-						className={cn(
-							"min-w-0 text-left",
-							tableLayout === "spot" ? "flex-1 lg:flex-none" : "flex-1 min-[848px]:flex-none",
-							getMarketTableColumnClass("pairName", mobile ?? false, tableLayout),
-						)}
-					>
-						{t`Market`}
+				{mobile ? (
+					<div className="grid h-11 w-full grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 px-2 text-3xs font-semibold uppercase tracking-wider text-fg-muted">
+						<div className="min-w-0 text-left">{t`Market`}</div>
+						<div className="flex min-w-0 flex-col items-end text-right">
+							{renderMobileSortHeader("volume")}
+							{renderMobileSortHeader(scope === "spot" ? "market-cap" : "oi")}
+						</div>
+						<div className="flex min-w-0 flex-col items-end text-right">
+							{renderMobileSortHeader("price")}
+							{renderMobileSortHeader("24h-change")}
+						</div>
 					</div>
-					{headerGroup?.headers
-						.filter((h) => h.id !== "pairName")
-						.map((header) => {
-							const hiddenOnMobile = ["oi", "volume", "funding", "market-cap"].includes(header.id);
-							const hideForSpot = scope === "spot" && ["oi", "funding"].includes(header.id);
-							const hideUnlessSpot = scope !== "spot" && header.id === "market-cap";
-							const visibilityClass = hiddenOnMobile
-								? mobile
-									? "hidden"
-									: header.id === "market-cap"
+				) : (
+					<div className="flex h-9 w-full items-center px-2 text-3xs font-semibold uppercase tracking-widest text-fg-muted">
+						<div
+							className={cn(
+								"min-w-0 text-left",
+								tableLayout === "spot" ? "flex-1 lg:flex-none" : "flex-1 min-[848px]:flex-none",
+								getMarketTableColumnClass("pairName", false, tableLayout),
+							)}
+						>
+							{t`Market`}
+						</div>
+						{headerGroup?.headers
+							.filter((h) => h.id !== "pairName")
+							.map((header) => {
+								const hideForSpot = scope === "spot" && ["oi", "funding"].includes(header.id);
+								const hideUnlessSpot = scope !== "spot" && header.id === "market-cap";
+								const visibilityClass =
+									header.id === "market-cap"
 										? "hidden lg:flex"
-										: "hidden sm:flex"
-								: undefined;
+										: ["oi", "volume", "funding"].includes(header.id)
+											? "hidden sm:flex"
+											: "flex";
 
-							if (hideForSpot || hideUnlessSpot) return null;
+								if (hideForSpot || hideUnlessSpot) return null;
 
-							const sortLabel = getColumnSortLabel(header.id);
-							return (
-								<div
-									key={header.id}
-									className={cn(
-										"h-full min-w-0 items-center justify-end text-right",
-										getMarketTableColumnClass(header.id, mobile ?? false, tableLayout),
-										visibilityClass ?? "flex",
-									)}
-								>
-									<button
-										type="button"
-										onClick={() => handleSort(header.id)}
-										title={sortLabel}
+								const sortLabel = getColumnSortLabel(header.id);
+								return (
+									<div
+										key={header.id}
 										className={cn(
-											"inline-flex w-full min-w-0 cursor-pointer items-center justify-end gap-1 rounded-4 py-0.5 text-inherit transition-colors",
-											"hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+											"h-full min-w-0 items-center justify-end text-right",
+											getMarketTableColumnClass(header.id, false, tableLayout),
+											visibilityClass,
 										)}
-										aria-label={t`Sort by ${sortLabel}`}
 									>
-										<span className="min-w-0 whitespace-normal text-right leading-tight text-balance">{sortLabel}</span>
-										<span className="inline-flex shrink-0 text-fg-muted">
-											<SortIcon columnId={header.id} sorting={sorting} />
-										</span>
-									</button>
-								</div>
-							);
-						})}
-				</div>
+										<button
+											type="button"
+											onClick={() => handleSort(header.id)}
+											title={sortLabel}
+											className={cn(
+												"inline-flex w-full min-w-0 cursor-pointer items-center justify-end gap-1 rounded-4 py-0.5 text-inherit transition-colors",
+												"hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+											)}
+											aria-label={t`Sort by ${sortLabel}`}
+										>
+											<span className="min-w-0 whitespace-normal text-right leading-tight text-balance">
+												{sortLabel}
+											</span>
+											<span className="inline-flex shrink-0 text-fg-muted">
+												<SortIcon columnId={header.id} sorting={sorting} />
+											</span>
+										</button>
+									</div>
+								);
+							})}
+					</div>
+				)}
 			</div>
 
-			<div ref={containerRef} className="flex-1 min-h-0 overflow-auto">
+			<div ref={containerRef} className={cn("min-h-0 flex-1 overflow-auto", mobile && "overscroll-none")}>
 				{isLoading ? (
 					<div className="flex items-center justify-center py-8">
 						<span className="text-fg text-xs">{t`Loading markets...`}</span>
@@ -315,7 +358,12 @@ export function TokenSelectorContent({
 				)}
 			</div>
 
-			<div className="px-2 py-1.5 bg-fill-weak flex items-center justify-between text-fg shrink-0 text-xs">
+			<div
+				className={cn(
+					"flex shrink-0 items-center justify-between bg-fill-weak px-2 py-1.5 text-xs text-fg",
+					mobile && onClose && "pb-[calc(0.375rem+env(safe-area-inset-bottom))]",
+				)}
+			>
 				<span>
 					{filteredMarkets.length} {t`markets`}
 				</span>

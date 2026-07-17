@@ -108,15 +108,16 @@ interface DrawerContentProps
 	extends React.ComponentPropsWithoutRef<typeof BaseDrawer.Popup>,
 		Omit<VariantProps<typeof drawerContentVariants>, "side"> {
 	overlay?: boolean;
+	overlayClassName?: string;
 	keepMounted?: boolean;
 }
 
 const DrawerContent = React.forwardRef<HTMLDivElement, DrawerContentProps>(
-	({ className, overlay = true, size, keepMounted, children, ...props }, ref) => {
+	({ className, overlay = true, overlayClassName, size, keepMounted, children, ...props }, ref) => {
 		const side = React.useContext(DrawerSideContext);
 		return (
 			<BaseDrawer.Portal keepMounted={keepMounted}>
-				{overlay && <DrawerOverlay />}
+				{overlay && <DrawerOverlay className={overlayClassName} />}
 				<BaseDrawer.Popup ref={ref} className={cn(drawerContentVariants({ side, size }), className)} {...props}>
 					{children}
 				</BaseDrawer.Popup>

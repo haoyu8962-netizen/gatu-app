@@ -192,7 +192,6 @@ msgstr "أنواع الأوامر المتقدمة"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "All"
 msgstr "الكل"
@@ -516,6 +515,7 @@ msgstr "الرسم البياني"
 #~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
 #~ msgstr "تم حظر اللصق من الحافظة. الصق من قائمة لوحة المفاتيح أو أدخل الرمز يدويًا."
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -1490,7 +1490,6 @@ msgid "Hide small"
 msgstr "إخفاء الصغيرة"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
@@ -1880,6 +1879,7 @@ msgstr "سعر العلامة: يُستخدم لحسابات الهامش، وا
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2057,6 +2057,7 @@ msgstr "رسوم الشبكة"
 msgid "New"
 msgstr "جديد"
 
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 msgid "NEW"
 msgstr "جديد"
@@ -2437,7 +2438,6 @@ msgstr "قيد الانتظار"
 #~ msgstr "دائم"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/config/nav.tsx
@@ -2630,7 +2630,6 @@ msgstr "جارٍ تجهيز عرض السعر..."
 #~ msgid "Previous"
 #~ msgstr "السابق"
 
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -3252,6 +3251,7 @@ msgstr "قريبًا"
 #~ msgstr "ترتيب حسب {headerLabel}"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
 msgstr "ترتيب حسب {sortLabel}"
 
@@ -3271,7 +3271,7 @@ msgstr "المصدر"
 #~ msgstr "فوري"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/positions/balances-tab.tsx

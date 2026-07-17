@@ -192,7 +192,6 @@ msgstr "उन्नत ऑर्डर प्रकार"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "All"
 msgstr "सभी"
@@ -516,6 +515,7 @@ msgstr "चार्ट"
 #~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
 #~ msgstr "क्लिपबोर्ड पेस्ट ब्लॉक हो गया। कीबोर्ड मेन्यू से पेस्ट करें या कोड मैन्युअल रूप से टाइप करें।"
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -1490,7 +1490,6 @@ msgid "Hide small"
 msgstr "छोटे छिपाएं"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
@@ -1880,6 +1879,7 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2057,6 +2057,7 @@ msgstr "नेटवर्क शुल्क"
 msgid "New"
 msgstr "नया"
 
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 msgid "NEW"
 msgstr "नया"
@@ -2437,7 +2438,6 @@ msgstr "लंबित"
 #~ msgstr "परप"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/config/nav.tsx
@@ -2630,7 +2630,6 @@ msgstr "आपका कोट तैयार किया जा रहा ह
 #~ msgid "Previous"
 #~ msgstr "पिछला"
 
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -3252,6 +3251,7 @@ msgstr "जल्द ही"
 #~ msgstr "{headerLabel} से क्रमबद्ध करें"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
 msgstr "{sortLabel} के अनुसार क्रमबद्ध करें"
 
@@ -3271,7 +3271,7 @@ msgstr "स्रोत"
 #~ msgstr "स्पॉट"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/positions/balances-tab.tsx

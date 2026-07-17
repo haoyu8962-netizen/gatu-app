@@ -79,12 +79,18 @@ export function TokenSelectorPopup({
 			highlightedIndex={highlightedIndex}
 			headingId={headingId}
 			mobile={mobile}
+			onClose={mobile ? () => onOpenChange(false) : undefined}
 		/>
 	);
 
 	if (mobile) {
 		return (
-			<DrawerContent keepMounted className="h-[85dvh] overflow-hidden p-0">
+			<DrawerContent
+				className="inset-0 z-[90] h-dvh max-h-none w-full overflow-hidden overscroll-none rounded-none border-0 p-0 shadow-none transition-[opacity,transform] duration-300 ease-out data-starting-style:-translate-y-[5px] data-starting-style:opacity-0 data-ending-style:-translate-y-[5px] data-ending-style:opacity-0 motion-reduce:transition-none"
+				overlayClassName="z-10 bg-transparent overscroll-none transition-none"
+				aria-labelledby={headingId}
+				onKeyDown={handleKeyDown}
+			>
 				{content}
 			</DrawerContent>
 		);

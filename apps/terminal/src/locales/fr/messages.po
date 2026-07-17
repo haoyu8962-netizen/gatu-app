@@ -192,7 +192,6 @@ msgstr "Types d'ordres avancés"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "All"
 msgstr "Tout"
@@ -516,6 +515,7 @@ msgstr "Graphique"
 #~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
 #~ msgstr "Le collage depuis le presse-papiers a été bloqué. Collez depuis le menu du clavier ou saisissez le code manuellement."
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -1490,7 +1490,6 @@ msgid "Hide small"
 msgstr "Masquer les petits"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
@@ -1880,6 +1879,7 @@ msgstr "Prix de marque : utilisé pour les calculs de marge, le PnL non réalis�
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2057,6 +2057,7 @@ msgstr "Frais de réseau"
 msgid "New"
 msgstr "Nouveau"
 
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 msgid "NEW"
 msgstr "NOUVEAU"
@@ -2437,7 +2438,6 @@ msgstr "en attente"
 #~ msgstr "perp"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/config/nav.tsx
@@ -2630,7 +2630,6 @@ msgstr "Préparation de votre devis..."
 #~ msgid "Previous"
 #~ msgstr "Précédent"
 
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -3252,6 +3251,7 @@ msgstr "Bientôt"
 #~ msgstr "Trier par {headerLabel}"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
 msgstr "Trier par {sortLabel}"
 
@@ -3271,7 +3271,7 @@ msgstr "Source"
 #~ msgstr "spot"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/positions/balances-tab.tsx

@@ -192,7 +192,6 @@ msgstr "专业委托类型"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "All"
 msgstr "全部"
@@ -516,6 +515,7 @@ msgstr "图表"
 #~ msgid "Clipboard paste was blocked. Paste from the keyboard menu or type the code manually."
 #~ msgstr "剪贴板粘贴被阻止。请从键盘菜单粘贴或手动输入配对码。"
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -1490,7 +1490,6 @@ msgid "Hide small"
 msgstr "隐藏小额"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
@@ -1880,6 +1879,7 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2057,6 +2057,7 @@ msgstr "网络费用"
 msgid "New"
 msgstr "新上线"
 
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 msgid "NEW"
 msgstr "新"
@@ -2437,7 +2438,6 @@ msgstr "待处理"
 #~ msgstr "永续"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/config/nav.tsx
@@ -2630,7 +2630,6 @@ msgstr "正在准备报价…"
 #~ msgid "Previous"
 #~ msgstr "上一页"
 
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -3252,6 +3251,7 @@ msgstr "即将推出"
 #~ msgstr "按 {headerLabel} 排序"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 msgid "Sort by {sortLabel}"
 msgstr "按{sortLabel}排序"
 
@@ -3271,7 +3271,7 @@ msgstr "来源"
 #~ msgstr "现货"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
