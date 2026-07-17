@@ -1,0 +1,32 @@
+---
+import Base from "@/layouts/Base.astro";
+import Nav from "@/components/Nav.astro";
+import Footer from "@/components/Footer.astro";
+import { SEO_DEFAULTS } from "@/config/seo";
+---
+
+<Base title="Page not found" description="This page does not exist." path="/404" noIndex>
+	<Nav />
+	<main class="flex min-h-[60vh] items-center justify-center px-6">
+		<div class="text-center">
+			<div class="text-3xs uppercase tracking-uppercase text-fg-faint">404</div>
+			<h1 class="mt-3 text-xl md:text-2xl font-medium tracking-display">This page doesn't exist.</h1>
+			<p class="mt-4 text-sm text-fg-muted">The chart you're looking for is probably in the terminal.</p>
+			<div class="mt-8 flex items-center justify-center gap-3">
+				<a
+					href={SEO_DEFAULTS.appUrl}
+					class="press inline-flex h-10 items-center justify-center rounded-xs bg-brand px-4 text-sm font-medium text-fg-inverse hover:opacity-90 transition-opacity duration-200"
+				>
+					Open the terminal
+				</a>
+				<a
+					href="/"
+					class="press inline-flex h-10 items-center justify-center rounded-xs border border-stroke-weak px-4 text-sm text-fg-muted hover:text-fg hover:border-stroke-strong transition-colors duration-200"
+				>
+					Back home
+				</a>
+			</div>
+		</div>
+	</main>
+	<Footer />
+</Base>

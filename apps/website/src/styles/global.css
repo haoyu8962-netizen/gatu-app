@@ -207,10 +207,51 @@
 	}
 
 	.text-brand-gradient {
-		background: linear-gradient(90deg, #46f0de, #26d2ec, #2e86f5);
+		background: linear-gradient(90deg, #46f0de, #26d2ec, #2e86f5, #26d2ec, #46f0de);
+		background-size: 200% 100%;
 		background-clip: text;
 		-webkit-background-clip: text;
 		color: transparent;
+		animation: gradient-flow 10s linear infinite;
+	}
+
+	@keyframes gradient-flow {
+		to {
+			background-position: 200% 0;
+		}
+	}
+
+	.marquee {
+		mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+	}
+	.marquee-track {
+		animation: marquee-scroll 45s linear infinite;
+	}
+	.marquee:hover .marquee-track {
+		animation-play-state: paused;
+	}
+	@keyframes marquee-scroll {
+		to {
+			transform: translateX(-50%);
+		}
+	}
+
+	.reveal {
+		opacity: 0;
+		transform: translateY(14px);
+		transition:
+			opacity 700ms var(--ease-out-quint),
+			transform 700ms var(--ease-out-quint);
+	}
+	.reveal.reveal-in {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.reveal {
+			opacity: 1;
+			transform: none;
+		}
 	}
 
 	/* Staggered fade-in: applies to children with `.stagger-item`. */

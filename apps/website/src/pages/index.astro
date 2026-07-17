@@ -2,15 +2,20 @@
 import Base from "@/layouts/Base.astro";
 import Nav from "@/components/Nav.astro";
 import Hero from "@/components/Hero.astro";
+import Ticker from "@/components/Ticker.astro";
+import Markets from "@/components/Markets.astro";
 import FeatureSpeed from "@/components/FeatureSpeed.astro";
 import Features from "@/components/Features.astro";
+import Fees from "@/components/Fees.astro";
+import Trust from "@/components/Trust.astro";
 import Faq from "@/components/Faq.astro";
 import Footer from "@/components/Footer.astro";
+import { FAQS } from "@/config/faq";
 import { ROUTE_SEO } from "@/config/seo";
-import { organizationSchema, softwareApplicationSchema, websiteSchema } from "@/lib/seo";
+import { faqSchema, organizationSchema, softwareApplicationSchema, websiteSchema } from "@/lib/seo";
 
 const seo = ROUTE_SEO.HOME;
-const jsonLd = [organizationSchema(), websiteSchema(), softwareApplicationSchema()];
+const jsonLd = [organizationSchema(), websiteSchema(), softwareApplicationSchema(), faqSchema(FAQS)];
 ---
 
 <Base
@@ -24,8 +29,12 @@ const jsonLd = [organizationSchema(), websiteSchema(), softwareApplicationSchema
 	<Nav />
 	<main>
 		<Hero />
+		<Ticker />
+		<Markets />
 		<FeatureSpeed />
 		<Features />
+		<Fees />
+		<Trust />
 		<Faq />
 	</main>
 	<Footer />
