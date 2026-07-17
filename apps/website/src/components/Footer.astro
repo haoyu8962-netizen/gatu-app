@@ -13,6 +13,7 @@ const product = [
 
 const resources = [
 	{ label: "Hyperliquid", href: "https://hyperliquid.xyz", icon: "link", external: true },
+	{ label: "Support", href: "/support", icon: "question" },
 	{ label: "Contact", href: "mailto:hi@gatu.ai", icon: "mail" },
 ];
 
@@ -103,7 +104,9 @@ const iconSvg: Record<string, string> = {
 
 		<div class="mt-10 md:mt-14 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-t border-stroke-weaker pt-6">
 			<p class="text-2xs text-fg-faint">
-				© {year} gatu · Not financial advice. Trade at your own risk.
+				© {year} gatu · Not financial advice. Trade at your own risk. ·
+				<a href="/privacy" class="hover:text-fg-muted transition-colors duration-150">Privacy</a> ·
+				<a href="/terms" class="hover:text-fg-muted transition-colors duration-150">Terms</a>
 			</p>
 			<div class="flex items-center gap-3 text-2xs text-fg-faint">
 				<span class="inline-flex items-center gap-1.5">
