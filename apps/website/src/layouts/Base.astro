@@ -56,8 +56,6 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		{seo.ogType === "article" && seo.author && <meta property="article:author" content={seo.author} />}
 
 		<meta name="twitter:card" content="summary_large_image" />
-		<meta name="twitter:site" content={SEO_DEFAULTS.twitterHandle} />
-		<meta name="twitter:creator" content={SEO_DEFAULTS.twitterHandle} />
 		<meta name="twitter:title" content={seo.title} />
 		<meta name="twitter:description" content={seo.description} />
 		<meta name="twitter:image" content={seo.ogImage} />
@@ -66,8 +64,8 @@ const schemas = jsonLd === undefined ? [] : Array.isArray(jsonLd) ? jsonLd : [js
 		<link rel="canonical" href={seo.canonical} />
 		<link rel="sitemap" href="/sitemap-index.xml" />
 
-		<link rel="preconnect" href="https://app.hypeterminal.com" />
-		<link rel="dns-prefetch" href="https://app.hypeterminal.com" />
+		<link rel="preconnect" href="https://app.gatu.ai" />
+		<link rel="dns-prefetch" href="https://app.gatu.ai" />
 
 		{schemas.map((schema) => (
 			<script type="application/ld+json" set:html={JSON.stringify(schema)} />

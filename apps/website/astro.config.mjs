@@ -3,7 +3,7 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-	site: "https://hypeterminal.com",
+	site: "https://gatu.ai",
 	output: "static",
 	integrations: [sitemap()],
 	vite: {

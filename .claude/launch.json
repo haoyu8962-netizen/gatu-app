@@ -12,6 +12,18 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@gatu/terminal", "exec", "vite", "dev", "--port", "3015", "--strictPort"],
       "port": 3015
+    },
+    {
+      "name": "terminal-3006",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@gatu/terminal", "exec", "vite", "dev", "--port", "3006", "--strictPort", "--host", "0.0.0.0"],
+      "port": 3006
+    },
+    {
+      "name": "website",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@gatu/website", "dev"],
+      "port": 3010
     }
   ]
 }
