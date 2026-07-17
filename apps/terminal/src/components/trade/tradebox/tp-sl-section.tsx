@@ -76,7 +76,7 @@ export function TpSlSection({
 	if (compact) {
 		return (
 			<div className="rounded-8 min-w-0 border border-stroke-weak/50 bg-surface p-2.5">
-				<div className="grid min-w-0 grid-cols-2 gap-2">
+				<div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-2">
 					<div className="min-w-0">
 						<NumberInput
 							label={t`Take Profit`}
