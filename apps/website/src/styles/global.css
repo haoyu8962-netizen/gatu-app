@@ -1,8 +1,10 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
+@import "@fontsource/instrument-serif";
 
 @theme {
 	--font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+	--font-display: "Instrument Serif", ui-serif, Georgia, serif;
 	--font-mono: ui-monospace, "SF Mono", monospace;
 
 	/* Strong custom easings — built-in CSS easings lack punch.
@@ -376,5 +378,33 @@
 		border: 0;
 		border-top: 1px solid var(--stroke-weak);
 		margin: 2em 0;
+	}
+}
+
+@layer components {
+	.font-display {
+		font-family: var(--font-display);
+		font-weight: 400;
+		letter-spacing: -0.01em;
+	}
+
+	.word-stagger .word {
+		display: inline-block;
+		margin-right: 0.28em;
+		opacity: 0;
+		transform: translateY(0.4em);
+		transition:
+			opacity 600ms var(--ease-out-quint),
+			transform 600ms var(--ease-out-quint);
+	}
+	.word-stagger.reveal-in .word {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.word-stagger .word {
+			opacity: 1;
+			transform: none;
+		}
 	}
 }
