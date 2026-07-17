@@ -1,7 +1,9 @@
 export {
 	exceedsBalance,
 	get24hChange,
+	get24hPriceChange,
 	getAvgPrice,
+	getEightHourFundingRate,
 	getMarketCapUsd,
 	getOiUsd,
 	getPercent,

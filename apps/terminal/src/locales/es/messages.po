@@ -49,7 +49,6 @@ msgstr "24h"
 #~ msgid "24H"
 #~ msgstr ""
 
-#: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "24h Change"
 msgstr "Cambio 24h"
@@ -76,6 +75,10 @@ msgstr "30 días"
 #: src/components/trade/market-overview.tsx
 msgid "7 days"
 msgstr "7 días"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "8h Funding"
+msgstr "Financiación 8 h"
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "A crypto wallet lets you store and manage your digital assets securely."
@@ -141,10 +144,13 @@ msgstr "Posiciones activas"
 msgid "Add"
 msgstr "Añadir"
 
-#. placeholder {0}: market.pairName
 #: src/components/trade/chart/token-selector-row.tsx
-msgid "Add {0} to favorites"
-msgstr "Añadir {0} a favoritos"
+#~ msgid "Add {0} to favorites"
+#~ msgstr "Añadir {0} a favoritos"
+
+#: src/components/trade/chart/token-selector-row.tsx
+msgid "Add {displayPairName} to favorites"
+msgstr "Añadir {displayPairName} a favoritos"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -184,6 +190,8 @@ msgstr "Tipos de orden avanzados"
 #~ msgid "Agent verification failed"
 #~ msgstr ""
 
+#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "All"
@@ -546,6 +554,10 @@ msgstr ""
 #~ msgid "Coming soon"
 #~ msgstr "Próximamente"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Commodities"
+msgstr "Materias primas"
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "completed"
 #~ msgstr "completado"
@@ -864,6 +876,10 @@ msgstr "Apalancamiento cruzado"
 msgid "Cross Margin Ratio"
 msgstr "Ratio de margen cruzado"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Crypto"
+msgstr "Cripto"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -897,6 +913,10 @@ msgstr "Predeterminado"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #~ msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
 #~ msgstr "Configuración de cuenta predeterminada. Cada activo de garantía tiene un único saldo. Los perpetuos solo pueden usar el activo de liquidación como garantía, y el margen cruzado se comparte entre posiciones cruzadas que usan el mismo activo de garantía."
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "DeFi"
+msgstr "DeFi"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -1328,6 +1348,10 @@ msgstr "No se pudo actualizar el modo de cuenta"
 msgid "Failed to update TP/SL orders"
 msgstr "No se pudieron actualizar las órdenes TP/SL"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Favorites"
+msgstr "Favoritos"
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Fee"
@@ -1362,10 +1386,13 @@ msgstr "Estado de ejecución"
 msgid "Filled"
 msgstr "Ejecutado"
 
-#. placeholder {0}: sub.label
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "Filter by {0}"
-msgstr "Filtrar por {0}"
+#~ msgid "Filter by {0}"
+#~ msgstr "Filtrar por {0}"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Filter by {label}"
+msgstr "Filtrar por {label}"
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Flip transfer direction"
@@ -1374,6 +1401,10 @@ msgstr "Invertir la dirección de la transferencia"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
 msgstr "Para usuarios avanzados que buscan mayor flexibilidad y eficiencia de capital. El trading spot y de perpetuos está totalmente unificado, y los activos de garantía elegibles como HYPE y BTC pueden usarse directamente como garantía de perpetuos sin convertirlos al activo de liquidación."
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Forex"
+msgstr "Forex"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Format for numbers and dates"
@@ -1391,8 +1422,6 @@ msgstr "Desde"
 #~ msgid "Full Position"
 #~ msgstr ""
 
-#: src/components/trade/chart/token-selector-columns.ts
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade.ts
@@ -1461,6 +1490,7 @@ msgid "Hide small"
 msgstr "Ocultar pequeños"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
@@ -1498,6 +1528,10 @@ msgstr "Importando..."
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "In Use"
 #~ msgstr "En uso"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Indices"
+msgstr "Índices"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Install a wallet extension to continue"
@@ -1557,9 +1591,21 @@ msgstr "IOC (Immediate Or Cancel)"
 msgid "Isolated"
 msgstr "Aislado"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "L1"
+msgstr "L1"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "L2"
+msgstr "L2"
+
 #: src/components/trade/header/language-switcher.tsx
 msgid "Language"
 msgstr "Idioma"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Last Price"
+msgstr "Último precio"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Latency:"
@@ -1833,7 +1879,6 @@ msgstr "Precio de marca: se usa para calcular margen, PnL no realizado, liquidac
 #~ msgid "Mark:"
 #~ msgstr ""
 
-#: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1843,6 +1888,7 @@ msgstr "Precio de marca: se usa para calcular margen, PnL no realizado, liquidac
 msgid "Market"
 msgstr "Mercado"
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Market Cap"
@@ -1905,6 +1951,10 @@ msgstr "Máx"
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Maximum slippage tolerance for market orders"
 #~ msgstr ""
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Meme"
+msgstr "Meme"
 
 #: src/components/ui/price-input.tsx
 msgid "Mid"
@@ -2002,6 +2052,10 @@ msgstr "Red"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Network fee"
 msgstr "Comisión de red"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "New"
+msgstr "Nuevo"
 
 #: src/components/trade/chart/token-selector-row.tsx
 msgid "NEW"
@@ -2192,7 +2246,6 @@ msgstr "Abrir menú de comandos"
 msgid "OPEN INT"
 msgstr "OPEN INT"
 
-#: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Open Interest"
 msgstr "Interés abierto"
@@ -2384,6 +2437,7 @@ msgstr "pendiente"
 #~ msgstr "perp"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/config/nav.tsx
@@ -2489,9 +2543,9 @@ msgstr "PNL"
 #~ msgid "Point your camera at the WalletConnect QR code on your desktop wallet."
 #~ msgstr ""
 
-#: src/components/trade/components/wallet-dialog.tsx
-#~ msgid "Popular"
-#~ msgstr ""
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Popular"
+msgstr "Popular"
 
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
@@ -2552,6 +2606,14 @@ msgstr "posiciones"
 msgid "Positions"
 msgstr "Posiciones"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Pre-IPO"
+msgstr "Pre-IPO"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Pre-launch"
+msgstr "Prelanzamiento"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Preparing automatic USDC deposit..."
 msgstr "Preparando depósito automático de USDC..."
@@ -2568,7 +2630,6 @@ msgstr "Preparando tu cotización..."
 #~ msgid "Previous"
 #~ msgstr "Anterior"
 
-#: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -2704,14 +2765,17 @@ msgstr "Solo reducir"
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
-#. placeholder {0}: market.pairName
 #: src/components/trade/chart/token-selector-row.tsx
-msgid "Remove {0} from favorites"
-msgstr "Quitar {0} de favoritos"
+#~ msgid "Remove {0} from favorites"
+#~ msgstr "Quitar {0} de favoritos"
 
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Remove {displayName} from favorites"
 msgstr "Quitar {displayName} de favoritos"
+
+#: src/components/trade/chart/token-selector-row.tsx
+msgid "Remove {displayPairName} from favorites"
+msgstr "Eliminar {displayPairName} de favoritos"
 
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Remove from favorites"
@@ -3207,6 +3271,9 @@ msgstr "Origen"
 #~ msgstr "spot"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -3252,6 +3319,10 @@ msgstr "Precio inicial"
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Status"
 msgstr "Estado"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Stocks"
+msgstr "Acciones"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Stop"
@@ -3670,6 +3741,10 @@ msgstr "Clave de operación aprobada"
 msgid "TradingView"
 msgstr "TradingView"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Traditional Finance"
+msgstr "Finanzas tradicionales"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "Desglose de la transacción"
@@ -3718,6 +3793,10 @@ msgstr "Transfiriendo..."
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Transfers between Spot and Perps are unavailable in unified account mode."
 msgstr "Las transferencias entre Spot y Perps no están disponibles en el modo de cuenta unificada."
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Trending"
+msgstr "Tendencias"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -3927,7 +4006,6 @@ msgstr "Ver en el explorador"
 msgid "VOL"
 msgstr "VOL"
 
-#: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Volume"
 msgstr "Volumen"

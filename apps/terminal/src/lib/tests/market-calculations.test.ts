@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { get24hChange, getOiUsd } from "@/domain/market";
+import { get24hChange, get24hPriceChange, getEightHourFundingRate, getMarketCapUsd, getOiUsd } from "@/domain/market";
 
 describe("market calculations", () => {
 	it("returns 24h change in percentage points", () => {
@@ -18,9 +18,24 @@ describe("market calculations", () => {
 		expect(get24hChange(100, 0)).toBeCloseTo(-100);
 	});
 
+	it("calculates the absolute 24h price change", () => {
+		expect(get24hPriceChange("64150.0", "63291.0")).toBeCloseTo(-859);
+		expect(get24hPriceChange(null, "63291.0")).toBeNull();
+	});
+
+	it("converts the hourly funding rate to an 8h rate", () => {
+		expect(getEightHourFundingRate("0.0000125")).toBeCloseTo(0.0001);
+		expect(getEightHourFundingRate(null)).toBeNull();
+	});
+
 	it("calculates open interest USD", () => {
 		expect(getOiUsd(2, 100)).toBeCloseTo(200);
 		expect(getOiUsd("2.5", "100")).toBeCloseTo(250);
 		expect(getOiUsd(null, 100)).toBeNull();
+	});
+
+	it("calculates spot market cap without losing API string precision", () => {
+		expect(getMarketCapUsd("299600000", "59.701")).toBe("17886419600");
+		expect(getMarketCapUsd(undefined, "59.701")).toBeNull();
 	});
 });

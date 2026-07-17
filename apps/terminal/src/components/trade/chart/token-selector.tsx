@@ -1,4 +1,4 @@
-import { infoPersistedKey } from "@gatu/hl-react";
+import { infoKey, infoPersistedKey } from "@gatu/hl-react";
 import { Drawer, DrawerTrigger } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,12 +16,12 @@ import {
 const TokenSelectorPopup = createLazyComponent(() => import("./token-selector-popup"), "TokenSelectorPopup");
 const MARKET_METADATA_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
 
-export type TokenSelectorProps = {
+interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	onValueChange: (value: string, market?: UnifiedMarketInfo) => void;
-};
+}
 
-export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorProps) {
+export function TokenSelector({ selectedMarket, onValueChange }: Props) {
 	const isMobile = useIsMobile();
 	const queryClient = useQueryClient();
 	const headingId = useId();
@@ -40,6 +40,7 @@ export function TokenSelector({ selectedMarket, onValueChange }: TokenSelectorPr
 					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("spotMeta", undefined) });
 					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("perpDexs", undefined) });
 					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("allPerpMetas", undefined) });
+					void queryClient.invalidateQueries({ queryKey: infoKey("perpConciseAnnotations", undefined) });
 				}
 			}
 			setOpen(nextOpen);

@@ -5,16 +5,16 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { TokenSelectorContent } from "./token-selector-content";
 import { useTokenSelector } from "./use-token-selector";
 
-const TOKEN_SELECTOR_POPOVER_WIDTH = "w-[min(44rem,calc(100vw-1rem))]";
+const TOKEN_SELECTOR_POPOVER_WIDTH = "w-[min(52rem,calc(100vw-1rem))]";
 
-export type TokenSelectorPopupProps = {
+interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	onValueChange: (value: string, market?: UnifiedMarketInfo) => void;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	mobile?: boolean;
 	headingId: string;
-};
+}
 
 export function TokenSelectorPopup({
 	selectedMarket,
@@ -23,7 +23,7 @@ export function TokenSelectorPopup({
 	onOpenChange,
 	mobile = false,
 	headingId,
-}: TokenSelectorPopupProps) {
+}: Props) {
 	const {
 		scope,
 		subcategory,
@@ -40,7 +40,8 @@ export function TokenSelectorPopup({
 		toggleFavorite,
 		table,
 		rows,
-		virtualizer,
+		virtualItems,
+		virtualTotalSize,
 		containerRef,
 		filteredMarkets,
 		highlightedIndex,
@@ -71,7 +72,8 @@ export function TokenSelectorPopup({
 			toggleFavorite={toggleFavorite}
 			table={table}
 			rows={rows}
-			virtualizer={virtualizer}
+			virtualItems={virtualItems}
+			virtualTotalSize={virtualTotalSize}
 			containerRef={containerRef}
 			filteredMarkets={filteredMarkets}
 			highlightedIndex={highlightedIndex}

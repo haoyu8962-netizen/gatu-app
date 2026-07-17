@@ -49,7 +49,6 @@ msgstr "24h"
 #~ msgid "24H"
 #~ msgstr ""
 
-#: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "24h Change"
 msgstr "24h 涨跌"
@@ -76,6 +75,10 @@ msgstr "30 天"
 #: src/components/trade/market-overview.tsx
 msgid "7 days"
 msgstr "7 天"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "8h Funding"
+msgstr "8小时资金费率"
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "A crypto wallet lets you store and manage your digital assets securely."
@@ -141,10 +144,13 @@ msgstr "活跃仓位"
 msgid "Add"
 msgstr "添加"
 
-#. placeholder {0}: market.pairName
 #: src/components/trade/chart/token-selector-row.tsx
-msgid "Add {0} to favorites"
-msgstr "将 {0} 加入自选"
+#~ msgid "Add {0} to favorites"
+#~ msgstr "将 {0} 加入自选"
+
+#: src/components/trade/chart/token-selector-row.tsx
+msgid "Add {displayPairName} to favorites"
+msgstr "将 {displayPairName} 加入自选"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -184,6 +190,8 @@ msgstr "专业委托类型"
 #~ msgid "Agent verification failed"
 #~ msgstr ""
 
+#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "All"
@@ -546,6 +554,10 @@ msgstr ""
 #~ msgid "Coming soon"
 #~ msgstr "即将推出"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Commodities"
+msgstr "大宗商品"
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "completed"
 #~ msgstr "已完成"
@@ -864,6 +876,10 @@ msgstr "全仓杠杆"
 msgid "Cross Margin Ratio"
 msgstr "全仓保证金率"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Crypto"
+msgstr "加密货币"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -897,6 +913,10 @@ msgstr "默认"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #~ msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
 #~ msgstr "默认账户设置。每种抵押资产都有单独余额。永续只能使用结算资产作为抵押品，同一抵押资产的全仓仓位之间共享保证金。"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "DeFi"
+msgstr "DeFi"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -1328,6 +1348,10 @@ msgstr "账户模式更新失败"
 msgid "Failed to update TP/SL orders"
 msgstr "更新 TP/SL 委托失败"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Favorites"
+msgstr "收藏夹"
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Fee"
@@ -1362,10 +1386,13 @@ msgstr "成交状态"
 msgid "Filled"
 msgstr "已成交"
 
-#. placeholder {0}: sub.label
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "Filter by {0}"
-msgstr "按 {0} 筛选"
+#~ msgid "Filter by {0}"
+#~ msgstr "按 {0} 筛选"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Filter by {label}"
+msgstr "按 {label} 筛选"
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Flip transfer direction"
@@ -1374,6 +1401,10 @@ msgstr "切换划转方向"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
 msgstr "适合希望获得更高灵活性和资金效率的高级用户。现货和永续交易完全统一，符合条件的抵押资产（如 HYPE 和 BTC）可直接用作永续抵押品，无需转换为结算资产。"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Forex"
+msgstr "外汇"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Format for numbers and dates"
@@ -1391,8 +1422,6 @@ msgstr "从"
 #~ msgid "Full Position"
 #~ msgstr ""
 
-#: src/components/trade/chart/token-selector-columns.ts
-#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade.ts
@@ -1461,6 +1490,7 @@ msgid "Hide small"
 msgstr "隐藏小额"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
@@ -1498,6 +1528,10 @@ msgstr "导入中…"
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "In Use"
 #~ msgstr "使用中"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Indices"
+msgstr "指数"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Install a wallet extension to continue"
@@ -1557,9 +1591,21 @@ msgstr "IOC（立即成交或取消）"
 msgid "Isolated"
 msgstr "逐仓"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "L1"
+msgstr "L1"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "L2"
+msgstr "L2"
+
 #: src/components/trade/header/language-switcher.tsx
 msgid "Language"
 msgstr "语言"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Last Price"
+msgstr "最后价格"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Latency:"
@@ -1833,7 +1879,6 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 #~ msgid "Mark:"
 #~ msgstr ""
 
-#: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1843,6 +1888,7 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 msgid "Market"
 msgstr "市场"
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Market Cap"
@@ -1905,6 +1951,10 @@ msgstr "最大"
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Maximum slippage tolerance for market orders"
 #~ msgstr ""
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Meme"
+msgstr "Meme"
 
 #: src/components/ui/price-input.tsx
 msgid "Mid"
@@ -2002,6 +2052,10 @@ msgstr "网络"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Network fee"
 msgstr "网络费用"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "New"
+msgstr "新上线"
 
 #: src/components/trade/chart/token-selector-row.tsx
 msgid "NEW"
@@ -2192,7 +2246,6 @@ msgstr "打开命令菜单"
 msgid "OPEN INT"
 msgstr "持仓量"
 
-#: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Open Interest"
 msgstr "未平仓量"
@@ -2384,6 +2437,7 @@ msgstr "待处理"
 #~ msgstr "永续"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/config/nav.tsx
@@ -2489,9 +2543,9 @@ msgstr "盈亏"
 #~ msgid "Point your camera at the WalletConnect QR code on your desktop wallet."
 #~ msgstr ""
 
-#: src/components/trade/components/wallet-dialog.tsx
-#~ msgid "Popular"
-#~ msgstr ""
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Popular"
+msgstr "热门"
 
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
@@ -2552,6 +2606,14 @@ msgstr "仓位"
 msgid "Positions"
 msgstr "持仓"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Pre-IPO"
+msgstr "上市前"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Pre-launch"
+msgstr "预上线"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Preparing automatic USDC deposit..."
 msgstr "正在准备 USDC 自动存款..."
@@ -2568,7 +2630,6 @@ msgstr "正在准备报价…"
 #~ msgid "Previous"
 #~ msgstr "上一页"
 
-#: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -2704,14 +2765,17 @@ msgstr "只减仓"
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
-#. placeholder {0}: market.pairName
 #: src/components/trade/chart/token-selector-row.tsx
-msgid "Remove {0} from favorites"
-msgstr "将 {0} 从收藏中移除"
+#~ msgid "Remove {0} from favorites"
+#~ msgstr "将 {0} 从收藏中移除"
 
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Remove {displayName} from favorites"
 msgstr "将 {displayName} 从收藏中移除"
+
+#: src/components/trade/chart/token-selector-row.tsx
+msgid "Remove {displayPairName} from favorites"
+msgstr "将 {displayPairName} 从收藏中移除"
 
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Remove from favorites"
@@ -3207,6 +3271,9 @@ msgstr "来源"
 #~ msgstr "现货"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-row.tsx
+#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -3252,6 +3319,10 @@ msgstr "起始价"
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Status"
 msgstr "状态"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Stocks"
+msgstr "股票"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Stop"
@@ -3670,6 +3741,10 @@ msgstr "交易密钥已授权"
 msgid "TradingView"
 msgstr "TradingView"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Traditional Finance"
+msgstr "传统金融"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "交易明细"
@@ -3718,6 +3793,10 @@ msgstr "划转中..."
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Transfers between Spot and Perps are unavailable in unified account mode."
 msgstr "启用统一账户后，现货与合约之间的划转不可用。"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Trending"
+msgstr "热门"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -3927,7 +4006,6 @@ msgstr "在区块浏览器中查看"
 msgid "VOL"
 msgstr "成交量"
 
-#: src/components/trade/chart/token-selector-columns.ts
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Volume"
 msgstr "成交量"

@@ -1,15 +1,56 @@
+import { useInfo } from "@gatu/hl-react";
 import { getCoreRowModel, getSortedRowModel, type Row, type SortingState, useReactTable } from "@tanstack/react-table";
-import { useVirtualizer, type Virtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { TOKEN_SELECTOR_OVERSCAN, TOKEN_SELECTOR_ROW_HEIGHT_PX } from "@/config/layout";
 import { PERP_CATEGORIES } from "@/config/markets";
 import { marketSearchConfig } from "@/config/search";
-import { type ExchangeScope, isTokenInCategory, type MarketCategory } from "@/domain/market";
+import type { ExchangeScope } from "@/domain/market";
 import { useMarketsInfo } from "@/lib/hyperliquid";
-import { createSearcher } from "@/lib/search";
+import { createSearcher, type SearchConfig } from "@/lib/search";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { useFavoriteMarkets, useMarketActions } from "@/stores/use-market-store";
+import {
+	createMarketRows,
+	getDefaultMarketSubcategory,
+	isMarketInScope,
+	isMarketInSubcategory,
+} from "./token-selector-categories";
 import { type MarketRow, type MarketScope, TOKEN_SELECTOR_COLUMNS } from "./token-selector-columns";
+
+const PERP_ANNOTATIONS_STALE_TIME_MS = 5 * 60 * 1_000;
+const MOBILE_MARKET_SCOPES = new Set<MarketScope>(["all", "perp", "spot", "hip3"]);
+
+const TRADITIONAL_FINANCE_SUBCATEGORIES: Subcategory[] = [
+	{ value: "all", label: "All" },
+	{ value: "stocks", label: "Stocks" },
+	{ value: "indices", label: "Indices" },
+	{ value: "commodities", label: "Commodities" },
+	{ value: "fx", label: "Forex" },
+	{ value: "preipo", label: "Pre-IPO" },
+];
+
+const DESKTOP_SPOT_QUOTE_SUBCATEGORIES: Subcategory[] = [
+	{ value: "all", label: "All" },
+	{ value: "USDC", label: "USDC" },
+	{ value: "USDH", label: "USDH" },
+	{ value: "USDT", label: "USDT" },
+];
+
+const TOKEN_SELECTOR_SEARCH_CONFIG: SearchConfig<MarketRow> = {
+	...marketSearchConfig,
+	fields: {
+		...marketSearchConfig.fields,
+		annotationDisplayName: {
+			extract: (market) => market.annotation?.displayName,
+			weight: 1.8,
+		},
+		annotationKeywords: {
+			extract: (market) => market.annotation?.keywords,
+			weight: 1,
+		},
+	},
+};
 
 export interface Subcategory {
 	value: string;
@@ -42,7 +83,8 @@ export interface UseTokenSelectorReturn {
 	toggleFavorite: (name: string) => void;
 	table: ReturnType<typeof useReactTable<MarketRow>>;
 	rows: Row<MarketRow>[];
-	virtualizer: Virtualizer<HTMLDivElement, Element>;
+	virtualItems: VirtualItem[];
+	virtualTotalSize: number;
 	containerRef: React.RefObject<HTMLDivElement | null>;
 	filteredMarkets: MarketRow[];
 	highlightedIndex: number;
@@ -61,16 +103,19 @@ function computeSubcategories(
 	scope: MarketScope,
 	spotMarkets: MarketsInfo["spotMarkets"],
 	builderPerpMarkets: MarketsInfo["builderPerpMarkets"],
+	mobile: boolean,
 ): Subcategory[] {
-	if (scope === "all") return [];
-	if (scope === "perp") return PERP_CATEGORIES;
+	if (scope === "traditional") return TRADITIONAL_FINANCE_SUBCATEGORIES;
+	if (scope === "perp") return mobile ? PERP_CATEGORIES : [];
 
 	if (scope === "spot") {
+		if (!mobile) return DESKTOP_SPOT_QUOTE_SUBCATEGORIES;
 		const quoteTokens = new Map<string, string>();
 		for (const market of spotMarkets) {
 			const quoteToken = market.tokensInfo[1];
-			if (quoteToken?.name && !quoteTokens.has(quoteToken.name)) {
-				quoteTokens.set(quoteToken.name, quoteToken.displayName);
+			const displayName = quoteToken?.displayName ?? quoteToken?.name;
+			if (displayName && !quoteTokens.has(displayName)) {
+				quoteTokens.set(displayName, displayName);
 			}
 		}
 		return [
@@ -95,6 +140,7 @@ export function useTokenSelector({
 	onValueChange,
 	open: controlledOpen,
 	onOpenChange,
+	mobile = false,
 }: UseTokenSelectorOptions): UseTokenSelectorReturn {
 	const { scope: exchangeScope, dex: exchangeDex } = useExchangeScope();
 	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
@@ -124,6 +170,10 @@ export function useTokenSelector({
 	}
 
 	const { markets, spotMarkets, builderPerpMarkets, isLoading } = useMarketsInfo();
+	const { data: perpAnnotations, isLoading: annotationsLoading } = useInfo("perpConciseAnnotations", undefined, {
+		enabled: !mobile,
+		staleTime: PERP_ANNOTATIONS_STALE_TIME_MS,
+	});
 
 	const favorites = useFavoriteMarkets();
 	const { toggleFavoriteMarket } = useMarketActions();
@@ -132,9 +182,19 @@ export function useTokenSelector({
 	const isFavorite = useCallback((name: string) => favoriteSet.has(name), [favoriteSet]);
 
 	const subcategories = useMemo(
-		() => computeSubcategories(scope, spotMarkets, builderPerpMarkets),
-		[scope, spotMarkets, builderPerpMarkets],
+		() => computeSubcategories(scope, spotMarkets, builderPerpMarkets, mobile),
+		[scope, spotMarkets, builderPerpMarkets, mobile],
 	);
+	const selectorMarkets = useMemo(
+		() => createMarketRows(markets, mobile ? undefined : perpAnnotations),
+		[markets, mobile, perpAnnotations],
+	);
+
+	useEffect(() => {
+		if (!mobile || MOBILE_MARKET_SCOPES.has(localScope)) return;
+		setLocalScope(mapExchangeToMarketScope(exchangeScope));
+		setLocalSubcategory(exchangeDex ?? "all");
+	}, [mobile, localScope, exchangeScope, exchangeDex]);
 
 	useEffect(() => {
 		if (!open) return;
@@ -160,7 +220,7 @@ export function useTokenSelector({
 
 	function handleScopeSelect(newScope: MarketScope) {
 		setLocalScope(newScope);
-		setLocalSubcategory("all");
+		setLocalSubcategory(getDefaultMarketSubcategory(newScope));
 		if (open && hasInitializedRef.current) {
 			setHighlightedIndex(0);
 		}
@@ -173,29 +233,11 @@ export function useTokenSelector({
 	const stableScopeFilteredRef = useRef<{ key: string; value: MarketRow[] }>({ key: "", value: [] });
 	const filteredByScope = useMemo(
 		() =>
-			markets.filter((market) => {
-				if (scope === "perp" && market.kind !== "perp") return false;
-				if (scope === "spot" && market.kind !== "spot") return false;
-				if (scope === "hip3" && market.kind !== "builderPerp") return false;
-
-				if (subcategory === "all") return true;
-
-				if (scope === "perp") {
-					return isTokenInCategory(market.shortName, subcategory as MarketCategory);
-				}
-
-				if (scope === "spot" && market.kind === "spot") {
-					const quoteToken = market.tokensInfo[1]?.name;
-					return quoteToken === subcategory;
-				}
-
-				if (scope === "hip3" && market.kind === "builderPerp") {
-					return market.dex === subcategory;
-				}
-
-				return true;
+			selectorMarkets.filter((market) => {
+				if (!isMarketInScope(market, scope, favoriteSet.has(market.name))) return false;
+				return isMarketInSubcategory(market, scope, subcategory);
 			}),
-		[markets, scope, subcategory],
+		[selectorMarkets, scope, subcategory, favoriteSet],
 	);
 	const scopeKey = `${scope}|${subcategory}|${filteredByScope.length}|${filteredByScope.map((m) => m.name).join(",")}`;
 	let scopeFilteredMarkets: MarketRow[];
@@ -209,7 +251,10 @@ export function useTokenSelector({
 		scopeFilteredMarkets = filteredByScope;
 	}
 
-	const searcher = useMemo(() => createSearcher(scopeFilteredMarkets, marketSearchConfig), [scopeFilteredMarkets]);
+	const searcher = useMemo(
+		() => createSearcher(scopeFilteredMarkets, TOKEN_SELECTOR_SEARCH_CONFIG),
+		[scopeFilteredMarkets],
+	);
 
 	const filteredMarkets = useMemo(() => {
 		if (!deferredSearch) {
@@ -258,6 +303,8 @@ export function useTokenSelector({
 		estimateSize: () => TOKEN_SELECTOR_ROW_HEIGHT_PX,
 		overscan: TOKEN_SELECTOR_OVERSCAN,
 	});
+	const virtualItems = virtualizer.getVirtualItems();
+	const virtualTotalSize = virtualizer.getTotalSize();
 
 	useEffect(() => {
 		if (!open) return;
@@ -365,7 +412,11 @@ export function useTokenSelector({
 		subcategories,
 		search,
 		setSearch: handleSearchChange,
-		isLoading: open && ((isLoading && markets.length === 0) || isPending),
+		isLoading:
+			open &&
+			((isLoading && markets.length === 0) ||
+				isPending ||
+				((scope === "traditional" || scope === "prelaunch") && annotationsLoading && !perpAnnotations)),
 		isFavorite,
 		sorting,
 		handleSort,
@@ -375,7 +426,8 @@ export function useTokenSelector({
 		toggleFavorite: toggleFavoriteMarket,
 		table,
 		rows,
-		virtualizer,
+		virtualItems,
+		virtualTotalSize,
 		containerRef,
 		filteredMarkets,
 		highlightedIndex,

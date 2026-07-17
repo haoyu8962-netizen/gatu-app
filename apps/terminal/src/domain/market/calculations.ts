@@ -43,6 +43,19 @@ export function get24hChange(prevDayPx: Numeric, markPx: Numeric): number | null
 	return mark.minus(prev).div(prev).times(100).toNumber();
 }
 
+export function get24hPriceChange(prevDayPx: Numeric, markPx: Numeric): number | null {
+	const prev = toBig(prevDayPx);
+	const mark = toBig(markPx);
+	if (!prev || !mark) return null;
+	return mark.minus(prev).toNumber();
+}
+
+export function getEightHourFundingRate(fundingRate: Numeric): number | null {
+	const funding = toBig(fundingRate);
+	if (!funding) return null;
+	return funding.times(8).toNumber();
+}
+
 export function getOiUsd(openInterest: Numeric, markPx: Numeric): number | null {
 	const oi = toBig(openInterest);
 	const px = toBig(markPx);

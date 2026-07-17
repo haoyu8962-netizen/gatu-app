@@ -42,7 +42,8 @@ export function MobileMarketsView() {
 				toggleFavorite={ts.toggleFavorite}
 				table={ts.table}
 				rows={ts.rows}
-				virtualizer={ts.virtualizer}
+				virtualItems={ts.virtualItems}
+				virtualTotalSize={ts.virtualTotalSize}
 				containerRef={ts.containerRef}
 				filteredMarkets={ts.filteredMarkets}
 				highlightedIndex={ts.highlightedIndex}
