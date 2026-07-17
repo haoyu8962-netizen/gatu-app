@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 @theme {
 	--font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
 	--font-mono: ui-monospace, "SF Mono", monospace;
@@ -52,20 +50,21 @@
 	:root {
 		color-scheme: dark;
 
-		/* Match apps/terminal/src/styles.css dark-mode tokens exactly. */
+		/* Derived from apps/terminal/src/styles.css dark tokens; brand hues follow
+		   public/logo.svg and low-contrast text steps are lifted for marketing copy. */
 		--bg-base: #12131a;
 		--bg-raised: #1d1e26;
 		--bg-overlay: #292b33;
 		--bg-sunken: #000000;
 		--bg-alternate: #1d1e26;
-		--bg-brand: #b2bcf1;
+		--bg-brand: #26d2ec;
 		--bg-inverse: #ffffff;
 
 		--text-strong: #ffffff;
 		--text-weak: #ffffffc7;
-		--text-muted: #ffffff8a;
-		--text-faint: #ffffff52;
-		--text-brand: #b2bcf1;
+		--text-muted: #ffffff99;
+		--text-faint: #ffffff70;
+		--text-brand: #26d2ec;
 		--text-disabled: #ffffff1f;
 		--text-error: #ff9c9c;
 		--text-warning: #e0be70;
@@ -78,58 +77,18 @@
 		--fill-weaker: #ffffff08;
 		--fill-hover: #ffffff14;
 		--fill-press: #ffffff1f;
-		--fill-brand-strong: #b2bcf1;
-		--fill-brand-weak: #b2bcf10f;
+		--fill-brand-strong: #26d2ec;
+		--fill-brand-weak: #26d2ec14;
 
 		--stroke-strong: #ffffff99;
 		--stroke-weak: #ffffff1f;
 		--stroke-weaker: #ffffff0f;
-		--stroke-focus: #b2bcf1;
+		--stroke-focus: #26d2ec;
 
-		--market-up: #77c7af;
-		--market-down: #ff9c9c;
-		--scope-perp: #4f7dff;
-		--scope-spot: #2dd4bf;
-		--scope-builders: #f59e0b;
-
-		/* Terminal-prompt brand green from apps/terminal/public/icon.svg. */
-		--terminal: #57cb60;
-		--terminal-soft: rgba(87, 203, 96, 0.15);
+		/* Semantic "live/online" indicator — intentionally green, decoupled from brand. */
+		--live: #57cb60;
 	}
 
-	.light {
-		color-scheme: light;
-
-		--bg-base: #ffffff;
-		--bg-raised: #ffffff;
-		--bg-overlay: #ffffff;
-		--bg-sunken: #f5f6fa;
-		--bg-alternate: #f5f6fa;
-		--bg-brand: #4c64d9;
-		--bg-inverse: #12131a;
-
-		--text-strong: #000626e5;
-		--text-weak: #000933a6;
-		--text-muted: #00093370;
-		--text-faint: #00093340;
-		--text-brand: #4c64d9;
-
-		--fill-weak: #0015800a;
-		--fill-weaker: #00158005;
-		--fill-hover: #00158014;
-		--fill-press: #0011661a;
-		--fill-brand-strong: #4c64d9;
-		--fill-brand-weak: #4c64d90d;
-
-		--stroke-strong: #000d4d52;
-		--stroke-weak: #0011661a;
-		--stroke-weaker: #0011660f;
-		--stroke-focus: #4c64d9;
-
-		--scope-perp: #2563eb;
-		--scope-spot: #0f766e;
-		--scope-builders: #b45309;
-	}
 }
 
 @theme inline {
@@ -165,13 +124,7 @@
 	--color-stroke-strong: var(--stroke-strong);
 	--color-stroke-focus: var(--stroke-focus);
 
-	--color-market-up: var(--market-up);
-	--color-market-down: var(--market-down);
-	--color-scope-perp: var(--scope-perp);
-	--color-scope-spot: var(--scope-spot);
-	--color-scope-builders: var(--scope-builders);
-	--color-terminal: var(--terminal);
-	--color-terminal-soft: var(--terminal-soft);
+	--color-live: var(--live);
 }
 
 @layer base {
@@ -239,25 +192,25 @@
 		mix-blend-mode: overlay;
 	}
 
-	.terminal-grid {
+	.bg-grid {
 		background-image:
 			linear-gradient(to right, var(--stroke-weaker) 1px, transparent 1px),
 			linear-gradient(to bottom, var(--stroke-weaker) 1px, transparent 1px);
 		background-size: 56px 56px;
 	}
 
+	/* Glow + gradient hues track the logo gradient in public/logo.svg. */
 	.glow-radial {
 		background:
-			radial-gradient(ellipse 50% 40% at 50% 0%, rgba(178, 188, 241, 0.22), transparent 65%),
-			radial-gradient(ellipse 80% 30% at 50% 0%, rgba(87, 203, 96, 0.06), transparent 70%);
+			radial-gradient(ellipse 50% 40% at 50% 0%, rgba(70, 240, 222, 0.14), transparent 65%),
+			radial-gradient(ellipse 80% 30% at 50% 0%, rgba(46, 134, 245, 0.07), transparent 70%);
 	}
 
-	.glow-terminal {
-		background: radial-gradient(
-			ellipse 40% 35% at 50% 50%,
-			rgba(87, 203, 96, 0.18),
-			transparent 70%
-		);
+	.text-brand-gradient {
+		background: linear-gradient(90deg, #46f0de, #26d2ec, #2e86f5);
+		background-clip: text;
+		-webkit-background-clip: text;
+		color: transparent;
 	}
 
 	/* Staggered fade-in: applies to children with `.stagger-item`. */
