@@ -73,7 +73,7 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | Get per-asset leverage + max trade sizes | `activeAssetData({user, coin})` | S |
 | Get portfolio PnL breakdown | `portfolio({user})` | I |
 | Get account abstraction mode | `userAbstraction({user})` | I |
-| Get explorer user details | `userDetails({user})` | X |
+| Get explorer user transaction details | `userDetails({user})` | X |
 
 ---
 
@@ -250,7 +250,7 @@ short intent tables above:
 |------------|--------|------|
 | Check if DEX abstraction enabled | `userDexAbstraction({user})` | I |
 | Enable/disable DEX abstraction | `userDexAbstraction({...})` | E |
-| Set unified/separate/portfolio account mode | `userSetAbstraction({user, abstraction})` | E |
+| Set account abstraction mode (`dexAbstraction` / `unifiedAccount` / `portfolioMargin` / `disabled`) | `userSetAbstraction({user, abstraction})` | E |
 | Configure portfolio margin | `userPortfolioMargin({...})` | E |
 
 ### Explorer/Blockchain

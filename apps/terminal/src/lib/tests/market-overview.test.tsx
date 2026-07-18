@@ -8,6 +8,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MarketOverview } from "@/components/trade/market-overview";
 
 const mocks = vi.hoisted(() => ({
+	perpCtxEvent: undefined as
+		| {
+				ctx: {
+					markPx: string;
+					prevDayPx: string;
+					oraclePx: string;
+					dayNtlVlm: string;
+					openInterest: string;
+					funding: string;
+				};
+		  }
+		| undefined,
 	selectedMarket: {
 		kind: "builderPerp",
 		name: "xyz:BRENTOIL",
@@ -34,7 +46,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 	getMarketApiCoin: (market: { name?: string } | undefined) => market?.name ?? "",
 	getSpotMarketApiCoin: () => "",
 	useSelectedMarketInfo: () => ({ data: mocks.selectedMarket }),
-	useSubscription: () => ({ data: undefined, status: "idle" }),
+	useSubscription: (method: string) => ({
+		data: method === "activeAssetCtx" ? mocks.perpCtxEvent : undefined,
+		status: "idle",
+	}),
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -44,6 +59,7 @@ describe("MarketOverview", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.perpCtxEvent = undefined;
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -72,5 +88,34 @@ describe("MarketOverview", () => {
 		expect(container.textContent).toContain("+0.0006%");
 		expect(container.textContent).not.toContain("—");
 		expect(container.textContent).not.toContain("0.0000%");
+	});
+
+	it("uses realtime context after the subscription becomes available", () => {
+		mocks.perpCtxEvent = {
+			ctx: {
+				markPx: "80",
+				prevDayPx: "64",
+				oraclePx: "79",
+				dayNtlVlm: "10000000",
+				openInterest: "2",
+				funding: "0.00001",
+			},
+		};
+
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MarketOverview />
+				</I18nProvider>,
+			),
+		);
+
+		expect(container.textContent).toContain("$80.00");
+		expect(container.textContent).toContain("$79.00");
+		expect(container.textContent).toContain("$10,000,000.00");
+		expect(container.textContent).toContain("$160.00");
+		expect(container.textContent).toContain("+25.00%");
+		expect(container.textContent).toContain("+0.0010%");
+		expect(container.textContent).not.toContain("$71.80");
 	});
 });

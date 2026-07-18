@@ -73,21 +73,29 @@ export function getMaxTotal(bids: BookLevel[], asks: BookLevel[]): number {
 	return Math.max(bidMax, askMax);
 }
 
-export function getPriceGroupingOptions(mid: number | undefined): L2BookPriceGroupOption[] {
+export function getPriceGroupingOptions(mid: number | undefined, maxDecimals?: number): L2BookPriceGroupOption[] {
 	if (!mid || !Number.isFinite(mid) || mid <= 0) {
 		return [];
 	}
 
 	const integerDigits = Math.floor(Math.log10(mid)) + 1;
-
-	return [
-		buildPriceGroupingOption({ nSigFigs: 5 }, 10 ** (integerDigits - 5)),
-		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 2 }, 2 * 10 ** (integerDigits - 5)),
-		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 5 }, 5 * 10 ** (integerDigits - 5)),
-		buildPriceGroupingOption({ nSigFigs: 4 }, 10 ** (integerDigits - 4)),
-		buildPriceGroupingOption({ nSigFigs: 3 }, 10 ** (integerDigits - 3)),
-		buildPriceGroupingOption({ nSigFigs: 2 }, 10 ** (integerDigits - 2)),
+	const minimumTickSize =
+		maxDecimals !== undefined && Number.isInteger(maxDecimals) && maxDecimals >= 0 ? 10 ** -maxDecimals : 0;
+	const options = [
+		buildPriceGroupingOption({ nSigFigs: 5 }, Math.max(10 ** (integerDigits - 5), minimumTickSize)),
+		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 2 }, Math.max(2 * 10 ** (integerDigits - 5), minimumTickSize)),
+		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 5 }, Math.max(5 * 10 ** (integerDigits - 5), minimumTickSize)),
+		buildPriceGroupingOption({ nSigFigs: 4 }, Math.max(10 ** (integerDigits - 4), minimumTickSize)),
+		buildPriceGroupingOption({ nSigFigs: 3 }, Math.max(10 ** (integerDigits - 3), minimumTickSize)),
+		buildPriceGroupingOption({ nSigFigs: 2 }, Math.max(10 ** (integerDigits - 2), minimumTickSize)),
 	].sort((a, b) => a.tickSize - b.tickSize);
+	const seenTickSizes = new Set<number>();
+
+	return options.filter((option) => {
+		if (seenTickSizes.has(option.tickSize)) return false;
+		seenTickSizes.add(option.tickSize);
+		return true;
+	});
 }
 
 export function getPriceGroupingKey(selection: L2BookPriceGroupSelection | null | undefined): string {

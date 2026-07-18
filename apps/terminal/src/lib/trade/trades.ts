@@ -24,9 +24,8 @@ export function getTradePriceDecimals(
 	marketType: "perp" | "spot",
 ): number {
 	const markPrice = toNumber(markPx);
-	return (
-		getPriceGroupingOptions(markPrice ?? undefined)[0]?.decimals ?? szDecimalsToPriceDecimals(szDecimals, marketType)
-	);
+	const maxPriceDecimals = szDecimalsToPriceDecimals(szDecimals, marketType);
+	return getPriceGroupingOptions(markPrice ?? undefined, maxPriceDecimals)[0]?.decimals ?? maxPriceDecimals;
 }
 
 export function getTradeQuoteSize(price: string, size: string): string | null {

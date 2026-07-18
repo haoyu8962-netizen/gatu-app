@@ -115,6 +115,13 @@ describe("getPriceGroupingOptions", () => {
 		expect(options.map((option) => option.label)).toEqual(["0.00001", "0.00002", "0.00005", "0.0001", "0.001", "0.01"]);
 	});
 
+	it("caps and deduplicates groupings at the market price-decimal limit", () => {
+		const options = getPriceGroupingOptions(0.6058, 4);
+
+		expect(options.map((option) => option.label)).toEqual(["0.0001", "0.001", "0.01"]);
+		expect(options.map((option) => option.decimals)).toEqual([4, 3, 2]);
+	});
+
 	it("keeps the same grouping key while labels retarget to the current market price", () => {
 		const btcWide = getPriceGroupingOptions(70910).at(-1);
 		const ethWide = getPriceGroupingOptions(2178.8).at(-1);

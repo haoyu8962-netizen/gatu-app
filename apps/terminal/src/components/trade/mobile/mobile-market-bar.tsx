@@ -184,7 +184,7 @@ export function MobileMarketBar({ className }: Props) {
 						<button
 							type="button"
 							onClick={() => setExpanded((value) => !value)}
-							className="flex size-8 shrink-0 items-center justify-center rounded-8 border border-stroke-weak/80 bg-transparent text-icon/90 hover:bg-fill-hover/60 active:bg-fill-press/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							className="flex size-8 shrink-0 items-center justify-center rounded-xs border border-stroke-weak/80 bg-transparent text-icon/90 hover:bg-fill-hover/60 active:bg-fill-press/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 							aria-expanded={expanded}
 							aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
 						>

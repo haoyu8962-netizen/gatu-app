@@ -27,7 +27,7 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Reset size-change comparison state when the market or grouping identity changes so stale values cannot flash after switching context.
 - In the mobile split layout, cumulative `Total` is static data; do not animate or color it from the individual level `size`.
 - Order-book rows use a `23px` row height and a `2px` gap. If either value changes, update every visible-row and panel-height formula that depends on them in the same change.
-- Desktop resizable layouts keep their percentage-based drag behavior. When the order book is narrower than `180px`, preserve the container-aware two-column compact layout; when the trade sidebar is narrower than `200px`, preserve its compact labels and spacing so manual resizing cannot reintroduce overlap.
+- Desktop resizing uses react-grid-layout grid units. Preserve panel min/max constraints and container-aware compact order-book behavior so manual resizing cannot reintroduce overlap.
 
 ## Recent trades contract
 
@@ -35,6 +35,7 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Desktop recent-trade rows display `Price / Size / Time`; their header and rows share the same grid definition. At widths below `200px`, hide `Time` and preserve the two-column `Price / Size` layout.
 - At normal desktop width, use the `1fr / 2fr / 2fr` column proportion and a `24px` recent-trade row height to match the terminal's stable data density.
 - Derive trade price precision from the selected market instead of hard-coding decimal places. Keep WebSocket `px` and `sz` values as strings until formatting or Big.js calculation.
+- Apply both Hyperliquid price constraints when deriving grouping and display precision: at most five significant figures and at most `6 - szDecimals` decimal places for perps or `8 - szDecimals` for spot.
 - Format trade times as local 24-hour `HH:mm:ss` values. Use `(time, coin, tid)` for trade identity in both processed UI data and subscription accumulation.
 - Quote-denominated trade sizes use Big.js outside React components; do not multiply JavaScript numbers in the row renderer.
 

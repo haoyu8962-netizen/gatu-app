@@ -441,7 +441,8 @@ const mids = await client.allMids();
 
 When the connection drops, the transport reconnects indefinitely by default. The delay uses
 `2 ** attempt * 150ms`, capped at 10 seconds, with equal jitter. A connection that remains open
-for 3 seconds resets the consecutive retry counter.
+for 3 seconds resets the consecutive retry counter. While disconnected, outgoing messages are
+buffered without a default count limit (`maxEnqueuedMessages: Infinity`).
 
 After reconnection, all active subscriptions are automatically restored if `resubscribe: true` (default).
 The default `shouldReconnect` callback always returns `true`. Configure `keepAlive` separately
@@ -491,7 +492,7 @@ const transport = new WebSocketTransport({
 #### reconnect (optional)
 
 * **Type:** `object`
-* **Default:** `{ maxRetries: Infinity, connectionTimeout: 10000, stableTimeout: 3000, reconnectionDelay: equalJitter(2 ** attempt * 150, 10000), shouldReconnect: () => true }`
+* **Default:** `{ maxRetries: Infinity, maxEnqueuedMessages: Infinity, connectionTimeout: 10000, stableTimeout: 3000, reconnectionDelay: equalJitter(2 ** attempt * 150, 10000), shouldReconnect: () => true }`
 
 Reconnection policy. See [`ReconnectingWebSocketOptions`](https://github.com/nktkas/rews#options).
 

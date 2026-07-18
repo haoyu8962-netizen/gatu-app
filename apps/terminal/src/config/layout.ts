@@ -1,24 +1,5 @@
 export const MOBILE_BREAKPOINT_PX = 1000;
 
-export const PANEL_LAYOUT = {
-	MAIN: {
-		id: "CHART_WITH_SWAPBOX",
-		analysis: { defaultSize: "77%", minSize: "50%" },
-		sidebar: { defaultSize: "23%", minSize: "18%" },
-	},
-	ANALYSIS: {
-		id: "CHART_WITH_POSITIONS",
-		minHeightPx: 660,
-		chart: { minHeightPx: 260 },
-		positions: { minHeightPx: 400, disconnectedMinHeightPx: 180 },
-	},
-	MARKET: {
-		id: "CHART_WITH_ORDERBOOK",
-		chart: { defaultSize: "76%", minSize: "40%" },
-		orderbook: { defaultSize: "24%", minSize: "20%" },
-	},
-} as const;
-
 export const SIDEBAR_LAYOUT = {
 	WIDTH: "16rem",
 	WIDTH_MOBILE: "18rem",

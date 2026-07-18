@@ -80,7 +80,7 @@ function RouteMarketSync() {
 		if (!selectedMarketName || !selectedMarketScope) {
 			if (isLoading || error || markets.length === 0) return;
 			const fallbackMarket = DEFAULT_SELECTED_MARKETS.perp;
-			setScope("perp", undefined, fallbackMarket);
+			setScope(routeScope === "all" ? "all" : "perp", undefined, fallbackMarket);
 			void navigate({
 				to: getTradePathForMarketName(fallbackMarket),
 				search: (previous) => ({ ...previous, scope: routeScope === "all" ? "all" : undefined }),

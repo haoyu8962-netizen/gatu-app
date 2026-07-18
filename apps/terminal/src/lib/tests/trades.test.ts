@@ -19,6 +19,11 @@ describe("trades", () => {
 		expect(getTradePriceDecimals(null, 3, "spot")).toBe(5);
 	});
 
+	it("caps low-price precision at Hyperliquid market limits", () => {
+		expect(getTradePriceDecimals("0.6058", 2, "perp")).toBe(4);
+		expect(getTradePriceDecimals("0.0000004", 1, "spot")).toBe(7);
+	});
+
 	it("calculates quote size with decimal-safe arithmetic", () => {
 		expect(getTradeQuoteSize("0.1", "0.2")).toBe("0.02");
 		expect(getTradeQuoteSize("invalid", "0.2")).toBeNull();

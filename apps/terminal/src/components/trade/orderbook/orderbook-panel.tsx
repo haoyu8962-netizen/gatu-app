@@ -24,7 +24,13 @@ export function OrderbookPanel() {
 
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const markPx = toNumber(selectedMarket?.markPx);
-	const priceGroupingOptions = useMemo(() => getPriceGroupingOptions(markPx ?? undefined), [markPx]);
+	const szDecimals = selectedMarket?.szDecimals ?? 4;
+	const marketType = selectedMarket?.kind === "spot" ? "spot" : "perp";
+	const maxPriceDecimals = szDecimalsToPriceDecimals(szDecimals, marketType);
+	const priceGroupingOptions = useMemo(
+		() => getPriceGroupingOptions(markPx ?? undefined, maxPriceDecimals),
+		[markPx, maxPriceDecimals],
+	);
 	const selectedOption = useMemo(
 		() => priceGroupingOptions.find((option) => option.key === selectedOptionKey) ?? priceGroupingOptions[0] ?? null,
 		[priceGroupingOptions, selectedOptionKey],
@@ -68,9 +74,7 @@ export function OrderbookPanel() {
 	const spread = deferredOrderbook?.spread;
 	const spreadPct = getPercent(spread, selectedMarket?.markPx);
 
-	const szDecimals = selectedMarket?.szDecimals ?? 4;
-	const marketType = selectedMarket?.kind === "spot" ? "spot" : "perp";
-	const priceDecimals = selectedOption?.decimals ?? szDecimalsToPriceDecimals(szDecimals, marketType);
+	const priceDecimals = selectedOption?.decimals ?? maxPriceDecimals;
 	const flashResetKey = `${subscriptionParams.coin}:${getPriceGroupingKey(selectedOption)}`;
 
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;

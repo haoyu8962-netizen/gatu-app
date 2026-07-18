@@ -4,7 +4,7 @@ import { useSubscription } from "@gatu/hl-react/hooks/useSubscription";
 import { useSub } from "@gatu/hl-react/hooks/utils/useSub";
 import { HyperliquidContext, type HyperliquidContextValue, HyperliquidStoreContext } from "@gatu/hl-react/provider";
 import { createHyperliquidStore, getStoreInternals, type HyperliquidStore } from "@gatu/hl-react/store";
-import type { SubscriptionClient } from "@nktkas/hyperliquid";
+import type { SubscriptionClient, TradesWsEvent } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -222,5 +222,70 @@ describe("useSub hook surface", () => {
 			root.render(<FullWrapper subscription={subscription}>{null}</FullWrapper>);
 		});
 		await act(() => vi.advanceTimersByTimeAsync(0));
+	});
+
+	it("resets accumulating data when subscription params change", async () => {
+		const listeners = new Map<string, (event: TradesWsEvent) => void>();
+		const trades = vi.fn(async (params: { coin: string }, listener: (event: TradesWsEvent) => void) => {
+			listeners.set(params.coin, listener);
+			return { unsubscribe: vi.fn(async () => {}) };
+		});
+		const subscription = { trades } as unknown as SubscriptionClient;
+		let captured: TradesWsEvent | undefined;
+
+		function Consumer({ coin }: { coin: string }) {
+			captured = useSubscription("trades", { coin }).data;
+			return null;
+		}
+
+		act(() => {
+			root.render(
+				<FullWrapper subscription={subscription}>
+					<Consumer coin="ETH" />
+				</FullWrapper>,
+			);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		act(() => {
+			listeners.get("ETH")?.([
+				{
+					coin: "ETH",
+					side: "B",
+					px: "3000",
+					sz: "1",
+					hash: "0xeth",
+					time: 1,
+					tid: 1,
+					users: ["0xbuyer", "0xseller"],
+				},
+			]);
+		});
+		expect(captured?.map((trade) => trade.coin)).toEqual(["ETH"]);
+
+		act(() => {
+			root.render(
+				<FullWrapper subscription={subscription}>
+					<Consumer coin="BTC" />
+				</FullWrapper>,
+			);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		act(() => {
+			listeners.get("BTC")?.([
+				{
+					coin: "BTC",
+					side: "A",
+					px: "64000",
+					sz: "0.1",
+					hash: "0xbtc",
+					time: 2,
+					tid: 2,
+					users: ["0xbuyer", "0xseller"],
+				},
+			]);
+		});
+		expect(captured?.map((trade) => trade.coin)).toEqual(["BTC"]);
 	});
 });

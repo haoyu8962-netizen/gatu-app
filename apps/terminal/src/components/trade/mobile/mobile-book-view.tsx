@@ -131,14 +131,18 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const name = selectedMarket?.name ?? "";
 	const szDecimals = selectedMarket?.szDecimals ?? 4;
+	const marketType = selectedMarket?.kind === "spot" ? "spot" : "perp";
+	const maxPriceDecimals = szDecimalsToPriceDecimals(szDecimals, marketType);
 	const referencePrice = toNumber(selectedMarket?.markPx) ?? undefined;
-	const priceGroupingOptions = useMemo(() => getPriceGroupingOptions(referencePrice), [referencePrice]);
+	const priceGroupingOptions = useMemo(
+		() => getPriceGroupingOptions(referencePrice, maxPriceDecimals),
+		[referencePrice, maxPriceDecimals],
+	);
 	const selectedOption = useMemo(
 		() => priceGroupingOptions.find((option) => option.key === selectedOptionKey) ?? priceGroupingOptions[0] ?? null,
 		[priceGroupingOptions, selectedOptionKey],
 	);
-	const marketType = selectedMarket?.kind === "spot" ? "spot" : "perp";
-	const priceDecimals = selectedOption?.decimals ?? szDecimalsToPriceDecimals(szDecimals, marketType);
+	const priceDecimals = selectedOption?.decimals ?? maxPriceDecimals;
 	const subscriptionParams = useMemo<L2BookParams | null>(() => {
 		if (!name) return null;
 		return {

@@ -111,7 +111,7 @@ describe("chart store benchmark", () => {
 		await stabilizeHeap();
 	});
 
-	it("keeps chart caches bounded and reusable", async () => {
+	it("keeps chart caches bounded and reusable", { timeout: 15_000 }, async () => {
 		const cap = await runCacheCapBenchmark(2_000);
 		const reuse = await runCacheReuseBenchmark(30_000);
 

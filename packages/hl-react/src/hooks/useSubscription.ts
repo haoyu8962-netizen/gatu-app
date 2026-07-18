@@ -24,10 +24,13 @@ export function useSubscription<M extends SubMethod>(
 
 	const accConfig = getAccumulateConfig(method);
 	const bufferRef = useRef<RingBuffer<unknown> | null>(null);
-	const prevMethodRef = useRef(method);
-	if (accConfig && (!bufferRef.current || prevMethodRef.current !== method)) {
+	const bufferKeyRef = useRef<string | null>(null);
+	if (accConfig && (!bufferRef.current || bufferKeyRef.current !== key)) {
 		bufferRef.current = new RingBuffer(accConfig.buffer);
-		prevMethodRef.current = method;
+		bufferKeyRef.current = key;
+	} else if (!accConfig && bufferRef.current) {
+		bufferRef.current = null;
+		bufferKeyRef.current = null;
 	}
 
 	return useSub(

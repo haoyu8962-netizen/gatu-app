@@ -29,6 +29,7 @@ describe("token selector visual contract", () => {
 		expect(MOBILE_MARKET_BAR_SOURCE).toContain("grid-cols-[minmax(max-content,1fr)_minmax(0,1fr)]");
 		expect(MOBILE_MARKET_BAR_SOURCE).toContain("grid-cols-[minmax(0,1fr)_2rem]");
 		expect(MOBILE_MARKET_BAR_SOURCE).toContain("whitespace-normal font-sans text-xs leading-[15px]");
+		expect(MOBILE_MARKET_BAR_SOURCE).toContain("rounded-xs border border-stroke-weak/80");
 	});
 
 	it("keeps every trigger state visible without changing selector behavior", () => {

@@ -529,7 +529,6 @@ Linear derives everything from **3 variables**: base color, accent color, contra
 | popover | @base-ui | Clean | — |
 | progress | @base-ui | Clean | — |
 | radio-group | @base-ui | Clean | — |
-| resizable | react-resizable-panels | Clean | — |
 | scroll-area | @base-ui | Clean | — |
 | select | @base-ui | Clean | — |
 | separator | @base-ui | Clean | — |

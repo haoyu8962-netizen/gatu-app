@@ -12,6 +12,7 @@ import {
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
+import { useExchangeScope } from "@/providers/exchange-scope";
 import { TokenSelector } from "../chart/token-selector";
 import { FavoritesStrip } from "../header/favorites-strip";
 import { MarketOverview } from "../market-overview";
@@ -29,8 +30,9 @@ export function MainWorkspace() {
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
 	const [initialLayouts] = useState(readDesktopGridLayouts);
 	const { data: selectedMarket } = useSelectedMarketInfo();
+	const { routeMarketName } = useExchangeScope();
 	const navigateToMarket = useMarketNavigation();
-	const marketKey = selectedMarket?.name ?? "default";
+	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
 
 	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
 		navigateToMarket(marketName, nextMarket);

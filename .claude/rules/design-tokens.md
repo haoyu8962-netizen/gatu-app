@@ -28,6 +28,7 @@ Never cause **literal doubling** of the Tailwind property prefix. If a token is 
 ### Surfaces — elevation (sunken → background → surface → overlay)
 - `bg-sunken` page/recessed background (light: `#f5f6fa`, dark: `#000000`)
 - `bg-background` default page background (light: `#ffffff`, shared dark default: `#12131a`)
+- `bg-grid-container` terminal desktop grid underlay visible through panel gutters (light: `#f1f3f6`, terminal dark: `#1b2429`)
 - `bg-surface` elevated surfaces, cards (light: `#ffffff`, shared dark default: `#1d1e26`)
 - `bg-overlay` lightweight raised overlays such as tooltips, toasts, and selection indicators (light: `#ffffff`, dark: `#292b33`)
 - `bg-modal` blocking modal and drawer surfaces (light: `#ffffff`, shared dark default: `#292b33`)
