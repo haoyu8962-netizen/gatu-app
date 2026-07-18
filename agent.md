@@ -75,7 +75,7 @@ Zustand stores in `src/stores/`:
 - Tailwind CSS with custom color tokens in `src/styles.css`
 - Radix UI for accessible primitives
 - CVA for component variants
-- Mobile breakpoint: 768px
+- Mobile breakpoint: 1000px (inclusive); desktop layouts start at 1001px
 
 ## Important Files
 
