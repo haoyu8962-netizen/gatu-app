@@ -13,7 +13,7 @@ import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
 
-const tabContentBaseClass = "flex-1 min-h-0 flex flex-col mt-0";
+const tabContentBaseClass = "mt-0 flex min-h-0 flex-1 flex-col pt-0";
 
 const BalancesTab = createLazyComponent(() => import("./balances-tab"), "BalancesTab");
 const FundingTab = createLazyComponent(() => import("./funding-tab"), "FundingTab");
@@ -82,11 +82,11 @@ export function PositionsPanel() {
 				value={activeTab}
 				onValueChange={handleTabChange}
 				className="flex-1 min-h-0 flex flex-col"
-				size="sm"
+				size="xs"
 				variant="underline"
 			>
-				<div className="overflow-x-auto scrollbar-none px-2 pt-1.5 pb-1">
-					<TabsList className="min-w-max gap-1">
+				<div className="flex h-9 shrink-0 items-stretch overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-stroke-weak px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					<TabsList className="h-full min-w-max gap-1 border-b-0">
 						{POSITIONS_TABS.map((tab) => {
 							const count = getTabCount(tab.value);
 
@@ -94,7 +94,7 @@ export function PositionsPanel() {
 								<TabsTrigger
 									key={tab.value}
 									value={tab.value}
-									className="inline-flex items-center gap-1 whitespace-nowrap"
+									className="inline-flex h-full items-center gap-1 whitespace-nowrap"
 								>
 									<span>{_(tab.label)}</span>
 									{typeof count === "number" ? <span className="text-fg-muted">({count})</span> : null}

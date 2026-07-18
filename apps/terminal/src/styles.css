@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "@fontsource-variable/inter";
 @import "@gatu/ui/globals.css";
+@import "react-grid-layout/css/styles.css";
 @source "../../../packages/ui/src";
 
 /* ============================================
@@ -111,6 +112,7 @@
     --bg-modal: #ffffff;
     --bg-sunken: #f5f6fa;
     --bg-alternate: #f5f6fa;
+    --bg-grid-container: #f1f3f6;
     --bg-brand: #4c64d9;
     --bg-inverse: #12131a;
 
@@ -213,6 +215,7 @@
     --bg-modal: #0f1a1f;
     --bg-sunken: #000000;
     --bg-alternate: #0f1a1f;
+    --bg-grid-container: #1b2429;
     --bg-brand: #b2bcf1;
     --bg-inverse: #ffffff;
 
@@ -318,6 +321,7 @@
   --color-modal: var(--bg-modal);
   --color-sunken: var(--bg-sunken);
   --color-alternate: var(--bg-alternate);
+  --color-grid-container: var(--bg-grid-container);
   --color-inverse-surface: var(--bg-inverse);
 
   /* Foregrounds */
@@ -403,7 +407,7 @@
    Layer 4: Responsive Typography
    ============================================= */
 @layer base {
-  @media (max-width: 767px) {
+  @media (max-width: 1000px) {
     :root,
     .dark {
       --text-xl: 24px;
@@ -542,7 +546,11 @@
   }
 
   .orderbook-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 2fr);
+  }
+
+  .trades-grid {
+    grid-template-columns: minmax(3.25rem, 1fr) minmax(0, 2fr) minmax(4.5rem, 2fr);
   }
 
   @container orderbook-panel (max-width: 19.9375rem) {
@@ -551,8 +559,30 @@
     }
   }
 
+  @container orderbook-panel (max-width: 17.4375rem) {
+    .orderbook-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .trades-grid {
+      grid-template-columns: minmax(3.5rem, 1fr) minmax(0, 1fr) minmax(3.5rem, 1fr);
+    }
+  }
+
   @container orderbook-panel (max-width: 14.9375rem) {
-    .orderbook-asset-heading {
+    .orderbook-asset-heading,
+    .trades-asset-heading,
+    .orderbook-tab-label {
+      display: none;
+    }
+  }
+
+  @container orderbook-panel (max-width: 12.4375rem) {
+    .trades-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .trades-grid > :nth-child(3) {
       display: none;
     }
   }
@@ -666,7 +696,7 @@
     --orderbook-flash-color: var(--orderbook-flash-ask);
   }
 
-  @media (max-width: 767px) {
+  @media (max-width: 1000px) {
     .mobile-terminal {
       font-variant-numeric: tabular-nums;
     }
@@ -694,5 +724,43 @@
     .orderbook-color-change {
       animation: none;
     }
+  }
+}
+
+@layer components {
+  .desktop-terminal-grid.react-grid-layout {
+    background-color: transparent;
+  }
+
+  .desktop-terminal-grid > .react-grid-item {
+    min-width: 0;
+  }
+
+  .desktop-terminal-grid > .react-grid-placeholder {
+    background-color: var(--fill-brand-weak);
+    border: 1px solid var(--stroke-brand-strong);
+    opacity: 0.45;
+  }
+
+  .desktop-terminal-grid > .react-grid-item > .react-resizable-handle {
+    z-index: 20;
+    opacity: 1;
+    touch-action: none;
+  }
+
+  .desktop-terminal-grid > .react-grid-item > .react-resizable-handle::after {
+    border-color: var(--stroke-strong);
+    opacity: 0;
+    transition: opacity 150ms ease;
+  }
+
+  .desktop-terminal-grid > .react-grid-item:hover > .react-resizable-handle::after,
+  .desktop-terminal-grid > .react-grid-item.resizing > .react-resizable-handle::after {
+    opacity: 0.8;
+  }
+
+  .desktop-grid-panel {
+    container-type: inline-size;
+    border-color: var(--stroke-weak);
   }
 }

@@ -89,6 +89,7 @@ msgstr "8小时资金费率"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Account"
 msgstr "账户"
@@ -1005,6 +1006,10 @@ msgstr "正在将 USDC 存入 Hyperliquid..."
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposits and withdrawals are not allowed."
 msgstr "暂不支持充值和提现。"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Desktop layout"
+msgstr "桌面布局"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Desktop wallet QR scanner"
@@ -2371,6 +2376,8 @@ msgstr "委托"
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Other"
 msgstr "其他"
 
@@ -2394,6 +2401,7 @@ msgstr "所有者账户"
 msgid "Page not found"
 msgstr "页面未找到"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Page reloads when changed"
 msgstr "更改后页面将重新加载"
@@ -2792,6 +2800,7 @@ msgstr "将替换当前手机密钥。旧手机需重新关联。"
 #~ msgid "Requirements:"
 #~ msgstr ""
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Reset"

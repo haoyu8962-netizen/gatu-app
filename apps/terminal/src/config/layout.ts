@@ -1,4 +1,4 @@
-export const MOBILE_BREAKPOINT_PX = 768;
+export const MOBILE_BREAKPOINT_PX = 1000;
 
 export const PANEL_LAYOUT = {
 	MAIN: {

@@ -394,15 +394,15 @@ export function MobileTradeView({ className, embedded }: Props) {
 			<div className={cn("shrink-0 border-b border-stroke-weak/60 bg-surface px-4 py-2", embedded && "hidden")}>
 				<div className="flex min-w-0 items-center justify-between gap-2">
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
-					<div className="shrink-0 text-right">
-						<div className={cn("whitespace-nowrap text-sm font-semibold tabular-nums", priceColorClass)}>
+					<div className="min-w-0 text-right">
+						<div className={cn("truncate whitespace-nowrap text-sm font-semibold tabular-nums", priceColorClass)}>
 							{formatPrice(markPx || null, {
 								szDecimals: market?.szDecimals,
 								marketType: market?.kind === "spot" ? "spot" : "perp",
 							})}
 						</div>
 						{typeof change24h === "number" && (
-							<div className={cn("whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
+							<div className={cn("truncate whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
 								{change24h >= 0 ? "+" : ""}
 								{change24h.toFixed(2)}%
 							</div>

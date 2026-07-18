@@ -1,7 +1,7 @@
 export function AppShellSkeleton() {
 	return (
 		<>
-			<div className="md:hidden h-dvh w-full flex flex-col bg-background overflow-hidden">
+			<div className="flex h-dvh w-full flex-col overflow-hidden bg-background min-[1001px]:hidden">
 				<div className="pt-[env(safe-area-inset-top)] border-b border-stroke-weak/60">
 					<div className="h-12 px-3 flex items-center justify-between">
 						<div className="flex items-center gap-1.5">
@@ -34,7 +34,7 @@ export function AppShellSkeleton() {
 					</div>
 				</div>
 			</div>
-			<div className="hidden md:flex h-screen w-full flex-col bg-background">
+			<div className="hidden h-screen w-full flex-col bg-background min-[1001px]:flex">
 				<div className="h-11 border-b border-stroke-weak/60 px-3 flex items-center gap-3 shrink-0">
 					<div className="h-4 w-32 rounded bg-surface animate-pulse" />
 					<div className="h-4 w-24 rounded bg-surface animate-pulse ml-auto" />

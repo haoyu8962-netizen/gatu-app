@@ -23,15 +23,18 @@ import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useSwapModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-global-settings-store";
 import { AssetDisplay } from "../components/asset-display";
+import {
+	balancesTableActionClass,
+	balancesTableCellClass,
+	balancesTableGroupCellClass,
+	balancesTableHeadClass,
+	balancesTableHeaderClass,
+	balancesToolbarClass,
+} from "./balances-table-styles";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
-	positionsPanelRowStripeClass,
 	positionsPanelTableBodyClass,
-	positionsPanelTableCaptionRowClass,
-	positionsPanelTableCellClass,
-	positionsPanelTableHeadClass,
-	positionsPanelTableHeaderClass,
 	positionsPanelTableHeaderRowClass,
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
@@ -132,7 +135,7 @@ export function BalancesTab() {
 		});
 	}
 
-	function renderBalanceRow(row: BalanceRow, index: number) {
+	function renderBalanceRow(row: BalanceRow) {
 		const token = getToken(row.asset);
 		const decimals = row.type === "perp" ? 2 : (token?.szDecimals ?? 2);
 		const canTransfer = internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && parseFloat(row.available) > 0;
@@ -140,23 +143,20 @@ export function BalancesTab() {
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
 		const pnlData = getPnl(row);
 		return (
-			<TableRow
-				key={`${row.type}-${row.asset}`}
-				className={cn(positionsPanelRowHoverClass, index % 2 === 1 && positionsPanelRowStripeClass)}
-			>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
+			<TableRow key={`${row.type}-${row.asset}`} className={positionsPanelRowHoverClass}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "font-medium text-fg")}>
 					<AssetDisplay coin={row.asset} />
 				</TableCell>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-fg")}>
 					{formatToken(row.available, decimals)}
 				</TableCell>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-fg")}>
 					{formatToken(row.total, decimals)}
 				</TableCell>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-success")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-fg")}>
 					{formatUSD(row.usdValue, { compact: true })}
 				</TableCell>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-fg")}>
 					{pnlData ? (
 						<span className={pnlData.pnl >= 0 ? "text-success" : "text-error"}>
 							{pnlData.pnl >= 0 ? "+" : ""}
@@ -167,13 +167,15 @@ export function BalancesTab() {
 						<span className="text-fg-muted">—</span>
 					)}
 				</TableCell>
-				<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right")}>
 					<div className="flex flex-nowrap items-center justify-end gap-1 whitespace-nowrap">
 						{canTransfer && (
 							<Button
-								variant="link"
+								variant="ghost"
+								intent="neutral"
+								size="xxs"
 								onClick={() => handleTransferClick(row)}
-								className="shrink-0 text-xs text-brand hover:text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className={balancesTableActionClass}
 							>
 								<ArrowsLeftRightIcon className="size-2.5" />
 								{transferLabel}
@@ -181,9 +183,11 @@ export function BalancesTab() {
 						)}
 						{canSwap && (
 							<Button
-								variant="link"
+								variant="ghost"
+								intent="neutral"
+								size="xxs"
 								onClick={() => openSwapModal(row.asset)}
-								className="shrink-0 text-xs text-brand hover:text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className={balancesTableActionClass}
 							>
 								<ArrowsDownUpIcon className="size-2.5" />
 								{t`Swap`}
@@ -191,9 +195,11 @@ export function BalancesTab() {
 						)}
 						{parseFloat(row.available) > 0 && (
 							<Button
-								variant="link"
+								variant="ghost"
+								intent="neutral"
+								size="xxs"
 								onClick={() => handleSendClick(row)}
-								className="shrink-0 text-xs text-brand hover:text-brand/80 hover:bg-transparent px-1.5 py-0.5 gap-1"
+								className={balancesTableActionClass}
 							>
 								<PaperPlaneTiltIcon className="size-2.5" />
 								{t`Send`}
@@ -218,18 +224,16 @@ export function BalancesTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className={positionsPanelTableCaptionRowClass}>
+			<div className={balancesToolbarClass}>
 				<Checkbox
 					size="xxs"
 					checked={hideSmallBalances}
 					onCheckedChange={(checked: boolean | "indeterminate") => setHideSmallBalances(Boolean(checked))}
-					label={
-						<span className="text-3xs font-normal normal-case tracking-normal text-fg-muted">{t`Hide small`}</span>
-					}
+					label={<span className="text-xs font-normal normal-case tracking-normal text-fg-muted">{t`Hide small`}</span>}
 					className="gap-1.5 items-center"
 				/>
 				{isConnected && !isLoading && !hasError ? (
-					<span className="inline-flex items-center gap-1 tabular-nums text-3xs font-medium text-success">
+					<span className="inline-flex items-center gap-1 tabular-nums text-xs font-medium text-fg">
 						{isSpotStateStale ? (
 							<SpinnerGapIcon className="size-3 animate-spin text-warning" aria-label={t`Loading...`} />
 						) : null}
@@ -241,44 +245,24 @@ export function BalancesTab() {
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
 						<Table className="table-fixed min-w-[44rem] w-full">
-							<TableHeader className={positionsPanelTableHeaderClass}>
+							<TableHeader className={balancesTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[20%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[20%] text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[14%] text-right")}>
 										{t`Available`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[14%] text-right")}>
 										{t`Total`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-right")}>
 										{t`USD Value`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-right")}>
 										{t`PNL`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[20%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[20%] text-right")}>
 										{t`Actions`}
 									</TableHead>
 								</TableRow>
@@ -287,27 +271,21 @@ export function BalancesTab() {
 								{filteredPerpBalances.length > 0 && (
 									<>
 										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
-											<TableCell
-												colSpan={6}
-												className="!h-auto !min-h-0 border-stroke-weak/40 bg-brand/8 px-2.5 py-1.5 text-3xs font-semibold uppercase tracking-widest text-brand"
-											>
+											<TableCell colSpan={6} className={balancesTableGroupCellClass}>
 												{t`Perpetuals`}
 											</TableCell>
 										</TableRow>
-										{filteredPerpBalances.map((row, i) => renderBalanceRow(row, i))}
+										{filteredPerpBalances.map(renderBalanceRow)}
 									</>
 								)}
 								{filteredSpotBalances.length > 0 && (
 									<>
 										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
-											<TableCell
-												colSpan={6}
-												className="!h-auto !min-h-0 border-stroke-weak/40 bg-warning/8 px-2.5 py-1.5 text-3xs font-semibold uppercase tracking-widest text-warning"
-											>
+											<TableCell colSpan={6} className={balancesTableGroupCellClass}>
 												{t`Spot`}
 											</TableCell>
 										</TableRow>
-										{filteredSpotBalances.map((row, i) => renderBalanceRow(row, i))}
+										{filteredSpotBalances.map(renderBalanceRow)}
 									</>
 								)}
 							</TableBody>

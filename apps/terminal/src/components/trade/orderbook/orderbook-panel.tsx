@@ -89,16 +89,27 @@ export function OrderbookPanel() {
 			value={tab}
 			onValueChange={setTab}
 			className="orderbook-panel-container h-full min-h-0 flex flex-col overflow-hidden bg-surface"
+			fullWidth
 			size="sm"
 			variant="underline"
 		>
 			<div className="flex items-center justify-between">
 				<TabsList className="w-full min-w-0">
-					<TabsTrigger value="book" aria-label={t`Order Book`} icon={<BookBookmarkIcon className="size-3.5" />}>
-						{t`Order Book`}
+					<TabsTrigger
+						value="book"
+						aria-label={t`Order Book`}
+						icon={<BookBookmarkIcon className="size-3.5 shrink-0" />}
+						className="min-w-0"
+					>
+						<span className="orderbook-tab-label min-w-0 truncate">{t`Order Book`}</span>
 					</TabsTrigger>
-					<TabsTrigger value="trades" aria-label={t`Recent Trades`} icon={<ListDashesIcon className="size-3.5" />}>
-						{t`Trades`}
+					<TabsTrigger
+						value="trades"
+						aria-label={t`Recent Trades`}
+						icon={<ListDashesIcon className="size-3.5 shrink-0" />}
+						className="min-w-0"
+					>
+						<span className="orderbook-tab-label min-w-0 truncate">{t`Trades`}</span>
 					</TabsTrigger>
 				</TabsList>
 			</div>

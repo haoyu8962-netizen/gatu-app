@@ -22,7 +22,7 @@ const ACCUMULATING_SUBS: Partial<Record<SubMethod, AccumulateConfig>> = {
 		isSnapshot: () => false,
 		buffer: {
 			maxSize: 100,
-			getKey: (t) => `${t.hash}:${t.tid}`,
+			getKey: (t) => `${t.time}:${t.coin}:${t.tid}`,
 			compare: (a, b) => b.time - a.time,
 		},
 	}),

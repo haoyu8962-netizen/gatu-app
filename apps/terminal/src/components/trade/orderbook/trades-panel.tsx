@@ -1,53 +1,12 @@
 import { useLingui } from "@lingui/react/macro";
-import { ArrowSquareOutIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
-import { memo, useMemo } from "react";
+import { ArrowsLeftRightIcon } from "@phosphor-icons/react";
+import { useMemo } from "react";
 import { getBaseQuoteFromPairName } from "@/domain/market";
 import { cn } from "@/lib/cn";
-import { formatNumber } from "@/lib/format";
-import { getExplorerTxUrl, useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
-import { type ProcessedTrade, processTrades } from "@/lib/trade/trades";
+import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
+import { getTradePriceDecimals, processTrades } from "@/lib/trade/trades";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
-
-interface Props {
-	trade: ProcessedTrade;
-	szDecimals: number;
-	showInQuote: boolean;
-	compact?: boolean;
-}
-
-const TradeRow = memo(function TradeRow({ trade, szDecimals, showInQuote, compact = false }: Props) {
-	const sizeDisplay = showInQuote ? formatNumber(trade.price * trade.size, 2) : formatNumber(trade.size, szDecimals);
-
-	return (
-		<a
-			href={getExplorerTxUrl(trade.hash)}
-			target="_blank"
-			rel="noopener noreferrer"
-			className={cn(
-				"grid gap-2 tabular-nums py-0.5 hover:bg-fill-hover group",
-				compact ? "grid-cols-2 text-2xs" : "grid-cols-3 text-xs",
-				trade.side === "buy" ? "trade-row-buy" : "trade-row-sell",
-			)}
-		>
-			{!compact && (
-				<div className="text-fg flex items-center gap-1">
-					{trade.time}
-					<ArrowSquareOutIcon className="size-2.5 opacity-100 hover:opacity-80" aria-hidden="true" />
-				</div>
-			)}
-			<div
-				className={cn(
-					"font-medium",
-					compact ? "text-left" : "text-right",
-					trade.side === "buy" ? "text-success" : "text-error",
-				)}
-			>
-				{formatNumber(trade.price, 2)}
-			</div>
-			<div className="text-right text-fg">{sizeDisplay}</div>
-		</a>
-	);
-});
+import { TradeRow } from "./trade-row";
 
 export function TradesPanel({ compact = false }: { compact?: boolean }) {
 	const { t } = useLingui();
@@ -70,6 +29,8 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 	}, [selectedMarket]);
 
 	const szDecimals = selectedMarket?.szDecimals ?? 4;
+	const marketType = selectedMarket?.kind === "spot" ? "spot" : "perp";
+	const priceDecimals = getTradePriceDecimals(selectedMarket?.markPx, szDecimals, marketType);
 	const processed = useMemo(() => processTrades(trades ?? []), [trades]);
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
 	const toggleAssetDisplay = () => setShowOrderbookInQuote(!showOrderbookInQuote);
@@ -78,21 +39,23 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 		<div className="flex-1 min-h-0 flex flex-col">
 			<div
 				className={cn(
-					"grid gap-2 items-center text-fg uppercase tracking-wider border-b border-stroke-weak/40",
-					compact ? "grid-cols-2 px-1.5 h-7 text-2xs" : "grid-cols-3 px-2 h-9 text-xs",
+					"grid items-center text-fg uppercase tracking-wider border-b border-stroke-weak/40",
+					compact ? "grid-cols-2 gap-2 px-1.5 h-7 text-2xs" : "trades-grid gap-1 px-2 h-8 text-xs",
 				)}
 			>
-				{!compact && <div>{t`Time`}</div>}
-				<div className={compact ? "text-left" : "text-right"}>{t`Price`}</div>
+				<div className="min-w-0 truncate text-left">{t`Price`}</div>
 				<button
 					type="button"
 					onClick={toggleAssetDisplay}
-					className="text-right hover:text-fg transition-colors inline-flex items-center justify-end gap-0.5"
+					className="min-w-0 overflow-hidden text-right hover:text-fg transition-colors"
 				>
-					{t`Size`}
-					<span className="text-fg">({displayAsset})</span>
-					<ArrowsLeftRightIcon className="size-2 opacity-40" />
+					<span className="flex min-w-0 items-center justify-end gap-0.5">
+						<span className="shrink-0">{t`Size`}</span>
+						<span className="trades-asset-heading min-w-0 truncate text-fg">({displayAsset})</span>
+						<ArrowsLeftRightIcon className="size-2 shrink-0 opacity-40" />
+					</span>
 				</button>
+				{!compact && <div className="min-w-0 truncate text-right">{t`Time`}</div>}
 			</div>
 
 			{status === "error" ? (
@@ -110,6 +73,7 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 							<TradeRow
 								key={trade.id}
 								trade={trade}
+								priceDecimals={priceDecimals}
 								szDecimals={szDecimals}
 								showInQuote={showOrderbookInQuote}
 								compact={compact}

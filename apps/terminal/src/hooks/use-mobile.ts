@@ -1,15 +1,17 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { MOBILE_BREAKPOINT_PX } from "@/config/layout";
 
+export const MOBILE_MEDIA_QUERY = `(max-width: ${MOBILE_BREAKPOINT_PX}px)`;
+
 function subscribeToMediaQuery(callback: () => void): () => void {
-	const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX - 1}px)`);
+	const mql = window.matchMedia(MOBILE_MEDIA_QUERY);
 	mql.addEventListener("change", callback);
 	return () => mql.removeEventListener("change", callback);
 }
 
 function getIsMobile(): boolean {
 	if (typeof window === "undefined") return false;
-	return window.innerWidth < MOBILE_BREAKPOINT_PX;
+	return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
 }
 
 function getServerSnapshot(): boolean {

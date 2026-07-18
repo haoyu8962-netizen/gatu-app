@@ -166,7 +166,7 @@ export function OrderToast() {
 		<div
 			className={cn(
 				ORDER_TOAST_WIDTH,
-				"fixed right-4 z-[60] bottom-[calc(env(safe-area-inset-bottom)+5rem)] md:right-6 md:bottom-6",
+				"fixed right-4 z-[60] bottom-[calc(env(safe-area-inset-bottom)+5rem)] min-[1001px]:right-6 min-[1001px]:bottom-6",
 				"bg-surface/95 backdrop-blur-sm",
 				"border border-stroke-weak/60 rounded-8 overflow-hidden",
 				"shadow-overlay shadow-black/20 dark:shadow-black/50",

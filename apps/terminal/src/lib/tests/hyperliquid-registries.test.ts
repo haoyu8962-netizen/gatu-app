@@ -95,12 +95,13 @@ describe("subscription registry", () => {
 		for (const method of EXPECTED_ACCUMULATING) {
 			const config = getAccumulateConfig(method);
 			expect(config, `${method} should have accumulate config`).not.toBeNull();
-			expect(typeof config!.getItems).toBe("function");
-			expect(typeof config!.withItems).toBe("function");
-			expect(typeof config!.isSnapshot).toBe("function");
-			expect(config!.buffer.maxSize).toBeGreaterThan(0);
-			expect(typeof config!.buffer.getKey).toBe("function");
-			expect(typeof config!.buffer.compare).toBe("function");
+			if (!config) throw new Error(`Missing accumulate config for ${method}`);
+			expect(typeof config.getItems).toBe("function");
+			expect(typeof config.withItems).toBe("function");
+			expect(typeof config.isSnapshot).toBe("function");
+			expect(config.buffer.maxSize).toBeGreaterThan(0);
+			expect(typeof config.buffer.getKey).toBe("function");
+			expect(typeof config.buffer.compare).toBe("function");
 		}
 	});
 
@@ -109,6 +110,11 @@ describe("subscription registry", () => {
 		for (const method of nonAccumulating) {
 			expect(getAccumulateConfig(method), `${method} should not accumulate`).toBeNull();
 		}
+	});
+
+	it("uses time, coin, and tid to identify public trades", () => {
+		const config = getAccumulateConfig("trades");
+		expect(config?.buffer.getKey({ time: 123, coin: "HYPE", tid: 456 })).toBe("123:HYPE:456");
 	});
 
 	it("has default throttle only for l2Book", () => {

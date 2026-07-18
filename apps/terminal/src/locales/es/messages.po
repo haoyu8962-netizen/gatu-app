@@ -89,6 +89,7 @@ msgstr "Financiación 8 h"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Account"
 msgstr "Cuenta"
@@ -1005,6 +1006,10 @@ msgstr "Depositando USDC en Hyperliquid..."
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposits and withdrawals are not allowed."
 msgstr "Los depósitos y retiros no están permitidos."
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Desktop layout"
+msgstr "Diseño de escritorio"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Desktop wallet QR scanner"
@@ -2371,6 +2376,8 @@ msgstr "órdenes"
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Other"
 msgstr "Otro"
 
@@ -2394,6 +2401,7 @@ msgstr "Cuenta propietaria"
 msgid "Page not found"
 msgstr "Página no encontrada"
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Page reloads when changed"
 msgstr "La página se recarga al cambiar"
@@ -2792,6 +2800,7 @@ msgstr "Reemplaza la clave actual del teléfono. El teléfono anterior debe volv
 #~ msgid "Requirements:"
 #~ msgstr ""
 
+#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Reset"

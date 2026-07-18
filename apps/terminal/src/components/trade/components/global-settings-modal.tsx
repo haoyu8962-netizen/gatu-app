@@ -1,4 +1,5 @@
 import {
+	Button,
 	Modal,
 	ModalContent,
 	ModalHeader,
@@ -15,6 +16,7 @@ import type { ChangeEvent, ReactNode } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
+import { resetDesktopGridLayouts } from "@/config/desktop-grid-layout";
 import { type LocaleCode, localeList, type NumberFormatLocale, numberFormatLocaleList } from "@/config/i18n";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
 import { dynamicActivate } from "@/lib/i18n";
@@ -68,6 +70,11 @@ export function GlobalSettingsModal() {
 
 	function handleNumberFormatChange(value: string | null) {
 		if (value) setNumberFormatLocale(value as NumberFormatLocale);
+	}
+
+	function handleDesktopLayoutReset() {
+		resetDesktopGridLayouts();
+		window.location.reload();
 	}
 
 	const languageOptions = localeList.map(({ code, name }) => ({ value: code, label: name }));
@@ -135,6 +142,11 @@ export function GlobalSettingsModal() {
 								size="xs"
 								triggerClassName="min-w-32"
 							/>
+						</SettingRow>
+						<SettingRow label={t`Desktop layout`} hint={t`Page reloads when changed`}>
+							<Button variant="outline" intent="neutral" size="xs" onClick={handleDesktopLayoutReset}>
+								{t`Reset`}
+							</Button>
 						</SettingRow>
 					</SettingsGroup>
 
