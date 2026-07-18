@@ -6,9 +6,6 @@ export type { MarketRow, MarketScope } from "./token-selector-categories";
 
 export type MarketTableLayout = "default" | "spot";
 
-const TOKEN_SELECTOR_MOBILE_24H_CHANGE_WIDTH = "w-[7.25rem]";
-const TOKEN_SELECTOR_MOBILE_PRICE_WIDTH = "w-[4.75rem]";
-
 const columnHelper = createColumnHelper<MarketRow>();
 
 const numericStringSortFn: SortingFn<MarketRow> = (rowA, rowB, columnId) => {
@@ -18,21 +15,7 @@ const numericStringSortFn: SortingFn<MarketRow> = (rowA, rowB, columnId) => {
 	return a - b;
 };
 
-export function getMarketTableColumnClass(
-	columnId: string,
-	mobile: boolean,
-	layout: MarketTableLayout = "default",
-): string {
-	if (mobile) {
-		switch (columnId) {
-			case "24h-change":
-				return TOKEN_SELECTOR_MOBILE_24H_CHANGE_WIDTH;
-			case "price":
-				return TOKEN_SELECTOR_MOBILE_PRICE_WIDTH;
-			default:
-				return "w-20";
-		}
-	}
+export function getMarketTableColumnClass(columnId: string, layout: MarketTableLayout = "default"): string {
 	if (layout === "spot") {
 		switch (columnId) {
 			case "pairName":
@@ -69,33 +52,28 @@ export function getMarketTableColumnClass(
 
 export const TOKEN_SELECTOR_COLUMNS = [
 	columnHelper.accessor("pairName", {
-		header: "Market",
 		size: 220,
 		enableSorting: false,
 	}),
 	columnHelper.accessor("markPx", {
 		id: "price",
-		header: "Price",
 		size: 80,
 		sortUndefined: "last",
 		sortingFn: numericStringSortFn,
 	}),
 	columnHelper.accessor((row: MarketRow) => get24hChange(row.prevDayPx, row.markPx) ?? undefined, {
 		id: "24h-change",
-		header: "24h Change",
 		size: 112,
 		sortUndefined: "last",
 	}),
 	columnHelper.accessor((row: MarketRow) => getEightHourFundingRate(row.funding) ?? undefined, {
 		id: "funding",
-		header: "8h Funding",
 		size: 112,
 		sortUndefined: "last",
 		sortingFn: numericStringSortFn,
 	}),
 	columnHelper.accessor("dayNtlVlm", {
 		id: "volume",
-		header: "Volume",
 		size: 80,
 		sortUndefined: "last",
 		sortingFn: numericStringSortFn,
@@ -105,7 +83,6 @@ export const TOKEN_SELECTOR_COLUMNS = [
 			row.kind === "spot" ? (getMarketCapUsd(row.circulatingSupply, row.markPx) ?? undefined) : undefined,
 		{
 			id: "market-cap",
-			header: "Market Cap",
 			size: 160,
 			sortUndefined: "last",
 			sortingFn: numericStringSortFn,
@@ -113,7 +90,6 @@ export const TOKEN_SELECTOR_COLUMNS = [
 	),
 	columnHelper.accessor((row: MarketRow) => getOiUsd(row.openInterest, row.markPx) ?? undefined, {
 		id: "oi",
-		header: "Open Interest",
 		size: 128,
 		sortUndefined: "last",
 	}),

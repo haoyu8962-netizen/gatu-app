@@ -4,9 +4,11 @@ import {
 	createMarketRows,
 	getDefaultMarketSubcategory,
 	getMarketSelectorPairName,
+	getSpotQuoteSubcategories,
 	isMarketInScope,
 	isMarketInSubcategory,
 	type MarketRow,
+	marketScopeUsesAnnotations,
 	normalizePerpCategory,
 } from "@/components/trade/chart/token-selector-categories";
 
@@ -32,7 +34,6 @@ const annotations = [
 	["xyz:AAPL", { category: "stocks" }],
 	["xyz:EUR", { category: "FX" }],
 	["xyz:BTC", { category: "crypto" }],
-	["xyz:COMING", { category: "pre-launch" }],
 ] as PerpConciseAnnotationsResponse;
 
 describe("token selector categories", () => {
@@ -44,6 +45,13 @@ describe("token selector categories", () => {
 	it("defaults Traditional Finance to Indices", () => {
 		expect(getDefaultMarketSubcategory("traditional")).toBe("indices");
 		expect(getDefaultMarketSubcategory("all")).toBe("all");
+	});
+
+	it("identifies scopes that require official annotations", () => {
+		expect(marketScopeUsesAnnotations("crypto")).toBe(true);
+		expect(marketScopeUsesAnnotations("traditional")).toBe(true);
+		expect(marketScopeUsesAnnotations("all")).toBe(false);
+		expect(marketScopeUsesAnnotations("hip3")).toBe(false);
 	});
 
 	it("attaches official annotations by canonical market name", () => {
@@ -74,12 +82,11 @@ describe("token selector categories", () => {
 		expect(isMarketInSubcategory(stock, "traditional", "indices")).toBe(false);
 	});
 
-	it("keeps favorites and pre-launch scopes explicit", () => {
-		const upcoming = annotatedMarket("xyz:COMING");
+	it("keeps favorites explicit", () => {
+		const favorite = annotatedMarket("xyz:BTC");
 
-		expect(isMarketInScope(upcoming, "favorites", true)).toBe(true);
-		expect(isMarketInScope(upcoming, "favorites", false)).toBe(false);
-		expect(isMarketInScope(upcoming, "prelaunch", false)).toBe(true);
+		expect(isMarketInScope(favorite, "favorites", true)).toBe(true);
+		expect(isMarketInScope(favorite, "favorites", false)).toBe(false);
 	});
 
 	it("uses official display names without changing the canonical symbol", () => {
@@ -100,5 +107,26 @@ describe("token selector categories", () => {
 
 		expect(isMarketInSubcategory(spot, "spot", "USDT")).toBe(true);
 		expect(isMarketInSubcategory(spot, "spot", "USDT0")).toBe(false);
+	});
+
+	it("derives spot quote filters from live metadata", () => {
+		function spotWithQuote(name: string, quoteName: string, quoteDisplayName?: string): MarketRow {
+			return {
+				...market(name, "spot", "HYPE"),
+				tokensInfo: [
+					{ name: "HYPE", displayName: "HYPE" },
+					{ name: quoteName, displayName: quoteDisplayName },
+				],
+			} as Extract<MarketRow, { kind: "spot" }>;
+		}
+
+		const subcategories = getSpotQuoteSubcategories([
+			spotWithQuote("@1", "USDE"),
+			spotWithQuote("@2", "USDT0", "USDT"),
+			spotWithQuote("@3", "USDC"),
+			spotWithQuote("@4", "USDH"),
+		]);
+
+		expect(subcategories.map(({ value }) => value)).toEqual(["all", "USDC", "USDH", "USDT", "USDE"]);
 	});
 });

@@ -1,4 +1,5 @@
 import { FALLBACK_VALUE_PLACEHOLDER, FORMAT_COMPACT_DEFAULT, FORMAT_COMPACT_THRESHOLD } from "@/config/app";
+import { HL_PERP_PRICE_MAX_DECIMALS, HL_PRICE_MAX_DECIMALS } from "@/config/trade";
 import { toNumber } from "@/lib/trade/numbers";
 import { getResolvedFormatLocale } from "@/stores/use-global-settings-store";
 
@@ -133,27 +134,31 @@ export function formatUSD(value: string | number | null | undefined, opts?: numb
 }
 
 /**
- * Calculate price decimals from szDecimals using Hyperliquid's rule.
- * Price decimals = max(0, 6 - szDecimals)
+ * Calculate price decimals from szDecimals using Hyperliquid's market-specific rule.
+ * Perp prices use max(0, 6 - szDecimals); spot prices use max(0, 8 - szDecimals).
  *
  * @example szDecimalsToPriceDecimals(4) -> 2 (BTC: szDecimals=4, shows $88,140.12)
  * @example szDecimalsToPriceDecimals(3) -> 3 (ETH: szDecimals=3, shows $3,456.789)
- * @example szDecimalsToPriceDecimals(0) -> 6 (low-priced assets)
+ * @example szDecimalsToPriceDecimals(0) -> 6 (low-priced perpetual)
+ * @example szDecimalsToPriceDecimals(0, "spot") -> 8 (low-priced spot asset)
  */
-export function szDecimalsToPriceDecimals(szDecimals: number): number {
-	return Math.max(0, 6 - szDecimals);
+export function szDecimalsToPriceDecimals(szDecimals: number, marketType: "perp" | "spot" = "perp"): number {
+	const maxDecimals = marketType === "spot" ? HL_PRICE_MAX_DECIMALS : HL_PERP_PRICE_MAX_DECIMALS;
+	return Math.max(0, maxDecimals - szDecimals);
 }
 
 export interface FormatPriceOptions extends FormatOptions {
 	/** Size decimals from market metadata - used to derive price decimals */
 	szDecimals?: number;
+	/** Hyperliquid market type used to select the protocol decimal cap. Defaults to perpetuals. */
+	marketType?: "perp" | "spot";
 	/** Remove trailing zeros (e.g., 12.00 -> 12, 12.50 -> 12.5). Defaults to true. */
 	trimZeros?: boolean;
 }
 
 /**
  * Format a price with decimal places derived from szDecimals.
- * Uses Hyperliquid's rule: priceDecimals = max(0, 6 - szDecimals)
+ * Uses Hyperliquid's market-specific `MAX_DECIMALS - szDecimals` rule.
  *
  * @example formatPrice(88140.123, { szDecimals: 4 }) -> "$88,140.12" (BTC)
  * @example formatPrice("3456.789", { szDecimals: 3 }) -> "$3,456.789" (ETH)
@@ -164,8 +169,8 @@ export function formatPrice(value: string | number | null | undefined, opts?: Fo
 	if (!isValidNumber(parsed.value)) return FALLBACK_VALUE_PLACEHOLDER;
 
 	// Derive decimals from szDecimals if provided, otherwise use explicit decimals or default to 2
-	const { decimals: decOpt, compact, szDecimals, trimZeros, ...rest } = opts ?? {};
-	const resolvedDecimals = decOpt ?? (szDecimals !== undefined ? szDecimalsToPriceDecimals(szDecimals) : 2);
+	const { decimals: decOpt, compact, szDecimals, marketType, trimZeros, ...rest } = opts ?? {};
+	const resolvedDecimals = decOpt ?? (szDecimals !== undefined ? szDecimalsToPriceDecimals(szDecimals, marketType) : 2);
 
 	const defaults: Intl.NumberFormatOptions = {
 		style: "currency",

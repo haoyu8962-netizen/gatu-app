@@ -396,7 +396,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 					<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					<div className="shrink-0 text-right">
 						<div className={cn("whitespace-nowrap text-sm font-semibold tabular-nums", priceColorClass)}>
-							{formatPrice(markPx || null, { szDecimals: market?.szDecimals })}
+							{formatPrice(markPx || null, {
+								szDecimals: market?.szDecimals,
+								marketType: market?.kind === "spot" ? "spot" : "perp",
+							})}
 						</div>
 						{typeof change24h === "number" && (
 							<div className={cn("whitespace-nowrap text-xs tabular-nums", getValueColorClass(change24h))}>
@@ -541,6 +544,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 							onMidClick={setTriggerPrice}
 							midPrice={markPx}
 							szDecimals={market?.szDecimals}
+							marketType={market?.kind === "spot" ? "spot" : "perp"}
 							className="tabular-nums font-semibold"
 							disabled={isFormDisabled}
 						/>
@@ -558,6 +562,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 								onMidClick={setLimitPriceInput}
 								midPrice={markPx}
 								szDecimals={market?.szDecimals}
+								marketType={market?.kind === "spot" ? "spot" : "perp"}
 								className="tabular-nums font-semibold"
 								disabled={isFormDisabled}
 							/>

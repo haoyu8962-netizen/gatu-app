@@ -12,27 +12,23 @@ import { useFavoriteMarkets, useMarketActions } from "@/stores/use-market-store"
 import {
 	createMarketRows,
 	getDefaultMarketSubcategory,
+	getSpotQuoteSubcategories,
 	isMarketInScope,
 	isMarketInSubcategory,
+	type MarketSubcategory,
+	marketScopeUsesAnnotations,
 } from "./token-selector-categories";
 import { type MarketRow, type MarketScope, TOKEN_SELECTOR_COLUMNS } from "./token-selector-columns";
 
 const PERP_ANNOTATIONS_STALE_TIME_MS = 5 * 60 * 1_000;
 
-const TRADITIONAL_FINANCE_SUBCATEGORIES: Subcategory[] = [
+const TRADITIONAL_FINANCE_SUBCATEGORIES: MarketSubcategory[] = [
 	{ value: "all", label: "All" },
 	{ value: "stocks", label: "Stocks" },
 	{ value: "indices", label: "Indices" },
 	{ value: "commodities", label: "Commodities" },
 	{ value: "fx", label: "Forex" },
 	{ value: "preipo", label: "Pre-IPO" },
-];
-
-const DESKTOP_SPOT_QUOTE_SUBCATEGORIES: Subcategory[] = [
-	{ value: "all", label: "All" },
-	{ value: "USDC", label: "USDC" },
-	{ value: "USDH", label: "USDH" },
-	{ value: "USDT", label: "USDT" },
 ];
 
 const TOKEN_SELECTOR_SEARCH_CONFIG: SearchConfig<MarketRow> = {
@@ -50,17 +46,11 @@ const TOKEN_SELECTOR_SEARCH_CONFIG: SearchConfig<MarketRow> = {
 	},
 };
 
-export interface Subcategory {
-	value: string;
-	label: string;
-}
-
 export interface UseTokenSelectorOptions {
 	value: string;
 	onValueChange: (value: string, market?: MarketRow) => void;
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
-	mobile?: boolean;
 }
 
 export interface UseTokenSelectorReturn {
@@ -68,10 +58,12 @@ export interface UseTokenSelectorReturn {
 	setOpen: (open: boolean) => void;
 	scope: MarketScope;
 	subcategory: string;
-	subcategories: Subcategory[];
+	subcategories: MarketSubcategory[];
 	search: string;
 	setSearch: (search: string) => void;
 	isLoading: boolean;
+	hasClassificationError: boolean;
+	retryClassifications: () => void;
 	isFavorite: (name: string) => boolean;
 	sorting: SortingState;
 	handleSort: (columnId: string) => void;
@@ -100,10 +92,11 @@ type MarketsInfo = ReturnType<typeof useMarketsInfo>;
 function computeSubcategories(
 	scope: MarketScope,
 	builderPerpMarkets: MarketsInfo["builderPerpMarkets"],
-): Subcategory[] {
+	spotMarkets: MarketsInfo["spotMarkets"],
+): MarketSubcategory[] {
 	if (scope === "traditional") return TRADITIONAL_FINANCE_SUBCATEGORIES;
 	if (scope === "perp") return [];
-	if (scope === "spot") return DESKTOP_SPOT_QUOTE_SUBCATEGORIES;
+	if (scope === "spot") return getSpotQuoteSubcategories(spotMarkets);
 
 	if (scope === "hip3") {
 		const dexNames = Object.keys(builderPerpMarkets).filter((k) => k !== "all");
@@ -146,8 +139,13 @@ export function useTokenSelector({
 		}
 	}
 
-	const { markets, builderPerpMarkets, isLoading } = useMarketsInfo();
-	const { data: perpAnnotations, isLoading: annotationsLoading } = useInfo("perpConciseAnnotations", undefined, {
+	const { markets, spotMarkets, builderPerpMarkets, isLoading } = useMarketsInfo();
+	const {
+		data: perpAnnotations,
+		isLoading: annotationsLoading,
+		isError: annotationsError,
+		refetch: refetchAnnotations,
+	} = useInfo("perpConciseAnnotations", undefined, {
 		staleTime: PERP_ANNOTATIONS_STALE_TIME_MS,
 	});
 
@@ -157,7 +155,10 @@ export function useTokenSelector({
 	const favoriteSet = useMemo(() => new Set(favorites), [favorites]);
 	const isFavorite = useCallback((name: string) => favoriteSet.has(name), [favoriteSet]);
 
-	const subcategories = useMemo(() => computeSubcategories(scope, builderPerpMarkets), [scope, builderPerpMarkets]);
+	const subcategories = useMemo(
+		() => computeSubcategories(scope, builderPerpMarkets, spotMarkets),
+		[scope, builderPerpMarkets, spotMarkets],
+	);
 	const selectorMarkets = useMemo(() => createMarketRows(markets, perpAnnotations), [markets, perpAnnotations]);
 
 	useEffect(() => {
@@ -368,6 +369,15 @@ export function useTokenSelector({
 		}
 	}
 
+	function retryClassifications() {
+		void refetchAnnotations();
+	}
+
+	const classificationsUnavailable =
+		marketScopeUsesAnnotations(scope) && (!perpAnnotations || perpAnnotations.length === 0);
+	const classificationRequestSettledWithoutData =
+		classificationsUnavailable && !annotationsLoading && (annotationsError || perpAnnotations?.length === 0);
+
 	return {
 		open,
 		setOpen: handleOpenChange,
@@ -377,10 +387,9 @@ export function useTokenSelector({
 		search,
 		setSearch: handleSearchChange,
 		isLoading:
-			open &&
-			((isLoading && markets.length === 0) ||
-				isPending ||
-				((scope === "traditional" || scope === "prelaunch") && annotationsLoading && !perpAnnotations)),
+			open && ((isLoading && markets.length === 0) || isPending || (classificationsUnavailable && annotationsLoading)),
+		hasClassificationError: open && classificationRequestSettledWithoutData,
+		retryClassifications,
 		isFavorite,
 		sorting,
 		handleSort,

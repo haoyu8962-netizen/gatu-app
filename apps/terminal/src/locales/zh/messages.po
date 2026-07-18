@@ -915,8 +915,8 @@ msgstr "默认"
 #~ msgstr "默认账户设置。每种抵押资产都有单独余额。永续只能使用结算资产作为抵押品，同一抵押资产的全仓仓位之间共享保证金。"
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "DeFi"
-msgstr "DeFi"
+#~ msgid "DeFi"
+#~ msgstr "DeFi"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -1285,6 +1285,10 @@ msgstr "加载余额失败。"
 msgid "Failed to load funding history."
 msgstr "加载资金费用历史失败。"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Failed to load market categories."
+msgstr "加载市场分类失败。"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Failed to load open orders."
@@ -1591,12 +1595,12 @@ msgid "Isolated"
 msgstr "逐仓"
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "L1"
-msgstr "L1"
+#~ msgid "L1"
+#~ msgstr "L1"
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "L2"
-msgstr "L2"
+#~ msgid "L2"
+#~ msgstr "L2"
 
 #: src/components/trade/header/language-switcher.tsx
 msgid "Language"
@@ -1953,8 +1957,8 @@ msgstr "最大"
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "Meme"
-msgstr "Meme"
+#~ msgid "Meme"
+#~ msgstr "Meme"
 
 #: src/components/ui/price-input.tsx
 msgid "Mid"
@@ -2054,8 +2058,8 @@ msgid "Network fee"
 msgstr "网络费用"
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "New"
-msgstr "新上线"
+#~ msgid "New"
+#~ msgstr "新上线"
 
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
@@ -2611,8 +2615,8 @@ msgid "Pre-IPO"
 msgstr "上市前"
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "Pre-launch"
-msgstr "预上线"
+#~ msgid "Pre-launch"
+#~ msgstr "预上线"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Preparing automatic USDC deposit..."
@@ -2806,6 +2810,7 @@ msgstr "重置倒计时"
 msgid "Resetting..."
 msgstr "正在重置…"
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3271,7 +3276,6 @@ msgstr "来源"
 #~ msgstr "现货"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -3795,8 +3799,8 @@ msgid "Transfers between Spot and Perps are unavailable in unified account mode.
 msgstr "启用统一账户后，现货与合约之间的划转不可用。"
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "Trending"
-msgstr "热门"
+#~ msgid "Trending"
+#~ msgstr "热门"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

@@ -69,7 +69,8 @@ export function OrderbookPanel() {
 	const spreadPct = getPercent(spread, selectedMarket?.markPx);
 
 	const szDecimals = selectedMarket?.szDecimals ?? 4;
-	const priceDecimals = selectedOption?.decimals ?? szDecimalsToPriceDecimals(szDecimals);
+	const marketType = selectedMarket?.kind === "spot" ? "spot" : "perp";
+	const priceDecimals = selectedOption?.decimals ?? szDecimalsToPriceDecimals(szDecimals, marketType);
 	const flashResetKey = `${subscriptionParams.coin}:${getPriceGroupingKey(selectedOption)}`;
 
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;

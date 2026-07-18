@@ -31,6 +31,8 @@ export function TokenSelectorPopup({
 		search,
 		setSearch,
 		isLoading,
+		hasClassificationError,
+		retryClassifications,
 		isFavorite,
 		sorting,
 		handleSort,
@@ -51,7 +53,6 @@ export function TokenSelectorPopup({
 		onValueChange,
 		open,
 		onOpenChange,
-		mobile,
 	});
 
 	const content = (
@@ -63,6 +64,8 @@ export function TokenSelectorPopup({
 			search={search}
 			setSearch={setSearch}
 			isLoading={isLoading}
+			hasClassificationError={hasClassificationError}
+			onRetryClassifications={retryClassifications}
 			isFavorite={isFavorite}
 			sorting={sorting}
 			handleSort={handleSort}

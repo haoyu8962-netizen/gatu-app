@@ -1,17 +1,8 @@
 import type { PerpConciseAnnotationsResponse } from "@nktkas/hyperliquid";
-import { isTokenInCategory, type MarketCategory } from "@/domain/market";
+import { isTokenInCategory } from "@/domain/market";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 
-export type MarketScope =
-	| "favorites"
-	| "all"
-	| "perp"
-	| "spot"
-	| "crypto"
-	| "traditional"
-	| "hip3"
-	| "popular"
-	| "prelaunch";
+export type MarketScope = "favorites" | "all" | "perp" | "spot" | "crypto" | "traditional" | "hip3" | "popular";
 
 export type TraditionalMarketSubcategory = "all" | "stocks" | "indices" | "commodities" | "fx" | "preipo";
 
@@ -21,7 +12,12 @@ export type MarketRow = UnifiedMarketInfo & {
 	annotation?: PerpMarketAnnotation;
 };
 
-const TRADITIONAL_MARKET_CATEGORIES = new Set<TraditionalMarketSubcategory>([
+export interface MarketSubcategory {
+	value: string;
+	label: string;
+}
+
+const TRADITIONAL_MARKET_CATEGORIES: ReadonlySet<string> = new Set([
 	"stocks",
 	"indices",
 	"commodities",
@@ -29,7 +25,7 @@ const TRADITIONAL_MARKET_CATEGORIES = new Set<TraditionalMarketSubcategory>([
 	"preipo",
 ]);
 
-const PRELAUNCH_CATEGORIES = new Set(["prelaunch", "pre-launch", "pre_launch"]);
+const PREFERRED_SPOT_QUOTES = ["USDC", "USDH", "USDT"];
 
 export function normalizePerpCategory(category: string | undefined): string | undefined {
 	return category?.trim().toLowerCase();
@@ -52,6 +48,32 @@ export function getDefaultMarketSubcategory(scope: MarketScope): string {
 	return scope === "traditional" ? "indices" : "all";
 }
 
+export function marketScopeUsesAnnotations(scope: MarketScope): boolean {
+	return scope === "crypto" || scope === "traditional";
+}
+
+export function getSpotQuoteSubcategories(markets: readonly UnifiedMarketInfo[]): MarketSubcategory[] {
+	const quotes = new Set<string>();
+
+	for (const market of markets) {
+		if (market.kind !== "spot") continue;
+		const quoteToken = market.tokensInfo[1];
+		const quote = quoteToken?.displayName ?? quoteToken?.name;
+		if (quote) quotes.add(quote);
+	}
+
+	const orderedQuotes = [...quotes].sort((left, right) => {
+		const leftIndex = PREFERRED_SPOT_QUOTES.indexOf(left);
+		const rightIndex = PREFERRED_SPOT_QUOTES.indexOf(right);
+		if (leftIndex >= 0 && rightIndex >= 0) return leftIndex - rightIndex;
+		if (leftIndex >= 0) return -1;
+		if (rightIndex >= 0) return 1;
+		return left.localeCompare(right);
+	});
+
+	return [{ value: "all", label: "All" }, ...orderedQuotes.map((quote) => ({ value: quote, label: quote }))];
+}
+
 export function isMarketInScope(market: MarketRow, scope: MarketScope, isFavorite: boolean): boolean {
 	const category = normalizePerpCategory(market.annotation?.category);
 
@@ -68,17 +90,11 @@ export function isMarketInScope(market: MarketRow, scope: MarketScope, isFavorit
 			// Builder crypto markets may omit an annotation; traditional assets are explicitly categorized.
 			return market.kind !== "builderPerp" || category === undefined || category === "crypto";
 		case "traditional":
-			return (
-				market.kind === "builderPerp" &&
-				category !== undefined &&
-				TRADITIONAL_MARKET_CATEGORIES.has(category as TraditionalMarketSubcategory)
-			);
+			return market.kind === "builderPerp" && category !== undefined && TRADITIONAL_MARKET_CATEGORIES.has(category);
 		case "hip3":
 			return market.kind === "builderPerp";
 		case "popular":
 			return isTokenInCategory(market.shortName, "trending");
-		case "prelaunch":
-			return category !== undefined && PRELAUNCH_CATEGORIES.has(category);
 	}
 }
 
@@ -87,10 +103,6 @@ export function isMarketInSubcategory(market: MarketRow, scope: MarketScope, sub
 
 	if (scope === "traditional") {
 		return normalizePerpCategory(market.annotation?.category) === subcategory;
-	}
-
-	if (scope === "perp") {
-		return isTokenInCategory(market.shortName, subcategory as MarketCategory);
 	}
 
 	if (scope === "spot" && market.kind === "spot") {

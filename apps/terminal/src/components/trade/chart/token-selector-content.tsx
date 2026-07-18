@@ -16,6 +16,12 @@ function SortIcon({ columnId, sorting }: { columnId: string; sorting: { id: stri
 	return <ArrowsDownUpIcon className="size-3 opacity-50" />;
 }
 
+function getHeaderVisibilityClass(columnId: string): string {
+	if (columnId === "market-cap") return "hidden lg:flex";
+	if (["oi", "volume", "funding"].includes(columnId)) return "hidden sm:flex";
+	return "flex";
+}
+
 interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	scope: MarketScope;
@@ -24,6 +30,8 @@ interface Props {
 	search: string;
 	setSearch: (value: string) => void;
 	isLoading: boolean;
+	hasClassificationError: boolean;
+	onRetryClassifications: () => void;
 	isFavorite: (name: string) => boolean;
 	sorting: { id: string; desc: boolean }[];
 	handleSort: (columnId: string) => void;
@@ -51,6 +59,8 @@ export function TokenSelectorContent({
 	search,
 	setSearch,
 	isLoading,
+	hasClassificationError,
+	onRetryClassifications,
 	isFavorite,
 	sorting,
 	handleSort,
@@ -66,7 +76,7 @@ export function TokenSelectorContent({
 	filteredMarkets,
 	highlightedIndex,
 	headingId,
-	mobile,
+	mobile = false,
 	onClose,
 }: Props) {
 	const { t } = useLingui();
@@ -81,11 +91,8 @@ export function TokenSelectorContent({
 		{ value: "traditional", label: t`Traditional Finance` },
 		{ value: "hip3", label: t`HIP-3` },
 		{ value: "popular", label: t`Popular` },
-		{ value: "prelaunch", label: t`Pre-launch` },
 	];
-	const showScopeTabs = true;
 	const showSubcategoryTabs = subcategories.length > 0;
-	const showSelectorFilters = showScopeTabs || showSubcategoryTabs;
 	const tableLayout: MarketTableLayout = scope === "spot" ? "spot" : "default";
 
 	function getColumnSortLabel(columnId: string): string {
@@ -111,18 +118,6 @@ export function TokenSelectorContent({
 		switch (value) {
 			case "all":
 				return t`All`;
-			case "trending":
-				return t`Trending`;
-			case "new":
-				return t`New`;
-			case "defi":
-				return t`DeFi`;
-			case "layer1":
-				return t`L1`;
-			case "layer2":
-				return t`L2`;
-			case "meme":
-				return t`Meme`;
 			case "stocks":
 				return t`Stocks`;
 			case "indices":
@@ -189,62 +184,58 @@ export function TokenSelectorContent({
 				/>
 			</div>
 
-			{showSelectorFilters ? (
-				<div className="border-b border-stroke-weak bg-background p-2 shrink-0">
-					{showScopeTabs ? (
-						<div className="overflow-x-auto overscroll-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-							<div className="flex w-max min-w-full flex-nowrap items-center gap-0.5">
-								{marketScopes.map((s) => {
-									const isSelected = scope === s.value;
-									return (
-										<Button
-											key={s.value}
-											variant="link"
-											intent="neutral"
-											onClick={() => handleScopeSelect(s.value)}
-											className={cn(
-												"shrink-0 cursor-pointer px-2 py-1 text-xs no-underline",
-												isSelected
-													? "bg-brand-soft text-brand hover:bg-brand-soft hover:text-brand"
-													: "text-fg hover:bg-transparent",
-											)}
-											aria-pressed={isSelected}
-										>
-											{s.label}
-										</Button>
-									);
-								})}
-							</div>
-						</div>
-					) : null}
-					{showSubcategoryTabs ? (
-						<div className="mt-1.5 flex items-center gap-0.5 overflow-x-auto overscroll-none pt-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-							{subcategories.map((sub) => {
-								const isSelected = subcategory === sub.value;
-								const label = getSubcategoryLabel(sub.value, sub.label);
-								return (
-									<Button
-										key={sub.value}
-										variant="link"
-										intent="neutral"
-										onClick={() => handleSubcategorySelect(sub.value)}
-										className={cn(
-											"shrink-0 px-2 py-0.5 tracking-wider cursor-pointer no-underline text-xs",
-											isSelected
-												? "bg-brand/10 text-brand hover:bg-brand/10 hover:text-brand"
-												: "text-fg hover:bg-transparent hover:text-fg",
-										)}
-										aria-label={t`Filter by ${label}`}
-										aria-pressed={isSelected}
-									>
-										{label}
-									</Button>
-								);
-							})}
-						</div>
-					) : null}
+			<div className="border-b border-stroke-weak bg-background p-2 shrink-0">
+				<div className="overflow-x-auto overscroll-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					<div className="flex w-max min-w-full flex-nowrap items-center gap-0.5">
+						{marketScopes.map((s) => {
+							const isSelected = scope === s.value;
+							return (
+								<Button
+									key={s.value}
+									variant="link"
+									intent="neutral"
+									onClick={() => handleScopeSelect(s.value)}
+									className={cn(
+										"shrink-0 cursor-pointer px-2 py-1 text-xs no-underline",
+										isSelected
+											? "bg-brand-soft text-brand hover:bg-brand-soft hover:text-brand"
+											: "text-fg hover:bg-transparent",
+									)}
+									aria-pressed={isSelected}
+								>
+									{s.label}
+								</Button>
+							);
+						})}
+					</div>
 				</div>
-			) : null}
+				{showSubcategoryTabs ? (
+					<div className="mt-1.5 flex items-center gap-0.5 overflow-x-auto overscroll-none pt-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+						{subcategories.map((sub) => {
+							const isSelected = subcategory === sub.value;
+							const label = getSubcategoryLabel(sub.value, sub.label);
+							return (
+								<Button
+									key={sub.value}
+									variant="link"
+									intent="neutral"
+									onClick={() => handleSubcategorySelect(sub.value)}
+									className={cn(
+										"shrink-0 px-2 py-0.5 tracking-wider cursor-pointer no-underline text-xs",
+										isSelected
+											? "bg-brand/10 text-brand hover:bg-brand/10 hover:text-brand"
+											: "text-fg hover:bg-transparent hover:text-fg",
+									)}
+									aria-label={t`Filter by ${label}`}
+									aria-pressed={isSelected}
+								>
+									{label}
+								</Button>
+							);
+						})}
+					</div>
+				) : null}
+			</div>
 			<div className="shrink-0 border-b border-stroke-weak bg-background">
 				{mobile ? (
 					<div className="grid h-11 w-full grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 px-2 text-3xs font-semibold uppercase tracking-wider text-fg-muted">
@@ -264,7 +255,7 @@ export function TokenSelectorContent({
 							className={cn(
 								"min-w-0 text-left",
 								tableLayout === "spot" ? "flex-1 lg:flex-none" : "flex-1 min-[848px]:flex-none",
-								getMarketTableColumnClass("pairName", false, tableLayout),
+								getMarketTableColumnClass("pairName", tableLayout),
 							)}
 						>
 							{t`Market`}
@@ -274,12 +265,7 @@ export function TokenSelectorContent({
 							.map((header) => {
 								const hideForSpot = scope === "spot" && ["oi", "funding"].includes(header.id);
 								const hideUnlessSpot = scope !== "spot" && header.id === "market-cap";
-								const visibilityClass =
-									header.id === "market-cap"
-										? "hidden lg:flex"
-										: ["oi", "volume", "funding"].includes(header.id)
-											? "hidden sm:flex"
-											: "flex";
+								const visibilityClass = getHeaderVisibilityClass(header.id);
 
 								if (hideForSpot || hideUnlessSpot) return null;
 
@@ -289,7 +275,7 @@ export function TokenSelectorContent({
 										key={header.id}
 										className={cn(
 											"h-full min-w-0 items-center justify-end text-right",
-											getMarketTableColumnClass(header.id, false, tableLayout),
+											getMarketTableColumnClass(header.id, tableLayout),
 											visibilityClass,
 										)}
 									>
@@ -318,7 +304,14 @@ export function TokenSelectorContent({
 			</div>
 
 			<div ref={containerRef} className={cn("min-h-0 flex-1 overflow-auto", mobile && "overscroll-none")}>
-				{isLoading ? (
+				{hasClassificationError ? (
+					<div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
+						<span className="text-xs text-error">{t`Failed to load market categories.`}</span>
+						<Button variant="outline" intent="neutral" size="xs" onClick={onRetryClassifications}>
+							{t`Retry`}
+						</Button>
+					</div>
+				) : isLoading ? (
 					<div className="flex items-center justify-center py-8">
 						<span className="text-fg text-xs">{t`Loading markets...`}</span>
 					</div>
@@ -341,7 +334,7 @@ export function TokenSelectorContent({
 								<TokenSelectorRow
 									key={row.id}
 									market={market}
-									mobile={mobile ?? false}
+									mobile={mobile}
 									showDerivativesMetrics={scope !== "spot"}
 									showSpotMarketCap={scope === "spot"}
 									isSelected={selectedMarket?.name === market.name}

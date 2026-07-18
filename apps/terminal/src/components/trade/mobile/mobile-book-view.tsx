@@ -137,7 +137,8 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 		() => priceGroupingOptions.find((option) => option.key === selectedOptionKey) ?? priceGroupingOptions[0] ?? null,
 		[priceGroupingOptions, selectedOptionKey],
 	);
-	const priceDecimals = selectedOption?.decimals ?? szDecimalsToPriceDecimals(szDecimals);
+	const marketType = selectedMarket?.kind === "spot" ? "spot" : "perp";
+	const priceDecimals = selectedOption?.decimals ?? szDecimalsToPriceDecimals(szDecimals, marketType);
 	const subscriptionParams = useMemo<L2BookParams | null>(() => {
 		if (!name) return null;
 		return {

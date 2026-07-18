@@ -28,7 +28,9 @@ describe("format", () => {
 
 	it("formats prices using szDecimals", () => {
 		expect(szDecimalsToPriceDecimals(4)).toBe(2);
+		expect(szDecimalsToPriceDecimals(0, "spot")).toBe(8);
 		expect(formatPrice(88140.123, { szDecimals: 4 })).toBe("$88,140.12");
+		expect(formatPrice("0.00000011", { szDecimals: 0, marketType: "spot" })).toBe("$0.00000011");
 	});
 
 	it("formats token amounts and percentages", () => {

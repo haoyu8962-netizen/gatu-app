@@ -439,7 +439,7 @@ function getAllMidsParams(market: UnifiedMarketInfo | undefined): AllMidsParams 
 
 function getPriceDecimals(market: UnifiedMarketInfo | undefined): number {
 	if (!market) return 2;
-	return szDecimalsToPriceDecimals(market.szDecimals);
+	return szDecimalsToPriceDecimals(market.szDecimals, market.kind === "spot" ? "spot" : "perp");
 }
 
 function formatDisplayPrice(value: string | number | null | undefined, decimals: number): string {

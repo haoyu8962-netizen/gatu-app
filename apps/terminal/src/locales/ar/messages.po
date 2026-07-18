@@ -915,8 +915,8 @@ msgstr "افتراضي"
 #~ msgstr "إعداد الحساب الافتراضي. لكل أصل ضمان رصيد واحد. لا يمكن للعقود الدائمة استخدام إلا أصل التسوية كضمان، ويتم تقاسم الهامش المتقاطع بين المراكز المتقاطعة التي تستخدم نفس أصل الضمان."
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "DeFi"
-msgstr "التمويل اللامركزي"
+#~ msgid "DeFi"
+#~ msgstr "التمويل اللامركزي"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -1285,6 +1285,10 @@ msgstr "فشل في تحميل الأرصدة."
 msgid "Failed to load funding history."
 msgstr "فشل في تحميل سجل التمويل."
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Failed to load market categories."
+msgstr "تعذر تحميل فئات الأسواق."
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Failed to load open orders."
@@ -1591,12 +1595,12 @@ msgid "Isolated"
 msgstr "معزول"
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "L1"
-msgstr "L1"
+#~ msgid "L1"
+#~ msgstr "L1"
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "L2"
-msgstr "L2"
+#~ msgid "L2"
+#~ msgstr "L2"
 
 #: src/components/trade/header/language-switcher.tsx
 msgid "Language"
@@ -1953,8 +1957,8 @@ msgstr "الأقصى"
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "Meme"
-msgstr "ميم"
+#~ msgid "Meme"
+#~ msgstr "ميم"
 
 #: src/components/ui/price-input.tsx
 msgid "Mid"
@@ -2054,8 +2058,8 @@ msgid "Network fee"
 msgstr "رسوم الشبكة"
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "New"
-msgstr "جديد"
+#~ msgid "New"
+#~ msgstr "جديد"
 
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
@@ -2611,8 +2615,8 @@ msgid "Pre-IPO"
 msgstr "ما قبل الاكتتاب"
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "Pre-launch"
-msgstr "قبل الإطلاق"
+#~ msgid "Pre-launch"
+#~ msgstr "قبل الإطلاق"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Preparing automatic USDC deposit..."
@@ -2806,6 +2810,7 @@ msgstr "تُعاد التعيين خلال"
 msgid "Resetting..."
 msgstr "جارٍ إعادة التعيين..."
 
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3271,7 +3276,6 @@ msgstr "المصدر"
 #~ msgstr "فوري"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -3795,8 +3799,8 @@ msgid "Transfers between Spot and Perps are unavailable in unified account mode.
 msgstr "لا تتوفر التحويلات بين Spot وPerps في وضع الحساب الموحد."
 
 #: src/components/trade/chart/token-selector-content.tsx
-msgid "Trending"
-msgstr "الرائج"
+#~ msgid "Trending"
+#~ msgstr "الرائج"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

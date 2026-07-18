@@ -61,6 +61,7 @@ export function TokenSelectorRow({
 	const { t } = useLingui();
 	const szDecimals = getSzDecimals(market);
 	const isSpot = market.kind === "spot";
+	const priceDecimals = szDecimalsToPriceDecimals(szDecimals, isSpot ? "spot" : "perp");
 	const spotBaseToken = isSpot ? market.tokensInfo[0] : undefined;
 	const spotQuoteToken = isSpot ? market.tokensInfo[1] : undefined;
 	const spotPairName =
@@ -70,7 +71,7 @@ export function TokenSelectorRow({
 	const displayPairName = !mobile && spotPairName ? spotPairName : getMarketSelectorPairName(market);
 	const priceText = formatNumber(market.markPx, {
 		minimumFractionDigits: 0,
-		maximumFractionDigits: szDecimalsToPriceDecimals(szDecimals),
+		maximumFractionDigits: priceDecimals,
 	});
 	const changePercent = get24hChange(market.prevDayPx, market.markPx);
 	const priceChange = get24hPriceChange(market.prevDayPx, market.markPx);
@@ -83,7 +84,7 @@ export function TokenSelectorRow({
 		changePercent === null || mobile
 			? changePercentText
 			: `${formatNumber(priceChange, {
-					maximumFractionDigits: szDecimalsToPriceDecimals(szDecimals),
+					maximumFractionDigits: priceDecimals,
 					signDisplay: "exceptZero",
 				})} / ${changePercentText}`;
 
@@ -151,11 +152,12 @@ export function TokenSelectorRow({
 			/>
 		</button>
 	);
-	const secondaryMobileMetric = showSpotMarketCap
-		? { text: mobileSpotMarketCapText, title: spotMarketCapText }
-		: showDerivativesMetrics && !isSpot
-			? { text: mobileOiText, title: oiText }
-			: { text: "--", title: undefined };
+	let secondaryMobileMetric: { text: string; title?: string } = { text: "--" };
+	if (showSpotMarketCap) {
+		secondaryMobileMetric = { text: mobileSpotMarketCapText, title: spotMarketCapText };
+	} else if (showDerivativesMetrics && !isSpot) {
+		secondaryMobileMetric = { text: mobileOiText, title: oiText };
+	}
 
 	if (mobile) {
 		return (
@@ -170,7 +172,7 @@ export function TokenSelectorRow({
 				tabIndex={-1}
 				className={cn(
 					"absolute top-0 left-0 grid w-full cursor-pointer grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-b border-stroke-weak px-2 py-1.5 transition-colors hover:bg-fill-hover",
-					isSelected && !isHighlighted && "bg-surface",
+					isSelected && !isHighlighted && "bg-fill-weak",
 					isHighlighted && "bg-fill-hover",
 				)}
 				style={{ height: `${height}px`, transform: `translateY(${top}px)` }}
@@ -234,9 +236,8 @@ export function TokenSelectorRow({
 			className={cn(
 				"flex items-center px-2 cursor-pointer border-b border-stroke-weak",
 				"hover:bg-fill-hover transition-colors",
-				"absolute top-0 left-0 w-full",
-				mobile ? "py-2.5" : "py-1.5",
-				isSelected && !isHighlighted && "bg-surface",
+				"absolute top-0 left-0 w-full py-1.5",
+				isSelected && !isHighlighted && "bg-fill-weak",
 				isHighlighted && "bg-fill-hover",
 			)}
 			style={{ height: `${height}px`, transform: `translateY(${top}px)` }}
@@ -245,26 +246,19 @@ export function TokenSelectorRow({
 				className={cn(
 					"min-w-0 flex items-center gap-2",
 					showSpotMarketCap ? "flex-1 lg:flex-none" : "flex-1 min-[848px]:flex-none",
-					getMarketTableColumnClass("pairName", mobile, tableLayout),
+					getMarketTableColumnClass("pairName", tableLayout),
 				)}
 			>
-				{mobile ? (
-					<AssetDisplay coin={market.name} iconUrl={market.iconUrl} hideName iconClassName="size-6 shrink-0" />
-				) : (
-					favoriteButton
-				)}
+				{favoriteButton}
 				<div className="min-w-0 flex-1">
 					<div className="flex min-w-0 items-center gap-1">
 						<span
 							title={displayPairName}
-							className={cn(
-								"min-w-0 truncate font-semibold tracking-tight",
-								mobile ? "text-xs" : "text-2xs leading-snug",
-							)}
+							className="min-w-0 truncate text-2xs font-semibold leading-snug tracking-tight"
 						>
 							{displayPairName}
 						</span>
-						{isSpot && !mobile ? (
+						{isSpot ? (
 							<Badge tone="brand" size="xxs" className="shrink-0 border-0">
 								{t`Spot`}
 							</Badge>
@@ -274,28 +268,26 @@ export function TokenSelectorRow({
 								{t`NEW`}
 							</Badge>
 						)}
-						{mobile ? favoriteButton : null}
 					</div>
-					<div className={cn("flex items-center gap-1.5 text-fg", mobile ? "text-xs" : "text-2xs")}>
+					<div className="flex items-center gap-1.5 text-2xs text-fg">
 						{getMaxLeverage(market) && <span>{getMaxLeverage(market)}x</span>}
-						{isSpot && mobile && <span className="text-brand">{t`Spot`}</span>}
-						{mobile && spotApiToken && spotApiToken !== market.shortName && (
+						{spotApiToken && spotApiToken !== market.shortName && (
 							<span className="font-mono text-fg-muted">{spotApiToken}</span>
 						)}
 						{isHip3 && <span className="text-warning">{getDex(market)}</span>}
 					</div>
 				</div>
 			</div>
-			<div className={cn("text-right", getMarketTableColumnClass("price", mobile, tableLayout))}>
+			<div className={cn("text-right", getMarketTableColumnClass("price", tableLayout))}>
 				<span className="font-medium tabular-nums text-xs">{priceText}</span>
 			</div>
-			<div className={cn("text-right", getMarketTableColumnClass("24h-change", mobile, tableLayout))}>
+			<div className={cn("text-right", getMarketTableColumnClass("24h-change", tableLayout))}>
 				<span className={cn(changeClass, "whitespace-nowrap")} title={changeText}>
 					{changeText}
 				</span>
 			</div>
 			{showDerivativesMetrics ? (
-				<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("funding", mobile))}>
+				<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("funding"))}>
 					<div className="flex items-center justify-end gap-1">
 						{!isSpot && eightHourFunding !== null && eightHourFunding !== 0 ? (
 							<FireIcon className={cn("size-2.5", getValueColorClass(eightHourFunding))} />
@@ -311,16 +303,16 @@ export function TokenSelectorRow({
 					</div>
 				</div>
 			) : null}
-			<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("volume", mobile, tableLayout))}>
+			<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("volume", tableLayout))}>
 				<span className="text-xs font-medium tabular-nums">{volumeText}</span>
 			</div>
 			{showSpotMarketCap ? (
-				<div className={cn("hidden text-right lg:block", getMarketTableColumnClass("market-cap", mobile, tableLayout))}>
+				<div className={cn("hidden text-right lg:block", getMarketTableColumnClass("market-cap", tableLayout))}>
 					<span className="whitespace-nowrap text-xs font-medium tabular-nums">{spotMarketCapText}</span>
 				</div>
 			) : null}
 			{showDerivativesMetrics ? (
-				<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("oi", mobile))}>
+				<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("oi"))}>
 					<span className="whitespace-nowrap text-xs font-medium tabular-nums" title={oiText}>
 						{isSpot ? "--" : oiText}
 					</span>

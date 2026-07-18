@@ -24,7 +24,7 @@ describe("market calculations", () => {
 	});
 
 	it("converts the hourly funding rate to an 8h rate", () => {
-		expect(getEightHourFundingRate("0.0000125")).toBeCloseTo(0.0001);
+		expect(getEightHourFundingRate("0.0000125")).toBeCloseTo(0.0001, 7);
 		expect(getEightHourFundingRate(null)).toBeNull();
 	});
 

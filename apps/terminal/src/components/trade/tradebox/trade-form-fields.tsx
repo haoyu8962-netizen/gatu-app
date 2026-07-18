@@ -194,6 +194,7 @@ export function TradeFormFields({
 							onMidClick={setTriggerPrice}
 							midPrice={markPx}
 							szDecimals={szDecimals}
+							marketType={isSpotMarket ? "spot" : "perp"}
 							className={cn(
 								"w-full text-xs tabular-nums",
 								usesTriggerPrice &&
@@ -216,6 +217,7 @@ export function TradeFormFields({
 							onMidClick={setLimitPrice}
 							midPrice={markPx}
 							szDecimals={szDecimals}
+							marketType={isSpotMarket ? "spot" : "perp"}
 							className={cn(
 								"w-full text-xs tabular-nums",
 								usesLimitPrice &&

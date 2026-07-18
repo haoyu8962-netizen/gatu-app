@@ -14,7 +14,7 @@ vi.mock("@/components/trade/components/asset-display", () => ({
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-describe("TokenSelectorRow mobile layout", () => {
+describe("TokenSelectorRow", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
@@ -30,16 +30,20 @@ describe("TokenSelectorRow mobile layout", () => {
 		container.remove();
 	});
 
-	function renderRow(market: MarketRow, showSpotMarketCap = false) {
+	function renderRow(
+		market: MarketRow,
+		options: { mobile?: boolean; showSpotMarketCap?: boolean; isSelected?: boolean } = {},
+	) {
+		const { mobile = true, showSpotMarketCap = false, isSelected = false } = options;
 		act(() => {
 			root.render(
 				<I18nProvider i18n={i18n}>
 					<TokenSelectorRow
 						market={market}
-						mobile
+						mobile={mobile}
 						showDerivativesMetrics={!showSpotMarketCap}
 						showSpotMarketCap={showSpotMarketCap}
-						isSelected={false}
+						isSelected={isSelected}
 						isHighlighted={false}
 						isFavorite={false}
 						top={0}
@@ -95,12 +99,72 @@ describe("TokenSelectorRow mobile layout", () => {
 					{ name: "USDC", displayName: "USDC", szDecimals: 6 },
 				],
 			} as MarketRow,
-			true,
+			{ showSpotMarketCap: true },
 		);
 
 		expect(row.children).toHaveLength(3);
 		expect(row.children[1]?.textContent).toContain("$125M");
 		expect(row.children[1]?.textContent).toContain("$6.45B");
 		expect(row.children[1]?.textContent).not.toContain("--");
+	});
+
+	it("shows the raw API token for colliding desktop spot names", () => {
+		const row = renderRow(
+			{
+				name: "@188",
+				kind: "spot",
+				shortName: "PUMP",
+				pairName: "PUMP/USDC",
+				markPx: "0.0000042",
+				prevDayPx: "0.000004",
+				dayNtlVlm: "1000",
+				tokensInfo: [
+					{ name: "UPUMP", displayName: "PUMP", szDecimals: 0 },
+					{ name: "USDC", displayName: "USDC", szDecimals: 6 },
+				],
+			} as MarketRow,
+			{ mobile: false, showSpotMarketCap: true },
+		);
+
+		expect(row.textContent).toContain("PUMP/USDC");
+		expect(row.textContent).toContain("UPUMP");
+		expect(row.querySelector('button[aria-pressed="false"]')).not.toBeNull();
+	});
+
+	it("preserves the protocol spot price precision", () => {
+		const row = renderRow(
+			{
+				name: "@300",
+				kind: "spot",
+				shortName: "HREKT",
+				pairName: "HREKT/USDC",
+				markPx: "0.00000011",
+				prevDayPx: "0.00000010",
+				dayNtlVlm: "1000",
+				tokensInfo: [
+					{ name: "HREKT", displayName: "HREKT", szDecimals: 0 },
+					{ name: "USDC", displayName: "USDC", szDecimals: 6 },
+				],
+			} as MarketRow,
+			{ mobile: false, showSpotMarketCap: true },
+		);
+
+		expect(row.textContent).toContain("0.00000011");
+	});
+
+	it("uses a visible background for the selected row", () => {
+		const row = renderRow(
+			{
+				name: "HYPE",
+				kind: "perp",
+				shortName: "HYPE",
+				pairName: "HYPE-USDC",
+				szDecimals: 2,
+				markPx: "64.5",
+			} as MarketRow,
+			{ isSelected: true },
+		);
+
+		expect(row.classList.contains("bg-fill-weak")).toBe(true);
 	});
 });

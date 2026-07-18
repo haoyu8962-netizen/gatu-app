@@ -10,13 +10,14 @@ const PRICE_INPUT_DEFAULT_DECIMALS = 4;
 interface Props extends Omit<React.ComponentPropsWithoutRef<typeof NumberInput>, "maxLabel" | "onMaxClick"> {
 	midPrice?: number | null;
 	szDecimals?: number;
+	marketType?: "perp" | "spot";
 	onMidClick?: (formattedPrice: string) => void;
 }
 
-export function PriceInput({ midPrice, szDecimals, onMidClick, labelValue, ...props }: Props) {
+export function PriceInput({ midPrice, szDecimals, marketType, onMidClick, labelValue, ...props }: Props) {
 	const { t } = useLingui();
 	const hasMid = midPrice != null && midPrice > 0 && onMidClick != null;
-	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? PRICE_INPUT_DEFAULT_DECIMALS);
+	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? PRICE_INPUT_DEFAULT_DECIMALS, marketType);
 	const formattedMid = midPrice != null && midPrice > 0 ? toFixed(midPrice, priceDecimals) : undefined;
 	function handleMidClick() {
 		if (!onMidClick || !formattedMid) return;
