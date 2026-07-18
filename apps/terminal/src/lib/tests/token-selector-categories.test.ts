@@ -2,7 +2,9 @@ import type { PerpConciseAnnotationsResponse } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
 import {
 	createMarketRows,
+	filterMarketRowsByScope,
 	getDefaultMarketSubcategory,
+	getMarketClassificationState,
 	getMarketSelectorPairName,
 	getSpotQuoteSubcategories,
 	isMarketInScope,
@@ -52,6 +54,24 @@ describe("token selector categories", () => {
 		expect(marketScopeUsesAnnotations("traditional")).toBe(true);
 		expect(marketScopeUsesAnnotations("all")).toBe(false);
 		expect(marketScopeUsesAnnotations("hip3")).toBe(false);
+	});
+
+	it("distinguishes pending, error, empty, and ready classification data", () => {
+		expect(getMarketClassificationState("crypto", undefined, { isPending: true, isError: false })).toBe("pending");
+		expect(getMarketClassificationState("traditional", undefined, { isPending: false, isError: true })).toBe("error");
+		expect(getMarketClassificationState("crypto", [], { isPending: false, isError: false })).toBe("empty");
+		expect(getMarketClassificationState("traditional", annotations, { isPending: false, isError: true })).toBe("ready");
+		expect(getMarketClassificationState("all", undefined, { isPending: true, isError: false })).toBe("ready");
+	});
+
+	it("suppresses annotation-dependent results until classification data is ready", () => {
+		const rows = createMarketRows([market("BTC", "perp"), market("xyz:AAPL", "builderPerp")], annotations);
+		const favorites = new Set<string>();
+
+		expect(filterMarketRowsByScope(rows, "crypto", "all", favorites, "pending")).toEqual([]);
+		expect(filterMarketRowsByScope(rows, "crypto", "all", favorites, "error")).toEqual([]);
+		expect(filterMarketRowsByScope(rows, "crypto", "all", favorites, "empty")).toEqual([]);
+		expect(filterMarketRowsByScope(rows, "crypto", "all", favorites, "ready").map(({ name }) => name)).toEqual(["BTC"]);
 	});
 
 	it("attaches official annotations by canonical market name", () => {

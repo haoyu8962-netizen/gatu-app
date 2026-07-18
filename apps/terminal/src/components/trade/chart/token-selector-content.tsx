@@ -305,7 +305,7 @@ export function TokenSelectorContent({
 
 			<div ref={containerRef} className={cn("min-h-0 flex-1 overflow-auto", mobile && "overscroll-none")}>
 				{hasClassificationError ? (
-					<div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
+					<div role="alert" className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
 						<span className="text-xs text-error">{t`Failed to load market categories.`}</span>
 						<Button variant="outline" intent="neutral" size="xs" onClick={onRetryClassifications}>
 							{t`Retry`}

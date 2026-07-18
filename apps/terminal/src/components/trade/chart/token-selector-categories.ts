@@ -4,9 +4,9 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 
 export type MarketScope = "favorites" | "all" | "perp" | "spot" | "crypto" | "traditional" | "hip3" | "popular";
 
-export type TraditionalMarketSubcategory = "all" | "stocks" | "indices" | "commodities" | "fx" | "preipo";
-
 export type PerpMarketAnnotation = PerpConciseAnnotationsResponse[number][1];
+
+export type MarketClassificationState = "ready" | "pending" | "error" | "empty";
 
 export type MarketRow = UnifiedMarketInfo & {
 	annotation?: PerpMarketAnnotation;
@@ -50,6 +50,17 @@ export function getDefaultMarketSubcategory(scope: MarketScope): string {
 
 export function marketScopeUsesAnnotations(scope: MarketScope): boolean {
 	return scope === "crypto" || scope === "traditional";
+}
+
+export function getMarketClassificationState(
+	scope: MarketScope,
+	annotations: PerpConciseAnnotationsResponse | undefined,
+	queryState: { isPending: boolean; isError: boolean },
+): MarketClassificationState {
+	if (!marketScopeUsesAnnotations(scope) || (annotations?.length ?? 0) > 0) return "ready";
+	if (queryState.isPending) return "pending";
+	if (queryState.isError) return "error";
+	return "empty";
 }
 
 export function getSpotQuoteSubcategories(markets: readonly UnifiedMarketInfo[]): MarketSubcategory[] {
@@ -115,6 +126,21 @@ export function isMarketInSubcategory(market: MarketRow, scope: MarketScope, sub
 	}
 
 	return true;
+}
+
+export function filterMarketRowsByScope(
+	markets: readonly MarketRow[],
+	scope: MarketScope,
+	subcategory: string,
+	favoriteNames: ReadonlySet<string>,
+	classificationState: MarketClassificationState,
+): MarketRow[] {
+	if (classificationState !== "ready") return [];
+
+	return markets.filter((market) => {
+		if (!isMarketInScope(market, scope, favoriteNames.has(market.name))) return false;
+		return isMarketInSubcategory(market, scope, subcategory);
+	});
 }
 
 export function getMarketSelectorPairName(market: MarketRow): string {

@@ -11,12 +11,11 @@ import { useExchangeScope } from "@/providers/exchange-scope";
 import { useFavoriteMarkets, useMarketActions } from "@/stores/use-market-store";
 import {
 	createMarketRows,
+	filterMarketRowsByScope,
 	getDefaultMarketSubcategory,
+	getMarketClassificationState,
 	getSpotQuoteSubcategories,
-	isMarketInScope,
-	isMarketInSubcategory,
 	type MarketSubcategory,
-	marketScopeUsesAnnotations,
 } from "./token-selector-categories";
 import { type MarketRow, type MarketScope, TOKEN_SELECTOR_COLUMNS } from "./token-selector-columns";
 
@@ -118,7 +117,7 @@ export function useTokenSelector({
 	const [localSubcategory, setLocalSubcategory] = useState<string>(() => exchangeDex ?? "all");
 	const [search, setSearch] = useState("");
 	const [deferredSearch, setDeferredSearch] = useState("");
-	const [isPending, startTransition] = useTransition();
+	const [isSearchPending, startTransition] = useTransition();
 	const [sorting, setSorting] = useState<SortingState>([{ id: "volume", desc: true }]);
 	const [highlightedIndex, setHighlightedIndex] = useState(-1);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -142,7 +141,7 @@ export function useTokenSelector({
 	const { markets, spotMarkets, builderPerpMarkets, isLoading } = useMarketsInfo();
 	const {
 		data: perpAnnotations,
-		isLoading: annotationsLoading,
+		isPending: annotationsPending,
 		isError: annotationsError,
 		refetch: refetchAnnotations,
 	} = useInfo("perpConciseAnnotations", undefined, {
@@ -160,6 +159,10 @@ export function useTokenSelector({
 		[scope, builderPerpMarkets, spotMarkets],
 	);
 	const selectorMarkets = useMemo(() => createMarketRows(markets, perpAnnotations), [markets, perpAnnotations]);
+	const classificationState = getMarketClassificationState(scope, perpAnnotations, {
+		isPending: annotationsPending,
+		isError: annotationsError,
+	});
 
 	useEffect(() => {
 		if (!open) return;
@@ -197,12 +200,8 @@ export function useTokenSelector({
 	// reference through so prices update.
 	const stableScopeFilteredRef = useRef<{ key: string; value: MarketRow[] }>({ key: "", value: [] });
 	const filteredByScope = useMemo(
-		() =>
-			selectorMarkets.filter((market) => {
-				if (!isMarketInScope(market, scope, favoriteSet.has(market.name))) return false;
-				return isMarketInSubcategory(market, scope, subcategory);
-			}),
-		[selectorMarkets, scope, subcategory, favoriteSet],
+		() => filterMarketRowsByScope(selectorMarkets, scope, subcategory, favoriteSet, classificationState),
+		[classificationState, selectorMarkets, scope, subcategory, favoriteSet],
 	);
 	const scopeKey = `${scope}|${subcategory}|${filteredByScope.length}|${filteredByScope.map((m) => m.name).join(",")}`;
 	let scopeFilteredMarkets: MarketRow[];
@@ -373,11 +372,6 @@ export function useTokenSelector({
 		void refetchAnnotations();
 	}
 
-	const classificationsUnavailable =
-		marketScopeUsesAnnotations(scope) && (!perpAnnotations || perpAnnotations.length === 0);
-	const classificationRequestSettledWithoutData =
-		classificationsUnavailable && !annotationsLoading && (annotationsError || perpAnnotations?.length === 0);
-
 	return {
 		open,
 		setOpen: handleOpenChange,
@@ -386,9 +380,8 @@ export function useTokenSelector({
 		subcategories,
 		search,
 		setSearch: handleSearchChange,
-		isLoading:
-			open && ((isLoading && markets.length === 0) || isPending || (classificationsUnavailable && annotationsLoading)),
-		hasClassificationError: open && classificationRequestSettledWithoutData,
+		isLoading: open && ((isLoading && markets.length === 0) || isSearchPending || classificationState === "pending"),
+		hasClassificationError: open && classificationState === "error",
 		retryClassifications,
 		isFavorite,
 		sorting,
