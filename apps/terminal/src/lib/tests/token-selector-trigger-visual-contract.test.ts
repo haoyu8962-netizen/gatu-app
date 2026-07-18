@@ -26,7 +26,7 @@ describe("token selector visual contract", () => {
 		expect(TRIGGER_SOURCE).toContain("whitespace-nowrap text-lg leading-[30px] font-normal");
 		expect(TRIGGER_SOURCE).not.toContain("max-w-[42vw] truncate");
 		expect(TRIGGER_SOURCE).not.toContain("max-[340px]:text-sm");
-		expect(MOBILE_MARKET_BAR_SOURCE).toContain("grid-cols-[max-content_minmax(0,1fr)]");
+		expect(MOBILE_MARKET_BAR_SOURCE).toContain("grid-cols-[minmax(max-content,1fr)_minmax(0,1fr)]");
 		expect(MOBILE_MARKET_BAR_SOURCE).toContain("grid-cols-[minmax(0,1fr)_2rem]");
 		expect(MOBILE_MARKET_BAR_SOURCE).toContain("whitespace-normal font-sans text-xs leading-[15px]");
 	});

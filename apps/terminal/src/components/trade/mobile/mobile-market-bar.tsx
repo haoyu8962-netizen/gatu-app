@@ -146,7 +146,7 @@ export function MobileMarketBar({ className }: Props) {
 			)}
 		>
 			<div className="min-w-0 px-3">
-				<div className="grid min-h-[61px] min-w-0 grid-cols-[max-content_minmax(0,1fr)] items-center gap-2">
+				<div className="grid min-h-[61px] min-w-0 grid-cols-[minmax(max-content,1fr)_minmax(0,1fr)] items-center gap-2">
 					<div className="flex min-w-0 items-center gap-1.5 min-[390px]:gap-2">
 						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					</div>
@@ -184,7 +184,7 @@ export function MobileMarketBar({ className }: Props) {
 						<button
 							type="button"
 							onClick={() => setExpanded((value) => !value)}
-							className="flex size-8 shrink-0 items-center justify-center rounded-xs border border-stroke-weak bg-transparent text-icon hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							className="flex size-8 shrink-0 items-center justify-center rounded-8 border border-stroke-weak/80 bg-transparent text-icon/90 hover:bg-fill-hover/60 active:bg-fill-press/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 							aria-expanded={expanded}
 							aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
 						>
