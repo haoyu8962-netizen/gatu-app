@@ -145,50 +145,52 @@ export function MobileMarketBar({ className }: Props) {
 				className,
 			)}
 		>
-			<div className="min-w-0 px-2 py-1.5 min-[390px]:px-2.5">
-				<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(7.5rem,auto)_2rem] items-center gap-1.5 min-[390px]:gap-2">
+			<div className="min-w-0 px-3">
+				<div className="grid min-h-[61px] min-w-0 grid-cols-[max-content_minmax(0,1fr)] items-center gap-2">
 					<div className="flex min-w-0 items-center gap-1.5 min-[390px]:gap-2">
 						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
 					</div>
 
-					<div data-boneyard="market-price" className="min-w-0 text-left">
-						<div className="flex min-w-0 flex-col items-start gap-1">
-							<span
-								key={priceFlash.sequence}
-								data-direction={priceFlash.direction ?? undefined}
-								className={cn(
-									"block truncate font-sans text-base leading-none font-normal text-fg tabular-nums",
-									priceFlash.direction && "use-color-change",
-								)}
-								title={priceText}
-							>
-								{priceText}
-							</span>
-							<div
-								className={cn(
-									"truncate font-sans text-xs leading-none tabular-nums",
-									changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
-										? "invisible text-fg-muted"
-										: changeColorClass,
-								)}
-								title={`${changeAmountText} / ${changePercentText}`}
-							>
-								{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
-									? `${changeAmountText} / ${changePercentText}`
-									: "0.00 / 0.00%"}
+					<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] items-center gap-2 overflow-hidden">
+						<div data-boneyard="market-price" className="min-w-0 text-left">
+							<div className="flex min-w-0 flex-col items-start">
+								<span
+									key={priceFlash.sequence}
+									data-direction={priceFlash.direction ?? undefined}
+									className={cn(
+										"block max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-sans text-lg leading-6 font-normal text-fg tabular-nums",
+										priceFlash.direction && "use-color-change",
+									)}
+									title={priceText}
+								>
+									{priceText}
+								</span>
+								<div
+									className={cn(
+										"max-w-full whitespace-normal font-sans text-xs leading-[15px] tabular-nums",
+										changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
+											? "invisible text-fg-muted"
+											: changeColorClass,
+									)}
+									title={`${changeAmountText} / ${changePercentText}`}
+								>
+									{changeAmountText !== FALLBACK_VALUE_PLACEHOLDER && changePercentText !== FALLBACK_VALUE_PLACEHOLDER
+										? `${changeAmountText} / ${changePercentText}`
+										: "0.00 / 0.00%"}
+								</div>
 							</div>
 						</div>
-					</div>
 
-					<button
-						type="button"
-						onClick={() => setExpanded((value) => !value)}
-						className="flex size-8 shrink-0 items-center justify-center rounded-xs border border-stroke-weak bg-fill-weak text-icon hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-						aria-expanded={expanded}
-						aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
-					>
-						{expanded ? <CaretUpIcon className="size-4" /> : <CaretDownIcon className="size-4" />}
-					</button>
+						<button
+							type="button"
+							onClick={() => setExpanded((value) => !value)}
+							className="flex size-8 shrink-0 items-center justify-center rounded-xs border border-stroke-weak bg-transparent text-icon hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							aria-expanded={expanded}
+							aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
+						>
+							{expanded ? <CaretUpIcon className="size-4" /> : <CaretDownIcon className="size-4" />}
+						</button>
+					</div>
 				</div>
 
 				{expanded && (

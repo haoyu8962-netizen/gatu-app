@@ -4,10 +4,10 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { AssetDisplay } from "../components/asset-display";
 
 export const TOKEN_SELECTOR_TRIGGER_CLASSNAME =
-	"inline-flex items-center gap-1 max-w-full min-w-0 px-2 py-1.5 rounded-8 border border-stroke-weak/50 bg-surface/80 hover:bg-fill-hover cursor-pointer leading-none";
+	"inline-flex h-10 shrink-0 select-none items-center gap-1.5 rounded-8 bg-transparent px-2 text-fg transition-[color,background-color] duration-150 ease-out hover:bg-fill-hover active:bg-fill-press aria-expanded:bg-fill-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-stroke-focus motion-reduce:transition-none cursor-pointer leading-none";
 
 export const MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME =
-	"inline-flex items-center gap-1 max-w-full min-w-0 px-2 py-1.5 rounded-8 bg-surface/80 hover:bg-fill-hover cursor-pointer leading-none";
+	"inline-flex shrink-0 items-center gap-2 rounded-8 bg-surface/80 py-2 pr-3 pl-2.5 hover:bg-fill-hover cursor-pointer leading-none";
 
 function getMarketKindBadgeLabel(market: UnifiedMarketInfo | undefined): string {
 	if (!market) return "";
@@ -33,41 +33,38 @@ function getPairNameParts(pairName: string): { main: string; suffix: string } {
 interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	mobile?: boolean;
+	open?: boolean;
 }
 
-export function TokenSelectorTriggerContent({ selectedMarket, mobile = false }: Props) {
+export function TokenSelectorTriggerContent({ selectedMarket, mobile = false, open = false }: Props) {
 	const kindBadge = getMarketKindBadgeLabel(selectedMarket);
 	const leverageLabel = getMarketLeverageLabel(selectedMarket);
 	const pairName = selectedMarket?.pairName ?? selectedMarket?.name ?? "";
 	const pairNameParts = getPairNameParts(pairName);
+	const desktopMetadataLabel = kindBadge === "Perp" && leverageLabel ? leverageLabel : kindBadge;
 
 	if (mobile) {
 		return (
 			<>
 				{selectedMarket && (
 					<>
-						<AssetDisplay
-							coin={selectedMarket.name}
-							iconUrl={selectedMarket.iconUrl}
-							hideName
-							iconClassName="size-[18px]"
-						/>
-						<span className="flex min-w-0 flex-col items-start gap-1">
-							<span
-								className="max-w-[42vw] truncate text-base font-normal tracking-tight leading-none"
-								title={pairName}
-							>
+						<AssetDisplay coin={selectedMarket.name} iconUrl={selectedMarket.iconUrl} hideName iconClassName="size-5" />
+						<span className="flex shrink-0 flex-col items-start">
+							<span className="whitespace-nowrap text-lg leading-[30px] font-normal tracking-tight" title={pairName}>
 								<span className="text-fg">{pairNameParts.main}</span>
 								{pairNameParts.suffix ? <span className="text-fg-muted">{pairNameParts.suffix}</span> : null}
 							</span>
-							<span className="flex min-w-0 items-center gap-1.5 text-3xs font-medium leading-none text-brand">
-								{kindBadge ? <span className="max-w-[5rem] truncate uppercase">{kindBadge}</span> : null}
-								{leverageLabel ? <span className="shrink-0 tabular-nums">{leverageLabel}</span> : null}
+							<span className="flex min-w-0 items-center text-[10px] leading-[15px] font-medium text-brand">
+								{kindBadge === "Perp" && leverageLabel ? (
+									<span className="shrink-0 tabular-nums">{leverageLabel}</span>
+								) : kindBadge ? (
+									<span className="max-w-[5rem] truncate uppercase">{kindBadge}</span>
+								) : null}
 							</span>
 						</span>
 					</>
 				)}
-				<CaretDownIcon className="size-4 shrink-0 self-start text-fg-muted" />
+				<CaretDownIcon className="size-3.5 shrink-0 self-center text-fg-muted" />
 			</>
 		);
 	}
@@ -76,30 +73,27 @@ export function TokenSelectorTriggerContent({ selectedMarket, mobile = false }: 
 		<>
 			{selectedMarket && (
 				<>
-					<AssetDisplay
-						coin={selectedMarket.name}
-						iconUrl={selectedMarket.iconUrl}
-						hideName
-						iconClassName="size-[18px]"
-					/>
+					<AssetDisplay coin={selectedMarket.name} iconUrl={selectedMarket.iconUrl} hideName iconClassName="size-5" />
 					<span
-						className="min-w-[82px] max-w-[34vw] truncate text-sm font-medium text-fg tracking-tight leading-none"
+						className="shrink-0 whitespace-nowrap text-lg font-normal text-fg tracking-tight leading-none"
 						title={selectedMarket.pairName ?? selectedMarket.name}
 					>
 						{selectedMarket.pairName ?? selectedMarket.name}
 					</span>
-					{kindBadge ? (
+					{desktopMetadataLabel ? (
 						<Badge
-							tone="neutral"
+							tone={desktopMetadataLabel === leverageLabel ? "success" : "neutral"}
 							size="xs"
-							className="uppercase shrink-0 self-center font-normal leading-none text-fg-muted border-stroke-weak/40 bg-fill-weaker"
+							className="shrink-0 self-center font-normal uppercase tabular-nums"
 						>
-							{kindBadge}
+							{desktopMetadataLabel}
 						</Badge>
 					) : null}
 				</>
 			)}
-			<CaretDownIcon className="size-4 shrink-0 self-center text-fg-muted" />
+			<CaretDownIcon
+				className={`size-4 shrink-0 self-center text-fg-muted transition-transform duration-150 ease-out motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
+			/>
 		</>
 	);
 }

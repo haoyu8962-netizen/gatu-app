@@ -31,7 +31,7 @@ function TradeOrderView({ active, showMarketBar }: { active: boolean; showMarket
 				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
-			{showMarketBar && <MobileMarketBar className="min-h-[57px]" />}
+			{showMarketBar && <MobileMarketBar className="min-h-[61px]" />}
 
 			<div className="w-full min-w-0 h-[52dvh] min-h-[420px] overflow-hidden flex items-stretch">
 				<MobileTradeView embedded className="flex-[1.2] min-h-0 min-w-0 border-r border-stroke-weak/60" />
@@ -65,7 +65,7 @@ function MarketsDataView({ active, showMarketBar }: { active: boolean; showMarke
 				"overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 			)}
 		>
-			{showMarketBar && <MobileMarketBar className="min-h-[57px]" />}
+			{showMarketBar && <MobileMarketBar className="min-h-[61px]" />}
 
 			<div className="h-[35px] min-h-[35px] shrink-0 flex overflow-hidden">
 				{tabs.map((tab) => {

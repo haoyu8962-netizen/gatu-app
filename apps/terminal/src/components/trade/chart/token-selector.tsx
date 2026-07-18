@@ -107,7 +107,7 @@ export function TokenSelector({ selectedMarket, onValueChange }: Props) {
 					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}
 				>
-					<TokenSelectorTriggerContent selectedMarket={selectedMarket} />
+					<TokenSelectorTriggerContent selectedMarket={selectedMarket} open={open} />
 				</button>
 			</PopoverTrigger>
 			{popup}
