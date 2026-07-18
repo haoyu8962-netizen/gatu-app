@@ -439,9 +439,13 @@ const mids = await client.allMids();
 
 ### Reconnection
 
-When connection drops, the transport automatically reconnects with exponential backoff (max 10 seconds) and 3 attempts.
+When the connection drops, the transport reconnects indefinitely by default. The delay uses
+`2 ** attempt * 150ms`, capped at 10 seconds, with equal jitter. A connection that remains open
+for 3 seconds resets the consecutive retry counter.
 
 After reconnection, all active subscriptions are automatically restored if `resubscribe: true` (default).
+The default `shouldReconnect` callback always returns `true`. Configure `keepAlive` separately
+when the application needs ping/pong liveness detection in addition to socket reconnection.
 
 ### Parameters
 
@@ -487,7 +491,7 @@ const transport = new WebSocketTransport({
 #### reconnect (optional)
 
 * **Type:** `object`
-* **Default:** `{ maxRetries: 3, connectionTimeout: 10000, reconnectionDelay: (attempt) => Math.min(~~(1 << attempt) * 150, 10000) }`
+* **Default:** `{ maxRetries: Infinity, connectionTimeout: 10000, stableTimeout: 3000, reconnectionDelay: equalJitter(2 ** attempt * 150, 10000), shouldReconnect: () => true }`
 
 Reconnection policy. See [`ReconnectingWebSocketOptions`](https://github.com/nktkas/rews#options).
 
@@ -499,6 +503,17 @@ const transport = new WebSocketTransport({
   },
 });
 ```
+
+Set `maxRetries` only when the application intentionally wants permanent termination after a
+bounded number of consecutive failures. The counter resets after `stableTimeout`.
+
+#### keepAlive (optional)
+
+* **Type:** `object`
+* **Default:** `{ interval: 30000, timeout: 10000 }`
+
+Configures the Hyperliquid ping/pong watchdog. This is independent from `reconnect`: keep-alive
+detects an unresponsive connection, while reconnect controls what happens after closure.
 
 #### resubscribe (optional)
 

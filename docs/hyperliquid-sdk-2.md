@@ -414,6 +414,14 @@
 
 > Subscription to spot state events for a specific user.
 
+> **SDK 0.33.1 response note:** `spotState.spotState` uses the current
+> `SpotClearinghouseStateResponse` union. Standard token balances may include optional
+> `spotHold`, `ltv`, `borrowed`, and `supplied`; outcome balances use a `+<id>` coin and do
+> not include `token`. The response can also include `portfolioMarginEnabled`,
+> `portfolioMarginRatio`, `tokenToPortfolioBorrowRatio`, and
+> `tokenToAvailableAfterMaintenance`. Treat the generated OpenAPI block below as the base shape,
+> not an exhaustive 0.33.1 schema.
+
 ```json
 {"openapi":"3.1.1","info":{"title":"Hyperliquid Subscription - spotState","version":"1.0.0"},"tags":[{"name":"spotState"}],"servers":[{"url":"wss://api.hyperliquid.xyz/ws","description":"Mainnet WebSocket"},{"url":"wss://api.hyperliquid-testnet.xyz/ws","description":"Testnet WebSocket"}],"paths":{"/":{"post":{"tags":["spotState"],"summary":"Subscribe to spotState","description":"Subscription to spot state events for a specific user.","requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"type":{"description":"Type of subscription.","enum":["spotState"]},"user":{"type":"string","pattern":"^0[xX][0-9a-fA-F]+$","minLength":42,"maxLength":42,"description":"User address."},"ignorePortfolioMargin":{"type":"boolean","description":"Whether to ignore portfolio margin calculations."}},"required":["type","user"],"description":"Subscription to spot state events for a specific user."}}},"required":true},"responses":{"200":{"description":"Event of user spot state.","content":{"application/json":{"schema":{"type":"object","properties":{"user":{"type":"string","pattern":"^0[xX][0-9a-fA-F]+$","minLength":42,"maxLength":42,"description":"User address."},"spotState":{"type":"object","properties":{"balances":{"type":"array","items":{"type":"object","properties":{"coin":{"type":"string","description":"Asset symbol."},"token":{"type":"number","minimum":0,"description":"Unique identifier for the token."},"total":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Total balance."},"hold":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Amount on hold."},"entryNtl":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Entry notional value."}},"required":["coin","token","total","hold","entryNtl"]},"description":"Array of available token balances."},"evmEscrows":{"type":"array","items":{"type":"object","properties":{"coin":{"type":"string","description":"Asset symbol."},"token":{"type":"number","minimum":0,"description":"Unique identifier for the token."},"total":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Total balance."}},"required":["coin","token","total"]},"description":"Array of escrowed balances."}},"required":["balances"],"description":"Account summary for spot trading."}},"required":["user","spotState"],"description":"Event of user spot state."}}}}}}}}}
 ```
@@ -913,8 +921,8 @@ import { CancelByCloidRequest } from "@nktkas/hyperliquid/api/exchange";
 import * as v from "valibot";
 
 const action = v.parse(CancelByCloidRequest.entries.action, {
-  cancels: [{ cloid: 12345, asset: 0 }],
-  type: "cancel",
+  cancels: [{ asset: 0, cloid: "0x00000000000000000000000000000001" }],
+  type: "cancelByCloid",
 });
 // => { type, cancels: [{ asset, cloid }] }
 ```

@@ -11,6 +11,7 @@ Scan the "Want to..." tables below to find the right method for your task.
 - **(I)** = Info method → read-only, no wallet needed, use `InfoClient`
 - **(E)** = Exchange method → requires signing, use `ExchangeClient` with wallet
 - **(S)** = Subscription → real-time WebSocket stream, use `SubscriptionClient`
+- **(X)** = Explorer method/stream → use `ExplorerClient` with an explorer-compatible transport
 
 ### Step 3: Get Full Parameter Schema (Full Docs)
 Once you know which method to use, look up the complete OpenAPI schema in:
@@ -32,6 +33,7 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | `InfoClient` | Read-only queries | No |
 | `ExchangeClient` | Signed actions (orders, transfers) | Yes |
 | `SubscriptionClient` | Real-time WebSocket streams | No |
+| `ExplorerClient` | HyperCore block, transaction, and user explorer data | No |
 
 **Wallet options:** `privateKeyToAccount("0x...")` (viem) or `new Wallet("0x...")` (ethers)
 
@@ -70,7 +72,8 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | Stream everything | `webData2({user})` | S |
 | Get per-asset leverage + max trade sizes | `activeAssetData({user, coin})` | S |
 | Get portfolio PnL breakdown | `portfolio({user})` | I |
-| Get user display name | `userDetails({user})` | I |
+| Get account abstraction mode | `userAbstraction({user})` | I |
+| Get explorer user details | `userDetails({user})` | X |
 
 ---
 
@@ -181,6 +184,7 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | Want to... | Method | Type |
 |------------|--------|------|
 | Get my delegations | `delegations({user})` | I |
+| Get delegation history | `delegatorHistory({user})` | I |
 | Get delegation summary | `delegatorSummary({user})` | I |
 | Get staking rewards | `delegatorRewards({user})` | I |
 | Get all validators | `validatorSummaries()` | I |
@@ -218,6 +222,23 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 
 ## Advanced
 
+### Additional SDK 0.33.1 APIs
+
+These methods are present in the pinned `@nktkas/hyperliquid@0.33.1` clients but do not fit the
+short intent tables above:
+
+| Area | Methods | Type |
+|------|---------|------|
+| Borrow/lend state | `allBorrowLendReserveStates`, `borrowLendReserveState`, `borrowLendUserState`, `userBorrowLendInterest` | I |
+| Expanded market metadata | `allPerpMetas`, `approvedBuilders`, `outcomeMeta`, `perpAnnotation`, `perpCategories`, `perpConciseAnnotations`, `perpDexLimits`, `settledOutcome`, `spotDeployState`, `spotMeta`, `spotMetaAndAssetCtxs` | I |
+| Network and account checks | `gossipPriorityAuctionStatus`, `gossipRootIps`, `legalCheck`, `subAccounts2`, `userRole`, `userTwapSliceFillsByTime`, `validatorL1Votes` | I |
+| Agent and account actions | `agentEnableDexAbstraction`, `agentSendAsset`, `agentSetAbstraction`, `authorizeAqav2Role`, `userOutcome` | E |
+| Borrow/lend and staking actions | `borrowLend`, `cDeposit`, `cSignerAction`, `cValidatorAction`, `cWithdraw`, `linkStakingUser`, `stakingLinkDisableTradingUser`, `validatorL1Stream` | E |
+| EVM, HIP-3, and deployment actions | `evmUserModify`, `finalizeEvmContract`, `gossipPriorityBid`, `hip3LiquidatorTransfer`, `sendToEvmWithData`, `spotUser`, `topUpIsolatedOnlyMargin` | E |
+| Exchange control actions | `noop`, `reserveRequestWeight`, `vaultDistribute` | E |
+| Expanded market streams | `activeAssetCtx`, `activeSpotAssetCtx`, `allDexsAssetCtxs`, `fastAssetCtxs`, `outcomeMetaUpdates`, `spotAssetCtxs` | S |
+| Expanded account streams | `allDexsClearinghouseState`, `notification`, `userHistoricalOrders`, `webData3` | S |
+
 ### Multi-sig
 | Want to... | Method | Type |
 |------------|--------|------|
@@ -229,14 +250,16 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 |------------|--------|------|
 | Check if DEX abstraction enabled | `userDexAbstraction({user})` | I |
 | Enable/disable DEX abstraction | `userDexAbstraction({...})` | E |
+| Set unified/separate/portfolio account mode | `userSetAbstraction({user, abstraction})` | E |
+| Configure portfolio margin | `userPortfolioMargin({...})` | E |
 
 ### Explorer/Blockchain
 | Want to... | Method | Type |
 |------------|--------|------|
-| Get block details | `blockDetails({height})` | I |
-| Get transaction details | `txDetails({hash})` | I |
-| Stream blocks | `explorerBlock` | S |
-| Stream transactions | `explorerTxs` | S |
+| Get block details | `blockDetails({height})` | X |
+| Get transaction details | `txDetails({hash})` | X |
+| Stream blocks | `explorerBlock` | X |
+| Stream transactions | `explorerTxs` | X |
 
 ### Token/Perp Deployment
 | Want to... | Method | Type |
@@ -276,7 +299,10 @@ import { signL1Action, signMultiSigL1, signMultiSigUserSigned, signUserSignedAct
 | `signMultiSigL1` | Multi-sig L1 operations |
 | `signMultiSigUserSigned` | Multi-sig user-signed operations |
 
-Use the helper-specific parameter types exported by the SDK. Multi-sig helpers accept an ordered `signers` tuple and construct the wire wrapper internally.
+Use each signing function's TypeScript signature as the source of truth. The signing entry point
+exports signing functions and wallet-related types; it does not expose a generic family of
+helper-specific `*Parameters` aliases. Multi-sig helpers accept an ordered `signers` tuple and
+construct the wire wrapper internally.
 
 ---
 
