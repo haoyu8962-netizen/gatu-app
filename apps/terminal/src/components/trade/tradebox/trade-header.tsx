@@ -88,8 +88,9 @@ export function TradeHeader({
 					: isAccountModeLoading
 						? t`Loading...`
 						: t`Unavailable`;
+	const compactAccountModeLabel = accountMode === null ? t`Account` : accountModeLabel;
 	const controlButtonClass = cn(
-		"group min-w-0 cursor-pointer rounded-8 bg-fill-weak px-2.5 py-1.5 text-xs font-semibold text-fg transition-colors",
+		"trade-control-button group min-w-0 cursor-pointer rounded-8 bg-fill-weak py-1.5 text-xs font-semibold text-fg transition-colors",
 		"hover:bg-fill-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
 		compact && "px-2 py-1 text-2xs",
@@ -142,7 +143,12 @@ export function TradeHeader({
 	return (
 		<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-4"}>
 			{isLeveraged && (
-				<div className={cn("grid min-w-0 grid-cols-3", compact ? "gap-1.5" : "gap-2.5")}>
+				<div
+					className={cn(
+						"trade-control-grid grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,1.35fr)]",
+						compact && "gap-1.5",
+					)}
+				>
 					<button
 						type="button"
 						onClick={onMarginLeverageClick}
@@ -174,7 +180,8 @@ export function TradeHeader({
 							{(isAccountModeLoading || isAccountModeUpdating) && (
 								<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
 							)}
-							<span className="truncate">{accountModeLabel}</span>
+							<span className="trade-full-label truncate">{accountModeLabel}</span>
+							<span className="trade-compact-label truncate">{compactAccountModeLabel}</span>
 						</span>
 					</button>
 				</div>
@@ -193,11 +200,13 @@ export function TradeHeader({
 				</OrderTypeTabButton>
 				<Dropdown
 					trigger={
-						<span className="inline-flex min-w-0 items-center justify-center gap-1">
-							<span className="truncate">
+						<span className="inline-flex min-w-0 items-center justify-center">
+							<span className="trade-full-label truncate">
 								{tabsOrderType === "advanced" ? getAdvancedOrderLabel(orderType, t`Advanced`) : t`Advanced`}
 							</span>
-							<CaretDownIcon className="size-3 shrink-0 text-fg-muted" />
+							<span className="trade-compact-label truncate">
+								{tabsOrderType === "advanced" ? getAdvancedOrderLabel(orderType, t`Other`) : t`Other`}
+							</span>
 						</span>
 					}
 					items={advancedOrderTypeItems}
@@ -222,7 +231,7 @@ export function TradeHeader({
 
 function orderTypeTabClass(active: boolean) {
 	return cn(
-		"min-w-0 border-b border-stroke-weak px-3 py-2 text-xs font-semibold transition-colors",
+		"trade-order-type-button min-w-0 border-b border-stroke-weak py-2 text-xs font-semibold transition-colors",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		active ? "text-fg" : "text-fg-muted hover:text-fg",
 	);

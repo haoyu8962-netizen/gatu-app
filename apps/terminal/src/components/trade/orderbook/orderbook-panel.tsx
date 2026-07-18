@@ -88,7 +88,7 @@ export function OrderbookPanel() {
 		<Tabs
 			value={tab}
 			onValueChange={setTab}
-			className="h-full min-h-0 flex flex-col overflow-hidden bg-surface"
+			className="orderbook-panel-container h-full min-h-0 flex flex-col overflow-hidden bg-surface"
 			size="sm"
 			variant="underline"
 		>
@@ -104,12 +104,12 @@ export function OrderbookPanel() {
 			</div>
 
 			<TabsContent value="book" className="flex-1 min-h-0 mt-0 pt-0 flex flex-col">
-				<div className="grid grid-cols-3 gap-1 px-2 py-1.5 items-center text-2xs text-fg-muted uppercase tracking-wider border-b border-stroke-weak shrink-0">
-					<div className="min-w-0 flex items-center gap-1">
-						{t`Price`}
+				<div className="orderbook-grid grid gap-1 px-2 py-1.5 items-center text-2xs text-fg-muted uppercase tracking-wider border-b border-stroke-weak shrink-0">
+					<div className="min-w-0 flex items-center gap-1 overflow-hidden">
+						<span className="orderbook-price-heading shrink-0">{t`Price`}</span>
 						<Dropdown
 							trigger={
-								<span className="text-2xs tabular-nums uppercase tracking-wider">
+								<span className="block min-w-0 truncate text-2xs tabular-nums uppercase tracking-wider">
 									{selectedOption?.label ?? priceGroupingOptions[0]?.label ?? "—"}
 								</span>
 							}
@@ -118,24 +118,22 @@ export function OrderbookPanel() {
 							align="start"
 							triggerVariant="minimal"
 							triggerAriaLabel={t`Price grouping`}
+							triggerClassName="min-w-0 max-w-full"
+							className="min-w-0 flex-1 overflow-hidden"
 							popupClassName="min-w-0 w-max"
 						/>
 					</div>
-					<button
-						className="min-w-0 inline-flex items-center justify-end gap-0.5 hover:text-fg truncate"
-						type="button"
-						onClick={toggleAssetDisplay}
-					>
-						{t`Size`}
-						<span className="text-fg truncate">({displayAsset})</span>
+					<button className="min-w-0 hover:text-fg truncate" type="button" onClick={toggleAssetDisplay}>
+						<span className="flex min-w-0 items-center justify-end gap-0.5">
+							{t`Size`}
+							<span className="orderbook-asset-heading text-fg truncate">({displayAsset})</span>
+						</span>
 					</button>
-					<button
-						className="min-w-0 inline-flex items-center justify-end gap-0.5 hover:text-fg truncate"
-						type="button"
-						onClick={toggleAssetDisplay}
-					>
-						{t`Total`}
-						<span className="text-fg truncate">({displayAsset})</span>
+					<button className="min-w-0 hover:text-fg truncate" type="button" onClick={toggleAssetDisplay}>
+						<span className="flex min-w-0 items-center justify-end gap-0.5">
+							{t`Total`}
+							<span className="orderbook-asset-heading text-fg truncate">({displayAsset})</span>
+						</span>
 					</button>
 				</div>
 

@@ -536,6 +536,76 @@
     opacity: 0.15;
   }
 
+  .orderbook-panel-container {
+    container-name: orderbook-panel;
+    container-type: inline-size;
+  }
+
+  .orderbook-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @container orderbook-panel (max-width: 19.9375rem) {
+    .orderbook-price-heading {
+      display: none;
+    }
+  }
+
+  @container orderbook-panel (max-width: 14.9375rem) {
+    .orderbook-asset-heading {
+      display: none;
+    }
+  }
+
+  @container orderbook-panel (max-width: 11.1875rem) {
+    .orderbook-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .orderbook-grid > :nth-child(3) {
+      display: none;
+    }
+  }
+
+  .trade-panel-container {
+    container-name: trade-panel;
+    container-type: inline-size;
+  }
+
+  .trade-control-grid {
+    gap: 0.5rem;
+  }
+
+  .trade-control-button {
+    padding-inline: 0.5rem;
+  }
+
+  .trade-order-type-button {
+    padding-inline: 0.125rem;
+  }
+
+  .trade-compact-label {
+    display: none;
+  }
+
+  @container trade-panel (max-width: 12.4375rem) {
+    .trade-control-grid {
+      gap: 0.25rem;
+    }
+
+    .trade-control-button {
+      padding-inline: 0.125rem;
+    }
+
+    .trade-full-label {
+      display: none;
+    }
+
+    .trade-compact-label {
+      display: block;
+    }
+  }
+
   .orderbook-price-ask,
   .orderbook-price-ask:hover {
     color: var(--orderbook-depth-ask);

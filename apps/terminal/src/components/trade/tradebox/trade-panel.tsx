@@ -392,7 +392,7 @@ export function TradePanel() {
 	}
 
 	return (
-		<div className="flex flex-col bg-surface">
+		<div className="trade-panel-container flex flex-col bg-surface">
 			<MarginModeModal
 				open={activeModal === "marginMode"}
 				onOpenChange={(open) => {

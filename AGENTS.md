@@ -27,6 +27,7 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Reset size-change comparison state when the market or grouping identity changes so stale values cannot flash after switching context.
 - In the mobile split layout, cumulative `Total` is static data; do not animate or color it from the individual level `size`.
 - Order-book rows use a `23px` row height and a `2px` gap. If either value changes, update every visible-row and panel-height formula that depends on them in the same change.
+- Desktop resizable layouts keep their percentage-based drag behavior. When the order book is narrower than `180px`, preserve the container-aware two-column compact layout; when the trade sidebar is narrower than `200px`, preserve its compact labels and spacing so manual resizing cannot reintroduce overlap.
 
 ## Verification
 

@@ -34,6 +34,7 @@ function OrderbookRowComponent({
 	const totalValue = showInQuote ? level.total * level.price : level.total;
 
 	const displayDecimals = showInQuote ? 2 : szDecimals;
+	const priceText = formatNumber(level.price, priceDecimals);
 	const sizeText = formatNumber(sizeValue, { decimals: displayDecimals, compact: true });
 	const totalText = formatNumber(totalValue, { decimals: displayDecimals, compact: true });
 
@@ -46,23 +47,31 @@ function OrderbookRowComponent({
 			<div
 				className={cn(
 					"grid gap-1 text-2xs tabular-nums py-0.5 relative z-10",
-					compact ? "grid-cols-2 px-1.5" : "grid-cols-3 px-2",
+					compact ? "grid-cols-2 px-1.5" : "orderbook-grid px-2",
 				)}
 			>
 				<button
 					type="button"
 					onClick={() => setSelectedPrice(level.price)}
-					className={cn("text-left justify-start font-medium", isAsk ? "orderbook-price-ask" : "orderbook-price-bid")}
+					title={priceText}
+					className={cn(
+						"min-w-0 truncate text-left justify-start font-medium",
+						isAsk ? "orderbook-price-ask" : "orderbook-price-bid",
+					)}
 				>
-					{formatNumber(level.price, priceDecimals)}
+					{priceText}
 				</button>
 				<OrderbookSizeCell
-					className="text-right orderbook-value-text"
+					className="min-w-0 truncate text-right orderbook-value-text"
 					displayValue={sizeText}
 					resetKey={flashResetKey}
 					value={level.size}
 				/>
-				{!compact && <div className="text-right orderbook-value-text">{totalText}</div>}
+				{!compact && (
+					<div className="min-w-0 truncate text-right orderbook-value-text" title={totalText}>
+						{totalText}
+					</div>
+				)}
 			</div>
 		</div>
 	);

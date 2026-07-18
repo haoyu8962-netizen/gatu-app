@@ -30,6 +30,7 @@ describe("OrderbookSizeCell", () => {
 	it("does not flash when the level first appears or remains unchanged", () => {
 		const initial = render(10);
 		expect(initial?.classList.contains("orderbook-color-change")).toBe(false);
+		expect(initial?.parentElement?.getAttribute("title")).toBe("10.00");
 
 		const unchanged = render(10);
 		expect(unchanged).toBe(initial);

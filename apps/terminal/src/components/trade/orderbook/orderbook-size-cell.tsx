@@ -30,7 +30,7 @@ export function OrderbookSizeCell({ className, displayValue, resetKey, value }: 
 	}
 
 	return (
-		<div className={className}>
+		<div className={className} title={displayValue}>
 			<span
 				key={flash.sequence}
 				data-direction={flash.direction ?? undefined}
