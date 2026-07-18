@@ -97,15 +97,18 @@ export function MarketOverview() {
 	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
 	const perpCtx = perpCtxEvent?.ctx;
 
-	const dayNtlVlm = liveCtx?.dayNtlVlm;
-	const oraclePx = perpCtx?.oraclePx;
-	const funding = perpCtx?.funding;
+	const displayPrice = midPx ?? liveCtx?.markPx ?? selectedMarketInfo?.markPx;
+	const dayNtlVlm = liveCtx?.dayNtlVlm ?? selectedMarketInfo?.dayNtlVlm;
+	const oraclePx = perpCtx?.oraclePx ?? selectedMarketInfo?.oraclePx;
+	const openInterest = perpCtx?.openInterest ?? selectedMarketInfo?.openInterest;
+	const markPx = perpCtx?.markPx ?? selectedMarketInfo?.markPx;
+	const funding = perpCtx?.funding ?? selectedMarketInfo?.funding;
 
 	const prevDayForChange = liveCtx?.prevDayPx ?? selectedMarketInfo?.prevDayPx;
 
 	const fundingNum = toBig(funding)?.toNumber() ?? 0;
-	const change24h = get24hChange(prevDayForChange, midPx);
-	const oiUsd = getOiUsd(perpCtx?.openInterest, perpCtx?.markPx);
+	const change24h = get24hChange(prevDayForChange, displayPrice);
+	const oiUsd = getOiUsd(openInterest, markPx);
 	const spotTokenAddress = getSpotTokenAddress(selectedMarketInfo);
 	const spotPrice = isSpot ? (spotCtxEvent?.ctx?.markPx ?? selectedMarketInfo?.markPx ?? midPx) : undefined;
 	const spotCirculatingSupply = isSpot
@@ -113,7 +116,7 @@ export function MarketOverview() {
 		: null;
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotPrice);
 
-	const heroPrice = midPx != null ? formatUSD(midPx, { compact: false }) : "—";
+	const heroPrice = displayPrice != null ? formatUSD(displayPrice, { compact: false }) : "—";
 	const changePct = change24h !== null ? formatPercent(change24h / 100, { signDisplay: "exceptZero" }) : "—";
 
 	return (
@@ -138,23 +141,9 @@ export function MarketOverview() {
 					<StatDivider />
 					<StatBlock layout="inline" label={t`ORACLE`} value={formatUSD(oraclePx)} />
 					<StatDivider />
-					<StatBlock
-						layout="inline"
-						label={t`24H VOL`}
-						value={formatUSD(dayNtlVlm, {
-							notation: "compact",
-							compactDisplay: "short",
-						})}
-					/>
+					<StatBlock layout="inline" label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
 					<StatDivider />
-					<StatBlock
-						layout="inline"
-						label={t`OPEN INT`}
-						value={formatUSD(oiUsd, {
-							notation: "compact",
-							compactDisplay: "short",
-						})}
-					/>
+					<StatBlock layout="inline" label={t`OPEN INT`} value={formatUSD(oiUsd, { compact: false })} />
 					<StatDivider />
 					<Tooltip content={<FundingTooltipContent fundingNum={fundingNum} />} side="bottom">
 						<span>
