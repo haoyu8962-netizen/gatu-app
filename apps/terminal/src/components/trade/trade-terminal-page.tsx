@@ -64,7 +64,7 @@ export function TradeTerminalPage() {
 }
 
 function RouteMarketSync() {
-	const { routeMarketName, setScope } = useExchangeScope();
+	const { routeMarketName, routeScope, setScope } = useExchangeScope();
 	const navigate = useNavigate();
 	const { data: selectedMarket, error, isLoading } = useSelectedMarketInfo();
 	const { markets } = useMarketsInfo();
@@ -83,6 +83,7 @@ function RouteMarketSync() {
 			setScope("perp", undefined, fallbackMarket);
 			void navigate({
 				to: getTradePathForMarketName(fallbackMarket),
+				search: (previous) => ({ ...previous, scope: routeScope === "all" ? "all" : undefined }),
 				replace: true,
 				resetScroll: false,
 			});
@@ -91,11 +92,12 @@ function RouteMarketSync() {
 
 		if (routeMarketName !== selectedMarketName && routeMarketName !== selectedMarketPairName) return;
 
-		setScope(selectedMarketScope, selectedMarketDex, selectedMarketName);
+		setScope(routeScope === "all" ? "all" : selectedMarketScope, selectedMarketDex, selectedMarketName);
 		setSelectedMarket(selectedMarketScope, selectedMarketName);
 		setSelectedMarket("all", selectedMarketName);
 	}, [
 		routeMarketName,
+		routeScope,
 		selectedMarketName,
 		selectedMarketPairName,
 		selectedMarketScope,

@@ -65,7 +65,11 @@ export function TopNav() {
 		);
 		setSelectedMarket(item.scope, resolvedMarketName);
 		setSelectedMarket("all", resolvedMarketName);
-		void navigate({ to: targetPath, resetScroll: false });
+		void navigate({
+			to: targetPath,
+			search: (previous) => ({ ...previous, scope: item.scope === "all" ? "all" : undefined }),
+			resetScroll: false,
+		});
 	}
 
 	return (
@@ -85,8 +89,8 @@ export function TopNav() {
 						<span className="text-fg">tu</span>
 					</span>
 				</div>
-				<Divider orientation="vertical" className="my-2 hidden lg:block" />
-				<nav className="hidden lg:flex items-center text-xs tracking-wide">
+				<Divider orientation="vertical" className="my-2 hidden min-[1001px]:block" />
+				<nav className="hidden min-[1001px]:flex items-center text-xs tracking-wide">
 					{SCOPE_NAV_ITEMS.map((item) => (
 						<button
 							key={item.scope}

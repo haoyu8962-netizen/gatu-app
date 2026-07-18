@@ -20,6 +20,7 @@ function TradeIndexRedirect() {
 	useEffect(() => {
 		void navigate({
 			to: getTradePathForMarketName(marketName),
+			search: { scope: "all" },
 			replace: true,
 			resetScroll: false,
 		});

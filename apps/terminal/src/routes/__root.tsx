@@ -18,7 +18,12 @@ interface MyRouterContext {
 	queryClient: QueryClient;
 }
 
+interface RootSearch {
+	scope?: "all";
+}
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
+	validateSearch: (search: Record<string, unknown>): RootSearch => (search.scope === "all" ? { scope: "all" } : {}),
 	head: () => buildPageHead(),
 	shellComponent: RootDocument,
 	component: RootComponent,
