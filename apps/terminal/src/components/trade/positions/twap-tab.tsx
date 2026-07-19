@@ -1,5 +1,5 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { TimeTicker } from "@/components/ui/time-ticker";
@@ -27,6 +27,7 @@ import {
 } from "./positions-panel-table-styles";
 
 export function TwapTab() {
+	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
 	const { data: twapStatesEvent } = useSubscription(

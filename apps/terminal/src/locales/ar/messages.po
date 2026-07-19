@@ -434,6 +434,8 @@ msgstr "رسوم المُنشئ"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy"
@@ -499,6 +501,10 @@ msgstr "إلغاء الأوامر المحددة"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Cancel TWAP order"
 msgstr "إلغاء أمر TWAP"
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Canceled"
+msgstr "ملغي"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1438,7 +1444,8 @@ msgstr ""
 msgid "Fill status"
 msgstr "حالة التنفيذ"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
 msgstr "منفذ"
 
@@ -1698,6 +1705,16 @@ msgstr "الرافعة المالية"
 msgid "Limit"
 msgstr "محدد"
 
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
+msgctxt "Order type"
+msgid "Limit"
+msgstr "محدد"
+
+#: src/components/trade/chart/use-kline-order-overlays.ts
+msgid "Limit Buy"
+msgstr "شراء محدد"
+
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
@@ -1721,6 +1738,10 @@ msgstr "السعر المحدد"
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "limit ro"
 #~ msgstr "محدد تقليل فقط"
+
+#: src/components/trade/chart/use-kline-order-overlays.ts
+msgid "Limit Sell"
+msgstr "بيع محدد"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Link desktop wallet"
@@ -1812,6 +1833,7 @@ msgid "Loading..."
 msgstr "جارٍ التحميل..."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
 msgstr "شراء"
@@ -1949,6 +1971,12 @@ msgstr "سعر العلامة: يُستخدم لحسابات الهامش، وا
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
 msgstr "السوق"
+
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
+msgctxt "Order type"
+msgid "Market"
+msgstr "سعر السوق"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/market-overview.tsx
@@ -2316,6 +2344,10 @@ msgstr "العقود المفتوحة"
 #~ msgid "open"
 #~ msgstr "مفتوح"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Open"
+msgstr "مفتوح"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open a WalletConnect wallet or copy the pairing link."
 #~ msgstr ""
@@ -2615,7 +2647,7 @@ msgstr "وضع أمر {0}"
 msgid "Place Limit Close"
 msgstr "وضع إغلاق محدد"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Placed"
 msgstr "تم الوضع"
 
@@ -2757,6 +2789,14 @@ msgstr "السعر"
 #~ msgid "PRICE"
 #~ msgstr ""
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Price above {price}"
+msgstr "السعر أعلى من {price}"
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Price below {price}"
+msgstr "السعر أدنى من {price}"
+
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Price grouping"
 msgstr "تجميع الأسعار"
@@ -2863,6 +2903,7 @@ msgstr "تم الاسترداد بعد إعادة التحميل. ينتهي ف�
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "تقليل فقط"
 
@@ -2874,6 +2915,10 @@ msgstr "تقليل فقط"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Register Builder Code"
 #~ msgstr ""
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Rejected"
+msgstr "مرفوض"
 
 #: src/components/trade/chart/token-selector-row.tsx
 #~ msgid "Remove {0} from favorites"
@@ -2947,7 +2992,7 @@ msgstr "المخاطرة/العائد"
 msgid "RO"
 msgstr "RO"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Running"
 msgstr "قيد التشغيل"
 
@@ -2965,7 +3010,8 @@ msgstr "مدة التشغيل"
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "كان رابط الهاتف المحفوظ غير صالح. الصق الرابط مجدداً."
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
 msgstr "تدرّج"
 
@@ -3088,6 +3134,8 @@ msgstr "المحفظة المحددة لا تطابق الحساب المتصل.
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell"
@@ -3151,7 +3199,7 @@ msgstr "منفصل"
 msgid "Separate Accounts"
 msgstr "حسابات منفصلة"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Set"
 msgstr "تعيين"
 
@@ -3188,6 +3236,7 @@ msgid "Settings"
 msgstr "الإعدادات"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
 msgstr "بيع"
@@ -3444,11 +3493,12 @@ msgstr "الحالة"
 msgid "Stocks"
 msgstr "الأسهم"
 
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Stop"
-#~ msgstr "إيقاف"
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Stop"
+msgstr "إيقاف"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Limit"
 msgstr "Stop Limit"
 
@@ -3457,7 +3507,8 @@ msgstr "Stop Limit"
 msgid "Stop Loss"
 msgstr "وقف الخسارة"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Market"
 msgstr "Stop Market"
 
@@ -3618,6 +3669,7 @@ msgstr "معرّف المزامنة"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit"
 msgstr "جني الأرباح"
 
@@ -3625,11 +3677,13 @@ msgstr "جني الأرباح"
 msgid "Take Profit / Stop Loss"
 msgstr "جني الأرباح / وقف الخسارة"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Limit"
 msgstr "Take Profit Limit"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Market"
 msgstr "Take Profit Market"
 
@@ -3941,6 +3995,7 @@ msgstr "لا تتوفر التحويلات بين Spot وPerps في وضع ال�
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
 msgstr "المُحفِّز"
 
@@ -3953,6 +4008,10 @@ msgstr "سعر التحفيز"
 #~ msgid "Trigger Price (USDC)"
 #~ msgstr ""
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Triggered"
+msgstr "تم التفعيل"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Try again"
 msgstr "حاول مرة أخرى"
@@ -3964,7 +4023,8 @@ msgstr "حاول مرة أخرى"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP"
 msgstr "TWAP"
 

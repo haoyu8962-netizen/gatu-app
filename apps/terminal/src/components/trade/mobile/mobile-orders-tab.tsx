@@ -1,11 +1,12 @@
 import { Badge, Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ListIcon, ListNumbersIcon, XIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
@@ -13,7 +14,6 @@ import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import type { MarketKind } from "@/lib/hyperliquid/markets";
 import {
 	getOrderTypeConfig,
-	getSideLabel,
 	isClosePositionOrder,
 	isMarketTriggerOrder,
 	type OpenOrder,
@@ -33,6 +33,7 @@ interface Props {
 type CancelScope = "row" | "all";
 
 export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) {
+	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -195,8 +196,18 @@ interface MobileOrderCardProps {
 }
 
 function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSelectMarket }: MobileOrderCardProps) {
+	const { t } = useLingui();
+	const {
+		getExecutionKindLabel,
+		getFullOrderTypeLabel,
+		getOrderSideLabel,
+		getTriggerConditionLabel,
+		getTriggerKindLabel,
+	} = useOrderDisplayLabels();
 	const typeConfig = getOrderTypeConfig(order);
-	const sideLabel = getSideLabel(order.side, kind);
+	const sideLabel = getOrderSideLabel(order.side, kind);
+	const triggerLabel = getTriggerKindLabel(typeConfig.triggerKind);
+	const executionLabel = getExecutionKindLabel(typeConfig.executionKind);
 	const isLong = order.side === "B";
 	const side: Side = isLong ? "buy" : "sell";
 
@@ -215,11 +226,12 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 					</Badge>
 				</div>
 				<div className="flex items-center gap-2">
-					<span className="inline-flex items-baseline gap-1 text-xs whitespace-nowrap" title={typeConfig.fullLabel}>
-						{typeConfig.triggerLabel ? (
-							<span className={cn("font-medium", typeConfig.triggerClass)}>{typeConfig.triggerLabel}</span>
-						) : null}
-						<span className="text-fg">{typeConfig.executionLabel}</span>
+					<span
+						className="inline-flex items-baseline gap-1 text-xs whitespace-nowrap"
+						title={getFullOrderTypeLabel(order)}
+					>
+						{triggerLabel ? <span className={cn("font-medium", typeConfig.triggerClass)}>{triggerLabel}</span> : null}
+						<span className="text-fg">{executionLabel}</span>
 					</span>
 					{order.reduceOnly && <span className="text-2xs uppercase text-fg-muted">{t`RO`}</span>}
 				</div>
@@ -238,7 +250,10 @@ function MobileOrderCard({ order, szDecimals, kind, isCancelling, onCancel, onSe
 							: formatToken(order.origSz, { decimals: szDecimals, symbol: order.coin })
 					}
 				/>
-				<MetricCell label={t`Trigger`} value={order.triggerCondition || FALLBACK_VALUE_PLACEHOLDER} />
+				<MetricCell
+					label={t`Trigger`}
+					value={order.triggerCondition ? getTriggerConditionLabel(order.triggerCondition) : FALLBACK_VALUE_PLACEHOLDER}
+				/>
 			</div>
 
 			<div className="flex items-center justify-between px-3 py-1.5">

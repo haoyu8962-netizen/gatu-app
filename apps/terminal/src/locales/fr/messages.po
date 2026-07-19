@@ -434,6 +434,8 @@ msgstr "Frais de builder"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy"
@@ -499,6 +501,10 @@ msgstr "Annuler les ordres sélectionnés"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Cancel TWAP order"
 msgstr "Annuler l'ordre TWAP"
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Canceled"
+msgstr "Annulé"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1438,7 +1444,8 @@ msgstr ""
 msgid "Fill status"
 msgstr "Statut d'exécution"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
 msgstr "Exécuté"
 
@@ -1698,6 +1705,16 @@ msgstr "Levier"
 msgid "Limit"
 msgstr "Limite"
 
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
+msgctxt "Order type"
+msgid "Limit"
+msgstr "Limite"
+
+#: src/components/trade/chart/use-kline-order-overlays.ts
+msgid "Limit Buy"
+msgstr "Achat limite"
+
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
@@ -1721,6 +1738,10 @@ msgstr "Prix limite"
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "limit ro"
 #~ msgstr "limite réd. seul."
+
+#: src/components/trade/chart/use-kline-order-overlays.ts
+msgid "Limit Sell"
+msgstr "Vente limite"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Link desktop wallet"
@@ -1812,6 +1833,7 @@ msgid "Loading..."
 msgstr "Chargement..."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
 msgstr "Achat"
@@ -1949,6 +1971,12 @@ msgstr "Prix de marque : utilisé pour les calculs de marge, le PnL non réalis�
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
 msgstr "Marché"
+
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
+msgctxt "Order type"
+msgid "Market"
+msgstr "Au marché"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/market-overview.tsx
@@ -2316,6 +2344,10 @@ msgstr "OI"
 #~ msgid "open"
 #~ msgstr "ouvert"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Open"
+msgstr "Ouvert"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open a WalletConnect wallet or copy the pairing link."
 #~ msgstr ""
@@ -2615,7 +2647,7 @@ msgstr "Placer l'ordre {0}"
 msgid "Place Limit Close"
 msgstr "Placer la clôture limite"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Placed"
 msgstr "Placé"
 
@@ -2757,6 +2789,14 @@ msgstr "Prix"
 #~ msgid "PRICE"
 #~ msgstr ""
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Price above {price}"
+msgstr "Prix supérieur à {price}"
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Price below {price}"
+msgstr "Prix inférieur à {price}"
+
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Price grouping"
 msgstr "Regroupement des prix"
@@ -2863,6 +2903,7 @@ msgstr "Récupéré après rechargement. Expire {expiresAtLabel}."
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "Réduction uniquement"
 
@@ -2874,6 +2915,10 @@ msgstr "Réduction uniquement"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Register Builder Code"
 #~ msgstr ""
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Rejected"
+msgstr "Rejeté"
 
 #: src/components/trade/chart/token-selector-row.tsx
 #~ msgid "Remove {0} from favorites"
@@ -2947,7 +2992,7 @@ msgstr "Risque/Rendement"
 msgid "RO"
 msgstr "RO"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Running"
 msgstr "En cours"
 
@@ -2965,7 +3010,8 @@ msgstr "Durée d'exécution"
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "Le lien téléphone enregistré était invalide. Collez à nouveau le lien."
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
 msgstr "Échelonné"
 
@@ -3088,6 +3134,8 @@ msgstr "Le portefeuille sélectionné ne correspond pas au compte connecté. Rec
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell"
@@ -3151,7 +3199,7 @@ msgstr "Séparé"
 msgid "Separate Accounts"
 msgstr "Comptes séparés"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Set"
 msgstr "Définir"
 
@@ -3188,6 +3236,7 @@ msgid "Settings"
 msgstr "Paramètres"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
 msgstr "Vente"
@@ -3444,11 +3493,12 @@ msgstr "Statut"
 msgid "Stocks"
 msgstr "Actions"
 
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Stop"
-#~ msgstr "Stop"
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Stop"
+msgstr "Stop"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Limit"
 msgstr "Stop Limit"
 
@@ -3457,7 +3507,8 @@ msgstr "Stop Limit"
 msgid "Stop Loss"
 msgstr "Stop Loss"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Market"
 msgstr "Stop Market"
 
@@ -3618,6 +3669,7 @@ msgstr "ID de synchronisation"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit"
 msgstr "Take Profit"
 
@@ -3625,11 +3677,13 @@ msgstr "Take Profit"
 msgid "Take Profit / Stop Loss"
 msgstr "Prise de profit / Stop Loss"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Limit"
 msgstr "Take Profit Limit"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Market"
 msgstr "Take Profit Market"
 
@@ -3941,6 +3995,7 @@ msgstr "Les transferts entre Spot et Perps ne sont pas disponibles en mode compt
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
 msgstr "Déclencheur"
 
@@ -3953,6 +4008,10 @@ msgstr "Prix de déclenchement"
 #~ msgid "Trigger Price (USDC)"
 #~ msgstr ""
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Triggered"
+msgstr "Déclenché"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Try again"
 msgstr "Réessayer"
@@ -3964,7 +4023,8 @@ msgstr "Réessayer"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP"
 msgstr "TWAP"
 

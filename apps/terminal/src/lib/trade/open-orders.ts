@@ -1,6 +1,5 @@
 import type { FrontendOpenOrdersResponse } from "@nktkas/hyperliquid";
 import { OPEN_ORDER_TYPE_PREFIXES } from "@/config/trade";
-import type { MarketKind } from "@/lib/hyperliquid/markets";
 import { toBig } from "@/lib/trade/numbers";
 
 export type OpenOrder = FrontendOpenOrdersResponse[number];
@@ -53,11 +52,6 @@ export function getOrderValue(order: OpenOrder): number | null {
 	return limitPx.times(origSz).toNumber();
 }
 
-export function getSideLabel(side: OrderSide, kind?: MarketKind): string {
-	if (kind === "spot") return side === "B" ? "buy" : "sell";
-	return side === "B" ? "long" : "short";
-}
-
 export function buildTpSlOrdersByCoin(orders: readonly OpenOrder[]): Map<string, TpSlOrderInfo> {
 	const map = new Map<string, TpSlOrderInfo>();
 	for (const order of orders) {
@@ -79,36 +73,27 @@ export function buildTpSlOrdersByCoin(orders: readonly OpenOrder[]): Map<string,
 	return map;
 }
 
-export function getOrderLineLabel(order: OpenOrder): string {
-	if (isTakeProfitOrder(order)) return "TP";
-	if (isStopOrder(order)) return "SL";
-	return order.side === "B" ? "Limit Buy" : "Limit Sell";
-}
-
 export interface OrderTypeConfig {
-	fullLabel: string;
-	triggerLabel: "Stop" | "Take Profit" | null;
+	triggerKind: "stop" | "takeProfit" | null;
 	triggerClass: string | null;
-	executionLabel: string;
+	executionKind: "market" | "limit";
 	reduceOnly: boolean;
 }
 
 export function getOrderTypeConfig(order: OpenOrder): OrderTypeConfig {
 	const reduceOnly = order.reduceOnly;
-	const suffix = reduceOnly ? " RO" : "";
-	const fullLabel = `${order.orderType}${suffix}`;
 
-	let triggerLabel: "Stop" | "Take Profit" | null = null;
+	let triggerKind: "stop" | "takeProfit" | null = null;
 	let triggerClass: string | null = null;
 	if (isStopOrder(order)) {
-		triggerLabel = "Stop";
+		triggerKind = "stop";
 		triggerClass = "text-warning";
 	} else if (isTakeProfitOrder(order)) {
-		triggerLabel = "Take Profit";
+		triggerKind = "takeProfit";
 		triggerClass = "text-success";
 	}
 
-	const executionLabel = order.orderType.endsWith("Market") ? "Market" : "Limit";
+	const executionKind = order.orderType.endsWith("Market") ? "market" : "limit";
 
-	return { fullLabel, triggerLabel, triggerClass, executionLabel, reduceOnly };
+	return { triggerKind, triggerClass, executionKind, reduceOnly };
 }

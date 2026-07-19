@@ -9,8 +9,18 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/mobile/mobile-account-view.tsx",
 	"components/trade/mobile/mobile-book-view.tsx",
 	"components/trade/mobile/mobile-nav-drawer.tsx",
+	"components/trade/mobile/mobile-orders-history-tab.tsx",
+	"components/trade/mobile/mobile-orders-tab.tsx",
 	"components/trade/mobile/mobile-trade-view.tsx",
+	"components/trade/mobile/mobile-twap-tab.tsx",
+	"components/trade/positions/orders-history-tab.tsx",
+	"components/trade/positions/orders-tab.tsx",
+	"components/trade/positions/twap-tab.tsx",
+	"components/trade/tradebox/advanced-order-dropdown.tsx",
+	"components/trade/tradebox/order-toast.tsx",
+	"components/trade/tradebox/trade-header.tsx",
 	"hooks/trade/use-order-entry-data.ts",
+	"hooks/trade/use-order-display-labels.ts",
 ];
 
 describe("live localization source contract", () => {

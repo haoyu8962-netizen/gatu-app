@@ -434,6 +434,8 @@ msgstr "बिल्डर फ़ीस"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy"
@@ -499,6 +501,10 @@ msgstr "चयनित ऑर्डर रद्द करें"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Cancel TWAP order"
 msgstr "TWAP ऑर्डर रद्द करें"
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Canceled"
+msgstr "रद्द"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1438,7 +1444,8 @@ msgstr ""
 msgid "Fill status"
 msgstr "फिल स्थिति"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
 msgstr "पूर्ण"
 
@@ -1698,6 +1705,16 @@ msgstr "Leverage"
 msgid "Limit"
 msgstr "लिमिट"
 
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
+msgctxt "Order type"
+msgid "Limit"
+msgstr "लिमिट"
+
+#: src/components/trade/chart/use-kline-order-overlays.ts
+msgid "Limit Buy"
+msgstr "लिमिट खरीद"
+
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
@@ -1721,6 +1738,10 @@ msgstr "लिमिट प्राइस"
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "limit ro"
 #~ msgstr "लिमिट आरओ"
+
+#: src/components/trade/chart/use-kline-order-overlays.ts
+msgid "Limit Sell"
+msgstr "लिमिट बिक्री"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Link desktop wallet"
@@ -1812,6 +1833,7 @@ msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
 msgstr "लॉन्ग"
@@ -1949,6 +1971,12 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
 msgstr "बाज़ार"
+
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
+msgctxt "Order type"
+msgid "Market"
+msgstr "मार्केट"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/market-overview.tsx
@@ -2316,6 +2344,10 @@ msgstr "OI"
 #~ msgid "open"
 #~ msgstr "खुला"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Open"
+msgstr "खुला"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open a WalletConnect wallet or copy the pairing link."
 #~ msgstr ""
@@ -2615,7 +2647,7 @@ msgstr "{0} ऑर्डर लगाएँ"
 msgid "Place Limit Close"
 msgstr "Limit क्लोज़ लगाएँ"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Placed"
 msgstr "लगाया गया"
 
@@ -2757,6 +2789,14 @@ msgstr "मूल्य"
 #~ msgid "PRICE"
 #~ msgstr ""
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Price above {price}"
+msgstr "कीमत {price} से ऊपर"
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Price below {price}"
+msgstr "कीमत {price} से नीचे"
+
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Price grouping"
 msgstr "प्राइस ग्रुपिंग"
@@ -2863,6 +2903,7 @@ msgstr "रीलोड के बाद रिकवर हुआ। {expiresAt
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "केवल कम करें"
 
@@ -2874,6 +2915,10 @@ msgstr "केवल कम करें"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Register Builder Code"
 #~ msgstr ""
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Rejected"
+msgstr "अस्वीकृत"
 
 #: src/components/trade/chart/token-selector-row.tsx
 #~ msgid "Remove {0} from favorites"
@@ -2947,7 +2992,7 @@ msgstr "जोखिम/इनाम"
 msgid "RO"
 msgstr "RO"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Running"
 msgstr "चल रहा है"
 
@@ -2965,7 +3010,8 @@ msgstr "रनटाइम"
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "सहेजा गया फ़ोन लिंक अमान्य था। लिंक फिर से पेस्ट करें।"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
 msgstr "Scale"
 
@@ -3088,6 +3134,8 @@ msgstr "चयनित वॉलेट कनेक्टेड खाते �
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell"
@@ -3151,7 +3199,7 @@ msgstr "अलग"
 msgid "Separate Accounts"
 msgstr "अलग खाते"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Set"
 msgstr "सेट करें"
 
@@ -3188,6 +3236,7 @@ msgid "Settings"
 msgstr "सेटिंग्स"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
 msgstr "शॉर्ट"
@@ -3444,11 +3493,12 @@ msgstr "स्थिति"
 msgid "Stocks"
 msgstr "स्टॉक्स"
 
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Stop"
-#~ msgstr "स्टॉप"
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Stop"
+msgstr "स्टॉप"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Limit"
 msgstr "Stop Limit"
 
@@ -3457,7 +3507,8 @@ msgstr "Stop Limit"
 msgid "Stop Loss"
 msgstr "Stop Loss"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Market"
 msgstr "Stop Market"
 
@@ -3618,6 +3669,7 @@ msgstr "Sync ID"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit"
 msgstr "Take Profit"
 
@@ -3625,11 +3677,13 @@ msgstr "Take Profit"
 msgid "Take Profit / Stop Loss"
 msgstr "प्रॉफिट लें / स्टॉप लॉस"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Limit"
 msgstr "Take Profit Limit"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Market"
 msgstr "Take Profit Market"
 
@@ -3941,6 +3995,7 @@ msgstr "यूनिफाइड अकाउंट मोड में Spot औ
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
 msgstr "ट्रिगर"
 
@@ -3953,6 +4008,10 @@ msgstr "ट्रिगर मूल्य"
 #~ msgid "Trigger Price (USDC)"
 #~ msgstr ""
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Triggered"
+msgstr "ट्रिगर हुआ"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Try again"
 msgstr "फिर से प्रयास करें"
@@ -3964,7 +4023,8 @@ msgstr "फिर से प्रयास करें"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP"
 msgstr "TWAP"
 

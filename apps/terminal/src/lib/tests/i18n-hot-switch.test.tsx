@@ -12,6 +12,7 @@ import { OrderbookPanel } from "@/components/trade/orderbook/orderbook-panel";
 import { AccountPanel } from "@/components/trade/tradebox/account-panel";
 import { OrderSummary } from "@/components/trade/tradebox/order-summary";
 import { TradeOptionCheckboxes } from "@/components/trade/tradebox/trade-option-checkboxes";
+import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 
 const zhTranslations: Record<string, string> = {
 	"Reduce Only": "只减仓",
@@ -30,6 +31,11 @@ const zhTranslations: Record<string, string> = {
 	Markets: "市场",
 	Trade: "交易",
 	Account: "账户",
+	"Stop Market": "止损市价",
+	"Price above {price}": "价格高于 {price}",
+	Canceled: "已取消",
+	Long: "多",
+	Trigger: "触发",
 };
 
 function getMessageId(message: string): string {
@@ -138,7 +144,30 @@ function TestSurface() {
 				<OrderbookPanel />
 			</div>
 			<AccountPanel />
+			<OrderLabelsProbe />
 		</>
+	);
+}
+
+function OrderLabelsProbe() {
+	const {
+		getAdvancedOrderTypeLabel,
+		getHistoricalOrderStatusLabel,
+		getOrderSideLabel,
+		getOrderTypeLabel,
+		getQueueOrderTypeLabel,
+		getTriggerConditionLabel,
+	} = useOrderDisplayLabels();
+
+	return (
+		<div data-testid="order-labels">
+			<span data-label="type">{getOrderTypeLabel("Stop Market")}</span>
+			<span data-label="advanced">{getAdvancedOrderTypeLabel("stopMarket")}</span>
+			<span data-label="condition">{getTriggerConditionLabel("Price above 70")}</span>
+			<span data-label="status">{getHistoricalOrderStatusLabel("marginCanceled")}</span>
+			<span data-label="side">{getOrderSideLabel("B", "perp")}</span>
+			<span data-label="queue-type">{getQueueOrderTypeLabel("trigger")}</span>
+		</div>
 	);
 }
 
@@ -200,5 +229,12 @@ describe("language hot switching", () => {
 		expect(localizedMobileNav?.textContent).toContain("市场");
 		expect(localizedMobileNav?.textContent).toContain("交易");
 		expect(localizedMobileNav?.textContent).toContain("账户");
+		const orderLabels = container.querySelector('[data-testid="order-labels"]');
+		expect(orderLabels?.querySelector('[data-label="type"]')?.textContent).toBe("止损市价");
+		expect(orderLabels?.querySelector('[data-label="advanced"]')?.textContent).toBe("止损市价");
+		expect(orderLabels?.querySelector('[data-label="condition"]')?.textContent).toBe("价格高于 70");
+		expect(orderLabels?.querySelector('[data-label="status"]')?.textContent).toBe("已取消");
+		expect(orderLabels?.querySelector('[data-label="side"]')?.textContent).toBe("多");
+		expect(orderLabels?.querySelector('[data-label="queue-type"]')?.textContent).toBe("触发");
 	});
 });

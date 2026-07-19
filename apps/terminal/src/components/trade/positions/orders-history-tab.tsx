@@ -1,8 +1,9 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
@@ -23,6 +24,8 @@ import {
 } from "./positions-panel-table-styles";
 
 export function OrdersHistoryTab() {
+	const { t } = useLingui();
+	const { getHistoricalOrderStatusLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
@@ -133,7 +136,7 @@ export function OrdersHistoryTab() {
 												/>
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
-												{order.orderType}
+												{getOrderTypeLabel(order.orderType)}
 											</TableCell>
 											<TableCell
 												size="dense"
@@ -148,7 +151,7 @@ export function OrdersHistoryTab() {
 												{formatToken(order.origSz, market?.szDecimals)}
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
-												{entry.status}
+												{getHistoricalOrderStatusLabel(entry.status)}
 											</TableCell>
 											<TableCell
 												size="dense"

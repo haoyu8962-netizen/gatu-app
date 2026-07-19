@@ -1,12 +1,13 @@
+import { useLingui } from "@lingui/react/macro";
 import Big from "big.js";
 import type { Chart } from "klinecharts";
-import { type RefObject, useEffect } from "react";
+import { type RefObject, useEffect, useMemo } from "react";
 import { HL_ALL_DEXS } from "@/config/app";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { TRANSPARENT_OVERLAY_STYLES } from "@/lib/chart/kline-styles";
 import { ORDER_LINE_NAME } from "@/lib/chart/order-line-overlay";
 import { useSubscription } from "@/lib/hyperliquid";
-import { getOrderLineLabel } from "@/lib/trade/open-orders";
+import { isStopOrder, isTakeProfitOrder, type OpenOrder } from "@/lib/trade/open-orders";
 
 interface Params {
 	chartRef: RefObject<Chart | null>;
@@ -14,6 +15,7 @@ interface Params {
 }
 
 export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
+	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 
 	const { data: openOrdersEvent } = useSubscription(
@@ -24,8 +26,15 @@ export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
 
 	const openOrders = openOrdersEvent?.orders;
 	const symbolOrders = openOrders?.filter((order) => order.coin === symbol) ?? [];
+	const orderLineLabels = useMemo(() => ({ limitBuy: t`Limit Buy`, limitSell: t`Limit Sell` }), [t]);
 
 	useEffect(() => {
+		function getOrderLineLabel(order: OpenOrder): string {
+			if (isTakeProfitOrder(order)) return "TP";
+			if (isStopOrder(order)) return "SL";
+			return order.side === "B" ? orderLineLabels.limitBuy : orderLineLabels.limitSell;
+		}
+
 		const chart = chartRef.current;
 		if (!chart || !symbol) return;
 
@@ -47,5 +56,5 @@ export function useKlineOrderOverlays({ chartRef, symbol }: Params) {
 				},
 			});
 		}
-	}, [chartRef, symbol, symbolOrders]);
+	}, [chartRef, orderLineLabels, symbol, symbolOrders]);
 }

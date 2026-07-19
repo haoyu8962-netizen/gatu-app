@@ -1,10 +1,10 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { CheckIcon, LightningIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { ORDER_TOAST_SUCCESS_DURATION_MS } from "@/config/time";
+import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { cn } from "@/lib/cn";
-import type { OrderOutcome } from "@/lib/trade/extract-order-status";
 import { type OrderQueueItem, useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
 
 const ORDER_TOAST_WIDTH = "w-80";
@@ -27,38 +27,14 @@ function useAutoRemove(order: OrderQueueItem, onRemove: () => void) {
 	}, [order.status, order.completedAt, onRemove]);
 }
 
-function getOrderTypeLabel(orderType: OrderQueueItem["orderType"]): string | null {
-	switch (orderType) {
-		case "trigger":
-			return "Trigger";
-		case "scale":
-			return "Scale";
-		case "twap":
-			return "TWAP";
-		default:
-			return null;
-	}
-}
-
-function getOutcomeLabel(outcome: OrderOutcome): string {
-	switch (outcome) {
-		case "filled":
-			return t`Filled`;
-		case "resting":
-			return t`Placed`;
-		case "triggerSet":
-			return t`Set`;
-		case "twapStarted":
-			return t`Running`;
-	}
-}
-
 function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () => void }) {
+	const { t } = useLingui();
+	const { getOrderOutcomeLabel, getQueueOrderTypeLabel, getQueueSideLabel } = useOrderDisplayLabels();
 	useAutoRemove(order, onRemove);
 
 	const sideColor = order.side === "buy" ? "text-success" : "text-error";
 	const sideBg = order.side === "buy" ? "bg-success-soft" : "bg-error-soft";
-	const orderTypeLabel = getOrderTypeLabel(order.orderType);
+	const orderTypeLabel = getQueueOrderTypeLabel(order.orderType);
 	const hasTpSl = order.tpPrice || order.slPrice;
 
 	return (
@@ -89,12 +65,12 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 						</span>
 					)}
 					<span className={cn("px-1.5 py-0.5 rounded text-xs font-bold uppercase tracking-wide", sideBg, sideColor)}>
-						{order.side}
+						{getQueueSideLabel(order.side)}
 					</span>
 					<span className="text-xs font-medium text-fg">{order.market}</span>
 					{order.status === "success" && order.outcome && (
 						<span className={cn("text-xs font-medium", order.outcome === "filled" ? "text-success" : "text-fg-muted")}>
-							{getOutcomeLabel(order.outcome)}
+							{getOrderOutcomeLabel(order.outcome)}
 						</span>
 					)}
 				</div>
@@ -154,6 +130,7 @@ function CountdownBar({ order }: { order: OrderQueueItem }) {
 }
 
 export function OrderToast() {
+	const { t } = useLingui();
 	const orders = useOrderQueue();
 	const { removeOrder } = useOrderQueueActions();
 	if (orders.length === 0) return null;

@@ -1,26 +1,4 @@
-import { t } from "@lingui/core/macro";
 import type { AdvancedOrderType, OrderType } from "@/config/trade";
-
-export function getAdvancedOrderTypeLabel(orderType: AdvancedOrderType): string {
-	switch (orderType) {
-		case "stopMarket":
-			return t`Stop Market`;
-		case "stopLimit":
-			return t`Stop Limit`;
-		case "takeProfitMarket":
-			return t`Take Profit Market`;
-		case "takeProfitLimit":
-			return t`Take Profit Limit`;
-		case "twap":
-			return t`TWAP`;
-		case "scale":
-			return t`Scale`;
-	}
-}
-
-export function getAdvancedOrderLabel(orderType: OrderType, fallback: string): string {
-	return isAdvancedOrderType(orderType) ? getAdvancedOrderTypeLabel(orderType) : fallback;
-}
 
 export function isAdvancedOrderType(orderType: OrderType): orderType is AdvancedOrderType {
 	return orderType !== "market" && orderType !== "limit";

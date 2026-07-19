@@ -5,10 +5,11 @@ import type { ReactNode } from "react";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import type { SideLabels } from "@/config/ui-text";
 import type { SelectableAccountAbstraction } from "@/hooks/trade/use-account-abstraction-control";
+import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { cn } from "@/lib/cn";
 import type { MarketKind } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
-import { getAdvancedOrderLabel, getAdvancedOrderTypeLabel, getTabsOrderType } from "@/lib/trade/order-types";
+import { getTabsOrderType } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
 import { SideToggle } from "./side-toggle";
 
@@ -52,6 +53,7 @@ export function TradeHeader({
 	layout = "desktop",
 }: Props) {
 	const { t } = useLingui();
+	const { getAdvancedOrderLabel, getAdvancedOrderTypeLabel } = useOrderDisplayLabels();
 	const tabsOrderType = getTabsOrderType(orderType);
 	const orderTypeIndex = tabsOrderType === "market" ? 0 : tabsOrderType === "limit" ? 1 : 2;
 	const orderTypeLabel =

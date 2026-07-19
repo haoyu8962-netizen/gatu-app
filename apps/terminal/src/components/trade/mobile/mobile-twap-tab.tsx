@@ -1,5 +1,5 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { TimerIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useMemo } from "react";
@@ -23,6 +23,7 @@ interface Props {
 }
 
 export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
+	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();

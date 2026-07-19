@@ -1,5 +1,5 @@
 import { Dropdown, type DropdownGroup } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import {
 	CrosshairIcon,
 	type Icon,
@@ -16,9 +16,10 @@ import {
 	type OrderType,
 	SPOT_ALLOWED_TYPES,
 } from "@/config/trade";
+import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { cn } from "@/lib/cn";
 import type { MarketKind } from "@/lib/hyperliquid";
-import { getAdvancedOrderLabel, getAdvancedOrderTypeLabel, isAdvancedOrderType } from "@/lib/trade/order-types";
+import { isAdvancedOrderType } from "@/lib/trade/order-types";
 
 interface Props {
 	orderType: OrderType;
@@ -43,10 +44,10 @@ const ADVANCED_ORDER_ICONS: Record<AdvancedOrderType, Icon> = {
 	scale: RowsIcon,
 };
 
-function buildAdvancedOrderOptions(): AdvancedOrderOption[] {
+function buildAdvancedOrderOptions(getLabel: (value: AdvancedOrderType) => string): AdvancedOrderOption[] {
 	return ADVANCED_ORDER_TYPES.map((value) => ({
 		value,
-		label: getAdvancedOrderTypeLabel(value),
+		label: getLabel(value),
 		icon: ADVANCED_ORDER_ICONS[value],
 		group: ADVANCED_ORDER_GROUPS[value],
 	}));
@@ -68,10 +69,12 @@ function toDropdownItems(options: AdvancedOrderOption[], onOrderTypeChange: (typ
 }
 
 export function AdvancedOrderDropdown({ orderType, onOrderTypeChange, marketKind = "perp", className }: Props) {
+	const { t } = useLingui();
+	const { getAdvancedOrderLabel, getAdvancedOrderTypeLabel } = useOrderDisplayLabels();
 	const isAdvanced = isAdvancedOrderType(orderType);
 	const label = getAdvancedOrderLabel(orderType, t`Other`);
 
-	const options = buildAdvancedOrderOptions();
+	const options = buildAdvancedOrderOptions(getAdvancedOrderTypeLabel);
 	const triggerOptions = getFilteredOptions(
 		options.filter((option) => option.group === "trigger"),
 		marketKind,

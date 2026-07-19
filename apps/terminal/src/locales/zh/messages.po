@@ -434,6 +434,8 @@ msgstr "构建者费用"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Buy"
@@ -499,6 +501,10 @@ msgstr "取消选中的订单"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Cancel TWAP order"
 msgstr "取消 TWAP 订单"
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Canceled"
+msgstr "已取消"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -1438,7 +1444,8 @@ msgstr "手续费（吃单 / 挂单）"
 msgid "Fill status"
 msgstr "成交状态"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
 msgstr "已成交"
 
@@ -1698,6 +1705,16 @@ msgstr "杠杆"
 msgid "Limit"
 msgstr "限价"
 
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
+msgctxt "Order type"
+msgid "Limit"
+msgstr "限价"
+
+#: src/components/trade/chart/use-kline-order-overlays.ts
+msgid "Limit Buy"
+msgstr "限价买入"
+
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
@@ -1721,6 +1738,10 @@ msgstr "限价"
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "limit ro"
 #~ msgstr "限价只减仓"
+
+#: src/components/trade/chart/use-kline-order-overlays.ts
+msgid "Limit Sell"
+msgstr "限价卖出"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Link desktop wallet"
@@ -1812,6 +1833,7 @@ msgid "Loading..."
 msgstr "加载中..."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
 msgstr "多"
@@ -1949,6 +1971,12 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Market"
 msgstr "市场"
+
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
+msgctxt "Order type"
+msgid "Market"
+msgstr "市价"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/market-overview.tsx
@@ -2316,6 +2344,10 @@ msgstr "持仓量"
 #~ msgid "open"
 #~ msgstr "未成交"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Open"
+msgstr "未成交"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open a WalletConnect wallet or copy the pairing link."
 #~ msgstr ""
@@ -2615,7 +2647,7 @@ msgstr "提交 {0} 委托"
 msgid "Place Limit Close"
 msgstr "提交限价平仓"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Placed"
 msgstr "已提交"
 
@@ -2757,6 +2789,14 @@ msgstr "价格"
 #~ msgid "PRICE"
 #~ msgstr ""
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Price above {price}"
+msgstr "价格高于 {price}"
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Price below {price}"
+msgstr "价格低于 {price}"
+
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Price grouping"
 msgstr "价格合并"
@@ -2863,6 +2903,7 @@ msgstr "重新加载后已恢复。将于 {expiresAtLabel} 过期。"
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "只减仓"
 
@@ -2874,6 +2915,10 @@ msgstr "只减仓"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Register Builder Code"
 #~ msgstr ""
+
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Rejected"
+msgstr "已拒绝"
 
 #: src/components/trade/chart/token-selector-row.tsx
 #~ msgid "Remove {0} from favorites"
@@ -2947,7 +2992,7 @@ msgstr "风险/收益"
 msgid "RO"
 msgstr "RO"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Running"
 msgstr "运行中"
 
@@ -2965,7 +3010,8 @@ msgstr "运行时长"
 msgid "Saved phone link was invalid. Paste the link again."
 msgstr "已保存的手机链接无效。请重新粘贴链接。"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Scale"
 msgstr "分段订单"
 
@@ -3088,6 +3134,8 @@ msgstr "所选钱包与当前连接账户不一致。请重新连接钱包后重
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Sell"
@@ -3151,7 +3199,7 @@ msgstr "分离"
 msgid "Separate Accounts"
 msgstr "分账户"
 
-#: src/components/trade/tradebox/order-toast.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Set"
 msgstr "设置"
 
@@ -3188,6 +3236,7 @@ msgid "Settings"
 msgstr "设置"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
 msgstr "空"
@@ -3444,11 +3493,12 @@ msgstr "状态"
 msgid "Stocks"
 msgstr "股票"
 
-#: src/components/trade/order-entry/order-entry-panel.tsx
-#~ msgid "Stop"
-#~ msgstr "止损"
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Stop"
+msgstr "止损"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Limit"
 msgstr "止损限价"
 
@@ -3457,7 +3507,8 @@ msgstr "止损限价"
 msgid "Stop Loss"
 msgstr "止损"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Stop Market"
 msgstr "止损市价"
 
@@ -3618,6 +3669,7 @@ msgstr "同步 ID"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit"
 msgstr "止盈"
 
@@ -3625,11 +3677,13 @@ msgstr "止盈"
 msgid "Take Profit / Stop Loss"
 msgstr "止盈 / 止损"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Limit"
 msgstr "止盈限价"
 
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Take Profit Market"
 msgstr "止盈市价"
 
@@ -3941,6 +3995,7 @@ msgstr "启用统一账户后，现货与合约之间的划转不可用。"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
 msgstr "触发"
 
@@ -3953,6 +4008,10 @@ msgstr "触发价"
 #~ msgid "Trigger Price (USDC)"
 #~ msgstr ""
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Triggered"
+msgstr "已触发"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Try again"
 msgstr "重试"
@@ -3964,7 +4023,8 @@ msgstr "重试"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
-#: src/lib/trade/order-types.ts
+#: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP"
 msgstr "TWAP"
 

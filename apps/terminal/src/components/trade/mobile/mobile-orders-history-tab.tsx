@@ -1,14 +1,14 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { getSideLabel } from "@/lib/trade/open-orders";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -20,6 +20,8 @@ interface Props {
 }
 
 export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: Props) {
+	const { t } = useLingui();
+	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -97,7 +99,7 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 											nameClassName="text-sm"
 										/>
 										<span className={cn("text-2xs font-medium uppercase", isLong ? "text-success" : "text-error")}>
-											{getSideLabel(order.side, market?.kind)}
+											{getOrderSideLabel(order.side, market?.kind)}
 										</span>
 									</div>
 									<span
@@ -110,12 +112,12 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 													: "bg-surface text-fg-muted",
 										)}
 									>
-										{entry.status}
+										{getHistoricalOrderStatusLabel(entry.status)}
 									</span>
 								</div>
 
 								<div className="grid grid-cols-3 divide-x divide-stroke-weak">
-									<MetricCell label={t`Type`} value={order.orderType} />
+									<MetricCell label={t`Type`} value={getOrderTypeLabel(order.orderType)} />
 									<MetricCell label={t`Price`} value={formatUSD(order.limitPx, { compact: false })} />
 									<MetricCell label={t`Size`} value={formatToken(order.origSz, market?.szDecimals)} />
 								</div>

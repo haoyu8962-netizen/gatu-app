@@ -1,9 +1,10 @@
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatPrice, formatToken, formatUSD } from "@/lib/format";
@@ -35,6 +36,7 @@ import {
 type CancelScope = "row" | "selected" | "all";
 
 export function OrdersTab() {
+	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
 	const { setSide } = useOrderEntryActions();
@@ -314,7 +316,12 @@ function OrderRow({
 	onCancel,
 	onSelectMarket,
 }: OrderRowProps) {
+	const { t } = useLingui();
+	const { getExecutionKindLabel, getFullOrderTypeLabel, getTriggerConditionLabel, getTriggerKindLabel } =
+		useOrderDisplayLabels();
 	const typeConfig = getOrderTypeConfig(order);
+	const triggerLabel = getTriggerKindLabel(typeConfig.triggerKind);
+	const executionLabel = getExecutionKindLabel(typeConfig.executionKind);
 	const isLong = order.side === "B";
 
 	return (
@@ -344,12 +351,10 @@ function OrderRow({
 				/>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg")}>
-				<Tooltip content={typeConfig.fullLabel}>
+				<Tooltip content={getFullOrderTypeLabel(order)}>
 					<span className="inline-flex items-baseline gap-1 text-xs whitespace-nowrap">
-						{typeConfig.triggerLabel ? (
-							<span className={cn("font-medium", typeConfig.triggerClass)}>{typeConfig.triggerLabel}</span>
-						) : null}
-						<span className="text-fg">{typeConfig.executionLabel}</span>
+						{triggerLabel ? <span className={cn("font-medium", typeConfig.triggerClass)}>{triggerLabel}</span> : null}
+						<span className="text-fg">{executionLabel}</span>
 						{typeConfig.reduceOnly ? <span className="text-2xs uppercase text-fg-muted">RO</span> : null}
 					</span>
 				</Tooltip>
@@ -374,7 +379,7 @@ function OrderRow({
 				)}
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg-muted")}>
-				{order.triggerCondition || FALLBACK_VALUE_PLACEHOLDER}
+				{order.triggerCondition ? getTriggerConditionLabel(order.triggerCondition) : FALLBACK_VALUE_PLACEHOLDER}
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
 				<Button
