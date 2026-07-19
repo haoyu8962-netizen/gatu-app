@@ -18,11 +18,12 @@ export function useWalletSession() {
 	const embeddedWalletAddress = ready && authenticated ? getPrivyEmbeddedWalletAddress(user) : undefined;
 	const shouldUseEmbeddedWallet = ready && authenticated && shouldUsePrivyEmbeddedWallet(user);
 	const embeddedWalletIsActive = hasSameWalletAddress(embeddedWalletAddress, connectedWalletAddress);
-	const walletAddress = shouldUseEmbeddedWallet
-		? embeddedWalletIsActive
-			? embeddedWalletAddress
-			: undefined
-		: connectedWalletAddress;
+	const walletAddress = resolveSessionWalletAddress({
+		shouldUseEmbeddedWallet,
+		embeddedWalletIsActive,
+		embeddedWalletAddress,
+		connectedWalletAddress,
+	});
 	const hasWalletSession = ready && authenticated && !!walletAddress;
 	const agentAddress =
 		hyperliquid?.sessionMode === "agent-only" && hyperliquid.clientKey !== "disconnected"
@@ -49,6 +50,21 @@ export function useWalletSession() {
 		sessionMode,
 		hasWalletAccess: sessionMode === "wallet" && !!walletAddress,
 	};
+}
+
+function resolveSessionWalletAddress({
+	shouldUseEmbeddedWallet,
+	embeddedWalletIsActive,
+	embeddedWalletAddress,
+	connectedWalletAddress,
+}: {
+	shouldUseEmbeddedWallet: boolean;
+	embeddedWalletIsActive: boolean;
+	embeddedWalletAddress: `0x${string}` | undefined;
+	connectedWalletAddress: `0x${string}` | undefined;
+}): `0x${string}` | undefined {
+	if (!shouldUseEmbeddedWallet) return connectedWalletAddress;
+	return embeddedWalletIsActive ? embeddedWalletAddress : undefined;
 }
 
 export function useReconnectWallet() {

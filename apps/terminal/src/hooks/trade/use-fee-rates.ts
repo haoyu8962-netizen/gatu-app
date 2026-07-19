@@ -5,6 +5,7 @@ import {
 	ORDER_FEE_RATE_SPOT_TAKER,
 	ORDER_FEE_RATE_TAKER,
 } from "@/config/trade";
+import { applyReferralDiscountToFeeRate } from "@/domain/trade/fees";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 
 interface FeeRates {
@@ -35,11 +36,15 @@ export function useFeeRates(marketKind?: MarketKind): FeeRates {
 	if (!data) return defaults;
 
 	const isSpot = marketKind === "spot";
-	const takerRate = Number(isSpot ? data.userSpotCrossRate : data.userCrossRate);
-	const makerRate = Number(isSpot ? data.userSpotAddRate : data.userAddRate);
+	const referralDiscount = data.activeReferralDiscount;
+	const takerRate = applyReferralDiscountToFeeRate(
+		isSpot ? data.userSpotCrossRate : data.userCrossRate,
+		referralDiscount,
+	);
+	const makerRate = applyReferralDiscountToFeeRate(isSpot ? data.userSpotAddRate : data.userAddRate, referralDiscount);
 
 	return {
-		takerRate: Number.isFinite(takerRate) ? takerRate : defaults.takerRate,
-		makerRate: Number.isFinite(makerRate) ? makerRate : defaults.makerRate,
+		takerRate: takerRate ?? defaults.takerRate,
+		makerRate: makerRate ?? defaults.makerRate,
 	};
 }

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
 	buildSwapQuote,
+	findSpotPair,
 	getMaxSwapInput,
 	getStablecoinSwapFromTokens,
 	getStablecoinSwapToTokens,
+	getSwapSide,
 } from "@/domain/trade/swap";
 import type { SpotMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { SpotToken } from "@/lib/hyperliquid/markets";
@@ -33,6 +35,16 @@ describe("stablecoin swap markets", () => {
 		expect(getStablecoinSwapToTokens("USDH", markets).map(({ name }) => name)).toEqual(["USDC"]);
 		expect(getStablecoinSwapToTokens("AAPL", markets)).toEqual([]);
 	});
+
+	it("finds spot pairs in either token order and derives the submitted order side", () => {
+		const usdtUsdc = markets[0];
+
+		expect(findSpotPair("USDC", "USDT0", markets)).toBe(usdtUsdc);
+		expect(findSpotPair("USDT0", "USDC", markets)).toBe(usdtUsdc);
+		expect(findSpotPair("USDT0", "USDH", markets)).toBeNull();
+		expect(getSwapSide("USDC", usdtUsdc)).toBe(true);
+		expect(getSwapSide("USDT0", usdtUsdc)).toBe(false);
+	});
 });
 
 describe("swap quote", () => {
@@ -48,6 +60,7 @@ describe("swap quote", () => {
 			szDecimals: 2,
 			slippageBps: 100,
 			takerFeeRate: 0.00045,
+			builderFeeTenthsBps: 10,
 			isStablecoinSwap: true,
 		});
 
@@ -74,6 +87,7 @@ describe("swap quote", () => {
 			szDecimals: 2,
 			slippageBps: 100,
 			takerFeeRate: 0.00045,
+			builderFeeTenthsBps: 10,
 			isStablecoinSwap: true,
 		});
 
@@ -97,6 +111,7 @@ describe("swap quote", () => {
 			szDecimals: 2,
 			slippageBps: 100,
 			takerFeeRate: 0.00045,
+			builderFeeTenthsBps: 10,
 			isStablecoinSwap: true,
 		});
 
@@ -108,7 +123,7 @@ describe("swap quote", () => {
 		});
 	});
 
-	it("uses the executable ask for the limit while preserving the market reference for order sizing", () => {
+	it("uses the executable ask for both buy sizing and the slippage limit", () => {
 		const quote = buildSwapQuote({
 			amount: "10",
 			isBuying: true,
@@ -118,14 +133,65 @@ describe("swap quote", () => {
 			szDecimals: 2,
 			slippageBps: 100,
 			takerFeeRate: 0.0007,
+			builderFeeTenthsBps: 10,
 			isStablecoinSwap: false,
 		});
 
 		expect(quote).toMatchObject({
+			isBelowMinimumNotional: true,
 			isPartial: false,
 			limitPrice: "339.6226",
-			orderSize: "0.03",
+			orderSize: "0.02",
 		});
+	});
+
+	it("quotes stablecoin sells from bids with downward slippage and includes the builder fee", () => {
+		const quote = buildSwapQuote({
+			amount: "10",
+			isBuying: false,
+			bids: [
+				{ px: "1", sz: "4" },
+				{ px: "0.995", sz: "6" },
+				{ px: "0.98", sz: "20" },
+			],
+			asks: [{ px: "1.001", sz: "20" }],
+			referencePrice: "1",
+			szDecimals: 2,
+			slippageBps: 100,
+			takerFeeRate: 0.0007,
+			builderFeeTenthsBps: 10,
+			isStablecoinSwap: true,
+		});
+
+		expect(quote).toMatchObject({
+			estimatedReceive: "9.9676072",
+			feeAmount: "0.0023928",
+			filledInput: "10",
+			isPartial: false,
+			limitPrice: "0.99",
+			maxInput: "10",
+			orderSize: "10",
+			rate: "0.997",
+		});
+	});
+
+	it("keeps a maximum buy quote within balance when the best ask is above the mark price", () => {
+		const balance = "10000";
+		const amount = getMaxSwapInput(balance, true, 100, 6);
+		const quote = buildSwapQuote({
+			amount,
+			isBuying: true,
+			bids: [{ px: "0.9998", sz: "20000" }],
+			asks: [{ px: "1.0001", sz: "20000" }],
+			referencePrice: "0.9999",
+			szDecimals: 6,
+			slippageBps: 100,
+			takerFeeRate: 0.0007,
+			builderFeeTenthsBps: 10,
+			isStablecoinSwap: true,
+		});
+
+		expect(Number(quote?.maxInput)).toBeLessThanOrEqual(Number(balance));
 	});
 
 	it("reserves buy-side slippage when calculating the maximum input", () => {

@@ -83,17 +83,29 @@ describe("portfolio data", () => {
 		);
 	});
 
-	it("prefers portfolio history and otherwise combines current account sources", () => {
+	it("prefers current account sources and uses portfolio history while they are unavailable", () => {
 		const vaults = [
 			{ vaultAddress: "0x0000000000000000000000000000000000000001", equity: "25", lockedUntilTimestamp: 0 },
 		] as InfoResponse<"userVaultEquities">;
 
 		expect(calculateVaultEquity(vaults)).toBe("25");
 		expect(
-			resolveCurrentTotalEquity({ portfolioValue: "900", coreEquity: "750", vaultEquity: "25", earnBalance: "10" }),
-		).toBe("900");
-		expect(
-			resolveCurrentTotalEquity({ portfolioValue: "0", coreEquity: "750", vaultEquity: "25", earnBalance: "10" }),
+			resolveCurrentTotalEquity({
+				portfolioValue: "900",
+				coreEquity: "750",
+				vaultEquity: "25",
+				earnBalance: "10",
+				currentSourcesAvailable: true,
+			}),
 		).toBe("785");
+		expect(
+			resolveCurrentTotalEquity({
+				portfolioValue: "900",
+				coreEquity: "750",
+				vaultEquity: "25",
+				earnBalance: "10",
+				currentSourcesAvailable: false,
+			}),
+		).toBe("900");
 	});
 });

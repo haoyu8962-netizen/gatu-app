@@ -1,4 +1,4 @@
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { getPerpBalanceRows, getSpotBalanceRows, getTotalUsdValue } from "@/domain/trade/balances";
@@ -11,6 +11,7 @@ import { AssetDisplay } from "../trade/components/asset-display";
 import { MetricCell } from "../trade/mobile/metric-cell";
 
 export function PortfolioMobileBalances() {
+	const { t } = useLingui();
 	const { isConnected } = useWalletSession();
 	const { getToken } = useSpotTokens();
 	const {

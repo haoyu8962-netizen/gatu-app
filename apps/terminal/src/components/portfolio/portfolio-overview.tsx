@@ -14,6 +14,7 @@ import {
 	resolveCurrentTotalEquity,
 } from "@/domain/portfolio";
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
+import { applyReferralDiscountToFeeRate } from "@/domain/trade/fees";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -80,11 +81,18 @@ export function PortfolioOverview() {
 		perpEquity: accountSummary.perpAccountValue,
 		usesSharedQuoteBalance: accountSummary.usesSpotStateForPerps,
 	});
+	const currentEquitySourcesAvailable =
+		!balances.isLoading &&
+		!balances.hasError &&
+		vaultsQuery.data !== undefined &&
+		borrowLendQuery.data !== undefined &&
+		reserveStatesQuery.data !== undefined;
 	const totalEquity = resolveCurrentTotalEquity({
 		portfolioValue: getLatestHistoryValue(combinedSnapshot?.accountValueHistory),
 		coreEquity,
 		vaultEquity,
 		earnBalance,
+		currentSourcesAvailable: currentEquitySourcesAvailable,
 	});
 	const fourteenDayVolume = calculateFourteenDayVolume(feesQuery.data?.dailyUserVlm);
 	const pnl = getLatestHistoryValue(snapshot?.pnlHistory);
@@ -92,8 +100,15 @@ export function PortfolioOverview() {
 	const isPortfolioLoading = isConnected && !snapshot && (portfolioQuery.isPending || portfolioQuery.isFetching);
 	const isPortfolioUnavailable = isConnected && !isPortfolioLoading && (snapshot === null || perpsSnapshot === null);
 	const isFeesLoading = isConnected && !feesQuery.data && (feesQuery.isPending || feesQuery.isFetching);
-	const takerFee = feeMarket === "perps" ? feesQuery.data?.userCrossRate : feesQuery.data?.userSpotCrossRate;
-	const makerFee = feeMarket === "perps" ? feesQuery.data?.userAddRate : feesQuery.data?.userSpotAddRate;
+	const activeReferralDiscount = feesQuery.data?.activeReferralDiscount;
+	const takerFee = applyReferralDiscountToFeeRate(
+		feeMarket === "perps" ? feesQuery.data?.userCrossRate : feesQuery.data?.userSpotCrossRate,
+		activeReferralDiscount,
+	);
+	const makerFee = applyReferralDiscountToFeeRate(
+		feeMarket === "perps" ? feesQuery.data?.userAddRate : feesQuery.data?.userSpotAddRate,
+		activeReferralDiscount,
+	);
 
 	const scopeOptions = [
 		{ value: "combined", label: t`Perps + Spot + Vaults` },
@@ -193,7 +208,10 @@ export function PortfolioOverview() {
 					perpsPnlHistory={perpsSnapshot?.pnlHistory ?? []}
 					isLoading={isPortfolioLoading}
 					isUnavailable={isPortfolioUnavailable}
-					onRetry={() => void portfolioQuery.refetch()}
+					onRetry={() => {
+						void portfolioQuery.refetch();
+						void feesQuery.refetch();
+					}}
 				/>
 			</div>
 		</div>

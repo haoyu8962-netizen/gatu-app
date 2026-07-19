@@ -43,7 +43,7 @@ msgstr "1 an"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "14 Day Volume"
-msgstr ""
+msgstr "Volume sur 14 jours"
 
 #: src/components/trade/market-overview.tsx
 msgid "24h"
@@ -51,7 +51,7 @@ msgstr "24h"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "24H"
-msgstr ""
+msgstr "24 h"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "24h Change"
@@ -78,7 +78,7 @@ msgstr "30 jours"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "30D"
-msgstr ""
+msgstr "30 j"
 
 #: src/components/trade/market-overview.tsx
 msgid "7 days"
@@ -86,7 +86,7 @@ msgstr "7 jours"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "7D"
-msgstr ""
+msgstr "7 j"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
@@ -105,6 +105,10 @@ msgstr "Financement 8 h"
 #: src/config/nav.tsx
 msgid "Account"
 msgstr "Compte"
+
+#: src/components/portfolio/portfolio-page.tsx
+msgid "Account activity"
+msgstr "Activité du compte"
 
 #: src/components/trade/header/user-menu.tsx
 msgid "Account and wallet"
@@ -128,7 +132,7 @@ msgstr "Type de compte"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Account Value"
-msgstr ""
+msgstr "Valeur du compte"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Account value must be below $25M to use portfolio margin while it is in beta."
@@ -222,7 +226,7 @@ msgstr "Toutes les positions en marge croisée partagent la même marge croisée
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "All Time"
-msgstr ""
+msgstr "Depuis toujours"
 
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
@@ -305,6 +309,10 @@ msgstr "Les {balance} USDC disponibles sont inférieurs au dépôt minimum. Envo
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Available funds are in Spot"
 msgstr "Fonds disponibles en Spot"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Available order book liquidity can only fill part of this swap."
+msgstr "La liquidité disponible dans le carnet d’ordres ne permet d’exécuter qu’une partie de cet échange."
 
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -677,7 +685,7 @@ msgstr "Connectez le portefeuille pour voir le compte"
 
 #: src/components/portfolio/portfolio-page.tsx
 msgid "Connect wallet to view portfolio"
-msgstr ""
+msgstr "Connectez votre portefeuille pour afficher le portefeuille"
 
 #: src/components/trade/mobile/mobile-positions-view.tsx
 msgid "Connect wallet to view positions"
@@ -1128,7 +1136,7 @@ msgstr "Chaque position utilise uniquement sa marge allouée. Si le ratio de mar
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Earn Balance"
-msgstr ""
+msgstr "Solde Earn"
 
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
@@ -1236,7 +1244,7 @@ msgstr "P&L est. à la limite"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
-msgstr ""
+msgstr "Frais estimés"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
@@ -1258,8 +1266,12 @@ msgid "Execution"
 msgstr "Exécution"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be partially filled."
-msgstr ""
+msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds {DEFAULT_SWAP_SLIPPAGE_PERCENT}%, the swap may be partially filled."
+msgstr "L’exécution n’est pas garantie en raison du glissement du carnet d’ordres. Si le glissement dépasse {DEFAULT_SWAP_SLIPPAGE_PERCENT} %, l’échange peut être partiellement exécuté."
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#~ msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be partially filled."
+#~ msgstr ""
 
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Expand account panel"
@@ -1429,7 +1441,7 @@ msgstr "Frais"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Fees (Taker / Maker)"
-msgstr ""
+msgstr "Frais (taker / maker)"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
@@ -1584,7 +1596,7 @@ msgstr "Importation..."
 
 #: src/components/portfolio/portfolio-mobile-balances.tsx
 msgid "In Orders"
-msgstr ""
+msgstr "Dans les ordres"
 
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "In Use"
@@ -2033,7 +2045,7 @@ msgstr "Max"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Max Drawdown"
-msgstr ""
+msgstr "Baisse maximale"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max Fee Rate (%)"
@@ -2077,8 +2089,12 @@ msgid "Minimum deposit is 5 USDC"
 msgstr "Le dépôt minimum est de 5 USDC"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Minimum order value is 10 USDC after size rounding."
-msgstr ""
+msgid "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."
+msgstr "La valeur minimale de l’ordre est de {ORDER_MIN_NOTIONAL_USD} USDC après arrondi de la quantité."
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#~ msgid "Minimum order value is 10 USDC after size rounding."
+#~ msgstr ""
 
 #. placeholder {0}: ctx.minWithdraw
 #: src/lib/errors/definitions/deposit.ts
@@ -2226,8 +2242,13 @@ msgstr "Aucun paiement de financement trouvé."
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "No liquidity was available within the 1% slippage limit."
-msgstr ""
+msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
+msgstr "Aucune liquidité n’était disponible dans la limite de glissement de {DEFAULT_SWAP_SLIPPAGE_PERCENT} %."
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
+#~ msgid "No liquidity was available within the 1% slippage limit."
+#~ msgstr ""
 
 #: src/lib/errors/definitions/market.ts
 msgid "No mark price"
@@ -2580,7 +2601,7 @@ msgstr "Perps / Spot"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Perps + Spot + Vaults"
-msgstr ""
+msgstr "Perpétuels + Spot + Coffres"
 
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
@@ -2588,7 +2609,7 @@ msgstr "Compte Perp"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Perps Account Equity"
-msgstr ""
+msgstr "Fonds propres du compte de perpétuels"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Perps Equity"
@@ -2600,7 +2621,7 @@ msgstr "Aperçu Perp"
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 msgid "Perps PNL"
-msgstr ""
+msgstr "PnL des perpétuels"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Perps Withdrawable"
@@ -2687,6 +2708,14 @@ msgstr "Populaire"
 msgid "Portfolio"
 msgstr "Portefeuille"
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Portfolio history"
+msgstr "Historique du portefeuille"
+
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Portfolio history chart"
+msgstr "Graphique de l’historique du portefeuille"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Portfolio margin"
 msgstr "Marge de portefeuille"
@@ -2695,9 +2724,13 @@ msgstr "Marge de portefeuille"
 msgid "Portfolio Margin"
 msgstr "Marge de portefeuille"
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Portfolio performance"
+msgstr "Performance du portefeuille"
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Portfolio summary"
-msgstr ""
+msgstr "Résumé du portefeuille"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Value"
@@ -3231,7 +3264,6 @@ msgstr "Régler sur {p}%"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
-#: src/lib/tests/tmp-stale-t-probe.test.tsx
 msgid "Settings"
 msgstr "Paramètres"
 
@@ -3452,7 +3484,7 @@ msgstr "Compte Spot"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Spot Account Equity"
-msgstr ""
+msgstr "Fonds propres du compte spot"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Spot Available"
@@ -3553,7 +3585,7 @@ msgstr "Échec de l'échange"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Swap Stablecoins"
-msgstr ""
+msgstr "Échanger des stablecoins"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Swap submitted"
@@ -3830,11 +3862,11 @@ msgstr "Total"
 
 #: src/components/portfolio/portfolio-mobile-balances.tsx
 msgid "Total balance"
-msgstr ""
+msgstr "Solde total"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
-msgstr ""
+msgstr "Fonds propres totaux"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
@@ -4395,7 +4427,7 @@ msgstr "Vous envoyez"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "You will approximately receive"
-msgstr ""
+msgstr "Vous recevrez environ"
 
 #: src/components/trade/mobile/offline-banner.tsx
 msgid "You're offline"

@@ -1,5 +1,5 @@
 import { Button } from "@gatu/ui";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import type { PortfolioSnapshot } from "@/domain/portfolio";
 import { cn } from "@/lib/cn";
@@ -30,16 +30,17 @@ export function PortfolioPerformanceChart({
 	isUnavailable,
 	onRetry,
 }: Props) {
+	const { t } = useLingui();
 	const [metric, setMetric] = useState<ChartMetric>("pnl");
-	const history =
-		metric === "accountValue" ? accountValueHistory : metric === "perpsPnl" ? perpsPnlHistory : pnlHistory;
+	const history = selectHistory(metric, accountValueHistory, pnlHistory, perpsPnlHistory);
 	const chart = useMemo(() => buildChart(history), [history]);
 	const latestValue = history.at(-1)?.[1] ?? null;
+	const formattedLatestValue = formatLatestValue(latestValue, metric);
 
 	return (
 		<section
 			className="flex h-60 flex-col overflow-hidden rounded-12 bg-surface min-[1001px]:h-[249px]"
-			aria-label="Portfolio performance"
+			aria-label={t`Portfolio performance`}
 			aria-busy={isLoading}
 		>
 			<div className="flex min-h-10 flex-wrap items-center justify-between gap-2 border-b border-stroke-weak px-3">
@@ -55,12 +56,7 @@ export function PortfolioPerformanceChart({
 					</ChartTab>
 				</div>
 				<span className={cn("text-xs font-medium tabular-nums", Number(latestValue) < 0 ? "text-error" : "text-fg")}>
-					{latestValue === null
-						? "—"
-						: formatUSD(latestValue, {
-								compact: false,
-								signDisplay: metric === "accountValue" ? "auto" : "exceptZero",
-							})}
+					{formattedLatestValue}
 				</span>
 			</div>
 
@@ -84,10 +80,10 @@ export function PortfolioPerformanceChart({
 						viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
 						className="h-full min-h-40 w-full overflow-visible text-brand"
 						role="img"
-						aria-label="Portfolio history chart"
+						aria-label={t`Portfolio history chart`}
 						preserveAspectRatio="none"
 					>
-						<title>Portfolio history</title>
+						<title>{t`Portfolio history`}</title>
 						<line
 							x1={CHART_PADDING_X}
 							y1={chart.zeroY}
@@ -113,6 +109,25 @@ export function PortfolioPerformanceChart({
 			</div>
 		</section>
 	);
+}
+
+function selectHistory(
+	metric: ChartMetric,
+	accountValueHistory: History,
+	pnlHistory: History,
+	perpsPnlHistory: History,
+): History {
+	if (metric === "accountValue") return accountValueHistory;
+	if (metric === "perpsPnl") return perpsPnlHistory;
+	return pnlHistory;
+}
+
+function formatLatestValue(latestValue: string | null, metric: ChartMetric): string {
+	if (latestValue === null) return "—";
+	return formatUSD(latestValue, {
+		compact: false,
+		signDisplay: metric === "accountValue" ? "auto" : "exceptZero",
+	});
 }
 
 function ChartTab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {

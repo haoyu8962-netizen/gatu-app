@@ -1,5 +1,5 @@
 import { Button } from "@gatu/ui";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { Suspense } from "react";
 import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
@@ -24,6 +24,7 @@ const GlobalModals = createLazyComponent(() => import("../trade/components/globa
 const PositionsPanel = createLazyComponent(() => import("../trade/positions/positions-panel"), "PositionsPanel");
 
 export function PortfolioPage() {
+	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
 	const { hasWalletAccess, isConnected } = useWalletSession();
@@ -105,7 +106,7 @@ export function PortfolioPage() {
 
 					<PortfolioOverview />
 
-					<section className="mt-2 overflow-hidden rounded-12 bg-surface" aria-label="Account activity">
+					<section className="mt-2 overflow-hidden rounded-12 bg-surface" aria-label={t`Account activity`}>
 						{isMobile ? (
 							<MobilePositionsView
 								className="min-h-80 py-1"

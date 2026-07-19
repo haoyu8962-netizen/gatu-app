@@ -119,6 +119,22 @@ describe("selectPrivyWagmiWallet", () => {
 		).toBe("0x2222222222222222222222222222222222222222");
 	});
 
+	it("does not treat a linked smart wallet as the Privy embedded EOA", () => {
+		const smartWalletUser = {
+			email: { address: "trader@example.com" },
+			linkedAccounts: [
+				{
+					address: "0x2222222222222222222222222222222222222222",
+					chainType: "ethereum",
+					type: "smart_wallet",
+					walletClientType: "privy",
+				},
+			],
+		} as unknown as User;
+
+		expect(getPrivyEmbeddedWalletAddress(smartWalletUser)).toBeUndefined();
+	});
+
 	it("prefers the embedded wallet for email users even when an injected wallet is connected", () => {
 		const wallets = [
 			wallet("0x1111111111111111111111111111111111111111", "metamask", "injected"),

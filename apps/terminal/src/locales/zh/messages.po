@@ -106,6 +106,10 @@ msgstr "8小时资金费率"
 msgid "Account"
 msgstr "账户"
 
+#: src/components/portfolio/portfolio-page.tsx
+msgid "Account activity"
+msgstr "账户活动"
+
 #: src/components/trade/header/user-menu.tsx
 msgid "Account and wallet"
 msgstr "账户与钱包"
@@ -305,6 +309,10 @@ msgstr "可用 {balance} USDC 低于最低存款金额。请至少发送 {minimu
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Available funds are in Spot"
 msgstr "可用资金在现货账户"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Available order book liquidity can only fill part of this swap."
+msgstr "当前订单簿流动性只能成交此兑换的一部分。"
 
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -1258,8 +1266,12 @@ msgid "Execution"
 msgstr "执行"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be partially filled."
-msgstr "由于订单簿可能产生滑点，无法保证完全成交。如果滑点超过 1%，兑换可能只会部分成交。"
+msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds {DEFAULT_SWAP_SLIPPAGE_PERCENT}%, the swap may be partially filled."
+msgstr "由于订单簿滑点，无法保证完全成交。如果滑点超过 {DEFAULT_SWAP_SLIPPAGE_PERCENT}%，兑换可能只会部分成交。"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#~ msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be partially filled."
+#~ msgstr "由于订单簿可能产生滑点，无法保证完全成交。如果滑点超过 1%，兑换可能只会部分成交。"
 
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Expand account panel"
@@ -2077,8 +2089,12 @@ msgid "Minimum deposit is 5 USDC"
 msgstr "最低充值为 5 USDC"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Minimum order value is 10 USDC after size rounding."
-msgstr "数量取整后的最低订单价值必须达到 10 USDC。"
+msgid "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."
+msgstr "数量取整后，最低订单价值必须达到 {ORDER_MIN_NOTIONAL_USD} USDC。"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#~ msgid "Minimum order value is 10 USDC after size rounding."
+#~ msgstr "数量取整后的最低订单价值必须达到 10 USDC。"
 
 #. placeholder {0}: ctx.minWithdraw
 #: src/lib/errors/definitions/deposit.ts
@@ -2226,8 +2242,13 @@ msgstr "未找到资金费用记录。"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "No liquidity was available within the 1% slippage limit."
-msgstr "1% 滑点范围内没有可用流动性。"
+msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
+msgstr "{DEFAULT_SWAP_SLIPPAGE_PERCENT}% 滑点范围内没有可用流动性。"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
+#~ msgid "No liquidity was available within the 1% slippage limit."
+#~ msgstr "1% 滑点范围内没有可用流动性。"
 
 #: src/lib/errors/definitions/market.ts
 msgid "No mark price"
@@ -2687,6 +2708,14 @@ msgstr "热门"
 msgid "Portfolio"
 msgstr "投资组合"
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Portfolio history"
+msgstr "投资组合历史"
+
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Portfolio history chart"
+msgstr "投资组合历史图表"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Portfolio margin"
 msgstr "投资组合保证金"
@@ -2694,6 +2723,10 @@ msgstr "投资组合保证金"
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Portfolio Margin"
 msgstr "组合保证金"
+
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Portfolio performance"
+msgstr "投资组合表现"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Portfolio summary"
@@ -3231,7 +3264,6 @@ msgstr "设为{p}%"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
-#: src/lib/tests/tmp-stale-t-probe.test.tsx
 msgid "Settings"
 msgstr "设置"
 

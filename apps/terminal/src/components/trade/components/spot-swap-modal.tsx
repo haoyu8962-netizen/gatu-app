@@ -7,6 +7,7 @@ import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SWAP_SUCCESS_DURATION_MS } from "@/config/time";
+import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
 import { getAvailableFromTotals, getSpotBalance } from "@/domain/trade/balances";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import {
@@ -24,7 +25,7 @@ import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
-import { useExchange, useSubscription } from "@/lib/hyperliquid";
+import { useExchange, useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { useMarketsInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import { toBig } from "@/lib/trade/numbers";
 import {
@@ -38,6 +39,8 @@ import {
 import { AssetDisplay } from "./asset-display";
 import { TokenSelectorDropdown } from "./token-selector-dropdown";
 import { TradingActionButton } from "./trading-action-button";
+
+const DEFAULT_SWAP_SLIPPAGE_PERCENT = DEFAULT_SWAP_SLIPPAGE_BPS / 100;
 
 export function SpotSwapModal() {
 	const isOpen = useSwapModalOpen();
@@ -68,6 +71,7 @@ interface Props {
 function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose }: Props) {
 	const { spotMarkets } = useMarketsInfo();
 	const { spotBalances } = useDefaultDexBalances();
+	const { builderConfig } = useHyperliquid();
 	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
 	const { takerRate } = useFeeRates("spot");
 	const isStablecoinSwap = mode === "stablecoin";
@@ -125,9 +129,19 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 				szDecimals,
 				slippageBps: DEFAULT_SWAP_SLIPPAGE_BPS,
 				takerFeeRate: takerRate,
+				builderFeeTenthsBps: builderConfig?.f ?? 0,
 				isStablecoinSwap,
 			}),
-		[amount, isBuying, isStablecoinSwap, orderbook?.levels, spotMarket?.markPx, szDecimals, takerRate],
+		[
+			amount,
+			builderConfig?.f,
+			isBuying,
+			isStablecoinSwap,
+			orderbook?.levels,
+			spotMarket?.markPx,
+			szDecimals,
+			takerRate,
+		],
 	);
 	const hasPositiveAmount = toBig(amount)?.gt(0) ?? false;
 	const estimatedReceive = quote?.estimatedReceive ?? "0";
@@ -202,7 +216,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		} catch (err) {
 			const rawMessage = err instanceof Error ? err.message : t`Swap failed`;
 			const message = rawMessage.includes("could not immediately match")
-				? t`No liquidity was available within the 1% slippage limit.`
+				? t`No liquidity was available within the ${DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit.`
 				: rawMessage;
 			setError(message);
 		}
@@ -215,7 +229,8 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		hasPositiveAmount && Boolean(spotMarket) && orderbookStatus !== "error" && !orderbook && !showSuccess;
 	const orderbookFailed = hasPositiveAmount && Boolean(spotMarket) && orderbookStatus === "error" && !showSuccess;
 	const quoteUnavailable = hasPositiveAmount && Boolean(spotMarket) && Boolean(orderbook) && !quote;
-	const belowMinimumNotional = isStablecoinSwap && Boolean(quote?.isBelowMinimumNotional);
+	const belowMinimumNotional = Boolean(quote?.isBelowMinimumNotional);
+	const partialFill = Boolean(quote?.isPartial);
 	const canSubmit =
 		hasPositiveAmount &&
 		!insufficientBalance &&
@@ -330,8 +345,9 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 							</div>
 							<p className="border-t border-stroke-weak/35 pt-3 text-3xs leading-relaxed text-fg-muted">
 								<Trans>
-									Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be
-									partially filled.
+									Execution is not guaranteed due to order book slippage. If slippage exceeds{" "}
+									{DEFAULT_SWAP_SLIPPAGE_PERCENT}
+									%, the swap may be partially filled.
 								</Trans>
 							</p>
 						</>
@@ -357,7 +373,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 								<span>
 									<Trans>Slippage tolerance</Trans>
 								</span>
-								<span className="tabular-nums text-fg">{DEFAULT_SWAP_SLIPPAGE_BPS / 100}%</span>
+								<span className="tabular-nums text-fg">{DEFAULT_SWAP_SLIPPAGE_PERCENT}%</span>
 							</div>
 						</div>
 					)}
@@ -377,7 +393,16 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 						<div className="flex items-start gap-2 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft p-2.5">
 							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
 							<p className="text-xs text-warning">
-								<Trans>Minimum order value is 10 USDC after size rounding.</Trans>
+								<Trans>Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding.</Trans>
+							</p>
+						</div>
+					)}
+
+					{partialFill && !insufficientBalance && !showSuccess && (
+						<div className="flex items-start gap-2 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft p-2.5">
+							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
+							<p className="text-xs text-warning">
+								<Trans>Available order book liquidity can only fill part of this swap.</Trans>
 							</p>
 						</div>
 					)}
@@ -414,7 +439,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 						<div className="flex items-start gap-2 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft p-2.5">
 							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
 							<p className="text-xs text-warning">
-								<Trans>No liquidity was available within the 1% slippage limit.</Trans>
+								<Trans>No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit.</Trans>
 							</p>
 						</div>
 					)}
@@ -493,23 +518,15 @@ function TokenPanel({
 		>
 			<div className="flex items-center justify-between">
 				<span className={labelTypographyClass}>{label}</span>
-				{showBalance && editable ? (
-					<button
-						type="button"
-						onClick={onMaxClick}
-						disabled={disabled}
-						className="text-3xs text-fg-muted tabular-nums leading-none hover:text-fg transition-colors disabled:pointer-events-none"
-					>
-						{balanceLabel}:{" "}
-						<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-							{formatToken(balance, { decimals: 4, symbol: balanceToken })}
-						</span>
-					</button>
-				) : showBalance ? (
-					<span className="text-3xs text-fg-muted tabular-nums leading-none">
-						{`${balanceLabel}: ${formatToken(balance, { decimals: 4, symbol: balanceToken })}`}
-					</span>
-				) : null}
+				<TokenBalance
+					show={showBalance}
+					editable={editable}
+					label={balanceLabel}
+					balance={balance}
+					balanceToken={balanceToken}
+					onMaxClick={onMaxClick}
+					disabled={disabled}
+				/>
 			</div>
 
 			<div className="flex items-center gap-2">
@@ -534,5 +551,42 @@ function TokenPanel({
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function TokenBalance({
+	show,
+	editable,
+	label,
+	balance,
+	balanceToken,
+	onMaxClick,
+	disabled,
+}: {
+	show: boolean;
+	editable: boolean;
+	label: string;
+	balance: number;
+	balanceToken: string;
+	onMaxClick?: () => void;
+	disabled?: boolean;
+}) {
+	if (!show) return null;
+
+	const formattedBalance = formatToken(balance, { decimals: 4, symbol: balanceToken });
+	if (!editable) {
+		return <span className="text-3xs text-fg-muted tabular-nums leading-none">{`${label}: ${formattedBalance}`}</span>;
+	}
+
+	return (
+		<button
+			type="button"
+			onClick={onMaxClick}
+			disabled={disabled}
+			className="text-3xs text-fg-muted tabular-nums leading-none hover:text-fg transition-colors disabled:pointer-events-none"
+		>
+			{label}:{" "}
+			<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">{formattedBalance}</span>
+		</button>
 	);
 }

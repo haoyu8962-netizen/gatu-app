@@ -112,14 +112,15 @@ export function resolveCurrentTotalEquity({
 	coreEquity,
 	vaultEquity,
 	earnBalance,
+	currentSourcesAvailable,
 }: {
 	portfolioValue: string | null | undefined;
 	coreEquity: string | number;
 	vaultEquity: string | number;
 	earnBalance: string | number;
+	currentSourcesAvailable: boolean;
 }): string {
-	const historicalValue = toSafeBig(portfolioValue);
-	if (historicalValue.gt(0)) return historicalValue.toString();
+	if (!currentSourcesAvailable) return toSafeBig(portfolioValue).toString();
 
 	return toSafeBig(coreEquity).plus(toSafeBig(vaultEquity)).plus(toSafeBig(earnBalance)).toString();
 }

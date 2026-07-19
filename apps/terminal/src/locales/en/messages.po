@@ -106,6 +106,10 @@ msgstr "8h Funding"
 msgid "Account"
 msgstr "Account"
 
+#: src/components/portfolio/portfolio-page.tsx
+msgid "Account activity"
+msgstr "Account activity"
+
 #: src/components/trade/header/user-menu.tsx
 msgid "Account and wallet"
 msgstr "Account and wallet"
@@ -305,6 +309,10 @@ msgstr "Available {balance} USDC is below the minimum deposit. Send at least {mi
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Available funds are in Spot"
 msgstr "Available funds are in Spot"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Available order book liquidity can only fill part of this swap."
+msgstr "Available order book liquidity can only fill part of this swap."
 
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
@@ -1258,8 +1266,12 @@ msgid "Execution"
 msgstr "Execution"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be partially filled."
-msgstr "Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be partially filled."
+msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds {DEFAULT_SWAP_SLIPPAGE_PERCENT}%, the swap may be partially filled."
+msgstr "Execution is not guaranteed due to order book slippage. If slippage exceeds {DEFAULT_SWAP_SLIPPAGE_PERCENT}%, the swap may be partially filled."
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#~ msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be partially filled."
+#~ msgstr "Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be partially filled."
 
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Expand account panel"
@@ -2077,8 +2089,12 @@ msgid "Minimum deposit is 5 USDC"
 msgstr "Minimum deposit is 5 USDC"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "Minimum order value is 10 USDC after size rounding."
-msgstr "Minimum order value is 10 USDC after size rounding."
+msgid "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."
+msgstr "Minimum order value is {ORDER_MIN_NOTIONAL_USD} USDC after size rounding."
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#~ msgid "Minimum order value is 10 USDC after size rounding."
+#~ msgstr "Minimum order value is 10 USDC after size rounding."
 
 #. placeholder {0}: ctx.minWithdraw
 #: src/lib/errors/definitions/deposit.ts
@@ -2226,8 +2242,13 @@ msgstr "No funding payments found."
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-msgid "No liquidity was available within the 1% slippage limit."
-msgstr "No liquidity was available within the 1% slippage limit."
+msgid "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
+msgstr "No liquidity was available within the {DEFAULT_SWAP_SLIPPAGE_PERCENT}% slippage limit."
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
+#~ msgid "No liquidity was available within the 1% slippage limit."
+#~ msgstr "No liquidity was available within the 1% slippage limit."
 
 #: src/lib/errors/definitions/market.ts
 msgid "No mark price"
@@ -2687,6 +2708,14 @@ msgstr "Popular"
 msgid "Portfolio"
 msgstr "Portfolio"
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Portfolio history"
+msgstr "Portfolio history"
+
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Portfolio history chart"
+msgstr "Portfolio history chart"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Portfolio margin"
 msgstr "Portfolio margin"
@@ -2694,6 +2723,10 @@ msgstr "Portfolio margin"
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Portfolio Margin"
 msgstr "Portfolio Margin"
+
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Portfolio performance"
+msgstr "Portfolio performance"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Portfolio summary"
@@ -3231,7 +3264,6 @@ msgstr "Set to {p}%"
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
-#: src/lib/tests/tmp-stale-t-probe.test.tsx
 msgid "Settings"
 msgstr "Settings"
 

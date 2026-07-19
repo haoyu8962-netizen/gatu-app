@@ -11,7 +11,17 @@ import type { InfoResponse } from "@/lib/hyperliquid";
 const mocks = vi.hoisted(() => ({
 	portfolioData: undefined as InfoResponse<"portfolio"> | undefined,
 	portfolioError: true,
+	feesData: undefined as
+		| {
+				dailyUserVlm: [];
+				userAddRate: string;
+				userCrossRate: string;
+				userSpotAddRate: string;
+				userSpotCrossRate: string;
+		  }
+		| undefined,
 	refetchPortfolio: vi.fn(),
+	refetchFees: vi.fn(),
 }));
 
 vi.mock("@gatu/ui", () => ({
@@ -60,16 +70,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 		if (method === "userFees") {
 			return {
-				data: {
-					dailyUserVlm: [],
-					userAddRate: "0.00015",
-					userCrossRate: "0.00045",
-					userSpotAddRate: "0.0004",
-					userSpotCrossRate: "0.0007",
-				},
+				data: mocks.feesData,
 				isError: false,
 				isFetching: false,
 				isPending: false,
+				refetch: mocks.refetchFees,
 			};
 		}
 
@@ -91,7 +96,15 @@ describe("PortfolioOverview", () => {
 	beforeEach(() => {
 		mocks.portfolioData = undefined;
 		mocks.portfolioError = true;
+		mocks.feesData = {
+			dailyUserVlm: [],
+			userAddRate: "0.00015",
+			userCrossRate: "0.00045",
+			userSpotAddRate: "0.0004",
+			userSpotCrossRate: "0.0007",
+		};
 		mocks.refetchPortfolio.mockReset();
+		mocks.refetchFees.mockReset();
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -114,6 +127,14 @@ describe("PortfolioOverview", () => {
 		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
 		act(() => retry?.click());
 		expect(mocks.refetchPortfolio).toHaveBeenCalledOnce();
+		expect(mocks.refetchFees).toHaveBeenCalledOnce();
+	});
+
+	it("does not present unavailable fee rates as real zero values", () => {
+		mocks.feesData = undefined;
+		renderOverview(root);
+
+		expect(metricValue(container, "Fees (Taker / Maker)")).toBe("—");
 	});
 
 	it("keeps valid zero values visible even after a background refresh error", () => {
@@ -140,6 +161,11 @@ function renderOverview(root: Root) {
 function summaryValue(container: HTMLElement, label: string): string | null | undefined {
 	const labelElement = [...container.querySelectorAll("span")].find((element) => element.textContent === label);
 	return labelElement?.nextElementSibling?.textContent;
+}
+
+function metricValue(container: HTMLElement, label: string): string | null | undefined {
+	const labelElement = [...container.querySelectorAll("span")].find((element) => element.textContent === label);
+	return labelElement?.closest("section")?.querySelector("p")?.textContent;
 }
 
 function createZeroPortfolio(): InfoResponse<"portfolio"> {

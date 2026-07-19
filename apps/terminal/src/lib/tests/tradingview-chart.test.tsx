@@ -5,6 +5,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradingViewChart } from "@/components/trade/chart/tradingview-chart";
+import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 
 const testState = vi.hoisted(() => ({
@@ -132,6 +133,7 @@ describe("TradingViewChart", () => {
 
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+		vi.mocked(loadTradingViewScript).mockReset().mockResolvedValue(undefined);
 		testState.datafeedOptions = [];
 		testState.datafeedResets = [];
 		testState.reconnectListener = undefined;
@@ -333,6 +335,39 @@ describe("TradingViewChart", () => {
 		expect(mask?.className).toContain("opacity-0");
 		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("false");
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+	});
+
+	it("restores the stable background mask when retrying after initialization fails", async () => {
+		let keepRetryPending: (() => void) | undefined;
+		vi.mocked(loadTradingViewScript)
+			.mockRejectedValueOnce(new Error("script load failed"))
+			.mockImplementationOnce(
+				() =>
+					new Promise<void>((resolve) => {
+						keepRetryPending = resolve;
+					}),
+			);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const chart = container.firstElementChild;
+		const mask = container.querySelector("[data-chart-initializing]");
+		const retry = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		expect(mask?.className).toContain("opacity-0");
+		expect(chart?.getAttribute("aria-busy")).toBe("false");
+
+		act(() => retry?.click());
+		await act(async () => Promise.resolve());
+
+		expect(loadTradingViewScript).toHaveBeenCalledTimes(2);
+		expect(mask?.className).toContain("opacity-100");
+		expect(chart?.getAttribute("aria-busy")).toBe("true");
+
+		act(() => keepRetryPending?.());
+		await flushChartEffects();
 	});
 
 	it("changes the TradingView theme without rebuilding the iframe", async () => {

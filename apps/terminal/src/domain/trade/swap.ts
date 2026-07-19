@@ -6,6 +6,7 @@ import type { SpotToken } from "@/lib/hyperliquid/markets";
 import { toBig } from "@/lib/trade/numbers";
 
 const BPS_DIVISOR = 10_000;
+const TENTHS_OF_BPS_DIVISOR = 100_000;
 const STABLE_PAIR_FEE_SCALE = "0.2";
 
 export const DEFAULT_SWAP_SLIPPAGE_BPS = 100;
@@ -27,6 +28,7 @@ interface BuildSwapQuoteParams {
 	szDecimals: number;
 	slippageBps: number;
 	takerFeeRate: number;
+	builderFeeTenthsBps: number | string;
 	isStablecoinSwap: boolean;
 }
 
@@ -158,6 +160,7 @@ export function buildSwapQuote({
 	szDecimals,
 	slippageBps,
 	takerFeeRate,
+	builderFeeTenthsBps,
 	isStablecoinSwap,
 }: BuildSwapQuoteParams): SwapQuote | null {
 	const amountValue = toBig(amount);
@@ -173,7 +176,7 @@ export function buildSwapQuote({
 		? bestPrice.times(Big(1).plus(slippageFraction))
 		: bestPrice.times(Big(1).minus(slippageFraction));
 	const parsedReferencePrice = toBig(referencePrice);
-	const sizeReferencePrice = parsedReferencePrice?.gt(0) ? parsedReferencePrice : bestPrice;
+	const sizeReferencePrice = isBuying ? bestPrice : parsedReferencePrice?.gt(0) ? parsedReferencePrice : bestPrice;
 	const requestedSize = (isBuying ? amountValue.div(sizeReferencePrice) : amountValue).round(szDecimals, Big.roundDown);
 	if (requestedSize.lte(0)) return null;
 
@@ -199,9 +202,13 @@ export function buildSwapQuote({
 	const grossReceive = isBuying ? filledSize : quoteAmount;
 	const filledInput = isBuying ? quoteAmount : filledSize;
 	const rawFeeRate = toBig(takerFeeRate);
-	const feeRate = rawFeeRate?.gt(0)
+	const takerFeeRateValue = rawFeeRate?.gt(0)
 		? rawFeeRate.times(isStablecoinSwap ? STABLE_PAIR_FEE_SCALE : 1)
 		: grossReceive.times(0);
+	const builderFeeRate = isBuying
+		? grossReceive.times(0)
+		: (toBig(builderFeeTenthsBps)?.div(TENTHS_OF_BPS_DIVISOR) ?? grossReceive.times(0));
+	const feeRate = takerFeeRateValue.plus(builderFeeRate);
 	const feeAmount = grossReceive.times(feeRate);
 	const estimatedReceive = bigMax(grossReceive.minus(feeAmount), grossReceive.times(0));
 	const maxInput = isBuying ? requestedSize.times(limitPrice) : requestedSize;
