@@ -39,12 +39,19 @@ describe("AdaptiveModal dismissal", () => {
 		const onOpenChange = vi.fn();
 		act(() => {
 			root.render(
-				<AdaptiveModal onOpenChange={onOpenChange} open presentation="modal" showClose={false}>
+				<AdaptiveModal
+					onOpenChange={onOpenChange}
+					overlayClassName="test-modal-overlay"
+					open
+					presentation="modal"
+					showClose={false}
+				>
 					<ModalTitle>Dismissible modal</ModalTitle>
 				</AdaptiveModal>,
 			);
 		});
 
+		expect(document.querySelector(".test-modal-overlay")).not.toBeNull();
 		dispatchEscape();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
@@ -67,12 +74,19 @@ describe("AdaptiveModal dismissal", () => {
 	it("keeps drawer presentations fixed to the viewport", () => {
 		act(() => {
 			root.render(
-				<AdaptiveModal onOpenChange={vi.fn()} open presentation="drawer" showClose={false}>
+				<AdaptiveModal
+					onOpenChange={vi.fn()}
+					overlayClassName="test-drawer-overlay"
+					open
+					presentation="drawer"
+					showClose={false}
+				>
 					<ModalTitle>Mobile drawer</ModalTitle>
 				</AdaptiveModal>,
 			);
 		});
 
+		expect(document.querySelector(".test-drawer-overlay")).not.toBeNull();
 		const dialog = document.querySelector('[role="dialog"]');
 		expect(dialog).not.toBeNull();
 		expect(dialog?.classList.contains("fixed")).toBe(true);

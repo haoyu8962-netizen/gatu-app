@@ -18,7 +18,7 @@ interface Props {
 	documentationUrl: string | undefined;
 }
 
-const LINK_CLASS = "font-medium text-brand underline underline-offset-2 hover:opacity-80";
+const LINK_CLASS = "text-brand no-underline hover:text-brand/80";
 
 export function Hip3DeployerDisclaimer({ documentationUrl }: Props) {
 	const isMobile = useIsMobile();
@@ -39,23 +39,24 @@ export function Hip3DeployerDisclaimer({ documentationUrl }: Props) {
 			dismissible={false}
 			presentation={isMobile ? "drawer" : "modal"}
 			layer="blocking"
-			className="max-h-[calc(100dvh-1rem)]"
+			overlayClassName="backdrop-blur-[2px] duration-100"
+			className="max-h-[calc(100dvh-1rem)] rounded-t-16 !shadow-none min-[1000px]:max-w-[32.5rem] min-[1000px]:rounded-16"
 		>
-			<ModalHeader divider={false} className="pb-2 pr-4">
-				<ModalTitle>
+			<ModalHeader divider={false} className="px-6 pt-5 pb-2">
+				<ModalTitle className="text-base font-normal">
 					<Trans>HIP-3 Deployer Disclaimer</Trans>
 				</ModalTitle>
 			</ModalHeader>
 
-			<ModalContent className="space-y-4 pt-0">
-				<ModalDescription className="text-sm leading-relaxed">
+			<ModalContent className="space-y-3 px-6 pt-0 pb-4">
+				<ModalDescription className="text-xs leading-[15px] text-fg-muted">
 					<Trans>
 						You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These
 						markets are surfaced based on onchain activity and are not reviewed, verified, or approved.
 					</Trans>
 				</ModalDescription>
 
-				<p className="text-sm leading-relaxed text-fg-muted">
+				<p className="text-xs leading-[15px] text-fg-muted">
 					<Trans>
 						Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete
 						documentation, and increased liquidation risk. Carefully assess the risks and understand how each market
@@ -63,7 +64,7 @@ export function Hip3DeployerDisclaimer({ documentationUrl }: Props) {
 					</Trans>
 				</p>
 
-				<p className="text-sm leading-relaxed text-fg-muted">
+				<p className="text-xs leading-[15px] text-fg-muted">
 					{documentationUrl ? (
 						<Trans>
 							Review the deployer's{" "}
@@ -87,23 +88,31 @@ export function Hip3DeployerDisclaimer({ documentationUrl }: Props) {
 					)}
 				</p>
 
-				<div className="rounded-8 border border-stroke-weak bg-fill-weak p-3">
+				<div className="py-1">
 					<Checkbox
 						size="lg"
 						checked={isAcknowledged}
-						onCheckedChange={(checked: boolean | "indeterminate") => setIsAcknowledged(checked === true)}
+						onCheckedChange={setIsAcknowledged}
 						label={
-							<Trans>
-								I have read and understood this disclaimer and accept the risks of interacting with permissionless
-								markets deployed by third parties.
-							</Trans>
+							<span className="text-fg-muted">
+								<Trans>
+									I have read and understood this disclaimer and accept the risks of interacting with permissionless
+									markets deployed by third parties.
+								</Trans>
+							</span>
 						}
 					/>
 				</div>
 			</ModalContent>
 
-			<ModalFooter className="pt-0">
-				<Button type="button" size="md" className="w-full" disabled={!isAcknowledged} onClick={handleConfirm}>
+			<ModalFooter className="px-6 pt-0 pb-5">
+				<Button
+					type="button"
+					size="md"
+					className="h-10 w-full py-0 text-xs font-normal !shadow-none data-disabled:cursor-default data-disabled:bg-brand/30 data-disabled:text-fg-inverse/60"
+					disabled={!isAcknowledged}
+					onClick={handleConfirm}
+				>
 					<Trans>Confirm</Trans>
 				</Button>
 			</ModalFooter>

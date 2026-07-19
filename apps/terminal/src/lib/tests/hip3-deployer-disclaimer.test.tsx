@@ -34,16 +34,20 @@ vi.mock("@/stores/use-hip3-disclaimer-store", () => ({
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
 		children,
+		className,
 		dismissible,
 		layer,
 		open,
+		overlayClassName,
 		presentation,
 		showClose,
 	}: {
 		children: ReactNode;
+		className?: string;
 		dismissible: boolean;
 		layer: string;
 		open: boolean;
+		overlayClassName?: string;
 		presentation: string;
 		showClose: boolean;
 	}) =>
@@ -53,15 +57,26 @@ vi.mock("@gatu/ui", () => ({
 					{
 						"data-dismissible": String(dismissible),
 						"data-layer": layer,
+						"data-overlay-class": overlayClassName,
 						"data-presentation": presentation,
 						"data-show-close": String(showClose),
+						className,
 						role: "dialog",
 					},
 					children,
 				)
 			: null,
-	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) =>
-		createElement("button", { disabled, onClick, type: "button" }, children),
+	Button: ({
+		children,
+		className,
+		disabled,
+		onClick,
+	}: {
+		children: ReactNode;
+		className?: string;
+		disabled?: boolean;
+		onClick?: () => void;
+	}) => createElement("button", { className, disabled, onClick, type: "button" }, children),
 	Checkbox: ({
 		checked,
 		label,
@@ -81,11 +96,16 @@ vi.mock("@gatu/ui", () => ({
 			}),
 			label,
 		),
-	ModalContent: ({ children }: { children: ReactNode }) => renderChildren(children),
-	ModalDescription: ({ children }: { children: ReactNode }) => createElement("p", null, children),
-	ModalFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
-	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
-	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
+	ModalContent: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("div", { className, "data-slot": "content" }, children),
+	ModalDescription: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("p", { className }, children),
+	ModalFooter: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("footer", { className }, children),
+	ModalHeader: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("header", { className }, children),
+	ModalTitle: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("h2", { className }, children),
 }));
 
 function getConfirmButton(container: HTMLElement): HTMLButtonElement {
@@ -128,7 +148,12 @@ describe("Hip3DeployerDisclaimer", () => {
 		expect(dialog?.getAttribute("data-layer")).toBe("blocking");
 		expect(dialog?.getAttribute("data-show-close")).toBe("false");
 		expect(dialog?.getAttribute("data-presentation")).toBe("modal");
+		expect(dialog?.getAttribute("data-overlay-class")).toContain("backdrop-blur-[2px]");
+		expect(dialog?.classList.contains("!shadow-none")).toBe(true);
+		expect(container.querySelector("h2")?.classList.contains("font-normal")).toBe(true);
+		expect(container.querySelector('[data-slot="content"]')?.classList.contains("space-y-3")).toBe(true);
 		expect(getConfirmButton(container).disabled).toBe(true);
+		expect(getConfirmButton(container).classList.contains("h-10")).toBe(true);
 		expect(
 			container.querySelector('a[href="https://docs.trade.xyz/consolidated-resources/specification-index"]'),
 		).not.toBeNull();

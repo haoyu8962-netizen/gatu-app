@@ -51,15 +51,17 @@ interface ModalPopupProps
 		VariantProps<typeof modalPopupVariants> {
 	showClose?: boolean;
 	layer?: "default" | "blocking";
+	overlayClassName?: string;
 }
 
 const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
-	({ className, size, showClose = true, layer = "default", children, ...props }, ref) => (
+	({ className, size, showClose = true, layer = "default", overlayClassName, children, ...props }, ref) => (
 		<Dialog.Portal>
 			<Dialog.Backdrop
 				className={cn(
 					"fixed inset-0 bg-scrim backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0",
 					layer === "blocking" ? "z-[var(--z-blocking-overlay)]" : "z-40",
+					overlayClassName,
 				)}
 			/>
 			<div
@@ -160,6 +162,7 @@ interface AdaptiveModalProps {
 	dismissible?: boolean;
 	presentation?: "auto" | "modal" | "drawer";
 	layer?: "default" | "blocking";
+	overlayClassName?: string;
 	children: React.ReactNode;
 	className?: string;
 }
@@ -172,6 +175,7 @@ function AdaptiveModal({
 	dismissible = true,
 	presentation = "auto",
 	layer = "default",
+	overlayClassName,
 	children,
 	className,
 }: AdaptiveModalProps) {
@@ -190,7 +194,7 @@ function AdaptiveModal({
 		return (
 			<Drawer side="bottom" open={open} onOpenChange={handleOpenChange} disablePointerDismissal={!dismissible}>
 				<DrawerContent
-					overlayClassName={layer === "blocking" ? "z-[var(--z-blocking-overlay)]" : undefined}
+					overlayClassName={cn(layer === "blocking" && "z-[var(--z-blocking-overlay)]", overlayClassName)}
 					className={cn(
 						"pb-[env(safe-area-inset-bottom)]",
 						layer === "blocking" && "z-[var(--z-blocking-overlay)]",
@@ -226,7 +230,13 @@ function AdaptiveModal({
 
 	return (
 		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={!dismissible}>
-			<ModalPopup size={size} showClose={showClose} layer={layer} className={className}>
+			<ModalPopup
+				size={size}
+				showClose={showClose}
+				layer={layer}
+				overlayClassName={overlayClassName}
+				className={className}
+			>
 				{children}
 			</ModalPopup>
 		</Modal>
