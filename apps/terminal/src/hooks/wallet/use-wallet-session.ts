@@ -5,6 +5,7 @@ import { useConnection } from "wagmi";
 import { clearActiveAgentOwner, useHyperliquid, useHyperliquidOptional } from "@/lib/hyperliquid";
 import {
 	getPrivyEmbeddedWalletAddress,
+	hasSameWalletAddress,
 	selectPrivyWagmiWallet,
 	shouldUsePrivyEmbeddedWallet,
 } from "@/lib/wallet/privy-wagmi";
@@ -16,7 +17,12 @@ export function useWalletSession() {
 
 	const embeddedWalletAddress = ready && authenticated ? getPrivyEmbeddedWalletAddress(user) : undefined;
 	const shouldUseEmbeddedWallet = ready && authenticated && shouldUsePrivyEmbeddedWallet(user);
-	const walletAddress = shouldUseEmbeddedWallet ? embeddedWalletAddress : connectedWalletAddress;
+	const embeddedWalletIsActive = hasSameWalletAddress(embeddedWalletAddress, connectedWalletAddress);
+	const walletAddress = shouldUseEmbeddedWallet
+		? embeddedWalletIsActive
+			? embeddedWalletAddress
+			: undefined
+		: connectedWalletAddress;
 	const hasWalletSession = ready && authenticated && !!walletAddress;
 	const agentAddress =
 		hyperliquid?.sessionMode === "agent-only" && hyperliquid.clientKey !== "disconnected"

@@ -3,12 +3,13 @@ import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 
 type DepositTab = "deposit" | "withdraw" | "bridge";
 export type TransferDirection = "toSpot" | "toPerp";
+export type SwapMode = "spot" | "stablecoin";
 
 type GlobalModal =
 	| { type: "deposit"; tab: DepositTab }
 	| { type: "internalTransfer"; direction: TransferDirection }
 	| { type: "settings" }
-	| { type: "swap"; fromToken: string; toToken?: string }
+	| { type: "swap"; fromToken: string; toToken?: string; mode: SwapMode }
 	| { type: "commandMenu" }
 	| null;
 
@@ -30,6 +31,7 @@ interface SettingsActions {
 
 interface SwapActions {
 	open: (fromToken?: string, toToken?: string) => void;
+	openStablecoins: () => void;
 	close: () => void;
 }
 
@@ -66,7 +68,9 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 			close,
 		},
 		swapActions: {
-			open: (fromToken = DEFAULT_QUOTE_TOKEN, toToken) => set({ modal: { type: "swap", fromToken, toToken } }),
+			open: (fromToken = DEFAULT_QUOTE_TOKEN, toToken) =>
+				set({ modal: { type: "swap", fromToken, toToken, mode: "spot" } }),
+			openStablecoins: () => set({ modal: { type: "swap", fromToken: DEFAULT_QUOTE_TOKEN, mode: "stablecoin" } }),
 			close,
 		},
 		commandMenuActions: {
@@ -115,6 +119,9 @@ export function useSwapModalFromToken() {
 }
 export function useSwapModalToToken() {
 	return useGlobalModalStore((s) => (s.modal?.type === "swap" ? s.modal.toToken : undefined));
+}
+export function useSwapModalMode() {
+	return useGlobalModalStore((s) => (s.modal?.type === "swap" ? s.modal.mode : "spot"));
 }
 export function useSwapModalActions() {
 	return useGlobalModalStore((s) => s.swapActions);

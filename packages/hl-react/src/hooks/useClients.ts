@@ -1,9 +1,10 @@
 import type { ExchangeClient, InfoClient, SubscriptionClient } from "@nktkas/hyperliquid";
+import { useMemo } from "react";
 import { useWalletClient } from "wagmi";
 import { createExchangeClient, getTradingClient } from "../clients";
 import { useHyperliquid } from "../provider";
 import { useAgentWallet } from "../signing/use-agent-wallet";
-import { toHyperliquidWallet } from "../wallet";
+import { toHyperliquidWallet, walletClientMatchesAddress } from "../wallet";
 
 export interface HyperliquidClients {
 	info: InfoClient;
@@ -12,6 +13,7 @@ export interface HyperliquidClients {
 	trading: ExchangeClient | null;
 	/** Exchange client using user wallet - for EIP-712/user-signed actions such as approvals, transfers, and withdrawals. */
 	user: ExchangeClient | null;
+	userWalletMismatch: boolean;
 }
 
 export function useHyperliquidClients(): HyperliquidClients {
@@ -26,17 +28,21 @@ export function useHyperliquidClients(): HyperliquidClients {
 		return getTradingClient(signer, isTestnet);
 	})();
 
-	const user = (() => {
+	const userWalletMismatch =
+		sessionMode === "wallet" && !!walletClient && !!address && !walletClientMatchesAddress(walletClient, address);
+	const user = useMemo(() => {
 		if (sessionMode !== "wallet" || !walletClient || !address) return null;
+		if (!walletClientMatchesAddress(walletClient, address)) return null;
 		const wallet = toHyperliquidWallet(walletClient, address);
 		if (!wallet) return null;
-		return createExchangeClient(wallet, isTestnet, `user:${isTestnet}:${address.toLowerCase()}`);
-	})();
+		return createExchangeClient(wallet, isTestnet);
+	}, [address, isTestnet, sessionMode, walletClient]);
 
 	return {
 		info,
 		subscription,
 		trading,
 		user,
+		userWalletMismatch,
 	};
 }

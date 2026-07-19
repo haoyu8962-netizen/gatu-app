@@ -29,6 +29,7 @@ export function TopNav() {
 	const tradeHomePath = useTradeHomePath();
 
 	const tradeActive = isTradeRoutePath(pathname);
+	const portfolioActive = pathname === "/portfolio";
 	const moreActive = ["/docs", "/support", "/terms", "/privacy"].includes(pathname);
 	const moreItems = [
 		{
@@ -87,6 +88,16 @@ export function TopNav() {
 							)}
 						>
 							<Trans>Trade</Trans>
+						</Link>
+						<Link
+							to="/portfolio"
+							aria-current={portfolioActive ? "page" : undefined}
+							className={cn(
+								"rounded-8 px-2.5 py-1 transition-colors",
+								portfolioActive ? "font-medium text-brand" : "text-fg-muted hover:text-fg",
+							)}
+						>
+							<Trans>Portfolio</Trans>
 						</Link>
 						<Dropdown
 							align="start"

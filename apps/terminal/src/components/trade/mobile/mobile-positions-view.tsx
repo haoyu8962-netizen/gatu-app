@@ -1,8 +1,9 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
-import { Suspense, useEffect, useState, useTransition } from "react";
+import { type ReactNode, Suspense, useEffect, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { HL_ALL_DEXS } from "@/config/app";
 import { MOBILE_POSITIONS_TABS, type MobilePositionsTabValue } from "@/config/trade";
@@ -20,21 +21,33 @@ import { MobileOrdersTab } from "./mobile-orders-tab";
 import { MobilePositionsTab } from "./mobile-positions-tab";
 import { MobileTwapTab } from "./mobile-twap-tab";
 
-type TabValue = MobilePositionsTabValue;
+type TabValue = MobilePositionsTabValue | "balances";
 export type MobileDataScrollMode = "contained" | "page";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 const MOBILE_POSITIONS_TAB_VALUES = new Set<string>(MOBILE_POSITIONS_TABS.map((tab) => tab.value));
+const BALANCES_TAB = { value: "balances", label: msg`Balances` } as const;
 
 interface Props {
 	className?: string;
 	scrollMode?: MobileDataScrollMode;
+	includeBottomNavSpacer?: boolean;
+	balancesContent?: ReactNode;
+	emptyDescription?: ReactNode;
 }
 
-export function MobilePositionsView({ className, scrollMode = "contained" }: Props) {
+export function MobilePositionsView({
+	className,
+	scrollMode = "contained",
+	includeBottomNavSpacer = true,
+	balancesContent,
+	emptyDescription,
+}: Props) {
 	const { _ } = useLingui();
 	const storedActiveTab = usePositionsActiveTab();
-	const activeTab = resolveMobilePositionsTab(storedActiveTab);
+	const hasBalancesTab = balancesContent != null;
+	const activeTab = resolveMobilePositionsTab(storedActiveTab, hasBalancesTab);
+	const tabs = hasBalancesTab ? [BALANCES_TAB, ...MOBILE_POSITIONS_TABS] : MOBILE_POSITIONS_TABS;
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useWalletSession();
@@ -64,7 +77,7 @@ export function MobilePositionsView({ className, scrollMode = "contained" }: Pro
 	const ordersCount = isConnected ? (openOrders?.length ?? 0) : 0;
 
 	function handleTabChange(value: string) {
-		startTransition(() => setPositionsActiveTab(resolveMobilePositionsTab(value)));
+		startTransition(() => setPositionsActiveTab(resolveMobilePositionsTab(value, hasBalancesTab)));
 	}
 
 	function getTabCount(tabValue: TabValue): number | null {
@@ -99,7 +112,7 @@ export function MobilePositionsView({ className, scrollMode = "contained" }: Pro
 			>
 				<div className="shrink-0 min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 					<TabsList className="w-full min-w-max justify-between px-1">
-						{MOBILE_POSITIONS_TABS.map((tab) => {
+						{tabs.map((tab) => {
 							const count = getTabCount(tab.value);
 							const loading = isTabLoading(tab.value);
 
@@ -117,9 +130,14 @@ export function MobilePositionsView({ className, scrollMode = "contained" }: Pro
 					</TabsList>
 				</div>
 				{!isConnected ? (
-					<EmptyState />
+					<EmptyState description={emptyDescription} />
 				) : (
 					<>
+						{balancesContent != null ? (
+							<TabsContent value="balances" className={tabContentClass}>
+								{balancesContent}
+							</TabsContent>
+						) : null}
 						<TabsContent value="positions" className={tabContentClass}>
 							<MobilePositionsTab scrollMode={scrollMode} />
 						</TabsContent>
@@ -140,17 +158,18 @@ export function MobilePositionsView({ className, scrollMode = "contained" }: Pro
 						</TabsContent>
 					</>
 				)}
-				<MobileBottomNavSpacer />
+				{includeBottomNavSpacer ? <MobileBottomNavSpacer /> : null}
 			</Tabs>
 		</div>
 	);
 }
 
-function resolveMobilePositionsTab(value: string): TabValue {
+function resolveMobilePositionsTab(value: string, hasBalancesTab: boolean): TabValue {
+	if (hasBalancesTab && value === "balances") return "balances";
 	return MOBILE_POSITIONS_TAB_VALUES.has(value) ? (value as TabValue) : "positions";
 }
 
-function EmptyState() {
+function EmptyState({ description }: { description?: ReactNode }) {
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 
 	return (
@@ -160,7 +179,7 @@ function EmptyState() {
 					<WalletIcon className="size-5 text-fg-muted" />
 				</div>
 				<p className="text-xs text-fg-muted max-w-xs text-pretty">
-					<Trans>Connect wallet to view positions</Trans>
+					{description ?? <Trans>Connect wallet to view positions</Trans>}
 				</p>
 				<Button variant="outline" intent="brand" size="sm" onClick={() => setWalletModalOpen(true)}>
 					<Trans>Connect Wallet</Trans>

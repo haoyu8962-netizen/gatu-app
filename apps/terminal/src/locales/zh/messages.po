@@ -41,13 +41,17 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
 msgid "1 year"
 msgstr "1 年"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "14 Day Volume"
+msgstr "14 日交易量"
+
 #: src/components/trade/market-overview.tsx
 msgid "24h"
 msgstr "24h"
 
-#: src/components/trade/market-overview.tsx
-#~ msgid "24H"
-#~ msgstr ""
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "24H"
+msgstr "24 小时"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "24h Change"
@@ -72,8 +76,16 @@ msgstr "24H VOL"
 msgid "30 days"
 msgstr "30 天"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "30D"
+msgstr "30 天"
+
 #: src/components/trade/market-overview.tsx
 msgid "7 days"
+msgstr "7 天"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "7D"
 msgstr "7 天"
 
 #: src/components/trade/chart/token-selector-content.tsx
@@ -113,6 +125,10 @@ msgstr "账户模式已更新"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Account type"
 msgstr "账户类型"
+
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Account Value"
+msgstr "账户价值"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Account value must be below $25M to use portfolio margin while it is in beta."
@@ -204,6 +220,10 @@ msgstr "所有全仓仓位共用同一笔全仓保证金作为抵押。一旦发
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr ""
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "All Time"
+msgstr "全部时间"
+
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
 msgstr "ALO（仅添加流动性）"
@@ -263,6 +283,9 @@ msgstr "资产"
 msgid "Automatic USDC deposit failed"
 msgstr "USDC 自动存款失败"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -322,6 +345,7 @@ msgstr "可用于交易的余额"
 #~ msgid "Balance:"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "余额"
@@ -408,6 +432,7 @@ msgstr "构建者费用"
 #~ msgid "buy"
 #~ msgstr "买入"
 
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -643,6 +668,10 @@ msgstr "连接钱包"
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect wallet to view account"
 msgstr "连接钱包查看账户"
+
+#: src/components/portfolio/portfolio-page.tsx
+msgid "Connect wallet to view portfolio"
+msgstr "连接钱包以查看投资组合"
 
 #: src/components/trade/mobile/mobile-positions-view.tsx
 msgid "Connect wallet to view positions"
@@ -917,6 +946,7 @@ msgstr "默认"
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -1090,6 +1120,10 @@ msgstr "完成"
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
 msgstr "每个仓位仅使用其分配的保证金。若保证金率达到 100%，该仓位将被强制平仓。保证金可单独增减。"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Earn Balance"
+msgstr "理财余额"
+
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "编辑 TP/SL"
@@ -1194,6 +1228,10 @@ msgstr "限价预估盈亏"
 #~ msgid "Est. time"
 #~ msgstr ""
 
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Estimated fee"
+msgstr "预估费用"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -1212,6 +1250,10 @@ msgstr "已执行"
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 msgid "Execution"
 msgstr "执行"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be partially filled."
+msgstr "由于订单簿可能产生滑点，无法保证完全成交。如果滑点超过 1%，兑换可能只会部分成交。"
 
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Expand account panel"
@@ -1273,6 +1315,7 @@ msgstr "启用交易失败"
 msgid "Failed to load balances"
 msgstr "加载余额失败"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1298,6 +1341,7 @@ msgstr "加载市场分类失败。"
 msgid "Failed to load open orders."
 msgstr "加载未成交订单失败。"
 
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -1376,6 +1420,10 @@ msgstr "手续费"
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Fees"
 msgstr "费用"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Fees (Taker / Maker)"
+msgstr "手续费（吃单 / 挂单）"
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
@@ -1527,9 +1575,9 @@ msgstr "重要：此地址只能接收 Arbitrum 网络的原生 USDC。请勿发
 msgid "Importing..."
 msgstr "导入中…"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "In Orders"
-#~ msgstr ""
+#: src/components/portfolio/portfolio-mobile-balances.tsx
+msgid "In Orders"
+msgstr "挂单占用"
 
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "In Use"
@@ -1707,6 +1755,7 @@ msgstr "加载中"
 msgid "Loading balances across all chains..."
 msgstr "正在加载所有链上的余额…"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Loading balances..."
 msgstr "加载余额中..."
@@ -1743,6 +1792,7 @@ msgstr "加载 TWAP 订单中..."
 msgid "Loading wallet..."
 msgstr "加载钱包中..."
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1934,6 +1984,7 @@ msgstr "市场"
 #~ msgid "Master"
 #~ msgstr ""
 
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 msgid "Max"
@@ -1950,6 +2001,10 @@ msgstr "最大"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max 0.1% (10 bps) for perps, 1% (100 bps) for spot. Enter as decimal (e.g., 0.01 for 1 basis point)."
 #~ msgstr ""
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Max Drawdown"
+msgstr "最大回撤"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max Fee Rate (%)"
@@ -1991,6 +2046,10 @@ msgstr "最低充值为 {0} USDC"
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Minimum deposit is 5 USDC"
 msgstr "最低充值为 5 USDC"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Minimum order value is 10 USDC after size rounding."
+msgstr "数量取整后的最低订单价值必须达到 10 USDC。"
 
 #. placeholder {0}: ctx.minWithdraw
 #: src/lib/errors/definitions/deposit.ts
@@ -2117,6 +2176,7 @@ msgstr "Hyperliquid 上无余额，请先充值。"
 msgid "No balances found"
 msgstr "未找到余额"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "未找到余额。存入资金开始交易。"
@@ -2134,6 +2194,11 @@ msgstr "未找到成交记录。"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "No funding payments found."
 msgstr "未找到资金费用记录。"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "No liquidity was available within the 1% slippage limit."
+msgstr "1% 滑点范围内没有可用流动性。"
 
 #: src/lib/errors/definitions/market.ts
 msgid "No mark price"
@@ -2466,10 +2531,13 @@ msgstr "永续"
 msgid "Perpetuals"
 msgstr "永续合约"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Perps"
-#~ msgstr "永续合约"
+#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/portfolio/portfolio-overview.tsx
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Perps"
+msgstr "永续合约"
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -2477,9 +2545,17 @@ msgstr "永续合约"
 msgid "Perps / Spot"
 msgstr "合约 / 现货"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Perps + Spot + Vaults"
+msgstr "合约 + 现货 + 金库"
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
 msgstr "合约账户"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Perps Account Equity"
+msgstr "合约账户权益"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Perps Equity"
@@ -2488,6 +2564,10 @@ msgstr "永续权益"
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
 msgstr "合约概览"
+
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Perps PNL"
+msgstr "合约盈亏"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Perps Withdrawable"
@@ -2551,6 +2631,8 @@ msgstr "平台"
 #~ msgid "Please wait while Privy creates your embedded wallet."
 #~ msgstr "请稍候，Privy 正在创建你的内嵌钱包。"
 
+#: src/components/portfolio/portfolio-overview.tsx
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -2565,8 +2647,10 @@ msgstr "盈亏"
 msgid "Popular"
 msgstr "热门"
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/config/nav.tsx
 msgid "Portfolio"
 msgstr "投资组合"
 
@@ -2577,6 +2661,10 @@ msgstr "投资组合保证金"
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Portfolio Margin"
 msgstr "组合保证金"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Portfolio summary"
+msgstr "投资组合摘要"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Value"
@@ -2996,6 +3084,7 @@ msgstr "所选钱包与当前连接账户不一致。请重新连接钱包后重
 #~ msgid "sell"
 #~ msgstr "卖出"
 
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -3294,6 +3383,8 @@ msgstr "来源"
 #~ msgid "spot"
 #~ msgstr "现货"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/portfolio/portfolio-overview.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
@@ -3306,6 +3397,10 @@ msgstr "现货"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Spot Account"
 msgstr "现货账户"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Spot Account Equity"
+msgstr "现货账户权益"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Spot Available"
@@ -3400,6 +3495,11 @@ msgstr "兑换方向"
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Swap failed"
 msgstr "兑换失败"
+
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Swap Stablecoins"
+msgstr "稳定币兑换"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Swap submitted"
@@ -3662,6 +3762,7 @@ msgstr "切换数量模式"
 #~ msgid "TOKEN"
 #~ msgstr "TOKEN"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -3669,6 +3770,14 @@ msgstr "切换数量模式"
 #: src/config/ui-text.ts
 msgid "Total"
 msgstr "合计"
+
+#: src/components/portfolio/portfolio-mobile-balances.tsx
+msgid "Total balance"
+msgstr "总余额"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Total Equity"
+msgstr "总权益"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
@@ -3982,6 +4091,7 @@ msgstr "已更新"
 msgid "Updated live"
 msgstr "实时更新"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "美元价值"
@@ -4034,6 +4144,7 @@ msgstr "在区块浏览器中查看"
 msgid "VOL"
 msgstr "成交量"
 
+#: src/components/portfolio/portfolio-overview.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Volume"
 msgstr "成交量"
@@ -4054,6 +4165,7 @@ msgstr "等待链上确认"
 #~ msgid "Waiting for native USDC to arrive on Arbitrum."
 #~ msgstr "正在等待 Arbitrum 原生 USDC 到账。"
 
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -4154,6 +4266,7 @@ msgstr "将在{0}后到账"
 #~ msgid "will arrive in ~5 min"
 #~ msgstr ""
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -4216,6 +4329,10 @@ msgstr "您将收到"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "You send"
 msgstr "您将发送"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "You will approximately receive"
+msgstr "预计收到"
 
 #: src/components/trade/mobile/offline-banner.tsx
 msgid "You're offline"

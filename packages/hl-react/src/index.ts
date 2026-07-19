@@ -25,7 +25,13 @@ export {
 	initializeClients,
 	subscribeWsReconnect,
 } from "./clients";
-export { assertExchange, MissingTransportError, MissingWalletError, ProviderNotFoundError } from "./errors";
+export {
+	assertExchange,
+	MissingTransportError,
+	MissingWalletError,
+	ProviderNotFoundError,
+	WalletAccountMismatchError,
+} from "./errors";
 export { getExplorerTokenUrl, getExplorerTxUrl } from "./explorer";
 export { type ApiStatus, type ApiStatusResult, useApiStatus } from "./hooks/useApiStatus";
 export { type HyperliquidClients, useHyperliquidClients } from "./hooks/useClients";

@@ -1,5 +1,7 @@
+// @vitest-environment jsdom
+
 import type { ConnectedWallet, User } from "@privy-io/react-auth";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
 	getPrivyEmailAddress,
 	getPrivyEmbeddedWalletAddress,
@@ -81,6 +83,10 @@ function externalWalletUserWithLinkedEmail({
 }
 
 describe("selectPrivyWagmiWallet", () => {
+	beforeEach(() => {
+		window.localStorage.clear();
+	});
+
 	it("selects the wallet matching the Privy user wallet address", () => {
 		const wallets = [
 			wallet("0x1111111111111111111111111111111111111111"),
@@ -144,7 +150,36 @@ describe("selectPrivyWagmiWallet", () => {
 		).toBe(wallets[0]);
 	});
 
-	it("falls back to the first wallet when the user wallet is not connected", () => {
+	it("prefers the exact embedded wallet when the latest login used email", () => {
+		window.localStorage.setItem("privy:test-app:recent-login-method", "email");
+		const wallets = [
+			wallet("0x1111111111111111111111111111111111111111", "metamask", "injected"),
+			wallet("0x2222222222222222222222222222222222222222", "privy", "embedded"),
+		];
+
+		expect(
+			selectPrivyWagmiWallet({
+				wallets,
+				user: externalWalletUserWithLinkedEmail({
+					walletAddress: "0x1111111111111111111111111111111111111111",
+					embeddedAddress: "0x2222222222222222222222222222222222222222",
+				}),
+			}),
+		).toBe(wallets[1]);
+	});
+
+	it("does not substitute another embedded wallet for the expected address", () => {
+		const wallets = [wallet("0x3333333333333333333333333333333333333333", "privy", "embedded")];
+
+		expect(
+			selectPrivyWagmiWallet({
+				wallets,
+				user: emailUser({ embeddedAddress: "0x2222222222222222222222222222222222222222" }),
+			}),
+		).toBeUndefined();
+	});
+
+	it("does not fall back to another wallet when the user wallet is not connected", () => {
 		const wallets = [
 			wallet("0x1111111111111111111111111111111111111111"),
 			wallet("0x2222222222222222222222222222222222222222"),
@@ -155,6 +190,6 @@ describe("selectPrivyWagmiWallet", () => {
 				wallets,
 				user: user("0x3333333333333333333333333333333333333333"),
 			}),
-		).toBe(wallets[0]);
+		).toBeUndefined();
 	});
 });

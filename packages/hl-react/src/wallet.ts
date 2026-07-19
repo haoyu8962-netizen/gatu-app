@@ -29,13 +29,25 @@ function isWalletClientLike(value: unknown): value is WalletClientLike {
 	return "signTypedData" in value && typeof (value as WalletClientLike).signTypedData === "function";
 }
 
+function normalizeAddress(address: string | null | undefined): string | null {
+	return address?.toLowerCase() ?? null;
+}
+
+export function walletClientMatchesAddress(walletClient: unknown, expectedAddress: string): boolean {
+	if (!isWalletClientLike(walletClient)) return false;
+	const walletAddress = normalizeAddress(walletClient.account?.address);
+	const expected = normalizeAddress(expectedAddress);
+	return !!walletAddress && !!expected && walletAddress === expected;
+}
+
 export function toHyperliquidWallet(
 	walletClient: unknown,
-	accountOverride?: `0x${string}` | null,
+	expectedAddress?: `0x${string}` | null,
 ): AbstractWallet | null {
 	if (isFullWalletClient(walletClient)) {
 		const client = walletClient;
-		const account = accountOverride ?? client.account?.address;
+		if (expectedAddress && !walletClientMatchesAddress(client, expectedAddress)) return null;
+		const account = client.account?.address;
 		if (!account) return null;
 		return {
 			signTypedData: async (params: SignTypedDataParams) => {
@@ -55,7 +67,8 @@ export function toHyperliquidWallet(
 	if (!isWalletClientLike(walletClient)) return null;
 
 	const client = walletClient;
-	const accountAddress = accountOverride ?? client.account?.address;
+	if (expectedAddress && !walletClientMatchesAddress(client, expectedAddress)) return null;
+	const accountAddress = client.account?.address;
 
 	if (!accountAddress) return null;
 

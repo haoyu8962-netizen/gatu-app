@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	addSpotMarketPriceAliases,
 	getAccountBalanceSummary,
+	getAvailableFromTotals,
 	getPerpBalanceRows,
 	getSpotAvailable,
 	getSpotAvailableValue,
@@ -46,6 +47,11 @@ describe("trade balances", () => {
 	it("falls back to total minus hold for older spot payloads", () => {
 		expect(getSpotAvailableValue(usdcBalance)).toBe("4964.51352969");
 		expect(getSpotAvailable(usdcBalance)).toBeCloseTo(4964.51352969);
+	});
+
+	it("uses settled balance rather than maintenance buying power for spendable funds", () => {
+		expect(getAvailableFromTotals("41.17419", "41.17419")).toBe(0);
+		expect(getAvailableFromTotals("41.17419", "21.17419")).toBe(20);
 	});
 
 	it("uses maintenance-adjusted available values in balance rows", () => {

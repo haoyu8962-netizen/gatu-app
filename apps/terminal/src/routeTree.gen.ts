@@ -14,6 +14,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SpotRouteImport } from './routes/spot'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PerpRouteImport } from './routes/perp'
 import { Route as MobileAgentSyncRouteImport } from './routes/mobile-agent-sync'
 import { Route as DocsRouteImport } from './routes/docs'
@@ -49,6 +50,11 @@ const SpotRoute = SpotRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortfolioRoute = PortfolioRouteImport.update({
+  id: '/portfolio',
+  path: '/portfolio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerpRoute = PerpRouteImport.update({
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
+  '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
+  '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
+  '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/mobile-agent-sync'
     | '/perp'
+    | '/portfolio'
     | '/privacy'
     | '/spot'
     | '/support'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/mobile-agent-sync'
     | '/perp'
+    | '/portfolio'
     | '/privacy'
     | '/spot'
     | '/support'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/mobile-agent-sync'
     | '/perp'
+    | '/portfolio'
     | '/privacy'
     | '/spot'
     | '/support'
@@ -222,6 +234,7 @@ export interface RootRouteChildren {
   DocsRoute: typeof DocsRoute
   MobileAgentSyncRoute: typeof MobileAgentSyncRoute
   PerpRoute: typeof PerpRoute
+  PortfolioRoute: typeof PortfolioRoute
   PrivacyRoute: typeof PrivacyRoute
   SpotRoute: typeof SpotRoute
   SupportRoute: typeof SupportRoute
@@ -264,6 +277,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portfolio': {
+      id: '/portfolio'
+      path: '/portfolio'
+      fullPath: '/portfolio'
+      preLoaderRoute: typeof PortfolioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perp': {
@@ -381,6 +401,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsRoute: DocsRoute,
   MobileAgentSyncRoute: MobileAgentSyncRoute,
   PerpRoute: PerpRoute,
+  PortfolioRoute: PortfolioRoute,
   PrivacyRoute: PrivacyRoute,
   SpotRoute: SpotRoute,
   SupportRoute: SupportRoute,

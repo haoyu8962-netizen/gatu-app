@@ -19,7 +19,7 @@ export function TokenSelectorDropdown({ tokens, selectedToken, onSelect, getBala
 	const items: DropdownItem[] = tokens.map((token) => {
 		const balance = getBalance(token.name);
 		return {
-			label: `${token.name}  ${formatToken(balance, 4)}`,
+			label: `${token.displayName}  ${formatToken(balance, 4)}`,
 			icon: <AssetDisplay coin={token.name} hideName iconClassName="size-5" />,
 			active: token.name === selectedToken,
 			onSelect: () => onSelect(token.name),

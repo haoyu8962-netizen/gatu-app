@@ -86,19 +86,15 @@ export function selectPrivyWagmiWallet({
 
 	const embeddedWalletAddress = getPrivyEmbeddedWalletAddress(user);
 	if (shouldUsePrivyEmbeddedWallet(user)) {
-		return (
-			wallets.find(
-				(wallet) => isPrivyEmbeddedWallet(wallet) && hasSameWalletAddress(wallet.address, embeddedWalletAddress),
-			) ??
-			wallets.find((wallet) => hasSameWalletAddress(wallet.address, embeddedWalletAddress)) ??
-			wallets.find(isPrivyEmbeddedWallet)
+		return wallets.find(
+			(wallet) => isPrivyEmbeddedWallet(wallet) && hasSameWalletAddress(wallet.address, embeddedWalletAddress),
 		);
 	}
 
 	const userWalletAddress = user?.wallet?.address;
 	if (userWalletAddress) {
-		return wallets.find((wallet) => hasSameWalletAddress(wallet.address, userWalletAddress)) ?? wallets[0];
+		return wallets.find((wallet) => hasSameWalletAddress(wallet.address, userWalletAddress));
 	}
 
-	return wallets[0];
+	return undefined;
 }

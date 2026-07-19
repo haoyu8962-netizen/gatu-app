@@ -1,0 +1,32 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+
+const TEST_DIR = dirname(fileURLToPath(import.meta.url));
+const TERMINAL_STYLES = readFileSync(resolve(TEST_DIR, "../..", "styles.css"), "utf8");
+const PORTFOLIO_PAGE = readFileSync(resolve(TEST_DIR, "../..", "components/portfolio/portfolio-page.tsx"), "utf8");
+
+describe("portfolio surface contract", () => {
+	it("keeps the portfolio canvas separate from its raised content panels", () => {
+		expect(readCssVariable(TERMINAL_STYLES, ":root", "--bg-portfolio-canvas")).toBe("#f1f3f6");
+		expect(readCssVariable(TERMINAL_STYLES, ".dark", "--bg-portfolio-canvas")).toBe("#04251f");
+		expect(readCssVariable(TERMINAL_STYLES, "@theme inline", "--color-portfolio-canvas")).toBe(
+			"var(--bg-portfolio-canvas)",
+		);
+		expect(PORTFOLIO_PAGE).toContain("bg-portfolio-canvas");
+		expect(PORTFOLIO_PAGE).toContain("rounded-12 bg-surface");
+	});
+});
+
+function readCssVariable(source: string, selector: string, variable: string): string | undefined {
+	const selectorStart = source.indexOf(`${selector} {`);
+	if (selectorStart === -1) return undefined;
+
+	const blockStart = source.indexOf("{", selectorStart);
+	const blockEnd = source.indexOf("}", blockStart);
+	if (blockStart === -1 || blockEnd === -1) return undefined;
+
+	const declaration = new RegExp(`${variable}:\\s*([^;]+);`).exec(source.slice(blockStart + 1, blockEnd));
+	return declaration?.[1]?.trim();
+}

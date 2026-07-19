@@ -7,19 +7,31 @@ import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SWAP_SUCCESS_DURATION_MS } from "@/config/time";
-import { getSpotAvailable, getSpotBalance } from "@/domain/trade/balances";
+import { getAvailableFromTotals, getSpotBalance } from "@/domain/trade/balances";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
-import { findSpotPair, getAvailablePairTokens, getSwapSide } from "@/domain/trade/swap";
+import {
+	buildSwapQuote,
+	DEFAULT_SWAP_SLIPPAGE_BPS,
+	findSpotPair,
+	getAvailablePairTokens,
+	getMaxSwapInput,
+	getStablecoinSwapFromTokens,
+	getStablecoinSwapToTokens,
+	getSwapSide,
+} from "@/domain/trade/swap";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
-import { useExchange } from "@/lib/hyperliquid";
+import { useExchange, useSubscription } from "@/lib/hyperliquid";
 import { useMarketsInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
-import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
 import {
+	type SwapMode,
 	useSwapModalActions,
 	useSwapModalFromToken,
+	useSwapModalMode,
 	useSwapModalOpen,
 	useSwapModalToToken,
 } from "@/stores/use-global-modal-store";
@@ -27,101 +39,110 @@ import { AssetDisplay } from "./asset-display";
 import { TokenSelectorDropdown } from "./token-selector-dropdown";
 import { TradingActionButton } from "./trading-action-button";
 
-const DEFAULT_SLIPPAGE_BPS = 100;
-
 export function SpotSwapModal() {
 	const isOpen = useSwapModalOpen();
 	const initialFromToken = useSwapModalFromToken() ?? DEFAULT_QUOTE_TOKEN;
 	const initialToToken = useSwapModalToToken();
+	const mode = useSwapModalMode();
 	const { close } = useSwapModalActions();
 
 	if (!isOpen) return null;
 
-	return <SpotSwapModalContent initialFromToken={initialFromToken} initialToToken={initialToToken} onClose={close} />;
+	return (
+		<SpotSwapModalContent
+			initialFromToken={initialFromToken}
+			initialToToken={initialToToken}
+			mode={mode}
+			onClose={close}
+		/>
+	);
 }
 
 interface Props {
 	initialFromToken: string;
 	initialToToken?: string;
+	mode: SwapMode;
 	onClose: () => void;
 }
 
-function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Props) {
+function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose }: Props) {
 	const { spotMarkets } = useMarketsInfo();
-	const { spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
+	const { spotBalances } = useDefaultDexBalances();
 	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
-
-	const defaultToToken = useMemo(() => {
-		if (initialToToken) return initialToToken;
-		const pairs = getAvailablePairTokens(initialFromToken, spotMarkets);
-		return pairs[0]?.name ?? "";
-	}, [initialFromToken, initialToToken, spotMarkets]);
+	const { takerRate } = useFeeRates("spot");
+	const isStablecoinSwap = mode === "stablecoin";
 
 	const [fromToken, setFromToken] = useState(initialFromToken);
-	const [toToken, setToToken] = useState(defaultToToken);
+	const [selectedToToken, setSelectedToToken] = useState(initialToToken ?? "");
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(onClose, SWAP_SUCCESS_DURATION_MS);
+	const getToTokens = useCallback(
+		(token: string) =>
+			isStablecoinSwap ? getStablecoinSwapToTokens(token, spotMarkets) : getAvailablePairTokens(token, spotMarkets),
+		[isStablecoinSwap, spotMarkets],
+	);
+	const availableToTokens = useMemo(() => (fromToken ? getToTokens(fromToken) : []), [fromToken, getToTokens]);
+	const toToken = availableToTokens.some((token) => token.name === selectedToToken)
+		? selectedToToken
+		: (availableToTokens[0]?.name ?? "");
+	const availableFromTokens = useMemo(() => {
+		if (isStablecoinSwap) return getStablecoinSwapFromTokens(spotMarkets);
+		return toToken ? getAvailablePairTokens(toToken, spotMarkets) : [];
+	}, [isStablecoinSwap, spotMarkets, toToken]);
 
 	const getTokenBalance = useCallback(
 		(token: string) => {
 			const balance = getSpotBalance(spotBalances, token);
-			return getSpotAvailable(balance, spotAvailableAfterMaintenance);
+			return getAvailableFromTotals(balance?.total, balance?.hold);
 		},
-		[spotBalances, spotAvailableAfterMaintenance],
+		[spotBalances],
 	);
 
 	const fromBalance = getTokenBalance(fromToken);
 	const toBalance = getTokenBalance(toToken);
-
-	const availableFromTokens = useMemo(() => {
-		if (!toToken) return [];
-		return getAvailablePairTokens(toToken, spotMarkets);
-	}, [toToken, spotMarkets]);
-
-	const availableToTokens = useMemo(() => {
-		if (!fromToken) return [];
-		return getAvailablePairTokens(fromToken, spotMarkets);
-	}, [fromToken, spotMarkets]);
 
 	const spotMarket = useMemo(() => {
 		if (!fromToken || !toToken) return null;
 		return findSpotPair(fromToken, toToken, spotMarkets);
 	}, [fromToken, toToken, spotMarkets]);
 
-	const markPx = toNumberOrZero(spotMarket?.markPx);
 	const szDecimals = spotMarket?.szDecimals ?? 2;
-	const baseToken = spotMarket?.tokensInfo[0]?.name ?? "";
 	const isBuying = spotMarket ? getSwapSide(fromToken, spotMarket) : false;
-
-	const amountValue = toNumber(amount) ?? 0;
-
-	const { estimatedReceive, orderSize } = useMemo(() => {
-		if (amountValue <= 0 || markPx <= 0) {
-			return { estimatedReceive: 0, orderSize: 0 };
-		}
-
-		if (isBuying) {
-			const size = amountValue / markPx;
-			return { estimatedReceive: size, orderSize: size };
-		}
-		const receive = amountValue * markPx;
-		return { estimatedReceive: receive, orderSize: amountValue };
-	}, [amountValue, markPx, isBuying]);
-
-	const rate = useMemo(() => {
-		if (markPx <= 0) return 0;
-		if (fromToken === baseToken) {
-			return markPx;
-		}
-		return 1 / markPx;
-	}, [markPx, fromToken, baseToken]);
+	const { data: orderbook, status: orderbookStatus } = useSubscription(
+		"l2Book",
+		{ coin: spotMarket?.name ?? "" },
+		{ enabled: Boolean(spotMarket?.name) },
+	);
+	const quote = useMemo(
+		() =>
+			buildSwapQuote({
+				amount,
+				isBuying,
+				bids: orderbook?.levels[0],
+				asks: orderbook?.levels[1],
+				referencePrice: spotMarket?.markPx,
+				szDecimals,
+				slippageBps: DEFAULT_SWAP_SLIPPAGE_BPS,
+				takerFeeRate: takerRate,
+				isStablecoinSwap,
+			}),
+		[amount, isBuying, isStablecoinSwap, orderbook?.levels, spotMarket?.markPx, szDecimals, takerRate],
+	);
+	const hasPositiveAmount = toBig(amount)?.gt(0) ?? false;
+	const estimatedReceive = quote?.estimatedReceive ?? "0";
+	const fromTokenInfo =
+		availableFromTokens.find((token) => token.name === fromToken) ??
+		spotMarket?.tokensInfo.find((token) => token.name === fromToken);
+	const toTokenInfo =
+		availableToTokens.find((token) => token.name === toToken) ??
+		spotMarket?.tokensInfo.find((token) => token.name === toToken);
 
 	function handleFlip() {
 		const newFrom = toToken;
 		const newTo = fromToken;
 		setFromToken(newFrom);
-		setToToken(newTo);
+		setSelectedToToken(newTo);
 		setAmount("");
 		setError(null);
 	}
@@ -131,25 +152,25 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 		setAmount("");
 		setError(null);
 
-		const pairs = getAvailablePairTokens(token, spotMarkets);
+		const pairs = getToTokens(token);
 		if (!pairs.some((p) => p.name === toToken)) {
-			setToToken(pairs[0]?.name ?? "");
+			setSelectedToToken(pairs[0]?.name ?? "");
 		}
 	}
 
 	function handleToTokenChange(token: string) {
-		setToToken(token);
+		setSelectedToToken(token);
 		setError(null);
-
-		const pairs = getAvailablePairTokens(token, spotMarkets);
-		if (!pairs.some((p) => p.name === fromToken)) {
-			setFromToken(pairs[0]?.name ?? "");
-			setAmount("");
-		}
 	}
 
 	function handleMaxClick() {
-		setAmount(String(fromBalance));
+		setAmount(getMaxSwapInput(fromBalance, isBuying, DEFAULT_SWAP_SLIPPAGE_BPS, fromTokenInfo?.szDecimals ?? 6));
+		setError(null);
+	}
+
+	function handleAmountChange(value: string) {
+		setAmount(value);
+		setError(null);
 	}
 
 	const handleOpenChange = useCallback(
@@ -160,18 +181,15 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 	);
 
 	const handleSubmit = useCallback(async () => {
-		if (!spotMarket || orderSize <= 0 || isSubmitting) return;
+		if (!spotMarket || !quote || isSubmitting) return;
 
 		setError(null);
-
-		const slippageMultiplier = 1 + DEFAULT_SLIPPAGE_BPS / 10000;
-		const price = isBuying ? markPx * slippageMultiplier : markPx / slippageMultiplier;
 
 		const order = {
 			a: spotMarket.assetId,
 			b: isBuying,
-			p: formatPriceForOrder(price, { assetId: spotMarket.assetId, szDecimals }),
-			s: formatSizeForOrder(orderSize, szDecimals),
+			p: formatPriceForOrder(quote.limitPrice, { assetId: spotMarket.assetId, szDecimals }),
+			s: formatSizeForOrder(quote.orderSize, szDecimals),
 			r: false,
 			t: { limit: { tif: "FrontendMarket" as const } },
 		};
@@ -182,24 +200,42 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 
 			triggerAutoClose();
 		} catch (err) {
-			const message = err instanceof Error ? err.message : t`Swap failed`;
+			const rawMessage = err instanceof Error ? err.message : t`Swap failed`;
+			const message = rawMessage.includes("could not immediately match")
+				? t`No liquidity was available within the 1% slippage limit.`
+				: rawMessage;
 			setError(message);
 		}
-	}, [spotMarket, orderSize, isSubmitting, isBuying, markPx, szDecimals, placeOrder, triggerAutoClose]);
+	}, [spotMarket, quote, isSubmitting, isBuying, szDecimals, placeOrder, triggerAutoClose]);
 
-	const insufficientBalance = amountValue > fromBalance;
+	const requiredInput = quote?.maxInput ?? amount;
+	const insufficientBalance = toBig(requiredInput)?.gt(fromBalance) ?? false;
 	const noPairAvailable = fromToken && toToken && !spotMarket;
-	const canSubmit = amountValue > 0 && !insufficientBalance && orderSize > 0 && !showSuccess && spotMarket;
+	const orderbookLoading =
+		hasPositiveAmount && Boolean(spotMarket) && orderbookStatus !== "error" && !orderbook && !showSuccess;
+	const orderbookFailed = hasPositiveAmount && Boolean(spotMarket) && orderbookStatus === "error" && !showSuccess;
+	const quoteUnavailable = hasPositiveAmount && Boolean(spotMarket) && Boolean(orderbook) && !quote;
+	const belowMinimumNotional = isStablecoinSwap && Boolean(quote?.isBelowMinimumNotional);
+	const canSubmit =
+		hasPositiveAmount &&
+		!insufficientBalance &&
+		!belowMinimumNotional &&
+		!showSuccess &&
+		Boolean(spotMarket) &&
+		Boolean(quote);
 	const isDisabled = isSubmitting || showSuccess;
 
 	return (
 		<Modal open onOpenChange={handleOpenChange}>
-			<ModalPopup size="sm">
-				<ModalHeader>
-					<ModalTitle>
-						<Trans>Swap</Trans>
+			<ModalPopup size={isStablecoinSwap ? "md" : "sm"}>
+				<ModalHeader
+					divider={!isStablecoinSwap}
+					className={isStablecoinSwap ? "items-center px-14 py-5 text-center" : undefined}
+				>
+					<ModalTitle className={isStablecoinSwap ? "text-lg" : undefined}>
+						{isStablecoinSwap ? <Trans>Swap Stablecoins</Trans> : <Trans>Swap</Trans>}
 					</ModalTitle>
-					<ModalDescription>
+					<ModalDescription className={isStablecoinSwap ? "sr-only" : undefined}>
 						{spotMarket ? (
 							<Trans>Trade via {spotMarket.pairName} spot market</Trans>
 						) : (
@@ -212,11 +248,12 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 					<div className="relative">
 						<div className="space-y-1">
 							<TokenPanel
-								label={t`From`}
+								label={isStablecoinSwap ? t`Sell` : t`From`}
 								balance={fromBalance}
-								balanceToken={fromToken}
+								balanceToken={fromTokenInfo?.displayName ?? fromToken}
+								balanceLabel={isStablecoinSwap ? t`Max` : t`Available`}
 								amount={amount}
-								onAmountChange={setAmount}
+								onAmountChange={handleAmountChange}
 								onMaxClick={handleMaxClick}
 								disabled={isDisabled}
 								hasError={insufficientBalance}
@@ -232,25 +269,29 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 								}
 							/>
 
-							<div className="relative h-0 flex items-center justify-center z-10">
-								<Button
-									variant="outline"
-									intent="neutral"
-									size="sm"
-									onClick={handleFlip}
-									disabled={isDisabled}
-									className="size-8 rounded-full bg-background border-stroke-weak hover:border-stroke-brand-strong hover:bg-fill-hover transition-colors"
-									aria-label={t`Swap direction`}
-								>
-									<ArrowsDownUpIcon className="size-3.5" />
-								</Button>
-							</div>
+							{!isStablecoinSwap && (
+								<div className="relative h-0 flex items-center justify-center z-10">
+									<Button
+										variant="outline"
+										intent="neutral"
+										size="sm"
+										onClick={handleFlip}
+										disabled={isDisabled}
+										className="size-8 rounded-full bg-background border-stroke-weak hover:border-stroke-brand-strong hover:bg-fill-hover transition-colors"
+										aria-label={t`Swap direction`}
+									>
+										<ArrowsDownUpIcon className="size-3.5" />
+									</Button>
+								</div>
+							)}
 
 							<TokenPanel
-								label={t`To`}
+								label={isStablecoinSwap ? t`Buy` : t`To`}
 								balance={toBalance}
-								balanceToken={toToken}
-								amount={estimatedReceive > 0 ? `~${formatToken(estimatedReceive, 6)}` : ""}
+								balanceToken={toTokenInfo?.displayName ?? toToken}
+								balanceLabel={t`Available`}
+								showBalance={!isStablecoinSwap}
+								amount={quote ? `~${formatToken(estimatedReceive, 6)}` : ""}
 								disabled
 								editable={false}
 								tokenSelector={
@@ -266,30 +307,60 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 						</div>
 					</div>
 
-					<div className="rounded-8 border border-stroke-weak/35 bg-fill-weak/40 px-3 py-2.5 space-y-2">
-						<div className="flex items-center justify-between text-xs text-fg-muted">
-							<span>
-								<Trans>Rate</Trans>
-							</span>
-							<span className="tabular-nums text-fg">
-								{rate > 0 ? (
-									<>
-										1 <AssetDisplay coin={fromToken} hideIcon /> ≈ {formatToken(rate, 6)}{" "}
-										<AssetDisplay coin={toToken} hideIcon />
-									</>
-								) : (
-									"-"
-								)}
-							</span>
+					{isStablecoinSwap ? (
+						<>
+							<div className="rounded-8 border border-stroke-weak/35 bg-fill-weak/40 px-3 py-2.5 space-y-2">
+								<div className="flex items-center justify-between gap-3 text-xs text-fg-muted">
+									<span>
+										<Trans>You will approximately receive</Trans>
+									</span>
+									<span className="shrink-0 tabular-nums text-fg">
+										{formatToken(estimatedReceive, 6)} <AssetDisplay coin={toToken} hideIcon />
+									</span>
+								</div>
+								<div className="h-px bg-stroke-weak/30" />
+								<div className="flex items-center justify-between gap-3 text-xs text-fg-muted">
+									<span>
+										<Trans>Estimated fee</Trans>
+									</span>
+									<span className="shrink-0 tabular-nums text-fg">
+										{formatToken(quote?.feeAmount ?? "0", 6)} <AssetDisplay coin={toToken} hideIcon />
+									</span>
+								</div>
+							</div>
+							<p className="border-t border-stroke-weak/35 pt-3 text-3xs leading-relaxed text-fg-muted">
+								<Trans>
+									Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be
+									partially filled.
+								</Trans>
+							</p>
+						</>
+					) : (
+						<div className="rounded-8 border border-stroke-weak/35 bg-fill-weak/40 px-3 py-2.5 space-y-2">
+							<div className="flex items-center justify-between text-xs text-fg-muted">
+								<span>
+									<Trans>Rate</Trans>
+								</span>
+								<span className="tabular-nums text-fg">
+									{quote ? (
+										<>
+											1 <AssetDisplay coin={fromToken} hideIcon /> ≈ {formatToken(quote.rate, 6)}{" "}
+											<AssetDisplay coin={toToken} hideIcon />
+										</>
+									) : (
+										"-"
+									)}
+								</span>
+							</div>
+							<div className="h-px bg-stroke-weak/30" />
+							<div className="flex items-center justify-between text-xs text-fg-muted">
+								<span>
+									<Trans>Slippage tolerance</Trans>
+								</span>
+								<span className="tabular-nums text-fg">{DEFAULT_SWAP_SLIPPAGE_BPS / 100}%</span>
+							</div>
 						</div>
-						<div className="h-px bg-stroke-weak/30" />
-						<div className="flex items-center justify-between text-xs text-fg-muted">
-							<span>
-								<Trans>Slippage tolerance</Trans>
-							</span>
-							<span className="tabular-nums text-fg">{DEFAULT_SLIPPAGE_BPS / 100}%</span>
-						</div>
-					</div>
+					)}
 
 					{insufficientBalance && !showSuccess && (
 						<div className="flex items-start gap-2 p-2.5 bg-warning-soft border border-stroke-warning-strong/20 rounded-8">
@@ -302,6 +373,15 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 						</div>
 					)}
 
+					{belowMinimumNotional && !insufficientBalance && !showSuccess && (
+						<div className="flex items-start gap-2 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft p-2.5">
+							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
+							<p className="text-xs text-warning">
+								<Trans>Minimum order value is 10 USDC after size rounding.</Trans>
+							</p>
+						</div>
+					)}
+
 					{noPairAvailable && !showSuccess && (
 						<div className="flex items-start gap-2 p-2.5 bg-warning-soft border border-stroke-warning-strong/20 rounded-8">
 							<WarningIcon className="size-3.5 text-warning shrink-0 mt-0.5" />
@@ -310,6 +390,31 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, onClose }: Pro
 									No trading pair available for <AssetDisplay coin={fromToken} hideIcon />/
 									<AssetDisplay coin={toToken} hideIcon />
 								</Trans>
+							</p>
+						</div>
+					)}
+
+					{orderbookLoading && (
+						<div className="flex items-center gap-2 rounded-8 border border-stroke-weak/35 bg-fill-weak/40 p-2.5 text-xs text-fg-muted">
+							<SpinnerGapIcon className="size-3.5 shrink-0 animate-spin" />
+							<Trans>Waiting for order book...</Trans>
+						</div>
+					)}
+
+					{orderbookFailed && (
+						<div className="flex items-start gap-2 rounded-8 border border-stroke-error-strong/20 bg-error-soft p-2.5">
+							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-error" />
+							<p className="text-xs text-error">
+								<Trans>Failed to load order book.</Trans>
+							</p>
+						</div>
+					)}
+
+					{quoteUnavailable && !showSuccess && (
+						<div className="flex items-start gap-2 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft p-2.5">
+							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
+							<p className="text-xs text-warning">
+								<Trans>No liquidity was available within the 1% slippage limit.</Trans>
 							</p>
 						</div>
 					)}
@@ -354,11 +459,13 @@ interface TokenPanelProps {
 	label: string;
 	balance: number;
 	balanceToken: string;
+	balanceLabel: string;
 	amount: string;
 	onAmountChange?: (value: string) => void;
 	onMaxClick?: () => void;
 	disabled?: boolean;
 	hasError?: boolean;
+	showBalance?: boolean;
 	editable: boolean;
 	tokenSelector: React.ReactNode;
 }
@@ -367,11 +474,13 @@ function TokenPanel({
 	label,
 	balance,
 	balanceToken,
+	balanceLabel,
 	amount,
 	onAmountChange,
 	onMaxClick,
 	disabled,
 	hasError,
+	showBalance = true,
 	editable,
 	tokenSelector,
 }: TokenPanelProps) {
@@ -384,23 +493,23 @@ function TokenPanel({
 		>
 			<div className="flex items-center justify-between">
 				<span className={labelTypographyClass}>{label}</span>
-				{editable ? (
+				{showBalance && editable ? (
 					<button
 						type="button"
 						onClick={onMaxClick}
 						disabled={disabled}
 						className="text-3xs text-fg-muted tabular-nums leading-none hover:text-fg transition-colors disabled:pointer-events-none"
 					>
-						Available:{" "}
+						{balanceLabel}:{" "}
 						<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 							{formatToken(balance, { decimals: 4, symbol: balanceToken })}
 						</span>
 					</button>
-				) : (
+				) : showBalance ? (
 					<span className="text-3xs text-fg-muted tabular-nums leading-none">
-						{`Available: ${formatToken(balance, { decimals: 4, symbol: balanceToken })}`}
+						{`${balanceLabel}: ${formatToken(balance, { decimals: 4, symbol: balanceToken })}`}
 					</span>
-				)}
+				) : null}
 			</div>
 
 			<div className="flex items-center gap-2">

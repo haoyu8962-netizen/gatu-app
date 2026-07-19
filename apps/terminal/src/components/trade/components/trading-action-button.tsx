@@ -3,6 +3,7 @@ import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { type ComponentProps, type ReactNode, useCallback } from "react";
 import { cn } from "@/lib/cn";
+import { formatTransferError } from "@/lib/errors/format";
 import { useTradingGuard } from "@/lib/hyperliquid";
 
 type ButtonProps = ComponentProps<typeof Button>;
@@ -23,7 +24,7 @@ export function TradingActionButton({
 	intent = "neutral",
 	...buttonProps
 }: Props) {
-	const { isReady, isEnabling, needsTrading, guardAction } = useTradingGuard();
+	const { isReady, isEnabling, needsTrading, guardAction, error } = useTradingGuard();
 
 	const handleClick = useCallback(() => {
 		guardAction(onClick);
@@ -52,6 +53,11 @@ export function TradingActionButton({
 					children
 				)}
 			</Button>
+			{error && (
+				<p role="alert" className="w-full text-xs leading-normal text-error">
+					{formatTransferError(error)}
+				</p>
+			)}
 		</div>
 	);
 }

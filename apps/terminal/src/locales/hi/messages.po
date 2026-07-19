@@ -41,13 +41,17 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} सेकंड"
 msgid "1 year"
 msgstr "1 वर्ष"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "14 Day Volume"
+msgstr ""
+
 #: src/components/trade/market-overview.tsx
 msgid "24h"
 msgstr "24h"
 
-#: src/components/trade/market-overview.tsx
-#~ msgid "24H"
-#~ msgstr ""
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "24H"
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "24h Change"
@@ -72,9 +76,17 @@ msgstr "24H VOL"
 msgid "30 days"
 msgstr "30 दिन"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "30D"
+msgstr ""
+
 #: src/components/trade/market-overview.tsx
 msgid "7 days"
 msgstr "7 दिन"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "7D"
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "8h Funding"
@@ -113,6 +125,10 @@ msgstr "खाता मोड अपडेट किया गया"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Account type"
 msgstr "खाता प्रकार"
+
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Account Value"
+msgstr ""
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Account value must be below $25M to use portfolio margin while it is in beta."
@@ -204,6 +220,10 @@ msgstr "सभी क्रॉस पोज़िशन समान क्र�
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr ""
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "All Time"
+msgstr ""
+
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
 msgstr "ALO (केवल लिक्विडिटी जोड़ें)"
@@ -263,6 +283,9 @@ msgstr "संपत्ति"
 msgid "Automatic USDC deposit failed"
 msgstr "USDC का स्वचालित जमा विफल रहा"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -322,6 +345,7 @@ msgstr "ट्रेड के लिए उपलब्ध बैलेंस"
 #~ msgid "Balance:"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "बैलेंस"
@@ -408,6 +432,7 @@ msgstr "बिल्डर फ़ीस"
 #~ msgid "buy"
 #~ msgstr "खरीदें"
 
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -643,6 +668,10 @@ msgstr "वॉलेट कनेक्ट करें"
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Connect wallet to view account"
 msgstr "खाता देखने के लिए वॉलेट कनेक्ट करें"
+
+#: src/components/portfolio/portfolio-page.tsx
+msgid "Connect wallet to view portfolio"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-positions-view.tsx
 msgid "Connect wallet to view positions"
@@ -917,6 +946,7 @@ msgstr "डिफ़ॉल्ट"
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -1090,6 +1120,10 @@ msgstr "पूर्ण"
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
 msgstr "प्रत्येक पोज़िशन केवल अपने आवंटित मार्जिन का उपयोग करती है। यदि मार्जिन अनुपात 100% तक पहुंच जाता है, तो पोज़िशन लिक्विडेट हो जाती है। मार्जिन को अलग-अलग जोड़ा या हटाया जा सकता है।"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Earn Balance"
+msgstr ""
+
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "TP/SL संपादित करें"
@@ -1194,6 +1228,10 @@ msgstr "लिमिट पर अनुमानित P&L"
 #~ msgid "Est. time"
 #~ msgstr ""
 
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Estimated fee"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -1212,6 +1250,10 @@ msgstr "निष्पादित"
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 msgid "Execution"
 msgstr "निष्पादन"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Execution is not guaranteed due to order book slippage. If slippage exceeds 1%, the swap may be partially filled."
+msgstr ""
 
 #: src/components/trade/order-entry/account-panel.tsx
 #~ msgid "Expand account panel"
@@ -1273,6 +1315,7 @@ msgstr "ट्रेडिंग सक्षम करने में वि�
 msgid "Failed to load balances"
 msgstr "बैलेंस लोड करने में विफल"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1298,6 +1341,7 @@ msgstr "बाज़ार श्रेणियां लोड नहीं �
 msgid "Failed to load open orders."
 msgstr "खुले ऑर्डर लोड करने में विफल।"
 
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -1376,6 +1420,10 @@ msgstr "शुल्क"
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Fees"
 msgstr "फ़ीस"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Fees (Taker / Maker)"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
@@ -1527,9 +1575,9 @@ msgstr "महत्वपूर्ण: यह पता केवल Arbitrum �
 msgid "Importing..."
 msgstr "इम्पोर्ट हो रहा है..."
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "In Orders"
-#~ msgstr ""
+#: src/components/portfolio/portfolio-mobile-balances.tsx
+msgid "In Orders"
+msgstr ""
 
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "In Use"
@@ -1707,6 +1755,7 @@ msgstr "लोड हो रहा है"
 msgid "Loading balances across all chains..."
 msgstr "सभी चेन पर बैलेंस लोड हो रहे हैं..."
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Loading balances..."
 msgstr "शेष लोड हो रहा है..."
@@ -1743,6 +1792,7 @@ msgstr "TWAP ऑर्डर लोड हो रहे हैं..."
 msgid "Loading wallet..."
 msgstr "वॉलेट लोड हो रहा है..."
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1934,6 +1984,7 @@ msgstr "मार्केट"
 #~ msgid "Master"
 #~ msgstr ""
 
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 msgid "Max"
@@ -1950,6 +2001,10 @@ msgstr "अधिकतम"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max 0.1% (10 bps) for perps, 1% (100 bps) for spot. Enter as decimal (e.g., 0.01 for 1 basis point)."
 #~ msgstr ""
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Max Drawdown"
+msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max Fee Rate (%)"
@@ -1991,6 +2046,10 @@ msgstr "न्यूनतम जमा {0} USDC है"
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Minimum deposit is 5 USDC"
 msgstr "न्यूनतम जमा 5 USDC है"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Minimum order value is 10 USDC after size rounding."
+msgstr ""
 
 #. placeholder {0}: ctx.minWithdraw
 #: src/lib/errors/definitions/deposit.ts
@@ -2117,6 +2176,7 @@ msgstr "Hyperliquid पर कोई बैलेंस नहीं। पह�
 msgid "No balances found"
 msgstr "कोई बैलेंस नहीं मिला"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "कोई शेष नहीं मिला। ट्रेडिंग शुरू करने के लिए धन जमा करें।"
@@ -2134,6 +2194,11 @@ msgstr "कोई निष्पादन नहीं मिला।"
 #: src/components/trade/positions/funding-tab.tsx
 msgid "No funding payments found."
 msgstr "कोई फंडिंग भुगतान नहीं मिला।"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "No liquidity was available within the 1% slippage limit."
+msgstr ""
 
 #: src/lib/errors/definitions/market.ts
 msgid "No mark price"
@@ -2466,10 +2531,13 @@ msgstr "Perp"
 msgid "Perpetuals"
 msgstr "Perpetuals"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Perps"
-#~ msgstr "परप्स"
+#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/portfolio/portfolio-overview.tsx
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Perps"
+msgstr "परप्स"
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -2477,9 +2545,17 @@ msgstr "Perpetuals"
 msgid "Perps / Spot"
 msgstr "Perps / Spot"
 
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Perps + Spot + Vaults"
+msgstr ""
+
 #: src/components/trade/positions/send-modal.tsx
 msgid "Perps Account"
 msgstr "Perps खाता"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Perps Account Equity"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Perps Equity"
@@ -2488,6 +2564,10 @@ msgstr "Perps इक्विटी"
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
 msgstr "Perps अवलोकन"
+
+#: src/components/portfolio/portfolio-performance-chart.tsx
+msgid "Perps PNL"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Perps Withdrawable"
@@ -2551,6 +2631,8 @@ msgstr "प्लेटफ़ॉर्म"
 #~ msgid "Please wait while Privy creates your embedded wallet."
 #~ msgstr "कृपया प्रतीक्षा करें, Privy आपका एम्बेडेड वॉलेट बना रहा है।"
 
+#: src/components/portfolio/portfolio-overview.tsx
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -2565,8 +2647,10 @@ msgstr "PNL"
 msgid "Popular"
 msgstr "लोकप्रिय"
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/tradebox/trade-header.tsx
-#: src/config/nav.tsx
 msgid "Portfolio"
 msgstr "पोर्टफोलियो"
 
@@ -2577,6 +2661,10 @@ msgstr "पोर्टफोलियो मार्जिन"
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Portfolio Margin"
 msgstr "पोर्टफोलियो मार्जिन"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Portfolio summary"
+msgstr ""
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Value"
@@ -2996,6 +3084,7 @@ msgstr "चयनित वॉलेट कनेक्टेड खाते �
 #~ msgid "sell"
 #~ msgstr "बेचें"
 
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/hooks/trade/use-order-entry-data.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -3294,6 +3383,8 @@ msgstr "स्रोत"
 #~ msgid "spot"
 #~ msgstr "स्पॉट"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/portfolio/portfolio-overview.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
@@ -3306,6 +3397,10 @@ msgstr "स्पॉट"
 #: src/components/trade/positions/send-modal.tsx
 msgid "Spot Account"
 msgstr "Spot खाता"
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Spot Account Equity"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Spot Available"
@@ -3400,6 +3495,11 @@ msgstr "स्वैप दिशा"
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Swap failed"
 msgstr "स्वैप विफल रहा"
+
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "Swap Stablecoins"
+msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Swap submitted"
@@ -3662,6 +3762,7 @@ msgstr "साइज मोड टॉगल करें"
 #~ msgid "TOKEN"
 #~ msgstr "टोकन"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -3669,6 +3770,14 @@ msgstr "साइज मोड टॉगल करें"
 #: src/config/ui-text.ts
 msgid "Total"
 msgstr "कुल"
+
+#: src/components/portfolio/portfolio-mobile-balances.tsx
+msgid "Total balance"
+msgstr ""
+
+#: src/components/portfolio/portfolio-overview.tsx
+msgid "Total Equity"
+msgstr ""
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
@@ -3982,6 +4091,7 @@ msgstr "अपडेट किया गया"
 msgid "Updated live"
 msgstr "लाइव अपडेट"
 
+#: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "USD मूल्य"
@@ -4034,6 +4144,7 @@ msgstr "Explorer पर देखें"
 msgid "VOL"
 msgstr "वॉल्यूम"
 
+#: src/components/portfolio/portfolio-overview.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Volume"
 msgstr "वॉल्यूम"
@@ -4054,6 +4165,7 @@ msgstr "ऑन-चेन पुष्टि की प्रतीक्षा �
 #~ msgid "Waiting for native USDC to arrive on Arbitrum."
 #~ msgstr "Arbitrum पर नेटिव USDC आने की प्रतीक्षा है।"
 
+#: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -4154,6 +4266,7 @@ msgstr "{0} में पहुँचेगा"
 #~ msgid "will arrive in ~5 min"
 #~ msgstr ""
 
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
@@ -4216,6 +4329,10 @@ msgstr "आपको प्राप्त होगा"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "You send"
 msgstr "आप भेजते हैं"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+msgid "You will approximately receive"
+msgstr ""
 
 #: src/components/trade/mobile/offline-banner.tsx
 msgid "You're offline"

@@ -21,6 +21,8 @@ const testState = vi.hoisted(() => ({
 	wallets: [] as Array<{ address: string }>,
 	walletsReady: true,
 	selectedWallet: undefined as { address: string } | undefined,
+	embeddedWalletAddress: undefined as string | undefined,
+	shouldUseEmbeddedWallet: false,
 	walletAddress: undefined as string | undefined,
 	walletConnected: false,
 	walletConnecting: false,
@@ -75,9 +77,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 vi.mock("@/lib/wallet/privy-wagmi", () => ({
-	getPrivyEmbeddedWalletAddress: () => undefined,
+	getPrivyEmbeddedWalletAddress: () => testState.embeddedWalletAddress,
+	hasSameWalletAddress: (a: string | undefined, b: string | undefined) =>
+		!!a && !!b && a.toLowerCase() === b.toLowerCase(),
 	selectPrivyWagmiWallet: () => testState.selectedWallet,
-	shouldUsePrivyEmbeddedWallet: () => false,
+	shouldUsePrivyEmbeddedWallet: () => testState.shouldUseEmbeddedWallet,
 }));
 
 function DisconnectButton() {
@@ -128,6 +132,8 @@ describe("useDisconnectWallet", () => {
 		testState.authenticated = true;
 		testState.ready = true;
 		testState.userWalletAddress = USER_ADDRESS;
+		testState.embeddedWalletAddress = undefined;
+		testState.shouldUseEmbeddedWallet = false;
 		testState.sessionMode = "wallet";
 		testState.wallets = [];
 		testState.walletsReady = true;
@@ -177,6 +183,35 @@ describe("useDisconnectWallet", () => {
 		expect(probe?.getAttribute("data-display-address")).toBe("");
 		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
 		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
+	it("does not expose an email wallet until wagmi activates its exact signer", () => {
+		testState.embeddedWalletAddress = USER_ADDRESS;
+		testState.shouldUseEmbeddedWallet = true;
+		testState.walletAddress = "0x3333333333333333333333333333333333333333";
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
+	it("exposes the email wallet after wagmi activates the matching signer", () => {
+		testState.embeddedWalletAddress = USER_ADDRESS;
+		testState.shouldUseEmbeddedWallet = true;
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe(USER_ADDRESS);
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("true");
+		expect(probe?.getAttribute("data-is-connected")).toBe("true");
 	});
 
 	it("restores an existing Privy wallet as the active wagmi wallet", async () => {

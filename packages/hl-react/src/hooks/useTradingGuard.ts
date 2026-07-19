@@ -54,6 +54,7 @@ export function useTradingGuard(): UseTradingGuardResult {
 	}
 
 	function guardAction(action: PendingAction) {
+		setLocalError(null);
 		if (isReady) {
 			Promise.resolve(action()).catch((err) => {
 				setLocalError(err instanceof Error ? err : new Error(String(err)));
