@@ -77,6 +77,7 @@ export function TradingViewChart({
 	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
 	const requestDataResetRef = useRef<() => void>(() => {});
 	const [initError, setInitError] = useState<string | null>(null);
+	const [isInitializing, setIsInitializing] = useState(true);
 	const [showReadyPrompt, setShowReadyPrompt] = useState(false);
 	const [retryNonce, setRetryNonce] = useState(0);
 	targetSymbolRef.current = widgetSymbol;
@@ -337,6 +338,7 @@ export function TradingViewChart({
 
 		const handleFinalFailure = (reason: string) => {
 			if (disposed) return;
+			setIsInitializing(false);
 			setInitError(reason);
 		};
 
@@ -400,6 +402,7 @@ export function TradingViewChart({
 					if (disposed || widgetRef.current !== widget) return;
 					clearReadyPromptTimeout();
 					chartReadyRef.current = true;
+					setIsInitializing(false);
 					setInitError(null);
 					setShowReadyPrompt(false);
 					if (pendingDataResetRef.current) requestDataResetRef.current();
@@ -448,8 +451,17 @@ export function TradingViewChart({
 		<div
 			className={cn("relative w-full h-full", yAxisInside && "[--tv-y-axis-inside:1]")}
 			style={{ minHeight: CHART_MIN_HEIGHT_PX }}
+			aria-busy={isInitializing}
 		>
 			<div ref={containerRef} className="w-full h-full" />
+			<div
+				data-chart-initializing
+				aria-hidden="true"
+				className={cn(
+					"pointer-events-none absolute inset-0 z-10 bg-background transition-opacity duration-150 ease-out motion-reduce:transition-none",
+					isInitializing ? "opacity-100" : "opacity-0",
+				)}
+			/>
 			{(initError || showReadyPrompt) && (
 				<div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface px-4 text-center">
 					<p className="text-sm font-medium text-fg">{initError ? t`Something went wrong` : t`Loading...`}</p>
@@ -457,6 +469,7 @@ export function TradingViewChart({
 						type="button"
 						className="rounded-xs border border-stroke-weak px-3 py-1.5 text-xs font-medium text-fg hover:bg-fill-hover"
 						onClick={() => {
+							setIsInitializing(true);
 							setInitError(null);
 							setShowReadyPrompt(false);
 							setRetryNonce((value) => value + 1);

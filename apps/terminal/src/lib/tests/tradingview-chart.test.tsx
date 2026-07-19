@@ -305,6 +305,36 @@ describe("TradingViewChart", () => {
 		expect(container.textContent).not.toContain("Something went wrong");
 	});
 
+	it("keeps a stable background mask until TradingView is ready", async () => {
+		let readyCallback: (() => void) | undefined;
+		widgetConstructor.mockImplementation(function Widget(this: unknown, options: unknown) {
+			void this;
+			const widget = createMockWidget(options as { theme?: "light" | "dark" });
+			widget.onChartReady.mockImplementation((callback: () => void) => {
+				readyCallback = callback;
+			});
+			widgets.push(widget);
+			return widget;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		const mask = container.querySelector("[data-chart-initializing]");
+		expect(mask?.className).toContain("bg-background");
+		expect(mask?.className).toContain("opacity-100");
+		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");
+
+		act(() => readyCallback?.());
+		await flushChartEffects();
+
+		expect(mask?.className).toContain("opacity-0");
+		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("false");
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+	});
+
 	it("changes the TradingView theme without rebuilding the iframe", async () => {
 		act(() => {
 			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));

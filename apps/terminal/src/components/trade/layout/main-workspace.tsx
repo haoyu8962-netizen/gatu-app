@@ -25,6 +25,7 @@ const TradePanel = createLazyComponent(() => import("../tradebox/trade-panel"), 
 
 const gridSpacing = [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX] as const;
 const panelFallback = <div className="h-full w-full animate-pulse bg-fill-weaker" />;
+const chartPanelFallback = <div className="h-full w-full bg-background" />;
 
 export function MainWorkspace() {
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
@@ -73,7 +74,7 @@ export function MainWorkspace() {
 					</div>
 
 					<div key="chart" className="desktop-grid-panel overflow-hidden bg-surface">
-						<Suspense fallback={panelFallback}>
+						<Suspense fallback={chartPanelFallback}>
 							<ChartPanel />
 						</Suspense>
 					</div>
@@ -107,7 +108,7 @@ export function MainWorkspace() {
 					</div>
 				</Responsive>
 			) : (
-				<div className="h-[41rem] animate-pulse bg-surface/20" />
+				<div className="h-[41rem] bg-grid-container" />
 			)}
 		</div>
 	);

@@ -46,5 +46,5 @@ export function ChartPanel({ active = true, yAxisInside = false }: Props) {
 }
 
 function ChartLoadingFallback() {
-	return <div className="h-full w-full animate-pulse bg-surface" />;
+	return <div className="h-full w-full bg-background" />;
 }
