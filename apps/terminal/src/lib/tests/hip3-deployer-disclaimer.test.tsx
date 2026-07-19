@@ -152,12 +152,22 @@ describe("Hip3DeployerDisclaimer", () => {
 		expect(dialog?.classList.contains("!shadow-none")).toBe(true);
 		expect(container.querySelector("h2")?.classList.contains("font-normal")).toBe(true);
 		expect(container.querySelector('[data-slot="content"]')?.classList.contains("space-y-3")).toBe(true);
+		const bodyParagraphs = container.querySelectorAll('[data-slot="content"] > p');
+		expect(bodyParagraphs).toHaveLength(3);
+		for (const paragraph of bodyParagraphs) {
+			expect(paragraph.classList.contains("text-fg")).toBe(true);
+			expect(paragraph.classList.contains("text-fg-muted")).toBe(false);
+			expect(paragraph.classList.contains("leading-4")).toBe(true);
+		}
+		expect(container.querySelector("label > span")?.classList.contains("text-fg-muted")).toBe(true);
 		expect(getConfirmButton(container).disabled).toBe(true);
 		expect(getConfirmButton(container).classList.contains("h-10")).toBe(true);
-		expect(
-			container.querySelector('a[href="https://docs.trade.xyz/consolidated-resources/specification-index"]'),
-		).not.toBeNull();
-		expect(container.querySelector('a[href="/terms"]')).not.toBeNull();
+		const documentationLink = container.querySelector(
+			'a[href="https://docs.trade.xyz/consolidated-resources/specification-index"]',
+		);
+		const termsLink = container.querySelector('a[href="/terms"]');
+		expect(documentationLink?.classList.contains("text-brand")).toBe(true);
+		expect(termsLink?.classList.contains("text-brand")).toBe(true);
 
 		const checkbox = container.querySelector('input[type="checkbox"]');
 		if (!(checkbox instanceof HTMLInputElement)) throw new Error("Acknowledgement checkbox not found");

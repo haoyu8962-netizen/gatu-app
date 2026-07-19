@@ -49,14 +49,14 @@ export function Hip3DeployerDisclaimer({ documentationUrl }: Props) {
 			</ModalHeader>
 
 			<ModalContent className="space-y-3 px-6 pt-0 pb-4">
-				<ModalDescription className="text-xs leading-[15px] text-fg-muted">
+				<ModalDescription className="text-xs leading-4 text-fg">
 					<Trans>
 						You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These
 						markets are surfaced based on onchain activity and are not reviewed, verified, or approved.
 					</Trans>
 				</ModalDescription>
 
-				<p className="text-xs leading-[15px] text-fg-muted">
+				<p className="text-xs leading-4 text-fg">
 					<Trans>
 						Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete
 						documentation, and increased liquidation risk. Carefully assess the risks and understand how each market
@@ -64,7 +64,7 @@ export function Hip3DeployerDisclaimer({ documentationUrl }: Props) {
 					</Trans>
 				</p>
 
-				<p className="text-xs leading-[15px] text-fg-muted">
+				<p className="text-xs leading-4 text-fg">
 					{documentationUrl ? (
 						<Trans>
 							Review the deployer's{" "}
