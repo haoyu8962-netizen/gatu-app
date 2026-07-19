@@ -1,4 +1,5 @@
 import { Suspense, useEffect } from "react";
+import { useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
 import { createLazyComponent } from "@/lib/lazy";
 import {
 	useCommandMenuActions,
@@ -6,6 +7,7 @@ import {
 	useTransferModalActions,
 	useTransferModalDirection,
 } from "@/stores/use-global-modal-store";
+import { Hip3DeployerDisclaimer } from "./hip3-deployer-disclaimer";
 
 const DepositModal = createLazyComponent(() => import("../tradebox/deposit-modal"), "DepositModal");
 const GlobalSettingsModal = createLazyComponent(() => import("./global-settings-modal"), "GlobalSettingsModal");
@@ -13,8 +15,14 @@ const SpotSwapModal = createLazyComponent(() => import("./spot-swap-modal"), "Sp
 const CommandMenu = createLazyComponent(() => import("./command-menu"), "CommandMenu");
 const TransferModal = createLazyComponent(() => import("../positions/transfer-modal"), "TransferModal");
 
-export function GlobalModals() {
+interface Props {
+	enableHip3Disclaimer?: boolean;
+}
+
+export function GlobalModals({ enableHip3Disclaimer = false }: Props) {
 	const activeModal = useGlobalModalType();
+	const hip3Disclaimer = useHip3DisclaimerRequirement();
+	const isHip3DisclaimerRequired = enableHip3Disclaimer && hip3Disclaimer.isRequired;
 	const { open: openCommandMenu, close: closeCommandMenu } = useCommandMenuActions();
 	const transferDirection = useTransferModalDirection();
 	const { close: closeTransferModal } = useTransferModalActions();
@@ -23,6 +31,7 @@ export function GlobalModals() {
 		function handleKeyDown(e: KeyboardEvent) {
 			if (e.key !== "k" || (!e.metaKey && !e.ctrlKey)) return;
 			e.preventDefault();
+			if (isHip3DisclaimerRequired) return;
 			if (activeModal === "commandMenu") {
 				closeCommandMenu();
 			} else {
@@ -32,7 +41,11 @@ export function GlobalModals() {
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [activeModal, closeCommandMenu, openCommandMenu]);
+	}, [activeModal, closeCommandMenu, isHip3DisclaimerRequired, openCommandMenu]);
+
+	if (isHip3DisclaimerRequired && hip3Disclaimer.dex) {
+		return <Hip3DeployerDisclaimer key={hip3Disclaimer.dex} documentationUrl={hip3Disclaimer.documentationUrl} />;
+	}
 
 	if (!activeModal) return null;
 

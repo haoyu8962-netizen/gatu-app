@@ -601,6 +601,7 @@ msgstr "大宗商品"
 #~ msgid "completed"
 #~ msgstr "已完成"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -1568,6 +1569,10 @@ msgstr "隐藏小额"
 msgid "HIP-3"
 msgstr "HIP-3"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "HIP-3 Deployer Disclaimer"
+msgstr "HIP-3 部署者免责声明"
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr "小时"
@@ -1575,6 +1580,10 @@ msgstr "小时"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "多头支付空头的小时费率（如果为负，则空头支付多头）。资金费没有关联费用，是用户之间的点对点转移，以将价格推向现货价格。详见文档。"
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
+msgstr "我已阅读并理解本免责声明，并接受与第三方部署的无需许可市场交互所涉及的风险。"
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -3016,6 +3025,14 @@ msgstr "重试"
 msgid "Reverse"
 msgstr "反向"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Review the available deployer information and our <0>Terms of Use</0> before trading."
+msgstr "交易前，请查看可用的部署者信息及我们的 <0>使用条款</0>。"
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
+msgstr "交易前，请查看部署者的<0>文档</0>及我们的<1>使用条款</1>。"
+
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
 msgstr "风险/收益"
@@ -3949,6 +3966,10 @@ msgstr "成交"
 msgid "Trading"
 msgstr "交易中"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."
+msgstr "交易这些市场可能涉及更高风险，包括流动性不足、高波动、文档不完整以及更高的强平风险。继续之前，请仔细评估风险并了解各市场的运作方式。"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -4408,6 +4429,10 @@ msgstr "您正从受限制的司法管辖区访问我们的产品和服务。我
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"
 msgstr "您当前处于测试网"
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These markets are surfaced based on onchain activity and are not reviewed, verified, or approved."
+msgstr "您当前查看的是由第三方在 Hyperliquid 上独立、无需许可部署的市场。这些市场基于链上活动展示，未经审查、验证或批准。"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."

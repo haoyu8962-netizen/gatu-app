@@ -601,6 +601,7 @@ msgstr "السلع"
 #~ msgid "completed"
 #~ msgstr "مكتمل"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -1568,6 +1569,10 @@ msgstr "إخفاء الصغيرة"
 msgid "HIP-3"
 msgstr "HIP-3"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "HIP-3 Deployer Disclaimer"
+msgstr "إخلاء مسؤولية جهة نشر HIP-3"
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr "ساعة/ساعات"
@@ -1575,6 +1580,10 @@ msgstr "ساعة/ساعات"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "المعدل الساعي الذي يدفعه أصحاب المراكز الطويلة لأصحاب المراكز القصيرة (إذا كان سالبًا، يدفع أصحاب المراكز القصيرة لأصحاب المراكز الطويلة). لا توجد رسوم مرتبطة بالتمويل؛ فهو تحويل مباشر بين المستخدمين لدفع السعر نحو السعر الفوري. راجع الوثائق للمزيد من التفاصيل."
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
+msgstr "لقد قرأت إخلاء المسؤولية هذا وفهمته، وأقبل مخاطر التفاعل مع الأسواق غير المرخصة التي تنشرها جهات خارجية."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -3016,6 +3025,14 @@ msgstr "إعادة المحاولة"
 msgid "Reverse"
 msgstr "عكس"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Review the available deployer information and our <0>Terms of Use</0> before trading."
+msgstr "قبل التداول، راجع معلومات جهة النشر المتاحة و<0>شروط الاستخدام</0> الخاصة بنا."
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
+msgstr "قبل التداول، راجع <0>وثائق</0> جهة النشر و<1>شروط الاستخدام</1> الخاصة بنا."
+
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
 msgstr "المخاطرة/العائد"
@@ -3949,6 +3966,10 @@ msgstr "الصفقات"
 msgid "Trading"
 msgstr "التداول"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."
+msgstr "قد ينطوي التداول في هذه الأسواق على مخاطر مرتفعة، بما في ذلك انخفاض السيولة وارتفاع التقلبات وعدم اكتمال الوثائق وزيادة مخاطر التصفية. قيّم المخاطر بعناية وافهم آلية عمل كل سوق قبل المتابعة."
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -4408,6 +4429,10 @@ msgstr "أنت تصل إلى منتجاتنا وخدماتنا من ولاية �
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"
 msgstr "أنت على Testnet"
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These markets are surfaced based on onchain activity and are not reviewed, verified, or approved."
+msgstr "أنت تعرض أسواقًا نشرتها جهة خارجية بشكل مستقل ودون إذن على Hyperliquid. تُعرض هذه الأسواق استنادًا إلى النشاط على السلسلة، ولم تتم مراجعتها أو التحقق منها أو اعتمادها."
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."

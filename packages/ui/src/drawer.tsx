@@ -17,8 +17,6 @@ const sideToSwipeDirection: Record<DrawerSide, "up" | "down" | "left" | "right">
 interface DrawerProps extends React.ComponentPropsWithoutRef<typeof BaseDrawer.Root> {
 	side?: DrawerSide;
 	children?: React.ReactNode;
-	open?: boolean;
-	onOpenChange?: (open: boolean) => void;
 }
 
 function Drawer({ side = "right", swipeDirection, children, ...props }: DrawerProps) {
@@ -63,7 +61,7 @@ DrawerOverlay.displayName = "DrawerOverlay";
 
 const drawerContentVariants = cva(
 	[
-		"fixed z-50 flex flex-col bg-modal border border-stroke-weak shadow-overlay",
+		"fixed z-50 flex flex-col bg-modal border border-stroke-weak shadow-overlay outline-none",
 		"transition-transform duration-200 ease-out motion-reduce:transition-none",
 	],
 	{

@@ -57,7 +57,7 @@ export function TradeTerminalPage() {
 				</div>
 			)}
 			<Suspense fallback={null}>
-				<GlobalModals />
+				<GlobalModals enableHip3Disclaimer />
 			</Suspense>
 		</>
 	);

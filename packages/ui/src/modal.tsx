@@ -50,13 +50,24 @@ interface ModalPopupProps
 	extends React.ComponentPropsWithoutRef<typeof Dialog.Popup>,
 		VariantProps<typeof modalPopupVariants> {
 	showClose?: boolean;
+	layer?: "default" | "blocking";
 }
 
 const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
-	({ className, size, showClose = true, children, ...props }, ref) => (
+	({ className, size, showClose = true, layer = "default", children, ...props }, ref) => (
 		<Dialog.Portal>
-			<Dialog.Backdrop className="fixed inset-0 z-40 bg-scrim backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0" />
-			<div className="fixed inset-0 z-50 overflow-y-auto p-6">
+			<Dialog.Backdrop
+				className={cn(
+					"fixed inset-0 bg-scrim backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none data-starting-style:opacity-0 data-ending-style:opacity-0",
+					layer === "blocking" ? "z-[var(--z-blocking-overlay)]" : "z-40",
+				)}
+			/>
+			<div
+				className={cn(
+					"fixed inset-0 overflow-y-auto p-6",
+					layer === "blocking" ? "z-[var(--z-blocking-overlay)]" : "z-50",
+				)}
+			>
 				<div className="flex min-h-full items-center justify-center">
 					<Dialog.Popup
 						className={cn(
@@ -137,8 +148,8 @@ const ModalFooter = React.forwardRef<HTMLDivElement, ModalFooterProps>(({ classN
 ModalFooter.displayName = "ModalFooter";
 
 // ─── AdaptiveModal ────────────────────────────────────────────────────────────
-// On mobile (< 768px): renders as a bottom drawer with swipe-to-close.
-// On desktop: renders as a centered modal.
+// Auto mode uses a bottom drawer below 768px and a centered modal otherwise.
+// Callers may override the presentation and disable dismissal for blocking flows.
 // Children are shared between both — use ModalHeader / ModalContent / ModalFooter as usual.
 
 interface AdaptiveModalProps {
@@ -146,21 +157,52 @@ interface AdaptiveModalProps {
 	onOpenChange: (open: boolean) => void;
 	size?: VariantProps<typeof modalPopupVariants>["size"];
 	showClose?: boolean;
+	dismissible?: boolean;
+	presentation?: "auto" | "modal" | "drawer";
+	layer?: "default" | "blocking";
 	children: React.ReactNode;
 	className?: string;
 }
 
-function AdaptiveModal({ open, onOpenChange, size, showClose = true, children, className }: AdaptiveModalProps) {
-	const isMobile = useMobile();
+function AdaptiveModal({
+	open,
+	onOpenChange,
+	size,
+	showClose = true,
+	dismissible = true,
+	presentation = "auto",
+	layer = "default",
+	children,
+	className,
+}: AdaptiveModalProps) {
+	const detectedMobile = useMobile();
+	const useDrawer = presentation === "drawer" || (presentation === "auto" && detectedMobile);
 
-	if (isMobile) {
+	function handleOpenChange(nextOpen: boolean, eventDetails: { cancel: () => void }) {
+		if (!dismissible && !nextOpen) {
+			eventDetails.cancel();
+			return;
+		}
+		onOpenChange(nextOpen);
+	}
+
+	if (useDrawer) {
 		return (
-			<Drawer side="bottom" open={open} onOpenChange={onOpenChange}>
-				<DrawerContent className={cn("relative pb-[env(safe-area-inset-bottom)]", className)}>
-					<div
-						className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20"
-						aria-hidden="true"
-					/>
+			<Drawer side="bottom" open={open} onOpenChange={handleOpenChange} disablePointerDismissal={!dismissible}>
+				<DrawerContent
+					overlayClassName={layer === "blocking" ? "z-[var(--z-blocking-overlay)]" : undefined}
+					className={cn(
+						"pb-[env(safe-area-inset-bottom)]",
+						layer === "blocking" && "z-[var(--z-blocking-overlay)]",
+						className,
+					)}
+				>
+					{dismissible && (
+						<div
+							className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20"
+							aria-hidden="true"
+						/>
+					)}
 					{showClose && (
 						<DrawerClose
 							className={cn(
@@ -183,8 +225,8 @@ function AdaptiveModal({ open, onOpenChange, size, showClose = true, children, c
 	}
 
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size={size} showClose={showClose} className={className}>
+		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={!dismissible}>
+			<ModalPopup size={size} showClose={showClose} layer={layer} className={className}>
 				{children}
 			</ModalPopup>
 		</Modal>

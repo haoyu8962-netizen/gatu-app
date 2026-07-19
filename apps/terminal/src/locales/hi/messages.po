@@ -601,6 +601,7 @@ msgstr "कमोडिटीज़"
 #~ msgid "completed"
 #~ msgstr "पूर्ण"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -1568,6 +1569,10 @@ msgstr "छोटे छिपाएं"
 msgid "HIP-3"
 msgstr "HIP-3"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "HIP-3 Deployer Disclaimer"
+msgstr "HIP-3 डिप्लॉयर अस्वीकरण"
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr "घंटे"
@@ -1575,6 +1580,10 @@ msgstr "घंटे"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "लॉन्ग द्वारा शॉर्ट को चुकाई जाने वाली प्रति घंटे की दर (यदि नकारात्मक हो, तो शॉर्ट लॉन्ग को भुगतान करते हैं)। फंडिंग से कोई अतिरिक्त शुल्क नहीं जुड़ा है; यह कीमत को स्पॉट कीमत की ओर ले जाने के लिए उपयोगकर्ताओं के बीच पीयर-टू-पीयर ट्रांसफर है। विवरण के लिए दस्तावेज़ देखें।"
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
+msgstr "मैंने इस अस्वीकरण को पढ़ और समझ लिया है तथा तृतीय पक्षों द्वारा डिप्लॉय किए गए अनुमति-रहित बाज़ारों से इंटरैक्ट करने के जोखिम स्वीकार करता/करती हूँ।"
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -3016,6 +3025,14 @@ msgstr "फिर से प्रयास करें"
 msgid "Reverse"
 msgstr "रिवर्स"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Review the available deployer information and our <0>Terms of Use</0> before trading."
+msgstr "ट्रेडिंग से पहले उपलब्ध डिप्लॉयर जानकारी और हमारी <0>उपयोग की शर्तें</0> देखें।"
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
+msgstr "ट्रेडिंग से पहले डिप्लॉयर का <0>दस्तावेज़</0> और हमारी <1>उपयोग की शर्तें</1> देखें।"
+
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
 msgstr "जोखिम/इनाम"
@@ -3949,6 +3966,10 @@ msgstr "ट्रेड्स"
 msgid "Trading"
 msgstr "ट्रेडिंग"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."
+msgstr "इन बाज़ारों में ट्रेडिंग में अधिक जोखिम हो सकता है, जिसमें कम लिक्विडिटी, अधिक अस्थिरता, अधूरे दस्तावेज़ और लिक्विडेशन का बढ़ा हुआ जोखिम शामिल है। आगे बढ़ने से पहले जोखिमों का सावधानीपूर्वक आकलन करें और समझें कि प्रत्येक बाज़ार कैसे काम करता है।"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -4408,6 +4429,10 @@ msgstr "आप किसी प्रतिबंधित क्षेत्र
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"
 msgstr "आप Testnet पर हैं"
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These markets are surfaced based on onchain activity and are not reviewed, verified, or approved."
+msgstr "आप Hyperliquid पर किसी तृतीय पक्ष द्वारा स्वतंत्र रूप से और बिना अनुमति के डिप्लॉय किए गए बाज़ार देख रहे हैं। ये बाज़ार ऑनचेन गतिविधि के आधार पर दिखाए जाते हैं और इनकी समीक्षा, पुष्टि या स्वीकृति नहीं की गई है।"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."

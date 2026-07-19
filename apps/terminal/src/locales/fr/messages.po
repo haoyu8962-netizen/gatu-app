@@ -601,6 +601,7 @@ msgstr "Matières premières"
 #~ msgid "completed"
 #~ msgstr "terminé"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -1568,6 +1569,10 @@ msgstr "Masquer les petits"
 msgid "HIP-3"
 msgstr "HIP-3"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "HIP-3 Deployer Disclaimer"
+msgstr "Avertissement relatif au déployeur HIP-3"
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr "Heure(s)"
@@ -1575,6 +1580,10 @@ msgstr "Heure(s)"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "Taux horaire payé par les positions longues aux positions courtes (s'il est négatif, les positions courtes paient les longues). Le funding n'a pas de frais associés ; il s'agit d'un transfert pair à pair entre utilisateurs pour rapprocher le prix du prix spot. Consultez la documentation pour plus de détails."
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
+msgstr "J’ai lu et compris cet avertissement et j’accepte les risques liés à l’utilisation de marchés sans autorisation déployés par des tiers."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -3016,6 +3025,14 @@ msgstr "Réessayer"
 msgid "Reverse"
 msgstr "Inverser"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Review the available deployer information and our <0>Terms of Use</0> before trading."
+msgstr "Avant de négocier, consultez les informations disponibles sur le déployeur et nos <0>Conditions d’utilisation</0>."
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
+msgstr "Avant de négocier, consultez la <0>documentation</0> du déployeur et nos <1>Conditions d’utilisation</1>."
+
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
 msgstr "Risque/Rendement"
@@ -3949,6 +3966,10 @@ msgstr "Transactions"
 msgid "Trading"
 msgstr "Trading"
 
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."
+msgstr "La négociation sur ces marchés peut présenter des risques élevés, notamment une faible liquidité, une forte volatilité, une documentation incomplète et un risque accru de liquidation. Évaluez soigneusement les risques et comprenez le fonctionnement de chaque marché avant de continuer."
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
@@ -4408,6 +4429,10 @@ msgstr "Vous accédez à nos produits et services depuis une juridiction restrei
 #: src/components/trade/testnet-banner.tsx
 msgid "You are on Testnet"
 msgstr "Vous êtes sur le Testnet"
+
+#: src/components/trade/components/hip3-deployer-disclaimer.tsx
+msgid "You are viewing markets deployed independently and permissionlessly by a third party on Hyperliquid. These markets are surfaced based on onchain activity and are not reviewed, verified, or approved."
+msgstr "Vous consultez des marchés déployés de manière indépendante et sans autorisation par un tiers sur Hyperliquid. Ces marchés sont présentés en fonction de l’activité onchain et ne sont ni examinés, ni vérifiés, ni approuvés."
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."
