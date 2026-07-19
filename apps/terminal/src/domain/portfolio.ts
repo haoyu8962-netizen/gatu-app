@@ -35,12 +35,12 @@ export function getPortfolioSnapshot(
 	return portfolio?.find(([key]) => key === periodKey)?.[1] ?? null;
 }
 
-export function getLatestHistoryValue(history: PortfolioSnapshot["accountValueHistory"] | undefined): string {
-	return history?.at(-1)?.[1] ?? "0";
+export function getLatestHistoryValue(history: PortfolioSnapshot["accountValueHistory"] | undefined): string | null {
+	return history?.at(-1)?.[1] ?? null;
 }
 
-export function calculateMaxDrawdown(history: PortfolioSnapshot["accountValueHistory"] | undefined): string {
-	if (!history?.length) return "0";
+export function calculateMaxDrawdown(history: PortfolioSnapshot["accountValueHistory"] | undefined): string | null {
+	if (!history?.length) return null;
 
 	let peak = Big(0);
 	let largestDrawdown = Big(0);
@@ -60,8 +60,9 @@ export function calculateMaxDrawdown(history: PortfolioSnapshot["accountValueHis
 	return largestDrawdown.times(-1).toString();
 }
 
-export function calculateFourteenDayVolume(dailyVolume: DailyUserVolume | null | undefined): string {
-	if (!dailyVolume?.length) return "0";
+export function calculateFourteenDayVolume(dailyVolume: DailyUserVolume | null | undefined): string | null {
+	if (dailyVolume == null) return null;
+	if (!dailyVolume.length) return "0";
 
 	return [...dailyVolume]
 		.sort((a, b) => a.date.localeCompare(b.date))

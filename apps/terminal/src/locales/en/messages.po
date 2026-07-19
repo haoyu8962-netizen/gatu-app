@@ -1793,6 +1793,7 @@ msgid "Loading wallet..."
 msgstr "Loading wallet..."
 
 #: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -2918,6 +2919,7 @@ msgstr "Resets in"
 msgid "Resetting..."
 msgstr "Resetting..."
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
@@ -3347,6 +3349,7 @@ msgstr "Smart wallet client not ready"
 msgid "Smart wallet deposits are not enabled for this network."
 msgstr "Smart wallet deposits are not enabled for this network."
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 msgid "Something went wrong"
 msgstr "Something went wrong"

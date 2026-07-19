@@ -1793,6 +1793,7 @@ msgid "Loading wallet..."
 msgstr "वॉलेट लोड हो रहा है..."
 
 #: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -2918,6 +2919,7 @@ msgstr "रीसेट होगा"
 msgid "Resetting..."
 msgstr "रीसेट हो रहा है..."
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
@@ -3347,6 +3349,7 @@ msgstr ""
 msgid "Smart wallet deposits are not enabled for this network."
 msgstr "इस नेटवर्क के लिए स्मार्ट वॉलेट जमा सक्षम नहीं हैं।"
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 msgid "Something went wrong"
 msgstr "कुछ गलत हो गया"

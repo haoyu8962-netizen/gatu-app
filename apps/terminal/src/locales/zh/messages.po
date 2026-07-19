@@ -1793,6 +1793,7 @@ msgid "Loading wallet..."
 msgstr "加载钱包中..."
 
 #: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -2918,6 +2919,7 @@ msgstr "重置倒计时"
 msgid "Resetting..."
 msgstr "正在重置…"
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/offline-banner.tsx
@@ -3347,6 +3349,7 @@ msgstr ""
 msgid "Smart wallet deposits are not enabled for this network."
 msgstr "当前网络未启用智能钱包存款。"
 
+#: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 msgid "Something went wrong"
 msgstr "出错了"

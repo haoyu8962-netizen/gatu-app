@@ -40,7 +40,8 @@ describe("portfolio data", () => {
 
 		expect(getLatestHistoryValue(history)).toBe("120");
 		expect(calculateMaxDrawdown(history)).toBe("-0.2");
-		expect(calculateMaxDrawdown([])).toBe("0");
+		expect(getLatestHistoryValue([])).toBeNull();
+		expect(calculateMaxDrawdown([])).toBeNull();
 	});
 
 	it("sums maker and taker volume for the latest fourteen calendar entries", () => {
@@ -52,6 +53,8 @@ describe("portfolio data", () => {
 		}));
 
 		expect(calculateFourteenDayVolume(dailyVolume)).toBe("175");
+		expect(calculateFourteenDayVolume([])).toBe("0");
+		expect(calculateFourteenDayVolume(undefined)).toBeNull();
 	});
 
 	it("values net borrow/lend balances with reserve oracle prices", () => {

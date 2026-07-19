@@ -89,7 +89,9 @@ export function PortfolioOverview() {
 	const fourteenDayVolume = calculateFourteenDayVolume(feesQuery.data?.dailyUserVlm);
 	const pnl = getLatestHistoryValue(snapshot?.pnlHistory);
 	const maxDrawdown = calculateMaxDrawdown(snapshot?.accountValueHistory);
-	const isLoading = isConnected && (portfolioQuery.isPending || feesQuery.isPending);
+	const isPortfolioLoading = isConnected && !snapshot && (portfolioQuery.isPending || portfolioQuery.isFetching);
+	const isPortfolioUnavailable = isConnected && !isPortfolioLoading && (snapshot === null || perpsSnapshot === null);
+	const isFeesLoading = isConnected && !feesQuery.data && (feesQuery.isPending || feesQuery.isFetching);
 	const takerFee = feeMarket === "perps" ? feesQuery.data?.userCrossRate : feesQuery.data?.userSpotCrossRate;
 	const makerFee = feeMarket === "perps" ? feesQuery.data?.userAddRate : feesQuery.data?.userSpotAddRate;
 
@@ -111,17 +113,20 @@ export function PortfolioOverview() {
 	return (
 		<div className="grid gap-2 min-[1001px]:grid-cols-4">
 			<div className="grid grid-cols-2 gap-2 min-[1001px]:grid-cols-1">
-				<MetricCard label={<Trans>14 Day Volume</Trans>} value={isLoading ? "—" : formatUSD(fourteenDayVolume)} />
+				<MetricCard
+					label={<Trans>14 Day Volume</Trans>}
+					value={isFeesLoading || fourteenDayVolume === null ? "—" : formatUSD(fourteenDayVolume)}
+				/>
 				<MetricCard
 					label={<Trans>Fees (Taker / Maker)</Trans>}
 					value={
-						isLoading
+						isFeesLoading || takerFee == null || makerFee == null
 							? "—"
-							: `${formatPercent(takerFee ?? 0, {
+							: `${formatPercent(takerFee, {
 									minimumFractionDigits: 4,
 									maximumFractionDigits: 4,
 									signDisplay: "auto",
-								})} / ${formatPercent(makerFee ?? 0, {
+								})} / ${formatPercent(makerFee, {
 									minimumFractionDigits: 4,
 									maximumFractionDigits: 4,
 									signDisplay: "auto",
@@ -163,9 +168,17 @@ export function PortfolioOverview() {
 					/>
 				</div>
 				<div className="flex flex-1 flex-col justify-center px-3 py-2 text-xs">
-					<SummaryRow label={<Trans>PNL</Trans>} value={formatUSD(pnl, { signDisplay: "exceptZero" })} tone={pnl} />
-					<SummaryRow label={<Trans>Volume</Trans>} value={formatUSD(snapshot?.vlm ?? 0)} />
-					<SummaryRow label={<Trans>Max Drawdown</Trans>} value={formatPercent(maxDrawdown)} tone={maxDrawdown} />
+					<SummaryRow
+						label={<Trans>PNL</Trans>}
+						value={pnl === null ? "—" : formatUSD(pnl, { signDisplay: "exceptZero" })}
+						tone={pnl ?? undefined}
+					/>
+					<SummaryRow label={<Trans>Volume</Trans>} value={snapshot === null ? "—" : formatUSD(snapshot.vlm)} />
+					<SummaryRow
+						label={<Trans>Max Drawdown</Trans>}
+						value={maxDrawdown === null ? "—" : formatPercent(maxDrawdown)}
+						tone={maxDrawdown ?? undefined}
+					/>
 					<SummaryRow label={<Trans>Total Equity</Trans>} value={formatUSD(totalEquity)} />
 					<SummaryRow label={<Trans>Perps Account Equity</Trans>} value={formatUSD(accountSummary.perpAccountValue)} />
 					<SummaryRow label={<Trans>Spot Account Equity</Trans>} value={formatUSD(accountSummary.spotAccountValue)} />
@@ -178,6 +191,9 @@ export function PortfolioOverview() {
 					accountValueHistory={snapshot?.accountValueHistory ?? []}
 					pnlHistory={snapshot?.pnlHistory ?? []}
 					perpsPnlHistory={perpsSnapshot?.pnlHistory ?? []}
+					isLoading={isPortfolioLoading}
+					isUnavailable={isPortfolioUnavailable}
+					onRetry={() => void portfolioQuery.refetch()}
 				/>
 			</div>
 		</div>
