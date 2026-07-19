@@ -9,6 +9,12 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Follow the existing TypeScript, React, Tailwind, Biome, and Conventional Commit conventions described in `agent.md`.
 - Do not change behavior outside the requested surface while making visual-alignment changes.
 
+## Wallet signing contract
+
+- Treat the active wallet account as the signing identity. Before creating a user-signed Hyperliquid client, require its address to match the selected Hyperliquid user address exactly, case-insensitively; fail closed on missing or mismatched accounts.
+- For Privy email sessions, activate only the exact embedded wallet belonging to that user. Never fall back to the first connected or first embedded wallet when the expected address is unavailable.
+- Hyperliquid Agent/API Wallet keys may be stored locally, but Agent approval must always be signed by the matching master wallet. Missing local Agent state may trigger re-registration; it must never trigger a different browser wallet.
+
 ## Trading terminal visual contract
 
 - The dark terminal and chart canvas use `#0F1A1F` (`rgb(15, 26, 31)`) as the main background.
