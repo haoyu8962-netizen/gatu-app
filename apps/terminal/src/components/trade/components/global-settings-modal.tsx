@@ -7,19 +7,15 @@ import {
 	ModalTitle,
 	SegmentedControlItem,
 	SegmentedControls,
-	Select,
 	Slider,
 	Toggle,
 } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import type { ChangeEvent, ReactNode } from "react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
 import { resetDesktopGridLayouts } from "@/config/desktop-grid-layout";
-import { type LocaleCode, localeList, type NumberFormatLocale, numberFormatLocaleList } from "@/config/i18n";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
-import { dynamicActivate } from "@/lib/i18n";
 import { useSettingsDialogActions, useSettingsDialogOpen } from "@/stores/use-global-modal-store";
 import {
 	useGlobalSettings,
@@ -31,12 +27,10 @@ import {
 export function GlobalSettingsModal() {
 	const open = useSettingsDialogOpen();
 	const { close } = useSettingsDialogActions();
-	const { i18n, t } = useLingui();
-	const activeLocale = i18n.locale;
+	const { t } = useLingui();
 	const slippagePercent = useMarketOrderSlippagePercent();
-	const { showOrderbookInQuote, numberFormatLocale } = useGlobalSettings();
-	const { setShowOrderbookInQuote, setNumberFormatLocale, setMarketOrderSlippagePercent, setNetwork } =
-		useGlobalSettingsActions();
+	const { showOrderbookInQuote } = useGlobalSettings();
+	const { setShowOrderbookInQuote, setMarketOrderSlippagePercent, setNetwork } = useGlobalSettingsActions();
 	const network = useNetwork();
 
 	const [localSlippageInput, setLocalSlippageInput] = useState<string | null>(null);
@@ -61,24 +55,10 @@ export function GlobalSettingsModal() {
 		}
 	}
 
-	function handleLanguageChange(value: string | null) {
-		if (!value || value === activeLocale) return;
-		dynamicActivate(value as LocaleCode).catch(() => {
-			toast.error(t`Failed to change language`);
-		});
-	}
-
-	function handleNumberFormatChange(value: string | null) {
-		if (value) setNumberFormatLocale(value as NumberFormatLocale);
-	}
-
 	function handleDesktopLayoutReset() {
 		resetDesktopGridLayouts();
 		window.location.reload();
 	}
-
-	const languageOptions = localeList.map(({ code, name }) => ({ value: code, label: name }));
-	const numberFormatOptions = numberFormatLocaleList.map(({ code, name }) => ({ value: code, label: name }));
 
 	return (
 		<Modal open={open} onOpenChange={close}>
@@ -124,24 +104,6 @@ export function GlobalSettingsModal() {
 					<SettingsGroup label={t`Display`}>
 						<SettingRow label={t`Order book in quote asset`}>
 							<Toggle size="xs" checked={showOrderbookInQuote} onCheckedChange={setShowOrderbookInQuote} />
-						</SettingRow>
-						<SettingRow label={t`Display language`}>
-							<Select
-								value={activeLocale}
-								onValueChange={handleLanguageChange}
-								options={languageOptions}
-								size="xs"
-								triggerClassName="min-w-32"
-							/>
-						</SettingRow>
-						<SettingRow label={t`Number format`}>
-							<Select
-								value={numberFormatLocale}
-								onValueChange={handleNumberFormatChange}
-								options={numberFormatOptions}
-								size="xs"
-								triggerClassName="min-w-32"
-							/>
 						</SettingRow>
 						<SettingRow label={t`Desktop layout`} hint={t`Page reloads when changed`}>
 							<Button variant="outline" intent="neutral" size="xs" onClick={handleDesktopLayoutReset}>

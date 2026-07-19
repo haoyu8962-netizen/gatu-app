@@ -1,11 +1,7 @@
-import { ButtonIcon } from "@gatu/ui";
-import { useLingui } from "@lingui/react/macro";
-import { GearIcon } from "@phosphor-icons/react";
+import { Link } from "@tanstack/react-router";
 import { APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
+import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { cn } from "@/lib/cn";
-import { useSettingsDialogActions } from "@/stores/use-global-modal-store";
-import { LanguageSwitcher } from "../header/language-switcher";
-import { ThemeToggle } from "../header/theme-toggle";
 import { UserMenu } from "../header/user-menu";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
 
@@ -14,8 +10,7 @@ interface Props {
 }
 
 export function MobileHeader({ className }: Props) {
-	const { t } = useLingui();
-	const { open: openSettingsDialog } = useSettingsDialogActions();
+	const tradeHomePath = useTradeHomePath();
 
 	return (
 		<header
@@ -29,23 +24,18 @@ export function MobileHeader({ className }: Props) {
 			<div className={cn(APP_HEADER_HEIGHT_CLASS, "px-2 flex items-center justify-between")}>
 				<div className="flex items-center gap-1">
 					<MobileNavDrawer />
-					<img src="/icon.svg" alt="gatu" className="size-6 rounded-8" />
+					<Link
+						to={tradeHomePath}
+						search={{ scope: "all" }}
+						aria-label="gatu"
+						className="rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+					>
+						<img src="/icon.svg" alt="" aria-hidden className="size-6 rounded-8" />
+					</Link>
 				</div>
 
-				<div className="flex items-center gap-0.5">
+				<div className="flex min-w-0 items-center">
 					<UserMenu />
-					<ThemeToggle />
-					<LanguageSwitcher />
-					<ButtonIcon
-						variant="ghost"
-						intent="neutral"
-						size="md"
-						className="touch-target"
-						aria-label={t`Settings`}
-						onClick={openSettingsDialog}
-					>
-						<GearIcon className="size-4" />
-					</ButtonIcon>
 				</div>
 			</div>
 		</header>

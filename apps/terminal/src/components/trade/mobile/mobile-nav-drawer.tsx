@@ -1,24 +1,34 @@
 import { Badge, Button, ButtonIcon, Drawer, DrawerContent } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
-import { DownloadSimpleIcon, GearIcon, ListIcon, WalletIcon, XIcon } from "@phosphor-icons/react";
-import { Suspense, useState } from "react";
-import { STATIC_NAV_ITEMS } from "@/config/nav";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { DownloadSimpleIcon, GearIcon, ListIcon, XIcon } from "@phosphor-icons/react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { useState } from "react";
+import { isTradeRoutePath, STATIC_NAV_ITEMS } from "@/config/nav";
+import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { createLazyComponent } from "@/lib/lazy";
+import { cn } from "@/lib/cn";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
+import { LanguageSwitcher } from "../header/language-switcher";
 import { ThemeToggle } from "../header/theme-toggle";
 
-const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
-
 export function MobileNavDrawer() {
+	const { t } = useLingui();
+	const { pathname } = useLocation();
 	const [open, setOpen] = useState(false);
-	const [walletOpen, setWalletOpen] = useState(false);
-	const { isConnected, sessionMode } = useWalletSession();
+	const { hasWalletAccess } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
+	const tradeHomePath = useTradeHomePath();
+	const tradeActive = isTradeRoutePath(pathname);
+
+	function getNavLinkClass(active: boolean): string {
+		return cn(
+			"rounded-8 px-3 py-2.5 text-sm transition-colors hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+			active ? "bg-fill-hover font-medium text-brand" : "text-fg",
+		);
+	}
 
 	function close() {
 		setOpen(false);
@@ -40,20 +50,72 @@ export function MobileNavDrawer() {
 			<Drawer side="left" open={open} onOpenChange={setOpen}>
 				<DrawerContent className="w-[80vw] max-w-72 flex flex-col p-0">
 					<div className="h-12 px-3 flex items-center justify-between border-b border-stroke-weak/60 shrink-0">
-						<div className="flex items-center gap-1.5">
-							<img src="/icon.svg" alt="gatu" className="size-5 rounded-8" />
+						<Link
+							to={tradeHomePath}
+							search={{ scope: "all" }}
+							onClick={close}
+							aria-label="gatu"
+							className="flex items-center gap-1.5 rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						>
+							<img src="/icon.svg" alt="" aria-hidden className="size-5 rounded-8" />
 							<span className="text-xs font-bold tracking-tight">
 								<span className="text-brand">ga</span>
 								<span className="text-fg">tu</span>
 							</span>
-						</div>
+						</Link>
 						<ButtonIcon variant="ghost" intent="neutral" size="md" aria-label={t`Close navigation`} onClick={close}>
 							<XIcon className="size-4" />
 						</ButtonIcon>
 					</div>
 
 					<div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
-						<nav className="p-2 flex flex-col" aria-label={t`Platform`}>
+						<nav className="flex flex-col p-2" aria-label={t`Primary navigation`}>
+							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
+								<Trans>Navigation</Trans>
+							</p>
+							<Link
+								to={tradeHomePath}
+								search={{ scope: "all" }}
+								onClick={close}
+								aria-current={tradeActive ? "page" : undefined}
+								className={getNavLinkClass(tradeActive)}
+							>
+								<Trans>Trade</Trans>
+							</Link>
+							<Link
+								to="/docs"
+								onClick={close}
+								aria-current={pathname === "/docs" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/docs")}
+							>
+								<Trans>Docs</Trans>
+							</Link>
+							<Link
+								to="/support"
+								onClick={close}
+								aria-current={pathname === "/support" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/support")}
+							>
+								<Trans>Support</Trans>
+							</Link>
+							<Link
+								to="/terms"
+								onClick={close}
+								aria-current={pathname === "/terms" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/terms")}
+							>
+								<Trans>Terms</Trans>
+							</Link>
+							<Link
+								to="/privacy"
+								onClick={close}
+								aria-current={pathname === "/privacy" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/privacy")}
+							>
+								<Trans>Privacy Policy</Trans>
+							</Link>
+						</nav>
+						<nav className="flex flex-col p-2 pt-0" aria-label={t`Platform`}>
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">
 								<Trans>Platform</Trans>
 							</p>
@@ -72,19 +134,7 @@ export function MobileNavDrawer() {
 					</div>
 
 					<div className="shrink-0 p-3 border-t border-stroke-weak/60 flex flex-col gap-2">
-						{!isConnected && (
-							<Button
-								variant="outline"
-								intent="neutral"
-								size="sm"
-								onClick={() => setWalletOpen(true)}
-								iconLeft={<WalletIcon className="size-3.5" />}
-								className="w-full"
-							>
-								<Trans>Connect Wallet</Trans>
-							</Button>
-						)}
-						{isConnected && sessionMode === "wallet" && !tradeRestricted && (
+						{hasWalletAccess && !tradeRestricted && (
 							<Button
 								variant="filled"
 								intent="brand"
@@ -100,6 +150,10 @@ export function MobileNavDrawer() {
 							</Button>
 						)}
 						<div className="flex items-center justify-between pt-1">
+							<div className="flex items-center gap-1">
+								<LanguageSwitcher />
+								<ThemeToggle />
+							</div>
 							<ButtonIcon
 								variant="ghost"
 								intent="neutral"
@@ -112,17 +166,10 @@ export function MobileNavDrawer() {
 							>
 								<GearIcon className="size-4" />
 							</ButtonIcon>
-							<ThemeToggle />
 						</div>
 					</div>
 				</DrawerContent>
 			</Drawer>
-
-			{walletOpen && (
-				<Suspense fallback={null}>
-					<WalletModal open onOpenChange={setWalletOpen} />
-				</Suspense>
-			)}
 		</>
 	);
 }

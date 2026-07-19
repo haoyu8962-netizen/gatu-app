@@ -25,6 +25,7 @@ const zhTranslations: Record<string, string> = {
 	"Portfolio Value": "投资组合价值",
 	Withdraw: "提款",
 	Language: "语言",
+	"Language and number format": "语言和数字格式",
 	"Primary navigation": "主导航",
 	Markets: "市场",
 	Trade: "交易",
@@ -69,8 +70,8 @@ vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	getResolvedFormatLocale: () => "en-US",
-	useGlobalSettings: () => ({ showOrderbookInQuote: false }),
-	useGlobalSettingsActions: () => ({ setShowOrderbookInQuote: vi.fn() }),
+	useGlobalSettings: () => ({ numberFormatLocale: "auto", showOrderbookInQuote: false }),
+	useGlobalSettingsActions: () => ({ setNumberFormatLocale: vi.fn(), setShowOrderbookInQuote: vi.fn() }),
 }));
 
 const balanceSnapshot = {
@@ -180,7 +181,7 @@ describe("language hot switching", () => {
 		const originalPath = window.location.pathname;
 		act(() => activateLocale("zh"));
 
-		expect(container.querySelector('[aria-label="语言"]')).not.toBeNull();
+		expect(container.querySelector('[aria-label="语言和数字格式"]')).not.toBeNull();
 		const localizedCheckbox = container.querySelector<HTMLElement>('[aria-label="只减仓"]');
 		expect(localizedCheckbox).toBe(originalCheckbox);
 		expect(localizedCheckbox?.getAttribute("aria-checked")).toBe("true");

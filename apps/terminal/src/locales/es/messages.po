@@ -193,7 +193,6 @@ msgstr "Tipos de orden avanzados"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/config/nav.tsx
 msgid "All"
 msgstr "Todos"
 
@@ -634,7 +633,6 @@ msgstr "Conectar"
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
@@ -920,7 +918,6 @@ msgstr "Predeterminado"
 #~ msgstr "DeFi"
 
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1061,8 +1058,8 @@ msgid "Display"
 msgstr "Pantalla"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Display language"
-msgstr "Idioma de la interfaz"
+#~ msgid "Display language"
+#~ msgstr "Idioma de la interfaz"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Display Language"
@@ -1073,6 +1070,8 @@ msgstr "Idioma de la interfaz"
 #~ msgstr "Muestra la barra lateral móvil."
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "Documentación"
 
@@ -1238,7 +1237,7 @@ msgstr "Explorador"
 msgid "failed"
 msgstr "fallido"
 
-#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
 msgid "Failed to change language"
 msgstr ""
@@ -1499,7 +1498,6 @@ msgid "Hide small"
 msgstr "Ocultar pequeños"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
 
@@ -1610,6 +1608,10 @@ msgstr "Aislado"
 #: src/components/trade/header/language-switcher.tsx
 msgid "Language"
 msgstr "Idioma"
+
+#: src/components/trade/header/language-switcher.tsx
+msgid "Language and number format"
+msgstr "Idioma y formato numérico"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Last Price"
@@ -2012,8 +2014,9 @@ msgid "Mode"
 msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
-#~ msgid "More"
-#~ msgstr "Más"
+#: src/components/trade/header/top-nav.tsx
+msgid "More"
+msgstr "Más"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "More details"
@@ -2044,6 +2047,10 @@ msgstr "Mueve USDC entre tus cuentas Perp y Spot."
 #: src/components/pages/builder-page.tsx
 #~ msgid "Must be signed by main wallet (not agent/API wallet)"
 #~ msgstr ""
+
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Navigation"
+msgstr "Navegación"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -2209,7 +2216,7 @@ msgstr "No conectado"
 #~ msgid "Notifications"
 #~ msgstr "Notificaciones"
 
-#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
 msgstr "Formato de número"
 
@@ -2452,7 +2459,6 @@ msgstr "pendiente"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/config/nav.tsx
 msgid "Perp"
 msgstr "Perp"
 
@@ -2666,11 +2672,15 @@ msgstr "Precio"
 msgid "Price grouping"
 msgstr "Agrupación de precios"
 
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Primary navigation"
 msgstr "Navegación principal"
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "Política de privacidad"
 
@@ -2802,6 +2812,7 @@ msgstr "Reemplaza la clave actual del teléfono. El teléfono anterior debe volv
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Reset"
 msgstr "Restablecer"
@@ -3079,7 +3090,6 @@ msgstr "Establecer en {p}%"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/mobile/mobile-header.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
 #: src/lib/tests/tmp-stale-t-probe.test.tsx
@@ -3290,7 +3300,6 @@ msgstr "Origen"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/config/nav.tsx
 msgid "Spot"
 msgstr "Spot"
 
@@ -3372,6 +3381,8 @@ msgid "Successful"
 msgstr "Exitoso"
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "Soporte"
 
@@ -3532,6 +3543,8 @@ msgid "Taking longer than expected"
 msgstr "Está tardando más de lo esperado"
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "Términos"
 
@@ -3702,6 +3715,8 @@ msgstr "TP/SL"
 msgid "Track on LI.FI Explorer"
 msgstr "Seguir en LI.FI Explorer"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/nav.tsx
 msgid "Trade"
 msgstr "Operar"

@@ -193,7 +193,6 @@ msgstr "专业委托类型"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/config/nav.tsx
 msgid "All"
 msgstr "全部"
 
@@ -634,7 +633,6 @@ msgstr "连接"
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
@@ -920,7 +918,6 @@ msgstr "默认"
 #~ msgstr "DeFi"
 
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1061,8 +1058,8 @@ msgid "Display"
 msgstr "显示"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Display language"
-msgstr "显示语言"
+#~ msgid "Display language"
+#~ msgstr "显示语言"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Display Language"
@@ -1073,6 +1070,8 @@ msgstr "显示语言"
 #~ msgstr "显示移动端侧边栏。"
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "文档"
 
@@ -1238,7 +1237,7 @@ msgstr "区块浏览器"
 msgid "failed"
 msgstr "失败"
 
-#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
 msgid "Failed to change language"
 msgstr ""
@@ -1499,7 +1498,6 @@ msgid "Hide small"
 msgstr "隐藏小额"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
 
@@ -1610,6 +1608,10 @@ msgstr "逐仓"
 #: src/components/trade/header/language-switcher.tsx
 msgid "Language"
 msgstr "语言"
+
+#: src/components/trade/header/language-switcher.tsx
+msgid "Language and number format"
+msgstr "语言和数字格式"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Last Price"
@@ -2012,8 +2014,9 @@ msgid "Mode"
 msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
-#~ msgid "More"
-#~ msgstr "更多"
+#: src/components/trade/header/top-nav.tsx
+msgid "More"
+msgstr "更多"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "More details"
@@ -2044,6 +2047,10 @@ msgstr "在合约账户与现货账户之间划转 USDC。"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Must be signed by main wallet (not agent/API wallet)"
 #~ msgstr ""
+
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Navigation"
+msgstr "导航"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -2209,7 +2216,7 @@ msgstr "未连接"
 #~ msgid "Notifications"
 #~ msgstr "通知"
 
-#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
 msgstr "数字格式"
 
@@ -2452,7 +2459,6 @@ msgstr "待处理"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/config/nav.tsx
 msgid "Perp"
 msgstr "永续"
 
@@ -2666,11 +2672,15 @@ msgstr "价格"
 msgid "Price grouping"
 msgstr "价格合并"
 
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Primary navigation"
 msgstr "主导航"
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "隐私政策"
 
@@ -2802,6 +2812,7 @@ msgstr "将替换当前手机密钥。旧手机需重新关联。"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Reset"
 msgstr "重置"
@@ -3079,7 +3090,6 @@ msgstr "设为{p}%"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/mobile/mobile-header.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
 #: src/lib/tests/tmp-stale-t-probe.test.tsx
@@ -3290,7 +3300,6 @@ msgstr "来源"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/config/nav.tsx
 msgid "Spot"
 msgstr "现货"
 
@@ -3372,6 +3381,8 @@ msgid "Successful"
 msgstr "成功"
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "支持"
 
@@ -3532,6 +3543,8 @@ msgid "Taking longer than expected"
 msgstr "耗时比预期更长"
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "条款"
 
@@ -3702,6 +3715,8 @@ msgstr "止盈止损"
 msgid "Track on LI.FI Explorer"
 msgstr "在 LI.FI Explorer 上追踪"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/nav.tsx
 msgid "Trade"
 msgstr "交易"

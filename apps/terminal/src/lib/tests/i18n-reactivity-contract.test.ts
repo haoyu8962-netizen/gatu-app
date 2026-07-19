@@ -4,10 +4,11 @@ import { describe, expect, it } from "vitest";
 
 const REACTIVE_COMPONENTS = [
 	"components/trade/header/top-nav.tsx",
+	"components/trade/header/language-switcher.tsx",
 	"components/trade/header/user-menu.tsx",
 	"components/trade/mobile/mobile-account-view.tsx",
 	"components/trade/mobile/mobile-book-view.tsx",
-	"components/trade/mobile/mobile-header.tsx",
+	"components/trade/mobile/mobile-nav-drawer.tsx",
 	"components/trade/mobile/mobile-trade-view.tsx",
 	"hooks/trade/use-order-entry-data.ts",
 ];

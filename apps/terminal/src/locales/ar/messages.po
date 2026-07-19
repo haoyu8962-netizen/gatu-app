@@ -193,7 +193,6 @@ msgstr "أنواع الأوامر المتقدمة"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/config/nav.tsx
 msgid "All"
 msgstr "الكل"
 
@@ -634,7 +633,6 @@ msgstr "ربط"
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
@@ -920,7 +918,6 @@ msgstr "افتراضي"
 #~ msgstr "التمويل اللامركزي"
 
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1061,8 +1058,8 @@ msgid "Display"
 msgstr "العرض"
 
 #: src/components/trade/components/global-settings-modal.tsx
-msgid "Display language"
-msgstr "لغة العرض"
+#~ msgid "Display language"
+#~ msgstr "لغة العرض"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Display Language"
@@ -1073,6 +1070,8 @@ msgstr "لغة العرض"
 #~ msgstr "يعرض الشريط الجانبي للجوال."
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Docs"
 msgstr "المستندات"
 
@@ -1238,7 +1237,7 @@ msgstr "المستكشف"
 msgid "failed"
 msgstr "فشل"
 
-#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
 msgid "Failed to change language"
 msgstr ""
@@ -1499,7 +1498,6 @@ msgid "Hide small"
 msgstr "إخفاء الصغيرة"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/config/nav.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
 
@@ -1610,6 +1608,10 @@ msgstr "معزول"
 #: src/components/trade/header/language-switcher.tsx
 msgid "Language"
 msgstr "اللغة"
+
+#: src/components/trade/header/language-switcher.tsx
+msgid "Language and number format"
+msgstr "اللغة وتنسيق الأرقام"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Last Price"
@@ -2012,8 +2014,9 @@ msgid "Mode"
 msgstr ""
 
 #: src/components/trade/header/top-nav.tsx
-#~ msgid "More"
-#~ msgstr "المزيد"
+#: src/components/trade/header/top-nav.tsx
+msgid "More"
+msgstr "المزيد"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "More details"
@@ -2044,6 +2047,10 @@ msgstr "نقل USDC بين حسابي Perp وSpot الخاصين بك."
 #: src/components/pages/builder-page.tsx
 #~ msgid "Must be signed by main wallet (not agent/API wallet)"
 #~ msgstr ""
+
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Navigation"
+msgstr "التنقل"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -2209,7 +2216,7 @@ msgstr "غير متصل"
 #~ msgid "Notifications"
 #~ msgstr "الإشعارات"
 
-#: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
 msgid "Number format"
 msgstr "تنسيق الأرقام"
 
@@ -2452,7 +2459,6 @@ msgstr "قيد الانتظار"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/config/nav.tsx
 msgid "Perp"
 msgstr "Perp"
 
@@ -2666,11 +2672,15 @@ msgstr "السعر"
 msgid "Price grouping"
 msgstr "تجميع الأسعار"
 
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Primary navigation"
 msgstr "التنقل الرئيسي"
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Privacy Policy"
 msgstr "سياسة الخصوصية"
 
@@ -2802,6 +2812,7 @@ msgstr "يستبدل مفتاح الهاتف الحالي. يجب على اله�
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/header/language-switcher.tsx
 #: src/routes/mobile-agent-sync.tsx
 msgid "Reset"
 msgstr "إعادة تعيين"
@@ -3079,7 +3090,6 @@ msgstr "تعيين إلى {p}%"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/header/top-nav.tsx
-#: src/components/trade/mobile/mobile-header.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/ui-text.ts
 #: src/lib/tests/tmp-stale-t-probe.test.tsx
@@ -3290,7 +3300,6 @@ msgstr "المصدر"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/config/nav.tsx
 msgid "Spot"
 msgstr "فوري"
 
@@ -3372,6 +3381,8 @@ msgid "Successful"
 msgstr "ناجح"
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Support"
 msgstr "الدعم"
 
@@ -3532,6 +3543,8 @@ msgid "Taking longer than expected"
 msgstr "يستغرق وقتًا أطول من المتوقع"
 
 #: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Terms"
 msgstr "الشروط"
 
@@ -3702,6 +3715,8 @@ msgstr "TP/SL"
 msgid "Track on LI.FI Explorer"
 msgstr "التتبّع على LI.FI Explorer"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/config/nav.tsx
 msgid "Trade"
 msgstr "تداول"

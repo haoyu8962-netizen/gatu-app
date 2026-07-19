@@ -1,24 +1,14 @@
 import { Button, ButtonIcon, Dropdown } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-	CheckIcon,
-	CopyIcon,
-	DeviceMobileIcon,
-	PlusCircleIcon,
-	SignOutIcon,
-	SpinnerGapIcon,
-	WalletIcon,
-} from "@phosphor-icons/react";
+import { CheckIcon, CopyIcon, DeviceMobileIcon, SignOutIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useEnsName } from "wagmi";
 import { APP_BAR_BUTTON_HEIGHT_CLASS } from "@/config/layout";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
-import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
-import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { MobileAgentSyncModal } from "../components/mobile-agent-sync-modal";
 
 const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
@@ -32,8 +22,6 @@ export function UserMenu() {
 	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
 	const emailAddress = getPrivyEmailAddress(user);
 	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
-	const { open: openDepositModal } = useDepositModalActions();
-	const { tradeRestricted } = useGeoRestriction();
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
 	const [mounted, setMounted] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
@@ -128,17 +116,6 @@ export function UserMenu() {
 					},
 				]
 			: []),
-		...(tradeRestricted || !hasWalletAccess
-			? []
-			: [
-					{
-						label: t`Deposit`,
-						icon: <PlusCircleIcon className="size-3.5" />,
-						onSelect: () => {
-							openDepositModal("deposit");
-						},
-					},
-				]),
 		...(hasWalletAccess
 			? [
 					{
@@ -176,9 +153,7 @@ export function UserMenu() {
 					</>
 				}
 				groups={[
-					{
-						items: actionItems,
-					},
+					...(actionItems.length > 0 ? [{ items: actionItems }] : []),
 					{
 						items: [
 							{

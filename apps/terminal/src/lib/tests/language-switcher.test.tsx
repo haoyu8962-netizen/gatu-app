@@ -17,6 +17,9 @@ function getMessageId(message: string): string {
 const zhMessages: Messages = Object.fromEntries(
 	Object.entries({
 		Language: "语言",
+		"Language and number format": "语言和数字格式",
+		"Number format": "数字格式",
+		Reset: "重置",
 		"Primary navigation": "主导航",
 		Markets: "市场",
 		Trade: "交易",
@@ -26,6 +29,18 @@ const zhMessages: Messages = Object.fromEntries(
 
 vi.mock("@/lib/i18n", () => ({
 	dynamicActivate: vi.fn(async () => {}),
+}));
+
+const settingsState = vi.hoisted(() => ({
+	numberFormatLocale: "auto",
+	setNumberFormatLocale: vi.fn((locale: string) => {
+		settingsState.numberFormatLocale = locale;
+	}),
+}));
+
+vi.mock("@/stores/use-global-settings-store", () => ({
+	useGlobalSettings: () => ({ numberFormatLocale: settingsState.numberFormatLocale }),
+	useGlobalSettingsActions: () => ({ setNumberFormatLocale: settingsState.setNumberFormatLocale }),
 }));
 
 function activateLocale(locale: "en" | "zh") {
@@ -39,7 +54,9 @@ describe("LanguageSwitcher", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		vi.clearAllMocks();
 		activateLocale("en");
+		settingsState.numberFormatLocale = "auto";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -60,14 +77,14 @@ describe("LanguageSwitcher", () => {
 		});
 
 		await act(async () => activateLocale("zh"));
-		const trigger = container.querySelector<HTMLElement>('[aria-label="语言"]');
+		const trigger = container.querySelector<HTMLElement>('[aria-label="语言和数字格式"]');
 		expect(trigger).not.toBeNull();
 
 		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 
 		const menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-		const englishItem = menuItems.find((item) => item.textContent?.includes("English"));
-		const chineseItem = menuItems.find((item) => item.textContent?.includes("中文"));
+		const englishItem = menuItems.find((item) => item.textContent?.trim() === "English");
+		const chineseItem = menuItems.find((item) => item.textContent?.trim() === "中文");
 		expect(englishItem?.getAttribute("aria-current")).toBeNull();
 		expect(chineseItem?.getAttribute("aria-current")).toBe("true");
 
@@ -75,11 +92,32 @@ describe("LanguageSwitcher", () => {
 		expect(dynamicActivate).not.toHaveBeenCalled();
 
 		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		const reopenedEnglishItem = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) =>
-			item.textContent?.includes("English"),
+		const reopenedEnglishItem = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
+			(item) => item.textContent?.trim() === "English",
 		);
 		await act(async () => reopenedEnglishItem?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 		expect(dynamicActivate).toHaveBeenCalledWith("en");
+	});
+
+	it("updates the number format independently of the interface language", async () => {
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<LanguageSwitcher />
+				</I18nProvider>,
+			);
+		});
+
+		const trigger = container.querySelector<HTMLElement>('[aria-label="Language and number format"]');
+		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const germanFormat = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) =>
+			item.textContent?.includes("German - 1.234,56"),
+		);
+
+		await act(async () => germanFormat?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+
+		expect(settingsState.setNumberFormatLocale).toHaveBeenCalledWith("de-DE");
+		expect(dynamicActivate).not.toHaveBeenCalled();
 	});
 
 	it("updates the mounted mobile navigation when the locale changes", async () => {
