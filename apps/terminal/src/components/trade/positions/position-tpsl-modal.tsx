@@ -1,7 +1,7 @@
 import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { InfoRow } from "@/components/ui/info-row";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -61,28 +61,35 @@ function PositionTpSlModalBody({ open, position, onOpenChange }: BodyProps) {
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: open && isConnected && !!address },
 	);
-	const currentTpSlInfo = useMemo(
-		() => buildTpSlOrdersByCoin(openOrdersEvent?.orders ?? []).get(position.coin),
-		[openOrdersEvent?.orders, position.coin],
-	);
+	const currentTpSlInfo = buildTpSlOrdersByCoin(openOrdersEvent?.orders ?? []).get(position.coin);
 	const currentPositionSize = toBig(currentPosition?.szi);
+	const hasOpenOrdersSnapshot = openOrdersEvent !== undefined;
 
-	if (positionError) {
+	if (!isConnected || !address) {
+		return (
+			<PositionTpSlStatus position={position} message={t`Connect wallet to view positions`} onClose={onOpenChange} />
+		);
+	}
+	if (positionError && !currentPosition) {
 		return <PositionTpSlStatus position={position} message={t`Failed to load positions.`} onClose={onOpenChange} />;
 	}
-	if (openOrdersStatus === "error") {
+	if (openOrdersStatus === "error" && !hasOpenOrdersSnapshot) {
 		return <PositionTpSlStatus position={position} message={t`Failed to load open orders.`} onClose={onOpenChange} />;
 	}
-	if (
-		positionLoading ||
-		openOrdersStatus === "idle" ||
-		openOrdersStatus === "subscribing" ||
-		openOrdersEvent === undefined
-	) {
+	if ((positionLoading && !currentPosition) || !hasOpenOrdersSnapshot) {
 		return <PositionTpSlStatus position={position} message={t`Loading...`} loading onClose={onOpenChange} />;
 	}
 	if (!currentPosition || !currentPositionSize || currentPositionSize.eq(0)) {
 		return <PositionTpSlStatus position={position} message={t`No active positions.`} onClose={onOpenChange} />;
+	}
+	const liveDataReady = !positionLoading && !positionError && openOrdersStatus === "active";
+	let liveDataMessage: string | null = null;
+	if (positionError) {
+		liveDataMessage = t`Failed to load positions.`;
+	} else if (openOrdersStatus === "error") {
+		liveDataMessage = t`Failed to load open orders.`;
+	} else if (!liveDataReady) {
+		liveDataMessage = t`Loading...`;
 	}
 
 	return (
@@ -91,6 +98,8 @@ function PositionTpSlModalBody({ open, position, onOpenChange }: BodyProps) {
 			position={currentPosition}
 			markPx={liveMarkPx}
 			currentTpSlInfo={currentTpSlInfo}
+			liveDataReady={liveDataReady}
+			liveDataMessage={liveDataMessage}
 			onOpenChange={onOpenChange}
 		/>
 	);
@@ -101,10 +110,20 @@ interface FormProps {
 	position: Position;
 	markPx: number | null;
 	currentTpSlInfo: TpSlOrderInfo | undefined;
+	liveDataReady: boolean;
+	liveDataMessage: string | null;
 	onOpenChange: (open: boolean) => void;
 }
 
-function PositionTpSlForm({ positionRef, position, markPx, currentTpSlInfo, onOpenChange }: FormProps) {
+function PositionTpSlForm({
+	positionRef,
+	position,
+	markPx,
+	currentTpSlInfo,
+	liveDataReady,
+	liveDataMessage,
+	onOpenChange,
+}: FormProps) {
 	const decimals = szDecimalsToPriceDecimals(positionRef.szDecimals);
 	const [initialTpPrice] = useState(currentTpSlInfo?.tpPrice);
 	const [initialSlPrice] = useState(currentTpSlInfo?.slPrice);
@@ -113,6 +132,7 @@ function PositionTpSlForm({ positionRef, position, markPx, currentTpSlInfo, onOp
 	const [tpPriceInput, setTpPriceInput] = useState(initialTpPrice ? initialTpPrice.toFixed(decimals) : "");
 	const [slPriceInput, setSlPriceInput] = useState(initialSlPrice ? initialSlPrice.toFixed(decimals) : "");
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [requiresRefresh, setRequiresRefresh] = useState(false);
 
 	const { mutateAsync: placeOrder, isPending: isPlacing, error: placeError } = useExchange("order");
 	const { mutateAsync: modifyOrders, isPending: isModifying, error: modifyError } = useExchange("batchModify");
@@ -159,7 +179,8 @@ function PositionTpSlForm({ positionRef, position, markPx, currentTpSlInfo, onOp
 	const tpValid = !tpNeedsMark || (markReady && validateTpPrice(markPx, tpPriceNum, side));
 	const slValid = !slNeedsMark || (markReady && validateSlPrice(markPx, slPriceNum, side));
 	const dataChanged = positionChanged || ordersChanged;
-	const canSubmit = updatePlan.hasChanges && tpValid && slValid && !dataChanged && !isSubmitting;
+	const canSubmit =
+		updatePlan.hasChanges && tpValid && slValid && !dataChanged && !requiresRefresh && liveDataReady && !isSubmitting;
 
 	let tpError: string | null = null;
 	if (tpNeedsMark && markReady && !tpValid) {
@@ -174,35 +195,37 @@ function PositionTpSlForm({ positionRef, position, markPx, currentTpSlInfo, onOp
 		if (!canSubmit) return;
 
 		setSubmitError(null);
-		let completedAction = false;
+		let mutationStarted = false;
 		try {
 			if (updatePlan.modifies.length > 0) {
-				const result = await modifyOrders({ modifies: updatePlan.modifies });
+				mutationStarted = true;
+				const result = await modifyOrders({ a: true, modifies: updatePlan.modifies });
 				throwIfAnyResponseError(result.response?.data?.statuses);
-				completedAction = true;
 			}
 			if (updatePlan.orders.length > 0) {
+				mutationStarted = true;
 				const result = await placeOrder({ orders: updatePlan.orders, grouping: "positionTpsl" });
 				throwIfAnyResponseError(result.response?.data?.statuses);
-				completedAction = true;
 			}
 			if (updatePlan.cancels.length > 0) {
+				mutationStarted = true;
 				const result = await cancelOrders({ cancels: updatePlan.cancels });
 				throwIfAnyResponseError(result.response?.data?.statuses);
-				completedAction = true;
 			}
 			onOpenChange(false);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : t`Failed to update TP/SL orders`;
 			setSubmitError(message);
 			toast.error(message);
-			if (completedAction) onOpenChange(false);
+			if (mutationStarted) setRequiresRefresh(true);
 		}
 	}
 
 	let guardMessage: string | null = null;
-	if (dataChanged) {
+	if (requiresRefresh || dataChanged) {
 		guardMessage = t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
+	} else if (liveDataMessage) {
+		guardMessage = liveDataMessage;
 	} else if ((tpNeedsMark || slNeedsMark) && !markReady) {
 		guardMessage = t`Loading...`;
 	}
@@ -260,6 +283,7 @@ function PositionTpSlForm({ positionRef, position, markPx, currentTpSlInfo, onOp
 					slError={slError}
 					quickPercentMode="roe"
 					leverage={leverage}
+					triggerValidationPrice={markPx}
 				/>
 
 				{guardMessage && (

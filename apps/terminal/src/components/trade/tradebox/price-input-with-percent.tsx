@@ -18,6 +18,7 @@ interface Props {
 	error?: string | null;
 	disabled?: boolean;
 	quickPercentDisabled?: boolean;
+	isPercentDisabled?: (percent: number) => boolean;
 	referencePrice: number;
 }
 
@@ -32,6 +33,7 @@ export function PriceInputWithPercent({
 	error,
 	disabled,
 	quickPercentDisabled,
+	isPercentDisabled,
 	referencePrice,
 }: Props) {
 	return (
@@ -70,7 +72,7 @@ export function PriceInputWithPercent({
 							key={p}
 							type="button"
 							onClick={() => onPercentClick(p)}
-							disabled={disabled || quickPercentDisabled || !isPositive(referencePrice)}
+							disabled={disabled || quickPercentDisabled || !isPositive(referencePrice) || isPercentDisabled?.(p)}
 							className="rounded-xs px-1.5 py-1 text-xs font-medium text-fg-muted transition-colors hover:bg-fill-weak hover:text-fg disabled:opacity-50"
 							aria-label={t`Set to ${p}%`}
 						>

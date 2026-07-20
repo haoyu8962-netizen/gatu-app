@@ -690,6 +690,7 @@ msgid "Connect wallet to view portfolio"
 msgstr "连接钱包以查看投资组合"
 
 #: src/components/trade/mobile/mobile-positions-view.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Connect wallet to view positions"
 msgstr "连接钱包查看持仓"
 
@@ -1359,6 +1360,7 @@ msgstr "加载市场分类失败。"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to load open orders."
 msgstr "加载未成交订单失败。"
 
@@ -1375,6 +1377,7 @@ msgid "Failed to load order history."
 msgstr "加载订单历史失败。"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to load positions."
@@ -1845,6 +1848,7 @@ msgstr "加载钱包中..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx

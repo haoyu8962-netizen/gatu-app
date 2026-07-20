@@ -1,6 +1,5 @@
 import { t } from "@lingui/core/macro";
 import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
-import { useMemo } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { SL_QUICK_PERCENT_OPTIONS, TP_QUICK_PERCENT_OPTIONS } from "@/config/trade";
 import { getRiskRewardRatio } from "@/domain/market";
@@ -14,6 +13,8 @@ import {
 	calculateTpPrice,
 	calculateTpPriceFromRoe,
 	formatRiskRewardRatio,
+	validateSlPrice,
+	validateTpPrice,
 } from "@/lib/trade/tpsl";
 import { PriceInputWithPercent } from "./price-input-with-percent";
 
@@ -32,6 +33,7 @@ interface Props {
 	compact?: boolean;
 	quickPercentMode?: "price" | "roe";
 	leverage?: number;
+	triggerValidationPrice?: number | null;
 }
 
 export function TpSlSection({
@@ -49,46 +51,67 @@ export function TpSlSection({
 	compact,
 	quickPercentMode = "price",
 	leverage,
+	triggerValidationPrice,
 }: Props) {
 	const tpPriceNum = toNumber(tpPrice);
 	const slPriceNum = toNumber(slPrice);
 
-	const tpPnl = useMemo(() => {
-		if (!isPositive(tpPriceNum) || !isPositive(referencePrice) || !isPositive(size)) return null;
-		return calculateEstimatedPnl({ referencePrice, side, size }, tpPriceNum);
-	}, [tpPriceNum, referencePrice, side, size]);
-
-	const slPnl = useMemo(() => {
-		if (!isPositive(slPriceNum) || !isPositive(referencePrice) || !isPositive(size)) return null;
-		return calculateEstimatedPnl({ referencePrice, side, size }, slPriceNum);
-	}, [slPriceNum, referencePrice, side, size]);
-
-	const riskRewardRatio = useMemo(() => getRiskRewardRatio(tpPnl, slPnl), [tpPnl, slPnl]);
-
-	const riskRewardDisplay = useMemo(() => {
-		if (riskRewardRatio === null || tpPnl === null || slPnl === null) return null;
+	const tpPnl =
+		isPositive(tpPriceNum) && isPositive(referencePrice) && isPositive(size)
+			? calculateEstimatedPnl({ referencePrice, side, size }, tpPriceNum)
+			: null;
+	const slPnl =
+		isPositive(slPriceNum) && isPositive(referencePrice) && isPositive(size)
+			? calculateEstimatedPnl({ referencePrice, side, size }, slPriceNum)
+			: null;
+	const riskRewardRatio = getRiskRewardRatio(tpPnl, slPnl);
+	let riskRewardDisplay: {
+		rrDisplay: NonNullable<ReturnType<typeof formatRiskRewardRatio>>;
+		tpPnl: number;
+		slPnl: number;
+	} | null = null;
+	if (riskRewardRatio !== null && tpPnl !== null && slPnl !== null) {
 		const rrDisplay = formatRiskRewardRatio(riskRewardRatio);
-		if (!rrDisplay) return null;
-		return { rrDisplay, tpPnl, slPnl };
-	}, [riskRewardRatio, tpPnl, slPnl]);
+		if (rrDisplay) riskRewardDisplay = { rrDisplay, tpPnl, slPnl };
+	}
 
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? 4);
 	const quickPercentDisabled = quickPercentMode === "roe" && !isPositive(leverage);
 
+	function getTpQuickPrice(percent: number): string | null {
+		if (quickPercentMode === "roe") {
+			return calculateTpPriceFromRoe(referencePrice, side, percent, leverage, priceDecimals);
+		}
+		return calculateTpPrice(referencePrice, side, percent, priceDecimals);
+	}
+
+	function getSlQuickPrice(percent: number): string | null {
+		if (quickPercentMode === "roe") {
+			return calculateSlPriceFromRoe(referencePrice, side, percent, leverage, priceDecimals);
+		}
+		return calculateSlPrice(referencePrice, side, percent, priceDecimals);
+	}
+
+	function isTpPercentDisabled(percent: number): boolean {
+		if (triggerValidationPrice === undefined) return false;
+		const price = getTpQuickPrice(percent);
+		return !isPositive(triggerValidationPrice) || !price || !validateTpPrice(triggerValidationPrice, price, side);
+	}
+
+	function isSlPercentDisabled(percent: number): boolean {
+		if (triggerValidationPrice === undefined) return false;
+		const price = getSlQuickPrice(percent);
+		return !isPositive(triggerValidationPrice) || !price || !validateSlPrice(triggerValidationPrice, price, side);
+	}
+
 	function handleTpPercentClick(percent: number) {
-		const price =
-			quickPercentMode === "roe"
-				? calculateTpPriceFromRoe(referencePrice, side, percent, leverage, priceDecimals)
-				: calculateTpPrice(referencePrice, side, percent, priceDecimals);
-		if (price) onTpPriceChange(price);
+		const price = getTpQuickPrice(percent);
+		if (price && !isTpPercentDisabled(percent)) onTpPriceChange(price);
 	}
 
 	function handleSlPercentClick(percent: number) {
-		const price =
-			quickPercentMode === "roe"
-				? calculateSlPriceFromRoe(referencePrice, side, percent, leverage, priceDecimals)
-				: calculateSlPrice(referencePrice, side, percent, priceDecimals);
-		if (price) onSlPriceChange(price);
+		const price = getSlQuickPrice(percent);
+		if (price && !isSlPercentDisabled(percent)) onSlPriceChange(price);
 	}
 
 	if (compact) {
@@ -141,6 +164,7 @@ export function TpSlSection({
 				error={tpError}
 				disabled={disabled}
 				quickPercentDisabled={quickPercentDisabled}
+				isPercentDisabled={isTpPercentDisabled}
 				referencePrice={referencePrice}
 			/>
 
@@ -155,6 +179,7 @@ export function TpSlSection({
 				error={slError}
 				disabled={disabled}
 				quickPercentDisabled={quickPercentDisabled}
+				isPercentDisabled={isSlPercentDisabled}
 				referencePrice={referencePrice}
 			/>
 

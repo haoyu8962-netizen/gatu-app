@@ -11,8 +11,13 @@ import type { OpenOrder } from "@/lib/trade/open-orders";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
+	connected: true,
 	markPx: "28595.5" as string | undefined,
 	marketMarkPx: "28000" as string | undefined,
+	openOrdersStatus: "active" as "idle" | "subscribing" | "active" | "error",
+	hasOpenOrdersSnapshot: true,
+	positionLoading: false,
+	positionError: false,
 	position: {
 		dex: "xyz",
 		coin: "xyz:XYZ100",
@@ -54,7 +59,10 @@ vi.mock("@gatu/ui", () => ({
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: "0x1111111111111111111111111111111111111111", isConnected: true }),
+	useWalletSession: () => ({
+		address: testState.connected ? "0x1111111111111111111111111111111111111111" : undefined,
+		isConnected: testState.connected,
+	}),
 }));
 
 vi.mock("@/components/trade/components/asset-display", () => ({
@@ -116,7 +124,12 @@ vi.mock("@/lib/hyperliquid", () => ({
 		if (method === "activeAssetCtx") {
 			return { data: testState.markPx ? { ctx: { markPx: testState.markPx } } : undefined, status: "active" };
 		}
-		if (method === "openOrders") return { data: { orders: testState.orders }, status: "active" };
+		if (method === "openOrders") {
+			return {
+				data: testState.hasOpenOrdersSnapshot ? { orders: testState.orders } : undefined,
+				status: testState.openOrdersStatus,
+			};
+		}
 		return { data: undefined, status: "idle" };
 	},
 	useUserPositions: () => ({
@@ -124,8 +137,8 @@ vi.mock("@/lib/hyperliquid", () => ({
 			testState.getPosition(coin, dex);
 			return testState.position;
 		},
-		hasError: false,
-		isLoading: false,
+		hasError: testState.positionError,
+		isLoading: testState.positionLoading,
 	}),
 }));
 
@@ -186,8 +199,13 @@ describe("PositionTpSlModal live data", () => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
+		testState.connected = true;
 		testState.markPx = "28595.5";
 		testState.marketMarkPx = "28000";
+		testState.openOrdersStatus = "active";
+		testState.hasOpenOrdersSnapshot = true;
+		testState.positionLoading = false;
+		testState.positionError = false;
 		testState.position = {
 			dex: "xyz",
 			coin: positionRef.coin,
@@ -216,10 +234,11 @@ describe("PositionTpSlModal live data", () => {
 		vi.clearAllMocks();
 	});
 
-	function renderModal() {
+	function renderModal(onOpenChange = vi.fn()) {
 		act(() => {
-			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange, position: positionRef }));
 		});
+		return onOpenChange;
 	}
 
 	it("queries the exact HIP-3 dex and accepts a negative short size as an active position", () => {
@@ -283,5 +302,98 @@ describe("PositionTpSlModal live data", () => {
 		expect(testState.cancelOrders).toHaveBeenCalledWith({ cancels: [{ a: positionRef.assetId, o: 7 }] });
 		expect(testState.placeOrder).not.toHaveBeenCalled();
 		expect(testState.modifyOrders).not.toHaveBeenCalled();
+	});
+
+	it("modifies an existing position TP with the trigger-replacement flag", async () => {
+		testState.orders = [openOrder()];
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.modifyOrders).toHaveBeenCalledWith({
+			a: true,
+			modifies: [
+				{
+					oid: 7,
+					order: {
+						a: positionRef.assetId,
+						b: true,
+						p: "30250",
+						r: true,
+						s: "0",
+						t: { trigger: { isMarket: true, tpsl: "tp", triggerPx: "27500" } },
+					},
+				},
+			],
+		});
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
+	});
+
+	it("keeps the dialog open and blocks retries after an uncertain partial update", async () => {
+		testState.orders = [
+			openOrder(),
+			openOrder({
+				oid: 8,
+				orderType: "Stop Market",
+				triggerCondition: "Price above 31000",
+				triggerPx: "31000",
+			}),
+		];
+		testState.cancelOrders.mockRejectedValueOnce(new Error("cancel failed"));
+		const onOpenChange = renderModal();
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		act(() => setInputValue(getInput(container, "Stop Loss"), ""));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.modifyOrders).toHaveBeenCalledTimes(1);
+		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
+		expect(testState.modifyOrders.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.cancelOrders.mock.invocationCallOrder[0],
+		);
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+		expect(container.textContent).toContain("cancel failed");
+		expect(container.textContent).toContain("Close and reopen it before submitting.");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+	});
+
+	it("shows a stable disconnected state instead of an endless loading screen", () => {
+		testState.connected = false;
+		renderModal();
+
+		expect(container.textContent).toContain("Connect wallet to view positions");
+		expect(container.textContent).not.toContain("Loading...");
+	});
+
+	it("preserves draft inputs while subscriptions reconnect and blocks stale submission", () => {
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+
+		testState.openOrdersStatus = "subscribing";
+		testState.positionLoading = true;
+		act(() => {
+			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+		});
+
+		expect(getInput(container, "Take Profit").value).toBe("27500");
+		expect(container.textContent).toContain("Loading...");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+	});
+
+	it("preserves cached form data across transient subscription errors", () => {
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+
+		testState.openOrdersStatus = "error";
+		testState.positionError = true;
+		act(() => {
+			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+		});
+
+		expect(getInput(container, "Take Profit").value).toBe("27500");
+		expect(container.textContent).toContain("Failed to load positions.");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
 	});
 });

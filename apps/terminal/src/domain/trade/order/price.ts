@@ -1,5 +1,5 @@
 import Big from "big.js";
-import { type OrderType, TP_SL_MARKET_SLIPPAGE_BPS } from "@/config/trade";
+import { type OrderType, TRIGGER_MARKET_SLIPPAGE_BPS } from "@/config/trade";
 import { toBig } from "@/lib/trade/numbers";
 import {
 	isMarketExecutionOrderType,
@@ -58,5 +58,5 @@ export function getExecutedPrice(
 }
 
 export function getTriggerMarketExecutionPrice(side: Side, triggerPrice: number): number {
-	return getExecutedPrice("market", side, triggerPrice, TP_SL_MARKET_SLIPPAGE_BPS, triggerPrice);
+	return getExecutedPrice("market", side, triggerPrice, TRIGGER_MARKET_SLIPPAGE_BPS, triggerPrice);
 }

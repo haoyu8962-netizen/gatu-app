@@ -690,6 +690,7 @@ msgid "Connect wallet to view portfolio"
 msgstr "Connectez votre portefeuille pour afficher le portefeuille"
 
 #: src/components/trade/mobile/mobile-positions-view.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Connect wallet to view positions"
 msgstr "Connectez le portefeuille pour voir les positions"
 
@@ -1359,6 +1360,7 @@ msgstr "Impossible de charger les catégories de marché."
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to load open orders."
 msgstr "Échec du chargement des ordres ouverts."
 
@@ -1375,6 +1377,7 @@ msgid "Failed to load order history."
 msgstr "Échec du chargement de l'historique des ordres."
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to load positions."
@@ -1845,6 +1848,7 @@ msgstr "Chargement du portefeuille..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
