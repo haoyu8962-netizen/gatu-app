@@ -1,6 +1,6 @@
 import Big from "big.js";
 import type { ExchangeOrder, LimitTif, OrderType } from "@/config/trade";
-import { getExecutedPrice } from "@/domain/trade/order/price";
+import { getExecutedPrice, getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
 import { buildOrders, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import { isPositive, toBig } from "@/lib/trade/numbers";
 import { isScaleOrderType, isStopOrderType, isTriggerOrderType, usesLimitPrice } from "@/lib/trade/order-types";
@@ -44,6 +44,25 @@ export type PositionTpSlIntent = {
 	tpPriceNum: number | null;
 	slPriceNum: number | null;
 };
+
+export type PositionTpSlUpdateIntent = PositionTpSlIntent & {
+	existingTpPrice?: number;
+	existingSlPrice?: number;
+	existingTpOrderId?: number;
+	existingSlOrderId?: number;
+};
+
+export type PositionTpSlUpdatePlan = {
+	orders: ExchangeOrder[];
+	modifies: Array<{ oid: number; order: ExchangeOrder }>;
+	cancels: Array<{ a: number; o: number }>;
+	hasChanges: boolean;
+};
+
+export function hasPositionTpSlTriggerMutation(plan: PositionTpSlUpdatePlan, tpsl: "tp" | "sl"): boolean {
+	const changedOrders = [...plan.orders, ...plan.modifies.map((modify) => modify.order)];
+	return changedOrders.some((order) => "trigger" in order.t && order.t.trigger.tpsl === tpsl);
+}
 
 export type MarketCloseIntent = {
 	kind: "marketClose";
@@ -153,6 +172,81 @@ function buildPositionTpSlPlan(intent: PositionTpSlIntent): OrderPlan {
 	};
 }
 
+export function buildPositionTpSlUpdatePlan(intent: PositionTpSlUpdateIntent): PositionTpSlUpdatePlan {
+	const isBuy = !intent.isLong;
+	const tpOrder =
+		intent.tpPriceNum && isPositive(intent.tpPriceNum)
+			? buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, intent.tpPriceNum, "tp")
+			: null;
+	const slOrder =
+		intent.slPriceNum && isPositive(intent.slPriceNum)
+			? buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, intent.slPriceNum, "sl")
+			: null;
+
+	const orders: ExchangeOrder[] = [];
+	const modifies: Array<{ oid: number; order: ExchangeOrder }> = [];
+	const cancels: Array<{ a: number; o: number }> = [];
+
+	reconcilePositionTpSlOrder({
+		assetId: intent.assetId,
+		desiredOrder: tpOrder,
+		existingOrderId: intent.existingTpOrderId,
+		existingPrice: intent.existingTpPrice,
+		orders,
+		modifies,
+		cancels,
+	});
+	reconcilePositionTpSlOrder({
+		assetId: intent.assetId,
+		desiredOrder: slOrder,
+		existingOrderId: intent.existingSlOrderId,
+		existingPrice: intent.existingSlPrice,
+		orders,
+		modifies,
+		cancels,
+	});
+
+	return {
+		orders,
+		modifies,
+		cancels,
+		hasChanges: orders.length > 0 || modifies.length > 0 || cancels.length > 0,
+	};
+}
+
+interface ReconcilePositionTpSlParams {
+	assetId: number;
+	desiredOrder: ExchangeOrder | null;
+	existingOrderId?: number;
+	existingPrice?: number;
+	orders: ExchangeOrder[];
+	modifies: Array<{ oid: number; order: ExchangeOrder }>;
+	cancels: Array<{ a: number; o: number }>;
+}
+
+function reconcilePositionTpSlOrder(params: ReconcilePositionTpSlParams): void {
+	if (params.existingOrderId === undefined) {
+		if (params.desiredOrder) params.orders.push(params.desiredOrder);
+		return;
+	}
+
+	if (!params.desiredOrder) {
+		params.cancels.push({ a: params.assetId, o: params.existingOrderId });
+		return;
+	}
+
+	if (!hasSameTriggerPrice(params.desiredOrder, params.existingPrice)) {
+		params.modifies.push({ oid: params.existingOrderId, order: params.desiredOrder });
+	}
+}
+
+function hasSameTriggerPrice(order: ExchangeOrder, existingPrice: number | undefined): boolean {
+	if (existingPrice === undefined || !("trigger" in order.t)) return false;
+	const existing = toBig(existingPrice);
+	const desired = toBig(order.t.trigger.triggerPx);
+	return existing !== null && desired !== null && existing.eq(desired);
+}
+
 function buildMarketClosePlan({
 	assetId,
 	size,
@@ -230,10 +324,14 @@ function buildPositionTpSlOrder(
 	tpsl: "tp" | "sl",
 ): ExchangeOrder {
 	const triggerPx = formatPriceForOrder(triggerPrice, { assetId, szDecimals });
+	const orderPx = formatPriceForOrder(getTriggerMarketExecutionPrice(isBuy ? "buy" : "sell", triggerPrice), {
+		assetId,
+		szDecimals,
+	});
 	return {
 		a: assetId,
 		b: isBuy,
-		p: triggerPx,
+		p: orderPx,
 		s: "0",
 		r: true,
 		t: { trigger: { isMarket: true, triggerPx, tpsl } },

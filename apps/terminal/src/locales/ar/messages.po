@@ -557,6 +557,7 @@ msgstr "الرسم البياني"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
@@ -1357,6 +1358,7 @@ msgstr "تعذر تحميل فئات الأسواق."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to load open orders."
 msgstr "فشل في تحميل الأوامر المفتوحة."
 
@@ -1373,6 +1375,7 @@ msgid "Failed to load order history."
 msgstr "فشل تحميل سجل الأوامر."
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to load positions."
 msgstr "فشل تحميل المراكز."
@@ -1842,6 +1845,8 @@ msgstr "جاري تحميل المحفظة..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -2208,6 +2213,7 @@ msgid "No"
 msgstr "لا"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No active positions."
 msgstr "لا توجد مراكز نشطة."
@@ -3403,12 +3409,10 @@ msgstr "الحجم لكل أمر فرعي"
 #~ msgid "SL"
 #~ msgstr ""
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be above entry"
 msgstr "يجب أن يكون SL أعلى من سعر الدخول"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be below entry"
 msgstr "يجب أن يكون SL أدنى من سعر الدخول"
@@ -3561,10 +3565,12 @@ msgstr "وقف الخسارة"
 msgid "Stop Market"
 msgstr "Stop Market"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Stop trigger must be above mark"
 msgstr "يجب أن يكون مُحفِّز الإيقاف أعلى من سعر العلامة"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Stop trigger must be below mark"
 msgstr "يجب أن يكون مُحفِّز الإيقاف أدنى من سعر العلامة"
@@ -3736,10 +3742,12 @@ msgstr "Take Profit Limit"
 msgid "Take Profit Market"
 msgstr "Take Profit Market"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Take profit trigger must be above mark"
 msgstr "يجب أن يكون مُحفِّز جني الأرباح أعلى من سعر العلامة"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Take profit trigger must be below mark"
 msgstr "يجب أن يكون مُحفِّز جني الأرباح أدنى من سعر العلامة"
@@ -3901,12 +3909,10 @@ msgstr "الوقت الإجمالي"
 #~ msgid "TP"
 #~ msgstr ""
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "TP must be above entry"
 msgstr "يجب أن يكون TP أعلى من سعر الدخول"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "TP must be below entry"
 msgstr "يجب أن يكون TP أدنى من سعر الدخول"
@@ -3965,6 +3971,10 @@ msgstr "الصفقات"
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Trading"
 msgstr "التداول"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
+msgstr "تغيرت بيانات التداول أثناء فتح مربع الحوار هذا. أغلقه وأعد فتحه قبل الإرسال."
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."

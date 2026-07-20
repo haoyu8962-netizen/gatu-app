@@ -12,7 +12,7 @@ import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
 import { PositionActionsDropdown } from "./position-actions-dropdown";
-import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "./position-dialog-types";
+import type { ClosePositionData, LimitClosePositionData, TpSlPositionRef } from "./position-dialog-types";
 import {
 	positionsPanelRowHoverClass,
 	positionsPanelRowStripeClass,
@@ -29,7 +29,7 @@ interface Props {
 	onClose: (data: ClosePositionData) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onReverse: (data: ClosePositionData) => void;
-	onOpenTpSl: (data: TpSlPositionData) => void;
+	onOpenTpSl: (data: TpSlPositionRef) => void;
 	onSelectMarket: (coin: string, side: Side) => void;
 }
 
@@ -150,18 +150,10 @@ export function PositionRow({
 		if (typeof assetId !== "number") return;
 		onOpenTpSl({
 			coin: p.coin,
+			dex: p.dex,
 			assetId,
 			isLong,
-			size: absSize,
-			entryPx,
-			markPx,
-			unrealizedPnl,
-			roe,
 			szDecimals,
-			existingTpPrice: tpSlInfo?.tpPrice,
-			existingSlPrice: tpSlInfo?.slPrice,
-			existingTpOrderId: tpSlInfo?.tpOrderId,
-			existingSlOrderId: tpSlInfo?.slOrderId,
 		});
 	}
 

@@ -68,10 +68,10 @@ describe("exchange registry", () => {
 		}
 	});
 
-	it("only uses clientKey for order and cancel", () => {
+	it("uses clientKey for account-scoped trading mutations", () => {
 		for (const method of EXCHANGE_METHODS) {
 			const config = getExchangeMethodConfig(method);
-			if (method === "order" || method === "cancel") {
+			if (method === "order" || method === "cancel" || method === "batchModify") {
 				expect(config.useClientKey, `${method} should use clientKey`).toBe(true);
 			} else {
 				expect(config.useClientKey, `${method} should not use clientKey`).toBe(false);

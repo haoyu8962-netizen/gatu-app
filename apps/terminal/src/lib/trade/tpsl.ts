@@ -31,6 +31,40 @@ export function calculateSlPrice(
 	return price.toFixed(decimals);
 }
 
+export function calculateTpPriceFromRoe(
+	referencePrice: Numeric,
+	side: Side,
+	tpPercent: Numeric,
+	leverage: Numeric,
+	decimals: number,
+): string | null {
+	const ref = toSafeBig(referencePrice);
+	const pct = toSafeBig(tpPercent);
+	const leverageValue = toSafeBig(leverage);
+	if (ref.lte(0) || pct.lte(0) || leverageValue.lte(0)) return null;
+
+	const priceDelta = ref.times(pct).div(100).div(leverageValue);
+	const price = side === "buy" ? ref.plus(priceDelta) : ref.minus(priceDelta);
+	return price.gt(0) ? price.toFixed(decimals) : null;
+}
+
+export function calculateSlPriceFromRoe(
+	referencePrice: Numeric,
+	side: Side,
+	slPercent: Numeric,
+	leverage: Numeric,
+	decimals: number,
+): string | null {
+	const ref = toSafeBig(referencePrice);
+	const pct = toSafeBig(slPercent);
+	const leverageValue = toSafeBig(leverage);
+	if (ref.lte(0) || pct.lte(0) || leverageValue.lte(0)) return null;
+
+	const priceDelta = ref.times(pct).div(100).div(leverageValue);
+	const price = side === "buy" ? ref.minus(priceDelta) : ref.plus(priceDelta);
+	return price.gt(0) ? price.toFixed(decimals) : null;
+}
+
 export function calculatePercentFromPrice(
 	referencePrice: Numeric,
 	targetPrice: Numeric,

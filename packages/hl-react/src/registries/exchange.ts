@@ -31,7 +31,7 @@ const USER_SIGNED_METHODS: ReadonlySet<string> = new Set([
 // They call executeL1Action in the SDK, not executeUserSignedAction.
 const BUILDER_INJECTED_METHODS: ReadonlySet<string> = new Set(["order"]);
 
-const CLIENT_KEY_METHODS: ReadonlySet<string> = new Set(["order", "cancel"]);
+const CLIENT_KEY_METHODS: ReadonlySet<string> = new Set(["order", "cancel", "batchModify"]);
 
 export function getExchangeMethodConfig(method: ExchangeMethod): ExchangeMethodConfig {
 	return {

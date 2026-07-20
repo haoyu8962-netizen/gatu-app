@@ -13,6 +13,22 @@ export interface TpSlOrderInfo {
 	slOrderId?: number;
 }
 
+function optionalPricesEqual(left: number | undefined, right: number | undefined): boolean {
+	if (left === undefined || right === undefined) return left === right;
+	const leftPrice = toBig(left);
+	const rightPrice = toBig(right);
+	return leftPrice !== null && rightPrice !== null && leftPrice.eq(rightPrice);
+}
+
+export function areTpSlOrderInfosEqual(left: TpSlOrderInfo | undefined, right: TpSlOrderInfo | undefined): boolean {
+	return (
+		left?.tpOrderId === right?.tpOrderId &&
+		left?.slOrderId === right?.slOrderId &&
+		optionalPricesEqual(left?.tpPrice, right?.tpPrice) &&
+		optionalPricesEqual(left?.slPrice, right?.slPrice)
+	);
+}
+
 export function isTakeProfitOrder(order: OpenOrder): boolean {
 	return order.orderType.startsWith(OPEN_ORDER_TYPE_PREFIXES.takeProfit);
 }
@@ -55,7 +71,7 @@ export function getOrderValue(order: OpenOrder): number | null {
 export function buildTpSlOrdersByCoin(orders: readonly OpenOrder[]): Map<string, TpSlOrderInfo> {
 	const map = new Map<string, TpSlOrderInfo>();
 	for (const order of orders) {
-		if (!order.isTrigger) continue;
+		if (!order.isTrigger || !isClosePositionOrder(order)) continue;
 
 		const triggerPx = toBig(order.triggerPx)?.toNumber();
 		if (!triggerPx || triggerPx <= 0) continue;

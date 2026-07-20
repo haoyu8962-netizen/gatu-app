@@ -11,7 +11,7 @@ import {
 	SCALE_LEVELS_MAX,
 	SCALE_LEVELS_MIN,
 } from "@/config/trade";
-import { getExecutedPrice } from "@/domain/trade/order/price";
+import { getExecutedPrice, getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
 import { clampInt, formatDecimalFloor, isPositive, type Numeric, toBig, toSafeBig } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 
@@ -191,7 +191,10 @@ function buildTriggerOrder(orders: ExchangeOrder[], params: TriggerOrderParams):
 	}
 	const triggerPx = formatPriceForOrder(triggerBig, params);
 
-	let orderPx = triggerPx;
+	let orderPx = formatPriceForOrder(
+		getTriggerMarketExecutionPrice(params.isBuy ? "buy" : "sell", triggerBig.toNumber()),
+		params,
+	);
 	if (params.usesLimitPriceForOrder) {
 		const limitBig = toBig(params.limitPriceInput);
 		if (!limitBig || limitBig.lte(0)) {
@@ -260,10 +263,14 @@ interface TpSlOrderParams {
 
 function buildTpSlOrder(orders: ExchangeOrder[], params: TpSlOrderParams): void {
 	const triggerPx = formatPriceForOrder(params.triggerPrice, params);
+	const orderPx = formatPriceForOrder(
+		getTriggerMarketExecutionPrice(params.isBuy ? "buy" : "sell", params.triggerPrice),
+		params,
+	);
 	orders.push({
 		a: params.assetId,
 		b: params.isBuy,
-		p: triggerPx,
+		p: orderPx,
 		s: params.formattedSize,
 		r: true,
 		t: { trigger: { isMarket: true, triggerPx, tpsl: params.tpsl } },

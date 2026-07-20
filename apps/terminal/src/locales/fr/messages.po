@@ -557,6 +557,7 @@ msgstr "Graphique"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
@@ -1357,6 +1358,7 @@ msgstr "Impossible de charger les catégories de marché."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to load open orders."
 msgstr "Échec du chargement des ordres ouverts."
 
@@ -1373,6 +1375,7 @@ msgid "Failed to load order history."
 msgstr "Échec du chargement de l'historique des ordres."
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to load positions."
 msgstr "Échec du chargement des positions."
@@ -1842,6 +1845,8 @@ msgstr "Chargement du portefeuille..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -2208,6 +2213,7 @@ msgid "No"
 msgstr "Non"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No active positions."
 msgstr "Aucune position active."
@@ -3403,12 +3409,10 @@ msgstr "Taille par sous-ordre"
 #~ msgid "SL"
 #~ msgstr ""
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be above entry"
 msgstr "Le SL doit être au-dessus du prix d'entrée"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be below entry"
 msgstr "Le SL doit être en dessous du prix d'entrée"
@@ -3561,10 +3565,12 @@ msgstr "Stop Loss"
 msgid "Stop Market"
 msgstr "Stop Market"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Stop trigger must be above mark"
 msgstr "Le déclencheur du stop doit être au-dessus du prix mark"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Stop trigger must be below mark"
 msgstr "Le déclencheur du stop doit être en dessous du prix mark"
@@ -3736,10 +3742,12 @@ msgstr "Take Profit Limit"
 msgid "Take Profit Market"
 msgstr "Take Profit Market"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Take profit trigger must be above mark"
 msgstr "Le déclencheur Take Profit doit être au-dessus du prix mark"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Take profit trigger must be below mark"
 msgstr "Le déclencheur Take Profit doit être en dessous du prix mark"
@@ -3901,12 +3909,10 @@ msgstr "Durée totale"
 #~ msgid "TP"
 #~ msgstr ""
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "TP must be above entry"
 msgstr "Le TP doit être au-dessus du prix d'entrée"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "TP must be below entry"
 msgstr "Le TP doit être en dessous du prix d'entrée"
@@ -3965,6 +3971,10 @@ msgstr "Transactions"
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Trading"
 msgstr "Trading"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
+msgstr "Les données de trading ont changé pendant l’ouverture de cette fenêtre. Fermez-la puis rouvrez-la avant de confirmer."
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."

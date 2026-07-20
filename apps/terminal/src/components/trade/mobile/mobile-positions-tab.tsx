@@ -9,13 +9,13 @@ import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { useExchange, useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
-import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "../positions/position-dialog-types";
+import type { ClosePositionData, LimitClosePositionData, TpSlPositionRef } from "../positions/position-dialog-types";
 import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
@@ -41,7 +41,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		setActiveTab("trade");
 	}
 	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
-	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionData | null>(null);
+	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionRef | null>(null);
 	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
 	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
 	const [closingAssetIds, setClosingAssetIds] = useState<Set<number>>(() => new Set());
@@ -50,10 +50,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const { mutate: placeOrder, reset: resetCloseError } = useExchange("order");
 	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
 	const markets = useMarkets();
-
-	const allMidsEnabled = isConnected && positions.length > 0;
-	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: allMidsEnabled });
-	const mids = allMidsEvent?.mids;
+	const { getMarketInfo } = useMarketsInfo();
 
 	const { data: openOrdersEvent } = useSubscription(
 		"openOrders",
@@ -134,7 +131,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		setLimitCloseModalOpen(true);
 	}
 
-	function handleOpenTpSlModal(data: TpSlPositionData) {
+	function handleOpenTpSlModal(data: TpSlPositionRef) {
 		setSelectedTpSlPosition(data);
 		setTpSlModalOpen(true);
 	}
@@ -195,7 +192,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 								key={`${p.coin}-${p.entryPx}-${p.szi}`}
 								position={p}
 								markets={markets}
-								markPx={mids?.[p.coin]}
+								markPx={getMarketInfo(p.coin)?.markPx}
 								tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
 								isRowClosing={isRowClosing}
 								closeErrorMessage={closeErrorMessage}

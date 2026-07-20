@@ -557,6 +557,7 @@ msgstr "图表"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
@@ -1357,6 +1358,7 @@ msgstr "加载市场分类失败。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to load open orders."
 msgstr "加载未成交订单失败。"
 
@@ -1373,6 +1375,7 @@ msgid "Failed to load order history."
 msgstr "加载订单历史失败。"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Failed to load positions."
 msgstr "加载仓位失败。"
@@ -1842,6 +1845,8 @@ msgstr "加载钱包中..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -2208,6 +2213,7 @@ msgid "No"
 msgstr "否"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No active positions."
 msgstr "无活跃仓位。"
@@ -3403,12 +3409,10 @@ msgstr "每笔子订单数量"
 #~ msgid "SL"
 #~ msgstr ""
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be above entry"
 msgstr "止损价须高于开仓价"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be below entry"
 msgstr "止损价须低于开仓价"
@@ -3561,10 +3565,12 @@ msgstr "止损"
 msgid "Stop Market"
 msgstr "止损市价"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Stop trigger must be above mark"
 msgstr "止损触发价须高于标记价"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Stop trigger must be below mark"
 msgstr "止损触发价须低于标记价"
@@ -3736,10 +3742,12 @@ msgstr "止盈限价"
 msgid "Take Profit Market"
 msgstr "止盈市价"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Take profit trigger must be above mark"
 msgstr "止盈触发价须高于标记价"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/trigger.ts
 msgid "Take profit trigger must be below mark"
 msgstr "止盈触发价须低于标记价"
@@ -3901,12 +3909,10 @@ msgstr "总时长"
 #~ msgid "TP"
 #~ msgstr ""
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "TP must be above entry"
 msgstr "止盈价须高于开仓价"
 
-#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "TP must be below entry"
 msgstr "止盈价须低于开仓价"
@@ -3965,6 +3971,10 @@ msgstr "成交"
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Trading"
 msgstr "交易中"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
+msgstr "此弹窗打开期间交易数据已发生变化。请关闭并重新打开后再提交。"
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Trading in these markets may involve elevated risk, including low liquidity, high volatility, incomplete documentation, and increased liquidation risk. Carefully assess the risks and understand how each market works before proceeding."

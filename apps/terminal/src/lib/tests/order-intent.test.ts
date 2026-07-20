@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildOrderPlan, type EntryOrderIntent } from "@/domain/trade/order-intent";
+import {
+	buildOrderPlan,
+	buildPositionTpSlUpdatePlan,
+	type EntryOrderIntent,
+	hasPositionTpSlTriggerMutation,
+	type PositionTpSlIntent,
+} from "@/domain/trade/order-intent";
 import { buildOrders, type OrderBuildParams } from "@/domain/trade/orders";
 
 vi.mock("@lingui/core/macro", () => ({
@@ -68,6 +74,18 @@ function buildParams(overrides: Partial<OrderBuildParams>): OrderBuildParams {
 	};
 }
 
+function positionTpSl(overrides: Partial<PositionTpSlIntent> = {}): PositionTpSlIntent {
+	return {
+		kind: "positionTpsl",
+		assetId: 0,
+		szDecimals: 2,
+		isLong: true,
+		tpPriceNum: 110,
+		slPriceNum: 90,
+		...overrides,
+	};
+}
+
 describe("buildOrderPlan entry trigger guard", () => {
 	it("rejects a stop-limit order with an empty trigger price instead of building triggerPx 0", () => {
 		const plan = buildOrderPlan(entry({ orderType: "stopLimit", limitPriceInput: "100", triggerPriceInput: "" }));
@@ -124,5 +142,173 @@ describe("buildOrders low-level trigger guard", () => {
 		const { orders } = buildOrders(buildParams({ triggerPriceInput: "95" }));
 		expect(orders.length).toBeGreaterThan(0);
 		expect(orders[0]?.p).not.toBe("0");
+	});
+
+	it("keeps a market trigger separate from its documented execution tolerance", () => {
+		const { orders } = buildOrders(
+			buildParams({
+				orderType: "stopMarket",
+				triggerPriceInput: "95",
+				limitPriceInput: "",
+				usesLimitPriceForOrder: false,
+			}),
+		);
+
+		expect(orders[0]?.p).toBe("104.5");
+		expect(orders[0]?.t).toEqual({ trigger: { isMarket: true, triggerPx: "95", tpsl: "sl" } });
+	});
+
+	it("uses the explicit execution price for limit triggers", () => {
+		const { orders } = buildOrders(buildParams({ triggerPriceInput: "95", limitPriceInput: "94" }));
+
+		expect(orders[0]?.p).toBe("94");
+		expect(orders[0]?.t).toEqual({ trigger: { isMarket: false, triggerPx: "95", tpsl: "sl" } });
+	});
+});
+
+describe("attached TP/SL order planning", () => {
+	it("applies the market execution tolerance without changing the trigger prices", () => {
+		const plan = buildOrderPlan(
+			entry({
+				tpSlEnabled: true,
+				tpPriceNum: 110,
+				slPriceNum: 90,
+			}),
+		);
+
+		expect(plan.grouping).toBe("normalTpsl");
+		expect(plan.orders.slice(1)).toEqual([
+			{
+				a: 0,
+				b: false,
+				p: "99",
+				s: "1",
+				r: true,
+				t: { trigger: { isMarket: true, triggerPx: "110", tpsl: "tp" } },
+			},
+			{
+				a: 0,
+				b: false,
+				p: "81",
+				s: "1",
+				r: true,
+				t: { trigger: { isMarket: true, triggerPx: "90", tpsl: "sl" } },
+			},
+		]);
+	});
+});
+
+describe("position TP/SL order planning", () => {
+	it("builds full-position close triggers with the documented market slippage tolerance", () => {
+		const plan = buildOrderPlan(positionTpSl());
+
+		expect(plan.grouping).toBe("positionTpsl");
+		expect(plan.orders).toEqual([
+			{
+				a: 0,
+				b: false,
+				p: "99",
+				s: "0",
+				r: true,
+				t: { trigger: { isMarket: true, triggerPx: "110", tpsl: "tp" } },
+			},
+			{
+				a: 0,
+				b: false,
+				p: "81",
+				s: "0",
+				r: true,
+				t: { trigger: { isMarket: true, triggerPx: "90", tpsl: "sl" } },
+			},
+		]);
+	});
+
+	it("uses the opposite close direction for a short position", () => {
+		const plan = buildOrderPlan(positionTpSl({ isLong: false, tpPriceNum: 90, slPriceNum: null }));
+
+		expect(plan.orders[0]).toEqual({
+			a: 0,
+			b: true,
+			p: "99",
+			s: "0",
+			r: true,
+			t: { trigger: { isMarket: true, triggerPx: "90", tpsl: "tp" } },
+		});
+	});
+
+	it("modifies an existing leg and creates a missing leg", () => {
+		const plan = buildPositionTpSlUpdatePlan({
+			...positionTpSl({ tpPriceNum: 115 }),
+			existingTpPrice: 110,
+			existingTpOrderId: 7,
+		});
+
+		expect(plan.modifies).toEqual([
+			{
+				oid: 7,
+				order: {
+					a: 0,
+					b: false,
+					p: "103.5",
+					s: "0",
+					r: true,
+					t: { trigger: { isMarket: true, triggerPx: "115", tpsl: "tp" } },
+				},
+			},
+		]);
+		expect(plan.orders).toHaveLength(1);
+		expect(plan.cancels).toHaveLength(0);
+		expect(plan.hasChanges).toBe(true);
+	});
+
+	it("cancels a cleared existing leg", () => {
+		const plan = buildPositionTpSlUpdatePlan({
+			...positionTpSl({ tpPriceNum: null, slPriceNum: null }),
+			existingTpPrice: 110,
+			existingTpOrderId: 7,
+		});
+
+		expect(plan.orders).toHaveLength(0);
+		expect(plan.modifies).toHaveLength(0);
+		expect(plan.cancels).toEqual([{ a: 0, o: 7 }]);
+		expect(plan.hasChanges).toBe(true);
+	});
+
+	it("does not submit an unchanged existing leg", () => {
+		const plan = buildPositionTpSlUpdatePlan({
+			...positionTpSl({ slPriceNum: null }),
+			existingTpPrice: 110,
+			existingTpOrderId: 7,
+		});
+
+		expect(plan.orders).toHaveLength(0);
+		expect(plan.modifies).toHaveLength(0);
+		expect(plan.cancels).toHaveLength(0);
+		expect(plan.hasChanges).toBe(false);
+	});
+
+	it("requires a mark-price check for created and modified trigger legs", () => {
+		const created = buildPositionTpSlUpdatePlan(positionTpSl({ slPriceNum: null }));
+		const modified = buildPositionTpSlUpdatePlan({
+			...positionTpSl({ tpPriceNum: 115, slPriceNum: null }),
+			existingTpPrice: 110,
+			existingTpOrderId: 7,
+		});
+
+		expect(hasPositionTpSlTriggerMutation(created, "tp")).toBe(true);
+		expect(hasPositionTpSlTriggerMutation(created, "sl")).toBe(false);
+		expect(hasPositionTpSlTriggerMutation(modified, "tp")).toBe(true);
+	});
+
+	it("does not require a mark-price check for a cancel-only plan", () => {
+		const cancelled = buildPositionTpSlUpdatePlan({
+			...positionTpSl({ tpPriceNum: null, slPriceNum: null }),
+			existingTpPrice: 110,
+			existingTpOrderId: 7,
+		});
+
+		expect(cancelled.cancels).toEqual([{ a: 0, o: 7 }]);
+		expect(hasPositionTpSlTriggerMutation(cancelled, "tp")).toBe(false);
+		expect(hasPositionTpSlTriggerMutation(cancelled, "sl")).toBe(false);
 	});
 });

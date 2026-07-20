@@ -13,7 +13,7 @@ import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
-import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "../positions/position-dialog-types";
+import type { ClosePositionData, LimitClosePositionData, TpSlPositionRef } from "../positions/position-dialog-types";
 import { MetricCell } from "./metric-cell";
 
 interface Props {
@@ -26,7 +26,7 @@ interface Props {
 	onClose: (data: ClosePositionData) => void;
 	onReverse: (data: ClosePositionData) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
-	onOpenTpSl: (data: TpSlPositionData) => void;
+	onOpenTpSl: (data: TpSlPositionRef) => void;
 	onSelectMarket: (coin: string, side: Side) => void;
 }
 
@@ -102,18 +102,10 @@ export function MobilePositionCard({
 		if (typeof assetId !== "number") return;
 		onOpenTpSl({
 			coin: p.coin,
+			dex: p.dex,
 			assetId,
 			isLong,
-			size: absSize,
-			entryPx,
-			markPx,
-			unrealizedPnl,
-			roe,
 			szDecimals,
-			existingTpPrice: tpSlInfo?.tpPrice,
-			existingSlPrice: tpSlInfo?.slPrice,
-			existingTpOrderId: tpSlInfo?.tpOrderId,
-			existingSlOrderId: tpSlInfo?.slOrderId,
 		});
 	}
 

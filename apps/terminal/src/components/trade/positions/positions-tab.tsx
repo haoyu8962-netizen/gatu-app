@@ -8,14 +8,14 @@ import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useExchange, useMarkets, useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { useExchange, useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
-import type { ClosePositionData, LimitClosePositionData, TpSlPositionData } from "./position-dialog-types";
+import type { ClosePositionData, LimitClosePositionData, TpSlPositionRef } from "./position-dialog-types";
 import { PositionLimitCloseModal } from "./position-limit-close-modal";
 import { PositionRow } from "./position-row";
 import { PositionTpSlModal } from "./position-tpsl-modal";
@@ -42,7 +42,7 @@ export function PositionsTab() {
 		setSide(side);
 	}
 	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
-	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionData | null>(null);
+	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionRef | null>(null);
 	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
 	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
 	const [closingAssetIds, setClosingAssetIds] = useState<Set<number>>(() => new Set());
@@ -52,9 +52,7 @@ export function PositionsTab() {
 	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
 
 	const markets = useMarkets();
-	const allMidsEnabled = isConnected && positions.length > 0;
-	const { data: allMidsEvent } = useSubscription("allMids", { dex: HL_ALL_DEXS }, { enabled: allMidsEnabled });
-	const mids = allMidsEvent?.mids;
+	const { getMarketInfo } = useMarketsInfo();
 
 	const { data: openOrdersEvent } = useSubscription(
 		"openOrders",
@@ -126,7 +124,7 @@ export function PositionsTab() {
 		setLimitCloseModalOpen(true);
 	}
 
-	function handleOpenTpSlModal(data: TpSlPositionData) {
+	function handleOpenTpSlModal(data: TpSlPositionRef) {
 		setSelectedTpSlPosition(data);
 		setTpSlModalOpen(true);
 	}
@@ -229,7 +227,7 @@ export function PositionsTab() {
 											key={p.coin}
 											position={p}
 											markets={markets}
-											markPx={mids?.[p.coin]}
+											markPx={getMarketInfo(p.coin)?.markPx}
 											tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
 											isRowClosing={typeof assetId === "number" && closingAssetIds.has(assetId)}
 											isEven={i % 2 === 1}

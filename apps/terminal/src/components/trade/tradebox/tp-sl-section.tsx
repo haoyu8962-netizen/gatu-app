@@ -7,7 +7,14 @@ import { getRiskRewardRatio } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { isPositive, toNumber } from "@/lib/trade/numbers";
-import { calculateEstimatedPnl, calculateSlPrice, calculateTpPrice, formatRiskRewardRatio } from "@/lib/trade/tpsl";
+import {
+	calculateEstimatedPnl,
+	calculateSlPrice,
+	calculateSlPriceFromRoe,
+	calculateTpPrice,
+	calculateTpPriceFromRoe,
+	formatRiskRewardRatio,
+} from "@/lib/trade/tpsl";
 import { PriceInputWithPercent } from "./price-input-with-percent";
 
 interface Props {
@@ -23,6 +30,8 @@ interface Props {
 	slError?: string | null;
 	disabled?: boolean;
 	compact?: boolean;
+	quickPercentMode?: "price" | "roe";
+	leverage?: number;
 }
 
 export function TpSlSection({
@@ -38,6 +47,8 @@ export function TpSlSection({
 	slError,
 	disabled,
 	compact,
+	quickPercentMode = "price",
+	leverage,
 }: Props) {
 	const tpPriceNum = toNumber(tpPrice);
 	const slPriceNum = toNumber(slPrice);
@@ -62,14 +73,21 @@ export function TpSlSection({
 	}, [riskRewardRatio, tpPnl, slPnl]);
 
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? 4);
+	const quickPercentDisabled = quickPercentMode === "roe" && !isPositive(leverage);
 
 	function handleTpPercentClick(percent: number) {
-		const price = calculateTpPrice(referencePrice, side, percent, priceDecimals);
+		const price =
+			quickPercentMode === "roe"
+				? calculateTpPriceFromRoe(referencePrice, side, percent, leverage, priceDecimals)
+				: calculateTpPrice(referencePrice, side, percent, priceDecimals);
 		if (price) onTpPriceChange(price);
 	}
 
 	function handleSlPercentClick(percent: number) {
-		const price = calculateSlPrice(referencePrice, side, percent, priceDecimals);
+		const price =
+			quickPercentMode === "roe"
+				? calculateSlPriceFromRoe(referencePrice, side, percent, leverage, priceDecimals)
+				: calculateSlPrice(referencePrice, side, percent, priceDecimals);
 		if (price) onSlPriceChange(price);
 	}
 
@@ -122,6 +140,7 @@ export function TpSlSection({
 				pnlValue={tpPnl}
 				error={tpError}
 				disabled={disabled}
+				quickPercentDisabled={quickPercentDisabled}
 				referencePrice={referencePrice}
 			/>
 
@@ -135,6 +154,7 @@ export function TpSlSection({
 				pnlValue={slPnl}
 				error={slError}
 				disabled={disabled}
+				quickPercentDisabled={quickPercentDisabled}
 				referencePrice={referencePrice}
 			/>
 
