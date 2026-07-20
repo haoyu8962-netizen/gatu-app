@@ -215,7 +215,9 @@ sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh test-pr102
 
 ### CloudFront(CDN,可选)
 Caddy 已直接对外可用。若要全球加速/抗量,在 Caddy 前再挂一层 CloudFront:
-源站指向 `app.gatu.ai`,转发 `Host` 头,对 `/assets/*`、`/charting_library/*` 走长缓存,其余 SSR 路径不缓存(或极短 TTL)。
+源站指向 `app.gatu.ai`,转发 `Host` 头,仅对 `/assets/*` 走长缓存。当前 Charting Library v28
+在 iPad WebKit 热缓存下可能无法完成初始化,因此 `/charting_library/*` 和
+`/tradingview-theme.css` 必须每次重新验证,其余 SSR 路径不缓存(或极短 TTL)。
 
 ### CSP(默认未开)
 这是 web3 + Privy + WalletConnect + TradingView + Hyperliquid WebSocket 的混合页面,

@@ -10,10 +10,14 @@
 app.gatu.ai {
 	encode zstd gzip
 
-	# Long-cache the immutable, content-hashed build assets. Nitro already sets
-	# this via routeRules; we re-assert it at the edge for safety.
-	@immutable path /assets/* /charting_library/*
-	header @immutable Cache-Control "public, max-age=31536000, immutable"
+	# The application build assets are content-hashed and safe to cache indefinitely.
+	@immutable path /assets/*
+	header @immutable >Cache-Control "public, max-age=31536000, immutable"
+
+	# Charting Library v28 can stall during repeated WebKit loads when its scripts
+	# are reused from a hot immutable cache. Revalidate the complete chart package.
+	@chart_assets path /charting_library/* /tradingview-theme.css
+	header @chart_assets >Cache-Control "public, max-age=0, must-revalidate"
 
 	# Baseline security headers. A Content-Security-Policy is intentionally NOT
 	# set here — see deploy/README.md ("可选加固: CSP") for why and how to add it.

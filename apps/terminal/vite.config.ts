@@ -56,7 +56,10 @@ const config = defineConfig({
           headers: { ...securityHeaders, 'cache-control': 'public, max-age=31536000, immutable' },
         },
         '/charting_library/**': {
-          headers: { ...chartingLibrarySecurityHeaders, 'cache-control': 'public, max-age=31536000, immutable' },
+          headers: { ...chartingLibrarySecurityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
+        },
+        '/tradingview-theme.css': {
+          headers: { ...securityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
         },
       },
     }),
