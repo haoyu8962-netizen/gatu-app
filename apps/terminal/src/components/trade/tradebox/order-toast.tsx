@@ -1,6 +1,6 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CheckIcon, LightningIcon, SpinnerGapIcon, XIcon } from "@phosphor-icons/react";
+import { CheckIcon, LightningIcon, SpinnerGapIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { ORDER_TOAST_SUCCESS_DURATION_MS } from "@/config/time";
@@ -49,11 +49,15 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 				className={cn(
 					"flex items-center justify-center size-7 rounded-8 shrink-0",
 					order.status === "pending" && "bg-brand-soft border border-stroke-brand-strong/30",
+					order.status === "confirming" && "bg-warning-soft border border-stroke-warning-strong/30",
+					order.status === "partial" && "bg-warning-soft border border-stroke-warning-strong/30",
 					order.status === "success" && "bg-success-soft border border-stroke-success-strong/30",
 					order.status === "failed" && "bg-error-soft border border-stroke-error-strong/30",
 				)}
 			>
 				{order.status === "pending" && <SpinnerGapIcon className="size-4 animate-spin text-brand" />}
+				{order.status === "confirming" && <SpinnerGapIcon className="size-4 animate-spin text-warning" />}
+				{order.status === "partial" && <WarningCircleIcon className="size-4 text-warning" />}
 				{order.status === "success" && <CheckIcon className="size-4 text-success" />}
 				{order.status === "failed" && <XIcon className="size-4 text-error" />}
 			</div>
@@ -99,10 +103,20 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 						)}
 					</div>
 				)}
-				{order.error && <div className="text-xs text-error">{order.error}</div>}
+				{order.status === "confirming" && (
+					<div className="text-xs text-warning">{t`Confirming order status. Do not retry.`}</div>
+				)}
+				{order.status === "partial" && order.acceptedCount !== undefined && order.totalCount !== undefined && (
+					<div className="text-xs text-warning">
+						{t`${order.acceptedCount} of ${order.totalCount} orders were accepted. Review open orders before retrying.`}
+					</div>
+				)}
+				{order.error && (
+					<div className={cn("text-xs", order.status === "partial" ? "text-warning" : "text-error")}>{order.error}</div>
+				)}
 			</div>
 
-			{order.status === "failed" && (
+			{(order.status === "partial" || order.status === "failed") && (
 				<Button
 					variant="ghost"
 					intent="neutral"
@@ -137,6 +151,8 @@ export function OrderToast() {
 	if (orders.length === 0 || typeof document === "undefined") return null;
 
 	const pendingCount = orders.filter((o) => o.status === "pending").length;
+	const confirmingCount = orders.filter((o) => o.status === "confirming").length;
+	const partialCount = orders.filter((o) => o.status === "partial").length;
 	const successCount = orders.filter((o) => o.status === "success").length;
 	const failedCount = orders.filter((o) => o.status === "failed").length;
 
@@ -152,8 +168,19 @@ export function OrderToast() {
 				"font-sans",
 
 				pendingCount > 0 && "ring-1 ring-stroke-brand-strong/30",
-				failedCount > 0 && pendingCount === 0 && "ring-1 ring-stroke-error-strong/30",
-				successCount > 0 && pendingCount === 0 && failedCount === 0 && "ring-1 ring-stroke-success-strong/30",
+				confirmingCount > 0 && pendingCount === 0 && "ring-1 ring-stroke-warning-strong/30",
+				partialCount > 0 && pendingCount === 0 && confirmingCount === 0 && "ring-1 ring-stroke-warning-strong/30",
+				failedCount > 0 &&
+					pendingCount === 0 &&
+					confirmingCount === 0 &&
+					partialCount === 0 &&
+					"ring-1 ring-stroke-error-strong/30",
+				successCount > 0 &&
+					pendingCount === 0 &&
+					confirmingCount === 0 &&
+					partialCount === 0 &&
+					failedCount === 0 &&
+					"ring-1 ring-stroke-success-strong/30",
 			)}
 		>
 			<div className="px-3 py-2 border-b border-stroke-weak/40 bg-surface flex items-center justify-between">
@@ -165,6 +192,16 @@ export function OrderToast() {
 					{pendingCount > 0 && (
 						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-brand-soft text-brand border border-stroke-brand-strong/30">
 							{pendingCount} {t`pending`}
+						</span>
+					)}
+					{confirmingCount > 0 && (
+						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-warning-soft text-warning border border-stroke-warning-strong/30">
+							{confirmingCount} {t`confirming`}
+						</span>
+					)}
+					{partialCount > 0 && (
+						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-warning-soft text-warning border border-stroke-warning-strong/30">
+							{partialCount} {t`partial`}
 						</span>
 					)}
 					{failedCount > 0 && (

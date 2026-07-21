@@ -1,5 +1,11 @@
+import Big from "big.js";
 import { describe, expect, it, vi } from "vitest";
-import { formatPriceForOrder, formatSizeForOrder, getDefaultLeverage } from "@/domain/trade/orders";
+import {
+	createScaleOrderLevelPlan,
+	formatPriceForOrder,
+	formatSizeForOrder,
+	getDefaultLeverage,
+} from "@/domain/trade/orders";
 
 vi.mock("@lingui/core/macro", () => ({
 	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
@@ -62,5 +68,76 @@ describe("orders", () => {
 		expect(formatSizeForOrder(0, 0)).toBe("0");
 		expect(formatSizeForOrder(100, 2)).toBe("100");
 		expect(formatSizeForOrder(1.2, 2)).toBe("1.2");
+	});
+});
+
+describe("scale order planning", () => {
+	it("distributes size units without dropping the remainder", () => {
+		const plan = createScaleOrderLevelPlan({
+			assetId: 0,
+			sizeValue: 7,
+			szDecimals: 0,
+			scaleStartPriceInput: "10",
+			scaleEndPriceInput: "30",
+			scaleLevelsNum: 4,
+		});
+
+		expect(plan.issues).toEqual([]);
+		expect(plan.levels.map((level) => level.size)).toEqual(["2", "2", "2", "1"]);
+		expect(plan.levels.reduce((total, level) => total.plus(level.size), Big(0)).toString()).toBe("7");
+	});
+
+	it("rejects a size that cannot allocate one lot to every level", () => {
+		const plan = createScaleOrderLevelPlan({
+			assetId: 0,
+			sizeValue: 3,
+			szDecimals: 0,
+			scaleStartPriceInput: "10",
+			scaleEndPriceInput: "30",
+			scaleLevelsNum: 4,
+		});
+
+		expect(plan.issues).toContain("insufficient-size");
+		expect(plan.levels).toEqual([]);
+	});
+
+	it("checks minimum notional on every formatted level", () => {
+		const plan = createScaleOrderLevelPlan({
+			assetId: 0,
+			sizeValue: 2,
+			szDecimals: 1,
+			scaleStartPriceInput: "10",
+			scaleEndPriceInput: "30",
+			scaleLevelsNum: 4,
+		});
+
+		expect(plan.issues).toContain("min-notional");
+		expect(plan.levels[0]?.notional).toBe("5");
+	});
+
+	it("rejects distinct inputs that collapse to the same protocol tick", () => {
+		const plan = createScaleOrderLevelPlan({
+			assetId: 0,
+			sizeValue: 4,
+			szDecimals: 0,
+			scaleStartPriceInput: "100.001",
+			scaleEndPriceInput: "100.004",
+			scaleLevelsNum: 4,
+		});
+
+		expect(plan.issues).toContain("duplicate-price");
+	});
+
+	it("rejects out-of-range levels instead of clamping them", () => {
+		const plan = createScaleOrderLevelPlan({
+			assetId: 0,
+			sizeValue: 100,
+			szDecimals: 0,
+			scaleStartPriceInput: "10",
+			scaleEndPriceInput: "30",
+			scaleLevelsNum: 21,
+		});
+
+		expect(plan).toEqual({ levels: [], issues: ["invalid-levels"] });
 	});
 });

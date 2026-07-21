@@ -16,6 +16,7 @@ export const ORDER_FEE_RATE_SPOT_TAKER = 0.0007;
 export const ORDER_FEE_RATE_SPOT_MAKER = 0.0004;
 export const ORDER_SIZE_PERCENT_STEPS = [25, 50, 75, 100] as const;
 export const SIZE_PERCENT_OPTIONS = [0, 25, 50, 75, 100] as const;
+export const QUOTE_SIZE_INPUT_MAX_DECIMALS = 2;
 export const ORDER_LEVERAGE_STEPS = [1, 2, 3, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 200] as const;
 
 /** Liquidation-distance safety multiplier applied to the 1/leverage price buffer. */

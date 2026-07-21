@@ -1,16 +1,19 @@
 import { t } from "@lingui/core/macro";
 import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } from "@/config/trade";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
+import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
-import { useExchange } from "@/lib/hyperliquid";
 import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
-import { clampInt, isPositive } from "@/lib/trade/numbers";
+import { isPositive } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
+import { useTrackedOrder } from "./use-tracked-order";
+import { useTrackedTwapOrder } from "./use-tracked-twap-order";
 
 interface SubmitMarket {
 	assetId: number;
+	name: string;
 	szDecimals?: number;
 }
 
@@ -57,8 +60,8 @@ function getQueueOrderType(input: OrderSubmitInput): QueueOrderType {
 }
 
 export function useOrderSubmit(): UseOrderSubmitResult {
-	const { mutateAsync: placeOrder, isPending: isSubmittingOrder } = useExchange("order");
-	const { mutateAsync: placeTwapOrder, isPending: isSubmittingTwap } = useExchange("twapOrder");
+	const { submitOrder, isPending: isSubmittingOrder } = useTrackedOrder();
+	const { submitTwap, isPending: isSubmittingTwap } = useTrackedTwapOrder();
 	const { addOrder, updateOrder } = useOrderQueueActions();
 	const { resetForm } = useOrderEntryActions();
 
@@ -110,18 +113,47 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 
 		try {
 			if (twapOrder) {
-				const minutes = clampInt(Math.round(twapMinutesNum ?? 0), TWAP_MINUTES_MIN, TWAP_MINUTES_MAX);
-				const result = await placeTwapOrder({
-					twap: {
-						a: market.assetId,
-						b: side === "buy",
-						s: formattedSize,
-						r: reduceOnly,
-						m: minutes,
-						t: twapRandomize,
+				const minutes = twapMinutesNum;
+				if (
+					minutes === null ||
+					!Number.isSafeInteger(minutes) ||
+					minutes < TWAP_MINUTES_MIN ||
+					minutes > TWAP_MINUTES_MAX
+				) {
+					updateOrder(orderId, {
+						status: "failed",
+						error: t`TWAP minutes must be ${TWAP_MINUTES_MIN}-${TWAP_MINUTES_MAX}`,
+					});
+					return;
+				}
+				const submission = await submitTwap(
+					{
+						twap: {
+							a: market.assetId,
+							b: side === "buy",
+							s: formattedSize,
+							r: reduceOnly,
+							m: minutes,
+							t: twapRandomize,
+						},
 					},
-				});
-				throwIfResponseError(result.response?.data?.status);
+					{ coin: market.name, queueId: orderId },
+				);
+				if (submission.state === "blocked") {
+					updateOrder(orderId, {
+						status: "failed",
+						error:
+							submission.reason === "pending"
+								? t`Another TWAP order for this market is still being confirmed.`
+								: t`TWAP order state is still loading. Please retry in a moment.`,
+					});
+					return;
+				}
+				if (submission.state === "reconciling") {
+					resetForm();
+					return;
+				}
+				throwIfResponseError(submission.result.response?.data?.status);
 				updateOrder(orderId, { status: "success", outcome: "twapStarted" });
 			} else {
 				const plan = buildOrderPlan({
@@ -152,14 +184,24 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 					return;
 				}
 
-				const result = await placeOrder({ orders: plan.orders, grouping: plan.grouping });
-				const statuses = result.response?.data?.statuses ?? [];
+				const submission = await submitOrder({ orders: plan.orders, grouping: plan.grouping }, { queueId: orderId });
+				if (submission.state === "blocked") {
+					updateOrder(orderId, {
+						status: "failed",
+						error: t`Another order for this market is still being confirmed.`,
+					});
+					return;
+				}
+				if (submission.state === "reconciling") {
+					resetForm();
+					return;
+				}
+
+				const statuses = submission.result.response?.data?.statuses ?? [];
 				const errors = extractStatusErrors(statuses);
 
 				if (errors.length > 0) {
 					updateOrder(orderId, { status: "failed", error: errors.join("; ") });
-				} else if (statuses.length === 0) {
-					updateOrder(orderId, { status: "failed", error: t`No response from exchange` });
 				} else {
 					updateOrder(orderId, { status: "success", outcome: deriveOrderOutcome(statuses) });
 				}
@@ -167,6 +209,21 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 
 			resetForm();
 		} catch (error) {
+			if (isOrderBatchResolutionError(error)) {
+				const { resolution } = error;
+				if (resolution.status === "partial") {
+					updateOrder(orderId, {
+						status: "partial",
+						acceptedCount: resolution.acceptedCount,
+						totalCount: resolution.totalCount,
+						error: resolution.errors.join("; ") || undefined,
+					});
+					resetForm();
+					return;
+				}
+				updateOrder(orderId, { status: "failed", error: error.message });
+				return;
+			}
 			const errorMessage = error instanceof Error ? error.message : t`Order failed`;
 			updateOrder(orderId, { status: "failed", error: errorMessage });
 		}

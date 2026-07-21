@@ -7,7 +7,9 @@ import { WagmiProvider } from "@privy-io/wagmi";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { OrderReconciliation } from "@/components/trade/order-reconciliation";
 import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-deposit-auto-bridge";
+import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
 import { APP_NAME, RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { PRIVY_APP_ID, privyConfig } from "@/config/privy";
@@ -97,6 +99,8 @@ function ClientProviders({ children, queryClient }: { children: React.ReactNode;
 						<I18nProvider i18n={i18n}>
 							<HyperliquidBridge>
 								<EmbeddedDepositAutoBridge />
+								<OrderReconciliation />
+								<TwapReconciliation />
 								{children}
 							</HyperliquidBridge>
 						</I18nProvider>

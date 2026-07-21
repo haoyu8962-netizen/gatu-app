@@ -8,9 +8,10 @@ import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
+import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
-import { useExchange, useSubscription } from "@/lib/hyperliquid";
+import { useSubscription } from "@/lib/hyperliquid";
 import { formatDecimalFloor, isPositive, toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { TradingActionButton } from "../components/trading-action-button";
@@ -48,7 +49,7 @@ function PositionLimitCloseModalBody({ position, onOpenChange }: BodyProps) {
 	const [sizeInput, setSizeInput] = useState(formatDecimalFloor(position.size, position.szDecimals));
 	const [submitError, setSubmitError] = useState<string | null>(null);
 
-	const { mutateAsync: placeOrder, isPending: isSubmitting, error } = useExchange("order");
+	const { submitOrder, isPending: isSubmitting, error } = useTrackedOrder();
 	const { data: liveCtxEvent } = useSubscription(
 		"activeAssetCtx",
 		{ coin: position.coin },
@@ -84,8 +85,16 @@ function PositionLimitCloseModalBody({ position, onOpenChange }: BodyProps) {
 
 		setSubmitError(null);
 		try {
-			const result = await placeOrder({ orders, grouping });
-			throwIfAnyResponseError(result.response?.data?.statuses);
+			const submission = await submitOrder({ orders, grouping });
+			if (submission.state === "blocked") {
+				setSubmitError(t`Another order for this market is still being confirmed.`);
+				return;
+			}
+			if (submission.state === "reconciling") {
+				setSubmitError(t`Order submitted. Confirming exchange status; do not retry.`);
+				return;
+			}
+			throwIfAnyResponseError(submission.result.response?.data?.statuses);
 
 			toast.success(t`Limit close order placed` + (position.coin ? ` — ${position.coin}` : ""));
 			onOpenChange(false);

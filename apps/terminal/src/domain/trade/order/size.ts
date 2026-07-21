@@ -1,4 +1,5 @@
 import Big from "big.js";
+import { QUOTE_SIZE_INPUT_MAX_DECIMALS } from "@/config/trade";
 import type { SpotBalanceData } from "@/domain/trade/balances";
 import { floorToDecimals, formatDecimalFloor, toBig } from "@/lib/trade/numbers";
 import type { Side, SizeMode } from "@/lib/trade/types";
@@ -171,4 +172,8 @@ export function getSliderValue(sizeValue: number, maxSize: number): number {
 	const max = toBig(maxSize);
 	if (!sz || !max || sz.lte(0) || max.lte(0)) return 0;
 	return Math.min(100, sz.div(max).times(100).toNumber());
+}
+
+export function getSizeInputMaxDecimals(sizeMode: SizeMode, szDecimals: number): number {
+	return sizeMode === "quote" ? QUOTE_SIZE_INPUT_MAX_DECIMALS : szDecimals;
 }

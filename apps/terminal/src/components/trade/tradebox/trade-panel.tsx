@@ -179,6 +179,7 @@ export function TradePanel() {
 
 	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSize = toNumberOrZero(position?.szi);
+	const validatedPositionSize = userPositions.isLoading || userPositions.hasError ? null : positionSize;
 
 	const price = getOrderPrice(
 		orderType,
@@ -200,6 +201,8 @@ export function TradePanel() {
 	const canApprove = !!walletClient && !!address;
 
 	const baseInput = {
+		assetId: typeof market?.assetId === "number" ? market.assetId : null,
+		szDecimals: market?.szDecimals ?? 0,
 		isConnected,
 		isWalletLoading,
 		availableBalance,
@@ -212,6 +215,14 @@ export function TradePanel() {
 		orderValue,
 		side,
 		usesLimitPrice,
+		usesTriggerPrice: triggerOrder,
+		triggerPriceNum,
+		scaleOrder,
+		twapOrder,
+		scaleStartPriceNum,
+		scaleEndPriceNum,
+		scaleLevelsNum,
+		twapMinutesNum,
 	};
 
 	const validation = useOrderValidation(
@@ -226,16 +237,9 @@ export function TradePanel() {
 					orderType,
 					markPx,
 					maxSize,
-					usesTriggerPrice: isTriggerOrderType(orderType),
-					triggerPriceNum,
 					stopOrder,
 					takeProfitOrder,
-					scaleOrder,
-					twapOrder,
-					scaleStartPriceNum,
-					scaleEndPriceNum,
-					scaleLevelsNum,
-					twapMinutesNum,
+					positionSize: validatedPositionSize,
 					tpSlEnabled,
 					canUseTpSl,
 					tpPriceNum,
@@ -295,7 +299,7 @@ export function TradePanel() {
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
 		await submitOrder({
-			market: { assetId: market.assetId, szDecimals: market.szDecimals },
+			market: { assetId: market.assetId, name: market.name, szDecimals: market.szDecimals },
 			baseToken,
 			side,
 			orderType,

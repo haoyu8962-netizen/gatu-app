@@ -7,6 +7,7 @@ import { InfoRow } from "@/components/ui/info-row";
 import { HL_ALL_DEXS } from "@/config/app";
 import { buildPositionTpSlUpdatePlan, hasPositionTpSlTriggerMutation } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
+import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
@@ -134,7 +135,7 @@ function PositionTpSlForm({
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [requiresRefresh, setRequiresRefresh] = useState(false);
 
-	const { mutateAsync: placeOrder, isPending: isPlacing, error: placeError } = useExchange("order");
+	const { submitOrder, isPending: isPlacing, error: placeError } = useTrackedOrder();
 	const { mutateAsync: modifyOrders, isPending: isModifying, error: modifyError } = useExchange("batchModify");
 	const { mutateAsync: cancelOrders, isPending: isCancelling, error: cancelError } = useExchange("cancel");
 	const isSubmitting = isPlacing || isModifying || isCancelling;
@@ -204,8 +205,17 @@ function PositionTpSlForm({
 			}
 			if (updatePlan.orders.length > 0) {
 				mutationStarted = true;
-				const result = await placeOrder({ orders: updatePlan.orders, grouping: "positionTpsl" });
-				throwIfAnyResponseError(result.response?.data?.statuses);
+				const submission = await submitOrder({ orders: updatePlan.orders, grouping: "positionTpsl" });
+				if (submission.state === "blocked") {
+					setSubmitError(t`Another order for this market is still being confirmed.`);
+					return;
+				}
+				if (submission.state === "reconciling") {
+					setSubmitError(t`Order submitted. Confirming exchange status; do not retry.`);
+					setRequiresRefresh(true);
+					return;
+				}
+				throwIfAnyResponseError(submission.result.response?.data?.statuses);
 			}
 			if (updatePlan.cancels.length > 0) {
 				mutationStarted = true;

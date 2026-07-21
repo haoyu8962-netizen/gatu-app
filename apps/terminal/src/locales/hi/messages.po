@@ -17,6 +17,12 @@ msgstr ""
 #~ msgid "{0} more wallets"
 #~ msgstr ""
 
+#. placeholder {0}: order.acceptedCount
+#. placeholder {1}: order.totalCount
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "{0} of {1} orders were accepted. Review open orders before retrying."
+msgstr "{1} में से {0} ऑर्डर स्वीकार किए गए। पुनः प्रयास करने से पहले खुले ऑर्डर जाँचें।"
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
 #~ msgstr ""
@@ -241,6 +247,20 @@ msgstr "राशि"
 #: src/components/trade/positions/transfer-dialog.tsx
 #~ msgid "Amount (USDC)"
 #~ msgstr ""
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-order-submit.ts
+msgid "Another order for this market is still being confirmed."
+msgstr "इस बाज़ार के लिए एक अन्य ऑर्डर की पुष्टि अभी जारी है।"
+
+#: src/hooks/trade/use-order-submit.ts
+msgid "Another TWAP order for this market is still being confirmed."
+msgstr "इस बाज़ार के लिए एक अन्य TWAP ऑर्डर की पुष्टि अभी जारी है।"
 
 #: src/config/tooltips.ts
 msgid "Any portion that is not immediately filled will be canceled."
@@ -506,6 +526,7 @@ msgstr "चयनित रद्द करें"
 msgid "Cancel selected orders"
 msgstr "चयनित ऑर्डर रद्द करें"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Cancel TWAP order"
 msgstr "TWAP ऑर्डर रद्द करें"
@@ -515,9 +536,11 @@ msgid "Canceled"
 msgstr "रद्द"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-tab.tsx
 msgid "Canceling..."
 msgstr "रद्द हो रहा है..."
 
@@ -637,6 +660,14 @@ msgstr "अपने वॉलेट में लेनदेन की पु�
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute."
 msgstr "Arbitrum पर पुष्टि हो गई। Hyperliquid क्रेडिट आम तौर पर एक मिनट के भीतर आ जाता है।"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "confirming"
+msgstr "पुष्टि जारी"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "Confirming order status. Do not retry."
+msgstr "ऑर्डर की स्थिति की पुष्टि की जा रही है। दोबारा प्रयास न करें।"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Connect"
@@ -1299,6 +1330,10 @@ msgstr "एक्सप्लोरर"
 msgid "failed"
 msgstr "विफल"
 
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "Failed to cancel TWAP order."
+msgstr "TWAP ऑर्डर रद्द नहीं किया जा सका।"
+
 #: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
 msgid "Failed to change language"
@@ -1394,6 +1429,11 @@ msgstr "ट्रेड लोड करने में विफल।"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Failed to load TWAP history."
 #~ msgstr "TWAP इतिहास लोड करने में विफल।"
+
+#: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Failed to load TWAP orders."
+msgstr "TWAP ऑर्डर लोड नहीं किए जा सके।"
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Failed to open deposit flow"
@@ -2223,6 +2263,7 @@ msgid "No active positions."
 msgstr "कोई सक्रिय पोजीशन नहीं।"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No active TWAP orders."
 msgstr "कोई सक्रिय TWAP ऑर्डर नहीं।"
@@ -2295,7 +2336,6 @@ msgstr "कोई खुला ऑर्डर नहीं।"
 msgid "No order history found."
 msgstr "कोई ऑर्डर हिस्ट्री नहीं मिली।"
 
-#: src/hooks/trade/use-order-submit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -2388,6 +2428,10 @@ msgstr "OI"
 msgid "Open"
 msgstr "खुला"
 
+#: src/lib/errors/definitions/trigger.ts
+msgid "Open a position before placing a trigger order"
+msgstr "ट्रिगर ऑर्डर देने से पहले पोज़िशन खोलें"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Open a WalletConnect wallet or copy the pairing link."
 #~ msgstr ""
@@ -2466,6 +2510,10 @@ msgstr "ऑर्डर बुक"
 msgid "Order book in quote asset"
 msgstr "क्वोट एसेट में ऑर्डर बुक"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "Order confirmed by the exchange."
+msgstr "एक्सचेंज ने ऑर्डर की पुष्टि कर दी है।"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/config/ui-text.ts
 #: src/hooks/trade/use-order-submit.ts
@@ -2489,6 +2537,14 @@ msgstr "ऑर्डर कतार"
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Order submitted"
 msgstr "ऑर्डर सबमिट किया गया"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Order submitted. Confirming exchange status; do not retry."
+msgstr "ऑर्डर सबमिट हो गया है। एक्सचेंज की स्थिति की पुष्टि की जा रही है; दोबारा प्रयास न करें।"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Order type"
@@ -2564,6 +2620,10 @@ msgstr "बदलने पर पेज रीलोड होता है"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Pairing code does not match this link."
 #~ msgstr "पेयरिंग कोड इस लिंक से मेल नहीं खाता।"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "partial"
+msgstr "आंशिक"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Paste code"
@@ -3089,6 +3149,14 @@ msgstr "स्केल स्तर न्यूनतम नोशनल स�
 msgid "Scale levels must be {SCALE_LEVELS_MIN}-{SCALE_LEVELS_MAX}"
 msgstr "स्केल स्तर {SCALE_LEVELS_MIN}-{SCALE_LEVELS_MAX} होने चाहिए"
 
+#: src/lib/errors/definitions/scale.ts
+msgid "Scale prices must resolve to distinct ticks"
+msgstr "स्केल ऑर्डर की कीमतें अलग-अलग टिक पर होनी चाहिए"
+
+#: src/lib/errors/definitions/scale.ts
+msgid "Scale size is too small for the selected number of orders"
+msgstr "चुने गए ऑर्डरों की संख्या के लिए स्केल ऑर्डर का आकार बहुत छोटा है"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Scan a QR code from a desktop wallet."
 #~ msgstr ""
@@ -3462,6 +3530,10 @@ msgstr "स्मार्ट वॉलेट क्लाइंट तैया
 msgid "Smart wallet deposits are not enabled for this network."
 msgstr "इस नेटवर्क के लिए स्मार्ट वॉलेट जमा सक्षम नहीं हैं।"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "Some orders were accepted. Review open orders before retrying."
+msgstr "कुछ ऑर्डर स्वीकार किए गए। पुनः प्रयास करने से पहले खुले ऑर्डर जाँचें।"
+
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 msgid "Something went wrong"
@@ -3781,6 +3853,19 @@ msgstr "Testnet"
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
 #~ msgstr ""
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The exchange did not accept every order."
+msgstr "एक्सचेंज ने सभी ऑर्डर स्वीकार नहीं किए।"
+
+#: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/order-reconciliation.tsx
+msgid "The exchange did not accept the order."
+msgstr "एक्सचेंज ने ऑर्डर स्वीकार नहीं किया।"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "The exchange did not accept the TWAP order."
+msgstr "एक्सचेंज ने TWAP ऑर्डर स्वीकार नहीं किया।"
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।"
@@ -4073,6 +4158,10 @@ msgstr "यूनिफाइड अकाउंट मोड में Spot औ
 msgid "Trigger"
 msgstr "ट्रिगर"
 
+#: src/lib/errors/definitions/trigger.ts
+msgid "Trigger order must reduce your current position"
+msgstr "ट्रिगर ऑर्डर को आपकी मौजूदा पोज़िशन कम करनी चाहिए"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
@@ -4081,6 +4170,10 @@ msgstr "ट्रिगर मूल्य"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #~ msgid "Trigger Price (USDC)"
 #~ msgstr ""
+
+#: src/lib/errors/definitions/trigger.ts
+msgid "Trigger size exceeds position size"
+msgstr "ट्रिगर का आकार पोज़िशन के आकार से अधिक है"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Triggered"
@@ -4102,9 +4195,31 @@ msgstr "फिर से प्रयास करें"
 msgid "TWAP"
 msgstr "TWAP"
 
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "TWAP cancellation confirmed."
+msgstr "TWAP रद्दीकरण की पुष्टि हो गई।"
+
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "TWAP cancellation was submitted, but its status could not be confirmed. Check the active TWAP list before retrying."
+msgstr "TWAP रद्दीकरण अनुरोध भेज दिया गया, लेकिन उसकी स्थिति की पुष्टि नहीं हो सकी। पुनः प्रयास करने से पहले सक्रिय TWAP सूची देखें।"
+
+#: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-tab.tsx
+msgid "TWAP data may be stale while the connection recovers."
+msgstr "कनेक्शन बहाल होने के दौरान TWAP डेटा पुराना हो सकता है।"
+
+#: src/hooks/trade/use-order-submit.ts
 #: src/lib/errors/definitions/twap.ts
 msgid "TWAP minutes must be {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX}"
 msgstr "TWAP मिनट {TWAP_MINUTES_MIN}-{TWAP_MINUTES_MAX} होने चाहिए"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "TWAP order confirmed by the exchange."
+msgstr "एक्सचेंज ने TWAP ऑर्डर की पुष्टि कर दी।"
+
+#: src/hooks/trade/use-order-submit.ts
+msgid "TWAP order state is still loading. Please retry in a moment."
+msgstr "TWAP ऑर्डर की स्थिति अभी लोड हो रही है। कृपया कुछ देर बाद फिर प्रयास करें।"
 
 #: src/lib/errors/definitions/twap.ts
 msgid "TWAP order value too small. Min is ${min}, which is ${TWAP_MIN_NOTIONAL_PER_MINUTE_USD} per minute."
@@ -4133,6 +4248,10 @@ msgstr "प्रकार"
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Unable to close position."
 #~ msgstr "पोजीशन बंद करने में असमर्थ।"
+
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "Unable to identify this TWAP market. Refresh market data before retrying."
+msgstr "इस TWAP बाज़ार की पहचान नहीं हो सकी। पुनः प्रयास करने से पहले बाज़ार डेटा रीफ़्रेश करें।"
 
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx

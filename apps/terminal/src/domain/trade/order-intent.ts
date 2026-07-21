@@ -123,33 +123,42 @@ function buildEntryPlan(intent: EntryOrderIntent): OrderPlan {
 		return { orders: [], grouping: "na", errors: ["Enter trigger price"], warnings: [] };
 	}
 
-	const { orders, grouping } = buildOrders({
-		assetId: intent.assetId,
-		side: intent.side,
-		orderType,
-		sizeValue: intent.sizeValue,
-		szDecimals: intent.szDecimals,
-		markPx: intent.markPx,
-		price: intent.price,
-		slippageBps: intent.slippageBps,
-		reduceOnly: intent.reduceOnly,
-		tif: intent.tif,
-		limitPriceInput: intent.limitPriceInput,
-		triggerPriceInput: intent.triggerPriceInput,
-		scaleStartPriceInput: intent.scaleStartPriceInput,
-		scaleEndPriceInput: intent.scaleEndPriceInput,
-		scaleLevelsNum: intent.scaleLevelsNum,
-		tpSlEnabled: intent.tpSlEnabled,
-		canUseTpSl: intent.canUseTpSl,
-		tpPriceNum: intent.tpPriceNum,
-		slPriceNum: intent.slPriceNum,
-		isStopOrder: isStopOrderType(orderType),
-		isTriggerOrder: isTriggerOrderType(orderType),
-		isScaleOrder: isScaleOrderType(orderType),
-		usesLimitPriceForOrder: usesLimitPrice(orderType),
-	});
+	try {
+		const { orders, grouping } = buildOrders({
+			assetId: intent.assetId,
+			side: intent.side,
+			orderType,
+			sizeValue: intent.sizeValue,
+			szDecimals: intent.szDecimals,
+			markPx: intent.markPx,
+			price: intent.price,
+			slippageBps: intent.slippageBps,
+			reduceOnly: intent.reduceOnly,
+			tif: intent.tif,
+			limitPriceInput: intent.limitPriceInput,
+			triggerPriceInput: intent.triggerPriceInput,
+			scaleStartPriceInput: intent.scaleStartPriceInput,
+			scaleEndPriceInput: intent.scaleEndPriceInput,
+			scaleLevelsNum: intent.scaleLevelsNum,
+			tpSlEnabled: intent.tpSlEnabled,
+			canUseTpSl: intent.canUseTpSl,
+			tpPriceNum: intent.tpPriceNum,
+			slPriceNum: intent.slPriceNum,
+			isStopOrder: isStopOrderType(orderType),
+			isTriggerOrder: isTriggerOrderType(orderType),
+			isScaleOrder: isScaleOrderType(orderType),
+			usesLimitPriceForOrder: usesLimitPrice(orderType),
+		});
 
-	return { orders, grouping, errors: [], warnings: [] };
+		return { orders, grouping, errors: [], warnings: [] };
+	} catch (error) {
+		return {
+			orders: [],
+			grouping: "na",
+			errors: [error instanceof Error ? error.message : "Unable to build order"],
+			warnings: [],
+		};
+	}
 }
 
 function buildPositionTpSlPlan(intent: PositionTpSlIntent): OrderPlan {

@@ -27,6 +27,8 @@ export const STORAGE_KEYS = {
 	LAST_MARK: "hl-last-mark-v1",
 	MARKETS_STATS: "hl-mkt-stats-v1",
 	HIP3_DISCLAIMER: "hip3-deployer-disclaimer-v1",
+	PENDING_ORDERS: "hl-pending-orders-v1",
+	PENDING_TWAPS: "hl-pending-twaps-v1",
 	RECENT_WALLETS: "hypeterminal:recent-wallets",
 	RQ_CACHE: "hl-rq-cache-v1",
 	LEGACY_METADATA: "hl-markets-meta-v1",

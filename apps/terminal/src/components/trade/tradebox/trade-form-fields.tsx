@@ -7,7 +7,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD, SIZE_PERCENT_OPTIONS } from "@/config/trade";
-import { getSliderValue } from "@/domain/trade/order/size";
+import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -250,7 +250,7 @@ export function TradeFormFields({
 							placeholder="0.00"
 							value={sizeInput}
 							onChange={(e) => setSize(e.target.value)}
-							maxAllowedDecimals={szDecimals}
+							maxAllowedDecimals={getSizeInputMaxDecimals(sizeMode, szDecimals)}
 							className={cn(
 								"flex-1 text-xs tabular-nums",
 								sizeHasError && "border-stroke-error-strong focus:border-stroke-error-strong",
@@ -301,7 +301,14 @@ export function TradeFormFields({
 				</div>
 			</div>
 
-			{scaleOrder && <TradeFormScale markPx={markPx} szDecimals={szDecimals} disabled={isFormDisabled} />}
+			{scaleOrder && (
+				<TradeFormScale
+					markPx={markPx}
+					szDecimals={szDecimals}
+					marketType={isSpotMarket ? "spot" : "perp"}
+					disabled={isFormDisabled}
+				/>
+			)}
 
 			{twapOrder && <TradeFormTwap disabled={isFormDisabled} />}
 

@@ -9,7 +9,7 @@ import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SWAP_SUCCESS_DURATION_MS } from "@/config/time";
 import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
 import { getAvailableFromTotals, getSpotBalance } from "@/domain/trade/balances";
-import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
+import { formatPriceForOrder, formatSizeForOrder, throwIfAnyResponseError } from "@/domain/trade/orders";
 import {
 	buildSwapQuote,
 	DEFAULT_SWAP_SLIPPAGE_BPS,
@@ -22,10 +22,11 @@ import {
 } from "@/domain/trade/swap";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
+import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
-import { useExchange, useHyperliquid, useSubscription } from "@/lib/hyperliquid";
+import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { useMarketsInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import { toBig } from "@/lib/trade/numbers";
 import {
@@ -72,7 +73,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	const { spotMarkets } = useMarketsInfo();
 	const { spotBalances } = useDefaultDexBalances();
 	const { builderConfig } = useHyperliquid();
-	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
+	const { submitOrder, isPending: isSubmitting } = useTrackedOrder();
 	const { takerRate } = useFeeRates("spot");
 	const isStablecoinSwap = mode === "stablecoin";
 
@@ -209,8 +210,16 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		};
 
 		try {
-			const result = await placeOrder({ orders: [order], grouping: "na" });
-			throwIfResponseError(result.response?.data?.statuses?.[0]);
+			const submission = await submitOrder({ orders: [order], grouping: "na" });
+			if (submission.state === "blocked") {
+				setError(t`Another order for this market is still being confirmed.`);
+				return;
+			}
+			if (submission.state === "reconciling") {
+				setError(t`Order submitted. Confirming exchange status; do not retry.`);
+				return;
+			}
+			throwIfAnyResponseError(submission.result.response?.data?.statuses);
 
 			triggerAutoClose();
 		} catch (err) {
@@ -220,7 +229,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 				: rawMessage;
 			setError(message);
 		}
-	}, [spotMarket, quote, isSubmitting, isBuying, szDecimals, placeOrder, triggerAutoClose]);
+	}, [spotMarket, quote, isSubmitting, isBuying, szDecimals, submitOrder, triggerAutoClose]);
 
 	const requiredInput = quote?.maxInput ?? amount;
 	const insufficientBalance = toBig(requiredInput)?.gt(fromBalance) ?? false;

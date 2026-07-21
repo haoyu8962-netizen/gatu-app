@@ -7,12 +7,13 @@ import {
 	HL_PRICE_MAX_DECIMALS,
 	HL_PRICE_MAX_SIG_FIGS,
 	type LimitTif,
+	ORDER_MIN_NOTIONAL_USD,
 	type OrderType,
 	SCALE_LEVELS_MAX,
 	SCALE_LEVELS_MIN,
 } from "@/config/trade";
 import { getExecutedPrice, getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
-import { clampInt, formatDecimalFloor, isPositive, type Numeric, toBig, toSafeBig } from "@/lib/trade/numbers";
+import { formatDecimalFloor, isPositive, type Numeric, toBig } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 
 export interface OrderBuildParams {
@@ -141,36 +142,120 @@ export function buildOrders(params: OrderBuildParams): OrderBuildResult {
 	return { orders, grouping: hasTp || hasSl ? "normalTpsl" : "na" };
 }
 
-interface ScaleOrderParams {
+export interface ScaleOrderPlanParams {
 	assetId: number;
-	isBuy: boolean;
-	sizeValue: number;
+	sizeValue: Numeric;
 	szDecimals: number;
-	reduceOnly: boolean;
-	tif: LimitTif;
-	scaleStartPriceInput: string;
-	scaleEndPriceInput: string;
+	scaleStartPriceInput: Numeric;
+	scaleEndPriceInput: Numeric;
 	scaleLevelsNum: number | null;
 }
 
-function buildScaleOrders(orders: ExchangeOrder[], params: ScaleOrderParams): void {
-	const levels = clampInt(Math.round(params.scaleLevelsNum ?? SCALE_LEVELS_MIN), SCALE_LEVELS_MIN, SCALE_LEVELS_MAX);
-	const start = toSafeBig(params.scaleStartPriceInput);
-	const end = toSafeBig(params.scaleEndPriceInput);
-	const step = levels > 1 ? end.minus(start).div(levels - 1) : start.times(0);
-	const perLevelSize = toSafeBig(params.sizeValue).div(levels);
+export type ScaleOrderPlanIssue =
+	| "invalid-levels"
+	| "invalid-price-range"
+	| "insufficient-size"
+	| "duplicate-price"
+	| "min-notional";
 
-	for (let i = 0; i < levels; i += 1) {
-		const levelPrice = start.plus(step.times(i)).toNumber();
+export interface ScaleOrderLevel {
+	price: string;
+	size: string;
+	notional: string;
+}
+
+export interface ScaleOrderLevelPlan {
+	levels: ScaleOrderLevel[];
+	issues: ScaleOrderPlanIssue[];
+}
+
+interface ScaleOrderParams extends ScaleOrderPlanParams {
+	isBuy: boolean;
+	reduceOnly: boolean;
+	tif: LimitTif;
+}
+
+export function createScaleOrderLevelPlan(params: ScaleOrderPlanParams): ScaleOrderLevelPlan {
+	const levels = params.scaleLevelsNum;
+	if (levels === null || !Number.isSafeInteger(levels) || levels < SCALE_LEVELS_MIN || levels > SCALE_LEVELS_MAX) {
+		return { levels: [], issues: ["invalid-levels"] };
+	}
+
+	const start = toBig(params.scaleStartPriceInput);
+	const end = toBig(params.scaleEndPriceInput);
+	if (!start || !end || start.lte(0) || end.lte(0) || start.eq(end)) {
+		return { levels: [], issues: ["invalid-price-range"] };
+	}
+
+	const totalSize = toBig(params.sizeValue);
+	if (!totalSize || totalSize.lte(0)) return { levels: [], issues: ["insufficient-size"] };
+
+	const sizeFactor = Big(10).pow(params.szDecimals);
+	const totalSizeUnits = totalSize.times(sizeFactor).round(0, Big.roundDown);
+	if (totalSizeUnits.lt(levels)) return { levels: [], issues: ["insufficient-size"] };
+
+	const unitsPerLevel = totalSizeUnits.div(levels).round(0, Big.roundDown);
+	const remainderUnits = totalSizeUnits.minus(unitsPerLevel.times(levels)).toNumber();
+	const priceStep = end.minus(start).div(levels - 1);
+	const plannedLevels: ScaleOrderLevel[] = [];
+	const formattedPrices = new Set<string>();
+	const issues = new Set<ScaleOrderPlanIssue>();
+
+	for (let index = 0; index < levels; index += 1) {
+		const price = formatPriceForOrder(start.plus(priceStep.times(index)), params);
+		const sizeUnits = index < remainderUnits ? unitsPerLevel.plus(1) : unitsPerLevel;
+		const size = formatDecimalFloor(sizeUnits.div(sizeFactor), params.szDecimals);
+		const priceValue = toBig(price);
+		const sizeValue = toBig(size);
+
+		if (!priceValue || priceValue.lte(0)) issues.add("invalid-price-range");
+		if (!sizeValue || sizeValue.lte(0)) issues.add("insufficient-size");
+		if (formattedPrices.has(price)) issues.add("duplicate-price");
+		formattedPrices.add(price);
+
+		const notional = priceValue && sizeValue ? priceValue.times(sizeValue) : Big(0);
+		if (notional.lt(ORDER_MIN_NOTIONAL_USD)) issues.add("min-notional");
+		plannedLevels.push({ price, size, notional: notional.toString() });
+	}
+
+	return { levels: plannedLevels, issues: Array.from(issues) };
+}
+
+function buildScaleOrders(orders: ExchangeOrder[], params: ScaleOrderParams): void {
+	const plan = createScaleOrderLevelPlan(params);
+	if (plan.issues.length > 0) throw new Error(getScaleOrderPlanError(plan.issues[0]));
+
+	for (const level of plan.levels) {
 		orders.push({
 			a: params.assetId,
 			b: params.isBuy,
-			p: formatPriceForOrder(levelPrice, params),
-			s: formatSizeForOrder(perLevelSize.toNumber(), params.szDecimals),
+			p: level.price,
+			s: level.size,
 			r: params.reduceOnly,
 			t: { limit: { tif: params.tif } },
 		});
 	}
+}
+
+function getScaleOrderPlanError(issue: ScaleOrderPlanIssue): string {
+	switch (issue) {
+		case "invalid-levels":
+			return `Scale levels must be ${SCALE_LEVELS_MIN}-${SCALE_LEVELS_MAX}`;
+		case "invalid-price-range":
+			return "Enter a valid scale price range";
+		case "insufficient-size":
+			return "Scale size is too small for the selected number of orders";
+		case "duplicate-price":
+			return "Scale prices must resolve to distinct ticks";
+		case "min-notional":
+			return "Scale level below min notional";
+		default:
+			return assertNever(issue);
+	}
+}
+
+function assertNever(value: never): never {
+	throw new Error(`Unhandled scale order issue: ${String(value)}`);
 }
 
 interface TriggerOrderParams {

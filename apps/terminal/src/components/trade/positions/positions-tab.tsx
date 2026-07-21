@@ -5,10 +5,12 @@ import { toast } from "sonner";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
+import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useExchange, useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
@@ -47,7 +49,7 @@ export function PositionsTab() {
 	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
 	const [closingAssetIds, setClosingAssetIds] = useState<Set<number>>(() => new Set());
 
-	const { mutate: placeOrder, error: closeError, reset: resetCloseError } = useExchange("order");
+	const { submitOrder, error: closeError, reset: resetCloseError } = useTrackedOrder();
 
 	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
 
@@ -65,7 +67,7 @@ export function PositionsTab() {
 
 	const actionError = closeError?.message;
 
-	function submitCloseOrReverse(intent: CloseIntent, data: ClosePositionData) {
+	async function submitCloseOrReverse(intent: CloseIntent, data: ClosePositionData) {
 		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe } = data;
 		if (closingAssetIds.has(assetId)) return;
 
@@ -89,34 +91,37 @@ export function PositionsTab() {
 		const title = intent === "close" ? t`Position closed — ${coin}` : t`Position reversed — ${coin}`;
 		const failureMessage = intent === "close" ? t`Failed to close position` : t`Failed to reverse position`;
 
-		placeOrder(
-			{ orders, grouping },
-			{
-				onSuccess: () => {
-					toast.success(title, {
-						description: buildClosePositionDescription({ size, szDecimals, coin, unrealizedPnl, roe }),
-					});
-				},
-				onError: (error) => {
-					toast.error(error.message || failureMessage);
-				},
-				onSettled: () => {
-					setClosingAssetIds((prev) => {
-						const next = new Set(prev);
-						next.delete(assetId);
-						return next;
-					});
-				},
-			},
-		);
+		try {
+			const submission = await submitOrder({ orders, grouping });
+			if (submission.state === "blocked") {
+				toast.warning(t`Another order for this market is still being confirmed.`);
+				return;
+			}
+			if (submission.state === "reconciling") {
+				toast.info(t`Order submitted. Confirming exchange status; do not retry.`);
+				return;
+			}
+			throwIfAnyResponseError(submission.result.response?.data?.statuses);
+			toast.success(title, {
+				description: buildClosePositionDescription({ size, szDecimals, coin, unrealizedPnl, roe }),
+			});
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : failureMessage);
+		} finally {
+			setClosingAssetIds((prev) => {
+				const next = new Set(prev);
+				next.delete(assetId);
+				return next;
+			});
+		}
 	}
 
 	function handleClosePosition(data: ClosePositionData) {
-		submitCloseOrReverse("close", data);
+		void submitCloseOrReverse("close", data);
 	}
 
 	function handleReverse(data: ClosePositionData) {
-		submitCloseOrReverse("reverse", data);
+		void submitCloseOrReverse("reverse", data);
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {

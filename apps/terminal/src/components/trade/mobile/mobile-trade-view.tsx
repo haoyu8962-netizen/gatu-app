@@ -8,15 +8,17 @@ import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { SIZE_PERCENT_OPTIONS } from "@/config/trade";
-import { get24hChange } from "@/domain/market";
+import { get24hChange, getPositionDex } from "@/domain/market";
 import { getLiquidationInfo } from "@/domain/trade/order/metrics";
-import { getSliderValue } from "@/domain/trade/order/size";
+import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
-import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
+import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
+import { formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import { useAccountAbstractionControl } from "@/hooks/trade/use-account-abstraction-control";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -25,11 +27,11 @@ import {
 	type UnifiedMarketInfo,
 	useAgentRegistration,
 	useAgentStatus,
-	useExchange,
 	useSelectedMarketInfo,
+	useUserPositions,
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { deriveOrderOutcome } from "@/lib/trade/extract-order-status";
+import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
@@ -81,6 +83,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const needsChainSwitch = !!walletClientError && walletClientError.message.includes("does not match");
 
 	const { data: market } = useSelectedMarketInfo();
+	const userPositions = useUserPositions();
 	const navigateToMarket = useMarketNavigation();
 
 	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
@@ -125,7 +128,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { tradeRestricted } = useGeoRestriction();
 
-	const { mutateAsync: placeOrder, isPending: isSubmitting } = useExchange("order");
+	const { submitOrder, isPending: isSubmitting } = useTrackedOrder();
 
 	const usesLimitPrice = usesLimitPriceForOrder(orderType);
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
@@ -172,6 +175,9 @@ export function MobileTradeView({ className, embedded }: Props) {
 		}
 	}, [selectedPrice, setOrderType]);
 	const price = isMarketExecution ? markPx : toNumberOrZero(limitPriceInput);
+	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
+	const positionSize = toNumberOrZero(position?.szi);
+	const validatedPositionSize = userPositions.isLoading || userPositions.hasError ? null : positionSize;
 	const { takerRate, makerRate } = useFeeRates(market?.kind);
 	const feeRate = isMarketExecution ? takerRate : makerRate;
 	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
@@ -184,6 +190,8 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const liqValueClass = getLiquidationValueClass(liqPrice, liqWarning);
 
 	const baseInput = {
+		assetId: typeof market?.assetId === "number" ? market.assetId : null,
+		szDecimals: market?.szDecimals ?? 0,
 		isConnected,
 		isWalletLoading,
 		availableBalance,
@@ -196,6 +204,14 @@ export function MobileTradeView({ className, embedded }: Props) {
 		orderValue,
 		side,
 		usesLimitPrice,
+		usesTriggerPrice,
+		triggerPriceNum: toNumber(triggerPrice),
+		scaleOrder: false,
+		twapOrder: false,
+		scaleStartPriceNum: null,
+		scaleEndPriceNum: null,
+		scaleLevelsNum: null,
+		twapMinutesNum: null,
 	};
 
 	const validation = useOrderValidation(
@@ -210,16 +226,9 @@ export function MobileTradeView({ className, embedded }: Props) {
 					orderType,
 					markPx,
 					maxSize,
-					usesTriggerPrice,
-					triggerPriceNum: toNumber(triggerPrice),
 					stopOrder: isStopOrderType(orderType),
 					takeProfitOrder: isTakeProfitOrderType(orderType),
-					scaleOrder: false,
-					twapOrder: false,
-					scaleStartPriceNum: null,
-					scaleEndPriceNum: null,
-					scaleLevelsNum: null,
-					twapMinutesNum: null,
+					positionSize: validatedPositionSize,
 					tpSlEnabled,
 					canUseTpSl,
 					tpPriceNum: toNumber(tpPrice),
@@ -301,10 +310,29 @@ export function MobileTradeView({ className, embedded }: Props) {
 		});
 
 		try {
-			const result = await placeOrder({ orders: plan.orders, grouping: plan.grouping });
+			const submission = await submitOrder({ orders: plan.orders, grouping: plan.grouping }, { queueId: orderId });
+			if (submission.state === "blocked") {
+				updateOrder(orderId, {
+					status: "failed",
+					error: t`Another order for this market is still being confirmed.`,
+				});
+				return;
+			}
+			if (submission.state === "reconciling") {
+				setSizeInput("");
+				setLimitPriceInput("");
+				setTpPrice("");
+				setSlPrice("");
+				setTriggerPrice("");
+				return;
+			}
 
-			const statuses = result.response?.data?.statuses ?? [];
-			throwIfResponseError(statuses[0]);
+			const statuses = submission.result.response?.data?.statuses ?? [];
+			const errors = extractStatusErrors(statuses);
+			if (errors.length > 0) {
+				updateOrder(orderId, { status: "failed", error: errors.join("; ") });
+				return;
+			}
 
 			updateOrder(orderId, { status: "success", outcome: deriveOrderOutcome(statuses) });
 			setSizeInput("");
@@ -313,6 +341,23 @@ export function MobileTradeView({ className, embedded }: Props) {
 			setSlPrice("");
 			setTriggerPrice("");
 		} catch (error) {
+			if (isOrderBatchResolutionError(error)) {
+				const { resolution } = error;
+				if (resolution.status === "partial") {
+					updateOrder(orderId, {
+						status: "partial",
+						acceptedCount: resolution.acceptedCount,
+						totalCount: resolution.totalCount,
+						error: resolution.errors.join("; ") || undefined,
+					});
+					setSizeInput("");
+					setLimitPriceInput("");
+					setTpPrice("");
+					setSlPrice("");
+					setTriggerPrice("");
+					return;
+				}
+			}
 			updateOrder(orderId, {
 				status: "failed",
 				error: error instanceof Error ? error.message : t`Order failed`,
@@ -469,6 +514,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 								placeholder="0.00"
 								value={sizeInput}
 								onChange={(e: ChangeEvent<HTMLInputElement>) => setSizeInput(e.target.value)}
+								maxAllowedDecimals={getSizeInputMaxDecimals(sizeMode, szDecimals)}
 								className="flex-1 tabular-nums font-semibold"
 								disabled={isFormDisabled}
 							/>

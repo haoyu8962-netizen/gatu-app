@@ -6,6 +6,15 @@ import {
 } from "../definitions/connection";
 import { marketNotReadyValidator, noMarketValidator } from "../definitions/market";
 import {
+	enterPriceRangeValidator,
+	type ScaleContext,
+	scaleLevelMinNotionalValidator,
+	scaleLevelsRangeValidator,
+	scalePricePrecisionValidator,
+	scaleSizeAllocationValidator,
+	scaleStartEndDifferValidator,
+} from "../definitions/scale";
+import {
 	insufficientBaseBalanceValidator,
 	insufficientQuoteBalanceValidator,
 	type SpotBalanceContext,
@@ -16,9 +25,10 @@ import {
 	spotEnterSizeValidator,
 	spotMinOrderNotionalValidator,
 } from "../definitions/spot-input";
+import { type TwapContext, twapMinNotionalValidator, twapMinutesRangeValidator } from "../definitions/twap";
 import { runValidators, type ValidationError, type Validator } from "../types";
 
-export interface SpotOrderContext extends SpotInputContext, SpotBalanceContext {
+export interface SpotOrderContext extends SpotInputContext, SpotBalanceContext, ScaleContext, TwapContext {
 	isConnected: boolean;
 	isWalletLoading: boolean;
 	isReadyToTrade: boolean;
@@ -45,6 +55,14 @@ const spotOrderValidators: Validator<SpotOrderContext>[] = [
 	spotEnterLimitPriceValidator,
 	spotEnterSizeValidator,
 	spotMinOrderNotionalValidator,
+	enterPriceRangeValidator,
+	scaleLevelsRangeValidator,
+	scaleStartEndDifferValidator,
+	scaleSizeAllocationValidator,
+	scalePricePrecisionValidator,
+	scaleLevelMinNotionalValidator,
+	twapMinutesRangeValidator,
+	twapMinNotionalValidator,
 	insufficientQuoteBalanceValidator,
 	insufficientBaseBalanceValidator,
 ];

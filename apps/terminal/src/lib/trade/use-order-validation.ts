@@ -3,6 +3,8 @@ import { type SpotOrderContext, validateSpotOrder } from "@/lib/errors/stacks/sp
 import type { FormValidationResult, Side } from "@/lib/trade/types";
 
 export interface BaseOrderInput {
+	assetId: number | null;
+	szDecimals: number;
 	isConnected: boolean;
 	isWalletLoading: boolean;
 	availableBalance: number;
@@ -15,6 +17,14 @@ export interface BaseOrderInput {
 	orderValue: number;
 	side: Side;
 	usesLimitPrice: boolean;
+	usesTriggerPrice: boolean;
+	triggerPriceNum: number | null;
+	scaleOrder: boolean;
+	twapOrder: boolean;
+	scaleStartPriceNum: number | null;
+	scaleEndPriceNum: number | null;
+	scaleLevelsNum: number | null;
+	twapMinutesNum: number | null;
 }
 
 export interface SpotOrderFields {
@@ -28,16 +38,9 @@ export interface PerpOrderFields {
 	orderType: string;
 	markPx: number;
 	maxSize: number;
-	usesTriggerPrice: boolean;
-	triggerPriceNum: number | null;
 	stopOrder: boolean;
 	takeProfitOrder: boolean;
-	scaleOrder: boolean;
-	twapOrder: boolean;
-	scaleStartPriceNum: number | null;
-	scaleEndPriceNum: number | null;
-	scaleLevelsNum: number | null;
-	twapMinutesNum: number | null;
+	positionSize: number | null;
 	tpSlEnabled: boolean;
 	canUseTpSl: boolean;
 	tpPriceNum: number | null;

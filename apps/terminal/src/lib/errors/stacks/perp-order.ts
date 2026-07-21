@@ -18,6 +18,8 @@ import {
 	type ScaleContext,
 	scaleLevelMinNotionalValidator,
 	scaleLevelsRangeValidator,
+	scalePricePrecisionValidator,
+	scaleSizeAllocationValidator,
 	scaleStartEndDifferValidator,
 } from "../definitions/scale";
 import { enterTpSlPriceValidator, slPriceValidator, type TpSlContext, tpPriceValidator } from "../definitions/tpsl";
@@ -27,6 +29,9 @@ import {
 	type TriggerContext,
 	tpTriggerAboveMarkValidator,
 	tpTriggerBelowMarkValidator,
+	triggerPositionDirectionValidator,
+	triggerPositionExistsValidator,
+	triggerPositionSizeValidator,
 } from "../definitions/trigger";
 import { type TwapContext, twapMinNotionalValidator, twapMinutesRangeValidator } from "../definitions/twap";
 import { runValidators, type ValidationError, type Validator } from "../types";
@@ -69,9 +74,14 @@ const perpOrderValidators: Validator<PerpOrderContext>[] = [
 	stopTriggerBelowMarkValidator,
 	tpTriggerAboveMarkValidator,
 	tpTriggerBelowMarkValidator,
+	triggerPositionExistsValidator,
+	triggerPositionDirectionValidator,
+	triggerPositionSizeValidator,
 	enterPriceRangeValidator,
 	scaleLevelsRangeValidator,
 	scaleStartEndDifferValidator,
+	scaleSizeAllocationValidator,
+	scalePricePrecisionValidator,
 	scaleLevelMinNotionalValidator,
 	twapMinutesRangeValidator,
 	twapMinNotionalValidator,

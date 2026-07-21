@@ -116,6 +116,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 					? testState.modifyOrders
 					: testState.cancelOrders,
 	}),
+	useHyperliquid: () => ({
+		clientKey: testState.connected ? "0x1111111111111111111111111111111111111111" : "disconnected",
+		env: "Mainnet",
+	}),
 	useMarketsInfo: () => ({
 		getMarketInfo: () => (testState.marketMarkPx ? { markPx: testState.marketMarkPx } : undefined),
 	}),

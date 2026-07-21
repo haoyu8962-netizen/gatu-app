@@ -5,11 +5,13 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { HL_ALL_DEXS } from "@/config/app";
 import { getAvgPrice } from "@/domain/market";
+import { getTwapViewState } from "@/domain/trade/twap";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useTwapCancel } from "@/hooks/trade/use-twap-cancel";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatDuration, formatNumber, formatPrice } from "@/lib/format";
-import { useExchange, useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
@@ -30,13 +32,18 @@ export function TwapTab() {
 	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
-	const { data: twapStatesEvent } = useSubscription(
+	const {
+		data: twapStatesEvent,
+		status,
+		error,
+		isStale,
+	} = useSubscription(
 		"twapStates",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
 	const markets = useMarkets();
-	const { mutate: cancelTwap, isPending: isCancelling } = useExchange("twapCancel");
+	const { cancelTwap, cancellingTwapId, feedback } = useTwapCancel();
 
 	const twapStates = twapStatesEvent?.states ?? [];
 
@@ -48,13 +55,20 @@ export function TwapTab() {
 
 	const activeCount = activeOrders.length;
 
-	const headerCount = isConnected ? `${activeCount} ${t`active`}` : null;
-
-	const twapStatesStatus = twapStatesEvent ? "active" : "loading";
+	const viewState = getTwapViewState({ isConnected, status, hasData: twapStatesEvent !== undefined, isStale });
+	const headerCount = viewState === "ready" || viewState === "stale" ? `${activeCount} ${t`active`}` : null;
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view TWAP orders.`}</Placeholder>;
-		if (twapStatesStatus === "loading") return <Placeholder>{t`Loading TWAP orders...`}</Placeholder>;
+		if (viewState === "loading") return <Placeholder>{t`Loading TWAP orders...`}</Placeholder>;
+		if (viewState === "error") {
+			return (
+				<Placeholder variant="error">
+					<span>{t`Failed to load TWAP orders.`}</span>
+					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
+				</Placeholder>
+			);
+		}
 		if (activeOrders.length === 0) return <Placeholder>{t`No active TWAP orders.`}</Placeholder>;
 		return null;
 	}
@@ -66,6 +80,19 @@ export function TwapTab() {
 			<div className={positionsPanelTableCaptionRowClass}>
 				{headerCount ? <span className="tabular-nums text-3xs text-fg-muted">{headerCount}</span> : null}
 			</div>
+			{feedback ? (
+				<div
+					role={feedback.tone === "error" ? "alert" : "status"}
+					className={cn("px-2.5 py-1 text-2xs", feedback.tone === "error" ? "text-error" : "text-warning")}
+				>
+					{feedback.message}
+				</div>
+			) : null}
+			{viewState === "stale" ? (
+				<output className="block px-2.5 py-1 text-2xs text-warning">
+					{t`TWAP data may be stale while the connection recovers.`}
+				</output>
+			) : null}
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
@@ -182,14 +209,11 @@ export function TwapTab() {
 													intent="error"
 													size="sm"
 													aria-label={t`Cancel TWAP order`}
-													disabled={isCancelling}
-													onClick={() => {
-														const assetId = markets.getAssetId(state.coin);
-														if (typeof assetId !== "number") return;
-														cancelTwap({ a: assetId, t: twapId });
-													}}
+													aria-busy={cancellingTwapId === twapId}
+													disabled={cancellingTwapId !== null}
+													onClick={() => void cancelTwap(state.coin, twapId)}
 												>
-													{t`Cancel`}
+													{cancellingTwapId === twapId ? t`Canceling...` : t`Cancel`}
 												</Button>
 											</TableCell>
 										</TableRow>

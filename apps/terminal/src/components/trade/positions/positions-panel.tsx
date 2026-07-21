@@ -37,13 +37,18 @@ export function PositionsPanel() {
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
-	const { data: twapStatesEvent } = useSubscription(
+	const {
+		data: twapStatesEvent,
+		status: twapStatesStatus,
+		isStale: twapStatesStale,
+	} = useSubscription(
 		"twapStates",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
 	const openOrders = ordersEvent?.orders;
-	const twapCount = isConnected ? (twapStatesEvent?.states?.length ?? 0) : null;
+	const twapCount =
+		isConnected && twapStatesStatus === "active" && !twapStatesStale ? (twapStatesEvent?.states?.length ?? 0) : null;
 
 	function handleTabChange(value: string) {
 		startTransition(() => setPositionsActiveTab(value));
