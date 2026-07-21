@@ -89,6 +89,7 @@ export function DepositModal() {
 		status: depositStatus,
 		error: depositError,
 		hash: depositHash,
+		walletResponseDelayed,
 		isArbitrum,
 		isSwitching,
 		deposit,
@@ -209,6 +210,9 @@ export function DepositModal() {
 	function handlePerpsSpotTransferClick() {
 		openTransferModal("toPerp");
 	}
+	let depositPendingHeading = <Trans>Confirm in wallet</Trans>;
+	if (walletResponseDelayed) depositPendingHeading = <Trans>Taking longer than expected</Trans>;
+	if (depositStatus === "confirming") depositPendingHeading = <Trans>Waiting for chain confirmation</Trans>;
 
 	if (depositStatus === "success") {
 		return (
@@ -269,10 +273,19 @@ export function DepositModal() {
 			<StatusScreen
 				title={<Trans>Deposit</Trans>}
 				icon="loading"
-				heading={
-					depositStatus === "pending" ? <Trans>Confirm in wallet</Trans> : <Trans>Waiting for chain confirmation</Trans>
+				heading={depositPendingHeading}
+				description={
+					<span className="flex flex-col gap-1">
+						<span className="tabular-nums">{depositAmount} USDC → Hyperliquid</span>
+						{walletResponseDelayed ? (
+							<span>
+								<Trans>
+									Keep this window open and confirm or reject the request in your wallet. Do not submit another deposit.
+								</Trans>
+							</span>
+						) : null}
+					</span>
 				}
-				description={<span className="tabular-nums">{depositAmount} USDC → Hyperliquid</span>}
 				txHash={depositStatus === "confirming" ? depositHash : undefined}
 				txChain={depositTxChain}
 				closable={false}

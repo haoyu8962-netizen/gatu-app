@@ -120,12 +120,19 @@ describe("deposit broadcast confirmation", () => {
 		);
 	});
 
-	it("times out when the wallet does not return a transaction hash", async () => {
-		const never = new Promise<Hash>(() => {});
+	it("keeps waiting after the wallet response threshold without enabling an unsafe retry", async () => {
+		let resolveHash: ((hash: Hash) => void) | undefined;
+		const walletResponse = new Promise<Hash>((resolve) => {
+			resolveHash = resolve;
+		});
+		const onDelayed = vi.fn();
+		const result = waitForWalletTransactionHash(walletResponse, 0, onDelayed);
 
-		await expect(waitForWalletTransactionHash(never, 0)).rejects.toThrow(
-			"Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice.",
-		);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(onDelayed).toHaveBeenCalledOnce();
+
+		resolveHash?.(HASH);
+		await expect(result).resolves.toBe(HASH);
 	});
 
 	it("does not confirm through the wallet provider when the public RPC fails", async () => {

@@ -1,7 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CoinIcon, WalletIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
-import { HL_ICON_URL, USDC_ICON_URL } from "@/config/bridge";
+import { BRIDGE_QUOTE_VALIDITY_MS, HL_ICON_URL, USDC_ICON_URL } from "@/config/bridge";
 import { cn } from "@/lib/cn";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
 import { isSafeHttpUrl } from "@/lib/safe-url";
@@ -137,21 +136,9 @@ export function ExplorerLink({ href, children }: { href: string; children: React
 }
 
 const QUOTE_COUNTDOWN_RADIUS = 10;
-const QUOTE_COUNTDOWN_DURATION_S = 30;
+const QUOTE_COUNTDOWN_DURATION_S = BRIDGE_QUOTE_VALIDITY_MS / 1000;
 
-export function QuoteCountdown({ dataUpdatedAt }: { dataUpdatedAt: number }) {
-	const [remaining, setRemaining] = useState(QUOTE_COUNTDOWN_DURATION_S);
-
-	useEffect(() => {
-		function tick() {
-			const elapsed = (Date.now() - dataUpdatedAt) / 1000;
-			setRemaining(Math.max(0, Math.ceil(QUOTE_COUNTDOWN_DURATION_S - elapsed)));
-		}
-		tick();
-		const id = setInterval(tick, 1000);
-		return () => clearInterval(id);
-	}, [dataUpdatedAt]);
-
+export function QuoteCountdown({ remaining }: { remaining: number }) {
 	const circumference = 2 * Math.PI * QUOTE_COUNTDOWN_RADIUS;
 	const offset = circumference * (1 - remaining / QUOTE_COUNTDOWN_DURATION_S);
 

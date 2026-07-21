@@ -248,6 +248,10 @@ msgstr "المبلغ"
 #~ msgid "Amount (USDC)"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Amount is too low for the available bridge routes."
+msgstr "المبلغ منخفض جدًا بالنسبة لمسارات الجسر المتاحة."
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1489,6 +1493,10 @@ msgstr "الرسوم"
 msgid "Fees (Taker / Maker)"
 msgstr "الرسوم (آخذ السيولة / صانع السيولة)"
 
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Fees are higher than the bridge amount."
+msgstr "الرسوم أعلى من مبلغ التحويل عبر الجسر."
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
 #~ msgstr ""
@@ -1717,6 +1725,10 @@ msgstr "IOC (تنفيذ فوري أو إلغاء)"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Isolated"
 msgstr "معزول"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Keep this window open and confirm or reject the request in your wallet. Do not submit another deposit."
+msgstr "أبقِ هذه النافذة مفتوحة وأكّد الطلب أو ارفضه في محفظتك. لا ترسل إيداعًا آخر."
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "L1"
@@ -2955,6 +2967,18 @@ msgstr "جارٍ المعالجة..."
 msgid "QR visible"
 msgstr "رمز QR ظاهر"
 
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Quote expired. Refresh it before confirming."
+msgstr "انتهت صلاحية عرض السعر. حدّثه قبل التأكيد."
+
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Quote refresh failed. Try again before confirming."
+msgstr "تعذّر تحديث عرض السعر. حاول مرة أخرى قبل التأكيد."
+
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Quote updated. Review the new amount before confirming."
+msgstr "تم تحديث عرض السعر. راجع المبلغ الجديد قبل التأكيد."
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Randomize timing"
 msgstr "عشوائية التوقيت"
@@ -3018,6 +3042,10 @@ msgstr "تم الاسترداد بعد إعادة التحميل. ينتهي ف�
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "تقليل فقط"
+
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Refresh quote"
+msgstr "تحديث عرض السعر"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Register Another"
@@ -3836,6 +3864,7 @@ msgid "Take profit trigger must be below mark"
 msgstr "يجب أن يكون مُحفِّز جني الأرباح أدنى من سعر العلامة"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Taking longer than expected"
 msgstr "يستغرق وقتًا أطول من المتوقع"
 
@@ -4461,7 +4490,6 @@ msgid "Wallet connection unavailable"
 msgstr "اتصال المحفظة غير متاح"
 
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
 msgstr "لم تُرجع المحفظة تجزئة معاملة. تحقق من نشاط المحفظة قبل إعادة المحاولة لتجنب إرسال الإيداع مرتين."
 

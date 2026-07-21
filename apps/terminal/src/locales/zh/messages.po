@@ -248,6 +248,10 @@ msgstr "数量"
 #~ msgid "Amount (USDC)"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Amount is too low for the available bridge routes."
+msgstr "金额过低，当前桥接路由均不可用。"
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1489,6 +1493,10 @@ msgstr "费用"
 msgid "Fees (Taker / Maker)"
 msgstr "手续费（吃单 / 挂单）"
 
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Fees are higher than the bridge amount."
+msgstr "桥接费用高于桥接金额。"
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
 #~ msgstr ""
@@ -1717,6 +1725,10 @@ msgstr "IOC（立即成交或取消）"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Isolated"
 msgstr "逐仓"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Keep this window open and confirm or reject the request in your wallet. Do not submit another deposit."
+msgstr "请保持此窗口打开，并在钱包中确认或拒绝请求。请勿再次提交入金。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "L1"
@@ -2955,6 +2967,18 @@ msgstr "处理中…"
 msgid "QR visible"
 msgstr "二维码已显示"
 
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Quote expired. Refresh it before confirming."
+msgstr "报价已过期，请刷新后再确认。"
+
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Quote refresh failed. Try again before confirming."
+msgstr "报价刷新失败，请重试后再确认。"
+
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Quote updated. Review the new amount before confirming."
+msgstr "报价已更新，请核对新金额后再确认。"
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Randomize timing"
 msgstr "随机化时间"
@@ -3018,6 +3042,10 @@ msgstr "重新加载后已恢复。将于 {expiresAtLabel} 过期。"
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "只减仓"
+
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Refresh quote"
+msgstr "刷新报价"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Register Another"
@@ -3836,6 +3864,7 @@ msgid "Take profit trigger must be below mark"
 msgstr "止盈触发价须低于标记价"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Taking longer than expected"
 msgstr "耗时比预期更长"
 
@@ -4461,7 +4490,6 @@ msgid "Wallet connection unavailable"
 msgstr "钱包连接不可用"
 
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
 msgstr "钱包没有返回交易哈希。重试前请先检查钱包活动，避免重复发送充值交易。"
 

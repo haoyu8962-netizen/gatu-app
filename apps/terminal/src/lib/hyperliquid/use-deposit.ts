@@ -55,6 +55,7 @@ export interface UseDepositResult {
 	status: DepositStatus;
 	error: Error | null;
 	hash: Hash | undefined;
+	walletResponseDelayed: boolean;
 	deposit: (amount: string) => void;
 	validate: (amount: string) => ValidationResult;
 	reset: () => void;
@@ -71,6 +72,7 @@ interface DepositState {
 	status: DepositStatus;
 	error: Error | null;
 	hash: Hash | undefined;
+	walletResponseDelayed: boolean;
 }
 
 interface UsdcBalanceState {
@@ -168,7 +170,7 @@ function validateAmount(amount: string, maxDepositRaw: bigint | undefined): Vali
 }
 
 function createIdleState(): DepositState {
-	return { status: "idle", error: null, hash: undefined };
+	return { status: "idle", error: null, hash: undefined, walletResponseDelayed: false };
 }
 
 function createArbitrumSwitchState(key = ""): ArbitrumSwitchState {
@@ -486,21 +488,10 @@ async function assertWalletCanPayDepositGas(
 export function waitForWalletTransactionHash<T>(
 	promise: Promise<T>,
 	timeoutMs = DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
+	onDelayed?: () => void,
 ): Promise<T> {
-	let timeoutId: ReturnType<typeof setTimeout> | undefined;
-	const timeout = new Promise<never>((_, reject) => {
-		timeoutId = setTimeout(() => {
-			reject(
-				new Error(
-					t`Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice.`,
-				),
-			);
-		}, timeoutMs);
-	});
-
-	return Promise.race([promise, timeout]).finally(() => {
-		if (timeoutId) clearTimeout(timeoutId);
-	});
+	const timeoutId = setTimeout(() => onDelayed?.(), timeoutMs);
+	return promise.finally(() => clearTimeout(timeoutId));
 }
 
 async function getReadyWalletDepositContext({
@@ -1038,13 +1029,19 @@ export function useDeposit({
 			const operationId = operationIdRef.current + 1;
 			operationIdRef.current = operationId;
 			inFlightRef.current = true;
-			setState({ status: "pending", error: null, hash: undefined });
+			setState({ status: "pending", error: null, hash: undefined, walletResponseDelayed: false });
 
 			try {
 				const amountRaw = parseUnits(amount, USDC_DECIMALS);
 				let hash: Hash;
 				let provider: Eip1193Provider | undefined;
 				let smartDepositUser: `0x${string}` | undefined;
+				const markWalletResponseDelayed = () => {
+					if (operationIdRef.current !== operationId) return;
+					setState((previous) =>
+						previous.status === "pending" ? { ...previous, walletResponseDelayed: true } : previous,
+					);
+				};
 
 				if (mode === "smart") {
 					if (!depositConfig.smartDepositEnabled) {
@@ -1075,6 +1072,8 @@ export function useDeposit({
 							},
 							{ uiOptions: { showWalletUIs: false } },
 						),
+						DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
+						markWalletResponseDelayed,
 					)) as Hash;
 				} else {
 					const ready = await getReadyWalletDepositContext({
@@ -1100,11 +1099,13 @@ export function useDeposit({
 							args: [depositConfig.bridge2, amountRaw],
 							nonce,
 						}),
+						DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
+						markWalletResponseDelayed,
 					);
 				}
 
 				if (operationIdRef.current !== operationId) return;
-				setState({ status: "confirming", error: null, hash });
+				setState({ status: "confirming", error: null, hash, walletResponseDelayed: false });
 				if (!publicClient) throw new Error(t`No response from exchange`);
 				await waitForBroadcastedTransaction(publicClient, hash, { provider });
 
@@ -1121,11 +1122,16 @@ export function useDeposit({
 				}
 
 				if (operationIdRef.current !== operationId) return;
-				setState({ status: "success", error: null, hash });
+				setState({ status: "success", error: null, hash, walletResponseDelayed: false });
 				refetch();
 			} catch (error) {
 				if (operationIdRef.current !== operationId) return;
-				setState((previous) => ({ status: "error", error: toError(error), hash: previous.hash }));
+				setState((previous) => ({
+					status: "error",
+					error: toError(error),
+					hash: previous.hash,
+					walletResponseDelayed: false,
+				}));
 			} finally {
 				if (operationIdRef.current === operationId) {
 					inFlightRef.current = false;
@@ -1154,6 +1160,7 @@ export function useDeposit({
 		status: state.status,
 		error: state.error,
 		hash: state.hash,
+		walletResponseDelayed: state.walletResponseDelayed,
 		deposit,
 		validate,
 		reset,

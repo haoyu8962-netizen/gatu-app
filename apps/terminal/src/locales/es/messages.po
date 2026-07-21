@@ -248,6 +248,10 @@ msgstr "Importe"
 #~ msgid "Amount (USDC)"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Amount is too low for the available bridge routes."
+msgstr "El importe es demasiado bajo para las rutas de puente disponibles."
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1489,6 +1493,10 @@ msgstr "Comisiones"
 msgid "Fees (Taker / Maker)"
 msgstr "Comisiones (taker / maker)"
 
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Fees are higher than the bridge amount."
+msgstr "Las comisiones superan el importe del puente."
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
 #~ msgstr ""
@@ -1717,6 +1725,10 @@ msgstr "IOC (Immediate Or Cancel)"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Isolated"
 msgstr "Aislado"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Keep this window open and confirm or reject the request in your wallet. Do not submit another deposit."
+msgstr "Mantén esta ventana abierta y confirma o rechaza la solicitud en tu cartera. No envíes otro depósito."
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "L1"
@@ -2955,6 +2967,18 @@ msgstr "Procesando..."
 msgid "QR visible"
 msgstr "QR visible"
 
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Quote expired. Refresh it before confirming."
+msgstr "La cotización ha caducado. Actualízala antes de confirmar."
+
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Quote refresh failed. Try again before confirming."
+msgstr "No se pudo actualizar la cotización. Inténtalo de nuevo antes de confirmar."
+
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Quote updated. Review the new amount before confirming."
+msgstr "La cotización se ha actualizado. Revisa el nuevo importe antes de confirmar."
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Randomize timing"
 msgstr "Aleatorizar la sincronización"
@@ -3018,6 +3042,10 @@ msgstr "Recuperado tras recargar. Caduca el {expiresAtLabel}."
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Reduce Only"
 msgstr "Solo reducir"
+
+#: src/components/trade/tradebox/bridge/confirmation-screen.tsx
+msgid "Refresh quote"
+msgstr "Actualizar cotización"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Register Another"
@@ -3836,6 +3864,7 @@ msgid "Take profit trigger must be below mark"
 msgstr "El disparador de take profit debe estar por debajo del precio de marca"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Taking longer than expected"
 msgstr "Está tardando más de lo esperado"
 
@@ -4461,7 +4490,6 @@ msgid "Wallet connection unavailable"
 msgstr "La conexión del monedero no está disponible"
 
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet did not return a transaction hash. Check your wallet activity before retrying to avoid sending the deposit twice."
 msgstr "La billetera no devolvió un hash de transacción. Revisa la actividad de tu billetera antes de reintentar para evitar enviar el depósito dos veces."
 

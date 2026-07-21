@@ -1,6 +1,6 @@
 import type { RouteExtended } from "@lifi/sdk";
-import { convertQuoteToRoute, executeRoute } from "@lifi/sdk";
-import { useRef, useState } from "react";
+import { convertQuoteToRoute, executeRoute, resumeRoute, updateRouteExecution } from "@lifi/sdk";
+import { create } from "zustand";
 import { isSafeHttpUrl } from "@/lib/safe-url";
 import type { BridgeQuote } from "./use-quote";
 
@@ -25,6 +25,10 @@ interface BridgeState {
 	startTime: number | null;
 	endTime: number | null;
 	processDetails: ProcessDetail[];
+	latestRoute: RouteExtended | null;
+	expectedToAmount: string | null;
+	sourceAddress: string | null;
+	canAbandon: boolean;
 }
 
 const INITIAL_STATE: BridgeState = {
@@ -36,7 +40,13 @@ const INITIAL_STATE: BridgeState = {
 	startTime: null,
 	endTime: null,
 	processDetails: [],
+	latestRoute: null,
+	expectedToAmount: null,
+	sourceAddress: null,
+	canAbandon: true,
 };
+
+const useBridgeExecutionState = create<BridgeState>(() => INITIAL_STATE);
 
 function getProcessStatusText(route: RouteExtended): string {
 	for (const step of route.steps) {
@@ -101,111 +111,172 @@ function isRouteDone(route: RouteExtended): boolean {
 	return hasProcess;
 }
 
+function hasCommittedFunds(route: RouteExtended): boolean {
+	for (const step of route.steps) {
+		if (!step.execution) continue;
+		for (const process of step.execution.process) {
+			if (process.type === "TOKEN_ALLOWANCE" || process.status === "FAILED" || process.status === "CANCELLED") {
+				continue;
+			}
+			const hasSignedData = Array.isArray(process.signedTypedData) && process.signedTypedData.length > 0;
+			if (process.txHash || process.taskId || hasSignedData) return true;
+		}
+	}
+	return false;
+}
+
 function getRouteToAmount(route: RouteExtended, fallback: string): string {
 	return route.steps.at(-1)?.execution?.toAmount ?? fallback;
 }
 
-export function useBridgeExecutor() {
-	const [state, setState] = useState<BridgeState>(INITIAL_STATE);
-	const executingRef = useRef(false);
+function getSourceAddress(route: RouteExtended): string | null {
+	return route.steps[0]?.action.fromAddress ?? null;
+}
 
-	async function execute(quote: BridgeQuote): Promise<BridgeOutcome> {
-		if (executingRef.current) return "error";
-		executingRef.current = true;
+function updateBridgeRoute(route: RouteExtended) {
+	const current = useBridgeExecutionState.getState();
+	const txHash = getLastTxHash(route);
+	const processDetails = getAllProcessDetails(route);
+	const canAbandon = !hasCommittedFunds(route);
 
-		const startedAt = Date.now();
-		setState({
-			status: "executing",
-			statusText: "Preparing transaction...",
+	if (isRouteDone(route)) {
+		useBridgeExecutionState.setState({
+			status: "success",
+			statusText: "Bridge complete",
 			error: null,
-			txHash: null,
-			receivedAmount: null,
-			startTime: startedAt,
-			endTime: null,
-			processDetails: [],
+			txHash,
+			receivedAmount: getRouteToAmount(route, current.expectedToAmount ?? "0"),
+			endTime: Date.now(),
+			processDetails,
+			latestRoute: route,
+			canAbandon,
 		});
+		return;
+	}
 
-		let routeMarkedDone = false;
+	useBridgeExecutionState.setState({
+		statusText: getProcessStatusText(route),
+		txHash: txHash ?? current.txHash,
+		processDetails,
+		latestRoute: route,
+		canAbandon,
+	});
+}
 
-		try {
-			const route = convertQuoteToRoute(quote.step);
+function isUserRejection(error: unknown): boolean {
+	const message = error instanceof Error ? error.message.toLowerCase() : "";
+	return (
+		message.includes("rejected") ||
+		message.includes("denied") ||
+		message.includes("cancelled") ||
+		message.includes("canceled")
+	);
+}
 
-			const result = await executeRoute(route, {
-				updateRouteHook(updatedRoute) {
-					const txHash = getLastTxHash(updatedRoute);
-					const statusText = getProcessStatusText(updatedRoute);
-					const processDetails = getAllProcessDetails(updatedRoute);
-					if (isRouteDone(updatedRoute)) {
-						routeMarkedDone = true;
-						setState({
-							status: "success",
-							statusText: "Bridge complete",
-							error: null,
-							txHash,
-							receivedAmount: getRouteToAmount(updatedRoute, quote.toAmount),
-							startTime: startedAt,
-							endTime: Date.now(),
-							processDetails,
-						});
-						return;
-					}
-					setState((prev) => ({
-						...prev,
-						statusText,
-						txHash: txHash ?? prev.txHash,
-						processDetails,
-					}));
-				},
-			});
+async function runBridgeRoute(
+	route: RouteExtended,
+	runner: typeof executeRoute | typeof resumeRoute,
+): Promise<BridgeOutcome> {
+	try {
+		const result = await runner(route, { updateRouteHook: updateBridgeRoute });
+		updateBridgeRoute(result);
+		if (isRouteDone(result)) return "success";
 
-			const toAmount = getRouteToAmount(result, quote.toAmount);
+		useBridgeExecutionState.setState({
+			status: "error",
+			error: "Bridge execution paused before completion.",
+			endTime: Date.now(),
+		});
+		return "error";
+	} catch (error) {
+		if (useBridgeExecutionState.getState().status === "success") return "success";
 
-			setState({
-				status: "success",
-				statusText: "Bridge complete",
-				error: null,
-				txHash: getLastTxHash(result),
-				receivedAmount: toAmount,
-				startTime: startedAt,
-				endTime: Date.now(),
-				processDetails: getAllProcessDetails(result),
-			});
-			return "success";
-		} catch (err) {
-			if (routeMarkedDone) return "success";
-			const message = err instanceof Error ? err.message : "Bridge failed";
-			const isUserRejection =
-				message.includes("rejected") ||
-				message.includes("denied") ||
-				message.includes("cancelled") ||
-				message.includes("user rejected");
-
-			if (isUserRejection) {
-				setState((prev) => ({
-					...prev,
-					status: "idle",
-					statusText: "",
-					error: null,
-					endTime: Date.now(),
-				}));
-				return "rejected";
-			}
-			setState((prev) => ({
-				...prev,
-				status: "error",
-				error: message,
-				endTime: Date.now(),
-			}));
-			return "error";
-		} finally {
-			executingRef.current = false;
+		const current = useBridgeExecutionState.getState();
+		const latestRoute = current.latestRoute;
+		const canAbandon = latestRoute ? !hasCommittedFunds(latestRoute) : current.canAbandon;
+		if (isUserRejection(error) && canAbandon) {
+			useBridgeExecutionState.setState(INITIAL_STATE);
+			return "rejected";
 		}
+
+		useBridgeExecutionState.setState({
+			status: "error",
+			error: error instanceof Error ? error.message : "Bridge failed",
+			endTime: Date.now(),
+			canAbandon,
+		});
+		return "error";
+	}
+}
+
+export async function executeBridgeQuote(quote: BridgeQuote): Promise<BridgeOutcome> {
+	if (useBridgeExecutionState.getState().status !== "idle") return "error";
+
+	let route: RouteExtended;
+	try {
+		route = convertQuoteToRoute(quote.step);
+	} catch (error) {
+		useBridgeExecutionState.setState({
+			status: "error",
+			error: error instanceof Error ? error.message : "Bridge failed",
+			endTime: Date.now(),
+		});
+		return "error";
 	}
 
-	function reset() {
-		setState(INITIAL_STATE);
-		executingRef.current = false;
-	}
+	useBridgeExecutionState.setState({
+		status: "executing",
+		statusText: "Preparing transaction...",
+		error: null,
+		txHash: null,
+		receivedAmount: null,
+		startTime: Date.now(),
+		endTime: null,
+		processDetails: [],
+		latestRoute: route,
+		expectedToAmount: quote.toAmount,
+		sourceAddress: getSourceAddress(route),
+		canAbandon: true,
+	});
 
-	return { ...state, execute, reset };
+	return runBridgeRoute(route, executeRoute);
+}
+
+export async function retryBridgeExecution(): Promise<BridgeOutcome> {
+	const current = useBridgeExecutionState.getState();
+	if (current.status !== "error" || !current.latestRoute) return "error";
+
+	useBridgeExecutionState.setState({
+		status: "executing",
+		statusText: getProcessStatusText(current.latestRoute),
+		error: null,
+		endTime: null,
+	});
+
+	return runBridgeRoute(current.latestRoute, resumeRoute);
+}
+
+export function resetBridgeExecution(): boolean {
+	const current = useBridgeExecutionState.getState();
+	if (current.status === "executing" || (current.status === "error" && !current.canAbandon)) return false;
+	useBridgeExecutionState.setState(INITIAL_STATE);
+	return true;
+}
+
+export function continueBridgeInBackground(): boolean {
+	const current = useBridgeExecutionState.getState();
+	if (current.status !== "executing" || !current.latestRoute) return false;
+	updateRouteExecution(current.latestRoute, { executeInBackground: true });
+	return true;
+}
+
+export function useBridgeExecutor() {
+	const state = useBridgeExecutionState();
+	return {
+		...state,
+		execute: executeBridgeQuote,
+		retry: retryBridgeExecution,
+		reset: resetBridgeExecution,
+		continueInBackground: continueBridgeInBackground,
+	};
 }

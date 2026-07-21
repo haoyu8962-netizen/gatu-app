@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { initLiFi } from "@/lib/lifi/config";
 import type { BridgeToken } from "@/lib/lifi/use-balances";
-import { useBridgeExecutor } from "@/lib/lifi/use-bridge";
+import { continueBridgeInBackground, useBridgeExecutor } from "@/lib/lifi/use-bridge";
 import type { BridgeQuote } from "@/lib/lifi/use-quote";
+import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { AmountEntryScreen } from "./amount-entry-screen";
 import { AssetSelectionScreen } from "./asset-selection-screen";
 import { BridgeErrorScreen } from "./bridge-error-screen";
@@ -19,16 +20,15 @@ export function BridgeTab() {
 	const [selectedToken, setSelectedToken] = useState<BridgeToken | null>(null);
 	const [usdInput, setUsdInput] = useState("");
 	const [tokenAmount, setTokenAmount] = useState("");
-	const lastQuoteRef = useRef<BridgeQuote | null>(null);
 	const bridge = useBridgeExecutor();
+	const { close: closeDepositModal } = useDepositModalActions();
 
 	useEffect(() => {
 		initLiFi();
+		return () => {
+			continueBridgeInBackground();
+		};
 	}, []);
-
-	if (!hasWalletAccess || !walletAddress) {
-		return <BridgeWalletNotConnected />;
-	}
 
 	function handleTokenSelect(token: BridgeToken) {
 		setSelectedToken(token);
@@ -59,31 +59,40 @@ export function BridgeTab() {
 	}
 
 	function handleConfirm(quote: BridgeQuote) {
-		lastQuoteRef.current = quote;
-		runBridge(quote);
+		void runBridge(quote);
 	}
 
 	function handleRetry() {
-		if (lastQuoteRef.current) runBridge(lastQuoteRef.current);
+		void bridge.retry();
+	}
+
+	function handleExecutionClose() {
+		bridge.continueInBackground();
+		closeDepositModal();
 	}
 
 	function resetToSelect() {
+		if (!bridge.reset()) return;
 		setScreen("select");
 		setSelectedToken(null);
 		setUsdInput("");
 		setTokenAmount("");
-		bridge.reset();
-		lastQuoteRef.current = null;
 	}
 
 	if (bridge.status === "error") {
-		return <BridgeErrorScreen error={bridge.error ?? "Unknown error"} onRetry={handleRetry} onBack={resetToSelect} />;
+		return (
+			<BridgeErrorScreen
+				error={bridge.error ?? "Unknown error"}
+				onRetry={handleRetry}
+				onBack={bridge.canAbandon ? resetToSelect : undefined}
+			/>
+		);
 	}
 
 	if (bridge.status === "success" && bridge.receivedAmount) {
 		return (
 			<SuccessScreen
-				address={walletAddress}
+				address={bridge.sourceAddress ?? walletAddress ?? ""}
 				receivedAmount={bridge.receivedAmount}
 				txHash={bridge.txHash}
 				startTime={bridge.startTime}
@@ -95,15 +104,19 @@ export function BridgeTab() {
 		);
 	}
 
-	if (screen === "executing") {
+	if (bridge.status === "executing") {
 		return (
 			<ExecutingScreen
-				address={walletAddress}
+				address={bridge.sourceAddress ?? walletAddress ?? ""}
 				statusText={bridge.statusText}
 				txHash={bridge.txHash}
-				onDone={resetToSelect}
+				onDone={handleExecutionClose}
 			/>
 		);
+	}
+
+	if (!hasWalletAccess || !walletAddress) {
+		return <BridgeWalletNotConnected />;
 	}
 
 	if (screen === "confirm" && selectedToken && tokenAmount) {

@@ -6,7 +6,7 @@ const BRIDGE_MESSAGE_MAX_WIDTH = "max-w-70";
 
 interface Props {
 	error: string;
-	onBack: () => void;
+	onBack?: () => void;
 	onRetry: () => void;
 }
 
@@ -25,9 +25,11 @@ export function BridgeErrorScreen({ error, onBack, onRetry }: Props) {
 				</div>
 			</div>
 			<div className="flex gap-2 w-full mt-auto">
-				<Button variant="outline" intent="neutral" size="lg" className="flex-1" onClick={onBack}>
-					<Trans>Back</Trans>
-				</Button>
+				{onBack ? (
+					<Button variant="outline" intent="neutral" size="lg" className="flex-1" onClick={onBack}>
+						<Trans>Back</Trans>
+					</Button>
+				) : null}
 				<Button variant="filled" intent="brand" size="lg" className="flex-1" onClick={onRetry}>
 					<Trans>Try Again</Trans>
 				</Button>
