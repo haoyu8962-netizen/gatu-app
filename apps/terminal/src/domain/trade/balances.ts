@@ -196,7 +196,7 @@ export function getAccountBalanceSummary({
 	// Withdrawable is initial-margin constrained: the L1 locks unified-margin USDC via `hold`,
 	// so total - hold matches the official app. The maintenance-adjusted value
 	// (tokenToAvailableAfterMaintenance) is the distance to liquidation, not what can leave.
-	const spotUsdcWithdrawable = getAvailableFromTotals(usdcBalance?.total, usdcBalance?.hold);
+	const spotUsdcWithdrawable = getSpotTransferable(usdcBalance);
 	const spotAccountValue = getSpotAccountValue(spotBalances, tokenUsdPrices);
 
 	const perpAccountValue = toSafeBig(marginSummary?.accountValue ?? perpSummary?.accountValue).toNumber();
@@ -237,9 +237,24 @@ export function getAvailableFromTotals(
 	total: string | number | null | undefined,
 	hold: string | number | null | undefined,
 ): number {
-	const t = toSafeBig(total);
-	const h = toSafeBig(hold);
-	return Math.max(0, t.minus(h).toNumber());
+	return toSafeBig(getAvailableFromTotalsValue(total, hold)).toNumber();
+}
+
+function getAvailableFromTotalsValue(
+	total: string | number | null | undefined,
+	hold: string | number | null | undefined,
+): string {
+	const available = toSafeBig(total).minus(toSafeBig(hold));
+	return available.gt(0) ? available.toString() : "0";
+}
+
+/** Settled spot balance that can leave the account. Trading buying power uses a different maintenance-adjusted value. */
+export function getSpotTransferableValue(balance: SpotBalance | null | undefined): string {
+	return getAvailableFromTotalsValue(balance?.total, balance?.hold);
+}
+
+export function getSpotTransferable(balance: SpotBalance | null | undefined): number {
+	return toSafeBig(getSpotTransferableValue(balance)).toNumber();
 }
 
 function getAvailableAfterMaintenanceValue(

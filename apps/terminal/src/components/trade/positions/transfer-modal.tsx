@@ -6,9 +6,9 @@ import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN, USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { exceedsBalance, isAmountWithinBalance } from "@/domain/market";
 import {
-	getPerpAvailable,
-	getSpotAvailable,
+	getAccountBalanceSummary,
 	getSpotBalance,
+	getSpotTransferable,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
@@ -51,16 +51,22 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 
 	const { hasWalletAccess, walletAddress } = useWalletSession();
 	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer");
-	const { perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction } = useDefaultDexBalances();
+	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable } =
+		useDefaultDexBalances();
 
 	const spotUsdcBal = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
+	const accountSummary = getAccountBalanceSummary({
+		accountAbstraction,
+		marginSummary,
+		perpSummary,
+		withdrawable,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+	});
 	const internalTransfersDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
 		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
 		: null;
-	const availableBalanceValue =
-		direction === "toSpot"
-			? getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed)
-			: getSpotAvailable(spotUsdcBal, spotAvailableAfterMaintenance);
+	const availableBalanceValue = direction === "toSpot" ? accountSummary.withdrawable : getSpotTransferable(spotUsdcBal);
 
 	const isValidAmount =
 		!internalTransfersDisabledReason &&

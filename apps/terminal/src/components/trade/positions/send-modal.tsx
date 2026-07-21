@@ -16,7 +16,12 @@ import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { exceedsBalance, getTokenTransferDecimals, isAmountWithinBalance } from "@/domain/market";
-import { type BalanceRow, getPerpAvailable, getSpotAvailable, getSpotAvailableValue } from "@/domain/trade/balances";
+import {
+	type BalanceRow,
+	getAccountBalanceSummary,
+	getSpotTransferable,
+	getSpotTransferableValue,
+} from "@/domain/trade/balances";
 import { isTokenSpotBalance, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -70,29 +75,38 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 	const { getToken } = useSpotTokens();
 	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset");
 	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend");
-	const { perpSummary, spotBalances, spotAvailableAfterMaintenance } = useDefaultDexBalances();
+	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable } =
+		useDefaultDexBalances();
 	const { hasWalletAccess } = useWalletSession();
 
 	const isPending = isSendAssetPending || isSpotSendPending;
+	const accountSummary = getAccountBalanceSummary({
+		accountAbstraction,
+		marginSummary,
+		perpSummary,
+		withdrawable,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+	});
 
 	const availableSpotTokens = useMemo((): BalanceRow[] => {
 		if (!spotBalances?.length) return [];
 		return spotBalances
 			.filter(isTokenSpotBalance)
 			.filter((b) => {
-				const available = getSpotAvailable(b, spotAvailableAfterMaintenance);
+				const available = getSpotTransferable(b);
 				return available > 0;
 			})
 			.map((b) => ({
 				asset: b.coin,
 				type: "spot" as const,
-				available: getSpotAvailableValue(b, spotAvailableAfterMaintenance),
+				available: getSpotTransferableValue(b),
 				inOrder: b.hold,
 				total: b.total,
 				usdValue: b.coin === DEFAULT_QUOTE_TOKEN ? b.total : b.entryNtl,
 				entryNtl: b.entryNtl,
 			}));
-	}, [spotBalances, spotAvailableAfterMaintenance]);
+	}, [spotBalances]);
 
 	const tokenOptions = useMemo(() => {
 		if (accountType === "perp") {
@@ -106,13 +120,9 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 
 	const decimals = getTokenTransferDecimals(tokenInfo);
 
-	const availableBalance = useMemo(() => {
-		if (accountType === "perp") {
-			return getPerpAvailable(perpSummary?.accountValue, perpSummary?.totalMarginUsed);
-		}
-		const balance = spotBalances?.find((b) => b.coin === selectedToken);
-		return getSpotAvailable(balance, spotAvailableAfterMaintenance);
-	}, [accountType, perpSummary, spotBalances, selectedToken, spotAvailableAfterMaintenance]);
+	const selectedSpotBalance = spotBalances?.find((balance) => balance.coin === selectedToken);
+	const availableBalance =
+		accountType === "perp" ? accountSummary.withdrawable : getSpotTransferable(selectedSpotBalance);
 
 	const isValidDestination = isAddress(destination);
 	const isValidAmount = isAmountWithinBalance(amount, availableBalance);

@@ -8,6 +8,8 @@ import {
 	getSpotAvailableValue,
 	getSpotBalanceData,
 	getSpotBalanceRows,
+	getSpotTransferable,
+	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 	type SpotAvailableAfterMaintenance,
 } from "@/domain/trade/balances";
@@ -52,6 +54,19 @@ describe("trade balances", () => {
 	it("uses settled balance rather than maintenance buying power for spendable funds", () => {
 		expect(getAvailableFromTotals("41.17419", "41.17419")).toBe(0);
 		expect(getAvailableFromTotals("41.17419", "21.17419")).toBe(20);
+	});
+
+	it("uses total minus hold for spot transfers even when maintenance buying power differs", () => {
+		expect(getSpotTransferableValue(usdcBalance)).toBe("4964.51352969");
+		expect(getSpotTransferable(usdcBalance)).toBeCloseTo(4964.51352969);
+		expect(getSpotAvailableValue(usdcBalance, maintenanceAvailable)).toBe("4947.18019669");
+	});
+
+	it("does not allow a fully held spot balance to leave the account", () => {
+		const fullyHeld: SpotBalance = { coin: "USDC", token: 0, total: "488.239063", hold: "488.239063", entryNtl: "0" };
+
+		expect(getSpotTransferableValue(fullyHeld)).toBe("0");
+		expect(getSpotTransferable(fullyHeld)).toBe(0);
 	});
 
 	it("uses maintenance-adjusted available values in balance rows", () => {
