@@ -3043,6 +3043,12 @@ msgstr "交易前，请查看可用的部署者信息及我们的 <0>使用条�
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 msgstr "交易前，请查看部署者的<0>文档</0>及我们的<1>使用条款</1>。"
 
+#: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Risk Disclosure"
+msgstr "风险披露"
+
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
 msgstr "风险/收益"

@@ -15,7 +15,7 @@ const blog = defineCollection({
 
 const legal = defineCollection({
 	loader: glob({
-		pattern: ["privacyPolicy.md", "terms.md", "support.md"],
+		pattern: ["privacyPolicy.md", "riskDisclosure.md", "terms.md", "support.md"],
 		base: "../../legal",
 		generateId: ({ entry }) => entry.replace(/\.md$/, ""),
 	}),

@@ -122,6 +122,14 @@ export function MobileNavDrawer() {
 							>
 								<Trans>Privacy Policy</Trans>
 							</Link>
+							<Link
+								to="/risk"
+								onClick={close}
+								aria-current={pathname === "/risk" ? "page" : undefined}
+								className={getNavLinkClass(pathname === "/risk")}
+							>
+								<Trans>Risk Disclosure</Trans>
+							</Link>
 						</nav>
 						<nav className="flex flex-col p-2 pt-0" aria-label={t`Platform`}>
 							<p className="px-3 py-2 text-2xs font-semibold uppercase tracking-wider text-fg-muted">

@@ -3043,6 +3043,12 @@ msgstr "Review the available deployer information and our <0>Terms of Use</0> be
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 msgstr "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 
+#: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Risk Disclosure"
+msgstr "Risk Disclosure"
+
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
 msgstr "Risk/Reward"

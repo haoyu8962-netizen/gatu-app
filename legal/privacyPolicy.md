@@ -1,102 +1,135 @@
-# Gatu — Privacy Policy
+# Gatu - Privacy Policy
 
-**Last Updated:** January 26, 2025
+**Last Updated:** July 21, 2026
 
-This Privacy Policy ("Policy") for Gatu describes the basis on which Gatu Corp. ("Company," "we," "us," or "our") will process personal data we may collect from users
-of the interface available at app.gatu.ai, including any subdomains ("Website"), and all
-related services ("Services"), in accordance with applicable law. For purposes of applicable
-data protection laws, the Company is the data controller. Capitalized but undefined terms
-have the meaning given in our Terms of Use at app.gatu.ai/terms.
+This Privacy Policy ("Policy") explains how Gatu Corp. ("Gatu," "we," "us," or "our")
+handles personal data in connection with the interface available at
+[https://app.gatu.ai](https://app.gatu.ai) and related Gatu websites and support services
+(collectively, the "Services"). Capitalized terms not defined here have the meaning given in
+our [Terms of Use](https://app.gatu.ai/terms).
 
-## Personal Data We Collect, Why, and Legal Basis
+## 1. Scope and Roles
 
-**Information you provide to us** may include (i) IP Address; (ii) wallet, smart-contract, or
-protocol address information, associations, and identifiers; and (iii) geolocation data. It
-may also include your social media handle, transaction data/history, information needed to
-transfer or allocate tokens, marketing preferences, token holdings, and the content of any
-communications with us. We process this to perform our contract with you.
+Gatu provides non-custodial interface software. Public blockchain networks, Hyperliquid,
+wallet and authentication providers, RPC providers, bridges, block explorers, and other
+third-party services process data under their own terms and privacy policies. Gatu does not
+control public blockchain records and generally cannot delete or alter information recorded
+onchain.
 
-**Information we collect automatically:** our servers may log (i) the IP Address; (ii) date
-and time of access; (iii) the country of access; (iv) any API endpoint; (v) user-agent
-details; (vi) operating system and browser (provider, version, language); and (vii) the
-transmission protocol. We process this to (i) facilitate your connection to the Website; (ii)
-identify if you are likely a Prohibited Person or subject to prohibitions; and/or (iii) verify
-your identity and location to determine eligibility — to perform our contract and in our
-legitimate interests, including system security, troubleshooting, analytics, testing, and to
-maintain safety and security.
+## 2. Personal Data We May Handle
 
-**Cookies and tracking:** we may use cookies, web beacons/clear gifs, geolocation and
-tracking technologies, and collect Usage Data, potentially integrated with third-party
-providers. With your consent, we may tailor features and content and, if you opt in, use data
-for marketing.
+Depending on how you use the Services, we may handle:
 
-**Third-party wallet connections:** governed by the applicable wallet provider's privacy
-policy; we disclaim liability for third-party wallets.
+- **Account and contact information:** an email address, social-login identifier, support correspondence, or other information you choose to provide. Authentication providers may process this information before making limited account information available to the Interface.
+- **Wallet and transaction information:** public wallet addresses, smart-wallet or Agent-wallet addresses, signatures, transaction hashes, orders, positions, balances, and other public or protocol-provided activity associated with an address.
+- **Device and usage information:** IP address, approximate country or region, request date and time, requested path, browser and operating-system information, language, referral information, and technical diagnostics generated when the Services are accessed.
+- **Preferences stored on your device:** language, theme, chart settings, favorites, account-mode preferences, and other local settings. Locally generated Agent credentials may also be stored on your device to support authorized trading. Gatu does not receive your seed phrase or wallet private key through ordinary use of the Interface.
 
-## Your Rights
+## 3. How and Why We Use Data
 
-Subject to applicable law, you may have rights of: access; correction; deletion; objection;
-restriction of processing; portability; objection to marketing communications; breach
-notification; complaint to the data protection supervisory authority in your EEA country, or to the UK Information Commissioner's Office (ICO); and withdrawal of consent. We will respond
-without undue delay and, where required, within one month (extendable by a further two months
-in certain circumstances).
+We may use personal data to:
 
-## Automated Decision-Making
+- provide, maintain, secure, and troubleshoot the Services;
+- connect the Interface to wallets, authentication providers, Hyperliquid, blockchain networks, and supported third-party services;
+- display account and transaction information requested by you;
+- detect abuse, fraud, security incidents, sanctions exposure, or attempts to evade access restrictions;
+- respond to support, legal, or regulatory requests;
+- understand aggregate service reliability and performance; and
+- comply with applicable law and enforce the Terms.
 
-We will not take decisions producing legal effects concerning you, or otherwise significantly
-affecting you, based solely on automated processing unless it meets applicable requirements.
-Requests: support@gatu.ai.
+Where applicable, we rely on performance of a contract, legitimate interests in operating
+and securing the Services, consent, or compliance with legal obligations. Mandatory rights
+available under applicable data-protection law are not limited by this Policy.
 
-## Sharing of Personal Data
+## 4. Cookies, Local Storage, and Analytics
 
-We may share your data with: service providers and vendors (including IP-based geolocation
-providers such as IPdata, analytics providers such as Mixpanel, blockchain analysis, KYC and
-screening providers, developers, content delivery, and data analytics providers, who may help
-determine eligibility); professional advisors; for legal and security reasons; with
-law enforcement and regulatory authorities; with our affiliates; and in connection with a
-merger, sale, bankruptcy, or reorganization.
+The Services may use cookies and browser storage for authentication, security, preferences,
+and feature operation. Clearing browser storage may remove settings or locally stored Agent
+credentials and may require you to reconnect or reauthorize a wallet.
 
-Your personal information may be transferred to and processed in countries outside your
-jurisdiction, including outside the EEA and the UK and including the U.S. For transfers out of
-the EEA/UK we seek to put in place appropriate safeguards, including the EU **Standard
-Contractual Clauses (SCCs)** and/or the UK ICO international data transfer agreement/addendum,
-unless an adequacy decision applies.
+As of the Last Updated date, the Interface does not integrate a product-analytics SDK.
+Infrastructure access logs and third-party providers may still process
+the technical data necessary to deliver, secure, and diagnose the Services. If Gatu later
+introduces a materially different analytics or tracking service, this Policy should be
+updated before that service is enabled.
 
-## Retention
+## 5. When Data Is Shared
 
-We retain personal data only as long as necessary for the purposes for which it was collected,
-including to satisfy any legal, accounting, or reporting requirements.
+We may share data with service providers only as reasonably necessary for the purposes above,
+including:
 
-## Children's Privacy
+- wallet, authentication, and account-abstraction providers;
+- Hyperliquid and supported blockchain, RPC, bridge, and explorer providers;
+- IP-based geolocation, hosting, content-delivery, security, and infrastructure providers;
+- professional advisers, auditors, and insurers;
+- law-enforcement, courts, regulators, or other authorities when legally required; and
+- a successor or counterparty in a merger, financing, reorganization, or sale of relevant assets.
 
-Persons under the age of majority in their jurisdiction may not use the Services. We do not
-knowingly collect data about children under thirteen (13) years of age (or sixteen (16) in
-the EEA/UK), and will make commercially reasonable efforts to delete such data if discovered.
+We may also disclose data to protect users, enforce the Terms, investigate security incidents,
+or prevent unlawful activity. We do not sell personal data in exchange for money.
 
-## Security
+## 6. Public Blockchain Data
 
-Despite our efforts, we cannot guarantee "perfect security." Any information transmitted is
-at your own risk.
+Transactions and wallet activity submitted to public networks or decentralized protocols may
+be permanently public. A third party may associate a public address with other information
+about you. Do not submit information to a public blockchain that you do not want publicly
+available.
 
-## Usage Data Collection
+## 7. International Transfers
 
-When you access or interact with the Services, we and our third-party service providers may
-receive and record personal data including your IP Address, digital signature, and
-wallet-related information.
+Providers may process data in countries other than your own. Where required, we seek to use
+appropriate transfer mechanisms, such as adequacy decisions, standard contractual clauses,
+or the United Kingdom international data transfer addendum. Public blockchain data may be
+replicated globally and may not be subject to conventional transfer controls.
 
-## Social Media and Third-Party Links
+## 8. Retention
 
-We may link to third-party sites and Social Media Platforms (e.g., X, Medium) which we do not
-own or control; review their policies. Opening such a link may establish a direct connection
-sharing your IP Address and visit with that platform, and if you are logged in, may link your
-visit to your profile.
+We retain personal data only for as long as reasonably necessary for the purposes described
+here, including security, support, legal, accounting, and dispute-resolution requirements.
+Retention by public blockchains and independent third-party providers is governed by their
+systems and policies. Data stored only in your browser remains under your control until it is
+cleared or expires.
 
-## Periodic Reviews and Updates
+## 9. Security
 
-This Policy takes into account Panama's Law No. 81 of 2019 and general privacy principles. Individuals in the EU and UK may have GDPR rights and
-may complain to their supervisory authority or the UK ICO. We may update this Policy; updates
-apply only to information collected after the change.
+We use reasonable technical and organizational measures intended to protect data, but no
+internet, wallet, browser-storage, or blockchain system is completely secure. You are
+responsible for securing your devices, wallets, credentials, recovery methods, and signing
+authorizations.
 
-## Contact
+## 10. Children
 
-support@gatu.ai
+The Services are not intended for anyone below the age of legal majority where they live. We
+do not knowingly collect personal data from children. Contact us if you believe a child has
+provided personal data through the Services.
+
+## 11. Your Rights
+
+Depending on your location, you may have rights to access, correct, delete, restrict, or
+object to processing of personal data, receive a portable copy, withdraw consent, or complain
+to a supervisory authority. These rights may be limited where data is public onchain, must be
+retained by law, or is controlled by an independent provider. We may need to verify your
+request before acting on it.
+
+## 12. Third-Party Links and Services
+
+The Services may link to or embed third-party services. Their privacy practices are governed
+by their own policies. Review those policies before using the relevant service.
+
+## 13. Relationship to the Terms
+
+This Policy forms part of the Terms. To the extent permitted by mandatory applicable law, the
+governing-law and dispute-resolution provisions in Section 13.3 of the Terms apply to this
+Policy. If this Policy conflicts with the Terms on a non-privacy contractual matter, the Terms
+control. Mandatory data-protection rights remain unaffected.
+
+## 14. Changes to This Policy
+
+We may update this Policy as the Services, providers, or legal requirements change. The Last
+Updated date identifies the latest revision. Material changes take effect when posted unless
+a later date is stated.
+
+## 15. Contact
+
+Questions or privacy requests may be sent to
+[support@gatu.ai](mailto:support@gatu.ai).

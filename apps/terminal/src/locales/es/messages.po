@@ -3043,6 +3043,12 @@ msgstr "Antes de operar, consulta la información disponible del implementador y
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 msgstr "Antes de operar, consulta la <0>documentación</0> del implementador y nuestras <1>Condiciones de uso</1>."
 
+#: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Risk Disclosure"
+msgstr "Divulgación de riesgos"
+
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
 msgstr "Riesgo/Recompensa"

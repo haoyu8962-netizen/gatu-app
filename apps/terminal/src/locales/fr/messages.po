@@ -3043,6 +3043,12 @@ msgstr "Avant de négocier, consultez les informations disponibles sur le déplo
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 msgstr "Avant de négocier, consultez la <0>documentation</0> du déployeur et nos <1>Conditions d’utilisation</1>."
 
+#: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Risk Disclosure"
+msgstr "Avertissement sur les risques"
+
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
 msgstr "Risque/Rendement"

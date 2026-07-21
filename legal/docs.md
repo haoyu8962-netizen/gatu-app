@@ -108,3 +108,4 @@ Follow these steps to place your first trade:
 - Need help? See the [Support](/support) page or email support@gatu.ai.
 - [Terms of Service](/terms)
 - [Privacy Policy](/privacy)
+- [Risk Disclosure](/risk)

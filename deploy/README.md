@@ -219,12 +219,26 @@ Caddy 已直接对外可用。若要全球加速/抗量,在 Caddy 前再挂一�
 在 iPad WebKit 热缓存下可能无法完成初始化,因此 `/charting_library/*` 和
 `/tradingview-theme.css` 必须每次重新验证,其余 SSR 路径不缓存(或极短 TTL)。
 
-### CSP(默认未开)
-这是 web3 + Privy + WalletConnect + TradingView + Hyperliquid WebSocket 的混合页面,
-CSP 极易配错导致白屏。建议**上线稳定后**在 `Caddyfile` 的 `header` 块里**逐步**加,
-先用 `Content-Security-Policy-Report-Only` 观察违规,再切正式。涉及放行:Privy/WalletConnect 域、
-`wss://api.hyperliquid.xyz`、`https://app.hyperliquid.xyz`(图标/charting)、内联脚本(SSR 注入了
-启动脚本,需 `nonce` 或 hash)。不要直接抄通用模板。
+### CSP(应用层已启用)
+
+CSP 由 `apps/terminal/src/config/security-headers.ts` 定义,并通过
+`apps/terminal/vite.config.ts` 的 Nitro `routeRules` 下发。主文档使用
+`frame-ancestors 'none'`,TradingView 同源资源使用允许 `frame-ancestors 'self'` 的独立策略。
+Caddy 只补充 HSTS 等代理层响应头,不要再添加第二份 CSP;浏览器会同时执行多份 CSP,
+未经协调的重复策略会让钱包、Turnstile、TradingView iframe 或 SSR 启动过程白屏。
+
+当前 `script-src` 包含 `'unsafe-inline'`,用于兼容 TanStack Start SSR 注入的启动脚本;
+这会放宽对内联脚本注入的防护,属于已知限制,不应描述成严格 CSP。移除前必须把每请求 nonce
+贯穿 TanStack Router 的 `ssr.nonce`、`HeadContent`/`Scripts`、内联样式和第三方认证流程,
+并先在生产同等环境使用 `Content-Security-Policy-Report-Only`、钱包登录、下单、充值、桥和
+TradingView 回归测试验证。不要直接从当前策略删除 `'unsafe-inline'`。
+
+核对生产响应:
+
+```bash
+curl -sSI https://app.gatu.ai/ | grep -i '^content-security-policy:'
+curl -sSI https://app.gatu.ai/charting_library/charting_library.js | grep -i '^content-security-policy:'
+```
 
 ### 备选 B:本地/CI 构建,只传产物(EC2 可降到 t3.small)
 因为 `.output` 自包含,无需在 EC2 上构建:

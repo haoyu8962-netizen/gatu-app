@@ -87,6 +87,9 @@ export function FooterBar() {
 					<Link to="/privacy" className={FOOTER_LINK_CLASS}>
 						<Trans>Privacy Policy</Trans>
 					</Link>
+					<Link to="/risk" className={FOOTER_LINK_CLASS}>
+						<Trans>Risk Disclosure</Trans>
+					</Link>
 				</nav>
 				<Divider orientation="vertical" className="my-1.5 hidden md:block" />
 				<ClientOnly>

@@ -30,7 +30,7 @@ export function TopNav() {
 
 	const tradeActive = isTradeRoutePath(pathname);
 	const portfolioActive = pathname === "/portfolio";
-	const moreActive = ["/docs", "/support", "/terms", "/privacy"].includes(pathname);
+	const moreActive = ["/docs", "/support", "/terms", "/privacy", "/risk"].includes(pathname);
 	const moreItems = [
 		{
 			label: t`Docs`,
@@ -51,6 +51,11 @@ export function TopNav() {
 			label: t`Privacy Policy`,
 			active: pathname === "/privacy",
 			onSelect: () => void navigate({ to: "/privacy" }),
+		},
+		{
+			label: t`Risk Disclosure`,
+			active: pathname === "/risk",
+			onSelect: () => void navigate({ to: "/risk" }),
 		},
 	];
 

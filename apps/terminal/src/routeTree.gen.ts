@@ -13,6 +13,7 @@ import { Route as TradeRouteImport } from './routes/trade'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as SpotRouteImport } from './routes/spot'
+import { Route as RiskRouteImport } from './routes/risk'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PerpRouteImport } from './routes/perp'
@@ -45,6 +46,11 @@ const SupportRoute = SupportRouteImport.update({
 const SpotRoute = SpotRouteImport.update({
   id: '/spot',
   path: '/spot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RiskRoute = RiskRouteImport.update({
+  id: '/risk',
+  path: '/risk',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
+  '/risk': typeof RiskRoute
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
+  '/risk': typeof RiskRoute
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
+  '/risk': typeof RiskRoute
   '/spot': typeof SpotRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/perp'
     | '/portfolio'
     | '/privacy'
+    | '/risk'
     | '/spot'
     | '/support'
     | '/terms'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/perp'
     | '/portfolio'
     | '/privacy'
+    | '/risk'
     | '/spot'
     | '/support'
     | '/terms'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/perp'
     | '/portfolio'
     | '/privacy'
+    | '/risk'
     | '/spot'
     | '/support'
     | '/terms'
@@ -236,6 +248,7 @@ export interface RootRouteChildren {
   PerpRoute: typeof PerpRoute
   PortfolioRoute: typeof PortfolioRoute
   PrivacyRoute: typeof PrivacyRoute
+  RiskRoute: typeof RiskRoute
   SpotRoute: typeof SpotRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       path: '/spot'
       fullPath: '/spot'
       preLoaderRoute: typeof SpotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/risk': {
+      id: '/risk'
+      path: '/risk'
+      fullPath: '/risk'
+      preLoaderRoute: typeof RiskRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -403,6 +423,7 @@ const rootRouteChildren: RootRouteChildren = {
   PerpRoute: PerpRoute,
   PortfolioRoute: PortfolioRoute,
   PrivacyRoute: PrivacyRoute,
+  RiskRoute: RiskRoute,
   SpotRoute: SpotRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,

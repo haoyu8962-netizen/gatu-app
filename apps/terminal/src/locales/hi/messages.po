@@ -3043,6 +3043,12 @@ msgstr "ट्रेडिंग से पहले उपलब्ध डि�
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 msgstr "ट्रेडिंग से पहले डिप्लॉयर का <0>दस्तावेज़</0> और हमारी <1>उपयोग की शर्तें</1> देखें।"
 
+#: src/components/trade/footer/footer-bar.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/mobile/mobile-nav-drawer.tsx
+msgid "Risk Disclosure"
+msgstr "जोखिम प्रकटीकरण"
+
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Risk/Reward"
 msgstr "जोखिम/इनाम"
