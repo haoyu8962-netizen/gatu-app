@@ -176,7 +176,7 @@ msgstr "{displayPairName} को पसंदीदा में जोड़े
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
-msgstr ""
+msgstr "नेटवर्क शुल्क का भुगतान करने के लिए इस वॉलेट में थोड़ी मात्रा में Arbitrum ETH जमा करें, फिर दोबारा प्रयास करें।"
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Add funds"
@@ -396,7 +396,7 @@ msgstr "ब्रिज विफल"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
-msgstr ""
+msgstr "Bridge2 जमा राशि खाते में जमा नहीं हुई। दोबारा प्रयास करने से पहले Arbiscan पर जाँच करें।"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Bridge2 rejected the USDC permit. Retrying automatically."
@@ -567,7 +567,7 @@ msgstr "बंद करें"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Close navigation"
-msgstr ""
+msgstr "नेविगेशन बंद करें"
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Close position"
@@ -588,7 +588,7 @@ msgstr "बंद हो रहा है..."
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Collapse market details"
-msgstr ""
+msgstr "बाज़ार विवरण समेटें"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Coming soon"
@@ -1030,7 +1030,7 @@ msgstr "जमा लेनदेन ब्रॉडकास्ट हो ग�
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
-msgstr ""
+msgstr "जमा लेनदेन प्रसारित हो गया, लेकिन Arbitrum RPC पुष्टि विफल रही। दोबारा प्रयास करने से पहले Arbiscan पर जाँच करें।"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -1282,7 +1282,7 @@ msgstr "ऑर्डर बुक स्लिपेज के कारण न�
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Expand market details"
-msgstr ""
+msgstr "बाज़ार विवरण विस्तृत करें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAtLabel}"
@@ -1303,7 +1303,7 @@ msgstr "विफल"
 #: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
 msgid "Failed to change language"
-msgstr ""
+msgstr "भाषा बदलने में विफल"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1598,7 +1598,7 @@ msgstr "फ़ोन एक्सेस इम्पोर्ट करें"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
-msgstr ""
+msgstr "अपने डेस्कटॉप से ट्रेडिंग कुंजी आयात करें। इस फ़ोन पर वॉलेट कनेक्शन की आवश्यकता नहीं है।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -2133,7 +2133,7 @@ msgstr "मिनट"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Mode"
-msgstr ""
+msgstr "मोड"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
@@ -2407,7 +2407,7 @@ msgstr "ओपन इंटरेस्ट"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Open navigation"
-msgstr ""
+msgstr "नेविगेशन खोलें"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
@@ -2660,7 +2660,7 @@ msgstr "फ़ोन एक्सेस रीसेट हो गई। प्�
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone import"
-msgstr ""
+msgstr "फ़ोन आयात"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone link"
@@ -2911,7 +2911,7 @@ msgstr "दर"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Ready to import"
-msgstr ""
+msgstr "आयात के लिए तैयार"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -3442,7 +3442,7 @@ msgstr "Slippage सहनशीलता"
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet client not ready"
-msgstr ""
+msgstr "स्मार्ट वॉलेट क्लाइंट तैयार नहीं है"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3814,11 +3814,11 @@ msgstr "यह मोबाइल लिंक समाप्त हो गय�
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This mobile link is damaged or incomplete. Scan or paste it again."
-msgstr ""
+msgstr "यह मोबाइल लिंक क्षतिग्रस्त या अधूरा है। इसे दोबारा स्कैन या पेस्ट करें।"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This phone link belongs to a different owner account."
-msgstr ""
+msgstr "यह फ़ोन लिंक किसी दूसरे स्वामी खाते से संबंधित है।"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
@@ -3992,7 +3992,7 @@ msgstr "आपके क्षेत्र में ट्रेडिंग �
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Trading key"
-msgstr ""
+msgstr "ट्रेडिंग कुंजी"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading key approved"
@@ -4013,7 +4013,7 @@ msgstr "लेन-देन विवरण"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction reverted on Arbitrum"
-msgstr ""
+msgstr "Arbitrum पर लेनदेन रिवर्ट हो गया"
 
 #: src/lib/errors/format.ts
 msgid "Transaction was not broadcast. Please retry."
@@ -4133,7 +4133,7 @@ msgstr "प्रकार"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to load Arbitrum USDC balance"
-msgstr ""
+msgstr "Arbitrum USDC बैलेंस लोड नहीं किया जा सका"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Unable to load the current account mode. Reconnect your wallet and try again."
@@ -4142,12 +4142,12 @@ msgstr "वर्तमान खाता मोड लोड नहीं ह�
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to prepare USDC permit"
-msgstr ""
+msgstr "USDC परमिट तैयार नहीं किया जा सका"
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
-msgstr ""
+msgstr "वॉलेट को {0} पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और दोबारा प्रयास करें।"
 
 #: src/lib/errors/format.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
@@ -4178,7 +4178,7 @@ msgstr "अज्ञात त्रुटि"
 #. placeholder {0}: symbolInfo.ticker ?? symbolInfo.name
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {0}"
-msgstr ""
+msgstr "अज्ञात प्रतीक: {0}"
 
 #: src/components/trade/chart/datafeed.ts
 #: src/components/trade/chart/datafeed.ts
@@ -4332,7 +4332,7 @@ msgstr "वॉलेट कनेक्शन अनुरोध अस्वी
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Wallet connection unavailable"
-msgstr ""
+msgstr "वॉलेट कनेक्शन उपलब्ध नहीं है"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -4342,7 +4342,7 @@ msgstr "वॉलेट ने ट्रांज़ैक्शन हैश �
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
-msgstr ""
+msgstr "वॉलेट {0} से कनेक्ट नहीं है। अपने वॉलेट में नेटवर्क बदलें और दोबारा प्रयास करें।"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."

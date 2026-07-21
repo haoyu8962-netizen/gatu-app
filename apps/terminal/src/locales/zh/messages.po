@@ -176,7 +176,7 @@ msgstr "将 {displayPairName} 加入自选"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
-msgstr ""
+msgstr "向此钱包存入少量 Arbitrum ETH 以支付网络手续费，然后重试。"
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Add funds"
@@ -396,7 +396,7 @@ msgstr "跨链失败"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
-msgstr ""
+msgstr "Bridge2 充值尚未到账。请先在 Arbiscan 上检查后再重试。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Bridge2 rejected the USDC permit. Retrying automatically."
@@ -567,7 +567,7 @@ msgstr "关闭"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Close navigation"
-msgstr ""
+msgstr "关闭导航"
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Close position"
@@ -588,7 +588,7 @@ msgstr "平仓中..."
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Collapse market details"
-msgstr ""
+msgstr "收起市场详情"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Coming soon"
@@ -1030,7 +1030,7 @@ msgstr "充值交易已广播，但确认超时。请先在 Arbiscan 上检查�
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
-msgstr ""
+msgstr "充值交易已广播，但 Arbitrum RPC 确认失败。请先在 Arbiscan 上检查后再重试。"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -1282,7 +1282,7 @@ msgstr "由于订单簿滑点，无法保证完全成交。如果滑点超过 {D
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Expand market details"
-msgstr ""
+msgstr "展开市场详情"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAtLabel}"
@@ -1303,7 +1303,7 @@ msgstr "失败"
 #: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
 msgid "Failed to change language"
-msgstr ""
+msgstr "切换语言失败"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1598,7 +1598,7 @@ msgstr "导入手机访问权限"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
-msgstr ""
+msgstr "从桌面端导入交易密钥。此手机无需连接钱包。"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -2133,7 +2133,7 @@ msgstr "分钟"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Mode"
-msgstr ""
+msgstr "模式"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
@@ -2407,7 +2407,7 @@ msgstr "未平仓量"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Open navigation"
-msgstr ""
+msgstr "打开导航"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
@@ -2660,7 +2660,7 @@ msgstr "手机访问已重置。替换密钥将于 {expiresAtLabel} 过期。"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone import"
-msgstr ""
+msgstr "手机导入"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone link"
@@ -2911,7 +2911,7 @@ msgstr "费率"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Ready to import"
-msgstr ""
+msgstr "可以导入"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -3442,7 +3442,7 @@ msgstr "滑点容忍度"
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet client not ready"
-msgstr ""
+msgstr "智能钱包客户端尚未就绪"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3814,11 +3814,11 @@ msgstr "此手机链接已过期。"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This mobile link is damaged or incomplete. Scan or paste it again."
-msgstr ""
+msgstr "此手机链接已损坏或不完整。请重新扫描或粘贴。"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This phone link belongs to a different owner account."
-msgstr ""
+msgstr "此手机链接属于另一个所有者账户。"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
@@ -3992,7 +3992,7 @@ msgstr "您所在的地区暂不支持交易"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Trading key"
-msgstr ""
+msgstr "交易密钥"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading key approved"
@@ -4013,7 +4013,7 @@ msgstr "交易明细"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction reverted on Arbitrum"
-msgstr ""
+msgstr "交易已在 Arbitrum 上回滚"
 
 #: src/lib/errors/format.ts
 msgid "Transaction was not broadcast. Please retry."
@@ -4133,7 +4133,7 @@ msgstr "类型"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to load Arbitrum USDC balance"
-msgstr ""
+msgstr "无法加载 Arbitrum USDC 余额"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Unable to load the current account mode. Reconnect your wallet and try again."
@@ -4142,12 +4142,12 @@ msgstr "无法加载当前账户模式。请重新连接钱包后重试。"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to prepare USDC permit"
-msgstr ""
+msgstr "无法准备 USDC 授权"
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
-msgstr ""
+msgstr "无法将钱包切换到 {0}。请在钱包中切换网络后重试。"
 
 #: src/lib/errors/format.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
@@ -4178,7 +4178,7 @@ msgstr "未知错误"
 #. placeholder {0}: symbolInfo.ticker ?? symbolInfo.name
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {0}"
-msgstr ""
+msgstr "未知交易标的：{0}"
 
 #: src/components/trade/chart/datafeed.ts
 #: src/components/trade/chart/datafeed.ts
@@ -4342,7 +4342,7 @@ msgstr "钱包没有返回交易哈希。重试前请先检查钱包活动，避
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
-msgstr ""
+msgstr "钱包未连接到 {0}。请在钱包中切换网络后重试。"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."

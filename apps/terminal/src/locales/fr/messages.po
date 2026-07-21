@@ -176,7 +176,7 @@ msgstr "Ajouter {displayPairName} aux favoris"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
-msgstr ""
+msgstr "Ajoutez une petite quantité d’ETH sur Arbitrum à ce portefeuille pour payer les frais de réseau, puis réessayez."
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Add funds"
@@ -396,7 +396,7 @@ msgstr "Échec du bridge"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Bridge2 deposit was not credited. Check Arbiscan before retrying."
-msgstr ""
+msgstr "Le dépôt Bridge2 n’a pas été crédité. Vérifiez Arbiscan avant de réessayer."
 
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Bridge2 rejected the USDC permit. Retrying automatically."
@@ -567,7 +567,7 @@ msgstr "Fermer"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Close navigation"
-msgstr ""
+msgstr "Fermer la navigation"
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Close position"
@@ -588,7 +588,7 @@ msgstr "Fermeture..."
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Collapse market details"
-msgstr ""
+msgstr "Réduire les détails du marché"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Coming soon"
@@ -1030,7 +1030,7 @@ msgstr "La transaction de dépôt a été diffusée, mais la confirmation a expi
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Deposit transaction was broadcast, but Arbitrum RPC confirmation failed. Check Arbiscan before retrying."
-msgstr ""
+msgstr "La transaction de dépôt a été diffusée, mais la confirmation RPC d’Arbitrum a échoué. Vérifiez Arbiscan avant de réessayer."
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -1282,7 +1282,7 @@ msgstr "L’exécution n’est pas garantie en raison du glissement du carnet d�
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Expand market details"
-msgstr ""
+msgstr "Développer les détails du marché"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Expires {expiresAtLabel}"
@@ -1303,7 +1303,7 @@ msgstr "échoué"
 #: src/components/trade/header/language-switcher.tsx
 #: src/components/trade/header/language-switcher.tsx
 msgid "Failed to change language"
-msgstr ""
+msgstr "Impossible de changer de langue"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -1598,7 +1598,7 @@ msgstr "Importer l'accès mobile"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
-msgstr ""
+msgstr "Importez la clé de trading depuis votre ordinateur. Aucune connexion de portefeuille n’est requise sur ce téléphone."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -2133,7 +2133,7 @@ msgstr "Minute(s)"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Mode"
-msgstr ""
+msgstr "Mode"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
@@ -2407,7 +2407,7 @@ msgstr "Intérêt ouvert"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Open navigation"
-msgstr ""
+msgstr "Ouvrir la navigation"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
@@ -2660,7 +2660,7 @@ msgstr "Accès téléphone réinitialisé. La clé de remplacement expire à {ex
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone import"
-msgstr ""
+msgstr "Importation mobile"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Phone link"
@@ -2911,7 +2911,7 @@ msgstr "Taux"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Ready to import"
-msgstr ""
+msgstr "Prêt à importer"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -3442,7 +3442,7 @@ msgstr "Tolérance au slippage"
 
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet client not ready"
-msgstr ""
+msgstr "Le client du portefeuille intelligent n’est pas prêt"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -3814,11 +3814,11 @@ msgstr "Ce lien mobile a expiré."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This mobile link is damaged or incomplete. Scan or paste it again."
-msgstr ""
+msgstr "Ce lien mobile est endommagé ou incomplet. Scannez-le ou collez-le à nouveau."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This phone link belongs to a different owner account."
-msgstr ""
+msgstr "Ce lien téléphone appartient à un autre compte propriétaire."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
@@ -3992,7 +3992,7 @@ msgstr "Le trading n'est pas disponible dans votre région"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Trading key"
-msgstr ""
+msgstr "Clé de trading"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Trading key approved"
@@ -4013,7 +4013,7 @@ msgstr "Détail de la transaction"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Transaction reverted on Arbitrum"
-msgstr ""
+msgstr "La transaction a été annulée sur Arbitrum"
 
 #: src/lib/errors/format.ts
 msgid "Transaction was not broadcast. Please retry."
@@ -4133,7 +4133,7 @@ msgstr "Type"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to load Arbitrum USDC balance"
-msgstr ""
+msgstr "Impossible de charger le solde USDC sur Arbitrum"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Unable to load the current account mode. Reconnect your wallet and try again."
@@ -4142,12 +4142,12 @@ msgstr "Impossible de charger le mode de compte actuel. Reconnectez votre portef
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to prepare USDC permit"
-msgstr ""
+msgstr "Impossible de préparer l’autorisation USDC"
 
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to switch wallet to {0}. Switch networks in your wallet and retry."
-msgstr ""
+msgstr "Impossible de basculer le portefeuille vers {0}. Changez de réseau dans votre portefeuille, puis réessayez."
 
 #: src/lib/errors/format.ts
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
@@ -4178,7 +4178,7 @@ msgstr "Erreur inconnue"
 #. placeholder {0}: symbolInfo.ticker ?? symbolInfo.name
 #: src/components/trade/chart/datafeed.ts
 msgid "Unknown symbol: {0}"
-msgstr ""
+msgstr "Symbole inconnu : {0}"
 
 #: src/components/trade/chart/datafeed.ts
 #: src/components/trade/chart/datafeed.ts
@@ -4332,7 +4332,7 @@ msgstr "La demande de connexion du portefeuille a été refusée."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Wallet connection unavailable"
-msgstr ""
+msgstr "Connexion au portefeuille indisponible"
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -4342,7 +4342,7 @@ msgstr "Le portefeuille n'a pas renvoyé de hash de transaction. Vérifiez l'act
 #. placeholder {0}: config.chainName
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet is not connected to {0}. Switch networks in your wallet and retry."
-msgstr ""
+msgstr "Le portefeuille n’est pas connecté à {0}. Changez de réseau dans votre portefeuille, puis réessayez."
 
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
