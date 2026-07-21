@@ -62,7 +62,6 @@ import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbo
 import { AccountModeModal } from "./account-mode-modal";
 import { MarginModeModal } from "./margin-mode-modal";
 import { OrderSummary } from "./order-summary";
-import { OrderToast } from "./order-toast";
 import { ScaleOrderSummary } from "./scale-order-summary";
 import { TradeFormFields } from "./trade-form-fields";
 import { TradeHeader } from "./trade-header";
@@ -501,8 +500,6 @@ export function TradePanel() {
 					<WalletModal open onOpenChange={(open) => setActiveModal(open ? "wallet" : null)} />
 				</Suspense>
 			)}
-
-			<OrderToast />
 		</div>
 	);
 }

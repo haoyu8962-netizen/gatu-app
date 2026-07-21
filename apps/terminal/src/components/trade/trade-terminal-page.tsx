@@ -22,6 +22,7 @@ import { TopNav } from "./header/top-nav";
 import { MainWorkspace } from "./layout/main-workspace";
 import { MobileTerminal } from "./mobile/mobile-terminal";
 import { TestnetBanner } from "./testnet-banner";
+import { OrderToast } from "./tradebox/order-toast";
 
 const GlobalModals = createLazyComponent(() => import("./components/global-modals"), "GlobalModals");
 const FooterBar = createLazyComponent(() => import("./footer/footer-bar"), "FooterBar");
@@ -56,6 +57,7 @@ export function TradeTerminalPage() {
 					</Suspense>
 				</div>
 			)}
+			<OrderToast />
 			<Suspense fallback={null}>
 				<GlobalModals enableHip3Disclaimer />
 			</Suspense>

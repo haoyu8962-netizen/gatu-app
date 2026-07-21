@@ -59,7 +59,6 @@ import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { MarginModeModal } from "../tradebox/margin-mode-modal";
-import { OrderToast } from "../tradebox/order-toast";
 import { TpSlSection } from "../tradebox/tp-sl-section";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
 import { TradeHeader } from "../tradebox/trade-header";
@@ -693,7 +692,6 @@ export function MobileTradeView({ className, embedded }: Props) {
 					<WalletModal open onOpenChange={setWalletModalOpen} />
 				</Suspense>
 			)}
-			<OrderToast />
 		</div>
 	);
 }
