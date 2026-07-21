@@ -533,7 +533,6 @@ msgstr "खुली पोज़िशन के साथ आइसोले�
 msgid "Change leverage"
 msgstr "लेवरेज बदलें"
 
-#: src/components/trade/chart/kline-toolbar.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "चार्ट"
@@ -952,8 +951,8 @@ msgstr "वर्तमान"
 #~ msgstr ""
 
 #: src/components/trade/chart/chart-source-toggle.tsx
-msgid "Default"
-msgstr "डिफ़ॉल्ट"
+#~ msgid "Default"
+#~ msgstr "डिफ़ॉल्ट"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #~ msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
@@ -1738,7 +1737,7 @@ msgctxt "Order type"
 msgid "Limit"
 msgstr "लिमिट"
 
-#: src/components/trade/chart/use-kline-order-overlays.ts
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Buy"
 msgstr "लिमिट खरीद"
 
@@ -1766,7 +1765,7 @@ msgstr "लिमिट प्राइस"
 #~ msgid "limit ro"
 #~ msgstr "लिमिट आरओ"
 
-#: src/components/trade/chart/use-kline-order-overlays.ts
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Sell"
 msgstr "लिमिट बिक्री"
 
@@ -1862,6 +1861,7 @@ msgstr "वॉलेट लोड हो रहा है..."
 msgid "Loading..."
 msgstr "लोड हो रहा है..."
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -2151,8 +2151,8 @@ msgid "More Info"
 msgstr "अधिक जानकारी"
 
 #: src/components/trade/chart/kline-toolbar.tsx
-msgid "More intervals"
-msgstr "अधिक अंतराल"
+#~ msgid "More intervals"
+#~ msgstr "अधिक अंतराल"
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More options"
@@ -3300,6 +3300,7 @@ msgstr "{p}% पर सेट करें"
 msgid "Settings"
 msgstr "सेटिंग्स"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4005,8 +4006,8 @@ msgid "Trading key approved"
 msgstr "ट्रेडिंग की स्वीकृत हुई"
 
 #: src/components/trade/chart/chart-source-toggle.tsx
-msgid "TradingView"
-msgstr "TradingView"
+#~ msgid "TradingView"
+#~ msgstr "TradingView"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Traditional Finance"

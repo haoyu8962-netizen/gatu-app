@@ -10,8 +10,10 @@ import { type SubEvent, type SubParams, useSelectedMarketInfo, useSubscription }
 import { toNumber } from "@/lib/trade/numbers";
 import {
 	type BookLevel,
+	getL2BookSubscriptionParams,
 	getPriceGroupingKey,
 	getPriceGroupingOptions,
+	getRawSpreadInfo,
 	type L2BookPriceGroupOption,
 	processLevels,
 } from "@/lib/trade/orderbook";
@@ -26,7 +28,6 @@ const COMPACT_LEVEL_COUNT = 5;
 const MIN_LEVEL_COUNT = 3;
 const MAX_LEVEL_COUNT = 24;
 const ORDERBOOK_ROW_HEIGHT_PX = 23;
-const DEFAULT_L2_BOOK_N_SIG_FIGS = 5;
 const ORDERBOOK_ROW_GAP_PX = 2;
 const ORDERBOOK_LADDER_VERTICAL_PADDING_PX = 8;
 const PLACEHOLDER_ROW_KEYS = Array.from({ length: 64 }, (_, index) => `placeholder-${index}`);
@@ -44,12 +45,12 @@ type VisibleOrderbookSnapshot = {
 	szDecimals: number;
 };
 
-const DISABLED_L2_BOOK_PARAMS: L2BookParams = { coin: "", nSigFigs: DEFAULT_L2_BOOK_N_SIG_FIGS };
+const DISABLED_L2_BOOK_PARAMS: L2BookParams = { coin: "" };
 const orderbookSnapshotCache = new Map<string, CachedOrderbookSnapshot>();
 
 function getOrderbookSnapshotCacheKey(params: L2BookParams | null): string | null {
 	if (!params?.coin) return null;
-	return [params.coin, params.nSigFigs ?? "default", params.mantissa ?? "default"].join(":");
+	return `${params.coin}:${getPriceGroupingKey(params)}`;
 }
 
 function getFreshOrderbookSnapshotCache(key: string | null): CachedOrderbookSnapshot | null {
@@ -145,12 +146,8 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 	const priceDecimals = selectedOption?.decimals ?? maxPriceDecimals;
 	const subscriptionParams = useMemo<L2BookParams | null>(() => {
 		if (!name) return null;
-		return {
-			coin: name,
-			nSigFigs: selectedOption?.nSigFigs ?? DEFAULT_L2_BOOK_N_SIG_FIGS,
-			mantissa: selectedOption?.mantissa,
-		};
-	}, [name, selectedOption?.mantissa, selectedOption?.nSigFigs]);
+		return getL2BookSubscriptionParams(name, selectedOption);
+	}, [name, selectedOption]);
 	const bookCacheKey = useMemo(() => getOrderbookSnapshotCacheKey(subscriptionParams), [subscriptionParams]);
 	const keepSubscriptionWarm = useWarmBoolean(view === "book", ORDERBOOK_SUBSCRIPTION_KEEP_ALIVE_MS);
 	const subscriptionEnabled = keepSubscriptionWarm && !!selectedMarket && !!subscriptionParams;
@@ -244,27 +241,10 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 		lastMidRef.current = { key, value: mid };
 	}, [displaySnapshot?.key, mid]);
 
-	const spread = useMemo(() => {
-		if (!Number.isFinite(bestBid) || !Number.isFinite(bestAsk)) return undefined;
-		return bestAsk - bestBid;
-	}, [bestAsk, bestBid]);
-
-	const spreadPct = useMemo(() => {
-		if (
-			typeof spread !== "number" ||
-			typeof mid !== "number" ||
-			!Number.isFinite(spread) ||
-			!Number.isFinite(mid) ||
-			mid === 0
-		) {
-			return undefined;
-		}
-		return (spread / mid) * 100;
-	}, [spread, mid]);
-	const spreadText =
-		typeof spread === "number" && Number.isFinite(spread) && typeof spreadPct === "number" && Number.isFinite(spreadPct)
-			? `${formatNumber(spread, 2)} (${formatNumber(spreadPct, 3)}%)`
-			: FALLBACK_VALUE_PLACEHOLDER;
+	const spreadInfo = useMemo(() => getRawSpreadInfo(book?.levels), [book?.levels]);
+	const spreadText = spreadInfo
+		? `${formatNumber(spreadInfo.spread, displayPriceDecimals)} (${formatNumber(spreadInfo.spreadPct, 3)}%)`
+		: FALLBACK_VALUE_PLACEHOLDER;
 
 	const { baseToken, quoteToken } = useMemo(() => {
 		if (!selectedMarket) return { baseToken: "", quoteToken: "" };

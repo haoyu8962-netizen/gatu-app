@@ -533,7 +533,6 @@ msgstr "No se puede cambiar al modo aislado con una posición abierta. Cierra tu
 msgid "Change leverage"
 msgstr "Cambiar apalancamiento"
 
-#: src/components/trade/chart/kline-toolbar.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "Gráfico"
@@ -952,8 +951,8 @@ msgstr "Actual"
 #~ msgstr ""
 
 #: src/components/trade/chart/chart-source-toggle.tsx
-msgid "Default"
-msgstr "Predeterminado"
+#~ msgid "Default"
+#~ msgstr "Predeterminado"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #~ msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
@@ -1738,7 +1737,7 @@ msgctxt "Order type"
 msgid "Limit"
 msgstr "Límite"
 
-#: src/components/trade/chart/use-kline-order-overlays.ts
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Buy"
 msgstr "Compra límite"
 
@@ -1766,7 +1765,7 @@ msgstr "Precio límite"
 #~ msgid "limit ro"
 #~ msgstr "límite sr"
 
-#: src/components/trade/chart/use-kline-order-overlays.ts
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Sell"
 msgstr "Venta límite"
 
@@ -1862,6 +1861,7 @@ msgstr "Cargando billetera..."
 msgid "Loading..."
 msgstr "Cargando..."
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -2151,8 +2151,8 @@ msgid "More Info"
 msgstr "Más información"
 
 #: src/components/trade/chart/kline-toolbar.tsx
-msgid "More intervals"
-msgstr "Más intervalos"
+#~ msgid "More intervals"
+#~ msgstr "Más intervalos"
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More options"
@@ -3300,6 +3300,7 @@ msgstr "Establecer en {p}%"
 msgid "Settings"
 msgstr "Configuración"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4005,8 +4006,8 @@ msgid "Trading key approved"
 msgstr "Clave de operación aprobada"
 
 #: src/components/trade/chart/chart-source-toggle.tsx
-msgid "TradingView"
-msgstr "TradingView"
+#~ msgid "TradingView"
+#~ msgstr "TradingView"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Traditional Finance"

@@ -5,7 +5,7 @@ import { getBaseQuoteFromPairName } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { getTradePriceDecimals, processTrades } from "@/lib/trade/trades";
-import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
+import { useGlobalSettings, useGlobalSettingsActions, useIsTestnet } from "@/stores/use-global-settings-store";
 import { TradeRow } from "./trade-row";
 
 export function TradesPanel({ compact = false }: { compact?: boolean }) {
@@ -22,6 +22,7 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 	});
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const { setShowOrderbookInQuote } = useGlobalSettingsActions();
+	const isTestnet = useIsTestnet();
 
 	const { baseToken, quoteToken } = useMemo(() => {
 		if (!selectedMarket) return { baseToken: "", quoteToken: "" };
@@ -76,6 +77,7 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 								priceDecimals={priceDecimals}
 								szDecimals={szDecimals}
 								showInQuote={showOrderbookInQuote}
+								isTestnet={isTestnet}
 								compact={compact}
 							/>
 						))}

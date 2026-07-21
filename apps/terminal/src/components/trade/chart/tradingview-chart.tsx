@@ -10,7 +10,15 @@ import {
 	getChartSymbolInfo,
 	isChartMarketSymbol,
 } from "@/lib/chart/market-symbol";
-import { buildChartOverrides, getChartCssUrl, getLoadingScreenColors } from "@/lib/chart/theme-colors";
+import {
+	buildChartOverrides,
+	colorToHex,
+	colorToRgba,
+	getChartColors,
+	getChartCssUrl,
+	getLoadingScreenColors,
+} from "@/lib/chart/theme-colors";
+import { TradingViewOverlayController, type TradingViewOverlayPalette } from "@/lib/chart/tradingview-overlays";
 import { cn } from "@/lib/cn";
 import { subscribeWsReconnect, type UnifiedMarketInfo } from "@/lib/hyperliquid";
 import type { IChartingLibraryWidget, ResolutionString } from "@/types/charting_library";
@@ -29,10 +37,29 @@ import {
 	TIMEZONE,
 } from "./constants";
 import { type ChartDatafeed, createDatafeed } from "./datafeed";
+import { useTradingViewOverlayLines } from "./use-tradingview-overlay-lines";
 
 const CHART_READY_SOFT_TIMEOUT_MS = 45_000;
 const SYMBOL_SWITCH_RETRY_TIMEOUT_MS = 8_000;
 const SYMBOL_SWITCH_MAX_RETRIES = 1;
+
+function getTradingViewOverlayPalette(): TradingViewOverlayPalette {
+	const colors = getChartColors();
+	return {
+		buy: {
+			lineColor: colorToRgba(colors.green, 0.45),
+			textColor: colorToHex(colors.green),
+		},
+		sell: {
+			lineColor: colorToRgba(colors.red, 0.45),
+			textColor: colorToHex(colors.red),
+		},
+		liquidation: {
+			lineColor: colorToRgba(colors.red, 0.55),
+			textColor: colorToHex(colors.red),
+		},
+	};
+}
 
 interface Props {
 	active?: boolean;
@@ -52,6 +79,7 @@ export function TradingViewChart({
 	yAxisInside = false,
 }: Props) {
 	const widgetSymbol = market ? getChartApiSymbol(market) : symbol;
+	const overlayLines = useTradingViewOverlayLines(market, symbol);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const widgetRef = useRef<IChartingLibraryWidget | null>(null);
 	const datafeedRef = useRef<ChartDatafeed | null>(null);
@@ -73,17 +101,22 @@ export function TradingViewChart({
 	const cancelSymbolSwitchRef = useRef<() => void>(() => {});
 	const themeSwitchSequenceRef = useRef(0);
 	const marketBySymbolRef = useRef(new Map<string, UnifiedMarketInfo>());
+	const overlayLinesRef = useRef(overlayLines);
+	const overlayControllerRef = useRef<TradingViewOverlayController | null>(null);
 	const applySymbolRef = useRef<() => void>(() => {});
 	const applyThemeRef = useRef<(nextTheme: "light" | "dark") => void>(() => {});
 	const requestDataResetRef = useRef<() => void>(() => {});
+	const syncOverlaysRef = useRef<() => void>(() => {});
 	const [initError, setInitError] = useState<string | null>(null);
 	const [isInitializing, setIsInitializing] = useState(true);
 	const [showReadyPrompt, setShowReadyPrompt] = useState(false);
 	const [retryNonce, setRetryNonce] = useState(0);
+	if (!overlayControllerRef.current) overlayControllerRef.current = new TradingViewOverlayController();
 	targetSymbolRef.current = widgetSymbol;
 	targetIntervalRef.current = interval;
 	targetThemeRef.current = theme;
 	activeRef.current = active;
+	overlayLinesRef.current = overlayLines;
 	if (market) {
 		for (const key of getChartMarketKeys(market)) {
 			marketBySymbolRef.current.set(getChartMarketLookupKey(key), market);
@@ -120,6 +153,7 @@ export function TradingViewChart({
 		appliedSymbolRef.current = nextSymbol;
 		appliedIntervalRef.current = nextInterval;
 		finishSymbolSwitch();
+		syncOverlaysRef.current();
 	};
 
 	const isChartSymbolApplied = (actualSymbol: string | undefined, nextSymbol: string) => {
@@ -137,6 +171,22 @@ export function TradingViewChart({
 		} catch {
 			return undefined;
 		}
+	};
+
+	syncOverlaysRef.current = () => {
+		const widget = widgetRef.current;
+		if (!widget || !chartReadyRef.current || !activeRef.current || pendingSymbolRef.current) return;
+		const nextSymbol = targetSymbolRef.current;
+		if (!isChartSymbolApplied(getActiveChartSymbol(widget), nextSymbol)) return;
+
+		try {
+			overlayControllerRef.current?.sync(
+				widget.activeChart(),
+				nextSymbol,
+				overlayLinesRef.current,
+				getTradingViewOverlayPalette(),
+			);
+		} catch {}
 	};
 
 	applySymbolRef.current = () => {
@@ -157,6 +207,7 @@ export function TradingViewChart({
 		}
 
 		clearPendingSymbolSwitch();
+		overlayControllerRef.current?.clear();
 		pendingSymbolRef.current = nextSymbol;
 		pendingIntervalRef.current = nextInterval;
 		setInitError(null);
@@ -228,7 +279,10 @@ export function TradingViewChart({
 
 		const sequence = themeSwitchSequenceRef.current + 1;
 		themeSwitchSequenceRef.current = sequence;
-		if (appliedThemeRef.current === nextTheme && widget.getTheme() === nextTheme) return;
+		if (appliedThemeRef.current === nextTheme && widget.getTheme() === nextTheme) {
+			syncOverlaysRef.current();
+			return;
+		}
 
 		void widget
 			.changeTheme(nextTheme)
@@ -236,6 +290,7 @@ export function TradingViewChart({
 				if (widgetRef.current !== widget || themeSwitchSequenceRef.current !== sequence) return;
 				appliedThemeRef.current = nextTheme;
 				widget.applyOverrides(buildChartOverrides());
+				syncOverlaysRef.current();
 			})
 			.catch(() => undefined);
 	};
@@ -322,6 +377,7 @@ export function TradingViewChart({
 		const removeWidget = () => {
 			clearReadyPromptTimeout();
 			clearPendingSymbolSwitch();
+			overlayControllerRef.current?.clear();
 			if (widgetRef.current) {
 				widgetRef.current.remove();
 				widgetRef.current = null;
@@ -408,6 +464,7 @@ export function TradingViewChart({
 					if (pendingDataResetRef.current) requestDataResetRef.current();
 					applyThemeRef.current(targetThemeRef.current);
 					applySymbolRef.current();
+					syncOverlaysRef.current();
 				});
 			} catch {
 				if (disposed) return;
@@ -440,7 +497,12 @@ export function TradingViewChart({
 			return;
 		}
 		applySymbolRef.current();
+		syncOverlaysRef.current();
 	}, [widgetSymbol, interval, active]);
+
+	useEffect(() => {
+		syncOverlaysRef.current();
+	});
 
 	useEffect(() => {
 		targetThemeRef.current = theme;

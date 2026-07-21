@@ -1,3 +1,5 @@
+import { toBig } from "@/lib/trade/numbers";
+
 export type RawBookLevel = { px: string; sz: string; n: number };
 
 export type BookLevel = {
@@ -8,14 +10,23 @@ export type BookLevel = {
 
 export type L2BookPriceGroupOption = {
 	key: string;
-	nSigFigs: 2 | 3 | 4 | 5;
+	nSigFigs: 2 | 3 | 4 | 5 | null;
 	mantissa?: 2 | 5;
 	tickSize: number;
 	decimals: number;
 	label: string;
 };
 
-export type L2BookPriceGroupSelection = Pick<L2BookPriceGroupOption, "nSigFigs" | "mantissa">;
+export type L2BookPriceGroupSelection = {
+	nSigFigs?: 2 | 3 | 4 | 5 | null;
+	mantissa?: 2 | 5 | null;
+};
+
+export type L2BookSubscriptionParams = {
+	coin: string;
+	nSigFigs?: 2 | 3 | 4 | 5;
+	mantissa?: 2 | 5;
+};
 
 export function processLevels(raw: RawBookLevel[] | undefined, limit?: number): BookLevel[] {
 	if (!raw?.length) return [];
@@ -29,13 +40,18 @@ export function processLevels(raw: RawBookLevel[] | undefined, limit?: number): 
 	});
 }
 
-export function getSpreadInfo(bids: BookLevel[], asks: BookLevel[]) {
-	const bestBid = bids[0]?.price;
-	const bestAsk = asks[0]?.price;
-	if (!bestBid || !bestAsk) return { mid: undefined, spread: undefined, spreadPct: undefined };
-	const mid = (bestBid + bestAsk) / 2;
-	const spread = bestAsk - bestBid;
-	return { mid, spread, spreadPct: (spread / mid) * 100 };
+export function getRawSpreadInfo(levels: readonly [readonly RawBookLevel[], readonly RawBookLevel[]] | undefined) {
+	const bestBid = toBig(levels?.[0][0]?.px);
+	const bestAsk = toBig(levels?.[1][0]?.px);
+	if (!bestBid || !bestAsk || bestBid.lte(0) || bestAsk.lte(0) || bestAsk.lt(bestBid)) return null;
+
+	const mid = bestAsk.plus(bestBid).div(2);
+	const spread = bestAsk.minus(bestBid);
+	return {
+		mid: mid.toString(),
+		spread: spread.toString(),
+		spreadPct: spread.div(mid).times(100).toString(),
+	};
 }
 
 export function getTickSizes(price: number | undefined): number[] {
@@ -81,8 +97,11 @@ export function getPriceGroupingOptions(mid: number | undefined, maxDecimals?: n
 	const integerDigits = Math.floor(Math.log10(mid)) + 1;
 	const minimumTickSize =
 		maxDecimals !== undefined && Number.isInteger(maxDecimals) && maxDecimals >= 0 ? 10 ** -maxDecimals : 0;
+	const fiveSignificantFigureTick = Math.max(10 ** (integerDigits - 5), minimumTickSize);
+	const nativeTickSize = integerDigits > 5 ? Math.max(1, minimumTickSize) : fiveSignificantFigureTick;
 	const options = [
-		buildPriceGroupingOption({ nSigFigs: 5 }, Math.max(10 ** (integerDigits - 5), minimumTickSize)),
+		buildPriceGroupingOption({ nSigFigs: null }, nativeTickSize),
+		buildPriceGroupingOption({ nSigFigs: 5 }, fiveSignificantFigureTick),
 		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 2 }, Math.max(2 * 10 ** (integerDigits - 5), minimumTickSize)),
 		buildPriceGroupingOption({ nSigFigs: 5, mantissa: 5 }, Math.max(5 * 10 ** (integerDigits - 5), minimumTickSize)),
 		buildPriceGroupingOption({ nSigFigs: 4 }, Math.max(10 ** (integerDigits - 4), minimumTickSize)),
@@ -99,10 +118,26 @@ export function getPriceGroupingOptions(mid: number | undefined, maxDecimals?: n
 }
 
 export function getPriceGroupingKey(selection: L2BookPriceGroupSelection | null | undefined): string {
-	return `${selection?.nSigFigs ?? "default"}:${selection?.mantissa ?? "default"}`;
+	if (selection?.nSigFigs == null) return "full";
+	return `${selection.nSigFigs}:${selection.mantissa ?? "default"}`;
 }
 
-function buildPriceGroupingOption(selection: L2BookPriceGroupSelection, tickSize: number): L2BookPriceGroupOption {
+export function getL2BookSubscriptionParams(
+	coin: string,
+	selection: L2BookPriceGroupSelection | null | undefined,
+): L2BookSubscriptionParams {
+	if (selection?.nSigFigs == null) return { coin };
+	return {
+		coin,
+		nSigFigs: selection.nSigFigs,
+		...(selection.mantissa == null ? {} : { mantissa: selection.mantissa }),
+	};
+}
+
+function buildPriceGroupingOption(
+	selection: Pick<L2BookPriceGroupOption, "nSigFigs" | "mantissa">,
+	tickSize: number,
+): L2BookPriceGroupOption {
 	const decimals = getTickSizeDecimals(tickSize);
 	return {
 		...selection,

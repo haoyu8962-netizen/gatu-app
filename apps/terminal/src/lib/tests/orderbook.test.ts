@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
 	aggregateLevels,
+	getL2BookSubscriptionParams,
 	getMaxTotal,
 	getPriceGroupingKey,
 	getPriceGroupingOptions,
-	getSpreadInfo,
+	getRawSpreadInfo,
 	getTickSizes,
 	processLevels,
 } from "@/lib/trade/orderbook";
@@ -27,22 +28,19 @@ describe("processLevels", () => {
 	});
 });
 
-describe("getSpreadInfo", () => {
-	it("calculates mid, spread, and spreadPct", () => {
-		const bids = [{ price: 100, size: 1, total: 1 }];
-		const asks = [{ price: 102, size: 1, total: 1 }];
-		const info = getSpreadInfo(bids, asks);
+describe("getRawSpreadInfo", () => {
+	it("calculates sub-cent spreads from raw price strings without losing precision", () => {
+		const info = getRawSpreadInfo([[{ px: "0.0027810", sz: "1", n: 1 }], [{ px: "0.0027880", sz: "1", n: 1 }]]);
 
-		expect(info.mid).toBe(101);
-		expect(info.spread).toBe(2);
-		expect(info.spreadPct).toBeCloseTo(1.98, 1);
+		expect(info).not.toBeNull();
+		expect(info?.mid).toBe("0.0027845");
+		expect(info?.spread).toBe("0.000007");
+		expect(Number(info?.spreadPct)).toBeCloseTo(0.2513916322, 8);
 	});
 
-	it("returns undefined values when no bids/asks", () => {
-		const info = getSpreadInfo([], []);
-		expect(info.mid).toBeUndefined();
-		expect(info.spread).toBeUndefined();
-		expect(info.spreadPct).toBeUndefined();
+	it("rejects crossed or incomplete books", () => {
+		expect(getRawSpreadInfo([[], []])).toBeNull();
+		expect(getRawSpreadInfo([[{ px: "102", sz: "1", n: 1 }], [{ px: "101", sz: "1", n: 1 }]])).toBeNull();
 	});
 });
 
@@ -131,5 +129,24 @@ describe("getPriceGroupingOptions", () => {
 		expect(getPriceGroupingKey(btcWide)).toBe(getPriceGroupingKey(ethWide));
 		expect(btcWide?.label).toBe("1000");
 		expect(ethWide?.label).toBe("100");
+	});
+
+	it("preserves native integer precision above the five-significant-figure boundary", () => {
+		const options = getPriceGroupingOptions(100_000, 1);
+
+		expect(options.map((option) => option.label)).toEqual(["1", "10", "20", "50", "100", "1000", "10000"]);
+		expect(options[0]).toMatchObject({ key: "full", nSigFigs: null, tickSize: 1, decimals: 0 });
+		expect(options[1]).toMatchObject({ key: "5:default", nSigFigs: 5, tickSize: 10 });
+	});
+
+	it("subscribes to the native book by omitting aggregation fields", () => {
+		const full = getPriceGroupingOptions(100_000, 1)[0];
+
+		expect(getL2BookSubscriptionParams("BTC", full)).toEqual({ coin: "BTC" });
+		expect(getL2BookSubscriptionParams("BTC", { nSigFigs: 5, mantissa: 2 })).toEqual({
+			coin: "BTC",
+			nSigFigs: 5,
+			mantissa: 2,
+		});
 	});
 });

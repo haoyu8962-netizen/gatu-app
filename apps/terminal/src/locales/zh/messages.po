@@ -533,7 +533,6 @@ msgstr "持有仓位时无法切换到逐仓模式。请先平仓。"
 msgid "Change leverage"
 msgstr "调整杠杆"
 
-#: src/components/trade/chart/kline-toolbar.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "图表"
@@ -952,8 +951,8 @@ msgstr "当前"
 #~ msgstr ""
 
 #: src/components/trade/chart/chart-source-toggle.tsx
-msgid "Default"
-msgstr "默认"
+#~ msgid "Default"
+#~ msgstr "默认"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #~ msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
@@ -1738,7 +1737,7 @@ msgctxt "Order type"
 msgid "Limit"
 msgstr "限价"
 
-#: src/components/trade/chart/use-kline-order-overlays.ts
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Buy"
 msgstr "限价买入"
 
@@ -1766,7 +1765,7 @@ msgstr "限价"
 #~ msgid "limit ro"
 #~ msgstr "限价只减仓"
 
-#: src/components/trade/chart/use-kline-order-overlays.ts
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Sell"
 msgstr "限价卖出"
 
@@ -1862,6 +1861,7 @@ msgstr "加载钱包中..."
 msgid "Loading..."
 msgstr "加载中..."
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -2151,8 +2151,8 @@ msgid "More Info"
 msgstr "更多信息"
 
 #: src/components/trade/chart/kline-toolbar.tsx
-msgid "More intervals"
-msgstr "更多周期"
+#~ msgid "More intervals"
+#~ msgstr "更多周期"
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More options"
@@ -3300,6 +3300,7 @@ msgstr "设为{p}%"
 msgid "Settings"
 msgstr "设置"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4005,8 +4006,8 @@ msgid "Trading key approved"
 msgstr "交易密钥已授权"
 
 #: src/components/trade/chart/chart-source-toggle.tsx
-msgid "TradingView"
-msgstr "TradingView"
+#~ msgid "TradingView"
+#~ msgstr "TradingView"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Traditional Finance"

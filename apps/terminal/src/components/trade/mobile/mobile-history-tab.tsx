@@ -6,11 +6,11 @@ import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { getExplorerTxUrl } from "@/lib/explorer";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { getExplorerTxUrl, useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
+import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { AssetBadge } from "../components/asset-badge";
 import { MetricCell } from "./metric-cell";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -26,6 +26,7 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
+	const isTestnet = useIsTestnet();
 
 	function handleSelectMarket(name: string) {
 		navigateToMarket(name, undefined, { displayedContent: "trade" });
@@ -83,7 +84,7 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 						const showPnl = closedPnl !== null && closedPnl !== 0;
 						const isLiquidation = !!fill.liquidation;
 						const isBuy = fill.dir.startsWith("Open Long") || fill.dir.startsWith("Close Short");
-						const explorerUrl = getExplorerTxUrl(fill.hash);
+						const explorerUrl = getExplorerTxUrl(fill.hash, isTestnet);
 
 						return (
 							<div

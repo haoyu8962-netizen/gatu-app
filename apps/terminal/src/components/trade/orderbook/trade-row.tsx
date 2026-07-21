@@ -10,10 +10,11 @@ interface Props {
 	priceDecimals: number;
 	szDecimals: number;
 	showInQuote: boolean;
+	isTestnet: boolean;
 	compact?: boolean;
 }
 
-function TradeRowComponent({ trade, priceDecimals, szDecimals, showInQuote, compact = false }: Props) {
+function TradeRowComponent({ trade, priceDecimals, szDecimals, showInQuote, isTestnet, compact = false }: Props) {
 	const priceDisplay = formatNumber(trade.price, priceDecimals);
 	const sizeDisplay = showInQuote
 		? formatNumber(getTradeQuoteSize(trade.price, trade.size), 2)
@@ -21,7 +22,7 @@ function TradeRowComponent({ trade, priceDecimals, szDecimals, showInQuote, comp
 
 	return (
 		<a
-			href={getExplorerTxUrl(trade.hash)}
+			href={getExplorerTxUrl(trade.hash, isTestnet)}
 			target="_blank"
 			rel="noopener noreferrer"
 			className={cn(

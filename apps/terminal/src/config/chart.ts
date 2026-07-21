@@ -1,4 +1,3 @@
-import type { CandleType } from "klinecharts";
 import type { ChartingLibraryFeatureset, ResolutionString, TimeFrameItem } from "@/types/charting_library";
 import { DEFAULT_QUOTE_TOKEN } from "./app";
 
@@ -99,20 +98,6 @@ export const CHART_DATAFEED_CONFIG = {
 	VOLUME_PRECISION: 2,
 	SEARCH_LIMIT: 50,
 } as const;
-
-export const CHART_TYPES = [
-	{ label: "Candles", type: "candle_solid" as CandleType },
-	{ label: "Hollow", type: "candle_stroke" as CandleType },
-	{ label: "OHLC", type: "ohlc" as CandleType },
-	{ label: "Area", type: "area" as CandleType },
-] as const;
-
-export type ChartTypeConfig = (typeof CHART_TYPES)[number];
-
-export const DEFAULT_CHART_TYPE = CHART_TYPES[0];
-
-export const INITIAL_CANDLE_COUNT = 500;
-export const VOLUME_INDICATOR_NAME = "VOL";
 
 export const CHART_MIN_HEIGHT_PX = 300;
 

@@ -15,7 +15,7 @@ Composes `@gatu/hl-react` (data/signing) and `@gatu/ui` (design system) into the
 | Client state | Zustand (+ `persist`) | 5.0 |
 | Styling | Tailwind v4 + `@gatu/ui` tokens | 4.0 |
 | Wallets | wagmi + viem | 3.1 / 2.42 |
-| Charting | klinecharts (+ optional TradingView via `types/charting_library`) | 9.8 |
+| Charting | TradingView Charting Library + custom Hyperliquid datafeed | vendored |
 | Bridging | `@lifi/sdk` | 3.16 |
 | Numbers | `big.js` (via `lib/trade/numbers`) | 7.0 |
 | Validation | Zod | 4.3 |
@@ -66,7 +66,7 @@ apps/terminal/
 
 | Panel | Location |
 |---|---|
-| Chart | `chart/` — `kline-chart.tsx`, `tradingview-chart.tsx`, `token-selector.tsx`, `theme-colors.ts` |
+| Chart | `chart/` — `tradingview-chart.tsx`, `token-selector.tsx`, `theme-colors.ts` |
 | Tradebox (order entry) | `tradebox/` — `trade-panel.tsx`, `trade-form-fields.tsx`, `leverage-control.tsx`, `margin-mode-modal.tsx`, `tp-sl-section.tsx`, `deposit-modal.tsx`, `bridge-tab.tsx` |
 | Orderbook & tape | `orderbook/` — `orderbook-panel.tsx`, `trades-panel.tsx` |
 | Positions | `positions/` — `positions-tab.tsx`, `position-tpsl-modal.tsx`, `position-limit-close-modal.tsx`, `funding-tab.tsx`, `balances-tab.tsx` |
@@ -120,7 +120,7 @@ All in `src/stores/`. `validated-storage.ts` wraps `localStorage` with Zod valid
 | Subdir | Contents |
 |---|---|
 | `trade/` | order types, orderbook math, open-orders, TP/SL, margin mode, order validation, **`numbers.ts`** (big.js wrappers: `toBig`, `toSafeBig`, `toNumber`) |
-| `chart/` | klinecharts adapters |
+| `chart/` | TradingView datafeed, symbol mapping, and chart overlays |
 | `hyperliquid/` | markets context, `use-deposit`, hl-react re-exports |
 | `search/` | market/asset search presets |
 | `lifi/` | bridge SDK integration |

@@ -533,7 +533,6 @@ msgstr "لا يمكن التبديل إلى وضع الهامش المعزول �
 msgid "Change leverage"
 msgstr "تغيير الرافعة المالية"
 
-#: src/components/trade/chart/kline-toolbar.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
 msgid "Chart"
 msgstr "الرسم البياني"
@@ -952,8 +951,8 @@ msgstr "الحالي"
 #~ msgstr ""
 
 #: src/components/trade/chart/chart-source-toggle.tsx
-msgid "Default"
-msgstr "افتراضي"
+#~ msgid "Default"
+#~ msgstr "افتراضي"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #~ msgid "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
@@ -1738,7 +1737,7 @@ msgctxt "Order type"
 msgid "Limit"
 msgstr "محدد"
 
-#: src/components/trade/chart/use-kline-order-overlays.ts
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Buy"
 msgstr "شراء محدد"
 
@@ -1766,7 +1765,7 @@ msgstr "السعر المحدد"
 #~ msgid "limit ro"
 #~ msgstr "محدد تقليل فقط"
 
-#: src/components/trade/chart/use-kline-order-overlays.ts
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 msgid "Limit Sell"
 msgstr "بيع محدد"
 
@@ -1862,6 +1861,7 @@ msgstr "جاري تحميل المحفظة..."
 msgid "Loading..."
 msgstr "جارٍ التحميل..."
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -2151,8 +2151,8 @@ msgid "More Info"
 msgstr "مزيد من المعلومات"
 
 #: src/components/trade/chart/kline-toolbar.tsx
-msgid "More intervals"
-msgstr "فواصل زمنية أكثر"
+#~ msgid "More intervals"
+#~ msgstr "فواصل زمنية أكثر"
 
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "More options"
@@ -3300,6 +3300,7 @@ msgstr "تعيين إلى {p}%"
 msgid "Settings"
 msgstr "الإعدادات"
 
+#: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4005,8 +4006,8 @@ msgid "Trading key approved"
 msgstr "تمت الموافقة على مفتاح التداول"
 
 #: src/components/trade/chart/chart-source-toggle.tsx
-msgid "TradingView"
-msgstr "TradingView"
+#~ msgid "TradingView"
+#~ msgstr "TradingView"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Traditional Finance"

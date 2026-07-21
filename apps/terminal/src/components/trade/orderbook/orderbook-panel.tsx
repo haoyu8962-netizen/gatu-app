@@ -2,12 +2,19 @@ import { Dropdown, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { BookBookmarkIcon, ListDashesIcon } from "@phosphor-icons/react";
 import { useDeferredValue, useMemo, useState } from "react";
-import { getBaseQuoteFromPairName, getPercent } from "@/domain/market";
+import { getBaseQuoteFromPairName } from "@/domain/market";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumber } from "@/lib/trade/numbers";
-import { getMaxTotal, getPriceGroupingKey, getPriceGroupingOptions, processLevels } from "@/lib/trade/orderbook";
+import {
+	getL2BookSubscriptionParams,
+	getMaxTotal,
+	getPriceGroupingKey,
+	getPriceGroupingOptions,
+	getRawSpreadInfo,
+	processLevels,
+} from "@/lib/trade/orderbook";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { OrderbookRow } from "./orderbook-row";
 import { TradesPanel } from "./trades-panel";
@@ -36,12 +43,8 @@ export function OrderbookPanel() {
 		[priceGroupingOptions, selectedOptionKey],
 	);
 	const subscriptionParams = useMemo(
-		() => ({
-			coin: selectedMarket?.name ?? "",
-			nSigFigs: selectedOption?.nSigFigs ?? 5,
-			mantissa: selectedOption?.mantissa,
-		}),
-		[selectedMarket?.name, selectedOption?.mantissa, selectedOption?.nSigFigs],
+		() => getL2BookSubscriptionParams(selectedMarket?.name ?? "", selectedOption),
+		[selectedMarket?.name, selectedOption],
 	);
 
 	const { data: orderbook, status: orderbookStatus } = useSubscription("l2Book", subscriptionParams, {
@@ -71,10 +74,11 @@ export function OrderbookPanel() {
 		return reversed;
 	}, [asks]);
 	const maxTotal = useMemo(() => getMaxTotal(bids, asks), [asks, bids]);
-	const spread = deferredOrderbook?.spread;
-	const spreadPct = getPercent(spread, selectedMarket?.markPx);
-
 	const priceDecimals = selectedOption?.decimals ?? maxPriceDecimals;
+	const spreadInfo = useMemo(() => getRawSpreadInfo(deferredOrderbook?.levels), [deferredOrderbook?.levels]);
+	const spreadText = spreadInfo
+		? `${formatNumber(spreadInfo.spread, priceDecimals)} (${formatNumber(spreadInfo.spreadPct, 3)}%)`
+		: "—";
 	const flashResetKey = `${subscriptionParams.coin}:${getPriceGroupingKey(selectedOption)}`;
 
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
@@ -179,9 +183,7 @@ export function OrderbookPanel() {
 						className="orderbook-spread-bg shrink-0 px-2 py-1.5 border-y border-stroke-weak flex items-center justify-between text-xs text-fg"
 					>
 						<span>{t`Spread`}</span>
-						<span className="tabular-nums font-medium text-fg-muted">
-							{`${formatNumber(spread, 2)} (${formatNumber(spreadPct, 3)}%)`}
-						</span>
+						<span className="tabular-nums font-medium text-fg-muted">{spreadText}</span>
 					</div>
 
 					<div className="flex-1 min-h-0 flex flex-col gap-[2px]">

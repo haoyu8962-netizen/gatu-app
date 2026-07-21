@@ -23,12 +23,19 @@ vi.mock("@/lib/hyperliquid", () => ({
 	},
 }));
 
+vi.mock("@/components/trade/chart/use-tradingview-overlay-lines", () => ({
+	useTradingViewOverlayLines: () => [],
+}));
+
 vi.mock("@/lib/chart/load-tradingview", () => ({
 	loadTradingViewScript: vi.fn(async () => {}),
 }));
 
 vi.mock("@/lib/chart/theme-colors", () => ({
 	buildChartOverrides: () => ({}),
+	colorToHex: (color: string) => color,
+	colorToRgba: (color: string, alpha: number) => `${color}:${alpha}`,
+	getChartColors: () => ({ green: "green", red: "red" }),
 	getChartCssUrl: vi.fn(() => "/tradingview-theme.css"),
 	getLoadingScreenColors: () => ({}),
 	getToolbarBgColor: () => "#000",
