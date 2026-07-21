@@ -465,6 +465,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 							<NumberInput
 								inputMode="decimal"
 								inputSize={entryInputSize}
+								mobileSafe
 								placeholder="0.00"
 								value={sizeInput}
 								onChange={(e: ChangeEvent<HTMLInputElement>) => setSizeInput(e.target.value)}
@@ -537,6 +538,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 							label={t`Trigger Price`}
 							inputMode="decimal"
 							inputSize={entryInputSize}
+							mobileSafe
 							placeholder="0.00"
 							value={triggerPrice}
 							onChange={(e: ChangeEvent<HTMLInputElement>) => setTriggerPrice(e.target.value)}
@@ -555,6 +557,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 								label={t`Limit Price`}
 								inputMode="decimal"
 								inputSize={entryInputSize}
+								mobileSafe
 								placeholder="0.00"
 								value={limitPriceInput}
 								onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}

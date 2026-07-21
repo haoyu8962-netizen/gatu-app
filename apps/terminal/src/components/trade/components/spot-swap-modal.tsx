@@ -535,6 +535,7 @@ function TokenPanel({
 					{editable ? (
 						<NumberInput
 							placeholder="0.00"
+							mobileSafe
 							value={amount}
 							onChange={(e) => onAmountChange?.(e.target.value)}
 							className={cn(

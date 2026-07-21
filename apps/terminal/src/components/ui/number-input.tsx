@@ -49,6 +49,7 @@ function exceedsDecimalLimit(value: string, maxDecimals: number | undefined): bo
 
 interface Props extends Omit<React.ComponentProps<"input">, "type" | "onChange" | "min" | "max" | "step"> {
 	inputSize?: InputSize;
+	mobileSafe?: boolean;
 	allowDecimals?: boolean;
 	allowNegative?: boolean;
 	maxAllowedDecimals?: number;
@@ -67,6 +68,7 @@ interface Props extends Omit<React.ComponentProps<"input">, "type" | "onChange" 
 export function NumberInput({
 	className,
 	inputSize = "default",
+	mobileSafe,
 	allowDecimals = true,
 	allowNegative = false,
 	maxAllowedDecimals,
@@ -195,7 +197,7 @@ export function NumberInput({
 			data-size={inputSize}
 			value={value}
 			disabled={disabled}
-			className={getInputClassName(inputSize, cn(hasMax && "pr-20", hasSuffix && "pr-7", className))}
+			className={getInputClassName(inputSize, cn(hasMax && "pr-20", hasSuffix && "pr-7", className), mobileSafe)}
 			onKeyDown={handleKeyDown}
 			onChange={handleChange}
 			{...props}

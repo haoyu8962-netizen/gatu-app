@@ -122,6 +122,7 @@ export function TpSlSection({
 						<NumberInput
 							label={t`Take Profit`}
 							placeholder={t`TP Price`}
+							mobileSafe
 							value={tpPrice}
 							onChange={(e) => onTpPriceChange(e.target.value)}
 							className={cn(
@@ -136,6 +137,7 @@ export function TpSlSection({
 						<NumberInput
 							label={t`Stop Loss`}
 							placeholder={t`SL Price`}
+							mobileSafe
 							value={slPrice}
 							onChange={(e) => onSlPriceChange(e.target.value)}
 							className={cn(

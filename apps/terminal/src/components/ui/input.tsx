@@ -29,26 +29,29 @@ const inputSizeStyles: Record<InputSize, string> = {
 	xl: "h-12 text-base px-3",
 };
 
-function getInputClassName(inputSize: InputSize, className?: string) {
-	return cn(inputBaseStyles, inputSizeStyles[inputSize], className);
+const mobileSafeInputStyles = "max-[1000px]:text-base max-[1000px]:leading-5";
+
+function getInputClassName(inputSize: InputSize, className?: string, mobileSafe = false) {
+	return cn(inputBaseStyles, inputSizeStyles[inputSize], mobileSafe && mobileSafeInputStyles, className);
 }
 
 type InputProps = Omit<React.ComponentProps<typeof BaseInput>, "className"> & {
 	className?: string;
 	inputSize?: InputSize;
+	mobileSafe?: boolean;
 };
 
-function Input({ className, type, inputSize = "default", ...props }: InputProps) {
+function Input({ className, type, inputSize = "default", mobileSafe, ...props }: InputProps) {
 	return (
 		<BaseInput
 			type={type}
 			data-slot="input"
 			data-size={inputSize}
-			className={cn("w-full", getInputClassName(inputSize, className))}
+			className={cn("w-full", getInputClassName(inputSize, className, mobileSafe))}
 			{...props}
 		/>
 	);
 }
 
-export { Input, inputBaseStyles, inputSizeStyles, getInputClassName };
+export { Input, inputBaseStyles, inputSizeStyles, mobileSafeInputStyles, getInputClassName };
 export type { InputSize };
