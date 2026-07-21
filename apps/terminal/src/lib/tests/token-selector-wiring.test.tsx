@@ -272,4 +272,49 @@ describe("token selector wiring", () => {
 		});
 		expect(retry).toHaveBeenCalledTimes(1);
 	});
+
+	it("uses an iOS-safe font size for the mobile market search field", () => {
+		const table = {
+			getHeaderGroups: () => [{ headers: [] }],
+		} as unknown as ReturnType<typeof useTokenSelector>["table"];
+
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<TokenSelectorContent
+						selectedMarket={undefined}
+						scope="all"
+						subcategory="all"
+						subcategories={[]}
+						search=""
+						setSearch={NOOP}
+						isLoading={false}
+						hasClassificationError={false}
+						onRetryClassifications={NOOP}
+						isFavorite={() => false}
+						sorting={[]}
+						handleSort={NOOP}
+						handleSelect={NOOP}
+						handleSubcategorySelect={NOOP}
+						handleScopeSelect={NOOP}
+						toggleFavorite={NOOP}
+						table={table}
+						rows={[]}
+						virtualItems={[]}
+						virtualTotalSize={0}
+						containerRef={{ current: null }}
+						filteredMarkets={[]}
+						highlightedIndex={-1}
+						headingId="mobile-market-selector-heading"
+						mobile
+					/>
+				</I18nProvider>,
+			);
+		});
+
+		const searchInput = container.querySelector<HTMLInputElement>('input[type="search"]');
+		expect(searchInput?.className).toContain("text-base");
+		expect(searchInput?.className).toContain("leading-5");
+		expect(searchInput?.className).not.toContain("text-sm");
+	});
 });

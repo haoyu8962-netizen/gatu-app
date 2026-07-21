@@ -180,6 +180,7 @@ export function TokenSelectorContent({
 					onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
 					onClear={() => setSearch("")}
 					size={mobile ? "md" : "sm"}
+					inputClassName={mobile ? "text-base leading-5" : undefined}
 					aria-labelledby={headingId}
 				/>
 			</div>
