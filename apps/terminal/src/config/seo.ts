@@ -6,7 +6,11 @@ export const SEO_DEFAULTS = {
 	defaultTitle: "gatu - Hyperliquid Trading Terminal",
 	defaultDescription:
 		"A professional trading terminal for Hyperliquid DEX. Trade perpetuals and spot markets with real-time data, advanced charting, and seamless wallet connectivity.",
-	twitterHandle: "@hypeterminal",
+	ogImagePath: "/gatu-terminal-og-v1.png",
+	ogImageWidth: 1200,
+	ogImageHeight: 630,
+	ogImageType: "image/png",
+	ogImageAlt: "gatu Hyperliquid trading terminal",
 	locale: "en_US",
 	// meta theme-color needs a literal CSS color value (tag consumer reads from HTML, not CSS vars)
 	themeColor: "#0a0e13",

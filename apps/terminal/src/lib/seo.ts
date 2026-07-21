@@ -28,6 +28,14 @@ export interface PageSeoOptions {
 	path?: string;
 	/** Open Graph image URL (absolute) */
 	ogImage?: string;
+	/** Accessible description for the Open Graph image */
+	ogImageAlt?: string;
+	/** Open Graph image width in pixels */
+	ogImageWidth?: number;
+	/** Open Graph image height in pixels */
+	ogImageHeight?: number;
+	/** Open Graph image MIME type */
+	ogImageType?: string;
 	/** Page type for Open Graph */
 	ogType?: "website" | "article";
 	/** Additional keywords for meta keywords tag */
@@ -66,7 +74,11 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 		fullTitle = false,
 		description = SEO_DEFAULTS.defaultDescription,
 		path = "",
-		ogImage = `${SEO_DEFAULTS.siteUrl}/og-image.png`,
+		ogImage = `${SEO_DEFAULTS.siteUrl}${SEO_DEFAULTS.ogImagePath}`,
+		ogImageAlt = SEO_DEFAULTS.ogImageAlt,
+		ogImageWidth = SEO_DEFAULTS.ogImageWidth,
+		ogImageHeight = SEO_DEFAULTS.ogImageHeight,
+		ogImageType = SEO_DEFAULTS.ogImageType,
 		ogType = "website",
 		keywords = [],
 		noIndex = false,
@@ -98,14 +110,18 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 		{ property: "og:description", content: description },
 		{ property: "og:url", content: canonicalUrl },
 		{ property: "og:image", content: ogImage },
+		{ property: "og:image:type", content: ogImageType },
+		{ property: "og:image:width", content: String(ogImageWidth) },
+		{ property: "og:image:height", content: String(ogImageHeight) },
+		{ property: "og:image:alt", content: ogImageAlt },
 		{ property: "og:locale", content: SEO_DEFAULTS.locale },
 
 		// Twitter Card
 		{ name: "twitter:card", content: "summary_large_image" },
-		{ name: "twitter:site", content: SEO_DEFAULTS.twitterHandle },
 		{ name: "twitter:title", content: pageTitle },
 		{ name: "twitter:description", content: description },
 		{ name: "twitter:image", content: ogImage },
+		{ name: "twitter:image:alt", content: ogImageAlt },
 	];
 
 	if (noIndex) {

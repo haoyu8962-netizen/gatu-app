@@ -13,6 +13,7 @@ RELEASES=/opt/gatu/releases
 CURRENT=/opt/gatu/current
 KEEP_RELEASES="${KEEP_RELEASES:-5}"
 BRANCH="${1:-main}"
+SOCIAL_IMAGE_PATH="/gatu-terminal-og-v1.png"
 
 ensure_pnpm() {
 	local expected
@@ -68,6 +69,10 @@ publish_release() {
 		echo "ERROR: build output has no main client asset." >&2
 		exit 1
 	}
+	test -f "apps/terminal/.output/public${SOCIAL_IMAGE_PATH}" || {
+		echo "ERROR: build output is missing social image: ${SOCIAL_IMAGE_PATH}" >&2
+		exit 1
+	}
 
 	mkdir -p "$RELEASES"
 	rm -rf "$release_tmp"
@@ -95,10 +100,12 @@ rollback_to_release() {
 	sudo systemctl restart gatu
 }
 
-fetch_js_asset() {
+fetch_typed_asset() {
 	local base_url="$1"
 	local path="$2"
 	local tmpdir="$3"
+	local expected_type="$4"
+	local asset_label="$5"
 	local headers="${tmpdir}/headers"
 	local body="${tmpdir}/body"
 	local content_type
@@ -109,12 +116,16 @@ fetch_js_asset() {
 	fi
 
 	content_type="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/ {print $0; exit}' "$headers")"
-	if ! printf '%s' "$content_type" | grep -qi 'javascript'; then
-		echo "ERROR: asset ${path} returned non-JavaScript response: ${content_type:-missing content-type}" >&2
+	if ! printf '%s' "$content_type" | grep -qi "$expected_type"; then
+		echo "ERROR: ${asset_label} ${path} returned unexpected response: ${content_type:-missing content-type}" >&2
 		head -c 200 "$body" >&2 || true
 		echo >&2
 		return 1
 	fi
+}
+
+fetch_js_asset() {
+	fetch_typed_asset "$1" "$2" "$3" "javascript" "JavaScript asset"
 }
 
 extract_asset() {
@@ -178,7 +189,8 @@ health_check() {
 						rm -rf "$tmpdir"
 						return 1
 					fi
-					if fetch_referenced_js_assets "$base_url" "$trade_file" "$tmpdir"; then
+					if fetch_referenced_js_assets "$base_url" "$trade_file" "$tmpdir" &&
+						fetch_typed_asset "$base_url" "$SOCIAL_IMAGE_PATH" "$tmpdir" "image/png" "Social image"; then
 						rm -rf "$tmpdir"
 						return 0
 					fi
