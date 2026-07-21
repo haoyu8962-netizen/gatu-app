@@ -1,5 +1,12 @@
 export const APP_NAME = "gatu";
-export const APP_VERSION = "v0.1.0";
+export const APP_RELEASE_VERSION = import.meta.env.VITE_GATU_APP_VERSION?.trim() || "0.1.0";
+export const APP_BUILD_COMMIT = import.meta.env.VITE_GATU_BUILD_SHA?.trim() || "dev";
+export const APP_RELEASE_ID = import.meta.env.VITE_GATU_RELEASE_ID?.trim() || "local";
+export const APP_BUILD_TIME = import.meta.env.VITE_GATU_BUILD_TIME?.trim() || "unknown";
+export const APP_VERSION =
+	APP_BUILD_COMMIT === "dev"
+		? `v${APP_RELEASE_VERSION}-dev`
+		: `v${APP_RELEASE_VERSION}+${APP_BUILD_COMMIT.slice(0, 8)}`;
 
 export const FALLBACK_VALUE_PLACEHOLDER = "-";
 export const FORMAT_COMPACT_THRESHOLD = 10_000;
@@ -20,6 +27,7 @@ export const HL_ALL_DEXS = "ALL_DEXS" as const;
 export const STORAGE_KEYS = {
 	MARKET_PREFS: "market-prefs-v2",
 	GLOBAL_SETTINGS: "global-settings-v2",
+	NETWORK: "hyperliquid-network-v1",
 	LOCALE: "locale-v1",
 	META_CACHE: "hyperliquid-meta-cache-v2",
 	SIDEBAR_STATE: "sidebar_state-v2",

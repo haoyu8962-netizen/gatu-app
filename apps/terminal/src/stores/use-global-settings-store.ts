@@ -10,7 +10,7 @@ import {
 	MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
 	MARKET_ORDER_SLIPPAGE_MIN_PERCENT,
 } from "@/config/trade";
-import type { Network } from "@/lib/network";
+import { getNetwork, type Network, persistNetwork, subscribeNetworkStorage } from "@/lib/network";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 
@@ -43,7 +43,7 @@ const DEFAULT_GLOBAL_SETTINGS = {
 	positionsActiveTab: "positions",
 	mobileActiveTab: "trade",
 	theme: "dark" as Theme,
-	network: "mainnet" as Network,
+	network: getNetwork(),
 } as const;
 
 interface GlobalSettingsStore {
@@ -93,6 +93,8 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				setMobileActiveTab: (tab) => set({ mobileActiveTab: tab }),
 				setTheme: (theme) => set({ theme }),
 				setNetwork: (network) => {
+					persistNetwork(network);
+					if (get().network === network) return;
 					set({ network });
 					if (typeof window !== "undefined") window.location.reload();
 				},
@@ -112,7 +114,6 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 				positionsActiveTab: state.positionsActiveTab,
 				mobileActiveTab: state.mobileActiveTab,
 				theme: state.theme,
-				network: state.network,
 			}),
 			merge: (persisted, current) => {
 				const p = persisted as Partial<GlobalSettingsStore>;
@@ -135,7 +136,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					marketOrderSlippagePercent: slippagePercent,
 					marginMode: p?.marginMode === "isolated" ? "isolated" : "cross",
 					theme: p?.theme === "light" ? "light" : "dark",
-					network: p?.network === "testnet" ? "testnet" : "mainnet",
+					network: getNetwork(),
 				};
 			},
 		},
@@ -152,6 +153,12 @@ function applyThemeClass(theme: Theme) {
 applyThemeClass(useGlobalSettingsStore.getState().theme);
 useGlobalSettingsStore.subscribe((state, prev) => {
 	if (state.theme !== prev.theme) applyThemeClass(state.theme);
+});
+
+subscribeNetworkStorage((network) => {
+	if (useGlobalSettingsStore.getState().network === network) return;
+	useGlobalSettingsStore.setState({ network });
+	window.location.reload();
 });
 
 export function useTheme() {

@@ -4,7 +4,7 @@ import { buildPageHead } from "@/lib/seo";
 import content from "../../../../legal/riskDisclosure.md?raw";
 
 export const Route = createFileRoute("/risk")({
-	ssr: false,
+	ssr: true,
 	head: () =>
 		buildPageHead({
 			title: "Risk Disclosure",

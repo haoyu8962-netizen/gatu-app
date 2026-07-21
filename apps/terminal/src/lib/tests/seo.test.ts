@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { buildPageHead, mergeHead, SEO_DEFAULTS } from "@/lib/seo";
+import { buildPageHead, buildRootHead, mergeHead, SEO_DEFAULTS } from "@/lib/seo";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_ROOT = resolve(TEST_DIR, "../../..");
@@ -26,6 +26,13 @@ describe("seo", () => {
 
 		const canonical = head.links.find((l) => l.rel === "canonical");
 		expect(canonical?.href).toBe(`${SEO_DEFAULTS.siteUrl}/trade`);
+	});
+
+	it("keeps canonical links route-owned so only one is rendered", () => {
+		const rootHead = buildRootHead();
+		const routeHead = buildPageHead({ path: "/terms" });
+		expect(rootHead.links.some((link) => link.rel === "canonical")).toBe(false);
+		expect(routeHead.links.filter((link) => link.rel === "canonical")).toHaveLength(1);
 	});
 
 	it("builds a complete large social card without a stale Twitter account", () => {

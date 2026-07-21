@@ -91,3 +91,22 @@ export function getTradePathForMarketName(marketName: string): string {
 
 	return `/trade/${encodeSegment(marketName)}`;
 }
+
+export function findCanonicalMarketForRoute(
+	markets: readonly UnifiedMarketInfo[],
+	requestedName: string,
+): UnifiedMarketInfo | undefined {
+	const exactName = markets.find((market) => market.name === requestedName);
+	if (exactName) return exactName;
+
+	const exactPairMatches = markets.filter((market) => market.pairName === requestedName);
+	if (exactPairMatches.length === 1) return exactPairMatches[0];
+
+	const normalizedRequestedName = requestedName.toLocaleLowerCase("en-US");
+	const normalizedMatches = markets.filter(
+		(market) =>
+			market.name.toLocaleLowerCase("en-US") === normalizedRequestedName ||
+			market.pairName.toLocaleLowerCase("en-US") === normalizedRequestedName,
+	);
+	return normalizedMatches.length === 1 ? normalizedMatches[0] : undefined;
+}

@@ -1,18 +1,26 @@
 import { i18n } from "@lingui/core";
 import type { QueryClient } from "@tanstack/react-query";
-import { ClientOnly, createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import {
+	ClientOnly,
+	createRootRouteWithContext,
+	HeadContent,
+	Outlet,
+	Scripts,
+	useRouterState,
+} from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
 import { createLazyComponent } from "@/lib/lazy";
-import { buildPageHead } from "@/lib/seo";
+import { buildRootHead } from "@/lib/seo";
 import { ExchangeScopeProvider } from "@/providers/exchange-scope";
 import "@/bones/registry";
 import appCss from "../styles.css?url";
 
 const Toaster = createLazyComponent(() => import("@/components/ui/sonner"), "Toaster");
+const DOCUMENT_ROUTE_PATHS = new Set(["/docs", "/privacy", "/risk", "/support", "/terms"]);
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -24,18 +32,23 @@ interface RootSearch {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	validateSearch: (search: Record<string, unknown>): RootSearch => (search.scope === "all" ? { scope: "all" } : {}),
-	head: () => buildPageHead(),
+	head: () => buildRootHead(),
 	shellComponent: RootDocument,
 	component: RootComponent,
 	notFoundComponent: NotFoundPage,
 });
 
 function RootComponent() {
+	const pathname = useRouterState({ select: (state) => state.location.pathname });
+	const isDocumentRoute = DOCUMENT_ROUTE_PATHS.has(pathname);
+
 	useEffect(() => {
 		if ("serviceWorker" in navigator) {
 			navigator.serviceWorker.register("/sw.js", { scope: "/" });
 		}
 	}, []);
+
+	if (isDocumentRoute) return <Outlet />;
 
 	return (
 		<ClientOnly fallback={<AppShellSkeleton />}>

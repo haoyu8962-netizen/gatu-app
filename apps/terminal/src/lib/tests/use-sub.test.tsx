@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { OversizedWebSocketPayloadError } from "@gatu/hl-react";
 import { useSubscription } from "@gatu/hl-react/hooks/useSubscription";
 import { useSub } from "@gatu/hl-react/hooks/utils/useSub";
 import { HyperliquidContext, type HyperliquidContextValue, HyperliquidStoreContext } from "@gatu/hl-react/provider";
@@ -176,6 +177,67 @@ describe("useSub hook surface", () => {
 			root.render(createElement(Wrapper, null, null));
 		});
 		await act(() => vi.advanceTimersByTimeAsync(0));
+	});
+
+	it("keeps oversized account payloads instead of silently dropping balances", async () => {
+		const key = JSON.stringify(["hl", "subscription", "openOrders", { user: "0xabc" }]);
+		let emit: ((data: { orders: string[] }) => void) | undefined;
+		let captured: { data: { orders: string[] } | undefined; status: string } = {
+			data: undefined,
+			status: "idle",
+		};
+
+		function Consumer() {
+			const result = useSub<{ orders: string[] }>(
+				key,
+				async (listener) => {
+					emit = listener;
+					return { unsubscribe: async () => {} };
+				},
+				{ maxPayloadBytes: 1 },
+			);
+			captured = { data: result.data, status: result.status };
+			return null;
+		}
+
+		act(() => {
+			root.render(createElement(Wrapper, null, createElement(Consumer)));
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		act(() => emit?.({ orders: ["large-account-payload"] }));
+
+		expect(captured.status).toBe("active");
+		expect(captured.data).toEqual({ orders: ["large-account-payload"] });
+	});
+
+	it("surfaces oversized market payloads as observable subscription errors", async () => {
+		const key = JSON.stringify(["hl", "subscription", "l2Book", { coin: "ETH" }]);
+		let emit: ((data: { levels: string[] }) => void) | undefined;
+		let captured: { error: unknown; status: string } = { error: undefined, status: "idle" };
+
+		function Consumer() {
+			const result = useSub<{ levels: string[] }>(
+				key,
+				async (listener) => {
+					emit = listener;
+					return { unsubscribe: async () => {} };
+				},
+				{ maxPayloadBytes: 1 },
+			);
+			captured = { error: result.error, status: result.status };
+			return null;
+		}
+
+		act(() => {
+			root.render(createElement(Wrapper, null, createElement(Consumer)));
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		act(() => emit?.({ levels: ["large-market-payload"] }));
+
+		expect(captured.status).toBe("error");
+		expect(captured.error).toBeInstanceOf(OversizedWebSocketPayloadError);
 	});
 
 	it("uses refreshKey to resubscribe without changing SDK params", async () => {

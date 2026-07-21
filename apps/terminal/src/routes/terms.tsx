@@ -4,7 +4,7 @@ import { buildPageHead } from "@/lib/seo";
 import content from "../../../../legal/terms.md?raw";
 
 export const Route = createFileRoute("/terms")({
-	ssr: false,
+	ssr: true,
 	head: () =>
 		buildPageHead({
 			title: "Terms of Use",

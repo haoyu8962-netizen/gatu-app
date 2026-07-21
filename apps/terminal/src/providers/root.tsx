@@ -18,6 +18,7 @@ import { config } from "@/config/wagmi";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
 import { getNetwork } from "@/lib/network";
+import { getQueryRetryDelayMs, shouldRetryQuery } from "@/lib/query-retry";
 import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
 import "@/lib/i18n";
 
@@ -41,7 +42,14 @@ const persister = isServer
 		});
 
 export function getRootProviderContext() {
-	const queryClient = new QueryClient();
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				retry: shouldRetryQuery,
+				retryDelay: getQueryRetryDelayMs,
+			},
+		},
+	});
 	return { queryClient };
 }
 
@@ -55,23 +63,12 @@ function HyperliquidBridge({ children }: { children: React.ReactNode }) {
 	);
 }
 
-// The app is gated behind <ClientOnly> in routes/__root.tsx, so the server only ever
-// renders the static AppShellSkeleton. PrivyProvider is client-only (it mounts a dialog
-// and an iframe), so the server path deliberately omits Privy + wagmi and renders the
-// Hyperliquid context with no connected user.
+// Server-rendered routes only need request-scoped query and i18n state. Hyperliquid and
+// wallet providers stay client-only so SSR never opens a persistent market WebSocket.
 function ServerProviders({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<I18nProvider i18n={i18n}>
-				<HyperliquidProvider
-					env={env}
-					userAddress={undefined}
-					builderConfig={DEFAULT_BUILDER_CONFIG}
-					agentName={APP_NAME}
-				>
-					<MarketsProvider>{children}</MarketsProvider>
-				</HyperliquidProvider>
-			</I18nProvider>
+			<I18nProvider i18n={i18n}>{children}</I18nProvider>
 		</QueryClientProvider>
 	);
 }

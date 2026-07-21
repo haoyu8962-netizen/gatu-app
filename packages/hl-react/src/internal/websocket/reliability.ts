@@ -144,6 +144,10 @@ export function isUserStreamKey(key: string): boolean {
 	return false;
 }
 
+export function shouldDropOversizedPayloadForSubscriptionKey(key: string): boolean {
+	return !isUserStreamKey(key);
+}
+
 export function getReconnectDelayMs(attempt: number): number {
 	const exponent = Math.max(0, attempt - 1);
 	const baseDelay = Math.min(

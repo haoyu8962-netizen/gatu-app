@@ -1,11 +1,13 @@
 import type { ISubscription } from "@nktkas/hyperliquid";
 import { useEffect, useRef } from "react";
 import { useStore } from "zustand";
+import { OversizedWebSocketPayloadError } from "../../errors";
 import { createThrottledUpdater } from "../../internal/websocket/batch-updater";
 import { isPayloadOversized } from "../../internal/websocket/payload-guard";
 import {
 	getPayloadLimitBytesForSubscriptionKey,
 	getStalenessThresholdForKey,
+	shouldDropOversizedPayloadForSubscriptionKey,
 } from "../../internal/websocket/reliability";
 import { useHyperliquidStoreApi } from "../../provider";
 import type { SubscribeFailureOptions, SubscriptionOptions, SubscriptionResult } from "../../types";
@@ -15,18 +17,12 @@ export function useSub<TData>(
 	subscribe: (listener: (data: TData) => void, failureOptions?: SubscribeFailureOptions) => Promise<ISubscription>,
 	options: SubscriptionOptions = {},
 ): SubscriptionResult<TData> {
-	const {
-		enabled = true,
-		throttleMs,
-		maxStaleMs,
-		maxPayloadBytes,
-		dropOversizedPayload = true,
-		pauseWhenHidden,
-	} = options;
+	const { enabled = true, throttleMs, maxStaleMs, maxPayloadBytes, dropOversizedPayload, pauseWhenHidden } = options;
 	const stalenessThresholdMs = maxStaleMs ?? getStalenessThresholdForKey(key);
 	const store = useHyperliquidStoreApi();
 	const entry = useStore(store, (state) => state.subscriptions[key]);
 	const payloadLimitBytes = maxPayloadBytes ?? getPayloadLimitBytesForSubscriptionKey(key);
+	const shouldDropOversizedPayload = dropOversizedPayload ?? shouldDropOversizedPayloadForSubscriptionKey(key);
 
 	const subscribeRef = useRef(subscribe);
 	subscribeRef.current = subscribe;
@@ -36,14 +32,22 @@ export function useSub<TData>(
 		const state = store.getState();
 		let droppedPayloads = 0;
 		let lastWarningAt = 0;
+		let payloadErrorActive = false;
 
 		const shouldDropPayload = (data: TData): boolean => {
-			if (!dropOversizedPayload) return false;
+			if (!shouldDropOversizedPayload) return false;
 
 			const { estimatedBytes, oversized } = isPayloadOversized(data, payloadLimitBytes);
-			if (!oversized) return false;
+			if (!oversized) {
+				payloadErrorActive = false;
+				return false;
+			}
 
 			droppedPayloads += 1;
+			if (!payloadErrorActive) {
+				payloadErrorActive = true;
+				state.setSubscriptionError(key, new OversizedWebSocketPayloadError(key, estimatedBytes, payloadLimitBytes));
+			}
 			const now = Date.now();
 			const shouldWarn = droppedPayloads === 1 || now - lastWarningAt >= 30_000;
 			if (import.meta.env.DEV && shouldWarn) {
@@ -85,7 +89,16 @@ export function useSub<TData>(
 			pauseWhenHidden,
 		);
 		return () => store.getState().releaseSubscription(key);
-	}, [dropOversizedPayload, enabled, key, pauseWhenHidden, payloadLimitBytes, stalenessThresholdMs, store, throttleMs]);
+	}, [
+		enabled,
+		key,
+		pauseWhenHidden,
+		payloadLimitBytes,
+		shouldDropOversizedPayload,
+		stalenessThresholdMs,
+		store,
+		throttleMs,
+	]);
 
 	if (!enabled) {
 		return {

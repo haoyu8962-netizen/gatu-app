@@ -26,6 +26,7 @@
 		"./signing/l1-agent-wallet": "./src/signing/l1-agent-wallet.ts",
 		"./signing/mobile-agent": "./src/signing/mobile-agent.ts",
 		"./internal/websocket/*": "./src/internal/websocket/*.ts",
+		"./internal/exchange/*": "./src/internal/exchange/*.ts",
 		"./internal/circular-buffer/ring-buffer": "./src/internal/circular-buffer/ring-buffer.ts",
 		"./internal/circular-buffer/use-ring-buffer": "./src/internal/circular-buffer/use-ring-buffer.ts"
 	},

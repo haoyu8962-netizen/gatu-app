@@ -1,6 +1,7 @@
 import type { ExchangeClient } from "@nktkas/hyperliquid";
 import { type UseMutationResult, useMutation } from "@tanstack/react-query";
 import { assertExchange, WalletAccountMismatchError } from "../errors";
+import { getExchangeRequestPriority, scheduleExchangeRequest } from "../internal/exchange/request-scheduler";
 import { useHyperliquid } from "../provider";
 import { getExchangeMethodConfig } from "../registries/exchange";
 import type { HyperliquidQueryError, MutationParameter } from "../types";
@@ -23,10 +24,14 @@ export function useExchange<M extends ExchangeMethod>(
 		if (config.client === "user" && userWalletMismatch) throw new WalletAccountMismatchError();
 		assertExchange(exchange);
 		const fn = (exchange as ExchangeClient)[method] as (...args: unknown[]) => Promise<ExchangeResponse<M>>;
-		if (config.injectBuilder && params != null && typeof params === "object") {
-			return fn.call(exchange, { ...params, builder: builderConfig });
-		}
-		return params !== undefined ? fn.call(exchange, params) : fn.call(exchange);
+		const requestParams =
+			config.injectBuilder && params != null && typeof params === "object"
+				? { ...params, builder: builderConfig }
+				: params;
+		const priority = getExchangeRequestPriority(method, requestParams);
+		return scheduleExchangeRequest(exchange, priority, () =>
+			requestParams !== undefined ? fn.call(exchange, requestParams) : fn.call(exchange),
+		);
 	};
 
 	return useMutation({

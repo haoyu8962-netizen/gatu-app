@@ -9,78 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TradeRouteImport } from './routes/trade'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as SpotRouteImport } from './routes/spot'
-import { Route as RiskRouteImport } from './routes/risk'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PortfolioRouteImport } from './routes/portfolio'
-import { Route as PerpRouteImport } from './routes/perp'
-import { Route as MobileAgentSyncRouteImport } from './routes/mobile-agent-sync'
-import { Route as DocsRouteImport } from './routes/docs'
-import { Route as BuildersPerpRouteImport } from './routes/builders-perp'
-import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TradeIndexRouteImport } from './routes/trade.index'
+import { Route as SplatRouteImport } from './routes/$'
+import { Route as BuildMetaDotjsonRouteImport } from './routes/build-meta[.]json'
+import { Route as BuildersPerpRouteImport } from './routes/builders-perp'
+import { Route as DocsRouteImport } from './routes/docs'
+import { Route as MobileAgentSyncRouteImport } from './routes/mobile-agent-sync'
+import { Route as PerpRouteImport } from './routes/perp'
+import { Route as PortfolioRouteImport } from './routes/portfolio'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RiskRouteImport } from './routes/risk'
+import { Route as SpotRouteImport } from './routes/spot'
+import { Route as SupportRouteImport } from './routes/support'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TradeRouteImport } from './routes/trade'
 import { Route as BuildersPerpIndexRouteImport } from './routes/builders-perp.index'
-import { Route as TradeSymbolRouteImport } from './routes/trade.$symbol'
 import { Route as BuildersPerpDexRouteImport } from './routes/builders-perp.$dex'
+import { Route as TradeIndexRouteImport } from './routes/trade.index'
+import { Route as TradeSymbolRouteImport } from './routes/trade.$symbol'
 import { Route as TradeBaseQuoteRouteImport } from './routes/trade.$base.$quote'
 
-const TradeRoute = TradeRouteImport.update({
-  id: '/trade',
-  path: '/trade',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SpotRoute = SpotRouteImport.update({
-  id: '/spot',
-  path: '/spot',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RiskRoute = RiskRouteImport.update({
-  id: '/risk',
-  path: '/risk',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PortfolioRoute = PortfolioRouteImport.update({
-  id: '/portfolio',
-  path: '/portfolio',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PerpRoute = PerpRouteImport.update({
-  id: '/perp',
-  path: '/perp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MobileAgentSyncRoute = MobileAgentSyncRouteImport.update({
-  id: '/mobile-agent-sync',
-  path: '/mobile-agent-sync',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DocsRoute = DocsRouteImport.update({
-  id: '/docs',
-  path: '/docs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BuildersPerpRoute = BuildersPerpRouteImport.update({
-  id: '/builders-perp',
-  path: '/builders-perp',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SplatRoute = SplatRouteImport.update({
@@ -88,30 +39,85 @@ const SplatRoute = SplatRouteImport.update({
   path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const BuildMetaDotjsonRoute = BuildMetaDotjsonRouteImport.update({
+  id: '/build-meta.json',
+  path: '/build-meta.json',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TradeIndexRoute = TradeIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => TradeRoute,
+const BuildersPerpRoute = BuildersPerpRouteImport.update({
+  id: '/builders-perp',
+  path: '/builders-perp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MobileAgentSyncRoute = MobileAgentSyncRouteImport.update({
+  id: '/mobile-agent-sync',
+  path: '/mobile-agent-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerpRoute = PerpRouteImport.update({
+  id: '/perp',
+  path: '/perp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PortfolioRoute = PortfolioRouteImport.update({
+  id: '/portfolio',
+  path: '/portfolio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RiskRoute = RiskRouteImport.update({
+  id: '/risk',
+  path: '/risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SpotRoute = SpotRouteImport.update({
+  id: '/spot',
+  path: '/spot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SupportRoute = SupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TradeRoute = TradeRouteImport.update({
+  id: '/trade',
+  path: '/trade',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const BuildersPerpIndexRoute = BuildersPerpIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => BuildersPerpRoute,
 } as any)
-const TradeSymbolRoute = TradeSymbolRouteImport.update({
-  id: '/$symbol',
-  path: '/$symbol',
-  getParentRoute: () => TradeRoute,
-} as any)
 const BuildersPerpDexRoute = BuildersPerpDexRouteImport.update({
   id: '/$dex',
   path: '/$dex',
   getParentRoute: () => BuildersPerpRoute,
+} as any)
+const TradeIndexRoute = TradeIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TradeRoute,
+} as any)
+const TradeSymbolRoute = TradeSymbolRouteImport.update({
+  id: '/$symbol',
+  path: '/$symbol',
+  getParentRoute: () => TradeRoute,
 } as any)
 const TradeBaseQuoteRoute = TradeBaseQuoteRouteImport.update({
   id: '/$base/$quote',
@@ -122,6 +128,7 @@ const TradeBaseQuoteRoute = TradeBaseQuoteRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/perp': typeof PerpRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
@@ -183,6 +192,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/build-meta.json'
     | '/builders-perp'
     | '/docs'
     | '/mobile-agent-sync'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/build-meta.json'
     | '/docs'
     | '/mobile-agent-sync'
     | '/perp'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/build-meta.json'
     | '/builders-perp'
     | '/docs'
     | '/mobile-agent-sync'
@@ -242,6 +254,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  BuildMetaDotjsonRoute: typeof BuildMetaDotjsonRoute
   BuildersPerpRoute: typeof BuildersPerpRouteWithChildren
   DocsRoute: typeof DocsRoute
   MobileAgentSyncRoute: typeof MobileAgentSyncRoute
@@ -257,81 +270,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/trade': {
-      id: '/trade'
-      path: '/trade'
-      fullPath: '/trade'
-      preLoaderRoute: typeof TradeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/support': {
-      id: '/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/spot': {
-      id: '/spot'
-      path: '/spot'
-      fullPath: '/spot'
-      preLoaderRoute: typeof SpotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/risk': {
-      id: '/risk'
-      path: '/risk'
-      fullPath: '/risk'
-      preLoaderRoute: typeof RiskRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/portfolio': {
-      id: '/portfolio'
-      path: '/portfolio'
-      fullPath: '/portfolio'
-      preLoaderRoute: typeof PortfolioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/perp': {
-      id: '/perp'
-      path: '/perp'
-      fullPath: '/perp'
-      preLoaderRoute: typeof PerpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mobile-agent-sync': {
-      id: '/mobile-agent-sync'
-      path: '/mobile-agent-sync'
-      fullPath: '/mobile-agent-sync'
-      preLoaderRoute: typeof MobileAgentSyncRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/docs': {
-      id: '/docs'
-      path: '/docs'
-      fullPath: '/docs'
-      preLoaderRoute: typeof DocsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/builders-perp': {
-      id: '/builders-perp'
-      path: '/builders-perp'
-      fullPath: '/builders-perp'
-      preLoaderRoute: typeof BuildersPerpRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -341,19 +284,89 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/build-meta.json': {
+      id: '/build-meta.json'
+      path: '/build-meta.json'
+      fullPath: '/build-meta.json'
+      preLoaderRoute: typeof BuildMetaDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/trade/': {
-      id: '/trade/'
-      path: '/'
-      fullPath: '/trade/'
-      preLoaderRoute: typeof TradeIndexRouteImport
-      parentRoute: typeof TradeRoute
+    '/builders-perp': {
+      id: '/builders-perp'
+      path: '/builders-perp'
+      fullPath: '/builders-perp'
+      preLoaderRoute: typeof BuildersPerpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mobile-agent-sync': {
+      id: '/mobile-agent-sync'
+      path: '/mobile-agent-sync'
+      fullPath: '/mobile-agent-sync'
+      preLoaderRoute: typeof MobileAgentSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perp': {
+      id: '/perp'
+      path: '/perp'
+      fullPath: '/perp'
+      preLoaderRoute: typeof PerpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/portfolio': {
+      id: '/portfolio'
+      path: '/portfolio'
+      fullPath: '/portfolio'
+      preLoaderRoute: typeof PortfolioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/risk': {
+      id: '/risk'
+      path: '/risk'
+      fullPath: '/risk'
+      preLoaderRoute: typeof RiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/spot': {
+      id: '/spot'
+      path: '/spot'
+      fullPath: '/spot'
+      preLoaderRoute: typeof SpotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/support': {
+      id: '/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof SupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trade': {
+      id: '/trade'
+      path: '/trade'
+      fullPath: '/trade'
+      preLoaderRoute: typeof TradeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/builders-perp/': {
       id: '/builders-perp/'
@@ -362,19 +375,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuildersPerpIndexRouteImport
       parentRoute: typeof BuildersPerpRoute
     }
-    '/trade/$symbol': {
-      id: '/trade/$symbol'
-      path: '/$symbol'
-      fullPath: '/trade/$symbol'
-      preLoaderRoute: typeof TradeSymbolRouteImport
-      parentRoute: typeof TradeRoute
-    }
     '/builders-perp/$dex': {
       id: '/builders-perp/$dex'
       path: '/$dex'
       fullPath: '/builders-perp/$dex'
       preLoaderRoute: typeof BuildersPerpDexRouteImport
       parentRoute: typeof BuildersPerpRoute
+    }
+    '/trade/': {
+      id: '/trade/'
+      path: '/'
+      fullPath: '/trade/'
+      preLoaderRoute: typeof TradeIndexRouteImport
+      parentRoute: typeof TradeRoute
+    }
+    '/trade/$symbol': {
+      id: '/trade/$symbol'
+      path: '/$symbol'
+      fullPath: '/trade/$symbol'
+      preLoaderRoute: typeof TradeSymbolRouteImport
+      parentRoute: typeof TradeRoute
     }
     '/trade/$base/$quote': {
       id: '/trade/$base/$quote'
@@ -417,6 +437,7 @@ const TradeRouteWithChildren = TradeRoute._addFileChildren(TradeRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  BuildMetaDotjsonRoute: BuildMetaDotjsonRoute,
   BuildersPerpRoute: BuildersPerpRouteWithChildren,
   DocsRoute: DocsRoute,
   MobileAgentSyncRoute: MobileAgentSyncRoute,
@@ -437,6 +458,7 @@ import type { getRouter } from './router.tsx'
 import type { createStart } from '@tanstack/react-start'
 declare module '@tanstack/react-start' {
   interface Register {
+    ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
   }
 }

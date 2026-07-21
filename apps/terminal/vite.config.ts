@@ -1,3 +1,6 @@
+import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import tailwindcss from '@tailwindcss/vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
@@ -9,6 +12,27 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import { chartingLibrarySecurityHeaders, securityHeaders } from './src/config/security-headers'
 
 const isAnalyze = process.env.ANALYZE === 'true'
+const terminalPackage = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+  version: string
+}
+
+function resolveBuildSha() {
+  const environmentSha = process.env.GATU_BUILD_SHA?.trim() || process.env.GITHUB_SHA?.trim()
+  if (environmentSha) return environmentSha
+
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: fileURLToPath(new URL('../..', import.meta.url)),
+      encoding: 'utf8',
+    }).trim()
+  } catch {
+    return 'dev'
+  }
+}
+
+const buildSha = resolveBuildSha()
+const releaseId = process.env.GATU_RELEASE_ID?.trim() || 'local'
+const buildTime = process.env.GATU_BUILD_TIME?.trim() || new Date().toISOString()
 
 function createManualChunks(id: string) {
   if (id.includes('node_modules')) {
@@ -21,6 +45,12 @@ function createManualChunks(id: string) {
 }
 
 const config = defineConfig({
+  define: {
+    'import.meta.env.VITE_GATU_APP_VERSION': JSON.stringify(terminalPackage.version),
+    'import.meta.env.VITE_GATU_BUILD_SHA': JSON.stringify(buildSha),
+    'import.meta.env.VITE_GATU_RELEASE_ID': JSON.stringify(releaseId),
+    'import.meta.env.VITE_GATU_BUILD_TIME': JSON.stringify(buildTime),
+  },
   server: {
     strictPort: false,
   },
@@ -59,6 +89,9 @@ const config = defineConfig({
         },
         '/tradingview-theme.css': {
           headers: { ...securityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
+        },
+        '/build-meta.json': {
+          headers: { ...securityHeaders, 'cache-control': 'no-store' },
         },
       },
     }),

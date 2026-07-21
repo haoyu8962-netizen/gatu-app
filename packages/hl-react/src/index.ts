@@ -29,6 +29,7 @@ export {
 	assertExchange,
 	MissingTransportError,
 	MissingWalletError,
+	OversizedWebSocketPayloadError,
 	ProviderNotFoundError,
 	WalletAccountMismatchError,
 } from "./errors";

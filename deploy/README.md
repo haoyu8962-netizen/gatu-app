@@ -147,6 +147,10 @@ sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh main
 原子切换 `/opt/gatu/current` → `systemctl restart gatu` → 健康检查。
 末行打印 `OK — gatu serving on 127.0.0.1:3000 (commit …)` 即成功。
 
+构建时脚本会注入完整 Git commit 和 release ID。产物根目录的 `/build-meta.json` 会公开
+`version`、`commit`、`release`、`builtAt`;健康检查会核对它们与本次部署完全一致,避免服务
+实际仍在运行旧 release 却被误判为成功。
+
 > 重要:不要让 systemd 直接从 `/opt/gatu/repo/apps/terminal/.output` 运行。该目录会在构建时被覆盖,
 > 旧 Node 进程内存中的 SSR manifest 可能继续引用旧 hash,而磁盘静态资源已变成新 hash,从而导致
 > `Failed to fetch dynamically imported module: /assets/mobile-terminal-*.js`。`/opt/gatu/current`
@@ -160,7 +164,8 @@ sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh main
 
 ```bash
 curl -I https://app.gatu.ai          # 期望 200，且证书有效
-asset="$(curl -fsS https://app.gatu.ai/builders-perp | grep -o '/assets/main-[^"]*\.js' | head -1)"
+curl -fsS https://app.gatu.ai/build-meta.json # 期望 commit/release 与部署日志一致
+asset="$(curl -fsS https://app.gatu.ai/builders-perp | grep -o '/assets/[^"]*\.js' | head -1)"
 curl -I "https://app.gatu.ai${asset}" # 期望 200 且 content-type 为 JavaScript
 sudo systemctl status gatu --no-pager
 ```
@@ -192,9 +197,10 @@ sudo systemctl restart gatu
 
 > 更新时构建期间旧进程继续服务,旧 release 目录不会被覆盖。新 release 会携带上一版 hashed assets,
 > 所以刚发布后旧客户端仍能拉到上一版动态 chunk。只有 `restart` 那几秒短暂中断。
-> `deploy.sh` 的健康检查不仅访问 SSR HTML,还会拉取 HTML 中的 `main-*.js`、`trade-terminal-page-*.js`,
+> `deploy.sh` 的健康检查不仅访问 SSR HTML,还会拉取 HTML 实际引用的入口 JS、`trade-terminal-page-*.js`,
 > 以及交易页动态引用的 `mobile-terminal-*.js`;任何一个 hashed asset 返回 HTML/500/非 JavaScript
-> 都会失败并尝试回滚到上一个 release。
+> 都会失败并尝试回滚到上一个 release。它还会读取 `/build-meta.json`,确认线上 commit 与 release
+> 就是刚发布的版本。
 
 ### 已有服务器从旧部署模式迁移
 
@@ -244,9 +250,9 @@ curl -sSI https://app.gatu.ai/charting_library/charting_library.js | grep -i '^c
 因为 `.output` 自包含,无需在 EC2 上构建:
 
 ```bash
-# 本地（已设好 VITE_* 的 apps/terminal/.env.local）
-NITRO_PRESET=node-server pnpm build
 release="$(date -u +%Y%m%d%H%M%S)-$(git rev-parse --short HEAD)"
+# 本地（已设好 VITE_* 的 apps/terminal/.env.local）
+GATU_BUILD_SHA="$(git rev-parse HEAD)" GATU_RELEASE_ID="$release" NITRO_PRESET=node-server pnpm build
 ssh gatu@<host> "mkdir -p /opt/gatu/releases/${release}"
 rsync -az --delete apps/terminal/.output/ "gatu@<host>:/opt/gatu/releases/${release}/"
 ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && mv -Tf /opt/gatu/current.tmp /opt/gatu/current && sudo systemctl restart gatu"

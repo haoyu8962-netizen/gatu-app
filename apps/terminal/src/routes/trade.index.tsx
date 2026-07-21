@@ -4,7 +4,7 @@ import { buildPageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/trade/")({
 	ssr: false,
-	head: () => buildPageHead(ROUTE_SEO.TRADE),
+	head: () => buildPageHead({ ...ROUTE_SEO.TRADE, path: "/trade" }),
 	component: EmptyTradeRoute,
 });
 

@@ -44,6 +44,29 @@ export interface PageSeoOptions {
 	noIndex?: boolean;
 }
 
+export function buildRootHead(): HeadOutput {
+	return {
+		meta: [
+			{ charSet: "utf-8" },
+			{
+				name: "viewport",
+				content: "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
+			},
+			{ name: "theme-color", content: SEO_DEFAULTS.themeColor },
+			{ name: "color-scheme", content: "dark light" },
+			{ name: "author", content: SEO_DEFAULTS.siteName },
+		],
+		links: [
+			{ rel: "icon", href: "/favicon.ico", sizes: "32x32" },
+			{ rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
+			{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+			{ rel: "manifest", href: "/manifest.json" },
+			{ rel: "preconnect", href: "https://app.hyperliquid.xyz" },
+			{ rel: "dns-prefetch", href: "https://app.hyperliquid.xyz" },
+		],
+	};
+}
+
 interface MetaTag {
 	title?: string;
 	name?: string;
@@ -91,17 +114,9 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 	const allKeywords = Array.from(new Set([...SEO_BASE_KEYWORDS, ...keywords]));
 
 	const meta: MetaTag[] = [
-		{ charSet: "utf-8" },
-		{
-			name: "viewport",
-			content: "width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content",
-		},
 		{ title: pageTitle },
 		{ name: "description", content: description },
 		{ name: "keywords", content: allKeywords.join(", ") },
-		{ name: "theme-color", content: SEO_DEFAULTS.themeColor },
-		{ name: "color-scheme", content: "dark light" },
-		{ name: "author", content: SEO_DEFAULTS.siteName },
 
 		// Open Graph
 		{ property: "og:type", content: ogType },
@@ -128,15 +143,7 @@ export function buildPageHead(options: PageSeoOptions = {}): HeadOutput {
 		meta.push({ name: "robots", content: "noindex, nofollow" });
 	}
 
-	const links: LinkTag[] = [
-		{ rel: "canonical", href: canonicalUrl },
-		{ rel: "icon", href: "/favicon.ico", sizes: "32x32" },
-		{ rel: "icon", href: "/icon.svg", type: "image/svg+xml" },
-		{ rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-		{ rel: "manifest", href: "/manifest.json" },
-		{ rel: "preconnect", href: "https://app.hyperliquid.xyz" },
-		{ rel: "dns-prefetch", href: "https://app.hyperliquid.xyz" },
-	];
+	const links: LinkTag[] = [{ rel: "canonical", href: canonicalUrl }];
 
 	return { meta, links };
 }

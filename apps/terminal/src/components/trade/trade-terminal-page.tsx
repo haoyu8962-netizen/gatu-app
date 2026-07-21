@@ -1,17 +1,18 @@
 import { useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
+import { NotFoundPage } from "@/components/pages/not-found-page";
+import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import {
 	APP_HEADER_OFFSET_CLASS,
 	APP_HEADER_PLUS_BANNER_OFFSET_CLASS,
 	MOBILE_BOTTOM_NAV_HEIGHT_PX,
 } from "@/config/layout";
-import { DEFAULT_SELECTED_MARKETS } from "@/config/markets";
 import { useDefaultUnifiedAccount } from "@/hooks/trade/use-default-unified-account";
 import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
-import { getTradePathForMarketName } from "@/lib/hyperliquid/market-route";
+import { findCanonicalMarketForRoute, getTradePathForMarket } from "@/lib/hyperliquid/market-route";
 import { getExchangeDexForMarket, getExchangeScopeForMarket } from "@/lib/hyperliquid/market-scope";
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
@@ -28,6 +29,34 @@ const GlobalModals = createLazyComponent(() => import("./components/global-modal
 const FooterBar = createLazyComponent(() => import("./footer/footer-bar"), "FooterBar");
 
 export function TradeTerminalPage() {
+	const navigate = useNavigate();
+	const { routeMarketName, routeScope } = useExchangeScope();
+	const { getMarketInfo, markets, isLoading, error } = useMarketsInfo();
+	const exactMarket = routeMarketName ? getMarketInfo(routeMarketName) : undefined;
+	const canonicalMarket =
+		routeMarketName && !exactMarket && markets.length > 0
+			? findCanonicalMarketForRoute(markets, routeMarketName)
+			: undefined;
+
+	useEffect(() => {
+		if (!canonicalMarket) return;
+		void navigate({
+			to: getTradePathForMarket(canonicalMarket),
+			search: (previous) => ({ ...previous, scope: routeScope === "all" ? "all" : undefined }),
+			replace: true,
+			resetScroll: false,
+		});
+	}, [canonicalMarket, navigate, routeScope]);
+
+	if (routeMarketName && !exactMarket) {
+		if (canonicalMarket || isLoading) return <AppShellSkeleton />;
+		if (!error) return <NotFoundPage />;
+	}
+
+	return <TradeTerminalContent />;
+}
+
+function TradeTerminalContent() {
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
 	useDefaultUnifiedAccount();
@@ -67,9 +96,7 @@ export function TradeTerminalPage() {
 
 function RouteMarketSync() {
 	const { routeMarketName, routeScope, setScope } = useExchangeScope();
-	const navigate = useNavigate();
-	const { data: selectedMarket, error, isLoading } = useSelectedMarketInfo();
-	const { markets } = useMarketsInfo();
+	const { data: selectedMarket } = useSelectedMarketInfo();
 	const { setSelectedMarket } = useMarketActions();
 	const selectedMarketName = selectedMarket?.name;
 	const selectedMarketPairName = selectedMarket?.pairName;
@@ -80,15 +107,6 @@ function RouteMarketSync() {
 		if (!routeMarketName) return;
 
 		if (!selectedMarketName || !selectedMarketScope) {
-			if (isLoading || error || markets.length === 0) return;
-			const fallbackMarket = DEFAULT_SELECTED_MARKETS.perp;
-			setScope(routeScope === "all" ? "all" : "perp", undefined, fallbackMarket);
-			void navigate({
-				to: getTradePathForMarketName(fallbackMarket),
-				search: (previous) => ({ ...previous, scope: routeScope === "all" ? "all" : undefined }),
-				replace: true,
-				resetScroll: false,
-			});
 			return;
 		}
 
@@ -104,10 +122,6 @@ function RouteMarketSync() {
 		selectedMarketPairName,
 		selectedMarketScope,
 		selectedMarketDex,
-		isLoading,
-		error,
-		markets.length,
-		navigate,
 		setScope,
 		setSelectedMarket,
 	]);

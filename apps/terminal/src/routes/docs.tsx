@@ -4,7 +4,7 @@ import { buildPageHead } from "@/lib/seo";
 import content from "../../../../legal/docs.md?raw";
 
 export const Route = createFileRoute("/docs")({
-	ssr: false,
+	ssr: true,
 	head: () =>
 		buildPageHead({
 			title: "Docs",

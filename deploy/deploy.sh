@@ -54,9 +54,8 @@ verify_systemd_unit() {
 
 publish_release() {
 	local previous_release="$1"
-	local commit release_name release_tmp release_dir current_tmp
-	commit="$(git rev-parse --short HEAD)"
-	release_name="$(date -u +%Y%m%d%H%M%S)-${commit}"
+	local release_name="$2"
+	local release_tmp release_dir current_tmp
 	release_tmp="${RELEASES}/.${release_name}.tmp"
 	release_dir="${RELEASES}/${release_name}"
 	current_tmp="${CURRENT}.tmp"
@@ -65,15 +64,14 @@ publish_release() {
 		echo "ERROR: missing Nitro server output: apps/terminal/.output/server/index.mjs" >&2
 		exit 1
 	}
-	compgen -G "apps/terminal/.output/public/assets/main-*.js" >/dev/null || {
-		echo "ERROR: build output has no main client asset." >&2
+	compgen -G "apps/terminal/.output/public/assets/*.js" >/dev/null || {
+		echo "ERROR: build output has no client JavaScript assets." >&2
 		exit 1
 	}
 	test -f "apps/terminal/.output/public${SOCIAL_IMAGE_PATH}" || {
 		echo "ERROR: build output is missing social image: ${SOCIAL_IMAGE_PATH}" >&2
 		exit 1
 	}
-
 	mkdir -p "$RELEASES"
 	rm -rf "$release_tmp"
 	mkdir -p "$release_tmp"
@@ -87,6 +85,35 @@ publish_release() {
 	ln -sfn "$release_dir" "$current_tmp"
 	mv -Tf "$current_tmp" "$CURRENT"
 	printf '%s\n' "$release_dir"
+}
+
+verify_build_metadata() {
+	local base_url="$1"
+	local tmpdir="$2"
+	local expected_commit="${3:-}"
+	local expected_release="${4:-}"
+
+	if ! fetch_typed_asset "$base_url" "/build-meta.json" "$tmpdir" "application/json" "Build metadata"; then
+		return 1
+	fi
+
+	node - "${tmpdir}/body" "$expected_commit" "$expected_release" <<'NODE'
+const fs = require("node:fs");
+const [file, expectedCommit, expectedRelease] = process.argv.slice(2);
+const metadata = JSON.parse(fs.readFileSync(file, "utf8"));
+
+for (const field of ["name", "version", "commit", "release", "builtAt"]) {
+	if (typeof metadata[field] !== "string" || metadata[field].length === 0) {
+		throw new Error(`Invalid build metadata field: ${field}`);
+	}
+}
+if (expectedCommit && metadata.commit !== expectedCommit) {
+	throw new Error(`Expected commit ${expectedCommit}, received ${metadata.commit}`);
+}
+if (expectedRelease && metadata.release !== expectedRelease) {
+	throw new Error(`Expected release ${expectedRelease}, received ${metadata.release}`);
+}
+NODE
 }
 
 rollback_to_release() {
@@ -171,26 +198,41 @@ fetch_referenced_js_assets() {
 	done < <(extract_js_assets "$file")
 }
 
+extract_first_js_asset() {
+	local file="$1"
+	node - "$file" <<'NODE'
+const fs = require("node:fs");
+const [file] = process.argv.slice(2);
+const text = fs.readFileSync(file, "utf8");
+const match = text.match(/\/?assets\/[^"'<>\s]+\.js/);
+if (!match) process.exit(1);
+process.stdout.write(match[0].startsWith("/") ? match[0] : `/${match[0]}`);
+NODE
+}
+
 health_check() {
 	local port="$1"
+	local expected_commit="${2:-}"
+	local expected_release="${3:-}"
 	local base_url="http://127.0.0.1:${port}"
-	local tmpdir html_file trade_file main_asset trade_asset
+	local tmpdir html_file trade_file entry_asset trade_asset
 	tmpdir="$(mktemp -d)"
 	html_file="${tmpdir}/builders-perp.html"
 	trade_file="${tmpdir}/trade-terminal-page.js"
 
 	for _ in $(seq 1 30); do
 		if curl -fsS -o "$html_file" "${base_url}/builders-perp"; then
-			main_asset="$(extract_asset "$html_file" '/assets/main-[^"'"'"'"'"'"'"'"'"'<>\s]+\.js' || true)"
+			entry_asset="$(extract_first_js_asset "$html_file" || true)"
 			trade_asset="$(extract_asset "$html_file" '/assets/trade-terminal-page-[^"'"'"'"'"'"'"'"'"'<>\s]+\.js' || true)"
-			if [ -n "$main_asset" ] && [ -n "$trade_asset" ]; then
+			if [ -n "$entry_asset" ] && [ -n "$trade_asset" ]; then
 				if fetch_referenced_js_assets "$base_url" "$html_file" "$tmpdir"; then
 					if ! curl -fsS -o "$trade_file" "${base_url}${trade_asset}"; then
 						rm -rf "$tmpdir"
 						return 1
 					fi
 					if fetch_referenced_js_assets "$base_url" "$trade_file" "$tmpdir" &&
-						fetch_typed_asset "$base_url" "$SOCIAL_IMAGE_PATH" "$tmpdir" "image/png" "Social image"; then
+						fetch_typed_asset "$base_url" "$SOCIAL_IMAGE_PATH" "$tmpdir" "image/png" "Social image" &&
+						verify_build_metadata "$base_url" "$tmpdir" "$expected_commit" "$expected_release"; then
 						rm -rf "$tmpdir"
 						return 0
 					fi
@@ -234,11 +276,15 @@ echo "==> [4/8] Install deps (frozen lockfile)"
 pnpm install --frozen-lockfile
 
 echo "==> [5/8] Build Nitro node-server output (8GB heap)"
-NITRO_PRESET=node-server pnpm build
+build_commit="$(git rev-parse HEAD)"
+build_commit_short="$(git rev-parse --short HEAD)"
+release_name="$(date -u +%Y%m%d%H%M%S)-${build_commit_short}"
+build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+GATU_BUILD_SHA="$build_commit" GATU_RELEASE_ID="$release_name" GATU_BUILD_TIME="$build_time" NITRO_PRESET=node-server pnpm build
 
 echo "==> [6/8] Publish immutable release"
 previous_release="$(readlink -f "$CURRENT" 2>/dev/null || true)"
-new_release="$(publish_release "$previous_release")"
+new_release="$(publish_release "$previous_release" "$release_name")"
 echo "Published ${new_release}"
 
 echo "==> [7/8] Restart service"
@@ -251,7 +297,7 @@ fi
 echo "==> [8/8] Health check"
 set -a; . "$SHARED/.env.runtime" 2>/dev/null || true; set +a
 PORT="${PORT:-3000}"
-if health_check "$PORT"; then
+if health_check "$PORT" "$build_commit" "$release_name"; then
 	cleanup_old_releases
 	echo "OK — gatu serving on 127.0.0.1:${PORT} (commit $(git rev-parse --short HEAD), release $(basename "$new_release"))"
 	exit 0
