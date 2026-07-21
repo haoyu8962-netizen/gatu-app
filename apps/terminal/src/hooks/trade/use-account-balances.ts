@@ -26,6 +26,8 @@ export type AccountAbstraction =
 export interface AccountBalances {
 	dex: string;
 	allDexClearinghouseStates: AllDexsAccountState["clearinghouseStates"];
+	hasAllDexsSnapshot: boolean;
+	hasSpotStateSnapshot: boolean;
 	marginSummary: MarginSummary | null;
 	perpSummary: PerpSummary | null;
 	perpPositions: PerpPosition[];
@@ -99,6 +101,8 @@ export function useUserAbstraction(user: string | undefined, enabled: boolean) {
 
 export interface AllDexsAccountState {
 	clearinghouseStates: AllDexsClearinghouseStateWsEvent["clearinghouseStates"];
+	hasAllDexsSnapshot: boolean;
+	hasSpotStateSnapshot: boolean;
 	spotBalances: SpotBalance[];
 	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance;
 	accountAbstraction: AccountAbstraction;
@@ -152,6 +156,8 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	if (!enabled) {
 		return {
 			clearinghouseStates: [],
+			hasAllDexsSnapshot: false,
+			hasSpotStateSnapshot: false,
 			spotBalances: EMPTY_SPOT_BALANCES,
 			spotAvailableAfterMaintenance: EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE,
 			accountAbstraction: null,
@@ -180,6 +186,8 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 
 	return {
 		clearinghouseStates,
+		hasAllDexsSnapshot: clearinghouseEvent !== undefined,
+		hasSpotStateSnapshot: spotEvent !== undefined,
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
@@ -193,6 +201,8 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 export function useDexBalances(dex: string | null | undefined): AccountBalances {
 	const {
 		clearinghouseStates,
+		hasAllDexsSnapshot,
+		hasSpotStateSnapshot,
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		accountAbstraction,
@@ -222,6 +232,8 @@ export function useDexBalances(dex: string | null | undefined): AccountBalances 
 	return {
 		dex: selectedDex,
 		allDexClearinghouseStates: clearinghouseStates,
+		hasAllDexsSnapshot,
+		hasSpotStateSnapshot,
 		marginSummary,
 		perpSummary,
 		perpPositions,

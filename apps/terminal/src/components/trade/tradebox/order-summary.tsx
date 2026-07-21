@@ -61,13 +61,13 @@ export function OrderSummary({
 			)}
 			<SummaryRow label={t`Order Value`}>
 				<span className={cn("whitespace-nowrap", orderValue > 0 ? "text-fg" : "text-fg-muted")}>
-					{orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
+					{orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{isLeveraged && (
 				<SummaryRow label={t`Margin Req.`}>
 					<span className={cn("whitespace-nowrap", marginRequired > 0 ? "text-fg" : "text-fg-muted")}>
-						{marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
+						{marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
 			)}

@@ -24,6 +24,8 @@ describe("format", () => {
 	it("formats USD values with fixed digits", () => {
 		expect(formatUSD(1234.56)).toBe("$1,234.56");
 		expect(formatUSD(1234.56, 0)).toBe("$1,235");
+		expect(formatUSD(150000)).toBe("$150K");
+		expect(formatUSD(150000, { compact: false })).toBe("$150,000.00");
 	});
 
 	it("formats prices using szDecimals", () => {

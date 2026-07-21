@@ -97,8 +97,8 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 }));
 
 vi.mock("@/domain/trade/balances", () => ({
-	getAccountBalanceSummary: () => ({ accountEquity: 100 }),
-	getPerpRiskSummary: () => ({ crossMaintenanceMarginUsed: 5, totalNtlPos: 20, unrealizedPnl: 2 }),
+	getAccountBalanceSummary: () => ({ accountEquity: 150000 }),
+	getPerpRiskSummary: () => ({ crossMaintenanceMarginUsed: 12000, totalNtlPos: 200000, unrealizedPnl: 20000 }),
 	isQuoteBalanceSharedWithPerps: () => true,
 }));
 
@@ -131,8 +131,8 @@ function TestSurface() {
 			<OrderSummary
 				liqPrice={65}
 				liqWarning={false}
-				orderValue={100}
-				marginRequired={10}
+				orderValue={150000}
+				marginRequired={12000}
 				estimatedFee={0.05}
 				feeRatePercent="0.0500%"
 				slippagePercent={2.5}
@@ -201,6 +201,8 @@ describe("language hot switching", () => {
 		const checkbox = container.querySelector<HTMLElement>('[aria-label="Reduce Only"]');
 		expect(checkbox).not.toBeNull();
 		expect(checkbox?.getAttribute("aria-checked")).toBe("false");
+		expect(container.textContent).toContain("$150,000.00");
+		expect(container.textContent).toContain("$12,000.00");
 
 		act(() => checkbox?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 		expect(checkbox?.getAttribute("aria-checked")).toBe("true");

@@ -618,13 +618,13 @@ export function MobileTradeView({ className, embedded }: Props) {
 						)}
 						<SummaryRow
 							label={t`Order Value`}
-							value={orderValue > 0 ? formatUSD(orderValue) : FALLBACK_VALUE_PLACEHOLDER}
+							value={orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 							compact={embedded}
 						/>
 						{capabilities.isLeveraged && (
 							<SummaryRow
 								label={t`Margin Req.`}
-								value={marginRequired > 0 ? formatUSD(marginRequired) : FALLBACK_VALUE_PLACEHOLDER}
+								value={marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 								compact={embedded}
 							/>
 						)}

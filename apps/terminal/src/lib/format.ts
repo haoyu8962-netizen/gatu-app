@@ -122,11 +122,12 @@ export function formatUSD(value: string | number | null | undefined, opts?: numb
 	if (!isValidNumber(parsed.value)) return FALLBACK_VALUE_PLACEHOLDER;
 
 	const { decimals, compact, ...rest } = resolveOptions(opts);
+	const usesCompactNotation = (compact ?? FORMAT_COMPACT_DEFAULT) && Math.abs(parsed.value) >= FORMAT_COMPACT_THRESHOLD;
 
 	const defaults: Intl.NumberFormatOptions = {
 		style: "currency",
 		currency: "USD",
-		minimumFractionDigits: decimals ?? 2,
+		minimumFractionDigits: decimals ?? (usesCompactNotation ? 0 : 2),
 		maximumFractionDigits: decimals ?? 2,
 	};
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, FORMAT_COMPACT_DEFAULT);

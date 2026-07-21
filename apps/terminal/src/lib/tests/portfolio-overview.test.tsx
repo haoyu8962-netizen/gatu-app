@@ -9,8 +9,23 @@ import { PortfolioOverview } from "@/components/portfolio/portfolio-overview";
 import type { InfoResponse } from "@/lib/hyperliquid";
 
 const mocks = vi.hoisted(() => ({
+	isConnected: true,
 	portfolioData: undefined as InfoResponse<"portfolio"> | undefined,
 	portfolioError: true,
+	accountSummary: {
+		spotAccountValue: 42,
+		perpAccountValue: 0,
+		usesSpotStateForPerps: true,
+	},
+	balances: {
+		accountAbstraction: "unifiedAccount",
+		allDexClearinghouseStates: [["", { marginSummary: { accountValue: "0" } }]],
+		hasAllDexsSnapshot: true,
+		hasSpotStateSnapshot: true,
+	},
+	builderPerpMarkets: [] as Array<{ dex: string; quoteToken?: { name: string } }>,
+	tokenUsdPrices: undefined as Record<string, string> | undefined,
+	auxiliaryDataAvailable: true,
 	feesData: undefined as
 		| {
 				dailyUserVlm: [];
@@ -34,29 +49,26 @@ vi.mock("@gatu/ui", () => ({
 }));
 
 vi.mock("@/domain/trade/balances", () => ({
-	getAccountBalanceSummary: () => ({
-		spotAccountValue: "42",
-		perpAccountValue: "0",
-		usesSpotStateForPerps: true,
-	}),
+	getAccountBalanceSummary: () => mocks.accountSummary,
 }));
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
-	useDefaultDexBalances: () => ({}),
+	useDefaultDexBalances: () => mocks.balances,
 }));
 
 vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
-	useSpotTokenUsdPrices: () => new Map(),
+	useSpotTokenUsdPrices: () => mocks.tokenUsdPrices,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
 		address: "0x0000000000000000000000000000000000000001",
-		isConnected: true,
+		isConnected: mocks.isConnected,
 	}),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useMarkets: () => ({ builderPerp: mocks.builderPerpMarkets }),
 	useInfo: (method: string) => {
 		if (method === "portfolio") {
 			return {
@@ -78,8 +90,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 			};
 		}
 
+		const auxiliaryData = method === "borrowLendUserState" ? { tokenToState: [] } : [];
+
 		return {
-			data: method === "userVaultEquities" || method === "allBorrowLendReserveStates" ? [] : undefined,
+			data: mocks.auxiliaryDataAvailable ? auxiliaryData : undefined,
 			isError: false,
 			isFetching: false,
 			isPending: false,
@@ -94,8 +108,23 @@ describe("PortfolioOverview", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.isConnected = true;
 		mocks.portfolioData = undefined;
 		mocks.portfolioError = true;
+		mocks.accountSummary = {
+			spotAccountValue: 42,
+			perpAccountValue: 0,
+			usesSpotStateForPerps: true,
+		};
+		mocks.balances = {
+			accountAbstraction: "unifiedAccount",
+			allDexClearinghouseStates: [["", { marginSummary: { accountValue: "0" } }]],
+			hasAllDexsSnapshot: true,
+			hasSpotStateSnapshot: true,
+		};
+		mocks.builderPerpMarkets = [];
+		mocks.tokenUsdPrices = undefined;
+		mocks.auxiliaryDataAvailable = true;
 		mocks.feesData = {
 			dailyUserVlm: [],
 			userAddRate: "0.00015",
@@ -135,6 +164,73 @@ describe("PortfolioOverview", () => {
 		renderOverview(root);
 
 		expect(metricValue(container, "Fees (Taker / Maker)")).toBe("—");
+	});
+
+	it("does not present unavailable account balances as real zero values", () => {
+		mocks.accountSummary = {
+			spotAccountValue: 0,
+			perpAccountValue: 0,
+			usesSpotStateForPerps: false,
+		};
+		mocks.balances = {
+			accountAbstraction: "disabled",
+			allDexClearinghouseStates: [],
+			hasAllDexsSnapshot: false,
+			hasSpotStateSnapshot: false,
+		};
+		mocks.auxiliaryDataAvailable = false;
+		renderOverview(root);
+
+		expect(summaryValue(container, "Total Equity")).toBe("—");
+		expect(summaryValue(container, "Perps Account Equity")).toBe("—");
+		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
+		expect(summaryValue(container, "Earn Balance")).toBe("—");
+	});
+
+	it("does not retain account values after the wallet disconnects", () => {
+		mocks.isConnected = false;
+		renderOverview(root);
+
+		expect(summaryValue(container, "Total Equity")).toBe("—");
+		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
+		expect(summaryValue(container, "Earn Balance")).toBe("—");
+	});
+
+	it("includes every separately collateralized DEX in standard account equity", () => {
+		mocks.accountSummary = {
+			spotAccountValue: 42,
+			perpAccountValue: 500,
+			usesSpotStateForPerps: false,
+		};
+		mocks.balances = {
+			accountAbstraction: "disabled",
+			allDexClearinghouseStates: [
+				["", { marginSummary: { accountValue: "500" } }],
+				["xyz", { marginSummary: { accountValue: "100" } }],
+			],
+			hasAllDexsSnapshot: true,
+			hasSpotStateSnapshot: true,
+		};
+		mocks.builderPerpMarkets = [{ dex: "xyz", quoteToken: { name: "USDH" } }];
+		mocks.tokenUsdPrices = { USDH: "0.99" };
+		renderOverview(root);
+
+		expect(summaryValue(container, "Total Equity")).toBe("$641.00");
+		expect(summaryValue(container, "Perps Account Equity")).toBe("$599.00");
+		expect(summaryValue(container, "Spot Account Equity")).toBe("$42.00");
+	});
+
+	it("does not expose a non-additive perps equity row in unified account mode", () => {
+		mocks.accountSummary = {
+			spotAccountValue: 500,
+			perpAccountValue: 500,
+			usesSpotStateForPerps: true,
+		};
+		renderOverview(root);
+
+		expect(summaryValue(container, "Total Equity")).toBe("$500.00");
+		expect(summaryValue(container, "Perps Account Equity")).toBeUndefined();
+		expect(summaryValue(container, "Spot Account Equity")).toBe("$500.00");
 	});
 
 	it("keeps valid zero values visible even after a background refresh error", () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	calculateAllDexPerpEquityUsd,
 	calculateCoreAccountEquity,
 	calculateEarnBalance,
 	calculateFourteenDayVolume,
@@ -83,6 +84,30 @@ describe("portfolio data", () => {
 		);
 	});
 
+	it("converts and sums separate DEX account values using each collateral token", () => {
+		expect(
+			calculateAllDexPerpEquityUsd({
+				accounts: [
+					{ dex: "", accountValue: "500" },
+					{ dex: "xyz", accountValue: "100" },
+					{ dex: "empty", accountValue: "0" },
+				],
+				collaterals: [{ dex: "xyz", collateralToken: "USDH" }],
+				tokenUsdPrices: { USDH: "0.99" },
+			}),
+		).toBe("599");
+	});
+
+	it("does not understate separate DEX equity when collateral pricing is unavailable", () => {
+		expect(
+			calculateAllDexPerpEquityUsd({
+				accounts: [{ dex: "xyz", accountValue: "100" }],
+				collaterals: [{ dex: "xyz", collateralToken: "USDH" }],
+				tokenUsdPrices: undefined,
+			}),
+		).toBeNull();
+	});
+
 	it("prefers current account sources and uses portfolio history while they are unavailable", () => {
 		const vaults = [
 			{ vaultAddress: "0x0000000000000000000000000000000000000001", equity: "25", lockedUntilTimestamp: 0 },
@@ -107,5 +132,14 @@ describe("portfolio data", () => {
 				currentSourcesAvailable: false,
 			}),
 		).toBe("900");
+		expect(
+			resolveCurrentTotalEquity({
+				portfolioValue: null,
+				coreEquity: "750",
+				vaultEquity: "25",
+				earnBalance: "10",
+				currentSourcesAvailable: false,
+			}),
+		).toBeNull();
 	});
 });

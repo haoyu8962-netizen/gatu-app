@@ -1,6 +1,8 @@
 import Big from "big.js";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import type { TokenUsdPrices } from "@/domain/trade/balances";
 import type { InfoResponse } from "@/lib/hyperliquid";
-import { toSafeBig } from "@/lib/trade/numbers";
+import { toBig, toSafeBig } from "@/lib/trade/numbers";
 
 export type PortfolioPeriod = "day" | "week" | "month" | "allTime";
 export type PortfolioScope = "combined" | "perps";
@@ -10,6 +12,16 @@ type DailyUserVolume = InfoResponse<"userFees">["dailyUserVlm"];
 type BorrowLendUserState = InfoResponse<"borrowLendUserState">;
 type BorrowLendReserveStates = InfoResponse<"allBorrowLendReserveStates">;
 type UserVaultEquities = InfoResponse<"userVaultEquities">;
+
+interface PerpDexAccountValue {
+	dex: string;
+	accountValue: string | number | null | undefined;
+}
+
+interface PerpDexCollateral {
+	dex: string;
+	collateralToken: string | undefined;
+}
 
 const PORTFOLIO_PERIOD_KEYS: Record<PortfolioScope, Record<PortfolioPeriod, InfoResponse<"portfolio">[number][0]>> = {
 	combined: {
@@ -107,6 +119,38 @@ export function calculateCoreAccountEquity({
 	return (usesSharedQuoteBalance ? spotValue : spotValue.plus(toSafeBig(perpEquity))).toString();
 }
 
+export function calculateAllDexPerpEquityUsd({
+	accounts,
+	collaterals,
+	tokenUsdPrices,
+}: {
+	accounts: readonly PerpDexAccountValue[];
+	collaterals: readonly PerpDexCollateral[];
+	tokenUsdPrices: TokenUsdPrices;
+}): string | null {
+	const collateralByDex = new Map<string, string>([["", DEFAULT_QUOTE_TOKEN]]);
+	for (const { dex, collateralToken } of collaterals) {
+		if (collateralToken && !collateralByDex.has(dex)) collateralByDex.set(dex, collateralToken);
+	}
+
+	let total = Big(0);
+	for (const { dex, accountValue } of accounts) {
+		const value = toSafeBig(accountValue);
+		if (value.eq(0)) continue;
+
+		const collateralToken = collateralByDex.get(dex);
+		if (!collateralToken) return null;
+
+		const collateralUsdPrice =
+			collateralToken === DEFAULT_QUOTE_TOKEN ? Big(1) : toBig(tokenUsdPrices?.[collateralToken]);
+		if (!collateralUsdPrice?.gt(0)) return null;
+
+		total = total.plus(value.times(collateralUsdPrice));
+	}
+
+	return total.toString();
+}
+
 export function resolveCurrentTotalEquity({
 	portfolioValue,
 	coreEquity,
@@ -119,8 +163,8 @@ export function resolveCurrentTotalEquity({
 	vaultEquity: string | number;
 	earnBalance: string | number;
 	currentSourcesAvailable: boolean;
-}): string {
-	if (!currentSourcesAvailable) return toSafeBig(portfolioValue).toString();
+}): string | null {
+	if (!currentSourcesAvailable) return portfolioValue == null ? null : toSafeBig(portfolioValue).toString();
 
 	return toSafeBig(coreEquity).plus(toSafeBig(vaultEquity)).plus(toSafeBig(earnBalance)).toString();
 }

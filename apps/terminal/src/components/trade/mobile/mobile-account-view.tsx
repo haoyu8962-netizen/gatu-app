@@ -191,7 +191,9 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						<Skeleton name="account-equity" loading={isLoading}>
 							<div>
 								<div className="text-2xs uppercase font-medium text-fg-muted mb-1.5">{equityLabel}</div>
-								<div className="text-3xl font-bold tabular-nums text-fg">{formatUSD(accountSummary.accountEquity)}</div>
+								<div className="text-3xl font-bold tabular-nums text-fg">
+									{formatUSD(accountSummary.accountEquity, { compact: false })}
+								</div>
 								<div
 									className={cn(
 										"text-sm tabular-nums mt-1.5 font-medium",
@@ -199,30 +201,42 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									)}
 								>
 									{riskSummary.unrealizedPnl >= 0 ? "+" : ""}
-									{formatUSD(riskSummary.unrealizedPnl)} {t`Unrealized PNL`}
+									{formatUSD(riskSummary.unrealizedPnl, { compact: false })} {t`Unrealized PNL`}
 								</div>
 							</div>
 						</Skeleton>
 					</div>
 
 					<div className="grid grid-cols-2 gap-3">
-						<StatCard label={balanceLabel} value={formatUSD(balanceValue)} isLoading={isLoading} />
-						<StatCard label={availableLabel} value={formatUSD(accountSummary.available)} isLoading={isLoading} />
-						<StatCard label={t`Margin Used`} value={formatUSD(accountSummary.perpMarginUsed)} isLoading={isLoading} />
+						<StatCard label={balanceLabel} value={formatUSD(balanceValue, { compact: false })} isLoading={isLoading} />
+						<StatCard
+							label={availableLabel}
+							value={formatUSD(accountSummary.available, { compact: false })}
+							isLoading={isLoading}
+						/>
+						<StatCard
+							label={t`Margin Used`}
+							value={formatUSD(accountSummary.perpMarginUsed, { compact: false })}
+							isLoading={isLoading}
+						/>
 						<StatCard
 							label={t`Margin Ratio`}
 							value={formatPercent(marginRatio)}
 							valueClass={marginRatio > 0.8 ? "text-error" : marginRatio > 0.5 ? "text-warning" : ""}
 							isLoading={isLoading}
 						/>
-						<StatCard label={t`Maintenance Margin`} value={formatUSD(maintenanceMargin)} isLoading={isLoading} />
+						<StatCard
+							label={t`Maintenance Margin`}
+							value={formatUSD(maintenanceMargin, { compact: false })}
+							isLoading={isLoading}
+						/>
 						<StatCard label={t`Cross Leverage`} value={`${crossLeverage.toFixed(2)}x`} isLoading={isLoading} />
 					</div>
 
 					{showSpotFundsNotice && (
 						<div className="rounded-xs border border-stroke-warning-weak bg-warning-soft p-3 text-sm text-warning">
 							<div className="tabular-nums">
-								{t`Available funds are in Spot`}: {formatUSD(accountSummary.spotUsdcAvailable)}
+								{t`Available funds are in Spot`}: {formatUSD(accountSummary.spotUsdcAvailable, { compact: false })}
 							</div>
 							{hasWalletAccess && (
 								<Button

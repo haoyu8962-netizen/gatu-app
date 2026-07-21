@@ -2,6 +2,7 @@ import { Select } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import {
+	calculateAllDexPerpEquityUsd,
 	calculateCoreAccountEquity,
 	calculateEarnBalance,
 	calculateFourteenDayVolume,
@@ -20,7 +21,7 @@ import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
-import { useInfo } from "@/lib/hyperliquid";
+import { useInfo, useMarkets } from "@/lib/hyperliquid";
 import { PortfolioPerformanceChart } from "./portfolio-performance-chart";
 
 type FeeMarket = "perps" | "spot";
@@ -47,6 +48,7 @@ export function PortfolioOverview() {
 	const borrowLendQuery = useInfo("borrowLendUserState", { user }, queryOptions);
 	const reserveStatesQuery = useInfo("allBorrowLendReserveStates", undefined, queryOptions);
 	const balances = useDefaultDexBalances();
+	const markets = useMarkets();
 	const tokenUsdPrices = useSpotTokenUsdPrices(isConnected);
 
 	const accountSummary = useMemo(
@@ -76,24 +78,50 @@ export function PortfolioOverview() {
 	const perpsSnapshot = getPortfolioSnapshot(portfolioQuery.data, "perps", period);
 	const earnBalance = calculateEarnBalance(borrowLendQuery.data, reserveStatesQuery.data);
 	const vaultEquity = calculateVaultEquity(vaultsQuery.data);
+	let perpAccountEquity: string | null = null;
+	if (!accountSummary.usesSpotStateForPerps && balances.accountAbstraction !== null && balances.hasAllDexsSnapshot) {
+		perpAccountEquity =
+			balances.accountAbstraction === "disabled"
+				? calculateAllDexPerpEquityUsd({
+						accounts: balances.allDexClearinghouseStates.map(([dex, state]) => ({
+							dex,
+							accountValue: state.marginSummary.accountValue,
+						})),
+						collaterals: markets.builderPerp.map((market) => ({
+							dex: market.dex,
+							collateralToken: market.quoteToken?.name,
+						})),
+						tokenUsdPrices,
+					})
+				: accountSummary.perpAccountValue.toString();
+	}
 	const coreEquity = calculateCoreAccountEquity({
 		spotEquity: accountSummary.spotAccountValue,
-		perpEquity: accountSummary.perpAccountValue,
+		perpEquity: perpAccountEquity ?? 0,
 		usesSharedQuoteBalance: accountSummary.usesSpotStateForPerps,
 	});
+	const hasResolvedBalanceSources =
+		isConnected &&
+		balances.accountAbstraction !== null &&
+		balances.hasSpotStateSnapshot &&
+		(accountSummary.usesSpotStateForPerps || (balances.hasAllDexsSnapshot && perpAccountEquity !== null));
 	const currentEquitySourcesAvailable =
-		!balances.isLoading &&
-		!balances.hasError &&
+		hasResolvedBalanceSources &&
 		vaultsQuery.data !== undefined &&
 		borrowLendQuery.data !== undefined &&
 		reserveStatesQuery.data !== undefined;
-	const totalEquity = resolveCurrentTotalEquity({
-		portfolioValue: getLatestHistoryValue(combinedSnapshot?.accountValueHistory),
-		coreEquity,
-		vaultEquity,
-		earnBalance,
-		currentSourcesAvailable: currentEquitySourcesAvailable,
-	});
+	const totalEquity = isConnected
+		? resolveCurrentTotalEquity({
+				portfolioValue: getLatestHistoryValue(combinedSnapshot?.accountValueHistory),
+				coreEquity,
+				vaultEquity,
+				earnBalance,
+				currentSourcesAvailable: currentEquitySourcesAvailable,
+			})
+		: null;
+	const spotAccountEquity = isConnected && balances.hasSpotStateSnapshot ? accountSummary.spotAccountValue : null;
+	const displayedEarnBalance =
+		isConnected && borrowLendQuery.data !== undefined && reserveStatesQuery.data !== undefined ? earnBalance : null;
 	const fourteenDayVolume = calculateFourteenDayVolume(feesQuery.data?.dailyUserVlm);
 	const pnl = getLatestHistoryValue(snapshot?.pnlHistory);
 	const maxDrawdown = calculateMaxDrawdown(snapshot?.accountValueHistory);
@@ -185,7 +213,7 @@ export function PortfolioOverview() {
 				<div className="flex flex-1 flex-col justify-center px-3 py-2 text-xs">
 					<SummaryRow
 						label={<Trans>PNL</Trans>}
-						value={pnl === null ? "—" : formatUSD(pnl, { signDisplay: "exceptZero" })}
+						value={pnl === null ? "—" : formatUSD(pnl, { compact: false, signDisplay: "exceptZero" })}
 						tone={pnl ?? undefined}
 					/>
 					<SummaryRow label={<Trans>Volume</Trans>} value={snapshot === null ? "—" : formatUSD(snapshot.vlm)} />
@@ -194,10 +222,24 @@ export function PortfolioOverview() {
 						value={maxDrawdown === null ? "—" : formatPercent(maxDrawdown)}
 						tone={maxDrawdown ?? undefined}
 					/>
-					<SummaryRow label={<Trans>Total Equity</Trans>} value={formatUSD(totalEquity)} />
-					<SummaryRow label={<Trans>Perps Account Equity</Trans>} value={formatUSD(accountSummary.perpAccountValue)} />
-					<SummaryRow label={<Trans>Spot Account Equity</Trans>} value={formatUSD(accountSummary.spotAccountValue)} />
-					<SummaryRow label={<Trans>Earn Balance</Trans>} value={formatUSD(earnBalance)} />
+					<SummaryRow
+						label={<Trans>Total Equity</Trans>}
+						value={totalEquity === null ? "—" : formatUSD(totalEquity, { compact: false })}
+					/>
+					{!accountSummary.usesSpotStateForPerps ? (
+						<SummaryRow
+							label={<Trans>Perps Account Equity</Trans>}
+							value={perpAccountEquity === null ? "—" : formatUSD(perpAccountEquity, { compact: false })}
+						/>
+					) : null}
+					<SummaryRow
+						label={<Trans>Spot Account Equity</Trans>}
+						value={spotAccountEquity === null ? "—" : formatUSD(spotAccountEquity, { compact: false })}
+					/>
+					<SummaryRow
+						label={<Trans>Earn Balance</Trans>}
+						value={displayedEarnBalance === null ? "—" : formatUSD(displayedEarnBalance, { compact: false })}
+					/>
 				</div>
 			</section>
 

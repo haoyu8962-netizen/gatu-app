@@ -71,12 +71,12 @@ export function AccountPanel() {
 		? [
 				{
 					label: t`Portfolio Value`,
-					value: formatUSD(perpMetrics.accountValue),
+					value: formatUSD(perpMetrics.accountValue, { compact: false }),
 					valueClassName: "tabular-nums",
 				},
 				{
 					label: t`Unrealized PNL`,
-					value: formatUSD(perpMetrics.unrealizedPnl, { signDisplay: "exceptZero" }),
+					value: formatUSD(perpMetrics.unrealizedPnl, { compact: false, signDisplay: "exceptZero" }),
 					valueClassName: cn("tabular-nums", getValueColorClass(perpMetrics.unrealizedPnl)),
 				},
 				{
@@ -86,7 +86,7 @@ export function AccountPanel() {
 				},
 				{
 					label: t`Maintenance Margin`,
-					value: formatUSD(perpMetrics.maintenanceMargin),
+					value: formatUSD(perpMetrics.maintenanceMargin, { compact: false }),
 					valueClassName: "tabular-nums",
 				},
 				{
