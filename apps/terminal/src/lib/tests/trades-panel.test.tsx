@@ -84,6 +84,15 @@ describe("TradesPanel", () => {
 		expect(container.querySelector('[data-slot="trades-pending"]')).not.toBeNull();
 	});
 
+	it("waits for the initial snapshot after the subscription becomes active", () => {
+		mocks.result.status = "active";
+
+		renderPanel();
+
+		expect(container.textContent).not.toContain("No recent trades.");
+		expect(container.querySelector('[data-slot="trades-pending"]')).not.toBeNull();
+	});
+
 	it("prewarms one trades subscription while the order book tab is active", () => {
 		act(() =>
 			root.render(

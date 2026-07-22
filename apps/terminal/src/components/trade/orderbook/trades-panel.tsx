@@ -79,7 +79,7 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 						))}
 					</div>
 				</div>
-			) : status === "active" ? (
+			) : status === "active" && trades !== undefined ? (
 				<div className="flex-1 flex items-center justify-center px-2 py-6 text-xs text-fg-muted">
 					{t`No recent trades.`}
 				</div>
