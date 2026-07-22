@@ -2348,6 +2348,10 @@ msgstr "कोई खुला ऑर्डर नहीं।"
 msgid "No order history found."
 msgstr "कोई ऑर्डर हिस्ट्री नहीं मिली।"
 
+#: src/components/trade/orderbook/trades-panel.tsx
+msgid "No recent trades."
+msgstr "कोई हालिया ट्रेड नहीं।"
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -4458,8 +4462,8 @@ msgid "Waiting for order book..."
 msgstr "ऑर्डर बुक की प्रतीक्षा..."
 
 #: src/components/trade/orderbook/trades-panel.tsx
-msgid "Waiting for trades..."
-msgstr "ट्रेड की प्रतीक्षा..."
+#~ msgid "Waiting for trades..."
+#~ msgstr "ट्रेड की प्रतीक्षा..."
 
 #. placeholder {0}: shortenAddress(address)
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx

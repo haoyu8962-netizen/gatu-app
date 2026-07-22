@@ -2348,6 +2348,10 @@ msgstr "无未成交订单。"
 msgid "No order history found."
 msgstr "未找到订单历史。"
 
+#: src/components/trade/orderbook/trades-panel.tsx
+msgid "No recent trades."
+msgstr "暂无最近成交。"
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -4458,8 +4462,8 @@ msgid "Waiting for order book..."
 msgstr "等待订单簿..."
 
 #: src/components/trade/orderbook/trades-panel.tsx
-msgid "Waiting for trades..."
-msgstr "等待成交记录..."
+#~ msgid "Waiting for trades..."
+#~ msgstr "等待成交记录..."
 
 #. placeholder {0}: shortenAddress(address)
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx

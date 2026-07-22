@@ -2348,6 +2348,10 @@ msgstr "لا توجد أوامر مفتوحة."
 msgid "No order history found."
 msgstr "لم يُعثر على سجل أوامر."
 
+#: src/components/trade/orderbook/trades-panel.tsx
+msgid "No recent trades."
+msgstr "لا توجد صفقات حديثة."
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -4458,8 +4462,8 @@ msgid "Waiting for order book..."
 msgstr "في انتظار دفتر الأوامر..."
 
 #: src/components/trade/orderbook/trades-panel.tsx
-msgid "Waiting for trades..."
-msgstr "في انتظار الصفقات..."
+#~ msgid "Waiting for trades..."
+#~ msgstr "في انتظار الصفقات..."
 
 #. placeholder {0}: shortenAddress(address)
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx

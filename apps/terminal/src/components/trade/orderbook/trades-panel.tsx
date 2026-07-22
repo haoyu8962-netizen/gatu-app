@@ -63,11 +63,7 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 				<div className="flex-1 flex items-center justify-center px-2 py-6 text-xs text-fg">
 					{error instanceof Error ? error.message : t`Failed to load trades.`}
 				</div>
-			) : processed.length === 0 ? (
-				<div className="flex-1 flex items-center justify-center px-2 py-6 text-xs text-fg">
-					{t`Waiting for trades...`}
-				</div>
-			) : (
+			) : processed.length > 0 ? (
 				<div className="flex-1 min-h-0 overflow-y-auto">
 					<div className={cn("py-1 space-y-px", compact ? "px-1.5" : "px-2")}>
 						{processed.map((trade) => (
@@ -83,6 +79,12 @@ export function TradesPanel({ compact = false }: { compact?: boolean }) {
 						))}
 					</div>
 				</div>
+			) : status === "active" ? (
+				<div className="flex-1 flex items-center justify-center px-2 py-6 text-xs text-fg-muted">
+					{t`No recent trades.`}
+				</div>
+			) : (
+				<div data-slot="trades-pending" className="flex-1 min-h-0" aria-hidden="true" />
 			)}
 		</div>
 	);

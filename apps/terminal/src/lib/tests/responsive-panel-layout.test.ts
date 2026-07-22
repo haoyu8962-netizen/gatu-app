@@ -49,9 +49,12 @@ describe("responsive panel layout contract", () => {
 	it("keeps order book and recent trades in one mutually exclusive tab panel", () => {
 		expect(ORDERBOOK_PANEL_SOURCE.match(/<TradesPanel/g)).toHaveLength(1);
 		expect(ORDERBOOK_PANEL_SOURCE).toContain('<TabsContent value="book"');
-		expect(ORDERBOOK_PANEL_SOURCE).toContain('<TabsContent value="trades"');
+		expect(ORDERBOOK_PANEL_SOURCE).toContain('<TabsContent value="trades" keepMounted');
+		expect(ORDERBOOK_PANEL_SOURCE).toContain("<TradesPanel />");
+		expect(ORDERBOOK_PANEL_SOURCE).not.toContain("<TradesPanel key=");
 		expect(TRADE_ROW_SOURCE).toContain('"grid h-6 items-center tabular-nums');
 		expect(TRADES_PANEL_SOURCE).toContain('"trades-grid gap-1 px-2 h-8 text-xs"');
+		expect(TRADES_PANEL_SOURCE).not.toContain("Waiting for trades...");
 	});
 
 	it("keeps every desktop panel mounted once while responsive grid geometry changes", () => {

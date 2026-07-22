@@ -204,8 +204,8 @@ export function OrderbookPanel() {
 				</div>
 			</TabsContent>
 
-			<TabsContent value="trades" className="flex-1 min-h-0 mt-0 pt-0 flex flex-col">
-				<TradesPanel key={selectedMarket?.name} />
+			<TabsContent value="trades" keepMounted className="flex-1 min-h-0 mt-0 pt-0 flex flex-col">
+				<TradesPanel />
 			</TabsContent>
 		</Tabs>
 	);
