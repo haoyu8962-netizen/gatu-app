@@ -93,6 +93,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const balanceLabel = showsSpotBalance ? t`Spot Available` : t`Balance`;
 	const balanceValue = showsSpotBalance ? accountSummary.spotUsdcAvailable : accountSummary.balance;
 	const availableLabel = usesUnifiedBalance ? t`Available` : t`Perps Withdrawable`;
+	const availableValue = accountSummary.mode === "unified" ? accountSummary.withdrawable : accountSummary.available;
 	const equityLabel = usesUnifiedBalance ? t`Equity` : t`Perps Equity`;
 	const showSpotFundsNotice = showsSpotBalance && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 	const internalTransferDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
@@ -211,12 +212,12 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 						<StatCard label={balanceLabel} value={formatUSD(balanceValue, { compact: false })} isLoading={isLoading} />
 						<StatCard
 							label={availableLabel}
-							value={formatUSD(accountSummary.available, { compact: false })}
+							value={formatUSD(availableValue, { compact: false })}
 							isLoading={isLoading}
 						/>
 						<StatCard
 							label={t`Margin Used`}
-							value={formatUSD(accountSummary.perpMarginUsed, { compact: false })}
+							value={formatUSD(riskSummary.totalMarginUsed, { compact: false })}
 							isLoading={isLoading}
 						/>
 						<StatCard
