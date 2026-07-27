@@ -80,6 +80,19 @@ describe("errors", () => {
 		);
 	});
 
+	it("redacts smart-wallet nonce conflicts instead of exposing RPC payloads", () => {
+		const message =
+			'RPC Request failed. URL: https://rpc.zerodev.app/private Request body: {"callData":"0xdeadbeef"} Details: AA25 invalid account nonce';
+
+		const formatted = formatTransferError(new Error(message));
+
+		expect(formatted).toBe(
+			"Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked.",
+		);
+		expect(formatted).not.toContain("rpc.zerodev.app");
+		expect(formatted).not.toContain("callData");
+	});
+
 	it("does not label unrelated timeout errors as deposit failures", () => {
 		expect(formatTransferError(new Error("Withdraw confirmation timed out."))).toBe("Withdraw confirmation timed out.");
 	});

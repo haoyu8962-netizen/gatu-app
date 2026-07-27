@@ -1,6 +1,7 @@
 import { t } from "@lingui/core/macro";
 
 const ERROR_MESSAGE_TRUNCATE_LIMIT = 100;
+const SMART_WALLET_NONCE_CONFLICT_PATTERN = /\bAA25\b(?: invalid account nonce)?/i;
 
 const ERROR_PATTERNS = [
 	{ pattern: /user rejected/i, message: () => t`Transaction was rejected` },
@@ -41,7 +42,16 @@ const ERROR_PATTERNS = [
 		message: () =>
 			t`Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry.`,
 	},
+	{
+		pattern: SMART_WALLET_NONCE_CONFLICT_PATTERN,
+		message: () =>
+			t`Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked.`,
+	},
 ] as const;
+
+export function isSmartWalletNonceConflict(error: Error | null): boolean {
+	return !!error && SMART_WALLET_NONCE_CONFLICT_PATTERN.test(error.message);
+}
 
 export function formatTransferError(error: Error | null): string {
 	if (!error) return t`Unknown error`;

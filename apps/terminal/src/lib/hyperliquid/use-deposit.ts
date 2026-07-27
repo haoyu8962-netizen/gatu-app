@@ -56,7 +56,8 @@ export interface UseDepositResult {
 	error: Error | null;
 	hash: Hash | undefined;
 	walletResponseDelayed: boolean;
-	deposit: (amount: string) => void;
+	deposit: (amount: string) => Promise<void>;
+	refreshBalance: () => Promise<bigint | undefined>;
 	validate: (amount: string) => ValidationResult;
 	reset: () => void;
 }
@@ -913,10 +914,10 @@ function useDepositUsdcBalance(
 	const [state, setState] = useState<UsdcBalanceState>(createIdleBalanceState);
 	const requestIdRef = useRef(0);
 
-	const refetch = useCallback(async () => {
+	const refetch = useCallback(async (): Promise<bigint | undefined> => {
 		if (!enabled || !address) {
 			setState(createIdleBalanceState());
-			return;
+			return undefined;
 		}
 
 		const requestId = requestIdRef.current + 1;
@@ -927,11 +928,13 @@ function useDepositUsdcBalance(
 
 		try {
 			const raw = await readDepositUsdcBalance(config, address, abortController.signal);
-			if (requestIdRef.current !== requestId) return;
+			if (requestIdRef.current !== requestId) return undefined;
 			setState({ status: "success", raw, error: null });
+			return raw;
 		} catch (error) {
-			if (abortController.signal.aborted || requestIdRef.current !== requestId) return;
+			if (abortController.signal.aborted || requestIdRef.current !== requestId) return undefined;
 			setState((previous) => ({ status: "error", raw: previous.raw, error: toError(error) }));
+			return undefined;
 		}
 	}, [address, config, enabled]);
 
@@ -1162,6 +1165,7 @@ export function useDeposit({
 		hash: state.hash,
 		walletResponseDelayed: state.walletResponseDelayed,
 		deposit,
+		refreshBalance: refetch,
 		validate,
 		reset,
 	};

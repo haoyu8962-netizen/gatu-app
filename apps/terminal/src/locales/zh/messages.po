@@ -3551,6 +3551,10 @@ msgstr "滑点容忍度"
 msgid "Smart wallet client not ready"
 msgstr "智能钱包客户端尚未就绪"
 
+#: src/lib/errors/format.ts
+msgid "Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked."
+msgstr "智能钱包入金状态正在同步。余额核对完成前，请勿再次提交入金。"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."

@@ -3551,6 +3551,10 @@ msgstr "Slippage सहनशीलता"
 msgid "Smart wallet client not ready"
 msgstr "स्मार्ट वॉलेट क्लाइंट तैयार नहीं है"
 
+#: src/lib/errors/format.ts
+msgid "Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked."
+msgstr "स्मार्ट वॉलेट जमा स्थिति सिंक हो रही है। शेष राशि की जाँच पूरी होने तक दूसरा जमा सबमिट न करें।"
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/lib/hyperliquid/use-deposit.ts
 #~ msgid "Smart wallet deposits are enabled on Arbitrum Sepolia testnet only."
