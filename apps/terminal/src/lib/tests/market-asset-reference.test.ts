@@ -28,6 +28,7 @@ function createSpotMarket(
 		ctxIndex: 107,
 		iconUrl: undefined,
 		szDecimals: 2,
+		isStablePair: false,
 		tokensInfo: [
 			{
 				name: baseToken.displayName,

@@ -67,6 +67,8 @@ export function createMarkets(params: CreateMarketsParams): Markets {
 	const spotTokenByIndex = new Map(spotTokens.map((token) => [token.index, token]));
 
 	if (spotMeta?.universe && spotTokens.length > 0) {
+		const quoteTokenIndexes = new Set(spotMeta.universe.map((pair) => pair.tokens[1]));
+
 		for (const pair of spotMeta.universe) {
 			const tokensInfo = pair.tokens.map((idx) => spotTokenByIndex.get(idx)).filter((t): t is SpotToken => !!t);
 
@@ -85,6 +87,7 @@ export function createMarkets(params: CreateMarketsParams): Markets {
 				ctxIndex: pair.index,
 				tokensInfo,
 				szDecimals: baseToken.szDecimals,
+				isStablePair: quoteTokenIndexes.has(pair.tokens[0]),
 				iconUrl: getIconUrlFromMarketName(getUnderlyingAsset(baseToken) ?? baseToken.name, "spot"),
 			});
 		}

@@ -1,7 +1,7 @@
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
-import { STABLE_PAIR_FEE_SCALE, STABLECOIN_SWAP_TOKEN_NAMES } from "@/domain/trade/fees";
+import { STABLE_PAIR_FEE_SCALE } from "@/domain/trade/fees";
 import type { SpotMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { SpotToken } from "@/lib/hyperliquid/markets";
 import { toBig } from "@/lib/trade/numbers";
@@ -10,6 +10,7 @@ const BPS_DIVISOR = 10_000;
 const TENTHS_OF_BPS_DIVISOR = 100_000;
 
 export const DEFAULT_SWAP_SLIPPAGE_BPS = 100;
+export const STABLECOIN_SWAP_TOKEN_NAMES = [DEFAULT_QUOTE_TOKEN, "USDT0", "USDH"] as const;
 
 type StablecoinSwapTokenName = (typeof STABLECOIN_SWAP_TOKEN_NAMES)[number];
 
@@ -28,7 +29,7 @@ interface BuildSwapQuoteParams {
 	slippageBps: number;
 	takerFeeRate: number;
 	builderFeeTenthsBps: number | string;
-	isStablecoinSwap: boolean;
+	isStablePair: boolean;
 }
 
 export interface SwapQuote {
@@ -160,7 +161,7 @@ export function buildSwapQuote({
 	slippageBps,
 	takerFeeRate,
 	builderFeeTenthsBps,
-	isStablecoinSwap,
+	isStablePair,
 }: BuildSwapQuoteParams): SwapQuote | null {
 	const amountValue = toBig(amount);
 	if (!amountValue || amountValue.lte(0)) return null;
@@ -202,7 +203,7 @@ export function buildSwapQuote({
 	const filledInput = isBuying ? quoteAmount : filledSize;
 	const rawFeeRate = toBig(takerFeeRate);
 	const takerFeeRateValue = rawFeeRate?.gt(0)
-		? rawFeeRate.times(isStablecoinSwap ? STABLE_PAIR_FEE_SCALE : 1)
+		? rawFeeRate.times(isStablePair ? STABLE_PAIR_FEE_SCALE : 1)
 		: grossReceive.times(0);
 	const builderFeeRate = isBuying
 		? grossReceive.times(0)

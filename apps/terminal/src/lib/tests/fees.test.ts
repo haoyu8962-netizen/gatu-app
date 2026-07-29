@@ -11,11 +11,11 @@ function createBuilderPerpMarket(overrides: { deployerFeeScale: string; growthMo
 	} as UnifiedMarket;
 }
 
-function createSpotMarket(baseName: string, quoteName: string): UnifiedMarket {
+function createSpotMarket(isStablePair: boolean): UnifiedMarket {
 	return {
 		kind: "spot",
 		name: "@1",
-		tokensInfo: [{ name: baseName }, { name: quoteName }],
+		isStablePair,
 	} as UnifiedMarket;
 }
 
@@ -67,10 +67,10 @@ describe("market fee scaling", () => {
 		expect(applyMarketFeeScale(-0.00001, market)).toBe(-0.000001);
 	});
 
-	it("applies the stable-pair scale to stablecoin spot markets only", () => {
-		expect(applyMarketFeeScale(0.0007, createSpotMarket("USDT0", "USDC"))).toBe(0.00014);
-		expect(applyMarketFeeScale(0.0004, createSpotMarket("USDH", "USDC"))).toBe(0.00008);
-		expect(applyMarketFeeScale(0.0007, createSpotMarket("UBTC", "USDC"))).toBe(0.0007);
+	it("applies the stable-pair scale to quote-asset spot pairs only", () => {
+		expect(applyMarketFeeScale(0.0007, createSpotMarket(true))).toBe(0.00014);
+		expect(applyMarketFeeScale(0.0004, createSpotMarket(true))).toBe(0.00008);
+		expect(applyMarketFeeScale(0.0007, createSpotMarket(false))).toBe(0.0007);
 	});
 
 	it("passes native perp rates and missing markets through unchanged", () => {

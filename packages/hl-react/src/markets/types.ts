@@ -29,6 +29,7 @@ export interface SpotMarket extends SpotPair, BaseMarket {
 	kind: "spot";
 	tokensInfo: SpotToken[];
 	szDecimals: number;
+	isStablePair: boolean;
 }
 
 export interface BuilderPerpMarket extends PerpAsset, BaseMarket {

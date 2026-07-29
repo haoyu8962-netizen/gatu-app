@@ -1,9 +1,7 @@
 import type { UnifiedMarket } from "@gatu/hl-react";
 import Big from "big.js";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { type Numeric, toBig } from "@/lib/trade/numbers";
 
-export const STABLECOIN_SWAP_TOKEN_NAMES = [DEFAULT_QUOTE_TOKEN, "USDT0", "USDH"] as const;
 export const STABLE_PAIR_FEE_SCALE = "0.2";
 const GROWTH_MODE_FEE_SCALE = "0.1";
 
@@ -25,19 +23,11 @@ export function getHip3DeployerFeeScale(deployerFeeScale: Numeric): Big {
 	return parsed.lt(1) ? parsed.plus(1) : parsed.times(2);
 }
 
-function isStableSpotPair(market: UnifiedMarket): boolean {
-	if (market.kind !== "spot") return false;
-	const [baseToken, quoteToken] = market.tokensInfo;
-	if (!baseToken || !quoteToken) return false;
-	const stableNames: readonly string[] = STABLECOIN_SWAP_TOKEN_NAMES;
-	return stableNames.includes(baseToken.name) && stableNames.includes(quoteToken.name);
-}
-
 export function applyMarketFeeScale(feeRate: number, market: UnifiedMarket | undefined): number {
 	if (!market) return feeRate;
 
 	if (market.kind === "spot") {
-		if (!isStableSpotPair(market)) return feeRate;
+		if (!market.isStablePair) return feeRate;
 		return Big(feeRate).times(STABLE_PAIR_FEE_SCALE).toNumber();
 	}
 

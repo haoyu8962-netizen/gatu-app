@@ -50,6 +50,28 @@ describe("market catalog identity", () => {
 		expect(markets.builderPerp[0]?.quoteToken?.name).toBe("SPARSE");
 	});
 
+	it("derives stable pairs from quote-asset positions in the spot universe", () => {
+		const spotMeta = {
+			tokens: [spotToken("USDC", 0), spotToken("MOG", 43), spotToken("USDE", 235), spotToken("USDT0", 268)],
+			universe: [
+				{ name: "@43", tokens: [43, 0], index: 43, isCanonical: true },
+				{ name: "@150", tokens: [235, 0], index: 150, isCanonical: true },
+				{ name: "@166", tokens: [268, 0], index: 166, isCanonical: true },
+				{ name: "@300", tokens: [43, 235], index: 300, isCanonical: true },
+				{ name: "@301", tokens: [43, 268], index: 301, isCanonical: true },
+			],
+		} as SpotMetaResponse;
+
+		const markets = createTestMarkets(spotMeta);
+		const stableByName = new Map(markets.spot.map((market) => [market.name, market.isStablePair]));
+
+		expect(stableByName.get("@150")).toBe(true);
+		expect(stableByName.get("@166")).toBe(true);
+		expect(stableByName.get("@43")).toBe(false);
+		expect(stableByName.get("@300")).toBe(false);
+		expect(stableByName.get("@301")).toBe(false);
+	});
+
 	it("uses canonical @index routes and rejects ambiguous display-name lookup", () => {
 		const spotMeta = {
 			tokens: [spotToken("USDC", 0), spotToken("MOG", 43), spotToken("UMOG", 200, "Unit Mog")],

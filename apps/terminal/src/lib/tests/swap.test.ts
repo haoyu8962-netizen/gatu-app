@@ -61,7 +61,7 @@ describe("swap quote", () => {
 			slippageBps: 100,
 			takerFeeRate: 0.00045,
 			builderFeeTenthsBps: 10,
-			isStablecoinSwap: true,
+			isStablePair: true,
 		});
 
 		expect(quote).toMatchObject({
@@ -88,7 +88,7 @@ describe("swap quote", () => {
 			slippageBps: 100,
 			takerFeeRate: 0.00045,
 			builderFeeTenthsBps: 10,
-			isStablecoinSwap: true,
+			isStablePair: true,
 		});
 
 		expect(quote).toMatchObject({
@@ -112,7 +112,7 @@ describe("swap quote", () => {
 			slippageBps: 100,
 			takerFeeRate: 0.00045,
 			builderFeeTenthsBps: 10,
-			isStablecoinSwap: true,
+			isStablePair: true,
 		});
 
 		expect(quote).toMatchObject({
@@ -134,7 +134,7 @@ describe("swap quote", () => {
 			slippageBps: 100,
 			takerFeeRate: 0.0007,
 			builderFeeTenthsBps: 10,
-			isStablecoinSwap: false,
+			isStablePair: false,
 		});
 
 		expect(quote).toMatchObject({
@@ -160,7 +160,7 @@ describe("swap quote", () => {
 			slippageBps: 100,
 			takerFeeRate: 0.0007,
 			builderFeeTenthsBps: 10,
-			isStablecoinSwap: true,
+			isStablePair: true,
 		});
 
 		expect(quote).toMatchObject({
@@ -188,7 +188,7 @@ describe("swap quote", () => {
 			slippageBps: 100,
 			takerFeeRate: 0.0007,
 			builderFeeTenthsBps: 10,
-			isStablecoinSwap: true,
+			isStablePair: true,
 		});
 
 		expect(Number(quote?.maxInput)).toBeLessThanOrEqual(Number(balance));
