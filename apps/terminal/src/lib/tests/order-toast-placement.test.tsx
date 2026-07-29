@@ -40,6 +40,23 @@ function OrderToastHarness() {
 		createElement(
 			"button",
 			{
+				"data-testid": "add-unconfirmed-order",
+				onClick: () =>
+					addOrder({
+						error: "Review open orders and positions before retrying.",
+						market: "HYPE",
+						orderType: "market",
+						side: "sell",
+						size: "1",
+						status: "unconfirmed",
+					}),
+				type: "button",
+			},
+			"Add unconfirmed order",
+		),
+		createElement(
+			"button",
+			{
 				"data-testid": "clear-orders",
 				onClick: () => {
 					for (const order of orders) removeOrder(order.id);
@@ -94,6 +111,22 @@ describe("OrderToast placement", () => {
 		expect(terminalPage.match(/<OrderToast\s*\/>/g)).toHaveLength(1);
 		expect(desktopPanel).not.toContain("OrderToast");
 		expect(mobilePanel).not.toContain("OrderToast");
+	});
+
+	it("renders an unconfirmed order as a dismissible warning", () => {
+		const addButton = container.querySelector<HTMLButtonElement>('[data-testid="add-unconfirmed-order"]');
+		if (!addButton) throw new Error("Add unconfirmed order button not found");
+		act(() => addButton.click());
+
+		const status = document.body.querySelector<HTMLOutputElement>('output[aria-live="polite"]');
+		expect(status?.textContent).toContain("unconfirmed");
+		expect(status?.textContent).toContain("Review open orders and positions before retrying.");
+
+		const dismissButton = status?.querySelector<HTMLButtonElement>('button[aria-label="Dismiss"]');
+		if (!dismissButton) throw new Error("Dismiss button not found");
+		act(() => dismissButton.click());
+
+		expect(document.body.querySelector('output[aria-live="polite"]')).toBeNull();
 	});
 });
 

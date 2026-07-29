@@ -105,4 +105,18 @@ describe("useTwapCancel", () => {
 		expect(mocks.errorToast).toHaveBeenCalledWith("TWAP 45 is not active");
 		expect(hookValue?.feedback).toEqual({ tone: "error", message: "TWAP 45 is not active" });
 	});
+
+	it("treats HTTP 429 as a definitive cancellation failure", async () => {
+		mocks.mutateAsync.mockRejectedValueOnce(
+			new HttpRequestError({ response: new Response("rate limited", { status: 429 }) }),
+		);
+
+		await act(async () => {
+			await hookValue?.cancelTwap("ETH", 46);
+		});
+
+		expect(mocks.errorToast).toHaveBeenCalledOnce();
+		expect(mocks.warningToast).not.toHaveBeenCalled();
+		expect(hookValue?.feedback?.tone).toBe("error");
+	});
 });

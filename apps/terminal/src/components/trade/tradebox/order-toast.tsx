@@ -50,6 +50,7 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 					"flex items-center justify-center size-7 rounded-8 shrink-0",
 					order.status === "pending" && "bg-brand-soft border border-stroke-brand-strong/30",
 					order.status === "confirming" && "bg-warning-soft border border-stroke-warning-strong/30",
+					order.status === "unconfirmed" && "bg-warning-soft border border-stroke-warning-strong/30",
 					order.status === "partial" && "bg-warning-soft border border-stroke-warning-strong/30",
 					order.status === "success" && "bg-success-soft border border-stroke-success-strong/30",
 					order.status === "failed" && "bg-error-soft border border-stroke-error-strong/30",
@@ -57,6 +58,7 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 			>
 				{order.status === "pending" && <SpinnerGapIcon className="size-4 animate-spin text-brand" />}
 				{order.status === "confirming" && <SpinnerGapIcon className="size-4 animate-spin text-warning" />}
+				{order.status === "unconfirmed" && <WarningCircleIcon className="size-4 text-warning" />}
 				{order.status === "partial" && <WarningCircleIcon className="size-4 text-warning" />}
 				{order.status === "success" && <CheckIcon className="size-4 text-success" />}
 				{order.status === "failed" && <XIcon className="size-4 text-error" />}
@@ -112,11 +114,18 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 					</div>
 				)}
 				{order.error && (
-					<div className={cn("text-xs", order.status === "partial" ? "text-warning" : "text-error")}>{order.error}</div>
+					<div
+						className={cn(
+							"text-xs",
+							order.status === "partial" || order.status === "unconfirmed" ? "text-warning" : "text-error",
+						)}
+					>
+						{order.error}
+					</div>
 				)}
 			</div>
 
-			{(order.status === "partial" || order.status === "failed") && (
+			{(order.status === "unconfirmed" || order.status === "partial" || order.status === "failed") && (
 				<Button
 					variant="ghost"
 					intent="neutral"
@@ -152,6 +161,7 @@ export function OrderToast() {
 
 	const pendingCount = orders.filter((o) => o.status === "pending").length;
 	const confirmingCount = orders.filter((o) => o.status === "confirming").length;
+	const unconfirmedCount = orders.filter((o) => o.status === "unconfirmed").length;
 	const partialCount = orders.filter((o) => o.status === "partial").length;
 	const successCount = orders.filter((o) => o.status === "success").length;
 	const failedCount = orders.filter((o) => o.status === "failed").length;
@@ -169,15 +179,22 @@ export function OrderToast() {
 
 				pendingCount > 0 && "ring-1 ring-stroke-brand-strong/30",
 				confirmingCount > 0 && pendingCount === 0 && "ring-1 ring-stroke-warning-strong/30",
-				partialCount > 0 && pendingCount === 0 && confirmingCount === 0 && "ring-1 ring-stroke-warning-strong/30",
+				unconfirmedCount > 0 && pendingCount === 0 && confirmingCount === 0 && "ring-1 ring-stroke-warning-strong/30",
+				partialCount > 0 &&
+					pendingCount === 0 &&
+					confirmingCount === 0 &&
+					unconfirmedCount === 0 &&
+					"ring-1 ring-stroke-warning-strong/30",
 				failedCount > 0 &&
 					pendingCount === 0 &&
 					confirmingCount === 0 &&
+					unconfirmedCount === 0 &&
 					partialCount === 0 &&
 					"ring-1 ring-stroke-error-strong/30",
 				successCount > 0 &&
 					pendingCount === 0 &&
 					confirmingCount === 0 &&
+					unconfirmedCount === 0 &&
 					partialCount === 0 &&
 					failedCount === 0 &&
 					"ring-1 ring-stroke-success-strong/30",
@@ -197,6 +214,11 @@ export function OrderToast() {
 					{confirmingCount > 0 && (
 						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-warning-soft text-warning border border-stroke-warning-strong/30">
 							{confirmingCount} {t`confirming`}
+						</span>
+					)}
+					{unconfirmedCount > 0 && (
+						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-warning-soft text-warning border border-stroke-warning-strong/30">
+							{unconfirmedCount} {t`unconfirmed`}
 						</span>
 					)}
 					{partialCount > 0 && (

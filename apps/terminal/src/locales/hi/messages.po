@@ -3978,6 +3978,14 @@ msgstr "एक्सचेंज ने ऑर्डर स्वीकार �
 msgid "The exchange did not accept the TWAP order."
 msgstr "एक्सचेंज ने TWAP ऑर्डर स्वीकार नहीं किया।"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The exchange did not return a final order status. Review open orders and positions before retrying."
+msgstr "एक्सचेंज ने ऑर्डर की अंतिम स्थिति नहीं लौटाई। दोबारा प्रयास करने से पहले खुले ऑर्डर और पोज़िशन जाँचें।"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
+msgstr "एक्सचेंज ने TWAP की अंतिम स्थिति नहीं लौटाई। दोबारा प्रयास करने से पहले सक्रिय TWAP ऑर्डर जाँचें।"
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।"
@@ -4420,6 +4428,10 @@ msgstr "वॉलेट को Arbitrum पर स्विच नहीं क�
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unavailable"
 msgstr "अनुपलब्ध"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "unconfirmed"
+msgstr "अपुष्ट"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified"

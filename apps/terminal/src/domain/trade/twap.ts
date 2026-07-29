@@ -2,6 +2,7 @@ import Big from "big.js";
 import type { SubscriptionStatus } from "@/lib/hyperliquid";
 
 export const TWAP_RECONCILIATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+export const TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS = 2 * 60 * 1000;
 
 export type TwapViewState = "disconnected" | "loading" | "error" | "stale" | "ready";
 

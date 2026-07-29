@@ -85,6 +85,9 @@ describe("order tracking", () => {
 		expect(
 			isAmbiguousOrderRequestError(new HttpRequestError({ response: new Response("bad request", { status: 400 }) })),
 		).toBe(false);
+		expect(
+			isAmbiguousOrderRequestError(new HttpRequestError({ response: new Response("rate limited", { status: 429 }) })),
+		).toBe(false);
 	});
 
 	it("preserves partial batch acceptance from the SDK error response", () => {

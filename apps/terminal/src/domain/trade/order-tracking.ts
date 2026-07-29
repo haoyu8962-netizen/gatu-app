@@ -2,6 +2,7 @@ import type { InfoClient } from "@nktkas/hyperliquid";
 import type { ExchangeParams } from "@/lib/hyperliquid";
 
 export const ORDER_RECONCILIATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+export const ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS = 2 * 60 * 1000;
 export const ORDER_RECONCILIATION_POLL_LIMIT = 3;
 
 const ACCEPTED_ORDER_STATUSES: ReadonlySet<OrderProcessingStatus> = new Set(["open", "filled", "triggered"]);
@@ -103,7 +104,7 @@ export function isAmbiguousOrderRequestError(error: unknown): boolean {
 	if (!isHttpRequestErrorLike(error)) return false;
 	const status = getHttpStatus(error.response);
 	if (status === undefined) return true;
-	return status < 400 || status === 408 || status === 429 || status >= 500;
+	return status < 400 || status === 408 || status >= 500;
 }
 
 export function isApiOrderResponseError(error: unknown): error is { response: unknown } {

@@ -164,4 +164,16 @@ describe("useTrackedTwapOrder", () => {
 
 		expect(hasPendingTwapForAsset("Mainnet", USER, 10)).toBe(false);
 	});
+
+	it("treats HTTP 429 as a definitive rejection without leaving the asset blocked", async () => {
+		const error = new HttpRequestError({ response: new Response("rate limited", { status: 429 }) });
+		mocks.mutateAsync.mockRejectedValueOnce(error);
+		if (!hookValue) throw new Error("Expected tracked TWAP hook");
+
+		await act(async () => {
+			await expect(hookValue?.submitTwap(createParams(11), { coin: "HYPE" })).rejects.toBe(error);
+		});
+
+		expect(hasPendingTwapForAsset("Mainnet", USER, 11)).toBe(false);
+	});
 });

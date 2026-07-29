@@ -4,10 +4,12 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderReconciliation } from "@/components/trade/order-reconciliation";
+import { ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS } from "@/domain/trade/order-tracking";
 import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
 const mocks = vi.hoisted(() => ({
+	clientKey: "0x1111111111111111111111111111111111111111",
 	infoOrderStatus: vi.fn(),
 	successToast: vi.fn(),
 	warningToast: vi.fn(),
@@ -21,7 +23,7 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useHyperliquid: () => ({ clientKey: USER, env: "Mainnet", info: { orderStatus: mocks.infoOrderStatus } }),
+	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: "Mainnet", info: { orderStatus: mocks.infoOrderStatus } }),
 	useSubscription: () => ({ data: mocks.orderUpdatesData }),
 }));
 
@@ -35,6 +37,7 @@ describe("OrderReconciliation", () => {
 		mocks.infoOrderStatus.mockReset();
 		mocks.successToast.mockReset();
 		mocks.warningToast.mockReset();
+		mocks.clientKey = USER;
 		mocks.orderUpdatesData = undefined;
 		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
 		container = document.createElement("div");
@@ -152,5 +155,55 @@ describe("OrderReconciliation", () => {
 			),
 		).toBe(true);
 		expect(mocks.successToast).not.toHaveBeenCalled();
+	});
+
+	it("stops polling, releases the asset lock, and warns when confirmation times out", () => {
+		const submission = getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "unknown-order",
+			children: [{ assetId: 30, cloid: "0x00000000000000000000000000000030" }],
+		});
+		vi.setSystemTime(submission.createdAt + ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS);
+
+		act(() => root.render(createElement(OrderReconciliation)));
+
+		expect(mocks.infoOrderStatus).not.toHaveBeenCalled();
+		expect(hasPendingOrderForAssets("Mainnet", USER, [30])).toBe(false);
+		expect(mocks.warningToast).toHaveBeenCalledOnce();
+	});
+
+	it("releases the local lock while the wallet is disconnected", () => {
+		const submission = getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "disconnected-order",
+			children: [{ assetId: 32, cloid: "0x00000000000000000000000000000032" }],
+		});
+		mocks.clientKey = "disconnected";
+		vi.setSystemTime(submission.createdAt + ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS);
+
+		act(() => root.render(createElement(OrderReconciliation)));
+
+		expect(hasPendingOrderForAssets("Mainnet", USER, [32])).toBe(false);
+		expect(mocks.infoOrderStatus).not.toHaveBeenCalled();
+		expect(mocks.warningToast).toHaveBeenCalledOnce();
+	});
+
+	it("accepts a late order update after the local hard lock has been released", () => {
+		const cloid = "0x00000000000000000000000000000031" as const;
+		const submission = getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "late-order",
+			children: [{ assetId: 31, cloid }],
+		});
+		getPendingOrderActions().markUnconfirmed(submission.id, submission.createdAt + 1);
+		mocks.orderUpdatesData = [{ order: { cloid }, status: "filled" }];
+
+		act(() => root.render(createElement(OrderReconciliation)));
+
+		expect(hasPendingOrderForAssets("Mainnet", USER, [31])).toBe(false);
+		expect(mocks.successToast).toHaveBeenCalledOnce();
 	});
 });

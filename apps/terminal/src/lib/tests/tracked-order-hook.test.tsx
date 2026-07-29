@@ -22,14 +22,14 @@ function Probe() {
 	return null;
 }
 
-function createParams(assetId = 0, count = 1) {
+function createParams(assetId = 0, count = 1, reduceOnly = false) {
 	return {
 		grouping: "na" as const,
 		orders: Array.from({ length: count }, () => ({
 			a: assetId,
 			b: true,
 			p: "10",
-			r: false,
+			r: reduceOnly,
 			s: "1",
 			t: { limit: { tif: "Gtc" as const } },
 		})),
@@ -145,6 +145,39 @@ describe("useTrackedOrder", () => {
 		});
 
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [11])).toBe(false);
+	});
+
+	it("treats HTTP 429 as a definitive rejection without leaving the market blocked", async () => {
+		const error = new HttpRequestError({ response: new Response("rate limited", { status: 429 }) });
+		mutateAsync.mockRejectedValueOnce(error);
+		if (!hookValue) throw new Error("Expected tracked order hook");
+
+		await act(async () => {
+			await expect(hookValue?.submitOrder(createParams(14))).rejects.toBe(error);
+		});
+
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [14])).toBe(false);
+	});
+
+	it("allows a different reduce-only intent while an entry order for the asset is unresolved", async () => {
+		mutateAsync
+			.mockRejectedValueOnce(new HttpRequestError({ detail: "Request timed out after 10000 ms" }))
+			.mockResolvedValueOnce({
+				status: "ok",
+				response: { type: "order", data: { statuses: [{ filled: { totalSz: "1", avgPx: "10", oid: 2 } }] } },
+			});
+		if (!hookValue) throw new Error("Expected tracked order hook");
+
+		await act(async () => {
+			await hookValue?.submitOrder(createParams(15));
+		});
+		let closeResult: Awaited<ReturnType<typeof hookValue.submitOrder>> | undefined;
+		await act(async () => {
+			closeResult = await hookValue?.submitOrder(createParams(15, 1, true));
+		});
+
+		expect(closeResult?.state).toBe("confirmed");
+		expect(mutateAsync).toHaveBeenCalledTimes(2);
 	});
 
 	it("reports mixed batch statuses as partial without leaving reconciliation state", async () => {

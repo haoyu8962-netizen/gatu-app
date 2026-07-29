@@ -8,7 +8,11 @@ import {
 } from "@/domain/trade/order-tracking";
 import { type ExchangeResponse, useExchange, useHyperliquid } from "@/lib/hyperliquid";
 import { updateOrderQueueItem } from "@/stores/use-order-queue-store";
-import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
+import {
+	getPendingOrderActions,
+	hasPendingOrderForAssets,
+	hasPendingOrderIntent,
+} from "@/stores/use-pending-order-store";
 
 interface SubmitOptions {
 	queueId?: string;
@@ -29,7 +33,10 @@ export function useTrackedOrder() {
 		const user = clientKey.toLowerCase() as `0x${string}`;
 		const tracked = trackOrderRequest(params);
 		const assetIds = tracked.children.map((child) => child.assetId);
-		if (hasPendingOrderForAssets(env, user, assetIds)) return { state: "blocked" };
+		const hasExactPendingIntent = hasPendingOrderIntent(env, user, tracked.intentKey);
+		const hasPendingAsset = hasPendingOrderForAssets(env, user, assetIds);
+		const isRiskReducing = tracked.params.orders.every((order) => order.r);
+		if (hasExactPendingIntent || (hasPendingAsset && !isRiskReducing)) return { state: "blocked" };
 		const submission = getPendingOrderActions().add({
 			env,
 			user,

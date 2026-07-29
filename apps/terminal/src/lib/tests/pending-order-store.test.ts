@@ -1,11 +1,20 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS } from "@/domain/trade/order-tracking";
+import {
+	getPendingOrderActions,
+	hasPendingOrderForAssets,
+	hasPendingOrderIntent,
+} from "@/stores/use-pending-order-store";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
 
 describe("pending order store", () => {
 	beforeEach(() => {
 		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
 	});
 
 	it("blocks the affected asset until every child has a known exchange status", () => {
@@ -42,5 +51,22 @@ describe("pending order store", () => {
 		expect(hasPendingOrderForAssets("Mainnet", USER, [10])).toBe(true);
 		expect(hasPendingOrderForAssets("Testnet", USER, [10])).toBe(false);
 		expect(hasPendingOrderForAssets("Mainnet", "0x2222222222222222222222222222222222222222", [10])).toBe(false);
+	});
+
+	it("releases the hard lock after the confirmation window while retaining the tracked record", () => {
+		const submission = getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "order",
+			children: [{ assetId: 11, cloid: "0x00000000000000000000000000000004" }],
+		});
+		vi.spyOn(Date, "now").mockReturnValue(submission.createdAt + ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS);
+
+		expect(hasPendingOrderForAssets("Mainnet", USER, [11])).toBe(false);
+		expect(hasPendingOrderIntent("Mainnet", USER, "order")).toBe(false);
+		expect(getPendingOrderActions().markUnconfirmed(submission.id, Date.now())).toMatchObject({
+			id: submission.id,
+			unconfirmedAt: Date.now(),
+		});
 	});
 });

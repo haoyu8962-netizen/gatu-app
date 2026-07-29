@@ -10,7 +10,7 @@ export interface OrderQueueItem {
 	orderType?: "market" | "limit" | "trigger" | "scale" | "twap";
 	tpPrice?: string;
 	slPrice?: string;
-	status: "pending" | "confirming" | "partial" | "success" | "failed";
+	status: "pending" | "confirming" | "unconfirmed" | "partial" | "success" | "failed";
 	outcome?: OrderOutcome;
 	error?: string;
 	acceptedCount?: number;
@@ -71,7 +71,7 @@ const useOrderQueueStore = create<OrderQueueStore>()((set) => ({
 }));
 
 function isCompletedOrderStatus(status: OrderQueueItem["status"] | undefined): boolean {
-	return status === "partial" || status === "success" || status === "failed";
+	return status === "unconfirmed" || status === "partial" || status === "success" || status === "failed";
 }
 
 export function useOrderQueue() {

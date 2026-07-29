@@ -3978,6 +3978,14 @@ msgstr "The exchange did not accept the order."
 msgid "The exchange did not accept the TWAP order."
 msgstr "The exchange did not accept the TWAP order."
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The exchange did not return a final order status. Review open orders and positions before retrying."
+msgstr "The exchange did not return a final order status. Review open orders and positions before retrying."
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
+msgstr "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "The page you are looking for does not exist."
@@ -4420,6 +4428,10 @@ msgstr "Unable to switch wallet to Arbitrum. Switch networks in your wallet and 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unavailable"
 msgstr "Unavailable"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "unconfirmed"
+msgstr "unconfirmed"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified"

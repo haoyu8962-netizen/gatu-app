@@ -2,7 +2,11 @@ import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { STORAGE_KEYS } from "@/config/app";
-import { TWAP_RECONCILIATION_MAX_AGE_MS, type TwapIntent } from "@/domain/trade/twap";
+import {
+	TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS,
+	TWAP_RECONCILIATION_MAX_AGE_MS,
+	type TwapIntent,
+} from "@/domain/trade/twap";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 
 const baselineSchema = z.object({
@@ -19,6 +23,7 @@ const pendingTwapStoreSchema = z.object({
 				user: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
 				queueId: z.string().optional(),
 				createdAt: z.number().int().nonnegative(),
+				unconfirmedAt: z.number().int().nonnegative().optional(),
 				intent: z.object({
 					assetId: z.number().int().nonnegative(),
 					coin: z.string().min(1),
@@ -48,6 +53,7 @@ export interface PendingTwapSubmission {
 	user: `0x${string}`;
 	queueId?: string;
 	createdAt: number;
+	unconfirmedAt?: number;
 	intent: TwapIntent;
 	activeBaseline: TwapBaseline;
 	historyBaseline: TwapBaseline;
@@ -66,6 +72,7 @@ interface PendingTwapStore {
 		clearActive: (id: string) => void;
 		remove: (id: string) => void;
 		resolve: (id: string) => PendingTwapSubmission | null;
+		markUnconfirmed: (id: string, markedAt: number) => PendingTwapSubmission | null;
 		prune: (now: number) => void;
 	};
 }
@@ -119,6 +126,19 @@ const usePendingTwapStore = create<PendingTwapStore>()(
 					});
 					return completed;
 				},
+				markUnconfirmed: (id, markedAt) => {
+					let marked: PendingTwapSubmission | null = null;
+					set((state) => {
+						const submission = state.submissions.find((entry) => entry.id === id);
+						if (!submission || submission.unconfirmedAt !== undefined) return state;
+						const next = { ...submission, unconfirmedAt: markedAt };
+						marked = next;
+						return {
+							submissions: state.submissions.map((entry) => (entry.id === id ? next : entry)),
+						};
+					});
+					return marked;
+				},
 				prune: (now) => {
 					set((state) => {
 						const submissions = state.submissions.filter(
@@ -170,10 +190,20 @@ export function getPendingTwapActions() {
 
 export function hasPendingTwapForAsset(env: PendingTwapSubmission["env"], user: string, assetId: number): boolean {
 	const normalizedUser = user.toLowerCase();
+	const now = Date.now();
 	return usePendingTwapStore
 		.getState()
 		.submissions.some(
 			(submission) =>
-				submission.env === env && submission.user === normalizedUser && submission.intent.assetId === assetId,
+				submission.env === env &&
+				submission.user === normalizedUser &&
+				submission.intent.assetId === assetId &&
+				isPendingTwapSubmissionBlocking(submission, now),
 		);
+}
+
+export function isPendingTwapSubmissionBlocking(submission: PendingTwapSubmission, now: number): boolean {
+	return (
+		submission.unconfirmedAt === undefined && now - submission.createdAt < TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS
+	);
 }

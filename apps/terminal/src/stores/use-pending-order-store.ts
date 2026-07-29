@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { STORAGE_KEYS } from "@/config/app";
 import {
 	getReconciliationDelayMs,
+	ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS,
 	ORDER_RECONCILIATION_MAX_AGE_MS,
 	type OrderProcessingStatus,
 	type TrackedOrderChild,
@@ -21,6 +22,7 @@ const pendingOrderStoreSchema = z.object({
 				intentKey: z.string(),
 				queueId: z.string().optional(),
 				createdAt: z.number().int().nonnegative(),
+				unconfirmedAt: z.number().int().nonnegative().optional(),
 				children: z.array(
 					z.object({
 						assetId: z.number().int().nonnegative(),
@@ -50,6 +52,7 @@ export interface PendingOrderSubmission {
 	intentKey: string;
 	queueId?: string;
 	createdAt: number;
+	unconfirmedAt?: number;
 	children: PendingOrderChild[];
 }
 
@@ -76,6 +79,7 @@ interface PendingOrderStore {
 			cloid: string,
 			status: OrderProcessingStatus,
 		) => PendingOrderSubmission | null;
+		markUnconfirmed: (id: string, markedAt: number) => PendingOrderSubmission | null;
 		prune: (now: number) => void;
 	};
 }
@@ -172,6 +176,19 @@ const usePendingOrderStore = create<PendingOrderStore>()(
 					});
 					return completed;
 				},
+				markUnconfirmed: (id, markedAt) => {
+					let marked: PendingOrderSubmission | null = null;
+					set((state) => {
+						const submission = state.submissions.find((entry) => entry.id === id);
+						if (!submission || submission.unconfirmedAt !== undefined) return state;
+						const next = { ...submission, unconfirmedAt: markedAt };
+						marked = next;
+						return {
+							submissions: state.submissions.map((entry) => (entry.id === id ? next : entry)),
+						};
+					});
+					return marked;
+				},
 				prune: (now) => {
 					set((state) => {
 						const submissions = state.submissions.filter(
@@ -204,6 +221,10 @@ export function usePendingOrderSubmissions(): PendingOrderSubmission[] {
 	return usePendingOrderStore((state) => state.submissions);
 }
 
+export function usePendingOrderActiveSubmissionIds(): ReadonlySet<string> {
+	return usePendingOrderStore((state) => state.activeSubmissionIds);
+}
+
 export function getPendingOrderActions() {
 	return usePendingOrderStore.getState().actions;
 }
@@ -215,14 +236,36 @@ export function hasPendingOrderForAssets(
 ): boolean {
 	const normalizedUser = user.toLowerCase();
 	const assets = new Set(assetIds);
+	const now = Date.now();
 	return usePendingOrderStore
 		.getState()
 		.submissions.some(
 			(submission) =>
 				submission.env === env &&
 				submission.user === normalizedUser &&
+				isPendingOrderSubmissionBlocking(submission, now) &&
 				submission.children.some((child) => assets.has(child.assetId)),
 		);
+}
+
+export function hasPendingOrderIntent(env: PendingOrderSubmission["env"], user: string, intentKey: string): boolean {
+	const normalizedUser = user.toLowerCase();
+	const now = Date.now();
+	return usePendingOrderStore
+		.getState()
+		.submissions.some(
+			(submission) =>
+				submission.env === env &&
+				submission.user === normalizedUser &&
+				submission.intentKey === intentKey &&
+				isPendingOrderSubmissionBlocking(submission, now),
+		);
+}
+
+export function isPendingOrderSubmissionBlocking(submission: PendingOrderSubmission, now: number): boolean {
+	return (
+		submission.unconfirmedAt === undefined && now - submission.createdAt < ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS
+	);
 }
 
 export function isPendingOrderSubmissionActive(id: string): boolean {

@@ -3978,6 +3978,14 @@ msgstr "交易所未接受该订单。"
 msgid "The exchange did not accept the TWAP order."
 msgstr "交易所未接受该 TWAP 订单。"
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The exchange did not return a final order status. Review open orders and positions before retrying."
+msgstr "交易所未返回最终订单状态。重试前请检查当前委托和持仓。"
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
+msgstr "交易所未返回最终 TWAP 状态。重试前请检查当前 TWAP 委托。"
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "您查找的页面不存在。"
@@ -4420,6 +4428,10 @@ msgstr "无法将钱包切换到 Arbitrum。请在钱包中切换网络后重试
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unavailable"
 msgstr "不可用"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "unconfirmed"
+msgstr "未确认"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified"

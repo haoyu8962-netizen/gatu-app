@@ -3978,6 +3978,14 @@ msgstr "La plateforme n'a pas accepté l'ordre."
 msgid "The exchange did not accept the TWAP order."
 msgstr "La plateforme n'a pas accepté l'ordre TWAP."
 
+#: src/components/trade/order-reconciliation.tsx
+msgid "The exchange did not return a final order status. Review open orders and positions before retrying."
+msgstr "La plateforme n’a pas renvoyé le statut final de l’ordre. Vérifiez les ordres ouverts et les positions avant de réessayer."
+
+#: src/components/trade/twap-reconciliation.tsx
+msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
+msgstr "La plateforme n’a pas renvoyé le statut final du TWAP. Vérifiez les ordres TWAP actifs avant de réessayer."
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "La page que vous recherchez n'existe pas."
@@ -4420,6 +4428,10 @@ msgstr "Impossible de passer le portefeuille sur Arbitrum. Changez de réseau da
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unavailable"
 msgstr "Indisponible"
+
+#: src/components/trade/tradebox/order-toast.tsx
+msgid "unconfirmed"
+msgstr "non confirmé"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified"
