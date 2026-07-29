@@ -14,6 +14,7 @@ import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { TokenSelector } from "../chart/token-selector";
+import { MarketAssetInfo } from "../components/market-asset-info";
 import { FavoritesStrip } from "../header/favorites-strip";
 import { MarketOverview } from "../market-overview";
 
@@ -66,7 +67,10 @@ export function MainWorkspace() {
 						key="coinInfo"
 						className="desktop-grid-panel flex min-w-0 items-center overflow-hidden border-b border-stroke-weak bg-surface px-2"
 					>
-						<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} />
+						<div className="flex shrink-0 items-center">
+							<MarketAssetInfo key={selectedMarket?.name} market={selectedMarket} />
+							<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} showAssetIcon={false} />
+						</div>
 						<Divider orientation="vertical" className="mx-2.5 my-1" />
 						<div className="min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 							<MarketOverview />

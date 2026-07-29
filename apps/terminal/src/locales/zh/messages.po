@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: reference.coin
+#: src/components/trade/components/market-asset-info.tsx
+msgid "{0} is listed as a native Hyperliquid perpetual market."
+msgstr "{0} 已作为 Hyperliquid 原生永续市场上线。"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "{0} more wallets"
 #~ msgstr ""
@@ -303,6 +308,18 @@ msgstr "已拒绝切换到 Arbitrum 网络。"
 msgid "Asset"
 msgstr "资产"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Asset information could not be loaded."
+msgstr "无法加载资产说明。"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Asset information is temporarily unavailable."
+msgstr "资产信息暂时不可用。"
+
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "Asset information supplied through Hyperliquid market metadata."
+#~ msgstr "通过 Hyperliquid 市场元数据提供的资产说明。"
+
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Assets"
 #~ msgstr ""
@@ -381,6 +398,10 @@ msgstr "可用于交易的余额"
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "余额"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
+msgstr "Bitcoin 是一种由工作量证明网络保障安全的去中心化数字资产。"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Block:"
@@ -567,6 +588,14 @@ msgstr "图表"
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Checking..."
 #~ msgstr "检查中..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Circulating supply"
+msgstr "流通量"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Click to learn more about this asset."
+msgstr "点击了解更多关于此资产的信息。"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Clipboard does not contain a pairing code."
@@ -997,6 +1026,10 @@ msgstr "当前"
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Deployer"
+msgstr "部署者"
+
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1289,6 +1322,10 @@ msgstr "预估费用"
 msgid "Estimated time"
 msgstr "预计时间"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
+msgstr "Ethereum 是一个用于智能合约和去中心化应用的可编程区块链。"
+
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
 msgstr "超过最大数量"
@@ -1547,6 +1584,10 @@ msgstr "频率"
 msgid "From"
 msgstr "从"
 
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "Full name"
+#~ msgstr "全名"
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Full Position"
 #~ msgstr ""
@@ -1633,6 +1674,10 @@ msgstr "小时"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "多头支付空头的小时费率（如果为负，则空头支付多头）。资金费没有关联费用，是用户之间的点对点转移，以将价格推向现货价格。详见文档。"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "HYPE is the native token of Hyperliquid."
+msgstr "HYPE 是 Hyperliquid 的原生代币。"
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
@@ -1850,6 +1895,10 @@ msgstr "已强平"
 msgid "Loading"
 msgstr "加载中"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Loading asset information..."
+msgstr "正在加载资产说明..."
+
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Loading balances across all chains..."
 msgstr "正在加载所有链上的余额…"
@@ -1878,6 +1927,10 @@ msgstr "正在加载订单历史…"
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Loading positions..."
 msgstr "加载仓位中..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Loading token metadata..."
+msgstr "正在加载代币元数据..."
 
 #: src/components/trade/positions/history-tab.tsx
 msgid "Loading trade history..."
@@ -2060,6 +2113,10 @@ msgctxt "Order type"
 msgid "Market"
 msgstr "市价"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Market and token information from local references and Hyperliquid metadata."
+msgstr "来自本地资料和 Hyperliquid 元数据的市场与代币信息。"
+
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -2128,6 +2185,10 @@ msgstr "最大回撤"
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Maximum slippage tolerance for market orders"
 #~ msgstr ""
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Maximum supply"
+msgstr "最大供应量"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Meme"
@@ -2279,6 +2340,10 @@ msgstr "无活跃仓位。"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No active TWAP orders."
 msgstr "没有进行中的 TWAP 委托。"
+
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "No asset description is available for this market."
+#~ msgstr "此市场暂无资产说明。"
 
 #: src/lib/errors/definitions/balance.ts
 msgid "No balance"
@@ -3111,6 +3176,8 @@ msgstr "正在重置…"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3566,6 +3633,10 @@ msgstr "智能钱包入金状态正在同步。余额核对完成前，请勿再
 msgid "Smart wallet deposits are not enabled for this network."
 msgstr "当前网络未启用智能钱包存款。"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
+msgstr "Solana 是一个面向智能合约和去中心化应用、专为高吞吐执行而设计的区块链。"
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "Some orders were accepted. Review open orders before retrying."
 msgstr "部分订单已被接受。重试前请检查当前委托。"
@@ -3911,6 +3982,10 @@ msgstr "您查找的页面不存在。"
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This description was supplied by the third-party market deployer. Treat it as unverified information."
+msgstr "此说明由第三方市场部署者提供，请将其视为未经核实的信息。"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
 #~ msgstr ""
@@ -3952,6 +4027,16 @@ msgstr "此手机链接属于另一个所有者账户。"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
 #~ msgstr "此手机链接未在 Hyperliquid 上获得授权。"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This spot asset is enabled independently by Unit, a third-party provider."
+msgstr "该现货资产由第三方提供商 Unit 独立启用。"
+
+#. placeholder {0}: reference.baseName
+#. placeholder {1}: reference.quoteName
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This spot market trades {0} against {1} on Hyperliquid."
+msgstr "该现货市场在 Hyperliquid 上交易 {0}/{1}。"
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
@@ -4009,6 +4094,14 @@ msgstr "切换数量模式"
 #~ msgid "TOKEN"
 #~ msgstr "TOKEN"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Token ID"
+msgstr "代币 ID"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Token metadata could not be loaded."
+msgstr "无法加载代币元数据。"
+
 #: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -4029,6 +4122,10 @@ msgstr "总权益"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
 #~ msgstr "总数量"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Total supply"
+msgstr "总供应量"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Total time"
@@ -4428,6 +4525,10 @@ msgstr "金库"
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "验证中..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "View asset information"
+msgstr "查看资产说明"
 
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "View on explorer"

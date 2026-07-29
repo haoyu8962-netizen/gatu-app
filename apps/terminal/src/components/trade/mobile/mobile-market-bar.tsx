@@ -28,6 +28,7 @@ import {
 } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { TokenSelector } from "../chart/token-selector";
+import { MarketAssetInfo } from "../components/market-asset-info";
 
 type PriceDirection = "up" | "down";
 
@@ -147,8 +148,9 @@ export function MobileMarketBar({ className }: Props) {
 		>
 			<div className="min-w-0 px-3">
 				<div className="grid min-h-[61px] min-w-0 grid-cols-[minmax(max-content,1fr)_minmax(0,1fr)] items-center gap-2">
-					<div className="flex min-w-0 items-center gap-1.5 min-[390px]:gap-2">
-						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} />
+					<div className="flex min-w-0 items-center">
+						<MarketAssetInfo key={market?.name} market={market} />
+						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} showAssetIcon={false} />
 					</div>
 
 					<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] items-center gap-2 overflow-hidden">

@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useCallback, useEffect, useId, useRef, useState } from "react";
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/cn";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import {
@@ -19,9 +20,10 @@ const MARKET_METADATA_REFRESH_INTERVAL_MS = 5 * 60 * 1_000;
 interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	onValueChange: (value: string, market?: UnifiedMarketInfo) => void;
+	showAssetIcon?: boolean;
 }
 
-export function TokenSelector({ selectedMarket, onValueChange }: Props) {
+export function TokenSelector({ selectedMarket, onValueChange, showAssetIcon = true }: Props) {
 	const isMobile = useIsMobile();
 	const queryClient = useQueryClient();
 	const headingId = useId();
@@ -82,12 +84,12 @@ export function TokenSelector({ selectedMarket, onValueChange }: Props) {
 					role="combobox"
 					aria-expanded={open}
 					aria-label={t`Select token`}
-					className={MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME}
+					className={cn(MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME, showAssetIcon ? "pl-2.5" : "pl-1")}
 					onPointerEnter={preloadPopup}
 					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}
 				>
-					<TokenSelectorTriggerContent selectedMarket={selectedMarket} mobile />
+					<TokenSelectorTriggerContent selectedMarket={selectedMarket} mobile showAssetIcon={showAssetIcon} />
 				</DrawerTrigger>
 				{popup}
 			</Drawer>
@@ -102,12 +104,12 @@ export function TokenSelector({ selectedMarket, onValueChange }: Props) {
 					role="combobox"
 					aria-expanded={open}
 					aria-label={t`Select token`}
-					className={TOKEN_SELECTOR_TRIGGER_CLASSNAME}
+					className={cn(TOKEN_SELECTOR_TRIGGER_CLASSNAME, showAssetIcon ? "pl-2" : "pl-1")}
 					onPointerEnter={preloadPopup}
 					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}
 				>
-					<TokenSelectorTriggerContent selectedMarket={selectedMarket} open={open} />
+					<TokenSelectorTriggerContent selectedMarket={selectedMarket} open={open} showAssetIcon={showAssetIcon} />
 				</button>
 			</PopoverTrigger>
 			{popup}

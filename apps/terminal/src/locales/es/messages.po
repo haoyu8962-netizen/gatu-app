@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: reference.coin
+#: src/components/trade/components/market-asset-info.tsx
+msgid "{0} is listed as a native Hyperliquid perpetual market."
+msgstr "{0} está listado como mercado perpetuo nativo de Hyperliquid."
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "{0} more wallets"
 #~ msgstr ""
@@ -303,6 +308,18 @@ msgstr "Se rechazó el cambio a la red Arbitrum."
 msgid "Asset"
 msgstr "Activo"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Asset information could not be loaded."
+msgstr "No se pudo cargar la información del activo."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Asset information is temporarily unavailable."
+msgstr "La información del activo no está disponible temporalmente."
+
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "Asset information supplied through Hyperliquid market metadata."
+#~ msgstr "Información del activo proporcionada mediante los metadatos de mercado de Hyperliquid."
+
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Assets"
 #~ msgstr ""
@@ -381,6 +398,10 @@ msgstr "Saldo disponible para operar"
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "Saldos"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
+msgstr "Bitcoin es un activo digital descentralizado protegido por una red de prueba de trabajo."
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Block:"
@@ -567,6 +588,14 @@ msgstr "Gráfico"
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Checking..."
 #~ msgstr "Comprobando..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Circulating supply"
+msgstr "Suministro circulante"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Click to learn more about this asset."
+msgstr "Haz clic para obtener más información sobre este activo."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Clipboard does not contain a pairing code."
@@ -997,6 +1026,10 @@ msgstr "Actual"
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Deployer"
+msgstr "Desplegador"
+
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1289,6 +1322,10 @@ msgstr "Comisión estimada"
 msgid "Estimated time"
 msgstr "Tiempo estimado"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
+msgstr "Ethereum es una cadena de bloques programable para contratos inteligentes y aplicaciones descentralizadas."
+
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
 msgstr "Excede tamaño máximo"
@@ -1547,6 +1584,10 @@ msgstr "Frecuencia"
 msgid "From"
 msgstr "Desde"
 
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "Full name"
+#~ msgstr "Nombre completo"
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Full Position"
 #~ msgstr ""
@@ -1633,6 +1674,10 @@ msgstr "Hora(s)"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "Tasa horaria que los largos pagan a los cortos (si es negativa, los cortos pagan a los largos). La financiación no tiene comisiones asociadas; es una transferencia punto a punto entre usuarios para acercar el precio al precio spot. Consulta la documentación para más detalles."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "HYPE is the native token of Hyperliquid."
+msgstr "HYPE es el token nativo de Hyperliquid."
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
@@ -1850,6 +1895,10 @@ msgstr "Liquidada"
 msgid "Loading"
 msgstr "Cargando"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Loading asset information..."
+msgstr "Cargando información del activo..."
+
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Loading balances across all chains..."
 msgstr "Cargando saldos en todas las redes..."
@@ -1878,6 +1927,10 @@ msgstr "Cargando historial de órdenes..."
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Loading positions..."
 msgstr "Cargando posiciones..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Loading token metadata..."
+msgstr "Cargando metadatos del token..."
 
 #: src/components/trade/positions/history-tab.tsx
 msgid "Loading trade history..."
@@ -2060,6 +2113,10 @@ msgctxt "Order type"
 msgid "Market"
 msgstr "Mercado"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Market and token information from local references and Hyperliquid metadata."
+msgstr "Información del mercado y del token procedente de referencias locales y metadatos de Hyperliquid."
+
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -2128,6 +2185,10 @@ msgstr "Caída máxima"
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Maximum slippage tolerance for market orders"
 #~ msgstr ""
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Maximum supply"
+msgstr "Suministro máximo"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Meme"
@@ -2279,6 +2340,10 @@ msgstr "Sin posiciones activas."
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No active TWAP orders."
 msgstr "No hay órdenes TWAP activas."
+
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "No asset description is available for this market."
+#~ msgstr "No hay ninguna descripción del activo disponible para este mercado."
 
 #: src/lib/errors/definitions/balance.ts
 msgid "No balance"
@@ -3111,6 +3176,8 @@ msgstr "Restableciendo..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3566,6 +3633,10 @@ msgstr "El estado del depósito de la billetera inteligente se está sincronizan
 msgid "Smart wallet deposits are not enabled for this network."
 msgstr "Los depósitos con billetera inteligente no están habilitados para esta red."
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
+msgstr "Solana es una cadena de bloques para contratos inteligentes y aplicaciones descentralizadas, diseñada para una ejecución de alto rendimiento."
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "Some orders were accepted. Review open orders before retrying."
 msgstr "Se aceptaron algunas órdenes. Revise las órdenes abiertas antes de volver a intentarlo."
@@ -3911,6 +3982,10 @@ msgstr "La página que buscas no existe."
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This description was supplied by the third-party market deployer. Treat it as unverified information."
+msgstr "Esta descripción fue proporcionada por el desplegador externo del mercado. Considérela información no verificada."
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
 #~ msgstr ""
@@ -3952,6 +4027,16 @@ msgstr "Este enlace del teléfono pertenece a la cuenta de otro propietario."
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
 #~ msgstr "Este enlace móvil no está aprobado en Hyperliquid."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This spot asset is enabled independently by Unit, a third-party provider."
+msgstr "Este activo spot es habilitado de forma independiente por Unit, un proveedor externo."
+
+#. placeholder {0}: reference.baseName
+#. placeholder {1}: reference.quoteName
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This spot market trades {0} against {1} on Hyperliquid."
+msgstr "Este mercado spot negocia {0} contra {1} en Hyperliquid."
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
@@ -4009,6 +4094,14 @@ msgstr "Cambiar modo de tamaño"
 #~ msgid "TOKEN"
 #~ msgstr "TOKEN"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Token ID"
+msgstr "ID del token"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Token metadata could not be loaded."
+msgstr "No se pudieron cargar los metadatos del token."
+
 #: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -4029,6 +4122,10 @@ msgstr "Patrimonio total"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
 #~ msgstr "Tamaño total"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Total supply"
+msgstr "Suministro total"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Total time"
@@ -4428,6 +4525,10 @@ msgstr "Bóvedas"
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "Verificando..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "View asset information"
+msgstr "Ver información del activo"
 
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "View on explorer"

@@ -4,10 +4,10 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { AssetDisplay } from "../components/asset-display";
 
 export const TOKEN_SELECTOR_TRIGGER_CLASSNAME =
-	"inline-flex h-10 shrink-0 select-none items-center gap-1.5 rounded-8 bg-transparent px-2 text-fg transition-[color,background-color] duration-150 ease-out hover:bg-fill-hover active:bg-fill-press aria-expanded:bg-fill-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-stroke-focus motion-reduce:transition-none cursor-pointer leading-none";
+	"inline-flex h-10 shrink-0 select-none items-center gap-1.5 rounded-8 bg-transparent pr-2 text-fg transition-[color,background-color] duration-150 ease-out hover:bg-fill-hover active:bg-fill-press aria-expanded:bg-fill-hover focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-stroke-focus motion-reduce:transition-none cursor-pointer leading-none";
 
 export const MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME =
-	"inline-flex shrink-0 items-center gap-2 rounded-8 bg-surface/80 py-2 pr-3 pl-2.5 hover:bg-fill-hover cursor-pointer leading-none";
+	"inline-flex shrink-0 items-center gap-2 rounded-8 bg-surface/80 py-2 pr-3 hover:bg-fill-hover cursor-pointer leading-none";
 
 function getMarketKindBadgeLabel(market: UnifiedMarketInfo | undefined): string {
 	if (!market) return "";
@@ -34,9 +34,15 @@ interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	mobile?: boolean;
 	open?: boolean;
+	showAssetIcon?: boolean;
 }
 
-export function TokenSelectorTriggerContent({ selectedMarket, mobile = false, open = false }: Props) {
+export function TokenSelectorTriggerContent({
+	selectedMarket,
+	mobile = false,
+	open = false,
+	showAssetIcon = true,
+}: Props) {
 	const kindBadge = getMarketKindBadgeLabel(selectedMarket);
 	const leverageLabel = getMarketLeverageLabel(selectedMarket);
 	const pairName = selectedMarket?.pairName ?? selectedMarket?.name ?? "";
@@ -48,7 +54,14 @@ export function TokenSelectorTriggerContent({ selectedMarket, mobile = false, op
 			<>
 				{selectedMarket && (
 					<>
-						<AssetDisplay coin={selectedMarket.name} iconUrl={selectedMarket.iconUrl} hideName iconClassName="size-5" />
+						{showAssetIcon ? (
+							<AssetDisplay
+								coin={selectedMarket.name}
+								iconUrl={selectedMarket.iconUrl}
+								hideName
+								iconClassName="size-5"
+							/>
+						) : null}
 						<span className="flex shrink-0 flex-col items-start">
 							<span className="whitespace-nowrap text-lg leading-[30px] font-normal tracking-tight" title={pairName}>
 								<span className="text-fg">{pairNameParts.main}</span>
@@ -73,7 +86,9 @@ export function TokenSelectorTriggerContent({ selectedMarket, mobile = false, op
 		<>
 			{selectedMarket && (
 				<>
-					<AssetDisplay coin={selectedMarket.name} iconUrl={selectedMarket.iconUrl} hideName iconClassName="size-5" />
+					{showAssetIcon ? (
+						<AssetDisplay coin={selectedMarket.name} iconUrl={selectedMarket.iconUrl} hideName iconClassName="size-5" />
+					) : null}
 					<span
 						className="shrink-0 whitespace-nowrap text-lg font-normal text-fg tracking-tight leading-none"
 						title={selectedMarket.pairName ?? selectedMarket.name}

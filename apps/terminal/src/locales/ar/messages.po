@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: reference.coin
+#: src/components/trade/components/market-asset-info.tsx
+msgid "{0} is listed as a native Hyperliquid perpetual market."
+msgstr "{0} مدرج كسوق عقود دائمة أصلي على Hyperliquid."
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "{0} more wallets"
 #~ msgstr ""
@@ -303,6 +308,18 @@ msgstr "تم رفض التبديل إلى شبكة Arbitrum."
 msgid "Asset"
 msgstr "الأصل"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Asset information could not be loaded."
+msgstr "تعذر تحميل معلومات الأصل."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Asset information is temporarily unavailable."
+msgstr "معلومات الأصل غير متاحة مؤقتًا."
+
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "Asset information supplied through Hyperliquid market metadata."
+#~ msgstr "معلومات الأصل المقدمة عبر بيانات سوق Hyperliquid الوصفية."
+
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Assets"
 #~ msgstr ""
@@ -381,6 +398,10 @@ msgstr "الرصيد المتاح للتداول"
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "الأرصدة"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
+msgstr "بيتكوين أصل رقمي لامركزي تؤمّنه شبكة إثبات العمل."
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Block:"
@@ -567,6 +588,14 @@ msgstr "الرسم البياني"
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Checking..."
 #~ msgstr "جارٍ التحقق..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Circulating supply"
+msgstr "المعروض المتداول"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Click to learn more about this asset."
+msgstr "انقر لمعرفة المزيد عن هذا الأصل."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Clipboard does not contain a pairing code."
@@ -997,6 +1026,10 @@ msgstr "الحالي"
 #~ msgid "DeFi"
 #~ msgstr "التمويل اللامركزي"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Deployer"
+msgstr "جهة النشر"
+
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1289,6 +1322,10 @@ msgstr "الرسوم المقدرة"
 msgid "Estimated time"
 msgstr "الوقت المقدّر"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
+msgstr "إيثريوم سلسلة كتل قابلة للبرمجة للعقود الذكية والتطبيقات اللامركزية."
+
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
 msgstr "يتجاوز الحد الأقصى"
@@ -1547,6 +1584,10 @@ msgstr "التكرار"
 msgid "From"
 msgstr "من"
 
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "Full name"
+#~ msgstr "الاسم الكامل"
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Full Position"
 #~ msgstr ""
@@ -1633,6 +1674,10 @@ msgstr "ساعة/ساعات"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "المعدل الساعي الذي يدفعه أصحاب المراكز الطويلة لأصحاب المراكز القصيرة (إذا كان سالبًا، يدفع أصحاب المراكز القصيرة لأصحاب المراكز الطويلة). لا توجد رسوم مرتبطة بالتمويل؛ فهو تحويل مباشر بين المستخدمين لدفع السعر نحو السعر الفوري. راجع الوثائق للمزيد من التفاصيل."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "HYPE is the native token of Hyperliquid."
+msgstr "HYPE هو الرمز الأصلي لشبكة Hyperliquid."
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
@@ -1850,6 +1895,10 @@ msgstr "تمت التصفية"
 msgid "Loading"
 msgstr "جارٍ التحميل"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Loading asset information..."
+msgstr "جارٍ تحميل معلومات الأصل..."
+
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Loading balances across all chains..."
 msgstr "جارٍ تحميل الأرصدة عبر جميع الشبكات..."
@@ -1878,6 +1927,10 @@ msgstr "جارٍ تحميل سجل الأوامر..."
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Loading positions..."
 msgstr "جاري تحميل المراكز..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Loading token metadata..."
+msgstr "جارٍ تحميل البيانات الوصفية للرمز..."
 
 #: src/components/trade/positions/history-tab.tsx
 msgid "Loading trade history..."
@@ -2060,6 +2113,10 @@ msgctxt "Order type"
 msgid "Market"
 msgstr "سعر السوق"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Market and token information from local references and Hyperliquid metadata."
+msgstr "معلومات السوق والرمز من المراجع المحلية وبيانات Hyperliquid الوصفية."
+
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -2128,6 +2185,10 @@ msgstr "أقصى تراجع"
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Maximum slippage tolerance for market orders"
 #~ msgstr ""
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Maximum supply"
+msgstr "الحد الأقصى للمعروض"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Meme"
@@ -2279,6 +2340,10 @@ msgstr "لا توجد مراكز نشطة."
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No active TWAP orders."
 msgstr "لا توجد أوامر TWAP نشطة."
+
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "No asset description is available for this market."
+#~ msgstr "لا يتوفر وصف للأصل في هذا السوق."
 
 #: src/lib/errors/definitions/balance.ts
 msgid "No balance"
@@ -3111,6 +3176,8 @@ msgstr "جارٍ إعادة التعيين..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3566,6 +3633,10 @@ msgstr "تجري مزامنة حالة إيداع المحفظة الذكية. �
 msgid "Smart wallet deposits are not enabled for this network."
 msgstr "إيداعات المحفظة الذكية غير مفعلة لهذه الشبكة."
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
+msgstr "سولانا سلسلة كتل للعقود الذكية والتطبيقات اللامركزية، مصممة للتنفيذ عالي الإنتاجية."
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "Some orders were accepted. Review open orders before retrying."
 msgstr "تم قبول بعض الأوامر. راجع الأوامر المفتوحة قبل إعادة المحاولة."
@@ -3911,6 +3982,10 @@ msgstr "الصفحة التي تبحث عنها غير موجودة."
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This description was supplied by the third-party market deployer. Treat it as unverified information."
+msgstr "تم تقديم هذا الوصف بواسطة جهة خارجية ناشرة للسوق. تعامل معه على أنه معلومات غير متحقق منها."
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
 #~ msgstr ""
@@ -3952,6 +4027,16 @@ msgstr "رابط الهاتف هذا يخص حساب مالك مختلف."
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
 #~ msgstr "رابط الهاتف هذا غير معتمد على Hyperliquid."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This spot asset is enabled independently by Unit, a third-party provider."
+msgstr "يُتاح هذا الأصل الفوري بشكل مستقل بواسطة Unit، وهو مزود خارجي."
+
+#. placeholder {0}: reference.baseName
+#. placeholder {1}: reference.quoteName
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This spot market trades {0} against {1} on Hyperliquid."
+msgstr "يتداول هذا السوق الفوري {0} مقابل {1} على Hyperliquid."
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
@@ -4009,6 +4094,14 @@ msgstr "تبديل وضع الحجم"
 #~ msgid "TOKEN"
 #~ msgstr "TOKEN"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Token ID"
+msgstr "معرّف الرمز"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Token metadata could not be loaded."
+msgstr "تعذر تحميل البيانات الوصفية للرمز."
+
 #: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -4029,6 +4122,10 @@ msgstr "إجمالي القيمة"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
 #~ msgstr "الحجم الإجمالي"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Total supply"
+msgstr "إجمالي المعروض"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Total time"
@@ -4428,6 +4525,10 @@ msgstr "الخزائن"
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "جارٍ التحقق..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "View asset information"
+msgstr "عرض معلومات الأصل"
 
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "View on explorer"

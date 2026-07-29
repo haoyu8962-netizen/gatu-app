@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: reference.coin
+#: src/components/trade/components/market-asset-info.tsx
+msgid "{0} is listed as a native Hyperliquid perpetual market."
+msgstr "{0} Hyperliquid के मूल परपेचुअल मार्केट के रूप में सूचीबद्ध है।"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "{0} more wallets"
 #~ msgstr ""
@@ -303,6 +308,18 @@ msgstr "Arbitrum नेटवर्क स्विच अस्वीकार 
 msgid "Asset"
 msgstr "संपत्ति"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Asset information could not be loaded."
+msgstr "परिसंपत्ति की जानकारी लोड नहीं की जा सकी।"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Asset information is temporarily unavailable."
+msgstr "एसेट की जानकारी अस्थायी रूप से उपलब्ध नहीं है।"
+
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "Asset information supplied through Hyperliquid market metadata."
+#~ msgstr "Hyperliquid बाज़ार मेटाडेटा के माध्यम से दी गई परिसंपत्ति जानकारी।"
+
 #: src/components/trade/tradebox/account-panel.tsx
 #~ msgid "Assets"
 #~ msgstr ""
@@ -381,6 +398,10 @@ msgstr "ट्रेड के लिए उपलब्ध बैलेंस"
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "बैलेंस"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
+msgstr "बिटकॉइन एक विकेंद्रीकृत डिजिटल परिसंपत्ति है जिसकी सुरक्षा प्रूफ-ऑफ-वर्क नेटवर्क करता है।"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Block:"
@@ -567,6 +588,14 @@ msgstr "चार्ट"
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Checking..."
 #~ msgstr "जांच हो रही है..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Circulating supply"
+msgstr "परिसंचारी आपूर्ति"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Click to learn more about this asset."
+msgstr "इस एसेट के बारे में अधिक जानने के लिए क्लिक करें।"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Clipboard does not contain a pairing code."
@@ -997,6 +1026,10 @@ msgstr "वर्तमान"
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Deployer"
+msgstr "डिप्लॉयर"
+
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1289,6 +1322,10 @@ msgstr "अनुमानित शुल्क"
 msgid "Estimated time"
 msgstr "अनुमानित समय"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Ethereum is a programmable blockchain for smart contracts and decentralized applications."
+msgstr "एथेरियम स्मार्ट कॉन्ट्रैक्ट और विकेंद्रीकृत अनुप्रयोगों के लिए एक प्रोग्राम योग्य ब्लॉकचेन है।"
+
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
 msgstr "अधिकतम साइज से अधिक"
@@ -1547,6 +1584,10 @@ msgstr "आवृत्ति"
 msgid "From"
 msgstr "से"
 
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "Full name"
+#~ msgstr "पूरा नाम"
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Full Position"
 #~ msgstr ""
@@ -1633,6 +1674,10 @@ msgstr "घंटे"
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details."
 msgstr "लॉन्ग द्वारा शॉर्ट को चुकाई जाने वाली प्रति घंटे की दर (यदि नकारात्मक हो, तो शॉर्ट लॉन्ग को भुगतान करते हैं)। फंडिंग से कोई अतिरिक्त शुल्क नहीं जुड़ा है; यह कीमत को स्पॉट कीमत की ओर ले जाने के लिए उपयोगकर्ताओं के बीच पीयर-टू-पीयर ट्रांसफर है। विवरण के लिए दस्तावेज़ देखें।"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "HYPE is the native token of Hyperliquid."
+msgstr "HYPE, Hyperliquid का मूल टोकन है।"
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
@@ -1850,6 +1895,10 @@ msgstr "लिक्विडेट हो गया"
 msgid "Loading"
 msgstr "लोड हो रहा है"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Loading asset information..."
+msgstr "परिसंपत्ति की जानकारी लोड हो रही है..."
+
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Loading balances across all chains..."
 msgstr "सभी चेन पर बैलेंस लोड हो रहे हैं..."
@@ -1878,6 +1927,10 @@ msgstr "ऑर्डर हिस्ट्री लोड हो रही ह�
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Loading positions..."
 msgstr "पोजीशन लोड हो रहे हैं..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Loading token metadata..."
+msgstr "टोकन मेटाडेटा लोड हो रहा है..."
 
 #: src/components/trade/positions/history-tab.tsx
 msgid "Loading trade history..."
@@ -2060,6 +2113,10 @@ msgctxt "Order type"
 msgid "Market"
 msgstr "मार्केट"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Market and token information from local references and Hyperliquid metadata."
+msgstr "स्थानीय संदर्भों और Hyperliquid मेटाडेटा से मार्केट और टोकन की जानकारी।"
+
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -2128,6 +2185,10 @@ msgstr "अधिकतम गिरावट"
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Maximum slippage tolerance for market orders"
 #~ msgstr ""
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Maximum supply"
+msgstr "अधिकतम आपूर्ति"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Meme"
@@ -2279,6 +2340,10 @@ msgstr "कोई सक्रिय पोजीशन नहीं।"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No active TWAP orders."
 msgstr "कोई सक्रिय TWAP ऑर्डर नहीं।"
+
+#: src/components/trade/components/market-asset-info.tsx
+#~ msgid "No asset description is available for this market."
+#~ msgstr "इस बाज़ार के लिए परिसंपत्ति का विवरण उपलब्ध नहीं है।"
 
 #: src/lib/errors/definitions/balance.ts
 msgid "No balance"
@@ -3111,6 +3176,8 @@ msgstr "रीसेट हो रहा है..."
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/components/market-asset-info.tsx
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/offline-banner.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3566,6 +3633,10 @@ msgstr "स्मार्ट वॉलेट जमा स्थिति स�
 msgid "Smart wallet deposits are not enabled for this network."
 msgstr "इस नेटवर्क के लिए स्मार्ट वॉलेट जमा सक्षम नहीं हैं।"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
+msgstr "सोलाना स्मार्ट कॉन्ट्रैक्ट और विकेंद्रीकृत अनुप्रयोगों के लिए उच्च-थ्रूपुट निष्पादन हेतु डिज़ाइन किया गया ब्लॉकचेन है।"
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "Some orders were accepted. Review open orders before retrying."
 msgstr "कुछ ऑर्डर स्वीकार किए गए। पुनः प्रयास करने से पहले खुले ऑर्डर जाँचें।"
@@ -3911,6 +3982,10 @@ msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह �
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This description was supplied by the third-party market deployer. Treat it as unverified information."
+msgstr "यह विवरण तीसरे पक्ष के बाज़ार डिप्लॉयर द्वारा दिया गया है। इसे असत्यापित जानकारी मानें।"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
 #~ msgstr ""
@@ -3952,6 +4027,16 @@ msgstr "यह फ़ोन लिंक किसी दूसरे स्व�
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
 #~ msgstr "यह फ़ोन लिंक Hyperliquid पर स्वीकृत नहीं है।"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This spot asset is enabled independently by Unit, a third-party provider."
+msgstr "यह स्पॉट परिसंपत्ति तृतीय-पक्ष प्रदाता Unit द्वारा स्वतंत्र रूप से सक्षम की गई है।"
+
+#. placeholder {0}: reference.baseName
+#. placeholder {1}: reference.quoteName
+#: src/components/trade/components/market-asset-info.tsx
+msgid "This spot market trades {0} against {1} on Hyperliquid."
+msgstr "यह स्पॉट मार्केट Hyperliquid पर {0} को {1} के मुकाबले ट्रेड करता है।"
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
@@ -4009,6 +4094,14 @@ msgstr "साइज मोड टॉगल करें"
 #~ msgid "TOKEN"
 #~ msgstr "टोकन"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Token ID"
+msgstr "टोकन ID"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Token metadata could not be loaded."
+msgstr "टोकन मेटाडेटा लोड नहीं किया जा सका।"
+
 #: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -4029,6 +4122,10 @@ msgstr "कुल इक्विटी"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
 #~ msgstr "कुल आकार"
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Total supply"
+msgstr "कुल आपूर्ति"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Total time"
@@ -4428,6 +4525,10 @@ msgstr "वॉल्ट"
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "सत्यापित किया जा रहा है..."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "View asset information"
+msgstr "परिसंपत्ति की जानकारी देखें"
 
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 msgid "View on explorer"

@@ -1,5 +1,5 @@
 import { Suspense, useEffect } from "react";
-import { useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
+import { type Hip3DisclaimerRequirement, useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
 import { createLazyComponent } from "@/lib/lazy";
 import {
 	useCommandMenuActions,
@@ -20,9 +20,18 @@ interface Props {
 }
 
 export function GlobalModals({ enableHip3Disclaimer = false }: Props) {
-	const activeModal = useGlobalModalType();
+	if (enableHip3Disclaimer) return <Hip3AwareGlobalModals />;
+	return <SharedGlobalModals />;
+}
+
+function Hip3AwareGlobalModals() {
 	const hip3Disclaimer = useHip3DisclaimerRequirement();
-	const isHip3DisclaimerRequired = enableHip3Disclaimer && hip3Disclaimer.isRequired;
+	return <SharedGlobalModals hip3Disclaimer={hip3Disclaimer} />;
+}
+
+function SharedGlobalModals({ hip3Disclaimer }: { hip3Disclaimer?: Hip3DisclaimerRequirement }) {
+	const activeModal = useGlobalModalType();
+	const isHip3DisclaimerRequired = hip3Disclaimer?.isRequired === true;
 	const { open: openCommandMenu, close: closeCommandMenu } = useCommandMenuActions();
 	const transferDirection = useTransferModalDirection();
 	const { close: closeTransferModal } = useTransferModalActions();

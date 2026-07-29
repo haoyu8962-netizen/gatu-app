@@ -12,11 +12,15 @@ const testState = vi.hoisted(() => ({
 		dex: "xyz" as string | undefined,
 		documentationUrl: "https://docs.trade.xyz/consolidated-resources/specification-index" as string | undefined,
 	},
+	hip3RequirementHook: vi.fn(),
 	openCommandMenu: vi.fn(),
 }));
 
 vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
-	useHip3DisclaimerRequirement: () => testState.hip3Disclaimer,
+	useHip3DisclaimerRequirement: () => {
+		testState.hip3RequirementHook();
+		return testState.hip3Disclaimer;
+	},
 }));
 
 vi.mock("@/components/trade/components/hip3-deployer-disclaimer", () => ({
@@ -53,6 +57,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 			documentationUrl: "https://docs.trade.xyz/consolidated-resources/specification-index",
 		};
 		testState.closeCommandMenu.mockReset();
+		testState.hip3RequirementHook.mockReset();
 		testState.openCommandMenu.mockReset();
 	});
 
@@ -68,6 +73,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true })));
 		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
+		expect(testState.hip3RequirementHook).toHaveBeenCalledTimes(1);
 
 		act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true })));
 		expect(testState.openCommandMenu).not.toHaveBeenCalled();
@@ -92,5 +98,6 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		act(() => root.render(createElement(GlobalModals)));
 		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).toBeNull();
 		expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
+		expect(testState.hip3RequirementHook).not.toHaveBeenCalled();
 	});
 });
