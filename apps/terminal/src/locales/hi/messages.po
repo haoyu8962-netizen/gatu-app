@@ -313,8 +313,8 @@ msgid "Asset information could not be loaded."
 msgstr "परिसंपत्ति की जानकारी लोड नहीं की जा सकी।"
 
 #: src/components/trade/components/market-asset-info.tsx
-msgid "Asset information is temporarily unavailable."
-msgstr "एसेट की जानकारी अस्थायी रूप से उपलब्ध नहीं है।"
+#~ msgid "Asset information is temporarily unavailable."
+#~ msgstr "एसेट की जानकारी अस्थायी रूप से उपलब्ध नहीं है।"
 
 #: src/components/trade/components/market-asset-info.tsx
 #~ msgid "Asset information supplied through Hyperliquid market metadata."
@@ -2366,6 +2366,10 @@ msgstr "कोई शेष नहीं मिला। ट्रेडिं�
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No camera was found on this device."
 #~ msgstr ""
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "No description has been provided for this market."
+msgstr "इस बाज़ार के लिए कोई विवरण उपलब्ध नहीं कराया गया है।"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx

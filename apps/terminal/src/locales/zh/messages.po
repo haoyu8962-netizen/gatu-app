@@ -313,8 +313,8 @@ msgid "Asset information could not be loaded."
 msgstr "无法加载资产说明。"
 
 #: src/components/trade/components/market-asset-info.tsx
-msgid "Asset information is temporarily unavailable."
-msgstr "资产信息暂时不可用。"
+#~ msgid "Asset information is temporarily unavailable."
+#~ msgstr "资产信息暂时不可用。"
 
 #: src/components/trade/components/market-asset-info.tsx
 #~ msgid "Asset information supplied through Hyperliquid market metadata."
@@ -2366,6 +2366,10 @@ msgstr "未找到余额。存入资金开始交易。"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No camera was found on this device."
 #~ msgstr ""
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "No description has been provided for this market."
+msgstr "该市场尚未提供说明。"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx

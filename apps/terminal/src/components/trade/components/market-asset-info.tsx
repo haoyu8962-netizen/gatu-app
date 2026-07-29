@@ -113,21 +113,23 @@ export function MarketAssetInfo({ market }: Props) {
 	const fallbackDescription = createFallbackDescription(reference);
 	const description = localDescription ?? annotationDescription ?? fallbackDescription;
 	const providerDescription = createProviderDescription(reference);
-	const canOpen = canOpenMarketAssetInfo(reference, annotationAvailable);
-	const annotationUnavailable =
-		reference.kind === "perp" &&
-		reference.isBuilder &&
-		annotationAvailable &&
-		!annotationQuery.isPending &&
-		annotationQuery.data === null;
+	const isBuilderPerp = reference.kind === "perp" && reference.isBuilder;
+	const conciseAnnotationsError = isBuilderPerp && conciseAnnotationsQuery.isError;
+	const canOpen = canOpenMarketAssetInfo(reference, annotationAvailable || conciseAnnotationsError);
+	const annotationMissing =
+		isBuilderPerp && annotationAvailable && !annotationQuery.isPending && annotationQuery.data === null;
 	const annotationLoading =
-		reference.kind === "perp" &&
-		reference.isBuilder &&
-		annotationAvailable &&
-		annotationQuery.isPending &&
-		annotationQuery.data === undefined;
+		isBuilderPerp && annotationAvailable && annotationQuery.isPending && annotationQuery.data === undefined;
 	const annotationError =
-		reference.kind === "perp" && reference.isBuilder && annotationQuery.isError && annotationQuery.data === undefined;
+		isBuilderPerp && (annotationQuery.isError || conciseAnnotationsError) && annotationQuery.data === undefined;
+
+	function handleAnnotationRetry() {
+		if (conciseAnnotationsQuery.isError) {
+			void conciseAnnotationsQuery.refetch();
+			return;
+		}
+		void annotationQuery.refetch();
+	}
 	const tokenDetails = tokenDetailsQuery.data;
 	const tokenMetadataLoading =
 		reference.kind === "spot" && tokenId !== null && tokenDetailsQuery.isPending && tokenDetails === undefined;
@@ -258,22 +260,18 @@ export function MarketAssetInfo({ market }: Props) {
 						</p>
 					) : null}
 
-					{annotationError || annotationUnavailable ? (
+					{annotationMissing ? (
+						<p className="text-xs leading-5 text-fg-muted">
+							<Trans>No description has been provided for this market.</Trans>
+						</p>
+					) : null}
+
+					{annotationError ? (
 						<div className="space-y-3" role="alert">
 							<p className="text-xs leading-5 text-error">
-								{annotationUnavailable ? (
-									<Trans>Asset information is temporarily unavailable.</Trans>
-								) : (
-									<Trans>Asset information could not be loaded.</Trans>
-								)}
+								<Trans>Asset information could not be loaded.</Trans>
 							</p>
-							<Button
-								type="button"
-								size="xs"
-								variant="outline"
-								intent="neutral"
-								onClick={() => void annotationQuery.refetch()}
-							>
+							<Button type="button" size="xs" variant="outline" intent="neutral" onClick={handleAnnotationRetry}>
 								<Trans>Retry</Trans>
 							</Button>
 						</div>

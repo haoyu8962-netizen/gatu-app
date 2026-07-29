@@ -19,6 +19,7 @@ const testState = vi.hoisted(() => ({
 	conciseAnnotations: undefined as PerpConciseAnnotationsResponse | undefined,
 	conciseError: false,
 	concisePending: true,
+	conciseRefetch: vi.fn(),
 	tokenDetails: undefined as TokenDetailsResponse | undefined,
 	tokenDetailsError: false,
 	tokenDetailsPending: true,
@@ -40,7 +41,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 				data: testState.conciseAnnotations,
 				isError: testState.conciseError,
 				isPending: testState.concisePending,
-				refetch: vi.fn(),
+				refetch: testState.conciseRefetch,
 			};
 		}
 		if (method === "tokenDetails") {
@@ -194,6 +195,7 @@ describe("MarketAssetInfo", () => {
 		testState.conciseAnnotations = undefined;
 		testState.conciseError = false;
 		testState.concisePending = true;
+		testState.conciseRefetch.mockReset();
 		testState.tokenDetails = undefined;
 		testState.tokenDetailsError = false;
 		testState.tokenDetailsPending = true;
@@ -265,6 +267,37 @@ describe("MarketAssetInfo", () => {
 		expect(container.querySelector("img")).toBeNull();
 		expect(container.textContent).toContain("Treat it as unverified information.");
 		expect(container.querySelector("h2")?.textContent).toBe("BOT-USDC");
+	});
+
+	it("degrades to a neutral notice when a confirmed annotation resolves to null", async () => {
+		testState.conciseAnnotations = [["xyz:BOT", { category: "stocks" }]];
+		testState.concisePending = false;
+		testState.annotation = null;
+		testState.annotationPending = false;
+		await renderAssetInfo();
+		openDialog();
+
+		expect(container.textContent).toContain("No description has been provided for this market.");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect([...container.querySelectorAll("button")].find((button) => button.textContent === "Retry")).toBeUndefined();
+	});
+
+	it("keeps the HIP-3 entry available and retries the concise list when it fails to load", async () => {
+		testState.conciseError = true;
+		testState.concisePending = false;
+		await renderAssetInfo();
+
+		expect(container.querySelector('button[aria-haspopup="dialog"]')).not.toBeNull();
+
+		openDialog();
+
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Asset information could not be loaded.");
+
+		const retryButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");
+		if (!retryButton) throw new Error("Retry button not found");
+		act(() => retryButton.click());
+		expect(testState.conciseRefetch).toHaveBeenCalledOnce();
+		expect(testState.annotationRefetch).not.toHaveBeenCalled();
 	});
 
 	it("does not expose an empty dialog when a HIP-3 market has no annotation", async () => {
@@ -393,6 +426,7 @@ describe("MarketAssetInfo", () => {
 		if (!retryButton) throw new Error("Retry button not found");
 		act(() => retryButton.click());
 		expect(testState.annotationRefetch).toHaveBeenCalledOnce();
+		expect(testState.conciseRefetch).not.toHaveBeenCalled();
 		expect(testState.tokenDetailsRefetch).not.toHaveBeenCalled();
 	});
 });

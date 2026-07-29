@@ -313,8 +313,8 @@ msgid "Asset information could not be loaded."
 msgstr "Impossible de charger les informations sur l'actif."
 
 #: src/components/trade/components/market-asset-info.tsx
-msgid "Asset information is temporarily unavailable."
-msgstr "Les informations sur l’actif sont temporairement indisponibles."
+#~ msgid "Asset information is temporarily unavailable."
+#~ msgstr "Les informations sur l’actif sont temporairement indisponibles."
 
 #: src/components/trade/components/market-asset-info.tsx
 #~ msgid "Asset information supplied through Hyperliquid market metadata."
@@ -2366,6 +2366,10 @@ msgstr "Aucun solde trouvé. Déposez des fonds pour commencer à trader."
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "No camera was found on this device."
 #~ msgstr ""
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "No description has been provided for this market."
+msgstr "Aucune description n'a été fournie pour ce marché."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
