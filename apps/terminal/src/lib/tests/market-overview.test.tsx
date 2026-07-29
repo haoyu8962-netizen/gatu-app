@@ -80,11 +80,11 @@ describe("MarketOverview", () => {
 			),
 		);
 
-		expect(container.textContent).toContain("$71.80");
+		expect(container.textContent).toContain("Price71.8");
+		expect(container.textContent).toContain("24h Change+1.8 / +2.57%");
 		expect(container.textContent).toContain("$71.70");
 		expect(container.textContent).toContain("$22,228,099.94");
 		expect(container.textContent).toContain("$120,995,909.64");
-		expect(container.textContent).toContain("+2.57%");
 		expect(container.textContent).toContain("+0.0006%");
 		expect(container.textContent).not.toContain("—");
 		expect(container.textContent).not.toContain("0.0000%");
@@ -110,12 +110,12 @@ describe("MarketOverview", () => {
 			),
 		);
 
-		expect(container.textContent).toContain("$80.00");
+		expect(container.textContent).toContain("Price80");
+		expect(container.textContent).toContain("24h Change+16 / +25.00%");
 		expect(container.textContent).toContain("$79.00");
 		expect(container.textContent).toContain("$10,000,000.00");
 		expect(container.textContent).toContain("$160.00");
-		expect(container.textContent).toContain("+25.00%");
 		expect(container.textContent).toContain("+0.0010%");
-		expect(container.textContent).not.toContain("$71.80");
+		expect(container.textContent).not.toContain("Price71.8");
 	});
 });

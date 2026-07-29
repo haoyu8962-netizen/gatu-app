@@ -35,6 +35,7 @@ interface Props {
 	mobile?: boolean;
 	open?: boolean;
 	showAssetIcon?: boolean;
+	showMetadataBadge?: boolean;
 }
 
 export function TokenSelectorTriggerContent({
@@ -42,6 +43,7 @@ export function TokenSelectorTriggerContent({
 	mobile = false,
 	open = false,
 	showAssetIcon = true,
+	showMetadataBadge = true,
 }: Props) {
 	const kindBadge = getMarketKindBadgeLabel(selectedMarket);
 	const leverageLabel = getMarketLeverageLabel(selectedMarket);
@@ -95,7 +97,7 @@ export function TokenSelectorTriggerContent({
 					>
 						{selectedMarket.pairName ?? selectedMarket.name}
 					</span>
-					{desktopMetadataLabel ? (
+					{desktopMetadataLabel && showMetadataBadge ? (
 						<Badge
 							tone={desktopMetadataLabel === leverageLabel ? "success" : "neutral"}
 							size="xs"

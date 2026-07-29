@@ -48,6 +48,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} secondes"
 #~ msgid "% filled"
 #~ msgstr "% exécuté"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
+msgstr "$SPCXD est une représentation tokenisée de SpaceX distribuée via l’infrastructure dShares™ de Dinari et le premier titre américain tokenisé disponible au trading spot sur HyperCore. Les $SPCXD sur HyperLiquid sont des dShares™ enveloppés et soumis à restrictions, ce qui signifie que certains droits associés au titre sous-jacent sont gelés. Si le wallet détenant les dShares™ est vérifié KYC auprès de Dinari ou d’un partenaire, ces droits peuvent être restaurés automatiquement sans effort supplémentaire de la part du détenteur du token."
+
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
 msgstr "1 an"
@@ -57,8 +61,8 @@ msgid "14 Day Volume"
 msgstr "Volume sur 14 jours"
 
 #: src/components/trade/market-overview.tsx
-msgid "24h"
-msgstr "24h"
+#~ msgid "24h"
+#~ msgstr "24h"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "24H"
@@ -68,6 +72,11 @@ msgstr "24 h"
 msgid "24h Change"
 msgstr "Variation 24h"
 
+#: src/components/trade/market-overview.tsx
+msgctxt "Market overview"
+msgid "24h Change"
+msgstr "Variation sur 24 h"
+
 #: src/components/trade/chart/constants.ts
 #~ msgid "24h Price"
 #~ msgstr "Prix 24h"
@@ -76,12 +85,16 @@ msgstr "Variation 24h"
 #~ msgid "24h vol"
 #~ msgstr ""
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "24H VOL"
 msgstr "24H VOL"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
+msgctxt "Market overview"
+msgid "24H VOL"
+msgstr "Volume sur 24 h"
 
 #: src/components/trade/market-overview.tsx
 msgid "30 days"
@@ -854,6 +867,10 @@ msgstr "Connexion..."
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "Continue"
 msgstr "Continuer"
+
+#: src/components/trade/market-overview.tsx
+msgid "Contract"
+msgstr "Contrat"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/market-overview.tsx
@@ -2257,8 +2274,6 @@ msgstr "Plus"
 msgid "More details"
 msgstr "Plus de détails"
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "More Info"
 msgstr "Plus d’infos"
@@ -2966,6 +2981,7 @@ msgstr "Préparation de votre devis..."
 #~ msgid "Previous"
 #~ msgstr "Précédent"
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -4653,6 +4669,10 @@ msgstr "Le portefeuille a renvoyé un hash de transaction, mais il n'est pas enc
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect QR code"
 #~ msgstr ""
+
+#: src/components/trade/components/spot-market-social-links.tsx
+msgid "Website"
+msgstr "Site web"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #~ msgid "WebSocket error"

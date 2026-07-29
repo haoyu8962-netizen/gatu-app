@@ -9,6 +9,7 @@ import { createI18nRoot } from "./harness/react";
 
 const HYPE_TOKEN_ID = "0x0d01dc56dcaaca66ad901c959b4011ec";
 const SOLANA_TOKEN_ID = "0x49b67c39f5566535de22b29b0e51e685";
+const SPCXD_TOKEN_ID = "0x4f49b5f025c969501c6a350f984e1725";
 const USDC_TOKEN_ID = "0x6d1e7cde53ba9467b783cb7c530ce054";
 
 const testState = vi.hoisted(() => ({
@@ -26,6 +27,8 @@ const testState = vi.hoisted(() => ({
 	tokenDetailsRefetch: vi.fn(),
 	isMobile: false,
 	useInfo: vi.fn(),
+	spotDescription: undefined as string | null | undefined,
+	useDescriptionQuery: vi.fn(),
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
@@ -58,6 +61,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 			isPending: testState.annotationPending,
 			refetch: testState.annotationRefetch,
 		};
+	},
+}));
+
+vi.mock("@tanstack/react-query", () => ({
+	useQuery: (options: { enabled?: boolean }) => {
+		testState.useDescriptionQuery(options);
+		return { data: options.enabled ? testState.spotDescription : undefined };
 	},
 }));
 
@@ -130,11 +140,13 @@ const SPOT_MARKET = {
 	iconUrl: "/coins/HYPE.svg",
 	tokensInfo: [
 		{
+			name: "HYPE",
 			displayName: "HYPE",
 			fullName: "Hyperliquid",
 			tokenId: HYPE_TOKEN_ID,
 		},
 		{
+			name: "USDC",
 			displayName: "USDC",
 			fullName: null,
 			tokenId: USDC_TOKEN_ID,
@@ -149,11 +161,13 @@ const UNIT_SOL_SPOT_MARKET = {
 	iconUrl: "/coins/SOL.svg",
 	tokensInfo: [
 		{
+			name: "SOL",
 			displayName: "SOL",
 			fullName: "Unit Solana",
 			tokenId: SOLANA_TOKEN_ID,
 		},
 		{
+			name: "USDC",
 			displayName: "USDC",
 			fullName: null,
 			tokenId: USDC_TOKEN_ID,
@@ -168,11 +182,34 @@ const GENERIC_SPOT_MARKET = {
 	iconUrl: "/coins/APU.svg",
 	tokensInfo: [
 		{
+			name: "APU",
 			displayName: "APU",
 			fullName: null,
 			tokenId: "0x11111111111111111111111111111111",
 		},
 		{
+			name: "USDC",
+			displayName: "USDC",
+			fullName: null,
+			tokenId: USDC_TOKEN_ID,
+		},
+	],
+} as unknown as UnifiedMarketInfo;
+
+const SPCXD_SPOT_MARKET = {
+	kind: "spot",
+	name: "@465",
+	pairName: "SPCXD/USDC",
+	iconUrl: "/coins/SPCXD.svg",
+	tokensInfo: [
+		{
+			name: "SPCXD",
+			displayName: "SPCXD",
+			fullName: "Space Exploration Technologies Corp.",
+			tokenId: SPCXD_TOKEN_ID,
+		},
+		{
+			name: "USDC",
 			displayName: "USDC",
 			fullName: null,
 			tokenId: USDC_TOKEN_ID,
@@ -202,6 +239,8 @@ describe("MarketAssetInfo", () => {
 		testState.tokenDetailsRefetch.mockReset();
 		testState.isMobile = false;
 		testState.useInfo.mockReset();
+		testState.spotDescription = undefined;
+		testState.useDescriptionQuery.mockReset();
 	});
 
 	afterEach(() => {
@@ -362,11 +401,35 @@ describe("MarketAssetInfo", () => {
 		expect(container.textContent).toContain("Unit Solana");
 	});
 
+	it("prefers the reviewed official spot description when the snapshot contains one", async () => {
+		testState.spotDescription = "HYPE is the native token of the Hyperliquid blockchain.";
+		await renderAssetInfo(SPOT_MARKET);
+		openDialog();
+
+		expect(container.textContent).toContain("HYPE is the native token of the Hyperliquid blockchain.");
+		expect(container.textContent).not.toContain("HYPE is the native token of Hyperliquid.");
+		expect(testState.useDescriptionQuery).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				enabled: true,
+				queryKey: expect.arrayContaining(["spot-asset-description", "@107", "HYPE", "USDC"]),
+			}),
+		);
+	});
+
 	it("keeps every valid spot pair covered by a localized market fallback", async () => {
 		await renderAssetInfo(GENERIC_SPOT_MARKET);
 		openDialog();
 
 		expect(container.textContent).toContain("This spot market trades APU against USDC on Hyperliquid.");
+	});
+
+	it("renders the curated SPCXD description for the exact spot pair", async () => {
+		await renderAssetInfo(SPCXD_SPOT_MARKET);
+		openDialog();
+
+		expect(container.textContent).toContain("tokenized representation of SpaceX");
+		expect(container.textContent).toContain("Dinari's dShares™ infrastructure");
+		expect(container.textContent).not.toContain("This spot market trades SPCXD against USDC");
 	});
 
 	it("loads official tokenDetails for spot markets and renders structured metadata", async () => {
@@ -410,6 +473,19 @@ describe("MarketAssetInfo", () => {
 		expect(container.querySelector(`a[href="/explorer/token/${HYPE_TOKEN_ID}"]`)).not.toBeNull();
 	});
 
+	it("uses a minimum mobile height so content-rich spot metadata can expand", async () => {
+		testState.isMobile = true;
+		await renderAssetInfo(SPOT_MARKET);
+		openDialog();
+
+		const dialog = container.querySelector('[role="dialog"]');
+		const classes = dialog?.className.split(" ") ?? [];
+		expect(dialog?.getAttribute("data-presentation")).toBe("drawer");
+		expect(classes).toContain("min-h-[166px]");
+		expect(classes).not.toContain("h-[166px]");
+		expect(classes).toContain("min-[1001px]:min-h-0");
+	});
+
 	it("uses a mobile drawer and exposes the correct retry action for HIP-3 failures", async () => {
 		testState.isMobile = true;
 		testState.conciseAnnotations = [["xyz:BOT", { category: "stocks" }]];
@@ -419,7 +495,10 @@ describe("MarketAssetInfo", () => {
 		await renderAssetInfo();
 		openDialog();
 
-		expect(container.querySelector('[role="dialog"]')?.getAttribute("data-presentation")).toBe("drawer");
+		const dialog = container.querySelector('[role="dialog"]');
+		expect(dialog?.getAttribute("data-presentation")).toBe("drawer");
+		expect(dialog?.className).toContain("min-h-[166px]");
+		expect(dialog?.className).toContain("min-[1001px]:min-h-0");
 		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Asset information could not be loaded.");
 
 		const retryButton = [...container.querySelectorAll("button")].find((button) => button.textContent === "Retry");

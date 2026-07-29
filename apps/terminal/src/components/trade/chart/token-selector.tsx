@@ -21,9 +21,15 @@ interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
 	onValueChange: (value: string, market?: UnifiedMarketInfo) => void;
 	showAssetIcon?: boolean;
+	showMetadataBadge?: boolean;
 }
 
-export function TokenSelector({ selectedMarket, onValueChange, showAssetIcon = true }: Props) {
+export function TokenSelector({
+	selectedMarket,
+	onValueChange,
+	showAssetIcon = true,
+	showMetadataBadge = true,
+}: Props) {
 	const isMobile = useIsMobile();
 	const queryClient = useQueryClient();
 	const headingId = useId();
@@ -89,7 +95,12 @@ export function TokenSelector({ selectedMarket, onValueChange, showAssetIcon = t
 					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}
 				>
-					<TokenSelectorTriggerContent selectedMarket={selectedMarket} mobile showAssetIcon={showAssetIcon} />
+					<TokenSelectorTriggerContent
+						selectedMarket={selectedMarket}
+						mobile
+						showAssetIcon={showAssetIcon}
+						showMetadataBadge={showMetadataBadge}
+					/>
 				</DrawerTrigger>
 				{popup}
 			</Drawer>
@@ -109,7 +120,12 @@ export function TokenSelector({ selectedMarket, onValueChange, showAssetIcon = t
 					onPointerDown={preloadPopup}
 					onFocus={preloadPopup}
 				>
-					<TokenSelectorTriggerContent selectedMarket={selectedMarket} open={open} showAssetIcon={showAssetIcon} />
+					<TokenSelectorTriggerContent
+						selectedMarket={selectedMarket}
+						open={open}
+						showAssetIcon={showAssetIcon}
+						showMetadataBadge={showMetadataBadge}
+					/>
 				</button>
 			</PopoverTrigger>
 			{popup}

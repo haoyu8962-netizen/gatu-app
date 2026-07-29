@@ -2,11 +2,18 @@ import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon, FireIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import { get24hChange, get24hPriceChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
-import { formatClockDuration, formatPercent, formatUSD, shortenAddress } from "@/lib/format";
+import {
+	formatClockDuration,
+	formatNumber,
+	formatPercent,
+	formatUSD,
+	shortenAddress,
+	szDecimalsToPriceDecimals,
+} from "@/lib/format";
 import {
 	getExplorerTokenUrl,
 	getMarketApiCoin,
@@ -54,10 +61,6 @@ function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
 			</div>
 		</div>
 	);
-}
-
-function StatDivider() {
-	return <div className="h-3 w-px shrink-0 self-center bg-stroke-weak/30" aria-hidden />;
 }
 
 function getSpotTokenAddress(market: UnifiedMarketInfo | undefined): string | null {
@@ -108,6 +111,7 @@ export function MarketOverview() {
 
 	const fundingNum = toBig(funding)?.toNumber() ?? 0;
 	const change24h = get24hChange(prevDayForChange, displayPrice);
+	const priceChange24h = get24hPriceChange(prevDayForChange, displayPrice);
 	const oiUsd = getOiUsd(openInterest, markPx);
 	const spotTokenAddress = getSpotTokenAddress(selectedMarketInfo);
 	const spotPrice = isSpot ? (spotCtxEvent?.ctx?.markPx ?? selectedMarketInfo?.markPx ?? midPx) : undefined;
@@ -115,40 +119,55 @@ export function MarketOverview() {
 		? (spotCtxEvent?.ctx?.circulatingSupply ?? getSpotCirculatingSupply(selectedMarketInfo))
 		: null;
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotPrice);
-
-	const heroPrice = displayPrice != null ? formatUSD(displayPrice, { compact: false }) : "—";
+	const marketType = isSpot ? "spot" : "perp";
+	const priceDecimals = szDecimalsToPriceDecimals(selectedMarketInfo?.szDecimals ?? 2, marketType);
+	const priceText = formatNumber(displayPrice, {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: priceDecimals,
+	});
 	const changePct = change24h !== null ? formatPercent(change24h / 100, { signDisplay: "exceptZero" }) : "—";
+	const priceChangeText =
+		priceChange24h !== null
+			? formatNumber(priceChange24h, {
+					minimumFractionDigits: 0,
+					maximumFractionDigits: priceDecimals,
+					signDisplay: "exceptZero",
+				})
+			: "—";
+	const changeText = change24h === null ? "—" : `${priceChangeText} / ${changePct}`;
+	const quoteToken =
+		selectedMarketInfo?.kind === "spot"
+			? (selectedMarketInfo.tokensInfo[1]?.displayName ?? selectedMarketInfo.tokensInfo[1]?.name ?? "USDC")
+			: "USDC";
+	const spotVolumeText =
+		dayNtlVlm != null
+			? `${formatNumber(dayNtlVlm, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${quoteToken}`
+			: "—";
+	const spotMarketCapText =
+		spotMarketCap != null
+			? `${formatNumber(spotMarketCap, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ${quoteToken}`
+			: "—";
 
 	return (
-		<div className="flex min-h-0 w-max min-w-0 flex-nowrap items-center gap-0 text-xs">
-			<div className="flex shrink-0 items-center gap-2 border-r border-stroke-weak/35 pr-2.5">
-				<span className="font-sans text-sm font-semibold tabular-nums tracking-tight text-fg">{heroPrice}</span>
-				<div className="flex min-w-0 items-baseline gap-1">
-					<span className="shrink-0 text-2xs font-medium uppercase tracking-wide text-fg-muted">{t`24h`}</span>
-					<span
-						className={cn(
-							"min-w-0 font-sans text-xs font-medium tabular-nums leading-none",
-							change24h === null ? "text-fg-muted" : getValueColorClass(change24h),
-						)}
-					>
-						{changePct}
-					</span>
-				</div>
-			</div>
+		<div className="grid h-11 w-max min-w-0 auto-cols-max grid-flow-col items-center gap-8 text-xs">
+			<StatBlock label={t`Price`} value={priceText} valueClass="text-fg" />
+			<StatBlock
+				label={t({ message: "24h Change", context: "Market overview" })}
+				value={changeText}
+				valueClass={change24h === null ? "text-fg-muted" : getValueColorClass(change24h)}
+			/>
 
 			{!isSpot && (
 				<>
-					<StatDivider />
-					<StatBlock layout="inline" label={t`ORACLE`} value={formatUSD(oraclePx)} />
-					<StatDivider />
-					<StatBlock layout="inline" label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
-					<StatDivider />
-					<StatBlock layout="inline" label={t`OPEN INT`} value={formatUSD(oiUsd, { compact: false })} />
-					<StatDivider />
+					<StatBlock label={t`ORACLE`} value={formatUSD(oraclePx)} />
+					<StatBlock
+						label={t({ message: "24H VOL", context: "Market overview" })}
+						value={formatUSD(dayNtlVlm, { compact: false })}
+					/>
+					<StatBlock label={t`OPEN INT`} value={formatUSD(oiUsd, { compact: false })} />
 					<Tooltip content={<FundingTooltipContent fundingNum={fundingNum} />} side="bottom">
 						<span>
 							<StatBlock
-								layout="inline"
 								label={t`FUNDING`}
 								value={formatPercent(fundingNum, {
 									minimumFractionDigits: 4,
@@ -166,50 +185,30 @@ export function MarketOverview() {
 			)}
 			{isSpot && (
 				<>
-					<StatDivider />
+					<StatBlock label={t({ message: "24H VOL", context: "Market overview" })} value={spotVolumeText} />
+					<StatBlock label={t`Market Cap`} value={spotMarketCapText} />
 					<StatBlock
-						layout="inline"
-						label={t`24H VOL`}
-						value={formatUSD(dayNtlVlm, {
-							notation: "compact",
-							compactDisplay: "short",
-						})}
+						label={t`Contract`}
+						value={createSpotTokenContractValue(spotTokenAddress, copiedSpotTokenAddress, copySpotTokenAddress)}
 					/>
-					<StatDivider />
-					<StatBlock
-						layout="inline"
-						label={t`Market Cap`}
-						value={formatUSD(spotMarketCap, {
-							notation: "compact",
-							compactDisplay: "short",
-						})}
-					/>
-					<StatDivider />
-					{createSpotTokenInfoInline(spotTokenAddress, copiedSpotTokenAddress, copySpotTokenAddress)}
 				</>
 			)}
 		</div>
 	);
 }
 
-function createSpotTokenInfoInline(address: string | null, copied: boolean, onCopy: (value: string) => void) {
+function createSpotTokenContractValue(address: string | null, copied: boolean, onCopy: (value: string) => void) {
 	function handleCopy() {
 		if (!address) return;
 		onCopy(address);
 	}
 
 	if (!address) {
-		return (
-			<div className="flex items-center gap-1.5 whitespace-nowrap px-1.5 py-px">
-				<span className="text-2xs text-fg-muted/80 uppercase tracking-wide">{t`More Info`}</span>
-				<span className="font-sans text-xs font-medium tabular-nums text-fg">—</span>
-			</div>
-		);
+		return "—";
 	}
 
 	return (
-		<div className="flex items-center gap-1.5 whitespace-nowrap px-1.5 py-px">
-			<span className="text-2xs text-fg-muted/80 uppercase tracking-wide">{t`More Info`}</span>
+		<span className="flex items-center gap-1 whitespace-nowrap">
 			<a
 				href={getExplorerTokenUrl(address)}
 				target="_blank"
@@ -228,6 +227,6 @@ function createSpotTokenInfoInline(address: string | null, copied: boolean, onCo
 			>
 				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
 			</button>
-		</div>
+		</span>
 	);
 }

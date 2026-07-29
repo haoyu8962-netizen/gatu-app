@@ -5,6 +5,7 @@ import { canOpenMarketAssetInfo, getMarketAssetReference, hasPerpAnnotation } fr
 
 const HYPE_TOKEN_ID = "0x0d01dc56dcaaca66ad901c959b4011ec";
 const SOLANA_TOKEN_ID = "0x49b67c39f5566535de22b29b0e51e685";
+const SPCXD_TOKEN_ID = "0x4f49b5f025c969501c6a350f984e1725";
 const USDC_TOKEN_ID = "0x6d1e7cde53ba9467b783cb7c530ce054";
 
 function createSpotMarket(
@@ -106,6 +107,22 @@ describe("market asset references", () => {
 			kind: "spot",
 			localDescriptionId: "solana",
 			localProviderId: "unit",
+		});
+	});
+
+	it("uses the exact SPCXD/USDC token pair for its local description", () => {
+		const reference = getMarketAssetReference(
+			createSpotMarket(USDC_TOKEN_ID, {
+				displayName: "SPCXD",
+				fullName: "Space Exploration Technologies Corp.",
+				tokenId: SPCXD_TOKEN_ID,
+			}),
+		);
+
+		expect(reference).toMatchObject({
+			kind: "spot",
+			tokenId: SPCXD_TOKEN_ID,
+			localDescriptionId: "spcxd",
 		});
 	});
 

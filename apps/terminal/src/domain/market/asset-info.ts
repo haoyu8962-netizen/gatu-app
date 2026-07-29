@@ -1,7 +1,7 @@
 import type { UnifiedMarket } from "@gatu/hl-react";
 import type { PerpConciseAnnotationsResponse } from "@nktkas/hyperliquid";
 
-export type LocalAssetDescriptionId = "bitcoin" | "ethereum" | "hype" | "solana";
+export type LocalAssetDescriptionId = "bitcoin" | "ethereum" | "hype" | "solana" | "spcxd";
 export type LocalAssetProviderId = "unit";
 
 type TokenId = `0x${string}`;
@@ -29,6 +29,7 @@ const BITCOIN_TOKEN_ID = "0x8f254b963e8468305d409b33aa137c67";
 const ETHEREUM_TOKEN_ID = "0xe1edd30daaf5caac3fe63569e24748da";
 const HYPE_TOKEN_ID = "0x0d01dc56dcaaca66ad901c959b4011ec";
 const SOLANA_TOKEN_ID = "0x49b67c39f5566535de22b29b0e51e685";
+const SPCXD_TOKEN_ID = "0x4f49b5f025c969501c6a350f984e1725";
 const USDC_TOKEN_ID = "0x6d1e7cde53ba9467b783cb7c530ce054";
 const TOKEN_ID_PATTERN = /^0x[0-9a-f]{32}$/i;
 
@@ -41,6 +42,7 @@ const LOCAL_PERP_DESCRIPTIONS: Readonly<Record<string, LocalAssetDescriptionId>>
 
 const LOCAL_SPOT_PAIR_DESCRIPTIONS: Readonly<Record<string, LocalAssetDescriptionId>> = {
 	[`${HYPE_TOKEN_ID}:${USDC_TOKEN_ID}`]: "hype",
+	[`${SPCXD_TOKEN_ID}:${USDC_TOKEN_ID}`]: "spcxd",
 };
 
 const LOCAL_SPOT_TOKEN_DESCRIPTIONS: Readonly<Record<string, LocalAssetDescriptionId>> = {

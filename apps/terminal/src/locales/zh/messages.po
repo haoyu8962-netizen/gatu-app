@@ -48,6 +48,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
 #~ msgid "% filled"
 #~ msgstr "% 已成交"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
+msgstr "$SPCXD 是通过 Dinari 的 dShares™ 基础设施发行的 SpaceX 代币化表示，也是首个可在 HyperCore 现货交易的代币化美国股票。HyperLiquid 上的 $SPCXD 是封装的 dShares™，并且受到限制，这意味着与底层证券相关的某些权利被冻结。如果持有 dShares™ 的钱包已通过 Dinari 或其合作伙伴完成 KYC，这些权利可以自动恢复，代币持有人无需额外操作。"
+
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
 msgstr "1 年"
@@ -57,8 +61,8 @@ msgid "14 Day Volume"
 msgstr "14 日交易量"
 
 #: src/components/trade/market-overview.tsx
-msgid "24h"
-msgstr "24h"
+#~ msgid "24h"
+#~ msgstr "24h"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "24H"
@@ -68,6 +72,11 @@ msgstr "24 小时"
 msgid "24h Change"
 msgstr "24h 涨跌"
 
+#: src/components/trade/market-overview.tsx
+msgctxt "Market overview"
+msgid "24h Change"
+msgstr "24小时变化"
+
 #: src/components/trade/chart/constants.ts
 #~ msgid "24h Price"
 #~ msgstr "24小时价格"
@@ -76,12 +85,16 @@ msgstr "24h 涨跌"
 #~ msgid "24h vol"
 #~ msgstr ""
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "24H VOL"
 msgstr "24H VOL"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
+msgctxt "Market overview"
+msgid "24H VOL"
+msgstr "24小时成交量"
 
 #: src/components/trade/market-overview.tsx
 msgid "30 days"
@@ -854,6 +867,10 @@ msgstr "连接中..."
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "Continue"
 msgstr "继续"
+
+#: src/components/trade/market-overview.tsx
+msgid "Contract"
+msgstr "合约"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/market-overview.tsx
@@ -2257,8 +2274,6 @@ msgstr "更多"
 msgid "More details"
 msgstr "更多详情"
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "More Info"
 msgstr "更多信息"
@@ -2966,6 +2981,7 @@ msgstr "正在准备报价…"
 #~ msgid "Previous"
 #~ msgstr "上一页"
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -4653,6 +4669,10 @@ msgstr "钱包已返回交易哈希，但该交易暂时还无法在 Arbitrum �
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect QR code"
 #~ msgstr ""
+
+#: src/components/trade/components/spot-market-social-links.tsx
+msgid "Website"
+msgstr "网站"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #~ msgid "WebSocket error"

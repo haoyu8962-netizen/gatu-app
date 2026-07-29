@@ -1,7 +1,8 @@
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import {
@@ -11,6 +12,7 @@ import {
 	type LocalAssetDescriptionId,
 	type MarketAssetReference,
 } from "@/domain/market/asset-info";
+import { getSpotAssetSnapshotIdentity, loadSpotAssetDescription } from "@/domain/market/spot-asset-info";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatNumber, shortenAddress } from "@/lib/format";
 import { getExplorerTokenUrl, type UnifiedMarketInfo, useInfo } from "@/lib/hyperliquid";
@@ -48,6 +50,16 @@ function createLocalDescription(descriptionId: LocalAssetDescriptionId | null): 
 					execution.
 				</Trans>
 			);
+		case "spcxd":
+			return (
+				<Trans>
+					$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the
+					first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped
+					dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the
+					wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored
+					with no additional effort by the tokenholder.
+				</Trans>
+			);
 		default:
 			return null;
 	}
@@ -75,12 +87,14 @@ function createProviderDescription(reference: MarketAssetReference | null): Reac
 }
 
 export function MarketAssetInfo({ market }: Props) {
+	const { i18n } = useLingui();
 	const isMobile = useIsMobile();
 	const [open, setOpen] = useState(false);
 	const reference = getMarketAssetReference(market);
 	const localDescription = createLocalDescription(reference?.localDescriptionId ?? null);
 	const annotationCoin = reference?.kind === "perp" && reference.localDescriptionId === null ? reference.coin : null;
 	const tokenId = reference?.kind === "spot" ? reference.tokenId : null;
+	const spotAssetIdentity = getSpotAssetSnapshotIdentity(market);
 
 	const conciseAnnotationsQuery = useInfo("perpConciseAnnotations", undefined, {
 		enabled: annotationCoin !== null,
@@ -105,13 +119,29 @@ export function MarketAssetInfo({ market }: Props) {
 			gcTime: ANNOTATION_GC_TIME_MS,
 		},
 	);
+	const spotDescriptionQuery = useQuery({
+		queryKey: [
+			"spot-asset-description",
+			spotAssetIdentity?.pair,
+			spotAssetIdentity?.base,
+			spotAssetIdentity?.quote,
+			i18n.locale,
+		],
+		queryFn: () => loadSpotAssetDescription(spotAssetIdentity, i18n.locale),
+		enabled: open && spotAssetIdentity !== null,
+		staleTime: Number.POSITIVE_INFINITY,
+		gcTime: Number.POSITIVE_INFINITY,
+	});
 
 	if (!market || !reference) return null;
 
 	const annotation = annotationQuery.data;
 	const annotationDescription = annotation?.description.trim() || null;
 	const fallbackDescription = createFallbackDescription(reference);
-	const description = localDescription ?? annotationDescription ?? fallbackDescription;
+	const description =
+		reference.kind === "spot"
+			? (spotDescriptionQuery.data ?? localDescription ?? fallbackDescription)
+			: (localDescription ?? annotationDescription ?? fallbackDescription);
 	const providerDescription = createProviderDescription(reference);
 	const isBuilderPerp = reference.kind === "perp" && reference.isBuilder;
 	const conciseAnnotationsError = isBuilderPerp && conciseAnnotationsQuery.isError;
@@ -229,7 +259,7 @@ export function MarketAssetInfo({ market }: Props) {
 				size="lg"
 				presentation={isMobile ? "drawer" : "modal"}
 				overlayClassName="backdrop-blur-[2px] duration-100"
-				className="max-h-[calc(100dvh-1rem)] rounded-t-16 !shadow-none min-[1001px]:max-w-[32.5rem] min-[1001px]:rounded-16"
+				className="min-h-[166px] max-h-[calc(100dvh-1rem)] rounded-t-16 !shadow-none min-[1001px]:min-h-0 min-[1001px]:max-w-[32.5rem] min-[1001px]:rounded-16"
 			>
 				<ModalHeader divider={false} className="px-6 pt-5 pb-3">
 					<div className="flex min-w-0 items-center gap-3 pr-8">

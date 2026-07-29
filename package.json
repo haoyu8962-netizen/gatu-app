@@ -23,6 +23,7 @@
 		"fix": "biome check --write",
 		"i18n:extract": "pnpm --filter @gatu/terminal i18n:extract",
 		"i18n:compile": "pnpm --filter @gatu/terminal i18n:compile",
+		"asset-info:generate": "node scripts/generate-spot-asset-info.mjs",
 		"prepare": "lefthook install"
 	},
 	"devDependencies": {

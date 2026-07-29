@@ -48,6 +48,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} ثانية"
 #~ msgid "% filled"
 #~ msgstr "% مكتمل"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
+msgstr "$SPCXD هو تمثيل مرمّز لـ SpaceX موزّع عبر بنية dShares™ التابعة لـ Dinari، وهو أول سهم أمريكي مرمّز متاح للتداول الفوري على HyperCore. رموز $SPCXD على HyperLiquid هي dShares™ مغلّفة وخاضعة لقيود، ما يعني تجميد بعض الحقوق المرتبطة بالورقة المالية الأساسية. إذا كانت المحفظة التي تحتفظ بـ dShares™ قد أكملت إجراءات اعرف عميلك (KYC) لدى Dinari أو أحد شركائها، فيمكن استعادة تلك الحقوق تلقائيًا دون أي إجراء إضافي من حامل الرمز."
+
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
 msgstr "سنة واحدة"
@@ -57,8 +61,8 @@ msgid "14 Day Volume"
 msgstr "حجم التداول خلال 14 يومًا"
 
 #: src/components/trade/market-overview.tsx
-msgid "24h"
-msgstr "24h"
+#~ msgid "24h"
+#~ msgstr "24h"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "24H"
@@ -68,6 +72,11 @@ msgstr "24 ساعة"
 msgid "24h Change"
 msgstr "تغيّر 24h"
 
+#: src/components/trade/market-overview.tsx
+msgctxt "Market overview"
+msgid "24h Change"
+msgstr "التغير خلال 24 ساعة"
+
 #: src/components/trade/chart/constants.ts
 #~ msgid "24h Price"
 #~ msgstr "سعر 24 ساعة"
@@ -76,12 +85,16 @@ msgstr "تغيّر 24h"
 #~ msgid "24h vol"
 #~ msgstr ""
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "24H VOL"
 msgstr "24H VOL"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
+msgctxt "Market overview"
+msgid "24H VOL"
+msgstr "حجم التداول خلال 24 ساعة"
 
 #: src/components/trade/market-overview.tsx
 msgid "30 days"
@@ -854,6 +867,10 @@ msgstr "جارٍ الاتصال..."
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "Continue"
 msgstr "متابعة"
+
+#: src/components/trade/market-overview.tsx
+msgid "Contract"
+msgstr "العقد"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/market-overview.tsx
@@ -2257,8 +2274,6 @@ msgstr "المزيد"
 msgid "More details"
 msgstr "مزيد من التفاصيل"
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "More Info"
 msgstr "مزيد من المعلومات"
@@ -2966,6 +2981,7 @@ msgstr "جارٍ تجهيز عرض السعر..."
 #~ msgid "Previous"
 #~ msgstr "السابق"
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -4653,6 +4669,10 @@ msgstr "أعادت المحفظة تجزئة معاملة، لكنها غير ظ
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect QR code"
 #~ msgstr ""
+
+#: src/components/trade/components/spot-market-social-links.tsx
+msgid "Website"
+msgstr "الموقع الإلكتروني"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #~ msgid "WebSocket error"

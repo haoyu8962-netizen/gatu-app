@@ -48,6 +48,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 #~ msgid "% filled"
 #~ msgstr "% filled"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
+msgstr "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
+
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
 msgstr "1 year"
@@ -57,14 +61,19 @@ msgid "14 Day Volume"
 msgstr "14 Day Volume"
 
 #: src/components/trade/market-overview.tsx
-msgid "24h"
-msgstr "24h"
+#~ msgid "24h"
+#~ msgstr "24h"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "24H"
 msgstr "24H"
 
 #: src/components/trade/chart/token-selector-content.tsx
+msgid "24h Change"
+msgstr "24h Change"
+
+#: src/components/trade/market-overview.tsx
+msgctxt "Market overview"
 msgid "24h Change"
 msgstr "24h Change"
 
@@ -76,10 +85,14 @@ msgstr "24h Change"
 #~ msgid "24h vol"
 #~ msgstr "24h vol"
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
+msgid "24H VOL"
+msgstr "24H VOL"
+
+#: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
+msgctxt "Market overview"
 msgid "24H VOL"
 msgstr "24H VOL"
 
@@ -854,6 +867,10 @@ msgstr "Connecting..."
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "Continue"
 msgstr "Continue"
+
+#: src/components/trade/market-overview.tsx
+msgid "Contract"
+msgstr "Contract"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/market-overview.tsx
@@ -2257,8 +2274,6 @@ msgstr "More"
 msgid "More details"
 msgstr "More details"
 
-#: src/components/trade/market-overview.tsx
-#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "More Info"
 msgstr "More Info"
@@ -2966,6 +2981,7 @@ msgstr "Preparing your quote..."
 #~ msgid "Previous"
 #~ msgstr "Previous"
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -4653,6 +4669,10 @@ msgstr "Wallet returned a transaction hash, but it is not visible on Arbitrum ye
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect QR code"
 #~ msgstr "WalletConnect QR code"
+
+#: src/components/trade/components/spot-market-social-links.tsx
+msgid "Website"
+msgstr "Website"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #~ msgid "WebSocket error"

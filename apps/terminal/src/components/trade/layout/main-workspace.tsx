@@ -1,4 +1,3 @@
-import { Divider } from "@gatu/ui";
 import { Suspense, useState } from "react";
 import { Responsive, useContainerWidth } from "react-grid-layout";
 import {
@@ -9,12 +8,14 @@ import {
 	readDesktopGridLayouts,
 	writeDesktopGridLayouts,
 } from "@/config/desktop-grid-layout";
+import { getSpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { type UnifiedMarketInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useExchangeScope } from "@/providers/exchange-scope";
 import { TokenSelector } from "../chart/token-selector";
 import { MarketAssetInfo } from "../components/market-asset-info";
+import { SpotMarketSocialLinks } from "../components/spot-market-social-links";
 import { FavoritesStrip } from "../header/favorites-strip";
 import { MarketOverview } from "../market-overview";
 
@@ -35,6 +36,7 @@ export function MainWorkspace() {
 	const { routeMarketName } = useExchangeScope();
 	const navigateToMarket = useMarketNavigation();
 	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
+	const spotSocials = getSpotAssetSocials(selectedMarket);
 
 	function handleMarketChange(marketName: string, nextMarket?: UnifiedMarketInfo) {
 		navigateToMarket(marketName, nextMarket);
@@ -67,12 +69,21 @@ export function MainWorkspace() {
 						key="coinInfo"
 						className="desktop-grid-panel flex min-w-0 items-center overflow-hidden border-b border-stroke-weak bg-surface px-2"
 					>
-						<div className="flex shrink-0 items-center">
+						<div className="flex h-10 shrink-0 items-center">
 							<MarketAssetInfo key={selectedMarket?.name} market={selectedMarket} />
-							<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} showAssetIcon={false} />
+							<TokenSelector
+								selectedMarket={selectedMarket}
+								onValueChange={handleMarketChange}
+								showAssetIcon={false}
+								showMetadataBadge={false}
+							/>
 						</div>
-						<Divider orientation="vertical" className="mx-2.5 my-1" />
-						<div className="min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+						{spotSocials ? (
+							<div className="ml-8">
+								<SpotMarketSocialLinks socials={spotSocials} />
+							</div>
+						) : null}
+						<div className="ml-8 min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 							<MarketOverview />
 						</div>
 					</div>
