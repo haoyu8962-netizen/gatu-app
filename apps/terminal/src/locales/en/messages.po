@@ -463,9 +463,9 @@ msgstr "Bridge2 deposit was not credited. Check Arbiscan before retrying."
 #~ msgid "Builder codes allow DeFi builders to receive a fee on fills they send on behalf of users. They are set per-order for maximal flexibility."
 #~ msgstr "Builder codes allow DeFi builders to receive a fee on fills they send on behalf of users. They are set per-order for maximal flexibility."
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Builder Fee"
 msgstr "Builder Fee"
 

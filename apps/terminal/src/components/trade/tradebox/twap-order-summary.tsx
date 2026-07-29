@@ -1,9 +1,8 @@
 import { useLingui } from "@lingui/react/macro";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import { cn } from "@/lib/cn";
-import { bpsToPercentage, formatDuration, formatToken, formatUSD } from "@/lib/format";
+import { formatDuration, formatToken, formatUSD } from "@/lib/format";
 
 interface Props {
 	twapMinutesNum: number | null;
@@ -65,11 +64,6 @@ export function TwapOrderSummary({
 					{orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
 				</span>
 			</SummaryRow>
-			{DEFAULT_BUILDER_CONFIG?.f && (
-				<SummaryRow label={t`Builder Fee`}>
-					<span className="whitespace-nowrap text-fg-muted">{`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}</span>
-				</SummaryRow>
-			)}
 		</div>
 	);
 }

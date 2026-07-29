@@ -1,16 +1,15 @@
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD } from "@/config/trade";
+import { STABLE_PAIR_FEE_SCALE, STABLECOIN_SWAP_TOKEN_NAMES } from "@/domain/trade/fees";
 import type { SpotMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { SpotToken } from "@/lib/hyperliquid/markets";
 import { toBig } from "@/lib/trade/numbers";
 
 const BPS_DIVISOR = 10_000;
 const TENTHS_OF_BPS_DIVISOR = 100_000;
-const STABLE_PAIR_FEE_SCALE = "0.2";
 
 export const DEFAULT_SWAP_SLIPPAGE_BPS = 100;
-export const STABLECOIN_SWAP_TOKEN_NAMES = [DEFAULT_QUOTE_TOKEN, "USDT0", "USDH"] as const;
 
 type StablecoinSwapTokenName = (typeof STABLECOIN_SWAP_TOKEN_NAMES)[number];
 

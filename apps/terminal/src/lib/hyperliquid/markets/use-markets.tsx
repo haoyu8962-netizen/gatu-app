@@ -123,6 +123,7 @@ export function createMarkets(params: CreateMarketsParams): Markets {
 					assetId: getBuilderPerpAssetId(dexIndex, assetIndex),
 					dex: dexName,
 					dexIndex,
+					deployerFeeScale: dexInfo.deployerFeeScale ?? "1",
 					ctxIndex: assetIndex,
 					quoteToken,
 					iconUrl: getIconUrlFromMarketName(asset.name, "builderPerp"),

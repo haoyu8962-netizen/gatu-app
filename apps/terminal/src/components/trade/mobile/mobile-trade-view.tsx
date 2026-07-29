@@ -7,6 +7,7 @@ import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
+import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { getLiquidationInfo } from "@/domain/trade/order/metrics";
@@ -15,14 +16,14 @@ import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import { useAccountAbstractionControl } from "@/hooks/trade/use-account-abstraction-control";
-import { useFeeRates } from "@/hooks/trade/use-fee-rates";
+import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatPrice, formatToken, formatUSD } from "@/lib/format";
+import { bpsToPercentage, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import {
 	type UnifiedMarketInfo,
 	useAgentRegistration,
@@ -178,7 +179,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSize = toNumberOrZero(position?.szi);
 	const validatedPositionSize = userPositions.isLoading || userPositions.hasError ? null : positionSize;
-	const { takerRate, makerRate } = useFeeRates(market?.kind);
+	const { takerRate, makerRate } = useMarketFeeRates(market);
 	const feeRate = isMarketExecution ? takerRate : makerRate;
 	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
 	const estimatedFee = orderValue * feeRate;
@@ -698,6 +699,14 @@ export function MobileTradeView({ className, embedded }: Props) {
 							valueClass="text-fg-muted"
 							compact={embedded}
 						/>
+						{DEFAULT_BUILDER_CONFIG?.f ? (
+							<SummaryRow
+								label={t`Builder Fee`}
+								value={`${bpsToPercentage(DEFAULT_BUILDER_CONFIG.f)}%`}
+								valueClass="text-fg-muted"
+								compact={embedded}
+							/>
+						) : null}
 					</div>
 				</div>
 			</div>

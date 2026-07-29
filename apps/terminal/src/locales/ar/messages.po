@@ -463,9 +463,9 @@ msgstr "لم يُضف إيداع Bridge2 إلى الرصيد. تحقق من Arbi
 #~ msgid "Builder codes allow DeFi builders to receive a fee on fills they send on behalf of users. They are set per-order for maximal flexibility."
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
-#: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Builder Fee"
 msgstr "رسوم المُنشئ"
 

@@ -35,6 +35,7 @@ export interface BuilderPerpMarket extends PerpAsset, BaseMarket {
 	kind: "builderPerp";
 	dex: string;
 	dexIndex: number;
+	deployerFeeScale: string;
 	quoteToken: SpotToken | undefined;
 }
 

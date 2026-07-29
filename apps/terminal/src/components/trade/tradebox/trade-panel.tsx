@@ -14,7 +14,7 @@ import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
 } from "@/hooks/trade/use-account-abstraction-control";
-import { useFeeRates } from "@/hooks/trade/use-fee-rates";
+import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
@@ -122,7 +122,7 @@ export function TradePanel() {
 		switchModeError,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
 
-	const { takerRate, makerRate } = useFeeRates(market?.kind);
+	const { takerRate, makerRate } = useMarketFeeRates(market);
 	const selectedPrice = useSelectedPrice();
 	const orderType = useOrderType();
 	const reduceOnly = useReduceOnly();
