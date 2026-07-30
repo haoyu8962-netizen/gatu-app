@@ -10,6 +10,7 @@ import {
 	formatClockDuration,
 	formatNumber,
 	formatPercent,
+	formatQuoteAmount,
 	formatUSD,
 	shortenAddress,
 	szDecimalsToPriceDecimals,
@@ -141,11 +142,17 @@ export function MarketOverview() {
 			: "USDC";
 	const spotVolumeText =
 		dayNtlVlm != null
-			? `${formatNumber(dayNtlVlm, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${quoteToken}`
+			? formatQuoteAmount(dayNtlVlm, quoteToken, {
+					minimumFractionDigits: 2,
+					maximumFractionDigits: 2,
+				})
 			: "—";
 	const spotMarketCapText =
 		spotMarketCap != null
-			? `${formatNumber(spotMarketCap, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ${quoteToken}`
+			? formatQuoteAmount(spotMarketCap, quoteToken, {
+					minimumFractionDigits: 0,
+					maximumFractionDigits: 0,
+				})
 			: "—";
 
 	return (
@@ -159,7 +166,13 @@ export function MarketOverview() {
 
 			{!isSpot && (
 				<>
-					<StatBlock label={t`ORACLE`} value={formatUSD(oraclePx)} />
+					<StatBlock
+						label={t`ORACLE`}
+						value={formatNumber(oraclePx, {
+							minimumFractionDigits: 0,
+							maximumFractionDigits: priceDecimals,
+						})}
+					/>
 					<StatBlock
 						label={t({ message: "24H VOL", context: "Market overview" })}
 						value={formatUSD(dayNtlVlm, { compact: false })}

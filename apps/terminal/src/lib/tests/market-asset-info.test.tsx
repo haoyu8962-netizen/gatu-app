@@ -4,6 +4,8 @@ import type { PerpAnnotationResponse, PerpConciseAnnotationsResponse, TokenDetai
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MarketAssetInfo } from "@/components/trade/components/market-asset-info";
+import type { SpotAssetDescription } from "@/domain/market/spot-asset-info";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { createI18nRoot } from "./harness/react";
 
@@ -27,7 +29,8 @@ const testState = vi.hoisted(() => ({
 	tokenDetailsRefetch: vi.fn(),
 	isMobile: false,
 	useInfo: vi.fn(),
-	spotDescription: undefined as string | null | undefined,
+	spotDescription: undefined as SpotAssetDescription | null | undefined,
+	spotDescriptionPending: false,
 	useDescriptionQuery: vi.fn(),
 }));
 
@@ -67,7 +70,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 vi.mock("@tanstack/react-query", () => ({
 	useQuery: (options: { enabled?: boolean }) => {
 		testState.useDescriptionQuery(options);
-		return { data: options.enabled ? testState.spotDescription : undefined };
+		return {
+			data: options.enabled ? testState.spotDescription : undefined,
+			isPending: options.enabled && testState.spotDescriptionPending,
+		};
 	},
 }));
 
@@ -156,12 +162,12 @@ const SPOT_MARKET = {
 
 const UNIT_SOL_SPOT_MARKET = {
 	kind: "spot",
-	name: "@150",
+	name: "@156",
 	pairName: "SOL-USDC",
 	iconUrl: "/coins/SOL.svg",
 	tokensInfo: [
 		{
-			name: "SOL",
+			name: "USOL",
 			displayName: "SOL",
 			fullName: "Unit Solana",
 			tokenId: SOLANA_TOKEN_ID,
@@ -240,6 +246,7 @@ describe("MarketAssetInfo", () => {
 		testState.isMobile = false;
 		testState.useInfo.mockReset();
 		testState.spotDescription = undefined;
+		testState.spotDescriptionPending = false;
 		testState.useDescriptionQuery.mockReset();
 	});
 
@@ -249,8 +256,7 @@ describe("MarketAssetInfo", () => {
 		vi.clearAllMocks();
 	});
 
-	async function renderAssetInfo(market: UnifiedMarketInfo = BUILDER_MARKET) {
-		const { MarketAssetInfo } = await import("@/components/trade/components/market-asset-info");
+	function renderAssetInfo(market: UnifiedMarketInfo = BUILDER_MARKET) {
 		act(() => root.render(createElement(MarketAssetInfo, { market })));
 		return MarketAssetInfo;
 	}
@@ -401,8 +407,30 @@ describe("MarketAssetInfo", () => {
 		expect(container.textContent).toContain("Unit Solana");
 	});
 
+	it("keeps the localized asset description separate from Unit provider copy", async () => {
+		testState.spotDescription = {
+			kind: "provider",
+			text: "This Solana spot asset on Hyperliquid is enabled by Unit, an independent third-party.",
+		};
+		await renderAssetInfo(UNIT_SOL_SPOT_MARKET);
+		openDialog();
+
+		expect(container.textContent).toContain(
+			"Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution.",
+		);
+		expect(container.textContent).toContain(
+			"This Solana spot asset on Hyperliquid is enabled by Unit, an independent third-party.",
+		);
+		expect(container.textContent).not.toContain(
+			"This spot asset is enabled independently by Unit, a third-party provider.",
+		);
+	});
+
 	it("prefers the reviewed official spot description when the snapshot contains one", async () => {
-		testState.spotDescription = "HYPE is the native token of the Hyperliquid blockchain.";
+		testState.spotDescription = {
+			kind: "asset",
+			text: "HYPE is the native token of the Hyperliquid blockchain.",
+		};
 		await renderAssetInfo(SPOT_MARKET);
 		openDialog();
 
@@ -411,9 +439,32 @@ describe("MarketAssetInfo", () => {
 		expect(testState.useDescriptionQuery).toHaveBeenLastCalledWith(
 			expect.objectContaining({
 				enabled: true,
-				queryKey: expect.arrayContaining(["spot-asset-description", "@107", "HYPE", "USDC"]),
+				queryKey: expect.arrayContaining([
+					"spot-asset-description",
+					"@107",
+					"HYPE",
+					"USDC",
+					HYPE_TOKEN_ID,
+					USDC_TOKEN_ID,
+				]),
 			}),
 		);
+	});
+
+	it("keeps the description area stable while the lazy snapshot loads", async () => {
+		testState.spotDescriptionPending = true;
+		const MarketAssetInfo = await renderAssetInfo(SPOT_MARKET);
+		openDialog();
+
+		expect(container.textContent).toContain("Loading asset information...");
+		expect(container.textContent).not.toContain("HYPE is the native token of Hyperliquid.");
+
+		testState.spotDescriptionPending = false;
+		testState.spotDescription = null;
+		act(() => root.render(createElement(MarketAssetInfo, { market: SPOT_MARKET })));
+
+		expect(container.textContent).not.toContain("Loading asset information...");
+		expect(container.textContent).toContain("HYPE is the native token of Hyperliquid.");
 	});
 
 	it("keeps every valid spot pair covered by a localized market fallback", async () => {

@@ -48,9 +48,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 #~ msgid "% filled"
 #~ msgstr "% filled"
 
+#. js-lingui-explicit-id
 #: src/components/trade/components/market-asset-info.tsx
-msgid "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
-msgstr "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
+msgid "market.asset.spcxd.description"
+msgstr "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD tokens on Hyperliquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
 
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
@@ -4671,6 +4672,7 @@ msgstr "Wallet returned a transaction hash, but it is not visible on Arbitrum ye
 #~ msgstr "WalletConnect QR code"
 
 #: src/components/trade/components/spot-market-social-links.tsx
+#: src/lib/tests/spot-market-social-links.test.tsx
 msgid "Website"
 msgstr "Website"
 

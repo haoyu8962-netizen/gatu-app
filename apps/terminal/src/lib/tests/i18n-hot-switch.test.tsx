@@ -78,6 +78,7 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 	getResolvedFormatLocale: () => "en-US",
 	useGlobalSettings: () => ({ numberFormatLocale: "auto", showOrderbookInQuote: false }),
 	useGlobalSettingsActions: () => ({ setNumberFormatLocale: vi.fn(), setShowOrderbookInQuote: vi.fn() }),
+	useIsTestnet: () => false,
 }));
 
 const balanceSnapshot = {

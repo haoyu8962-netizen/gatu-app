@@ -6,11 +6,30 @@ import {
 	loadSpotAssetDescription,
 } from "@/domain/market/spot-asset-info";
 
-function createSpotMarket(name: string, base: string, quote = "USDC"): UnifiedMarket {
+const TOKEN_IDS: Readonly<Record<string, `0x${string}`>> = {
+	LICK: "0xba3aaf468f793d9b42fd3328e24f1de9",
+	MBAPPE: "0x03e1ad7d4d6d82b3da89ac8d35cc917b",
+	NOT_LICK: "0x11111111111111111111111111111111",
+	PURR: "0xc1fb593aeffbeb02f85e0308e9956a90",
+	RUG: "0x4978f3f49f30776d9d7397b873223c2d",
+	TIME: "0xae3f9675b5825ab20850ce6229c4bdbd",
+	UBTC: "0x8f254b963e8468305d409b33aa137c67",
+	USDC: "0x6d1e7cde53ba9467b783cb7c530ce054",
+	UZEC: "0x1c994ad3381d31c86c8c2d74ed89a365",
+};
+
+function createSpotMarket(
+	name: string,
+	base: keyof typeof TOKEN_IDS,
+	quote: keyof typeof TOKEN_IDS = "USDC",
+): UnifiedMarket {
 	return {
 		kind: "spot",
 		name,
-		tokensInfo: [{ name: base }, { name: quote }],
+		tokensInfo: [
+			{ name: base, tokenId: TOKEN_IDS[base] },
+			{ name: quote, tokenId: TOKEN_IDS[quote] },
+		],
 	} as unknown as UnifiedMarket;
 }
 
@@ -19,21 +38,52 @@ describe("spot asset info snapshot", () => {
 		const market = createSpotMarket("@2", "LICK");
 		const identity = getSpotAssetSnapshotIdentity(market);
 
-		expect(identity).toEqual({ pair: "@2", base: "LICK", quote: "USDC" });
-		await expect(loadSpotAssetDescription(identity, "zh")).resolves.toContain("人工智能");
+		expect(identity).toEqual({
+			pair: "@2",
+			base: "LICK",
+			quote: "USDC",
+			baseTokenId: TOKEN_IDS.LICK,
+			quoteTokenId: TOKEN_IDS.USDC,
+		});
+		await expect(loadSpotAssetDescription(identity, "zh")).resolves.toEqual({
+			kind: "asset",
+			text: expect.stringContaining("人工智能"),
+		});
 		await expect(loadSpotAssetDescription(identity, "en")).resolves.toBeNull();
 	});
 
-	it("falls back to the official English description for unsupported app locales", async () => {
+	it("does not replace unsupported app locales with English snapshot copy", async () => {
 		const identity = getSpotAssetSnapshotIdentity(createSpotMarket("PURR/USDC", "PURR"));
 
-		await expect(loadSpotAssetDescription(identity, "ar")).resolves.toContain("first native spot asset");
+		await expect(loadSpotAssetDescription(identity, "ar")).resolves.toBeNull();
+		await expect(loadSpotAssetDescription(identity, "hi")).resolves.toBeNull();
+		await expect(loadSpotAssetDescription(identity, "en-US")).resolves.toEqual({
+			kind: "asset",
+			text: expect.stringContaining("first native spot asset"),
+		});
 	});
 
-	it("rejects stale pair indexes when the underlying token identity differs", async () => {
+	it("classifies Unit-only snapshot copy as provider information", async () => {
+		const identity = getSpotAssetSnapshotIdentity(createSpotMarket("@142", "UBTC"));
+
+		await expect(loadSpotAssetDescription(identity, "en")).resolves.toEqual({
+			kind: "provider",
+			text: expect.stringContaining("enabled by Unit"),
+		});
+		await expect(loadSpotAssetDescription(identity, "es")).resolves.toBeNull();
+	});
+
+	it("rejects stale pair indexes when names or token IDs differ", async () => {
 		const staleIdentity = getSpotAssetSnapshotIdentity(createSpotMarket("@2", "NOT_LICK"));
+		const currentIdentity = getSpotAssetSnapshotIdentity(createSpotMarket("@2", "LICK"));
+		if (!currentIdentity) throw new Error("Expected a spot identity");
+		const staleTokenIdentity = {
+			...currentIdentity,
+			baseTokenId: TOKEN_IDS.NOT_LICK,
+		};
 
 		await expect(loadSpotAssetDescription(staleIdentity, "zh")).resolves.toBeNull();
+		await expect(loadSpotAssetDescription(staleTokenIdentity, "zh")).resolves.toBeNull();
 		expect(getSpotAssetSocials(createSpotMarket("@2", "NOT_LICK"))).toBeNull();
 	});
 
@@ -49,6 +99,21 @@ describe("spot asset info snapshot", () => {
 			x: "https://x.com/mbappe_HL",
 			telegram: "https://t.me/mbappe_HL",
 			website: undefined,
+		});
+	});
+
+	it("labels social destinations by their verified hostnames", () => {
+		expect(getSpotAssetSocials(createSpotMarket("@13", "RUG"))).toEqual({
+			displayName: "Rugman",
+			x: "https://x.com/RUG_on_HL",
+			telegram: undefined,
+			website: undefined,
+		});
+		expect(getSpotAssetSocials(createSpotMarket("@138", "TIME"))).toEqual({
+			displayName: "Timeswap",
+			x: "https://x.com/timeswaplabs",
+			telegram: "https://t.me/timeswap",
+			website: "https://timeswap.io/",
 		});
 	});
 

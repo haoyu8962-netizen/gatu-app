@@ -230,6 +230,15 @@ export function formatToken(value: string | number | null | undefined, opts?: nu
 	return symbol ? `${number} ${symbol}` : number;
 }
 
+export function formatQuoteAmount(
+	value: string | number | null | undefined,
+	quoteSymbol: string,
+	opts?: number | FormatOptions,
+): string {
+	const options = typeof opts === "number" ? { decimals: opts } : opts;
+	return formatToken(value, { ...options, symbol: quoteSymbol });
+}
+
 /**
  * Format percentage
  * Expects decimal input (0.15 = 15%)

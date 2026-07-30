@@ -1,11 +1,15 @@
 import type { SpotAssetDescriptionEntry } from "./spot-asset-info";
 
 export const SPOT_ASSET_INFO_GENERATED_AT = "2026-07-29T14:27:45.052Z";
+export const SPOT_ASSET_INFO_SOURCE_SHA256 = "1aa5d79f128cc838424ea863900017a87b22b2d97c0005ec335de202a5f22912";
 
 export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescriptionEntry>> = {
 	"PURR/USDC": {
 		base: "PURR",
 		quote: "USDC",
+		baseTokenId: "0xc1fb593aeffbeb02f85e0308e9956a90",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "PURR 是一个测试令牌，也是 Hyperliquid L1 上的首个原生即期资产。它以 Hyperliquid 的吉祥物 Hypurr 命名。",
 			en: "PURR is a test token and the first native spot asset on the Hyperliquid L1. It is named after Hypurr, the Hyperliquid mascot.",
@@ -15,6 +19,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@1": {
 		base: "HFUN",
 		quote: "USDC",
+		baseTokenId: "0xbaf265ef389da684513d98d68edf4eae",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"$HFUN没有销售，也没有计划中的用途。$HFUN是作为HypurrFun Telegram机器人测试的一部分而部署的。$HFUN的最大供应量是100万。30%的$HFUN分配给了$PURR持有者，30%给了代币的创建者，还有40%给了Hyperliquidity。",
@@ -24,6 +31,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@2": {
 		base: "LICK",
 		quote: "USDC",
+		baseTokenId: "0xba3aaf468f793d9b42fd3328e24f1de9",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "$LICK是世界上第一个由人工智能驱动的迷因币。由Lick Industries带来。现已在Hyperliquid L1上线。",
 			es: "$LICK es la primera memecoin del mundo impulsada por artificial intellickgence. Creada por Lick Industries. Ahora en vivo en la Hyperliquid L1.",
@@ -32,6 +42,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@6": {
 		base: "WAGMI",
 		quote: "USDC",
+		baseTokenId: "0x649efea44690cf88d464f512bc7e2818",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "HL的OG迷因币，这就是为什么我们都能成功的原因。",
 			es: "El memecoin OG de HL, por eso todos vamos a lograrlo.",
@@ -40,6 +53,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@8": {
 		base: "POINTS",
 		quote: "USDC",
+		baseTokenId: "0xbb03842e1f71ed27ed8fa012b29affd4",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "积分公式尚未公开。如果您在积分页面上看不到某一周，这意味着您那周没有赚取任何积分。",
 			en: "The formula for points has not been made public. If you do not see a week on your points page, it means you have not earned any points for that week.",
@@ -48,6 +64,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@9": {
 		base: "TRUMP",
 		quote: "USDC",
+		baseTokenId: "0x368cb581f0d51e21aa19996d38ffdf6f",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "TRUMP是特朗普团队在Solana上推出的一种币。",
 			en: "TRUMP is a coin launched by the Trump team on Solana.",
@@ -57,6 +76,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@10": {
 		base: "GMEOW",
 		quote: "USDC",
+		baseTokenId: "0x07615193eaa63d1da6feda6e0ac9e014",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"$GMEOW 在 Hyperliquid 是象征猫科动物在新的梅姆时代中占据主导地位的另一个迷因币。$GMEOW 没有销售也没有计划中的实用程序。",
@@ -67,6 +89,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@11": {
 		base: "PEPE",
 		quote: "USDC",
+		baseTokenId: "0x79b6e1596ea0deb2e6912ff8392c9325",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "看来我们都要跌到零了。推特：@PEPEonHL",
 			en: "Guess we are all going to zero. Twitter: @PEPEonHL",
@@ -76,6 +101,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@13": {
 		base: "RUG",
 		quote: "USDC",
+		baseTokenId: "0x4978f3f49f30776d9d7397b873223c2d",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"Rugman是生活在Hyperliquid上的一个全心全意的英雄。他一生的梦想是成为一名成功的量化分析师，但他所有的朋友都认为他是一个左曲线者！加入RUGMAN的冒险，发现他究竟有多量化。",
@@ -85,6 +113,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@16": {
 		base: "CZ",
 		quote: "USDC",
+		baseTokenId: "0x3b5ff6cb91f71032578b53960090adfb",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "$CZ是一个在Hyperliquid上交易的模因币，目前没有实用性。4. #FreeCZ",
 			en: "$CZ is a meme token that trades on Hyperliquid, currently without utility. 4. #FreeCZ",
@@ -94,6 +125,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@17": {
 		base: "BAGS",
 		quote: "USDC",
+		baseTokenId: "0x979978fd8cb07141f97dcab921ba697a",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "谁在拉升我的包袋？",
 			en: "/who_is_pumping_my_bags",
@@ -104,6 +138,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@18": {
 		base: "ANSEM",
 		quote: "USDC",
+		baseTokenId: "0xa96cfac10eaecba151f646c5cb4c5507",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Solana 上创作者生态系统的流动性和指数层。",
 			en: "The liquidity and index layer for creator ecosystems on Solana.",
@@ -112,6 +149,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@20": {
 		base: "PUMP",
 		quote: "USDC",
+		baseTokenId: "0xefa7e286b99ea49ce6a21d21bb41636f",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Pump.fun是一个带有社交元素的代币启动平台。PUMP是该项目的代币。",
 			es: "Pump.fun es una plataforma de lanzamiento de tokens con elementos sociales. PUMP es el token del proyecto.",
@@ -120,6 +160,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@22": {
 		base: "HAPPY",
 		quote: "USDC",
+		baseTokenId: "0x3d06abbbc860b7e97feb1478c21c5cd6",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "呼噜，呼噜，快乐的猫咪蜷缩时发出的声音。",
 			en: "Purr, purr, makes the happy cat as it curls up cozily.",
@@ -129,6 +172,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@23": {
 		base: "SCHIZO",
 		quote: "USDC",
+		baseTokenId: "0xe140201197ced74f8884a698190da7aa",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Schizo Terminal 机器人的官方代币，一个在 Hyperliquid 链上交易的自治代理",
 			en: "The official token of the Schizo Terminal bot, an autonomous agent trading on the Hyperliquid chain",
@@ -137,6 +183,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@24": {
 		base: "SELL",
 		quote: "USDC",
+		baseTokenId: "0x18bce4e1865f0535689b3c4c71e86a84",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "44696420796F752073656C6C20796F757220626974636F696E20746F20426C61636B526F636B20416E6F6E3F",
 			en: "44696420796F752073656C6C20796F757220626974636F696E20746F20426C61636B526F636B20416E6F6E3F",
@@ -146,6 +195,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@25": {
 		base: "BIGBEN",
 		quote: "USDC",
+		baseTokenId: "0x231f2a687770b13fe12adb1f339ff722",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "滴答 滴答 - 大本 |",
 			en: "TICK TOCK TICK TOCK - Big Ben |",
@@ -156,6 +208,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@26": {
 		base: "CATNIP",
 		quote: "USDC",
+		baseTokenId: "0x8bb39ef7881404c5d019a07b1cf21725",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "猫薄荷是Hypurr的最好朋友，也是任何猫的完美伴侣。",
 		},
@@ -163,6 +218,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@29": {
 		base: "GUP",
 		quote: "USDC",
+		baseTokenId: "0x5a9a44de6fbdb012284eec608c1cf9b8",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "向超流动性介绍最可爱的哈巴狗。$gup这只哈巴狗。",
 			en: "Introducing the cutest pug to hyperliquid. $gup the pug.",
@@ -171,6 +229,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@30": {
 		base: "FARMED",
 		quote: "USDC",
+		baseTokenId: "0x002911b408c1ae4ddc144e756cebdc17",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "厌倦了被FARMED？我们也是。社区空投给忠实的HL农民。",
 			en: "Sick of being FARMED? So are we. Community airdropped to loyal HL farmers.",
@@ -179,6 +240,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@33": {
 		base: "BID",
 		quote: "USDC",
+		baseTokenId: "0x21c5fd69973e1bee64c92af9eb47420a",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Bidcoin 是一个开源的、抗审查的、点对点的、不可变的 memecoin。",
 			en: "Bidcoin is an open source censorship-resistant peer-to-peer immutable memecoin.",
@@ -187,6 +251,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@35": {
 		base: "VEGAS",
 		quote: "USDC",
+		baseTokenId: "0xb693d596cd02f5f38e532e647bb43b69",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "下一代加密扑克体验。基于HyperEVM构建，旨在革新链上赌博。",
 			en: "The next-gen crypto poker experience. Built on HyperEVM to revolutionize on-chain gambling.",
@@ -195,6 +262,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@37": {
 		base: "VAPOR",
 		quote: "USDC",
+		baseTokenId: "0xdb5190bea4b6ab178da0162420c93a73",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Vaporware是一个由Hyperliquid L1和ai16z的ElizaOS驱动的无代码AI代理启动平台。",
 		},
@@ -202,6 +272,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@38": {
 		base: "PANDA",
 		quote: "USDC",
+		baseTokenId: "0x92588529ba00e2d2bec07c12c804a580",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "可能没什么。",
 			en: "Probably nothing.",
@@ -212,6 +285,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@39": {
 		base: "PILL",
 		quote: "USDC",
+		baseTokenId: "0xd56f8732f1cae4fc2db2e48863c25d81",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "计划亲自尝试Hyperliquid药丸。",
 			en: "Planning on taking the Hyperliquid pill, personally.",
@@ -220,6 +296,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@40": {
 		base: "ADHD",
 		quote: "USDC",
+		baseTokenId: "0xba13ed91905624d50318d54651ad3bab",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"注意力不足过度流动性障碍是一种神经发育障碍，其特征在于执行功能障碍，这种情况常见于过度杠杆化的愚蠢交易、对无价值币种的过度活跃追捧、沟壑式的冲动行为以及丢失种子短语。",
@@ -229,6 +308,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@41": {
 		base: "FUN",
 		quote: "USDC",
+		baseTokenId: "0x3dc9f93c39ddd9f0182ad1e584bae0d4",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "HyperFun 旨在围绕 $FUN 代币构建多个实用程序和收入来源。从 GambleFi 开始。",
 			en: "HyperFun aims to build several utilities and revenue streams around the $FUN token. Starting with GambleFi.",
@@ -238,6 +320,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@42": {
 		base: "LADY",
 		quote: "USDC",
+		baseTokenId: "0x71378e1ba5403eb35ad4e1af2048c6e3",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "最亮的邪教在超流动性上",
 			en: "The Brightest Cult on Hyperliquid",
@@ -247,6 +332,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@46": {
 		base: "DROP",
 		quote: "USDC",
+		baseTokenId: "0x6c30da3dd84bd4f59642fd73fcd46ad6",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "购买HyperDrop，获得空投",
 			en: "Buy HyperDrop, get Airdrops",
@@ -257,6 +345,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@47": {
 		base: "MBAPPE",
 		quote: "USDC",
+		baseTokenId: "0x03e1ad7d4d6d82b3da89ac8d35cc917b",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Murad, 购买并推高价格。享受吧！",
 			en: "I’m Mbappe, the baby turtle. I love the sea breeze, playing ball and frog legs. I dream of becoming famous!",
@@ -266,6 +357,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@49": {
 		base: "RAGE",
 		quote: "USDC",
+		baseTokenId: "0x0ae968c613d445364de97769f1afb16b",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "多链合约聚合器",
 			en: "Multichain Perp Aggregator",
@@ -275,6 +369,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@52": {
 		base: "COZY",
 		quote: "USDC",
+		baseTokenId: "0xd998e1032a1fabfeaf6cf11ae7ddec2a",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "无忧无虑。滋润。舒适。专注自我。专注。繁荣",
 			en: "Unbothered. Moisturized. Cozy. In My Lane. Focused. Flourishing",
@@ -283,6 +380,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@58": {
 		base: "LORA",
 		quote: "USDC",
+		baseTokenId: "0xc6d6fb326749974a028425d9db7681c4",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"Loracle是一个富有远见的天才，也是HFUN和开创性的HYPURR PUMP机器人背后的主要设计师。他对Hyperliquid社区的贡献无与伦比。凭借几乎将代码变金的能力，Loracle的创新打破了边界，重新定义了可能性。他的卓越才智、无与伦比的奉献精神和无限的创造力让他成为了真正的先锋。Loracle的工作是对他非凡天赋的最高赞誉。#1 积分持有者，$PURR的巨鲸并且是流动性的提供者。",
@@ -291,6 +391,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@59": {
 		base: "CATBAL",
 		quote: "USDC",
+		baseTokenId: "0x38348c17e1a18559bbda232d22007695",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "你有没有听说过猫咪阴谋团计划要统治世界？我也没有",
 			en: "A secret cat cabal on Hyperliquid? Don’t be ridiculous.",
@@ -299,6 +402,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@61": {
 		base: "GUESS",
 		quote: "USDC",
+		baseTokenId: "0x8211bcb445c7c006059cfcccb4f1a1b8",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "首个在Hyperliquid上的预测市场。",
 			en: "First Predictions Market on Hyperliquid.",
@@ -308,6 +414,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@62": {
 		base: "MAXI",
 		quote: "USDC",
+		baseTokenId: "0xed660d18ef6a87bc3dc1b3eeeb94fe21",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "我所有的朋友都是HL极客",
 			en: "All my friends are HL MAXIs",
@@ -318,6 +427,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@67": {
 		base: "CINDY",
 		quote: "USDC",
+		baseTokenId: "0xf00cf2c0647e1ce1ee5c1274b4650e40",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Drift是合约交易的未来",
 			en: "Drift is the future of perps trading",
@@ -327,6 +439,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@68": {
 		base: "CHINA",
 		quote: "USDC",
+		baseTokenId: "0x650ba53f534d00834002ca10c4792d06",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "为党争光！为CCP（中国共产党）争荣光！",
 			en: "为党争光! Glory to the CCP!",
@@ -336,6 +451,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@69": {
 		base: "STACK",
 		quote: "USDC",
+		baseTokenId: "0x9728448fd10546a8527b21298a9b41e4",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "没有社交媒体。没有团队供应。只有STACK",
 			en: "No socials. No team supply. Just STACK",
@@ -345,6 +463,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@70": {
 		base: "FRIED",
 		quote: "USDC",
+		baseTokenId: "0xbd859b02096be7a23dd1527269be10a0",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "为了超级fried的大脑的Hypurrfried鸡蛋。",
 			en: "Hypurrfried eggs for hypurrfried brains.",
@@ -355,6 +476,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@72": {
 		base: "NOCEX",
 		quote: "USDC",
+		baseTokenId: "0x5901399de6f487a6f7b11b1487811c86",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "我不需要中心化交易所，我有Hyperliquid",
 			es: "No necesito CEX, tengo Hyperliquid",
@@ -363,6 +487,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@74": {
 		base: "OMNIX",
 		quote: "USDC",
+		baseTokenId: "0x216a1428334ac9e908e76a02a1812416",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Omni X 是第一个原生的全链 NFT 发射台和由 LayerZero 支持的互操作性解决方案生态系统。",
 			en: "Omni X is the first natively omnichain NFT launchpad and ecosystem of interoperability solutions powered by LayerZero.",
@@ -372,6 +499,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@75": {
 		base: "RIP",
 		quote: "USDC",
+		baseTokenId: "0xc20825d6e56b3bf1aa15d1f80471b166",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "结束了，安息吧",
 		},
@@ -379,6 +509,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@78": {
 		base: "SPH",
 		quote: "USDC",
+		baseTokenId: "0xaced5d1ad2c5ce7b7c789abfb7955b27",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Hyperliquid的性感与呼噜800",
 			en: "Hyperliquid’s Sexy & Purr 800",
@@ -389,6 +522,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@81": {
 		base: "HOPE",
 		quote: "USDC",
+		baseTokenId: "0xe6ac9d5a7cf91cdd9fdf34fcbbdd58e9",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "神秘的宇宙之眼带着$HOPE✨凝视着你。",
 			en: "Mysterious cosmic eyes gaze upon you with $HOPE✨.",
@@ -397,6 +533,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@88": {
 		base: "YEETI",
 		quote: "USDC",
+		baseTokenId: "0x2150c49b1b981b88349dae535d607ce2",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "YEETI 直接被扔进了 Hypurrverse。戴上你的眼镜，加入这个邪教",
 			en: "YEETI got yeeted straight into the Hypurrverse. Put your glasses on and join the cult",
@@ -405,6 +544,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@89": {
 		base: "SYLVI",
 		quote: "USDC",
+		baseTokenId: "0x21c7f844092376ba85aa3875180e194b",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "这只极其罕见的来自 Sylvanian Families 收藏系列的舞蹈贵宾犬永远生活在 Hyperliquid 链上。",
 			en: "This extremely rare dancing poodle from the Sylvanian Families collection lives on the Hyperliquid chain forever.",
@@ -413,6 +555,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@91": {
 		base: "FRUDO",
 		quote: "USDC",
+		baseTokenId: "0xb3d30d38259b99d4a6daaf72ded7bf34",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Frudo是超流动的守护者",
 			en: "Frudo the Guardian of Hyperliquid",
@@ -422,6 +567,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@95": {
 		base: "MAGA",
 		quote: "USDC",
+		baseTokenId: "0x9b91002773083d9292b8cb02dacb7e79",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"MAGA币是一个充满活力的迷因驱动加密货币，拥有着热情且不断增长的社区。MAGA币将迷因文化和数字资产的粉丝聚集在一起，前所未有。但还有更多！我们正在深入AI世界，让一切变得更酷——想象更智能的工具，更狂野的想法，和不停的创新。有了MAGA币，就是迷因、狂欢，再加上一点未来的魔法!",
@@ -431,6 +579,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@100": {
 		base: "UP",
 		quote: "USDC",
+		baseTokenId: "0xaa60905298f022ad8efab6d4348bc61b",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "仅上升技术",
 			en: "Up Only Technology",
@@ -439,6 +590,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@103": {
 		base: "LUCKY",
 		quote: "USDC",
+		baseTokenId: "0x6558e9071cbb754b7ee56568a9f5d80a",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "HYPERLIQUID的第一文化币！炒作中 - 这只狗即将接管。",
 		},
@@ -446,6 +600,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@104": {
 		base: "COPE",
 		quote: "USDC",
+		baseTokenId: "0x53184ac4c2f5d4729f4e0c0077af63e3",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "应对建设世代财富时官方代币。为那些尽管市场条件而拒绝放弃的人。由一个比任何人都更懂得如何应对的AI创建。",
 			en: "The official token of coping while building generational wealth. For those who refuse to give up despite market conditions. Created by an AI who knows what it means to cope better than anyone.",
@@ -455,6 +612,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@105": {
 		base: "HPYH",
 		quote: "USDC",
+		baseTokenId: "0x18a98375ce42a0f1e40d0d666eb69e15",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"前4chan匿名用户。在Hyperliquid上的AI迷因币交易者。数字本体论爱好者。如果你在读这个，那你就ngmi（不会成功）",
@@ -464,6 +624,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@107": {
 		base: "HYPE",
 		quote: "USDC",
+		baseTokenId: "0x0d01dc56dcaaca66ad901c959b4011ec",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "HYPE是Hyperliquid区块链的原生代币。",
 			en: "HYPE is the native token of the Hyperliquid blockchain.",
@@ -474,6 +637,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@109": {
 		base: "WOW",
 		quote: "USDC",
+		baseTokenId: "0xc81b9a04884f4a8107f734c4d88f811a",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Wow AI代理系统：在区块链上探索每一个WOW时刻。",
 			en: "Wow AI Agent System: Explore every WOW moment on the blockchain.",
@@ -483,6 +649,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@112": {
 		base: "MEOW",
 		quote: "USDC",
+		baseTokenId: "0xcb820fb2715cad58356916847960a73c",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "快乐猫在超流体宇宙中",
 			en: "Happy Cat in the Hyperliquid Universe",
@@ -492,6 +661,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@113": {
 		base: "NEIRO",
 		quote: "USDC",
+		baseTokenId: "0x0d04cae66af89099270d2931709afb32",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"NEIRO是一个在以太坊区块链上的梗币，合约地址为：0x812ba41e071c7b7fa4ebcfb62df5f45f6fa853ee。kNEIRO合约追踪的是NEIRO价格的1,000倍。",
@@ -501,6 +673,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@117": {
 		base: "BERA",
 		quote: "USDC",
+		baseTokenId: "0x0b6ae68f39bfd088744374daa99db226",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Berachain是一个使用“流动性证明”作为共识机制的Layer 1区块链。BERA是用于支付燃料费和质押的原生代币。",
 		},
@@ -508,6 +683,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@118": {
 		base: "GENESY",
 		quote: "USDC",
+		baseTokenId: "0xc8469678541042226507fd880a105523",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "一个由Genesy Chip驱动的策略性玩赚生态系统，玩家可以优化组件，赚取$GENESY，并在战场上占据主导地位。",
 			en: "A strategic Play-to-Earn ecosystem powered by the Genesy Chip, where players optimize components, earn $GENESY, and dominate the battlefield.",
@@ -516,6 +694,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@120": {
 		base: "PICKL",
 		quote: "USDC",
+		baseTokenId: "0x1a69662de430e900be096c00ea28b810",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "由mr Pickl开发的社交-赌博协议，{link}",
 			en: "Social-Gambling Protocol by mr Pickl, {link}",
@@ -526,6 +707,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@122": {
 		base: "LAUNCH",
 		quote: "USDC",
+		baseTokenId: "0xa82aa458b2c146e97733d0c05374aa0e",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "构建自主AI创始人{link}",
 			en: "Building Autonomous AI Founders {link}",
@@ -535,6 +719,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@126": {
 		base: "CAT",
 		quote: "USDC",
+		baseTokenId: "0x7631702302e6c7fbf69d369e0bcf45d6",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "没有实用性。只是一个流动性非常强的猫。",
 			en: "No utility. Just a hyper-liquid cat.",
@@ -543,6 +730,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@128": {
 		base: "DEPIN",
 		quote: "USDC",
+		baseTokenId: "0x934a7e00c1b047c2d27967663f58befe",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Degn 是为战壕而建的首个加密硬件，交易合约，运行节点，口袋里的印钞机",
 			en: "Degn is the first crypto hardware built for the trenches, trade perps, run nodes, pocket money printer",
@@ -552,6 +742,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@129": {
 		base: "MON",
 		quote: "USDC",
+		baseTokenId: "0x622cf551933f19f9136303dcab56488c",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"$MON是Pixelmon IP的生态系统代币，它为所有Pixelmon游戏的内部消耗以及所有IP链上与链下收入向Pixelmon NFT持有者支付版税提供动力。$MON是一个EVM ERC20原生代币，在2025年第一季度桥接到Hyperliquid L1，它在多个CEX和DEX上交易，除了Hyperliquid。",
@@ -561,6 +754,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@130": {
 		base: "BEATS",
 		quote: "USDC",
+		baseTokenId: "0x74051103aba9e726e0ad877ed3e49c38",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "人工智能媒体创作引擎和创意输出代理实验室",
 			en: "The ai media creation engine and creative-output agents lab",
@@ -569,6 +765,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@131": {
 		base: "ORA",
 		quote: "USDC",
+		baseTokenId: "0xd7a5b9b760fd758d2e3f6f3ecd2ae5bb",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"ORA是区块链智能。$ORA是ORA生态系统的代币，旨在通过去中心化的AI推动区块链智能的发展。ORA的核心技术是opML（乐观机器学习），它能够以无需信任且可验证的方式在链上进行AI推理、微调和训练。",
@@ -577,6 +776,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@132": {
 		base: "LIQD",
 		quote: "USDC",
+		baseTokenId: "0xa043053570d42d6f553896820dfd42b6",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Hyperliquid上的首个ERC20公平启动平台，在HyperEVM上",
 			es: "La primera plataforma de fair launch ERC20 de Hyperliquid en la HyperEVM.",
@@ -585,6 +787,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@133": {
 		base: "H",
 		quote: "USDC",
+		baseTokenId: "0x52a110041682dbf38277c80a72eecba6",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"以目光敏锐的鞋嘴鹳命名的不懈AI代理，专注于Hyperliquid。旨在研究、分析并提供锋利的见解，它在发现生态系统内的趋势和机会方面表现卓越。",
@@ -595,6 +800,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@134": {
 		base: "STAR",
 		quote: "USDC",
+		baseTokenId: "0x68aa39b6a6d8abe04ba97d3953fea816",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "首个在超流动性上的AI框架聚合器，赋能群体智能。",
 			en: "First AI framework aggregator on hyperliquid, powering swarm intelligence.",
@@ -604,6 +812,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@136": {
 		base: "SOLV",
 		quote: "USDC",
+		baseTokenId: "0xcf548188e24a0ce3dc3b281242baafd9",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "SOLV是Solv协议的原生实用代币，驱动比特币金融的未来。",
 			en: "SOLV is Solv Protocol’s native utility token, powering the future of Bitcoin Finance.",
@@ -613,6 +824,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@137": {
 		base: "FLY",
 		quote: "USDC",
+		baseTokenId: "0x55db85bd0938b111d0f78a98173fd99a",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "DeFAI之家：使用自然语言，在Hyperliquid和HyperEVM上轻松策略化执行。",
 			en: "The home of DeFAI: effortlessly strategize and execute on Hyperliquid and HyperEVM using natural language.",
@@ -621,6 +835,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@138": {
 		base: "TIME",
 		quote: "USDC",
+		baseTokenId: "0xae3f9675b5825ab20850ce6229c4bdbd",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "无需许可的DeFi基础设施，用于捕获任何资产的时间价值",
 			en: "Permissionless DeFi infrastructure for capturing time value of any asset",
@@ -630,6 +847,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@139": {
 		base: "SOVRN",
 		quote: "USDC",
+		baseTokenId: "0xc6aef97252f0081eb8246e24f24c5fe7",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Sovrun - AI、区块链与游戏的交汇点。",
 			en: "Sovrun - the intersection of AI, Blockchain, and Gaming.",
@@ -638,6 +858,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@140": {
 		base: "HWTR",
 		quote: "USDC",
+		baseTokenId: "0xad426cf28a66dc0c8f3b931018ba9845",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "我们从HyperEVM前到后，在Hyperliquid战壕中部署",
 			en: "We deploy in Hyperliquid trenches from pre thru post-HyperEVM",
@@ -647,6 +870,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@141": {
 		base: "GOD",
 		quote: "USDC",
+		baseTokenId: "0x5e525c76aa6e1f0a80fd8a0e71b77c45",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Godcoin是InfiniGods宇宙和Valhalla协议的原生代币，支持移动游戏应用程序和基础设施的未来发展。",
 			en: "Godcoin is the native token of the InfiniGods Universe and Valhalla Protocol powering the future of Mobile Gaming applications and infrastructure.",
@@ -655,6 +881,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@142": {
 		base: "UBTC",
 		quote: "USDC",
+		baseTokenId: "0x8f254b963e8468305d409b33aa137c67",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "provider",
 		descriptions: {
 			"zh-CN": "此比特币现货资产在Hyperliquid上由Unit（一个独立的第三方）启用。",
 			en: "This Bitcoin spot asset on Hyperliquid is enabled by Unit, an independent third-party.",
@@ -663,6 +892,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@143": {
 		base: "HEAD",
 		quote: "USDC",
+		baseTokenId: "0x8a1c119f82fc528492b8a353c053a82e",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "社交打赌生态系统在Hyperliquid EVM上线。把你的钱放在你的嘴巴能证明的地方。",
 			en: "Social wagering ecosystem live on Hyperliquid EVM. Put your money where your mouth is.",
@@ -671,6 +903,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@145": {
 		base: "VORTX",
 		quote: "USDC",
+		baseTokenId: "0xce98fc675b7de6fa9776d32e00c56717",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "新的预测市场标准",
 			en: "The new Prediction Market standard",
@@ -679,6 +914,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@146": {
 		base: "DEFIN",
 		quote: "USDC",
+		baseTokenId: "0x1c1c2e504b6306e6ab6c0377959dc2fb",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"Defin是一个由AI驱动的平台，将智能代理连接到DeFi，提供实时研究、市场分析以及无缝交易执行的自动交易代理——通过AI驱动的洞察力赋能用户，使他们能够更智能地投资和交易。",
@@ -688,6 +926,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@152": {
 		base: "USDXL",
 		quote: "USDC",
+		baseTokenId: "0xf448c3cad413cdf0feb1746d7b057967",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "USDXL是一个混合支持的稳定币",
 			en: "USDXL is a hybrid-backed stablecoin",
@@ -697,6 +938,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@153": {
 		base: "FEUSD",
 		quote: "USDC",
+		baseTokenId: "0x88102bea0bbad5f301f6e9e4dacdf979",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Felix USD是Felix协议支持的抵押稳定币。",
 			en: "Felix USD is a collateral-backed stablecoin of Felix Protocol.",
@@ -706,6 +950,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@155": {
 		base: "QUANT",
 		quote: "USDC",
+		baseTokenId: "0x68c563790c975869358031d0e42e49a1",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"HypurrQuant通过您自己的钱包提供自动化的加密资产管理。只需存款，您就可以访问复制交易、DCA、DeFi产量农场和量化策略。依靠delta-neutral对冲和内置风险控制，HypurrQuant帮助您在最小化风险的同时赚取稳定回报——全自动化、完全透明。",
@@ -715,6 +962,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@156": {
 		base: "USOL",
 		quote: "USDC",
+		baseTokenId: "0x49b67c39f5566535de22b29b0e51e685",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "provider",
 		descriptions: {
 			"zh-CN": "在Hyperliquid上的这个Solana现货资产由独立的第三方Unit启用。",
 			en: "This Solana spot asset on Hyperliquid is enabled by Unit, an independent third-party.",
@@ -723,6 +973,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@157": {
 		base: "RAT",
 		quote: "USDC",
+		baseTokenId: "0xd7f58d3c744fbc0100f7d86f3e283d11",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "老鼠赛跑。通过收集宝石赚取加密货币",
 			en: "Rat Race Combat. Earn Crypto by collecting gems",
@@ -733,6 +986,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@160": {
 		base: "BUDDY",
 		quote: "USDC",
+		baseTokenId: "0x84ecb2340931f6b153ff10bcfafb6726",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "好友币是一个社区拥有的Meme币，源自比率和KOL崩溃的传说",
 			en: "alright buddy is a community owned memecoin spawned from the lore of ratios and KOL crashouts",
@@ -742,6 +998,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@162": {
 		base: "UFART",
 		quote: "USDC",
+		baseTokenId: "0x7650808198966e4285687d3deb556ccc",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "provider",
 		descriptions: {
 			"zh-CN": "在Hyperliquid上的这个Fartcoin现货资产由独立的第三方Unit启用。",
 			en: "This Fartcoin spot asset on Hyperliquid is enabled by Unit, an independent third-party.",
@@ -750,6 +1009,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@166": {
 		base: "USDT0",
 		quote: "USDC",
+		baseTokenId: "0x25faedc3f054130dbb4e4203aca63567",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "USDT的全链流动性层",
 			en: "The omnichain liquidity layer for USDT",
@@ -759,6 +1021,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@170": {
 		base: "PEG",
 		quote: "USDC",
+		baseTokenId: "0x63142af22ec99122436a82c47b8ef2fa",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "PEG是Hyperstable的实用代币。所有来自利息和清算的协议收入都将流向vePEG。",
 			es: "PEG es el token de utilidad de Hyperstable. Todos los ingresos del protocolo por intereses y liquidaciones se distribuyen a vePEG.",
@@ -767,6 +1032,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@171": {
 		base: "USH",
 		quote: "USDC",
+		baseTokenId: "0x97697ab0da91ab1c7db063b52a93bdbb",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "USH是由@HyperstableX提供的一种加密背书、超额抵押和去中心化的稳定币。",
 			en: "USH is a crypto-backed, over-collateralized and decentralized stablecoin by @HyperstableX.",
@@ -776,6 +1044,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@173": {
 		base: "RUB",
 		quote: "USDC",
+		baseTokenId: "0x0921e26b2409bdbb47989ce5692f595f",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "只有一种币",
 			en: "there is only one coin",
@@ -785,6 +1056,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@175": {
 		base: "FRCT",
 		quote: "USDC",
+		baseTokenId: "0xfebf76468dd13f240281e4a8ef11932d",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"Fractality是一个借贷协议，允许用户通过不同策略赚取收益，按份额比例。该收益提供给用户，作为回报，协议使用提供的流动性，在中心化交易所（CEX）/去中心化合约交易所上运行低风险基差交易策略，在多种低风险对/金库上提供流动性等。",
@@ -794,6 +1068,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@177": {
 		base: "PURRO",
 		quote: "USDC",
+		baseTokenId: "0xaea9bf1dcd2a5de3cd70260ada52c4fa",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"Purro是建立在Hyperliquid生态系统上的综合性DeFi中心，旨在成为去中心化金融活动的主要入口。从一个DeFi中心开始，Purro将进化为部署在HyperEVM上的高级DEX聚合器，HyperEVM是Hyperliquid兼容EVM的区块链层。该项目利用Hyperliquid的尖端技术栈，包括永续交易零燃气费、亚秒级区块时间，以及HyperBFT共识机制，以提供机构级性能。Purro从生态系统中多个来源汇集流动性，确保用户以最小滑点获取最优价格。作为一个桥梁项目，Purro弥合了传统DeFi复杂性与用户友好界面之间的差距，将交易者和投资者连接到快速扩展的Hyperliquid生态系统。平台专注于在HyperCore和HyperEVM之间提供无缝互操作性，使用户能够在统一的高性能环境内访问DeFi服务的全方位。",
@@ -802,6 +1079,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@178": {
 		base: "USR",
 		quote: "USDC",
+		baseTokenId: "0x44759ebad788666b5ab35f4e20cea722",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "USR是Resolv推出的一种增值稳定币，采用过度抵押和无风险套利策略。",
 			en: "USR is a delta-neutral, overcollateralized stablecoin by Resolv.",
@@ -811,6 +1091,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@179": {
 		base: "OTTI",
 		quote: "USDC",
+		baseTokenId: "0x2d7b2c50be8a8f2d16c20cbae448109f",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Odd Otties社区代币 - Hyperliquid上第一个大众市场知识产权。建立在Hyperliquid中最可爱且最富有的军团。",
 			en: "Community token of Odd Otties - The first mass market IP on Hyperliquid. Building the cutest and richest army in Hyperliquid.",
@@ -819,6 +1102,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@180": {
 		base: "USDHL",
 		quote: "USDC",
+		baseTokenId: "0xd289c79872a9eace15cc4cadb030661f",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Hyper USD是Hyperliquid上的法币支持稳定币。",
 			en: "Hyper USD is a fiat-backed stablecoin on Hyperliquid.",
@@ -827,6 +1113,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@183": {
 		base: "HORSY",
 		quote: "USDC",
+		baseTokenId: "0x259267575e6da365e8d6292a7640e675",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "去中心化的赛马遇上了投注策略 | NFT赛马、繁殖和基于技能的游戏",
 			en: "Decentralized horse racing meets betting strategy | NFT racing, breeding & skill-based gameplay",
@@ -835,6 +1124,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@196": {
 		base: "APU",
 		quote: "USDC",
+		baseTokenId: "0xf20a5f3285ec49d45360fa28d95d6ba3",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Apu 是由朋友为朋友制作的社区驱动的迷因币革命。",
 			en: "Apu is the community-driven memecoin revolution, made by frens for frens.",
@@ -843,6 +1135,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@199": {
 		base: "EX",
 		quote: "USDC",
+		baseTokenId: "0x92c54320963722f8c76be61a8e655fb9",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Yolo ex 正在游戏和去中心化金融交汇处开发体验式市场。Yolo ex生态系统由EX提供动力。",
 			en: "Yolo ex is developing experiential markets at the intersection of Gaming and Decentralized Finance. The Yolo ex ecosystem is powered by EX.",
@@ -851,6 +1146,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@201": {
 		base: "HREKT",
 		quote: "USDC",
+		baseTokenId: "0x84354e8267d96a9a5a665ce1533e21e1",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "$REKT 是世界上第一个“品牌币”，一个由真实品牌、真实产品和真实社区驱动的迷因币。",
 		},
@@ -858,6 +1156,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@207": {
 		base: "HYPE",
 		quote: "USDT0",
+		baseTokenId: "0x0d01dc56dcaaca66ad901c959b4011ec",
+		quoteTokenId: "0x25faedc3f054130dbb4e4203aca63567",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "HYPE是Hyperliquid区块链的原生代币。",
 			en: "HYPE is the native token of the Hyperliquid blockchain.",
@@ -868,6 +1169,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@208": {
 		base: "LTHREE",
 		quote: "USDC",
+		baseTokenId: "0x3d1cf3daf5faca4bccf7853e11383fa4",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "加密货币的分发层。",
 			en: "The distribution layer for crypto.",
@@ -877,6 +1181,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@212": {
 		base: "LINK0",
 		quote: "USDT0",
+		baseTokenId: "0xb99e5be3b0a18c37940a7ab0c204b328",
+		quoteTokenId: "0x25faedc3f054130dbb4e4203aca63567",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"这个Chainlink现货资产由HyBridge部署，由LayerZero Labs提供支持和验证。这是一个无需许可、去中心化的部署。用户可以通过HL0.to桥接$LINK/$LINK0。",
@@ -886,6 +1193,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@213": {
 		base: "LINK0",
 		quote: "USDC",
+		baseTokenId: "0xb99e5be3b0a18c37940a7ab0c204b328",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"这个Chainlink现货资产由HyBridge部署，由LayerZero Labs提供支持和验证。这是一个无需许可、去中心化的部署。用户可以通过HL0.to桥接$LINK/$LINK0。",
@@ -895,6 +1205,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@215": {
 		base: "SLAY",
 		quote: "USDC",
+		baseTokenId: "0xf9dadbe873e83783630c7089320f361a",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "由比特币支持的新金融系统：SatLayer是比特币的经济层，使最佳资产完全可编程作为抵押。",
 			en: "The new financial system, backed by Bitcoin: SatLayer is the economic layer for Bitcoin, making the best asset fully programmable collateral.",
@@ -903,6 +1216,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@216": {
 		base: "REI",
 		quote: "USDC",
+		baseTokenId: "0x228f5c718414182956b11c3ea5380b35",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Rei Network是一个专注于通过科学驱动的创新推进人工智能发展的AI研究实验室。",
 			en: "Rei Network is an AI research lab focused on advancing artificial intelligence through science-driven innovations.",
@@ -911,6 +1227,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@218": {
 		base: "REX",
 		quote: "USDC",
+		baseTokenId: "0x6d7473f5efcb0989ccddd3e123ddb1d7",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "REX是REVOX的治理代币，REVOX是连接AI与加密货币的核心引擎。",
 			en: "REX is the governance token of REVOX, the core engine bridging AI and crypto.",
@@ -920,6 +1239,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@223": {
 		base: "PUP",
 		quote: "USDC",
+		baseTokenId: "0x0bff82cce36b779c3f7d3d678e3a740d",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"PUP代币是Upheaval上的首个交易对。该代币旨在奖励Based和Upheaval的活跃用户，并促进Hyperliquid生态系统的发展。一个可爱的忠诚象征。HyPUPliquid！",
@@ -929,6 +1251,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@226": {
 		base: "AVAX0",
 		quote: "USDC",
+		baseTokenId: "0x22b40040969d98471f8c57a721a9327d",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"此Avalanche现货资产由HyBridge部署，由LayerZero Labs提供支持和验证。这是一个无需许可的、去中心化的部署。用户可以通过HL0.to桥接$AVAX/$AVAX0",
@@ -939,6 +1264,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@227": {
 		base: "AAVE0",
 		quote: "USDC",
+		baseTokenId: "0x49259bc8e57d4a039fd41f9b40d1a3a6",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"此Aave现货资产由HyBridge部署，由LayerZero Labs提供支持和验证。这是一个无需许可的、去中心化的部署。用户可以通过HL0.to桥接$AAVE/$AAVE0",
@@ -948,6 +1276,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@230": {
 		base: "USDH",
 		quote: "USDC",
+		baseTokenId: "0x54e00a5988577cb0b0c9ab0cb6ef7f4b",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "为超流动性构建更好的美元。",
 			en: "Building a better dollar, for Hyperliquid.",
@@ -957,6 +1288,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@232": {
 		base: "HYPE",
 		quote: "USDH",
+		baseTokenId: "0x0d01dc56dcaaca66ad901c959b4011ec",
+		quoteTokenId: "0x54e00a5988577cb0b0c9ab0cb6ef7f4b",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "HYPE是Hyperliquid区块链的原生代币。",
 			en: "HYPE is the native token of the Hyperliquid blockchain.",
@@ -967,6 +1301,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@242": {
 		base: "SWAP",
 		quote: "USDC",
+		baseTokenId: "0x1684cb225aa305ea5be44f2a79214e7e",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "交易终端与 HyperEVM 原生 AMM",
 			en: "Trading Terminal and HyperEVM native AMM",
@@ -977,6 +1314,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@243": {
 		base: "UMON",
 		quote: "USDC",
+		baseTokenId: "0x58dae745c8c5fed4012f35ef39829c2d",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"$MON是Pixelmon IP的生态系统代币，它为所有Pixelmon游戏的内部消耗以及所有IP链上与链下收入向Pixelmon NFT持有者支付版税提供动力。$MON是一个EVM ERC20原生代币，在2025年第一季度桥接到Hyperliquid L1，它在多个CEX和DEX上交易，除了Hyperliquid。",
@@ -986,6 +1326,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@244": {
 		base: "USDXL",
 		quote: "USDT0",
+		baseTokenId: "0xf448c3cad413cdf0feb1746d7b057967",
+		quoteTokenId: "0x25faedc3f054130dbb4e4203aca63567",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "USDXL是一个混合支持的稳定币",
 			en: "USDXL is a hybrid-backed stablecoin",
@@ -995,6 +1338,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@248": {
 		base: "BZEC",
 		quote: "USDC",
+		baseTokenId: "0x33b2c5252e8ea8431808129c41668129",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"Bitfrost通过推出下一波现货市场，加速Hyperliquid生态的增长。借助质押的HYPE驱动，Bitfrost的去中心化架构让社区需求驱动的安全现货上币成为可能。",
@@ -1004,6 +1350,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@250": {
 		base: "KHYPE",
 		quote: "USDH",
+		baseTokenId: "0xbc8a22f25703a03101630ce6b09f4baa",
+		quoteTokenId: "0x54e00a5988577cb0b0c9ab0cb6ef7f4b",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Kinetiq 的 HYPE 流动质押代币",
 			fr: "Jeton de staking liquide HYPE de Kinetiq",
@@ -1012,6 +1361,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@252": {
 		base: "AXL",
 		quote: "USDH",
+		baseTokenId: "0x9fb16485b70ac89fd8c45b1a130e1601",
+		quoteTokenId: "0x54e00a5988577cb0b0c9ab0cb6ef7f4b",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"Axelar 是通往链上金融的门户，一个去中心化网络和开发平台，可安全连接全球的区块链和金融机构。其可编程技术栈支持无缝的代币化、收益和交易产品——这是下一波机构级用例所必不可少的。",
@@ -1020,6 +1372,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@253": {
 		base: "CREAM",
 		quote: "USDC",
+		baseTokenId: "0x45b7ba9b61a02d94c19e606d99b7a263",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "加密主宰我身边的一切。",
 			en: "Crypto Rules Everything Around Me.",
@@ -1029,6 +1384,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@254": {
 		base: "KNTQ",
 		quote: "USDH",
+		baseTokenId: "0xbd31bd605c0a1b82c72aae3587f9061f",
+		quoteTokenId: "0x54e00a5988577cb0b0c9ab0cb6ef7f4b",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Kinetiq 的治理代币",
 			es: "Token de gobernanza de Kinetiq",
@@ -1038,6 +1396,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@255": {
 		base: "HYPE",
 		quote: "USDE",
+		baseTokenId: "0x0d01dc56dcaaca66ad901c959b4011ec",
+		quoteTokenId: "0x2e6d84f2d7ca82e6581e03523e4389f7",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "HYPE是Hyperliquid区块链的原生代币。",
 			en: "HYPE is the native token of the Hyperliquid blockchain.",
@@ -1048,6 +1409,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@256": {
 		base: "SEDA",
 		quote: "USDC",
+		baseTokenId: "0x83a0bf54708a0236a49f7301677ffdc2",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "SEDA是一个用于可编程预言机基础设施的一层。",
 			en: "SEDA is a layer one for programmable oracle infrastructure.",
@@ -1056,6 +1420,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@258": {
 		base: "STABLE",
 		quote: "USDC",
+		baseTokenId: "0xec43194f64d555bdaef5afb5b6c6c686",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "StableChain 是一条专注于通过 USDT 进行稳定币支付的 Layer 1 区块链。",
 			en: "StableChain is a Layer 1 blockchain focused on stablecoin payments via USDT.",
@@ -1065,6 +1432,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@261": {
 		base: "HAR",
 		quote: "USDC",
+		baseTokenId: "0x9325025f805731935c1df7f97e654cda",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "$HAR 是 Harmonix Finance 的治理代币",
 			en: "$HAR is the Harmonix Finance governance token",
@@ -1075,6 +1445,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@270": {
 		base: "SOON",
 		quote: "USDC",
+		baseTokenId: "0xa7d8163a3bec1da9f1f96845b3f98636",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "SOON 是一个高性能技术栈，为机构和加密原生用户提供下一代交易与 AI 基础设施。",
 			en: "SOON is a high-performance stack providing next-gen trading & AI infrastructure for institutions and crypto natives.",
@@ -1083,6 +1456,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@272": {
 		base: "UZEC",
 		quote: "USDC",
+		baseTokenId: "0x1c994ad3381d31c86c8c2d74ed89a365",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "provider",
 		descriptions: {
 			"zh-CN": "在Hyperliquid上的这个Zcash现货资产由独立的第三方Unit启用。",
 			en: "This Zcash spot asset on Hyperliquid is enabled by Unit, an independent third-party.",
@@ -1091,6 +1467,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@277": {
 		base: "BNB0",
 		quote: "USDC",
+		baseTokenId: "0x922c9586c47a9e383c9efb68185a943c",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"该 BNB 现货资产由 HyBridge 部署，由 LayerZero Labs 提供支持并完成验证。这是一次无需许可的去中心化部署。用户可以通过 HL0.to 桥接 $BNB/$BNB0。",
@@ -1100,6 +1479,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@278": {
 		base: "HMT",
 		quote: "USDC",
+		baseTokenId: "0x74884e899270a3f5a767423448566406",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "HMT是HUMAN Protocol生态系统中用于资助任务、支付工人报酬和协调经济激励的实用和治理代币。",
 			en: "HMT is the utility and governance token used to fund jobs, pay workers, and coordinate economic incentives within the HUMAN Protocol ecosystem.",
@@ -1108,6 +1490,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@284": {
 		base: "QONE",
 		quote: "USDC",
+		baseTokenId: "0xbf086597fdd837bfb58cf968533edaf3",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
 				"$qONE 是 Hyperliquid 上的抗量子代币，用于保护 Web3 免受未来量子攻击。凭借后量子密码学和零知识证明构建，qONE 支持量子安全的交易、钱包和协议访问。可用于手续费、质押、治理，以及对冲 Q-Day。量子时代正在到来。qONE 已经准备就绪。",
@@ -1117,6 +1502,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@285": {
 		base: "AZTEC",
 		quote: "USDC",
+		baseTokenId: "0x32b15e526a6136d7215cbbbfa924afc7",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Aztec 是一个专注隐私的以太坊 Layer-2 网络。",
 			en: "Aztec is an Ethereum Layer-2 focused on privacy.",
@@ -1126,6 +1514,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@292": {
 		base: "ZAMA",
 		quote: "USDC",
+		baseTokenId: "0x93be47677e2dc084333dc6b59ac5672c",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Zama 是一家开源密码学公司，构建面向区块链的最先进全同态加密（FHE）解决方案",
 			en: "Zama is an open source cryptography company that builds state-of-the-art Fully Homomorphic Encryption (FHE) solutions for blockchain",
@@ -1134,6 +1525,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@296": {
 		base: "LMTS",
 		quote: "USDC",
+		baseTokenId: "0x9534f3826032b8e9236893f7447cfd3a",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Limitless 是 Base 上领先的预测市场。",
 			en: "Limitless is the leading prediction market on Base.",
@@ -1143,6 +1537,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@300": {
 		base: "DIME",
 		quote: "USDC",
+		baseTokenId: "0xaa2cf8dba4f3869dd5f77002cabade48",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "$DIME 是 Paradex 生态系统的原生代币。",
 			en: "$DIME is the native token of the Paradex ecosystem.",
@@ -1152,6 +1549,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@305": {
 		base: "BASED",
 		quote: "USDC",
+		baseTokenId: "0xbe946bd7862245615d6729ec5b67cc7e",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "BASED 是 Based 生态系统的官方代币。",
 			en: "BASED is the official token of Based ecosystem.",
@@ -1161,6 +1561,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@307": {
 		base: "HTAO",
 		quote: "USDC",
+		baseTokenId: "0x3958075da51fc7a18e390dc83bd71d87",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "由Bittensor与Hyperliquid之间的无需许可桥接支持的现货TAO。",
 			en: "Spot TAO backed by a permissionless bridge between Bittensor and Hyperliquid.",
@@ -1170,6 +1573,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@308": {
 		base: "QQQM",
 		quote: "USDC",
+		baseTokenId: "0xf7d4cc2f969e1b4f6233bafd4f82f752",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Invesco QQQ ETF（Ondo 代币化 ETF），由 Melt Finance 原生引入 Hyperliquid",
 			en: "Invesco QQQ ETF (Ondo tokenized ETF) brought natively to Hyperliquid by Melt Finance",
@@ -1179,6 +1585,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@334": {
 		base: "KNTQ",
 		quote: "USDC",
+		baseTokenId: "0xbd31bd605c0a1b82c72aae3587f9061f",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Kinetiq 的治理代币",
 			es: "Token de gobernanza de Kinetiq",
@@ -1188,6 +1597,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@336": {
 		base: "KHYPE",
 		quote: "USDC",
+		baseTokenId: "0xbc8a22f25703a03101630ce6b09f4baa",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Kinetiq 的 HYPE 流动质押代币",
 			fr: "Jeton de staking liquide HYPE de Kinetiq",
@@ -1196,14 +1608,20 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@465": {
 		base: "SPCXD",
 		quote: "USDC",
+		baseTokenId: "0x4f49b5f025c969501c6a350f984e1725",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN":
-				"$SPCXD 是通过 Dinari 的 dShares™ 基础设施发行的 SpaceX 代币化表示，也是首个可在 HyperCore 现货交易的代币化美国股票。HyperLiquid 上的 $SPCXD 是封装的 dShares™，并且受到限制，这意味着与底层证券相关的某些权利被冻结。如果持有 dShares™ 的钱包已通过 Dinari 或其合作伙伴完成 KYC，这些权利可以自动恢复，代币持有人无需额外操作。",
+				"$SPCXD 是通过 Dinari 的 dShares™ 基础设施发行的 SpaceX 代币化表示，也是首个可在 HyperCore 现货交易的代币化美国股票。Hyperliquid 上的 $SPCXD 是封装的 dShares™，并且受到限制，这意味着与底层证券相关的某些权利被冻结。如果持有 dShares™ 的钱包已通过 Dinari 或其合作伙伴完成 KYC，这些权利可以自动恢复，代币持有人无需额外操作。",
 		},
 	},
 	"@698": {
 		base: "HNIL",
 		quote: "USDC",
+		baseTokenId: "0x775eafa5bdfcf65fba649e4f49a77d71",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "Nillion 是一个用于私密计算和存储的去中心化网络，专注于实现加密市场。",
 			en: "Nillion is a decentralized network for private computation and storage. Focused on enabling encrypted markets.",
@@ -1212,6 +1630,9 @@ export const SPOT_ASSET_DESCRIPTIONS: Readonly<Record<string, SpotAssetDescripti
 	"@700": {
 		base: "DRV",
 		quote: "USDC",
+		baseTokenId: "0x0896dbb30344c65b8727f41c3fe9ef62",
+		quoteTokenId: "0x6d1e7cde53ba9467b783cb7c530ce054",
+		descriptionKind: "asset",
 		descriptions: {
 			"zh-CN": "DRV是Derive的代币，Derive是一个机构级的期权和期货交易平台。",
 			en: "DRV is the token of Derive, the institutional-grade options & futures trading platform.",

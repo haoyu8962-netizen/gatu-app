@@ -3,6 +3,7 @@ import {
 	formatNumber,
 	formatPercent,
 	formatPrice,
+	formatQuoteAmount,
 	formatToken,
 	formatUSD,
 	shortenAddress,
@@ -38,6 +39,7 @@ describe("format", () => {
 	it("formats token amounts and percentages", () => {
 		expect(formatToken(1.23456, 2)).toBe("1.23");
 		expect(formatToken(1.23456, { decimals: 3, symbol: "ETH" })).toBe("1.235 ETH");
+		expect(formatQuoteAmount("12345.67", "USDH", 2)).toBe("12,345.67 USDH");
 		expect(formatPercent(0.125, 2)).toBe("+12.50%");
 	});
 

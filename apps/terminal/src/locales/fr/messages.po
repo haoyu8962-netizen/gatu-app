@@ -48,9 +48,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} secondes"
 #~ msgid "% filled"
 #~ msgstr "% exécuté"
 
+#. js-lingui-explicit-id
 #: src/components/trade/components/market-asset-info.tsx
-msgid "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
-msgstr "$SPCXD est une représentation tokenisée de SpaceX distribuée via l’infrastructure dShares™ de Dinari et le premier titre américain tokenisé disponible au trading spot sur HyperCore. Les $SPCXD sur HyperLiquid sont des dShares™ enveloppés et soumis à restrictions, ce qui signifie que certains droits associés au titre sous-jacent sont gelés. Si le wallet détenant les dShares™ est vérifié KYC auprès de Dinari ou d’un partenaire, ces droits peuvent être restaurés automatiquement sans effort supplémentaire de la part du détenteur du token."
+msgid "market.asset.spcxd.description"
+msgstr "$SPCXD est une représentation tokenisée de SpaceX distribuée via l’infrastructure dShares™ de Dinari et le premier titre américain tokenisé disponible au trading spot sur HyperCore. Les $SPCXD sur Hyperliquid sont des dShares™ enveloppés et soumis à restrictions, ce qui signifie que certains droits associés au titre sous-jacent sont gelés. Si le wallet détenant les dShares™ est vérifié KYC auprès de Dinari ou d’un partenaire, ces droits peuvent être restaurés automatiquement sans effort supplémentaire de la part du détenteur du token."
 
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
@@ -4671,6 +4672,7 @@ msgstr "Le portefeuille a renvoyé un hash de transaction, mais il n'est pas enc
 #~ msgstr ""
 
 #: src/components/trade/components/spot-market-social-links.tsx
+#: src/lib/tests/spot-market-social-links.test.tsx
 msgid "Website"
 msgstr "Site web"
 

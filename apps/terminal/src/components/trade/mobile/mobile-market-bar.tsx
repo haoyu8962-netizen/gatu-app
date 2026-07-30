@@ -13,6 +13,7 @@ import {
 	formatClockDuration,
 	formatNumber,
 	formatPercent,
+	formatQuoteAmount,
 	formatUSD,
 	shortenAddress,
 	szDecimalsToPriceDecimals,
@@ -141,6 +142,16 @@ export function MobileMarketBar({ className }: Props) {
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotMarkPx);
 	const spotTokenAddress = getSpotTokenAddress(market);
 	const spotSocials = getSpotAssetSocials(market);
+	const spotQuoteToken =
+		market?.kind === "spot" ? (market.tokensInfo[1]?.displayName ?? market.tokensInfo[1]?.name ?? "USDC") : "USDC";
+	const spotVolumeText = formatQuoteAmount(dayNtlVlm, spotQuoteToken, {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	});
+	const spotMarketCapText = formatQuoteAmount(spotMarketCap, spotQuoteToken, {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 0,
+	});
 
 	return (
 		<div
@@ -238,8 +249,8 @@ export function MobileMarketBar({ className }: Props) {
 						{isSpot && (
 							<>
 								<DetailCell label={t`Mark`} value={formatDisplayPrice(spotMarkPx, priceDecimals)} />
-								<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
-								<DetailCell label={t`Market Cap`} value={formatUSD(spotMarketCap, { compact: false })} />
+								<DetailCell label={t`24H VOL`} value={spotVolumeText} />
+								<DetailCell label={t`Market Cap`} value={spotMarketCapText} />
 								<DetailCell
 									label={t`More Info`}
 									value={createSpotTokenInfo(

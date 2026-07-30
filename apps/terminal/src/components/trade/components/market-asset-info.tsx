@@ -52,9 +52,10 @@ function createLocalDescription(descriptionId: LocalAssetDescriptionId | null): 
 			);
 		case "spcxd":
 			return (
-				<Trans>
+				// biome-ignore lint/correctness/useUniqueElementIds: This is a Lingui catalog key, not a DOM id.
+				<Trans id="market.asset.spcxd.description">
 					$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the
-					first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped
+					first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD tokens on Hyperliquid are wrapped
 					dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the
 					wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored
 					with no additional effort by the tokenholder.
@@ -125,6 +126,8 @@ export function MarketAssetInfo({ market }: Props) {
 			spotAssetIdentity?.pair,
 			spotAssetIdentity?.base,
 			spotAssetIdentity?.quote,
+			spotAssetIdentity?.baseTokenId,
+			spotAssetIdentity?.quoteTokenId,
 			i18n.locale,
 		],
 		queryFn: () => loadSpotAssetDescription(spotAssetIdentity, i18n.locale),
@@ -138,11 +141,18 @@ export function MarketAssetInfo({ market }: Props) {
 	const annotation = annotationQuery.data;
 	const annotationDescription = annotation?.description.trim() || null;
 	const fallbackDescription = createFallbackDescription(reference);
+	const spotDescription = spotDescriptionQuery.data;
 	const description =
 		reference.kind === "spot"
-			? (spotDescriptionQuery.data ?? localDescription ?? fallbackDescription)
+			? ((spotDescription?.kind === "asset" ? spotDescription.text : null) ?? localDescription ?? fallbackDescription)
 			: (localDescription ?? annotationDescription ?? fallbackDescription);
-	const providerDescription = createProviderDescription(reference);
+	const providerDescription =
+		spotDescription?.kind === "provider" ? spotDescription.text : createProviderDescription(reference);
+	const spotDescriptionLoading =
+		reference.kind === "spot" &&
+		spotAssetIdentity !== null &&
+		spotDescriptionQuery.isPending &&
+		spotDescription === undefined;
 	const isBuilderPerp = reference.kind === "perp" && reference.isBuilder;
 	const conciseAnnotationsError = isBuilderPerp && conciseAnnotationsQuery.isError;
 	const canOpen = canOpenMarketAssetInfo(reference, annotationAvailable || conciseAnnotationsError);
@@ -277,14 +287,14 @@ export function MarketAssetInfo({ market }: Props) {
 				</ModalHeader>
 
 				<ModalContent className="space-y-4 px-6 pt-0 pb-6">
-					{description || providerDescription ? (
+					{!spotDescriptionLoading && (description || providerDescription) ? (
 						<div className="space-y-3 text-xs leading-5 text-fg-muted">
 							{description ? <p className="whitespace-pre-wrap">{description}</p> : null}
 							{providerDescription ? <p>{providerDescription}</p> : null}
 						</div>
 					) : null}
 
-					{annotationLoading ? (
+					{spotDescriptionLoading || annotationLoading ? (
 						<p className="text-xs leading-5 text-fg-muted" aria-live="polite">
 							<Trans>Loading asset information...</Trans>
 						</p>

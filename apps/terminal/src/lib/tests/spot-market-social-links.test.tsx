@@ -1,8 +1,14 @@
 // @vitest-environment jsdom
 
+import { i18n } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	SpotMarketSocialIconLinks,
+	SpotMarketSocialLinks,
+} from "@/components/trade/components/spot-market-social-links";
 import { createI18nRoot } from "./harness/react";
 
 vi.mock("@gatu/ui", () => ({
@@ -15,6 +21,7 @@ describe("SpotMarketSocialLinks", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -26,8 +33,7 @@ describe("SpotMarketSocialLinks", () => {
 		vi.clearAllMocks();
 	});
 
-	it("renders safe external links in the desktop-only market bar row", async () => {
-		const { SpotMarketSocialLinks } = await import("@/components/trade/components/spot-market-social-links");
+	it("renders safe external links in the desktop-only market bar row", () => {
 		act(() =>
 			root.render(
 				createElement(SpotMarketSocialLinks, {
@@ -53,15 +59,13 @@ describe("SpotMarketSocialLinks", () => {
 		expect(container.firstElementChild?.className).toContain("min-[1001px]:grid");
 	});
 
-	it("renders nothing when the selected market has no spot social metadata", async () => {
-		const { SpotMarketSocialLinks } = await import("@/components/trade/components/spot-market-social-links");
+	it("renders nothing when the selected market has no spot social metadata", () => {
 		act(() => root.render(createElement(SpotMarketSocialLinks, { socials: null })));
 
 		expect(container.firstElementChild).toBeNull();
 	});
 
-	it("renders compact links without hover tooltips for the mobile market details row", async () => {
-		const { SpotMarketSocialIconLinks } = await import("@/components/trade/components/spot-market-social-links");
+	it("renders compact links without hover tooltips for the mobile market details row", () => {
 		act(() =>
 			root.render(
 				createElement(SpotMarketSocialIconLinks, {
@@ -84,5 +88,25 @@ describe("SpotMarketSocialLinks", () => {
 			"Website",
 		]);
 		expect(container.firstElementChild?.className).toContain("gap-1");
+	});
+
+	it("updates localized website labels without remounting the social links", () => {
+		const websiteMessage = msg`Website`;
+		i18n.loadAndActivate({ locale: "en", messages: { [websiteMessage.id]: "Website" } });
+		act(() =>
+			root.render(
+				createElement(SpotMarketSocialIconLinks, {
+					socials: {
+						displayName: "Lick",
+						website: "https://www.lick.fun/",
+					},
+				}),
+			),
+		);
+		expect(container.querySelector("a")?.getAttribute("aria-label")).toBe("Website");
+
+		act(() => i18n.loadAndActivate({ locale: "zh", messages: { [websiteMessage.id]: "网站" } }));
+
+		expect(container.querySelector("a")?.getAttribute("aria-label")).toBe("网站");
 	});
 });

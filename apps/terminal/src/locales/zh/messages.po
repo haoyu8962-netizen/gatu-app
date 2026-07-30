@@ -48,9 +48,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
 #~ msgid "% filled"
 #~ msgstr "% 已成交"
 
+#. js-lingui-explicit-id
 #: src/components/trade/components/market-asset-info.tsx
-msgid "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
-msgstr "$SPCXD 是通过 Dinari 的 dShares™ 基础设施发行的 SpaceX 代币化表示，也是首个可在 HyperCore 现货交易的代币化美国股票。HyperLiquid 上的 $SPCXD 是封装的 dShares™，并且受到限制，这意味着与底层证券相关的某些权利被冻结。如果持有 dShares™ 的钱包已通过 Dinari 或其合作伙伴完成 KYC，这些权利可以自动恢复，代币持有人无需额外操作。"
+msgid "market.asset.spcxd.description"
+msgstr "$SPCXD 是通过 Dinari 的 dShares™ 基础设施发行的 SpaceX 代币化表示，也是首个可在 HyperCore 现货交易的代币化美国股票。Hyperliquid 上的 $SPCXD 是封装的 dShares™，并且受到限制，这意味着与底层证券相关的某些权利被冻结。如果持有 dShares™ 的钱包已通过 Dinari 或其合作伙伴完成 KYC，这些权利可以自动恢复，代币持有人无需额外操作。"
 
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
@@ -4671,6 +4672,7 @@ msgstr "钱包已返回交易哈希，但该交易暂时还无法在 Arbitrum �
 #~ msgstr ""
 
 #: src/components/trade/components/spot-market-social-links.tsx
+#: src/lib/tests/spot-market-social-links.test.tsx
 msgid "Website"
 msgstr "网站"
 

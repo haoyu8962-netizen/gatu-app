@@ -1,5 +1,5 @@
 import { Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { GlobeSimpleIcon, TelegramLogoIcon, XLogoIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import type { SpotAssetSocials } from "@/domain/market/spot-asset-info";
@@ -44,6 +44,7 @@ function SocialLink({ href, label, icon, showTooltip }: SocialLinkProps) {
 }
 
 export function SpotMarketSocialIconLinks({ socials, className, showTooltips = true }: IconLinksProps) {
+	const { t } = useLingui();
 	if (!socials || (!socials.x && !socials.telegram && !socials.website)) return null;
 
 	return (

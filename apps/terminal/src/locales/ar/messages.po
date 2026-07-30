@@ -48,9 +48,10 @@ msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} ثانية"
 #~ msgid "% filled"
 #~ msgstr "% مكتمل"
 
+#. js-lingui-explicit-id
 #: src/components/trade/components/market-asset-info.tsx
-msgid "$SPCXD is a tokenized representation of SpaceX distributed through Dinari's dShares™ infrastructure and the first tokenized U.S. equity available for spot trading on HyperCore. $SPCXD on HyperLiquid are wrapped dShares™ and are restricted, meaning certain rights associated with the underlying security are frozen. If the wallet holding the dShares™ is KYC’ed with Dinari or a partner, those rights can be automatically restored with no additional effort by the tokenholder."
-msgstr "$SPCXD هو تمثيل مرمّز لـ SpaceX موزّع عبر بنية dShares™ التابعة لـ Dinari، وهو أول سهم أمريكي مرمّز متاح للتداول الفوري على HyperCore. رموز $SPCXD على HyperLiquid هي dShares™ مغلّفة وخاضعة لقيود، ما يعني تجميد بعض الحقوق المرتبطة بالورقة المالية الأساسية. إذا كانت المحفظة التي تحتفظ بـ dShares™ قد أكملت إجراءات اعرف عميلك (KYC) لدى Dinari أو أحد شركائها، فيمكن استعادة تلك الحقوق تلقائيًا دون أي إجراء إضافي من حامل الرمز."
+msgid "market.asset.spcxd.description"
+msgstr "$SPCXD هو تمثيل مرمّز لـ SpaceX موزّع عبر بنية dShares™ التابعة لـ Dinari، وهو أول سهم أمريكي مرمّز متاح للتداول الفوري على HyperCore. رموز $SPCXD على Hyperliquid هي dShares™ مغلّفة وخاضعة لقيود، ما يعني تجميد بعض الحقوق المرتبطة بالورقة المالية الأساسية. إذا كانت المحفظة التي تحتفظ بـ dShares™ قد أكملت إجراءات اعرف عميلك (KYC) لدى Dinari أو أحد شركائها، فيمكن استعادة تلك الحقوق تلقائيًا دون أي إجراء إضافي من حامل الرمز."
 
 #: src/components/trade/market-overview.tsx
 msgid "1 year"
@@ -4671,6 +4672,7 @@ msgstr "أعادت المحفظة تجزئة معاملة، لكنها غير ظ
 #~ msgstr ""
 
 #: src/components/trade/components/spot-market-social-links.tsx
+#: src/lib/tests/spot-market-social-links.test.tsx
 msgid "Website"
 msgstr "الموقع الإلكتروني"
 
