@@ -59,4 +59,30 @@ describe("SpotMarketSocialLinks", () => {
 
 		expect(container.firstElementChild).toBeNull();
 	});
+
+	it("renders compact links without hover tooltips for the mobile market details row", async () => {
+		const { SpotMarketSocialIconLinks } = await import("@/components/trade/components/spot-market-social-links");
+		act(() =>
+			root.render(
+				createElement(SpotMarketSocialIconLinks, {
+					socials: {
+						displayName: "Lick",
+						x: "https://x.com/lick_fun",
+						telegram: "https://t.me/lickfun",
+						website: "https://www.lick.fun/",
+					},
+					showTooltips: false,
+					className: "gap-1",
+				}),
+			),
+		);
+
+		expect(container.querySelectorAll("[data-tooltip]")).toHaveLength(0);
+		expect([...container.querySelectorAll("a")].map((link) => link.getAttribute("aria-label"))).toEqual([
+			"X",
+			"Telegram",
+			"Website",
+		]);
+		expect(container.firstElementChild?.className).toContain("gap-1");
+	});
 });

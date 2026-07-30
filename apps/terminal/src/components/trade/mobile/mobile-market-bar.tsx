@@ -4,6 +4,7 @@ import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState }
 import { createPortal } from "react-dom";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import { getSpotAssetSocials, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
@@ -29,6 +30,7 @@ import {
 import { toBig } from "@/lib/trade/numbers";
 import { TokenSelector } from "../chart/token-selector";
 import { MarketAssetInfo } from "../components/market-asset-info";
+import { SpotMarketSocialIconLinks } from "../components/spot-market-social-links";
 
 type PriceDirection = "up" | "down";
 
@@ -138,6 +140,7 @@ export function MobileMarketBar({ className }: Props) {
 	const oiUsd = getOiUsd(openInterest, marketMarkPx);
 	const spotMarketCap = getMarketCapUsd(spotCirculatingSupply, spotMarkPx);
 	const spotTokenAddress = getSpotTokenAddress(market);
+	const spotSocials = getSpotAssetSocials(market);
 
 	return (
 		<div
@@ -239,7 +242,12 @@ export function MobileMarketBar({ className }: Props) {
 								<DetailCell label={t`Market Cap`} value={formatUSD(spotMarketCap, { compact: false })} />
 								<DetailCell
 									label={t`More Info`}
-									value={createSpotTokenInfo(spotTokenAddress, copiedSpotTokenAddress, copySpotTokenAddress)}
+									value={createSpotTokenInfo(
+										spotTokenAddress,
+										copiedSpotTokenAddress,
+										copySpotTokenAddress,
+										spotSocials,
+									)}
 								/>
 							</>
 						)}
@@ -250,8 +258,14 @@ export function MobileMarketBar({ className }: Props) {
 	);
 }
 
-function createSpotTokenInfo(address: string | null, copied: boolean, onCopy: (value: string) => void) {
-	if (!address) return FALLBACK_VALUE_PLACEHOLDER;
+function createSpotTokenInfo(
+	address: string | null,
+	copied: boolean,
+	onCopy: (value: string) => void,
+	socials: SpotAssetSocials | null,
+) {
+	const hasSocialLinks = !!(socials?.x || socials?.telegram || socials?.website);
+	if (!address && !hasSocialLinks) return FALLBACK_VALUE_PLACEHOLDER;
 
 	function handleCopy() {
 		if (!address) return;
@@ -260,26 +274,31 @@ function createSpotTokenInfo(address: string | null, copied: boolean, onCopy: (v
 
 	return (
 		<span className="inline-flex min-w-0 max-w-full items-center gap-1">
-			<span className="min-w-0 truncate font-mono tabular-nums" title={address}>
-				{shortenAddress(address, 4, 4)}
-			</span>
-			<a
-				href={getExplorerTokenUrl(address)}
-				target="_blank"
-				rel="noopener noreferrer"
-				aria-label={t`Open token in explorer`}
-				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-			>
-				<ArrowSquareOutIcon className="size-3.5" aria-hidden="true" />
-			</a>
-			<button
-				type="button"
-				onClick={handleCopy}
-				aria-label={copied ? t`Copied` : t`Copy token address`}
-				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-			>
-				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
-			</button>
+			{address ? (
+				<>
+					<span className="min-w-0 truncate font-mono tabular-nums" title={address}>
+						{shortenAddress(address, 4, 4)}
+					</span>
+					<a
+						href={getExplorerTokenUrl(address)}
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label={t`Open token in explorer`}
+						className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+					>
+						<ArrowSquareOutIcon className="size-3.5" aria-hidden="true" />
+					</a>
+					<button
+						type="button"
+						onClick={handleCopy}
+						aria-label={copied ? t`Copied` : t`Copy token address`}
+						className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+					>
+						{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+					</button>
+				</>
+			) : null}
+			<SpotMarketSocialIconLinks socials={socials} showTooltips={false} className="gap-1" />
 		</span>
 	);
 }
