@@ -4,7 +4,7 @@ import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState }
 import { createPortal } from "react-dom";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { get24hChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
-import { getSpotAssetSocials, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
+import { getSpotAssetSocials, hasSpotSocialLinks, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
@@ -52,6 +52,7 @@ interface Props {
 
 interface DetailCellProps {
 	label: ReactNode;
+	multiline?: boolean;
 	tooltipContent?: ReactNode;
 	value: ReactNode;
 }
@@ -259,6 +260,7 @@ export function MobileMarketBar({ className }: Props) {
 										copySpotTokenAddress,
 										spotSocials,
 									)}
+									multiline
 								/>
 							</>
 						)}
@@ -275,8 +277,7 @@ function createSpotTokenInfo(
 	onCopy: (value: string) => void,
 	socials: SpotAssetSocials | null,
 ) {
-	const hasSocialLinks = !!(socials?.x || socials?.telegram || socials?.website);
-	if (!address && !hasSocialLinks) return FALLBACK_VALUE_PLACEHOLDER;
+	if (!address && !hasSpotSocialLinks(socials)) return FALLBACK_VALUE_PLACEHOLDER;
 
 	function handleCopy() {
 		if (!address) return;
@@ -284,37 +285,41 @@ function createSpotTokenInfo(
 	}
 
 	return (
-		<span className="inline-flex min-w-0 max-w-full items-center gap-1">
+		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full flex-col items-start">
 			{address ? (
-				<>
-					<span className="min-w-0 truncate font-mono tabular-nums" title={address}>
-						{shortenAddress(address, 4, 4)}
-					</span>
-					<a
-						href={getExplorerTokenUrl(address)}
-						target="_blank"
-						rel="noopener noreferrer"
-						aria-label={t`Open token in explorer`}
-						className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-					>
-						<ArrowSquareOutIcon className="size-3.5" aria-hidden="true" />
-					</a>
-					<button
-						type="button"
-						onClick={handleCopy}
-						aria-label={copied ? t`Copied` : t`Copy token address`}
-						className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-					>
-						{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
-					</button>
-				</>
+				<span className="block max-w-full truncate font-mono tabular-nums" title={address}>
+					{shortenAddress(address, 4, 4)}
+				</span>
 			) : null}
-			<SpotMarketSocialIconLinks socials={socials} showTooltips={false} className="gap-1" />
+			<span className="flex max-w-full flex-wrap items-center">
+				{address ? (
+					<>
+						<a
+							href={getExplorerTokenUrl(address)}
+							target="_blank"
+							rel="noopener noreferrer"
+							aria-label={t`Open token in explorer`}
+							className="inline-flex size-6 shrink-0 items-center justify-center rounded-xs text-brand transition-colors duration-150 hover:bg-fill-hover hover:text-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+						>
+							<ArrowSquareOutIcon className="size-3.5" aria-hidden="true" />
+						</a>
+						<button
+							type="button"
+							onClick={handleCopy}
+							aria-label={copied ? t`Copied` : t`Copy token address`}
+							className="inline-flex size-6 shrink-0 items-center justify-center rounded-xs text-brand transition-colors duration-150 hover:bg-fill-hover hover:text-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+						>
+							{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+						</button>
+					</>
+				) : null}
+				<SpotMarketSocialIconLinks socials={socials} showTooltips={false} targetSize="touch" />
+			</span>
 		</span>
 	);
 }
 
-function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
+function DetailCell({ label, multiline = false, tooltipContent, value }: DetailCellProps) {
 	const triggerRef = useRef<HTMLButtonElement>(null);
 	const tooltipId = useId();
 	const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition | null>(null);
@@ -419,7 +424,10 @@ function DetailCell({ label, tooltipContent, value }: DetailCellProps) {
 				)}
 			</div>
 			<div
-				className="truncate text-xs font-semibold leading-5 text-fg tabular-nums"
+				className={cn(
+					"text-xs font-semibold leading-5 text-fg tabular-nums",
+					multiline ? "whitespace-normal" : "truncate",
+				)}
 				title={typeof value === "string" ? value : undefined}
 			>
 				{value}

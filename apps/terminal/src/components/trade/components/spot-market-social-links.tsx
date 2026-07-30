@@ -2,16 +2,18 @@ import { Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { GlobeSimpleIcon, TelegramLogoIcon, XLogoIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
-import type { SpotAssetSocials } from "@/domain/market/spot-asset-info";
+import { hasSpotSocialLinks, type SpotAssetSocials } from "@/domain/market/spot-asset-info";
 import { cn } from "@/lib/cn";
 
-interface Props {
+interface SpotMarketSocialLinksProps {
 	socials: SpotAssetSocials | null;
 }
 
-interface IconLinksProps extends Props {
+interface SpotMarketSocialIconLinksProps {
 	className?: string;
 	showTooltips?: boolean;
+	socials: SpotAssetSocials | null;
+	targetSize?: "compact" | "touch";
 }
 
 interface SocialLinkProps {
@@ -19,16 +21,21 @@ interface SocialLinkProps {
 	label: string;
 	icon: ReactNode;
 	showTooltip: boolean;
+	targetSize: "compact" | "touch";
 }
 
-function SocialLink({ href, label, icon, showTooltip }: SocialLinkProps) {
+function SocialLink({ href, label, icon, showTooltip, targetSize }: SocialLinkProps) {
 	const link = (
 		<a
 			href={href}
 			target="_blank"
 			rel="noopener noreferrer"
 			aria-label={label}
-			className="inline-flex size-3 items-center justify-center text-brand transition-colors duration-150 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+			className={cn(
+				"inline-flex items-center justify-center text-brand transition-colors duration-150 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none",
+				targetSize === "touch" && "size-6 shrink-0 rounded-xs hover:bg-fill-hover active:bg-fill-press",
+				targetSize === "compact" && "size-3",
+			)}
 		>
 			{icon}
 		</a>
@@ -43,9 +50,14 @@ function SocialLink({ href, label, icon, showTooltip }: SocialLinkProps) {
 	);
 }
 
-export function SpotMarketSocialIconLinks({ socials, className, showTooltips = true }: IconLinksProps) {
+export function SpotMarketSocialIconLinks({
+	socials,
+	className,
+	showTooltips = true,
+	targetSize = "compact",
+}: SpotMarketSocialIconLinksProps) {
 	const { t } = useLingui();
-	if (!socials || (!socials.x && !socials.telegram && !socials.website)) return null;
+	if (!hasSpotSocialLinks(socials)) return null;
 
 	return (
 		<span className={cn("inline-flex items-center", className)}>
@@ -55,6 +67,7 @@ export function SpotMarketSocialIconLinks({ socials, className, showTooltips = t
 					label="X"
 					icon={<XLogoIcon className="size-3" aria-hidden />}
 					showTooltip={showTooltips}
+					targetSize={targetSize}
 				/>
 			) : null}
 			{socials.telegram ? (
@@ -63,6 +76,7 @@ export function SpotMarketSocialIconLinks({ socials, className, showTooltips = t
 					label="Telegram"
 					icon={<TelegramLogoIcon className="size-3" aria-hidden />}
 					showTooltip={showTooltips}
+					targetSize={targetSize}
 				/>
 			) : null}
 			{socials.website ? (
@@ -71,13 +85,14 @@ export function SpotMarketSocialIconLinks({ socials, className, showTooltips = t
 					label={t`Website`}
 					icon={<GlobeSimpleIcon className="size-3" aria-hidden />}
 					showTooltip={showTooltips}
+					targetSize={targetSize}
 				/>
 			) : null}
 		</span>
 	);
 }
 
-export function SpotMarketSocialLinks({ socials }: Props) {
+export function SpotMarketSocialLinks({ socials }: SpotMarketSocialLinksProps) {
 	if (!socials) return null;
 
 	return (

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	getSpotAssetSnapshotIdentity,
 	getSpotAssetSocials,
+	hasSpotSocialLinks,
 	loadSpotAssetDescription,
 } from "@/domain/market/spot-asset-info";
 
@@ -100,6 +101,14 @@ describe("spot asset info snapshot", () => {
 			telegram: "https://t.me/mbappe_HL",
 			website: undefined,
 		});
+	});
+
+	it("uses one predicate for every supported social destination", () => {
+		expect(hasSpotSocialLinks(null)).toBe(false);
+		expect(hasSpotSocialLinks({ displayName: "No links" })).toBe(false);
+		expect(hasSpotSocialLinks({ displayName: "X", x: "https://x.com/example" })).toBe(true);
+		expect(hasSpotSocialLinks({ displayName: "Telegram", telegram: "https://t.me/example" })).toBe(true);
+		expect(hasSpotSocialLinks({ displayName: "Website", website: "https://example.com/" })).toBe(true);
 	});
 
 	it("labels social destinations by their verified hostnames", () => {

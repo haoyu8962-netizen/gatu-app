@@ -32,6 +32,10 @@ export interface SpotAssetSocials {
 	website?: string;
 }
 
+export function hasSpotSocialLinks(socials: SpotAssetSocials | null | undefined): socials is SpotAssetSocials {
+	return Boolean(socials?.x || socials?.telegram || socials?.website);
+}
+
 export interface SpotAssetSnapshotIdentity {
 	pair: string;
 	base: string;

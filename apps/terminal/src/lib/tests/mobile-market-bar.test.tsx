@@ -6,8 +6,12 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileMarketBar } from "@/components/trade/mobile/mobile-market-bar";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import type { SpotAssetSocials } from "@/domain/market/spot-asset-info";
 
+const BASE_TOKEN_ID = "0x11111111111111111111111111111111";
 const mocks = vi.hoisted(() => ({
+	copy: vi.fn(),
 	selectedMarket: {
 		kind: "spot",
 		name: "@999",
@@ -21,7 +25,7 @@ const mocks = vi.hoisted(() => ({
 			{
 				name: "TOKEN",
 				displayName: "TOKEN",
-				tokenId: "0x11111111111111111111111111111111",
+				tokenId: "0x11111111111111111111111111111111" as string | undefined,
 			},
 			{
 				name: "USDH",
@@ -30,6 +34,7 @@ const mocks = vi.hoisted(() => ({
 			},
 		],
 	},
+	socials: null as SpotAssetSocials | null,
 }));
 
 vi.mock("@/components/trade/chart/token-selector", () => ({
@@ -41,7 +46,18 @@ vi.mock("@/components/trade/components/market-asset-info", () => ({
 }));
 
 vi.mock("@/components/trade/components/spot-market-social-links", () => ({
-	SpotMarketSocialIconLinks: () => null,
+	SpotMarketSocialIconLinks: ({ socials, targetSize }: { socials: SpotAssetSocials | null; targetSize?: string }) =>
+		socials ? (
+			<span data-slot="mock-social-links" data-target-size={targetSize}>
+				Social links
+			</span>
+		) : null,
+}));
+
+vi.mock("@/domain/market/spot-asset-info", () => ({
+	getSpotAssetSocials: () => mocks.socials,
+	hasSpotSocialLinks: (socials: SpotAssetSocials | null | undefined) =>
+		Boolean(socials?.x || socials?.telegram || socials?.website),
 }));
 
 vi.mock("@/hooks/trade/use-market-navigation", () => ({
@@ -53,7 +69,7 @@ vi.mock("@/hooks/trade/use-orderbook-mid-price", () => ({
 }));
 
 vi.mock("@/hooks/ui/use-copy-to-clipboard", () => ({
-	useCopyToClipboard: () => ({ copied: false, copy: vi.fn() }),
+	useCopyToClipboard: () => ({ copied: false, copy: mocks.copy }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -70,19 +86,7 @@ describe("MobileMarketBar", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
-	beforeEach(() => {
-		i18n.loadAndActivate({ locale: "en", messages: {} });
-		container = document.createElement("div");
-		document.body.appendChild(container);
-		root = createRoot(container);
-	});
-
-	afterEach(() => {
-		act(() => root.unmount());
-		container.remove();
-	});
-
-	it("labels expanded spot notionals with the selected quote token", () => {
+	function renderExpandedBar() {
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
@@ -94,9 +98,77 @@ describe("MobileMarketBar", () => {
 		const expandButton = container.querySelector<HTMLButtonElement>('button[aria-label="Expand market details"]');
 		expect(expandButton).not.toBeNull();
 		act(() => expandButton?.click());
+	}
+
+	beforeEach(() => {
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+		mocks.copy.mockReset();
+		mocks.selectedMarket.tokensInfo[0].tokenId = BASE_TOKEN_ID;
+		mocks.socials = null;
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+	});
+
+	afterEach(() => {
+		act(() => root.unmount());
+		container.remove();
+	});
+
+	it("labels expanded spot notionals with the selected quote token", () => {
+		renderExpandedBar();
 
 		expect(container.textContent).toContain("24H VOL12,345.67 USDH");
 		expect(container.textContent).toContain("Market Cap1,250 USDH");
 		expect(container.textContent).not.toContain("$12,345.67");
+	});
+
+	it("separates the address from touch-sized actions when both address and socials exist", () => {
+		mocks.socials = {
+			displayName: "Token",
+			x: "https://x.com/example",
+			telegram: "https://t.me/example",
+			website: "https://example.com/",
+		};
+
+		renderExpandedBar();
+
+		const tokenInfo = container.querySelector<HTMLElement>('[data-slot="mobile-spot-token-info"]');
+		expect(tokenInfo?.className).toContain("flex-col");
+		expect(tokenInfo?.querySelector(`span[title="${BASE_TOKEN_ID}"]`)?.textContent).toBe("0x1111...1111");
+		expect(tokenInfo?.querySelector('a[aria-label="Open token in explorer"]')?.className).toContain("size-6");
+		expect(tokenInfo?.querySelector('button[aria-label="Copy token address"]')?.className).toContain("size-6");
+		expect(tokenInfo?.querySelector('[data-slot="mock-social-links"]')?.getAttribute("data-target-size")).toBe("touch");
+	});
+
+	it("renders address actions without a social row dependency", () => {
+		renderExpandedBar();
+
+		const tokenInfo = container.querySelector<HTMLElement>('[data-slot="mobile-spot-token-info"]');
+		expect(tokenInfo?.querySelector('a[aria-label="Open token in explorer"]')).not.toBeNull();
+		expect(tokenInfo?.querySelector('button[aria-label="Copy token address"]')).not.toBeNull();
+		expect(tokenInfo?.querySelector('[data-slot="mock-social-links"]')).toBeNull();
+	});
+
+	it("renders social actions when no token address is available", () => {
+		mocks.selectedMarket.tokensInfo[0].tokenId = undefined;
+		mocks.socials = { displayName: "Token", website: "https://example.com/" };
+
+		renderExpandedBar();
+
+		const tokenInfo = container.querySelector<HTMLElement>('[data-slot="mobile-spot-token-info"]');
+		expect(tokenInfo?.querySelector("[title]")).toBeNull();
+		expect(tokenInfo?.querySelector('a[aria-label="Open token in explorer"]')).toBeNull();
+		expect(tokenInfo?.querySelector('button[aria-label="Copy token address"]')).toBeNull();
+		expect(tokenInfo?.querySelector('[data-slot="mock-social-links"]')).not.toBeNull();
+	});
+
+	it("renders a placeholder when neither address nor social actions exist", () => {
+		mocks.selectedMarket.tokensInfo[0].tokenId = undefined;
+
+		renderExpandedBar();
+
+		expect(container.querySelector('[data-slot="mobile-spot-token-info"]')).toBeNull();
+		expect(container.textContent).toContain(`More Info${FALLBACK_VALUE_PLACEHOLDER}`);
 	});
 });

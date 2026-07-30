@@ -52,6 +52,7 @@ describe("SpotMarketSocialLinks", () => {
 		expect(links).toHaveLength(3);
 		expect(links.map((link) => link.getAttribute("aria-label"))).toEqual(["X", "Telegram", "Website"]);
 		for (const link of links) {
+			expect(link.className).toContain("size-3");
 			expect(link.getAttribute("target")).toBe("_blank");
 			expect(link.getAttribute("rel")).toBe("noopener noreferrer");
 		}
@@ -76,18 +77,17 @@ describe("SpotMarketSocialLinks", () => {
 						website: "https://www.lick.fun/",
 					},
 					showTooltips: false,
-					className: "gap-1",
+					targetSize: "touch",
 				}),
 			),
 		);
 
 		expect(container.querySelectorAll("[data-tooltip]")).toHaveLength(0);
-		expect([...container.querySelectorAll("a")].map((link) => link.getAttribute("aria-label"))).toEqual([
-			"X",
-			"Telegram",
-			"Website",
-		]);
-		expect(container.firstElementChild?.className).toContain("gap-1");
+		const links = [...container.querySelectorAll("a")];
+		expect(links.map((link) => link.getAttribute("aria-label"))).toEqual(["X", "Telegram", "Website"]);
+		for (const link of links) {
+			expect(link.className).toContain("size-6");
+		}
 	});
 
 	it("updates localized website labels without remounting the social links", () => {
