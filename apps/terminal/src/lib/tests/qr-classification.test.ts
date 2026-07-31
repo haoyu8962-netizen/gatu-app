@@ -10,21 +10,33 @@ describe("QR classification", () => {
 	});
 
 	it("classifies gatu phone-access links", () => {
-		const url = "https://app.hypeterminal.com/mobile-agent-sync#ht-mobile-sync=payload";
-		expect(classifyQrValue(url)).toEqual({
+		const origin = "https://app.hypeterminal.com";
+		const url = `${origin}/mobile-agent-sync#ht-mobile-sync=payload&k=key`;
+		expect(classifyQrValue(url, origin)).toEqual({
 			type: "phoneAccessLink",
 			url,
 		});
 	});
 
-	it("classifies unrelated values as unsupported", () => {
+	it("rejects cross-origin, wrong-path, and incomplete phone-access links", () => {
+		const origin = "https://app.hypeterminal.com";
+		for (const value of [
+			"https://evil.example/mobile-agent-sync#ht-mobile-sync=payload&k=key",
+			`${origin}/trade#ht-mobile-sync=payload&k=key`,
+			`${origin}/mobile-agent-sync#ht-mobile-sync=payload`,
+		]) {
+			expect(classifyQrValue(value, origin)).toEqual({
+				type: "unsupported",
+			});
+		}
+	});
+
+	it("classifies unrelated values as unsupported without exposing them as a supported link", () => {
 		expect(classifyQrValue("https://example.com/qr")).toEqual({
 			type: "unsupported",
-			value: "https://example.com/qr",
 		});
 		expect(classifyQrValue("not a link")).toEqual({
 			type: "unsupported",
-			value: "not a link",
 		});
 	});
 

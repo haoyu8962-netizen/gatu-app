@@ -89,6 +89,12 @@ export function useReconnectWallet() {
 				await setActiveWallet(preferredWallet);
 				return;
 			}
+			if (shouldUsePrivyEmbeddedWallet(user)) {
+				// An email session must never fall back to an arbitrary
+				// external wallet while its exact embedded signer is absent
+				// or ambiguous.
+				return;
+			}
 
 			connectWallet({
 				walletChainType: "ethereum-only",

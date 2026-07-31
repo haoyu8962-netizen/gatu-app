@@ -71,26 +71,37 @@ export { createKey, infoKeys, serializeKey, subscriptionKeys } from "./query/key
 export {
 	type AgentOwner,
 	clearActiveAgentOwner,
+	clearActiveAgentOwnerIfMatches,
 	getActiveAgentOwner,
 	type ResolvedSession,
 	resolveSession,
 	type SessionMode,
 	setActiveAgentOwner,
+	setActiveAgentOwnerAndVerify,
 	useActiveAgentOwner,
 } from "./signing/agent-session";
 export {
+	type AgentStorageRemovalResult,
+	type AgentStorageWriteResult,
+	hasInvalidAgentStorageRecord,
 	readAgentFromStorage,
 	removeAgentFromStorage,
+	removeAgentFromStorageAndVerify,
 	useAgentWalletActions,
 	useAgentWalletStorage,
+	useInvalidAgentStorageRecord,
 	writeAgentToStorage,
+	writeAgentToStorageAndVerify,
 } from "./signing/agent-storage";
+export { isBuilderFeeApproved } from "./signing/agent-utils";
 export {
 	createMobileAgentApproval,
 	createMobileAgentName,
 	createMobileAgentRevocationApproval,
 	createMobileAgentStorageMetadata,
 	createMobileAgentWalletRecord,
+	type ExpectedMobileAgent,
+	type ExpectedMobileAgentVerification,
 	findApprovedMobileAgent,
 	getMobileAgentNameBase,
 	isMobileAgentName,
@@ -102,6 +113,7 @@ export {
 	type MobileAgentStorageMetadata,
 	type MobileAgentVerification,
 	shouldClearMobileAgent,
+	verifyExpectedMobileAgent,
 	verifyMobileAgent,
 } from "./signing/mobile-agent";
 export type {
@@ -116,7 +128,13 @@ export {
 	type UseAgentRegistrationResult,
 	useAgentRegistration,
 } from "./signing/use-agent-registration";
-export { type AgentRequirements, type UseAgentStatusResult, useAgentStatus } from "./signing/use-agent-status";
+export {
+	type AgentRequirements,
+	deriveAgentRequirements,
+	getDefinitiveMobileAgentStaleReason,
+	type UseAgentStatusResult,
+	useAgentStatus,
+} from "./signing/use-agent-status";
 export { type UseAgentWalletResult, useAgentWallet } from "./signing/use-agent-wallet";
 export type {
 	HyperliquidConfig,

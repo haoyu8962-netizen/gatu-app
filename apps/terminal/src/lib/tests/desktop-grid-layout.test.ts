@@ -11,7 +11,7 @@ import {
 	writeDesktopGridLayouts,
 } from "@/config/desktop-grid-layout";
 import { MOBILE_BREAKPOINT_PX } from "@/config/layout";
-import { MOBILE_MEDIA_QUERY } from "@/hooks/use-mobile";
+import { MOBILE_MEDIA_QUERY, MOBILE_QR_SURFACE_MEDIA_QUERY } from "@/hooks/use-mobile";
 
 describe("desktop grid layout", () => {
 	beforeEach(() => window.localStorage.clear());
@@ -19,6 +19,7 @@ describe("desktop grid layout", () => {
 	it("uses the official desktop and mobile thresholds", () => {
 		expect(MOBILE_BREAKPOINT_PX).toBe(1000);
 		expect(MOBILE_MEDIA_QUERY).toBe("(max-width: 1000px)");
+		expect(MOBILE_QR_SURFACE_MEDIA_QUERY).toBe("(max-width: 1000px), (pointer: coarse), (display-mode: standalone)");
 		expect(DESKTOP_GRID_BREAKPOINTS).toEqual({ lg: 1420, md: 1000 });
 		expect(DESKTOP_GRID_COLS).toEqual({ lg: 16, md: 14 });
 		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v3");

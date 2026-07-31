@@ -56,6 +56,21 @@ function normalizeOwner(value: unknown): AgentOwner | null {
 // no-op write), so the module is safe to evaluate and call on the server.
 let cache: { value: AgentOwner | null; version: number } | null = null;
 let version = 0;
+const blockedOwners = new Set<string>();
+
+function getOwnerKey(owner: AgentOwner): string {
+	return `${owner.env}:${owner.address}`;
+}
+
+function isOwnerBlocked(owner: AgentOwner | null): boolean {
+	return !!owner && blockedOwners.has(getOwnerKey(owner));
+}
+
+function blockOwner(owner: AgentOwner) {
+	blockedOwners.add(getOwnerKey(owner));
+	version += 1;
+	cache = { value: null, version };
+}
 
 function readPersisted(): AgentOwner | null {
 	if (typeof window === "undefined") return null;
@@ -69,23 +84,60 @@ function readPersisted(): AgentOwner | null {
 
 export function getActiveAgentOwner(): AgentOwner | null {
 	if (cache && cache.version === version) return cache.value;
-	const value = readPersisted();
+	const persisted = readPersisted();
+	const value = isOwnerBlocked(persisted) ? null : persisted;
 	cache = { value, version };
 	return value;
 }
 
-function writeOwner(owner: AgentOwner | null): void {
-	if (typeof window === "undefined") return;
+function writeOwner(owner: AgentOwner | null): boolean {
+	if (typeof window === "undefined") return false;
 	try {
 		if (owner) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(owner));
-		else window.localStorage.removeItem(STORAGE_KEY);
+		else {
+			try {
+				window.localStorage.removeItem(STORAGE_KEY);
+			} catch {
+				window.localStorage.setItem(STORAGE_KEY, "null");
+			}
+		}
+
+		let raw = window.localStorage.getItem(STORAGE_KEY);
+		let persisted = raw ? normalizeOwner(JSON.parse(raw)) : null;
+		let matches = owner
+			? !!persisted && persisted.env === owner.env && persisted.address === owner.address
+			: persisted === null;
+		if (!matches && !owner) {
+			window.localStorage.setItem(STORAGE_KEY, "null");
+			raw = window.localStorage.getItem(STORAGE_KEY);
+			persisted = raw ? normalizeOwner(JSON.parse(raw)) : null;
+			matches = persisted === null;
+		}
+		if (matches && owner) {
+			blockedOwners.delete(getOwnerKey(owner));
+		}
 		version += 1;
-		cache = null;
+		cache = { value: isOwnerBlocked(persisted) ? null : persisted, version };
 		// Same-tab listeners never receive the native storage event, so dispatch one explicitly
 		// (matches the agent-storage pattern); other tabs receive the native event.
-		window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+		try {
+			window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+		} catch {
+			// The exact storage readback above remains authoritative. Event
+			// construction can fail in restricted webviews, but must not turn a
+			// successful write into a false failure and leave an orphan owner.
+		}
+		return matches;
 	} catch {
-		// Storage may be unavailable (private mode, quota); nothing else to do.
+		version += 1;
+		cache = null;
+		try {
+			window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+		} catch {
+			// The in-memory block still prevents this tab from resolving the
+			// stale owner when both persistent cleanup paths are unavailable.
+		}
+		return false;
 	}
 }
 
@@ -97,9 +149,27 @@ export function setActiveAgentOwner(env: HyperliquidEnv, address: Address): void
 	writeOwner(next);
 }
 
+export function setActiveAgentOwnerAndVerify(env: HyperliquidEnv, address: Address): boolean {
+	const expected = normalizeOwner({ env, address });
+	if (!expected) return false;
+	return writeOwner(expected);
+}
+
 export function clearActiveAgentOwner(): void {
-	if (!getActiveAgentOwner()) return;
+	const current = readPersisted();
+	if (!current) return;
+	blockOwner(current);
 	writeOwner(null);
+}
+
+export function clearActiveAgentOwnerIfMatches(env: HyperliquidEnv, address: Address): boolean {
+	const expected = normalizeOwner({ env, address });
+	const current = readPersisted();
+	if (!expected || !current || current.env !== expected.env || current.address !== expected.address) {
+		return false;
+	}
+	blockOwner(current);
+	return writeOwner(null);
 }
 
 function subscribe(callback: () => void): () => void {

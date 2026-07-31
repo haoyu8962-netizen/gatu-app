@@ -102,7 +102,7 @@ sudo -u gatu cp /opt/gatu/repo/deploy/env.build.example   /opt/gatu/shared/.env.
 sudo -u gatu cp /opt/gatu/repo/deploy/env.runtime.example /opt/gatu/shared/.env.runtime
 sudo chmod 600 /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime
 # 编辑这两个文件填入真实值：
-#   .env.local   → VITE_PRIVY_APP_ID（其余可留空）
+#   .env.local   → VITE_PRIVY_APP_ID；移动配对放量时再把对应 gate 设为精确的 "true"
 #   .env.runtime → IPDATA_API_KEY（PORT/HOST 默认即可）
 sudo -u gatu nano /opt/gatu/shared/.env.local
 sudo -u gatu nano /opt/gatu/shared/.env.runtime
@@ -171,6 +171,16 @@ sudo systemctl status gatu --no-pager
 ```
 
 浏览器打开 `https://app.gatu.ai`:能连钱包(Privy)、看行情、下单表单可见。
+
+移动配对的两个构建期开关默认关闭:
+
+- `VITE_MOBILE_PAIRING_CREATE_ENABLED=true`:允许桌面创建、批准并揭示 QR，但仅在 import gate 也开启时生效。
+- `VITE_MOBILE_PAIRING_IMPORT_ENABLED=true`:允许手机扫码并导入。
+
+建议先开启 import gate，再开启 create gate，并在测试环境跑完桌面批准、手机导入和撤销回归后
+按环境放量。create-only 会保持关闭，避免同名 Agent 替换现有手机后却无法导入。关闭任一开关都
+需要重新构建和部署；它不是无需部署即可切换的远端 kill switch。无论开关状态如何，撤销已有
+Mobile Agent 和已有 Agent 的远端对账都保持可用。
 
 ---
 
@@ -265,6 +275,7 @@ ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && 
 ## 上线 Checklist
 
 - [ ] `.env.local`:`VITE_PRIVY_APP_ID` 已填(生产 mainnet,`VITE_HYPERLIQUID_TESTNET` 留空)
+- [ ] 移动配对 rollout 已决策；若启用，两个 `VITE_MOBILE_PAIRING_*_ENABLED` 均为精确的 `true`
 - [ ] `.env.runtime`:`IPDATA_API_KEY` 已填(并已**轮换**掉聊天里泄漏过的旧 key)
 - [ ] Privy Dashboard:把 `app.gatu.ai` 加入 Allowed origins
 - [ ] Builder 地址已充值 ≥100 USDC(否则 builder fee 下单会失败)

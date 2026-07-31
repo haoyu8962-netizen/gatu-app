@@ -271,6 +271,14 @@ msgstr "Importe"
 msgid "Amount is too low for the available bridge routes."
 msgstr "El importe es demasiado bajo para las rutas de puente disponibles."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Another mobile approval is already in progress for this wallet."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Another mobile approval is being prepared for this wallet."
+msgstr ""
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -289,6 +297,10 @@ msgstr "Otra orden TWAP para este mercado aún se está confirmando."
 msgid "Any portion that is not immediately filled will be canceled."
 msgstr "Cualquier parte que no se ejecute de inmediato se cancelará."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Anyone who scans or captures the QR can trade as this Agent."
+msgstr ""
+
 #: src/components/trade/header/top-nav.tsx
 #~ msgid "API"
 #~ msgstr "API"
@@ -297,13 +309,29 @@ msgstr "Cualquier parte que no se ejecute de inmediato se cancelará."
 #~ msgid "Appearance"
 #~ msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Approval verification pending"
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "Approve a builder to charge fees on orders placed on your behalf. Builder codes allow DeFi applications to receive a portion of trading fees."
 #~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Approve a mobile trading key"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Approve in wallet..."
 msgstr "Aprobar en el monedero..."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Approve mobile trading key"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Approving a new mobile key replaces the previous mobile key."
+msgstr ""
 
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -381,6 +409,7 @@ msgstr "La liquidez disponible del libro de órdenes solo permite ejecutar una p
 msgid "Avg Price"
 msgstr "Precio prom."
 
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -512,6 +541,10 @@ msgstr "Comprar"
 msgid "Buy Long"
 msgstr "Comprar largo"
 
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "Camera access failed. Allow camera access and try again, or scan the QR with your system camera."
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Camera access is not available in this browser."
 #~ msgstr ""
@@ -523,6 +556,10 @@ msgstr "Comprar largo"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Camera permission was denied."
 #~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "Camera preview for desktop wallet QR"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -537,7 +574,6 @@ msgstr "Comprar largo"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/routes/mobile-agent-sync.tsx
 msgid "Cancel"
 msgstr "Cancelar"
 
@@ -599,9 +635,13 @@ msgstr "Cambiar apalancamiento"
 msgid "Chart"
 msgstr "Gráfico"
 
-#: src/components/trade/tradebox/deposit/deposit-address.tsx
-#~ msgid "Checking..."
-#~ msgstr "Comprobando..."
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Checking account..."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Checking..."
+msgstr "Comprobando..."
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Circulating supply"
@@ -696,6 +736,14 @@ msgstr "Confirmar en el monedero"
 msgid "Confirm Reverse"
 msgstr "Confirmar inversión"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Confirm revoke in wallet"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Confirm the approval only in the selected master wallet."
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Confirm transaction in your wallet"
 msgstr "Confirma la transacción en tu monedero"
@@ -720,6 +768,14 @@ msgstr "Confirmando el estado de la orden. No vuelva a intentarlo."
 msgid "Connect"
 msgstr "Conectar"
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Connect a wallet on this phone to trade."
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Connect a wallet on this phone, or scan a desktop-approved trading key."
+msgstr ""
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Connect a wallet to manage orders."
 #~ msgstr "Conecta una billetera para gestionar órdenes."
@@ -740,13 +796,25 @@ msgstr "Conectar"
 #~ msgid "Connect the same wallet used on desktop."
 #~ msgstr "Conecta el mismo monedero usado en el escritorio."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Connect the selected master wallet before linking a mobile device."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Connect the selected master wallet before resetting mobile access."
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Connect to trade"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Connect to verify"
 #~ msgstr "Conecta para verificar"
 
-#: src/routes/mobile-agent-sync.tsx
-#~ msgid "Connect wallet"
-#~ msgstr "Conectar monedero"
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Connect wallet"
+msgstr "Conectar monedero"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -772,12 +840,12 @@ msgid "Connect wallet to view positions"
 msgstr "Conecta la billetera para ver posiciones"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Connect your wallet before linking a mobile device."
-msgstr "Conecta tu monedero antes de vincular un dispositivo móvil."
+#~ msgid "Connect your wallet before linking a mobile device."
+#~ msgstr "Conecta tu monedero antes de vincular un dispositivo móvil."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Connect your wallet before resetting mobile access."
-msgstr "Conecta tu monedero antes de restablecer el acceso móvil."
+#~ msgid "Connect your wallet before resetting mobile access."
+#~ msgstr "Conecta tu monedero antes de restablecer el acceso móvil."
 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "Connect your wallet to bridge funds"
@@ -861,6 +929,7 @@ msgstr "Conectando"
 #~ msgid "Connecting desktop wallet"
 #~ msgstr ""
 
+#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Connecting..."
 msgstr "Conectando..."
@@ -873,7 +942,6 @@ msgstr "Continuar"
 msgid "Contract"
 msgstr "Contrato"
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -909,8 +977,8 @@ msgstr "Copiar dirección de la billetera integrada"
 #~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Copy phone link"
-msgstr "Copiar enlace del teléfono"
+#~ msgid "Copy phone link"
+#~ msgstr "Copiar enlace del teléfono"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -930,8 +998,12 @@ msgid "Could not fetch your token balances"
 msgstr "No se pudieron obtener tus saldos de tokens"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Could not import phone access."
-msgstr "No se pudo importar el acceso del teléfono."
+#~ msgid "Could not import phone access."
+#~ msgstr "No se pudo importar el acceso del teléfono."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Could not import phone access. Retry or create a new desktop QR."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Could not link mobile device."
@@ -943,24 +1015,36 @@ msgstr "No se pudo importar el acceso del teléfono."
 #~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not render QR"
-msgstr "No se pudo generar el QR"
+#~ msgid "Could not render QR"
+#~ msgstr "No se pudo generar el QR"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Could not reset mobile access."
-msgstr "No se pudo restablecer el acceso móvil."
+msgid "Could not render QR. Create a new key."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Could not reset mobile access."
+#~ msgstr "No se pudo restablecer el acceso móvil."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Could not verify current mobile access."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Create a desktop trading key and transfer it only through a QR code."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Create phone access"
 msgstr "Crear acceso del teléfono"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Create phone link"
-msgstr "Crear enlace del teléfono"
+#~ msgid "Create phone link"
+#~ msgstr "Crear enlace del teléfono"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Create secure phone access for trading from this account."
-msgstr "Crea acceso seguro desde el teléfono para operar con esta cuenta."
+#~ msgid "Create secure phone access for trading from this account."
+#~ msgstr "Crea acceso seguro desde el teléfono para operar con esta cuenta."
 
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Created"
@@ -971,8 +1055,8 @@ msgstr "Creado"
 #~ msgstr "Creando billetera de depósito"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Creating link..."
-msgstr "Creando enlace..."
+#~ msgid "Creating link..."
+#~ msgstr "Creando enlace..."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Creating your wallet. Please wait..."
@@ -1141,6 +1225,14 @@ msgid "Desktop layout"
 msgstr "Diseño de escritorio"
 
 #: src/components/trade/components/wallet-modal.tsx
+msgid "Desktop linking imports an approved trading key. It cannot withdraw funds or change account permissions."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Desktop QR loaded"
+msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Desktop wallet QR scanner"
 #~ msgstr ""
 
@@ -1166,6 +1258,10 @@ msgstr "Dirección de destino"
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Direct mode: Sign each order with wallet"
 #~ msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Discard"
+msgstr ""
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -1200,6 +1296,14 @@ msgstr "Pantalla"
 #: src/components/ui/sidebar.tsx
 #~ msgid "Displays the mobile sidebar."
 #~ msgstr "Muestra la barra lateral móvil."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Do not photograph, copy, share, or screen-record the QR code."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Do not submit another revocation. Retry the read-only verification."
+msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx
@@ -1243,6 +1347,11 @@ msgstr "Activar"
 #: src/lib/trade/use-button-content.ts
 msgid "Enable Trading"
 msgstr "Habilitar trading"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Enable trading and approve the builder fee on this desktop before linking a phone."
+msgstr ""
 
 #: src/components/trade/components/trading-action-button.tsx
 msgid "Enabling"
@@ -1374,8 +1483,8 @@ msgid "Expand market details"
 msgstr "Expandir detalles del mercado"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Expires {expiresAtLabel}"
-msgstr "Caduca {expiresAtLabel}"
+#~ msgid "Expires {expiresAtLabel}"
+#~ msgstr "Caduca {expiresAtLabel}"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Expires {expiresAtLabel}."
@@ -1685,6 +1794,14 @@ msgstr "HIP-3"
 msgid "HIP-3 Deployer Disclaimer"
 msgstr "Aviso legal del implementador de HIP-3"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Hold for 4 seconds to reveal phone access QR"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Hold to reveal QR"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr "Hora(s)"
@@ -1697,6 +1814,15 @@ msgstr "Tasa horaria que los largos pagan a los cortos (si es negativa, los cort
 msgid "HYPE is the native token of Hyperliquid."
 msgstr "HYPE es el token nativo de Hyperliquid."
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "Hyperliquid approval could not be checked. Check your connection and retry."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
+msgstr ""
+
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
 msgstr "He leído y comprendido este aviso legal y acepto los riesgos de interactuar con mercados sin permisos implementados por terceros."
@@ -1707,8 +1833,8 @@ msgid "Import phone access"
 msgstr "Importar acceso del teléfono"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
-msgstr "Importa la clave de trading desde tu ordenador. No es necesario conectar un monedero en este teléfono."
+#~ msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
+#~ msgstr "Importa la clave de trading desde tu ordenador. No es necesario conectar un monedero en este teléfono."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -1716,8 +1842,8 @@ msgid "Important: this address can only receive native USDC on Arbitrum. Do not 
 msgstr "Importante: esta dirección solo puede recibir USDC nativo en Arbitrum. No envíes USDC.e ni activos de otras redes. El depósito mínimo es {minimumDeposit}."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Importing..."
-msgstr "Importando..."
+#~ msgid "Importing..."
+#~ msgstr "Importando..."
 
 #: src/components/portfolio/portfolio-mobile-balances.tsx
 msgid "In Orders"
@@ -1789,9 +1915,21 @@ msgstr "IOC (Immediate Or Cancel)"
 msgid "Isolated"
 msgstr "Aislado"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Keep holding... {remainingSeconds}s"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Keep this window open and confirm or reject the request in your wallet. Do not submit another deposit."
 msgstr "Mantén esta ventana abierta y confirma o rechaza la solicitud en tu cartera. No envíes otro depósito."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Keep this window open until Hyperliquid finishes checking the wallet action."
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "L1"
@@ -1887,6 +2025,11 @@ msgstr "Venta límite"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Link desktop wallet"
 #~ msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Link Desktop Wallet"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -2002,6 +2145,10 @@ msgstr "Posición Long"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Looking for a WalletConnect QR code"
 #~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "Looking for the desktop wallet QR..."
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 msgid "Low balance"
@@ -2170,6 +2317,10 @@ msgstr "Mercados"
 #~ msgid "Master"
 #~ msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Master wallet"
+msgstr ""
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
@@ -2258,13 +2409,43 @@ msgstr "El retiro mínimo es ${MIN_WITHDRAW_USD}"
 msgid "Minute(s)"
 msgstr "Minuto(s)"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Mobile access revoked. The inaccessible replacement expires at {expiresAtLabel}."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Mobile QR creation is temporarily unavailable."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "Mobile QR import is temporarily unavailable."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "Mobile QR import is unavailable and its temporary copy could not be cleared. Close this tab and clear this site's data."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Mobile QR reveal is temporarily unavailable. Revoke this key if you no longer need it."
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Mock Wallet (Testing)"
 #~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Mode"
-msgstr "Modo"
+#~ msgid "Mode"
+#~ msgstr "Modo"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
@@ -2312,6 +2493,7 @@ msgstr "Neto recibido"
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
 msgid "Network"
 msgstr "Red"
 
@@ -2332,6 +2514,10 @@ msgstr "NUEVO"
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "New deposit"
 msgstr "Nuevo depósito"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "New mobile pairing is temporarily unavailable"
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "New to wallets?"
@@ -2356,6 +2542,14 @@ msgstr "Sin posiciones activas."
 #: src/components/trade/positions/twap-tab.tsx
 msgid "No active TWAP orders."
 msgstr "No hay órdenes TWAP activas."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "No approved mobile Agent remains."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "No approved mobile Agent remains. Local mobile access was cleared."
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 #~ msgid "No asset description is available for this market."
@@ -2386,6 +2580,14 @@ msgstr "No se encontraron saldos. Deposita fondos para comenzar a operar."
 #: src/components/trade/components/market-asset-info.tsx
 msgid "No description has been provided for this market."
 msgstr "No se ha proporcionado una descripción para este mercado."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "No desktop QR is loaded. Return to the terminal scanner or scan a fresh QR with your system camera."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "No desktop wallet QR was found."
+msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -2420,8 +2622,8 @@ msgid "No markets found."
 msgstr "No se encontraron mercados."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "No mobile link found."
-msgstr "No se encontró ningún enlace móvil."
+#~ msgid "No mobile link found."
+#~ msgstr "No se encontró ningún enlace móvil."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -2516,6 +2718,10 @@ msgstr "IA"
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "on"
 #~ msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Only scan a QR displayed by this terminal on your desktop."
+msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Only you control your funds. No email or password required."
@@ -2731,12 +2937,12 @@ msgstr "parcial"
 #~ msgstr "Pegar código"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Paste link from desktop"
-msgstr "Pegar enlace del escritorio"
+#~ msgid "Paste link from desktop"
+#~ msgstr "Pegar enlace del escritorio"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Paste the full phone link from desktop."
-msgstr "Pega el enlace completo del teléfono desde el escritorio."
+#~ msgid "Paste the full phone link from desktop."
+#~ msgstr "Pega el enlace completo del teléfono desde el escritorio."
 
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
@@ -2812,32 +3018,52 @@ msgstr "Retirable de perpetuos"
 #~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
+msgid "Phone access could not be activated or fully removed from this device. Clear this site's data before retrying."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Phone access could not be saved on this device. Check browser storage and retry."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Phone access is ready, but the temporary QR copy could not be cleared. Close this tab and clear this site's data."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Phone access QR code"
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
 msgid "Phone access ready"
 msgstr "Acceso del teléfono listo"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Phone access reset. The replacement key expires at {expiresAtLabel}."
-msgstr "Acceso del teléfono restablecido. La clave de reemplazo caduca el {expiresAtLabel}."
+#~ msgid "Phone access reset. The replacement key expires at {expiresAtLabel}."
+#~ msgstr "Acceso del teléfono restablecido. La clave de reemplazo caduca el {expiresAtLabel}."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Phone import"
-msgstr "Importación en el teléfono"
+#~ msgid "Phone import"
+#~ msgstr "Importación en el teléfono"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Phone link"
-msgstr "Enlace del teléfono"
+#~ msgid "Phone link"
+#~ msgstr "Enlace del teléfono"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Phone link loaded"
-msgstr "Enlace del teléfono cargado"
+#~ msgid "Phone link loaded"
+#~ msgstr "Enlace del teléfono cargado"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Phone link QR"
-msgstr "QR del enlace del teléfono"
+#~ msgid "Phone link QR"
+#~ msgstr "QR del enlace del teléfono"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Phone link ready"
-msgstr "Enlace del teléfono listo"
+#~ msgid "Phone link ready"
+#~ msgstr "Enlace del teléfono listo"
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Phone-access storage is unavailable. Close this tab and clear this site's data before scanning again."
+msgstr ""
 
 #. placeholder {0}: input.sideLabel
 #: src/lib/trade/use-button-content.ts
@@ -2978,6 +3204,10 @@ msgstr "Preparando depósito automático de USDC..."
 msgid "Preparing your quote..."
 msgstr "Preparando tu cotización..."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Press and hold for 4 seconds"
+msgstr ""
+
 #: src/components/ui/pagination.tsx
 #~ msgid "Previous"
 #~ msgstr "Anterior"
@@ -3049,13 +3279,17 @@ msgstr "Procesando..."
 #~ msgid "Progress"
 #~ msgstr "Progreso"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "QR reveal progress"
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "QR scanning is not available in this browser."
 #~ msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "QR visible"
-msgstr "QR visible"
+#~ msgid "QR visible"
+#~ msgstr "QR visible"
 
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Quote expired. Refresh it before confirming."
@@ -3084,8 +3318,12 @@ msgstr "Tasa"
 #~ msgstr "Listo"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Ready to import"
-msgstr "Listo para importar"
+msgid "Ready for verification"
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "Ready to import"
+#~ msgstr "Listo para importar"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
@@ -3094,6 +3332,10 @@ msgstr "Listo para importar"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"
 msgstr "Operaciones recientes"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Rechecking approval..."
+msgstr ""
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Recommended"
@@ -3111,6 +3353,7 @@ msgstr "Recomendado solo para traders automatizados. Cada DEX tiene un saldo sep
 #~ msgid "Reconnect or refresh after your embedded wallet is ready."
 #~ msgstr ""
 
+#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
@@ -3118,8 +3361,12 @@ msgid "Reconnect wallet"
 msgstr "Volver a conectar la cartera"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Recovered after reload. Expires {expiresAtLabel}."
-msgstr "Recuperado tras recargar. Caduca el {expiresAtLabel}."
+#~ msgid "Recovered after reload. Expires {expiresAtLabel}."
+#~ msgstr "Recuperado tras recargar. Caduca el {expiresAtLabel}."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Recovered in this tab. Expires {expiresAtLabel}."
+msgstr ""
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Reduce"
@@ -3150,6 +3397,10 @@ msgstr "Actualizar cotización"
 msgid "Rejected"
 msgstr "Rechazada"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Remote access is revoked, but this browser could not fully clear its local mobile state. Clear this site's data before using mobile access here again."
+msgstr ""
+
 #: src/components/trade/chart/token-selector-row.tsx
 #~ msgid "Remove {0} from favorites"
 #~ msgstr "Quitar {0} de favoritos"
@@ -3167,23 +3418,29 @@ msgstr "Eliminar {displayPairName} de favoritos"
 #~ msgstr "Quitar de favoritos"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Replaces the current phone key. The old phone must link again."
-msgstr "Reemplaza la clave actual del teléfono. El teléfono anterior debe volver a vincularse."
+msgid "Rendering QR"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Replaces the current mobile Agent with a temporary inaccessible key."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "Replaces the current phone key. The old phone must link again."
+#~ msgstr "Reemplaza la clave actual del teléfono. El teléfono anterior debe volver a vincularse."
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Requirements:"
 #~ msgstr ""
 
 #: src/components/trade/components/global-settings-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/language-switcher.tsx
-#: src/routes/mobile-agent-sync.tsx
 msgid "Reset"
 msgstr "Restablecer"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Reset phone access"
-msgstr "Restablecer acceso del teléfono"
+#~ msgid "Reset phone access"
+#~ msgstr "Restablecer acceso del teléfono"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -3191,8 +3448,8 @@ msgid "Resets in"
 msgstr "Se restablece en"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Resetting..."
-msgstr "Restableciendo..."
+#~ msgid "Resetting..."
+#~ msgstr "Restableciendo..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -3206,6 +3463,14 @@ msgstr "Restableciendo..."
 msgid "Retry"
 msgstr "Reintentar"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Retry read-only verification"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Retry verification"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Retry wallet creation"
 #~ msgstr "Reintentar creación de billetera"
@@ -3215,6 +3480,26 @@ msgstr "Reintentar"
 msgid "Reverse"
 msgstr "Invertir"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Review again"
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "Review and import the desktop-approved trading key. No phone wallet is required."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Review phone access"
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Review phone access with the selected master wallet before approving it."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Review revoke"
+msgstr ""
+
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the available deployer information and our <0>Terms of Use</0> before trading."
 msgstr "Antes de operar, consulta la información disponible del implementador y nuestras <0>Condiciones de uso</0>."
@@ -3222,6 +3507,14 @@ msgstr "Antes de operar, consulta la información disponible del implementador y
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "Review the deployer's <0>documentation</0> and our <1>Terms of Use</1> before trading."
 msgstr "Antes de operar, consulta la <0>documentación</0> del implementador y nuestras <1>Condiciones de uso</1>."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Revocation was submitted but is not yet confirmed."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Revoke mobile access"
+msgstr ""
 
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx
@@ -3253,8 +3546,8 @@ msgstr "Tiempo de ejecución"
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "Saved phone link was invalid. Paste the link again."
-msgstr "El enlace del teléfono guardado no era válido. Pega el enlace de nuevo."
+#~ msgid "Saved phone link was invalid. Paste the link again."
+#~ msgstr "El enlace del teléfono guardado no era válido. Pega el enlace de nuevo."
 
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -3293,6 +3586,14 @@ msgstr "El tamaño de la orden escalonada es demasiado pequeño para el número 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Scan on your phone"
 msgstr "Escanea con tu móvil"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Scan only with your phone. Anyone who captures this QR can use the trading key."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "Scan the QR shown by Link Mobile Device on your desktop."
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Scan this QR with your desktop wallet."
@@ -3536,8 +3837,8 @@ msgstr "Posición corta"
 #~ msgstr "Mostrar posiciones en gráfico"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Show QR"
-msgstr "Mostrar QR"
+#~ msgid "Show QR"
+#~ msgstr "Mostrar QR"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Scanlines"
@@ -3740,6 +4041,10 @@ msgstr "Staking"
 msgid "Start and end must differ"
 msgstr "El inicio y el final deben ser distintos"
 
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "Start camera"
+msgstr ""
+
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/components/trade/tradebox/trade-form-scale.tsx
 msgid "Start Price"
@@ -3748,6 +4053,11 @@ msgstr "Precio inicial"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #~ msgid "Start Price (USDC)"
 #~ msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "Starting camera..."
+msgstr ""
 
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Status"
@@ -3922,8 +4232,8 @@ msgid "Switching..."
 msgstr "Cambiando..."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Sync ID"
-msgstr "ID de sincronización"
+#~ msgid "Sync ID"
+#~ msgstr "ID de sincronización"
 
 #: src/lib/trade/order-types.ts
 #~ msgid "Take Limit"
@@ -3978,6 +4288,15 @@ msgstr "Términos"
 msgid "Testnet"
 msgstr "Testnet"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The approval could not be rechecked. The QR remains hidden until read-only verification succeeds."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
 #~ msgstr ""
@@ -4003,25 +4322,117 @@ msgstr "El exchange no devolvió el estado final de la orden. Revisa las órdene
 msgid "The exchange did not return a final TWAP status. Review active TWAP orders before retrying."
 msgstr "El exchange no devolvió el estado final del TWAP. Revisa las órdenes TWAP activas antes de volver a intentarlo."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
+msgstr ""
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "La página que buscas no existe."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The private key is created on this desktop and embedded in the QR code."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR expired before it could be displayed. Create a new key."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The QR stays hidden until you deliberately reveal it."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "The QR stays on this device and is never uploaded."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The replacement expired before Hyperliquid confirmed it. Review and sign a new revocation."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "The saved desktop QR was invalid. Scan a fresh QR."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
+msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This approval recovery is no longer active."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This approval recovery is no longer available."
+msgstr ""
+
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This description was supplied by the third-party market deployer. Treat it as unverified information."
 msgstr "Esta descripción fue proporcionada por el desplegador externo del mercado. Considérela información no verificada."
+
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "This desktop wallet QR expired, but its temporary copy could not be cleared. Close this tab and clear this site's data."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "This desktop wallet QR expired."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "This desktop wallet QR expired. Create a new QR on desktop."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This desktop wallet QR is damaged or incomplete. Scan a new QR."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "This device could not securely hold the QR. Check browser storage and retry."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "This device could not securely hold the QR. Check browser storage and scan again."
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."
 #~ msgstr ""
 
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "This is a WalletConnect QR. Scan the Link Desktop Wallet QR instead."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
-msgid "This is not a valid gatu mobile link."
-msgstr "Este no es un enlace móvil de gatu válido."
+#: src/routes/mobile-agent-sync.tsx
+msgid "This is not a valid gatu desktop wallet QR."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+#~ msgid "This is not a valid gatu mobile link."
+#~ msgstr "Este no es un enlace móvil de gatu válido."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This is not a valid HypeTerminal mobile link."
@@ -4032,30 +4443,58 @@ msgstr "Este no es un enlace móvil de gatu válido."
 #~ msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This link was created for a different network."
-msgstr "Este enlace se creó para una red diferente."
+#~ msgid "This link was created for a different network."
+#~ msgstr "Este enlace se creó para una red diferente."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This link was created for a different site."
-msgstr "Este enlace se creó para un sitio diferente."
+#~ msgid "This link was created for a different site."
+#~ msgstr "Este enlace se creó para un sitio diferente."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
-msgid "This mobile link expired."
-msgstr "Este enlace móvil ha expirado."
+#~ msgid "This mobile link expired."
+#~ msgstr "Este enlace móvil ha expirado."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This mobile link is damaged or incomplete. Scan or paste it again."
-msgstr "Este enlace móvil está dañado o incompleto. Escanéalo o pégalo de nuevo."
+#~ msgid "This mobile link is damaged or incomplete. Scan or paste it again."
+#~ msgstr "Este enlace móvil está dañado o incompleto. Escanéalo o pégalo de nuevo."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This mobile trading key has expired."
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "This phone link belongs to a different owner account."
-msgstr "Este enlace del teléfono pertenece a la cuenta de otro propietario."
+#~ msgid "This phone link belongs to a different owner account."
+#~ msgstr "Este enlace del teléfono pertenece a la cuenta de otro propietario."
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
 #~ msgstr "Este enlace móvil no está aprobado en Hyperliquid."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR belongs to a different owner account."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This QR closes automatically 60 seconds after it appears."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "This QR is invalid or incomplete. Create a new QR on desktop."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-qr-scanner.tsx
+msgid "This QR is not a valid desktop wallet link."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR was created for a different network."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This QR was created for a different site."
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This spot asset is enabled independently by Unit, a third-party provider."
@@ -4066,6 +4505,18 @@ msgstr "Este activo spot es habilitado de forma independiente por Unit, un prove
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This spot market trades {0} against {1} on Hyperliquid."
 msgstr "Este mercado spot negocia {0} contra {1} en Hyperliquid."
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This will replace any current mobile trading key with an inaccessible key. Existing phones will stop trading after Hyperliquid confirms the replacement."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#~ msgid "This will revoke {0} current mobile trading key. Existing phones will stop trading."
+#~ msgstr ""
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
@@ -4130,6 +4581,10 @@ msgstr "ID del token"
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Token metadata could not be loaded."
 msgstr "No se pudieron cargar los metadatos del token."
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
+msgstr ""
 
 #: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
@@ -4343,8 +4798,8 @@ msgid "Triggered"
 msgstr "Activada"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Try again"
-msgstr "Intentar de nuevo"
+#~ msgid "Try again"
+#~ msgstr "Intentar de nuevo"
 
 #: src/components/trade/tradebox/bridge/asset-selection-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
@@ -4536,16 +4991,16 @@ msgid "USDC will be sent to this Arbitrum address."
 msgstr "El USDC se enviará a esta dirección de Arbitrum."
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Use a different phone link"
-msgstr "Usar un enlace móvil diferente"
+#~ msgid "Use a different phone link"
+#~ msgstr "Usar un enlace móvil diferente"
 
 #: src/routes/mobile-agent-sync.tsx
-msgid "Use phone link"
-msgstr "Usar enlace móvil"
+#~ msgid "Use phone link"
+#~ msgstr "Usar enlace móvil"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Using"
-msgstr "Usando"
+#~ msgid "Using"
+#~ msgstr "Usando"
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Value"
@@ -4554,6 +5009,11 @@ msgstr "Usando"
 #: src/config/nav.tsx
 msgid "Vaults"
 msgstr "Bóvedas"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/routes/mobile-agent-sync.tsx
+msgid "Verifying approval..."
+msgstr ""
 
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
@@ -4608,6 +5068,10 @@ msgstr "Esperando libro de órdenes..."
 msgid "Wallet ({0})"
 msgstr "Wallet ({0})"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Wallet approval unavailable"
+msgstr ""
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -4644,7 +5108,6 @@ msgstr "El monedero no está conectado a {0}. Cambia de red en tu monedero y vue
 #~ msgid "Wallet is not connected to Arbitrum. Switch networks in your wallet and retry."
 #~ msgstr "La billetera no está conectada a Arbitrum. Cambia la red en tu billetera y vuelve a intentarlo."
 
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 #: src/components/trade/tradebox/deposit/shared-ui.tsx
 #: src/lib/hyperliquid/use-deposit.ts
@@ -4753,6 +5216,10 @@ msgstr "Estás viendo mercados implementados de forma independiente y sin permis
 #~ msgid "You can revoke permissions at any time by registering a new approval with 0% fee rate. Builder codes are processed entirely onchain as part of the fee logic."
 #~ msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "You can still verify and revoke existing mobile access below."
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -4789,10 +5256,14 @@ msgstr "Tu posición abierta actual en este mercado"
 msgid "Your funds were successfully deposited."
 msgstr "Tus fondos se depositaron correctamente."
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "Your master wallet approves one trading key. The key cannot withdraw funds."
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Your transaction is being processed"
 msgstr "Tu transacción se está procesando"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "Your wallet approves one trading key for this phone. It cannot withdraw funds."
-msgstr "Tu wallet aprueba una clave de operación para este móvil. No puede retirar fondos."
+#~ msgid "Your wallet approves one trading key for this phone. It cannot withdraw funds."
+#~ msgstr "Tu wallet aprueba una clave de operación para este móvil. No puede retirar fondos."

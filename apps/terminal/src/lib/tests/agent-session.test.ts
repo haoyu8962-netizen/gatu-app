@@ -2,11 +2,13 @@
 import {
 	type AgentOwner,
 	clearActiveAgentOwner,
+	clearActiveAgentOwnerIfMatches,
 	getActiveAgentOwner,
 	resolveSession,
 	setActiveAgentOwner,
+	setActiveAgentOwnerAndVerify,
 } from "@gatu/hl-react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const WALLET = "0x1111111111111111111111111111111111111111" as const;
 const OWNER = "0x2222222222222222222222222222222222222222" as const;
@@ -59,10 +61,79 @@ describe("active agent owner store (jsdom + localStorage)", () => {
 		expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null")).toEqual({ env: "Testnet", address: OWNER });
 	});
 
+	it("only reports verified activation after exact storage readback", () => {
+		expect(setActiveAgentOwnerAndVerify("Mainnet", OWNER)).toBe(true);
+		expect(getActiveAgentOwner()).toEqual({ env: "Mainnet", address: OWNER });
+
+		clearActiveAgentOwner();
+		vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => {
+			throw new Error("storage unavailable");
+		});
+		expect(setActiveAgentOwnerAndVerify("Mainnet", OWNER)).toBe(false);
+		expect(getActiveAgentOwner()).toBeNull();
+	});
+
+	it("does not trust a cached owner when verified persistence fails", () => {
+		setActiveAgentOwner("Mainnet", OWNER);
+		expect(getActiveAgentOwner()).toEqual({ env: "Mainnet", address: OWNER });
+		localStorage.removeItem(STORAGE_KEY);
+		vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => {
+			throw new Error("storage unavailable");
+		});
+
+		expect(setActiveAgentOwnerAndVerify("Mainnet", OWNER)).toBe(false);
+	});
+
+	it("keeps an exactly persisted owner authoritative when event dispatch is unavailable", () => {
+		vi.spyOn(window, "dispatchEvent").mockImplementationOnce(() => {
+			throw new Error("restricted webview");
+		});
+
+		expect(setActiveAgentOwnerAndVerify("Mainnet", OWNER)).toBe(true);
+		expect(getActiveAgentOwner()).toEqual({ env: "Mainnet", address: OWNER });
+		expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null")).toEqual({
+			env: "Mainnet",
+			address: OWNER,
+		});
+	});
+
 	it("clears the active owner and removes the stored key", () => {
 		setActiveAgentOwner("Testnet", OWNER);
 		clearActiveAgentOwner();
 		expect(getActiveAgentOwner()).toBeNull();
+		expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+	});
+
+	it("only clears the active owner when both environment and address match", () => {
+		setActiveAgentOwner("Mainnet", OWNER);
+
+		expect(clearActiveAgentOwnerIfMatches("Testnet", OWNER)).toBe(false);
+		expect(clearActiveAgentOwnerIfMatches("Mainnet", WALLET)).toBe(false);
+		expect(getActiveAgentOwner()).toEqual({ env: "Mainnet", address: OWNER });
+
+		expect(clearActiveAgentOwnerIfMatches("Mainnet", OWNER)).toBe(true);
+		expect(getActiveAgentOwner()).toBeNull();
+	});
+
+	it("blocks a stale agent-only session when persistent owner cleanup fails, then allows retry", () => {
+		setActiveAgentOwner("Mainnet", OWNER);
+		const removeSpy = vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+			throw new Error("remove unavailable");
+		});
+		const setSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+			throw new Error("fallback unavailable");
+		});
+
+		expect(clearActiveAgentOwnerIfMatches("Mainnet", OWNER)).toBe(false);
+		expect(getActiveAgentOwner()).toBeNull();
+		expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null")).toEqual({
+			env: "Mainnet",
+			address: OWNER,
+		});
+
+		removeSpy.mockRestore();
+		setSpy.mockRestore();
+		expect(clearActiveAgentOwnerIfMatches("Mainnet", OWNER)).toBe(true);
 		expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
 	});
 

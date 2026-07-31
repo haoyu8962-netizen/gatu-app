@@ -7,6 +7,7 @@ import {
 	getPrivyEmbeddedWalletAddress,
 	hasSameWalletAddress,
 	selectPrivyWagmiWallet,
+	shouldUsePrivyEmbeddedWallet,
 } from "@/lib/wallet/privy-wagmi";
 
 function wallet(address: string, walletClientType = "metamask", connectorType = "injected"): ConnectedWallet {
@@ -182,6 +183,106 @@ describe("selectPrivyWagmiWallet", () => {
 				}),
 			}),
 		).toBe(wallets[1]);
+	});
+
+	it("keeps email wallet intent fail-closed while the embedded wallet is unavailable", () => {
+		window.localStorage.setItem("privy:test-app:recent-login-method", "email");
+		const emailOnlyUser = {
+			email: { address: "trader@example.com" },
+			linkedAccounts: [{ address: "trader@example.com", type: "email" }],
+			wallet: {
+				address: "0x1111111111111111111111111111111111111111",
+				chainType: "ethereum",
+				connectorType: "injected",
+				walletClientType: "metamask",
+			},
+		} as User;
+		const externalWallet = wallet("0x1111111111111111111111111111111111111111");
+
+		expect(shouldUsePrivyEmbeddedWallet(emailOnlyUser)).toBe(true);
+		expect(getPrivyEmbeddedWalletAddress(emailOnlyUser)).toBeUndefined();
+		expect(selectPrivyWagmiWallet({ wallets: [externalWallet], user: emailOnlyUser })).toBeUndefined();
+	});
+
+	it("does not select the first embedded wallet when multiple HD wallets are ambiguous", () => {
+		window.localStorage.setItem("privy:test-app:recent-login-method", "email");
+		const ambiguousUser = {
+			email: { address: "trader@example.com" },
+			linkedAccounts: [
+				{ address: "trader@example.com", type: "email" },
+				{
+					address: "0x2222222222222222222222222222222222222222",
+					chainType: "ethereum",
+					type: "wallet",
+					walletClientType: "privy",
+					walletIndex: 1,
+				},
+				{
+					address: "0x3333333333333333333333333333333333333333",
+					chainType: "ethereum",
+					type: "wallet",
+					walletClientType: "privy",
+					walletIndex: 2,
+				},
+			],
+			wallet: {
+				address: "0x1111111111111111111111111111111111111111",
+				chainType: "ethereum",
+				connectorType: "injected",
+				walletClientType: "metamask",
+			},
+		} as User;
+
+		expect(getPrivyEmbeddedWalletAddress(ambiguousUser)).toBeUndefined();
+		expect(
+			selectPrivyWagmiWallet({
+				wallets: [
+					wallet("0x2222222222222222222222222222222222222222", "privy", "embedded"),
+					wallet("0x3333333333333333333333333333333333333333", "privy", "embedded"),
+				],
+				user: ambiguousUser,
+			}),
+		).toBeUndefined();
+	});
+
+	it("selects the explicit primary HD embedded wallet by walletIndex", () => {
+		window.localStorage.setItem("privy:test-app:recent-login-method", "email");
+		const primaryAddress = "0x3333333333333333333333333333333333333333";
+		const hdUser = {
+			email: { address: "trader@example.com" },
+			linkedAccounts: [
+				{ address: "trader@example.com", type: "email" },
+				{
+					address: "0x2222222222222222222222222222222222222222",
+					chainType: "ethereum",
+					type: "wallet",
+					walletClientType: "privy",
+					walletIndex: 1,
+				},
+				{
+					address: primaryAddress,
+					chainType: "ethereum",
+					type: "wallet",
+					walletClientType: "privy",
+					walletIndex: 0,
+				},
+			],
+			wallet: {
+				address: "0x1111111111111111111111111111111111111111",
+				chainType: "ethereum",
+				connectorType: "injected",
+				walletClientType: "metamask",
+			},
+		} as User;
+		const primaryWallet = wallet(primaryAddress, "privy", "embedded");
+
+		expect(getPrivyEmbeddedWalletAddress(hdUser)).toBe(primaryAddress);
+		expect(
+			selectPrivyWagmiWallet({
+				wallets: [wallet("0x2222222222222222222222222222222222222222", "privy", "embedded"), primaryWallet],
+				user: hdUser,
+			}),
+		).toBe(primaryWallet);
 	});
 
 	it("does not substitute another embedded wallet for the expected address", () => {

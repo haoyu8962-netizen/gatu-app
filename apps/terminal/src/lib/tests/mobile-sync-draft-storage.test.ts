@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { clearMobileSyncDraft, readMobileSyncDraft, saveMobileSyncDraft } from "../mobile-sync/draft-storage";
 import {
 	createMobileAgentSyncUrl,
@@ -40,6 +40,10 @@ async function createSyncFixture() {
 }
 
 describe("mobile sync draft storage", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	it("persists the encrypted envelope metadata and the embedded key, and survives a reload", async () => {
 		const sync = await createSyncFixture();
 		const storage = createMemoryStorage();
@@ -86,5 +90,45 @@ describe("mobile sync draft storage", () => {
 		saveMobileSyncDraft(sync.envelope, sync.encodedKey, { storage, nowMs: NOW_MS });
 		expect(clearMobileSyncDraft({ storage })).toBe(true);
 		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS })).toEqual({ status: "empty" });
+	});
+
+	it("does not report a clear until the exact draft is absent on readback", async () => {
+		const sync = await createSyncFixture();
+		const storage = createMemoryStorage();
+
+		saveMobileSyncDraft(sync.envelope, sync.encodedKey, { storage, nowMs: NOW_MS });
+		storage.removeItem = () => {};
+
+		expect(clearMobileSyncDraft({ storage })).toBe(false);
+		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS }).status).toBe("found");
+	});
+
+	it("fails closed when the exact draft cannot be read back", async () => {
+		const sync = await createSyncFixture();
+		const storage = createMemoryStorage();
+		const setItem = storage.setItem.bind(storage);
+		storage.setItem = (key, value) => setItem(key, `${value}corrupted`);
+
+		expect(saveMobileSyncDraft(sync.envelope, sync.encodedKey, { storage, nowMs: NOW_MS })).toBe(false);
+		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS })).toEqual({ status: "empty" });
+	});
+
+	it("distinguishes an unreadable store from an empty store", () => {
+		const storage = createMemoryStorage();
+		storage.getItem = () => {
+			throw new Error("storage read blocked");
+		};
+
+		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS })).toEqual({ status: "unavailable" });
+	});
+
+	it("does not arm browser-length timers for caller-provided memory storage", async () => {
+		const sync = await createSyncFixture();
+		const storage = createMemoryStorage();
+		const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+
+		expect(saveMobileSyncDraft(sync.envelope, sync.encodedKey, { storage, nowMs: NOW_MS })).toBe(true);
+		expect(readMobileSyncDraft({ storage, nowMs: NOW_MS }).status).toBe("found");
+		expect(setTimeoutSpy).not.toHaveBeenCalled();
 	});
 });

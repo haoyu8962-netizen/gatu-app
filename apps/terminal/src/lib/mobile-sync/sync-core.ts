@@ -147,6 +147,17 @@ export interface MobileSyncHistoryLike {
 	replaceState(data: unknown, unused: string, url?: string | URL | null): void;
 }
 
+export interface MobileSyncNavigationLike {
+	replace(url: string | URL): void;
+}
+
+export class MobileSyncCleanNavigationRequiredError extends Error {
+	constructor() {
+		super("A clean full-page navigation is required before mobile access can be imported.");
+		this.name = "MobileSyncCleanNavigationRequiredError";
+	}
+}
+
 type JsonRecord = Record<string, unknown>;
 
 export async function createMobileAgentSyncUrl(
@@ -257,14 +268,58 @@ export function parseMobileSyncUrl(urlInput: string | URL): ParsedMobileSync {
 export function readAndClearMobileSyncEnvelope(
 	location: MobileSyncLocationLike = window.location,
 	history: MobileSyncHistoryLike = window.history,
+	navigation: MobileSyncNavigationLike = window.location,
 ): ParsedMobileSync {
 	const href = location.href;
-	history.replaceState(null, "", getMobileSyncCleanUrl(location));
+	const cleanUrl = getMobileSyncCleanUrl(location);
+
+	try {
+		history.replaceState(null, "", cleanUrl);
+	} catch {
+		navigateToCleanMobileSyncUrl(navigation, cleanUrl);
+	}
+	if (!isMobileSyncLocationClean(location, cleanUrl)) {
+		navigateToCleanMobileSyncUrl(navigation, cleanUrl);
+	}
+
 	return parseMobileSyncUrl(href);
 }
 
 export function getMobileSyncCleanUrl(location: Pick<MobileSyncLocationLike, "pathname" | "search">): string {
-	return `${location.pathname}${location.search}`;
+	const pathname =
+		location.pathname === MOBILE_SYNC_ROUTE_PATH || location.pathname === `${MOBILE_SYNC_ROUTE_PATH}/`
+			? location.pathname
+			: MOBILE_SYNC_ROUTE_PATH;
+	const searchParams = new URLSearchParams(location.search);
+	searchParams.delete(MOBILE_SYNC_FRAGMENT_KEY);
+	searchParams.delete(MOBILE_SYNC_KEY_FRAGMENT_KEY);
+	const search = searchParams.toString();
+	return `${pathname}${search ? `?${search}` : ""}`;
+}
+
+export function isMobileSyncCleanNavigationRequiredError(
+	error: unknown,
+): error is MobileSyncCleanNavigationRequiredError {
+	return error instanceof MobileSyncCleanNavigationRequiredError;
+}
+
+function isMobileSyncLocationClean(location: MobileSyncLocationLike, cleanUrl: string): boolean {
+	const expected = new URL(cleanUrl, "https://mobile-sync.invalid");
+	const searchParams = new URLSearchParams(location.search);
+	return (
+		location.pathname === expected.pathname &&
+		location.search === expected.search &&
+		location.hash === "" &&
+		!searchParams.has(MOBILE_SYNC_FRAGMENT_KEY) &&
+		!searchParams.has(MOBILE_SYNC_KEY_FRAGMENT_KEY)
+	);
+}
+
+function navigateToCleanMobileSyncUrl(navigation: MobileSyncNavigationLike, cleanUrl: string): never {
+	try {
+		navigation.replace(cleanUrl);
+	} catch {}
+	throw new MobileSyncCleanNavigationRequiredError();
 }
 
 export async function decryptMobileAgentSyncEnvelope(

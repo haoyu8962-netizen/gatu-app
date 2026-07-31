@@ -1,15 +1,20 @@
 import type { ConnectedWallet, User } from "@privy-io/react-auth";
+import { isAddress, zeroAddress } from "viem";
 
 interface WalletIdentity {
 	address?: string;
 	chainType?: string;
 	connectorType?: string;
+	walletIndex?: number | null;
 	walletClientType?: string;
 	type?: string;
 }
 
 function normalizeAddress(address: string | null | undefined): string | null {
-	return address ? address.toLowerCase() : null;
+	if (!address) return null;
+	const candidate = address.startsWith("0X") ? `0x${address.slice(2)}` : address;
+	if (!isAddress(candidate, { strict: false }) || candidate.toLowerCase() === zeroAddress) return null;
+	return candidate.toLowerCase();
 }
 
 export function hasSameWalletAddress(a: string | null | undefined, b: string | null | undefined): boolean {
@@ -33,13 +38,27 @@ export function getPrivyEmailAddress(user: User | null | undefined): string | un
 }
 
 export function getPrivyEmbeddedWalletAddress(user: User | null | undefined): `0x${string}` | undefined {
-	if (isPrivyEmbeddedWallet(user?.wallet)) return user?.wallet?.address as `0x${string}`;
+	const primaryWalletAddress = normalizeAddress(user?.wallet?.address);
+	if (isPrivyEmbeddedWallet(user?.wallet) && primaryWalletAddress) {
+		return primaryWalletAddress as `0x${string}`;
+	}
 
-	const embeddedWallet = user?.linkedAccounts?.find(
-		(account) => account.type === "wallet" && isPrivyEmbeddedWallet(account),
-	);
-	if (!embeddedWallet || !("address" in embeddedWallet)) return undefined;
-	return embeddedWallet.address as `0x${string}`;
+	const embeddedWallets = ((user?.linkedAccounts ?? []) as WalletIdentity[])
+		.filter((account) => account.type === "wallet" && isPrivyEmbeddedWallet(account))
+		.flatMap((wallet) => {
+			const address = normalizeAddress(wallet.address);
+			return address ? [{ address, walletIndex: wallet.walletIndex ?? null }] : [];
+		});
+
+	const uniqueByAddress = new Map(embeddedWallets.map((wallet) => [wallet.address, wallet]));
+	const uniqueWallets = [...uniqueByAddress.values()];
+	if (uniqueWallets.length === 1) return uniqueWallets[0]?.address as `0x${string}`;
+
+	// Privy designates walletIndex 0 as the primary HD embedded wallet. If
+	// multiple embedded wallets exist without one unambiguous primary, fail
+	// closed instead of selecting whichever linked account happens to be first.
+	const primaryHdWallets = uniqueWallets.filter((wallet) => wallet.walletIndex === 0);
+	return primaryHdWallets.length === 1 ? (primaryHdWallets[0]?.address as `0x${string}`) : undefined;
 }
 
 export function getPrivyRecentLoginMethod(): string | undefined {
@@ -64,8 +83,6 @@ export function getPrivyRecentLoginMethod(): string | undefined {
 }
 
 export function shouldUsePrivyEmbeddedWallet(user: User | null | undefined): boolean {
-	const embeddedWalletAddress = getPrivyEmbeddedWalletAddress(user);
-	if (!embeddedWalletAddress) return false;
 	if (isPrivyEmbeddedWallet(user?.wallet)) return true;
 
 	const recentLoginMethod = getPrivyRecentLoginMethod();

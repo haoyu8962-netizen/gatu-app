@@ -93,6 +93,20 @@ const config = defineConfig({
         '/build-meta.json': {
           headers: { ...securityHeaders, 'cache-control': 'no-store' },
         },
+        '/mobile-agent-sync': {
+          headers: {
+            ...securityHeaders,
+            'cache-control': 'no-store',
+            'referrer-policy': 'no-referrer',
+          },
+        },
+        '/mobile-agent-sync/': {
+          headers: {
+            ...securityHeaders,
+            'cache-control': 'no-store',
+            'referrer-policy': 'no-referrer',
+          },
+        },
       },
     }),
     lingui(),

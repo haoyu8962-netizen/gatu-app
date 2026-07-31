@@ -6,6 +6,8 @@ import {
 } from "./sync-core";
 
 const MOBILE_SYNC_DRAFT_STORAGE_KEY = "gatu.mobile-sync.import-draft.v1";
+let draftExpiryTimer: ReturnType<typeof globalThis.setTimeout> | null = null;
+let scheduledDraftStorage: Storage | null = null;
 
 interface StoredMobileSyncDraft {
 	v: 1;
@@ -30,7 +32,8 @@ export type ReadMobileSyncDraftResult =
 	| { status: "empty" }
 	| { status: "found"; draft: MobileSyncDraft }
 	| { status: "expired" }
-	| { status: "invalid" };
+	| { status: "invalid" }
+	| { status: "unavailable" };
 
 interface MobileSyncDraftStorageOptions {
 	nowMs?: number;
@@ -56,22 +59,31 @@ export function saveMobileSyncDraft(
 	};
 
 	try {
-		storage.setItem(MOBILE_SYNC_DRAFT_STORAGE_KEY, JSON.stringify(storedDraft));
+		const serialized = JSON.stringify(storedDraft);
+		storage.setItem(MOBILE_SYNC_DRAFT_STORAGE_KEY, serialized);
+		if (storage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY) !== serialized) {
+			clearMobileSyncDraft({ storage });
+			return false;
+		}
+		if (isBrowserSessionStorage(storage)) {
+			scheduleMobileSyncDraftExpiry(storage, envelope.expiresAtMs, options.nowMs ?? Date.now());
+		}
 		return true;
 	} catch {
+		clearMobileSyncDraft({ storage });
 		return false;
 	}
 }
 
 export function readMobileSyncDraft(options: MobileSyncDraftStorageOptions = {}): ReadMobileSyncDraftResult {
 	const storage = getDraftStorage(options.storage);
-	if (!storage) return { status: "empty" };
+	if (!storage) return { status: "unavailable" };
 
 	let storedValue: string | null;
 	try {
 		storedValue = storage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY);
 	} catch {
-		return { status: "empty" };
+		return { status: "unavailable" };
 	}
 	if (!storedValue) return { status: "empty" };
 
@@ -104,6 +116,9 @@ export function readMobileSyncDraft(options: MobileSyncDraftStorageOptions = {})
 			clearMobileSyncDraft({ storage });
 			return { status: "invalid" };
 		}
+		if (isBrowserSessionStorage(storage)) {
+			scheduleMobileSyncDraftExpiry(storage, parsed.expiresAtMs, options.nowMs ?? Date.now());
+		}
 
 		return {
 			status: "found",
@@ -128,7 +143,9 @@ export function clearMobileSyncDraft(options: Pick<MobileSyncDraftStorageOptions
 
 	try {
 		storage.removeItem(MOBILE_SYNC_DRAFT_STORAGE_KEY);
-		return true;
+		const removed = storage.getItem(MOBILE_SYNC_DRAFT_STORAGE_KEY) === null;
+		if (removed) cancelMobileSyncDraftExpiry(storage);
+		return removed;
 	} catch {
 		return false;
 	}
@@ -136,6 +153,11 @@ export function clearMobileSyncDraft(options: Pick<MobileSyncDraftStorageOptions
 
 export function isMobileSyncEnvelopeExpired(envelope: MobileSyncEnvelope, nowMs = Date.now()): boolean {
 	return isMobileSyncEnvelopeExpiredAt(envelope.expiresAtMs, nowMs);
+}
+
+/** Arms cleanup for a draft left by a previous route or full-page navigation. */
+export function armMobileSyncDraftExpiryCleanup(): void {
+	readMobileSyncDraft();
 }
 
 function isMobileSyncEnvelopeExpiredAt(expiresAtMs: number, nowMs: number): boolean {
@@ -150,6 +172,33 @@ function getDraftStorage(storage?: Storage | null): Storage | null {
 	} catch {
 		return null;
 	}
+}
+
+function isBrowserSessionStorage(storage: Storage): boolean {
+	if (typeof window === "undefined") return false;
+	try {
+		return storage === window.sessionStorage;
+	} catch {
+		return false;
+	}
+}
+
+function scheduleMobileSyncDraftExpiry(storage: Storage, expiresAtMs: number, nowMs: number): void {
+	if (draftExpiryTimer !== null) globalThis.clearTimeout(draftExpiryTimer);
+	scheduledDraftStorage = storage;
+	const delayMs = Math.max(0, expiresAtMs + MOBILE_SYNC_CLOCK_SKEW_MS - nowMs + 1);
+	draftExpiryTimer = globalThis.setTimeout(() => {
+		draftExpiryTimer = null;
+		scheduledDraftStorage = null;
+		clearMobileSyncDraft({ storage });
+	}, delayMs);
+}
+
+function cancelMobileSyncDraftExpiry(storage: Storage): void {
+	if (scheduledDraftStorage !== storage) return;
+	if (draftExpiryTimer !== null) globalThis.clearTimeout(draftExpiryTimer);
+	draftExpiryTimer = null;
+	scheduledDraftStorage = null;
 }
 
 export { MOBILE_SYNC_DRAFT_STORAGE_KEY };

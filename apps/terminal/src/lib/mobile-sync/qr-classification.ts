@@ -1,27 +1,27 @@
-import { MOBILE_SYNC_FRAGMENT_KEY } from "./sync-core";
+import { MOBILE_SYNC_FRAGMENT_KEY, MOBILE_SYNC_KEY_FRAGMENT_KEY, MOBILE_SYNC_ROUTE_PATH } from "./sync-core";
 
 export type QrClassification =
 	| { type: "walletconnect"; uri: string }
 	| { type: "phoneAccessLink"; url: string }
-	| { type: "unsupported"; value: string };
+	| { type: "unsupported" };
 
 export type QrFeedbackThrottleState = {
 	atMs: number;
 	message: string;
 };
 
-export function classifyQrValue(value: string): QrClassification {
+export function classifyQrValue(value: string, expectedOrigin?: string): QrClassification {
 	const trimmed = value.trim();
 
 	if (trimmed.startsWith("wc:")) {
 		return { type: "walletconnect", uri: trimmed };
 	}
 
-	if (isPhoneAccessLink(trimmed)) {
+	if (isPhoneAccessLink(trimmed, expectedOrigin)) {
 		return { type: "phoneAccessLink", url: trimmed };
 	}
 
-	return { type: "unsupported", value: trimmed };
+	return { type: "unsupported" };
 }
 
 export function shouldShowQrFeedback(
@@ -33,12 +33,17 @@ export function shouldShowQrFeedback(
 	return lastFeedback?.message !== message || nowMs - lastFeedback.atMs >= throttleMs;
 }
 
-function isPhoneAccessLink(value: string): boolean {
+function isPhoneAccessLink(value: string, expectedOrigin?: string): boolean {
 	if (!value.includes(`#${MOBILE_SYNC_FRAGMENT_KEY}=`)) return false;
 
 	try {
 		const url = new URL(value);
-		return new URLSearchParams(url.hash.slice(1)).has(MOBILE_SYNC_FRAGMENT_KEY);
+		if (url.protocol !== "https:" && url.protocol !== "http:") return false;
+		if (url.pathname !== MOBILE_SYNC_ROUTE_PATH) return false;
+		if (expectedOrigin && url.origin !== new URL(expectedOrigin).origin) return false;
+
+		const fragment = new URLSearchParams(url.hash.slice(1));
+		return fragment.has(MOBILE_SYNC_FRAGMENT_KEY) && fragment.has(MOBILE_SYNC_KEY_FRAGMENT_KEY);
 	} catch {
 		return false;
 	}

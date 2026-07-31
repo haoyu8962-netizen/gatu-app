@@ -1,3 +1,4 @@
+import { privateKeyToAccount } from "viem/accounts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 function installDom() {
@@ -36,6 +37,7 @@ function installDom() {
 describe("agent snapshot cache", () => {
 	const VALID_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
 	const VALID_PUBLIC_KEY = `0x${"cd".repeat(20)}` as const;
+	const MATCHING_PUBLIC_KEY = privateKeyToAccount(VALID_PRIVATE_KEY).address.toLowerCase();
 	const STORAGE_VALUE = JSON.stringify({ privateKey: VALID_PRIVATE_KEY, publicKey: VALID_PUBLIC_KEY });
 
 	beforeEach(() => {
@@ -63,21 +65,23 @@ describe("agent snapshot cache", () => {
 	it("returns null when localStorage is empty", async () => {
 		installDom();
 
-		const { readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
+		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(false);
 	});
 
 	it("returns null for invalid storage data", async () => {
 		const store = installDom();
 		store.set("hyperliquid_agent_Mainnet_0x1234", "not-json");
 
-		const { readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
+		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
 	});
 
-	it("clears expired mobile agent keys on read", async () => {
+	it("marks partial mobile Agent records without treating them as generic registrations", async () => {
 		const store = installDom();
 		store.set(
 			"hyperliquid_agent_Mainnet_0x1234",
@@ -89,10 +93,80 @@ describe("agent snapshot cache", () => {
 			}),
 		);
 
-		const { readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
 
 		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
-		expect(store.has("hyperliquid_agent_Mainnet_0x1234")).toBe(false);
+		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
+	});
+
+	it("preserves the invalid-mobile classification when its key fields cannot be parsed", async () => {
+		const store = installDom();
+		store.set(
+			"hyperliquid_agent_Mainnet_0x1234",
+			JSON.stringify({
+				privateKey: "not-a-private-key",
+				publicKey: VALID_PUBLIC_KEY,
+				source: "mobile-sync",
+			}),
+		);
+
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+
+		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
+		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
+	});
+
+	it("rejects non-canonical names, key mismatches, and null expiry in mobile storage", async () => {
+		const store = installDom();
+		const storageKey = "hyperliquid_agent_Mainnet_0x1234";
+		const validUntilMs = 2_000_000_000_000;
+		const canonical = {
+			privateKey: VALID_PRIVATE_KEY,
+			publicKey: MATCHING_PUBLIC_KEY,
+			source: "mobile-sync",
+			agentNameBase: "Mobile",
+			agentName: `Mobile valid_until ${validUntilMs}`,
+			agentValidUntilMs: validUntilMs,
+			importedAtMs: validUntilMs - 1_000,
+			syncId: "canonical-storage",
+		};
+		const invalidRecords = [
+			{ ...canonical, agentName: `Mobile valid_until ${validUntilMs + 1}` },
+			{ ...canonical, publicKey: VALID_PUBLIC_KEY },
+			{ ...canonical, agentValidUntilMs: null },
+		];
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+
+		for (const record of invalidRecords) {
+			store.set(storageKey, JSON.stringify(record));
+			expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
+			expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
+		}
+	});
+
+	it("retains a complete expired mobile record for immediate lifecycle cleanup after reload", async () => {
+		const store = installDom();
+		store.set(
+			"hyperliquid_agent_Mainnet_0x1234",
+			JSON.stringify({
+				privateKey: VALID_PRIVATE_KEY,
+				publicKey: MATCHING_PUBLIC_KEY,
+				source: "mobile-sync",
+				agentNameBase: "Mobile",
+				agentName: "Mobile valid_until 2",
+				agentValidUntilMs: 2,
+				importedAtMs: 1,
+				syncId: "expired-reload",
+			}),
+		);
+
+		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
+
+		expect(readAgentFromStorage("Mainnet", "0x1234")).toMatchObject({
+			source: "mobile-sync",
+			agentValidUntilMs: 2,
+		});
+		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(false);
 	});
 
 	it("LRU cap (4) evicts the oldest (env,address) pair on the 5th unique read", async () => {
@@ -138,5 +212,19 @@ describe("agent snapshot cache", () => {
 		expect(after?.publicKey).toBe(VALID_PUBLIC_KEY);
 
 		unsubscribe();
+	});
+
+	it("invalidates a prior snapshot after a strict write without a subscriber", async () => {
+		installDom();
+		const privateKey = `0x${"44".repeat(32)}` as const;
+		const publicKey = privateKeyToAccount(privateKey).address;
+		const owner = "0x9999999999999999999999999999999999999999";
+		const { getCachedAgentSnapshot, writeAgentToStorageAndVerify } = await import(
+			"@gatu/hl-react/signing/agent-storage"
+		);
+
+		expect(getCachedAgentSnapshot("Mainnet", owner)).toBeNull();
+		expect(writeAgentToStorageAndVerify("Mainnet", owner, privateKey, publicKey).status).toBe("stored");
+		expect(getCachedAgentSnapshot("Mainnet", owner)?.publicKey).toBe(publicKey.toLowerCase());
 	});
 });

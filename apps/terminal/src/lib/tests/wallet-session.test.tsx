@@ -200,6 +200,21 @@ describe("useDisconnectWallet", () => {
 		expect(probe?.getAttribute("data-is-connected")).toBe("false");
 	});
 
+	it("does not fall back to a connected external wallet when an email embedded signer is unavailable", () => {
+		testState.embeddedWalletAddress = undefined;
+		testState.shouldUseEmbeddedWallet = true;
+		testState.walletAddress = "0x3333333333333333333333333333333333333333";
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
 	it("exposes the email wallet after wagmi activates the matching signer", () => {
 		testState.embeddedWalletAddress = USER_ADDRESS;
 		testState.shouldUseEmbeddedWallet = true;
@@ -245,5 +260,20 @@ describe("useDisconnectWallet", () => {
 			walletChainType: "ethereum-only",
 			suggestedAddress: USER_ADDRESS,
 		});
+	});
+
+	it("does not open an external connector for an email session with no exact embedded wallet", async () => {
+		testState.shouldUseEmbeddedWallet = true;
+
+		act(() => {
+			root.render(createElement(ReconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.setActiveWallet).not.toHaveBeenCalled();
+		expect(testState.connectWallet).not.toHaveBeenCalled();
 	});
 });
