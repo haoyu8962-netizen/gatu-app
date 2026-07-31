@@ -1,15 +1,20 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CheckIcon, LightningIcon, SpinnerGapIcon, WarningCircleIcon, XIcon } from "@phosphor-icons/react";
-import { useEffect } from "react";
+import { type CSSProperties, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { ORDER_TOAST_SUCCESS_DURATION_MS } from "@/config/time";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { cn } from "@/lib/cn";
 import { type OrderQueueItem, useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
 
-const ORDER_TOAST_WIDTH = "w-80 max-w-[calc(100vw-2rem)]";
-const ORDER_TOAST_LIST_MAX_HEIGHT = "max-h-72";
+const ORDER_TOAST_MOBILE_GAP_PX = 12;
+const ORDER_TOAST_MOBILE_BOTTOM = `calc(env(safe-area-inset-bottom) + ${
+	MOBILE_BOTTOM_NAV_HEIGHT_PX + ORDER_TOAST_MOBILE_GAP_PX
+}px)`;
+const ORDER_TOAST_WIDTH = "left-4 right-4 w-auto min-[1001px]:left-auto min-[1001px]:right-6 min-[1001px]:w-80";
+const ORDER_TOAST_LIST_MAX_HEIGHT = "max-h-[min(18rem,40dvh)]";
 
 function useAutoRemove(order: OrderQueueItem, onRemove: () => void) {
 	useEffect(() => {
@@ -169,9 +174,10 @@ export function OrderToast() {
 	return createPortal(
 		<output
 			aria-live="polite"
+			style={{ "--order-toast-mobile-bottom": ORDER_TOAST_MOBILE_BOTTOM } as CSSProperties}
 			className={cn(
 				ORDER_TOAST_WIDTH,
-				"fixed right-4 z-[var(--z-toast)] bottom-[calc(env(safe-area-inset-bottom)+5rem)] min-[1001px]:right-6 min-[1001px]:bottom-[calc(env(safe-area-inset-bottom)+3.5rem)]",
+				"fixed z-[var(--z-toast)] bottom-[var(--order-toast-mobile-bottom)] min-[1001px]:bottom-[calc(env(safe-area-inset-bottom)+3.5rem)]",
 				"bg-surface/95 backdrop-blur-sm",
 				"border border-stroke-weak/60 rounded-8 overflow-hidden",
 				"shadow-overlay shadow-black/20 dark:shadow-black/50",

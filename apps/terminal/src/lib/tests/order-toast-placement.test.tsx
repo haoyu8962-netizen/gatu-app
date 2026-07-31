@@ -7,11 +7,13 @@ import { act, createElement, Fragment } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { OrderToast } from "@/components/trade/tradebox/order-toast";
+import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { useOrderQueue, useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { createI18nRoot } from "./harness/react";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TRADE_COMPONENT_DIR = resolve(TEST_DIR, "../..", "components/trade");
+const ORDER_TOAST_MOBILE_GAP_PX = 12;
 
 function OrderToastHarness() {
 	const orders = useOrderQueue();
@@ -98,9 +100,18 @@ describe("OrderToast placement", () => {
 		expect(status?.parentElement).toBe(document.body);
 		expect(status?.getAttribute("aria-live")).toBe("polite");
 		expect(status?.className).toContain("z-[var(--z-toast)]");
-		expect(status?.className).toContain("max-w-[calc(100vw-2rem)]");
-		expect(status?.className).toContain("bottom-[calc(env(safe-area-inset-bottom)+5rem)]");
+		expect(status?.className).toContain("left-4 right-4 w-auto");
+		expect(status?.className).toContain("min-[1001px]:left-auto");
+		expect(status?.className).toContain("min-[1001px]:right-6");
+		expect(status?.className).toContain("min-[1001px]:w-80");
+		expect(status?.className).toContain("bottom-[var(--order-toast-mobile-bottom)]");
 		expect(status?.className).toContain("min-[1001px]:bottom-[calc(env(safe-area-inset-bottom)+3.5rem)]");
+		expect(status?.style.getPropertyValue("--order-toast-mobile-bottom")).toBe(
+			`calc(env(safe-area-inset-bottom) + ${MOBILE_BOTTOM_NAV_HEIGHT_PX + ORDER_TOAST_MOBILE_GAP_PX}px)`,
+		);
+
+		const list = status?.querySelector<HTMLDivElement>("div.overflow-y-auto");
+		expect(list?.className).toContain("max-h-[min(18rem,40dvh)]");
 	});
 
 	it("mounts one queue outside the market-keyed desktop and mobile order forms", () => {
