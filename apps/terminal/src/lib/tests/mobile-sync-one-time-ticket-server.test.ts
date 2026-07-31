@@ -4,6 +4,7 @@ import {
 	createMobileSyncTicketStore,
 	handleMobileSyncTicket,
 	MOBILE_SYNC_TICKET_MAX_BYTES,
+	MOBILE_SYNC_TICKET_TTL_MS,
 } from "../mobile-sync/one-time-ticket-server";
 
 const ORIGIN = "https://app.gatu.test";
@@ -32,7 +33,7 @@ describe("mobile sync one-time ticket server", () => {
 
 		expect(
 			(await handleMobileSyncTicket(createRequest({ operation: "register", syncId: SYNC_ID }), options)).status,
-		).toBe(204);
+		).toBe(200);
 		expect(
 			(
 				await handleMobileSyncTicket(
@@ -60,6 +61,34 @@ describe("mobile sync one-time ticket server", () => {
 		expect(
 			(await handleMobileSyncTicket(createRequest({ operation: "register", syncId: SYNC_ID }), options)).status,
 		).toBe(409);
+	});
+
+	it("returns the authoritative deadline without extending it on repeated registration", async () => {
+		let nowMs = 2_000;
+		const store = createMobileSyncTicketStore();
+		const options = { now: () => nowMs, sourceKey: SOURCE_KEY, store };
+
+		const firstResponse = await handleMobileSyncTicket(
+			createRequest({ operation: "register", syncId: SYNC_ID }),
+			options,
+		);
+		expect(firstResponse.status).toBe(200);
+		expect(firstResponse.headers.get("cache-control")).toBe("no-store");
+		expect(await firstResponse.json()).toEqual({
+			expiresAtMs: 2_000 + MOBILE_SYNC_TICKET_TTL_MS,
+			serverNowMs: 2_000,
+		});
+
+		nowMs += 10_000;
+		const repeatedResponse = await handleMobileSyncTicket(
+			createRequest({ operation: "register", syncId: SYNC_ID }),
+			options,
+		);
+		expect(repeatedResponse.status).toBe(200);
+		expect(await repeatedResponse.json()).toEqual({
+			expiresAtMs: 2_000 + MOBILE_SYNC_TICKET_TTL_MS,
+			serverNowMs: 12_000,
+		});
 	});
 
 	it("atomically admits only one of two concurrent devices", async () => {
@@ -97,7 +126,7 @@ describe("mobile sync one-time ticket server", () => {
 		nowMs = 3_000 + 11 * 60_000;
 		expect(
 			(await handleMobileSyncTicket(createRequest({ operation: "register", syncId: SYNC_ID }), options)).status,
-		).toBe(204);
+		).toBe(200);
 	});
 
 	it("fails closed after server state is replaced", async () => {
@@ -172,7 +201,7 @@ describe("mobile sync one-time ticket server", () => {
 		).toBe(400);
 		expect(
 			(await handleMobileSyncTicket(createRequest({ operation: "register", syncId: SYNC_ID }), options)).status,
-		).toBe(204);
+		).toBe(200);
 		expect(
 			(await handleMobileSyncTicket(createRequest({ operation: "register", syncId: "B".repeat(22) }), options)).status,
 		).toBe(429);
@@ -183,7 +212,7 @@ describe("mobile sync one-time ticket server", () => {
 					sourceKey: "203.0.113.11",
 				})
 			).status,
-		).toBe(204);
+		).toBe(200);
 		expect(
 			(
 				await handleMobileSyncTicket(

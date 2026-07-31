@@ -4706,8 +4706,8 @@ msgid "This QR belongs to a different owner account."
 msgstr "This QR belongs to a different owner account."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This QR closes automatically 60 seconds after it appears."
-msgstr "This QR closes automatically 60 seconds after it appears."
+msgid "This one-time QR closes automatically within 60 seconds."
+msgstr "This one-time QR closes automatically within 60 seconds."
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This QR is invalid or incomplete. Create a new QR on desktop."

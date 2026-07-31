@@ -1,6 +1,6 @@
+import { MOBILE_SYNC_TICKET_TTL_MS } from "./one-time-ticket-policy";
 import { MOBILE_SYNC_CLOCK_SKEW_MS, MOBILE_SYNC_PAYLOAD_TTL_MS } from "./sync-core";
 
-const MOBILE_SYNC_TICKET_TTL_MS = 60_000;
 const MOBILE_SYNC_TICKET_TOMBSTONE_TTL_MS = MOBILE_SYNC_PAYLOAD_TTL_MS + MOBILE_SYNC_CLOCK_SKEW_MS;
 const MOBILE_SYNC_TICKET_MAX_BYTES = 256;
 const MOBILE_SYNC_TICKET_MAX_ENTRIES = 20_000;
@@ -12,6 +12,7 @@ const SYNC_ID_RE = /^[A-Za-z0-9_-]{22}$/;
 const CONSUMER_ID_RE = /^[0-9a-f]{32}$/;
 
 type TicketStoreResult = "accepted" | "rejected" | "missing" | "full";
+type TicketRegistrationStoreResult = { status: "accepted"; expiresAtMs: number } | { status: "rejected" | "full" };
 
 interface MobileSyncTicket {
 	consumerId: string | null;
@@ -20,7 +21,7 @@ interface MobileSyncTicket {
 }
 
 export interface MobileSyncTicketStore {
-	register(syncId: string, nowMs: number): TicketStoreResult;
+	register(syncId: string, nowMs: number): TicketRegistrationStoreResult;
 	consume(syncId: string, consumerId: string, nowMs: number): TicketStoreResult;
 }
 
@@ -79,7 +80,7 @@ export async function handleMobileSyncTicket(
 
 	const store = options.store ?? serverTicketStore;
 	if (parsedRequest.operation === "register") {
-		return ticketResultResponse(store.register(parsedRequest.syncId, nowMs));
+		return ticketRegistrationResultResponse(store.register(parsedRequest.syncId, nowMs), nowMs);
 	}
 	return ticketResultResponse(store.consume(parsedRequest.syncId, parsedRequest.consumerId, nowMs));
 }
@@ -101,15 +102,18 @@ export function createMobileSyncTicketStore(
 			removeExpiredTombstones(nowMs);
 			const existing = tickets.get(syncId);
 			if (existing) {
-				return existing.consumerId === null && existing.consumeExpiresAtMs > nowMs ? "accepted" : "rejected";
+				return existing.consumerId === null && existing.consumeExpiresAtMs > nowMs
+					? { status: "accepted", expiresAtMs: existing.consumeExpiresAtMs }
+					: { status: "rejected" };
 			}
-			if (tickets.size >= maxEntries) return "full";
+			if (tickets.size >= maxEntries) return { status: "full" };
+			const expiresAtMs = nowMs + ttlMs;
 			tickets.set(syncId, {
 				consumerId: null,
-				consumeExpiresAtMs: nowMs + ttlMs,
+				consumeExpiresAtMs: expiresAtMs,
 				tombstoneExpiresAtMs: nowMs + MOBILE_SYNC_TICKET_TOMBSTONE_TTL_MS,
 			});
-			return "accepted";
+			return { status: "accepted", expiresAtMs };
 		},
 		consume(syncId, consumerId, nowMs) {
 			removeExpiredTombstones(nowMs);
@@ -251,6 +255,28 @@ function ticketResultResponse(result: TicketStoreResult): Response {
 	if (result === "rejected") return responseWithStatus(409);
 	if (result === "missing") return responseWithStatus(410);
 	return responseWithStatus(503, { "retry-after": "60" });
+}
+
+function ticketRegistrationResultResponse(result: TicketRegistrationStoreResult, serverNowMs: number): Response {
+	if (result.status === "accepted") {
+		return responseWithJson({
+			expiresAtMs: result.expiresAtMs,
+			serverNowMs,
+		});
+	}
+	if (result.status === "rejected") return responseWithStatus(409);
+	return responseWithStatus(503, { "retry-after": "60" });
+}
+
+function responseWithJson(body: Record<string, number>): Response {
+	return new Response(JSON.stringify(body), {
+		status: 200,
+		headers: {
+			"cache-control": "no-store",
+			"content-type": "application/json",
+			"referrer-policy": "no-referrer",
+		},
+	});
 }
 
 function responseWithStatus(status: number, extraHeaders: Record<string, string> = {}): Response {

@@ -338,7 +338,11 @@ describe("MobileAgentSyncModal", () => {
 		testState.localAgent = null;
 		testState.qrToCanvas.mockReset();
 		testState.registerMobileSyncTicket.mockReset();
-		testState.registerMobileSyncTicket.mockResolvedValue("accepted");
+		testState.registerMobileSyncTicket.mockImplementation(async () => ({
+			status: "accepted",
+			expiresAtMonotonicMs: performance.now() + 60_000,
+			expiresAtWallClockMs: Date.now() + 60_000,
+		}));
 		testState.registrationLeaseCurrent = true;
 		testState.qrToCanvas.mockResolvedValue(undefined);
 		testState.spotState = { balances: [] };
@@ -513,7 +517,7 @@ describe("MobileAgentSyncModal", () => {
 	});
 
 	it("never renders an unregistered one-time QR", async () => {
-		testState.registerMobileSyncTicket.mockResolvedValue("unavailable");
+		testState.registerMobileSyncTicket.mockResolvedValue({ status: "unavailable" });
 		await renderModal();
 		await reviewAndApprove();
 
@@ -590,14 +594,52 @@ describe("MobileAgentSyncModal", () => {
 		expect(testState.createMobileAgentSyncUrl).toHaveBeenCalledTimes(1);
 	});
 
-	it("keeps the QR for less than 60 seconds, then clears and closes it", async () => {
+	it("deducts registration and rendering delays from the ticket's 60-second lifetime", async () => {
+		let finishRegistration:
+			| ((result: { status: "accepted"; expiresAtMonotonicMs: number; expiresAtWallClockMs: number }) => void)
+			| undefined;
+		let finishQrRender: (() => void) | undefined;
+		let ticketExpiresAtMonotonicMs = 0;
+		let ticketExpiresAtWallClockMs = 0;
+		testState.registerMobileSyncTicket.mockImplementationOnce(() => {
+			ticketExpiresAtMonotonicMs = performance.now() + 60_000;
+			ticketExpiresAtWallClockMs = Date.now() + 60_000;
+			return new Promise((resolve) => {
+				finishRegistration = resolve;
+			});
+		});
+		testState.qrToCanvas.mockImplementationOnce(
+			() =>
+				new Promise<void>((resolve) => {
+					finishQrRender = resolve;
+				}),
+		);
 		const onOpenChange = await renderModal();
 		await reviewAndApprove();
 		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
 		await advanceTime(4_000);
 
-		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).not.toBeNull();
-		await advanceTime(59_999);
+		expect(testState.registerMobileSyncTicket).toHaveBeenCalledTimes(1);
+		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
+
+		await advanceTime(5_000);
+		act(() =>
+			finishRegistration?.({
+				status: "accepted",
+				expiresAtMonotonicMs: ticketExpiresAtMonotonicMs,
+				expiresAtWallClockMs: ticketExpiresAtWallClockMs,
+			}),
+		);
+		await flushAsyncWork();
+		expect(testState.qrToCanvas).toHaveBeenCalledTimes(1);
+		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
+
+		await advanceTime(5_000);
+		act(() => finishQrRender?.());
+		await flushAsyncWork();
+		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(false);
+
+		await advanceTime(49_999);
 		expect(onOpenChange).not.toHaveBeenCalledWith(false);
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).not.toBeNull();
 
@@ -605,6 +647,25 @@ describe("MobileAgentSyncModal", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
 		expect(container.innerHTML).not.toContain(PHONE_LINK);
+	});
+
+	it("closes at the wall-clock ticket deadline when the monotonic clock lags", async () => {
+		testState.registerMobileSyncTicket.mockImplementationOnce(async () => ({
+			status: "accepted",
+			expiresAtMonotonicMs: performance.now() + 60_000,
+			expiresAtWallClockMs: Date.now() + 20_000,
+		}));
+		const onOpenChange = await renderModal();
+		await reviewAndApprove();
+		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
+		await advanceTime(4_000);
+
+		await advanceTime(19_999);
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+
+		await advanceTime(1);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
 	});
 
 	it("immediately clears and closes a visible QR when the document becomes hidden", async () => {

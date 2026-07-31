@@ -65,8 +65,10 @@ interface QrPayload {
 	agentAddress: Address;
 	expiresAtMs: number;
 	pageSafetyEpoch: number;
+	rendered: boolean;
+	ticketExpiresAtMonotonicMs: number;
+	ticketExpiresAtWallClockMs: number;
 	url: string;
-	visibleUntilMs: number | null;
 }
 
 interface ExpectedRevocationAgent {
@@ -103,7 +105,6 @@ type ResetState =
 	| { status: "error"; message: string };
 
 const QR_REVEAL_HOLD_MS = 4_000;
-const QR_VISIBLE_MS = 60_000;
 const useBrowserLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 function normalizeError(error: unknown): Error {
@@ -250,8 +251,13 @@ function MobileAgentSyncSession({
 
 	const visibleUrl = syncState.status === "visible" ? syncState.payload.url : null;
 	const visibleAgentAddress = syncState.status === "visible" ? syncState.payload.agentAddress : null;
+	const visibleExpiresAtMs = syncState.status === "visible" ? syncState.payload.expiresAtMs : null;
 	const visiblePageSafetyEpoch = syncState.status === "visible" ? syncState.payload.pageSafetyEpoch : null;
-	const visibleUntilMs = syncState.status === "visible" ? syncState.payload.visibleUntilMs : null;
+	const visibleQrRendered = syncState.status === "visible" && syncState.payload.rendered;
+	const visibleTicketExpiresAtMonotonicMs =
+		syncState.status === "visible" ? syncState.payload.ticketExpiresAtMonotonicMs : null;
+	const visibleTicketExpiresAtWallClockMs =
+		syncState.status === "visible" ? syncState.payload.ticketExpiresAtWallClockMs : null;
 	const hasUnsettledWalletAction =
 		syncState.status === "approving" ||
 		syncState.status === "verifying" ||
@@ -329,10 +335,19 @@ function MobileAgentSyncSession({
 
 	useEffect(() => {
 		const canvas = qrCanvasRef.current;
-		if (!canvas || !visibleUrl) {
+		if (
+			!canvas ||
+			!visibleUrl ||
+			visibleExpiresAtMs === null ||
+			visibleTicketExpiresAtMonotonicMs === null ||
+			visibleTicketExpiresAtWallClockMs === null
+		) {
 			clearQrCanvas(canvas);
 			return;
 		}
+		const envelopeExpiresAtMs = visibleExpiresAtMs;
+		const ticketExpiresAtMonotonicMs = visibleTicketExpiresAtMonotonicMs;
+		const ticketExpiresAtWallClockMs = visibleTicketExpiresAtWallClockMs;
 		if (!isQrPageActive() || visiblePageSafetyEpoch !== pageSafetyEpochRef.current) {
 			clearQrCanvas(canvas);
 			return;
@@ -358,15 +373,18 @@ function MobileAgentSyncSession({
 					clearQrCanvas(canvas);
 					return;
 				}
+				if (
+					Date.now() >= Math.min(envelopeExpiresAtMs, ticketExpiresAtWallClockMs) ||
+					performance.now() >= ticketExpiresAtMonotonicMs
+				) {
+					clearQrCanvas(canvas);
+					return;
+				}
 				setSyncState((current) => {
 					if (current.status !== "visible" || current.payload.url !== qrText) return current;
-					const expiresAtMs = Math.min(current.payload.expiresAtMs, Date.now() + QR_VISIBLE_MS);
-					if (expiresAtMs <= Date.now()) {
-						return { status: "error", message: t`The QR expired before it could be displayed. Create a new key.` };
-					}
 					return {
 						status: "visible",
-						payload: { ...current.payload, visibleUntilMs: expiresAtMs },
+						payload: { ...current.payload, rendered: true },
 					};
 				});
 			} catch {
@@ -383,18 +401,33 @@ function MobileAgentSyncSession({
 			cancelled = true;
 			clearQrCanvas(canvas);
 		};
-	}, [visiblePageSafetyEpoch, visibleUrl]);
+	}, [
+		visibleExpiresAtMs,
+		visiblePageSafetyEpoch,
+		visibleTicketExpiresAtMonotonicMs,
+		visibleTicketExpiresAtWallClockMs,
+		visibleUrl,
+	]);
 
 	useEffect(() => {
-		if (!walletAddress || !visibleAgentAddress || visibleUntilMs === null) return;
+		if (!walletAddress || !visibleAgentAddress || !visibleQrRendered) return;
 		if (clearDesktopApprovalRecovery(env, walletAddress, visibleAgentAddress)) {
 			setRecoveryRevision((current) => current + 1);
 		}
-	}, [env, visibleAgentAddress, visibleUntilMs, walletAddress]);
+	}, [env, visibleAgentAddress, visibleQrRendered, walletAddress]);
 
 	useBrowserLayoutEffect(() => {
-		if (!visibleUrl) return;
-		const qrDeadline = visibleUntilMs;
+		if (
+			!visibleUrl ||
+			visibleExpiresAtMs === null ||
+			visibleTicketExpiresAtMonotonicMs === null ||
+			visibleTicketExpiresAtWallClockMs === null
+		) {
+			return;
+		}
+		const envelopeExpiresAtMs = visibleExpiresAtMs;
+		const ticketExpiresAtMonotonicMs = visibleTicketExpiresAtMonotonicMs;
+		const ticketExpiresAtWallClockMs = visibleTicketExpiresAtWallClockMs;
 
 		function expireQr() {
 			activeOperationRef.current?.abort();
@@ -405,14 +438,22 @@ function MobileAgentSyncSession({
 			onOpenChange(false);
 		}
 
-		const timeoutId = qrDeadline === null ? null : window.setTimeout(expireQr, Math.max(0, qrDeadline - Date.now()));
+		function remainingQrLifetimeMs() {
+			return Math.min(
+				envelopeExpiresAtMs - Date.now(),
+				ticketExpiresAtMonotonicMs - performance.now(),
+				ticketExpiresAtWallClockMs - Date.now(),
+			);
+		}
+
+		const timeoutId = window.setTimeout(expireQr, Math.max(0, remainingQrLifetimeMs()));
 
 		function handleVisibilityChange() {
-			if (document.visibilityState !== "visible" || (qrDeadline !== null && Date.now() >= qrDeadline)) expireQr();
+			if (document.visibilityState !== "visible" || remainingQrLifetimeMs() <= 0) expireQr();
 		}
 
 		if (!isQrPageActive() || visiblePageSafetyEpoch !== pageSafetyEpochRef.current) {
-			if (timeoutId !== null) window.clearTimeout(timeoutId);
+			window.clearTimeout(timeoutId);
 			expireQr();
 			return;
 		}
@@ -420,12 +461,19 @@ function MobileAgentSyncSession({
 		window.addEventListener("blur", expireQr);
 		window.addEventListener("pagehide", expireQr);
 		return () => {
-			if (timeoutId !== null) window.clearTimeout(timeoutId);
+			window.clearTimeout(timeoutId);
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 			window.removeEventListener("blur", expireQr);
 			window.removeEventListener("pagehide", expireQr);
 		};
-	}, [onOpenChange, visiblePageSafetyEpoch, visibleUntilMs, visibleUrl]);
+	}, [
+		onOpenChange,
+		visibleExpiresAtMs,
+		visiblePageSafetyEpoch,
+		visibleTicketExpiresAtMonotonicMs,
+		visibleTicketExpiresAtWallClockMs,
+		visibleUrl,
+	]);
 
 	function startOperation() {
 		activeOperationRef.current?.abort();
@@ -822,12 +870,12 @@ function MobileAgentSyncSession({
 				return;
 			}
 			const ticketResult = await registerMobileSyncTicket(syncUrl.syncId, operation.signal);
-			if (ticketResult !== "accepted") {
+			if (ticketResult.status !== "accepted") {
 				setSyncState({
 					status: "concealed",
 					approval,
 					message:
-						ticketResult === "rejected"
+						ticketResult.status === "rejected"
 							? t`This one-time QR could not be created. Try revealing a new QR.`
 							: t`The one-time QR service is unavailable. Check your connection and retry.`,
 				});
@@ -838,6 +886,17 @@ function MobileAgentSyncSession({
 				setSyncState({ status: "concealed", approval });
 				return;
 			}
+			if (
+				Math.min(syncUrl.expiresAtMs, ticketResult.expiresAtWallClockMs) <= Date.now() ||
+				ticketResult.expiresAtMonotonicMs <= performance.now()
+			) {
+				setSyncState({
+					status: "concealed",
+					approval,
+					message: t`This one-time QR could not be created. Try revealing a new QR.`,
+				});
+				return;
+			}
 
 			setSyncState({
 				status: "visible",
@@ -846,7 +905,9 @@ function MobileAgentSyncSession({
 					url: syncUrl.url,
 					expiresAtMs: syncUrl.expiresAtMs,
 					pageSafetyEpoch,
-					visibleUntilMs: null,
+					rendered: false,
+					ticketExpiresAtMonotonicMs: ticketResult.expiresAtMonotonicMs,
+					ticketExpiresAtWallClockMs: ticketResult.expiresAtWallClockMs,
 				},
 			});
 		} catch (error) {
@@ -1330,10 +1391,10 @@ function VisibleQrPanel({
 							<Trans>Scan on your phone</Trans>
 						</p>
 						<p className="mt-0.5 text-xs text-fg-muted">
-							<Trans>This QR closes automatically 60 seconds after it appears.</Trans>
+							<Trans>This one-time QR closes automatically within 60 seconds.</Trans>
 						</p>
 					</div>
-					{payload.visibleUntilMs === null && (
+					{!payload.rendered && (
 						<SpinnerGapIcon className="size-4 animate-spin text-brand" aria-label={t`Rendering QR`} />
 					)}
 				</div>

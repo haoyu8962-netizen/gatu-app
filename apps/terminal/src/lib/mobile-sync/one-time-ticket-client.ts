@@ -1,9 +1,14 @@
+import { MOBILE_SYNC_TICKET_TTL_MS } from "./one-time-ticket-policy";
+
 const MOBILE_SYNC_TICKET_ENDPOINT = "/mobile-agent-sync-ticket";
 const MOBILE_SYNC_CONSUMER_STORAGE_KEY = "gatu.mobile-sync.consumer.v1";
 const CONSUMER_ID_BYTES = 16;
 const CONSUMER_ID_RE = /^[0-9a-f]{32}$/;
 
 export type MobileSyncTicketResult = "accepted" | "rejected" | "unavailable";
+export type MobileSyncTicketRegistrationResult =
+	| { status: "accepted"; expiresAtMonotonicMs: number; expiresAtWallClockMs: number }
+	| { status: "rejected" | "unavailable" };
 
 export function getOrCreateMobileSyncConsumerId(storage: Storage = window.sessionStorage): string | null {
 	try {
@@ -20,8 +25,32 @@ export function getOrCreateMobileSyncConsumerId(storage: Storage = window.sessio
 	}
 }
 
-export function registerMobileSyncTicket(syncId: string, signal?: AbortSignal): Promise<MobileSyncTicketResult> {
-	return requestMobileSyncTicket({ operation: "register", syncId }, signal);
+export async function registerMobileSyncTicket(
+	syncId: string,
+	signal?: AbortSignal,
+): Promise<MobileSyncTicketRegistrationResult> {
+	const requestStartedAtMs = performance.now();
+	const requestStartedAtWallClockMs = Date.now();
+	try {
+		const response = await sendMobileSyncTicketRequest({ operation: "register", syncId }, signal);
+		if (response.status === 409 || response.status === 410) return { status: "rejected" };
+		if (response.status !== 200) return { status: "unavailable" };
+
+		const registration = parseTicketRegistrationResponse(await response.json());
+		const responseParsedAtMs = performance.now();
+		if (!registration) return { status: "unavailable" };
+
+		const roundTripMs = Math.max(0, responseParsedAtMs - requestStartedAtMs);
+		const remainingMs = registration.expiresAtMs - registration.serverNowMs - roundTripMs;
+		if (remainingMs <= 0) return { status: "rejected" };
+		return {
+			status: "accepted",
+			expiresAtMonotonicMs: responseParsedAtMs + remainingMs,
+			expiresAtWallClockMs: requestStartedAtWallClockMs + registration.expiresAtMs - registration.serverNowMs,
+		};
+	} catch {
+		return { status: "unavailable" };
+	}
 }
 
 export function consumeMobileSyncTicket(
@@ -37,21 +66,41 @@ async function requestMobileSyncTicket(
 	signal?: AbortSignal,
 ): Promise<MobileSyncTicketResult> {
 	try {
-		const response = await fetch(MOBILE_SYNC_TICKET_ENDPOINT, {
-			method: "POST",
-			headers: { "content-type": "application/json" },
-			body: JSON.stringify(body),
-			cache: "no-store",
-			credentials: "same-origin",
-			redirect: "error",
-			referrerPolicy: "no-referrer",
-			signal,
-		});
+		const response = await sendMobileSyncTicketRequest(body, signal);
 		if (response.ok) return "accepted";
 		return response.status === 409 || response.status === 410 ? "rejected" : "unavailable";
 	} catch {
 		return "unavailable";
 	}
+}
+
+function sendMobileSyncTicketRequest(
+	body: { operation: "register"; syncId: string } | { operation: "consume"; syncId: string; consumerId: string },
+	signal?: AbortSignal,
+): Promise<Response> {
+	return fetch(MOBILE_SYNC_TICKET_ENDPOINT, {
+		method: "POST",
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(body),
+		cache: "no-store",
+		credentials: "same-origin",
+		redirect: "error",
+		referrerPolicy: "no-referrer",
+		signal,
+	});
+}
+
+function parseTicketRegistrationResponse(value: unknown): { expiresAtMs: number; serverNowMs: number } | null {
+	if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+	const registration = value as Record<string, unknown>;
+	if (!Number.isSafeInteger(registration.expiresAtMs) || !Number.isSafeInteger(registration.serverNowMs)) {
+		return null;
+	}
+	const expiresAtMs = registration.expiresAtMs as number;
+	const serverNowMs = registration.serverNowMs as number;
+	const serverRemainingMs = expiresAtMs - serverNowMs;
+	if (serverRemainingMs <= 0 || serverRemainingMs > MOBILE_SYNC_TICKET_TTL_MS) return null;
+	return { expiresAtMs, serverNowMs };
 }
 
 export { MOBILE_SYNC_CONSUMER_STORAGE_KEY, MOBILE_SYNC_TICKET_ENDPOINT };
