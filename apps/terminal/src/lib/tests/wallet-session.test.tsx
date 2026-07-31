@@ -3,7 +3,12 @@
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useDisconnectWallet, useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import {
+	clearVerifiedExternalWalletOwner,
+	useDisconnectWallet,
+	useReconnectWallet,
+	useWalletSession,
+} from "@/hooks/wallet/use-wallet-session";
 
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
 const AGENT_STORAGE_KEY = `hyperliquid_agent_Mainnet_${USER_ADDRESS}`;
@@ -28,8 +33,14 @@ const testState = vi.hoisted(() => ({
 	walletConnecting: false,
 	authenticated: true,
 	ready: true,
+	userId: "did:privy:test-user",
 	userWalletAddress: undefined as string | undefined,
 	sessionMode: "wallet" as "wallet" | "agent-only" | "disconnected",
+	env: "Mainnet" as "Mainnet" | "Testnet",
+	clientKey: "0x1111111111111111111111111111111111111111",
+	closeRegistration: vi.fn(),
+	removeAgent: vi.fn(),
+	toastError: vi.fn(),
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -40,7 +51,7 @@ vi.mock("@privy-io/react-auth", () => ({
 		ready: testState.ready,
 		login: testState.login,
 		logout: testState.logout,
-		user: { wallet: { address: testState.userWalletAddress } },
+		user: { id: testState.userId, wallet: { address: testState.userWalletAddress } },
 	}),
 	useConnectWallet: () => ({ connectWallet: testState.connectWallet }),
 	useWallets: () => ({ ready: testState.walletsReady, wallets: testState.wallets }),
@@ -63,17 +74,23 @@ vi.mock("wagmi", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	clearActiveAgentOwner: () => {
-		window.localStorage.removeItem("hyperliquid_active_agent_owner");
-	},
+	closeAgentRegistrationSessionAndRemove: testState.closeRegistration,
 	useHyperliquid: () => ({
-		clientKey: USER_ADDRESS,
+		clientKey: testState.clientKey,
+		env: testState.env,
 		sessionMode: testState.sessionMode,
 	}),
 	useHyperliquidOptional: () => ({
-		clientKey: USER_ADDRESS,
+		clientKey: testState.clientKey,
+		env: testState.env,
 		sessionMode: testState.sessionMode,
 	}),
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		error: testState.toastError,
+	},
 }));
 
 vi.mock("@/lib/wallet/privy-wagmi", () => ({
@@ -131,10 +148,13 @@ describe("useDisconnectWallet", () => {
 		testState.walletConnecting = false;
 		testState.authenticated = true;
 		testState.ready = true;
+		testState.userId = "did:privy:test-user";
 		testState.userWalletAddress = USER_ADDRESS;
 		testState.embeddedWalletAddress = undefined;
 		testState.shouldUseEmbeddedWallet = false;
 		testState.sessionMode = "wallet";
+		testState.env = "Mainnet";
+		testState.clientKey = USER_ADDRESS;
 		testState.wallets = [];
 		testState.walletsReady = true;
 		testState.selectedWallet = undefined;
@@ -146,16 +166,35 @@ describe("useDisconnectWallet", () => {
 		testState.connectWallet.mockReset();
 		testState.setActiveWallet.mockReset();
 		testState.setActiveWallet.mockResolvedValue(undefined);
+		testState.closeRegistration.mockReset();
+		testState.closeRegistration.mockImplementation(async (env: string, ownerAddress: string) => {
+			const removal = testState.removeAgent(env, ownerAddress);
+			if (removal.status !== "removed") return removal;
+			const rawOwner = window.localStorage.getItem("hyperliquid_active_agent_owner");
+			const activeOwner = rawOwner ? JSON.parse(rawOwner) : null;
+			if (activeOwner?.env === env && activeOwner.address.toLowerCase() === ownerAddress.toLowerCase()) {
+				window.localStorage.removeItem("hyperliquid_active_agent_owner");
+			}
+			return { status: "closed", epoch: { env, owner: ownerAddress, epoch: "logout-epoch" } };
+		});
+		testState.removeAgent.mockReset();
+		testState.removeAgent.mockImplementation((env: string, ownerAddress: string) => {
+			window.localStorage.removeItem(`hyperliquid_agent_${env}_${ownerAddress.toLowerCase()}`);
+			return { status: "removed" };
+		});
+		testState.toastError.mockReset();
+		clearVerifiedExternalWalletOwner();
 	});
 
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
 		window.localStorage.clear();
+		clearVerifiedExternalWalletOwner();
 		vi.clearAllMocks();
 	});
 
-	it("logs out through Privy without creating a disconnected wagmi shim", async () => {
+	it("removes the exact current Agent before clearing its owner and logging out through Privy", async () => {
 		act(() => {
 			root.render(createElement(DisconnectButton));
 		});
@@ -166,9 +205,284 @@ describe("useDisconnectWallet", () => {
 		await flushAsyncWork();
 
 		expect(testState.disconnect).not.toHaveBeenCalled();
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(testState.closeRegistration.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.logout.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+		);
 		expect(testState.logout).toHaveBeenCalledTimes(1);
 		expect(window.localStorage.getItem("hyperliquid_active_agent_owner")).toBeNull();
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+	});
+
+	it("fails closed and warns when the exact Agent key cannot be verified as removed", async () => {
+		testState.removeAgent.mockReturnValue({ status: "failed", reason: "remove_failed" });
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Secure disconnect failed because the local trading key could not be removed. Please retry.",
+		);
 		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBe(AGENT_STORAGE_VALUE);
+	});
+
+	it("fails closed with an actionable warning when Web Locks are unavailable", async () => {
+		testState.closeRegistration.mockResolvedValue({ status: "failed", reason: "lock_unavailable" });
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).not.toHaveBeenCalled();
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Secure disconnect requires Web Locks support. Update your browser and try again.",
+		);
+	});
+
+	it("fails closed and warns if Agent key removal unexpectedly throws", async () => {
+		testState.removeAgent.mockImplementation(() => {
+			throw new Error("storage blocked");
+		});
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Secure disconnect failed because the local trading key could not be removed. Please retry.",
+		);
+	});
+
+	it("fails closed before key removal when the active wallet and trading account do not match", async () => {
+		testState.clientKey = "0x4444444444444444444444444444444444444444";
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).not.toHaveBeenCalled();
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Secure disconnect failed because the active trading account could not be verified. Please retry.",
+		);
+	});
+
+	it("does not treat Privy's first verified wallet as the owner of a disconnected trading session", async () => {
+		testState.sessionMode = "disconnected";
+		testState.walletAddress = undefined;
+		testState.walletConnected = false;
+		testState.clientKey = "disconnected";
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).not.toHaveBeenCalled();
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBe(AGENT_STORAGE_VALUE);
+	});
+
+	it("uses the connected wagmi owner even when it differs from Privy's first verified wallet", async () => {
+		const connectedOwner = "0x3333333333333333333333333333333333333333";
+		testState.walletAddress = connectedOwner;
+		testState.clientKey = connectedOwner;
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", connectedOwner);
+		expect(testState.logout).toHaveBeenCalledTimes(1);
+	});
+
+	it("remembers only a previously verified wagmi owner across a transient external disconnect", async () => {
+		const connectedOwner = "0x3333333333333333333333333333333333333333";
+		testState.walletAddress = connectedOwner;
+		testState.clientKey = connectedOwner;
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		await flushAsyncWork();
+
+		testState.walletAddress = undefined;
+		testState.walletConnected = false;
+		testState.clientKey = "disconnected";
+		testState.sessionMode = "disconnected";
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		await flushAsyncWork();
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", connectedOwner);
+		expect(testState.logout).toHaveBeenCalledTimes(1);
+	});
+
+	it("invalidates the remembered owner when the authenticated Privy identity changes", async () => {
+		const connectedOwner = "0x3333333333333333333333333333333333333333";
+		testState.walletAddress = connectedOwner;
+		testState.clientKey = connectedOwner;
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		await flushAsyncWork();
+
+		testState.userId = "did:privy:another-user";
+		testState.walletAddress = undefined;
+		testState.walletConnected = false;
+		testState.clientKey = "disconnected";
+		testState.sessionMode = "disconnected";
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		await flushAsyncWork();
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).not.toHaveBeenCalled();
+		expect(testState.logout).not.toHaveBeenCalled();
+	});
+
+	it("uses only the exact embedded owner for a disconnected authenticated email session", async () => {
+		testState.sessionMode = "disconnected";
+		testState.walletAddress = undefined;
+		testState.walletConnected = false;
+		testState.clientKey = "disconnected";
+		testState.userWalletAddress = undefined;
+		testState.embeddedWalletAddress = USER_ADDRESS;
+		testState.shouldUseEmbeddedWallet = true;
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(testState.logout).toHaveBeenCalledTimes(1);
+	});
+
+	it("fails closed without deleting any key when a disconnected Privy owner is ambiguous", async () => {
+		const otherOwner = "0x3333333333333333333333333333333333333333";
+		const otherStorageKey = `hyperliquid_agent_Mainnet_${otherOwner}`;
+		window.localStorage.setItem(otherStorageKey, AGENT_STORAGE_VALUE);
+		testState.sessionMode = "disconnected";
+		testState.walletAddress = undefined;
+		testState.walletConnected = false;
+		testState.clientKey = "disconnected";
+		testState.userWalletAddress = undefined;
+		testState.embeddedWalletAddress = undefined;
+		testState.shouldUseEmbeddedWallet = true;
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).not.toHaveBeenCalled();
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBe(AGENT_STORAGE_VALUE);
+		expect(window.localStorage.getItem(otherStorageKey)).toBe(AGENT_STORAGE_VALUE);
+	});
+
+	it("keeps the local trading key removed when Privy logout fails", async () => {
+		testState.logout.mockRejectedValue(new Error("Privy unavailable"));
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+		expect(window.localStorage.getItem("hyperliquid_active_agent_owner")).toBeNull();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet.",
+		);
+	});
+
+	it("fails closed when the exact active agent-only owner cannot be cleared", async () => {
+		testState.closeRegistration.mockResolvedValue({ status: "failed", reason: "owner_cleanup_failed" });
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.logout).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Secure disconnect failed because the local trading session could not be cleared. Please retry.",
+		);
+	});
+
+	it("removes only the active agent-only owner and does not delete another owner's key", async () => {
+		const otherOwner = "0x3333333333333333333333333333333333333333";
+		const otherStorageKey = `hyperliquid_agent_Mainnet_${otherOwner}`;
+		window.localStorage.setItem(otherStorageKey, AGENT_STORAGE_VALUE);
+		testState.sessionMode = "agent-only";
+		testState.walletAddress = undefined;
+		testState.userWalletAddress = undefined;
+		testState.authenticated = false;
+
+		act(() => {
+			root.render(createElement(DisconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+		expect(window.localStorage.getItem(otherStorageKey)).toBe(AGENT_STORAGE_VALUE);
+		expect(window.localStorage.getItem("hyperliquid_active_agent_owner")).toBeNull();
+		expect(testState.logout).not.toHaveBeenCalled();
 	});
 
 	it("does not expose a linked wallet as connected when wagmi has no signer", () => {

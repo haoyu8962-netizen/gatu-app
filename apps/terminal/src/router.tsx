@@ -1,5 +1,6 @@
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
+import { ApplicationErrorBoundary } from "@/components/application-error-boundary";
 import { getRootProviderContext, RootProvider } from "@/providers/root";
 import { routeTree } from "./routeTree.gen";
 
@@ -11,7 +12,11 @@ export function getRouter() {
 		context: { ...rqContext },
 		defaultPreload: "intent",
 		Wrap: (props: { children: React.ReactNode }) => {
-			return <RootProvider {...rqContext}>{props.children}</RootProvider>;
+			return (
+				<ApplicationErrorBoundary>
+					<RootProvider {...rqContext}>{props.children}</RootProvider>
+				</ApplicationErrorBoundary>
+			);
 		},
 	});
 

@@ -30,9 +30,8 @@ const PHONE_LINK = "https://app.hypeterminal.test/mobile-agent-sync#ht-mobile-sy
 
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
-	activeAgentOwner: null as { env: "Mainnet" | "Testnet"; address: `0x${string}` } | null,
-	clearActiveAgentOwnerIfMatches: vi.fn(),
-	clearAgentVerified: vi.fn(),
+	captureRegistrationLease: vi.fn(),
+	cleanupAgentRegistrationIfMatches: vi.fn(),
 	builderFeeRefetch: vi.fn(),
 	maxBuilderFee: 10,
 	clearinghouseRefetch: vi.fn(),
@@ -53,6 +52,8 @@ const testState = vi.hoisted(() => ({
 	hasWalletAccess: true,
 	localAgent: null as Record<string, unknown> | null,
 	qrToCanvas: vi.fn(),
+	registerMobileSyncTicket: vi.fn(),
+	registrationLeaseCurrent: true,
 	spotRefetch: vi.fn(),
 	spotState: { balances: [] as Array<{ hold?: string; total?: string }> },
 	walletAddress: "0x1111111111111111111111111111111111111111" as `0x${string}` | undefined,
@@ -159,8 +160,7 @@ vi.mock("@gatu/hl-react/signing/mobile-agent", async (importOriginal) => {
 });
 
 vi.mock("@gatu/hl-react", () => ({
-	clearActiveAgentOwnerIfMatches: testState.clearActiveAgentOwnerIfMatches,
-	getActiveAgentOwner: () => testState.activeAgentOwner,
+	cleanupAgentRegistrationIfMatches: testState.cleanupAgentRegistrationIfMatches,
 }));
 
 vi.mock("@/config/mobile-pairing", () => ({
@@ -182,9 +182,10 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	captureAgentRegistrationExecutionLease: testState.captureRegistrationLease,
+	isAgentRegistrationExecutionLeaseCurrent: () => Promise.resolve(testState.registrationLeaseCurrent),
 	isBuilderFeeApproved: (maxBuilderFee: number | undefined, requiredFee: number | string | undefined) =>
 		maxBuilderFee !== undefined && requiredFee !== undefined && maxBuilderFee >= Number(requiredFee),
-	useAgentWalletActions: () => ({ clearAgentVerified: testState.clearAgentVerified }),
 	useAgentWalletStorage: () => testState.localAgent,
 	useHyperliquid: () => ({
 		env: "Mainnet",
@@ -222,6 +223,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 vi.mock("@/lib/mobile-sync/sync-core", () => ({
 	createMobileAgentSyncUrl: testState.createMobileAgentSyncUrl,
+}));
+
+vi.mock("@/lib/mobile-sync/one-time-ticket-client", () => ({
+	registerMobileSyncTicket: testState.registerMobileSyncTicket,
 }));
 
 vi.mock("qrcode", () => ({
@@ -282,14 +287,19 @@ describe("MobileAgentSyncModal", () => {
 		testState.features.importFromQr = true;
 		testState.approveAgent.mockReset();
 		testState.approveAgent.mockResolvedValue(undefined);
-		testState.activeAgentOwner = {
-			env: "Mainnet",
-			address: USER_ADDRESS,
-		};
-		testState.clearActiveAgentOwnerIfMatches.mockReset();
-		testState.clearActiveAgentOwnerIfMatches.mockReturnValue(true);
-		testState.clearAgentVerified.mockReset();
-		testState.clearAgentVerified.mockReturnValue({ status: "removed" });
+		testState.captureRegistrationLease.mockReset();
+		testState.captureRegistrationLease.mockReturnValue({
+			epoch: {
+				env: "Mainnet",
+				owner: USER_ADDRESS,
+				epoch: "11111111-1111-4111-8111-111111111111",
+			},
+		});
+		testState.cleanupAgentRegistrationIfMatches.mockReset();
+		testState.cleanupAgentRegistrationIfMatches.mockResolvedValue({
+			status: "cleaned",
+			activeOwnerCleanupIncomplete: false,
+		});
 		testState.maxBuilderFee = 10;
 		testState.builderFeeRefetch.mockReset();
 		testState.builderFeeRefetch.mockImplementation(async () => ({
@@ -327,6 +337,9 @@ describe("MobileAgentSyncModal", () => {
 		}));
 		testState.localAgent = null;
 		testState.qrToCanvas.mockReset();
+		testState.registerMobileSyncTicket.mockReset();
+		testState.registerMobileSyncTicket.mockResolvedValue("accepted");
+		testState.registrationLeaseCurrent = true;
 		testState.qrToCanvas.mockResolvedValue(undefined);
 		testState.spotState = { balances: [] };
 		testState.spotRefetch.mockReset();
@@ -487,12 +500,31 @@ describe("MobileAgentSyncModal", () => {
 				width: 320,
 			}),
 		);
+		expect(testState.registerMobileSyncTicket).toHaveBeenCalledWith("sync-id", expect.any(AbortSignal));
+		expect(testState.registerMobileSyncTicket.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.qrToCanvas.mock.invocationCallOrder[0] ?? 0,
+		);
 		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).not.toBeNull();
 		expect(container.querySelector("a[href]")).toBeNull();
 		expect(container.innerHTML).not.toContain(PHONE_LINK);
 		expect(container.textContent).not.toContain("Copy phone link");
 		expect(testState.writeClipboard).not.toHaveBeenCalled();
 		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(false);
+	});
+
+	it("never renders an unregistered one-time QR", async () => {
+		testState.registerMobileSyncTicket.mockResolvedValue("unavailable");
+		await renderModal();
+		await reviewAndApprove();
+
+		act(() => dispatchPointer(getButton(container, "Press and hold for 4 seconds"), "pointerdown"));
+		await advanceTime(4_000);
+
+		expect(testState.registerMobileSyncTicket).toHaveBeenCalledTimes(1);
+		expect(testState.qrToCanvas).not.toHaveBeenCalled();
+		expect(container.querySelector('canvas[aria-label="Phone access QR code"]')).toBeNull();
+		expect(container.textContent).toContain("one-time QR service is unavailable");
+		expect(hasDesktopApprovalRecovery("Mainnet", USER_ADDRESS)).toBe(true);
 	});
 
 	it("cancels the reveal hold on pointer leave, blur, Escape, and hidden visibility", async () => {
@@ -953,8 +985,10 @@ describe("MobileAgentSyncModal", () => {
 			{ signal: expect.any(AbortSignal) },
 		);
 		expect(container.textContent).toContain("Mobile access revoked");
-		expect(testState.clearAgentVerified).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
-		expect(testState.clearActiveAgentOwnerIfMatches).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(testState.cleanupAgentRegistrationIfMatches).toHaveBeenCalledWith("Mainnet", USER_ADDRESS, {
+			kind: "public-key",
+			publicKey: OLD_AGENT_ADDRESS,
+		});
 	});
 
 	it("clears an approved desktop recovery only after revoke is remotely confirmed", async () => {
@@ -999,9 +1033,7 @@ describe("MobileAgentSyncModal", () => {
 			source: "mobile-sync",
 			syncId: "old-sync",
 		};
-		testState.clearAgentVerified.mockImplementation(() => {
-			throw new Error("storage blocked");
-		});
+		testState.cleanupAgentRegistrationIfMatches.mockRejectedValue(new Error("storage blocked"));
 		testState.approveAgent.mockImplementation(async ({ agentAddress }: { agentAddress: string }) => {
 			if (agentAddress === REVOKE_AGENT_ADDRESS) testState.extraAgents = [replacementRemoteAgent()];
 		});
@@ -1014,7 +1046,10 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(container.textContent).toContain("Remote access is revoked");
 		expect(container.textContent).not.toContain("not yet confirmed");
-		expect(testState.clearActiveAgentOwnerIfMatches).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(testState.cleanupAgentRegistrationIfMatches).toHaveBeenCalledWith("Mainnet", USER_ADDRESS, {
+			kind: "public-key",
+			publicKey: OLD_AGENT_ADDRESS,
+		});
 	});
 
 	it("reports partial local cleanup when the matching active owner cannot be removed", async () => {
@@ -1025,7 +1060,10 @@ describe("MobileAgentSyncModal", () => {
 				validUntil: AGENT_VALID_UNTIL_MS,
 			},
 		];
-		testState.clearActiveAgentOwnerIfMatches.mockReturnValue(false);
+		testState.cleanupAgentRegistrationIfMatches.mockResolvedValue({
+			status: "cleaned",
+			activeOwnerCleanupIncomplete: true,
+		});
 		testState.approveAgent.mockImplementation(async ({ agentAddress }: { agentAddress: string }) => {
 			if (agentAddress === REVOKE_AGENT_ADDRESS) testState.extraAgents = [replacementRemoteAgent()];
 		});
@@ -1037,8 +1075,9 @@ describe("MobileAgentSyncModal", () => {
 		await flushAsyncWork();
 
 		expect(container.textContent).toContain("Remote access is revoked");
-		expect(testState.clearAgentVerified).not.toHaveBeenCalled();
-		expect(testState.clearActiveAgentOwnerIfMatches).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(testState.cleanupAgentRegistrationIfMatches).toHaveBeenCalledWith("Mainnet", USER_ADDRESS, {
+			kind: "absent-record",
+		});
 	});
 
 	it("keeps an ambiguous revoke pending and retries verification without signing again", async () => {
@@ -1058,7 +1097,7 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(container.textContent).toContain("not yet confirmed");
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
-		expect(testState.clearAgentVerified).not.toHaveBeenCalled();
+		expect(testState.cleanupAgentRegistrationIfMatches).not.toHaveBeenCalled();
 
 		testState.extraAgents = [replacementRemoteAgent()];
 		act(() => getButton(container, "Retry verification").click());
@@ -1096,8 +1135,7 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.textContent).not.toContain("No approved mobile Agent remains");
 		expect(getButton(container, "Review revoke")).not.toBeNull();
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
-		expect(testState.clearAgentVerified).not.toHaveBeenCalled();
-		expect(testState.clearActiveAgentOwnerIfMatches).not.toHaveBeenCalled();
+		expect(testState.cleanupAgentRegistrationIfMatches).not.toHaveBeenCalled();
 	});
 
 	it("does not treat an undefined extraAgents response as a completed revoke", async () => {
@@ -1124,8 +1162,7 @@ describe("MobileAgentSyncModal", () => {
 		expect(container.textContent).toContain("not yet confirmed");
 		expect(container.textContent).not.toContain("Mobile access revoked");
 		expect(container.textContent).not.toContain("No approved mobile Agent remains");
-		expect(testState.clearAgentVerified).not.toHaveBeenCalled();
-		expect(testState.clearActiveAgentOwnerIfMatches).not.toHaveBeenCalled();
+		expect(testState.cleanupAgentRegistrationIfMatches).not.toHaveBeenCalled();
 	});
 
 	it("does not claim revoke success when another concurrent Mobile Agent replaced the slot", async () => {
@@ -1156,7 +1193,7 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(container.textContent).toContain("not yet confirmed");
 		expect(container.textContent).not.toContain("Mobile access revoked");
-		expect(testState.clearAgentVerified).not.toHaveBeenCalled();
+		expect(testState.cleanupAgentRegistrationIfMatches).not.toHaveBeenCalled();
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
 	});
 
@@ -1181,6 +1218,8 @@ describe("MobileAgentSyncModal", () => {
 
 		expect(container.textContent).toContain("Mobile access revoked");
 		expect(testState.approveAgent).toHaveBeenCalledTimes(1);
-		expect(testState.clearActiveAgentOwnerIfMatches).toHaveBeenCalledWith("Mainnet", USER_ADDRESS);
+		expect(testState.cleanupAgentRegistrationIfMatches).toHaveBeenCalledWith("Mainnet", USER_ADDRESS, {
+			kind: "absent-record",
+		});
 	});
 });

@@ -2,7 +2,13 @@ import { useSignTypedData } from "@privy-io/react-auth";
 import { useRef, useState } from "react";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import type { ExchangeParams, ExchangeResponse } from "@/lib/hyperliquid";
-import { createExchangeClient, useExchange, useHyperliquid } from "@/lib/hyperliquid";
+import {
+	captureAgentRegistrationExecutionLease,
+	createExchangeClient,
+	startAgentRegistrationExecution,
+	useExchange,
+	useHyperliquid,
+} from "@/lib/hyperliquid";
 import { createPrivyAgentSigner } from "@/lib/wallet/privy-agent-signer";
 import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
 import { useWalletSession } from "./use-wallet-session";
@@ -32,7 +38,7 @@ export interface ExplicitAgentApprovalOptions {
 export function useExplicitAgentApproval(): ExplicitAgentApproval {
 	const fallbackApproval = useExchange("approveAgent");
 	const { signTypedData } = useSignTypedData();
-	const { env } = useHyperliquid();
+	const { env, exchangeLifecycle } = useHyperliquid();
 	const { walletAddress, connectedWalletAddress, embeddedWalletAddress, hasWalletAccess } = useWalletSession();
 	const inFlightRef = useRef(false);
 	const [isPrivyApprovalPending, setIsPrivyApprovalPending] = useState(false);
@@ -56,15 +62,29 @@ export function useExplicitAgentApproval(): ExplicitAgentApproval {
 			}
 
 			setIsPrivyApprovalPending(true);
-			const signer = createPrivyAgentSigner({
-				expectedAddress: walletAddress,
-				activeAddress: connectedWalletAddress,
-				embeddedWalletAddress,
-				chainId: env === "Testnet" ? arbitrumSepolia.id : arbitrum.id,
-				signTypedData,
-			});
-			const client = createExchangeClient(signer, env === "Testnet");
-			return await client.approveAgent(params, options.signal ? { signal: options.signal } : undefined);
+			const registrationLease = captureAgentRegistrationExecutionLease(env, walletAddress);
+			if (!registrationLease) {
+				throw new Error("The wallet session changed before mobile access approval.");
+			}
+			const guarded = await startAgentRegistrationExecution(
+				registrationLease,
+				() => exchangeLifecycle.active && options.signal?.aborted !== true,
+				() => {
+					const signer = createPrivyAgentSigner({
+						expectedAddress: walletAddress,
+						activeAddress: connectedWalletAddress,
+						embeddedWalletAddress,
+						chainId: env === "Testnet" ? arbitrumSepolia.id : arbitrum.id,
+						signTypedData,
+					});
+					const client = createExchangeClient(signer, env === "Testnet");
+					return client.approveAgent(params, options.signal ? { signal: options.signal } : undefined);
+				},
+			);
+			if (guarded.status === "invalidated") {
+				throw new Error("The wallet session changed before mobile access approval.");
+			}
+			return await guarded.execution;
 		} finally {
 			inFlightRef.current = false;
 			setIsPrivyApprovalPending(false);

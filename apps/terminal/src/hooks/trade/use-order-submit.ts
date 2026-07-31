@@ -4,6 +4,7 @@ import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
 import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
+import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive } from "@/lib/trade/numbers";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
@@ -13,6 +14,7 @@ import { useTrackedTwapOrder } from "./use-tracked-twap-order";
 
 interface SubmitMarket {
 	assetId: number;
+	kind: "spot" | "perp";
 	name: string;
 	szDecimals?: number;
 }
@@ -25,6 +27,7 @@ export interface OrderSubmitInput {
 	sizeValue: number;
 	price: number;
 	markPx: number;
+	marginMode: MarginMode;
 	slippageBps: number;
 	reduceOnly: boolean;
 	tif: LimitTif;
@@ -76,6 +79,7 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 			sizeValue,
 			price,
 			markPx,
+			marginMode,
 			slippageBps,
 			reduceOnly,
 			tif,
@@ -96,6 +100,8 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 		const szDecimals = market.szDecimals ?? 0;
 		const formattedSize = formatSizeForOrder(sizeValue, szDecimals);
 		const formattedPrice = formatPriceForOrder(price, { assetId: market.assetId, szDecimals });
+		const riskContext =
+			market.kind === "spot" ? ({ marketKind: "spot" } as const) : ({ marketKind: "perp", marginMode } as const);
 
 		const hasTp = tpSlEnabled && canUseTpSl && isPositive(tpPriceNum);
 		const hasSl = tpSlEnabled && canUseTpSl && isPositive(slPriceNum);
@@ -137,7 +143,7 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 							t: twapRandomize,
 						},
 					},
-					{ coin: market.name, queueId: orderId },
+					{ coin: market.name, queueId: orderId, riskContext },
 				);
 				if (submission.state === "blocked") {
 					updateOrder(orderId, {
@@ -184,7 +190,10 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 					return;
 				}
 
-				const submission = await submitOrder({ orders: plan.orders, grouping: plan.grouping }, { queueId: orderId });
+				const submission = await submitOrder(
+					{ orders: plan.orders, grouping: plan.grouping },
+					{ queueId: orderId, riskContext },
+				);
 				if (submission.state === "blocked") {
 					updateOrder(orderId, {
 						status: "failed",

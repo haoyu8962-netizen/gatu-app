@@ -3,8 +3,8 @@ import { useEffect } from "react";
 import { type Address, zeroAddress } from "viem";
 import { useInfo } from "../hooks/useInfo";
 import { useHyperliquid } from "../provider";
-import { clearActiveAgentOwnerIfMatches } from "./agent-session";
-import { removeAgentFromStorageAndVerify, useAgentWalletStorage, useInvalidAgentStorageRecord } from "./agent-storage";
+import { cleanupAgentRegistrationIfMatches } from "./agent-registration-session";
+import { useAgentWalletStorage, useInvalidAgentStorageRecord } from "./agent-storage";
 import { isAgentApproved, isBuilderFeeApproved } from "./agent-utils";
 import { isStoredMobileAgent, type MobileAgentStaleReason, verifyMobileAgent } from "./mobile-agent";
 import type { AgentWallet, BuilderConfig } from "./types";
@@ -112,8 +112,13 @@ export function useAgentStatus(): UseAgentStatusResult {
 		if (!address || (!hasInvalidStorageRecord && localAgent?.source !== "mobile-sync") || !staleMobileReason) {
 			return;
 		}
-		clearActiveAgentOwnerIfMatches(env, address);
-		removeAgentFromStorageAndVerify(env, address);
+		const target = hasInvalidStorageRecord
+			? ({ kind: "invalid-record" } as const)
+			: localAgent?.source === "mobile-sync"
+				? ({ kind: "public-key", publicKey: localAgent.publicKey } as const)
+				: null;
+		if (!target) return;
+		void cleanupAgentRegistrationIfMatches(env, address, target);
 	}, [address, env, hasInvalidStorageRecord, localAgent, staleMobileReason]);
 
 	const isLoading = builderFeeQuery.isLoading || extraAgentsQuery.isLoading;

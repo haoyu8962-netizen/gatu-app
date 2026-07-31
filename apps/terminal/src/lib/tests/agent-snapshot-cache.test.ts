@@ -36,8 +36,8 @@ function installDom() {
 
 describe("agent snapshot cache", () => {
 	const VALID_PRIVATE_KEY = `0x${"ab".repeat(32)}` as const;
-	const VALID_PUBLIC_KEY = `0x${"cd".repeat(20)}` as const;
-	const MATCHING_PUBLIC_KEY = privateKeyToAccount(VALID_PRIVATE_KEY).address.toLowerCase();
+	const MISMATCHED_PUBLIC_KEY = `0x${"cd".repeat(20)}` as const;
+	const VALID_PUBLIC_KEY = privateKeyToAccount(VALID_PRIVATE_KEY).address.toLowerCase();
 	const STORAGE_VALUE = JSON.stringify({ privateKey: VALID_PRIVATE_KEY, publicKey: VALID_PUBLIC_KEY });
 
 	beforeEach(() => {
@@ -122,7 +122,7 @@ describe("agent snapshot cache", () => {
 		const validUntilMs = 2_000_000_000_000;
 		const canonical = {
 			privateKey: VALID_PRIVATE_KEY,
-			publicKey: MATCHING_PUBLIC_KEY,
+			publicKey: VALID_PUBLIC_KEY,
 			source: "mobile-sync",
 			agentNameBase: "Mobile",
 			agentName: `Mobile valid_until ${validUntilMs}`,
@@ -132,7 +132,7 @@ describe("agent snapshot cache", () => {
 		};
 		const invalidRecords = [
 			{ ...canonical, agentName: `Mobile valid_until ${validUntilMs + 1}` },
-			{ ...canonical, publicKey: VALID_PUBLIC_KEY },
+			{ ...canonical, publicKey: MISMATCHED_PUBLIC_KEY },
 			{ ...canonical, agentValidUntilMs: null },
 		];
 		const { hasInvalidAgentStorageRecord, readAgentFromStorage } = await import("@gatu/hl-react/signing/agent-storage");
@@ -150,7 +150,7 @@ describe("agent snapshot cache", () => {
 			"hyperliquid_agent_Mainnet_0x1234",
 			JSON.stringify({
 				privateKey: VALID_PRIVATE_KEY,
-				publicKey: MATCHING_PUBLIC_KEY,
+				publicKey: VALID_PUBLIC_KEY,
 				source: "mobile-sync",
 				agentNameBase: "Mobile",
 				agentName: "Mobile valid_until 2",
@@ -167,6 +167,27 @@ describe("agent snapshot cache", () => {
 			agentValidUntilMs: 2,
 		});
 		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(false);
+	});
+
+	it.each(["local-registration", undefined])("rejects a mismatched key pair for %s Agent storage", async (source) => {
+		const store = installDom();
+		const storageKey = "hyperliquid_agent_Mainnet_0x1234";
+		store.set(
+			storageKey,
+			JSON.stringify({
+				privateKey: VALID_PRIVATE_KEY,
+				publicKey: MISMATCHED_PUBLIC_KEY,
+				...(source ? { source } : {}),
+			}),
+		);
+
+		const { getCachedAgentSnapshot, hasInvalidAgentStorageRecord, readAgentFromStorage } = await import(
+			"@gatu/hl-react/signing/agent-storage"
+		);
+
+		expect(readAgentFromStorage("Mainnet", "0x1234")).toBeNull();
+		expect(getCachedAgentSnapshot("Mainnet", "0x1234")).toBeNull();
+		expect(hasInvalidAgentStorageRecord("Mainnet", "0x1234")).toBe(true);
 	});
 
 	it("LRU cap (4) evicts the oldest (env,address) pair on the 5th unique read", async () => {

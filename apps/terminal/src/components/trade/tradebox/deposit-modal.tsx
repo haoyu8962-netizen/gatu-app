@@ -15,6 +15,7 @@ import { Suspense, useEffect, useState } from "react";
 import { isAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { WITHDRAWAL_FEE_USD } from "@/config/contracts";
+import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { NETWORKS } from "@/config/networks";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import { getAccountBalanceSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
@@ -26,6 +27,7 @@ import { formatNumber } from "@/lib/format";
 import { useExchange } from "@/lib/hyperliquid";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
+import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import { toSafeBig } from "@/lib/trade/numbers";
 import { validateWithdraw } from "@/lib/trade/withdraw-validation";
 import { getPrivyEmailAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
@@ -155,7 +157,12 @@ export function DepositModal() {
 	const withdrawValidation = validateWithdraw(withdrawAmount, withdrawableNum);
 	const canUseFundsActions = hasWalletAccess && !!walletAddress;
 	const canUseDeposit = canUseFundsActions || isEmbeddedDeposit;
-	const showBridgeTab = !isEmbeddedDeposit;
+	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
+	const showBridgeTab = shouldShowLiFiBridgeTab({
+		isEmbeddedDeposit,
+		hasExistingExecution: hasExistingBridgeExecution,
+		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
+	});
 	const visibleTab = showBridgeTab || activeTab !== "bridge" ? activeTab : "deposit";
 	const isDepositPending = depositStatus === "pending" || depositStatus === "confirming";
 	const walletDepositProviderUnavailable =

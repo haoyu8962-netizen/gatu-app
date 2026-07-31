@@ -85,7 +85,10 @@ function PositionLimitCloseModalBody({ position, onOpenChange }: BodyProps) {
 
 		setSubmitError(null);
 		try {
-			const submission = await submitOrder({ orders, grouping });
+			const submission = await submitOrder(
+				{ orders, grouping },
+				{ riskContext: { marketKind: "perp", marginMode: position.marginMode } },
+			);
 			if (submission.state === "blocked") {
 				setSubmitError(t`Another order for this market is still being confirmed.`);
 				return;

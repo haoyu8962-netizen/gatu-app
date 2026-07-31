@@ -12,6 +12,7 @@ interface Props {
 	isLoading?: boolean;
 	isUpdating?: boolean;
 	canChange?: boolean;
+	portfolioMarginActivationEnabled?: boolean;
 	onConnect?: () => void;
 	onApply: (mode: SelectableAccountAbstraction) => Promise<void>;
 }
@@ -30,6 +31,7 @@ export function AccountModeModal({
 	isLoading,
 	isUpdating,
 	canChange,
+	portfolioMarginActivationEnabled = false,
 	onConnect,
 	onApply,
 }: Props) {
@@ -98,13 +100,16 @@ export function AccountModeModal({
 						{accountModeOptions.map((option) => {
 							const isSelected = selectedMode === option.id;
 							const isCurrent = currentMode === option.id;
+							const isActivationDisabled =
+								option.id === "portfolioMargin" && !isCurrent && !portfolioMarginActivationEnabled;
+							const isOptionDisabled = isBusy || isModeUnavailable || isActivationDisabled;
 
 							return (
 								<button
 									key={option.id}
 									type="button"
 									onClick={() => setSelectedMode(option.id)}
-									disabled={isBusy || isModeUnavailable}
+									disabled={isOptionDisabled}
 									aria-pressed={isSelected}
 									className={cn(
 										"w-full rounded-xs border px-3 py-3 text-left transition-colors",
@@ -112,7 +117,7 @@ export function AccountModeModal({
 										isSelected
 											? "border-stroke-selected bg-brand-soft text-fg"
 											: "border-stroke-weak bg-fill-weak/40 text-fg hover:bg-fill-hover",
-										(isBusy || isModeUnavailable) && "cursor-not-allowed opacity-70",
+										isOptionDisabled && "cursor-not-allowed opacity-70",
 									)}
 								>
 									<span className="flex min-w-0 items-center gap-2">
@@ -121,6 +126,9 @@ export function AccountModeModal({
 											{option.badge && <span className="ml-1 text-2xs font-medium text-brand">({option.badge})</span>}
 										</span>
 										{isCurrent && <span className="text-2xs font-medium uppercase text-fg-muted">{t`Current`}</span>}
+										{isActivationDisabled && (
+											<span className="text-2xs font-medium uppercase text-warning">{t`Unavailable`}</span>
+										)}
 										{isSelected && <CheckIcon className="size-3.5 shrink-0 text-brand" />}
 									</span>
 									<span className="mt-2 block text-xs leading-relaxed text-fg-muted">{option.description}</span>
@@ -130,8 +138,19 @@ export function AccountModeModal({
 					</div>
 
 					<p className="text-2xs leading-relaxed text-fg-muted">
-						<Trans>Account value must be below $25M to use portfolio margin while it is in beta.</Trans>
+						<Trans>
+							Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts
+							holding less than $1,000.
+						</Trans>
 					</p>
+					{!portfolioMarginActivationEnabled && currentMode !== "portfolioMargin" && (
+						<p className="text-xs text-warning">
+							<Trans>
+								New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not
+								affected and can switch away.
+							</Trans>
+						</p>
+					)}
 					{isModeUnavailable && (
 						<p className="text-xs text-error">
 							<Trans>Unable to load the current account mode. Reconnect your wallet and try again.</Trans>

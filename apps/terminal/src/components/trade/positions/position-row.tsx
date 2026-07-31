@@ -2,6 +2,7 @@ import { TableCell, TableRow, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { PencilIcon, PlusIcon } from "@phosphor-icons/react";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
+import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
 import { cn } from "@/lib/cn";
 import { formatLiquidationPrice, formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
@@ -12,7 +13,12 @@ import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
 import { PositionActionsDropdown } from "./position-actions-dropdown";
-import type { ClosePositionData, LimitClosePositionData, TpSlPositionRef } from "./position-dialog-types";
+import type {
+	ClosePositionData,
+	IsolatedMarginPositionRef,
+	LimitClosePositionData,
+	TpSlPositionRef,
+} from "./position-dialog-types";
 import {
 	positionsPanelRowHoverClass,
 	positionsPanelRowStripeClass,
@@ -30,6 +36,7 @@ interface Props {
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onReverse: (data: ClosePositionData) => void;
 	onOpenTpSl: (data: TpSlPositionRef) => void;
+	onAdjustMargin: (data: IsolatedMarginPositionRef) => void;
 	onSelectMarket: (coin: string, side: Side) => void;
 }
 
@@ -44,6 +51,7 @@ export function PositionRow({
 	onLimitClose,
 	onReverse,
 	onOpenTpSl,
+	onAdjustMargin,
 	onSelectMarket,
 }: Props) {
 	const size = toBig(p.szi)?.toNumber() ?? Number.NaN;
@@ -54,6 +62,7 @@ export function PositionRow({
 	const szDecimals = market?.szDecimals ?? 4;
 	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
 	const displayName = market?.pairName ?? p.coin;
+	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
 
 	const liqPx = toBig(p.liquidationPx)?.toNumber();
 	const liqIsNear =
@@ -118,6 +127,7 @@ export function PositionRow({
 			isLong,
 			unrealizedPnl,
 			roe,
+			marginMode: p.leverage.type,
 		};
 	}
 
@@ -138,6 +148,7 @@ export function PositionRow({
 			unrealizedPnl,
 			roe,
 			szDecimals,
+			marginMode: p.leverage.type,
 		});
 	}
 
@@ -154,8 +165,36 @@ export function PositionRow({
 			assetId,
 			isLong,
 			szDecimals,
+			marginMode: p.leverage.type,
 		});
 	}
+
+	function handleAdjustMargin() {
+		if (p.leverage.type !== "isolated" || typeof assetId !== "number") return;
+		onAdjustMargin({
+			coin: p.coin,
+			dex: p.dex,
+			assetId,
+			isLong,
+			szDecimals,
+			marginConstraint,
+			marginUsed: p.marginUsed,
+			positionValue: p.positionValue,
+			liquidationPx: p.liquidationPx,
+		});
+	}
+
+	const marginContent = (
+		<div className="flex flex-col items-end gap-px">
+			<span className="text-xs font-semibold tabular-nums leading-tight">{formatUSD(p.marginUsed)}</span>
+			<span className="inline-flex items-center gap-1 text-2xs font-medium text-fg-muted leading-tight">
+				{p.leverage.type === "isolated" ? t`Isolated` : t`Cross`}
+				{p.leverage.type === "isolated" ? (
+					<PencilIcon className="size-2.5 text-fg-disabled transition-colors group-hover:text-fg-muted" />
+				) : null}
+			</span>
+		</div>
+	);
 
 	return (
 		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
@@ -186,12 +225,20 @@ export function PositionRow({
 				</div>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right text-fg")}>
-				<div className="flex flex-col items-end gap-px">
-					<span className="text-xs font-semibold tabular-nums leading-tight">{formatUSD(p.marginUsed)}</span>
-					<span className="text-2xs font-medium text-fg-muted leading-tight">
-						{p.leverage.type === "isolated" ? t`Isolated` : t`Cross`}
-					</span>
-				</div>
+				{p.leverage.type === "isolated" && typeof assetId === "number" ? (
+					<Tooltip content={t`Adjust isolated margin`} side="top">
+						<button
+							type="button"
+							onClick={handleAdjustMargin}
+							aria-label={t`Adjust isolated margin for ${displayName}`}
+							className="group flex w-full cursor-pointer justify-end rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						>
+							{marginContent}
+						</button>
+					</Tooltip>
+				) : (
+					marginContent
+				)}
 			</TableCell>
 			<TableCell
 				size="dense"

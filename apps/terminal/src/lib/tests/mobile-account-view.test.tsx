@@ -54,6 +54,10 @@ const testState = {
 	accountAbstraction: "unifiedAccount",
 };
 
+const bridgeState = vi.hoisted(() => ({
+	hasExistingExecution: false,
+}));
+
 vi.mock("@/hooks/trade/use-account-balances", () => ({
 	useDefaultDexBalances: () => ({ ...balanceSnapshot, accountAbstraction: testState.accountAbstraction }),
 	useSelectedDexBalances: () => ({ ...balanceSnapshot, accountAbstraction: testState.accountAbstraction }),
@@ -77,7 +81,12 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 		address: "0x1111111111111111111111111111111111111111",
 		isConnected: true,
 		sessionMode: "wallet",
+		walletAddress: "0x1111111111111111111111111111111111111111",
 	}),
+}));
+
+vi.mock("@/lib/lifi/bridge-execution-state", () => ({
+	useHasExistingBridgeExecution: () => bridgeState.hasExistingExecution,
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
@@ -98,6 +107,7 @@ describe("mobile account view", () => {
 
 	beforeEach(() => {
 		testState.accountAbstraction = "unifiedAccount";
+		bridgeState.hasExistingExecution = false;
 		Object.defineProperty(window, "matchMedia", {
 			configurable: true,
 			value: vi.fn().mockReturnValue({
@@ -144,5 +154,28 @@ describe("mobile account view", () => {
 		});
 
 		expect(getStatCardText(container, "Available")).toContain("$122.75");
+	});
+
+	it("hides the mobile bridge entry while creation is gated and restores it for an existing execution", () => {
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileAccountView />
+				</I18nProvider>,
+			);
+		});
+		const getBridgeButton = () =>
+			Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Bridge");
+		expect(getBridgeButton()).toBeUndefined();
+
+		bridgeState.hasExistingExecution = true;
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MobileAccountView />
+				</I18nProvider>,
+			);
+		});
+		expect(getBridgeButton()).toBeDefined();
 	});
 });

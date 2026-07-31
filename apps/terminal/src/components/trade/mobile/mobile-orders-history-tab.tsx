@@ -7,9 +7,10 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTime, formatToken } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { AssetBadge } from "../components/asset-badge";
+import { HistoricalOrderPrice } from "../components/historical-order-price";
 import { MetricCell } from "./metric-cell";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
@@ -118,7 +119,7 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 
 								<div className="grid grid-cols-3 divide-x divide-stroke-weak">
 									<MetricCell label={t`Type`} value={getOrderTypeLabel(order.orderType)} />
-									<MetricCell label={t`Price`} value={formatUSD(order.limitPx, { compact: false })} />
+									<MetricCell label={t`Price`} value={<HistoricalOrderPrice align="start" order={order} />} />
 									<MetricCell label={t`Size`} value={formatToken(order.origSz, market?.szDecimals)} />
 								</div>
 

@@ -110,7 +110,11 @@ describe("mobile Agent pre-bootstrap fragment scrub", () => {
 		expect(staticImports).toEqual([
 			'import { canHydrateAfterMobileAgentSyncScrub } from "./lib/mobile-sync/bootstrap-fragment";',
 		]);
-		expect(clientSource).toContain('void import("./client-hydrate")');
+		expect(clientSource.indexOf('import("./lib/error-reporting/client")')).toBeLessThan(
+			clientSource.indexOf('import("./client-hydrate")'),
+		);
+		expect(clientSource).toContain("installGlobalErrorReporting();");
+		expect(clientSource).toContain("renderBootstrapErrorPage();");
 		expect(hydrationSource).toContain('import { StartClient } from "@tanstack/react-start/client";');
 		expect(hydrationSource).toContain("hydrateRoot(");
 	});

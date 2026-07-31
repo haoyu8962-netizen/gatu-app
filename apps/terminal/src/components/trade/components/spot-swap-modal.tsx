@@ -210,7 +210,10 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 		};
 
 		try {
-			const submission = await submitOrder({ orders: [order], grouping: "na" });
+			const submission = await submitOrder(
+				{ orders: [order], grouping: "na" },
+				{ riskContext: { marketKind: "spot" } },
+			);
 			if (submission.state === "blocked") {
 				setError(t`Another order for this market is still being confirmed.`);
 				return;

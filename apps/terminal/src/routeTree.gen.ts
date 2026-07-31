@@ -13,8 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as BuildMetaDotjsonRouteImport } from './routes/build-meta[.]json'
 import { Route as BuildersPerpRouteImport } from './routes/builders-perp'
+import { Route as ClientErrorReportRouteImport } from './routes/client-error-report'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as MobileAgentSyncRouteImport } from './routes/mobile-agent-sync'
+import { Route as MobileAgentSyncTicketRouteImport } from './routes/mobile-agent-sync-ticket'
 import { Route as PerpRouteImport } from './routes/perp'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -49,6 +51,11 @@ const BuildersPerpRoute = BuildersPerpRouteImport.update({
   path: '/builders-perp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClientErrorReportRoute = ClientErrorReportRouteImport.update({
+  id: '/client-error-report',
+  path: '/client-error-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
   path: '/docs',
@@ -57,6 +64,11 @@ const DocsRoute = DocsRouteImport.update({
 const MobileAgentSyncRoute = MobileAgentSyncRouteImport.update({
   id: '/mobile-agent-sync',
   path: '/mobile-agent-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MobileAgentSyncTicketRoute = MobileAgentSyncTicketRouteImport.update({
+  id: '/mobile-agent-sync-ticket',
+  path: '/mobile-agent-sync-ticket',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerpRoute = PerpRouteImport.update({
@@ -130,8 +142,10 @@ export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
+  '/client-error-report': typeof ClientErrorReportRoute
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
+  '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
@@ -150,8 +164,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/build-meta.json': typeof BuildMetaDotjsonRoute
+  '/client-error-report': typeof ClientErrorReportRoute
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
+  '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
@@ -171,8 +187,10 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
+  '/client-error-report': typeof ClientErrorReportRoute
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
+  '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
   '/perp': typeof PerpRoute
   '/portfolio': typeof PortfolioRoute
   '/privacy': typeof PrivacyRoute
@@ -194,8 +212,10 @@ export interface FileRouteTypes {
     | '/$'
     | '/build-meta.json'
     | '/builders-perp'
+    | '/client-error-report'
     | '/docs'
     | '/mobile-agent-sync'
+    | '/mobile-agent-sync-ticket'
     | '/perp'
     | '/portfolio'
     | '/privacy'
@@ -214,8 +234,10 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/build-meta.json'
+    | '/client-error-report'
     | '/docs'
     | '/mobile-agent-sync'
+    | '/mobile-agent-sync-ticket'
     | '/perp'
     | '/portfolio'
     | '/privacy'
@@ -234,8 +256,10 @@ export interface FileRouteTypes {
     | '/$'
     | '/build-meta.json'
     | '/builders-perp'
+    | '/client-error-report'
     | '/docs'
     | '/mobile-agent-sync'
+    | '/mobile-agent-sync-ticket'
     | '/perp'
     | '/portfolio'
     | '/privacy'
@@ -256,8 +280,10 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   BuildMetaDotjsonRoute: typeof BuildMetaDotjsonRoute
   BuildersPerpRoute: typeof BuildersPerpRouteWithChildren
+  ClientErrorReportRoute: typeof ClientErrorReportRoute
   DocsRoute: typeof DocsRoute
   MobileAgentSyncRoute: typeof MobileAgentSyncRoute
+  MobileAgentSyncTicketRoute: typeof MobileAgentSyncTicketRoute
   PerpRoute: typeof PerpRoute
   PortfolioRoute: typeof PortfolioRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -298,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuildersPerpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/client-error-report': {
+      id: '/client-error-report'
+      path: '/client-error-report'
+      fullPath: '/client-error-report'
+      preLoaderRoute: typeof ClientErrorReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/docs': {
       id: '/docs'
       path: '/docs'
@@ -310,6 +343,13 @@ declare module '@tanstack/react-router' {
       path: '/mobile-agent-sync'
       fullPath: '/mobile-agent-sync'
       preLoaderRoute: typeof MobileAgentSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mobile-agent-sync-ticket': {
+      id: '/mobile-agent-sync-ticket'
+      path: '/mobile-agent-sync-ticket'
+      fullPath: '/mobile-agent-sync-ticket'
+      preLoaderRoute: typeof MobileAgentSyncTicketRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perp': {
@@ -439,8 +479,10 @@ const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   BuildMetaDotjsonRoute: BuildMetaDotjsonRoute,
   BuildersPerpRoute: BuildersPerpRouteWithChildren,
+  ClientErrorReportRoute: ClientErrorReportRoute,
   DocsRoute: DocsRoute,
   MobileAgentSyncRoute: MobileAgentSyncRoute,
+  MobileAgentSyncTicketRoute: MobileAgentSyncTicketRoute,
   PerpRoute: PerpRoute,
   PortfolioRoute: PortfolioRoute,
   PrivacyRoute: PrivacyRoute,

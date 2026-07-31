@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const OWNER = "0xAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfAbCdEfABCD";
 const STORAGE_KEY = `hyperliquid_agent_Mainnet_${OWNER.toLowerCase()}`;
+const SESSION_STORAGE_KEY = `hyperliquid_agent_registration_session_Mainnet_${OWNER.toLowerCase()}`;
 const OTHER_STORAGE_KEY = "hyperliquid_agent_Mainnet_0xother";
 const PRIVATE_KEY = `0x${"44".repeat(32)}` as const;
 const PUBLIC_KEY = privateKeyToAccount(PRIVATE_KEY).address.toLowerCase();
@@ -105,6 +106,62 @@ describe("verified Agent storage removal", () => {
 		expect(removeAgentFromStorageAndVerify("Mainnet", OWNER)).toEqual({ status: "removed" });
 	});
 
+	it("invalidates selected exchange work before Agent removal reaches browser storage", async () => {
+		installDom();
+		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const schedulerModule = await import("@gatu/hl-react/internal/exchange/request-scheduler");
+		const scheduler = new schedulerModule.ExchangeRequestScheduler();
+		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "wallet");
+		const run = vi.fn(async () => "unexpected");
+		const pending = scheduler.schedule("normal", run, generation);
+		const rejection = expect(pending).rejects.toBeInstanceOf(schedulerModule.ExchangeRequestInvalidatedError);
+
+		expect(storageModule.removeAgentFromStorageAndVerify("Mainnet", OWNER)).toEqual({ status: "removed" });
+
+		await rejection;
+		expect(run).not.toHaveBeenCalled();
+	});
+
+	it("invalidates selected exchange work when another tab changes the Agent key", async () => {
+		installDom();
+		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const schedulerModule = await import("@gatu/hl-react/internal/exchange/request-scheduler");
+		const unsubscribe = storageModule.subscribeToStorage(vi.fn());
+		const scheduler = new schedulerModule.ExchangeRequestScheduler();
+		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "agent-only");
+		const run = vi.fn(async () => "unexpected");
+		const pending = scheduler.schedule("normal", run, generation);
+		const rejection = expect(pending).rejects.toBeInstanceOf(schedulerModule.ExchangeRequestInvalidatedError);
+
+		window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+
+		await rejection;
+		expect(run).not.toHaveBeenCalled();
+		unsubscribe();
+	});
+
+	it("invalidates selected exchange work when another tab closes the registration session", async () => {
+		const { store } = installDom();
+		store.set(
+			SESSION_STORAGE_KEY,
+			JSON.stringify({ version: 1, epoch: "closing-registration-epoch", state: "closing" }),
+		);
+		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const schedulerModule = await import("@gatu/hl-react/internal/exchange/request-scheduler");
+		const unsubscribe = storageModule.subscribeToStorage(vi.fn());
+		const scheduler = new schedulerModule.ExchangeRequestScheduler();
+		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "wallet");
+		const run = vi.fn(async () => "unexpected");
+		const pending = scheduler.schedule("normal", run, generation);
+		const rejection = expect(pending).rejects.toBeInstanceOf(schedulerModule.ExchangeRequestInvalidatedError);
+
+		window.dispatchEvent(new StorageEvent("storage", { key: SESSION_STORAGE_KEY }));
+
+		await rejection;
+		expect(run).not.toHaveBeenCalled();
+		unsubscribe();
+	});
+
 	it("reports unavailable storage without throwing and invalidates the cached snapshot", async () => {
 		const { controls, store } = installDom();
 		store.set(STORAGE_KEY, STORAGE_VALUE);
@@ -139,6 +196,60 @@ describe("verified Agent storage removal", () => {
 		controls.removeFails = false;
 		expect(storageModule.removeAgentFromStorageAndVerify("Mainnet", OWNER)).toEqual({ status: "removed" });
 		expect(store.has(STORAGE_KEY)).toBe(false);
+	});
+
+	it("quarantines an undeletable key until a later verified write replaces it", async () => {
+		const { controls, storage, store } = installDom();
+		store.set(STORAGE_KEY, STORAGE_VALUE);
+		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).not.toBeNull();
+
+		controls.removeFails = true;
+		storage.setItem.mockImplementation(() => {
+			throw new Error("write failed");
+		});
+
+		expect(storageModule.removeAgentFromStorageAndVerify("Mainnet", OWNER)).toEqual({
+			status: "failed",
+			reason: "remove_failed",
+		});
+		expect(store.get(STORAGE_KEY)).toBe(STORAGE_VALUE);
+		expect(storageModule.readAgentFromStorage("Mainnet", OWNER)).toBeNull();
+		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).toBeNull();
+
+		controls.removeFails = false;
+		storage.setItem.mockImplementation((key: string, value: string) => {
+			store.set(key, value);
+		});
+		const replacementPrivateKey = `0x${"55".repeat(32)}` as const;
+		const replacementPublicKey = privateKeyToAccount(replacementPrivateKey).address;
+		expect(
+			storageModule.writeAgentToStorageAndVerify("Mainnet", OWNER, replacementPrivateKey, replacementPublicKey, {
+				source: "local-registration",
+			}).status,
+		).toBe("stored");
+		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)?.publicKey).toBe(replacementPublicKey.toLowerCase());
+	});
+
+	it("does not revive a persisted key while its registration session has a closing tombstone", async () => {
+		const { store } = installDom();
+		store.set(STORAGE_KEY, STORAGE_VALUE);
+		store.set(
+			SESSION_STORAGE_KEY,
+			JSON.stringify({ version: 1, epoch: "closing-registration-epoch", state: "closing" }),
+		);
+		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+
+		expect(storageModule.readAgentFromStorage("Mainnet", OWNER)).toBeNull();
+		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).toBeNull();
+
+		store.set(
+			SESSION_STORAGE_KEY,
+			JSON.stringify({ version: 1, epoch: "new-active-registration-epoch", state: "active" }),
+		);
+		window.dispatchEvent(new StorageEvent("storage", { key: SESSION_STORAGE_KEY }));
+
+		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)?.publicKey).toBe(PUBLIC_KEY);
 	});
 
 	it("distinguishes a failed readback from a key that remains present", async () => {
@@ -189,5 +300,115 @@ describe("verified Agent storage removal", () => {
 		store.set(STORAGE_KEY, STORAGE_VALUE);
 		expect(actions.clearAgent("Mainnet", OWNER)).toBeUndefined();
 		expect(store.has(STORAGE_KEY)).toBe(false);
+	});
+
+	it("evicts the exact in-memory signer and trading client after verified removal", async () => {
+		const { store } = installDom();
+		store.set(STORAGE_KEY, STORAGE_VALUE);
+		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const signerModule = await import("@gatu/hl-react/signing/agent-signer-cache");
+		const clientsModule = await import("@gatu/hl-react/clients");
+
+		const signer = signerModule.getCachedAgentSigner(PRIVATE_KEY);
+		expect(signer).not.toBeNull();
+		if (!signer) throw new Error("Expected Agent signer");
+		const tradingClient = clientsModule.getTradingClient(signer, false);
+		expect(signerModule.signerCache.has(PRIVATE_KEY)).toBe(true);
+
+		expect(storageModule.removeAgentFromStorageAndVerify("Mainnet", OWNER)).toEqual({ status: "removed" });
+		expect(signerModule.signerCache.has(PRIVATE_KEY)).toBe(false);
+
+		const replacementSigner = signerModule.getCachedAgentSigner(PRIVATE_KEY);
+		expect(replacementSigner).not.toBeNull();
+		if (!replacementSigner) throw new Error("Expected replacement Agent signer");
+		expect(clientsModule.getTradingClient(replacementSigner, false)).not.toBe(tradingClient);
+	});
+
+	it("evicts caches behind a closing tombstone without relying on a storage notification", async () => {
+		const { controls, store } = installDom();
+		store.set(STORAGE_KEY, STORAGE_VALUE);
+		store.set(
+			SESSION_STORAGE_KEY,
+			JSON.stringify({ version: 1, epoch: "closing-registration-epoch", state: "closing" }),
+		);
+		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const signerModule = await import("@gatu/hl-react/signing/agent-signer-cache");
+		const clientsModule = await import("@gatu/hl-react/clients");
+
+		const signer = signerModule.getCachedAgentSigner(PRIVATE_KEY);
+		expect(signer).not.toBeNull();
+		if (!signer) throw new Error("Expected Agent signer");
+		const tradingClient = clientsModule.getTradingClient(signer, false);
+		controls.notificationFails = true;
+
+		expect(storageModule.removeAgentFromStorageAndVerify("Mainnet", OWNER)).toEqual({
+			status: "failed",
+			reason: "notification_failed",
+		});
+		expect(signerModule.signerCache.has(PRIVATE_KEY)).toBe(false);
+
+		const replacementSigner = signerModule.getCachedAgentSigner(PRIVATE_KEY);
+		expect(replacementSigner).not.toBeNull();
+		if (!replacementSigner) throw new Error("Expected replacement Agent signer");
+		expect(clientsModule.getTradingClient(replacementSigner, false)).not.toBe(tradingClient);
+	});
+
+	it("revalidates storage after every unobserved interval instead of reviving a stale cached key", async () => {
+		const { store } = installDom();
+		store.set(STORAGE_KEY, STORAGE_VALUE);
+		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const signerModule = await import("@gatu/hl-react/signing/agent-signer-cache");
+		const clientsModule = await import("@gatu/hl-react/clients");
+
+		const unsubscribe = storageModule.subscribeToStorage(vi.fn());
+		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).not.toBeNull();
+		const signer = signerModule.getCachedAgentSigner(PRIVATE_KEY);
+		expect(signer).not.toBeNull();
+		if (!signer) throw new Error("Expected Agent signer");
+		const tradingClient = clientsModule.getTradingClient(signer, false);
+		unsubscribe();
+
+		// A native cross-tab event can be missed while no React consumer is
+		// mounted. The next snapshot read must still compare localStorage.
+		store.delete(STORAGE_KEY);
+
+		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).toBeNull();
+		expect(signerModule.signerCache.has(PRIVATE_KEY)).toBe(false);
+		const replacementSigner = signerModule.getCachedAgentSigner(PRIVATE_KEY);
+		expect(replacementSigner).not.toBeNull();
+		if (!replacementSigner) throw new Error("Expected replacement Agent signer");
+		expect(clientsModule.getTradingClient(replacementSigner, false)).not.toBe(tradingClient);
+	});
+
+	it("evicts every sensitive Agent cache when another tab clears localStorage", async () => {
+		const { store } = installDom();
+		store.set(STORAGE_KEY, STORAGE_VALUE);
+		const storageModule = await import("@gatu/hl-react/signing/agent-storage");
+		const signerModule = await import("@gatu/hl-react/signing/agent-signer-cache");
+		const clientsModule = await import("@gatu/hl-react/clients");
+
+		expect(storageModule.getCachedAgentSnapshot("Mainnet", OWNER)).not.toBeNull();
+		const signer = signerModule.getCachedAgentSigner(PRIVATE_KEY);
+		expect(signer).not.toBeNull();
+		if (!signer) throw new Error("Expected Agent signer");
+		const tradingClient = clientsModule.getTradingClient(signer, false);
+		const schedulerModule = await import("@gatu/hl-react/internal/exchange/request-scheduler");
+		const scheduler = new schedulerModule.ExchangeRequestScheduler();
+		const generation = schedulerModule.captureExchangeRequestGeneration("Mainnet", OWNER, "wallet");
+		const run = vi.fn(async () => "unexpected");
+		const pending = scheduler.schedule("normal", run, generation);
+		const rejection = expect(pending).rejects.toBeInstanceOf(schedulerModule.ExchangeRequestInvalidatedError);
+
+		store.clear();
+		window.dispatchEvent(new StorageEvent("storage", { key: null }));
+
+		await rejection;
+		expect(run).not.toHaveBeenCalled();
+		expect(storageModule.snapshotCache.size).toBe(0);
+		expect(signerModule.signerCache.has(PRIVATE_KEY)).toBe(false);
+		const replacementSigner = signerModule.getCachedAgentSigner(PRIVATE_KEY);
+		expect(replacementSigner).not.toBeNull();
+		if (!replacementSigner) throw new Error("Expected replacement Agent signer");
+		expect(clientsModule.getTradingClient(replacementSigner, false)).not.toBe(tradingClient);
 	});
 });

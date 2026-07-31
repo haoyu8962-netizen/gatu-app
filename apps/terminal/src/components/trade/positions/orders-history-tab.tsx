@@ -6,9 +6,10 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTime, formatToken } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { AssetBadge } from "../components/asset-badge";
+import { HistoricalOrderPrice } from "../components/historical-order-price";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
@@ -142,7 +143,7 @@ export function OrdersHistoryTab() {
 												size="dense"
 												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
 											>
-												{formatUSD(order.limitPx, { compact: false })}
+												<HistoricalOrderPrice order={order} />
 											</TableCell>
 											<TableCell
 												size="dense"

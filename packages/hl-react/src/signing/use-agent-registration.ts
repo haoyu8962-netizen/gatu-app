@@ -5,7 +5,15 @@ import { zeroAddress } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { useExchange } from "../hooks/useExchange";
 import { useHyperliquid } from "../provider";
-import { useAgentWalletActions } from "./agent-storage";
+import {
+	activateAgentRegistrationSession,
+	cancelAgentRegistrationEpochAndRemove,
+	captureAgentRegistrationEpoch,
+	closeAgentRegistrationSessionAndRemove,
+	isAgentRegistrationEpochCurrent,
+	persistAgentForRegistration,
+	verifyAgentRegistrationOrRemove,
+} from "./agent-registration-session";
 import { convertFeeToPercentageString } from "./agent-utils";
 import type { RegistrationStatus } from "./types";
 import { useAgentStatus } from "./use-agent-status";
@@ -53,7 +61,6 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	addressRef.current = address;
 
 	const [currentStep, setCurrentStep] = useState<RegistrationStep>(null);
-	const { setAgent, clearAgent } = useAgentWalletActions();
 	const mountedRef = useRef(true);
 
 	useEffect(() => {
@@ -77,15 +84,68 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 			try {
 				const startAddress = address;
 				if (!startAddress) throw new Error("No wallet connected");
+				const verifiedAddress: Address = startAddress;
 
-				function assertSameWallet() {
-					if (addressRef.current !== startAddress) {
+				const registrationSession = await captureAgentRegistrationEpoch(env, verifiedAddress);
+				if (registrationSession.status === "failed") {
+					throw new Error(
+						registrationSession.reason === "lock_unavailable"
+							? "Secure Agent registration requires Web Locks support. Update your browser and try again."
+							: "Secure Agent registration session is unavailable",
+					);
+				}
+				const epoch = registrationSession.epoch;
+
+				function hasSameWallet() {
+					return addressRef.current?.toLowerCase() === verifiedAddress.toLowerCase();
+				}
+
+				async function assertRegistrationCurrent() {
+					if (!hasSameWallet()) {
+						const cancellation = await cancelAgentRegistrationEpochAndRemove(epoch);
+						if (cancellation.status === "failed") {
+							throw new Error("Wallet changed and Agent registration cleanup failed");
+						}
 						throw new Error("Wallet changed during registration");
+					}
+					if (!(await isAgentRegistrationEpochCurrent(epoch))) {
+						throw new Error("Agent registration session changed");
 					}
 				}
 
+				async function verifyStoredAgent(publicKey: Address) {
+					if (!hasSameWallet()) {
+						const cancellation = await cancelAgentRegistrationEpochAndRemove(epoch, publicKey);
+						if (cancellation.status === "failed") {
+							throw new Error("Wallet changed and Agent registration cleanup failed");
+						}
+						throw new Error("Wallet changed during registration");
+					}
+
+					const verification = await verifyAgentRegistrationOrRemove(epoch, publicKey);
+					if (verification.status === "failed") {
+						throw new Error("Agent registration cleanup could not be verified");
+					}
+					if (verification.status === "cancelled") {
+						throw new Error("Agent registration session changed");
+					}
+				}
+
+				async function persistAndVerifyAgent(privateKey: `0x${string}`, publicKey: Address) {
+					await assertRegistrationCurrent();
+					const persistence = await persistAgentForRegistration(epoch, privateKey, publicKey);
+					if (persistence.status === "failed") {
+						throw new Error(
+							persistence.reason === "registration_cancelled"
+								? "Agent registration session changed"
+								: "Agent private key could not be stored securely",
+						);
+					}
+					await verifyStoredAgent(publicKey);
+				}
+
 				let requirements = await agentStatus.refetch();
-				assertSameWallet();
+				await assertRegistrationCurrent();
 
 				if (requirements.needsBuilderFee && builderConfig?.b && builderConfig?.f !== undefined) {
 					safeSetStep("fee");
@@ -95,9 +155,9 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 							maxFeeRate: convertFeeToPercentageString(builderConfig.f),
 						}),
 					);
-					assertSameWallet();
+					await assertRegistrationCurrent();
 					requirements = await agentStatus.refetch();
-					assertSameWallet();
+					await assertRegistrationCurrent();
 				}
 
 				if (requirements.needsAgent) {
@@ -113,19 +173,18 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					} catch (error) {
 						approveAgentPromise
 							.then(async () => {
-								if (addressRef.current !== startAddress) return;
-								clearAgent(env, startAddress);
-								setAgent(env, startAddress, privateKey, publicKey);
+								await persistAndVerifyAgent(privateKey, publicKey);
 								await agentStatus.refetch();
+								await verifyStoredAgent(publicKey);
 							})
 							.catch(() => {});
 						throw error;
 					}
-					assertSameWallet();
+					await assertRegistrationCurrent();
 
-					clearAgent(env, startAddress);
-					setAgent(env, startAddress, privateKey, publicKey);
+					await persistAndVerifyAgent(privateKey, publicKey);
 					await agentStatus.refetch();
+					await verifyStoredAgent(publicKey);
 
 					return publicKey;
 				}
@@ -140,7 +199,11 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	const status = deriveRegistrationStatus(registration.isPending, registration.isError, currentStep);
 
 	function reset() {
-		if (address) clearAgent(env, address);
+		if (address) {
+			void closeAgentRegistrationSessionAndRemove(env, address).then((result) => {
+				if (result.status === "closed") void activateAgentRegistrationSession(env, address);
+			});
+		}
 		registration.reset();
 		setCurrentStep(null);
 	}

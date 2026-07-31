@@ -13,6 +13,9 @@ const testState = vi.hoisted(() => ({
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 vi.mock("@/lib/lifi/config", () => ({ initLiFi: testState.initLiFi }));
+vi.mock("@/config/lifi-bridge", () => ({
+	LIFI_BRIDGE_FEATURES: { createNewRoute: true },
+}));
 vi.mock("@/lib/lifi/use-bridge", () => ({
 	continueBridgeInBackground: testState.continueBridgeInBackground,
 	useBridgeExecutor: () => ({

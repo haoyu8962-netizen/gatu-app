@@ -17,7 +17,13 @@ import type { Side } from "@/lib/trade/types";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
-import type { ClosePositionData, LimitClosePositionData, TpSlPositionRef } from "./position-dialog-types";
+import type {
+	ClosePositionData,
+	IsolatedMarginPositionRef,
+	LimitClosePositionData,
+	TpSlPositionRef,
+} from "./position-dialog-types";
+import { PositionIsolatedMarginModal } from "./position-isolated-margin-modal";
 import { PositionLimitCloseModal } from "./position-limit-close-modal";
 import { PositionRow } from "./position-row";
 import { PositionTpSlModal } from "./position-tpsl-modal";
@@ -47,6 +53,9 @@ export function PositionsTab() {
 	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionRef | null>(null);
 	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
 	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
+	const [isolatedMarginModalOpen, setIsolatedMarginModalOpen] = useState(false);
+	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
+		useState<IsolatedMarginPositionRef | null>(null);
 	const [closingAssetIds, setClosingAssetIds] = useState<Set<number>>(() => new Set());
 
 	const { submitOrder, error: closeError, reset: resetCloseError } = useTrackedOrder();
@@ -68,7 +77,7 @@ export function PositionsTab() {
 	const actionError = closeError?.message;
 
 	async function submitCloseOrReverse(intent: CloseIntent, data: ClosePositionData) {
-		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe } = data;
+		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe, marginMode } = data;
 		if (closingAssetIds.has(assetId)) return;
 
 		resetCloseError();
@@ -92,7 +101,7 @@ export function PositionsTab() {
 		const failureMessage = intent === "close" ? t`Failed to close position` : t`Failed to reverse position`;
 
 		try {
-			const submission = await submitOrder({ orders, grouping });
+			const submission = await submitOrder({ orders, grouping }, { riskContext: { marketKind: "perp", marginMode } });
 			if (submission.state === "blocked") {
 				toast.warning(t`Another order for this market is still being confirmed.`);
 				return;
@@ -132,6 +141,11 @@ export function PositionsTab() {
 	function handleOpenTpSlModal(data: TpSlPositionRef) {
 		setSelectedTpSlPosition(data);
 		setTpSlModalOpen(true);
+	}
+
+	function handleOpenIsolatedMarginModal(data: IsolatedMarginPositionRef) {
+		setSelectedIsolatedMarginPosition(data);
+		setIsolatedMarginModalOpen(true);
 	}
 
 	function renderPlaceholder() {
@@ -240,6 +254,7 @@ export function PositionsTab() {
 											onLimitClose={handleOpenLimitCloseModal}
 											onReverse={handleReverse}
 											onOpenTpSl={handleOpenTpSlModal}
+											onAdjustMargin={handleOpenIsolatedMarginModal}
 											onSelectMarket={handleSelectMarket}
 										/>
 									);
@@ -256,6 +271,11 @@ export function PositionsTab() {
 				open={limitCloseModalOpen}
 				onOpenChange={setLimitCloseModalOpen}
 				position={selectedLimitClosePosition}
+			/>
+			<PositionIsolatedMarginModal
+				open={isolatedMarginModalOpen}
+				onOpenChange={setIsolatedMarginModalOpen}
+				position={selectedIsolatedMarginPosition}
 			/>
 		</div>
 	);

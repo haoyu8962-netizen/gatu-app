@@ -1,4 +1,4 @@
-import { clearActiveAgentOwnerIfMatches, getActiveAgentOwner } from "@gatu/hl-react";
+import { cleanupAgentRegistrationIfMatches } from "@gatu/hl-react";
 import {
 	createMobileAgentApproval,
 	createMobileAgentRevocationApproval,
@@ -29,9 +29,11 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError } from "@/lib/errors/format";
 import { shortenAddress } from "@/lib/format";
 import {
+	type AgentRegistrationExecutionLease,
+	captureAgentRegistrationExecutionLease,
 	type HyperliquidEnv,
+	isAgentRegistrationExecutionLeaseCurrent,
 	isBuilderFeeApproved,
-	useAgentWalletActions,
 	useAgentWalletStorage,
 	useHyperliquid,
 	useInfo,
@@ -44,6 +46,7 @@ import {
 	hasDesktopApprovalRecovery,
 	updateDesktopApprovalRecovery,
 } from "@/lib/mobile-sync/desktop-approval-recovery";
+import { registerMobileSyncTicket } from "@/lib/mobile-sync/one-time-ticket-client";
 import { waitForExpectedMobileAgent } from "@/lib/mobile-sync/remote-verification";
 import { createMobileAgentSyncUrl } from "@/lib/mobile-sync/sync-core";
 
@@ -215,7 +218,6 @@ function MobileAgentSyncSession({
 }: MobileAgentSyncSessionProps) {
 	const { builderConfig } = useHyperliquid();
 	const localAgent = useAgentWalletStorage(env, walletAddress);
-	const { clearAgentVerified } = useAgentWalletActions();
 	const approveAgent = useExplicitAgentApproval();
 	const clearinghouseStateQuery = useInfo(
 		"clearinghouseState",
@@ -460,6 +462,16 @@ function MobileAgentSyncSession({
 		return waitForExpectedMobileAgent(loadExtraAgents, toExpectedAgent(approval), { signal });
 	}
 
+	async function keepApprovalSessionCurrent(
+		lease: AgentRegistrationExecutionLease,
+		approval: MobileAgentApproval,
+	): Promise<boolean> {
+		if (await isAgentRegistrationExecutionLeaseCurrent(lease)) return true;
+		if (walletAddress) clearDesktopApprovalRecovery(env, walletAddress, approval.publicKey);
+		setSyncState({ status: "error", message: t`This approval recovery is no longer active.` });
+		return false;
+	}
+
 	function retainApprovalForVerification(approval: MobileAgentApproval, message: string) {
 		const retained = updateDesktopApprovalRecovery({
 			env,
@@ -478,8 +490,10 @@ function MobileAgentSyncSession({
 	async function reconcileApproval(
 		approval: MobileAgentApproval,
 		signal: AbortSignal,
+		registrationLease: AgentRegistrationExecutionLease,
 		submissionErrorMessage?: string,
 	) {
+		if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
 		if (approval.agentValidUntilMs <= Date.now()) {
 			clearDesktopApprovalRecovery(env, walletAddress ?? zeroAddress, approval.publicKey);
 			setSyncState({ status: "error", message: t`This mobile trading key has expired.` });
@@ -494,6 +508,7 @@ function MobileAgentSyncSession({
 		const verification = await verifyApproval(approval, signal);
 		if (verification.status === "aborted") return;
 		if (verification.status === "approved") {
+			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
 			const retained = updateDesktopApprovalRecovery({
 				env,
 				ownerAddress: walletAddress ?? zeroAddress,
@@ -527,25 +542,17 @@ function MobileAgentSyncSession({
 		);
 	}
 
-	function clearStoredMobileAccess(): boolean {
+	async function clearStoredMobileAccess(): Promise<boolean> {
 		if (!walletAddress) return true;
-		let cleanupIncomplete = false;
-		if (isStoredMobileAgent(localAgent)) {
-			try {
-				if (clearAgentVerified(env, walletAddress).status !== "removed") cleanupIncomplete = true;
-			} catch {
-				cleanupIncomplete = true;
-			}
-		}
 		try {
-			const activeOwner = getActiveAgentOwner();
-			const ownerMatches =
-				activeOwner?.env === env && activeOwner.address.toLowerCase() === walletAddress.toLowerCase();
-			if (ownerMatches && !clearActiveAgentOwnerIfMatches(env, walletAddress)) cleanupIncomplete = true;
+			const target = isStoredMobileAgent(localAgent)
+				? ({ kind: "public-key", publicKey: localAgent.publicKey } as const)
+				: ({ kind: "absent-record" } as const);
+			const cleanup = await cleanupAgentRegistrationIfMatches(env, walletAddress, target);
+			return cleanup.status === "failed" || (cleanup.status === "cleaned" && cleanup.activeOwnerCleanupIncomplete);
 		} catch {
-			cleanupIncomplete = true;
+			return true;
 		}
-		return cleanupIncomplete;
 	}
 
 	async function handleReviewSync() {
@@ -626,6 +633,11 @@ function MobileAgentSyncSession({
 			});
 			return;
 		}
+		const registrationLease = captureAgentRegistrationExecutionLease(env, walletAddress);
+		if (!registrationLease) {
+			setSyncState({ status: "error", message: t`This approval recovery is no longer active.` });
+			return;
+		}
 
 		if (builderConfig?.b) {
 			const preflightOperation = startOperation();
@@ -698,7 +710,7 @@ function MobileAgentSyncSession({
 			if (operation.signal.aborted) return;
 
 			setSyncState({ status: "verifying" });
-			await reconcileApproval(approval, operation.signal, submissionErrorMessage);
+			await reconcileApproval(approval, operation.signal, registrationLease, submissionErrorMessage);
 		} catch (error) {
 			if (!operation.signal.aborted) {
 				retainApprovalForVerification(approval, formatTransferError(normalizeError(error)));
@@ -717,11 +729,17 @@ function MobileAgentSyncSession({
 			setSyncState({ status: "error", message: t`This approval recovery is no longer available.` });
 			return;
 		}
+		const registrationLease = captureAgentRegistrationExecutionLease(env, walletAddress);
+		if (!registrationLease) {
+			clearDesktopApprovalRecovery(env, walletAddress, approval.publicKey);
+			setSyncState({ status: "error", message: t`This approval recovery is no longer active.` });
+			return;
+		}
 
 		const operation = startOperation();
 		setSyncState({ status: "verifying" });
 		try {
-			await reconcileApproval(approval, operation.signal, recovery.submissionErrorMessage);
+			await reconcileApproval(approval, operation.signal, registrationLease, recovery.submissionErrorMessage);
 		} catch (error) {
 			if (!operation.signal.aborted) {
 				retainApprovalForVerification(approval, formatTransferError(normalizeError(error)));
@@ -745,6 +763,12 @@ function MobileAgentSyncSession({
 			setSyncState({ status: "concealed", approval });
 			return;
 		}
+		const registrationLease = captureAgentRegistrationExecutionLease(env, walletAddress);
+		if (!registrationLease) {
+			clearDesktopApprovalRecovery(env, walletAddress, approval.publicKey);
+			setSyncState({ status: "error", message: t`This approval recovery is no longer active.` });
+			return;
+		}
 
 		const pageSafetyEpoch = pageSafetyEpochRef.current;
 		const operation = startOperation();
@@ -758,6 +782,7 @@ function MobileAgentSyncSession({
 			}
 			const verification = await verifyApproval(approval, operation.signal);
 			if (verification.status === "aborted") return;
+			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
 			if (!isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
 				setSyncState({ status: "concealed", approval });
 				return;
@@ -791,6 +816,24 @@ function MobileAgentSyncSession({
 				agentValidUntilMs: approval.agentValidUntilMs,
 				nowMs: syncCreatedAtMs,
 			});
+			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
+			if (operation.signal.aborted || !isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
+				setSyncState({ status: "concealed", approval });
+				return;
+			}
+			const ticketResult = await registerMobileSyncTicket(syncUrl.syncId, operation.signal);
+			if (ticketResult !== "accepted") {
+				setSyncState({
+					status: "concealed",
+					approval,
+					message:
+						ticketResult === "rejected"
+							? t`This one-time QR could not be created. Try revealing a new QR.`
+							: t`The one-time QR service is unavailable. Check your connection and retry.`,
+				});
+				return;
+			}
+			if (!(await keepApprovalSessionCurrent(registrationLease, approval))) return;
 			if (operation.signal.aborted || !isQrPageActive() || pageSafetyEpoch !== pageSafetyEpochRef.current) {
 				setSyncState({ status: "concealed", approval });
 				return;
@@ -881,9 +924,9 @@ function MobileAgentSyncSession({
 			: { status: "unverified" as const };
 	}
 
-	function completeRevocation(replacementExpiresAtMs: number | null) {
+	async function completeRevocation(replacementExpiresAtMs: number | null) {
 		if (walletAddress) clearDesktopApprovalRecovery(env, walletAddress);
-		const localCleanupIncomplete = clearStoredMobileAccess();
+		const localCleanupIncomplete = await clearStoredMobileAccess();
 		setSyncState({ status: "idle" });
 		setResetState({ status: "success", replacementExpiresAtMs, localCleanupIncomplete });
 	}
@@ -917,7 +960,7 @@ function MobileAgentSyncSession({
 			const verification = await verifyRevocation(oldAgentAddresses, replacement, operation.signal);
 			if (verification.status === "aborted") return;
 			if (verification.status === "approved") {
-				completeRevocation(verification.replacementExpiresAtMs);
+				await completeRevocation(verification.replacementExpiresAtMs);
 				return;
 			}
 			if (verification.status === "expired-unverified") {
@@ -952,7 +995,7 @@ function MobileAgentSyncSession({
 			const verification = await verifyRevocation(oldAgentAddresses, replacement, operation.signal);
 			if (verification.status === "aborted") return;
 			if (verification.status === "approved") {
-				completeRevocation(verification.replacementExpiresAtMs);
+				await completeRevocation(verification.replacementExpiresAtMs);
 				return;
 			}
 			if (verification.status === "expired-unverified") {

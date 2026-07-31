@@ -57,6 +57,7 @@ const ACCUMULATING_SUBS: Partial<Record<SubMethod, AccumulateConfig>> = {
 			maxSize: 500,
 			getKey: (o) => String(o.order.oid),
 			compare: (a, b) => b.statusTimestamp - a.statusTimestamp,
+			shouldReplace: (existing, incoming) => incoming.statusTimestamp >= existing.statusTimestamp,
 		},
 	}),
 	userNonFundingLedgerUpdates: defineAccumulator<

@@ -11,6 +11,8 @@ import {
 } from "@nktkas/hyperliquid";
 import type { AbstractWallet } from "@nktkas/hyperliquid/signing";
 import type { PrivateKeyAccount } from "viem/accounts";
+import { createCrossTabNonceManager } from "./internal/exchange/cross-tab-nonce-manager";
+import { invalidateExchangeClientRequests } from "./internal/exchange/request-scheduler";
 import { getSdkReconnectionDelayMs } from "./internal/websocket/reliability";
 import { createWsTransportMonitor, type WsTransportMonitor } from "./internal/websocket/transport-monitor";
 import { LRU } from "./lru";
@@ -29,6 +31,7 @@ function getOrCreate<T>(key: string, create: () => T): T {
 
 /** @internal — exported only for tests; do not consume from outside this package. */
 export const tradingClientCache = new LRU<string, ExchangeClient>(4);
+const agentTradingClientCache = new LRU<string, ExchangeClient>(4);
 
 function getHttpOptions(isTestnet: boolean): HttpTransportOptions {
 	return { isTestnet };
@@ -92,7 +95,11 @@ export function createExchangeClient(wallet: AbstractWallet, isTestnet: boolean,
 		const cached = tradingClientCache.get(cacheKey);
 		if (cached) return cached;
 	}
-	const client = new ExchangeClient({ transport: getHttpTransport(isTestnet), wallet });
+	const client = new ExchangeClient({
+		transport: getHttpTransport(isTestnet),
+		wallet,
+		nonceManager: createCrossTabNonceManager(isTestnet ? "Testnet" : "Mainnet"),
+	});
 	if (cacheKey) {
 		tradingClientCache.set(cacheKey, client);
 	}
@@ -104,10 +111,32 @@ function isPrivateKeyAccount(wallet: AbstractWallet): wallet is PrivateKeyAccoun
 }
 
 export function getTradingClient(wallet: AbstractWallet & { address: string }, isTestnet: boolean): ExchangeClient {
-	return getOrCreate(`trading:${wallet.address.toLowerCase()}:${isTestnet}`, () => {
-		const signingWallet = isPrivateKeyAccount(wallet) ? createL1AgentWallet(wallet) : wallet;
-		return new ExchangeClient({ transport: getHttpTransport(isTestnet), wallet: signingWallet });
+	const key = `${wallet.address.toLowerCase()}:${isTestnet}`;
+	const cached = agentTradingClientCache.get(key);
+	if (cached) return cached;
+	const signingWallet = isPrivateKeyAccount(wallet) ? createL1AgentWallet(wallet) : wallet;
+	const client = new ExchangeClient({
+		transport: getHttpTransport(isTestnet),
+		wallet: signingWallet,
+		nonceManager: createCrossTabNonceManager(isTestnet ? "Testnet" : "Mainnet"),
 	});
+	agentTradingClientCache.set(key, client);
+	return client;
+}
+
+export function evictTradingClient(address: string, isTestnet: boolean): void {
+	const key = `${address.toLowerCase()}:${isTestnet}`;
+	const client = agentTradingClientCache.get(key);
+	if (client) invalidateExchangeClientRequests(client);
+	agentTradingClientCache.delete(key);
+}
+
+export function evictAllAgentTradingClients(): void {
+	for (const key of Array.from(agentTradingClientCache.keys())) {
+		const client = agentTradingClientCache.get(key);
+		if (client) invalidateExchangeClientRequests(client);
+	}
+	agentTradingClientCache.clear();
 }
 
 export function initializeClients(isTestnet: boolean): void {

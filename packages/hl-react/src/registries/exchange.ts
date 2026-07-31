@@ -18,6 +18,7 @@ const USER_SIGNED_METHODS: ReadonlySet<string> = new Set([
 	"sendAsset",
 	"sendToEvmWithData",
 	"spotSend",
+	"stakingLinkDisableTradingUser",
 	"tokenDelegate",
 	"usdClassTransfer",
 	"usdSend",

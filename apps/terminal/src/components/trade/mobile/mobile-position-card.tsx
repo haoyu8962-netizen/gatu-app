@@ -4,6 +4,7 @@ import { ArrowsClockwiseIcon, CrosshairIcon, PencilIcon, PlusIcon, XIcon } from 
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
+import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
 import { cn } from "@/lib/cn";
 import { formatLiquidationPrice, formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
@@ -13,7 +14,12 @@ import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
-import type { ClosePositionData, LimitClosePositionData, TpSlPositionRef } from "../positions/position-dialog-types";
+import type {
+	ClosePositionData,
+	IsolatedMarginPositionRef,
+	LimitClosePositionData,
+	TpSlPositionRef,
+} from "../positions/position-dialog-types";
 import { MetricCell } from "./metric-cell";
 
 interface Props {
@@ -27,6 +33,7 @@ interface Props {
 	onReverse: (data: ClosePositionData) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onOpenTpSl: (data: TpSlPositionRef) => void;
+	onAdjustMargin: (data: IsolatedMarginPositionRef) => void;
 	onSelectMarket: (coin: string, side: Side) => void;
 }
 
@@ -41,6 +48,7 @@ export function MobilePositionCard({
 	onReverse,
 	onLimitClose,
 	onOpenTpSl,
+	onAdjustMargin,
 	onSelectMarket,
 }: Props) {
 	const [confirming, setConfirming] = useState<"close" | "reverse" | null>(null);
@@ -52,6 +60,7 @@ export function MobilePositionCard({
 	const displayName = market?.pairName ?? p.coin;
 	const assetId = market?.assetId;
 	const szDecimals = market?.szDecimals ?? 4;
+	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
 	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
 	const entryPx = toBig(p.entryPx)?.toNumber() ?? Number.NaN;
 	const unrealizedPnl = toBig(p.unrealizedPnl)?.toNumber() ?? Number.NaN;
@@ -73,7 +82,17 @@ export function MobilePositionCard({
 
 	function buildCloseData(): ClosePositionData | null {
 		if (!canClose || typeof assetId !== "number") return null;
-		return { assetId, coin: p.coin, size: absSize, markPx, szDecimals, isLong, unrealizedPnl, roe };
+		return {
+			assetId,
+			coin: p.coin,
+			size: absSize,
+			markPx,
+			szDecimals,
+			isLong,
+			unrealizedPnl,
+			roe,
+			marginMode: p.leverage.type,
+		};
 	}
 
 	function handleConfirm() {
@@ -95,6 +114,7 @@ export function MobilePositionCard({
 			unrealizedPnl,
 			roe,
 			szDecimals,
+			marginMode: p.leverage.type,
 		});
 	}
 
@@ -106,8 +126,36 @@ export function MobilePositionCard({
 			assetId,
 			isLong,
 			szDecimals,
+			marginMode: p.leverage.type,
 		});
 	}
+
+	function handleAdjustMargin() {
+		if (p.leverage.type !== "isolated" || typeof assetId !== "number") return;
+		onAdjustMargin({
+			coin: p.coin,
+			dex: p.dex,
+			assetId,
+			isLong,
+			szDecimals,
+			marginConstraint,
+			marginUsed: p.marginUsed,
+			positionValue: p.positionValue,
+			liquidationPx: p.liquidationPx,
+		});
+	}
+
+	const marginMetric = (
+		<MetricCell
+			label={
+				<span className="inline-flex items-center gap-1">
+					{p.leverage.type === "isolated" ? t`Margin · Iso` : t`Margin`}
+					{p.leverage.type === "isolated" ? <PencilIcon className="size-2.5 text-fg-disabled" /> : null}
+				</span>
+			}
+			value={formatUSD(p.marginUsed)}
+		/>
+	);
 
 	return (
 		<div className="rounded-xs border border-stroke-weak bg-surface overflow-hidden">
@@ -153,10 +201,18 @@ export function MobilePositionCard({
 				<MetricCell label={t`Mark`} value={formatPrice(markPx, { szDecimals })} />
 			</div>
 			<div className="grid grid-cols-3 divide-x divide-stroke-weak border-t border-stroke-weak">
-				<MetricCell
-					label={p.leverage.type === "isolated" ? t`Margin · Iso` : t`Margin`}
-					value={formatUSD(p.marginUsed)}
-				/>
+				{p.leverage.type === "isolated" && typeof assetId === "number" ? (
+					<button
+						type="button"
+						onClick={handleAdjustMargin}
+						aria-label={t`Adjust isolated margin for ${displayName}`}
+						className="min-w-0 cursor-pointer text-left transition-colors hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+					>
+						{marginMetric}
+					</button>
+				) : (
+					marginMetric
+				)}
 				<MetricCell
 					label={t`Liq`}
 					value={formatLiquidationPrice(p.liquidationPx, szDecimals)}

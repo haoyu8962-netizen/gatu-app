@@ -2,6 +2,7 @@ import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
+import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
@@ -9,6 +10,7 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
+import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 
@@ -22,7 +24,7 @@ export function AccountPanel() {
 	const { t } = useLingui();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
-	const { isConnected, sessionMode } = useWalletSession();
+	const { isConnected, sessionMode, walletAddress } = useWalletSession();
 	const { tradeRestricted } = useGeoRestriction();
 	const selectedBalances = useSelectedDexBalances();
 	const defaultBalances = useDefaultDexBalances();
@@ -63,6 +65,12 @@ export function AccountPanel() {
 
 	const hasPerpData = isConnected && perpMetrics !== null;
 	const hasWalletAccess = sessionMode === "wallet";
+	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
+	const showBridgeEntry = shouldShowLiFiBridgeTab({
+		isEmbeddedDeposit: false,
+		hasExistingExecution: hasExistingBridgeExecution,
+		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
+	});
 	const internalTransferDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
 		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
 		: null;
@@ -155,15 +163,17 @@ export function AccountPanel() {
 									</Button>
 								</span>
 							</Tooltip>
-							<Button
-								variant="outline"
-								intent="neutral"
-								onClick={() => openDepositModal("bridge")}
-								aria-label={t`Bridge`}
-								iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-							>
-								{t`Bridge`}
-							</Button>
+							{showBridgeEntry ? (
+								<Button
+									variant="outline"
+									intent="neutral"
+									onClick={() => openDepositModal("bridge")}
+									aria-label={t`Bridge`}
+									iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+								>
+									{t`Bridge`}
+								</Button>
+							) : null}
 						</div>
 					)}
 				</div>

@@ -14,9 +14,10 @@ interface Props {
 	statusText: string;
 	txHash: string | null;
 	onDone: () => void;
+	recoveryWarning: string | null;
 }
 
-export function ExecutingScreen({ address, statusText, txHash, onDone }: Props) {
+export function ExecutingScreen({ address, statusText, txHash, onDone, recoveryWarning }: Props) {
 	const [isTimedOut, setIsTimedOut] = useState(false);
 	const startTimeRef = useRef(Date.now());
 
@@ -50,10 +51,17 @@ export function ExecutingScreen({ address, statusText, txHash, onDone }: Props) 
 							<Trans>Track on LI.FI Explorer</Trans>
 						</ExplorerLink>
 					) : null}
+					{recoveryWarning ? (
+						<p role="alert" className={`text-xs text-warning ${BRIDGE_MESSAGE_MAX_WIDTH}`}>
+							{recoveryWarning}
+						</p>
+					) : null}
 				</div>
-				<Button variant="outline" intent="neutral" size="lg" className="w-full mt-auto" onClick={onDone}>
-					<Trans>Close</Trans>
-				</Button>
+				{recoveryWarning ? null : (
+					<Button variant="outline" intent="neutral" size="lg" className="w-full mt-auto" onClick={onDone}>
+						<Trans>Close</Trans>
+					</Button>
+				)}
 			</div>
 		);
 	}
@@ -113,9 +121,15 @@ export function ExecutingScreen({ address, statusText, txHash, onDone }: Props) 
 				</div>
 			) : null}
 
-			<Button variant="outline" intent="neutral" size="lg" className="w-full mt-auto" onClick={onDone}>
-				<Trans>Close</Trans>
-			</Button>
+			{recoveryWarning ? (
+				<p role="alert" className={`text-xs text-center text-warning ${BRIDGE_MESSAGE_MAX_WIDTH}`}>
+					{recoveryWarning}
+				</p>
+			) : (
+				<Button variant="outline" intent="neutral" size="lg" className="w-full mt-auto" onClick={onDone}>
+					<Trans>Close</Trans>
+				</Button>
+			)}
 		</div>
 	);
 }

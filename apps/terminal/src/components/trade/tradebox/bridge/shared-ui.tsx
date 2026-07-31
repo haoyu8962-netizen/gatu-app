@@ -80,6 +80,39 @@ export function BridgeWalletNotConnected() {
 	);
 }
 
+export function BridgeWalletMismatch() {
+	return (
+		<div className="flex flex-col items-center gap-4 py-8">
+			<div className="flex size-12 items-center justify-center rounded-full bg-surface border border-stroke-weak/40">
+				<WalletIcon className="size-6 text-fg" />
+			</div>
+			<div className="text-center space-y-1">
+				<p className="text-sm font-medium">
+					<Trans>Reconnect the bridge wallet</Trans>
+				</p>
+				<p className="text-xs text-fg">
+					<Trans>This bridge can only be resumed by the wallet that started it.</Trans>
+				</p>
+			</div>
+		</div>
+	);
+}
+
+export function BridgeCreationPaused() {
+	return (
+		<div className="flex flex-col items-center gap-4 py-8">
+			<div className="text-center space-y-1">
+				<p className="text-sm font-medium">
+					<Trans>Bridge creation is temporarily unavailable</Trans>
+				</p>
+				<p className="text-xs text-fg-muted">
+					<Trans>Deposits and withdrawals remain available.</Trans>
+				</p>
+			</div>
+		</div>
+	);
+}
+
 export function TokenIcon({ token, size = "md" }: { token: BridgeToken; size?: "sm" | "md" }) {
 	const iconSize = size === "sm" ? "size-5" : "size-8";
 	const badgeSize = size === "sm" ? "size-2.5" : "size-3.5";

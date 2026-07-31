@@ -1,3 +1,10 @@
+import { t } from "@lingui/core/macro";
+import { ISOLATED_RISK_FEATURES } from "@/config/isolated-risk";
+import {
+	doesOrderBatchMatchRiskContext,
+	isIsolatedOrderRiskIncrease,
+	type OrderRiskContext,
+} from "@/domain/trade/order-risk-context";
 import {
 	isAmbiguousOrderRequestError,
 	isApiOrderResponseError,
@@ -16,6 +23,7 @@ import {
 
 interface SubmitOptions {
 	queueId?: string;
+	riskContext: OrderRiskContext;
 }
 
 export type TrackedOrderResult =
@@ -27,8 +35,16 @@ export function useTrackedOrder() {
 	const mutation = useExchange("order");
 	const { clientKey, env } = useHyperliquid();
 
-	async function submitOrder(params: TrackedOrderParams, options: SubmitOptions = {}): Promise<TrackedOrderResult> {
+	async function submitOrder(params: TrackedOrderParams, options: SubmitOptions): Promise<TrackedOrderResult> {
 		if (clientKey === "disconnected") throw new Error("No active Hyperliquid account");
+		if (!doesOrderBatchMatchRiskContext(params.orders, options.riskContext)) {
+			throw new Error(t`Order market context does not match the submitted asset.`);
+		}
+		if (!ISOLATED_RISK_FEATURES.increaseEnabled && isIsolatedOrderRiskIncrease(params.orders, options.riskContext)) {
+			throw new Error(
+				t`Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available.`,
+			);
+		}
 
 		const user = clientKey.toLowerCase() as `0x${string}`;
 		const tracked = trackOrderRequest(params);

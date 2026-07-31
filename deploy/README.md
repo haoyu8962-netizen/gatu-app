@@ -11,7 +11,19 @@ Internet → Caddy :443 (自动 Let's Encrypt TLS, app.gatu.ai)
 ```
 
 > 行情 WebSocket、订单签名都由浏览器直连 Hyperliquid,**不经过本机**。
-> 服务端只做首屏 SSR 渲染 + `getGeo`(IPdata 查询),负载很轻。
+> 服务端负责首屏 SSR、`getGeo`(IPdata 查询)、脱敏客户端错误接收，以及移动配对 QR 的
+> 60 秒一次性消费登记。移动配对登记只保存随机 `syncId`、随机设备 ID 和过期时间，
+> 不接收或保存 Agent 私钥、QR 密钥、钱包地址。
+
+移动配对的一次性消费依赖当前拓扑中的**单个常驻 Node 进程**完成原子判定。进程重启会让
+尚未消费的 QR 安全失效，用户需要重新生成；不会降级为允许导入。若未来扩成多进程、多实例
+或多区域，必须先把该登记迁移到所有实例共享、支持原子 compare-and-set 且带 TTL 的存储，
+并在迁移验证完成前保持移动配对两个 gate 关闭，不能使用各实例独立内存。
+
+`/mobile-agent-sync-ticket` 会先验证同源、体积和完整 schema，再按 Caddy 覆盖写入的客户端
+IP 分别限制 register/consume。Nitro 只监听 loopback；不要把 3000 端口直接暴露公网，也不要
+删除 `Caddyfile` 中覆盖 `X-Forwarded-For` / `X-Real-IP` 的配置。若前置 CloudFront 或其他
+代理，必须重新建立受信代理链并验证应用拿到的是终端客户端 IP，而不是可由请求方伪造的头。
 
 本目录文件:
 
@@ -172,6 +184,11 @@ sudo systemctl status gatu --no-pager
 
 浏览器打开 `https://app.gatu.ai`:能连钱包(Privy)、看行情、下单表单可见。
 
+客户端运行时错误只会 POST 到同源 `/client-error-report`；应用层仅接受 4 KiB 以内的固定枚举/栈位置
+摘要，不接收原始 message、完整 URL、查询参数、钱包地址或密钥。Node 进程内的 60 次/分钟限流只是
+单实例兜底，不是分布式防护。生产入口必须另外为该路径配置 CDN/WAF 的分布式请求频率与请求体大小限制，
+并禁止边缘层记录请求 body；多实例发布不能依赖进程内计数器。
+
 移动配对的两个构建期开关默认关闭:
 
 - `VITE_MOBILE_PAIRING_CREATE_ENABLED=true`:允许桌面创建、批准并揭示 QR，但仅在 import gate 也开启时生效。
@@ -181,6 +198,32 @@ sudo systemctl status gatu --no-pager
 按环境放量。create-only 会保持关闭，避免同名 Agent 替换现有手机后却无法导入。关闭任一开关都
 需要重新构建和部署；它不是无需部署即可切换的远端 kill switch。无论开关状态如何，撤销已有
 Mobile Agent 和已有 Agent 的远端对账都保持可用。
+
+其余三个高风险能力也使用彼此独立、默认关闭的构建期开关:
+
+- `VITE_PORTFOLIO_MARGIN_ACTIVATION_ENABLED=true`:允许从非 PM 模式新激活 Portfolio Margin。关闭时已有
+  PM 用户仍可使用当前模式或切回其他模式。
+- `VITE_LIFI_BRIDGE_CREATE_ENABLED=true`:允许通过 LI.FI 创建新的跨链 route。关闭时标准 Hyperliquid
+  Bridge2 入金/出金不受影响。对于已经提交跨链交易的 LI.FI route，客户端会把
+  `updateRouteHook` 返回的 latest route 去除签名、typed data、transaction request 和 calldata 后，
+  临时保存在当前标签页的 `sessionStorage`。即使 LI.FI SDK 在广播后把 source process 标为 `FAILED`，
+  只要仍有合法 `txHash` 或 `taskId`，客户端也会保留恢复记录；恢复时先把该标识规范成只追踪既有交易
+  的输入，不会把原始 `FAILED` process 直接交给重试路径，也不会在关闭新 route 的 gate 后重新签名或
+  发送源链交易。用户必须显式点击 Resume tracking 才开始对账；没有广播标识的 route 在 gate 关闭后
+  不提供 Retry。同一标签页刷新或加载新部署后，只有连接精确相同的钱包，且 source chain、返回的 wallet
+  client chain、route/step ID、tool、源 token/金额、HyperCore 目标链、目标地址和 USDC 目标资产均与
+  已批准 route 的 fingerprint 一致时才允许追踪。关闭标签页或浏览器后 `sessionStorage` 不再存在，因此
+  不承诺本地恢复，也不要把它当作长期交易历史；应使用链上浏览器/LI.FI Explorer 继续核对。如果提交后
+  浏览器无法写入恢复记录，执行页会明确要求保持当前标签页打开并移除 Close 操作，直到当前追踪完成。
+- `VITE_ISOLATED_RISK_INCREASE_ENABLED=true`:允许切入 isolated、调整 isolated 杠杆、移除 isolated
+  保证金，以及提交非 reduce-only 的 isolated 普通单/TWAP。关闭时 cross 与 spot 下单不受影响；已有
+  isolated 仓位仍可通过 reduce-only 市价/限价/TP-SL 平仓或减仓，撤单、TWAP 撤单、对账、追加保证金
+  和切回 cross 仍保持可用。
+
+这些变量只接受精确的 `true`，关闭任意能力都需要重新构建和部署。不要把它们当作远端实时 kill switch。
+已经加载旧构建的浏览器标签页不会被构建期开关立即关闭。关闭 LI.FI 新 route 时，应先停止对启用版本的
+流量并留出在途 route 排空窗口，再发布关闭版本；发布后用同一标签页刷新验证 committed route 的恢复入口，
+并确认新标签页、桌面账户入口和移动账户入口均不再显示新 Bridge 入口。
 
 ---
 
@@ -276,6 +319,9 @@ ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && 
 
 - [ ] `.env.local`:`VITE_PRIVY_APP_ID` 已填(生产 mainnet,`VITE_HYPERLIQUID_TESTNET` 留空)
 - [ ] 移动配对 rollout 已决策；若启用，两个 `VITE_MOBILE_PAIRING_*_ENABLED` 均为精确的 `true`
+- [ ] 启用移动配对时仍为单 Node 进程；若已横向扩容，一次性 QR 登记已迁移到共享原子 TTL 存储
+- [ ] PM 激活、LI.FI 新 bridge、isolated 风险增加三个独立 rollout 已决策；未批准的 gate 保持为空
+- [ ] 若关闭 LI.FI 新 bridge，已停止启用版本的流量、盘点在途 route，并验证同标签页刷新恢复和双端新入口隐藏
 - [ ] `.env.runtime`:`IPDATA_API_KEY` 已填(并已**轮换**掉聊天里泄漏过的旧 key)
 - [ ] Privy Dashboard:把 `app.gatu.ai` 加入 Allowed origins
 - [ ] Builder 地址已充值 ≥100 USDC(否则 builder fee 下单会失败)

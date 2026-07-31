@@ -152,6 +152,7 @@ const positionRef: TpSlPositionRef = {
 	assetId: 120000,
 	isLong: false,
 	szDecimals: 3,
+	marginMode: "cross",
 };
 
 function openOrder(overrides: Partial<OpenOrder> = {}): OpenOrder {

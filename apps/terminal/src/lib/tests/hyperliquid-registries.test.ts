@@ -23,6 +23,8 @@ describe("exchange registry", () => {
 		}
 	});
 
+	// Exact methods marked "Signing: User-Signed EIP-712" by
+	// @nktkas/hyperliquid 0.33.1. Update this contract with every SDK upgrade.
 	const EXPECTED_USER_SIGNED: ExchangeMethod[] = [
 		"approveAgent",
 		"approveBuilderFee",
@@ -33,6 +35,7 @@ describe("exchange registry", () => {
 		"sendAsset",
 		"sendToEvmWithData",
 		"spotSend",
+		"stakingLinkDisableTradingUser",
 		"tokenDelegate",
 		"usdClassTransfer",
 		"usdSend",

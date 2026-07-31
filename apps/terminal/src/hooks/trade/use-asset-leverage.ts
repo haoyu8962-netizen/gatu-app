@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { assertIsolatedRiskIncreaseAllowed } from "@/config/isolated-risk";
 import { DEFAULT_MAX_LEVERAGE } from "@/config/trade";
 import { type AssetAvailabilityStatus, getAssetAvailabilityStatus } from "@/domain/trade/order/availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -151,6 +152,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		if (!isPerpMarket || pendingLeverage === null || typeof assetId !== "number") {
 			return;
 		}
+		assertIsolatedRiskIncreaseAllowed(marginMode);
 
 		operationTypeRef.current = "leverage";
 		await updateLeverage({
@@ -164,6 +166,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 
 	async function switchMarginMode(mode: MarginMode) {
 		if (!isPerpMarket || typeof assetId !== "number") return;
+		assertIsolatedRiskIncreaseAllowed(mode);
 
 		if (isOnlyIsolated && mode === "cross") {
 			throw new Error("This market only supports isolated margin mode");
@@ -190,6 +193,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 
 	async function applyMarginAndLeverage(mode: MarginMode, leverageValue: number) {
 		if (!isPerpMarket || typeof assetId !== "number") return;
+		assertIsolatedRiskIncreaseAllowed(mode);
 
 		const clamped = Math.max(1, Math.min(Math.round(leverageValue), maxLeverage));
 

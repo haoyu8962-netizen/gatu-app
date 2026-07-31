@@ -9,6 +9,12 @@ import { getPendingOrderActions, hasPendingOrderForAssets } from "@/stores/use-p
 
 const mutateAsync = vi.fn();
 const reset = vi.fn();
+const CROSS_PERP_SUBMIT_OPTIONS = {
+	riskContext: { marketKind: "perp", marginMode: "cross" },
+} as const;
+const ISOLATED_SUBMIT_OPTIONS = {
+	riskContext: { marketKind: "perp", marginMode: "isolated" },
+} as const;
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useExchange: () => ({ mutateAsync, isPending: false, error: null, reset }),
@@ -65,7 +71,7 @@ describe("useTrackedOrder", () => {
 		const params = createParams(7);
 		let firstResult: Awaited<ReturnType<NonNullable<typeof hookValue>["submitOrder"]>> | undefined;
 		await act(async () => {
-			firstResult = await hookValue?.submitOrder(params);
+			firstResult = await hookValue?.submitOrder(params, CROSS_PERP_SUBMIT_OPTIONS);
 		});
 
 		expect(firstResult?.state).toBe("reconciling");
@@ -75,7 +81,7 @@ describe("useTrackedOrder", () => {
 
 		let secondResult: Awaited<ReturnType<NonNullable<typeof hookValue>["submitOrder"]>> | undefined;
 		await act(async () => {
-			secondResult = await hookValue?.submitOrder(params);
+			secondResult = await hookValue?.submitOrder(params, CROSS_PERP_SUBMIT_OPTIONS);
 		});
 		expect(secondResult?.state).toBe("blocked");
 		expect(mutateAsync).toHaveBeenCalledTimes(1);
@@ -88,7 +94,7 @@ describe("useTrackedOrder", () => {
 		});
 		let result: Awaited<ReturnType<NonNullable<typeof hookValue>["submitOrder"]>> | undefined;
 		await act(async () => {
-			result = await hookValue?.submitOrder(createParams(8));
+			result = await hookValue?.submitOrder(createParams(8), CROSS_PERP_SUBMIT_OPTIONS);
 		});
 
 		expect(result?.state).toBe("confirmed");
@@ -103,7 +109,7 @@ describe("useTrackedOrder", () => {
 		mutateAsync.mockReturnValueOnce(request);
 		if (!hookValue) throw new Error("Expected tracked order hook");
 
-		const submitPromise = hookValue.submitOrder(createParams(10));
+		const submitPromise = hookValue.submitOrder(createParams(10), CROSS_PERP_SUBMIT_OPTIONS);
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [10])).toBe(true);
 
 		if (!resolveRequest) throw new Error("Expected pending exchange request");
@@ -127,7 +133,7 @@ describe("useTrackedOrder", () => {
 		});
 		let result: Awaited<ReturnType<NonNullable<typeof hookValue>["submitOrder"]>> | undefined;
 		await act(async () => {
-			result = await hookValue?.submitOrder(createParams(9, 2));
+			result = await hookValue?.submitOrder(createParams(9, 2), CROSS_PERP_SUBMIT_OPTIONS);
 		});
 
 		expect(result?.state).toBe("reconciling");
@@ -141,7 +147,7 @@ describe("useTrackedOrder", () => {
 		if (!hookValue) throw new Error("Expected tracked order hook");
 
 		await act(async () => {
-			await expect(hookValue?.submitOrder(createParams(11))).rejects.toBe(error);
+			await expect(hookValue?.submitOrder(createParams(11), CROSS_PERP_SUBMIT_OPTIONS)).rejects.toBe(error);
 		});
 
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [11])).toBe(false);
@@ -153,7 +159,7 @@ describe("useTrackedOrder", () => {
 		if (!hookValue) throw new Error("Expected tracked order hook");
 
 		await act(async () => {
-			await expect(hookValue?.submitOrder(createParams(14))).rejects.toBe(error);
+			await expect(hookValue?.submitOrder(createParams(14), CROSS_PERP_SUBMIT_OPTIONS)).rejects.toBe(error);
 		});
 
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [14])).toBe(false);
@@ -169,11 +175,11 @@ describe("useTrackedOrder", () => {
 		if (!hookValue) throw new Error("Expected tracked order hook");
 
 		await act(async () => {
-			await hookValue?.submitOrder(createParams(15));
+			await hookValue?.submitOrder(createParams(15), CROSS_PERP_SUBMIT_OPTIONS);
 		});
 		let closeResult: Awaited<ReturnType<typeof hookValue.submitOrder>> | undefined;
 		await act(async () => {
-			closeResult = await hookValue?.submitOrder(createParams(15, 1, true));
+			closeResult = await hookValue?.submitOrder(createParams(15, 1, true), ISOLATED_SUBMIT_OPTIONS);
 		});
 
 		expect(closeResult?.state).toBe("confirmed");
@@ -194,7 +200,7 @@ describe("useTrackedOrder", () => {
 		let caught: unknown;
 		await act(async () => {
 			try {
-				await hookValue?.submitOrder(createParams(12, 2));
+				await hookValue?.submitOrder(createParams(12, 2), CROSS_PERP_SUBMIT_OPTIONS);
 			} catch (error) {
 				caught = error;
 			}
@@ -216,11 +222,37 @@ describe("useTrackedOrder", () => {
 		if (!hookValue) throw new Error("Expected tracked order hook");
 
 		await act(async () => {
-			await expect(hookValue?.submitOrder(createParams(13, 3))).rejects.toMatchObject({
+			await expect(hookValue?.submitOrder(createParams(13, 3), CROSS_PERP_SUBMIT_OPTIONS)).rejects.toMatchObject({
 				resolution: { status: "rejected", acceptedCount: 0, rejectedCount: 3, totalCount: 3 },
 			});
 		});
 
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [13])).toBe(false);
+	});
+
+	it("blocks isolated risk-increasing orders before persistence or SDK mutation", async () => {
+		if (!hookValue) throw new Error("Expected tracked order hook");
+
+		await act(async () => {
+			await expect(hookValue?.submitOrder(createParams(16), ISOLATED_SUBMIT_OPTIONS)).rejects.toThrow(
+				"Opening or increasing isolated positions is temporarily unavailable.",
+			);
+		});
+
+		expect(mutateAsync).not.toHaveBeenCalled();
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [16])).toBe(false);
+	});
+
+	it("rejects a caller that labels a perp asset as spot", async () => {
+		if (!hookValue) throw new Error("Expected tracked order hook");
+
+		await act(async () => {
+			await expect(hookValue?.submitOrder(createParams(18), { riskContext: { marketKind: "spot" } })).rejects.toThrow(
+				"Order market context does not match the submitted asset.",
+			);
+		});
+
+		expect(mutateAsync).not.toHaveBeenCalled();
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [18])).toBe(false);
 	});
 });

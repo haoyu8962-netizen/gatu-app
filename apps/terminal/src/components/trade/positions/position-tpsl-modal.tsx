@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { InfoRow } from "@/components/ui/info-row";
 import { HL_ALL_DEXS } from "@/config/app";
 import { buildPositionTpSlUpdatePlan, hasPositionTpSlTriggerMutation } from "@/domain/trade/order-intent";
+import { doesOrderBatchMatchRiskContext } from "@/domain/trade/order-risk-context";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -198,6 +199,11 @@ function PositionTpSlForm({
 		setSubmitError(null);
 		let mutationStarted = false;
 		try {
+			const riskContext = { marketKind: "perp", marginMode: position.leverage.type } as const;
+			const changedOrders = [...updatePlan.modifies.map((modify) => modify.order), ...updatePlan.orders];
+			if (!doesOrderBatchMatchRiskContext(changedOrders, riskContext)) {
+				throw new Error(t`Order market context does not match the submitted asset.`);
+			}
 			if (updatePlan.modifies.length > 0) {
 				mutationStarted = true;
 				const result = await modifyOrders({ a: true, modifies: updatePlan.modifies });
@@ -205,7 +211,7 @@ function PositionTpSlForm({
 			}
 			if (updatePlan.orders.length > 0) {
 				mutationStarted = true;
-				const submission = await submitOrder({ orders: updatePlan.orders, grouping: "positionTpsl" });
+				const submission = await submitOrder({ orders: updatePlan.orders, grouping: "positionTpsl" }, { riskContext });
 				if (submission.state === "blocked") {
 					setSubmitError(t`Another order for this market is still being confirmed.`);
 					return;

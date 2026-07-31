@@ -33,6 +33,13 @@ export {
 	ProviderNotFoundError,
 	WalletAccountMismatchError,
 } from "./errors";
+export {
+	assertExchangeMutationAllowed,
+	HyperliquidExchangePolicyProvider,
+	type HyperliquidExchangePolicyProviderProps,
+	isPortfolioMarginActivation,
+	usePortfolioMarginActivationPolicy,
+} from "./exchange-policy";
 export { getExplorerTokenUrl, getExplorerTxUrl } from "./explorer";
 export { type ApiStatus, type ApiStatusResult, useApiStatus } from "./hooks/useApiStatus";
 export { type HyperliquidClients, useHyperliquidClients } from "./hooks/useClients";
@@ -69,12 +76,44 @@ export type { HyperliquidContextValue, HyperliquidProviderProps } from "./provid
 export { HyperliquidProvider, useConfig, useHyperliquid, useHyperliquidOptional } from "./provider";
 export { createKey, infoKeys, serializeKey, subscriptionKeys } from "./query/keys";
 export {
+	type AgentRegistrationCleanupResult,
+	type AgentRegistrationCleanupTarget,
+	type AgentRegistrationEpoch,
+	type AgentRegistrationExecutionLease,
+	type AgentRegistrationExecutionLeaseOptions,
+	type AgentRegistrationExecutionStartResult,
+	type AgentRegistrationPersistResult,
+	type AgentRegistrationSessionFailureReason,
+	type AgentRegistrationSessionResult,
+	type AgentRegistrationShutdownOptions,
+	type AgentRegistrationShutdownResult,
+	type AgentRegistrationVerificationResult,
+	activateAgentOwnerForRegistration,
+	activateAgentRegistrationSession,
+	cancelAgentRegistrationEpochAndRemove,
+	captureAgentRegistrationEpoch,
+	captureAgentRegistrationExecutionLease,
+	cleanupAgentRegistrationIfMatches,
+	closeAgentRegistrationSession,
+	closeAgentRegistrationSessionAndRemove,
+	isAgentRegistrationEpochCurrent,
+	isAgentRegistrationExecutionLeaseCurrent,
+	persistAgentForRegistration,
+	restoreAgentRegistrationSession,
+	startAgentRegistrationExecution,
+	verifyAgentRegistrationOrRemove,
+} from "./signing/agent-registration-session";
+export {
+	type ActiveAgentOwnerExecutionLease,
 	type AgentOwner,
+	captureActiveAgentOwnerExecutionLease,
 	clearActiveAgentOwner,
 	clearActiveAgentOwnerIfMatches,
+	ensureActiveAgentOwnerRevision,
 	getActiveAgentOwner,
 	type ResolvedSession,
 	resolveSession,
+	runWithActiveAgentOwnerExecutionLease,
 	type SessionMode,
 	setActiveAgentOwner,
 	setActiveAgentOwnerAndVerify,
@@ -83,6 +122,7 @@ export {
 export {
 	type AgentStorageRemovalResult,
 	type AgentStorageWriteResult,
+	type AgentWalletMetadata,
 	hasInvalidAgentStorageRecord,
 	readAgentFromStorage,
 	removeAgentFromStorage,

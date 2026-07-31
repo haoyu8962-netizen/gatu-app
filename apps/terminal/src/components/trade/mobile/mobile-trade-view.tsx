@@ -236,6 +236,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 					slPriceNum: toNumber(slPrice),
 				}),
 	);
+	const riskContext = isSpotMarket ? ({ marketKind: "spot" } as const) : ({ marketKind: "perp", marginMode } as const);
 
 	function applySizeFromPercent(pct: number) {
 		if (maxSize <= 0) return;
@@ -311,7 +312,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 		});
 
 		try {
-			const submission = await submitOrder({ orders: plan.orders, grouping: plan.grouping }, { queueId: orderId });
+			const submission = await submitOrder(
+				{ orders: plan.orders, grouping: plan.grouping },
+				{ queueId: orderId, riskContext },
+			);
 			if (submission.state === "blocked") {
 				updateOrder(orderId, {
 					status: "failed",

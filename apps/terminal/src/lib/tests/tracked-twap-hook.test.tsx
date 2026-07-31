@@ -8,6 +8,8 @@ import { useTrackedTwapOrder } from "@/hooks/trade/use-tracked-twap-order";
 import { getPendingTwapActions, hasPendingTwapForAsset } from "@/stores/use-pending-twap-store";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
+const CROSS_PERP_RISK_CONTEXT = { marketKind: "perp", marginMode: "cross" } as const;
+const ISOLATED_RISK_CONTEXT = { marketKind: "perp", marginMode: "isolated" } as const;
 const mocks = vi.hoisted(() => ({
 	mutateAsync: vi.fn(),
 	reset: vi.fn(),
@@ -45,13 +47,13 @@ function Probe() {
 	return null;
 }
 
-function createParams(assetId = 7) {
+function createParams(assetId = 7, reduceOnly = false) {
 	return {
 		twap: {
 			a: assetId,
 			b: true,
 			s: "1.25",
-			r: false,
+			r: reduceOnly,
 			m: 30,
 			t: true,
 		},
@@ -88,7 +90,10 @@ describe("useTrackedTwapOrder", () => {
 
 		let firstResult: Awaited<ReturnType<typeof hookValue.submitTwap>> | undefined;
 		await act(async () => {
-			firstResult = await hookValue?.submitTwap(createParams(), { coin: "xyz:GOLD" });
+			firstResult = await hookValue?.submitTwap(createParams(), {
+				coin: "xyz:GOLD",
+				riskContext: CROSS_PERP_RISK_CONTEXT,
+			});
 		});
 
 		expect(firstResult?.state).toBe("reconciling");
@@ -97,7 +102,10 @@ describe("useTrackedTwapOrder", () => {
 
 		let secondResult: Awaited<ReturnType<typeof hookValue.submitTwap>> | undefined;
 		await act(async () => {
-			secondResult = await hookValue?.submitTwap(createParams(), { coin: "xyz:GOLD" });
+			secondResult = await hookValue?.submitTwap(createParams(), {
+				coin: "xyz:GOLD",
+				riskContext: CROSS_PERP_RISK_CONTEXT,
+			});
 		});
 		expect(secondResult).toEqual({ state: "blocked", reason: "pending" });
 		expect(mocks.mutateAsync).toHaveBeenCalledTimes(1);
@@ -110,7 +118,10 @@ describe("useTrackedTwapOrder", () => {
 
 		let result: Awaited<ReturnType<typeof hookValue.submitTwap>> | undefined;
 		await act(async () => {
-			result = await hookValue?.submitTwap(createParams(12), { coin: "BTC" });
+			result = await hookValue?.submitTwap(createParams(12), {
+				coin: "BTC",
+				riskContext: CROSS_PERP_RISK_CONTEXT,
+			});
 		});
 
 		expect(result).toEqual({ state: "blocked", reason: "stateUnavailable" });
@@ -127,7 +138,10 @@ describe("useTrackedTwapOrder", () => {
 
 		let result: Awaited<ReturnType<typeof hookValue.submitTwap>> | undefined;
 		await act(async () => {
-			result = await hookValue?.submitTwap(createParams(8), { coin: "ETH" });
+			result = await hookValue?.submitTwap(createParams(8), {
+				coin: "ETH",
+				riskContext: CROSS_PERP_RISK_CONTEXT,
+			});
 		});
 
 		expect(result?.state).toBe("confirmed");
@@ -142,7 +156,10 @@ describe("useTrackedTwapOrder", () => {
 		mocks.mutateAsync.mockReturnValueOnce(request);
 		if (!hookValue) throw new Error("Expected tracked TWAP hook");
 
-		const submitPromise = hookValue.submitTwap(createParams(9), { coin: "BTC" });
+		const submitPromise = hookValue.submitTwap(createParams(9), {
+			coin: "BTC",
+			riskContext: CROSS_PERP_RISK_CONTEXT,
+		});
 		expect(hasPendingTwapForAsset("Mainnet", USER, 9)).toBe(true);
 
 		if (!resolveRequest) throw new Error("Expected pending exchange request");
@@ -159,7 +176,9 @@ describe("useTrackedTwapOrder", () => {
 		if (!hookValue) throw new Error("Expected tracked TWAP hook");
 
 		await act(async () => {
-			await expect(hookValue?.submitTwap(createParams(10), { coin: "SOL" })).rejects.toBe(error);
+			await expect(
+				hookValue?.submitTwap(createParams(10), { coin: "SOL", riskContext: CROSS_PERP_RISK_CONTEXT }),
+			).rejects.toBe(error);
 		});
 
 		expect(hasPendingTwapForAsset("Mainnet", USER, 10)).toBe(false);
@@ -171,9 +190,62 @@ describe("useTrackedTwapOrder", () => {
 		if (!hookValue) throw new Error("Expected tracked TWAP hook");
 
 		await act(async () => {
-			await expect(hookValue?.submitTwap(createParams(11), { coin: "HYPE" })).rejects.toBe(error);
+			await expect(
+				hookValue?.submitTwap(createParams(11), { coin: "HYPE", riskContext: CROSS_PERP_RISK_CONTEXT }),
+			).rejects.toBe(error);
 		});
 
 		expect(hasPendingTwapForAsset("Mainnet", USER, 11)).toBe(false);
+	});
+
+	it("blocks isolated TWAP risk increases before persistence or SDK mutation", async () => {
+		if (!hookValue) throw new Error("Expected tracked TWAP hook");
+
+		await act(async () => {
+			await expect(
+				hookValue?.submitTwap(createParams(13), {
+					coin: "BTC",
+					riskContext: ISOLATED_RISK_CONTEXT,
+				}),
+			).rejects.toThrow("Opening or increasing isolated positions is temporarily unavailable.");
+		});
+
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+		expect(hasPendingTwapForAsset("Mainnet", USER, 13)).toBe(false);
+	});
+
+	it("preserves reduce-only isolated TWAP submissions", async () => {
+		mocks.mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "twapOrder", data: { status: { running: { twapId: 44 } } } },
+		});
+		if (!hookValue) throw new Error("Expected tracked TWAP hook");
+
+		let result: Awaited<ReturnType<typeof hookValue.submitTwap>> | undefined;
+		await act(async () => {
+			result = await hookValue?.submitTwap(createParams(13, true), {
+				coin: "BTC",
+				riskContext: ISOLATED_RISK_CONTEXT,
+			});
+		});
+
+		expect(result?.state).toBe("confirmed");
+		expect(mocks.mutateAsync).toHaveBeenCalledOnce();
+	});
+
+	it("rejects a caller that labels a perp TWAP asset as spot", async () => {
+		if (!hookValue) throw new Error("Expected tracked TWAP hook");
+
+		await act(async () => {
+			await expect(
+				hookValue?.submitTwap(createParams(15), {
+					coin: "BTC",
+					riskContext: { marketKind: "spot" },
+				}),
+			).rejects.toThrow("Order market context does not match the submitted asset.");
+		});
+
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
+		expect(hasPendingTwapForAsset("Mainnet", USER, 15)).toBe(false);
 	});
 });

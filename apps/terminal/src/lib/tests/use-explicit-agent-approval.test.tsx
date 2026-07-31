@@ -10,11 +10,13 @@ const AGENT = "0x2222222222222222222222222222222222222222";
 
 const testState = vi.hoisted(() => ({
 	clientApproveAgent: vi.fn(),
+	captureRegistrationLease: vi.fn(),
 	createExchangeClient: vi.fn(),
 	createPrivyAgentSigner: vi.fn(),
 	fallbackApproveAgent: vi.fn(),
 	hasSameWalletAddress: true,
 	signTypedData: vi.fn(),
+	startRegistrationExecution: vi.fn(),
 }));
 
 vi.mock("@privy-io/react-auth", () => ({
@@ -22,12 +24,17 @@ vi.mock("@privy-io/react-auth", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	captureAgentRegistrationExecutionLease: testState.captureRegistrationLease,
 	createExchangeClient: testState.createExchangeClient,
+	startAgentRegistrationExecution: testState.startRegistrationExecution,
 	useExchange: () => ({
 		isPending: false,
 		mutateAsync: testState.fallbackApproveAgent,
 	}),
-	useHyperliquid: () => ({ env: "Mainnet" }),
+	useHyperliquid: () => ({
+		env: "Mainnet",
+		exchangeLifecycle: { id: Symbol.for("test-provider"), active: true },
+	}),
 }));
 
 vi.mock("@/lib/wallet/privy-agent-signer", () => ({
@@ -59,6 +66,10 @@ describe("useExplicitAgentApproval", () => {
 		approval = undefined;
 		testState.clientApproveAgent.mockReset();
 		testState.clientApproveAgent.mockResolvedValue({ status: "ok", response: { type: "default" } });
+		testState.captureRegistrationLease.mockReset();
+		testState.captureRegistrationLease.mockReturnValue({
+			epoch: { env: "Mainnet", owner: OWNER, epoch: "11111111-1111-4111-8111-111111111111" },
+		});
 		testState.createExchangeClient.mockReset();
 		testState.createExchangeClient.mockReturnValue({ approveAgent: testState.clientApproveAgent });
 		testState.createPrivyAgentSigner.mockReset();
@@ -66,6 +77,11 @@ describe("useExplicitAgentApproval", () => {
 		testState.fallbackApproveAgent.mockReset();
 		testState.fallbackApproveAgent.mockResolvedValue({ status: "ok", response: { type: "default" } });
 		testState.hasSameWalletAddress = true;
+		testState.startRegistrationExecution.mockReset();
+		testState.startRegistrationExecution.mockImplementation(
+			async (_lease: unknown, canStart: () => boolean, execute: () => Promise<unknown>) =>
+				canStart() ? { status: "started", execution: execute() } : { status: "invalidated" },
+		);
 	});
 
 	afterEach(() => {
@@ -140,6 +156,21 @@ describe("useExplicitAgentApproval", () => {
 		});
 
 		expect(testState.fallbackApproveAgent).not.toHaveBeenCalled();
+		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
+	});
+
+	it("does not create a signer when the exact registration lease is no longer current", async () => {
+		testState.startRegistrationExecution.mockResolvedValue({ status: "invalidated" });
+		const hook = await renderApprovalHook();
+
+		await act(async () => {
+			await expect(hook.mutateAsync({ agentAddress: AGENT, agentName: "Mobile" })).rejects.toThrow(
+				"The wallet session changed before mobile access approval.",
+			);
+		});
+
+		expect(testState.createPrivyAgentSigner).not.toHaveBeenCalled();
+		expect(testState.signTypedData).not.toHaveBeenCalled();
 		expect(testState.clientApproveAgent).not.toHaveBeenCalled();
 	});
 });

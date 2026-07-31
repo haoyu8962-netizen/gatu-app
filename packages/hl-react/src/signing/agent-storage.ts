@@ -2,7 +2,13 @@ import { useSyncExternalStore } from "react";
 import type { Address, Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { z } from "zod";
+import { evictAllAgentTradingClients, evictTradingClient } from "../clients";
+import {
+	invalidateAllExchangeRequestIdentities,
+	invalidateExchangeRequestIdentity,
+} from "../internal/exchange/request-scheduler";
 import { LRU } from "../lru";
+import { evictAgentSigner, evictAllAgentSigners } from "./agent-signer-cache";
 import { createMobileAgentName, MOBILE_AGENT_NAME_BASE } from "./mobile-agent";
 import type { AgentWallet, HyperliquidEnv } from "./types";
 
@@ -58,22 +64,21 @@ const legacyLocalAgentWalletSchema = agentKeySchema
 const agentWalletSchema = z
 	.union([sourcedAgentWalletSchema, legacyLocalAgentWalletSchema])
 	.superRefine((agent, ctx) => {
-		if (agent.source !== "mobile-sync") return;
-
-		if (
-			agent.agentName !== createMobileAgentName(agent.agentValidUntilMs) ||
-			agent.importedAtMs >= agent.agentValidUntilMs ||
-			agent.syncId.trim() !== agent.syncId
-		) {
-			ctx.addIssue({ code: "custom", message: "Invalid canonical mobile Agent metadata" });
-		}
-
 		try {
 			if (privateKeyToAccount(agent.privateKey).address.toLowerCase() !== agent.publicKey.toLowerCase()) {
-				ctx.addIssue({ code: "custom", message: "Mobile Agent key pair mismatch" });
+				ctx.addIssue({ code: "custom", message: "Agent key pair mismatch" });
 			}
 		} catch {
-			ctx.addIssue({ code: "custom", message: "Invalid mobile Agent private key" });
+			ctx.addIssue({ code: "custom", message: "Invalid Agent private key" });
+		}
+
+		if (
+			agent.source === "mobile-sync" &&
+			(agent.agentName !== createMobileAgentName(agent.agentValidUntilMs) ||
+				agent.importedAtMs >= agent.agentValidUntilMs ||
+				agent.syncId.trim() !== agent.syncId)
+		) {
+			ctx.addIssue({ code: "custom", message: "Invalid canonical mobile Agent metadata" });
 		}
 	});
 
@@ -102,16 +107,83 @@ function getStorageKey(env: HyperliquidEnv, userAddress: string): string {
 	return `hyperliquid_agent_${env}_${userAddress.toLowerCase()}`;
 }
 
+const REGISTRATION_SESSION_STORAGE_PREFIX = "hyperliquid_agent_registration_session";
+
+function getRegistrationSessionStorageKey(env: HyperliquidEnv, userAddress: string): string {
+	return `${REGISTRATION_SESSION_STORAGE_PREFIX}_${env}_${userAddress.toLowerCase()}`;
+}
+
+function isAgentRegistrationSessionUsable(raw: string | null): boolean {
+	// Existing installations without a session record remain compatible. Once
+	// a record exists, malformed and closing/closed records fail closed.
+	if (raw === null) return true;
+	try {
+		const parsed = JSON.parse(raw) as Record<string, unknown>;
+		return (
+			parsed.version === 1 && parsed.state === "active" && typeof parsed.epoch === "string" && parsed.epoch.length >= 16
+		);
+	} catch {
+		return false;
+	}
+}
+
+function readStoredAgentRecord(env: HyperliquidEnv, userAddress: string): AgentWallet | null {
+	try {
+		const raw = localStorage.getItem(getStorageKey(env, userAddress));
+		return raw ? parseAgentWallet(JSON.parse(raw)) : null;
+	} catch {
+		return null;
+	}
+}
+
+/** @internal — used by the registration lock to revalidate cleanup targets. */
+export type AgentStorageRecordInspection =
+	| { status: "absent" }
+	| { status: "valid"; agent: AgentWallet }
+	| { status: "invalid" }
+	| { status: "failed"; reason: "storage_unavailable" };
+
+/** @internal — bypasses the session gate but never exposes an unvalidated record. */
+export function inspectAgentStorageRecord(env: HyperliquidEnv, userAddress: string): AgentStorageRecordInspection {
+	if (typeof window === "undefined") return { status: "failed", reason: "storage_unavailable" };
+
+	let raw: string | null;
+	try {
+		raw = window.localStorage.getItem(getStorageKey(env, userAddress));
+	} catch {
+		return { status: "failed", reason: "storage_unavailable" };
+	}
+	if (raw === null) return { status: "absent" };
+
+	try {
+		const agent = parseAgentWallet(JSON.parse(raw));
+		return agent ? { status: "valid", agent } : { status: "invalid" };
+	} catch {
+		return { status: "invalid" };
+	}
+}
+
+// A verified cleanup attempt quarantines the exact slot immediately. If
+// browser storage refuses both removal and tombstoning, this process must not
+// recreate a signer from the stale value. Only a later verified write can
+// reopen the slot.
+const blockedAgentStorageKeys = new Set<string>();
+
+function evictAgentWallet(env: HyperliquidEnv, agent: AgentWallet | null): void {
+	if (!agent) return;
+	evictAgentSigner(agent.privateKey);
+	evictTradingClient(agent.publicKey, env === "Testnet");
+}
+
 export function readAgentFromStorage(env: HyperliquidEnv, userAddress: string): AgentWallet | null {
 	if (typeof window === "undefined") return null;
 
 	try {
 		const key = getStorageKey(env, userAddress);
-		const raw = localStorage.getItem(key);
-		if (!raw) return null;
-
-		const parsed = JSON.parse(raw);
-		return parseAgentWallet(parsed);
+		if (blockedAgentStorageKeys.has(key)) return null;
+		const sessionRaw = localStorage.getItem(getRegistrationSessionStorageKey(env, userAddress));
+		if (!isAgentRegistrationSessionUsable(sessionRaw)) return null;
+		return readStoredAgentRecord(env, userAddress);
 	} catch {
 		return null;
 	}
@@ -121,7 +193,11 @@ export function hasInvalidAgentStorageRecord(env: HyperliquidEnv, userAddress: s
 	if (typeof window === "undefined") return false;
 
 	try {
-		const raw = localStorage.getItem(getStorageKey(env, userAddress));
+		const key = getStorageKey(env, userAddress);
+		if (blockedAgentStorageKeys.has(key)) return false;
+		const sessionRaw = localStorage.getItem(getRegistrationSessionStorageKey(env, userAddress));
+		if (!isAgentRegistrationSessionUsable(sessionRaw)) return false;
+		const raw = localStorage.getItem(key);
 		if (!raw) return false;
 		return !agentWalletSchema.safeParse(JSON.parse(raw)).success;
 	} catch {
@@ -142,6 +218,7 @@ export function writeAgentToStorage(
 ): void {
 	if (typeof window === "undefined") return;
 
+	const previous = readStoredAgentRecord(env, userAddress);
 	try {
 		const key = getStorageKey(env, userAddress);
 		const data: AgentWallet = {
@@ -150,6 +227,10 @@ export function writeAgentToStorage(
 			...metadata,
 		};
 		localStorage.setItem(key, JSON.stringify(agentWalletSchema.parse(data)));
+		if (previous?.privateKey !== data.privateKey) {
+			invalidateExchangeRequestIdentity(env, userAddress);
+			evictAgentWallet(env, previous);
+		}
 		invalidateSnapshotKey(key);
 		window.dispatchEvent(new StorageEvent("storage", { key }));
 	} catch {
@@ -172,6 +253,7 @@ export function writeAgentToStorageAndVerify(
 		return { status: "failed", reason: "storage_unavailable" };
 	}
 
+	const previous = readStoredAgentRecord(env, userAddress);
 	let expected: AgentWallet;
 	try {
 		expected = agentWalletSchema.parse({
@@ -198,11 +280,17 @@ export function writeAgentToStorageAndVerify(
 		const actual = raw ? parseAgentWallet(JSON.parse(raw)) : null;
 		if (!actual || JSON.stringify(actual) !== JSON.stringify(expected)) {
 			localStorage.removeItem(key);
+			invalidateExchangeRequestIdentity(env, userAddress);
 			invalidateSnapshotKey(key);
 			window.dispatchEvent(new StorageEvent("storage", { key }));
 			return { status: "failed", reason: "readback_mismatch" };
 		}
 		invalidateSnapshotKey(key);
+		if (previous?.privateKey !== actual.privateKey) {
+			invalidateExchangeRequestIdentity(env, userAddress);
+			evictAgentWallet(env, previous);
+		}
+		blockedAgentStorageKeys.delete(key);
 		window.dispatchEvent(new StorageEvent("storage", { key }));
 		return { status: "stored", agent: actual };
 	} catch {
@@ -211,6 +299,7 @@ export function writeAgentToStorageAndVerify(
 		} catch {
 			// The original readback failure remains the actionable result.
 		}
+		invalidateExchangeRequestIdentity(env, userAddress);
 		invalidateSnapshotKey(key);
 		try {
 			window.dispatchEvent(new StorageEvent("storage", { key }));
@@ -222,9 +311,12 @@ export function writeAgentToStorageAndVerify(
 }
 
 export function removeAgentFromStorage(env: HyperliquidEnv, userAddress: string): void {
+	invalidateExchangeRequestIdentity(env, userAddress);
 	if (typeof window === "undefined") return;
 
+	const previous = readStoredAgentRecord(env, userAddress);
 	const key = getStorageKey(env, userAddress);
+	blockedAgentStorageKeys.add(key);
 	try {
 		localStorage.removeItem(key);
 	} catch {
@@ -235,6 +327,7 @@ export function removeAgentFromStorage(env: HyperliquidEnv, userAddress: string)
 		}
 	}
 	invalidateSnapshotKey(key);
+	evictAgentWallet(env, previous);
 	try {
 		window.dispatchEvent(new StorageEvent("storage", { key }));
 	} catch {
@@ -243,7 +336,14 @@ export function removeAgentFromStorage(env: HyperliquidEnv, userAddress: string)
 }
 
 export function removeAgentFromStorageAndVerify(env: HyperliquidEnv, userAddress: string): AgentStorageRemovalResult {
+	invalidateExchangeRequestIdentity(env, userAddress);
+	// Registration teardown writes a closing session tombstone before removing
+	// the key. Read the stored record directly so that tombstone cannot hide the
+	// signer and trading-client identities that must be evicted.
+	const previous = readStoredAgentRecord(env, userAddress);
+	evictAgentWallet(env, previous);
 	const key = getStorageKey(env, userAddress);
+	blockedAgentStorageKeys.add(key);
 	invalidateSnapshotKey(key);
 	if (typeof window === "undefined") {
 		return { status: "failed", reason: "storage_unavailable" };
@@ -328,10 +428,15 @@ export function removeAgentFromStorageAndVerify(env: HyperliquidEnv, userAddress
 // for persistence) but callers in high-security contexts should consider a
 // shorter-lived store and a forced eviction on address change.
 /** @internal — exported only for tests; do not consume from outside this package. */
-export const snapshotCache = new LRU<string, { value: AgentWallet | null; version: number }>(4);
+export const snapshotCache = new LRU<
+	string,
+	{ raw: string | null; sessionRaw: string | null; value: AgentWallet | null; version: number }
+>(4);
 let cacheVersion = 0;
 
 const STORAGE_KEY_PREFIX = "hyperliquid_agent_";
+const storageSubscribers = new Set<() => void>();
+let storageListenerTarget: Window | null = null;
 
 // Single canonical derivation for the (env, address) cache key. Addresses from
 // wagmi arrive EIP-55 checksum-cased; the storage key is always lowercase, so
@@ -339,6 +444,31 @@ const STORAGE_KEY_PREFIX = "hyperliquid_agent_";
 // path in lock-step.
 function getCacheKey(env: HyperliquidEnv, userAddress: string): string {
 	return `${env}:${userAddress.toLowerCase()}`;
+}
+
+function getStorageScope(storageKey: string): { env: HyperliquidEnv; address: string } | null {
+	if (!storageKey.startsWith(STORAGE_KEY_PREFIX)) return null;
+	const rest = storageKey.slice(STORAGE_KEY_PREFIX.length);
+	const separator = rest.indexOf("_");
+	if (separator === -1) return null;
+	const env = rest.slice(0, separator);
+	if (env !== "Mainnet" && env !== "Testnet") return null;
+	const address = rest.slice(separator + 1);
+	if (!address) return null;
+	return { env, address };
+}
+
+function getRegistrationSessionScope(storageKey: string): { env: HyperliquidEnv; address: string } | null {
+	const prefix = `${REGISTRATION_SESSION_STORAGE_PREFIX}_`;
+	if (!storageKey.startsWith(prefix)) return null;
+	const rest = storageKey.slice(prefix.length);
+	const separator = rest.indexOf("_");
+	if (separator === -1) return null;
+	const env = rest.slice(0, separator);
+	if (env !== "Mainnet" && env !== "Testnet") return null;
+	const address = rest.slice(separator + 1);
+	if (!address) return null;
+	return { env, address };
 }
 
 function invalidateSnapshotCache() {
@@ -352,40 +482,134 @@ function invalidateSnapshotKey(storageKey: string | null) {
 		invalidateSnapshotCache();
 		return;
 	}
-	const rest = storageKey.slice(STORAGE_KEY_PREFIX.length);
-	const underscore = rest.indexOf("_");
-	if (underscore === -1) {
+	const scope = getStorageScope(storageKey);
+	if (!scope) {
 		invalidateSnapshotCache();
 		return;
 	}
-	const env = rest.slice(0, underscore);
-	const address = rest.slice(underscore + 1);
-	snapshotCache.delete(getCacheKey(env as HyperliquidEnv, address));
+	snapshotCache.delete(getCacheKey(scope.env, scope.address));
+}
+
+function evictAllCachedAgentWallets(): void {
+	for (const key of Array.from(snapshotCache.keys())) {
+		const entry = snapshotCache.get(key);
+		if (entry?.value) {
+			const separator = key.indexOf(":");
+			const env = key.slice(0, separator);
+			if (env === "Mainnet" || env === "Testnet") evictAgentWallet(env, entry.value);
+		}
+		snapshotCache.delete(key);
+	}
+	evictAllAgentSigners();
+	evictAllAgentTradingClients();
+}
+
+function handleStorageEvent(event: StorageEvent): void {
+	if (event.key === null) {
+		invalidateAllExchangeRequestIdentities();
+		evictAllCachedAgentWallets();
+		invalidateSnapshotCache();
+	} else {
+		const scope = getStorageScope(event.key);
+		if (scope) {
+			invalidateExchangeRequestIdentity(scope.env, scope.address);
+			let previous = event.oldValue;
+			if (!previous) {
+				previous = snapshotCache.get(getCacheKey(scope.env, scope.address))?.raw ?? null;
+			}
+			if (previous) {
+				try {
+					evictAgentWallet(scope.env, parseAgentWallet(JSON.parse(previous)));
+				} catch {
+					// Malformed prior data cannot identify a signer to evict.
+				}
+			}
+		}
+		const registrationScope = getRegistrationSessionScope(event.key);
+		if (registrationScope) {
+			let sessionRaw = typeof event.newValue === "string" ? event.newValue : null;
+			if (sessionRaw === null) {
+				try {
+					sessionRaw = window.localStorage.getItem(event.key);
+				} catch {
+					sessionRaw = "invalid";
+				}
+			}
+			if (!isAgentRegistrationSessionUsable(sessionRaw)) {
+				invalidateExchangeRequestIdentity(registrationScope.env, registrationScope.address);
+			}
+		}
+		invalidateSnapshotKey(event.key);
+	}
+	for (const callback of storageSubscribers) callback();
+}
+
+function ensureStorageListener(): void {
+	if (typeof window === "undefined" || storageListenerTarget === window) return;
+	if (storageListenerTarget) storageListenerTarget.removeEventListener("storage", handleStorageEvent);
+	window.addEventListener("storage", handleStorageEvent);
+	storageListenerTarget = window;
 }
 
 /** @internal — exported only for tests; do not consume from outside this package. */
 export function getCachedAgentSnapshot(env: HyperliquidEnv, userAddress: string): AgentWallet | null {
+	ensureStorageListener();
 	const key = getCacheKey(env, userAddress);
 	const entry = snapshotCache.get(key);
-	if (entry && entry.version === cacheVersion) return entry.value;
-	const value = readAgentFromStorage(env, userAddress);
-	snapshotCache.set(key, { value, version: cacheVersion });
+	const storageKey = getStorageKey(env, userAddress);
+	const sessionStorageKey = getRegistrationSessionStorageKey(env, userAddress);
+	if (blockedAgentStorageKeys.has(storageKey)) {
+		if (entry?.value) evictAgentWallet(env, entry.value);
+		snapshotCache.delete(key);
+		return null;
+	}
+	let raw: string | null;
+	let sessionRaw: string | null;
+	try {
+		raw = localStorage.getItem(storageKey);
+		sessionRaw = localStorage.getItem(sessionStorageKey);
+	} catch {
+		if (entry?.value) evictAgentWallet(env, entry.value);
+		snapshotCache.delete(key);
+		return null;
+	}
+	if (!isAgentRegistrationSessionUsable(sessionRaw)) {
+		const storedAgent = raw
+			? (() => {
+					try {
+						return parseAgentWallet(JSON.parse(raw));
+					} catch {
+						return null;
+					}
+				})()
+			: null;
+		evictAgentWallet(env, entry?.value ?? storedAgent);
+		snapshotCache.set(key, { raw, sessionRaw, value: null, version: cacheVersion });
+		return null;
+	}
+	if (entry?.raw === raw && entry.sessionRaw === sessionRaw) {
+		if (entry.version !== cacheVersion) snapshotCache.set(key, { ...entry, version: cacheVersion });
+		return entry.value;
+	}
+	if (entry?.value) evictAgentWallet(env, entry.value);
+	let value: AgentWallet | null = null;
+	if (raw) {
+		try {
+			value = parseAgentWallet(JSON.parse(raw));
+		} catch {
+			value = null;
+		}
+	}
+	snapshotCache.set(key, { raw, sessionRaw, value, version: cacheVersion });
 	return value;
 }
 
 /** @internal — exported only for tests; do not consume from outside this package. */
 export function subscribeToStorage(callback: () => void): () => void {
 	if (typeof window === "undefined") return () => {};
-	function handleStorage(event: StorageEvent) {
-		// Cross-tab StorageEvents carry the affected key; same-tab synthetic
-		// events from writeAgentToStorage/removeAgentFromStorage carry it too.
-		// Only invalidate the matching cache entry so other (env, address)
-		// pairs keep their cached reads.
-		invalidateSnapshotKey(event.key);
-		callback();
-	}
-	window.addEventListener("storage", handleStorage);
-	return () => window.removeEventListener("storage", handleStorage);
+	ensureStorageListener();
+	storageSubscribers.add(callback);
+	return () => storageSubscribers.delete(callback);
 }
 
 export function useAgentWalletStorage(env: HyperliquidEnv, userAddress: string | undefined): AgentWallet | null {

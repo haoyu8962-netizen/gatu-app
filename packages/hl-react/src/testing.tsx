@@ -33,6 +33,7 @@ export function MockHyperliquidProvider({ children, value = {} }: MockHyperliqui
 		agentName: "test",
 		clientKey: "mock",
 		sessionMode: "wallet",
+		exchangeLifecycle: { id: Symbol("mock-hyperliquid-provider"), active: true },
 		...value,
 	};
 

@@ -6,8 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const OWNER = "0x1111111111111111111111111111111111111111";
 
 const testState = vi.hoisted(() => ({
-	clearOwner: vi.fn(),
-	removeAgent: vi.fn(),
+	cleanupAgentRegistrationIfMatches: vi.fn(),
 }));
 
 vi.mock("@gatu/hl-react/provider", () => ({
@@ -29,12 +28,11 @@ vi.mock("@gatu/hl-react/hooks/useInfo", () => ({
 	}),
 }));
 
-vi.mock("@gatu/hl-react/signing/agent-session", () => ({
-	clearActiveAgentOwnerIfMatches: testState.clearOwner,
+vi.mock("@gatu/hl-react/signing/agent-registration-session", () => ({
+	cleanupAgentRegistrationIfMatches: testState.cleanupAgentRegistrationIfMatches,
 }));
 
 vi.mock("@gatu/hl-react/signing/agent-storage", () => ({
-	removeAgentFromStorageAndVerify: testState.removeAgent,
 	useAgentWalletStorage: () => null,
 	useInvalidAgentStorageRecord: () => true,
 }));
@@ -43,13 +41,14 @@ import { useAgentStatus } from "@gatu/hl-react/signing/use-agent-status";
 
 describe("useAgentStatus invalid storage cleanup", () => {
 	beforeEach(() => {
-		testState.clearOwner.mockReset();
-		testState.clearOwner.mockReturnValue(true);
-		testState.removeAgent.mockReset();
-		testState.removeAgent.mockReturnValue({ status: "removed" });
+		testState.cleanupAgentRegistrationIfMatches.mockReset();
+		testState.cleanupAgentRegistrationIfMatches.mockResolvedValue({
+			status: "cleaned",
+			activeOwnerCleanupIncomplete: false,
+		});
 	});
 
-	it("clears the active owner and invalid key without waiting for extraAgents", async () => {
+	it("revalidates and cleans an invalid key under the registration lock without waiting for extraAgents", async () => {
 		const container = document.createElement("div");
 		const root = createRoot(container);
 		function Probe() {
@@ -61,11 +60,9 @@ describe("useAgentStatus invalid storage cleanup", () => {
 			root.render(createElement(Probe));
 		});
 
-		expect(testState.clearOwner).toHaveBeenCalledWith("Mainnet", OWNER);
-		expect(testState.removeAgent).toHaveBeenCalledWith("Mainnet", OWNER);
-		expect(testState.clearOwner.mock.invocationCallOrder[0]).toBeLessThan(
-			testState.removeAgent.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
-		);
+		expect(testState.cleanupAgentRegistrationIfMatches).toHaveBeenCalledWith("Mainnet", OWNER, {
+			kind: "invalid-record",
+		});
 		act(() => root.unmount());
 	});
 });

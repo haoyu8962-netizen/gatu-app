@@ -92,6 +92,10 @@ const balanceSnapshot = {
 	withdrawable: "100",
 };
 
+const bridgeEntryState = vi.hoisted(() => ({
+	hasExistingExecution: false,
+}));
+
 vi.mock("@/hooks/trade/use-account-balances", () => ({
 	useDefaultDexBalances: () => balanceSnapshot,
 	useSelectedDexBalances: () => balanceSnapshot,
@@ -104,7 +108,15 @@ vi.mock("@/domain/trade/balances", () => ({
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ isConnected: true, sessionMode: "wallet" }),
+	useWalletSession: () => ({
+		isConnected: true,
+		sessionMode: "wallet",
+		walletAddress: "0x1111111111111111111111111111111111111111",
+	}),
+}));
+
+vi.mock("@/lib/lifi/bridge-execution-state", () => ({
+	useHasExistingBridgeExecution: () => bridgeEntryState.hasExistingExecution,
 }));
 
 vi.mock("@/hooks/use-geo-restriction", () => ({
@@ -178,6 +190,7 @@ describe("language hot switching", () => {
 
 	beforeEach(() => {
 		activateLocale("en");
+		bridgeEntryState.hasExistingExecution = false;
 		window.history.replaceState({}, "", "/trade/HYPE");
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -239,5 +252,26 @@ describe("language hot switching", () => {
 		expect(orderLabels?.querySelector('[data-label="status"]')?.textContent).toBe("已取消");
 		expect(orderLabels?.querySelector('[data-label="side"]')?.textContent).toBe("多");
 		expect(orderLabels?.querySelector('[data-label="queue-type"]')?.textContent).toBe("触发");
+	});
+
+	it("hides the desktop bridge entry while creation is gated and restores it for an existing execution", () => {
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountPanel />
+				</I18nProvider>,
+			),
+		);
+		expect(container.querySelector('[aria-label="Bridge"]')).toBeNull();
+
+		bridgeEntryState.hasExistingExecution = true;
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountPanel />
+				</I18nProvider>,
+			),
+		);
+		expect(container.querySelector('[aria-label="Bridge"]')).not.toBeNull();
 	});
 });

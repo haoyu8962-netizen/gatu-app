@@ -246,7 +246,6 @@ export function TradePanel() {
 					slPriceNum,
 				}),
 	);
-
 	function handleSizeModeToggle() {
 		const newMode = sizeMode === "base" ? "quote" : "base";
 		const convertedSize = convertSizeForModeToggle();
@@ -299,13 +298,19 @@ export function TradePanel() {
 		if (!market || !baseToken || typeof market.assetId !== "number") return;
 
 		await submitOrder({
-			market: { assetId: market.assetId, name: market.name, szDecimals: market.szDecimals },
+			market: {
+				assetId: market.assetId,
+				kind: market.kind === "spot" ? "spot" : "perp",
+				name: market.name,
+				szDecimals: market.szDecimals,
+			},
 			baseToken,
 			side,
 			orderType,
 			sizeValue,
 			price,
 			markPx,
+			marginMode,
 			slippageBps,
 			reduceOnly,
 			tif,
@@ -421,6 +426,7 @@ export function TradePanel() {
 				isLoading={accountModeControl.isLoading}
 				isUpdating={accountModeControl.isUpdating}
 				canChange={capabilities.isLeveraged && accountModeControl.canSet}
+				portfolioMarginActivationEnabled={accountModeControl.portfolioMarginActivationEnabled}
 				onConnect={() => setActiveModal("wallet")}
 				onApply={handleAccountModeChange}
 			/>

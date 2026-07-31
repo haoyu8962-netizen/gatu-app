@@ -17,7 +17,13 @@ import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
-import type { ClosePositionData, LimitClosePositionData, TpSlPositionRef } from "../positions/position-dialog-types";
+import type {
+	ClosePositionData,
+	IsolatedMarginPositionRef,
+	LimitClosePositionData,
+	TpSlPositionRef,
+} from "../positions/position-dialog-types";
+import { PositionIsolatedMarginModal } from "../positions/position-isolated-margin-modal";
 import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
@@ -46,6 +52,9 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionRef | null>(null);
 	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
 	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
+	const [isolatedMarginModalOpen, setIsolatedMarginModalOpen] = useState(false);
+	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
+		useState<IsolatedMarginPositionRef | null>(null);
 	const [closingAssetIds, setClosingAssetIds] = useState<Set<number>>(() => new Set());
 	const [closeErrors, setCloseErrors] = useState<Map<number, string>>(() => new Map());
 
@@ -65,7 +74,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const isPageScroll = scrollMode === "page";
 
 	async function submitCloseOrReverse(intent: CloseIntent, data: ClosePositionData) {
-		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe } = data;
+		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe, marginMode } = data;
 		if (closingAssetIds.has(assetId)) return;
 		resetCloseError();
 		setCloseErrors((prev) => {
@@ -94,7 +103,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		const failureMessage = intent === "close" ? t`Failed to close position` : t`Failed to reverse position`;
 
 		try {
-			const submission = await submitOrder({ orders, grouping });
+			const submission = await submitOrder({ orders, grouping }, { riskContext: { marketKind: "perp", marginMode } });
 			if (submission.state === "blocked") {
 				toast.warning(t`Another order for this market is still being confirmed.`);
 				return;
@@ -140,6 +149,11 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	function handleOpenTpSlModal(data: TpSlPositionRef) {
 		setSelectedTpSlPosition(data);
 		setTpSlModalOpen(true);
+	}
+
+	function handleOpenIsolatedMarginModal(data: IsolatedMarginPositionRef) {
+		setSelectedIsolatedMarginPosition(data);
+		setIsolatedMarginModalOpen(true);
 	}
 
 	const headerCount = isConnected ? positions.length : FALLBACK_VALUE_PLACEHOLDER;
@@ -206,6 +220,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 								onReverse={handleReverse}
 								onLimitClose={handleOpenLimitCloseModal}
 								onOpenTpSl={handleOpenTpSlModal}
+								onAdjustMargin={handleOpenIsolatedMarginModal}
 								onSelectMarket={handleSelectMarket}
 							/>
 						);
@@ -217,6 +232,11 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 					open={limitCloseModalOpen}
 					onOpenChange={setLimitCloseModalOpen}
 					position={selectedLimitClosePosition}
+				/>
+				<PositionIsolatedMarginModal
+					open={isolatedMarginModalOpen}
+					onOpenChange={setIsolatedMarginModalOpen}
+					position={selectedIsolatedMarginPosition}
 				/>
 			</div>
 		</Skeleton>

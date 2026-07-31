@@ -14,11 +14,12 @@ export interface HyperliquidClients {
 	/** Exchange client using user wallet - for EIP-712/user-signed actions such as approvals, transfers, and withdrawals. */
 	user: ExchangeClient | null;
 	userWalletMismatch: boolean;
+	agentPublicKey: `0x${string}` | null;
 }
 
 export function useHyperliquidClients(): HyperliquidClients {
 	const { info, subscription, isTestnet, clientKey, sessionMode } = useHyperliquid();
-	const { signer, isReady: agentReady } = useAgentWallet();
+	const { signer, address: agentPublicKey, isReady: agentReady } = useAgentWallet();
 	const { data: walletClient } = useWalletClient();
 	const hasUserSession = clientKey !== "disconnected";
 	const address = hasUserSession ? (clientKey as `0x${string}`) : undefined;
@@ -44,5 +45,6 @@ export function useHyperliquidClients(): HyperliquidClients {
 		trading,
 		user,
 		userWalletMismatch,
+		agentPublicKey,
 	};
 }

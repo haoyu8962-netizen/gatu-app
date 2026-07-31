@@ -160,8 +160,8 @@ msgid "Account Value"
 msgstr "Valeur du compte"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Account value must be below $25M to use portfolio margin while it is in beta."
-msgstr "La valeur du compte doit être inférieure à 25 M$ pour utiliser la marge de portefeuille pendant la bêta."
+#~ msgid "Account value must be below $25M to use portfolio margin while it is in beta."
+#~ msgstr "La valeur du compte doit être inférieure à 25 M$ pour utiliser la marge de portefeuille pendant la bêta."
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
@@ -186,6 +186,7 @@ msgstr "actif"
 msgid "Active Positions"
 msgstr "Positions actives"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-row.tsx
 msgid "Add"
 msgstr "Ajouter"
@@ -207,13 +208,38 @@ msgstr "Ajoutez une petite quantité d’ETH sur Arbitrum à ce portefeuille pou
 #~ msgid "Add funds"
 #~ msgstr "Ajouter des fonds"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Add Margin"
+msgstr "Ajouter de la marge"
+
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Add to favorites"
 #~ msgstr "Ajouter aux favoris"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Add to Target"
+msgstr "Ajouter jusqu'à la cible"
+
 #: src/components/trade/positions/position-row.tsx
 msgid "Add TP/SL"
 msgstr "Ajouter TP/SL"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Adding margin lowers effective leverage and moves the liquidation price farther away."
+msgstr "Ajouter de la marge réduit le levier effectif et éloigne le prix de liquidation."
+
+#: src/components/trade/positions/position-row.tsx
+msgid "Adjust isolated margin"
+msgstr "Ajuster la marge isolée"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Adjust Isolated Margin"
+msgstr "Ajuster la marge isolée"
+
+#: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-row.tsx
+msgid "Adjust isolated margin for {displayName}"
+msgstr "Ajuster la marge isolée de {displayName}"
 
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -257,6 +283,7 @@ msgstr "Depuis toujours"
 msgid "ALO (Add Liquidity Only)"
 msgstr "ALO (Add Liquidity Only)"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -469,6 +496,10 @@ msgstr "Bridge"
 #~ msgid "Bridge complete"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Bridge creation is temporarily unavailable"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Bridge failed"
 msgstr "Échec du bridge"
@@ -565,6 +596,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -1090,11 +1122,16 @@ msgstr "Ratio de marge croisée"
 msgid "Crypto"
 msgstr "Crypto"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Current"
 msgstr "Actuel"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Current Margin"
+msgstr "Marge actuelle"
 
 #: src/components/trade/order-entry/tp-sl-section.tsx
 #~ msgid "Custom SL percentage"
@@ -1220,6 +1257,10 @@ msgstr "Dépôt de l'USDC vers Hyperliquid..."
 msgid "Deposits and withdrawals are not allowed."
 msgstr "Les dépôts et les retraits ne sont pas autorisés."
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Deposits and withdrawals remain available."
+msgstr ""
+
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Desktop layout"
 msgstr "Disposition du bureau"
@@ -1334,6 +1375,10 @@ msgstr "Solde Earn"
 msgid "Edit TP/SL"
 msgstr "Modifier TP/SL"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Effective Leverage"
+msgstr "Levier effectif"
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Embedded wallet is not ready. Try again in a moment."
 #~ msgstr "Le portefeuille intégré n’est pas prêt. Réessayez dans un instant."
@@ -1369,6 +1414,14 @@ msgstr "Prix de fin"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #~ msgid "End Price (USDC)"
 #~ msgstr ""
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Enter a positive amount with up to 6 decimal places."
+msgstr "Saisissez un montant positif comportant jusqu'à 6 décimales."
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Enter a positive target leverage."
+msgstr "Saisissez un levier cible positif."
 
 #: src/lib/errors/definitions/order-input.ts
 #: src/lib/errors/definitions/spot-input.ts
@@ -1462,6 +1515,8 @@ msgstr "Dépasse la taille max"
 msgid "Executed"
 msgstr "Exécuté"
 
+#: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 msgid "Execution"
 msgstr "Exécution"
@@ -1627,6 +1682,10 @@ msgstr "Échec de l'inversion de la position"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Failed to update account mode"
 msgstr "Échec de la mise à jour du mode de compte"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Failed to update isolated margin"
+msgstr "Échec de la mise à jour de la marge isolée"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
@@ -1818,6 +1877,14 @@ msgstr "HYPE est le jeton natif de Hyperliquid."
 msgid "Hyperliquid approval could not be checked. Check your connection and retry."
 msgstr ""
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Hyperliquid calculates and adds the margin required to reach the target leverage."
+msgstr "Hyperliquid calcule et ajoute la marge nécessaire pour atteindre le levier cible."
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
@@ -1915,6 +1982,15 @@ msgstr "IOC (Immediate Or Cancel)"
 msgid "Isolated"
 msgstr "Isolé"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Isolated margin updated"
+msgstr "Marge isolée mise à jour"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#~ msgid "Isolated mode activation is temporarily unavailable."
+#~ msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."
 msgstr ""
@@ -2003,6 +2079,7 @@ msgstr "Clôture limite"
 msgid "Limit close order placed"
 msgstr "Ordre de clôture limite placé"
 
+#: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -2052,6 +2129,14 @@ msgstr "Prix liq."
 msgid "Liquidated"
 msgstr "Liquidé"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Liquidation Price"
+msgstr "Prix de liquidation"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Live position data is unavailable. Wait for the account connection to recover before adjusting margin."
+msgstr "Les données de position en temps réel sont indisponibles. Attendez le rétablissement de la connexion du compte avant d'ajuster la marge."
+
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "Chargement"
@@ -2084,6 +2169,10 @@ msgstr "Chargement des ordres ouverts..."
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Loading order history..."
 msgstr "Chargement de l'historique des ordres..."
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Loading position..."
+msgstr "Chargement de la position..."
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Loading positions..."
@@ -2210,6 +2299,10 @@ msgstr "Marge · Iso"
 msgid "Margin & leverage"
 msgstr "Marge et levier"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Margin amount"
+msgstr "Montant de la marge"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode"
 msgstr "Mode de marge"
@@ -2272,6 +2365,7 @@ msgstr "Prix de marque : utilisé pour les calculs de marge, le PnL non réalis�
 msgid "Market"
 msgstr "Marché"
 
+#: src/components/trade/components/historical-order-price.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -2517,6 +2611,10 @@ msgstr "Nouveau dépôt"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "New mobile pairing is temporarily unavailable"
+msgstr ""
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not affected and can switch away."
 msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
@@ -2795,6 +2893,24 @@ msgstr "Ouvrir le jeton dans l’explorateur"
 #~ msgid "Opening camera..."
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Enable Reduce Only to close or reduce an existing position."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can still be reduced or closed."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can still be reduced, closed, or switched to cross margin."
+msgstr ""
+
+#: src/hooks/trade/use-tracked-order.ts
+#: src/hooks/trade/use-tracked-twap-order.ts
+msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
+msgstr ""
+
 #: src/components/trade/layout/market-overview-variants-demo.tsx
 #~ msgid "Oracle"
 #~ msgstr ""
@@ -2836,6 +2952,12 @@ msgstr "Ordre exécuté"
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "Historique des ordres"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/hooks/trade/use-tracked-order.ts
+#: src/hooks/trade/use-tracked-twap-order.ts
+msgid "Order market context does not match the submitted asset."
+msgstr ""
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Order Queue"
@@ -3353,6 +3475,10 @@ msgstr "Recommandé uniquement aux traders automatisés. Chaque DEX possède un 
 #~ msgid "Reconnect or refresh after your embedded wallet is ready."
 #~ msgstr ""
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Reconnect the bridge wallet"
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3380,6 +3506,11 @@ msgstr ""
 msgid "Reduce Only"
 msgstr "Réduction uniquement"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+#~ msgid "Reduce-only orders only"
+#~ msgstr ""
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
 msgstr "Actualiser le devis"
@@ -3401,6 +3532,10 @@ msgstr "Rejeté"
 msgid "Remote access is revoked, but this browser could not fully clear its local mobile state. Clear this site's data before using mobile access here again."
 msgstr ""
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Remove"
+msgstr "Retirer"
+
 #: src/components/trade/chart/token-selector-row.tsx
 #~ msgid "Remove {0} from favorites"
 #~ msgstr "Retirer {0} des favoris"
@@ -3416,6 +3551,18 @@ msgstr "Retirer {displayPairName} des favoris"
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Remove from favorites"
 #~ msgstr "Retirer des favoris"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Remove Margin"
+msgstr "Retirer de la marge"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Removing isolated margin is temporarily unavailable. Adding margin and closing the position remain available."
+msgstr ""
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Removing margin increases liquidation risk. Hyperliquid will reject amounts that breach margin requirements."
+msgstr "Retirer de la marge augmente le risque de liquidation. Hyperliquid rejettera les montants qui ne respectent pas les exigences de marge."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Rendering QR"
@@ -3450,6 +3597,10 @@ msgstr "Réinitialisation dans"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Resetting..."
 #~ msgstr "Réinitialisation..."
+
+#: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
+msgid "Resume tracking"
+msgstr ""
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -3618,6 +3769,27 @@ msgstr "Rechercher des marchés..."
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Secure & Private"
 #~ msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
+msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
+msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
+msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+#~ msgid "Secure disconnect failed because the wallet session could not be closed. Please retry."
+#~ msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
+msgstr ""
 
 #: src/components/trade/header/favorites-strip.tsx
 #~ msgid "Select {coin} market"
@@ -4278,6 +4450,19 @@ msgstr "Le déclencheur Take Profit doit être en dessous du prix mark"
 msgid "Taking longer than expected"
 msgstr "Cela prend plus de temps que prévu"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Target leverage"
+msgstr "Levier cible"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Target Leverage"
+msgstr "Levier cible"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#~ msgid "Target leverage must be below the current effective leverage to add margin."
+#~ msgstr "Le levier cible doit être inférieur au levier effectif actuel pour ajouter de la marge."
+
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -4326,9 +4511,21 @@ msgstr "La plateforme n’a pas renvoyé le statut final du TWAP. Vérifiez les 
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr ""
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "The one-time QR could not be verified. Check your connection and retry."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The one-time QR service is unavailable. Check your connection and retry."
+msgstr ""
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "La page que vous recherchez n'existe pas."
+
+#: src/providers/root.tsx
+msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The private key is created on this desktop and embedded in the QR code."
@@ -4368,10 +4565,22 @@ msgstr ""
 msgid "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
 msgstr ""
 
+#: src/hooks/wallet/use-wallet-session.ts
+#~ msgid "The wallet session could not be closed and local Agent registration remains disabled. Reload, then retry disconnecting."
+#~ msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This approval recovery is no longer active."
@@ -4381,6 +4590,10 @@ msgstr ""
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This approval recovery is no longer available."
+msgstr ""
+
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "This bridge can only be resumed by the wallet that started it."
 msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
@@ -4442,6 +4655,10 @@ msgstr ""
 #~ msgid "This is not a WalletConnect QR code."
 #~ msgstr ""
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This isolated position is no longer open."
+msgstr "Cette position isolée n'est plus ouverte."
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This link was created for a different network."
 #~ msgstr "Ce lien a été créé pour un autre réseau."
@@ -4464,6 +4681,14 @@ msgstr ""
 msgid "This mobile trading key has expired."
 msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This one-time QR could not be created. Try revealing a new QR."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This one-time QR was already used or is no longer active. Scan a new QR."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link belongs to a different owner account."
 #~ msgstr "Ce lien téléphone appartient à un autre compte propriétaire."
@@ -4471,6 +4696,10 @@ msgstr ""
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
 #~ msgstr "Ce lien mobile n'est pas approuvé sur Hyperliquid."
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This position is no longer using isolated margin."
+msgstr "Cette position n'utilise plus la marge isolée."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR belongs to a different owner account."
@@ -4505,6 +4734,10 @@ msgstr "Cet actif au comptant est activé indépendamment par Unit, un fournisse
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This spot market trades {0} against {1} on Hyperliquid."
 msgstr "Ce marché au comptant échange {0} contre {1} sur Hyperliquid."
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This strict isolated market does not allow margin to be removed from an open position."
+msgstr "Ce marché à isolation stricte ne permet pas de retirer de la marge d'une position ouverte."
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
@@ -4769,6 +5002,7 @@ msgstr "Les transferts entre Spot et Perps ne sont pas disponibles en mode compt
 #~ msgid "Trending"
 #~ msgstr "Tendances"
 
+#: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -4897,6 +5131,7 @@ msgstr "Impossible de basculer le portefeuille vers {0}. Changez de réseau dans
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "Impossible de passer le portefeuille sur Arbitrum. Changez de réseau dans votre portefeuille puis réessayez."
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unavailable"
 msgstr "Indisponible"
@@ -4969,6 +5204,10 @@ msgstr "Mis à jour"
 msgid "Updated live"
 msgstr "Mise à jour en direct"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Updating..."
+msgstr "Mise à jour..."
+
 #: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
@@ -4977,6 +5216,10 @@ msgstr "Valeur en USD"
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "USDC"
 msgstr "USDC"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "USDC Amount"
+msgstr "Montant en USDC"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "USDC deposit submitted to Hyperliquid"

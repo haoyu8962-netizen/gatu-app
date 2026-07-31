@@ -3,6 +3,7 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, SpinnerGapIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
 import { useState } from "react";
+import { ISOLATED_RISK_FEATURES } from "@/config/isolated-risk";
 import { MARGIN_MODE_SUCCESS_DURATION_MS } from "@/config/time";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
@@ -149,9 +150,10 @@ function MarginModeModalBody({
 	const leverageDirty = pendingLeverage !== null && pendingLeverage !== currentLeverage;
 	const isDirty = modeDirty || leverageDirty;
 	const cannotSwitch = hasPosition && selectedMode === "isolated" && currentMode === "cross";
+	const isolatedChangeUnavailable = selectedMode === "isolated" && !ISOLATED_RISK_FEATURES.increaseEnabled && isDirty;
 
 	async function handleConfirm(): Promise<void> {
-		if (!isDirty || cannotSwitch) return;
+		if (!isDirty || cannotSwitch || isolatedChangeUnavailable) return;
 		const lev = pendingLeverage ?? currentLeverage;
 		try {
 			await onApply(selectedMode, lev);
@@ -185,7 +187,10 @@ function MarginModeModalBody({
 								option={option}
 								isSelected={selectedMode === option.id}
 								isCurrent={currentMode === option.id}
-								isDisabled={isOnlyIsolated && option.id === "cross"}
+								isDisabled={
+									(isOnlyIsolated && option.id === "cross") ||
+									(option.id === "isolated" && option.id !== currentMode && !ISOLATED_RISK_FEATURES.increaseEnabled)
+								}
 								isUpdating={isUpdating}
 								onSelect={() => setSelectedMode(option.id)}
 							/>
@@ -230,6 +235,18 @@ function MarginModeModalBody({
 					</div>
 				)}
 
+				{isolatedChangeUnavailable && (
+					<div className="flex items-start gap-2 rounded-xs border border-stroke-warning-strong/20 bg-warning-soft/10 p-2.5">
+						<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
+						<p className="text-xs leading-relaxed text-warning">
+							<Trans>
+								Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can
+								still be reduced, closed, or switched to cross margin.
+							</Trans>
+						</p>
+					</div>
+				)}
+
 				{updateError && (
 					<div className="flex items-center gap-2 rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error">
 						<WarningIcon className="size-3.5 shrink-0" />
@@ -258,7 +275,7 @@ function MarginModeModalBody({
 				) : (
 					<TradingActionButton
 						onClick={handleConfirm}
-						disabled={!isDirty || isUpdating || cannotSwitch}
+						disabled={!isDirty || isUpdating || cannotSwitch || isolatedChangeUnavailable}
 						className="gap-1.5"
 					>
 						{isUpdating && <SpinnerGapIcon className="size-3.5 animate-spin" />}

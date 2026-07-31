@@ -358,7 +358,9 @@ describe("mobile agent lifecycle", () => {
 			reason: "write_failed",
 		});
 
-		vi.spyOn(localStorage, "getItem").mockReturnValueOnce(null);
+		// The verified writer first reads the previous Agent so it can evict
+		// signer/client caches, then performs the security-sensitive readback.
+		vi.spyOn(localStorage, "getItem").mockReturnValueOnce(null).mockReturnValueOnce(null);
 		expect(writeAgentToStorageAndVerify("Mainnet", USER_ADDRESS, approval.privateKey, approval.publicKey)).toEqual({
 			status: "failed",
 			reason: "readback_mismatch",
@@ -600,6 +602,7 @@ describe("mobile agent lifecycle", () => {
 		expect(getExchangeMethodConfig("approveBuilderFee").client).toBe("user");
 		expect(getExchangeMethodConfig("withdraw3").client).toBe("user");
 		expect(getExchangeMethodConfig("usdSend").client).toBe("user");
+		expect(getExchangeMethodConfig("stakingLinkDisableTradingUser").client).toBe("user");
 		expect(getExchangeMethodConfig("order").client).toBe("trading");
 		expect(getExchangeMethodConfig("cancel").client).toBe("trading");
 	});

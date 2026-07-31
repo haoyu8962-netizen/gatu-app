@@ -15,6 +15,7 @@ const zhTranslations: Record<string, string> = {
 	"Portfolio margin": "投资组合保证金",
 	Separate: "分离",
 	Current: "当前",
+	Unavailable: "不可用",
 	"Switch to {selectedModeLabel}": "切换至{selectedModeLabel}",
 	"Unable to load the current account mode. Reconnect your wallet and try again.":
 		"无法加载当前账户模式。请重新连接钱包后重试。",
@@ -97,5 +98,52 @@ describe("AccountModeModal", () => {
 
 		expect(actionButton?.textContent?.trim()).toBe("切换至统一账户");
 		expect(unifiedOption?.getAttribute("aria-pressed")).toBe("true");
+	});
+
+	it("disables new portfolio margin activation and explains the gate", () => {
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountModeModal
+						open
+						onOpenChange={() => {}}
+						currentMode="unifiedAccount"
+						canChange
+						portfolioMarginActivationEnabled={false}
+						onApply={vi.fn()}
+					/>
+				</I18nProvider>,
+			),
+		);
+
+		const portfolioOption = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
+			(button) => button.textContent?.includes("Portfolio margin"),
+		);
+		expect(portfolioOption?.disabled).toBe(true);
+		expect(portfolioOption?.textContent).toContain("Unavailable");
+		expect(document.body.textContent).toContain("New portfolio margin activation is temporarily unavailable.");
+	});
+
+	it("lets an existing portfolio margin account select another mode when activation is gated", () => {
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountModeModal
+						open
+						onOpenChange={() => {}}
+						currentMode="portfolioMargin"
+						canChange
+						portfolioMarginActivationEnabled={false}
+						onApply={vi.fn()}
+					/>
+				</I18nProvider>,
+			),
+		);
+
+		const options = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")];
+		const portfolioOption = options.find((button) => button.textContent?.includes("Portfolio margin"));
+		const unifiedOption = options.find((button) => button.textContent?.includes("Unified account"));
+		expect(portfolioOption?.disabled).toBe(false);
+		expect(unifiedOption?.disabled).toBe(false);
 	});
 });

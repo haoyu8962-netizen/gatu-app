@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { Suspense, useState } from "react";
+import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
 import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
@@ -21,6 +22,7 @@ import { useDisconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { createLazyComponent } from "@/lib/lazy";
+import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 
@@ -32,7 +34,7 @@ interface MobileAccountViewProps {
 
 export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const { t } = useLingui();
-	const { address, isConnected, sessionMode } = useWalletSession();
+	const { address, isConnected, sessionMode, walletAddress } = useWalletSession();
 	const { disconnectWallet } = useDisconnectWallet();
 
 	const selectedBalances = useSelectedDexBalances();
@@ -68,6 +70,12 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const { open: openTransferModal } = useTransferModalActions();
 	const { tradeRestricted } = useGeoRestriction();
 	const hasWalletAccess = sessionMode === "wallet";
+	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
+	const showBridgeEntry = shouldShowLiFiBridgeTab({
+		isEmbeddedDeposit: false,
+		hasExistingExecution: hasExistingBridgeExecution,
+		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
+	});
 
 	function handleCopyAddress() {
 		if (!address) return;
@@ -290,15 +298,17 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									</Button>
 								</span>
 							</Tooltip>
-							<Button
-								variant="outline"
-								intent="neutral"
-								size="md"
-								onClick={() => openDepositModal("bridge")}
-								iconLeft={<ArrowsLeftRightIcon className="size-4" />}
-							>
-								{t`Bridge`}
-							</Button>
+							{showBridgeEntry ? (
+								<Button
+									variant="outline"
+									intent="neutral"
+									size="md"
+									onClick={() => openDepositModal("bridge")}
+									iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+								>
+									{t`Bridge`}
+								</Button>
+							) : null}
 						</div>
 					)}
 				</div>

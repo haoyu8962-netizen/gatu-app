@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
 import { NotFoundPage } from "@/components/pages/not-found-page";
+import { RouterErrorPage } from "@/components/pages/router-error-page";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import { MarketsInfoProvider } from "@/lib/hyperliquid/hooks/MarketsInfoProvider";
 import { getPersistedLocale, i18nReady } from "@/lib/i18n";
@@ -35,6 +36,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	head: () => buildRootHead(),
 	shellComponent: RootDocument,
 	component: RootComponent,
+	errorComponent: RouterErrorPage,
 	notFoundComponent: NotFoundPage,
 });
 

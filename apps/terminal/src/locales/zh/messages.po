@@ -160,8 +160,8 @@ msgid "Account Value"
 msgstr "账户价值"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Account value must be below $25M to use portfolio margin while it is in beta."
-msgstr "投资组合保证金测试版要求账户价值低于 2500 万美元。"
+#~ msgid "Account value must be below $25M to use portfolio margin while it is in beta."
+#~ msgstr "投资组合保证金测试版要求账户价值低于 2500 万美元。"
 
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Accounts"
@@ -186,6 +186,7 @@ msgstr "活跃"
 msgid "Active Positions"
 msgstr "活跃仓位"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-row.tsx
 msgid "Add"
 msgstr "添加"
@@ -207,13 +208,38 @@ msgstr "向此钱包存入少量 Arbitrum ETH 以支付网络手续费，然后�
 #~ msgid "Add funds"
 #~ msgstr "添加资金"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Add Margin"
+msgstr "增加保证金"
+
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Add to favorites"
 #~ msgstr "添加到收藏"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Add to Target"
+msgstr "补充至目标"
+
 #: src/components/trade/positions/position-row.tsx
 msgid "Add TP/SL"
 msgstr "添加 TP/SL"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Adding margin lowers effective leverage and moves the liquidation price farther away."
+msgstr "增加保证金会降低实际杠杆，并使强平价格远离当前价格。"
+
+#: src/components/trade/positions/position-row.tsx
+msgid "Adjust isolated margin"
+msgstr "调整逐仓保证金"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Adjust Isolated Margin"
+msgstr "调整逐仓保证金"
+
+#: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-row.tsx
+msgid "Adjust isolated margin for {displayName}"
+msgstr "调整 {displayName} 的逐仓保证金"
 
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -257,6 +283,7 @@ msgstr "全部时间"
 msgid "ALO (Add Liquidity Only)"
 msgstr "ALO（仅添加流动性）"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -469,6 +496,10 @@ msgstr "跨链"
 #~ msgid "Bridge complete"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Bridge creation is temporarily unavailable"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Bridge failed"
 msgstr "跨链失败"
@@ -565,6 +596,7 @@ msgstr "桌面钱包二维码的相机预览"
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -1090,11 +1122,16 @@ msgstr "全仓保证金率"
 msgid "Crypto"
 msgstr "加密货币"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Current"
 msgstr "当前"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Current Margin"
+msgstr "当前保证金"
 
 #: src/components/trade/order-entry/tp-sl-section.tsx
 #~ msgid "Custom SL percentage"
@@ -1220,6 +1257,10 @@ msgstr "正在将 USDC 存入 Hyperliquid..."
 msgid "Deposits and withdrawals are not allowed."
 msgstr "暂不支持充值和提现。"
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Deposits and withdrawals remain available."
+msgstr ""
+
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Desktop layout"
 msgstr "桌面布局"
@@ -1334,6 +1375,10 @@ msgstr "理财余额"
 msgid "Edit TP/SL"
 msgstr "编辑 TP/SL"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Effective Leverage"
+msgstr "实际杠杆"
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Embedded wallet is not ready. Try again in a moment."
 #~ msgstr "内嵌钱包尚未就绪，请稍后重试。"
@@ -1369,6 +1414,14 @@ msgstr "结束价格"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #~ msgid "End Price (USDC)"
 #~ msgstr ""
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Enter a positive amount with up to 6 decimal places."
+msgstr "请输入正数，最多 6 位小数。"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Enter a positive target leverage."
+msgstr "请输入大于 0 的目标杠杆。"
 
 #: src/lib/errors/definitions/order-input.ts
 #: src/lib/errors/definitions/spot-input.ts
@@ -1462,6 +1515,8 @@ msgstr "超过最大数量"
 msgid "Executed"
 msgstr "已执行"
 
+#: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 msgid "Execution"
 msgstr "执行"
@@ -1627,6 +1682,10 @@ msgstr "反向开仓失败"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Failed to update account mode"
 msgstr "账户模式更新失败"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Failed to update isolated margin"
+msgstr "调整逐仓保证金失败"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
@@ -1818,6 +1877,14 @@ msgstr "HYPE 是 Hyperliquid 的原生代币。"
 msgid "Hyperliquid approval could not be checked. Check your connection and retry."
 msgstr "无法检查 Hyperliquid 授权。请检查网络连接后重试。"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Hyperliquid calculates and adds the margin required to reach the target leverage."
+msgstr "Hyperliquid 会计算并补充达到目标杠杆所需的保证金。"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
@@ -1915,6 +1982,15 @@ msgstr "IOC（立即成交或取消）"
 msgid "Isolated"
 msgstr "逐仓"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Isolated margin updated"
+msgstr "逐仓保证金已更新"
+
+#: src/hooks/trade/use-asset-leverage.ts
+#: src/hooks/trade/use-asset-leverage.ts
+#~ msgid "Isolated mode activation is temporarily unavailable."
+#~ msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Keep holding for 4 seconds. Release, leave, blur, or press Escape to cancel."
 msgstr "请持续按住 4 秒。松开、移出、失去焦点或按 Esc 键均会取消。"
@@ -2003,6 +2079,7 @@ msgstr "限价平仓"
 msgid "Limit close order placed"
 msgstr "限价平仓委托已提交"
 
+#: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -2052,6 +2129,14 @@ msgstr "清算价"
 msgid "Liquidated"
 msgstr "已强平"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Liquidation Price"
+msgstr "强平价格"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Live position data is unavailable. Wait for the account connection to recover before adjusting margin."
+msgstr "无法获取实时仓位数据。请等待账户连接恢复后再调整保证金。"
+
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "加载中"
@@ -2084,6 +2169,10 @@ msgstr "加载未成交订单中..."
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Loading order history..."
 msgstr "正在加载订单历史…"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Loading position..."
+msgstr "正在加载仓位..."
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Loading positions..."
@@ -2210,6 +2299,10 @@ msgstr "保证金 · 逐仓"
 msgid "Margin & leverage"
 msgstr "保证金与杠杆"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Margin amount"
+msgstr "保证金金额"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode"
 msgstr "保证金模式"
@@ -2272,6 +2365,7 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 msgid "Market"
 msgstr "市场"
 
+#: src/components/trade/components/historical-order-price.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -2518,6 +2612,10 @@ msgstr "新充值"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "New mobile pairing is temporarily unavailable"
 msgstr "暂时无法进行新的移动设备配对"
+
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not affected and can switch away."
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "New to wallets?"
@@ -2795,6 +2893,24 @@ msgstr "在浏览器中打开代币"
 #~ msgid "Opening camera..."
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Enable Reduce Only to close or reduce an existing position."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can still be reduced or closed."
+#~ msgstr ""
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can still be reduced, closed, or switched to cross margin."
+msgstr ""
+
+#: src/hooks/trade/use-tracked-order.ts
+#: src/hooks/trade/use-tracked-twap-order.ts
+msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
+msgstr ""
+
 #: src/components/trade/layout/market-overview-variants-demo.tsx
 #~ msgid "Oracle"
 #~ msgstr ""
@@ -2836,6 +2952,12 @@ msgstr "委托已成交"
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "委托历史"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/hooks/trade/use-tracked-order.ts
+#: src/hooks/trade/use-tracked-twap-order.ts
+msgid "Order market context does not match the submitted asset."
+msgstr ""
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Order Queue"
@@ -3353,6 +3475,10 @@ msgstr "仅建议自动化交易者使用。每个 DEX 都有独立余额，全�
 #~ msgid "Reconnect or refresh after your embedded wallet is ready."
 #~ msgstr ""
 
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "Reconnect the bridge wallet"
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -3380,6 +3506,11 @@ msgstr "已在此标签页中恢复。将于 {expiresAtLabel} 过期。"
 msgid "Reduce Only"
 msgstr "只减仓"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/tradebox/trade-panel.tsx
+#~ msgid "Reduce-only orders only"
+#~ msgstr ""
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
 msgstr "刷新报价"
@@ -3401,6 +3532,10 @@ msgstr "已拒绝"
 msgid "Remote access is revoked, but this browser could not fully clear its local mobile state. Clear this site's data before using mobile access here again."
 msgstr "远程访问权限已撤销，但此浏览器未能完全清除本地移动访问状态。再次在此使用移动访问功能前，请清除此网站的数据。"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Remove"
+msgstr "移除"
+
 #: src/components/trade/chart/token-selector-row.tsx
 #~ msgid "Remove {0} from favorites"
 #~ msgstr "将 {0} 从收藏中移除"
@@ -3416,6 +3551,18 @@ msgstr "将 {displayPairName} 从收藏中移除"
 #: src/components/trade/chart/token-selector.tsx
 #~ msgid "Remove from favorites"
 #~ msgstr "从收藏中移除"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Remove Margin"
+msgstr "移除保证金"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Removing isolated margin is temporarily unavailable. Adding margin and closing the position remain available."
+msgstr ""
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Removing margin increases liquidation risk. Hyperliquid will reject amounts that breach margin requirements."
+msgstr "移除保证金会增加强平风险。超出保证金要求的金额将被 Hyperliquid 拒绝。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Rendering QR"
@@ -3450,6 +3597,10 @@ msgstr "重置倒计时"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Resetting..."
 #~ msgstr "正在重置…"
+
+#: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
+msgid "Resume tracking"
+msgstr ""
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
@@ -3618,6 +3769,27 @@ msgstr "搜索市场..."
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Secure & Private"
 #~ msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Secure disconnect failed because the active trading account could not be verified. Please retry."
+msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Secure disconnect failed because the local trading key could not be removed. Please retry."
+msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Secure disconnect failed because the local trading session could not be cleared. Please retry."
+msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+#~ msgid "Secure disconnect failed because the wallet session could not be closed. Please retry."
+#~ msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
+msgstr ""
 
 #: src/components/trade/header/favorites-strip.tsx
 #~ msgid "Select {coin} market"
@@ -4278,6 +4450,19 @@ msgstr "止盈触发价须低于标记价"
 msgid "Taking longer than expected"
 msgstr "耗时比预期更长"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Target leverage"
+msgstr "目标杠杆"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Target Leverage"
+msgstr "目标杠杆"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#~ msgid "Target leverage must be below the current effective leverage to add margin."
+#~ msgstr "目标杠杆必须低于当前实际杠杆才能增加保证金。"
+
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -4326,9 +4511,21 @@ msgstr "交易所未返回最终 TWAP 状态。重试前请检查当前 TWAP 委
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "生成的密钥仅保留在此标签页中。请勿授权其他密钥或重新加载页面。"
 
+#: src/routes/mobile-agent-sync.tsx
+msgid "The one-time QR could not be verified. Check your connection and retry."
+msgstr ""
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "The one-time QR service is unavailable. Check your connection and retry."
+msgstr ""
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "您查找的页面不存在。"
+
+#: src/providers/root.tsx
+msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The private key is created on this desktop and embedded in the QR code."
@@ -4368,10 +4565,22 @@ msgstr "已保存的桌面二维码无效。请扫描新二维码。"
 msgid "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
 msgstr "无法清除手机访问二维码的临时副本。请关闭此标签页并清除此网站的数据，然后重新扫描。"
 
+#: src/hooks/wallet/use-wallet-session.ts
+#~ msgid "The wallet session could not be closed and local Agent registration remains disabled. Reload, then retry disconnecting."
+#~ msgstr ""
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
 #~ msgstr ""
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This approval recovery is no longer active."
@@ -4382,6 +4591,10 @@ msgstr "此授权恢复已不再有效。"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This approval recovery is no longer available."
 msgstr "此授权恢复已不可用。"
+
+#: src/components/trade/tradebox/bridge/shared-ui.tsx
+msgid "This bridge can only be resumed by the wallet that started it."
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This description was supplied by the third-party market deployer. Treat it as unverified information."
@@ -4442,6 +4655,10 @@ msgstr "这不是有效的 gatu 桌面钱包二维码。"
 #~ msgid "This is not a WalletConnect QR code."
 #~ msgstr ""
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This isolated position is no longer open."
+msgstr "该逐仓仓位已不再持有。"
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This link was created for a different network."
 #~ msgstr "此链接是为其他网络创建的。"
@@ -4464,6 +4681,14 @@ msgstr "这不是有效的 gatu 桌面钱包二维码。"
 msgid "This mobile trading key has expired."
 msgstr "此移动交易密钥已过期。"
 
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This one-time QR could not be created. Try revealing a new QR."
+msgstr ""
+
+#: src/routes/mobile-agent-sync.tsx
+msgid "This one-time QR was already used or is no longer active. Scan a new QR."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link belongs to a different owner account."
 #~ msgstr "此手机链接属于另一个所有者账户。"
@@ -4471,6 +4696,10 @@ msgstr "此移动交易密钥已过期。"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link is not approved on Hyperliquid."
 #~ msgstr "此手机链接未在 Hyperliquid 上获得授权。"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This position is no longer using isolated margin."
+msgstr "该仓位已不再使用逐仓保证金。"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR belongs to a different owner account."
@@ -4505,6 +4734,10 @@ msgstr "该现货资产由第三方提供商 Unit 独立启用。"
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This spot market trades {0} against {1} on Hyperliquid."
 msgstr "该现货市场在 Hyperliquid 上交易 {0}/{1}。"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This strict isolated market does not allow margin to be removed from an open position."
+msgstr "该严格逐仓市场不允许从未平仓仓位中移除保证金。"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "This trading key is not the currently approved Mobile Agent. Create a new desktop QR."
@@ -4769,6 +5002,7 @@ msgstr "启用统一账户后，现货与合约之间的划转不可用。"
 #~ msgid "Trending"
 #~ msgstr "热门"
 
+#: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
@@ -4897,6 +5131,7 @@ msgstr "无法将钱包切换到 {0}。请在钱包中切换网络后重试。"
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "无法将钱包切换到 Arbitrum。请在钱包中切换网络后重试。"
 
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unavailable"
 msgstr "不可用"
@@ -4969,6 +5204,10 @@ msgstr "已更新"
 msgid "Updated live"
 msgstr "实时更新"
 
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Updating..."
+msgstr "正在更新..."
+
 #: src/components/portfolio/portfolio-mobile-balances.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
@@ -4977,6 +5216,10 @@ msgstr "美元价值"
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "USDC"
 msgstr "USDC"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "USDC Amount"
+msgstr "USDC 金额"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "USDC deposit submitted to Hyperliquid"

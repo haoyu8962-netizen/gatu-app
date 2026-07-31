@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useExchange, useHyperliquid, useHyperliquidClients } from "@/lib/hyperliquid";
 import { type AccountAbstraction, useUserAbstraction } from "./use-account-balances";
@@ -41,6 +42,16 @@ export function toSelectableAccountAbstraction(value: AccountAbstraction): Selec
 	return isSelectableAccountAbstraction(value) ? value : null;
 }
 
+export function assertPortfolioMarginActivationAllowed(
+	_currentAccountAbstraction: SelectableAccountAbstraction | null,
+	nextAccountAbstraction: SelectableAccountAbstraction,
+	activationEnabled = PORTFOLIO_MARGIN_FEATURES.activationEnabled,
+): void {
+	if (nextAccountAbstraction === "portfolioMargin" && !activationEnabled) {
+		throw new Error("Portfolio margin activation is temporarily unavailable");
+	}
+}
+
 export function useAccountAbstractionControl() {
 	const queryClient = useQueryClient();
 	const { isTestnet } = useHyperliquid();
@@ -56,6 +67,7 @@ export function useAccountAbstractionControl() {
 		if (!address || !canSet) {
 			throw new Error("Wallet is not ready to update account mode");
 		}
+		assertPortfolioMarginActivationAllowed(selectedAccountAbstraction, nextAccountAbstraction);
 
 		await setAbstraction.mutateAsync({
 			user: address,
@@ -75,6 +87,7 @@ export function useAccountAbstractionControl() {
 		isLoading: fetchStatus === "fetching",
 		isUpdating: setAbstraction.isPending,
 		canSet,
+		portfolioMarginActivationEnabled: PORTFOLIO_MARGIN_FEATURES.activationEnabled,
 		setAccountAbstraction,
 	};
 }

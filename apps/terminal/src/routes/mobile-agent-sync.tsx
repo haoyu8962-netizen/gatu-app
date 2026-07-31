@@ -1,10 +1,11 @@
 import {
-	clearActiveAgentOwnerIfMatches,
+	type AgentRegistrationEpoch,
+	activateAgentOwnerForRegistration,
+	cancelAgentRegistrationEpochAndRemove,
+	captureAgentRegistrationEpoch,
 	createMobileAgentWalletRecord,
-	getActiveAgentOwner,
-	removeAgentFromStorageAndVerify,
-	setActiveAgentOwnerAndVerify,
-	writeAgentToStorageAndVerify,
+	persistAgentForRegistration,
+	verifyAgentRegistrationOrRemove,
 } from "@gatu/hl-react";
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
@@ -24,6 +25,11 @@ import {
 	readMobileSyncDraft,
 	saveMobileSyncDraft,
 } from "@/lib/mobile-sync/draft-storage";
+import {
+	consumeMobileSyncTicket,
+	getOrCreateMobileSyncConsumerId,
+	type MobileSyncTicketResult,
+} from "@/lib/mobile-sync/one-time-ticket-client";
 import { waitForExpectedMobileAgent } from "@/lib/mobile-sync/remote-verification";
 import {
 	decodeSyncKey,
@@ -90,6 +96,12 @@ class MobileAgentRemoteVerificationError extends Error {
 class MobileAgentStorageError extends Error {
 	constructor(readonly cleanupIncomplete = false) {
 		super("Mobile Agent storage verification failed");
+	}
+}
+
+class MobileAgentOneTimeTicketError extends Error {
+	constructor(readonly result: Exclude<MobileSyncTicketResult, "accepted">) {
+		super("Mobile Agent one-time ticket verification failed");
 	}
 }
 
@@ -226,6 +238,14 @@ function MobileAgentSyncRoute() {
 		setSubmitError(null);
 		setStatus({ state: "importing" });
 
+		let registrationToRollback:
+			| {
+					epoch: AgentRegistrationEpoch;
+					publicKey: `0x${string}`;
+					persistenceAttempted: boolean;
+			  }
+			| undefined;
+
 		try {
 			const imported = await decryptMobileAgentSyncEnvelope(loadedSync.envelope, loadedSync.keyBytes, {
 				currentOrigin: window.location.origin,
@@ -260,21 +280,39 @@ function MobileAgentSyncRoute() {
 				syncId: imported.syncId,
 			});
 			const { privateKey, publicKey, ...metadata } = record;
-			const storageResult = writeAgentToStorageAndVerify(
-				imported.env,
-				imported.userAddress,
-				privateKey,
-				publicKey,
-				metadata,
-			);
-			if (storageResult.status !== "stored") {
+			const registration = await captureAgentRegistrationEpoch(imported.env, imported.userAddress);
+			if (registration.status !== "ready") {
 				throw new MobileAgentStorageError();
 			}
-			if (abortController.signal.aborted) return;
+			const consumerId = getOrCreateMobileSyncConsumerId();
+			if (!consumerId) throw new MobileAgentStorageError();
+			registrationToRollback = {
+				epoch: registration.epoch,
+				publicKey,
+				persistenceAttempted: false,
+			};
+			if (abortController.signal.aborted) throw new MobileAgentStorageError();
 
-			if (!setActiveAgentOwnerAndVerify(imported.env, imported.userAddress)) {
-				throw new MobileAgentStorageError(rollbackImportedMobileAccess(imported.env, imported.userAddress));
+			const ticketResult = await consumeMobileSyncTicket(imported.syncId, consumerId, abortController.signal);
+			if (ticketResult !== "accepted") throw new MobileAgentOneTimeTicketError(ticketResult);
+			if (abortController.signal.aborted) throw new MobileAgentStorageError();
+
+			registrationToRollback.persistenceAttempted = true;
+			const storageResult = await persistAgentForRegistration(registration.epoch, privateKey, publicKey, metadata);
+			if (storageResult.status !== "stored") throw new MobileAgentStorageError();
+			if (abortController.signal.aborted) throw new MobileAgentStorageError();
+
+			const activation = await activateAgentOwnerForRegistration(registration.epoch, publicKey);
+			if (activation.status !== "current") {
+				throw new MobileAgentStorageError();
 			}
+			const afterActivation = await verifyAgentRegistrationOrRemove(registration.epoch, publicKey);
+			if (afterActivation.status !== "current") {
+				throw new MobileAgentStorageError();
+			}
+			if (abortController.signal.aborted) throw new MobileAgentStorageError();
+
+			registrationToRollback = undefined;
 			loadedSync.keyBytes.fill(0);
 			const localCleanupIncomplete = !clearMobileSyncDraft();
 			setLoadState({ state: "empty" });
@@ -284,7 +322,12 @@ function MobileAgentSyncRoute() {
 				agentAddress: imported.agentAddress,
 				localCleanupIncomplete,
 			});
-		} catch (error) {
+		} catch (caughtError) {
+			let error = caughtError;
+			if (registrationToRollback) {
+				const cleanupIncomplete = await rollbackImportedMobileAccess(registrationToRollback);
+				if (cleanupIncomplete) error = new MobileAgentStorageError(true);
+			}
 			if (abortController.signal.aborted) return;
 			if (isMobileSyncError(error)) {
 				loadedSync.keyBytes.fill(0);
@@ -321,18 +364,22 @@ function MobileAgentSyncRoute() {
 		setStatus({ state: "idle" });
 	}
 
-	function rollbackImportedMobileAccess(importedEnv: "Mainnet" | "Testnet", userAddress: `0x${string}`): boolean {
+	async function rollbackImportedMobileAccess({
+		epoch,
+		publicKey,
+		persistenceAttempted,
+	}: {
+		epoch: AgentRegistrationEpoch;
+		publicKey: `0x${string}`;
+		persistenceAttempted: boolean;
+	}): Promise<boolean> {
 		let cleanupIncomplete = false;
 		try {
-			const activeOwner = getActiveAgentOwner();
-			const ownerMatches =
-				activeOwner?.env === importedEnv && activeOwner.address.toLowerCase() === userAddress.toLowerCase();
-			if (ownerMatches && !clearActiveAgentOwnerIfMatches(importedEnv, userAddress)) cleanupIncomplete = true;
-		} catch {
-			cleanupIncomplete = true;
-		}
-		try {
-			if (removeAgentFromStorageAndVerify(importedEnv, userAddress).status !== "removed") {
+			const cancellation = await cancelAgentRegistrationEpochAndRemove(
+				epoch,
+				persistenceAttempted ? publicKey : undefined,
+			);
+			if (cancellation.status === "failed") {
 				cleanupIncomplete = true;
 			}
 		} catch {
@@ -728,6 +775,11 @@ function createInitialLoadState(): LoadState {
 }
 
 function getMobileSyncImportErrorMessage(error: unknown): string {
+	if (error instanceof MobileAgentOneTimeTicketError) {
+		return error.result === "rejected"
+			? t`This one-time QR was already used or is no longer active. Scan a new QR.`
+			: t`The one-time QR could not be verified. Check your connection and retry.`;
+	}
 	if (error instanceof MobileAgentRemoteVerificationError) {
 		return error.hadNetworkError
 			? t`Hyperliquid approval could not be checked. Check your connection and retry.`
