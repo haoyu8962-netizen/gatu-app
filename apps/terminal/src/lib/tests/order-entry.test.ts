@@ -31,6 +31,14 @@ const builderPerpMarket = {
 	dex: "xyz",
 } as never;
 
+const googlMarket = {
+	kind: "builderPerp",
+	name: "xyz:GOOGL",
+	pairName: "GOOGL-USDC",
+	szDecimals: 3,
+	dex: "xyz",
+} as never;
+
 describe("order entry balances", () => {
 	it("blocks perp sizing while active asset availability is pending", () => {
 		const derived = deriveOrderEntry({
@@ -166,6 +174,40 @@ describe("order entry balances", () => {
 		expect(derived.availableBalance).toBe(0);
 		expect(derived.displayAvailableBalance).toBe(0);
 		expect(derived.maxSize).toBe(0);
+	});
+
+	it("keeps a manually entered GOOGL quantity in base units", () => {
+		const derived = deriveOrderEntry({
+			isConnected: true,
+			market: googlMarket,
+			side: "buy",
+			conversionPrice: 341,
+			sizeMode: "base",
+			sizeInput: "5",
+			spotBalances: [usdcBalance],
+			maxTradeSzs: [20, 20],
+			availableToTrade: [6820, 6820],
+		});
+
+		expect(derived.sizeValue).toBe(5);
+		expect(derived.orderValue).toBe(1705);
+	});
+
+	it("converts a GOOGL quote amount without applying leverage to size", () => {
+		const derived = deriveOrderEntry({
+			isConnected: true,
+			market: googlMarket,
+			side: "buy",
+			conversionPrice: 341,
+			sizeMode: "quote",
+			sizeInput: "5",
+			spotBalances: [usdcBalance],
+			maxTradeSzs: [20, 20],
+			availableToTrade: [6820, 6820],
+		});
+
+		expect(derived.sizeValue).toBe(0.014);
+		expect(derived.orderValue).toBeCloseTo(4.774);
 	});
 });
 

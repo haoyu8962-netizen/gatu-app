@@ -1,0 +1,73 @@
+/** @vitest-environment jsdom */
+
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const sliderMock = vi.hoisted(() => ({
+	props: null as Record<string, unknown> | null,
+}));
+
+vi.mock("@gatu/ui", () => ({
+	Slider: (props: Record<string, unknown>) => {
+		sliderMock.props = props;
+		return null;
+	},
+}));
+
+import { TradeSizeSlider } from "@/components/trade/components/trade-size-slider";
+
+describe("TradeSizeSlider", () => {
+	let container: HTMLDivElement;
+	let root: Root;
+
+	beforeEach(() => {
+		container = document.createElement("div");
+		document.body.appendChild(container);
+		root = createRoot(container);
+		sliderMock.props = null;
+	});
+
+	afterEach(() => {
+		act(() => root.unmount());
+		container.remove();
+	});
+
+	function render(value: number, onPercentChange: (value: number) => void) {
+		act(() => {
+			root.render(<TradeSizeSlider value={value} onPercentChange={onPercentChange} />);
+		});
+	}
+
+	it("updates size only during an actual slider change", () => {
+		const onPercentChange = vi.fn();
+		render(25, onPercentChange);
+
+		const onValueChange = sliderMock.props?.onValueChange as
+			| ((value: number, details: { reason: string }) => void)
+			| undefined;
+		expect(onValueChange).toBeTypeOf("function");
+
+		act(() => onValueChange?.(40, { reason: "drag" }));
+		expect(onPercentChange).toHaveBeenCalledTimes(1);
+		expect(onPercentChange).toHaveBeenCalledWith(40);
+
+		render(5, onPercentChange);
+		expect(sliderMock.props?.onValueCommitted).toBeUndefined();
+		expect(onPercentChange).toHaveBeenCalledTimes(1);
+		expect(sliderMock.props?.value).toBe(5);
+	});
+
+	it("ignores non-interactive value notifications", () => {
+		const onPercentChange = vi.fn();
+		render(25, onPercentChange);
+
+		const onValueChange = sliderMock.props?.onValueChange as
+			| ((value: number, details: { reason: string }) => void)
+			| undefined;
+		act(() => onValueChange?.(80, { reason: "none" }));
+
+		expect(onPercentChange).not.toHaveBeenCalled();
+		expect(sliderMock.props?.value).toBe(25);
+	});
+});

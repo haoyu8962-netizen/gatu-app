@@ -1,6 +1,9 @@
 import { t } from "@lingui/core/macro";
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import { useSelectedMarketInfo } from "@/lib/hyperliquid";
+import type { SizeMode } from "@/lib/trade/types";
+import { useExchangeScope } from "@/providers/exchange-scope";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileChartView } from "./mobile-chart-view";
 import { MobileMarketBar } from "./mobile-market-bar";
@@ -24,6 +27,11 @@ export function MobileTradeLayout({ active = true, showMarketBar = false, showOr
 }
 
 function TradeOrderView({ active, showMarketBar }: { active: boolean; showMarketBar: boolean }) {
+	const { data: selectedMarket } = useSelectedMarketInfo();
+	const { routeMarketName } = useExchangeScope();
+	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
+	const marketKey = routeMarketName ?? selectedMarket?.name ?? "default";
+
 	return (
 		<div
 			className={cn(
@@ -34,7 +42,13 @@ function TradeOrderView({ active, showMarketBar }: { active: boolean; showMarket
 			{showMarketBar && <MobileMarketBar className="min-h-[61px]" />}
 
 			<div className="w-full min-w-0 h-[52dvh] min-h-[420px] overflow-hidden flex items-stretch">
-				<MobileTradeView embedded className="flex-[1.2] min-h-0 min-w-0 border-r border-stroke-weak/60" />
+				<MobileTradeView
+					key={marketKey}
+					embedded
+					sizeMode={sizeMode}
+					onSizeModeChange={setSizeMode}
+					className="flex-[1.2] min-h-0 min-w-0 border-r border-stroke-weak/60"
+				/>
 				<MobileBookView compact inTabLayout view="book" className="flex-1 min-h-0 min-w-0 self-stretch" />
 			</div>
 

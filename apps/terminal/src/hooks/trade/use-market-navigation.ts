@@ -20,7 +20,7 @@ export function useMarketNavigation() {
 	const { getMarketInfo } = useMarketsInfo();
 	const { setSelectedMarket } = useMarketActions();
 	const currentMarketName = useSelectedMarket();
-	const { resetPrices } = useOrderEntryActions();
+	const { resetForm } = useOrderEntryActions();
 
 	return useCallback(
 		(marketName: string, marketOverride?: UnifiedMarketInfo, options: NavigateToMarketOptions = {}) => {
@@ -33,7 +33,7 @@ export function useMarketNavigation() {
 				market?.name === currentMarketName ||
 				market?.pairName === currentMarketName;
 			if (!isCurrentMarket) {
-				resetPrices();
+				resetForm();
 			}
 
 			if (!market) {
@@ -70,6 +70,6 @@ export function useMarketNavigation() {
 						: previous,
 			});
 		},
-		[currentMarketName, getMarketInfo, location.pathname, navigate, resetPrices, scope, setScope, setSelectedMarket],
+		[currentMarketName, getMarketInfo, location.pathname, navigate, resetForm, scope, setScope, setSelectedMarket],
 	);
 }

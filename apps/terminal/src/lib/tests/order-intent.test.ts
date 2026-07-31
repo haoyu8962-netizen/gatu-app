@@ -87,6 +87,25 @@ function positionTpSl(overrides: Partial<PositionTpSlIntent> = {}): PositionTpSl
 }
 
 describe("buildOrderPlan entry trigger guard", () => {
+	it("submits a GOOGL base quantity without leverage scaling", () => {
+		const plan = buildOrderPlan(
+			entry({
+				assetId: 110001,
+				orderType: "market",
+				sizeValue: 5,
+				szDecimals: 3,
+				markPx: 341,
+				price: 341,
+			}),
+		);
+
+		expect(plan.orders[0]).toMatchObject({
+			a: 110001,
+			b: true,
+			s: "5",
+		});
+	});
+
 	it("rejects a stop-limit order with an empty trigger price instead of building triggerPx 0", () => {
 		const plan = buildOrderPlan(entry({ orderType: "stopLimit", limitPriceInput: "100", triggerPriceInput: "" }));
 		expect(plan.orders).toHaveLength(0);

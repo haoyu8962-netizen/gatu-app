@@ -1,7 +1,7 @@
-import { Button, Slider, Tooltip } from "@gatu/ui";
+import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useId, useState } from "react";
+import { useId } from "react";
 import { labelTypographyClass } from "@/components/ui/field-label";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
@@ -34,6 +34,7 @@ import {
 	useTpSlEnabled,
 	useTriggerPrice,
 } from "@/stores/use-order-entry-store";
+import { TradeSizeSlider } from "../components/trade-size-slider";
 import { TradeFormScale } from "./trade-form-scale";
 import { TradeFormTif } from "./trade-form-tif";
 import { TradeFormTpSl } from "./trade-form-tp-sl";
@@ -61,8 +62,6 @@ export function TradeFormFields({
 }: Props) {
 	const { t } = useLingui();
 	const sizeFieldId = useId();
-	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-	const [dragSliderValue, setDragSliderValue] = useState(0);
 
 	const { isConnected } = useWalletSession();
 	const { data: market } = useSelectedMarketInfo();
@@ -111,7 +110,7 @@ export function TradeFormFields({
 	const triggerPriceNum = toNumber(triggerPriceInput);
 	const sizeHasError = (sizeValue > maxSize && maxSize > 0) || (orderValue > 0 && orderValue < ORDER_MIN_NOTIONAL_USD);
 
-	const sliderValue = isDraggingSlider ? dragSliderValue : getSliderValue(sizeValue, maxSize);
+	const sliderValue = getSliderValue(sizeValue, maxSize);
 
 	function handleSizePercentApply(pct: number) {
 		if (maxSize <= 0) return;
@@ -269,20 +268,9 @@ export function TradeFormFields({
 							{sizeModeLabel}
 						</Button>
 					</div>
-					<Slider
+					<TradeSizeSlider
 						value={sliderValue}
-						onValueChange={(val) => {
-							if (typeof val !== "number") return;
-							setIsDraggingSlider(true);
-							setDragSliderValue(val);
-						}}
-						onValueCommitted={(val) => {
-							if (typeof val !== "number") return;
-							setIsDraggingSlider(false);
-							handleSizePercentApply(val);
-						}}
-						max={100}
-						step={0.1}
+						onPercentChange={handleSizePercentApply}
 						disabled={isFormDisabled || maxSize <= 0}
 					/>
 					<div className="flex items-center justify-between pt-1 text-3xs text-fg-muted tabular-nums leading-none">

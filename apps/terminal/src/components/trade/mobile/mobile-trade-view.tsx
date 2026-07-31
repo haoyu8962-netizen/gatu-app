@@ -1,4 +1,4 @@
-import { Button, buttonVariants, Slider, Tooltip } from "@gatu/ui";
+import { Button, buttonVariants, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, Suspense, useEffect, useState } from "react";
@@ -61,6 +61,7 @@ import {
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
+import { TradeSizeSlider } from "../components/trade-size-slider";
 import { MarginModeModal } from "../tradebox/margin-mode-modal";
 import { TpSlSection } from "../tradebox/tp-sl-section";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
@@ -73,9 +74,11 @@ const WalletModal = createLazyComponent(() => import("../components/wallet-modal
 interface Props {
 	className?: string;
 	embedded?: boolean;
+	sizeMode: SizeMode;
+	onSizeModeChange: (sizeMode: SizeMode) => void;
 }
 
-export function MobileTradeView({ className, embedded }: Props) {
+export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChange }: Props) {
 	const { t } = useLingui();
 	const { address, isConnected, sessionMode } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
@@ -114,11 +117,8 @@ export function MobileTradeView({ className, embedded }: Props) {
 	const tif = useTif();
 	const triggerPrice = useTriggerPrice();
 	const [sizeInput, setSizeInput] = useState("");
-	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
 	const [limitPriceInput, setLimitPriceInput] = useState("");
 	const [reduceOnly, setReduceOnly] = useState(false);
-	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
-	const [dragSliderValue, setDragSliderValue] = useState(0);
 	const [approvalError, setApprovalError] = useState<string | null>(null);
 
 	const canUseTpSl = canUseTpSlForOrder(orderType);
@@ -246,8 +246,12 @@ export function MobileTradeView({ className, embedded }: Props) {
 	function handleSizeModeToggle() {
 		const newMode = sizeMode === "base" ? "quote" : "base";
 		const convertedSize = convertSizeForModeToggle();
-		setSizeMode(newMode);
+		onSizeModeChange(newMode);
 		if (convertedSize) setSizeInput(convertedSize);
+	}
+
+	function handleSizeInputChange(event: ChangeEvent<HTMLInputElement>) {
+		setSizeInput(event.target.value);
 	}
 
 	function handleSwitchChain() {
@@ -300,12 +304,13 @@ export function MobileTradeView({ className, embedded }: Props) {
 			slPriceNum: toNumber(slPrice),
 		});
 
-		if (plan.orders.length === 0) return;
+		const entryOrder = plan.orders[0];
+		if (!entryOrder) return;
 
 		const orderId = addOrder({
 			market: baseToken,
 			side,
-			size: formatSizeForOrder(sizeValue, orderSzDecimals),
+			size: String(entryOrder.s),
 			price: formatPriceForOrder(price, { assetId: market.assetId, szDecimals: orderSzDecimals }),
 			orderType: isMarketExecution ? "market" : "limit",
 			status: "pending",
@@ -370,7 +375,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 		}
 	}
 
-	const sliderValue = isDraggingSlider ? dragSliderValue : getSliderValue(sizeValue, maxSize);
+	const sliderValue = getSliderValue(sizeValue, maxSize);
 
 	const buttonContent = getMobileOrderButtonContent({
 		isConnected,
@@ -510,7 +515,14 @@ export function MobileTradeView({ className, embedded }: Props) {
 					</div>
 
 					<div className={cn(embedded ? "space-y-1.5" : "space-y-3")}>
-						<p className="text-2xs font-medium uppercase text-fg-muted">{t`Size`}</p>
+						<div className="flex min-w-0 items-baseline justify-between gap-2">
+							<p className="text-2xs font-medium uppercase text-fg-muted">{t`Size`}</p>
+							{sizeValue > 0 && baseToken ? (
+								<span className="shrink-0 whitespace-nowrap text-2xs tabular-nums text-fg">
+									{formatSizeForOrder(sizeValue, szDecimals)} {baseToken}
+								</span>
+							) : null}
+						</div>
 						<div className={cn("flex items-stretch", embedded ? "gap-1.5" : "gap-2")}>
 							<NumberInput
 								inputMode="decimal"
@@ -518,7 +530,7 @@ export function MobileTradeView({ className, embedded }: Props) {
 								mobileSafe
 								placeholder="0.00"
 								value={sizeInput}
-								onChange={(e: ChangeEvent<HTMLInputElement>) => setSizeInput(e.target.value)}
+								onChange={handleSizeInputChange}
 								maxAllowedDecimals={getSizeInputMaxDecimals(sizeMode, szDecimals)}
 								className="flex-1 tabular-nums font-semibold"
 								disabled={isFormDisabled}
@@ -548,21 +560,10 @@ export function MobileTradeView({ className, embedded }: Props) {
 							)}
 						</div>
 						<div className={cn(embedded ? "space-y-1.5" : "space-y-2")}>
-							<Slider
+							<TradeSizeSlider
 								thumbSize={sliderThumbSize}
 								value={sliderValue}
-								onValueChange={(val) => {
-									if (typeof val !== "number") return;
-									setIsDraggingSlider(true);
-									setDragSliderValue(val);
-								}}
-								onValueCommitted={(val) => {
-									if (typeof val !== "number") return;
-									setIsDraggingSlider(false);
-									applySizeFromPercent(val);
-								}}
-								max={100}
-								step={0.1}
+								onPercentChange={applySizeFromPercent}
 								disabled={isFormDisabled || maxSize <= 0}
 							/>
 							<div className="flex items-center justify-between text-2xs text-fg-muted tabular-nums leading-none">
