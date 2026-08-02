@@ -1,0 +1,46 @@
+import type { UserFillsResponse } from "@nktkas/hyperliquid";
+import { describe, expect, it } from "vitest";
+import { mergeUserFillSources } from "@/lib/trade/user-fills";
+
+type UserFill = UserFillsResponse[number];
+
+function createFill(overrides: Partial<UserFill> = {}): UserFill {
+	return {
+		closedPnl: "0.0",
+		coin: "BTC",
+		crossed: true,
+		dir: "Open Long",
+		fee: "0.01",
+		feeToken: "USDC",
+		hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+		oid: 42,
+		px: "63000",
+		side: "B",
+		startPosition: "0.0",
+		sz: "0.01",
+		tid: 100,
+		time: 1000,
+		twapId: null,
+		...overrides,
+	};
+}
+
+describe("mergeUserFillSources", () => {
+	it("merges REST history with realtime fills and sorts newest first", () => {
+		const older = createFill();
+		const newer = createFill({ oid: 43, tid: 101, time: 2000 });
+
+		expect(mergeUserFillSources([older], [newer])).toEqual([newer, older]);
+	});
+
+	it("deduplicates the same fill across REST and WebSocket snapshots", () => {
+		const restFill = createFill();
+		const realtimeFill = createFill({ fee: "0.02" });
+
+		expect(mergeUserFillSources([restFill], [realtimeFill])).toEqual([realtimeFill]);
+	});
+
+	it("handles unavailable sources without fabricating fills", () => {
+		expect(mergeUserFillSources(undefined, undefined)).toEqual([]);
+	});
+});

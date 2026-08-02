@@ -3,12 +3,11 @@ import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
-import { getExplorerTxUrl, useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -28,27 +27,16 @@ import {
 } from "./positions-panel-table-styles";
 
 export function HistoryTab() {
-	const { address, isConnected } = useWalletSession();
+	const { error, fills, isConnected, status } = useUserFills();
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
 	const isTestnet = useIsTestnet();
-	const {
-		data: fillsEvent,
-		status,
-		error,
-	} = useSubscription(
-		"userFills",
-		{ user: address ?? "0x0", aggregateByTime: true },
-		{ enabled: isConnected && !!address },
-	);
-
-	const fills = fillsEvent?.fills?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
 
 	const headerCount = isConnected ? `${fills.length} ${t`trades`}` : null;
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view trade history.`}</Placeholder>;
-		if (status === "subscribing" || status === "idle") return <Placeholder>{t`Loading trade history...`}</Placeholder>;
+		if (status === "loading" || status === "idle") return <Placeholder>{t`Loading trade history...`}</Placeholder>;
 		if (status === "error") {
 			return (
 				<Placeholder variant="error">

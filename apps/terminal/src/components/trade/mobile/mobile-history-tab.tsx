@@ -2,12 +2,11 @@ import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
-import { getExplorerTxUrl, useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -22,7 +21,7 @@ interface Props {
 }
 
 export function MobileHistoryTab({ className, scrollMode = "contained" }: Props) {
-	const { address, isConnected } = useWalletSession();
+	const { error, fills, isConnected, status } = useUserFills();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
@@ -32,17 +31,6 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 		navigateToMarket(name, undefined, { displayedContent: "trade" });
 		setActiveTab("trade");
 	}
-	const {
-		data: fillsEvent,
-		status,
-		error,
-	} = useSubscription(
-		"userFills",
-		{ user: address ?? "0x0", aggregateByTime: true },
-		{ enabled: isConnected && !!address },
-	);
-
-	const fills = fillsEvent?.fills?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
 	const headerCount = isConnected ? `${fills.length}` : FALLBACK_VALUE_PLACEHOLDER;
 	const isPageScroll = scrollMode === "page";
 
@@ -63,14 +51,14 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 		);
 	}
 
-	if (status === "active" && fills.length === 0) {
+	if (status === "ready" && fills.length === 0) {
 		return (
 			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">{t`No fills found.`}</div>
 		);
 	}
 
 	return (
-		<Skeleton name="history-tab" loading={status === "subscribing" || status === "idle"}>
+		<Skeleton name="history-tab" loading={status === "loading" || status === "idle"}>
 			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
 				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
 					<ClockCounterClockwiseIcon className="size-3" />
