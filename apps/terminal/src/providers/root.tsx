@@ -24,6 +24,7 @@ import { MarketsProvider } from "@/lib/hyperliquid/markets";
 import { getNetwork } from "@/lib/network";
 import { getQueryRetryDelayMs, shouldRetryQuery } from "@/lib/query-retry";
 import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
+import { PwaInstallProvider } from "@/providers/pwa-install";
 import "@/lib/i18n";
 
 const network = getNetwork();
@@ -98,32 +99,34 @@ function ClientProviders({ children, queryClient }: { children: React.ReactNode;
 	if (!persister) return null;
 
 	return (
-		<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={privyConfig}>
-			<SmartWalletsProvider>
-				<PersistQueryClientProvider
-					client={queryClient}
-					persistOptions={{
-						persister,
-						maxAge: RQ_CACHE_MAX_AGE_MS,
-						buster: RQ_CACHE_BUSTER,
-						dehydrateOptions: {
-							shouldDehydrateQuery: (query) => query.queryKey[0] === PERSISTED_QUERY_PREFIX,
-						},
-					}}
-				>
-					<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
-						<I18nProvider i18n={i18n}>
-							<HyperliquidBridge>
-								<EmbeddedDepositAutoBridge />
-								<OrderReconciliation />
-								<TwapReconciliation />
-								{children}
-							</HyperliquidBridge>
-						</I18nProvider>
-					</WagmiProvider>
-				</PersistQueryClientProvider>
-			</SmartWalletsProvider>
-		</PrivyProvider>
+		<PwaInstallProvider>
+			<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={privyConfig}>
+				<SmartWalletsProvider>
+					<PersistQueryClientProvider
+						client={queryClient}
+						persistOptions={{
+							persister,
+							maxAge: RQ_CACHE_MAX_AGE_MS,
+							buster: RQ_CACHE_BUSTER,
+							dehydrateOptions: {
+								shouldDehydrateQuery: (query) => query.queryKey[0] === PERSISTED_QUERY_PREFIX,
+							},
+						}}
+					>
+						<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
+							<I18nProvider i18n={i18n}>
+								<HyperliquidBridge>
+									<EmbeddedDepositAutoBridge />
+									<OrderReconciliation />
+									<TwapReconciliation />
+									{children}
+								</HyperliquidBridge>
+							</I18nProvider>
+						</WagmiProvider>
+					</PersistQueryClientProvider>
+				</SmartWalletsProvider>
+			</PrivyProvider>
+		</PwaInstallProvider>
 	);
 }
 

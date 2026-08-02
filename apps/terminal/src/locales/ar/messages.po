@@ -1936,6 +1936,18 @@ msgstr "المؤشرات"
 #~ msgid "Install a wallet extension to continue"
 #~ msgstr ""
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Install app"
+msgstr "تثبيت التطبيق"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Install gatu"
+msgstr "تثبيت gatu"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Install this web app for a full-screen, app-like trading experience."
+msgstr "ثبّت تطبيق الويب هذا للحصول على تجربة تداول بملء الشاشة تشبه التطبيق."
+
 #. placeholder {0}: ctx.baseToken
 #. placeholder {0}: ctx.quoteToken
 #: src/lib/errors/definitions/spot-balance.ts
@@ -2831,6 +2843,10 @@ msgstr "العقود المفتوحة"
 #~ msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
+msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
+msgstr "على iPhone أو iPad، افتح قائمة المشاركة واختر إضافة إلى الشاشة الرئيسية، ثم شغّل gatu من الشاشة الرئيسية."
+
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Only scan a QR displayed by this terminal on your desktop."
 msgstr ""
 
@@ -3331,6 +3347,10 @@ msgstr "ما قبل الاكتتاب"
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Pre-launch"
 #~ msgstr "قبل الإطلاق"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Prefer an app-like experience?"
+msgstr "هل تفضّل تجربة تشبه التطبيق؟"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Preparing automatic USDC deposit..."
@@ -5071,6 +5091,10 @@ msgstr "تم التفعيل"
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Try Again"
 msgstr "حاول مرة أخرى"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Try the PWA."
+msgstr "جرّب تطبيق PWA."
 
 #: src/config/trade.ts
 #: src/config/trade.ts

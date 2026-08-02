@@ -1936,6 +1936,18 @@ msgstr "सूचकांक"
 #~ msgid "Install a wallet extension to continue"
 #~ msgstr ""
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Install app"
+msgstr "ऐप इंस्टॉल करें"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Install gatu"
+msgstr "gatu इंस्टॉल करें"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Install this web app for a full-screen, app-like trading experience."
+msgstr "फ़ुल-स्क्रीन, ऐप जैसा ट्रेडिंग अनुभव पाने के लिए इस वेब ऐप को इंस्टॉल करें।"
+
 #. placeholder {0}: ctx.baseToken
 #. placeholder {0}: ctx.quoteToken
 #: src/lib/errors/definitions/spot-balance.ts
@@ -2831,6 +2843,10 @@ msgstr "OI"
 #~ msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
+msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
+msgstr "iPhone या iPad पर शेयर मेनू खोलें, होम स्क्रीन पर जोड़ें चुनें, फिर होम स्क्रीन से gatu लॉन्च करें।"
+
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Only scan a QR displayed by this terminal on your desktop."
 msgstr ""
 
@@ -3331,6 +3347,10 @@ msgstr "प्री-IPO"
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Pre-launch"
 #~ msgstr "प्री-लॉन्च"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Prefer an app-like experience?"
+msgstr "ऐप जैसा अनुभव पसंद करेंगे?"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Preparing automatic USDC deposit..."
@@ -5071,6 +5091,10 @@ msgstr "ट्रिगर हुआ"
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Try Again"
 msgstr "फिर से प्रयास करें"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Try the PWA."
+msgstr "PWA आज़माएँ।"
 
 #: src/config/trade.ts
 #: src/config/trade.ts

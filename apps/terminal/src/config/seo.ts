@@ -13,7 +13,7 @@ export const SEO_DEFAULTS = {
 	ogImageAlt: "gatu Hyperliquid trading terminal",
 	locale: "en_US",
 	// meta theme-color needs a literal CSS color value (tag consumer reads from HTML, not CSS vars)
-	themeColor: "#0a0e13",
+	themeColor: "#0F1A1F",
 } as const;
 
 export const SEO_BASE_KEYWORDS = ["hyperliquid", "trading", "dex", "perpetuals", "crypto", "defi"] as const;

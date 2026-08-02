@@ -1936,6 +1936,18 @@ msgstr "Indices"
 #~ msgid "Install a wallet extension to continue"
 #~ msgstr ""
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Install app"
+msgstr "Installer l’application"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Install gatu"
+msgstr "Installer gatu"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Install this web app for a full-screen, app-like trading experience."
+msgstr "Installez cette application web pour une expérience de trading en plein écran, proche d’une application native."
+
 #. placeholder {0}: ctx.baseToken
 #. placeholder {0}: ctx.quoteToken
 #: src/lib/errors/definitions/spot-balance.ts
@@ -2831,6 +2843,10 @@ msgstr "OI"
 #~ msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
+msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
+msgstr "Sur iPhone ou iPad, ouvrez le menu Partager, choisissez Sur l’écran d’accueil, puis lancez gatu depuis l’écran d’accueil."
+
+#: src/components/trade/components/wallet-modal.tsx
 msgid "Only scan a QR displayed by this terminal on your desktop."
 msgstr ""
 
@@ -3331,6 +3347,10 @@ msgstr "Pré-IPO"
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "Pre-launch"
 #~ msgstr "Pré-lancement"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Prefer an app-like experience?"
+msgstr "Vous préférez une expérience proche d’une application native ?"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Preparing automatic USDC deposit..."
@@ -5071,6 +5091,10 @@ msgstr "Déclenché"
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Try Again"
 msgstr "Réessayer"
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Try the PWA."
+msgstr "Essayez la PWA."
 
 #: src/config/trade.ts
 #: src/config/trade.ts

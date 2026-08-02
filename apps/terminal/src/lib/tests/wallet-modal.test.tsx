@@ -12,6 +12,8 @@ const testState = vi.hoisted(() => ({
 	importEnabled: true,
 	login: vi.fn(),
 	reconnectWallet: vi.fn(),
+	promptInstall: vi.fn(),
+	pwaCapability: "unsupported" as "browser-prompt" | "ios-instructions" | "installed" | "unsupported",
 	walletsReady: true,
 	isReconnecting: false,
 }));
@@ -29,7 +31,9 @@ vi.mock("@lingui/react/macro", () => ({
 }));
 
 vi.mock("@phosphor-icons/react", () => ({
+	ArrowLeftIcon: () => null,
 	DesktopIcon: () => null,
+	DownloadSimpleIcon: () => null,
 	EnvelopeSimpleIcon: () => null,
 	SpinnerGapIcon: () => null,
 	WalletIcon: () => null,
@@ -44,6 +48,13 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 		reconnectWallet: testState.reconnectWallet,
 		walletsReady: testState.walletsReady,
 		isReconnecting: testState.isReconnecting,
+	}),
+}));
+
+vi.mock("@/providers/pwa-install", () => ({
+	usePwaInstall: () => ({
+		capability: testState.pwaCapability,
+		promptInstall: testState.promptInstall,
 	}),
 }));
 
@@ -98,6 +109,9 @@ describe("WalletModal", () => {
 		testState.importEnabled = true;
 		testState.login.mockReset();
 		testState.reconnectWallet.mockReset();
+		testState.promptInstall.mockReset();
+		testState.promptInstall.mockResolvedValue("accepted");
+		testState.pwaCapability = "unsupported";
 		testState.walletsReady = true;
 		testState.isReconnecting = false;
 	});
@@ -286,5 +300,58 @@ describe("WalletModal", () => {
 		expect(findButton(container, "Connecting...")?.disabled).toBe(true);
 		expect(testState.reconnectWallet).not.toHaveBeenCalled();
 		expect(onOpenChange).not.toHaveBeenCalled();
+	});
+
+	it("shows iOS Home Screen instructions without invoking a wallet or browser prompt", async () => {
+		testState.isMobileQrSurface = true;
+		testState.pwaCapability = "ios-instructions";
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+		act(() => findButton(container, "Try the PWA.")?.click());
+
+		expect(container.querySelector("h2")?.textContent).toBe("Install gatu");
+		expect(container.textContent).toContain("open the Share menu");
+		expect(findButton(container, "Install app")).toBeUndefined();
+		expect(findButton(container, "Back")).toBeDefined();
+		expect(testState.promptInstall).not.toHaveBeenCalled();
+		expect(testState.login).not.toHaveBeenCalled();
+		expect(testState.reconnectWallet).not.toHaveBeenCalled();
+	});
+
+	it("invokes the captured browser install prompt only after explicit confirmation", async () => {
+		testState.isMobileQrSurface = true;
+		testState.pwaCapability = "browser-prompt";
+		const onOpenChange = vi.fn();
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange }));
+		});
+		act(() => findButton(container, "Try the PWA.")?.click());
+		await act(async () => {
+			findButton(container, "Install app")?.click();
+			await Promise.resolve();
+		});
+
+		expect(testState.promptInstall).toHaveBeenCalledTimes(1);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(testState.login).not.toHaveBeenCalled();
+		expect(testState.reconnectWallet).not.toHaveBeenCalled();
+	});
+
+	it("hides the PWA entry when the app is already installed", async () => {
+		testState.isMobileQrSurface = true;
+		testState.pwaCapability = "installed";
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+
+		expect(findButton(container, "Try the PWA.")).toBeUndefined();
+		expect(testState.promptInstall).not.toHaveBeenCalled();
 	});
 });

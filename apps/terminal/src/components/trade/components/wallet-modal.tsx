@@ -1,11 +1,19 @@
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
-import { DesktopIcon, EnvelopeSimpleIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
+import {
+	ArrowLeftIcon,
+	DesktopIcon,
+	DownloadSimpleIcon,
+	EnvelopeSimpleIcon,
+	SpinnerGapIcon,
+	WalletIcon,
+} from "@phosphor-icons/react";
 import { type LoginModalOptions, usePrivy } from "@privy-io/react-auth";
 import { useEffect, useRef, useState } from "react";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { useIsMobileQrSurface } from "@/hooks/use-mobile";
 import { useReconnectWallet } from "@/hooks/wallet/use-wallet-session";
+import { usePwaInstall } from "@/providers/pwa-install";
 import { MobileAgentQrScanner } from "./mobile-agent-qr-scanner";
 
 interface Props {
@@ -88,8 +96,11 @@ function MobileWalletChooser({
 	authenticated: boolean;
 	login: (options?: LoginModalOptions) => void;
 }) {
-	const [view, setView] = useState<"choice" | "scanner">("choice");
+	const [view, setView] = useState<"choice" | "pwa" | "scanner">("choice");
+	const [isInstalling, setIsInstalling] = useState(false);
 	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
+	const { capability: pwaCapability, promptInstall } = usePwaInstall();
+	const canOfferPwa = pwaCapability === "browser-prompt" || pwaCapability === "ios-instructions";
 
 	function handleReconnectWallet() {
 		if (!ready || !walletsReady || isReconnecting) return;
@@ -109,6 +120,14 @@ function MobileWalletChooser({
 		login({ loginMethods: ["wallet"], walletChainType: "ethereum-only" });
 	}
 
+	async function handleInstallApp() {
+		if (pwaCapability !== "browser-prompt" || isInstalling) return;
+		setIsInstalling(true);
+		await promptInstall();
+		setIsInstalling(false);
+		onOpenChange(false);
+	}
+
 	return (
 		<AdaptiveModal
 			open={open}
@@ -120,7 +139,13 @@ function MobileWalletChooser({
 		>
 			<ModalHeader divider={view !== "choice"} className={view === "choice" ? "px-4 pt-5 pb-2" : undefined}>
 				<ModalTitle className={view === "choice" ? "text-xl" : undefined}>
-					{view === "choice" ? <Trans>Connect</Trans> : <Trans>Link Desktop Wallet</Trans>}
+					{view === "choice" ? (
+						<Trans>Connect</Trans>
+					) : view === "scanner" ? (
+						<Trans>Link Desktop Wallet</Trans>
+					) : (
+						<Trans>Install gatu</Trans>
+					)}
 				</ModalTitle>
 				<ModalDescription className={view === "choice" ? "sr-only" : undefined}>
 					{view === "choice" ? (
@@ -129,8 +154,14 @@ function MobileWalletChooser({
 						) : (
 							<Trans>Connect a wallet on this phone to trade.</Trans>
 						)
-					) : (
+					) : view === "scanner" ? (
 						<Trans>Only scan a QR displayed by this terminal on your desktop.</Trans>
+					) : pwaCapability === "ios-instructions" ? (
+						<Trans>
+							On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen.
+						</Trans>
+					) : (
+						<Trans>Install this web app for a full-screen, app-like trading experience.</Trans>
 					)}
 				</ModalDescription>
 			</ModalHeader>
@@ -205,9 +236,61 @@ function MobileWalletChooser({
 								</Button>
 							</>
 						)}
+						{canOfferPwa && (
+							<Button
+								type="button"
+								variant="ghost"
+								intent="brand"
+								size="md"
+								className="h-13 w-full bg-success-soft px-4 text-sm font-medium text-success shadow-none"
+								onClick={() => setView("pwa")}
+								iconLeft={<DownloadSimpleIcon className="size-5" aria-hidden />}
+							>
+								<span>
+									<Trans>Prefer an app-like experience?</Trans>{" "}
+									<span className="underline underline-offset-4">
+										<Trans>Try the PWA.</Trans>
+									</span>
+								</span>
+							</Button>
+						)}
 					</>
-				) : (
+				) : view === "scanner" ? (
 					<MobileAgentQrScanner onCancel={() => setView("choice")} />
+				) : (
+					<div className="space-y-3">
+						{pwaCapability === "browser-prompt" && (
+							<Button
+								type="button"
+								variant="filled"
+								intent="brand"
+								size="md"
+								className="w-full"
+								disabled={isInstalling}
+								onClick={() => void handleInstallApp()}
+								iconLeft={
+									isInstalling ? (
+										<SpinnerGapIcon className="size-4 animate-spin" aria-hidden />
+									) : (
+										<DownloadSimpleIcon className="size-4" aria-hidden />
+									)
+								}
+							>
+								<Trans>Install app</Trans>
+							</Button>
+						)}
+						<Button
+							type="button"
+							variant="outline"
+							intent="neutral"
+							size="md"
+							className="w-full"
+							onClick={() => setView("choice")}
+							iconLeft={<ArrowLeftIcon className="size-4" aria-hidden />}
+						>
+							<Trans>Back</Trans>
+						</Button>
+					</div>
 				)}
 			</ModalContent>
 		</AdaptiveModal>
