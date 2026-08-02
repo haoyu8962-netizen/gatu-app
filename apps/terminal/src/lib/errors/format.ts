@@ -69,3 +69,29 @@ export function formatTransferError(error: Error | null): string {
 		? `${firstLine.slice(0, ERROR_MESSAGE_TRUNCATE_LIMIT)}...`
 		: firstLine;
 }
+
+export function formatExchangeActionError(error: unknown, fallback: string): string {
+	if (isAmbiguousExchangeActionError(error)) {
+		return t`Request status could not be confirmed. Check balances and transfer history before retrying.`;
+	}
+
+	if (error instanceof Error) return formatTransferError(error);
+	if (typeof error === "string") return formatTransferError(new Error(error));
+	return fallback;
+}
+
+export function isAmbiguousExchangeActionError(error: unknown): boolean {
+	if (!isRecord(error) || error.name !== "HttpRequestError") return false;
+	const status = getHttpStatus(error.response);
+	if (status === undefined) return true;
+	return status < 400 || status === 408 || status >= 500;
+}
+
+function getHttpStatus(response: unknown): number | undefined {
+	if (!isRecord(response) || typeof response.status !== "number") return undefined;
+	return response.status;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}

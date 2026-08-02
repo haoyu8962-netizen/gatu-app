@@ -31,6 +31,11 @@ const testState = vi.hoisted(() => ({
 		],
 		withdrawable: "40",
 	},
+	exchangeMutations: {
+		sendAsset: vi.fn(),
+		spotSend: vi.fn(),
+		usdClassTransfer: vi.fn(),
+	},
 }));
 
 function renderChildren(children: ReactNode) {
@@ -99,7 +104,10 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useExchange: () => ({ isPending: false, mutateAsync: vi.fn() }),
+	useExchange: (method: keyof typeof testState.exchangeMutations) => ({
+		isPending: false,
+		mutateAsync: testState.exchangeMutations[method],
+	}),
 }));
 
 vi.mock("@/lib/hyperliquid/markets/use-spot-tokens", () => ({
@@ -120,11 +128,25 @@ function clickAvailableBalance(container: HTMLElement) {
 	act(() => button.click());
 }
 
+function setInputValue(input: HTMLInputElement, value: string) {
+	const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+	if (!valueSetter) throw new Error("Native input value setter not found");
+	valueSetter.call(input, value);
+	input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function getButton(container: HTMLElement, label: string): HTMLButtonElement {
+	const button = [...container.querySelectorAll("button")].find((candidate) => candidate.textContent?.trim() === label);
+	if (!(button instanceof HTMLButtonElement)) throw new Error(`${label} button not found`);
+	return button;
+}
+
 describe("funds action balance wiring", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		testState.balances.accountAbstraction = "disabled";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -172,5 +194,33 @@ describe("funds action balance wiring", () => {
 		expect(container.textContent).not.toContain("4947.18 USDC");
 		clickAvailableBalance(container);
 		expect(getAmountInput(container).value).toBe("4964.51");
+	});
+
+	it("uses the unified trading account and the generalized spot-to-spot send action", async () => {
+		testState.balances.accountAbstraction = "unifiedAccount";
+		testState.exchangeMutations.sendAsset.mockResolvedValueOnce({ status: "ok" });
+
+		act(() => root.render(createElement(SendModal, { initialAccountType: "perp", onOpenChange: vi.fn(), open: true })));
+
+		expect(container.textContent).toContain("Trading Account");
+		expect(container.textContent).not.toContain("Perps Account");
+
+		const destinationInput = container.querySelector<HTMLInputElement>('input[placeholder="Destination address"]');
+		if (!destinationInput) throw new Error("Destination input not found");
+		act(() => {
+			setInputValue(destinationInput, "0x2222222222222222222222222222222222222222");
+			setInputValue(getAmountInput(container), "1");
+		});
+
+		await act(async () => getButton(container, "Send").click());
+
+		expect(testState.exchangeMutations.sendAsset).toHaveBeenCalledWith({
+			amount: "1",
+			destination: "0x2222222222222222222222222222222222222222",
+			destinationDex: "spot",
+			sourceDex: "spot",
+			token: "USDC:0",
+		});
+		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
 	});
 });

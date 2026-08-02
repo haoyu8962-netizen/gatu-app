@@ -14,6 +14,7 @@ const testState = vi.hoisted(() => ({
 	},
 	hip3RequirementHook: vi.fn(),
 	openCommandMenu: vi.fn(),
+	closeSendModal: vi.fn(),
 }));
 
 vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
@@ -38,6 +39,9 @@ vi.mock("@/lib/lazy", () => ({
 vi.mock("@/stores/use-global-modal-store", () => ({
 	useCommandMenuActions: () => ({ open: testState.openCommandMenu, close: testState.closeCommandMenu }),
 	useGlobalModalType: () => testState.activeModal,
+	useSendModalAccountType: () => "spot",
+	useSendModalActions: () => ({ close: testState.closeSendModal }),
+	useSendModalAsset: () => "USDC",
 	useTransferModalActions: () => ({ close: vi.fn() }),
 	useTransferModalDirection: () => "toPerp",
 }));
@@ -57,6 +61,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 			documentationUrl: "https://docs.trade.xyz/consolidated-resources/specification-index",
 		};
 		testState.closeCommandMenu.mockReset();
+		testState.closeSendModal.mockReset();
 		testState.hip3RequirementHook.mockReset();
 		testState.openCommandMenu.mockReset();
 	});
@@ -99,5 +104,17 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).toBeNull();
 		expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
 		expect(testState.hip3RequirementHook).not.toHaveBeenCalled();
+	});
+
+	it("mounts the globally accessible Send modal with the requested account defaults", async () => {
+		testState.activeModal = "send";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(GlobalModals)));
+
+		const sendModal = container.querySelector('[data-testid="SendModal"]');
+		expect(sendModal).not.toBeNull();
+		expect(sendModal?.getAttribute("data-props")).toContain('"initialAsset":"USDC"');
+		expect(sendModal?.getAttribute("data-props")).toContain('"initialAccountType":"spot"');
 	});
 });

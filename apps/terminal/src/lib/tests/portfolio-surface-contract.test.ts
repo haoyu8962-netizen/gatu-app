@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_STYLES = readFileSync(resolve(TEST_DIR, "../..", "styles.css"), "utf8");
 const PORTFOLIO_PAGE = readFileSync(resolve(TEST_DIR, "../..", "components/portfolio/portfolio-page.tsx"), "utf8");
+const DEPOSIT_MODAL = readFileSync(resolve(TEST_DIR, "../..", "components/trade/tradebox/deposit-modal.tsx"), "utf8");
 
 describe("portfolio surface contract", () => {
 	it("keeps the portfolio canvas separate from its raised content panels", () => {
@@ -16,6 +17,21 @@ describe("portfolio surface contract", () => {
 		);
 		expect(PORTFOLIO_PAGE).toContain("bg-portfolio-canvas");
 		expect(PORTFOLIO_PAGE).toContain("rounded-12 bg-surface");
+	});
+
+	it("exposes transfer history only through the portfolio account activity surface", () => {
+		expect(PORTFOLIO_PAGE).toContain("transfersContent={<MobileAccountTransfersTab");
+		expect(PORTFOLIO_PAGE).toContain("<PositionsPanel includeTransfers />");
+	});
+
+	it("keeps Send available in the responsive portfolio toolbar", () => {
+		expect(PORTFOLIO_PAGE).toContain("useSendModalActions");
+		expect(PORTFOLIO_PAGE).toContain("<Trans>Send</Trans>");
+	});
+
+	it("uses the default withdrawal account instead of the last selected HIP-3 market", () => {
+		expect(DEPOSIT_MODAL).toContain("useDefaultDexBalances");
+		expect(DEPOSIT_MODAL).not.toContain("useSelectedDexBalances");
 	});
 });
 

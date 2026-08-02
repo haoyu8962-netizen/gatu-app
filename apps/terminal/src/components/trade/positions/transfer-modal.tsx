@@ -1,4 +1,4 @@
-import { Button, Modal, ModalContent, ModalDescription, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
+import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowsLeftRightIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useState } from "react";
@@ -14,8 +14,10 @@ import {
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { formatExchangeActionError } from "@/lib/errors/format";
 import { useExchange } from "@/lib/hyperliquid";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
+import { PendingActionModal } from "../components/pending-action-modal";
 
 type TransferDirection = "toSpot" | "toPerp";
 
@@ -27,24 +29,22 @@ interface Props {
 
 export function TransferModal({ open, onOpenChange, initialDirection = "toSpot" }: Props) {
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm">
-				<TransferModalBody
-					key={`${initialDirection}:${open ? "open" : "closed"}`}
-					onOpenChange={onOpenChange}
-					initialDirection={initialDirection}
-				/>
-			</ModalPopup>
-		</Modal>
+		<TransferModalBody
+			key={`${initialDirection}:${open ? "open" : "closed"}`}
+			onOpenChange={onOpenChange}
+			initialDirection={initialDirection}
+			open={open}
+		/>
 	);
 }
 
 interface BodyProps {
 	onOpenChange: (open: boolean) => void;
 	initialDirection: TransferDirection;
+	open: boolean;
 }
 
-function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
+function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) {
 	const [direction, setDirection] = useState<TransferDirection>(initialDirection);
 	const [amount, setAmount] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -78,7 +78,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 	const toLabel = direction === "toSpot" ? t`Spot` : t`Perp`;
 
 	function handleFlip() {
-		if (internalTransfersDisabledReason) return;
+		if (internalTransfersDisabledReason || isPending) return;
 		setDirection((prev) => (prev === "toSpot" ? "toPerp" : "toSpot"));
 		setAmount("");
 	}
@@ -92,8 +92,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 			setAmount("");
 			onOpenChange(false);
 		} catch (err) {
-			const message = err instanceof Error ? err.message : t`Transfer failed`;
-			setError(message);
+			setError(formatExchangeActionError(err, t`Transfer failed`));
 		}
 	}
 
@@ -106,7 +105,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 	}
 
 	return (
-		<>
+		<PendingActionModal open={open} onOpenChange={onOpenChange} isPending={isPending}>
 			<ModalHeader>
 				<ModalTitle>{t`Transfer USDC`}</ModalTitle>
 				<ModalDescription>{t`Move USDC between your Perp and Spot accounts.`}</ModalDescription>
@@ -142,7 +141,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 							type="button"
 							onClick={handleFlip}
 							aria-label={t`Flip transfer direction`}
-							disabled={!!internalTransfersDisabledReason}
+							disabled={!!internalTransfersDisabledReason || isPending}
 							className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-brand"
 						>
 							<ArrowsLeftRightIcon className="size-4" />
@@ -173,7 +172,7 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 						placeholder="0.00"
 						value={amount}
 						onChange={(e) => handleAmountChange(e.target.value)}
-						disabled={!!internalTransfersDisabledReason}
+						disabled={!!internalTransfersDisabledReason || isPending}
 						className={cn(
 							"w-full tabular-nums",
 							exceedsBalance(amount, availableBalanceValue) &&
@@ -200,6 +199,6 @@ function TransferModalBody({ onOpenChange, initialDirection }: BodyProps) {
 					</Button>
 				</div>
 			</ModalContent>
-		</>
+		</PendingActionModal>
 	);
 }

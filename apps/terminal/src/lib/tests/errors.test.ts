@@ -1,6 +1,7 @@
+import { HttpRequestError } from "@nktkas/hyperliquid";
 import { describe, expect, it, vi } from "vitest";
 import { formatErrorForDisplay } from "@/lib/errors";
-import { formatTransferError } from "@/lib/errors/format";
+import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 
 vi.mock("@lingui/core/macro", () => ({
 	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
@@ -95,5 +96,21 @@ describe("errors", () => {
 
 	it("does not label unrelated timeout errors as deposit failures", () => {
 		expect(formatTransferError(new Error("Withdraw confirmation timed out."))).toBe("Withdraw confirmation timed out.");
+	});
+
+	it("warns against blind retries when a signed exchange request has an ambiguous transport result", () => {
+		const error = new HttpRequestError({ detail: "Request timed out after 10000 ms" });
+
+		expect(isAmbiguousExchangeActionError(error)).toBe(true);
+		expect(formatExchangeActionError(error, "Withdrawal failed")).toBe(
+			"Request status could not be confirmed. Check balances and transfer history before retrying.",
+		);
+	});
+
+	it("keeps rate-limit responses deterministic because the exchange rejected them before execution", () => {
+		const error = new HttpRequestError({ response: new Response("rate limited", { status: 429 }) });
+
+		expect(isAmbiguousExchangeActionError(error)).toBe(false);
+		expect(formatExchangeActionError(error, "Transfer failed")).not.toContain("status could not be confirmed");
 	});
 });

@@ -67,7 +67,7 @@ export function WithdrawForm({
 					label={t`Amount`}
 					labelValue={
 						<>
-							Available:{" "}
+							{t`Available`}:{" "}
 							<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 								{formatNumber(availableNum, 2)} USDC
 							</span>

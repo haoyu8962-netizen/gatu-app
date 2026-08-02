@@ -4,6 +4,9 @@ import { createLazyComponent } from "@/lib/lazy";
 import {
 	useCommandMenuActions,
 	useGlobalModalType,
+	useSendModalAccountType,
+	useSendModalActions,
+	useSendModalAsset,
 	useTransferModalActions,
 	useTransferModalDirection,
 } from "@/stores/use-global-modal-store";
@@ -14,6 +17,7 @@ const GlobalSettingsModal = createLazyComponent(() => import("./global-settings-
 const SpotSwapModal = createLazyComponent(() => import("./spot-swap-modal"), "SpotSwapModal");
 const CommandMenu = createLazyComponent(() => import("./command-menu"), "CommandMenu");
 const TransferModal = createLazyComponent(() => import("../positions/transfer-modal"), "TransferModal");
+const SendModal = createLazyComponent(() => import("../positions/send-modal"), "SendModal");
 
 interface Props {
 	enableHip3Disclaimer?: boolean;
@@ -35,6 +39,9 @@ function SharedGlobalModals({ hip3Disclaimer }: { hip3Disclaimer?: Hip3Disclaime
 	const { open: openCommandMenu, close: closeCommandMenu } = useCommandMenuActions();
 	const transferDirection = useTransferModalDirection();
 	const { close: closeTransferModal } = useTransferModalActions();
+	const sendModalAsset = useSendModalAsset();
+	const sendAccountType = useSendModalAccountType();
+	const { close: closeSendModal } = useSendModalActions();
 
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
@@ -66,6 +73,14 @@ function SharedGlobalModals({ hip3Disclaimer }: { hip3Disclaimer?: Hip3Disclaime
 					open
 					onOpenChange={(open) => !open && closeTransferModal()}
 					initialDirection={transferDirection}
+				/>
+			)}
+			{activeModal === "send" && (
+				<SendModal
+					open
+					onOpenChange={(open) => !open && closeSendModal()}
+					initialAsset={sendModalAsset}
+					initialAccountType={sendAccountType}
 				/>
 			)}
 			{activeModal === "settings" && <GlobalSettingsModal />}

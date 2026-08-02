@@ -1186,6 +1186,7 @@ msgstr "Deployer"
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
+#: src/config/account-ledger.ts
 msgid "Deposit"
 msgstr "Deposit"
 
@@ -1280,6 +1281,9 @@ msgstr "Desktop QR loaded"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Destination"
 msgstr "Destination"
 
@@ -1546,6 +1550,7 @@ msgid "Expires {expiresAtLabel}."
 msgstr "Expires {expiresAtLabel}."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 msgid "Explorer"
 msgstr "Explorer"
 
@@ -1697,6 +1702,9 @@ msgstr "Favorites"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "Fee"
 
@@ -2126,6 +2134,7 @@ msgstr "Liq. Price"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/config/account-ledger.ts
 msgid "Liquidated"
 msgstr "Liquidated"
 
@@ -3096,6 +3105,7 @@ msgstr "Perpetuals"
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/config/account-ledger.ts
 msgid "Perps"
 msgstr "Perps"
 
@@ -3611,6 +3621,8 @@ msgstr "Resume tracking"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Retry"
 msgstr "Retry"
 
@@ -3874,6 +3886,8 @@ msgstr "Sell Short"
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/portfolio/portfolio-page.tsx
+#: src/config/account-ledger.ts
 msgid "Send"
 msgstr "Send"
 
@@ -4165,6 +4179,9 @@ msgstr "Sorted by {0}"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Source"
 msgstr "Source"
 
@@ -4180,6 +4197,7 @@ msgstr "Source"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
+#: src/config/account-ledger.ts
 msgid "Spot"
 msgstr "Spot"
 
@@ -4206,6 +4224,7 @@ msgid "Spread"
 msgstr "Spread"
 
 #: src/config/nav.tsx
+#: src/config/account-ledger.ts
 msgid "Staking"
 msgstr "Staking"
 
@@ -4232,6 +4251,7 @@ msgid "Starting camera..."
 msgstr "Starting camera..."
 
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Status"
 msgstr "Status"
 
@@ -4761,6 +4781,8 @@ msgstr "TIF"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Time"
 msgstr "Time"
 
@@ -4969,6 +4991,7 @@ msgstr "Transaction was rejected"
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/config/account-ledger.ts
 msgid "Transfer"
 msgstr "Transfer"
 
@@ -4995,6 +5018,7 @@ msgstr "Transferring..."
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/components/portfolio/portfolio-page.tsx
 msgid "Transfers between Spot and Perps are unavailable in unified account mode."
 msgstr "Transfers between Spot and Perps are unavailable in unified account mode."
 
@@ -5510,3 +5534,139 @@ msgstr "Your transaction is being processed"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Your wallet approves one trading key for this phone. It cannot withdraw funds."
 #~ msgstr "Your wallet approves one trading key for this phone. It cannot withdraw funds."
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Account Value Change"
+msgstr "Account Value Change"
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Action"
+msgstr "Action"
+
+#: src/config/account-ledger.ts
+msgid "Activate DEX"
+msgstr "Activate DEX"
+
+#: src/config/account-ledger.ts
+msgid "Borrow"
+msgstr "Borrow"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Completed"
+msgstr "Completed"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Connect your wallet to view deposits and withdrawals."
+msgstr "Connect your wallet to view deposits and withdrawals."
+
+#: src/config/account-ledger.ts
+msgid "Create Vault"
+msgstr "Create Vault"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "CSV export reached the history limit. Some older records were not included."
+msgstr "CSV export reached the history limit. Some older records were not included."
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "CSV exported."
+msgstr "CSV exported."
+
+#: src/config/account-ledger.ts
+msgid "Deploy Gas Auction"
+msgstr "Deploy Gas Auction"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/config/account-ledger.ts
+msgid "Deposits & Withdrawals"
+msgstr "Deposits & Withdrawals"
+
+#: src/config/account-ledger.ts
+msgid "Earn"
+msgstr "Earn"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Export CSV"
+msgstr "Export CSV"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Exporting deposits and withdrawals..."
+msgstr "Exporting deposits and withdrawals..."
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Failed to export deposits and withdrawals."
+msgstr "Failed to export deposits and withdrawals."
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Failed to load deposits and withdrawals."
+msgstr "Failed to load deposits and withdrawals."
+
+#: src/config/account-ledger.ts
+msgid "Genesis Distribution"
+msgstr "Genesis Distribution"
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Loading deposits and withdrawals..."
+msgstr "Loading deposits and withdrawals..."
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "No deposits or withdrawals found."
+msgstr "No deposits or withdrawals found."
+
+#: src/config/account-ledger.ts
+msgid "Repay"
+msgstr "Repay"
+
+#: src/lib/errors/format.ts
+msgid "Request status could not be confirmed. Check balances and transfer history before retrying."
+msgstr "Request status could not be confirmed. Check balances and transfer history before retrying."
+
+#: src/config/account-ledger.ts
+msgid "Rewards Claim"
+msgstr "Rewards Claim"
+
+#: src/config/account-ledger.ts
+msgid "Stake"
+msgstr "Stake"
+
+#: src/config/account-ledger.ts
+msgid "Sub-account Transfer"
+msgstr "Sub-account Transfer"
+
+#: src/config/account-ledger.ts
+msgid "Supply"
+msgstr "Supply"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Trading Account"
+msgstr "Trading Account"
+
+#: src/config/account-ledger.ts
+msgid "Unstake"
+msgstr "Unstake"
+
+#: src/config/account-ledger.ts
+msgid "Vault Commission"
+msgstr "Vault Commission"
+
+#: src/config/account-ledger.ts
+msgid "Vault Deposit"
+msgstr "Vault Deposit"
+
+#: src/config/account-ledger.ts
+msgid "Vault Distribution"
+msgstr "Vault Distribution"
+
+#: src/config/account-ledger.ts
+msgid "Vault Withdrawal"
+msgstr "Vault Withdrawal"
+
+#: src/config/account-ledger.ts
+msgid "Withdrawal"
+msgstr "Withdrawal"

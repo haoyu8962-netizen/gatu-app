@@ -1186,6 +1186,7 @@ msgstr "部署者"
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
+#: src/config/account-ledger.ts
 msgid "Deposit"
 msgstr "存款"
 
@@ -1280,6 +1281,9 @@ msgstr "桌面二维码已加载"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Destination"
 msgstr "目标"
 
@@ -1546,6 +1550,7 @@ msgid "Expires {expiresAtLabel}."
 msgstr "{expiresAtLabel} 到期。"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 msgid "Explorer"
 msgstr "区块浏览器"
 
@@ -1697,6 +1702,9 @@ msgstr "收藏夹"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "手续费"
 
@@ -2126,6 +2134,7 @@ msgstr "清算价"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/config/account-ledger.ts
 msgid "Liquidated"
 msgstr "已强平"
 
@@ -3096,6 +3105,7 @@ msgstr "永续合约"
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/config/account-ledger.ts
 msgid "Perps"
 msgstr "永续合约"
 
@@ -3611,6 +3621,8 @@ msgstr ""
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Retry"
 msgstr "重试"
 
@@ -3874,6 +3886,8 @@ msgstr "卖出做空"
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/portfolio/portfolio-page.tsx
+#: src/config/account-ledger.ts
 msgid "Send"
 msgstr "发送"
 
@@ -4165,6 +4179,9 @@ msgstr "已按 {0} 排序"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Source"
 msgstr "来源"
 
@@ -4180,6 +4197,7 @@ msgstr "来源"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
+#: src/config/account-ledger.ts
 msgid "Spot"
 msgstr "现货"
 
@@ -4206,6 +4224,7 @@ msgid "Spread"
 msgstr "价差"
 
 #: src/config/nav.tsx
+#: src/config/account-ledger.ts
 msgid "Staking"
 msgstr "质押"
 
@@ -4232,6 +4251,7 @@ msgid "Starting camera..."
 msgstr "正在启动相机…"
 
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Status"
 msgstr "状态"
 
@@ -4761,6 +4781,8 @@ msgstr "TIF"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Time"
 msgstr "时间"
 
@@ -4969,6 +4991,7 @@ msgstr "交易被拒绝"
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/config/account-ledger.ts
 msgid "Transfer"
 msgstr "划转"
 
@@ -4995,6 +5018,7 @@ msgstr "划转中..."
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/components/portfolio/portfolio-page.tsx
 msgid "Transfers between Spot and Perps are unavailable in unified account mode."
 msgstr "启用统一账户后，现货与合约之间的划转不可用。"
 
@@ -5510,3 +5534,139 @@ msgstr "您的交易正在处理中"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Your wallet approves one trading key for this phone. It cannot withdraw funds."
 #~ msgstr "您的钱包为此手机授权一个交易密钥。它无法提取资金。"
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Account Value Change"
+msgstr "账户价值变化"
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Action"
+msgstr "操作"
+
+#: src/config/account-ledger.ts
+msgid "Activate DEX"
+msgstr "激活 DEX"
+
+#: src/config/account-ledger.ts
+msgid "Borrow"
+msgstr "借入"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Completed"
+msgstr "已完成"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Connect your wallet to view deposits and withdrawals."
+msgstr "请连接钱包以查看存款和提款记录。"
+
+#: src/config/account-ledger.ts
+msgid "Create Vault"
+msgstr "创建金库"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "CSV export reached the history limit. Some older records were not included."
+msgstr "CSV 导出已达历史记录上限，部分较早记录未包含。"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "CSV exported."
+msgstr "CSV 已导出。"
+
+#: src/config/account-ledger.ts
+msgid "Deploy Gas Auction"
+msgstr "部署 Gas 拍卖"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/config/account-ledger.ts
+msgid "Deposits & Withdrawals"
+msgstr "存款和提款"
+
+#: src/config/account-ledger.ts
+msgid "Earn"
+msgstr "收益"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Export CSV"
+msgstr "导出 CSV"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Exporting deposits and withdrawals..."
+msgstr "正在导出存款和提款记录..."
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Failed to export deposits and withdrawals."
+msgstr "存款和提款记录导出失败。"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Failed to load deposits and withdrawals."
+msgstr "存款和提款记录加载失败。"
+
+#: src/config/account-ledger.ts
+msgid "Genesis Distribution"
+msgstr "创世分配"
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Loading deposits and withdrawals..."
+msgstr "正在加载存款和提款记录..."
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "No deposits or withdrawals found."
+msgstr "未找到存款或提款记录。"
+
+#: src/config/account-ledger.ts
+msgid "Repay"
+msgstr "偿还"
+
+#: src/lib/errors/format.ts
+msgid "Request status could not be confirmed. Check balances and transfer history before retrying."
+msgstr "无法确认请求状态。重试前请检查余额和转账历史。"
+
+#: src/config/account-ledger.ts
+msgid "Rewards Claim"
+msgstr "领取奖励"
+
+#: src/config/account-ledger.ts
+msgid "Stake"
+msgstr "质押"
+
+#: src/config/account-ledger.ts
+msgid "Sub-account Transfer"
+msgstr "子账户转账"
+
+#: src/config/account-ledger.ts
+msgid "Supply"
+msgstr "存入借贷"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Trading Account"
+msgstr "交易账户"
+
+#: src/config/account-ledger.ts
+msgid "Unstake"
+msgstr "解除质押"
+
+#: src/config/account-ledger.ts
+msgid "Vault Commission"
+msgstr "金库佣金"
+
+#: src/config/account-ledger.ts
+msgid "Vault Deposit"
+msgstr "金库存款"
+
+#: src/config/account-ledger.ts
+msgid "Vault Distribution"
+msgstr "金库分配"
+
+#: src/config/account-ledger.ts
+msgid "Vault Withdrawal"
+msgstr "金库提款"
+
+#: src/config/account-ledger.ts
+msgid "Withdrawal"
+msgstr "提款"

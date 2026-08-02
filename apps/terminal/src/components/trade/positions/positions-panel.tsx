@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
 import { Suspense, useMemo, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
 import { POSITIONS_TABS } from "@/config/trade";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
@@ -16,6 +17,7 @@ import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-gl
 const tabContentBaseClass = "mt-0 flex min-h-0 flex-1 flex-col pt-0";
 
 const BalancesTab = createLazyComponent(() => import("./balances-tab"), "BalancesTab");
+const AccountTransfersTab = createLazyComponent(() => import("./account-transfers-tab"), "AccountTransfersTab");
 const FundingTab = createLazyComponent(() => import("./funding-tab"), "FundingTab");
 const HistoryTab = createLazyComponent(() => import("./history-tab"), "HistoryTab");
 const OrdersHistoryTab = createLazyComponent(() => import("./orders-history-tab"), "OrdersHistoryTab");
@@ -23,10 +25,18 @@ const OrdersTab = createLazyComponent(() => import("./orders-tab"), "OrdersTab")
 const PositionsTab = createLazyComponent(() => import("./positions-tab"), "PositionsTab");
 const TwapTab = createLazyComponent(() => import("./twap-tab"), "TwapTab");
 
-export function PositionsPanel() {
+interface Props {
+	includeTransfers?: boolean;
+}
+
+const POSITIONS_TAB_VALUES = new Set<string>(POSITIONS_TABS.map((tab) => tab.value));
+
+export function PositionsPanel({ includeTransfers = false }: Props) {
 	const { _ } = useLingui();
 	useRenderCommitTrack("positions-table");
-	const activeTab = usePositionsActiveTab();
+	const storedActiveTab = usePositionsActiveTab();
+	const activeTab = resolvePositionsTab(storedActiveTab, includeTransfers);
+	const tabs = includeTransfers ? [...POSITIONS_TABS, PORTFOLIO_TRANSFERS_TAB] : POSITIONS_TABS;
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useWalletSession();
@@ -92,7 +102,7 @@ export function PositionsPanel() {
 			>
 				<div className="flex h-9 shrink-0 items-stretch overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-stroke-weak px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 					<TabsList className="h-full min-w-max gap-1 border-b-0">
-						{POSITIONS_TABS.map((tab) => {
+						{tabs.map((tab) => {
 							const count = getTabCount(tab.value);
 
 							return (
@@ -143,9 +153,21 @@ export function PositionsPanel() {
 						<FundingTab />
 					</Suspense>
 				</TabsContent>
+				{includeTransfers ? (
+					<TabsContent value="transfers" className={tabContentClass}>
+						<Suspense fallback={<TabLoadingFallback />}>
+							<AccountTransfersTab />
+						</Suspense>
+					</TabsContent>
+				) : null}
 			</Tabs>
 		</div>
 	);
+}
+
+function resolvePositionsTab(value: string, includeTransfers: boolean): string {
+	if (includeTransfers && value === PORTFOLIO_TRANSFERS_TAB.value) return PORTFOLIO_TRANSFERS_TAB.value;
+	return POSITIONS_TAB_VALUES.has(value) ? value : "positions";
 }
 
 function TabLoadingFallback() {

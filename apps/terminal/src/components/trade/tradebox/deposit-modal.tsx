@@ -1,13 +1,4 @@
-import {
-	Button,
-	Modal,
-	ModalContent,
-	ModalHeader,
-	ModalPopup,
-	ModalTitle,
-	SegmentedControlItem,
-	SegmentedControls,
-} from "@gatu/ui";
+import { Button, ModalContent, ModalHeader, ModalTitle, SegmentedControlItem, SegmentedControls } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ArrowLineDownIcon, ArrowLineUpIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
@@ -18,11 +9,11 @@ import { WITHDRAWAL_FEE_USD } from "@/config/contracts";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { NETWORKS } from "@/config/networks";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
-import { getAccountBalanceSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
-import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import { getAccountBalanceSummary } from "@/domain/trade/balances";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { formatTransferError } from "@/lib/errors/format";
+import { formatExchangeActionError, formatTransferError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
 import { useExchange } from "@/lib/hyperliquid";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
@@ -38,6 +29,7 @@ import {
 	useTransferModalActions,
 } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { PendingActionModal } from "../components/pending-action-modal";
 import { DepositForm } from "./deposit/deposit-form";
 import { StatusScreen, WalletNotConnected } from "./deposit/shared-ui";
 import { WithdrawForm } from "./deposit/withdraw-form";
@@ -109,18 +101,15 @@ export function DepositModal() {
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
 	});
 
-	const selectedBalances = useSelectedDexBalances();
 	const defaultBalances = useDefaultDexBalances();
-	const accountAbstraction = selectedBalances.accountAbstraction;
-	const summaryBalances = isQuoteBalanceSharedWithPerps(accountAbstraction) ? defaultBalances : selectedBalances;
+	const accountAbstraction = defaultBalances.accountAbstraction;
 	const {
 		marginSummary,
 		perpSummary,
 		spotBalances,
 		spotAvailableAfterMaintenance,
 		withdrawable: perpWithdrawable,
-	} = summaryBalances;
-	const dex = selectedBalances.dex;
+	} = defaultBalances;
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,
@@ -132,7 +121,7 @@ export function DepositModal() {
 	const withdrawable = String(accountSummary.withdrawable);
 	const withdrawableNum = accountSummary.withdrawable;
 	const showSpotFundsNotice =
-		dex === "" && !accountSummary.usesSpotStateForPerps && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
+		!accountSummary.usesSpotStateForPerps && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
 
 	const {
 		mutate: withdraw,
@@ -193,6 +182,10 @@ export function DepositModal() {
 		setWithdrawAmount("");
 		setWithdrawDestination("");
 		close();
+	}
+
+	function handleModalOpenChange(nextOpen: boolean) {
+		if (!nextOpen) handleClose();
 	}
 
 	function handleReconnectWallet() {
@@ -376,7 +369,7 @@ export function DepositModal() {
 				title={<Trans>Withdraw</Trans>}
 				icon="error"
 				heading={<Trans>Withdrawal failed</Trans>}
-				description={formatTransferError(withdrawError)}
+				description={formatExchangeActionError(withdrawError, t`Withdrawal failed`)}
 				onClose={handleClose}
 			>
 				<div className="flex w-full gap-2">
@@ -392,94 +385,90 @@ export function DepositModal() {
 	}
 
 	return (
-		<Modal open={open} onOpenChange={handleClose}>
-			<ModalPopup size="sm">
-				<ModalHeader>
-					<ModalTitle>
-						<Trans>Transfer</Trans>
-					</ModalTitle>
-				</ModalHeader>
+		<PendingActionModal open={open} onOpenChange={handleModalOpenChange} isPending={isWithdrawPending}>
+			<ModalHeader>
+				<ModalTitle>
+					<Trans>Transfer</Trans>
+				</ModalTitle>
+			</ModalHeader>
 
-				<ModalContent className="space-y-4">
-					<SegmentedControls
-						value={visibleTab}
-						onValueChange={(v: string) => setTab(v as "deposit" | "withdraw" | "bridge")}
-						fullWidth
-					>
-						<SegmentedControlItem value="deposit" icon={<ArrowLineDownIcon className="size-3" />}>
-							<Trans>Deposit</Trans>
+			<ModalContent className="space-y-4">
+				<SegmentedControls
+					value={visibleTab}
+					onValueChange={(v: string) => setTab(v as "deposit" | "withdraw" | "bridge")}
+					fullWidth
+					disabled={isWithdrawPending}
+				>
+					<SegmentedControlItem value="deposit" icon={<ArrowLineDownIcon className="size-3" />}>
+						<Trans>Deposit</Trans>
+					</SegmentedControlItem>
+					<SegmentedControlItem value="withdraw" icon={<ArrowLineUpIcon className="size-3" />}>
+						<Trans>Withdraw</Trans>
+					</SegmentedControlItem>
+					{showBridgeTab ? (
+						<SegmentedControlItem value="bridge" icon={<ArrowsLeftRightIcon className="size-3" />}>
+							<Trans>Bridge</Trans>
 						</SegmentedControlItem>
-						<SegmentedControlItem value="withdraw" icon={<ArrowLineUpIcon className="size-3" />}>
-							<Trans>Withdraw</Trans>
-						</SegmentedControlItem>
-						{showBridgeTab ? (
-							<SegmentedControlItem value="bridge" icon={<ArrowsLeftRightIcon className="size-3" />}>
-								<Trans>Bridge</Trans>
-							</SegmentedControlItem>
-						) : null}
-					</SegmentedControls>
+					) : null}
+				</SegmentedControls>
 
-					<div className={`flex flex-col ${DEPOSIT_TAB_MIN_HEIGHT}`}>
-						{visibleTab === "deposit" &&
-							(canUseDeposit ? (
-								<DepositForm
-									amount={depositAmount}
-									onAmountChange={setDepositAmount}
-									balance={depositBalance}
-									maxAmount={maxDepositAmount}
-									maxDepositRaw={maxDepositRaw}
-									balanceStatus={depositBalanceStatus}
-									balanceError={depositBalanceError}
-									validation={depositValidation}
-									isPending={isDepositPending}
-									onSubmit={handleDepositSubmit}
-									networkName={depositNetworkName}
-									smartDepositEnabled={smartDepositEnabled}
-									autoBridgeEnabled={isEmbeddedDeposit}
-									fundingAddress={isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined}
-									onDone={handleClose}
-								/>
+				<div className={`flex flex-col ${DEPOSIT_TAB_MIN_HEIGHT}`}>
+					{visibleTab === "deposit" &&
+						(canUseDeposit ? (
+							<DepositForm
+								amount={depositAmount}
+								onAmountChange={setDepositAmount}
+								balance={depositBalance}
+								maxAmount={maxDepositAmount}
+								maxDepositRaw={maxDepositRaw}
+								balanceStatus={depositBalanceStatus}
+								balanceError={depositBalanceError}
+								validation={depositValidation}
+								isPending={isDepositPending}
+								onSubmit={handleDepositSubmit}
+								networkName={depositNetworkName}
+								smartDepositEnabled={smartDepositEnabled}
+								autoBridgeEnabled={isEmbeddedDeposit}
+								fundingAddress={isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined}
+								onDone={handleClose}
+							/>
+						) : (
+							<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
+						))}
+
+					{visibleTab === "withdraw" &&
+						(!canUseFundsActions ? (
+							<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
+						) : (
+							<WithdrawForm
+								amount={withdrawAmount}
+								onAmountChange={setWithdrawAmount}
+								destination={withdrawDestination}
+								onDestinationChange={setWithdrawDestination}
+								destinationRequired={requiresWithdrawDestination}
+								destinationError={withdrawDestinationError}
+								available={withdrawable}
+								validation={withdrawValidation}
+								canSubmit={canSubmitWithdraw}
+								isPending={isWithdrawPending}
+								onSubmit={handleWithdrawSubmit}
+								spotAvailable={accountSummary.spotUsdcAvailable}
+								showSpotFundsNotice={showSpotFundsNotice}
+								onTransferClick={handlePerpsSpotTransferClick}
+							/>
+						))}
+
+					{visibleTab === "bridge" && showBridgeTab && (
+						<Suspense fallback={null}>
+							{canUseFundsActions ? (
+								<LazyBridgeTab />
 							) : (
 								<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
-							))}
-
-						{visibleTab === "withdraw" &&
-							(!canUseFundsActions ? (
-								<WalletNotConnected onConnect={handleReconnectWallet} isConnecting={!walletsReady || isReconnecting} />
-							) : (
-								<WithdrawForm
-									amount={withdrawAmount}
-									onAmountChange={setWithdrawAmount}
-									destination={withdrawDestination}
-									onDestinationChange={setWithdrawDestination}
-									destinationRequired={requiresWithdrawDestination}
-									destinationError={withdrawDestinationError}
-									available={withdrawable}
-									validation={withdrawValidation}
-									canSubmit={canSubmitWithdraw}
-									isPending={isWithdrawPending}
-									onSubmit={handleWithdrawSubmit}
-									spotAvailable={accountSummary.spotUsdcAvailable}
-									showSpotFundsNotice={showSpotFundsNotice}
-									onTransferClick={handlePerpsSpotTransferClick}
-								/>
-							))}
-
-						{visibleTab === "bridge" && showBridgeTab && (
-							<Suspense fallback={null}>
-								{canUseFundsActions ? (
-									<LazyBridgeTab />
-								) : (
-									<WalletNotConnected
-										onConnect={handleReconnectWallet}
-										isConnecting={!walletsReady || isReconnecting}
-									/>
-								)}
-							</Suspense>
-						)}
-					</div>
-				</ModalContent>
-			</ModalPopup>
-		</Modal>
+							)}
+						</Suspense>
+					)}
+				</div>
+			</ModalContent>
+		</PendingActionModal>
 	);
 }

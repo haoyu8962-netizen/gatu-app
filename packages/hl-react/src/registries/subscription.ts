@@ -62,14 +62,14 @@ const ACCUMULATING_SUBS: Partial<Record<SubMethod, AccumulateConfig>> = {
 	}),
 	userNonFundingLedgerUpdates: defineAccumulator<
 		{ nonFundingLedgerUpdates: unknown[]; isSnapshot?: boolean },
-		{ hash: string; time: number }
+		{ delta: unknown; hash: string; time: number }
 	>({
-		getItems: (event) => event.nonFundingLedgerUpdates as { hash: string; time: number }[],
+		getItems: (event) => event.nonFundingLedgerUpdates as { delta: unknown; hash: string; time: number }[],
 		withItems: (event, items) => ({ ...event, nonFundingLedgerUpdates: items }),
 		isSnapshot: (event) => event.isSnapshot === true,
 		buffer: {
 			maxSize: 500,
-			getKey: (u) => u.hash,
+			getKey: (u) => `${u.hash}:${u.time}:${JSON.stringify(u.delta)}`,
 			compare: (a, b) => b.time - a.time,
 		},
 	}),

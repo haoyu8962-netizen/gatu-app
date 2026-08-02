@@ -1,6 +1,6 @@
-import { Button } from "@gatu/ui";
+import { Button, Tooltip } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
+import { ArrowsLeftRightIcon, DownloadSimpleIcon, PaperPlaneTiltIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { Suspense } from "react";
 import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
 import { isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
@@ -10,9 +10,15 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
-import { useDepositModalActions, useSwapModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
+import {
+	useDepositModalActions,
+	useSendModalActions,
+	useSwapModalActions,
+	useTransferModalActions,
+} from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { TopNav } from "../trade/header/top-nav";
+import { MobileAccountTransfersTab } from "../trade/mobile/mobile-account-transfers-tab";
 import { MobileBalancesTab } from "../trade/mobile/mobile-balances-tab";
 import { MobileHeader } from "../trade/mobile/mobile-header";
 import { MobilePositionsView } from "../trade/mobile/mobile-positions-view";
@@ -32,9 +38,13 @@ export function PortfolioPage() {
 	const { accountAbstraction } = useDefaultDexBalances();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
+	const { open: openSendModal } = useSendModalActions();
 	const { openStablecoins: openStablecoinSwapModal } = useSwapModalActions();
 	const fundsActionsDisabled = !hasWalletAccess || tradeRestricted;
-	const transferDisabled = fundsActionsDisabled || isQuoteBalanceSharedWithPerps(accountAbstraction);
+	const internalTransferDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
+		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+		: null;
+	const transferDisabled = fundsActionsDisabled || !!internalTransferDisabledReason;
 
 	return (
 		<>
@@ -71,15 +81,29 @@ export function PortfolioPage() {
 							>
 								<Trans>Swap Stablecoins</Trans>
 							</Button>
+							<Tooltip content={internalTransferDisabledReason} side="top">
+								<span className="inline-flex">
+									<Button
+										variant="outline"
+										intent="brand"
+										size="sm"
+										disabled={transferDisabled}
+										onClick={() => openTransferModal("toPerp")}
+										iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
+									>
+										<Trans>Perps / Spot</Trans>
+									</Button>
+								</span>
+							</Tooltip>
 							<Button
 								variant="outline"
 								intent="brand"
 								size="sm"
-								disabled={transferDisabled}
-								onClick={() => openTransferModal("toPerp")}
-								iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
+								disabled={fundsActionsDisabled}
+								onClick={() => openSendModal()}
+								iconLeft={<PaperPlaneTiltIcon className="size-3.5" />}
 							>
-								<Trans>Perps / Spot</Trans>
+								<Trans>Send</Trans>
 							</Button>
 							<Button
 								variant="outline"
@@ -113,12 +137,13 @@ export function PortfolioPage() {
 								scrollMode="page"
 								includeBottomNavSpacer={false}
 								balancesContent={<MobileBalancesTab />}
+								transfersContent={<MobileAccountTransfersTab scrollMode="page" />}
 								emptyDescription={<Trans>Connect wallet to view portfolio</Trans>}
 							/>
 						) : (
 							<div className={isConnected ? "h-[420px]" : "h-24"}>
 								<Suspense fallback={<AccountPanelSkeleton />}>
-									<PositionsPanel />
+									<PositionsPanel includeTransfers />
 								</Suspense>
 							</div>
 						)}

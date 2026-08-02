@@ -4,10 +4,12 @@ import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 type DepositTab = "deposit" | "withdraw" | "bridge";
 export type TransferDirection = "toSpot" | "toPerp";
 export type SwapMode = "spot" | "stablecoin";
+export type SendAccountType = "perp" | "spot";
 
 type GlobalModal =
 	| { type: "deposit"; tab: DepositTab }
 	| { type: "internalTransfer"; direction: TransferDirection }
+	| { type: "send"; asset: string; accountType: SendAccountType }
 	| { type: "settings" }
 	| { type: "swap"; fromToken: string; toToken?: string; mode: SwapMode }
 	| { type: "commandMenu" }
@@ -21,6 +23,11 @@ interface DepositActions {
 
 interface TransferActions {
 	open: (direction?: TransferDirection) => void;
+	close: () => void;
+}
+
+interface SendActions {
+	open: (asset?: string, accountType?: SendAccountType) => void;
 	close: () => void;
 }
 
@@ -44,6 +51,7 @@ interface GlobalModalState {
 	modal: GlobalModal;
 	depositActions: DepositActions;
 	transferActions: TransferActions;
+	sendActions: SendActions;
 	settingsActions: SettingsActions;
 	swapActions: SwapActions;
 	commandMenuActions: CommandMenuActions;
@@ -61,6 +69,10 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 		},
 		transferActions: {
 			open: (direction = "toPerp") => set({ modal: { type: "internalTransfer", direction } }),
+			close,
+		},
+		sendActions: {
+			open: (asset = DEFAULT_QUOTE_TOKEN, accountType = "spot") => set({ modal: { type: "send", asset, accountType } }),
 			close,
 		},
 		settingsActions: {
@@ -102,6 +114,16 @@ export function useTransferModalDirection() {
 }
 export function useTransferModalActions() {
 	return useGlobalModalStore((s) => s.transferActions);
+}
+
+export function useSendModalAsset() {
+	return useGlobalModalStore((s) => (s.modal?.type === "send" ? s.modal.asset : DEFAULT_QUOTE_TOKEN));
+}
+export function useSendModalAccountType() {
+	return useGlobalModalStore((s) => (s.modal?.type === "send" ? s.modal.accountType : "spot"));
+}
+export function useSendModalActions() {
+	return useGlobalModalStore((s) => s.sendActions);
 }
 
 export function useSettingsDialogOpen() {

@@ -10,7 +10,7 @@ type HttpLikeError = Error & {
 	};
 };
 
-function getHttpStatus(error: unknown): number | null {
+export function getHttpStatus(error: unknown): number | null {
 	if (!(error instanceof Error)) return null;
 	const status = (error as HttpLikeError).response?.status;
 	return typeof status === "number" ? status : null;

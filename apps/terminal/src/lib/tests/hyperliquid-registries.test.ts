@@ -120,6 +120,23 @@ describe("subscription registry", () => {
 		expect(config?.buffer.getKey({ time: 123, coin: "HYPE", tid: 456 })).toBe("123:HYPE:456");
 	});
 
+	it("preserves distinct ledger deltas that share an L1 hash", () => {
+		const config = getAccumulateConfig("userNonFundingLedgerUpdates");
+		const hash = `0x${"1".repeat(64)}`;
+		const withdrawalKey = config?.buffer.getKey({
+			delta: { type: "vaultWithdraw", netWithdrawnUsd: "99" },
+			hash,
+			time: 123,
+		});
+		const commissionKey = config?.buffer.getKey({
+			delta: { type: "vaultLeaderCommission", usdc: "1" },
+			hash,
+			time: 123,
+		});
+
+		expect(withdrawalKey).not.toBe(commissionKey);
+	});
+
 	it("has default throttle only for l2Book", () => {
 		expect(getDefaultThrottle("l2Book")).toBe(16);
 		const others = SUB_METHODS.filter((m) => m !== "l2Book");

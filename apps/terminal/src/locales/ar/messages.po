@@ -1186,6 +1186,7 @@ msgstr "جهة النشر"
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
+#: src/config/account-ledger.ts
 msgid "Deposit"
 msgstr "إيداع"
 
@@ -1280,6 +1281,9 @@ msgstr ""
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Destination"
 msgstr "الوجهة"
 
@@ -1546,6 +1550,7 @@ msgid "Expires {expiresAtLabel}."
 msgstr "تنتهي الصلاحية {expiresAtLabel}."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 msgid "Explorer"
 msgstr "المستكشف"
 
@@ -1697,6 +1702,9 @@ msgstr "المفضلة"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "الرسوم"
 
@@ -2126,6 +2134,7 @@ msgstr "سعر التصفية"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/config/account-ledger.ts
 msgid "Liquidated"
 msgstr "تمت التصفية"
 
@@ -3096,6 +3105,7 @@ msgstr "العقود الدائمة"
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-overview.tsx
+#: src/config/account-ledger.ts
 msgid "Perps"
 msgstr "العقود الدائمة"
 
@@ -3611,6 +3621,8 @@ msgstr ""
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Retry"
 msgstr "إعادة المحاولة"
 
@@ -3874,6 +3886,8 @@ msgstr "بيع قصير"
 
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/portfolio/portfolio-page.tsx
+#: src/config/account-ledger.ts
 msgid "Send"
 msgstr "إرسال"
 
@@ -4165,6 +4179,9 @@ msgstr "مرتب حسب {0}"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Source"
 msgstr "المصدر"
 
@@ -4180,6 +4197,7 @@ msgstr "المصدر"
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
+#: src/config/account-ledger.ts
 msgid "Spot"
 msgstr "فوري"
 
@@ -4206,6 +4224,7 @@ msgid "Spread"
 msgstr "الفارق"
 
 #: src/config/nav.tsx
+#: src/config/account-ledger.ts
 msgid "Staking"
 msgstr "التخزين"
 
@@ -4232,6 +4251,7 @@ msgid "Starting camera..."
 msgstr ""
 
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Status"
 msgstr "الحالة"
 
@@ -4761,6 +4781,8 @@ msgstr "TIF"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Time"
 msgstr "الوقت"
 
@@ -4969,6 +4991,7 @@ msgstr "تم رفض المعاملة"
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
+#: src/config/account-ledger.ts
 msgid "Transfer"
 msgstr "تحويل"
 
@@ -4995,6 +5018,7 @@ msgstr "جارٍ التحويل..."
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/components/portfolio/portfolio-page.tsx
 msgid "Transfers between Spot and Perps are unavailable in unified account mode."
 msgstr "لا تتوفر التحويلات بين Spot وPerps في وضع الحساب الموحد."
 
@@ -5510,3 +5534,139 @@ msgstr "جارٍ معالجة معاملتك"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Your wallet approves one trading key for this phone. It cannot withdraw funds."
 #~ msgstr "توافق محفظتك على مفتاح تداول واحد لهذا الهاتف. لا يمكنه سحب الأموال."
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Account Value Change"
+msgstr "تغير قيمة الحساب"
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Action"
+msgstr "الإجراء"
+
+#: src/config/account-ledger.ts
+msgid "Activate DEX"
+msgstr "تفعيل DEX"
+
+#: src/config/account-ledger.ts
+msgid "Borrow"
+msgstr "اقتراض"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Completed"
+msgstr "مكتمل"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Connect your wallet to view deposits and withdrawals."
+msgstr "صِل محفظتك لعرض الإيداعات والسحوبات."
+
+#: src/config/account-ledger.ts
+msgid "Create Vault"
+msgstr "إنشاء خزنة"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "CSV export reached the history limit. Some older records were not included."
+msgstr "وصل تصدير CSV إلى حد السجل. لم يتم تضمين بعض السجلات الأقدم."
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "CSV exported."
+msgstr "تم تصدير CSV."
+
+#: src/config/account-ledger.ts
+msgid "Deploy Gas Auction"
+msgstr "مزاد غاز النشر"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/config/account-ledger.ts
+msgid "Deposits & Withdrawals"
+msgstr "الإيداعات والسحوبات"
+
+#: src/config/account-ledger.ts
+msgid "Earn"
+msgstr "العوائد"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Export CSV"
+msgstr "تصدير CSV"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Exporting deposits and withdrawals..."
+msgstr "جارٍ تصدير الإيداعات والسحوبات..."
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Failed to export deposits and withdrawals."
+msgstr "تعذر تصدير الإيداعات والسحوبات."
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Failed to load deposits and withdrawals."
+msgstr "تعذر تحميل الإيداعات والسحوبات."
+
+#: src/config/account-ledger.ts
+msgid "Genesis Distribution"
+msgstr "توزيع التكوين"
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Loading deposits and withdrawals..."
+msgstr "جارٍ تحميل الإيداعات والسحوبات..."
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "No deposits or withdrawals found."
+msgstr "لم يتم العثور على إيداعات أو سحوبات."
+
+#: src/config/account-ledger.ts
+msgid "Repay"
+msgstr "سداد"
+
+#: src/lib/errors/format.ts
+msgid "Request status could not be confirmed. Check balances and transfer history before retrying."
+msgstr "تعذر تأكيد حالة الطلب. تحقق من الأرصدة وسجل التحويلات قبل إعادة المحاولة."
+
+#: src/config/account-ledger.ts
+msgid "Rewards Claim"
+msgstr "المطالبة بالمكافآت"
+
+#: src/config/account-ledger.ts
+msgid "Stake"
+msgstr "رهن"
+
+#: src/config/account-ledger.ts
+msgid "Sub-account Transfer"
+msgstr "تحويل حساب فرعي"
+
+#: src/config/account-ledger.ts
+msgid "Supply"
+msgstr "إيداع للإقراض"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Trading Account"
+msgstr "حساب التداول"
+
+#: src/config/account-ledger.ts
+msgid "Unstake"
+msgstr "إلغاء الرهن"
+
+#: src/config/account-ledger.ts
+msgid "Vault Commission"
+msgstr "عمولة الخزنة"
+
+#: src/config/account-ledger.ts
+msgid "Vault Deposit"
+msgstr "إيداع في الخزنة"
+
+#: src/config/account-ledger.ts
+msgid "Vault Distribution"
+msgstr "توزيع الخزنة"
+
+#: src/config/account-ledger.ts
+msgid "Vault Withdrawal"
+msgstr "سحب من الخزنة"
+
+#: src/config/account-ledger.ts
+msgid "Withdrawal"
+msgstr "سحب"

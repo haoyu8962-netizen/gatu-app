@@ -1,17 +1,7 @@
-import {
-	Button,
-	Modal,
-	ModalContent,
-	ModalDescription,
-	ModalHeader,
-	ModalPopup,
-	ModalTitle,
-	Select,
-	TextInput,
-} from "@gatu/ui";
+import { Button, ModalContent, ModalDescription, ModalHeader, ModalTitle, Select, TextInput } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { PaperPlaneTiltIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, useCallback, useMemo, useState } from "react";
+import { type ChangeEvent, useMemo, useState } from "react";
 import { isAddress } from "viem";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -21,14 +11,17 @@ import {
 	getAccountBalanceSummary,
 	getSpotTransferable,
 	getSpotTransferableValue,
+	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
 import { isTokenSpotBalance, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { formatExchangeActionError } from "@/lib/errors/format";
 import { useExchange } from "@/lib/hyperliquid";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { floorToString, limitDecimalInput } from "@/lib/trade/numbers";
 import { formatTokenId } from "@/lib/trade/token-id";
+import { PendingActionModal } from "../components/pending-action-modal";
 
 type AccountType = "perp" | "spot";
 
@@ -46,16 +39,13 @@ export function SendModal({
 	initialAccountType = "spot",
 }: Props) {
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm">
-				<SendModalBody
-					key={`${initialAsset}:${initialAccountType}:${open ? "open" : "closed"}`}
-					onOpenChange={onOpenChange}
-					initialAsset={initialAsset}
-					initialAccountType={initialAccountType}
-				/>
-			</ModalPopup>
-		</Modal>
+		<SendModalBody
+			key={`${initialAsset}:${initialAccountType}:${open ? "open" : "closed"}`}
+			onOpenChange={onOpenChange}
+			initialAsset={initialAsset}
+			initialAccountType={initialAccountType}
+			open={open}
+		/>
 	);
 }
 
@@ -63,9 +53,10 @@ interface BodyProps {
 	onOpenChange: (open: boolean) => void;
 	initialAsset: string;
 	initialAccountType: AccountType;
+	open: boolean;
 }
 
-function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyProps) {
+function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }: BodyProps) {
 	const [destination, setDestination] = useState("");
 	const [accountType, setAccountType] = useState<AccountType>(initialAccountType);
 	const [selectedToken, setSelectedToken] = useState(initialAsset);
@@ -88,6 +79,8 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 		spotBalances,
 		spotAvailableAfterMaintenance,
 	});
+	const usesTradingAccount = isQuoteBalanceSharedWithPerps(accountAbstraction);
+	const activeAccountType = usesTradingAccount ? "spot" : accountType;
 
 	const availableSpotTokens = useMemo((): BalanceRow[] => {
 		if (!spotBalances?.length) return [];
@@ -109,11 +102,11 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 	}, [spotBalances]);
 
 	const tokenOptions = useMemo(() => {
-		if (accountType === "perp") {
+		if (activeAccountType === "perp") {
 			return [DEFAULT_QUOTE_TOKEN];
 		}
 		return availableSpotTokens.map((b) => b.asset);
-	}, [accountType, availableSpotTokens]);
+	}, [activeAccountType, availableSpotTokens]);
 
 	const tokenInfo = getToken(selectedToken);
 	const tokenId = tokenInfo ? formatTokenId(tokenInfo) : "";
@@ -122,14 +115,14 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 
 	const selectedSpotBalance = spotBalances?.find((balance) => balance.coin === selectedToken);
 	const availableBalance =
-		accountType === "perp" ? accountSummary.withdrawable : getSpotTransferable(selectedSpotBalance);
+		activeAccountType === "perp" ? accountSummary.withdrawable : getSpotTransferable(selectedSpotBalance);
 
 	const isValidDestination = isAddress(destination);
 	const isValidAmount = isAmountWithinBalance(amount, availableBalance);
 	const canSend = hasWalletAccess && isValidDestination && isValidAmount && !!tokenId && !isPending;
 
 	function handleAccountTypeChange(value: string | null) {
-		if (!value) return;
+		if (!value || usesTradingAccount || isPending) return;
 		const v = value as AccountType;
 		setAccountType(v);
 		if (v === "perp") {
@@ -141,25 +134,35 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 	}
 
 	function handleTokenChange(value: string | null) {
-		if (!value) return;
+		if (!value || isPending) return;
 		setSelectedToken(value);
 		setAmount("");
 	}
 
 	function handleAmountChange(value: string) {
+		if (isPending) return;
 		setAmount(limitDecimalInput(value, decimals));
 	}
 
 	function handleMaxClick() {
+		if (isPending) return;
 		setAmount(floorToString(availableBalance, decimals));
 	}
 
-	const handleSend = useCallback(async () => {
+	async function handleSend() {
 		if (!canSend) return;
 
 		setError(null);
 		try {
-			if (accountType === "perp") {
+			if (usesTradingAccount) {
+				await sendAsset({
+					destination,
+					sourceDex: "spot",
+					destinationDex: "spot",
+					token: tokenId,
+					amount,
+				});
+			} else if (activeAccountType === "perp") {
 				await sendAsset({
 					destination,
 					sourceDex: "",
@@ -178,15 +181,16 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 			setAmount("");
 			onOpenChange(false);
 		} catch (err) {
-			const message = err instanceof Error ? err.message : t`Send failed`;
-			setError(message);
+			setError(formatExchangeActionError(err, t`Send failed`));
 		}
-	}, [accountType, amount, canSend, destination, onOpenChange, sendAsset, spotSend, tokenId]);
+	}
 
-	const accountTypeOptions = [
-		{ value: "perp", label: t`Perps Account` },
-		{ value: "spot", label: t`Spot Account` },
-	];
+	const accountTypeOptions = usesTradingAccount
+		? [{ value: "spot", label: t`Trading Account` }]
+		: [
+				{ value: "perp", label: t`Perps Account` },
+				{ value: "spot", label: t`Spot Account` },
+			];
 
 	const tokenSelectOptions = tokenOptions.map((tokenName) => ({
 		value: tokenName,
@@ -194,7 +198,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 	}));
 
 	return (
-		<>
+		<PendingActionModal open={open} onOpenChange={onOpenChange} isPending={isPending}>
 			<ModalHeader>
 				<ModalTitle>{t`Send Tokens`}</ModalTitle>
 				<ModalDescription>{t`Send tokens to another account on the Hyperliquid L1.`}</ModalDescription>
@@ -215,6 +219,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 						onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
 						autoComplete="off"
 						spellCheck={false}
+						disabled={isPending}
 						className={cn(
 							destination &&
 								!isValidDestination &&
@@ -224,9 +229,10 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 
 					<div className="flex gap-2">
 						<Select
-							value={accountType}
+							value={activeAccountType}
 							onValueChange={handleAccountTypeChange}
 							options={accountTypeOptions}
+							disabled={usesTradingAccount || isPending}
 							className="flex-1"
 						/>
 
@@ -234,6 +240,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 							value={selectedToken}
 							onValueChange={handleTokenChange}
 							options={tokenSelectOptions}
+							disabled={isPending}
 							className="flex-1"
 						/>
 					</div>
@@ -242,7 +249,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 						label={t`Amount`}
 						labelValue={
 							<>
-								Available:{" "}
+								{t`Available`}:{" "}
 								<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
 									{floorToString(availableBalance, decimals)} {selectedToken}
 								</span>
@@ -252,6 +259,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 						placeholder="0.00"
 						value={amount}
 						onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
+						disabled={isPending}
 						className={cn(
 							"w-full tabular-nums",
 							exceedsBalance(amount, availableBalance) && "border-stroke-error-strong focus:border-stroke-error-strong",
@@ -272,6 +280,6 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType }: BodyP
 					</Button>
 				</div>
 			</ModalContent>
-		</>
+		</PendingActionModal>
 	);
 }

@@ -1,10 +1,12 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
+import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
 import { type ReactNode, Suspense, useEffect, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
 import { MOBILE_POSITIONS_TABS, type MobilePositionsTabValue } from "@/config/trade";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -21,7 +23,7 @@ import { MobileOrdersTab } from "./mobile-orders-tab";
 import { MobilePositionsTab } from "./mobile-positions-tab";
 import { MobileTwapTab } from "./mobile-twap-tab";
 
-type TabValue = MobilePositionsTabValue | "balances";
+type TabValue = MobilePositionsTabValue | "balances" | "transfers";
 export type MobileDataScrollMode = "contained" | "page";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
@@ -33,6 +35,7 @@ interface Props {
 	scrollMode?: MobileDataScrollMode;
 	includeBottomNavSpacer?: boolean;
 	balancesContent?: ReactNode;
+	transfersContent?: ReactNode;
 	emptyDescription?: ReactNode;
 }
 
@@ -41,13 +44,19 @@ export function MobilePositionsView({
 	scrollMode = "contained",
 	includeBottomNavSpacer = true,
 	balancesContent,
+	transfersContent,
 	emptyDescription,
 }: Props) {
 	const { _ } = useLingui();
 	const storedActiveTab = usePositionsActiveTab();
 	const hasBalancesTab = balancesContent != null;
-	const activeTab = resolveMobilePositionsTab(storedActiveTab, hasBalancesTab);
-	const tabs = hasBalancesTab ? [BALANCES_TAB, ...MOBILE_POSITIONS_TABS] : MOBILE_POSITIONS_TABS;
+	const hasTransfersTab = transfersContent != null;
+	const activeTab = resolveMobilePositionsTab(storedActiveTab, hasBalancesTab, hasTransfersTab);
+	const tabs: ReadonlyArray<{ value: TabValue; label: MessageDescriptor }> = [
+		...(hasBalancesTab ? [BALANCES_TAB] : []),
+		...MOBILE_POSITIONS_TABS,
+		...(hasTransfersTab ? [PORTFOLIO_TRANSFERS_TAB] : []),
+	];
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useWalletSession();
@@ -77,7 +86,7 @@ export function MobilePositionsView({
 	const ordersCount = isConnected ? (openOrders?.length ?? 0) : 0;
 
 	function handleTabChange(value: string) {
-		startTransition(() => setPositionsActiveTab(resolveMobilePositionsTab(value, hasBalancesTab)));
+		startTransition(() => setPositionsActiveTab(resolveMobilePositionsTab(value, hasBalancesTab, hasTransfersTab)));
 	}
 
 	function getTabCount(tabValue: TabValue): number | null {
@@ -156,6 +165,11 @@ export function MobilePositionsView({
 						<TabsContent value="funding" className={tabContentClass}>
 							<MobileFundingTab scrollMode={scrollMode} />
 						</TabsContent>
+						{transfersContent != null ? (
+							<TabsContent value="transfers" className={tabContentClass}>
+								{transfersContent}
+							</TabsContent>
+						) : null}
 					</>
 				)}
 				{includeBottomNavSpacer ? <MobileBottomNavSpacer /> : null}
@@ -164,8 +178,9 @@ export function MobilePositionsView({
 	);
 }
 
-function resolveMobilePositionsTab(value: string, hasBalancesTab: boolean): TabValue {
+function resolveMobilePositionsTab(value: string, hasBalancesTab: boolean, hasTransfersTab: boolean): TabValue {
 	if (hasBalancesTab && value === "balances") return "balances";
+	if (hasTransfersTab && value === PORTFOLIO_TRANSFERS_TAB.value) return PORTFOLIO_TRANSFERS_TAB.value;
 	return MOBILE_POSITIONS_TAB_VALUES.has(value) ? (value as TabValue) : "positions";
 }
 
