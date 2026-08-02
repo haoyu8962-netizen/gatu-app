@@ -5354,6 +5354,7 @@ msgstr ""
 msgid "Wallet client not ready"
 msgstr "वॉलेट क्लाइंट तैयार नहीं है"
 
+#: src/hooks/wallet/use-wallet-session.ts
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -5526,6 +5527,10 @@ msgstr "आपका ब्रिज अभी भी प्रोसेस ह�
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Your current open position on this market"
 msgstr "इस मार्केट पर आपकी वर्तमान खुली पोज़िशन"
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+msgstr "आपका ईमेल वॉलेट उपलब्ध नहीं है। साइन आउट करें, उसी ईमेल से फिर लॉग इन करें और दोबारा प्रयास करें।"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Your funds were successfully deposited."

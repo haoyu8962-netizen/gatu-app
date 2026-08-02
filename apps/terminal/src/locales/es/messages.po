@@ -5354,6 +5354,7 @@ msgstr ""
 msgid "Wallet client not ready"
 msgstr "Cliente de billetera no está listo"
 
+#: src/hooks/wallet/use-wallet-session.ts
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -5526,6 +5527,10 @@ msgstr "Tu bridge aún se está procesando. Los fondos están seguros."
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Your current open position on this market"
 msgstr "Tu posición abierta actual en este mercado"
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+msgstr "Tu billetera de correo electrónico no está disponible. Cierra sesión y vuelve a iniciarla con el mismo correo electrónico; luego inténtalo de nuevo."
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Your funds were successfully deposited."

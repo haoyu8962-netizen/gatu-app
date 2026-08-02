@@ -39,6 +39,14 @@ function readVerifiedExternalWalletOwner(
 	return verifiedExternalWalletOwner.address;
 }
 
+function notifyWalletConnectionFailure(): void {
+	toast.error(t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`);
+}
+
+function notifyEmailWalletUnavailable(): void {
+	toast.error(t`Your email wallet is unavailable. Sign out and log in again with the same email, then retry.`);
+}
+
 /** @internal — exported only for deterministic session-boundary tests. */
 export function clearVerifiedExternalWalletOwner(): void {
 	verifiedExternalWalletOwner = null;
@@ -127,6 +135,7 @@ export function useReconnectWallet() {
 				// An email session must never fall back to an arbitrary
 				// external wallet while its exact embedded signer is absent
 				// or ambiguous.
+				notifyEmailWalletUnavailable();
 				return;
 			}
 
@@ -134,6 +143,12 @@ export function useReconnectWallet() {
 				walletChainType: "ethereum-only",
 				suggestedAddress: user?.wallet?.address,
 			});
+		} catch {
+			if (shouldUsePrivyEmbeddedWallet(user)) {
+				notifyEmailWalletUnavailable();
+			} else {
+				notifyWalletConnectionFailure();
+			}
 		} finally {
 			setIsReconnecting(false);
 		}

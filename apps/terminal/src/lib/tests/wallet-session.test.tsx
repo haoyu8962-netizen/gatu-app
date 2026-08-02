@@ -589,5 +589,51 @@ describe("useDisconnectWallet", () => {
 
 		expect(testState.setActiveWallet).not.toHaveBeenCalled();
 		expect(testState.connectWallet).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Your email wallet is unavailable. Sign out and log in again with the same email, then retry.",
+		);
+	});
+
+	it("reports an exact wallet activation failure without falling back to another connector", async () => {
+		const connectedWallet = { address: USER_ADDRESS };
+		testState.wallets = [connectedWallet];
+		testState.selectedWallet = connectedWallet;
+		testState.setActiveWallet.mockRejectedValue(new Error("connector rejected activation"));
+
+		act(() => {
+			root.render(createElement(ReconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.setActiveWallet).toHaveBeenCalledWith(connectedWallet);
+		expect(testState.connectWallet).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Wallet connection failed. Unlock your wallet, approve the connection, then retry.",
+		);
+	});
+
+	it("reports embedded wallet activation failure without asking an email user to unlock an external wallet", async () => {
+		const embeddedWallet = { address: USER_ADDRESS };
+		testState.wallets = [embeddedWallet];
+		testState.selectedWallet = embeddedWallet;
+		testState.shouldUseEmbeddedWallet = true;
+		testState.setActiveWallet.mockRejectedValue(new Error("embedded connector unavailable"));
+
+		act(() => {
+			root.render(createElement(ReconnectButton));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushAsyncWork();
+
+		expect(testState.setActiveWallet).toHaveBeenCalledWith(embeddedWallet);
+		expect(testState.connectWallet).not.toHaveBeenCalled();
+		expect(testState.toastError).toHaveBeenCalledWith(
+			"Your email wallet is unavailable. Sign out and log in again with the same email, then retry.",
+		);
 	});
 });

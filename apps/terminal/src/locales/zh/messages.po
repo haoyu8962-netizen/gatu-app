@@ -5354,6 +5354,7 @@ msgstr "钱包授权不可用"
 msgid "Wallet client not ready"
 msgstr "钱包客户端未就绪"
 
+#: src/hooks/wallet/use-wallet-session.ts
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -5526,6 +5527,10 @@ msgstr "您的跨链转账仍在处理中。资金安全。"
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Your current open position on this market"
 msgstr "您在此市场的当前持仓"
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+msgstr "邮箱钱包不可用。请退出登录并使用同一邮箱重新登录，然后重试。"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Your funds were successfully deposited."

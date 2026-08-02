@@ -5354,6 +5354,7 @@ msgstr ""
 msgid "Wallet client not ready"
 msgstr "عميل المحفظة غير جاهز"
 
+#: src/hooks/wallet/use-wallet-session.ts
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
@@ -5526,6 +5527,10 @@ msgstr "لا يزال الجسر قيد المعالجة. أموالك آمنة.
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Your current open position on this market"
 msgstr "مركزك المفتوح الحالي في هذا السوق"
+
+#: src/hooks/wallet/use-wallet-session.ts
+msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
+msgstr "محفظة البريد الإلكتروني غير متاحة. سجّل الخروج ثم سجّل الدخول مجددًا باستخدام البريد الإلكتروني نفسه وأعد المحاولة."
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Your funds were successfully deposited."
