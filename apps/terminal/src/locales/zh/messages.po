@@ -2225,6 +2225,10 @@ msgstr "加载钱包中..."
 msgid "Loading..."
 msgstr "加载中..."
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Log in with Email"
+msgstr "使用邮箱登录"
+
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
@@ -2919,6 +2923,10 @@ msgstr ""
 #: src/hooks/trade/use-tracked-twap-order.ts
 msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
 msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "OR"
+msgstr "或"
 
 #: src/components/trade/layout/market-overview-variants-demo.tsx
 #~ msgid "Oracle"

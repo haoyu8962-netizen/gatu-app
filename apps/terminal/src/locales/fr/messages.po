@@ -2114,7 +2114,7 @@ msgstr "Vente limite"
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Link Desktop Wallet"
-msgstr ""
+msgstr "Associer un portefeuille de bureau"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -2224,6 +2224,10 @@ msgstr "Chargement du portefeuille..."
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "Chargement..."
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Log in with Email"
+msgstr "Se connecter par e-mail"
 
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -2919,6 +2923,10 @@ msgstr ""
 #: src/hooks/trade/use-tracked-twap-order.ts
 msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
 msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "OR"
+msgstr "OU"
 
 #: src/components/trade/layout/market-overview-variants-demo.tsx
 #~ msgid "Oracle"

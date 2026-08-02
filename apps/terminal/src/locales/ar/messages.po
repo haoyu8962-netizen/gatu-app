@@ -2114,7 +2114,7 @@ msgstr "بيع محدد"
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Link Desktop Wallet"
-msgstr ""
+msgstr "ربط محفظة سطح المكتب"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #: src/components/trade/header/user-menu.tsx
@@ -2224,6 +2224,10 @@ msgstr "جاري تحميل المحفظة..."
 #: src/lib/trade/use-button-content.ts
 msgid "Loading..."
 msgstr "جارٍ التحميل..."
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Log in with Email"
+msgstr "تسجيل الدخول بالبريد الإلكتروني"
 
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -2919,6 +2923,10 @@ msgstr ""
 #: src/hooks/trade/use-tracked-twap-order.ts
 msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
 msgstr ""
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "OR"
+msgstr "أو"
 
 #: src/components/trade/layout/market-overview-variants-demo.tsx
 #~ msgid "Oracle"

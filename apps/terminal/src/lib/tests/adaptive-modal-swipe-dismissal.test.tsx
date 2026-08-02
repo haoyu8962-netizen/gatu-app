@@ -110,4 +110,17 @@ describe("AdaptiveModal drawer dismissal", () => {
 		expect(onOpenChange).not.toHaveBeenCalled();
 		expect(document.querySelector('[role="dialog"]')).not.toBeNull();
 	});
+
+	it("can hide the visual drawer handle without disabling dismissal", () => {
+		act(() => {
+			root.render(
+				<AdaptiveModal onOpenChange={vi.fn()} open presentation="drawer" showClose={false} showHandle={false}>
+					<div>Handle-free drawer</div>
+				</AdaptiveModal>,
+			);
+		});
+
+		expect(drawerHarness.disablePointerDismissal).toBe(false);
+		expect(document.querySelector('[data-slot="drawer-handle"]')).toBeNull();
+	});
 });

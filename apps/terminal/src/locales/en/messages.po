@@ -2225,6 +2225,10 @@ msgstr "Loading wallet..."
 msgid "Loading..."
 msgstr "Loading..."
 
+#: src/components/trade/components/wallet-modal.tsx
+msgid "Log in with Email"
+msgstr "Log in with Email"
+
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
@@ -2919,6 +2923,10 @@ msgstr "Opening or increasing isolated positions is temporarily unavailable. Exi
 #: src/hooks/trade/use-tracked-twap-order.ts
 msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
 msgstr "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
+
+#: src/components/trade/components/wallet-modal.tsx
+msgid "OR"
+msgstr "OR"
 
 #: src/components/trade/layout/market-overview-variants-demo.tsx
 #~ msgid "Oracle"

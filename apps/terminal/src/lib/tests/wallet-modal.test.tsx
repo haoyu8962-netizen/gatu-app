@@ -29,7 +29,8 @@ vi.mock("@lingui/react/macro", () => ({
 }));
 
 vi.mock("@phosphor-icons/react", () => ({
-	QrCodeIcon: () => null,
+	DesktopIcon: () => null,
+	EnvelopeSimpleIcon: () => null,
 	SpinnerGapIcon: () => null,
 	WalletIcon: () => null,
 }));
@@ -77,6 +78,10 @@ vi.mock("@/components/trade/components/mobile-agent-qr-scanner", () => ({
 
 function findButton(container: HTMLElement, label: string): HTMLButtonElement | undefined {
 	return [...container.querySelectorAll("button")].find((button) => button.textContent?.includes(label));
+}
+
+function getButtonLabels(container: HTMLElement): string[] {
+	return [...container.querySelectorAll("button")].map((button) => button.textContent?.trim() ?? "");
 }
 
 describe("WalletModal", () => {
@@ -169,7 +174,7 @@ describe("WalletModal", () => {
 		expect(testState.reconnectWallet).toHaveBeenCalledTimes(2);
 	});
 
-	it("offers mobile QR linking before starting wallet login", async () => {
+	it("shows the official mobile connection order before opening the QR scanner", async () => {
 		testState.isMobileQrSurface = true;
 		const onOpenChange = vi.fn();
 		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
@@ -179,12 +184,48 @@ describe("WalletModal", () => {
 		});
 
 		expect(testState.login).not.toHaveBeenCalled();
-		expect(findButton(container, "Connect wallet")).toBeDefined();
-		expect(findButton(container, "Link Desktop Wallet")).toBeDefined();
+		expect(getButtonLabels(container)).toEqual(["Link Desktop Wallet", "Log in with Email", "WalletConnect"]);
+		expect(container.querySelector("h2")?.textContent).toBe("Connect");
 
 		act(() => findButton(container, "Link Desktop Wallet")?.click());
 		expect(container.textContent).toContain("In-app QR scanner");
 		expect(testState.login).not.toHaveBeenCalled();
+	});
+
+	it("starts only the Privy email flow after closing the mobile chooser", async () => {
+		testState.isMobileQrSurface = true;
+		testState.walletsReady = false;
+		const onOpenChange = vi.fn();
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange }));
+		});
+		expect(findButton(container, "Log in with Email")?.disabled).toBe(false);
+
+		act(() => findButton(container, "Log in with Email")?.click());
+
+		expect(testState.login).toHaveBeenCalledWith({ loginMethods: ["email"] });
+		expect(testState.reconnectWallet).not.toHaveBeenCalled();
+		expect(onOpenChange.mock.invocationCallOrder[0]).toBeLessThan(testState.login.mock.invocationCallOrder[0]);
+	});
+
+	it("starts only the Privy EVM wallet flow after closing the mobile chooser", async () => {
+		testState.isMobileQrSurface = true;
+		const onOpenChange = vi.fn();
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange }));
+		});
+		act(() => findButton(container, "WalletConnect")?.click());
+
+		expect(testState.login).toHaveBeenCalledWith({
+			loginMethods: ["wallet"],
+			walletChainType: "ethereum-only",
+		});
+		expect(testState.reconnectWallet).not.toHaveBeenCalled();
+		expect(onOpenChange.mock.invocationCallOrder[0]).toBeLessThan(testState.login.mock.invocationCallOrder[0]);
 	});
 
 	it("keeps the scanner reachable for an already authenticated mobile session", async () => {
@@ -198,26 +239,13 @@ describe("WalletModal", () => {
 		});
 
 		expect(findButton(container, "Link Desktop Wallet")).toBeDefined();
+		expect(findButton(container, "Log in with Email")).toBeUndefined();
+		expect(findButton(container, "WalletConnect")).toBeUndefined();
 		expect(onOpenChange).not.toHaveBeenCalled();
 		expect(testState.login).not.toHaveBeenCalled();
 
 		act(() => findButton(container, "Reconnect wallet")?.click());
 		expect(testState.reconnectWallet).toHaveBeenCalledTimes(1);
-		expect(onOpenChange).toHaveBeenCalledWith(false);
-	});
-
-	it("starts the existing reconnect flow only after the mobile user chooses Connect wallet", async () => {
-		testState.isMobileQrSurface = true;
-		const onOpenChange = vi.fn();
-		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
-
-		act(() => {
-			root.render(createElement(WalletModal, { open: true, onOpenChange }));
-		});
-		act(() => findButton(container, "Connect wallet")?.click());
-
-		expect(testState.reconnectWallet).toHaveBeenCalledTimes(1);
-		expect(testState.login).not.toHaveBeenCalled();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
@@ -230,12 +258,13 @@ describe("WalletModal", () => {
 			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
 		});
 
-		expect(findButton(container, "Connect wallet")).toBeDefined();
+		expect(getButtonLabels(container)).toEqual(["Log in with Email", "WalletConnect"]);
 		expect(findButton(container, "Link Desktop Wallet")).toBeUndefined();
 	});
 
 	it("blocks reconnect while the Privy wallet runtime is unavailable or reconnecting", async () => {
 		testState.isMobileQrSurface = true;
+		testState.authenticated = true;
 		testState.walletsReady = false;
 		const onOpenChange = vi.fn();
 		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
@@ -243,7 +272,7 @@ describe("WalletModal", () => {
 		act(() => {
 			root.render(createElement(WalletModal, { open: true, onOpenChange }));
 		});
-		expect(findButton(container, "Connect wallet")?.disabled).toBe(true);
+		expect(findButton(container, "Reconnect wallet")?.disabled).toBe(true);
 
 		testState.walletsReady = true;
 		testState.isReconnecting = true;

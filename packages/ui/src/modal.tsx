@@ -159,6 +159,7 @@ interface AdaptiveModalProps {
 	onOpenChange: (open: boolean) => void;
 	size?: VariantProps<typeof modalPopupVariants>["size"];
 	showClose?: boolean;
+	showHandle?: boolean;
 	dismissible?: boolean;
 	presentation?: "auto" | "modal" | "drawer";
 	layer?: "default" | "blocking";
@@ -172,6 +173,7 @@ function AdaptiveModal({
 	onOpenChange,
 	size,
 	showClose = true,
+	showHandle = true,
 	dismissible = true,
 	presentation = "auto",
 	layer = "default",
@@ -201,8 +203,9 @@ function AdaptiveModal({
 						className,
 					)}
 				>
-					{dismissible && (
+					{dismissible && showHandle && (
 						<div
+							data-slot="drawer-handle"
 							className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20"
 							aria-hidden="true"
 						/>

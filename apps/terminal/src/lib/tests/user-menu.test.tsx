@@ -8,6 +8,7 @@ import { createI18nRoot } from "./harness/react";
 const testState = vi.hoisted(() => ({
 	login: vi.fn(),
 	walletModalOpen: false,
+	walletsReady: true,
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -43,7 +44,11 @@ vi.mock("@/hooks/ui/use-copy-to-clipboard", () => ({
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useDisconnectWallet: () => ({ disconnectWallet: vi.fn() }),
-	useReconnectWallet: () => ({ reconnectWallet: vi.fn(), walletsReady: true, isReconnecting: false }),
+	useReconnectWallet: () => ({
+		reconnectWallet: vi.fn(),
+		walletsReady: testState.walletsReady,
+		isReconnecting: false,
+	}),
 	useWalletSession: () => ({
 		ready: true,
 		authenticated: false,
@@ -82,6 +87,7 @@ describe("UserMenu", () => {
 		root = createI18nRoot(container);
 		testState.login.mockReset();
 		testState.walletModalOpen = false;
+		testState.walletsReady = true;
 	});
 
 	afterEach(() => {
@@ -90,7 +96,8 @@ describe("UserMenu", () => {
 		vi.clearAllMocks();
 	});
 
-	it("opens the shared wallet modal before starting a connection", async () => {
+	it("opens the shared wallet modal without waiting for unauthenticated wallet connectors", async () => {
+		testState.walletsReady = false;
 		const { UserMenu } = await import("@/components/trade/header/user-menu");
 
 		await act(async () => {

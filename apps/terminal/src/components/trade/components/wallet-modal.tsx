@@ -1,7 +1,7 @@
 import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
-import { QrCodeIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
-import { usePrivy } from "@privy-io/react-auth";
+import { DesktopIcon, EnvelopeSimpleIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
+import { type LoginModalOptions, usePrivy } from "@privy-io/react-auth";
 import { useEffect, useRef, useState } from "react";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { useIsMobileQrSurface } from "@/hooks/use-mobile";
@@ -12,6 +12,8 @@ interface Props {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 }
+
+const MOBILE_CONNECT_BUTTON_CLASS = "h-13 w-full justify-start bg-fill-weak px-4 text-base font-medium shadow-none";
 
 export function WalletModal({ open, onOpenChange }: Props) {
 	const { ready, authenticated, login } = usePrivy();
@@ -35,6 +37,7 @@ export function WalletModal({ open, onOpenChange }: Props) {
 			open={open}
 			ready={ready}
 			authenticated={authenticated}
+			login={login}
 			onOpenChange={onOpenChange}
 		/>
 	);
@@ -78,18 +81,32 @@ function MobileWalletChooser({
 	open,
 	ready,
 	authenticated,
+	login,
 	onOpenChange,
 }: Props & {
 	ready: boolean;
 	authenticated: boolean;
+	login: (options?: LoginModalOptions) => void;
 }) {
 	const [view, setView] = useState<"choice" | "scanner">("choice");
 	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
 
-	function handleConnectWallet() {
+	function handleReconnectWallet() {
 		if (!ready || !walletsReady || isReconnecting) return;
 		onOpenChange(false);
 		void reconnectWallet();
+	}
+
+	function handleEmailLogin() {
+		if (!ready || authenticated) return;
+		onOpenChange(false);
+		login({ loginMethods: ["email"] });
+	}
+
+	function handleWalletLogin() {
+		if (!ready || authenticated) return;
+		onOpenChange(false);
+		login({ loginMethods: ["wallet"], walletChainType: "ethereum-only" });
 	}
 
 	return (
@@ -98,13 +115,14 @@ function MobileWalletChooser({
 			onOpenChange={onOpenChange}
 			presentation="drawer"
 			size="sm"
-			className="max-h-[calc(100dvh-1rem)] overflow-y-auto"
+			showHandle={false}
+			className="max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-t-16"
 		>
-			<ModalHeader>
-				<ModalTitle>
-					{view === "choice" ? <Trans>Connect to trade</Trans> : <Trans>Link Desktop Wallet</Trans>}
+			<ModalHeader divider={view !== "choice"} className={view === "choice" ? "px-4 pt-5 pb-2" : undefined}>
+				<ModalTitle className={view === "choice" ? "text-xl" : undefined}>
+					{view === "choice" ? <Trans>Connect</Trans> : <Trans>Link Desktop Wallet</Trans>}
 				</ModalTitle>
-				<ModalDescription>
+				<ModalDescription className={view === "choice" ? "sr-only" : undefined}>
 					{view === "choice" ? (
 						MOBILE_PAIRING_FEATURES.importFromQr ? (
 							<Trans>Connect a wallet on this phone, or scan a desktop-approved trading key.</Trans>
@@ -117,53 +135,75 @@ function MobileWalletChooser({
 				</ModalDescription>
 			</ModalHeader>
 
-			<ModalContent className="space-y-3">
+			<ModalContent className={view === "choice" ? "space-y-3 px-3 pt-2 pb-4" : "space-y-3"}>
 				{view === "choice" ? (
 					<>
-						<Button
-							type="button"
-							variant="filled"
-							intent="brand"
-							size="md"
-							className="w-full"
-							disabled={!ready || !walletsReady || isReconnecting}
-							onClick={handleConnectWallet}
-							iconLeft={
-								isReconnecting ? (
-									<SpinnerGapIcon className="size-4 animate-spin" aria-hidden />
-								) : (
-									<WalletIcon className="size-4" aria-hidden />
-								)
-							}
-						>
-							{isReconnecting ? (
-								<Trans>Connecting...</Trans>
-							) : authenticated ? (
-								<Trans>Reconnect wallet</Trans>
-							) : (
-								<Trans>Connect wallet</Trans>
-							)}
-						</Button>
 						{MOBILE_PAIRING_FEATURES.importFromQr && (
 							<Button
 								type="button"
-								variant="outline"
+								variant="ghost"
 								intent="neutral"
 								size="md"
-								className="w-full"
+								className={MOBILE_CONNECT_BUTTON_CLASS}
 								onClick={() => setView("scanner")}
-								iconLeft={<QrCodeIcon className="size-4" aria-hidden />}
+								iconLeft={<DesktopIcon className="size-5" aria-hidden />}
 							>
 								<Trans>Link Desktop Wallet</Trans>
 							</Button>
 						)}
-						{MOBILE_PAIRING_FEATURES.importFromQr && (
-							<p className="text-xs text-fg-muted">
-								<Trans>
-									Desktop linking imports an approved trading key. It cannot withdraw funds or change account
-									permissions.
-								</Trans>
-							</p>
+						{authenticated ? (
+							<Button
+								type="button"
+								variant="ghost"
+								intent="neutral"
+								size="md"
+								className={MOBILE_CONNECT_BUTTON_CLASS}
+								disabled={!ready || !walletsReady || isReconnecting}
+								onClick={handleReconnectWallet}
+								iconLeft={
+									isReconnecting ? (
+										<SpinnerGapIcon className="size-5 animate-spin" aria-hidden />
+									) : (
+										<WalletIcon className="size-5" aria-hidden />
+									)
+								}
+							>
+								{isReconnecting ? <Trans>Connecting...</Trans> : <Trans>Reconnect wallet</Trans>}
+							</Button>
+						) : (
+							<>
+								<Button
+									type="button"
+									variant="ghost"
+									intent="neutral"
+									size="md"
+									className={MOBILE_CONNECT_BUTTON_CLASS}
+									disabled={!ready}
+									onClick={handleEmailLogin}
+									iconLeft={<EnvelopeSimpleIcon className="size-5" aria-hidden />}
+								>
+									<Trans>Log in with Email</Trans>
+								</Button>
+								<div className="flex items-center gap-3 px-0.5 text-2xs text-fg-muted" aria-hidden="true">
+									<span className="h-px flex-1 bg-stroke-weak" />
+									<span>
+										<Trans>OR</Trans>
+									</span>
+									<span className="h-px flex-1 bg-stroke-weak" />
+								</div>
+								<Button
+									type="button"
+									variant="ghost"
+									intent="neutral"
+									size="md"
+									className={MOBILE_CONNECT_BUTTON_CLASS}
+									disabled={!ready}
+									onClick={handleWalletLogin}
+									iconLeft={<WalletIcon className="size-5" aria-hidden />}
+								>
+									WalletConnect
+								</Button>
+							</>
 						)}
 					</>
 				) : (

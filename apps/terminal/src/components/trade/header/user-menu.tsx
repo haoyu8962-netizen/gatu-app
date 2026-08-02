@@ -33,7 +33,7 @@ export function UserMenu() {
 	}, []);
 
 	const walletSessionLoading =
-		sessionMode !== "agent-only" && (!ready || !walletsReady || isConnecting || isReconnecting);
+		sessionMode !== "agent-only" && (!ready || isConnecting || isReconnecting || (authenticated && !walletsReady));
 
 	if (!mounted || walletSessionLoading) {
 		return (
