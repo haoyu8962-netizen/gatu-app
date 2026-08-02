@@ -2,7 +2,7 @@ import { AdaptiveModal, Button, ModalContent, ModalDescription, ModalHeader, Mod
 import { Trans } from "@lingui/react/macro";
 import { QrCodeIcon, SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MOBILE_PAIRING_FEATURES } from "@/config/mobile-pairing";
 import { useIsMobileQrSurface } from "@/hooks/use-mobile";
 import { useReconnectWallet } from "@/hooks/wallet/use-wallet-session";
@@ -51,11 +51,25 @@ function PrivyWalletLauncher({
 	authenticated: boolean;
 	login: () => void;
 }) {
+	const launchedForOpenRef = useRef(false);
+	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
+
 	useEffect(() => {
-		if (!open || !ready) return;
+		if (!open) {
+			launchedForOpenRef.current = false;
+			return;
+		}
+		if (!ready || launchedForOpenRef.current || (authenticated && (!walletsReady || isReconnecting))) {
+			return;
+		}
+		launchedForOpenRef.current = true;
 		onOpenChange(false);
-		if (!authenticated) login();
-	}, [open, ready, authenticated, login, onOpenChange]);
+		if (authenticated) {
+			void reconnectWallet();
+			return;
+		}
+		login();
+	}, [open, ready, authenticated, login, onOpenChange, reconnectWallet, walletsReady, isReconnecting]);
 
 	return null;
 }

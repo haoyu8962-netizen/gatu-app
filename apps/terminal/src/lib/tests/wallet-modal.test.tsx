@@ -116,6 +116,59 @@ describe("WalletModal", () => {
 		expect(container.textContent).toBe("");
 	});
 
+	it("reconnects an authenticated desktop session instead of closing without an action", async () => {
+		testState.authenticated = true;
+		const onOpenChange = vi.fn();
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange }));
+		});
+
+		expect(testState.reconnectWallet).toHaveBeenCalledTimes(1);
+		expect(testState.login).not.toHaveBeenCalled();
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("blocks an unavailable wallet runtime and launches desktop reconnect only once per opening", async () => {
+		testState.authenticated = true;
+		testState.walletsReady = false;
+		const onOpenChange = vi.fn();
+		const { WalletModal } = await import("@/components/trade/components/wallet-modal");
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange }));
+		});
+		expect(testState.reconnectWallet).not.toHaveBeenCalled();
+
+		testState.walletsReady = true;
+		const launchedOnOpenChange = vi.fn();
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: launchedOnOpenChange }));
+		});
+
+		expect(testState.reconnectWallet).toHaveBeenCalledTimes(1);
+		expect(launchedOnOpenChange).toHaveBeenCalledWith(false);
+
+		testState.isReconnecting = true;
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+		testState.isReconnecting = false;
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange: vi.fn() }));
+		});
+		expect(testState.reconnectWallet).toHaveBeenCalledTimes(1);
+
+		act(() => {
+			root.render(createElement(WalletModal, { open: false, onOpenChange }));
+		});
+		act(() => {
+			root.render(createElement(WalletModal, { open: true, onOpenChange }));
+		});
+		expect(testState.reconnectWallet).toHaveBeenCalledTimes(2);
+	});
+
 	it("offers mobile QR linking before starting wallet login", async () => {
 		testState.isMobileQrSurface = true;
 		const onOpenChange = vi.fn();

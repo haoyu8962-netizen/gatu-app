@@ -10,19 +10,21 @@ import { cn } from "@/lib/cn";
 import { shortenAddress } from "@/lib/format";
 import { getPrivyEmailAddress } from "@/lib/wallet/privy-wagmi";
 import { MobileAgentSyncModal } from "../components/mobile-agent-sync-modal";
+import { WalletModal } from "../components/wallet-modal";
 
 const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
 export function UserMenu() {
 	const { t } = useLingui();
-	const { ready, authenticated, isConnected, isConnecting, login, displayAddress, sessionMode, hasWalletAccess, user } =
+	const { ready, authenticated, isConnected, isConnecting, displayAddress, sessionMode, hasWalletAccess, user } =
 		useWalletSession();
 	const { disconnectWallet } = useDisconnectWallet();
 	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
 	const emailAddress = getPrivyEmailAddress(user);
 	const { data: ensName } = useEnsName({ address: emailAddress ? undefined : displayAddress });
 	const [mobileSyncOpen, setMobileSyncOpen] = useState(false);
+	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [mounted, setMounted] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
 
@@ -54,19 +56,22 @@ export function UserMenu() {
 
 	if (!authenticated && !isConnected) {
 		return (
-			<Button
-				variant="outline"
-				intent="neutral"
-				size="sm"
-				onClick={() => login()}
-				iconLeft={<WalletIcon className="size-3.5" />}
-				className={cn(
-					APP_BAR_BUTTON_HEIGHT_CLASS,
-					"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
-				)}
-			>
-				<Trans>Connect Wallet</Trans>
-			</Button>
+			<>
+				<Button
+					variant="outline"
+					intent="neutral"
+					size="sm"
+					onClick={() => setWalletModalOpen(true)}
+					iconLeft={<WalletIcon className="size-3.5" />}
+					className={cn(
+						APP_BAR_BUTTON_HEIGHT_CLASS,
+						"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+					)}
+				>
+					<Trans>Connect Wallet</Trans>
+				</Button>
+				{walletModalOpen && <WalletModal open onOpenChange={setWalletModalOpen} />}
+			</>
 		);
 	}
 
