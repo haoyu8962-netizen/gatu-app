@@ -13,10 +13,10 @@ import { createLazyComponent } from "@/lib/lazy";
 import { useDepositModalActions, useSwapModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { TopNav } from "../trade/header/top-nav";
+import { MobileBalancesTab } from "../trade/mobile/mobile-balances-tab";
 import { MobileHeader } from "../trade/mobile/mobile-header";
 import { MobilePositionsView } from "../trade/mobile/mobile-positions-view";
 import { TestnetBanner } from "../trade/testnet-banner";
-import { PortfolioMobileBalances } from "./portfolio-mobile-balances";
 import { PortfolioOverview } from "./portfolio-overview";
 
 const FooterBar = createLazyComponent(() => import("../trade/footer/footer-bar"), "FooterBar");
@@ -112,7 +112,7 @@ export function PortfolioPage() {
 								className="min-h-80 py-1"
 								scrollMode="page"
 								includeBottomNavSpacer={false}
-								balancesContent={<PortfolioMobileBalances />}
+								balancesContent={<MobileBalancesTab />}
 								emptyDescription={<Trans>Connect wallet to view portfolio</Trans>}
 							/>
 						) : (

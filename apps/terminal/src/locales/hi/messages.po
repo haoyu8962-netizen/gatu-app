@@ -397,7 +397,7 @@ msgstr "परिसंपत्ति की जानकारी लोड �
 msgid "Automatic USDC deposit failed"
 msgstr "USDC का स्वचालित जमा विफल रहा"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1593,7 +1593,7 @@ msgstr "ट्रेडिंग सक्षम करने में वि�
 msgid "Failed to load balances"
 msgstr "बैलेंस लोड करने में विफल"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1912,7 +1912,7 @@ msgstr "महत्वपूर्ण: यह पता केवल Arbitrum �
 #~ msgid "Importing..."
 #~ msgstr "इम्पोर्ट हो रहा है..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 msgid "In Orders"
 msgstr "ऑर्डर में"
 
@@ -2149,7 +2149,7 @@ msgstr "परिसंपत्ति की जानकारी लोड �
 msgid "Loading balances across all chains..."
 msgstr "सभी चेन पर बैलेंस लोड हो रहे हैं..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Loading balances..."
 msgstr "शेष लोड हो रहा है..."
@@ -2194,7 +2194,7 @@ msgstr "TWAP ऑर्डर लोड हो रहे हैं..."
 msgid "Loading wallet..."
 msgstr "वॉलेट लोड हो रहा है..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2666,7 +2666,7 @@ msgstr "Hyperliquid पर कोई बैलेंस नहीं। पह�
 msgid "No balances found"
 msgstr "कोई बैलेंस नहीं मिला"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "कोई शेष नहीं मिला। ट्रेडिंग शुरू करने के लिए धन जमा करें।"
@@ -3093,7 +3093,7 @@ msgstr "Perp"
 msgid "Perpetuals"
 msgstr "Perpetuals"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Perps"
@@ -4172,7 +4172,7 @@ msgstr "स्रोत"
 #~ msgid "spot"
 #~ msgstr "स्पॉट"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
@@ -4819,7 +4819,7 @@ msgstr "टोकन मेटाडेटा लोड नहीं किय�
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr ""
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -4828,7 +4828,7 @@ msgstr ""
 msgid "Total"
 msgstr "कुल"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 msgid "Total balance"
 msgstr "कुल बैलेंस"
 
@@ -5208,7 +5208,7 @@ msgstr "लाइव अपडेट"
 msgid "Updating..."
 msgstr "अपडेट हो रहा है..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "USD मूल्य"

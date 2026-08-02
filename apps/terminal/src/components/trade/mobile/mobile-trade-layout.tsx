@@ -4,6 +4,7 @@ import { cn } from "@/lib/cn";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
 import type { SizeMode } from "@/lib/trade/types";
 import { useExchangeScope } from "@/providers/exchange-scope";
+import { MobileBalancesTab } from "./mobile-balances-tab";
 import { MobileBookView } from "./mobile-book-view";
 import { MobileChartView } from "./mobile-chart-view";
 import { MobileMarketBar } from "./mobile-market-bar";
@@ -54,7 +55,7 @@ function TradeOrderView({ active, showMarketBar }: { active: boolean; showMarket
 
 			{active && (
 				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
-					<MobilePositionsView scrollMode="page" />
+					<MobilePositionsView scrollMode="page" balancesContent={<MobileBalancesTab />} />
 				</div>
 			)}
 		</div>
@@ -119,7 +120,7 @@ function MarketsDataView({ active, showMarketBar }: { active: boolean; showMarke
 
 			{active && (
 				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
-					<MobilePositionsView scrollMode="page" />
+					<MobilePositionsView scrollMode="page" balancesContent={<MobileBalancesTab />} />
 				</div>
 			)}
 		</div>

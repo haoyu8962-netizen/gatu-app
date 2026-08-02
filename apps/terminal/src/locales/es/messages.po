@@ -397,7 +397,7 @@ msgstr "No se pudo cargar la información del activo."
 msgid "Automatic USDC deposit failed"
 msgstr "Error en el depósito automático de USDC"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1593,7 +1593,7 @@ msgstr "Error al habilitar trading"
 msgid "Failed to load balances"
 msgstr "No se pudieron cargar los saldos"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1912,7 +1912,7 @@ msgstr "Importante: esta dirección solo puede recibir USDC nativo en Arbitrum. 
 #~ msgid "Importing..."
 #~ msgstr "Importando..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 msgid "In Orders"
 msgstr "En órdenes"
 
@@ -2149,7 +2149,7 @@ msgstr "Cargando información del activo..."
 msgid "Loading balances across all chains..."
 msgstr "Cargando saldos en todas las redes..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Loading balances..."
 msgstr "Cargando saldos..."
@@ -2194,7 +2194,7 @@ msgstr "Cargando órdenes TWAP..."
 msgid "Loading wallet..."
 msgstr "Cargando billetera..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2666,7 +2666,7 @@ msgstr "Sin saldo en Hyperliquid. Deposita primero."
 msgid "No balances found"
 msgstr "No se encontraron saldos"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "No se encontraron saldos. Deposita fondos para comenzar a operar."
@@ -3093,7 +3093,7 @@ msgstr "Perp"
 msgid "Perpetuals"
 msgstr "Perpetuos"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Perps"
@@ -4172,7 +4172,7 @@ msgstr "Origen"
 #~ msgid "spot"
 #~ msgstr "spot"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
@@ -4819,7 +4819,7 @@ msgstr "No se pudieron cargar los metadatos del token."
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr ""
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -4828,7 +4828,7 @@ msgstr ""
 msgid "Total"
 msgstr "Total"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 msgid "Total balance"
 msgstr "Saldo total"
 
@@ -5208,7 +5208,7 @@ msgstr "Actualizado en vivo"
 msgid "Updating..."
 msgstr "Actualizando..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "Valor en USD"

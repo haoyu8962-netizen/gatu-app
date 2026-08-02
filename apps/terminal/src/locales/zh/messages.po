@@ -397,7 +397,7 @@ msgstr "无法加载资产说明。"
 msgid "Automatic USDC deposit failed"
 msgstr "USDC 自动存款失败"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1593,7 +1593,7 @@ msgstr "启用交易失败"
 msgid "Failed to load balances"
 msgstr "加载余额失败"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1912,7 +1912,7 @@ msgstr "重要：此地址只能接收 Arbitrum 网络的原生 USDC。请勿发
 #~ msgid "Importing..."
 #~ msgstr "导入中…"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 msgid "In Orders"
 msgstr "挂单占用"
 
@@ -2149,7 +2149,7 @@ msgstr "正在加载资产说明..."
 msgid "Loading balances across all chains..."
 msgstr "正在加载所有链上的余额…"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Loading balances..."
 msgstr "加载余额中..."
@@ -2194,7 +2194,7 @@ msgstr "加载 TWAP 订单中..."
 msgid "Loading wallet..."
 msgstr "加载钱包中..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2666,7 +2666,7 @@ msgstr "Hyperliquid 上无余额，请先充值。"
 msgid "No balances found"
 msgstr "未找到余额"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "未找到余额。存入资金开始交易。"
@@ -3093,7 +3093,7 @@ msgstr "永续"
 msgid "Perpetuals"
 msgstr "永续合约"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Perps"
@@ -4172,7 +4172,7 @@ msgstr "来源"
 #~ msgid "spot"
 #~ msgstr "现货"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
@@ -4819,7 +4819,7 @@ msgstr "无法加载代币元数据。"
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr "此标签页中有过多移动授权等待恢复。请先解决或撤销其中一项。"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -4828,7 +4828,7 @@ msgstr "此标签页中有过多移动授权等待恢复。请先解决或撤销
 msgid "Total"
 msgstr "合计"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 msgid "Total balance"
 msgstr "总余额"
 
@@ -5208,7 +5208,7 @@ msgstr "实时更新"
 msgid "Updating..."
 msgstr "正在更新..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "美元价值"

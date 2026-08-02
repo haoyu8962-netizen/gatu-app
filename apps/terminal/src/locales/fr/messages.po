@@ -397,7 +397,7 @@ msgstr "Impossible de charger les informations sur l'actif."
 msgid "Automatic USDC deposit failed"
 msgstr "Échec du dépôt automatique d'USDC"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1593,7 +1593,7 @@ msgstr "Échec de l'activation du trading"
 msgid "Failed to load balances"
 msgstr "Échec du chargement des soldes"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1912,7 +1912,7 @@ msgstr "Important : cette adresse ne peut recevoir que des USDC natifs sur Arbit
 #~ msgid "Importing..."
 #~ msgstr "Importation..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 msgid "In Orders"
 msgstr "Dans les ordres"
 
@@ -2149,7 +2149,7 @@ msgstr "Chargement des informations sur l'actif..."
 msgid "Loading balances across all chains..."
 msgstr "Chargement des soldes sur toutes les chaînes..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Loading balances..."
 msgstr "Chargement des soldes..."
@@ -2194,7 +2194,7 @@ msgstr "Chargement des ordres TWAP..."
 msgid "Loading wallet..."
 msgstr "Chargement du portefeuille..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -2666,7 +2666,7 @@ msgstr "Aucun solde sur Hyperliquid. Déposez d'abord."
 msgid "No balances found"
 msgstr "Aucun solde trouvé"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "No balances found. Deposit funds to start trading."
 msgstr "Aucun solde trouvé. Déposez des fonds pour commencer à trader."
@@ -3093,7 +3093,7 @@ msgstr "Perp"
 msgid "Perpetuals"
 msgstr "Perpetuals"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Perps"
@@ -4172,7 +4172,7 @@ msgstr "Source"
 #~ msgid "spot"
 #~ msgstr "spot"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
@@ -4819,7 +4819,7 @@ msgstr "Impossible de charger les métadonnées du jeton."
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr ""
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -4828,7 +4828,7 @@ msgstr ""
 msgid "Total"
 msgstr "Total"
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 msgid "Total balance"
 msgstr "Solde total"
 
@@ -5208,7 +5208,7 @@ msgstr "Mise à jour en direct"
 msgid "Updating..."
 msgstr "Mise à jour..."
 
-#: src/components/portfolio/portfolio-mobile-balances.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "Valeur en USD"

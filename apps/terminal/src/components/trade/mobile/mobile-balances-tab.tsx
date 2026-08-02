@@ -1,16 +1,15 @@
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WalletIcon } from "@phosphor-icons/react";
-import { useMemo } from "react";
 import { getPerpBalanceRows, getSpotBalanceRows, getTotalUsdValue } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
-import { AssetDisplay } from "../trade/components/asset-display";
-import { MetricCell } from "../trade/mobile/metric-cell";
+import { AssetDisplay } from "../components/asset-display";
+import { MetricCell } from "./metric-cell";
 
-export function PortfolioMobileBalances() {
+export function MobileBalancesTab() {
 	const { t } = useLingui();
 	const { isConnected } = useWalletSession();
 	const { getToken } = useSpotTokens();
@@ -25,19 +24,16 @@ export function PortfolioMobileBalances() {
 		hasError,
 	} = useDefaultDexBalances();
 	const mids = useSpotTokenUsdPrices(isConnected);
-	const balances = useMemo(
-		() => [
-			...getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable),
-			...getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction, mids),
-		],
-		[accountAbstraction, mids, perpSummary, spotAvailableAfterMaintenance, spotBalances, withdrawable],
-	);
-	const totalValue = useMemo(() => getTotalUsdValue(balances), [balances]);
+	const balances = [
+		...getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable),
+		...getSpotBalanceRows(spotBalances, spotAvailableAfterMaintenance, accountAbstraction, mids),
+	];
+	const totalValue = getTotalUsdValue(balances);
 
-	if (hasError) return <PortfolioBalancesState variant="error" label={t`Failed to load balances.`} />;
-	if (isLoading) return <PortfolioBalancesState loading label={t`Loading balances...`} />;
+	if (hasError) return <MobileBalancesState variant="error" label={t`Failed to load balances.`} />;
+	if (isLoading) return <MobileBalancesState loading label={t`Loading balances...`} />;
 	if (balances.length === 0)
-		return <PortfolioBalancesState label={t`No balances found. Deposit funds to start trading.`} />;
+		return <MobileBalancesState label={t`No balances found. Deposit funds to start trading.`} />;
 
 	return (
 		<div className="flex min-h-0 flex-col gap-2 p-2">
@@ -85,7 +81,7 @@ export function PortfolioMobileBalances() {
 	);
 }
 
-function PortfolioBalancesState({
+function MobileBalancesState({
 	label,
 	loading = false,
 	variant = "muted",

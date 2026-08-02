@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -56,8 +56,14 @@ vi.mock("@/components/trade/mobile/mobile-market-bar", () => ({
 	MobileMarketBar: () => null,
 }));
 
+vi.mock("@/components/trade/mobile/mobile-balances-tab", () => ({
+	MobileBalancesTab: () => <div data-mobile-balances />,
+}));
+
 vi.mock("@/components/trade/mobile/mobile-positions-view", () => ({
-	MobilePositionsView: () => null,
+	MobilePositionsView: ({ balancesContent }: { balancesContent?: ReactNode }) => (
+		<div data-mobile-positions>{balancesContent}</div>
+	),
 }));
 
 import { MobileTradeLayout } from "@/components/trade/mobile/mobile-trade-layout";
@@ -80,11 +86,18 @@ describe("MobileTradeLayout market identity", () => {
 		container.remove();
 	});
 
-	function render(active = true) {
+	function render(active = true, showOrderForm = true) {
 		act(() => {
-			root.render(<MobileTradeLayout active={active} showOrderForm />);
+			root.render(<MobileTradeLayout active={active} showOrderForm={showOrderForm} />);
 		});
 	}
+
+	it.each([true, false])("provides spot balances to the mobile account tabs when showOrderForm=%s", (showOrderForm) => {
+		render(true, showOrderForm);
+
+		expect(container.querySelector("[data-mobile-positions]")).not.toBeNull();
+		expect(container.querySelector("[data-mobile-balances]")).not.toBeNull();
+	});
 
 	it("remounts the order form when the canonical route market changes", () => {
 		render();
