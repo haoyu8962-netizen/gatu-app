@@ -22,6 +22,7 @@ interface Props {
 	value: PositionMarketFilter;
 	options: readonly PositionMarketOption[];
 	onChange: (value: PositionMarketFilter) => void;
+	mobile?: boolean;
 }
 
 const allMessage = msg`All`;
@@ -38,7 +39,7 @@ function getMarketFilterFallbackLabel(value: PositionMarketFilter): string | und
 	return value.market.dex ? `${marketName} (${value.market.dex})` : marketName;
 }
 
-export function PositionMarketFilterControl({ value, options, onChange }: Props) {
+export function PositionMarketFilterControl({ value, options, onChange, mobile = false }: Props) {
 	const { _ } = useLingui();
 	const [open, setOpen] = useState(false);
 	const selectedOption =
@@ -62,13 +63,16 @@ export function PositionMarketFilterControl({ value, options, onChange }: Props)
 					intent="neutral"
 					size="xxs"
 					aria-label={_(msg`Filter positions by market`)}
-					className="h-full min-h-0 max-w-32 gap-1 rounded-xs px-2 py-0 font-normal text-fg-muted hover:bg-fill-hover hover:text-fg"
+					className={cn(
+						"h-full min-h-0 gap-1 rounded-xs px-2 py-0 font-normal text-fg-muted hover:bg-fill-hover hover:text-fg",
+						mobile ? "h-8 max-w-24 text-xs" : "max-w-32",
+					)}
 				>
 					<span className="truncate">{triggerLabel}</span>
 					<CaretDownIcon className={cn("size-3 shrink-0 transition-transform duration-150", open && "rotate-180")} />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent align="end" className="w-56 rounded-8 p-1">
+			<PopoverContent align={mobile ? "start" : "end"} className="w-[min(14rem,calc(100vw-1rem))] rounded-8 p-1">
 				<Command className="rounded-8">
 					<CommandInput placeholder={_(msg`Search markets...`)} className="text-xs" />
 					<CommandList className="max-h-56 py-1">

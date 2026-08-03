@@ -98,6 +98,43 @@ describe("MobilePositionCard isolated margin entry", () => {
 		});
 	});
 
+	it("keeps the mobile summary compact until the user expands the position", () => {
+		const onExpandedChange = vi.fn();
+
+		act(() => {
+			root.render(
+				createElement(MobilePositionCard, {
+					position: isolatedPosition,
+					markets,
+					markPx: "7.5759",
+					tpSlInfo: undefined,
+					isRowClosing: false,
+					closeErrorMessage: null,
+					expanded: false,
+					onExpandedChange,
+					onClose: vi.fn(),
+					onReverse: vi.fn(),
+					onLimitClose: vi.fn(),
+					onOpenTpSl: vi.fn(),
+					onAdjustMargin: vi.fn(),
+					onSelectMarket: vi.fn(),
+				}),
+			);
+		});
+
+		expect(container.textContent).toContain("205.9 CXMT");
+		expect(container.textContent).toContain("10x");
+		expect(container.textContent).toContain("xyz");
+		expect(container.querySelector('button[aria-label="Adjust isolated margin for CXMT-USDC"]')).toBeNull();
+
+		const expandButton = container.querySelector('button[aria-label="Expand market details"]');
+		if (!(expandButton instanceof HTMLButtonElement)) throw new Error("Position details trigger was not rendered");
+
+		act(() => expandButton.click());
+
+		expect(onExpandedChange).toHaveBeenCalledWith(true);
+	});
+
 	it("does not expose the entry for cross-margin positions", () => {
 		const onAdjustMargin = vi.fn();
 

@@ -2,6 +2,7 @@ import { Dropdown } from "@gatu/ui";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import type { PositionDirectionFilter, PositionMarketFilter } from "@/domain/trade/position-toolbar";
+import { cn } from "@/lib/cn";
 import { PositionMarketFilterControl, type PositionMarketOption } from "./position-market-filter";
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 	marketOptions: readonly PositionMarketOption[];
 	onDirectionChange: (value: PositionDirectionFilter) => void;
 	onMarketChange: (value: PositionMarketFilter) => void;
+	mobile?: boolean;
 }
 
 const directionMessage = msg`Direction`;
@@ -17,7 +19,14 @@ const allMessage = msg`All`;
 const longMessage = msg`Long`;
 const shortMessage = msg`Short`;
 
-export function PositionFilterToolbar({ direction, market, marketOptions, onDirectionChange, onMarketChange }: Props) {
+export function PositionFilterToolbar({
+	direction,
+	market,
+	marketOptions,
+	onDirectionChange,
+	onMarketChange,
+	mobile = false,
+}: Props) {
 	const { _ } = useLingui();
 	const directionLabels: Record<PositionDirectionFilter, string> = {
 		all: _(directionMessage),
@@ -27,23 +36,31 @@ export function PositionFilterToolbar({ direction, market, marketOptions, onDire
 	const directionLabel = directionLabels[direction];
 
 	return (
-		<div className="flex h-full shrink-0 items-stretch border-l border-stroke-weak pl-1">
+		<div
+			className={cn(
+				"flex shrink-0 items-stretch",
+				mobile ? "h-8 min-w-0 flex-1" : "h-full border-l border-stroke-weak pl-1",
+			)}
+		>
 			<Dropdown
-				className="flex h-full items-center"
+				className={cn("flex items-center", mobile ? "h-8" : "h-full")}
 				triggerVariant="minimal"
 				size="xxs"
 				trigger={directionLabel}
 				triggerAriaLabel={_(msg`Filter positions by direction`)}
-				triggerClassName="h-full min-h-0 rounded-xs px-2 py-0 text-fg-muted hover:bg-fill-hover"
+				triggerClassName={cn(
+					"min-h-0 rounded-xs px-2 py-0 text-fg-muted hover:bg-fill-hover",
+					mobile ? "h-8 text-xs" : "h-full",
+				)}
 				popupClassName="min-w-32"
-				align="end"
+				align={mobile ? "start" : "end"}
 				items={[
 					{ label: _(allMessage), active: direction === "all", onSelect: () => onDirectionChange("all") },
 					{ label: _(longMessage), active: direction === "long", onSelect: () => onDirectionChange("long") },
 					{ label: _(shortMessage), active: direction === "short", onSelect: () => onDirectionChange("short") },
 				]}
 			/>
-			<PositionMarketFilterControl value={market} options={marketOptions} onChange={onMarketChange} />
+			<PositionMarketFilterControl value={market} options={marketOptions} onChange={onMarketChange} mobile={mobile} />
 		</div>
 	);
 }

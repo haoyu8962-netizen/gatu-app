@@ -1,7 +1,7 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowsClockwiseIcon, CrosshairIcon, PencilIcon, PlusIcon, XIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { ArrowsClockwiseIcon, CaretDownIcon, CaretUpIcon, PencilIcon, PlusIcon, XIcon } from "@phosphor-icons/react";
+import { useId, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
@@ -29,6 +29,8 @@ interface Props {
 	tpSlInfo: TpSlOrderInfo | undefined;
 	isRowClosing: boolean;
 	closeErrorMessage: string | null;
+	expanded?: boolean;
+	onExpandedChange?: (expanded: boolean) => void;
 	onClose: (data: ClosePositionData) => void;
 	onReverse: (data: ClosePositionData) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
@@ -44,6 +46,8 @@ export function MobilePositionCard({
 	tpSlInfo,
 	isRowClosing,
 	closeErrorMessage,
+	expanded,
+	onExpandedChange,
 	onClose,
 	onReverse,
 	onLimitClose,
@@ -52,12 +56,16 @@ export function MobilePositionCard({
 	onSelectMarket,
 }: Props) {
 	const [confirming, setConfirming] = useState<"close" | "reverse" | null>(null);
+	const [internalExpanded, setInternalExpanded] = useState(true);
+	const detailsId = useId();
+	const isExpanded = expanded ?? internalExpanded;
 
 	const size = toBig(p.szi)?.toNumber() ?? Number.NaN;
 	const isLong = size > 0;
 	const absSize = Math.abs(size);
 	const market = markets.getMarket(p.coin);
 	const displayName = market?.pairName ?? p.coin;
+	const sizeSymbol = market?.shortName ?? p.coin.split(":").pop() ?? p.coin;
 	const assetId = market?.assetId;
 	const szDecimals = market?.szDecimals ?? 4;
 	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
@@ -145,6 +153,13 @@ export function MobilePositionCard({
 		});
 	}
 
+	function handleToggleDetails() {
+		const nextExpanded = !isExpanded;
+		if (!nextExpanded) setConfirming(null);
+		if (onExpandedChange) onExpandedChange(nextExpanded);
+		else setInternalExpanded(nextExpanded);
+	}
+
 	const marginMetric = (
 		<MetricCell
 			label={
@@ -159,8 +174,9 @@ export function MobilePositionCard({
 
 	return (
 		<div className="rounded-xs border border-stroke-weak bg-surface overflow-hidden">
-			<div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-stroke-weak">
-				<div className="flex min-w-0 flex-1 items-center gap-2">
+			<div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.05fr)_2rem] items-stretch">
+				<div className="min-w-0 px-2.5 py-1.5">
+					<div className="text-3xs uppercase text-fg-muted">{t`Market`}</div>
 					<AssetBadge
 						coin={p.coin}
 						side={isLong ? "buy" : "sell"}
@@ -170,142 +186,155 @@ export function MobilePositionCard({
 								? t`Switch to ${displayName} market, long position`
 								: t`Switch to ${displayName} market, short position`
 						}
-						className="min-w-0 overflow-hidden"
-						nameClassName="min-w-0 truncate text-sm"
+						className="min-w-0 max-w-full overflow-hidden"
+						nameClassName="min-w-0 truncate text-xs"
 					/>
-					<span className={cn("shrink-0 text-2xs font-medium uppercase", isLong ? "text-success" : "text-error")}>
-						{isLong ? t`Long` : t`Short`}
-					</span>
+					<div className="mt-0.5 flex min-w-0 items-center gap-1 pl-1">
+						<span className="shrink-0 text-3xs font-medium text-fg-muted">{p.leverage.value}x</span>
+						{p.dex ? (
+							<span className="shrink-0 rounded-xs bg-brand/10 px-1 py-0.5 text-3xs font-medium text-brand">
+								{p.dex}
+							</span>
+						) : null}
+					</div>
 				</div>
-				<div className={cn("shrink-0 text-right text-xs tabular-nums font-medium", pnlClass)}>
-					{formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })}
-					<span className="text-2xs ml-1 font-normal text-fg-muted">{formatPercent(p.returnOnEquity, 1)}</span>
+				<div className="min-w-0 px-2 py-1.5">
+					<div className="text-3xs uppercase text-fg-muted">{t`Size`}</div>
+					<div
+						className={cn("truncate text-xs font-medium tabular-nums", isLong ? "text-success" : "text-error")}
+						title={formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol })}
+					>
+						{formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol })}
+					</div>
 				</div>
+				<div className="min-w-0 px-2 py-1.5 text-right">
+					<div className="text-3xs uppercase text-fg-muted">{t`PNL`} (ROE)</div>
+					<div className={cn("truncate text-xs font-medium tabular-nums", pnlClass)}>
+						{formatUSD(unrealizedPnl, { compact: false, signDisplay: "exceptZero" })}
+					</div>
+					<div className={cn("truncate text-3xs tabular-nums", pnlClass)}>{formatPercent(p.returnOnEquity, 1)}</div>
+				</div>
+				<button
+					type="button"
+					aria-label={isExpanded ? t`Collapse market details` : t`Expand market details`}
+					aria-expanded={isExpanded}
+					aria-controls={detailsId}
+					onClick={handleToggleDetails}
+					className="inline-flex min-h-12 items-center justify-center border-l border-stroke-weak text-fg-muted transition-colors hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus"
+				>
+					{isExpanded ? <CaretUpIcon className="size-3.5" /> : <CaretDownIcon className="size-3.5" />}
+				</button>
 			</div>
 
-			<div className="grid grid-cols-3 divide-x divide-stroke-weak">
-				<MetricCell
-					label={t`Size`}
-					value={
-						<>
-							<span className="whitespace-nowrap">
-								{formatToken(absSize, { decimals: szDecimals, symbol: p.coin })}
-							</span>
-							<div className="text-2xs text-fg-muted font-normal tabular-nums mt-0.5">
-								{formatUSD(p.positionValue, { compact: true })}
-							</div>
-						</>
-					}
-				/>
-				<MetricCell label={t`Entry`} value={formatPrice(entryPx, { szDecimals })} />
-				<MetricCell label={t`Mark`} value={formatPrice(markPx, { szDecimals })} />
-			</div>
-			<div className="grid grid-cols-3 divide-x divide-stroke-weak border-t border-stroke-weak">
-				{p.leverage.type === "isolated" && typeof assetId === "number" ? (
+			{isExpanded ? (
+				<div id={detailsId} className="border-t border-stroke-weak">
+					<div className="grid grid-cols-3 divide-x divide-stroke-weak">
+						<MetricCell label={t`Position Value`} value={formatUSD(p.positionValue, { compact: false })} />
+						<MetricCell label={t`Entry`} value={formatPrice(entryPx, { szDecimals, style: "decimal" })} />
+						<MetricCell label={t`Mark`} value={formatPrice(markPx, { szDecimals, style: "decimal" })} />
+					</div>
+					<div className="grid grid-cols-3 divide-x divide-stroke-weak border-t border-stroke-weak">
+						{p.leverage.type === "isolated" && typeof assetId === "number" ? (
+							<button
+								type="button"
+								onClick={handleAdjustMargin}
+								aria-label={t`Adjust isolated margin for ${displayName}`}
+								className="min-w-0 cursor-pointer text-left transition-colors hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							>
+								{marginMetric}
+							</button>
+						) : (
+							marginMetric
+						)}
+						<MetricCell
+							label={t`Liq`}
+							value={formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" })}
+							valueClass={liqIsNear ? "text-error" : undefined}
+						/>
+						<MetricCell label={t`Funding`} value={fundingValue} valueClass={fundingClass} />
+					</div>
 					<button
 						type="button"
-						onClick={handleAdjustMargin}
-						aria-label={t`Adjust isolated margin for ${displayName}`}
-						className="min-w-0 cursor-pointer text-left transition-colors hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+						onClick={handleOpenTpSl}
+						disabled={typeof assetId !== "number"}
+						className="flex min-h-10 w-full items-center justify-between gap-3 border-t border-stroke-weak px-2.5 text-left text-xs transition-colors hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
 					>
-						{marginMetric}
+						<span className="text-fg-muted">{t`TP/SL`}</span>
+						<span className="inline-flex min-w-0 items-center gap-1 truncate tabular-nums">
+							{tpSlInfo?.tpPrice ? (
+								<span className="text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
+							) : null}
+							{tpSlInfo?.tpPrice && tpSlInfo?.slPrice ? <span className="text-fg-muted"> / </span> : null}
+							{tpSlInfo?.slPrice ? (
+								<span className="text-error">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
+							) : null}
+							{hasTpSl ? <PencilIcon className="size-3 text-fg-disabled" /> : <PlusIcon className="size-3.5" />}
+						</span>
 					</button>
-				) : (
-					marginMetric
-				)}
-				<MetricCell
-					label={t`Liq`}
-					value={formatLiquidationPrice(p.liquidationPx, szDecimals)}
-					valueClass={liqIsNear ? "text-error" : undefined}
-				/>
-				<MetricCell label={t`Funding`} value={fundingValue} valueClass={fundingClass} />
-			</div>
 
-			<div className="flex gap-1.5 px-2.5 py-1.5 border-t border-stroke-weak">
-				{confirming !== null ? (
-					<>
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="xs"
-							className="flex-1 justify-center"
-							onClick={() => setConfirming(null)}
-						>
-							{t`Cancel`}
-						</Button>
-						<Button
-							variant="outline"
-							intent={confirming === "close" ? "error" : "neutral"}
-							size="xs"
-							className="flex-1 justify-center"
-							onClick={handleConfirm}
-							disabled={!canClose || isRowClosing}
-							iconLeft={isRowClosing ? <Spinner className="size-3" /> : undefined}
-						>
-							{confirming === "close" ? t`Confirm Close` : t`Confirm Reverse`}
-						</Button>
-					</>
-				) : (
-					<>
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="xs"
-							className="flex-1 justify-center touch-target"
-							onClick={handleOpenTpSl}
-							disabled={typeof assetId !== "number"}
-							iconLeft={hasTpSl ? <CrosshairIcon className="size-3.5" /> : <PlusIcon className="size-3.5" />}
-						>
-							{hasTpSl ? (
-								<span className="inline-flex items-center gap-1 tabular-nums truncate">
-									{tpSlInfo?.tpPrice && (
-										<span className="text-success">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
-									)}
-									{tpSlInfo?.tpPrice && tpSlInfo?.slPrice && <span className="text-fg-muted"> / </span>}
-									{tpSlInfo?.slPrice && (
-										<span className="text-error">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
-									)}
-									<PencilIcon className="size-3 text-fg-disabled" />
-								</span>
-							) : (
-								t`TP/SL`
-							)}
-						</Button>
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="xs"
-							className="flex-1 justify-center touch-target"
-							onClick={handleLimitClose}
-							disabled={!canClose || isRowClosing}
-						>
-							{t`Limit`}
-						</Button>
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="xs"
-							className="flex-1 justify-center touch-target"
-							onClick={() => setConfirming("reverse")}
-							disabled={!canClose || isRowClosing}
-							iconLeft={<ArrowsClockwiseIcon className="size-3.5" />}
-						>
-							{t`Reverse`}
-						</Button>
-						<Button
-							variant="outline"
-							intent="error"
-							size="xs"
-							className="flex-1 justify-center touch-target"
-							onClick={() => setConfirming("close")}
-							disabled={!canClose || isRowClosing}
-							iconLeft={<XIcon className="size-3.5" />}
-						>
-							{t`Close`}
-						</Button>
-					</>
-				)}
-			</div>
+					<div className="flex gap-1.5 border-t border-stroke-weak px-2.5 py-1.5">
+						{confirming !== null ? (
+							<>
+								<Button
+									variant="outline"
+									intent="neutral"
+									size="xs"
+									className="flex-1 justify-center"
+									onClick={() => setConfirming(null)}
+								>
+									{t`Cancel`}
+								</Button>
+								<Button
+									variant="outline"
+									intent={confirming === "close" ? "error" : "neutral"}
+									size="xs"
+									className="flex-1 justify-center"
+									onClick={handleConfirm}
+									disabled={!canClose || isRowClosing}
+									iconLeft={isRowClosing ? <Spinner className="size-3" /> : undefined}
+								>
+									{confirming === "close" ? t`Confirm Close` : t`Confirm Reverse`}
+								</Button>
+							</>
+						) : (
+							<>
+								<Button
+									variant="outline"
+									intent="neutral"
+									size="xs"
+									className="flex-1 justify-center touch-target"
+									onClick={handleLimitClose}
+									disabled={!canClose || isRowClosing}
+								>
+									{t`Limit`}
+								</Button>
+								<Button
+									variant="outline"
+									intent="error"
+									size="xs"
+									className="flex-1 justify-center touch-target"
+									onClick={() => setConfirming("close")}
+									disabled={!canClose || isRowClosing}
+									iconLeft={<XIcon className="size-3.5" />}
+								>
+									{t`Close`}
+								</Button>
+								<Button
+									variant="outline"
+									intent="neutral"
+									size="xs"
+									className="flex-1 justify-center touch-target"
+									onClick={() => setConfirming("reverse")}
+									disabled={!canClose || isRowClosing}
+									iconLeft={<ArrowsClockwiseIcon className="size-3.5" />}
+								>
+									{t`Reverse`}
+								</Button>
+							</>
+						)}
+					</div>
+				</div>
+			) : null}
 			{closeErrorMessage && (
 				<div className="px-3 py-1.5 text-xs text-error border-t border-stroke-weak">{closeErrorMessage}</div>
 			)}

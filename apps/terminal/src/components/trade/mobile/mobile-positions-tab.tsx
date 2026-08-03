@@ -1,17 +1,30 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ChartLineIcon, ListChecksIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretUpIcon, ChartLineIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
+import { HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
+import {
+	ALL_POSITION_MARKETS,
+	filterPositions,
+	type PositionDirectionFilter,
+	type PositionMarketFilter,
+	type PositionMarketIdentity,
+} from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import {
+	useMarkets,
+	useMarketsInfo,
+	useSelectedMarketInfo,
+	useSubscription,
+	useUserPositions,
+} from "@/lib/hyperliquid";
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
@@ -23,8 +36,10 @@ import type {
 	LimitClosePositionData,
 	TpSlPositionRef,
 } from "../positions/position-dialog-types";
+import { PositionFilterToolbar } from "../positions/position-filter-toolbar";
 import { PositionIsolatedMarginModal } from "../positions/position-isolated-margin-modal";
 import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
+import type { PositionMarketOption } from "../positions/position-market-filter";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -36,8 +51,15 @@ interface Props {
 	scrollMode?: MobileDataScrollMode;
 }
 
+interface PositionFiltersState {
+	ownerKey: string | null;
+	direction: PositionDirectionFilter;
+	market: PositionMarketFilter;
+}
+
 export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const { address, isConnected } = useWalletSession();
+	const ownerKey = address?.toLowerCase() ?? null;
 	const slippageBps = useMarketOrderSlippageBps();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -57,11 +79,18 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		useState<IsolatedMarginPositionRef | null>(null);
 	const [closingAssetIds, setClosingAssetIds] = useState<Set<number>>(() => new Set());
 	const [closeErrors, setCloseErrors] = useState<Map<number, string>>(() => new Map());
+	const [expandedPositionKeys, setExpandedPositionKeys] = useState<Set<string>>(() => new Set());
+	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
+		ownerKey,
+		direction: "all",
+		market: ALL_POSITION_MARKETS,
+	});
 
 	const { submitOrder, reset: resetCloseError } = useTrackedOrder();
 	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
 	const markets = useMarkets();
 	const { getMarketInfo } = useMarketsInfo();
+	const { data: selectedMarket } = useSelectedMarketInfo();
 
 	const { data: openOrdersEvent } = useSubscription(
 		"openOrders",
@@ -72,6 +101,71 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 	const isPageScroll = scrollMode === "page";
+	const positionDirectionFilter = positionFilters.ownerKey === ownerKey ? positionFilters.direction : "all";
+	const positionMarketFilter = positionFilters.ownerKey === ownerKey ? positionFilters.market : ALL_POSITION_MARKETS;
+	const currentPositionMarket: PositionMarketIdentity | null = selectedMarket
+		? {
+				coin: selectedMarket.name,
+				dex: selectedMarket.kind === "builderPerp" ? selectedMarket.dex : "",
+			}
+		: null;
+	const positionMarketOptions: PositionMarketOption[] = positions.map((position) => {
+		const market = markets.getMarket(position.coin);
+		const baseLabel = market?.shortName ?? position.coin;
+		return {
+			coin: position.coin,
+			dex: position.dex,
+			label: position.dex ? `${baseLabel} (${position.dex})` : baseLabel,
+		};
+	});
+	const filteredPositions = filterPositions(
+		positions,
+		positionDirectionFilter,
+		positionMarketFilter,
+		currentPositionMarket,
+	);
+	const filteredPositionKeys = filteredPositions.map(
+		(position) => `${ownerKey ?? "disconnected"}:${position.dex}:${position.coin}`,
+	);
+	const allFilteredExpanded =
+		filteredPositionKeys.length > 0 && filteredPositionKeys.every((key) => expandedPositionKeys.has(key));
+
+	function handlePositionDirectionChange(direction: PositionDirectionFilter) {
+		setPositionFilters((current) => ({
+			ownerKey,
+			direction,
+			market: current.ownerKey === ownerKey ? current.market : ALL_POSITION_MARKETS,
+		}));
+	}
+
+	function handlePositionMarketChange(market: PositionMarketFilter) {
+		setPositionFilters((current) => ({
+			ownerKey,
+			direction: current.ownerKey === ownerKey ? current.direction : "all",
+			market,
+		}));
+	}
+
+	function handlePositionExpandedChange(key: string, expanded: boolean) {
+		setExpandedPositionKeys((current) => {
+			if (current.has(key) === expanded) return current;
+			const next = new Set(current);
+			if (expanded) next.add(key);
+			else next.delete(key);
+			return next;
+		});
+	}
+
+	function handleToggleAllDetails() {
+		setExpandedPositionKeys((current) => {
+			const next = new Set(current);
+			for (const key of filteredPositionKeys) {
+				if (allFilteredExpanded) next.delete(key);
+				else next.add(key);
+			}
+			return next;
+		});
+	}
 
 	async function submitCloseOrReverse(intent: CloseIntent, data: ClosePositionData) {
 		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe, marginMode } = data;
@@ -156,8 +250,6 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		setIsolatedMarginModalOpen(true);
 	}
 
-	const headerCount = isConnected ? positions.length : FALLBACK_VALUE_PLACEHOLDER;
-
 	if (!isConnected) {
 		return (
 			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
@@ -197,25 +289,54 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	return (
 		<Skeleton name="positions-tab" loading={positionsLoading}>
 			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col")}>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-fg-muted">
-					<ListChecksIcon className="size-3" />
-					{t`Active Positions`}
-					<span className="font-semibold text-success ml-auto tabular-nums">{headerCount}</span>
+				<div className="flex h-9 shrink-0 items-center border-y border-stroke-weak px-1">
+					<PositionFilterToolbar
+						direction={positionDirectionFilter}
+						market={positionMarketFilter}
+						marketOptions={positionMarketOptions}
+						onDirectionChange={handlePositionDirectionChange}
+						onMarketChange={handlePositionMarketChange}
+						mobile
+					/>
+					<Button
+						type="button"
+						variant="ghost"
+						intent="neutral"
+						size="xxs"
+						aria-label={allFilteredExpanded ? t`Collapse market details` : t`Expand market details`}
+						title={allFilteredExpanded ? t`Collapse market details` : t`Expand market details`}
+						onClick={handleToggleAllDetails}
+						disabled={filteredPositionKeys.length === 0}
+						className="h-8 shrink-0 gap-1 rounded-xs px-2 font-normal text-fg-muted hover:text-fg"
+						iconLeft={allFilteredExpanded ? <CaretUpIcon className="size-3" /> : <CaretDownIcon className="size-3" />}
+					>
+						<span className="hidden min-[360px]:inline">
+							{allFilteredExpanded ? t`Collapse market details` : t`Expand market details`}
+						</span>
+					</Button>
 				</div>
-				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
-					{positions.map((p) => {
+				<div className={cn("space-y-1.5 px-3 py-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
+					{filteredPositions.length === 0 ? (
+						<div className="flex min-h-28 items-center justify-center px-4 text-center text-xs text-fg-muted">
+							{t`No positions match the selected filters.`}
+						</div>
+					) : null}
+					{filteredPositions.map((p) => {
 						const assetId = markets.getAssetId(p.coin);
 						const isRowClosing = typeof assetId === "number" && closingAssetIds.has(assetId);
 						const closeErrorMessage = typeof assetId === "number" ? (closeErrors.get(assetId) ?? null) : null;
+						const positionKey = `${ownerKey ?? "disconnected"}:${p.dex}:${p.coin}`;
 						return (
 							<MobilePositionCard
-								key={`${p.coin}-${p.entryPx}-${p.szi}`}
+								key={positionKey}
 								position={p}
 								markets={markets}
 								markPx={getMarketInfo(p.coin)?.markPx}
 								tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
 								isRowClosing={isRowClosing}
 								closeErrorMessage={closeErrorMessage}
+								expanded={expandedPositionKeys.has(positionKey)}
+								onExpandedChange={(expanded) => handlePositionExpandedChange(positionKey, expanded)}
 								onClose={handleClosePosition}
 								onReverse={handleReverse}
 								onLimitClose={handleOpenLimitCloseModal}
