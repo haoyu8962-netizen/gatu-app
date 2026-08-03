@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { PERSIST_TRADING_CONNECTION_STORAGE_KEY } from "@gatu/hl-react/signing/agent-storage";
 import { deriveAgentRequirements } from "@gatu/hl-react/signing/use-agent-status";
 import { useTradingAuthorization } from "@gatu/hl-react/signing/use-trading-authorization";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -86,6 +87,7 @@ describe("trading authorization contracts", () => {
 		testState.registerAgent.mockReset();
 		testState.registerAgent.mockResolvedValue(AGENT);
 		testState.refetch.mockReset();
+		localStorage.removeItem(PERSIST_TRADING_CONNECTION_STORAGE_KEY);
 	});
 
 	afterEach(() => {
@@ -142,7 +144,7 @@ describe("trading authorization contracts", () => {
 		});
 
 		expect(testState.approveBuilderFee).toHaveBeenCalledOnce();
-		expect(testState.registerAgent).toHaveBeenCalledOnce();
+		expect(testState.registerAgent).toHaveBeenCalledExactlyOnceWith({ persistConnection: false });
 		expect(testState.registerAgent.mock.invocationCallOrder[0]).toBeLessThan(
 			testState.approveBuilderFee.mock.invocationCallOrder[0] ?? 0,
 		);
@@ -153,6 +155,7 @@ describe("trading authorization contracts", () => {
 	});
 
 	it("skips builder approval when only Agent registration is required", async () => {
+		localStorage.setItem(PERSIST_TRADING_CONNECTION_STORAGE_KEY, "true");
 		testState.refetch
 			.mockResolvedValueOnce(requirements(false, true))
 			.mockResolvedValueOnce(requirements(false, false))
@@ -164,7 +167,7 @@ describe("trading authorization contracts", () => {
 		});
 
 		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
-		expect(testState.registerAgent).toHaveBeenCalledOnce();
+		expect(testState.registerAgent).toHaveBeenCalledExactlyOnceWith({ persistConnection: true });
 	});
 
 	it("fails closed when the final server state is not fully authorized", async () => {

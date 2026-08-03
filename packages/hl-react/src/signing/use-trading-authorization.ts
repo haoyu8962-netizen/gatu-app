@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import type { Address } from "viem";
 import { zeroAddress } from "viem";
+import { readPersistTradingConnection } from "./agent-storage";
 import type { RegistrationStatus } from "./types";
 import { useAgentRegistration } from "./use-agent-registration";
 import { useAgentStatus } from "./use-agent-status";
@@ -25,7 +26,9 @@ export function useTradingAuthorization(): UseTradingAuthorizationResult {
 			let requirements = await agentStatus.refetch();
 
 			if (requirements.needsAgent) {
-				registeredAddress = await agentRegistration.register();
+				registeredAddress = await agentRegistration.register({
+					persistConnection: readPersistTradingConnection(),
+				});
 				newlyVerifiedAgentAddress = registeredAddress;
 				requirements = await agentStatus.refetch(newlyVerifiedAgentAddress);
 			}
