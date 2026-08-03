@@ -31,6 +31,8 @@
 		"./signing/mobile-agent": "./src/signing/mobile-agent.ts",
 		"./signing/use-agent-registration": "./src/signing/use-agent-registration.ts",
 		"./signing/use-agent-status": "./src/signing/use-agent-status.ts",
+		"./signing/use-legal-status": "./src/signing/use-legal-status.ts",
+		"./signing/use-terms-acceptance": "./src/signing/use-terms-acceptance.ts",
 		"./internal/websocket/*": "./src/internal/websocket/*.ts",
 		"./internal/exchange/*": "./src/internal/exchange/*.ts",
 		"./internal/circular-buffer/ring-buffer": "./src/internal/circular-buffer/ring-buffer.ts",

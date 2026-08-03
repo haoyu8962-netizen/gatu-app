@@ -63,6 +63,13 @@ export {
 	registerHealthReport,
 } from "./internal/websocket/health";
 export { getReconnectDelayMs, WS_RELIABILITY_LIMITS } from "./internal/websocket/reliability";
+export {
+	type AcceptTermsRequest,
+	acceptHyperliquidTerms,
+	type LegalRestriction,
+	type LegalStatus,
+	parseLegalStatus,
+} from "./legal";
 export type {
 	BuilderPerpMarket,
 	MarketKind,
@@ -176,6 +183,8 @@ export {
 	useAgentStatus,
 } from "./signing/use-agent-status";
 export { type UseAgentWalletResult, useAgentWallet } from "./signing/use-agent-wallet";
+export { useLegalStatus } from "./signing/use-legal-status";
+export { useTermsAcceptance } from "./signing/use-terms-acceptance";
 export type {
 	HyperliquidConfig,
 	HyperliquidQueryError,
