@@ -375,13 +375,18 @@ Solution: Two-wallet pattern
 
 ### Agent Key Storage Security
 
-Agent private keys are stored in browser localStorage. This is acceptable because:
+Agent private keys are stored in browser storage. `Stay Connected` is off by
+default: unchecked uses `sessionStorage`, while checked uses `localStorage`.
+Both scopes use the same environment-and-owner key and validated record shape.
+
+This storage is acceptable within the product's Agent-wallet threat model because:
 
 | Concern | Mitigation |
 |---------|------------|
 | **Limited permissions** | Agent keys can only execute trades - they cannot withdraw funds or transfer assets |
 | **User-revocable** | Users can revoke agent approval anytime from their master wallet |
-| **Session-scoped risk** | Compromise only affects trading, not custody of funds |
+| **Session-scoped default** | The default key disappears with the browser tab/session |
+| **Persistent opt-in** | Cross-restart storage requires an explicit `Stay Connected` choice |
 | **Standard pattern** | This is the recommended Hyperliquid pattern for web applications |
 
 The master wallet (hardware wallet / MetaMask) never has its keys stored - it only signs the initial agent approval and admin operations like withdrawals.
@@ -389,8 +394,8 @@ The master wallet (hardware wallet / MetaMask) never has its keys stored - it on
 ### Current Implementation
 
 ```typescript
-// useAgentRegistration.ts - Generates and stores agent wallet
-const register = async () => {
+// useAgentRegistration.ts - Generates, stores, and verifies an Agent wallet
+const register = async (options: { persistConnection: boolean }) => {
   // 1. Generate new agent keypair
   const privateKey = generatePrivateKey();
   const account = privateKeyToAccount(privateKey);
@@ -401,16 +406,34 @@ const register = async () => {
     agentName,
   });
 
-  // 3. Store agent in localStorage (safe - agent has limited permissions)
-  setAgent(env, address, privateKey, account.address);
+  // 3. Store in the selected scope, then verify storage and server approval
+  const storageScope = options.persistConnection ? "local" : "session";
+  await persistAgentForRegistration(
+    epoch,
+    privateKey,
+    account.address,
+    { source: "local-registration" },
+    { scope: storageScope },
+  );
+  await refetchAgent(account.address);
+  await verifyStoredAgent(account.address);
 };
 
-// useSignedExchange.ts - Creates ExchangeClient with agent
-const exchange = useMemo(() => {
-  if (!signer) return null;
-  return createExchangeClient(signer); // Agent signs all L1 actions
-}, [signer]);
+// useHyperliquidClients.ts - Agent signs L1 actions only after verification
+const trading = hasUserSession && signer && agentReady
+  ? getTradingClient(signer, isTestnet)
+  : null;
 ```
+
+Agent registration does not approve a builder fee. The terminal requests
+`approveBuilderFee` separately when the first trading action needs the
+configured builder code. The complete first-time ordering and fail-closed
+requirements are documented in `docs/trading-onboarding.md`.
+
+The low-level registration hook retains a persistent default for compatibility
+with older callers. Product entry points must pass the user's stored
+`Stay Connected` preference explicitly; omitting it is not an acceptable UI
+default.
 
 ---
 

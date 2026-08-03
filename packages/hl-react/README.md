@@ -144,11 +144,23 @@ withdraw3
 
 | Hook | Role |
 |---|---|
-| `useAgentStatus` | Does the user need a builder-fee approval? An agent approval? What agent is registered? |
-| `useAgentRegistration` | Multi-step mutation: approve builder fee → generate + persist a new agent key → `approveAgent` on Hyperliquid. States: `idle → approving_fee → approving_agent → verifying → idle/error`. |
+| `useAgentStatus` | Independently reports Agent approval, builder-fee approval, and the registered Agent address. |
+| `useAgentRegistration` | Generates an Agent key, requests `approveAgent`, persists it in the requested storage scope, and verifies the freshly approved address. States: `idle -> approving_agent -> verifying -> idle/error`. It does not approve the builder fee. |
 | `useAgentWallet` | Returns `{ data, signer, address, isReady }` — the cached `PrivateKeyAccount` used for trading signatures. |
+| `useBuilderFeeApproval` | Requests and verifies `approveBuilderFee` independently from Agent registration. |
+| `useTradingAuthorization` | Composes Agent registration and builder-fee approval for an action that requires both. |
+| `useLegalStatus` / `useTermsAcceptance` | Reads `legalCheck` and signs/submits `acceptTerms2` with the matching owner wallet. |
 
-Agent keys persist to `localStorage` under `hyperliquid_agent_{env}_{userAddress}` with Zod validation. `StorageEvent` listeners keep tabs in sync.
+Agent keys use `hyperliquid_agent_{env}_{userAddress}` with Zod validation.
+Session-only records live in `sessionStorage`; persistent records live in
+`localStorage`. `hyperliquid.persist_trading_connection` selects the scope and
+defaults to `false`. A session record takes precedence over a persistent record
+for the same owner and environment. `StorageEvent` listeners synchronize
+persistent records across tabs; session records intentionally remain tab-local.
+
+See `docs/trading-onboarding.md` for the required first-time flow and the
+separation between legal acceptance, Agent setup, funding classification,
+deposit guidance, and builder-fee approval.
 
 ### `useClients`, `useTransport`, `useTradingGuard`, `useApiStatus`
 

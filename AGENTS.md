@@ -15,6 +15,15 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - For Privy email sessions, activate only the exact embedded wallet belonging to that user. Never fall back to the first connected or first embedded wallet when the expected address is unavailable.
 - Hyperliquid Agent/API Wallet keys may be stored locally, but Agent approval must always be signed by the matching master wallet. Missing local Agent state may trigger re-registration; it must never trigger a different browser wallet.
 
+## First-use trading onboarding contract
+
+- Preserve this order: connect owner wallet, verify/accept legal terms, approve and verify the Agent/API wallet, classify complete account funding snapshots, then open deposit only for a definitively empty account.
+- Legal status, Agent approval, local Agent key, builder-fee approval, and funding state are separate gates. Errors or missing snapshots must fail closed and must not be treated as acceptance, approval, or an empty account.
+- Agent registration must not approve the builder fee. Builder-fee approval belongs to the first trading action that requires the configured builder code.
+- `Stay Connected` is off by default. Off stores the generated Agent in `sessionStorage`; on stores it in `localStorage`. Every Agent-registration entry point must honor the same `hyperliquid.persist_trading_connection` preference.
+- Mobile wallet approval timeouts pause while the page is hidden. A late approval may be committed only after revalidating the owner, registration epoch, stored key, and server-approved Agent address.
+- Keep `docs/trading-onboarding.md` synchronized with changes to this flow.
+
 ## Trading terminal visual contract
 
 - The dark terminal and chart canvas use `#0F1A1F` (`rgb(15, 26, 31)`) as the main background.

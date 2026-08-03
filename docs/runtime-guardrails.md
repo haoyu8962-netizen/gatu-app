@@ -16,8 +16,11 @@ There are three separate states:
 | State | Meaning | Source |
 |---|---|---|
 | Wallet connection | A Privy/wagmi wallet session is connected | Privy + wagmi |
+| Legal access | Hyperliquid terms are accepted and the owner may perform actions | Hyperliquid `legalCheck` / `acceptTerms2` |
 | Hyperliquid agent approval | Hyperliquid has approved an agent address for the owner | Hyperliquid `approveAgent` / `extraAgents` |
-| Local agent key | Browser-local private key used for trading signatures | `localStorage` key `hyperliquid_agent_{env}_{owner}` |
+| Local agent key | Browser-local private key used for trading signatures | `sessionStorage` or `localStorage` key `hyperliquid_agent_{env}_{owner}` |
+| Builder-fee approval | Owner has approved the configured builder fee | Hyperliquid builder-fee status / `approveBuilderFee` |
+| Funding classification | Complete perp and spot snapshots establish funded or empty | all-DEX clearinghouse state + spot state |
 
 Do not collapse these states into one boolean.
 
@@ -25,6 +28,17 @@ Do not collapse these states into one boolean.
 
 - Connecting a wallet must not imply a fresh agent approval if a valid local
   approved agent already exists for the same owner.
+- Legal checks fail closed. A failed or unknown status must not expose Agent
+  setup or ordinary global dialogs.
+- Preserve the onboarding order documented in `docs/trading-onboarding.md`.
+- Agent registration and builder-fee approval are separate. First-time setup
+  approves only the Agent; builder-fee approval is deferred until an action
+  requires it.
+- `Stay Connected` is off by default. Session-only Agent records use
+  `sessionStorage`; persistent Agent records use `localStorage`. Both paths are
+  keyed by environment and exact owner identity.
+- Do not classify an account as empty until both complete all-DEX perpetual
+  and spot snapshots have loaded successfully.
 - Normal wallet disconnect must clear only the active agent-only owner
   (`hyperliquid_active_agent_owner`). It must not delete
   `hyperliquid_agent_{env}_{owner}`.
@@ -36,21 +50,36 @@ Do not collapse these states into one boolean.
   trading client backed by the local agent.
 - User-signed actions (`approveAgent`, `withdraw3`, `usdSend`, `spotSend`,
   `usdClassTransfer`, etc.) must use the connected owner wallet.
+- Mobile wallet approval timeouts pause while the document is hidden. Late
+  approvals must revalidate the owner and registration epoch before storage.
 
 ### Important Files
 
 - `packages/hl-react/src/signing/agent-storage.ts`
+- `packages/hl-react/src/signing/agent-registration-session.ts`
+- `packages/hl-react/src/legal.ts`
+- `packages/hl-react/src/signing/use-agent-registration.ts`
+- `packages/hl-react/src/signing/use-builder-fee-approval.ts`
+- `packages/hl-react/src/signing/use-trading-authorization.ts`
 - `packages/hl-react/src/signing/agent-session.ts`
 - `packages/hl-react/src/signing/use-agent-wallet.ts`
 - `packages/hl-react/src/hooks/useClients.ts`
 - `packages/hl-react/src/registries/exchange.ts`
+- `apps/terminal/src/domain/trade/onboarding.ts`
+- `apps/terminal/src/components/trade/components/trading-onboarding-gate.tsx`
 - `apps/terminal/src/hooks/wallet/use-wallet-session.ts`
+- `docs/trading-onboarding.md`
 
 ### Regression Coverage
 
 - `apps/terminal/src/lib/tests/wallet-session.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-agent-lifecycle.test.ts`
 - `apps/terminal/src/lib/tests/l1-agent-signing.test.ts`
+- `apps/terminal/src/lib/tests/legal-gate.test.ts`
+- `apps/terminal/src/lib/tests/trading-onboarding-domain.test.ts`
+- `apps/terminal/src/lib/tests/trading-onboarding-gate.test.tsx`
+- `apps/terminal/src/lib/tests/trading-authorization.test.tsx`
+- `apps/terminal/src/lib/tests/agent-storage-scope.test.ts`
 
 ## 2. Funding Paths
 
