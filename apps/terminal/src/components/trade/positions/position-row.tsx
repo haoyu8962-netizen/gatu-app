@@ -19,6 +19,7 @@ import { isPositive, toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
+import { AssetBadge } from "../components/asset-badge";
 import { PositionActionsDropdown } from "./position-actions-dropdown";
 import type {
 	ClosePositionData,
@@ -26,11 +27,7 @@ import type {
 	LimitClosePositionData,
 	TpSlPositionRef,
 } from "./position-dialog-types";
-import {
-	positionLongMarketCellStyle,
-	positionShortMarketCellStyle,
-	positionTableCellClass,
-} from "./position-table-styles";
+import { positionTableCellClass } from "./position-table-styles";
 import { positionsPanelRowHoverClass, positionsPanelRowStripeClass } from "./positions-panel-table-styles";
 
 interface Props {
@@ -71,7 +68,6 @@ export function PositionRow({
 	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
 	const displayName = market?.pairName ?? p.coin;
 	const sizeSymbol = market?.shortName ?? p.coin.split(":").pop() ?? p.coin;
-	const marketLabel = market?.shortName ?? sizeSymbol;
 	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
 	const quoteSymbol =
 		market?.kind === "builderPerp" ? (market.quoteToken?.displayName ?? DEFAULT_QUOTE_TOKEN) : DEFAULT_QUOTE_TOKEN;
@@ -93,7 +89,6 @@ export function PositionRow({
 	const fundingClass = getValueColorClass(cumFunding ? -cumFunding : null);
 	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
 	const sideClass = isLong ? "text-success" : "text-error";
-	const marketCellStyle = isLong ? positionLongMarketCellStyle : positionShortMarketCellStyle;
 	const sizeDisplay = formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol });
 	const positionValueDisplay = formatQuoteAmount(p.positionValue, quoteSymbol, { decimals: 2, compact: false });
 	const entryPriceDisplay = formatPrice(p.entryPx, { szDecimals, style: "decimal" });
@@ -227,25 +222,20 @@ export function PositionRow({
 
 	return (
 		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
-			<TableCell size="dense" className={cn(positionTableCellClass, "pl-3 text-fg")} style={marketCellStyle}>
+			<TableCell size="dense" className={cn(positionTableCellClass, "pl-3 text-fg")}>
 				<div className="flex items-center gap-1 whitespace-nowrap">
-					<button
-						type="button"
+					<AssetBadge
+						coin={p.coin}
+						side={isLong ? "buy" : "sell"}
+						fit
 						onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
 						aria-label={
 							isLong
 								? t`Switch to ${displayName} market, long position`
 								: t`Switch to ${displayName} market, short position`
 						}
-						title={displayName}
-						className={cn(
-							"rounded-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stroke-focus",
-							sideClass,
-						)}
-					>
-						{marketLabel}
-					</button>
-					<span className={cn("shrink-0 text-2xs font-medium", sideClass)}>{p.leverage.value}x</span>
+					/>
+					<span className="shrink-0 text-2xs font-medium text-fg-muted">{p.leverage.value}x</span>
 					{p.dex ? (
 						<span className="shrink-0 rounded-xs bg-brand/10 px-1 py-0.5 text-3xs font-medium text-brand">{p.dex}</span>
 					) : null}

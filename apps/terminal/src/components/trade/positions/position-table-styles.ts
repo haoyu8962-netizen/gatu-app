@@ -1,5 +1,3 @@
-import type { CSSProperties } from "react";
-
 // Preserve the dense desktop canvas while allowing nowrap content to widen individual columns.
 export const POSITION_TABLE_MIN_WIDTH = 1096;
 
@@ -15,13 +13,3 @@ export const positionTableCellClass =
 
 export const positionTableInlineActionClass =
 	"h-6 min-h-0 rounded-xs px-0.5 py-0 text-2xs font-medium hover:bg-transparent";
-
-export const positionLongMarketCellStyle = {
-	backgroundImage:
-		"linear-gradient(90deg, var(--orderbook-depth-bid) 0 4px, oklch(from var(--orderbook-depth-bid) l c h / 0.14) 4px, transparent 100%)",
-} satisfies CSSProperties;
-
-export const positionShortMarketCellStyle = {
-	backgroundImage:
-		"linear-gradient(90deg, var(--orderbook-depth-ask) 0 4px, oklch(from var(--orderbook-depth-ask) l c h / 0.14) 4px, transparent 100%)",
-} satisfies CSSProperties;

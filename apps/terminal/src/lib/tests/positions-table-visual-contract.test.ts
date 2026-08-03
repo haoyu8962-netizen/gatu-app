@@ -4,8 +4,6 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
 	POSITION_TABLE_MIN_WIDTH,
-	positionLongMarketCellStyle,
-	positionShortMarketCellStyle,
 	positionTableBodyClass,
 	positionTableCellClass,
 	positionTableHeadClass,
@@ -46,24 +44,21 @@ describe("positions table visual contract", () => {
 	it("keeps minimum column geometry while allowing content to expand the table", () => {
 		expect(POSITION_TABLE_MIN_WIDTH).toBe(1096);
 		expect(POSITION_ROW_SOURCE).not.toContain("truncate");
-		expect(POSITION_ROW_SOURCE).not.toContain("<AssetBadge");
+		expect(POSITION_ROW_SOURCE).toContain("<AssetBadge");
+		expect(POSITION_ROW_SOURCE).toContain('side={isLong ? "buy" : "sell"}');
+		expect(POSITION_ROW_SOURCE).toContain("{p.leverage.value}x");
+		expect(POSITION_ROW_SOURCE).toContain("{p.dex}");
 	});
 
-	it("uses native horizontal overflow without a persistent scrollbar and shows the position-side marker", () => {
+	it("uses native horizontal overflow without a persistent scrollbar", () => {
 		expect(POSITIONS_TAB_SOURCE).toContain("[&_[data-slot=scroll-area-scrollbar]]:hidden");
 		expect(POSITIONS_TAB_SOURCE).toContain("[&_[data-slot=scroll-area-viewport]]:overscroll-x-none");
 		expect(POSITIONS_TAB_SOURCE).not.toContain('<ScrollBar orientation="horizontal"');
-		expect(positionLongMarketCellStyle.backgroundImage).toContain("--orderbook-depth-bid");
-		expect(positionShortMarketCellStyle.backgroundImage).toContain("--orderbook-depth-ask");
-		expect(positionLongMarketCellStyle.backgroundImage).toContain("0 4px");
-		expect(positionShortMarketCellStyle.backgroundImage).toContain("0 4px");
 	});
 
 	it("keeps position identity and financial values visible without compact-number loss", () => {
 		expect(POSITIONS_TAB_SOURCE).toContain("Position Value");
 		expect(POSITIONS_TAB_SOURCE).toContain('context: "Cumulative position funding"');
-		expect(POSITION_ROW_SOURCE).toContain("{p.leverage.value}x");
-		expect(POSITION_ROW_SOURCE).toContain("{p.dex}");
 		expect(POSITION_ROW_SOURCE).toContain("formatQuoteAmount(p.positionValue, quoteSymbol");
 		expect(POSITION_ROW_SOURCE).toContain('style: "decimal"');
 		expect(POSITION_ROW_SOURCE).toContain('currencyDisplay: "narrowSymbol"');
