@@ -28,12 +28,14 @@ interface OrderEntryData extends OrderEntryDerived {
 	resetPendingLeverage: () => void;
 	marginMode: "cross" | "isolated";
 	hasPosition: boolean;
+	positionStateReady: boolean;
 	switchMarginMode: (mode: "cross" | "isolated") => Promise<void>;
 	applyMarginAndLeverage: (mode: "cross" | "isolated", leverageValue: number) => Promise<void>;
 	isSwitchingMode: boolean;
 	switchModeError: Error | null;
 	isOnlyIsolated: boolean;
 	allowsCrossMargin: boolean;
+	allowsIsolatedMarginRemoval: boolean;
 	maxTradeSzs: [number, number] | null;
 }
 
@@ -66,12 +68,14 @@ export function useOrderEntryData({
 		availableToTrade,
 		marginMode,
 		hasPosition,
+		positionStateReady,
 		switchMarginMode,
 		applyMarginAndLeverage,
 		isSwitchingMode,
 		switchModeError,
 		isOnlyIsolated,
 		allowsCrossMargin,
+		allowsIsolatedMarginRemoval,
 		subscriptionStatus,
 	} = useAssetLeverage();
 
@@ -146,12 +150,14 @@ export function useOrderEntryData({
 		resetPendingLeverage,
 		marginMode,
 		hasPosition,
+		positionStateReady,
 		switchMarginMode,
 		applyMarginAndLeverage,
 		isSwitchingMode,
 		switchModeError,
 		isOnlyIsolated,
 		allowsCrossMargin,
+		allowsIsolatedMarginRemoval,
 		maxTradeSzs,
 	};
 }

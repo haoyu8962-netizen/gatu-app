@@ -3,7 +3,6 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, SpinnerGapIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import { ISOLATED_RISK_FEATURES } from "@/config/isolated-risk";
 import { MARGIN_MODE_SUCCESS_DURATION_MS } from "@/config/time";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
@@ -48,7 +47,9 @@ interface Props {
 	maxLeverage: number;
 	onPendingLeverageChange: (value: number) => void;
 	hasPosition: boolean;
-	isOnlyIsolated: boolean;
+	positionStateReady: boolean;
+	allowsCrossMargin: boolean;
+	allowsIsolatedMarginRemoval: boolean;
 	isUpdating: boolean;
 	updateError: Error | null;
 	showLeverage: boolean;
@@ -132,7 +133,9 @@ function MarginModeModalBody({
 	maxLeverage,
 	onPendingLeverageChange,
 	hasPosition,
-	isOnlyIsolated,
+	positionStateReady,
+	allowsCrossMargin,
+	allowsIsolatedMarginRemoval,
 	isUpdating,
 	updateError,
 	showLeverage,
@@ -150,10 +153,10 @@ function MarginModeModalBody({
 	const leverageDirty = pendingLeverage !== null && pendingLeverage !== currentLeverage;
 	const isDirty = modeDirty || leverageDirty;
 	const cannotSwitch = hasPosition && selectedMode === "isolated" && currentMode === "cross";
-	const isolatedChangeUnavailable = selectedMode === "isolated" && !ISOLATED_RISK_FEATURES.increaseEnabled && isDirty;
+	const positionStateUnavailable = !positionStateReady && selectedMode === "isolated" && currentMode === "cross";
 
 	async function handleConfirm(): Promise<void> {
-		if (!isDirty || cannotSwitch || isolatedChangeUnavailable) return;
+		if (!isDirty || cannotSwitch || positionStateUnavailable) return;
 		const lev = pendingLeverage ?? currentLeverage;
 		try {
 			await onApply(selectedMode, lev);
@@ -165,7 +168,10 @@ function MarginModeModalBody({
 		onOpenChange(false);
 	}
 
-	const selectedModeDescription = MODE_OPTIONS.find((o) => o.id === selectedMode)?.description();
+	const selectedModeDescription =
+		selectedMode === "isolated" && !allowsIsolatedMarginRemoval
+			? t`Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open.`
+			: MODE_OPTIONS.find((o) => o.id === selectedMode)?.description();
 
 	return (
 		<>
@@ -187,10 +193,7 @@ function MarginModeModalBody({
 								option={option}
 								isSelected={selectedMode === option.id}
 								isCurrent={currentMode === option.id}
-								isDisabled={
-									(isOnlyIsolated && option.id === "cross") ||
-									(option.id === "isolated" && option.id !== currentMode && !ISOLATED_RISK_FEATURES.increaseEnabled)
-								}
+								isDisabled={!allowsCrossMargin && option.id === "cross"}
 								isUpdating={isUpdating}
 								onSelect={() => setSelectedMode(option.id)}
 							/>
@@ -235,16 +238,21 @@ function MarginModeModalBody({
 					</div>
 				)}
 
-				{isolatedChangeUnavailable && (
+				{positionStateUnavailable && (
 					<div className="flex items-start gap-2 rounded-xs border border-stroke-warning-strong/20 bg-warning-soft/10 p-2.5">
 						<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
 						<p className="text-xs leading-relaxed text-warning">
 							<Trans>
-								Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can
-								still be reduced, closed, or switched to cross margin.
+								Position data is unavailable. Wait for the account connection to recover before changing margin mode.
 							</Trans>
 						</p>
 					</div>
+				)}
+
+				{!allowsCrossMargin && (
+					<p className="text-xs leading-relaxed text-fg-muted">
+						<Trans>This market only supports isolated margin mode.</Trans>
+					</p>
 				)}
 
 				{updateError && (
@@ -275,7 +283,7 @@ function MarginModeModalBody({
 				) : (
 					<TradingActionButton
 						onClick={handleConfirm}
-						disabled={!isDirty || isUpdating || cannotSwitch || isolatedChangeUnavailable}
+						disabled={!isDirty || isUpdating || cannotSwitch || positionStateUnavailable}
 						className="gap-1.5"
 					>
 						{isUpdating && <SpinnerGapIcon className="size-3.5 animate-spin" />}

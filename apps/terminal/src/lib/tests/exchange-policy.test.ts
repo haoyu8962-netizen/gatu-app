@@ -1,8 +1,4 @@
-import {
-	assertExchangeMutationAllowed,
-	isIsolatedRiskIncreaseMutation,
-	isPortfolioMarginActivation,
-} from "@gatu/hl-react/exchange-policy";
+import { assertExchangeMutationAllowed, isPortfolioMarginActivation } from "@gatu/hl-react/exchange-policy";
 import { describe, expect, it } from "vitest";
 
 const USER = "0x1234567890abcdef1234567890abcdef12345678";
@@ -104,29 +100,15 @@ describe("exchange mutation policy", () => {
 		expect(() => assertExchangeMutationAllowed("agentSetAbstraction", { abstraction: "p" }, true)).not.toThrow();
 	});
 
-	it("blocks isolated activation, leverage changes, and margin removal by default", () => {
-		expect(isIsolatedRiskIncreaseMutation("updateLeverage", { asset: 1, isCross: false, leverage: 5 })).toBe(true);
-		expect(isIsolatedRiskIncreaseMutation("updateIsolatedMargin", { asset: 1, isBuy: true, ntli: -1 })).toBe(true);
-		expect(() => assertExchangeMutationAllowed("updateLeverage", { asset: 1, isCross: false, leverage: 5 })).toThrow(
-			"Isolated risk-increasing actions are temporarily unavailable",
-		);
-		expect(() => assertExchangeMutationAllowed("updateIsolatedMargin", { asset: 1, isBuy: true, ntli: -1 })).toThrow(
-			"Isolated risk-increasing actions are temporarily unavailable",
-		);
-	});
-
-	it("preserves cross leverage, isolated margin additions, and explicitly enabled isolated changes", () => {
+	it("does not classify isolated management payloads without market and position context", () => {
 		expect(() =>
-			assertExchangeMutationAllowed("updateLeverage", { asset: 1, isCross: true, leverage: 5 }),
+			assertExchangeMutationAllowed("updateLeverage", { asset: 1, isCross: false, leverage: 5 }),
 		).not.toThrow();
 		expect(() =>
-			assertExchangeMutationAllowed("updateIsolatedMargin", { asset: 1, isBuy: true, ntli: 1 }),
+			assertExchangeMutationAllowed("updateIsolatedMargin", { asset: 1, isBuy: true, ntli: -1 }),
 		).not.toThrow();
 		expect(() =>
-			assertExchangeMutationAllowed("updateLeverage", { asset: 1, isCross: false, leverage: 5 }, false, true),
-		).not.toThrow();
-		expect(() =>
-			assertExchangeMutationAllowed("updateIsolatedMargin", { asset: 1, isBuy: true, ntli: -1 }, false, true),
+			assertExchangeMutationAllowed("updateIsolatedMargin", { asset: 1, isBuy: true, ntli: "-1" }),
 		).not.toThrow();
 	});
 });

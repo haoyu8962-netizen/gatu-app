@@ -198,26 +198,30 @@ describe("useTrackedTwapOrder", () => {
 		expect(hasPendingTwapForAsset("Mainnet", USER, 11)).toBe(false);
 	});
 
-	it("blocks isolated TWAP risk increases before persistence or SDK mutation", async () => {
+	it("submits a non-reduce-only TWAP for a forced-isolated HIP-3 market", async () => {
+		mocks.mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "twapOrder", data: { status: { running: { twapId: 44 } } } },
+		});
 		if (!hookValue) throw new Error("Expected tracked TWAP hook");
 
+		let result: Awaited<ReturnType<typeof hookValue.submitTwap>> | undefined;
 		await act(async () => {
-			await expect(
-				hookValue?.submitTwap(createParams(13), {
-					coin: "BTC",
-					riskContext: ISOLATED_RISK_CONTEXT,
-				}),
-			).rejects.toThrow("Opening or increasing isolated positions is temporarily unavailable.");
+			result = await hookValue?.submitTwap(createParams(120_031), {
+				coin: "xyz:SMSN",
+				riskContext: ISOLATED_RISK_CONTEXT,
+			});
 		});
 
-		expect(mocks.mutateAsync).not.toHaveBeenCalled();
-		expect(hasPendingTwapForAsset("Mainnet", USER, 13)).toBe(false);
+		expect(result?.state).toBe("confirmed");
+		expect(mocks.mutateAsync).toHaveBeenCalledWith(createParams(120_031));
+		expect(hasPendingTwapForAsset("Mainnet", USER, 120_031)).toBe(false);
 	});
 
 	it("preserves reduce-only isolated TWAP submissions", async () => {
 		mocks.mutateAsync.mockResolvedValueOnce({
 			status: "ok",
-			response: { type: "twapOrder", data: { status: { running: { twapId: 44 } } } },
+			response: { type: "twapOrder", data: { status: { running: { twapId: 45 } } } },
 		});
 		if (!hookValue) throw new Error("Expected tracked TWAP hook");
 

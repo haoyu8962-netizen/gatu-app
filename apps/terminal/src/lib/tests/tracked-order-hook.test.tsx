@@ -230,17 +230,22 @@ describe("useTrackedOrder", () => {
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [13])).toBe(false);
 	});
 
-	it("blocks isolated risk-increasing orders before persistence or SDK mutation", async () => {
+	it("submits a non-reduce-only order for a forced-isolated HIP-3 market", async () => {
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "order", data: { statuses: [{ filled: { totalSz: "1", avgPx: "10", oid: 3 } }] } },
+		});
 		if (!hookValue) throw new Error("Expected tracked order hook");
 
+		let result: Awaited<ReturnType<typeof hookValue.submitOrder>> | undefined;
 		await act(async () => {
-			await expect(hookValue?.submitOrder(createParams(16), ISOLATED_SUBMIT_OPTIONS)).rejects.toThrow(
-				"Opening or increasing isolated positions is temporarily unavailable.",
-			);
+			result = await hookValue?.submitOrder(createParams(120_031), ISOLATED_SUBMIT_OPTIONS);
 		});
 
-		expect(mutateAsync).not.toHaveBeenCalled();
-		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [16])).toBe(false);
+		expect(result?.state).toBe("confirmed");
+		expect(mutateAsync).toHaveBeenCalledOnce();
+		expect(mutateAsync.mock.calls[0]?.[0].orders[0]).toMatchObject({ a: 120_031, r: false });
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [120_031])).toBe(false);
 	});
 
 	it("rejects a caller that labels a perp asset as spot", async () => {

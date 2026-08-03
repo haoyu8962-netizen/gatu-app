@@ -5796,3 +5796,23 @@ msgstr "No positions match the selected filters."
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position Value"
 msgstr "Position Value"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
+msgstr "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
+msgstr "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
+msgstr "The selected market changed. Reopen the margin dialog before adjusting margin."
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "This market only supports isolated margin mode."
+msgstr "This market only supports isolated margin mode."
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
+msgstr "This position changed sides. Reopen the margin dialog before adjusting margin."

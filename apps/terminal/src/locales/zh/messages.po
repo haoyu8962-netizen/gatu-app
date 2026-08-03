@@ -5796,3 +5796,23 @@ msgstr "没有符合所选筛选条件的仓位。"
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position Value"
 msgstr "仓位价值"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
+msgstr "每个仓位仅使用分配给它的保证金。如果保证金率达到 100%，仓位将被强平。可以追加保证金，但在仓位未平仓时无法移除保证金。"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
+msgstr "仓位数据暂不可用。请等待账户连接恢复后再更改保证金模式。"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
+msgstr "所选市场已发生变化。请重新打开保证金调整窗口后再操作。"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "This market only supports isolated margin mode."
+msgstr "该市场仅支持逐仓保证金模式。"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
+msgstr "该仓位的方向已发生变化。请重新打开保证金调整窗口后再操作。"

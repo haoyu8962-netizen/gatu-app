@@ -9,6 +9,23 @@ import type { Position } from "@/lib/hyperliquid";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
+	market: {
+		kind: "builderPerp",
+		name: "xyz:CXMT",
+		assetId: 120_031,
+		dex: "xyz",
+		marginMode: "noCross",
+		onlyIsolated: true,
+	} as {
+		kind: "builderPerp" | "perp" | "spot";
+		name: string;
+		assetId: number;
+		dex?: string;
+		marginMode?: "strictIsolated" | "noCross";
+		onlyIsolated?: true;
+	} | null,
+	marketLoading: false,
+	marketError: null as Error | null,
 	position: {
 		dex: "xyz",
 		coin: "xyz:CXMT",
@@ -25,8 +42,14 @@ const testState = vi.hoisted(() => ({
 	} as Position | null,
 	positionLoading: false,
 	positionError: false,
+	positionStale: false,
 	updateMargin: vi.fn(),
 	topUpMargin: vi.fn(),
+	beforeQueuedExecution: null as null | ((method: string) => Promise<void>),
+	executionGuards: {} as Record<
+		string,
+		((params: { asset: number; isBuy?: boolean; ntli?: number; leverage?: string }) => void) | undefined
+	>,
 }));
 
 vi.mock("@gatu/ui", async () => {
@@ -116,14 +139,37 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useExchange: (method: string) => ({
-		isPending: false,
-		mutateAsync: method === "updateIsolatedMargin" ? testState.updateMargin : testState.topUpMargin,
+	useExchange: (
+		method: string,
+		options?: {
+			executionGuard?: (params: { asset: number; isBuy?: boolean; ntli?: number; leverage?: string }) => void;
+		},
+	) => {
+		testState.executionGuards[method] = options?.executionGuard;
+		return {
+			isPending: false,
+			mutateAsync: async (params: { asset: number; isBuy?: boolean; ntli?: number; leverage?: string }) => {
+				options?.executionGuard?.(params);
+				await testState.beforeQueuedExecution?.(method);
+				options?.executionGuard?.(params);
+				const mutation = method === "updateIsolatedMargin" ? testState.updateMargin : testState.topUpMargin;
+				return mutation(params);
+			},
+		};
+	},
+	useMarkets: () => ({
+		error: testState.marketError,
+		getMarket: (coin: string) => (testState.market?.name === coin ? testState.market : undefined),
+		isLoading: testState.marketLoading,
 	}),
 	useUserPositions: () => ({
-		getPosition: () => testState.position,
+		getPosition: (coin: string, dex?: string) =>
+			testState.position?.coin === coin && (dex === undefined || testState.position.dex === dex)
+				? testState.position
+				: null,
 		hasError: testState.positionError,
 		isLoading: testState.positionLoading,
+		isStale: testState.positionStale,
 	}),
 }));
 
@@ -163,6 +209,19 @@ function getLiveTestPosition(): Position {
 	return testState.position;
 }
 
+function getLiveTestMarket() {
+	if (!testState.market) throw new Error("Live test market is not configured");
+	return testState.market;
+}
+
+function createDeferred() {
+	let resolve!: () => void;
+	const promise = new Promise<void>((resolvePromise) => {
+		resolve = resolvePromise;
+	});
+	return { promise, resolve };
+}
+
 describe("PositionIsolatedMarginModal", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -173,6 +232,17 @@ describe("PositionIsolatedMarginModal", () => {
 		root = createI18nRoot(container);
 		testState.positionLoading = false;
 		testState.positionError = false;
+		testState.positionStale = false;
+		testState.marketLoading = false;
+		testState.marketError = null;
+		testState.market = {
+			kind: "builderPerp",
+			name: "xyz:CXMT",
+			assetId: 120_031,
+			dex: "xyz",
+			marginMode: "noCross",
+			onlyIsolated: true,
+		};
 		testState.position = {
 			dex: "xyz",
 			coin: "xyz:CXMT",
@@ -189,6 +259,8 @@ describe("PositionIsolatedMarginModal", () => {
 		};
 		testState.updateMargin.mockReset().mockResolvedValue({ status: "ok", response: { type: "default" } });
 		testState.topUpMargin.mockReset().mockResolvedValue({ status: "ok", response: { type: "default" } });
+		testState.beforeQueuedExecution = null;
+		testState.executionGuards = {};
 	});
 
 	afterEach(() => {
@@ -197,8 +269,7 @@ describe("PositionIsolatedMarginModal", () => {
 		vi.clearAllMocks();
 	});
 
-	function renderModal(position: IsolatedMarginPositionRef = basePositionRef) {
-		const onOpenChange = vi.fn();
+	function renderModal(position: IsolatedMarginPositionRef = basePositionRef, onOpenChange = vi.fn()) {
 		act(() => {
 			root.render(
 				createElement(PositionIsolatedMarginModal, {
@@ -228,7 +299,7 @@ describe("PositionIsolatedMarginModal", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
-	it("uses the current live position side when building the action", async () => {
+	it("blocks an action when the current live position side differs from the opened position", async () => {
 		testState.position = {
 			...getLiveTestPosition(),
 			szi: "-205.9",
@@ -240,11 +311,9 @@ describe("PositionIsolatedMarginModal", () => {
 			getButton(container, "Add Margin").click();
 		});
 
-		expect(testState.updateMargin).toHaveBeenCalledWith({
-			asset: 120_031,
-			isBuy: false,
-			ntli: 1_000_000,
-		});
+		expect(getButton(container, "Add Margin").disabled).toBe(true);
+		expect(container.textContent).toContain("This position changed sides.");
+		expect(testState.updateMargin).not.toHaveBeenCalled();
 	});
 
 	it("uses the dedicated isolated-only target leverage action", async () => {
@@ -263,17 +332,30 @@ describe("PositionIsolatedMarginModal", () => {
 		expect(testState.updateMargin).not.toHaveBeenCalled();
 	});
 
-	it("keeps isolated margin removal unavailable while the risk gate is closed", async () => {
-		renderModal();
+	it("submits an exact margin removal for a noCross market", async () => {
+		const onOpenChange = renderModal();
 
-		expect(getButton(container, "Remove").disabled).toBe(true);
-		expect(container.textContent).toContain("Removing isolated margin is temporarily unavailable");
+		act(() => getButton(container, "Remove").click());
+		act(() => setInputValue(getInput(container, "Margin amount"), "1.25"));
+		await act(async () => {
+			getButton(container, "Remove Margin").click();
+		});
 
-		expect(testState.updateMargin).not.toHaveBeenCalled();
+		expect(testState.updateMargin).toHaveBeenCalledWith({
+			asset: 120_031,
+			isBuy: true,
+			ntli: -1_250_000,
+		});
+		expect(testState.topUpMargin).not.toHaveBeenCalled();
+		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
-	it("disables removal for strict isolated markets", () => {
-		renderModal({ ...basePositionRef, marginConstraint: "strictIsolated" });
+	it.each([
+		["strict isolated", { marginMode: "strictIsolated" as const, onlyIsolated: true as const }],
+		["legacy isolated-only", { marginMode: undefined, onlyIsolated: true as const }],
+	])("disables removal for %s markets", (_label, constraint) => {
+		testState.market = { ...getLiveTestMarket(), ...constraint };
+		renderModal();
 
 		expect(getButton(container, "Remove").disabled).toBe(true);
 		expect(container.textContent).toContain(
@@ -292,5 +374,228 @@ describe("PositionIsolatedMarginModal", () => {
 
 		expect(getButton(container, "Add Margin").disabled).toBe(true);
 		expect(container.textContent).toContain("This position is no longer using isolated margin.");
+	});
+
+	it.each([
+		["0", "This isolated position is no longer open."],
+		["invalid", "Live position data is unavailable."],
+	])("fails closed when the live position size is %s", (szi, expectedMessage) => {
+		testState.position = {
+			...getLiveTestPosition(),
+			szi,
+		};
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+
+		expect(getButton(container, "Add Margin").disabled).toBe(true);
+		expect(container.textContent).toContain(expectedMessage);
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+	});
+
+	it("fails closed while live position data is in an error state", () => {
+		testState.positionError = true;
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+
+		expect(getButton(container, "Add Margin").disabled).toBe(true);
+		expect(container.textContent).toContain("Live position data is unavailable.");
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+	});
+
+	it("fails closed while a cached live position is refreshing", () => {
+		testState.positionLoading = true;
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+
+		expect(getButton(container, "Add Margin").disabled).toBe(true);
+		expect(container.textContent).toContain("Loading position...");
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+	});
+
+	it("fails closed while the live position snapshot is stale", () => {
+		testState.positionStale = true;
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+
+		expect(getButton(container, "Add Margin").disabled).toBe(true);
+		expect(container.textContent).toContain("Live position data is unavailable.");
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+	});
+
+	it("keeps removal blocked when a strict position snapshot conflicts with current noCross metadata", async () => {
+		const onOpenChange = renderModal();
+
+		act(() => getButton(container, "Remove").click());
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		renderModal({ ...basePositionRef, marginConstraint: "strictIsolated" }, onOpenChange);
+
+		expect(getButton(container, "Remove").disabled).toBe(true);
+		expect(getButton(container, "Remove Margin").disabled).toBe(true);
+		await act(async () => {
+			getButton(container, "Remove Margin").click();
+		});
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+	});
+
+	it("fails closed when the current market identity no longer matches the position reference", () => {
+		testState.market = { ...getLiveTestMarket(), assetId: 120_032 };
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+
+		expect(getButton(container, "Add Margin").disabled).toBe(true);
+		expect(container.textContent).toContain("The selected market changed.");
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+	});
+
+	it("rejects an execution request for a different asset", () => {
+		renderModal();
+
+		expect(() =>
+			testState.executionGuards.updateIsolatedMargin?.({
+				asset: 120_032,
+				isBuy: true,
+				ntli: 1_000_000,
+			}),
+		).toThrow("The selected market changed.");
+	});
+
+	it("uses the latest position state when the queued amount callback executes", async () => {
+		const queueStarted = createDeferred();
+		const releaseQueue = createDeferred();
+		testState.beforeQueuedExecution = async () => {
+			queueStarted.resolve();
+			await releaseQueue.promise;
+		};
+		const onOpenChange = renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		act(() => getButton(container, "Add Margin").click());
+		await queueStarted.promise;
+
+		testState.position = { ...getLiveTestPosition(), szi: "-205.9" };
+		renderModal({ ...basePositionRef }, onOpenChange);
+		await act(async () => {
+			releaseQueue.resolve();
+			await releaseQueue.promise;
+		});
+
+		await vi.waitFor(() => expect(container.textContent).toContain("This position changed sides."));
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+	});
+
+	it("uses the latest position state when the queued target callback executes", async () => {
+		const queueStarted = createDeferred();
+		const releaseQueue = createDeferred();
+		testState.beforeQueuedExecution = async () => {
+			queueStarted.resolve();
+			await releaseQueue.promise;
+		};
+		const onOpenChange = renderModal();
+
+		act(() => getButton(container, "Target Leverage").click());
+		act(() => setInputValue(getInput(container, "Target leverage"), "5"));
+		act(() => getButton(container, "Add to Target").click());
+		await queueStarted.promise;
+
+		testState.position = { ...getLiveTestPosition(), szi: "-205.9" };
+		renderModal({ ...basePositionRef }, onOpenChange);
+		await act(async () => {
+			releaseQueue.resolve();
+			await releaseQueue.promise;
+		});
+
+		await vi.waitFor(() => expect(container.textContent).toContain("This position changed sides."));
+		expect(testState.topUpMargin).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+	});
+
+	it("fails closed if the position subscription errors before queued execution", async () => {
+		const queueStarted = createDeferred();
+		const releaseQueue = createDeferred();
+		testState.beforeQueuedExecution = async () => {
+			queueStarted.resolve();
+			await releaseQueue.promise;
+		};
+		const onOpenChange = renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		act(() => getButton(container, "Add Margin").click());
+		await queueStarted.promise;
+
+		testState.positionError = true;
+		renderModal({ ...basePositionRef }, onOpenChange);
+		await act(async () => {
+			releaseQueue.resolve();
+			await releaseQueue.promise;
+		});
+
+		await vi.waitFor(() => expect(container.textContent).toContain("Live position data is unavailable."));
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+	});
+
+	it("fails closed if the position snapshot becomes stale before queued execution", async () => {
+		const queueStarted = createDeferred();
+		const releaseQueue = createDeferred();
+		testState.beforeQueuedExecution = async () => {
+			queueStarted.resolve();
+			await releaseQueue.promise;
+		};
+		const onOpenChange = renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		act(() => getButton(container, "Add Margin").click());
+		await queueStarted.promise;
+
+		testState.positionStale = true;
+		renderModal({ ...basePositionRef }, onOpenChange);
+		await act(async () => {
+			releaseQueue.resolve();
+			await releaseQueue.promise;
+		});
+
+		await vi.waitFor(() => expect(container.textContent).toContain("Live position data is unavailable."));
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+	});
+
+	it.each([
+		["strict isolated", { marginMode: "strictIsolated" as const, onlyIsolated: true as const }],
+		["legacy isolated-only", { marginMode: undefined, onlyIsolated: true as const }],
+	])("denies queued removal after the market becomes %s", async (_label, constraint) => {
+		const queueStarted = createDeferred();
+		const releaseQueue = createDeferred();
+		testState.beforeQueuedExecution = async () => {
+			queueStarted.resolve();
+			await releaseQueue.promise;
+		};
+		const onOpenChange = renderModal();
+
+		act(() => getButton(container, "Remove").click());
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		act(() => getButton(container, "Remove Margin").click());
+		await queueStarted.promise;
+
+		testState.market = { ...getLiveTestMarket(), ...constraint };
+		renderModal({ ...basePositionRef }, onOpenChange);
+		await act(async () => {
+			releaseQueue.resolve();
+			await releaseQueue.promise;
+		});
+
+		await vi.waitFor(() =>
+			expect(container.textContent).toContain(
+				"This strict isolated market does not allow margin to be removed from an open position.",
+			),
+		);
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
 	});
 });

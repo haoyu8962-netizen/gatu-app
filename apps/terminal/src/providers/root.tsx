@@ -14,7 +14,6 @@ import { EmbeddedDepositAutoBridge } from "@/components/trade/tradebox/embedded-
 import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
 import { APP_NAME, RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
-import { ISOLATED_RISK_FEATURES } from "@/config/isolated-risk";
 import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
 import { PRIVY_APP_ID, PRIVY_CONFIG_BY_THEME } from "@/config/privy";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
@@ -63,10 +62,7 @@ function HyperliquidBridge({ children }: { children: React.ReactNode }) {
 	const { address } = useWalletSession();
 
 	return (
-		<HyperliquidExchangePolicyProvider
-			portfolioMarginActivationEnabled={PORTFOLIO_MARGIN_FEATURES.activationEnabled}
-			isolatedRiskIncreaseEnabled={ISOLATED_RISK_FEATURES.increaseEnabled}
-		>
+		<HyperliquidExchangePolicyProvider portfolioMarginActivationEnabled={PORTFOLIO_MARGIN_FEATURES.activationEnabled}>
 			<HyperliquidProvider
 				env={env}
 				userAddress={address}

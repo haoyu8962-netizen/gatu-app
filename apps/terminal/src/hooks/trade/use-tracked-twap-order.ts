@@ -1,11 +1,6 @@
 import { t } from "@lingui/core/macro";
 import { HL_ALL_DEXS } from "@/config/app";
-import { ISOLATED_RISK_FEATURES } from "@/config/isolated-risk";
-import {
-	doesOrderBatchMatchRiskContext,
-	isIsolatedOrderRiskIncrease,
-	type OrderRiskContext,
-} from "@/domain/trade/order-risk-context";
+import { doesOrderBatchMatchRiskContext, type OrderRiskContext } from "@/domain/trade/order-risk-context";
 import { isAmbiguousOrderRequestError } from "@/domain/trade/order-tracking";
 import type { TwapIntent } from "@/domain/trade/twap";
 import {
@@ -51,11 +46,6 @@ export function useTrackedTwapOrder() {
 		if (!address) throw new Error("No active Hyperliquid account");
 		if (!doesOrderBatchMatchRiskContext([params.twap], options.riskContext)) {
 			throw new Error(t`Order market context does not match the submitted asset.`);
-		}
-		if (!ISOLATED_RISK_FEATURES.increaseEnabled && isIsolatedOrderRiskIncrease([params.twap], options.riskContext)) {
-			throw new Error(
-				t`Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available.`,
-			);
 		}
 
 		const intent = createTwapIntent(params, options.coin);

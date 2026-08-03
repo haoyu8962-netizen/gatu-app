@@ -5796,3 +5796,23 @@ msgstr "चुने गए फ़िल्टर से कोई पोज़�
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position Value"
 msgstr "पोज़िशन मूल्य"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
+msgstr "प्रत्येक पोज़िशन केवल उसे आवंटित मार्जिन का उपयोग करती है। यदि मार्जिन अनुपात 100% तक पहुँच जाता है, तो पोज़िशन लिक्विडेट हो जाती है। मार्जिन जोड़ा जा सकता है, लेकिन पोज़िशन खुली रहने तक इसे निकाला नहीं जा सकता।"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
+msgstr "पोज़िशन डेटा उपलब्ध नहीं है। मार्जिन मोड बदलने से पहले खाते का कनेक्शन पुनः स्थापित होने की प्रतीक्षा करें।"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
+msgstr "चुना गया बाज़ार बदल गया है। मार्जिन समायोजित करने से पहले मार्जिन डायलॉग फिर से खोलें।"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "This market only supports isolated margin mode."
+msgstr "यह बाज़ार केवल आइसोलेटेड मार्जिन मोड का समर्थन करता है।"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
+msgstr "इस पोज़िशन की दिशा बदल गई है। मार्जिन समायोजित करने से पहले मार्जिन डायलॉग फिर से खोलें।"

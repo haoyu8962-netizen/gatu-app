@@ -10,13 +10,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const clients = vi.hoisted(() => {
 	const response = { status: "ok", response: { type: "default" } } as const;
+	const agentSetAbstraction = vi.fn(async () => response);
+	const updateIsolatedMargin = vi.fn(async () => response);
+	const updateLeverage = vi.fn(async () => response);
+	const userPortfolioMargin = vi.fn(async () => response);
+	const userSetAbstraction = vi.fn(async () => response);
 	return {
 		agentPublicKey: "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf" as const,
-		agentSetAbstraction: vi.fn(async () => response),
-		updateIsolatedMargin: vi.fn(async () => response),
-		updateLeverage: vi.fn(async () => response),
-		userPortfolioMargin: vi.fn(async () => response),
-		userSetAbstraction: vi.fn(async () => response),
+		agentSetAbstraction,
+		response,
+		trading: {
+			agentSetAbstraction,
+			updateIsolatedMargin,
+			updateLeverage,
+		},
+		updateIsolatedMargin,
+		updateLeverage,
+		user: {
+			userPortfolioMargin,
+			userSetAbstraction,
+		},
+		userPortfolioMargin,
+		userSetAbstraction,
 	};
 });
 
@@ -29,15 +44,8 @@ vi.mock("@gatu/hl-react/hooks/useClients", () => ({
 		agentPublicKey: clients.agentPublicKey,
 		info: {},
 		subscription: {},
-		trading: {
-			agentSetAbstraction: clients.agentSetAbstraction,
-			updateIsolatedMargin: clients.updateIsolatedMargin,
-			updateLeverage: clients.updateLeverage,
-		},
-		user: {
-			userPortfolioMargin: clients.userPortfolioMargin,
-			userSetAbstraction: clients.userSetAbstraction,
-		},
+		trading: clients.trading,
+		user: clients.user,
 		userWalletMismatch: false,
 	}),
 }));
@@ -65,6 +73,14 @@ const BLOCKED_MESSAGE = "Portfolio margin activation is temporarily unavailable"
 const AGENT_PRIVATE_KEY = `0x${"0".repeat(63)}1`;
 const SESSION_STORAGE_KEY = `hyperliquid_agent_registration_session_Mainnet_${USER}`;
 const AGENT_STORAGE_KEY = `hyperliquid_agent_Mainnet_${USER}`;
+const EXECUTION_BLOCKED_MESSAGE = "The isolated-management state changed before execution";
+const isolatedExecutionAllowedRef = { current: true };
+const updateIsolatedMarginExecutionGuard = vi.fn((_params: ExchangeParams<"updateIsolatedMargin">) => {
+	if (!isolatedExecutionAllowedRef.current) throw new Error(EXECUTION_BLOCKED_MESSAGE);
+});
+const updateLeverageExecutionGuard = vi.fn((_params: ExchangeParams<"updateLeverage">) => {
+	if (!isolatedExecutionAllowedRef.current) throw new Error(EXECUTION_BLOCKED_MESSAGE);
+});
 
 function installExclusiveLockManager() {
 	const queues = new Map<string, Promise<void>>();
@@ -109,6 +125,7 @@ describe("useExchange portfolio margin policy", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		isolatedExecutionAllowedRef.current = true;
 		window.localStorage.clear();
 		installExclusiveLockManager();
 		providerState.exchangeLifecycle.active = true;
@@ -152,8 +169,12 @@ describe("useExchange portfolio margin policy", () => {
 
 	function Probe() {
 		const agentSetAbstraction = useExchange("agentSetAbstraction");
-		const updateIsolatedMargin = useExchange("updateIsolatedMargin");
-		const updateLeverage = useExchange("updateLeverage");
+		const updateIsolatedMargin = useExchange("updateIsolatedMargin", {
+			executionGuard: updateIsolatedMarginExecutionGuard,
+		});
+		const updateLeverage = useExchange("updateLeverage", {
+			executionGuard: updateLeverageExecutionGuard,
+		});
 		const userPortfolioMargin = useExchange("userPortfolioMargin");
 		const userSetAbstraction = useExchange("userSetAbstraction");
 
@@ -275,77 +296,149 @@ describe("useExchange portfolio margin policy", () => {
 		expect(clients.agentSetAbstraction).toHaveBeenCalledTimes(1);
 	});
 
-	it("blocks isolated leverage and margin-removal mutations at the final SDK boundary", async () => {
+	it("passes isolated leverage and margin mutations through to the SDK boundary", async () => {
 		renderPolicy(false);
-
-		await act(async () => {
-			await expect(
-				capturedMutations?.updateLeverage({
-					asset: 1,
-					isCross: false,
-					leverage: 5,
-				}),
-			).rejects.toThrow("Isolated risk-increasing actions are temporarily unavailable");
-			await expect(
-				capturedMutations?.updateIsolatedMargin({
-					asset: 1,
-					isBuy: true,
-					ntli: -1,
-				}),
-			).rejects.toThrow("Isolated risk-increasing actions are temporarily unavailable");
-		});
-
-		expect(clients.updateLeverage).not.toHaveBeenCalled();
-		expect(clients.updateIsolatedMargin).not.toHaveBeenCalled();
-	});
-
-	it("snapshots and rechecks isolated policy fields immediately before SDK execution", async () => {
-		renderPolicy(false);
-		let isCrossReads = 0;
-		const params = { asset: 1, leverage: 5 } as ExchangeParams<"updateLeverage">;
-		Object.defineProperty(params, "isCross", {
-			enumerable: true,
-			get: () => {
-				isCrossReads += 1;
-				return isCrossReads === 1;
-			},
-		});
-
-		await act(async () => {
-			await expect(capturedMutations?.updateLeverage(params)).rejects.toThrow(
-				"Isolated risk-increasing actions are temporarily unavailable",
-			);
-		});
-
-		expect(isCrossReads).toBe(2);
-		expect(clients.updateLeverage).not.toHaveBeenCalled();
-	});
-
-	it("preserves cross leverage and isolated margin additions while the gate is closed", async () => {
-		renderPolicy(false);
+		const stringMarginRemoval = {
+			asset: 1,
+			isBuy: true,
+			ntli: "-1",
+		} as unknown as ExchangeParams<"updateIsolatedMargin">;
 
 		await act(async () => {
 			await capturedMutations?.updateLeverage({
 				asset: 1,
-				isCross: true,
+				isCross: false,
 				leverage: 5,
 			});
 			await capturedMutations?.updateIsolatedMargin({
 				asset: 1,
 				isBuy: true,
-				ntli: 1,
+				ntli: -1,
 			});
+			await capturedMutations?.updateIsolatedMargin(stringMarginRemoval);
 		});
 
 		expect(clients.updateLeverage).toHaveBeenCalledWith({
 			asset: 1,
-			isCross: true,
+			isCross: false,
 			leverage: 5,
 		});
-		expect(clients.updateIsolatedMargin).toHaveBeenCalledWith({
+		expect(clients.updateIsolatedMargin).toHaveBeenNthCalledWith(1, {
 			asset: 1,
 			isBuy: true,
-			ntli: 1,
+			ntli: -1,
 		});
+		expect(clients.updateIsolatedMargin).toHaveBeenNthCalledWith(2, {
+			asset: 1,
+			isBuy: true,
+			ntli: "-1",
+		});
+	});
+
+	it("rechecks the latest isolated-management state when a queued request reaches the SDK boundary", async () => {
+		renderPolicy(false);
+		let releaseFirstRequest = () => {};
+		let markFirstRequestStarted = () => {};
+		const firstRequestStarted = new Promise<void>((resolve) => {
+			markFirstRequestStarted = resolve;
+		});
+		const firstRequestResponse = new Promise<typeof clients.response>((resolve) => {
+			releaseFirstRequest = () => resolve(clients.response);
+		});
+		clients.updateLeverage.mockImplementationOnce(async () => {
+			markFirstRequestStarted();
+			return firstRequestResponse;
+		});
+
+		const mutations = capturedMutations;
+		if (!mutations) throw new Error("Mutation hooks were not captured");
+		let firstRequest: Promise<unknown> | undefined;
+		await act(async () => {
+			firstRequest = mutations.updateLeverage({ asset: 1, isCross: false, leverage: 5 });
+			await firstRequestStarted;
+		});
+		let queuedRequest: Promise<unknown> | undefined;
+		await act(async () => {
+			queuedRequest = mutations.updateLeverage({ asset: 1, isCross: false, leverage: 6 });
+			await vi.waitFor(() => expect(updateLeverageExecutionGuard).toHaveBeenCalledTimes(3));
+		});
+
+		isolatedExecutionAllowedRef.current = false;
+		await act(async () => {
+			releaseFirstRequest();
+			await expect(firstRequest).resolves.toEqual(clients.response);
+			await expect(queuedRequest).rejects.toThrow(EXECUTION_BLOCKED_MESSAGE);
+		});
+
+		expect(updateLeverageExecutionGuard).toHaveBeenCalledTimes(4);
+		expect(clients.updateLeverage).toHaveBeenCalledTimes(1);
+	});
+
+	it("fails closed at runtime when guarded methods bypass their required TypeScript option", async () => {
+		let mutationsWithoutGuards: {
+			topUpIsolatedOnlyMargin: (params: ExchangeParams<"topUpIsolatedOnlyMargin">) => Promise<unknown>;
+			updateIsolatedMargin: CapturedMutations["updateIsolatedMargin"];
+			updateLeverage: CapturedMutations["updateLeverage"];
+		} | null = null;
+		function MissingGuardProbe() {
+			const topUpIsolatedOnlyMargin = useExchange("topUpIsolatedOnlyMargin", undefined as never);
+			const updateIsolatedMargin = useExchange("updateIsolatedMargin", undefined as never);
+			const updateLeverage = useExchange("updateLeverage", undefined as never);
+			mutationsWithoutGuards = {
+				topUpIsolatedOnlyMargin: topUpIsolatedOnlyMargin.mutateAsync,
+				updateIsolatedMargin: updateIsolatedMargin.mutateAsync,
+				updateLeverage: updateLeverage.mutateAsync,
+			};
+			return null;
+		}
+
+		act(() => {
+			root.render(
+				<QueryClientProvider client={queryClient}>
+					<MissingGuardProbe />
+				</QueryClientProvider>,
+			);
+		});
+
+		if (!mutationsWithoutGuards) throw new Error("Mutation hooks were not captured");
+		await act(async () => {
+			await expect(mutationsWithoutGuards?.updateLeverage({ asset: 1, isCross: false, leverage: 5 })).rejects.toThrow(
+				"An execution guard is required for isolated margin management",
+			);
+			await expect(mutationsWithoutGuards?.updateIsolatedMargin({ asset: 1, isBuy: true, ntli: -1 })).rejects.toThrow(
+				"An execution guard is required for isolated margin management",
+			);
+			await expect(mutationsWithoutGuards?.topUpIsolatedOnlyMargin({ asset: 1, leverage: "5" })).rejects.toThrow(
+				"An execution guard is required for isolated margin management",
+			);
+		});
+		expect(clients.updateLeverage).not.toHaveBeenCalled();
+		expect(clients.updateIsolatedMargin).not.toHaveBeenCalled();
+	});
+
+	it("rejects asynchronous execution guards before scheduling an SDK request", async () => {
+		let mutateWithAsyncGuard: CapturedMutations["updateLeverage"] | null = null;
+		const asyncExecutionGuard = vi.fn(async (_params: ExchangeParams<"updateLeverage">) => {});
+		function AsyncGuardProbe() {
+			const mutation = useExchange("updateLeverage", { executionGuard: asyncExecutionGuard });
+			mutateWithAsyncGuard = mutation.mutateAsync;
+			return null;
+		}
+
+		act(() => {
+			root.render(
+				<QueryClientProvider client={queryClient}>
+					<AsyncGuardProbe />
+				</QueryClientProvider>,
+			);
+		});
+
+		await act(async () => {
+			await expect(mutateWithAsyncGuard?.({ asset: 1, isCross: false, leverage: 5 })).rejects.toThrow(
+				"Execution guards must complete synchronously",
+			);
+		});
+		expect(asyncExecutionGuard).toHaveBeenCalledTimes(1);
+		expect(clients.updateLeverage).not.toHaveBeenCalled();
 	});
 });

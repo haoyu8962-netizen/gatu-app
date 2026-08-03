@@ -6,7 +6,6 @@ import {
 	canRemoveIsolatedMargin,
 	getPerpMarginConstraint,
 } from "@/domain/trade/isolated-margin";
-import { isIsolatedOrderRiskIncrease } from "@/domain/trade/order-risk-context";
 
 describe("isolated margin actions", () => {
 	it("encodes exact USDC additions as signed six-decimal integers", () => {
@@ -76,27 +75,5 @@ describe("isolated margin actions", () => {
 		expect(canRemoveIsolatedMargin("strictIsolated")).toBe(false);
 		expect(canRemoveIsolatedMargin("noCross")).toBe(true);
 		expect(canRemoveIsolatedMargin(undefined)).toBe(true);
-	});
-
-	it("classifies only non-reduce-only isolated orders as risk increases", () => {
-		expect(
-			isIsolatedOrderRiskIncrease([{ a: 1, r: false }], {
-				marketKind: "perp",
-				marginMode: "isolated",
-			}),
-		).toBe(true);
-		expect(
-			isIsolatedOrderRiskIncrease([{ a: 1, r: true }], {
-				marketKind: "perp",
-				marginMode: "isolated",
-			}),
-		).toBe(false);
-		expect(
-			isIsolatedOrderRiskIncrease([{ a: 1, r: false }], {
-				marketKind: "perp",
-				marginMode: "cross",
-			}),
-		).toBe(false);
-		expect(isIsolatedOrderRiskIncrease([{ a: 10_001, r: false }], { marketKind: "spot" })).toBe(false);
 	});
 });

@@ -1,11 +1,7 @@
 import type { ExchangeClient } from "@nktkas/hyperliquid";
 import { type UseMutationResult, useMutation } from "@tanstack/react-query";
 import { assertExchange, WalletAccountMismatchError } from "../errors";
-import {
-	assertExchangeMutationAllowed,
-	useIsolatedRiskIncreasePolicy,
-	usePortfolioMarginActivationPolicy,
-} from "../exchange-policy";
+import { assertExchangeMutationAllowed, usePortfolioMarginActivationPolicy } from "../exchange-policy";
 import {
 	captureExchangeRequestGeneration,
 	ExchangeRequestInvalidatedError,
@@ -22,14 +18,64 @@ import type { HyperliquidQueryError, MutationParameter } from "../types";
 import type { ExchangeMethod, ExchangeParams, ExchangeResponse } from "../types/clients";
 import { useHyperliquidClients } from "./useClients";
 
+export type IsolatedManagementExchangeMethod = "topUpIsolatedOnlyMargin" | "updateIsolatedMargin" | "updateLeverage";
+
+/** Runs before enqueue and again at the SDK boundary; keep it synchronous and read volatile state from refs. */
+export type ExchangeExecutionGuard<M extends ExchangeMethod> = (params: ExchangeParams<M>) => void;
+
+export type ExchangeMutationOptions<M extends ExchangeMethod> = MutationParameter<
+	ExchangeResponse<M>,
+	ExchangeParams<M>
+> & {
+	executionGuard?: ExchangeExecutionGuard<M>;
+};
+
+export type GuardedExchangeMutationOptions<M extends IsolatedManagementExchangeMethod> = Omit<
+	ExchangeMutationOptions<M>,
+	"executionGuard"
+> & {
+	executionGuard: ExchangeExecutionGuard<M>;
+};
+
+const EXECUTION_GUARD_REQUIRED_MESSAGE = "An execution guard is required for isolated margin management";
+const ASYNC_EXECUTION_GUARD_MESSAGE = "Execution guards must complete synchronously";
+
+function requiresExecutionGuard(method: ExchangeMethod): method is IsolatedManagementExchangeMethod {
+	return method === "topUpIsolatedOnlyMargin" || method === "updateIsolatedMargin" || method === "updateLeverage";
+}
+
+function assertExecutionAllowed<M extends ExchangeMethod>(
+	method: M,
+	params: ExchangeParams<M>,
+	executionGuard: ExchangeExecutionGuard<M> | undefined,
+): void {
+	if (!executionGuard) {
+		if (requiresExecutionGuard(method)) throw new Error(EXECUTION_GUARD_REQUIRED_MESSAGE);
+		return;
+	}
+	const result = executionGuard(params) as unknown;
+	if (result && (typeof result === "object" || typeof result === "function") && "then" in result) {
+		void Promise.resolve(result).catch(() => {});
+		throw new Error(ASYNC_EXECUTION_GUARD_MESSAGE);
+	}
+}
+
+export function useExchange<M extends IsolatedManagementExchangeMethod>(
+	method: M,
+	options: GuardedExchangeMutationOptions<M>,
+): UseMutationResult<ExchangeResponse<M>, HyperliquidQueryError, ExchangeParams<M>>;
+export function useExchange<M extends Exclude<ExchangeMethod, IsolatedManagementExchangeMethod>>(
+	method: M,
+	options?: ExchangeMutationOptions<M>,
+): UseMutationResult<ExchangeResponse<M>, HyperliquidQueryError, ExchangeParams<M>>;
 export function useExchange<M extends ExchangeMethod>(
 	method: M,
-	options: MutationParameter<ExchangeResponse<M>, ExchangeParams<M>> = {},
+	options: ExchangeMutationOptions<M> = {},
 ): UseMutationResult<ExchangeResponse<M>, HyperliquidQueryError, ExchangeParams<M>> {
 	const { agentPublicKey, trading, user, userWalletMismatch } = useHyperliquidClients();
 	const { builderConfig, clientKey, env, exchangeLifecycle, sessionMode } = useHyperliquid();
 	const portfolioMarginActivationEnabled = usePortfolioMarginActivationPolicy();
-	const isolatedRiskIncreaseEnabled = useIsolatedRiskIncreasePolicy();
+	const { executionGuard, ...mutationOptions } = options;
 
 	const config = getExchangeMethodConfig(method);
 	const exchange = config.client === "user" ? user : trading;
@@ -37,7 +83,12 @@ export function useExchange<M extends ExchangeMethod>(
 	const mutationKey = config.useClientKey ? ["hl", method, clientKey] : ["hl", method];
 
 	const mutationFn = (params: ExchangeParams<M>): Promise<ExchangeResponse<M>> => {
-		assertExchangeMutationAllowed(method, params, portfolioMarginActivationEnabled, isolatedRiskIncreaseEnabled);
+		assertExchangeMutationAllowed(method, params, portfolioMarginActivationEnabled);
+		const requestParams =
+			params != null && typeof params === "object" && !Array.isArray(params)
+				? { ...params, ...(config.injectBuilder ? { builder: builderConfig } : {}) }
+				: params;
+		assertExecutionAllowed(method, requestParams as ExchangeParams<M>, executionGuard);
 		if (config.client === "user" && userWalletMismatch) throw new WalletAccountMismatchError();
 		assertExchange(exchange);
 		if (clientKey === "disconnected") throw new ExchangeRequestInvalidatedError();
@@ -60,21 +111,13 @@ export function useExchange<M extends ExchangeMethod>(
 			lifecycle: exchangeLifecycle,
 		});
 		const fn = (exchange as ExchangeClient)[method] as (...args: unknown[]) => Promise<ExchangeResponse<M>>;
-		const requestParams =
-			params != null && typeof params === "object" && !Array.isArray(params)
-				? { ...params, ...(config.injectBuilder ? { builder: builderConfig } : {}) }
-				: params;
 		const priority = getExchangeRequestPriority(method, requestParams);
 		return scheduleExchangeRequest(
 			exchange,
 			priority,
 			() => {
-				assertExchangeMutationAllowed(
-					method,
-					requestParams,
-					portfolioMarginActivationEnabled,
-					isolatedRiskIncreaseEnabled,
-				);
+				assertExchangeMutationAllowed(method, requestParams, portfolioMarginActivationEnabled);
+				assertExecutionAllowed(method, requestParams as ExchangeParams<M>, executionGuard);
 				return requestParams !== undefined ? fn.call(exchange, requestParams) : fn.call(exchange);
 			},
 			requestGeneration,
@@ -90,7 +133,7 @@ export function useExchange<M extends ExchangeMethod>(
 	};
 
 	return useMutation({
-		...options,
+		...mutationOptions,
 		mutationKey,
 		mutationFn,
 	});

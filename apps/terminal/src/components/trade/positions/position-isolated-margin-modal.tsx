@@ -11,21 +11,26 @@ import {
 	SegmentedControls,
 } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
+import type {
+	TopUpIsolatedOnlyMarginParameters,
+	UpdateIsolatedMarginParameters,
+} from "@nktkas/hyperliquid/api/exchange";
 import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
-import { ISOLATED_RISK_FEATURES } from "@/config/isolated-risk";
+import { getPositionDex } from "@/domain/market";
 import {
 	buildIsolatedMarginAmountParameters,
 	buildIsolatedMarginTargetParameters,
 	calculateEffectiveLeverage,
 	canRemoveIsolatedMargin,
+	getPerpMarginConstraint,
 	type IsolatedMarginDirection,
 } from "@/domain/trade/isolated-margin";
 import { formatLiquidationPrice, formatNumber, formatUSD } from "@/lib/format";
-import { useExchange, useUserPositions } from "@/lib/hyperliquid";
+import { useExchange, useMarkets, useUserPositions } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { TradingActionButton } from "../components/trading-action-button";
 import type { IsolatedMarginPositionRef } from "./position-dialog-types";
@@ -66,21 +71,101 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 	const [targetLeverageInput, setTargetLeverageInput] = useState("");
 	const [submitError, setSubmitError] = useState<string | null>(null);
 
-	const amountMutation = useExchange("updateIsolatedMargin");
-	const targetMutation = useExchange("topUpIsolatedOnlyMargin");
-	const { getPosition, isLoading: positionLoading, hasError: positionError } = useUserPositions();
+	const markets = useMarkets();
+	const userPositions = useUserPositions();
+	const { getPosition, isLoading: positionLoading, hasError: positionError, isStale: positionStale } = userPositions;
+	const executionStateRef = useRef({ markets, position, userPositions });
+	executionStateRef.current = { markets, position, userPositions };
+
+	const assertExecutionContext = useCallback(
+		(params: UpdateIsolatedMarginParameters | TopUpIsolatedOnlyMarginParameters, action: AdjustmentMode) => {
+			const current = executionStateRef.current;
+			const currentMarket = current.markets.getMarket(current.position.coin);
+			const currentMarketDex = currentMarket ? getPositionDex(currentMarket) : undefined;
+
+			if (
+				current.markets.isLoading ||
+				current.markets.error ||
+				!currentMarket ||
+				currentMarket.kind === "spot" ||
+				currentMarket.assetId !== current.position.assetId ||
+				currentMarketDex !== current.position.dex ||
+				params.asset !== current.position.assetId
+			) {
+				throw new Error(t`The selected market changed. Reopen the margin dialog before adjusting margin.`);
+			}
+
+			if (current.userPositions.isLoading || current.userPositions.hasError || current.userPositions.isStale) {
+				throw new Error(
+					t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`,
+				);
+			}
+
+			const currentPosition = current.userPositions.getPosition(current.position.coin, current.position.dex);
+			const currentSize = toBig(currentPosition?.szi);
+			if (!currentPosition || !currentSize || currentSize.eq(0)) {
+				throw new Error(t`This isolated position is no longer open.`);
+			}
+			if (currentPosition.leverage.type !== "isolated") {
+				throw new Error(t`This position is no longer using isolated margin.`);
+			}
+
+			const currentIsLong = currentSize.gt(0);
+			if (currentIsLong !== current.position.isLong || ("isBuy" in params && params.isBuy !== currentIsLong)) {
+				throw new Error(t`This position changed sides. Reopen the margin dialog before adjusting margin.`);
+			}
+
+			const marginConstraint = getPerpMarginConstraint(currentMarket);
+			if (action === "target" && marginConstraint === undefined) {
+				throw new Error(t`The selected market changed. Reopen the margin dialog before adjusting margin.`);
+			}
+			if ("ntli" in params) {
+				const marginDelta = toBig(params.ntli);
+				if (!marginDelta || marginDelta.eq(0)) {
+					throw new Error(t`Failed to update isolated margin`);
+				}
+				if (
+					marginDelta.lt(0) &&
+					(!canRemoveIsolatedMargin(current.position.marginConstraint) || !canRemoveIsolatedMargin(marginConstraint))
+				) {
+					throw new Error(t`This strict isolated market does not allow margin to be removed from an open position.`);
+				}
+			}
+		},
+		[],
+	);
+	const amountMutation = useExchange("updateIsolatedMargin", {
+		executionGuard: (params) => assertExecutionContext(params, "amount"),
+	});
+	const targetMutation = useExchange("topUpIsolatedOnlyMargin", {
+		executionGuard: (params) => assertExecutionContext(params, "target"),
+	});
 	const livePosition = getPosition(position.coin, position.dex);
+	const liveMarket = markets.getMarket(position.coin);
+	const liveMarketDex = liveMarket ? getPositionDex(liveMarket) : undefined;
+	const hasLiveMarket =
+		!markets.isLoading &&
+		!markets.error &&
+		liveMarket !== undefined &&
+		liveMarket.kind !== "spot" &&
+		liveMarket.assetId === position.assetId &&
+		liveMarketDex === position.dex;
+	const liveMarginConstraint = hasLiveMarket ? getPerpMarginConstraint(liveMarket) : undefined;
 
 	const marginUsed = livePosition?.marginUsed ?? position.marginUsed;
 	const positionValue = livePosition?.positionValue ?? position.positionValue;
 	const liquidationPx = livePosition?.liquidationPx ?? position.liquidationPx;
 	const currentEffectiveLeverage = calculateEffectiveLeverage(positionValue, marginUsed);
-	const supportsTargetLeverage = position.marginConstraint !== undefined;
-	const marketAllowsRemoval = canRemoveIsolatedMargin(position.marginConstraint);
-	const allowsRemoval = marketAllowsRemoval && ISOLATED_RISK_FEATURES.increaseEnabled;
+	const supportsTargetLeverage = hasLiveMarket && liveMarginConstraint !== undefined;
+	const marketAllowsRemoval =
+		hasLiveMarket &&
+		canRemoveIsolatedMargin(position.marginConstraint) &&
+		canRemoveIsolatedMargin(liveMarginConstraint);
+	const allowsRemoval = marketAllowsRemoval;
 	const livePositionSize = toBig(livePosition?.szi);
 	const isLiveIsolated = livePosition?.leverage.type === "isolated";
 	const liveIsLong = livePositionSize ? livePositionSize.gt(0) : position.isLong;
+	const liveSideMatches = livePositionSize !== null && !livePositionSize.eq(0) && liveIsLong === position.isLong;
 
 	const amountParams = buildIsolatedMarginAmountParameters({
 		assetId: position.assetId,
@@ -90,9 +175,20 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 	});
 	const targetParams = buildIsolatedMarginTargetParameters(position.assetId, targetLeverageInput);
 	const isSubmitting = amountMutation.isPending || targetMutation.isPending;
-	const hasLivePosition = livePosition !== null && isLiveIsolated && !positionError;
+	const hasLivePosition =
+		hasLiveMarket &&
+		livePosition !== null &&
+		livePositionSize !== null &&
+		!livePositionSize.eq(0) &&
+		liveSideMatches &&
+		isLiveIsolated &&
+		!positionLoading &&
+		!positionError &&
+		!positionStale;
 	const inputValid = mode === "amount" ? amountParams !== null : targetParams !== null;
-	const canSubmit = hasLivePosition && inputValid && !isSubmitting;
+	const actionAllowed =
+		(mode !== "target" || supportsTargetLeverage) && (mode !== "amount" || direction !== "remove" || allowsRemoval);
+	const canSubmit = hasLivePosition && inputValid && actionAllowed && !isSubmitting;
 
 	function handleModeChange(value: string) {
 		setMode(value as AdjustmentMode);
@@ -108,6 +204,7 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 
 	async function handleSubmit() {
 		if (!canSubmit) return;
+		if (mode === "amount" && direction === "remove" && !allowsRemoval) return;
 		setSubmitError(null);
 
 		try {
@@ -131,12 +228,20 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 	}
 
 	function renderPositionStatus() {
-		if (positionError) {
+		if (!hasLiveMarket) {
+			return t`The selected market changed. Reopen the margin dialog before adjusting margin.`;
+		}
+		if (positionError || positionStale) {
 			return t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`;
 		}
-		if (!livePosition && positionLoading) return t`Loading position...`;
+		if (positionLoading) return t`Loading position...`;
 		if (!livePosition) return t`This isolated position is no longer open.`;
+		if (!livePositionSize) {
+			return t`Live position data is unavailable. Wait for the account connection to recover before adjusting margin.`;
+		}
+		if (livePositionSize.eq(0)) return t`This isolated position is no longer open.`;
 		if (!isLiveIsolated) return t`This position is no longer using isolated margin.`;
+		if (!liveSideMatches) return t`This position changed sides. Reopen the margin dialog before adjusting margin.`;
 		return null;
 	}
 
@@ -228,13 +333,9 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 								{t`Adding margin lowers effective leverage and moves the liquidation price farther away.`}
 							</p>
 						)}
-						{!marketAllowsRemoval ? (
+						{hasLiveMarket && !marketAllowsRemoval ? (
 							<p className="text-xs leading-relaxed text-fg-muted">
 								{t`This strict isolated market does not allow margin to be removed from an open position.`}
-							</p>
-						) : !ISOLATED_RISK_FEATURES.increaseEnabled ? (
-							<p className="text-xs leading-relaxed text-fg-muted">
-								{t`Removing isolated margin is temporarily unavailable. Adding margin and closing the position remain available.`}
 							</p>
 						) : null}
 					</div>

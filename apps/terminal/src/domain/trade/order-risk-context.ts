@@ -23,7 +23,3 @@ export function doesOrderBatchMatchRiskContext(orders: readonly AssetOrder[], co
 		return context.marketKind === "spot" ? isSpot : !isSpot;
 	});
 }
-
-export function isIsolatedOrderRiskIncrease(orders: readonly AssetOrder[], context: OrderRiskContext): boolean {
-	return context.marketKind === "perp" && context.marginMode === "isolated" && orders.some((order) => order.r !== true);
-}

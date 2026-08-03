@@ -165,6 +165,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 		leverage,
 		marginMode,
 		hasPosition,
+		positionStateReady,
 		currentLeverage,
 		pendingLeverage,
 		maxLeverage,
@@ -173,6 +174,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 		applyMarginAndLeverage,
 		isSwitchingMode,
 		switchModeError,
+		allowsIsolatedMarginRemoval,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
 
 	useEffect(() => {
@@ -452,7 +454,9 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
 				hasPosition={hasPosition}
-				isOnlyIsolated={capabilities.isOnlyIsolated}
+				positionStateReady={positionStateReady}
+				allowsCrossMargin={capabilities.allowsCrossMargin}
+				allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
 				isUpdating={isSwitchingMode}
 				updateError={switchModeError}
 				showLeverage={capabilities.isLeveraged}

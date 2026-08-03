@@ -199,7 +199,7 @@ sudo systemctl status gatu --no-pager
 需要重新构建和部署；它不是无需部署即可切换的远端 kill switch。无论开关状态如何，撤销已有
 Mobile Agent 和已有 Agent 的远端对账都保持可用。
 
-其余三个高风险能力也使用彼此独立、默认关闭的构建期开关:
+其余两个高风险能力也使用彼此独立、默认关闭的构建期开关:
 
 - `VITE_PORTFOLIO_MARGIN_ACTIVATION_ENABLED=true`:允许从非 PM 模式新激活 Portfolio Margin。关闭时已有
   PM 用户仍可使用当前模式或切回其他模式。
@@ -215,11 +215,6 @@ Mobile Agent 和已有 Agent 的远端对账都保持可用。
   已批准 route 的 fingerprint 一致时才允许追踪。关闭标签页或浏览器后 `sessionStorage` 不再存在，因此
   不承诺本地恢复，也不要把它当作长期交易历史；应使用链上浏览器/LI.FI Explorer 继续核对。如果提交后
   浏览器无法写入恢复记录，执行页会明确要求保持当前标签页打开并移除 Close 操作，直到当前追踪完成。
-- `VITE_ISOLATED_RISK_INCREASE_ENABLED=true`:允许切入 isolated、调整 isolated 杠杆、移除 isolated
-  保证金，以及提交非 reduce-only 的 isolated 普通单/TWAP。关闭时 cross 与 spot 下单不受影响；已有
-  isolated 仓位仍可通过 reduce-only 市价/限价/TP-SL 平仓或减仓，撤单、TWAP 撤单、对账、追加保证金
-  和切回 cross 仍保持可用。
-
 这些变量只接受精确的 `true`，关闭任意能力都需要重新构建和部署。不要把它们当作远端实时 kill switch。
 已经加载旧构建的浏览器标签页不会被构建期开关立即关闭。关闭 LI.FI 新 route 时，应先停止对启用版本的
 流量并留出在途 route 排空窗口，再发布关闭版本；发布后用同一标签页刷新验证 committed route 的恢复入口，
@@ -320,7 +315,7 @@ ssh gatu@<host> "ln -sfn /opt/gatu/releases/${release} /opt/gatu/current.tmp && 
 - [ ] `.env.local`:`VITE_PRIVY_APP_ID` 已填(生产 mainnet,`VITE_HYPERLIQUID_TESTNET` 留空)
 - [ ] 移动配对 rollout 已决策；若启用，两个 `VITE_MOBILE_PAIRING_*_ENABLED` 均为精确的 `true`
 - [ ] 启用移动配对时仍为单 Node 进程；若已横向扩容，一次性 QR 登记已迁移到共享原子 TTL 存储
-- [ ] PM 激活、LI.FI 新 bridge、isolated 风险增加三个独立 rollout 已决策；未批准的 gate 保持为空
+- [ ] PM 激活和 LI.FI 新 bridge 两个独立 rollout 已决策；未批准的 gate 保持为空
 - [ ] 若关闭 LI.FI 新 bridge，已停止启用版本的流量、盘点在途 route，并验证同标签页刷新恢复和双端新入口隐藏
 - [ ] `.env.runtime`:`IPDATA_API_KEY` 已填(并已**轮换**掉聊天里泄漏过的旧 key)
 - [ ] Privy Dashboard:把 `app.gatu.ai` 加入 Allowed origins

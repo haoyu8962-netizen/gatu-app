@@ -43,7 +43,13 @@ export {
 export { getExplorerTokenUrl, getExplorerTxUrl } from "./explorer";
 export { type ApiStatus, type ApiStatusResult, useApiStatus } from "./hooks/useApiStatus";
 export { type HyperliquidClients, useHyperliquidClients } from "./hooks/useClients";
-export { useExchange } from "./hooks/useExchange";
+export {
+	type ExchangeExecutionGuard,
+	type ExchangeMutationOptions,
+	type GuardedExchangeMutationOptions,
+	type IsolatedManagementExchangeMethod,
+	useExchange,
+} from "./hooks/useExchange";
 export {
 	infoKey,
 	infoPersistedKey,

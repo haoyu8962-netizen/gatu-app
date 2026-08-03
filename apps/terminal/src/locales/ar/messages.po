@@ -5796,3 +5796,23 @@ msgstr "لا توجد مراكز تطابق عوامل التصفية المحد
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Position Value"
 msgstr "قيمة المركز"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
+msgstr "يستخدم كل مركز الهامش المخصص له فقط. إذا وصلت نسبة الهامش إلى 100٪، تتم تصفية المركز. يمكن إضافة الهامش، ولكن لا يمكن سحبه ما دام المركز مفتوحًا."
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
+msgstr "بيانات المركز غير متاحة. انتظر حتى تتم استعادة اتصال الحساب قبل تغيير وضع الهامش."
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
+msgstr "تغيّر السوق المحدد. أعد فتح نافذة الهامش قبل تعديل الهامش."
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "This market only supports isolated margin mode."
+msgstr "يدعم هذا السوق وضع الهامش المعزول فقط."
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
+msgstr "تغيّر اتجاه المركز. أعد فتح نافذة الهامش قبل تعديل الهامش."

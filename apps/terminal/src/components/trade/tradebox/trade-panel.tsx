@@ -117,6 +117,7 @@ export function TradePanel() {
 		leverage,
 		marginMode,
 		hasPosition,
+		positionStateReady,
 		currentLeverage,
 		pendingLeverage,
 		maxLeverage,
@@ -125,6 +126,7 @@ export function TradePanel() {
 		applyMarginAndLeverage,
 		isSwitchingMode,
 		switchModeError,
+		allowsIsolatedMarginRemoval,
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
 
 	const { takerRate, makerRate } = useMarketFeeRates(market);
@@ -425,7 +427,9 @@ export function TradePanel() {
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
 				hasPosition={hasPosition}
-				isOnlyIsolated={capabilities.isOnlyIsolated}
+				positionStateReady={positionStateReady}
+				allowsCrossMargin={capabilities.allowsCrossMargin}
+				allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
 				isUpdating={isSwitchingMode}
 				updateError={switchModeError}
 				showLeverage={capabilities.isLeveraged}
