@@ -21,18 +21,20 @@ export function useTradingAuthorization(): UseTradingAuthorizationResult {
 		mutationKey: ["hl", "tradingAuthorization", agentStatus.agentAddress],
 		mutationFn: async (): Promise<Address> => {
 			let registeredAddress = agentStatus.agentAddress;
+			let newlyVerifiedAgentAddress: Address | undefined;
 			let requirements = await agentStatus.refetch();
 
 			if (requirements.needsAgent) {
 				registeredAddress = await agentRegistration.register();
-				requirements = await agentStatus.refetch();
+				newlyVerifiedAgentAddress = registeredAddress;
+				requirements = await agentStatus.refetch(newlyVerifiedAgentAddress);
 			}
 
 			if (requirements.needsBuilderFee) {
 				await builderFeeApproval.approve();
 			}
 
-			const confirmed = await agentStatus.refetch();
+			const confirmed = await agentStatus.refetch(newlyVerifiedAgentAddress);
 			if (!confirmed.isReady) throw new Error("Trading authorization could not be confirmed");
 			return registeredAddress ?? zeroAddress;
 		},

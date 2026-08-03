@@ -23,7 +23,7 @@ export interface UseAgentStatusResult extends AgentRequirements {
 	isAgentLoading: boolean;
 	isBuilderFeeLoading: boolean;
 	agentAddress: Address | null;
-	refetch: () => Promise<AgentRequirements>;
+	refetch: (agentAddressOverride?: Address) => Promise<AgentRequirements>;
 	refetchAgent: () => Promise<AgentRequirements>;
 	refetchBuilderFee: () => Promise<AgentRequirements>;
 }
@@ -65,15 +65,17 @@ export function deriveAgentRequirements(
 	localAgent: AgentWallet | null | undefined,
 	builderConfig: BuilderConfig | undefined,
 	nowMs = Date.now(),
+	agentAddressOverride?: Address,
 ): AgentRequirements {
 	const hasBuilderConfig = !!builderConfig?.b;
 	const builderFeeKnown = !hasBuilderConfig || builderFeeData !== undefined;
 	const extraAgentsKnown = extraAgentsData !== undefined;
 	const mobileAgentApproved =
-		localAgent?.source === "mobile-sync"
+		!agentAddressOverride && localAgent?.source === "mobile-sync"
 			? verifyMobileAgent(localAgent, extraAgentsData, nowMs).status === "approved"
 			: null;
-	const agentApproved = mobileAgentApproved ?? isAgentApproved(extraAgentsData, localAgent?.publicKey);
+	const agentApproved =
+		mobileAgentApproved ?? isAgentApproved(extraAgentsData, agentAddressOverride ?? localAgent?.publicKey);
 
 	const needsBuilderFee =
 		hasBuilderConfig && builderFeeKnown && !isBuilderFeeApproved(builderFeeData, builderConfig?.f);
@@ -152,7 +154,7 @@ export function useAgentStatus(): UseAgentStatusResult {
 		return deriveAgentRequirements(feeResult.data, extraAgentsQuery.data, localAgent, builderConfig);
 	}
 
-	async function refetch(): Promise<AgentRequirements> {
+	async function refetch(agentAddressOverride?: Address): Promise<AgentRequirements> {
 		const [builderFeeData, agentsResult] = await Promise.all([
 			hasBuilderConfig
 				? builderFeeQuery.refetch().then((result) => {
@@ -166,7 +168,14 @@ export function useAgentStatus(): UseAgentStatusResult {
 			throw new Error("Could not load agent status");
 		}
 
-		return deriveAgentRequirements(builderFeeData, agentsResult.data, localAgent, builderConfig);
+		return deriveAgentRequirements(
+			builderFeeData,
+			agentsResult.data,
+			localAgent,
+			builderConfig,
+			Date.now(),
+			agentAddressOverride,
+		);
 	}
 
 	return {

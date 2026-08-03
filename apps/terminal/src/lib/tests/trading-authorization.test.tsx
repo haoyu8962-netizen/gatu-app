@@ -121,6 +121,13 @@ describe("trading authorization contracts", () => {
 			needsAgent: false,
 			needsBuilderFee: false,
 		});
+		expect(deriveAgentRequirements(10, [remoteAgent], null, { b: BUILDER, f: 10 }, Date.now(), AGENT)).toMatchObject({
+			isAgentReady: true,
+			isBuilderFeeReady: true,
+			isReady: true,
+			needsAgent: false,
+			needsBuilderFee: false,
+		});
 	});
 
 	it("authorizes the Agent before requesting the independent builder fee", async () => {
@@ -140,6 +147,9 @@ describe("trading authorization contracts", () => {
 			testState.approveBuilderFee.mock.invocationCallOrder[0] ?? 0,
 		);
 		expect(testState.refetch).toHaveBeenCalledTimes(3);
+		expect(testState.refetch).toHaveBeenNthCalledWith(1);
+		expect(testState.refetch).toHaveBeenNthCalledWith(2, AGENT);
+		expect(testState.refetch).toHaveBeenNthCalledWith(3, AGENT);
 	});
 
 	it("skips builder approval when only Agent registration is required", async () => {
