@@ -91,6 +91,9 @@ describe("positions table visual contract", () => {
 
 	it("uses the official-style mobile information grid without internal cell dividers", () => {
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-7");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-8");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("<AssetDisplay");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain('iconClassName="size-4 shrink-0"');
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain('context: "Cumulative position funding"');
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("formatQuoteAmount(p.positionValue, quoteSymbol");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Entry Price`");

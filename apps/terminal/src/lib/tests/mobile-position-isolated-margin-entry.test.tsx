@@ -8,6 +8,10 @@ import type { Position } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
 import { createI18nRoot } from "./harness/react";
 
+vi.mock("@/components/trade/components/asset-display", () => ({
+	AssetDisplay: ({ coin }: { coin: string }) => <span data-testid="position-asset-logo" data-coin={coin} />,
+}));
+
 const isolatedPosition: Position = {
 	dex: "xyz",
 	coin: "xyz:CXMT",
@@ -27,7 +31,9 @@ const markets = {
 	getMarket: () => ({
 		kind: "builderPerp",
 		name: "xyz:CXMT",
+		shortName: "CXMT",
 		pairName: "CXMT-USDC",
+		iconUrl: "https://assets.example/CXMT.svg",
 		assetId: 120_031,
 		szDecimals: 1,
 		marginMode: "noCross",
@@ -141,6 +147,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 
 	it("keeps the mobile summary compact until the user expands the position", () => {
 		const onExpandedChange = vi.fn();
+		const onSelectMarket = vi.fn();
 
 		act(() => {
 			root.render(
@@ -158,7 +165,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					onLimitClose: vi.fn(),
 					onOpenTpSl: vi.fn(),
 					onAdjustMargin: vi.fn(),
-					onSelectMarket: vi.fn(),
+					onSelectMarket,
 				}),
 			);
 		});
@@ -166,7 +173,13 @@ describe("MobilePositionCard isolated margin entry", () => {
 		expect(container.textContent).toContain("205.9 CXMT");
 		expect(container.textContent).toContain("10x");
 		expect(container.textContent).toContain("xyz");
+		expect(container.querySelector('[data-testid="position-asset-logo"]')?.getAttribute("data-coin")).toBe("xyz:CXMT");
 		expect(container.querySelector('button[aria-label="Adjust isolated margin for CXMT-USDC"]')).toBeNull();
+
+		const marketButton = container.querySelector('button[aria-label="Switch to CXMT-USDC market, long position"]');
+		if (!(marketButton instanceof HTMLButtonElement)) throw new Error("Market identity button was not rendered");
+		act(() => marketButton.click());
+		expect(onSelectMarket).toHaveBeenCalledWith("xyz:CXMT", "buy");
 
 		const expandButton = container.querySelector('button[aria-label="Expand market details"]');
 		if (!(expandButton instanceof HTMLButtonElement)) throw new Error("Position details trigger was not rendered");

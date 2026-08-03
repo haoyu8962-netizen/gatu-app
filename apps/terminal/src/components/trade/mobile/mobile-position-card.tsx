@@ -21,6 +21,7 @@ import { isPositive, toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
+import { AssetDisplay } from "../components/asset-display";
 import type {
 	ClosePositionData,
 	IsolatedMarginPositionRef,
@@ -245,10 +246,10 @@ export function MobilePositionCard({
 
 	return (
 		<div className="overflow-hidden rounded-8 border border-stroke-weak bg-fill-weaker p-3">
-			<div className="grid grid-cols-[minmax(0,1fr)_1rem] items-start gap-3">
+			<div className={cn("grid items-start", isExpanded ? "grid-cols-1" : "grid-cols-[minmax(0,1fr)_1rem] gap-3")}>
 				<div className="min-w-0">
-					<div className="grid min-w-0 grid-cols-7 gap-x-3 gap-y-3">
-						<div className="col-span-2 min-w-0">
+					<div className="grid min-w-0 grid-cols-8 gap-x-3 gap-y-3">
+						<div className="col-span-3 min-w-0">
 							<div className="truncate text-xs leading-4 text-fg-muted">{t`Market`}</div>
 							<button
 								type="button"
@@ -258,17 +259,26 @@ export function MobilePositionCard({
 										? t`Switch to ${displayName} market, long position`
 										: t`Switch to ${displayName} market, short position`
 								}
-								className="flex max-w-full min-w-0 items-center gap-1 rounded-xs text-left leading-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+								className="mt-0.5 flex max-w-full min-w-0 items-center gap-1 rounded-xs text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 							>
-								<span className={cn("truncate text-xs font-semibold", isLong ? "text-success" : "text-error")}>
-									{sizeSymbol}
-								</span>
-								<span className="shrink-0 text-3xs font-medium text-fg-muted">{p.leverage.value}x</span>
-								{p.dex ? (
-									<span className="shrink-0 rounded-xs bg-brand/10 px-1 py-0.5 text-3xs font-medium text-brand">
-										{p.dex}
+								<AssetDisplay coin={p.coin} iconUrl={market?.iconUrl} hideName iconClassName="size-4 shrink-0" />
+								<span className="flex min-w-0 flex-1 flex-col items-start leading-none">
+									<span
+										className={cn(
+											"max-w-full truncate text-xs font-semibold leading-4",
+											isLong ? "text-success" : "text-error",
+										)}
+										title={sizeSymbol}
+									>
+										{sizeSymbol}
 									</span>
-								) : null}
+									<span className="flex max-w-full min-w-0 items-center gap-1 text-3xs font-medium leading-3 text-fg-muted">
+										<span className="shrink-0">{p.leverage.value}x</span>
+										{p.dex ? (
+											<span className="max-w-full truncate rounded-xs bg-brand/10 px-1 py-px text-brand">{p.dex}</span>
+										) : null}
+									</span>
+								</span>
 							</button>
 						</div>
 						<PositionMetric
@@ -277,6 +287,7 @@ export function MobilePositionCard({
 							value={sizeDisplay}
 							valueClassName={isLong ? "text-success" : "text-error"}
 							valueTitle={sizeDisplay}
+							wrapValue
 						/>
 						<PositionMetric
 							className="col-span-3"
