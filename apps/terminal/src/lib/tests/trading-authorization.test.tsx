@@ -123,10 +123,10 @@ describe("trading authorization contracts", () => {
 		});
 	});
 
-	it("preserves the existing builder-then-Agent authorization sequence", async () => {
+	it("authorizes the Agent before requesting the independent builder fee", async () => {
 		testState.refetch
 			.mockResolvedValueOnce(requirements(true, true))
-			.mockResolvedValueOnce(requirements(false, true))
+			.mockResolvedValueOnce(requirements(true, false))
 			.mockResolvedValueOnce(requirements(false, false));
 		const hook = renderHook();
 
@@ -136,8 +136,8 @@ describe("trading authorization contracts", () => {
 
 		expect(testState.approveBuilderFee).toHaveBeenCalledOnce();
 		expect(testState.registerAgent).toHaveBeenCalledOnce();
-		expect(testState.approveBuilderFee.mock.invocationCallOrder[0]).toBeLessThan(
-			testState.registerAgent.mock.invocationCallOrder[0] ?? 0,
+		expect(testState.registerAgent.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.approveBuilderFee.mock.invocationCallOrder[0] ?? 0,
 		);
 		expect(testState.refetch).toHaveBeenCalledTimes(3);
 	});
@@ -145,6 +145,7 @@ describe("trading authorization contracts", () => {
 	it("skips builder approval when only Agent registration is required", async () => {
 		testState.refetch
 			.mockResolvedValueOnce(requirements(false, true))
+			.mockResolvedValueOnce(requirements(false, false))
 			.mockResolvedValueOnce(requirements(false, false));
 		const hook = renderHook();
 

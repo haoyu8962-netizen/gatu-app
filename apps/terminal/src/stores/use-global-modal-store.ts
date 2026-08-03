@@ -8,6 +8,7 @@ export type SendAccountType = "perp" | "spot";
 
 type GlobalModal =
 	| { type: "deposit"; tab: DepositTab }
+	| { type: "establishConnection" }
 	| { type: "internalTransfer"; direction: TransferDirection }
 	| { type: "send"; asset: string; accountType: SendAccountType }
 	| { type: "settings" }
@@ -18,6 +19,11 @@ type GlobalModal =
 interface DepositActions {
 	open: (tab?: DepositTab) => void;
 	setTab: (tab: DepositTab) => void;
+	close: () => void;
+}
+
+interface EstablishConnectionActions {
+	open: () => void;
 	close: () => void;
 }
 
@@ -50,6 +56,7 @@ interface CommandMenuActions {
 interface GlobalModalState {
 	modal: GlobalModal;
 	depositActions: DepositActions;
+	establishConnectionActions: EstablishConnectionActions;
 	transferActions: TransferActions;
 	sendActions: SendActions;
 	settingsActions: SettingsActions;
@@ -65,6 +72,10 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 		depositActions: {
 			open: (tab = "deposit") => set({ modal: { type: "deposit", tab } }),
 			setTab: (tab) => set((state) => (state.modal?.type === "deposit" ? { modal: { type: "deposit", tab } } : state)),
+			close,
+		},
+		establishConnectionActions: {
+			open: () => set({ modal: { type: "establishConnection" } }),
 			close,
 		},
 		transferActions: {
@@ -104,6 +115,14 @@ export function useDepositModalTab() {
 }
 export function useDepositModalActions() {
 	return useGlobalModalStore((s) => s.depositActions);
+}
+
+export function useEstablishConnectionModalOpen() {
+	return useGlobalModalStore((s) => s.modal?.type === "establishConnection");
+}
+
+export function useEstablishConnectionModalActions() {
+	return useGlobalModalStore((s) => s.establishConnectionActions);
 }
 
 export function useTransferModalOpen() {

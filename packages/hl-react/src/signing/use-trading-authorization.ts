@@ -23,13 +23,13 @@ export function useTradingAuthorization(): UseTradingAuthorizationResult {
 			let registeredAddress = agentStatus.agentAddress;
 			let requirements = await agentStatus.refetch();
 
-			if (requirements.needsBuilderFee) {
-				await builderFeeApproval.approve();
+			if (requirements.needsAgent) {
+				registeredAddress = await agentRegistration.register();
 				requirements = await agentStatus.refetch();
 			}
 
-			if (requirements.needsAgent) {
-				registeredAddress = await agentRegistration.register();
+			if (requirements.needsBuilderFee) {
+				await builderFeeApproval.approve();
 			}
 
 			const confirmed = await agentStatus.refetch();

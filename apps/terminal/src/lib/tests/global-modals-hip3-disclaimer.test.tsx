@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, createElement } from "react";
+import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -48,6 +48,11 @@ vi.mock("@/components/trade/components/hip3-deployer-disclaimer", () => ({
 vi.mock("@/components/trade/components/legal-acceptance-modal", () => ({
 	LegalAcceptanceModal: (props: Record<string, unknown>) =>
 		createElement("div", { "data-props": JSON.stringify(props), "data-testid": "LegalAcceptanceModal" }),
+}));
+
+vi.mock("@/components/trade/components/trading-onboarding-gate", () => ({
+	TradingOnboardingGate: ({ children }: { children: ReactNode }) =>
+		createElement("div", { "data-testid": "TradingOnboardingGate" }, children),
 }));
 
 vi.mock("@/lib/lazy", () => ({
@@ -124,6 +129,23 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).toBeNull();
 		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
 		expect(testState.hip3RequirementHook).not.toHaveBeenCalled();
+	});
+
+	it("mounts trading onboarding only after the legal gate is accepted", async () => {
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() =>
+			root.render(
+				createElement(GlobalModals, {
+					enableHip3Disclaimer: true,
+					enableLegalGate: true,
+					enableTradingOnboarding: true,
+				}),
+			),
+		);
+
+		expect(container.querySelector('[data-testid="TradingOnboardingGate"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).not.toBeNull();
 	});
 
 	it("suppresses lower-priority modals while legal status is loading", async () => {

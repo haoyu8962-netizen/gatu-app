@@ -12,6 +12,7 @@ import { SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { getLiquidationInfo } from "@/domain/trade/order/metrics";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
+import { getOrderActionStage } from "@/domain/trade/order-action-stage";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
@@ -46,7 +47,11 @@ import {
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
+import {
+	useDepositModalActions,
+	useEstablishConnectionModalActions,
+	useSettingsDialogActions,
+} from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import {
 	useOrderEntryActions,
@@ -94,13 +99,14 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 		navigateToMarket(marketName, nextMarket);
 	}
 
-	const { isReady: isAgentApproved } = useAgentStatus();
+	const { isReady: isTradingAuthorized, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
 	const { authorize, status: registerStatus } = useTradingAuthorization();
 	const accountModeControl = useAccountAbstractionControl();
 
 	const canApprove = !!walletClient && !!address;
 	const isRegistering =
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
+	const isApprovalLoading = isAgentReady ? isBuilderFeeLoading : isAgentLoading;
 
 	const slippageBps = useMarketOrderSlippageBps();
 	const slippagePercent = useMarketOrderSlippagePercent();
@@ -126,6 +132,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [showMarginDialog, setShowMarginDialog] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
+	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { tradeRestricted } = useGeoRestriction();
 
@@ -198,8 +205,8 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 		availableBalance,
 		hasMarket: !!market,
 		hasAssetIndex: typeof market?.assetId === "number",
-		needsAgentApproval: !isAgentApproved,
-		isReadyToTrade: isAgentApproved,
+		needsAgentApproval: !isTradingAuthorized,
+		isReadyToTrade: isTradingAuthorized,
 		price,
 		sizeValue,
 		orderValue,
@@ -266,6 +273,10 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 			return;
 		}
 		setApprovalError(null);
+		if (!isAgentReady) {
+			openEstablishConnectionModal();
+			return;
+		}
 		try {
 			await authorize();
 		} catch (error) {
@@ -386,6 +397,8 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 		hasBalanceError: hasAvailabilityError,
 		canDeposit: sessionMode === "wallet",
 		needsApproval: validation.needsApproval,
+		isAgentReady,
+		isApprovalLoading,
 		canSubmit: validation.canSubmit,
 		isRegistering,
 		canApprove,
@@ -793,6 +806,8 @@ interface MobileButtonContentInput {
 	hasBalanceError: boolean;
 	canDeposit: boolean;
 	needsApproval: boolean;
+	isAgentReady: boolean;
+	isApprovalLoading: boolean;
 	canSubmit: boolean;
 	isRegistering: boolean;
 	canApprove: boolean;
@@ -819,7 +834,17 @@ interface MobileOrderButtonLabels {
 }
 
 function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonContent {
-	if (!input.isConnected) {
+	const stage = getOrderActionStage({
+		isConnected: input.isConnected,
+		needsChainSwitch: input.needsChainSwitch,
+		needsApproval: input.needsApproval,
+		isAgentReady: input.isAgentReady,
+		hasBalanceError: input.hasBalanceError,
+		isBalanceLoading: input.isBalanceLoading,
+		availableBalance: input.availableBalance,
+	});
+
+	if (stage === "connect") {
 		return {
 			text: input.labels.connect,
 			action: input.onConnect,
@@ -827,7 +852,7 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 			variant: "cyan",
 		};
 	}
-	if (input.needsChainSwitch) {
+	if (stage === "switchChain") {
 		return {
 			text: input.isSwitchingChain ? input.labels.switching : input.labels.switchChain,
 			action: input.onSwitchChain,
@@ -835,15 +860,15 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 			variant: "cyan",
 		};
 	}
-	if (input.needsApproval) {
+	if (stage === "agent" || stage === "builder") {
 		return {
-			text: getApprovalButtonText(input.isRegistering, input.canApprove, input.labels),
+			text: getApprovalButtonText(input.isRegistering, input.canApprove, input.isApprovalLoading, input.labels),
 			action: input.onApprove,
-			disabled: input.isRegistering || !input.canApprove,
+			disabled: input.isRegistering || input.isApprovalLoading || !input.canApprove,
 			variant: "cyan",
 		};
 	}
-	if (input.hasBalanceError) {
+	if (stage === "balanceError") {
 		return {
 			text: input.labels.balanceError,
 			action: () => {},
@@ -851,7 +876,7 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 			variant: "cyan",
 		};
 	}
-	if (input.isBalanceLoading) {
+	if (stage === "balanceLoading") {
 		return {
 			text: input.labels.loading,
 			action: () => {},
@@ -859,7 +884,7 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 			variant: "cyan",
 		};
 	}
-	if (input.availableBalance <= 0) {
+	if (stage === "deposit") {
 		return {
 			text: input.labels.deposit,
 			action: input.canDeposit ? input.onDeposit : () => {},
@@ -875,8 +900,13 @@ function getMobileOrderButtonContent(input: MobileButtonContentInput): ButtonCon
 	};
 }
 
-function getApprovalButtonText(isRegistering: boolean, canApprove: boolean, labels: MobileOrderButtonLabels): string {
+function getApprovalButtonText(
+	isRegistering: boolean,
+	canApprove: boolean,
+	isApprovalLoading: boolean,
+	labels: MobileOrderButtonLabels,
+): string {
 	if (isRegistering) return labels.signing;
-	if (!canApprove) return labels.loading;
+	if (isApprovalLoading || !canApprove) return labels.loading;
 	return labels.enableTrading;
 }

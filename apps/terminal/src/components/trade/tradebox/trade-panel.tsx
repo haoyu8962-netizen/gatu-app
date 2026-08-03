@@ -37,7 +37,12 @@ import {
 import type { ActiveModal } from "@/lib/trade/types";
 import { useButtonContent } from "@/lib/trade/use-button-content";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
-import { useDepositModalActions, useSettingsDialogActions, useSwapModalActions } from "@/stores/use-global-modal-store";
+import {
+	useDepositModalActions,
+	useEstablishConnectionModalActions,
+	useSettingsDialogActions,
+	useSwapModalActions,
+} from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import {
 	useLimitPrice,
@@ -80,7 +85,7 @@ export function TradePanel() {
 
 	const userPositions = useUserPositions();
 
-	const { isReady: isAgentReady, isLoading: isAgentLoading } = useAgentStatus();
+	const { isReady: isTradingAuthorized, isAgentReady, isAgentLoading, isBuilderFeeLoading } = useAgentStatus();
 	const { authorize, status: registerStatus } = useTradingAuthorization();
 	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit();
 	const accountModeControl = useAccountAbstractionControl();
@@ -152,6 +157,7 @@ export function TradePanel() {
 	const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
 	const { open: openDepositModal } = useDepositModalActions();
+	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 	const { open: openSwapModal } = useSwapModalActions();
 
@@ -196,9 +202,10 @@ export function TradePanel() {
 	const { marginRequired, estimatedFee } = getOrderMetrics({ sizeValue, price, leverage, feeRate });
 	const { liqPrice, liqWarning } = getLiquidationInfo({ price, sizeValue, leverage, side });
 
-	const needsAgentApproval = !isAgentReady;
-	const isReadyToTrade = isAgentReady;
+	const needsAgentApproval = !isTradingAuthorized;
+	const isReadyToTrade = isTradingAuthorized;
 	const canApprove = !!walletClient && !!address;
+	const isApprovalLoading = isAgentReady ? isBuilderFeeLoading : isAgentLoading;
 
 	const baseInput = {
 		assetId: typeof market?.assetId === "number" ? market.assetId : null,
@@ -282,6 +289,10 @@ export function TradePanel() {
 			return;
 		}
 		setApprovalError(null);
+		if (!isAgentReady) {
+			openEstablishConnectionModal();
+			return;
+		}
 
 		authorize().catch((error: unknown) => {
 			const message = error instanceof Error ? error.message : t`Failed to enable trading`;
@@ -341,7 +352,8 @@ export function TradePanel() {
 		hasBalanceError: hasAvailabilityError,
 		canDeposit: sessionMode === "wallet",
 		validation,
-		isAgentLoading,
+		isAgentReady,
+		isApprovalLoading,
 		registerStatus,
 		canApprove,
 		side,

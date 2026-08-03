@@ -975,6 +975,10 @@ msgstr "Connecting"
 msgid "Connecting..."
 msgstr "Connecting..."
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Connection could not be established."
+msgstr "Connection could not be established."
+
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "Continue"
 msgstr "Continue"
@@ -1509,6 +1513,11 @@ msgstr "Est. P&L at Limit"
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Est. time"
 #~ msgstr "Est. time"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Establish Connection"
+msgstr "Establish Connection"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -4712,6 +4721,10 @@ msgstr "This device could not securely hold the QR. Check browser storage and re
 #: src/routes/mobile-agent-sync.tsx
 msgid "This device could not securely hold the QR. Check browser storage and scan again."
 msgstr "This device could not securely hold the QR. Check browser storage and scan again."
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This gas-free signature creates a dedicated API wallet for fast trading. It cannot withdraw funds."
+msgstr "This gas-free signature creates a dedicated API wallet for fast trading. It cannot withdraw funds."
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."

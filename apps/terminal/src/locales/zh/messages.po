@@ -975,6 +975,10 @@ msgstr "连接中"
 msgid "Connecting..."
 msgstr "连接中..."
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Connection could not be established."
+msgstr "无法建立连接。"
+
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "Continue"
 msgstr "继续"
@@ -1509,6 +1513,11 @@ msgstr "限价预估盈亏"
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Est. time"
 #~ msgstr ""
+
+#: src/components/trade/components/establish-connection-modal.tsx
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Establish Connection"
+msgstr "建立连接"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
@@ -4712,6 +4721,10 @@ msgstr "此设备无法安全保存二维码。请检查浏览器存储后重试
 #: src/routes/mobile-agent-sync.tsx
 msgid "This device could not securely hold the QR. Check browser storage and scan again."
 msgstr "此设备无法安全保存二维码。请检查浏览器存储后重新扫描。"
+
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "This gas-free signature creates a dedicated API wallet for fast trading. It cannot withdraw funds."
+msgstr "此免 Gas 签名会创建一个用于快速交易的专用 API 钱包。该钱包无法提取资金。"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "This is a phone-access QR. Open it with the phone camera or paste it on the phone access page."

@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
+import { getOrderActionStage } from "@/domain/trade/order-action-stage";
 import type { RegistrationStatus } from "@/lib/hyperliquid";
 import type { ButtonContent, FormValidationResult, Side } from "@/lib/trade/types";
 
@@ -14,7 +15,8 @@ interface ButtonContentInput {
 	hasBalanceError?: boolean;
 	canDeposit: boolean;
 	validation: FormValidationResult;
-	isAgentLoading: boolean;
+	isAgentReady: boolean;
+	isApprovalLoading: boolean;
 	registerStatus: RegistrationStatus;
 	canApprove: boolean;
 	side: Side;
@@ -34,16 +36,26 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.registerStatus === "verifying";
 
 	const registerText = useMemo(() => {
-		if (input.isAgentLoading || !input.canApprove) return t`Loading...`;
+		if (input.isApprovalLoading || !input.canApprove) return t`Loading...`;
 		if (input.registerStatus === "approving_fee" || input.registerStatus === "approving_agent") {
 			return t`Sign in wallet...`;
 		}
 		if (input.registerStatus === "verifying") return t`Verifying...`;
 		return t`Enable Trading`;
-	}, [input.isAgentLoading, input.registerStatus, input.canApprove, t]);
+	}, [input.isApprovalLoading, input.registerStatus, input.canApprove, t]);
 
 	return useMemo<ButtonContent>(() => {
-		if (!input.isConnected) {
+		const stage = getOrderActionStage({
+			isConnected: input.isConnected,
+			needsChainSwitch: input.needsChainSwitch,
+			needsApproval: input.validation.needsApproval,
+			isAgentReady: input.isAgentReady,
+			hasBalanceError: input.hasBalanceError === true,
+			isBalanceLoading: input.isBalanceLoading === true,
+			availableBalance: input.availableBalance,
+		});
+
+		if (stage === "connect") {
 			return {
 				text: t`Connect Wallet`,
 				action: input.onConnectWallet,
@@ -51,7 +63,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 				variant: "cyan",
 			};
 		}
-		if (input.needsChainSwitch) {
+		if (stage === "switchChain") {
 			return {
 				text: input.isSwitchingChain ? t`Switching...` : t`Switch to Arbitrum`,
 				action: () => input.switchChain(ARBITRUM_CHAIN_ID),
@@ -59,15 +71,15 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 				variant: "cyan",
 			};
 		}
-		if (input.validation.needsApproval) {
+		if (stage === "agent" || stage === "builder") {
 			return {
 				text: registerText,
 				action: input.onRegister,
-				disabled: isRegistering || !input.canApprove || input.isAgentLoading,
+				disabled: isRegistering || !input.canApprove || input.isApprovalLoading,
 				variant: "cyan",
 			};
 		}
-		if (input.hasBalanceError) {
+		if (stage === "balanceError") {
 			return {
 				text: t`Failed to load balances.`,
 				action: () => {},
@@ -75,7 +87,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 				variant: "cyan",
 			};
 		}
-		if (input.isBalanceLoading) {
+		if (stage === "balanceLoading") {
 			return {
 				text: t`Loading...`,
 				action: () => {},
@@ -83,7 +95,7 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 				variant: "cyan",
 			};
 		}
-		if (input.availableBalance <= 0) {
+		if (stage === "deposit") {
 			return {
 				text: t`Deposit`,
 				action: input.canDeposit ? input.onDeposit : () => {},
@@ -108,10 +120,11 @@ export function useButtonContent(input: ButtonContentInput): ButtonContent {
 		input.canDeposit,
 		input.validation.needsApproval,
 		input.validation.canSubmit,
+		input.isAgentReady,
 		registerText,
 		isRegistering,
 		input.canApprove,
-		input.isAgentLoading,
+		input.isApprovalLoading,
 		input.onConnectWallet,
 		input.onDeposit,
 		input.onRegister,
