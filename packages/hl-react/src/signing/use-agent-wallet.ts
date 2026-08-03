@@ -18,16 +18,16 @@ export interface UseAgentWalletResult {
 export function useAgentWallet(): UseAgentWalletResult {
 	const { env, clientKey } = useHyperliquid();
 	const userAddress = clientKey === "disconnected" ? undefined : (clientKey as Address);
-	const { isReady } = useAgentStatus();
+	const { isAgentReady } = useAgentStatus();
 
 	const agentWallet = useAgentWalletStorage(env, userAddress);
 
-	const signer = isReady && agentWallet?.privateKey ? getCachedAgentSigner(agentWallet.privateKey) : null;
+	const signer = isAgentReady && agentWallet?.privateKey ? getCachedAgentSigner(agentWallet.privateKey) : null;
 
 	return {
-		data: isReady ? agentWallet : null,
+		data: isAgentReady ? agentWallet : null,
 		signer,
 		address: agentWallet?.publicKey ?? null,
-		isReady: isReady && signer !== null,
+		isReady: isAgentReady && signer !== null,
 	};
 }

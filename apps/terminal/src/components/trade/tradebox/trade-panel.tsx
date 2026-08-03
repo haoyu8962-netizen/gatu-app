@@ -20,7 +20,7 @@ import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useAgentRegistration, useAgentStatus, useSelectedMarketInfo, useUserPositions } from "@/lib/hyperliquid";
+import { useAgentStatus, useSelectedMarketInfo, useTradingAuthorization, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
@@ -81,7 +81,7 @@ export function TradePanel() {
 	const userPositions = useUserPositions();
 
 	const { isReady: isAgentReady, isLoading: isAgentLoading } = useAgentStatus();
-	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
+	const { authorize, status: registerStatus } = useTradingAuthorization();
 	const { handleSubmit: submitOrder, isSubmitting } = useOrderSubmit();
 	const accountModeControl = useAccountAbstractionControl();
 	const { tradeRestricted } = useGeoRestriction();
@@ -283,7 +283,7 @@ export function TradePanel() {
 		}
 		setApprovalError(null);
 
-		registerAgent().catch((error: unknown) => {
+		authorize().catch((error: unknown) => {
 			const message = error instanceof Error ? error.message : t`Failed to enable trading`;
 			setApprovalError(message);
 			setTimeout(() => setApprovalError(null), APPROVAL_ERROR_DISMISS_MS);

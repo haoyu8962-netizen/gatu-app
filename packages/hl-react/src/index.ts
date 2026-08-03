@@ -183,8 +183,16 @@ export {
 	useAgentStatus,
 } from "./signing/use-agent-status";
 export { type UseAgentWalletResult, useAgentWallet } from "./signing/use-agent-wallet";
+export {
+	type UseBuilderFeeApprovalResult,
+	useBuilderFeeApproval,
+} from "./signing/use-builder-fee-approval";
 export { useLegalStatus } from "./signing/use-legal-status";
 export { useTermsAcceptance } from "./signing/use-terms-acceptance";
+export {
+	type UseTradingAuthorizationResult,
+	useTradingAuthorization,
+} from "./signing/use-trading-authorization";
 export type {
 	HyperliquidConfig,
 	HyperliquidQueryError,

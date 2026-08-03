@@ -14,13 +14,11 @@ import {
 	persistAgentForRegistration,
 	verifyAgentRegistrationOrRemove,
 } from "./agent-registration-session";
-import { convertFeeToPercentageString } from "./agent-utils";
 import type { RegistrationStatus } from "./types";
 import { useAgentStatus } from "./use-agent-status";
+import { withWalletApprovalTimeout } from "./wallet-approval-timeout";
 
-export type RegistrationStep = "fee" | "agent" | null;
-
-const WALLET_APPROVAL_TIMEOUT_MS = 60_000;
+export type RegistrationStep = "agent" | null;
 
 export interface UseAgentRegistrationResult {
 	register: () => Promise<Address>;
@@ -36,26 +34,12 @@ function deriveRegistrationStatus(
 	currentStep: RegistrationStep,
 ): RegistrationStatus {
 	if (!isPending) return isError ? "error" : "idle";
-	if (currentStep === "fee") return "approving_fee";
 	if (currentStep === "agent") return "approving_agent";
 	return "verifying";
 }
 
-function withWalletApprovalTimeout<T>(promise: Promise<T>): Promise<T> {
-	let timeoutId: ReturnType<typeof setTimeout> | undefined;
-	const timeout = new Promise<never>((_, reject) => {
-		timeoutId = setTimeout(() => {
-			reject(new Error("Wallet approval timed out. Check your wallet and try again."));
-		}, WALLET_APPROVAL_TIMEOUT_MS);
-	});
-
-	return Promise.race([promise, timeout]).finally(() => {
-		if (timeoutId) clearTimeout(timeoutId);
-	});
-}
-
 export function useAgentRegistration(): UseAgentRegistrationResult {
-	const { env, agentName, builderConfig, clientKey } = useHyperliquid();
+	const { env, agentName, clientKey } = useHyperliquid();
 	const address = clientKey === "disconnected" ? undefined : (clientKey as Address);
 	const addressRef = useRef(address);
 	addressRef.current = address;
@@ -71,7 +55,6 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 	}, []);
 
 	const agentStatus = useAgentStatus();
-	const approveBuilderFee = useExchange("approveBuilderFee");
 	const approveAgent = useExchange("approveAgent");
 
 	function safeSetStep(step: RegistrationStep) {
@@ -144,21 +127,8 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					await verifyStoredAgent(publicKey);
 				}
 
-				let requirements = await agentStatus.refetch();
+				const requirements = await agentStatus.refetchAgent();
 				await assertRegistrationCurrent();
-
-				if (requirements.needsBuilderFee && builderConfig?.b && builderConfig?.f !== undefined) {
-					safeSetStep("fee");
-					await withWalletApprovalTimeout(
-						approveBuilderFee.mutateAsync({
-							builder: builderConfig.b,
-							maxFeeRate: convertFeeToPercentageString(builderConfig.f),
-						}),
-					);
-					await assertRegistrationCurrent();
-					requirements = await agentStatus.refetch();
-					await assertRegistrationCurrent();
-				}
 
 				if (requirements.needsAgent) {
 					safeSetStep("agent");
@@ -174,7 +144,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 						approveAgentPromise
 							.then(async () => {
 								await persistAndVerifyAgent(privateKey, publicKey);
-								await agentStatus.refetch();
+								await agentStatus.refetchAgent();
 								await verifyStoredAgent(publicKey);
 							})
 							.catch(() => {});
@@ -183,7 +153,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					await assertRegistrationCurrent();
 
 					await persistAndVerifyAgent(privateKey, publicKey);
-					await agentStatus.refetch();
+					await agentStatus.refetchAgent();
 					await verifyStoredAgent(publicKey);
 
 					return publicKey;

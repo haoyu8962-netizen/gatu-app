@@ -13,13 +13,19 @@ export interface AgentRequirements {
 	needsBuilderFee: boolean;
 	needsAgent: boolean;
 	signaturesRequired: number;
+	isAgentReady: boolean;
+	isBuilderFeeReady: boolean;
 	isReady: boolean;
 }
 
 export interface UseAgentStatusResult extends AgentRequirements {
 	isLoading: boolean;
+	isAgentLoading: boolean;
+	isBuilderFeeLoading: boolean;
 	agentAddress: Address | null;
 	refetch: () => Promise<AgentRequirements>;
+	refetchAgent: () => Promise<AgentRequirements>;
+	refetchBuilderFee: () => Promise<AgentRequirements>;
 }
 
 export function getDefinitiveMobileAgentStaleReason(
@@ -73,12 +79,16 @@ export function deriveAgentRequirements(
 		hasBuilderConfig && builderFeeKnown && !isBuilderFeeApproved(builderFeeData, builderConfig?.f);
 	const needsAgent = extraAgentsKnown && !agentApproved;
 	const signaturesRequired = (needsBuilderFee ? 1 : 0) + (needsAgent ? 1 : 0);
+	const isAgentReady = extraAgentsKnown && !needsAgent;
+	const isBuilderFeeReady = builderFeeKnown && !needsBuilderFee;
 
 	return {
 		needsBuilderFee,
 		needsAgent,
 		signaturesRequired,
-		isReady: builderFeeKnown && extraAgentsKnown && signaturesRequired === 0,
+		isAgentReady,
+		isBuilderFeeReady,
+		isReady: isAgentReady && isBuilderFeeReady,
 	};
 }
 
@@ -121,27 +131,53 @@ export function useAgentStatus(): UseAgentStatusResult {
 		void cleanupAgentRegistrationIfMatches(env, address, target);
 	}, [address, env, hasInvalidStorageRecord, localAgent, staleMobileReason]);
 
-	const isLoading = builderFeeQuery.isLoading || extraAgentsQuery.isLoading;
+	const isAgentLoading = extraAgentsQuery.isLoading;
+	const isBuilderFeeLoading = hasBuilderConfig && builderFeeQuery.isLoading;
+	const isLoading = isAgentLoading || isBuilderFeeLoading;
 	const requirements = deriveAgentRequirements(builderFeeQuery.data, extraAgentsQuery.data, localAgent, builderConfig);
 
-	async function refetch(): Promise<AgentRequirements> {
-		const [feeResult, agentsResult] = await Promise.all([builderFeeQuery.refetch(), extraAgentsQuery.refetch()]);
+	async function refetchAgent(): Promise<AgentRequirements> {
+		const agentsResult = await extraAgentsQuery.refetch();
+		if (agentsResult.data === undefined) throw new Error("Could not load agent status");
+		return deriveAgentRequirements(builderFeeQuery.data, agentsResult.data, localAgent, builderConfig);
+	}
 
-		if (hasBuilderConfig && feeResult.data === undefined) {
-			throw new Error("Could not load builder fee status");
+	async function refetchBuilderFee(): Promise<AgentRequirements> {
+		if (!hasBuilderConfig) {
+			return deriveAgentRequirements(undefined, extraAgentsQuery.data, localAgent, builderConfig);
 		}
+
+		const feeResult = await builderFeeQuery.refetch();
+		if (feeResult.data === undefined) throw new Error("Could not load builder fee status");
+		return deriveAgentRequirements(feeResult.data, extraAgentsQuery.data, localAgent, builderConfig);
+	}
+
+	async function refetch(): Promise<AgentRequirements> {
+		const [builderFeeData, agentsResult] = await Promise.all([
+			hasBuilderConfig
+				? builderFeeQuery.refetch().then((result) => {
+						if (result.data === undefined) throw new Error("Could not load builder fee status");
+						return result.data;
+					})
+				: Promise.resolve(undefined),
+			extraAgentsQuery.refetch(),
+		]);
 		if (agentsResult.data === undefined) {
 			throw new Error("Could not load agent status");
 		}
 
-		return deriveAgentRequirements(feeResult.data, agentsResult.data, localAgent, builderConfig);
+		return deriveAgentRequirements(builderFeeData, agentsResult.data, localAgent, builderConfig);
 	}
 
 	return {
 		...requirements,
 		isReady: !isLoading && requirements.isReady,
 		isLoading,
+		isAgentLoading,
+		isBuilderFeeLoading,
 		agentAddress: localAgent?.publicKey ?? null,
 		refetch,
+		refetchAgent,
+		refetchBuilderFee,
 	};
 }

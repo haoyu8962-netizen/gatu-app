@@ -26,9 +26,9 @@ import { cn } from "@/lib/cn";
 import { bpsToPercentage, formatPrice, formatToken, formatUSD } from "@/lib/format";
 import {
 	type UnifiedMarketInfo,
-	useAgentRegistration,
 	useAgentStatus,
 	useSelectedMarketInfo,
+	useTradingAuthorization,
 	useUserPositions,
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
@@ -95,7 +95,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 	}
 
 	const { isReady: isAgentApproved } = useAgentStatus();
-	const { register: registerAgent, status: registerStatus } = useAgentRegistration();
+	const { authorize, status: registerStatus } = useTradingAuthorization();
 	const accountModeControl = useAccountAbstractionControl();
 
 	const canApprove = !!walletClient && !!address;
@@ -267,7 +267,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 		}
 		setApprovalError(null);
 		try {
-			await registerAgent();
+			await authorize();
 		} catch (error) {
 			setApprovalError(error instanceof Error ? error.message : t`Failed to enable trading`);
 		}

@@ -21,7 +21,7 @@ const SESSION_STORAGE_KEY = `hyperliquid_agent_registration_session_Mainnet_${OW
 const testState = vi.hoisted(() => ({
 	approveAgent: vi.fn(),
 	approveBuilderFee: vi.fn(),
-	refetch: vi.fn(),
+	refetchAgent: vi.fn(),
 }));
 
 vi.mock("@gatu/hl-react/provider", () => ({
@@ -46,7 +46,7 @@ vi.mock("@gatu/hl-react/signing/use-agent-status", () => ({
 		isReady: false,
 		needsAgent: true,
 		needsBuilderFee: false,
-		refetch: testState.refetch,
+		refetchAgent: testState.refetchAgent,
 		signaturesRequired: 1,
 	}),
 }));
@@ -147,8 +147,10 @@ describe("useAgentRegistration logout races", () => {
 		testState.approveAgent.mockReset();
 		testState.approveBuilderFee.mockReset();
 		testState.approveBuilderFee.mockResolvedValue(undefined);
-		testState.refetch.mockReset();
-		testState.refetch.mockResolvedValue({
+		testState.refetchAgent.mockReset();
+		testState.refetchAgent.mockResolvedValue({
+			isAgentReady: false,
+			isBuilderFeeReady: true,
 			isReady: false,
 			needsAgent: true,
 			needsBuilderFee: false,
@@ -186,6 +188,7 @@ describe("useAgentRegistration logout races", () => {
 			agentAddress: registeredAddress,
 			agentName: "HypeTerminal",
 		});
+		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
 		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
 			publicKey: registeredAddress.toLowerCase(),
 			source: "local-registration",
