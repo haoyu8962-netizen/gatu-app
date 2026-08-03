@@ -435,6 +435,11 @@
     font-family: var(--font-sans);
     background-color: var(--bg-base);
     color: var(--text-strong);
+    /* Hyperliquid uses 8px controls and a 16px mobile sheet; keep Privy on that same scale. */
+    --privy-border-radius-sm: var(--radius-16);
+    --privy-border-radius-md: var(--radius-16);
+    --privy-border-radius-lg: var(--radius-32);
+    --privy-border-radius-full: var(--radius-full);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

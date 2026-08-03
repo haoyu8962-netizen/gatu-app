@@ -6,6 +6,22 @@ import { BRIDGE_CHAINS } from "./wagmi";
 export const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID as string | undefined;
 const privyDefaultChain = getNetwork() === "testnet" ? arbitrumSepolia : arbitrum;
 
+type PrivyTheme = "dark" | "light";
+type PrivyClientConfigWithPasskeysDisabled = PrivyClientConfig & {
+	globalDisablePasskeys: true;
+};
+
+const PRIVY_APPEARANCE_BY_THEME = {
+	dark: {
+		theme: "#0F1A1F",
+		accentColor: "#50D2C1",
+	},
+	light: {
+		theme: "#FFFFFF",
+		accentColor: "#4C64D9",
+	},
+} as const satisfies Record<PrivyTheme, Pick<NonNullable<PrivyClientConfig["appearance"]>, "accentColor" | "theme">>;
+
 export const PRIVY_WALLET_LIST = [
 	"binance",
 	"metamask",
@@ -17,19 +33,30 @@ export const PRIVY_WALLET_LIST = [
 	"wallet_connect",
 ] as const satisfies readonly WalletListEntry[];
 
-export const privyConfig: PrivyClientConfig = {
-	defaultChain: privyDefaultChain,
-	supportedChains: [...BRIDGE_CHAINS],
-	embeddedWallets: {
-		ethereum: {
-			createOnLogin: "users-without-wallets",
+function createPrivyConfig(theme: PrivyTheme): PrivyClientConfigWithPasskeysDisabled {
+	return {
+		defaultChain: privyDefaultChain,
+		supportedChains: [...BRIDGE_CHAINS],
+		embeddedWallets: {
+			ethereum: {
+				createOnLogin: "users-without-wallets",
+			},
+			showWalletUIs: false,
 		},
-		showWalletUIs: false,
-	},
-	loginMethods: ["wallet", "email"],
-	appearance: {
-		showWalletLoginFirst: true,
-		walletChainType: "ethereum-only",
-		walletList: [...PRIVY_WALLET_LIST],
-	},
-};
+		loginMethods: ["wallet", "email"],
+		globalDisablePasskeys: true,
+		appearance: {
+			...PRIVY_APPEARANCE_BY_THEME[theme],
+			showWalletLoginFirst: true,
+			walletChainType: "ethereum-only",
+			walletList: [...PRIVY_WALLET_LIST],
+		},
+	};
+}
+
+export const PRIVY_CONFIG_BY_THEME = {
+	dark: createPrivyConfig("dark"),
+	light: createPrivyConfig("light"),
+} as const satisfies Record<PrivyTheme, PrivyClientConfigWithPasskeysDisabled>;
+
+export const privyConfig = PRIVY_CONFIG_BY_THEME.dark;

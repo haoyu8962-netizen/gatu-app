@@ -16,7 +16,7 @@ import { APP_NAME, RQ_CACHE_BUSTER, STORAGE_KEYS } from "@/config/app";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { ISOLATED_RISK_FEATURES } from "@/config/isolated-risk";
 import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
-import { PRIVY_APP_ID, privyConfig } from "@/config/privy";
+import { PRIVY_APP_ID, PRIVY_CONFIG_BY_THEME } from "@/config/privy";
 import { RQ_CACHE_MAX_AGE_MS } from "@/config/time";
 import { config } from "@/config/wagmi";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -25,6 +25,7 @@ import { getNetwork } from "@/lib/network";
 import { getQueryRetryDelayMs, shouldRetryQuery } from "@/lib/query-retry";
 import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
 import { PwaInstallProvider } from "@/providers/pwa-install";
+import { useTheme } from "@/stores/use-global-settings-store";
 import "@/lib/i18n";
 
 const network = getNetwork();
@@ -96,11 +97,12 @@ function ServerProviders({ children, queryClient }: { children: React.ReactNode;
 // Privy requires the order PrivyProvider > QueryClientProvider > WagmiProvider, and the
 // WagmiProvider must come from @privy-io/wagmi so Privy drives the connector state.
 function ClientProviders({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
+	const theme = useTheme();
 	if (!persister) return null;
 
 	return (
 		<PwaInstallProvider>
-			<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={privyConfig}>
+			<PrivyProvider appId={PRIVY_APP_ID ?? ""} config={PRIVY_CONFIG_BY_THEME[theme]}>
 				<SmartWalletsProvider>
 					<PersistQueryClientProvider
 						client={queryClient}
