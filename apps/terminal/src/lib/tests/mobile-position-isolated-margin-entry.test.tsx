@@ -8,14 +8,6 @@ import type { Position } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
 import { createI18nRoot } from "./harness/react";
 
-vi.mock("@/components/trade/components/asset-badge", async () => {
-	const React = await import("react");
-	return {
-		AssetBadge: ({ coin, onClick }: { coin: string; onClick?: () => void }) =>
-			React.createElement("button", { type: "button", onClick }, coin),
-	};
-});
-
 const isolatedPosition: Position = {
 	dex: "xyz",
 	coin: "xyz:CXMT",
@@ -96,6 +88,55 @@ describe("MobilePositionCard isolated margin entry", () => {
 			positionValue: "1559.84",
 			liquidationPx: "7.27304",
 		});
+		expect(container.textContent).toContain("1,559.84 USDC");
+		expect(container.textContent).toContain("$137.19");
+		expect(container.textContent).toContain("(Isolated)");
+		const tpSlButton = [...container.querySelectorAll("button")].find((element) =>
+			element.textContent?.startsWith("TP/SL"),
+		);
+		expect(tpSlButton?.textContent).toContain("--/--");
+	});
+
+	it("preserves limit close, market close, and reverse actions in the expanded card", () => {
+		const onClose = vi.fn();
+		const onReverse = vi.fn();
+		const onLimitClose = vi.fn();
+
+		act(() => {
+			root.render(
+				createElement(MobilePositionCard, {
+					position: isolatedPosition,
+					markets,
+					markPx: "7.5759",
+					tpSlInfo: undefined,
+					isRowClosing: false,
+					closeErrorMessage: null,
+					onClose,
+					onReverse,
+					onLimitClose,
+					onOpenTpSl: vi.fn(),
+					onAdjustMargin: vi.fn(),
+					onSelectMarket: vi.fn(),
+				}),
+			);
+		});
+
+		function getButton(label: string): HTMLButtonElement {
+			const button = [...container.querySelectorAll("button")].find((element) => element.textContent?.trim() === label);
+			if (!button) throw new Error(`${label} button was not rendered`);
+			return button;
+		}
+
+		act(() => getButton("Limit Close").click());
+		expect(onLimitClose).toHaveBeenCalledTimes(1);
+
+		act(() => getButton("Market Close").click());
+		act(() => getButton("Cancel").click());
+		expect(onClose).not.toHaveBeenCalled();
+
+		act(() => getButton("Reverse").click());
+		act(() => getButton("Confirm Reverse").click());
+		expect(onReverse).toHaveBeenCalledTimes(1);
 	});
 
 	it("keeps the mobile summary compact until the user expands the position", () => {

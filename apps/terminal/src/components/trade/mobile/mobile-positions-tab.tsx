@@ -315,7 +315,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 						</span>
 					</Button>
 				</div>
-				<div className={cn("space-y-1.5 px-3 py-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
+				<div className={cn("space-y-2 px-2.5 py-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 					{filteredPositions.length === 0 ? (
 						<div className="flex min-h-28 items-center justify-center px-4 text-center text-xs text-fg-muted">
 							{t`No positions match the selected filters.`}

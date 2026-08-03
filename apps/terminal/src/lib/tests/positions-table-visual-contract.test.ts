@@ -16,10 +16,15 @@ function readPositionSource(file: string): string {
 	return readFileSync(resolve(TEST_DIR, "../..", `components/trade/positions/${file}`), "utf8");
 }
 
+function readMobilePositionSource(file: string): string {
+	return readFileSync(resolve(TEST_DIR, "../..", `components/trade/mobile/${file}`), "utf8");
+}
+
 const POSITIONS_PANEL_SOURCE = readPositionSource("positions-panel.tsx");
 const POSITIONS_TAB_SOURCE = readPositionSource("positions-tab.tsx");
 const POSITION_ROW_SOURCE = readPositionSource("position-row.tsx");
 const POSITION_ACTIONS_SOURCE = readPositionSource("position-actions-dropdown.tsx");
+const MOBILE_POSITION_CARD_SOURCE = readMobilePositionSource("mobile-position-card.tsx");
 
 describe("positions table visual contract", () => {
 	it("uses the compact official-style hierarchy with a sticky table header", () => {
@@ -82,5 +87,16 @@ describe("positions table visual contract", () => {
 		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onMarketClose}");
 		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onReverse}");
 		expect(POSITION_ACTIONS_SOURCE).toContain("<Dropdown");
+	});
+
+	it("uses the official-style mobile information grid without internal cell dividers", () => {
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-7");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain('context: "Cumulative position funding"');
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("formatQuoteAmount(p.positionValue, quoteSymbol");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Entry Price`");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Mark Price`");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Liquidation Price`");
+		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain("divide-x");
+		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain("Margin · Iso");
 	});
 });
