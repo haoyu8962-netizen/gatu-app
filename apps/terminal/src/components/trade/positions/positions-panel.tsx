@@ -1,18 +1,27 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
-import { Suspense, useMemo, useTransition } from "react";
+import { Suspense, useMemo, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
 import { POSITIONS_TABS } from "@/config/trade";
+import {
+	ALL_POSITION_MARKETS,
+	getReadyItemCount,
+	type PositionDirectionFilter,
+	type PositionMarketFilter,
+	type PositionMarketIdentity,
+} from "@/domain/trade/position-toolbar";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { useMarkets, useSelectedMarketInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumberOrZero } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
+import { PositionFilterToolbar } from "./position-filter-toolbar";
+import type { PositionMarketOption } from "./position-market-filter";
 
 const tabContentBaseClass = "mt-0 flex min-h-0 flex-1 flex-col pt-0";
 
@@ -29,6 +38,12 @@ interface Props {
 	includeTransfers?: boolean;
 }
 
+interface PositionFiltersState {
+	ownerKey: string | null;
+	direction: PositionDirectionFilter;
+	market: PositionMarketFilter;
+}
+
 const POSITIONS_TAB_VALUES = new Set<string>(POSITIONS_TABS.map((tab) => tab.value));
 
 export function PositionsPanel({ includeTransfers = false }: Props) {
@@ -40,9 +55,29 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useWalletSession();
-	const { perpSummary, spotBalances } = useDefaultDexBalances();
-	const { positions } = useUserPositions();
-	const { data: ordersEvent } = useSubscription(
+	const ownerKey = address?.toLowerCase() ?? null;
+	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
+		ownerKey,
+		direction: "all",
+		market: ALL_POSITION_MARKETS,
+	});
+	const positionDirectionFilter = positionFilters.ownerKey === ownerKey ? positionFilters.direction : "all";
+	const positionMarketFilter = positionFilters.ownerKey === ownerKey ? positionFilters.market : ALL_POSITION_MARKETS;
+	const {
+		perpSummary,
+		spotBalances,
+		hasAllDexsSnapshot,
+		hasSpotStateSnapshot,
+		hasError: balancesError,
+	} = useDefaultDexBalances();
+	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
+	const markets = useMarkets();
+	const { data: selectedMarket } = useSelectedMarketInfo();
+	const {
+		data: ordersEvent,
+		status: ordersStatus,
+		isStale: ordersStale,
+	} = useSubscription(
 		"openOrders",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
@@ -57,21 +92,63 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 		{ enabled: isConnected && !!address },
 	);
 	const openOrders = ordersEvent?.orders;
-	const twapCount =
-		isConnected && twapStatesStatus === "active" && !twapStatesStale ? (twapStatesEvent?.states?.length ?? 0) : null;
+	const twapCount = getReadyItemCount({
+		isConnected,
+		isReady: twapStatesStatus === "active" && !twapStatesStale && twapStatesEvent !== undefined,
+		count: twapStatesEvent?.states?.length ?? 0,
+	});
+	const currentPositionMarket: PositionMarketIdentity | null = selectedMarket
+		? {
+				coin: selectedMarket.name,
+				dex: selectedMarket.kind === "builderPerp" ? selectedMarket.dex : "",
+			}
+		: null;
+	const positionMarketOptions: PositionMarketOption[] = positions.map((position) => {
+		const market = markets.getMarket(position.coin);
+		const baseLabel = market?.shortName ?? position.coin;
+		return {
+			coin: position.coin,
+			dex: position.dex,
+			label: position.dex ? `${baseLabel} (${position.dex})` : baseLabel,
+		};
+	});
 
 	function handleTabChange(value: string) {
 		startTransition(() => setPositionsActiveTab(value));
 	}
 
-	const positionsCount = isConnected ? positions.length : null;
+	function handlePositionDirectionChange(direction: PositionDirectionFilter) {
+		setPositionFilters((current) => ({
+			ownerKey,
+			direction,
+			market: current.ownerKey === ownerKey ? current.market : ALL_POSITION_MARKETS,
+		}));
+	}
 
-	const ordersCount = isConnected ? (openOrders?.length ?? 0) : null;
+	function handlePositionMarketChange(market: PositionMarketFilter) {
+		setPositionFilters((current) => ({
+			ownerKey,
+			direction: current.ownerKey === ownerKey ? current.direction : "all",
+			market,
+		}));
+	}
+
+	const positionsCount = getReadyItemCount({
+		isConnected,
+		isReady: hasAllDexsSnapshot && !positionsLoading && !positionsError,
+		count: positions.length,
+	});
+
+	const ordersCount = getReadyItemCount({
+		isConnected,
+		isReady: ordersStatus === "active" && !ordersStale && ordersEvent !== undefined,
+		count: openOrders?.length ?? 0,
+	});
 
 	const tabContentClass = cn(tabContentBaseClass, isPending && "opacity-70");
 
 	const balancesCount = useMemo(() => {
-		if (!isConnected) return null;
+		if (!isConnected || balancesError || !hasAllDexsSnapshot || !hasSpotStateSnapshot) return null;
 		let count = 0;
 		const perpAccountValue = toNumberOrZero(perpSummary?.accountValue);
 		if (perpAccountValue > 0) count++;
@@ -81,7 +158,7 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 			}
 		}
 		return count;
-	}, [isConnected, perpSummary?.accountValue, spotBalances]);
+	}, [balancesError, hasAllDexsSnapshot, hasSpotStateSnapshot, isConnected, perpSummary?.accountValue, spotBalances]);
 
 	function getTabCount(tabValue: string): number | null {
 		if (tabValue === "balances") return balancesCount;
@@ -100,23 +177,34 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 				size="xs"
 				variant="underline"
 			>
-				<div className="flex h-9 shrink-0 items-stretch overflow-x-auto overflow-y-hidden overscroll-x-contain border-b border-stroke-weak px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<TabsList className="h-full min-w-max gap-1 border-b-0">
-						{tabs.map((tab) => {
-							const count = getTabCount(tab.value);
+				<div className="flex h-9 shrink-0 items-stretch overflow-hidden border-b border-stroke-weak">
+					<div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+						<TabsList className="h-full min-w-max gap-1 border-b-0">
+							{tabs.map((tab) => {
+								const count = getTabCount(tab.value);
 
-							return (
-								<TabsTrigger
-									key={tab.value}
-									value={tab.value}
-									className="inline-flex h-full items-center gap-1 whitespace-nowrap"
-								>
-									<span>{_(tab.label)}</span>
-									{typeof count === "number" ? <span className="text-fg-muted">({count})</span> : null}
-								</TabsTrigger>
-							);
-						})}
-					</TabsList>
+								return (
+									<TabsTrigger
+										key={tab.value}
+										value={tab.value}
+										className="inline-flex h-full items-center gap-1 whitespace-nowrap"
+									>
+										<span>{_(tab.label)}</span>
+										{typeof count === "number" ? <span className="text-fg-muted">({count})</span> : null}
+									</TabsTrigger>
+								);
+							})}
+						</TabsList>
+					</div>
+					{activeTab === "positions" && positionsCount !== null ? (
+						<PositionFilterToolbar
+							direction={positionDirectionFilter}
+							market={positionMarketFilter}
+							marketOptions={positionMarketOptions}
+							onDirectionChange={handlePositionDirectionChange}
+							onMarketChange={handlePositionMarketChange}
+						/>
+					) : null}
 				</div>
 				<TabsContent value="balances" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
@@ -125,7 +213,11 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 				</TabsContent>
 				<TabsContent value="positions" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
-						<PositionsTab />
+						<PositionsTab
+							directionFilter={positionDirectionFilter}
+							marketFilter={positionMarketFilter}
+							currentMarket={currentPositionMarket}
+						/>
 					</Suspense>
 				</TabsContent>
 				<TabsContent value="orders" className={tabContentClass}>

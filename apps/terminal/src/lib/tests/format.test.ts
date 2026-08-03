@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+	formatLiquidationPrice,
 	formatNumber,
 	formatPercent,
 	formatPrice,
@@ -34,6 +35,8 @@ describe("format", () => {
 		expect(szDecimalsToPriceDecimals(0, "spot")).toBe(8);
 		expect(formatPrice(88140.123, { szDecimals: 4 })).toBe("$88,140.12");
 		expect(formatPrice("0.00000011", { szDecimals: 0, marketType: "spot" })).toBe("$0.00000011");
+		expect(formatPrice("447.934", { szDecimals: 3, style: "decimal" })).toBe("447.934");
+		expect(formatLiquidationPrice("447.934", 3, { style: "decimal" })).toBe("447.934");
 	});
 
 	it("formats token amounts and percentages", () => {

@@ -5771,3 +5771,28 @@ msgstr "金库提款"
 #: src/config/account-ledger.ts
 msgid "Withdrawal"
 msgstr "提款"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Direction"
+msgstr "方向"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Filter positions by direction"
+msgstr "按方向筛选仓位"
+
+#: src/components/trade/positions/position-market-filter.tsx
+msgid "Filter positions by market"
+msgstr "按市场筛选仓位"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgctxt "Cumulative position funding"
+msgid "Funding"
+msgstr "资金费"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "No positions match the selected filters."
+msgstr "没有符合所选筛选条件的仓位。"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Position Value"
+msgstr "仓位价值"

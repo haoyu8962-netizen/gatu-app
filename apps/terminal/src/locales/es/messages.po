@@ -5771,3 +5771,28 @@ msgstr "Retiro de la bóveda"
 #: src/config/account-ledger.ts
 msgid "Withdrawal"
 msgstr "Retiro"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Direction"
+msgstr "Dirección"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Filter positions by direction"
+msgstr "Filtrar posiciones por dirección"
+
+#: src/components/trade/positions/position-market-filter.tsx
+msgid "Filter positions by market"
+msgstr "Filtrar posiciones por mercado"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgctxt "Cumulative position funding"
+msgid "Funding"
+msgstr "Financiación"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "No positions match the selected filters."
+msgstr "Ninguna posición coincide con los filtros seleccionados."
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Position Value"
+msgstr "Valor de la posición"

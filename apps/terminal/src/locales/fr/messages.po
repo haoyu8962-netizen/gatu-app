@@ -5771,3 +5771,28 @@ msgstr "Retrait du coffre"
 #: src/config/account-ledger.ts
 msgid "Withdrawal"
 msgstr "Retrait"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Direction"
+msgstr "Direction"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Filter positions by direction"
+msgstr "Filtrer les positions par direction"
+
+#: src/components/trade/positions/position-market-filter.tsx
+msgid "Filter positions by market"
+msgstr "Filtrer les positions par marché"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgctxt "Cumulative position funding"
+msgid "Funding"
+msgstr "Financement"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "No positions match the selected filters."
+msgstr "Aucune position ne correspond aux filtres sélectionnés."
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Position Value"
+msgstr "Valeur de la position"

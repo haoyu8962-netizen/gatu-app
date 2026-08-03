@@ -5771,3 +5771,28 @@ msgstr "سحب من الخزنة"
 #: src/config/account-ledger.ts
 msgid "Withdrawal"
 msgstr "سحب"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Direction"
+msgstr "الاتجاه"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Filter positions by direction"
+msgstr "تصفية المراكز حسب الاتجاه"
+
+#: src/components/trade/positions/position-market-filter.tsx
+msgid "Filter positions by market"
+msgstr "تصفية المراكز حسب السوق"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgctxt "Cumulative position funding"
+msgid "Funding"
+msgstr "التمويل"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "No positions match the selected filters."
+msgstr "لا توجد مراكز تطابق عوامل التصفية المحددة."
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Position Value"
+msgstr "قيمة المركز"

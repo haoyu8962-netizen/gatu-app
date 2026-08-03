@@ -5771,3 +5771,28 @@ msgstr "Vault Withdrawal"
 #: src/config/account-ledger.ts
 msgid "Withdrawal"
 msgstr "Withdrawal"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Direction"
+msgstr "Direction"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Filter positions by direction"
+msgstr "Filter positions by direction"
+
+#: src/components/trade/positions/position-market-filter.tsx
+msgid "Filter positions by market"
+msgstr "Filter positions by market"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgctxt "Cumulative position funding"
+msgid "Funding"
+msgstr "Funding"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "No positions match the selected filters."
+msgstr "No positions match the selected filters."
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Position Value"
+msgstr "Position Value"

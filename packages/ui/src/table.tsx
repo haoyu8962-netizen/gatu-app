@@ -38,13 +38,17 @@ const tableCellVariants = cva(["align-middle text-fg-muted"], {
 	},
 });
 
-interface TableProps extends React.HTMLAttributes<HTMLTableElement>, VariantProps<typeof tableVariants> {}
+interface TableProps extends React.HTMLAttributes<HTMLTableElement>, VariantProps<typeof tableVariants> {
+	containerClassName?: string;
+}
 
-const Table = React.forwardRef<HTMLTableElement, TableProps>(({ className, variant, ...props }, ref) => (
-	<div className="w-full overflow-x-auto">
-		<table className={cn(tableVariants({ variant, className }))} ref={ref} {...props} />
-	</div>
-));
+const Table = React.forwardRef<HTMLTableElement, TableProps>(
+	({ className, containerClassName, variant, ...props }, ref) => (
+		<div className={cn("w-full overflow-x-auto", containerClassName)}>
+			<table className={cn(tableVariants({ variant, className }))} ref={ref} {...props} />
+		</div>
+	),
+);
 Table.displayName = "Table";
 
 interface TableHeaderProps extends React.HTMLAttributes<HTMLTableSectionElement> {}

@@ -2,10 +2,16 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
+import {
+	filterPositions,
+	type PositionDirectionFilter,
+	type PositionMarketFilter,
+	type PositionMarketIdentity,
+} from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -26,12 +32,15 @@ import type {
 import { PositionIsolatedMarginModal } from "./position-isolated-margin-modal";
 import { PositionLimitCloseModal } from "./position-limit-close-modal";
 import { PositionRow } from "./position-row";
+import {
+	POSITION_TABLE_MIN_WIDTH,
+	positionTableBodyClass,
+	positionTableHeadClass,
+	positionTableHeaderClass,
+} from "./position-table-styles";
 import { PositionTpSlModal } from "./position-tpsl-modal";
 import {
 	positionsPanelTableBodyClass,
-	positionsPanelTableCaptionRowClass,
-	positionsPanelTableHeadClass,
-	positionsPanelTableHeaderClass,
 	positionsPanelTableHeaderRowClass,
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
@@ -39,7 +48,13 @@ import {
 
 type CloseIntent = "close" | "reverse";
 
-export function PositionsTab() {
+interface Props {
+	directionFilter: PositionDirectionFilter;
+	marketFilter: PositionMarketFilter;
+	currentMarket: PositionMarketIdentity | null;
+}
+
+export function PositionsTab({ directionFilter, marketFilter, currentMarket }: Props) {
 	const { address, isConnected } = useWalletSession();
 	const slippageBps = useMarketOrderSlippageBps();
 	const navigateToMarket = useMarketNavigation();
@@ -73,6 +88,7 @@ export function PositionsTab() {
 	const openOrders = openOrdersEvent?.orders ?? [];
 
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
+	const filteredPositions = filterPositions(positions, directionFilter, marketFilter, currentMarket);
 
 	const actionError = closeError?.message;
 
@@ -163,83 +179,65 @@ export function PositionsTab() {
 	}
 
 	const placeholder = renderPlaceholder();
+	const filteredPlaceholder =
+		!placeholder && filteredPositions.length === 0 ? (
+			<Placeholder>{t`No positions match the selected filters.`}</Placeholder>
+		) : null;
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className={positionsPanelTableCaptionRowClass}>
-				{isConnected ? (
-					<span className="tabular-nums text-3xs text-fg-muted">
-						{positions.length} {t`positions`}
-					</span>
-				) : null}
-			</div>
 			{actionError ? <div className="px-2.5 py-1 text-2xs text-error">{actionError}</div> : null}
 			<div className={positionsPanelTableShellClass}>
-				{placeholder ? (
-					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{placeholder}</div>
+				{placeholder || filteredPlaceholder ? (
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+						{placeholder ?? filteredPlaceholder}
+					</div>
 				) : (
-					<ScrollArea className="min-h-0 w-full flex-1">
-						<Table className="table-fixed min-w-[64rem] w-full">
-							<TableHeader className={positionsPanelTableHeaderClass}>
+					<ScrollArea className="min-h-0 w-full flex-1 [&_[data-slot=scroll-area-scrollbar]]:hidden [&_[data-slot=scroll-area-viewport]]:overscroll-x-none">
+						<Table
+							containerClassName="overflow-visible"
+							className="table-auto w-full"
+							style={{ minWidth: POSITION_TABLE_MIN_WIDTH }}
+						>
+							<TableHeader className={positionTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[8%] min-w-0 text-left")}
-									>
-										{t`Asset`}
+									<TableHead scope="col" size="dense" className={cn(positionTableHeadClass, "min-w-0 pl-3")}>
+										{t`Market`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
 										{t`Size`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[12%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
+										{t`Position Value`}
+									</TableHead>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
+										{t`Entry Price`}
+									</TableHead>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
+										{t`Mark Price`}
+									</TableHead>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
+										{t`PNL`} (ROE)
+									</TableHead>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
+										{t`Liquidation Price`}
+									</TableHead>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
 										{t`Margin`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[8%] text-right")}>
-										{t`Entry`}
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
+										{t({ message: "Funding", context: "Cumulative position funding" })}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[9%] text-right")}>
-										{t`Mark`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[9%] text-right")}>
-										{t`Liq`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[8%] text-right")}>
-										{t`Funding`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[12%] text-right")}
-									>
-										{t`PNL`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
-									>
-										{t`TP/SL`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
 										{t`Actions`}
+									</TableHead>
+									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
+										{t`TP/SL`}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
-							<TableBody className={positionsPanelTableBodyClass}>
-								{positions.map((p, i) => {
+							<TableBody className={cn(positionsPanelTableBodyClass, positionTableBodyClass)}>
+								{filteredPositions.map((p, i) => {
 									const assetId = markets.getAssetId(p.coin);
 									return (
 										<PositionRow
@@ -261,7 +259,6 @@ export function PositionsTab() {
 								})}
 							</TableBody>
 						</Table>
-						<ScrollBar orientation="horizontal" />
 					</ScrollArea>
 				)}
 			</div>

@@ -1,17 +1,24 @@
 import { TableCell, TableRow, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { PencilIcon, PlusIcon } from "@phosphor-icons/react";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
 import { cn } from "@/lib/cn";
-import { formatLiquidationPrice, formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
+import {
+	formatLiquidationPrice,
+	formatPercent,
+	formatPrice,
+	formatQuoteAmount,
+	formatToken,
+	formatUSD,
+} from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
 import { isPositive, toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
-import { AssetBadge } from "../components/asset-badge";
 import { PositionActionsDropdown } from "./position-actions-dropdown";
 import type {
 	ClosePositionData,
@@ -20,10 +27,11 @@ import type {
 	TpSlPositionRef,
 } from "./position-dialog-types";
 import {
-	positionsPanelRowHoverClass,
-	positionsPanelRowStripeClass,
-	positionsPanelTableCellClass,
-} from "./positions-panel-table-styles";
+	positionLongMarketCellStyle,
+	positionShortMarketCellStyle,
+	positionTableCellClass,
+} from "./position-table-styles";
+import { positionsPanelRowHoverClass, positionsPanelRowStripeClass } from "./positions-panel-table-styles";
 
 interface Props {
 	position: Position;
@@ -62,7 +70,11 @@ export function PositionRow({
 	const szDecimals = market?.szDecimals ?? 4;
 	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
 	const displayName = market?.pairName ?? p.coin;
+	const sizeSymbol = market?.shortName ?? p.coin.split(":").pop() ?? p.coin;
+	const marketLabel = market?.shortName ?? sizeSymbol;
 	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
+	const quoteSymbol =
+		market?.kind === "builderPerp" ? (market.quoteToken?.displayName ?? DEFAULT_QUOTE_TOKEN) : DEFAULT_QUOTE_TOKEN;
 
 	const liqPx = toBig(p.liquidationPx)?.toNumber();
 	const liqIsNear =
@@ -80,15 +92,34 @@ export function PositionRow({
 	const pnlClass = getValueColorClass(unrealizedPnl);
 	const fundingClass = getValueColorClass(cumFunding ? -cumFunding : null);
 	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
+	const sideClass = isLong ? "text-success" : "text-error";
+	const marketCellStyle = isLong ? positionLongMarketCellStyle : positionShortMarketCellStyle;
+	const sizeDisplay = formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol });
+	const positionValueDisplay = formatQuoteAmount(p.positionValue, quoteSymbol, { decimals: 2, compact: false });
+	const entryPriceDisplay = formatPrice(p.entryPx, { szDecimals, style: "decimal" });
+	const markPriceDisplay = formatPrice(markPx, { szDecimals, style: "decimal" });
+	const pnlDisplay = formatUSD(unrealizedPnl, {
+		compact: false,
+		currencyDisplay: "narrowSymbol",
+		signDisplay: "exceptZero",
+	});
+	const roeDisplay = formatPercent(p.returnOnEquity, 1);
+	const liquidationPriceDisplay = formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" });
+	const marginDisplay = formatUSD(p.marginUsed, { compact: false, currencyDisplay: "narrowSymbol" });
+	const fundingDisplay = formatUSD(cumFunding ? -cumFunding : null, {
+		compact: false,
+		currencyDisplay: "narrowSymbol",
+		signDisplay: "exceptZero",
+	});
 
 	function renderTpSlContent() {
 		if (tpSlInfo?.tpPrice && tpSlInfo?.slPrice) {
 			return (
 				<>
 					<div className="flex items-center gap-1 text-2xs tabular-nums">
-						<span className="text-success/70">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
+						<span className="text-success/70">{formatPrice(tpSlInfo.tpPrice, { szDecimals, style: "decimal" })}</span>
 						<span className="text-fg-muted">/</span>
-						<span className="text-error/70">{formatPrice(tpSlInfo.slPrice, { szDecimals })}</span>
+						<span className="text-error/70">{formatPrice(tpSlInfo.slPrice, { szDecimals, style: "decimal" })}</span>
 					</div>
 					<PencilIcon className="size-3 text-fg-muted group-hover:text-fg transition-colors" />
 				</>
@@ -99,9 +130,9 @@ export function PositionRow({
 				<>
 					<div className="flex items-center gap-1 text-2xs tabular-nums">
 						{tpSlInfo?.tpPrice ? (
-							<span className="text-success/70">{formatPrice(tpSlInfo.tpPrice, { szDecimals })}</span>
+							<span className="text-success/70">{formatPrice(tpSlInfo.tpPrice, { szDecimals, style: "decimal" })}</span>
 						) : (
-							<span className="text-error/70">{formatPrice(tpSlInfo?.slPrice, { szDecimals })}</span>
+							<span className="text-error/70">{formatPrice(tpSlInfo?.slPrice, { szDecimals, style: "decimal" })}</span>
 						)}
 					</div>
 					<PlusIcon className="size-3 text-fg-muted group-hover:text-fg transition-colors" />
@@ -185,53 +216,83 @@ export function PositionRow({
 	}
 
 	const marginContent = (
-		<div className="flex flex-col items-end gap-px">
-			<span className="text-xs font-semibold tabular-nums leading-tight">{formatUSD(p.marginUsed)}</span>
-			<span className="inline-flex items-center gap-1 text-2xs font-medium text-fg-muted leading-tight">
-				{p.leverage.type === "isolated" ? t`Isolated` : t`Cross`}
-				{p.leverage.type === "isolated" ? (
-					<PencilIcon className="size-2.5 text-fg-disabled transition-colors group-hover:text-fg-muted" />
-				) : null}
-			</span>
-		</div>
+		<span className="inline-flex items-center justify-start gap-1 whitespace-nowrap tabular-nums" title={marginDisplay}>
+			<span className="font-medium text-fg">{marginDisplay}</span>
+			<span className="text-2xs text-fg-muted">({p.leverage.type === "isolated" ? t`Isolated` : t`Cross`})</span>
+			{p.leverage.type === "isolated" ? (
+				<PencilIcon className="size-2.5 text-fg-disabled transition-colors group-hover:text-fg-muted" />
+			) : null}
+		</span>
 	);
 
 	return (
 		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "min-w-0 text-fg")}>
-				<AssetBadge
-					coin={p.coin}
-					side={isLong ? "buy" : "sell"}
-					fit
-					onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
-					aria-label={
-						isLong
-							? t`Switch to ${displayName} market, long position`
-							: t`Switch to ${displayName} market, short position`
-					}
-				/>
-			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}>
-				<div className="flex flex-col items-end gap-px">
-					<span className="text-xs font-semibold tabular-nums leading-tight">
-						{formatToken(absSize, {
-							decimals: szDecimals,
-							symbol: p.coin,
-						})}
-					</span>
-					<span className="text-2xs text-fg-muted tabular-nums leading-tight">
-						({formatUSD(p.positionValue, { compact: true })})
-					</span>
+			<TableCell size="dense" className={cn(positionTableCellClass, "pl-3 text-fg")} style={marketCellStyle}>
+				<div className="flex items-center gap-1 whitespace-nowrap">
+					<button
+						type="button"
+						onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
+						aria-label={
+							isLong
+								? t`Switch to ${displayName} market, long position`
+								: t`Switch to ${displayName} market, short position`
+						}
+						title={displayName}
+						className={cn(
+							"rounded-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stroke-focus",
+							sideClass,
+						)}
+					>
+						{marketLabel}
+					</button>
+					<span className={cn("shrink-0 text-2xs font-medium", sideClass)}>{p.leverage.value}x</span>
+					{p.dex ? (
+						<span className="shrink-0 rounded-xs bg-brand/10 px-1 py-0.5 text-3xs font-medium text-brand">{p.dex}</span>
+					) : null}
 				</div>
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right text-fg")}>
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums text-fg")}>
+				<span className={cn("block font-medium", sideClass)} title={sizeDisplay}>
+					{sizeDisplay}
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums text-fg")}>
+				<span className="block font-medium" title={positionValueDisplay}>
+					{positionValueDisplay}
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums text-fg-muted")}>
+				<span className="block" title={entryPriceDisplay}>
+					{entryPriceDisplay}
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums text-fg")}>
+				<span className="block font-medium" title={markPriceDisplay}>
+					{markPriceDisplay}
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, pnlClass)}>
+				<span className="block tabular-nums" title={`${pnlDisplay} (${roeDisplay})`}>
+					<span className="font-medium">{pnlDisplay}</span>
+					<span className="ml-1 text-2xs opacity-90">({roeDisplay})</span>
+				</span>
+			</TableCell>
+			<TableCell
+				size="dense"
+				className={cn(positionTableCellClass, "tabular-nums", liqIsNear ? "font-medium text-error" : "text-fg-muted")}
+			>
+				<span className="block" title={liquidationPriceDisplay}>
+					{liquidationPriceDisplay}
+				</span>
+			</TableCell>
+			<TableCell size="dense" className={cn(positionTableCellClass, "text-fg")}>
 				{p.leverage.type === "isolated" && typeof assetId === "number" ? (
 					<Tooltip content={t`Adjust isolated margin`} side="top">
 						<button
 							type="button"
 							onClick={handleAdjustMargin}
 							aria-label={t`Adjust isolated margin for ${displayName}`}
-							className="group flex w-full cursor-pointer justify-end rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							className="group inline-flex min-h-6 cursor-pointer items-center justify-start rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
 							{marginContent}
 						</button>
@@ -240,64 +301,12 @@ export function PositionRow({
 					marginContent
 				)}
 			</TableCell>
-			<TableCell
-				size="dense"
-				className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg-muted whitespace-nowrap")}
-			>
-				<span className="tabular-nums">{formatPrice(p.entryPx, { szDecimals })}</span>
-			</TableCell>
-			<TableCell
-				size="dense"
-				className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg whitespace-nowrap")}
-			>
-				<span className="text-xs font-semibold tabular-nums">{formatPrice(markPx, { szDecimals })}</span>
-			</TableCell>
-			<TableCell
-				size="dense"
-				className={cn(
-					positionsPanelTableCellClass,
-					"text-right tabular-nums min-w-0",
-					liqIsNear ? "text-error font-medium" : "text-fg-muted",
-				)}
-			>
-				<span className="block truncate" title={formatPrice(p.liquidationPx, { szDecimals })}>
-					{formatLiquidationPrice(p.liquidationPx, szDecimals)}
+			<TableCell size="dense" className={cn(positionTableCellClass, "tabular-nums", fundingClass)}>
+				<span className="block font-medium tabular-nums" title={fundingDisplay}>
+					{fundingDisplay}
 				</span>
 			</TableCell>
-			<TableCell
-				size="dense"
-				className={cn(positionsPanelTableCellClass, "text-right tabular-nums whitespace-nowrap", fundingClass)}
-			>
-				<span className="font-medium tabular-nums">
-					{formatUSD(cumFunding ? -cumFunding : null, { signDisplay: "exceptZero" })}
-				</span>
-			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
-				<div className={cn("flex flex-col items-end gap-px tabular-nums", pnlClass)}>
-					<span className="text-xs font-semibold leading-tight">
-						{formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })}
-					</span>
-					<span className={cn("text-2xs leading-tight opacity-90", pnlClass)}>
-						({formatPercent(p.returnOnEquity, 1)})
-					</span>
-				</div>
-			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
-				<Tooltip content={tpSlInfo?.tpPrice && tpSlInfo?.slPrice ? t`Edit TP/SL` : t`Add TP/SL`} side="left">
-					<button
-						type="button"
-						onClick={handleOpenTpSl}
-						disabled={typeof assetId !== "number"}
-						className={cn(
-							"group inline-flex items-center gap-1.5 cursor-pointer transition-opacity disabled:cursor-not-allowed disabled:opacity-50",
-							!hasTpSl && "text-fg-disabled hover:text-fg-muted",
-						)}
-					>
-						{renderTpSlContent()}
-					</button>
-				</Tooltip>
-			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
+			<TableCell size="dense" className={positionTableCellClass}>
 				<PositionActionsDropdown
 					canClose={canClose}
 					isRowClosing={isRowClosing}
@@ -305,6 +314,21 @@ export function PositionRow({
 					onLimitClose={handleLimitClose}
 					onReverse={handleReverse}
 				/>
+			</TableCell>
+			<TableCell size="dense" className={positionTableCellClass}>
+				<Tooltip content={tpSlInfo?.tpPrice && tpSlInfo?.slPrice ? t`Edit TP/SL` : t`Add TP/SL`} side="left">
+					<button
+						type="button"
+						onClick={handleOpenTpSl}
+						disabled={typeof assetId !== "number"}
+						className={cn(
+							"group inline-flex min-h-6 items-center gap-1.5 cursor-pointer rounded-xs transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed disabled:opacity-50",
+							!hasTpSl && "text-fg-disabled hover:text-fg-muted",
+						)}
+					>
+						{renderTpSlContent()}
+					</button>
+				</Tooltip>
 			</TableCell>
 		</TableRow>
 	);

@@ -5771,3 +5771,28 @@ msgstr "वॉल्ट निकासी"
 #: src/config/account-ledger.ts
 msgid "Withdrawal"
 msgstr "निकासी"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Direction"
+msgstr "दिशा"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Filter positions by direction"
+msgstr "दिशा के अनुसार पोज़िशन फ़िल्टर करें"
+
+#: src/components/trade/positions/position-market-filter.tsx
+msgid "Filter positions by market"
+msgstr "बाज़ार के अनुसार पोज़िशन फ़िल्टर करें"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgctxt "Cumulative position funding"
+msgid "Funding"
+msgstr "फंडिंग"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "No positions match the selected filters."
+msgstr "चुने गए फ़िल्टर से कोई पोज़िशन मेल नहीं खाती।"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Position Value"
+msgstr "पोज़िशन मूल्य"
