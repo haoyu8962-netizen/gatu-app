@@ -11,6 +11,7 @@ function readRepositoryFile(path: string): string {
 const terms = readRepositoryFile("legal/terms.md");
 const privacy = readRepositoryFile("legal/privacyPolicy.md");
 const risk = readRepositoryFile("legal/riskDisclosure.md");
+const cookies = readRepositoryFile("legal/cookies.md");
 const legalReadme = readRepositoryFile("legal/README.md");
 
 describe("published legal policy contract", () => {
@@ -28,6 +29,17 @@ describe("published legal policy contract", () => {
 		expect(privacy).toContain("does not integrate a product-analytics SDK");
 		expect(privacy).not.toContain("Mixpanel");
 		expect(privacy).toContain("support@gatu.ai");
+	});
+
+	it("publishes an accurate cookie and browser-storage policy", () => {
+		const terminalRoute = readRepositoryFile("apps/terminal/src/routes/cookies.tsx");
+
+		expect(cookies).toContain("**Last Updated:** August 3, 2026");
+		expect(cookies).toContain("does not integrate a product-analytics SDK");
+		expect(cookies).toContain("Essential storage cannot be disabled through the Interface");
+		expect(cookies).toContain("support@gatu.ai");
+		expect(terminalRoute).toContain('createFileRoute("/cookies")');
+		expect(terminalRoute).toContain("ssr: true");
 	});
 
 	it("publishes a completed disclosure for the product's material risk surfaces", () => {

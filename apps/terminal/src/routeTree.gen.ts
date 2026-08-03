@@ -14,6 +14,7 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as BuildMetaDotjsonRouteImport } from './routes/build-meta[.]json'
 import { Route as BuildersPerpRouteImport } from './routes/builders-perp'
 import { Route as ClientErrorReportRouteImport } from './routes/client-error-report'
+import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as MobileAgentSyncRouteImport } from './routes/mobile-agent-sync'
 import { Route as MobileAgentSyncTicketRouteImport } from './routes/mobile-agent-sync-ticket'
@@ -54,6 +55,11 @@ const BuildersPerpRoute = BuildersPerpRouteImport.update({
 const ClientErrorReportRoute = ClientErrorReportRouteImport.update({
   id: '/client-error-report',
   path: '/client-error-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsRoute = DocsRouteImport.update({
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
   '/client-error-report': typeof ClientErrorReportRoute
+  '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/client-error-report': typeof ClientErrorReportRoute
+  '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/build-meta.json': typeof BuildMetaDotjsonRoute
   '/builders-perp': typeof BuildersPerpRouteWithChildren
   '/client-error-report': typeof ClientErrorReportRoute
+  '/cookies': typeof CookiesRoute
   '/docs': typeof DocsRoute
   '/mobile-agent-sync': typeof MobileAgentSyncRoute
   '/mobile-agent-sync-ticket': typeof MobileAgentSyncTicketRoute
@@ -213,6 +222,7 @@ export interface FileRouteTypes {
     | '/build-meta.json'
     | '/builders-perp'
     | '/client-error-report'
+    | '/cookies'
     | '/docs'
     | '/mobile-agent-sync'
     | '/mobile-agent-sync-ticket'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/build-meta.json'
     | '/client-error-report'
+    | '/cookies'
     | '/docs'
     | '/mobile-agent-sync'
     | '/mobile-agent-sync-ticket'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/build-meta.json'
     | '/builders-perp'
     | '/client-error-report'
+    | '/cookies'
     | '/docs'
     | '/mobile-agent-sync'
     | '/mobile-agent-sync-ticket'
@@ -281,6 +293,7 @@ export interface RootRouteChildren {
   BuildMetaDotjsonRoute: typeof BuildMetaDotjsonRoute
   BuildersPerpRoute: typeof BuildersPerpRouteWithChildren
   ClientErrorReportRoute: typeof ClientErrorReportRoute
+  CookiesRoute: typeof CookiesRoute
   DocsRoute: typeof DocsRoute
   MobileAgentSyncRoute: typeof MobileAgentSyncRoute
   MobileAgentSyncTicketRoute: typeof MobileAgentSyncTicketRoute
@@ -329,6 +342,13 @@ declare module '@tanstack/react-router' {
       path: '/client-error-report'
       fullPath: '/client-error-report'
       preLoaderRoute: typeof ClientErrorReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs': {
@@ -480,6 +500,7 @@ const rootRouteChildren: RootRouteChildren = {
   BuildMetaDotjsonRoute: BuildMetaDotjsonRoute,
   BuildersPerpRoute: BuildersPerpRouteWithChildren,
   ClientErrorReportRoute: ClientErrorReportRoute,
+  CookiesRoute: CookiesRoute,
   DocsRoute: DocsRoute,
   MobileAgentSyncRoute: MobileAgentSyncRoute,
   MobileAgentSyncTicketRoute: MobileAgentSyncTicketRoute,

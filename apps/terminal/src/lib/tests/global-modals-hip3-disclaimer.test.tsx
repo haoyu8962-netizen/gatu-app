@@ -13,6 +13,15 @@ const testState = vi.hoisted(() => ({
 		documentationUrl: "https://docs.trade.xyz/consolidated-resources/specification-index" as string | undefined,
 	},
 	hip3RequirementHook: vi.fn(),
+	legalGate: {
+		state: "accepted" as string,
+		identity: "0x1234",
+		accept: vi.fn(),
+		acceptanceError: null,
+		resetAcceptance: vi.fn(),
+		retryStatus: vi.fn(),
+	},
+	legalGateHook: vi.fn(),
 	openCommandMenu: vi.fn(),
 	closeSendModal: vi.fn(),
 }));
@@ -24,9 +33,21 @@ vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
 	},
 }));
 
+vi.mock("@/hooks/trade/use-legal-gate", () => ({
+	useLegalGate: () => {
+		testState.legalGateHook();
+		return testState.legalGate;
+	},
+}));
+
 vi.mock("@/components/trade/components/hip3-deployer-disclaimer", () => ({
 	Hip3DeployerDisclaimer: (props: Record<string, unknown>) =>
 		createElement("div", { "data-props": JSON.stringify(props), "data-testid": "Hip3DeployerDisclaimer" }),
+}));
+
+vi.mock("@/components/trade/components/legal-acceptance-modal", () => ({
+	LegalAcceptanceModal: (props: Record<string, unknown>) =>
+		createElement("div", { "data-props": JSON.stringify(props), "data-testid": "LegalAcceptanceModal" }),
 }));
 
 vi.mock("@/lib/lazy", () => ({
@@ -63,6 +84,15 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		testState.closeCommandMenu.mockReset();
 		testState.closeSendModal.mockReset();
 		testState.hip3RequirementHook.mockReset();
+		testState.legalGate = {
+			state: "accepted",
+			identity: "0x1234",
+			accept: vi.fn(),
+			acceptanceError: null,
+			resetAcceptance: vi.fn(),
+			retryStatus: vi.fn(),
+		};
+		testState.legalGateHook.mockReset();
 		testState.openCommandMenu.mockReset();
 	});
 
@@ -82,6 +112,28 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 
 		act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true })));
 		expect(testState.openCommandMenu).not.toHaveBeenCalled();
+	});
+
+	it("renders the legal gate before the HIP-3 disclaimer and other global modals", async () => {
+		testState.legalGate.state = "required";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true, enableLegalGate: true })));
+
+		expect(container.querySelector('[data-testid="LegalAcceptanceModal"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).toBeNull();
+		expect(container.querySelector('[data-testid="DepositModal"]')).toBeNull();
+		expect(testState.hip3RequirementHook).not.toHaveBeenCalled();
+	});
+
+	it("suppresses lower-priority modals while legal status is loading", async () => {
+		testState.legalGate.state = "checking";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(GlobalModals, { enableHip3Disclaimer: true, enableLegalGate: true })));
+
+		expect(container.children).toHaveLength(0);
+		expect(testState.hip3RequirementHook).not.toHaveBeenCalled();
 	});
 
 	it("preserves existing global modal behavior when no disclaimer is required", async () => {

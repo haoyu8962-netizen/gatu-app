@@ -157,7 +157,7 @@ export function PortfolioPage() {
 				)}
 			</div>
 			<Suspense fallback={null}>
-				<GlobalModals />
+				<GlobalModals enableLegalGate />
 			</Suspense>
 		</>
 	);

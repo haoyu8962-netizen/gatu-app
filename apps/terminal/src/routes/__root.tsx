@@ -21,7 +21,7 @@ import "@/bones/registry";
 import appCss from "../styles.css?url";
 
 const Toaster = createLazyComponent(() => import("@/components/ui/sonner"), "Toaster");
-const DOCUMENT_ROUTE_PATHS = new Set(["/docs", "/privacy", "/risk", "/support", "/terms"]);
+const DOCUMENT_ROUTE_PATHS = new Set(["/cookies", "/docs", "/privacy", "/risk", "/support", "/terms"]);
 
 interface MyRouterContext {
 	queryClient: QueryClient;

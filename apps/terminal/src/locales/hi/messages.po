@@ -125,6 +125,14 @@ msgstr "8 घंटे की फंडिंग"
 #~ msgid "About Builder Codes"
 #~ msgstr ""
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Accept"
+msgstr "स्वीकार करें"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Access restricted"
+msgstr "पहुँच प्रतिबंधित"
+
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
@@ -760,6 +768,7 @@ msgstr "पुष्टि करें"
 msgid "Confirm Close"
 msgstr "बंद करने की पुष्टि करें"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "वॉलेट में पुष्टि करें"
@@ -1153,6 +1162,10 @@ msgstr "वर्तमान मार्जिन"
 #~ msgid "Dark"
 #~ msgstr ""
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Decline"
+msgstr "अस्वीकार करें"
+
 #: src/components/trade/chart/chart-source-toggle.tsx
 #~ msgid "Default"
 #~ msgstr "डिफ़ॉल्ट"
@@ -1308,6 +1321,7 @@ msgstr "गंतव्य पता"
 msgid "Discard"
 msgstr ""
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
@@ -1898,9 +1912,17 @@ msgstr ""
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
 msgstr ""
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "I have read and agree to the Gatu <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
+msgstr "मैंने Gatu की <0>उपयोग की शर्तें</0>, <1>गोपनीयता नीति</1> और <2>Hyperliquid की उपयोग की शर्तें</2> पढ़ ली हैं और उनसे सहमत हूँ।"
+
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
 msgstr "मैंने इस अस्वीकरण को पढ़ और समझ लिया है तथा तृतीय पक्षों द्वारा डिप्लॉय किए गए अनुमति-रहित बाज़ारों से इंटरैक्ट करने के जोखिम स्वीकार करता/करती हूँ।"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "I understand that Gatu uses essential cookies and browser storage for authentication, security, preferences, and trading functionality. Review the <0>Cookie Policy</0>."
+msgstr "मैं समझता हूँ कि Gatu प्रमाणीकरण, सुरक्षा, प्राथमिकताओं और ट्रेडिंग कार्यक्षमता के लिए आवश्यक कुकीज़ और ब्राउज़र स्टोरेज का उपयोग करता है। <0>कुकी नीति</0> देखें।"
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -3643,6 +3665,7 @@ msgstr ""
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/offline-banner.tsx
@@ -4517,6 +4540,10 @@ msgstr "लक्ष्य लीवरेज"
 msgid "Terms"
 msgstr "शर्तें"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Terms of Use, Privacy Policy, and Cookie Policy"
+msgstr "उपयोग की शर्तें, गोपनीयता नीति और कुकी नीति"
+
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Testnet"
 msgstr "Testnet"
@@ -4613,6 +4640,10 @@ msgstr ""
 msgid "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
 msgstr ""
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "The terms could not be accepted. Confirm the request in the selected wallet and try again."
+msgstr "शर्तें स्वीकार नहीं की जा सकीं। चुने गए वॉलेट में अनुरोध की पुष्टि करें और फिर प्रयास करें।"
+
 #: src/hooks/wallet/use-wallet-session.ts
 #~ msgid "The wallet session could not be closed and local Agent registration remains disabled. Reload, then retry disconnecting."
 #~ msgstr ""
@@ -4620,6 +4651,10 @@ msgstr ""
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
 msgstr ""
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
+msgstr "इस खाते को अभी Hyperliquid पर ट्रेडिंग कार्रवाई करने की अनुमति नहीं है।"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
@@ -4834,6 +4869,10 @@ msgstr "को"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr "Perp में"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "To proceed, review and accept the following:"
+msgstr "आगे बढ़ने के लिए, निम्नलिखित की समीक्षा करके स्वीकार करें:"
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
@@ -5187,6 +5226,10 @@ msgstr "वॉलेट को {0} पर स्विच नहीं किय
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "वॉलेट को Arbitrum पर स्विच नहीं किया जा सका। अपने वॉलेट में नेटवर्क बदलें और फिर से प्रयास करें।"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Unable to verify access"
+msgstr "पहुँच सत्यापित नहीं हो सकी"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unavailable"
@@ -5433,6 +5476,10 @@ msgstr "वॉलेट ने लेनदेन हैश लौटाया �
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect QR code"
 #~ msgstr ""
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "We could not verify the legal status for this wallet. Check your connection and try again."
+msgstr "हम इस वॉलेट की कानूनी स्थिति सत्यापित नहीं कर सके। अपना कनेक्शन जाँचें और फिर प्रयास करें।"
 
 #: src/components/trade/components/spot-market-social-links.tsx
 #: src/lib/tests/spot-market-social-links.test.tsx

@@ -125,6 +125,14 @@ msgstr "8h Funding"
 #~ msgid "About Builder Codes"
 #~ msgstr "About Builder Codes"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Accept"
+msgstr "Accept"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Access restricted"
+msgstr "Access restricted"
+
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
@@ -760,6 +768,7 @@ msgstr "Confirm"
 msgid "Confirm Close"
 msgstr "Confirm Close"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
 msgstr "Confirm in wallet"
@@ -1153,6 +1162,10 @@ msgstr "Current Margin"
 #~ msgid "Dark"
 #~ msgstr "Dark"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Decline"
+msgstr "Decline"
+
 #: src/components/trade/chart/chart-source-toggle.tsx
 #~ msgid "Default"
 #~ msgstr "Default"
@@ -1308,6 +1321,7 @@ msgstr "Destination address"
 msgid "Discard"
 msgstr "Discard"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/header/user-menu.tsx
 msgid "Disconnect"
@@ -1898,9 +1912,17 @@ msgstr "Hyperliquid labels portfolio margin as pre-alpha and recommends testing 
 msgid "Hyperliquid reports that this trading key was replaced, changed, or expired."
 msgstr "Hyperliquid reports that this trading key was replaced, changed, or expired."
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "I have read and agree to the Gatu <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
+msgstr "I have read and agree to the Gatu <0>Terms of Use</0>, <1>Privacy Policy</1>, and the <2>Hyperliquid Terms of Use</2>."
+
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
 msgstr "I have read and understood this disclaimer and accept the risks of interacting with permissionless markets deployed by third parties."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "I understand that Gatu uses essential cookies and browser storage for authentication, security, preferences, and trading functionality. Review the <0>Cookie Policy</0>."
+msgstr "I understand that Gatu uses essential cookies and browser storage for authentication, security, preferences, and trading functionality. Review the <0>Cookie Policy</0>."
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -3643,6 +3665,7 @@ msgstr "Resume tracking"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
+#: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/offline-banner.tsx
@@ -4517,6 +4540,10 @@ msgstr "Target Leverage"
 msgid "Terms"
 msgstr "Terms"
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Terms of Use, Privacy Policy, and Cookie Policy"
+msgstr "Terms of Use, Privacy Policy, and Cookie Policy"
+
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Testnet"
 msgstr "Testnet"
@@ -4613,6 +4640,10 @@ msgstr "The saved desktop QR was invalid. Scan a fresh QR."
 msgid "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
 msgstr "The temporary phone-access QR could not be cleared. Close this tab and clear this site's data before scanning again."
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "The terms could not be accepted. Confirm the request in the selected wallet and try again."
+msgstr "The terms could not be accepted. Confirm the request in the selected wallet and try again."
+
 #: src/hooks/wallet/use-wallet-session.ts
 #~ msgid "The wallet session could not be closed and local Agent registration remains disabled. Reload, then retry disconnecting."
 #~ msgstr "The wallet session could not be closed and local Agent registration remains disabled. Reload, then retry disconnecting."
@@ -4620,6 +4651,10 @@ msgstr "The temporary phone-access QR could not be cleared. Close this tab and c
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
 msgstr "The wallet session could not be closed, but the local trading key was removed. Retry disconnecting the wallet."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
+msgstr "This account is not currently permitted to perform trading actions on Hyperliquid."
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
@@ -4834,6 +4869,10 @@ msgstr "To"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Perp"
 msgstr "To Perp"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "To proceed, review and accept the following:"
+msgstr "To proceed, review and accept the following:"
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "To Spot"
@@ -5187,6 +5226,10 @@ msgstr "Unable to switch wallet to {0}. Switch networks in your wallet and retry
 msgid "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 msgstr "Unable to switch wallet to Arbitrum. Switch networks in your wallet and retry."
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Unable to verify access"
+msgstr "Unable to verify access"
+
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unavailable"
@@ -5433,6 +5476,10 @@ msgstr "Wallet returned a transaction hash, but it is not visible on Arbitrum ye
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "WalletConnect QR code"
 #~ msgstr "WalletConnect QR code"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "We could not verify the legal status for this wallet. Check your connection and try again."
+msgstr "We could not verify the legal status for this wallet. Check your connection and try again."
 
 #: src/components/trade/components/spot-market-social-links.tsx
 #: src/lib/tests/spot-market-social-links.test.tsx

@@ -1,5 +1,6 @@
 import { Suspense, useEffect } from "react";
 import { type Hip3DisclaimerRequirement, useHip3DisclaimerRequirement } from "@/hooks/trade/use-hip3-disclaimer";
+import { useLegalGate } from "@/hooks/trade/use-legal-gate";
 import { createLazyComponent } from "@/lib/lazy";
 import {
 	useCommandMenuActions,
@@ -11,6 +12,7 @@ import {
 	useTransferModalDirection,
 } from "@/stores/use-global-modal-store";
 import { Hip3DeployerDisclaimer } from "./hip3-deployer-disclaimer";
+import { LegalAcceptanceModal } from "./legal-acceptance-modal";
 
 const DepositModal = createLazyComponent(() => import("../tradebox/deposit-modal"), "DepositModal");
 const GlobalSettingsModal = createLazyComponent(() => import("./global-settings-modal"), "GlobalSettingsModal");
@@ -21,11 +23,33 @@ const SendModal = createLazyComponent(() => import("../positions/send-modal"), "
 
 interface Props {
 	enableHip3Disclaimer?: boolean;
+	enableLegalGate?: boolean;
 }
 
-export function GlobalModals({ enableHip3Disclaimer = false }: Props) {
+export function GlobalModals({ enableHip3Disclaimer = false, enableLegalGate = false }: Props) {
+	if (enableLegalGate) return <LegalAwareGlobalModals enableHip3Disclaimer={enableHip3Disclaimer} />;
 	if (enableHip3Disclaimer) return <Hip3AwareGlobalModals />;
 	return <SharedGlobalModals />;
+}
+
+function LegalAwareGlobalModals({ enableHip3Disclaimer }: { enableHip3Disclaimer: boolean }) {
+	const legalGate = useLegalGate();
+
+	if (legalGate.state === "checking") return null;
+	if (legalGate.state !== "inactive" && legalGate.state !== "accepted") {
+		return (
+			<LegalAcceptanceModal
+				key={legalGate.identity}
+				state={legalGate.state}
+				acceptanceError={legalGate.acceptanceError}
+				onAccept={legalGate.accept}
+				onRetryStatus={legalGate.retryStatus}
+				onResetAcceptance={legalGate.resetAcceptance}
+			/>
+		);
+	}
+
+	return enableHip3Disclaimer ? <Hip3AwareGlobalModals /> : <SharedGlobalModals />;
 }
 
 function Hip3AwareGlobalModals() {
