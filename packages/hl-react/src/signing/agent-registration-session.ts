@@ -9,6 +9,7 @@ import {
 } from "./agent-session";
 import {
 	type AgentStorageRemovalResult,
+	type AgentStorageWriteOptions,
 	type AgentWalletMetadata,
 	inspectAgentStorageRecord,
 	removeAgentFromStorageAndVerify,
@@ -386,6 +387,7 @@ export async function persistAgentForRegistration(
 	privateKey: string,
 	publicKey: Address,
 	metadata: AgentWalletMetadata = { source: "local-registration" },
+	options: AgentStorageWriteOptions = {},
 ): Promise<AgentRegistrationPersistResult> {
 	const result = await withSessionLock<AgentRegistrationPersistResult>(epoch.env, epoch.owner, () => {
 		const before = readSessionRecord(epoch.env, epoch.owner);
@@ -394,7 +396,7 @@ export async function persistAgentForRegistration(
 			return { status: "failed", reason: "registration_cancelled" };
 		}
 
-		const write = writeAgentToStorageAndVerify(epoch.env, epoch.owner, privateKey, publicKey, metadata);
+		const write = writeAgentToStorageAndVerify(epoch.env, epoch.owner, privateKey, publicKey, metadata, options);
 		if (write.status === "failed") {
 			return {
 				status: "failed",

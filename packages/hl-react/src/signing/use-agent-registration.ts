@@ -20,8 +20,12 @@ import { withWalletApprovalTimeout } from "./wallet-approval-timeout";
 
 export type RegistrationStep = "agent" | null;
 
+export interface AgentRegistrationOptions {
+	persistConnection?: boolean;
+}
+
 export interface UseAgentRegistrationResult {
-	register: () => Promise<Address>;
+	register: (options?: AgentRegistrationOptions) => Promise<Address>;
 	status: RegistrationStatus;
 	currentStep: RegistrationStep;
 	error: Error | null;
@@ -63,7 +67,7 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 
 	const registration = useMutation({
 		mutationKey: ["hl", "registration", address],
-		mutationFn: async (): Promise<Address> => {
+		mutationFn: async (options?: AgentRegistrationOptions): Promise<Address> => {
 			try {
 				const startAddress = address;
 				if (!startAddress) throw new Error("No wallet connected");
@@ -114,9 +118,17 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					}
 				}
 
+				const storageScope = options?.persistConnection === false ? "session" : "local";
+
 				async function persistAndVerifyAgent(privateKey: `0x${string}`, publicKey: Address) {
 					await assertRegistrationCurrent();
-					const persistence = await persistAgentForRegistration(epoch, privateKey, publicKey);
+					const persistence = await persistAgentForRegistration(
+						epoch,
+						privateKey,
+						publicKey,
+						{ source: "local-registration" },
+						{ scope: storageScope },
+					);
 					if (persistence.status === "failed") {
 						throw new Error(
 							persistence.reason === "registration_cancelled"
@@ -178,8 +190,12 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 		setCurrentStep(null);
 	}
 
+	function register(options?: AgentRegistrationOptions) {
+		return registration.mutateAsync(options);
+	}
+
 	return {
-		register: registration.mutateAsync,
+		register,
 		status,
 		currentStep,
 		error: registration.error,

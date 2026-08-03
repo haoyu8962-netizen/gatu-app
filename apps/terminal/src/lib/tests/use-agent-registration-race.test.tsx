@@ -6,7 +6,7 @@ import {
 	closeAgentRegistrationSessionAndRemove,
 	persistAgentForRegistration,
 } from "@gatu/hl-react/signing/agent-registration-session";
-import { useAgentRegistration } from "@gatu/hl-react/signing/use-agent-registration";
+import { type AgentRegistrationOptions, useAgentRegistration } from "@gatu/hl-react/signing/use-agent-registration";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -97,6 +97,7 @@ function installExclusiveLockManager() {
 }
 
 let registrationPromise: Promise<Address> | undefined;
+let registrationOptions: AgentRegistrationOptions | undefined;
 
 function RegistrationButton() {
 	const { register, reset } = useAgentRegistration();
@@ -108,7 +109,7 @@ function RegistrationButton() {
 			"button",
 			{
 				onClick: () => {
-					registrationPromise = register();
+					registrationPromise = register(registrationOptions);
 					registrationPromise.catch(() => {});
 				},
 				type: "button",
@@ -133,6 +134,7 @@ describe("useAgentRegistration logout races", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		window.localStorage.clear();
+		window.sessionStorage.clear();
 		installExclusiveLockManager();
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -144,6 +146,7 @@ describe("useAgentRegistration logout races", () => {
 			},
 		});
 		registrationPromise = undefined;
+		registrationOptions = undefined;
 		testState.approveAgent.mockReset();
 		testState.approveBuilderFee.mockReset();
 		testState.approveBuilderFee.mockResolvedValue(undefined);
@@ -163,6 +166,7 @@ describe("useAgentRegistration logout races", () => {
 		queryClient.clear();
 		container.remove();
 		window.localStorage.clear();
+		window.sessionStorage.clear();
 		Object.defineProperty(window.navigator, "locks", {
 			configurable: true,
 			value: undefined,
@@ -193,6 +197,23 @@ describe("useAgentRegistration logout races", () => {
 			publicKey: registeredAddress.toLowerCase(),
 			source: "local-registration",
 		});
+	});
+
+	it("stores a non-persistent connection only for the current browser session", async () => {
+		registrationOptions = { persistConnection: false };
+		testState.approveAgent.mockResolvedValue(undefined);
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushMicrotasks();
+
+		await expect(registrationPromise).resolves.toBeDefined();
+		expect(window.sessionStorage.getItem(AGENT_STORAGE_KEY)).not.toBeNull();
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
 	});
 
 	it("explicit reset removes the key and restores only its exact closing generation", async () => {

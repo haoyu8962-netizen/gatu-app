@@ -128,6 +128,8 @@ export {
 } from "./signing/agent-session";
 export {
 	type AgentStorageRemovalResult,
+	type AgentStorageScope,
+	type AgentStorageWriteOptions,
 	type AgentStorageWriteResult,
 	type AgentWalletMetadata,
 	hasInvalidAgentStorageRecord,
@@ -171,6 +173,7 @@ export type {
 	RegistrationStatus,
 } from "./signing/types";
 export {
+	type AgentRegistrationOptions,
 	type RegistrationStep,
 	type UseAgentRegistrationResult,
 	useAgentRegistration,
