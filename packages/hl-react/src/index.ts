@@ -133,7 +133,9 @@ export {
 	type AgentStorageWriteResult,
 	type AgentWalletMetadata,
 	hasInvalidAgentStorageRecord,
+	PERSIST_TRADING_CONNECTION_STORAGE_KEY,
 	readAgentFromStorage,
+	readPersistTradingConnection,
 	removeAgentFromStorage,
 	removeAgentFromStorageAndVerify,
 	useAgentWalletActions,
@@ -141,6 +143,7 @@ export {
 	useInvalidAgentStorageRecord,
 	writeAgentToStorage,
 	writeAgentToStorageAndVerify,
+	writePersistTradingConnection,
 } from "./signing/agent-storage";
 export { isBuilderFeeApproved } from "./signing/agent-utils";
 export {

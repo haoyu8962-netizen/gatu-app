@@ -8,8 +8,10 @@ import { createI18nRoot } from "./harness/react";
 const testState = vi.hoisted(() => ({
 	error: null as Error | null,
 	isMobile: false,
+	persistConnection: false,
 	register: vi.fn(),
 	status: "idle" as "idle" | "approving_agent" | "verifying" | "error",
+	writePersistTradingConnection: vi.fn(),
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
@@ -17,11 +19,13 @@ vi.mock("@/hooks/use-mobile", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	readPersistTradingConnection: () => testState.persistConnection,
 	useAgentRegistration: () => ({
 		error: testState.error,
 		register: testState.register,
 		status: testState.status,
 	}),
+	writePersistTradingConnection: testState.writePersistTradingConnection,
 }));
 
 vi.mock("@/lib/errors/format", () => ({
@@ -46,6 +50,28 @@ vi.mock("@gatu/ui", () => ({
 		),
 	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) =>
 		createElement("button", { disabled, onClick, type: "button" }, children),
+	Checkbox: ({
+		checked,
+		disabled,
+		label,
+		onCheckedChange,
+	}: {
+		checked: boolean;
+		disabled?: boolean;
+		label: ReactNode;
+		onCheckedChange: (checked: boolean) => void;
+	}) =>
+		createElement(
+			"label",
+			null,
+			createElement("input", {
+				checked,
+				disabled,
+				onChange: (event: { currentTarget: { checked: boolean } }) => onCheckedChange(event.currentTarget.checked),
+				type: "checkbox",
+			}),
+			label,
+		),
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
@@ -68,9 +94,11 @@ describe("EstablishConnectionModal", () => {
 		onConnected = vi.fn();
 		testState.error = null;
 		testState.isMobile = false;
+		testState.persistConnection = false;
 		testState.register.mockReset();
 		testState.register.mockResolvedValue("0x1111111111111111111111111111111111111111");
 		testState.status = "idle";
+		testState.writePersistTradingConnection.mockReset();
 	});
 
 	afterEach(() => {
@@ -94,8 +122,23 @@ describe("EstablishConnectionModal", () => {
 		);
 		await act(async () => connect?.click());
 
-		expect(testState.register).toHaveBeenCalledOnce();
+		expect(testState.register).toHaveBeenCalledWith({ persistConnection: false });
 		expect(onConnected).toHaveBeenCalledOnce();
+	});
+
+	it("persists the Stay Connected preference and registers in persistent mode", async () => {
+		await renderModal();
+
+		const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
+		act(() => checkbox?.click());
+		expect(testState.writePersistTradingConnection).toHaveBeenCalledWith(true);
+
+		const connect = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent === "Establish Connection",
+		);
+		await act(async () => connect?.click());
+
+		expect(testState.register).toHaveBeenCalledWith({ persistConnection: true });
 	});
 
 	it("allows dismissal and surfaces a recoverable registration error", async () => {

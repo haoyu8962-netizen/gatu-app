@@ -4315,6 +4315,10 @@ msgstr ""
 msgid "Status"
 msgstr "الحالة"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Stay Connected"
+msgstr "البقاء على اتصال"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Stocks"
 msgstr "الأسهم"

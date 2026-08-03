@@ -4315,6 +4315,10 @@ msgstr ""
 msgid "Status"
 msgstr "Statut"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Stay Connected"
+msgstr "Rester connecté"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Stocks"
 msgstr "Actions"

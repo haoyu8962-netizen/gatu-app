@@ -1,9 +1,10 @@
-import { AdaptiveModal, Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
+import { AdaptiveModal, Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatExchangeActionError } from "@/lib/errors/format";
-import { useAgentRegistration } from "@/lib/hyperliquid";
+import { readPersistTradingConnection, useAgentRegistration, writePersistTradingConnection } from "@/lib/hyperliquid";
 
 interface Props {
 	onClose: () => void;
@@ -14,13 +15,19 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const { register, status, error } = useAgentRegistration();
+	const [persistConnection, setPersistConnection] = useState(readPersistTradingConnection);
 	const isPending = status === "approving_agent" || status === "verifying";
 
 	function handleConnect() {
 		if (isPending) return;
-		void register()
+		void register({ persistConnection })
 			.then(onConnected)
 			.catch(() => undefined);
+	}
+
+	function handlePersistConnectionChange(checked: boolean) {
+		setPersistConnection(checked);
+		writePersistTradingConnection(checked);
 	}
 
 	return (
@@ -46,6 +53,17 @@ export function EstablishConnectionModal({ onClose, onConnected }: Props) {
 						This gas-free signature creates a dedicated API wallet for fast trading. It cannot withdraw funds.
 					</Trans>
 				</p>
+				<Checkbox
+					size="lg"
+					checked={persistConnection}
+					disabled={isPending}
+					onCheckedChange={handlePersistConnectionChange}
+					label={
+						<span className="text-sm leading-5 text-fg-muted">
+							<Trans>Stay Connected</Trans>
+						</span>
+					}
+				/>
 				{error ? (
 					<p role="alert" className="text-xs leading-4 text-error">
 						{formatExchangeActionError(error, t`Connection could not be established.`)}

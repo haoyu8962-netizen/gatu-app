@@ -4315,6 +4315,10 @@ msgstr "Starting camera..."
 msgid "Status"
 msgstr "Status"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Stay Connected"
+msgstr "Stay Connected"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Stocks"
 msgstr "Stocks"

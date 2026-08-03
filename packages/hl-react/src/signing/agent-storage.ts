@@ -95,6 +95,8 @@ export interface AgentStorageWriteOptions {
 	scope?: AgentStorageScope;
 }
 
+export const PERSIST_TRADING_CONNECTION_STORAGE_KEY = "hyperliquid.persist_trading_connection";
+
 export type AgentStorageWriteResult =
 	| { status: "stored"; agent: AgentWallet }
 	| {
@@ -165,6 +167,28 @@ function readStoredAgentRecords(env: HyperliquidEnv, userAddress: string): Store
 
 function getPreferredStoredAgentRaw(records: StoredAgentRecords): string | null {
 	return records.sessionRaw ?? records.localRaw;
+}
+
+export function readPersistTradingConnection(): boolean {
+	try {
+		return getLocalAgentStorage()?.getItem(PERSIST_TRADING_CONNECTION_STORAGE_KEY) === "true";
+	} catch {
+		return false;
+	}
+}
+
+export function writePersistTradingConnection(persist: boolean): boolean {
+	const storage = getLocalAgentStorage();
+	if (!storage || typeof window === "undefined") return false;
+	const value = String(persist);
+	try {
+		storage.setItem(PERSIST_TRADING_CONNECTION_STORAGE_KEY, value);
+		if (storage.getItem(PERSIST_TRADING_CONNECTION_STORAGE_KEY) !== value) return false;
+		window.dispatchEvent(new StorageEvent("storage", { key: PERSIST_TRADING_CONNECTION_STORAGE_KEY }));
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 const REGISTRATION_SESSION_STORAGE_PREFIX = "hyperliquid_agent_registration_session";

@@ -83,6 +83,7 @@ export {
 	MissingWalletError,
 	type MutationParameter,
 	type ParsedAssetId,
+	PERSIST_TRADING_CONNECTION_STORAGE_KEY,
 	type PerpDex,
 	type Position,
 	ProviderNotFoundError,
@@ -92,6 +93,7 @@ export {
 	type RegistrationStatus,
 	type RegistrationStep,
 	readAgentFromStorage,
+	readPersistTradingConnection,
 	removeAgentFromStorage,
 	removeAgentFromStorageAndVerify,
 	restoreAgentRegistrationSession,
@@ -141,6 +143,7 @@ export {
 	type WebSocketTransportOptions,
 	WS_RELIABILITY_LIMITS,
 	writeAgentToStorage,
+	writePersistTradingConnection,
 } from "@gatu/hl-react";
 
 export type { MarketKind } from "@/domain/market";

@@ -4315,6 +4315,10 @@ msgstr "正在启动相机…"
 msgid "Status"
 msgstr "状态"
 
+#: src/components/trade/components/establish-connection-modal.tsx
+msgid "Stay Connected"
+msgstr "保持连接"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Stocks"
 msgstr "股票"
