@@ -36,14 +36,6 @@ msgstr "{0}/{1} 笔订单已被接受。重试前请检查当前委托。"
 msgid "{p}%"
 msgstr "{p}%"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
-msgstr "设定 {requestedPercent}%；受数量精度限制，实际为 {effectivePercent}%"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-#~ msgid "{sliderValue}% selected; {effectivePercent}% after size precision"
-#~ msgstr "已选择 {sliderValue}%；受数量精度限制，实际为 {effectivePercent}%"
-
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} 秒"
@@ -125,10 +117,6 @@ msgstr "7 天"
 msgid "8h Funding"
 msgstr "8小时资金费率"
 
-#: src/components/trade/components/global-settings-modal.tsx
-msgid "A confirmation is shown before each market close."
-msgstr "每次市价平仓前都会显示确认。"
-
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "A crypto wallet lets you store and manage your digital assets securely."
 #~ msgstr ""
@@ -140,10 +128,6 @@ msgstr "每次市价平仓前都会显示确认。"
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Accept"
 msgstr "接受"
-
-#: src/hooks/trade/use-position-market-close-submit.ts
-msgid "Accept the HIP-3 deployer disclaimer before trading this market."
-msgstr "请先接受该市场的 HIP-3 部署者免责声明再交易。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Access restricted"
@@ -183,11 +167,6 @@ msgstr "账户类型"
 msgid "Account Value"
 msgstr "账户价值"
 
-#: src/components/trade/positions/account-transfers-tab.tsx
-#: src/hooks/trade/use-account-ledger-csv.ts
-msgid "Account Value Change"
-msgstr "账户价值变化"
-
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #~ msgid "Account value must be below $25M to use portfolio margin while it is in beta."
 #~ msgstr "投资组合保证金测试版要求账户价值低于 2500 万美元。"
@@ -196,21 +175,12 @@ msgstr "账户价值变化"
 #~ msgid "Accounts"
 #~ msgstr ""
 
-#: src/components/trade/positions/account-transfers-tab.tsx
-#: src/hooks/trade/use-account-ledger-csv.ts
-msgid "Action"
-msgstr "操作"
-
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Actions"
 msgstr "操作"
-
-#: src/config/account-ledger.ts
-msgid "Activate DEX"
-msgstr "激活 DEX"
 
 #: src/components/trade/positions/twap-tab.tsx
 msgid "active"
@@ -221,8 +191,8 @@ msgstr "活跃"
 #~ msgstr "活跃"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
-#~ msgid "Active Positions"
-#~ msgstr "活跃仓位"
+msgid "Active Positions"
+msgstr "活跃仓位"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-row.tsx
@@ -302,8 +272,6 @@ msgstr "专业委托类型"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/positions/position-filter-toolbar.tsx
-#: src/components/trade/positions/position-market-filter.tsx
 msgid "All"
 msgstr "全部"
 
@@ -353,9 +321,6 @@ msgstr "正在为此钱包准备另一项移动授权。"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-order-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Another order for this market is still being confirmed."
 msgstr "该市场的另一笔订单仍在确认中。"
@@ -414,6 +379,7 @@ msgstr "已拒绝切换到 Arbitrum 网络。"
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit/asset-select.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
@@ -440,17 +406,15 @@ msgstr "无法加载资产说明。"
 msgid "Automatic USDC deposit failed"
 msgstr "USDC 自动存款失败"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/send-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -469,10 +433,6 @@ msgstr "可用资金在现货账户"
 msgid "Available order book liquidity can only fill part of this swap."
 msgstr "当前订单簿流动性只能成交此兑换的一部分。"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Available to close"
-msgstr "可平数量"
-
 #: src/components/trade/positions/send-dialog.tsx
 #: src/components/trade/positions/transfer-dialog.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -486,7 +446,6 @@ msgid "Avg Price"
 msgstr "均价"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
-#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -526,10 +485,6 @@ msgstr "Bitcoin 是一种由工作量证明网络保障安全的去中心化数�
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Block:"
 #~ msgstr "区块:"
-
-#: src/config/account-ledger.ts
-msgid "Borrow"
-msgstr "借入"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "bps"
@@ -646,7 +601,6 @@ msgstr "无法访问相机。请允许相机权限后重试，或使用系统相
 msgid "Camera preview for desktop wallet QR"
 msgstr "桌面钱包二维码的相机预览"
 
-#: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
@@ -693,8 +647,6 @@ msgstr "取消选中的订单"
 msgid "Cancel TWAP order"
 msgstr "取消 TWAP 订单"
 
-#: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Canceled"
 msgstr "已取消"
@@ -732,10 +684,6 @@ msgstr "正在检查账户…"
 msgid "Checking..."
 msgstr "检查中..."
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-#~ msgid "Choose how much of this position to close with a reduce-only market order."
-#~ msgstr "选择要通过只减仓市价单平掉的仓位数量。"
-
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Circulating supply"
 msgstr "流通量"
@@ -743,10 +691,6 @@ msgstr "流通量"
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Click to learn more about this asset."
 msgstr "点击了解更多关于此资产的信息。"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Click to submit · Filled trades cannot be reversed"
-msgstr "点击提交 · 成交后不可撤销"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Clipboard does not contain a pairing code."
@@ -761,44 +705,20 @@ msgstr "点击提交 · 成交后不可撤销"
 #~ msgstr "剪贴板粘贴被阻止。请从键盘菜单粘贴或手动输入配对码。"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Close"
 msgstr "关闭"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-#~ msgctxt "Position market close summary"
-#~ msgid "Close"
-#~ msgstr "平仓"
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Close navigation"
 msgstr "关闭导航"
-
-#: src/hooks/trade/use-position-market-close-submit.ts
-msgid "Close order submitted"
-msgstr "已提交平仓委托"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Close percentage"
-msgstr "平仓比例"
-
-#: src/lib/trade/position-market-close-errors.ts
-msgid "Close percentage must be a decimal number"
-msgstr "平仓比例必须为十进制数"
-
-#: src/lib/trade/position-market-close-errors.ts
-msgid "Close percentage must be between 0 and 100"
-msgstr "平仓比例必须在 0 到 100 之间"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Close percentage slider"
-msgstr "平仓比例滑块"
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Close position"
@@ -809,34 +729,6 @@ msgstr "平仓比例滑块"
 msgid "Close Position"
 msgstr "平仓"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Close size"
-msgstr "平仓数量"
-
-#: src/lib/trade/position-market-close-errors.ts
-msgid "Close size exceeds current position"
-msgstr "平仓数量超过当前仓位"
-
-#: src/lib/trade/position-market-close-errors.ts
-msgid "Close size is below market precision"
-msgstr "平仓数量低于市场精度"
-
-#: src/lib/trade/position-market-close-errors.ts
-msgid "Close size must be a decimal number"
-msgstr "平仓数量必须为十进制数"
-
-#: src/lib/trade/position-market-close-errors.ts
-msgid "Close size must be greater than zero"
-msgstr "平仓数量必须大于零"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-msgid "Closing this dialog will not cancel it."
-msgstr "关闭此弹窗不会取消该订单。"
-
-#: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Closing..."
 msgstr "平仓中..."
@@ -846,10 +738,6 @@ msgstr "平仓中..."
 #~ msgstr "收起账户面板"
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Collapse market details"
 msgstr "收起市场详情"
 
@@ -865,11 +753,6 @@ msgstr "大宗商品"
 #~ msgid "completed"
 #~ msgstr "已完成"
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Completed"
-msgstr "已完成"
-
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -884,10 +767,9 @@ msgstr "确认"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#~ msgid "Confirm Close"
-#~ msgstr "确认平仓"
+msgid "Confirm Close"
+msgstr "确认平仓"
 
-#: src/components/trade/components/establish-connection-modal.tsx
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Confirm in wallet"
@@ -905,7 +787,6 @@ msgstr "在钱包中确认撤销"
 msgid "Confirm the approval only in the selected master wallet."
 msgstr "仅在所选主钱包中确认授权。"
 
-#: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Confirm transaction in your wallet"
 msgstr "在钱包中确认交易"
@@ -926,11 +807,6 @@ msgstr "确认中"
 msgid "Confirming order status. Do not retry."
 msgstr "正在确认订单状态，请勿重试。"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Confirming..."
-msgstr "确认中..."
-
-#: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Connect"
 msgstr "连接"
@@ -950,10 +826,6 @@ msgstr "在此手机上连接钱包，或扫描桌面端已授权的交易密钥
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Connect a wallet to manage positions."
 #~ msgstr "连接钱包以管理仓位。"
-
-#: src/components/trade/components/global-settings-modal.tsx
-msgid "Connect an account with browser storage available to manage this preference."
-msgstr "请连接账户并确保浏览器存储可用，以管理此偏好。"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Connect the same owner wallet used on desktop before importing phone access."
@@ -976,16 +848,16 @@ msgid "Connect the selected master wallet before resetting mobile access."
 msgstr "重置移动访问权限前，请先连接所选主钱包。"
 
 #: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Connect to trade"
-#~ msgstr "连接以交易"
+msgid "Connect to trade"
+msgstr "连接以交易"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Connect to verify"
 #~ msgstr "连接以验证"
 
 #: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Connect wallet"
-#~ msgstr "连接钱包"
+msgid "Connect wallet"
+msgstr "连接钱包"
 
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
@@ -1045,11 +917,6 @@ msgstr "连接钱包以划转资金。"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "连接钱包查看余额。"
-
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Connect your wallet to view deposits and withdrawals."
-msgstr "请连接钱包以查看存款和提款记录。"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -1226,10 +1093,6 @@ msgstr "创建手机访问权限"
 #~ msgid "Create secure phone access for trading from this account."
 #~ msgstr "为通过此账户进行交易创建安全的手机访问权限。"
 
-#: src/config/account-ledger.ts
-msgid "Create Vault"
-msgstr "创建金库"
-
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Created"
 msgstr "已创建"
@@ -1246,8 +1109,6 @@ msgstr "已创建"
 msgid "Creating your wallet. Please wait..."
 msgstr "正在创建你的钱包，请稍候..."
 
-#: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -1276,16 +1137,7 @@ msgstr "全仓保证金率"
 msgid "Crypto"
 msgstr "加密货币"
 
-#: src/hooks/trade/use-account-ledger-csv.ts
-msgid "CSV export reached the history limit. Some older records were not included."
-msgstr "CSV 导出已达历史记录上限，部分较早记录未包含。"
-
-#: src/hooks/trade/use-account-ledger-csv.ts
-msgid "CSV exported."
-msgstr "CSV 已导出。"
-
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -1332,10 +1184,6 @@ msgstr "拒绝"
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
-#: src/config/account-ledger.ts
-msgid "Deploy Gas Auction"
-msgstr "部署 Gas 拍卖"
-
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Deployer"
 msgstr "部署者"
@@ -1354,10 +1202,10 @@ msgstr "部署者"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/config/account-ledger.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
+#: src/config/account-ledger.ts
 msgid "Deposit"
 msgstr "存款"
 
@@ -1424,11 +1272,6 @@ msgstr "从 Arbitrum 存入 USDC"
 msgid "Depositing USDC to Hyperliquid..."
 msgstr "正在将 USDC 存入 Hyperliquid..."
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/config/account-ledger.ts
-msgid "Deposits & Withdrawals"
-msgstr "存款和提款"
-
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Deposits and withdrawals are not allowed."
@@ -1443,8 +1286,8 @@ msgid "Desktop layout"
 msgstr "桌面布局"
 
 #: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Desktop linking imports an approved trading key. It cannot withdraw funds or change account permissions."
-#~ msgstr "关联桌面钱包会导入已授权的交易密钥。该密钥无法提现或更改账户权限。"
+msgid "Desktop linking imports an approved trading key. It cannot withdraw funds or change account permissions."
+msgstr "关联桌面钱包会导入已授权的交易密钥。该密钥无法提现或更改账户权限。"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Desktop QR loaded"
@@ -1454,11 +1297,11 @@ msgstr "桌面二维码已加载"
 #~ msgid "Desktop wallet QR scanner"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Destination"
 msgstr "目标"
@@ -1479,10 +1322,6 @@ msgstr "目标地址"
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Direct mode: Sign each order with wallet"
 #~ msgstr ""
-
-#: src/components/trade/positions/position-filter-toolbar.tsx
-msgid "Direction"
-msgstr "方向"
 
 #: src/routes/mobile-agent-sync.tsx
 msgid "Discard"
@@ -1537,10 +1376,6 @@ msgstr "请勿再次提交撤销。请重试只读验证。"
 msgid "Docs"
 msgstr "文档"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Don't show this confirmation again"
-msgstr "以后不再提示"
-
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -1555,14 +1390,6 @@ msgstr "完成"
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added or removed individually."
 msgstr "每个仓位仅使用其分配的保证金。若保证金率达到 100%，该仓位将被强制平仓。保证金可单独增减。"
-
-#: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
-msgstr "每个仓位仅使用分配给它的保证金。如果保证金率达到 100%，仓位将被强平。可以追加保证金，但在仓位未平仓时无法移除保证金。"
-
-#: src/config/account-ledger.ts
-msgid "Earn"
-msgstr "收益"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Earn Balance"
@@ -1617,8 +1444,6 @@ msgid "Enter a positive amount with up to 6 decimal places."
 msgstr "请输入正数，最多 6 位小数。"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Enter a positive target leverage."
 msgstr "请输入大于 0 的目标杠杆。"
 
@@ -1628,7 +1453,6 @@ msgid "Enter limit price"
 msgstr "输入限价"
 
 #: src/lib/errors/definitions/scale.ts
-#: src/lib/errors/format.ts
 msgid "Enter price range"
 msgstr "输入价格区间"
 
@@ -1654,17 +1478,12 @@ msgid "Enter trigger price"
 msgstr "输入触发价格"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#~ msgid "Entry"
-#~ msgstr "开仓价"
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Entry"
+msgstr "开仓价"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Entry price"
-msgstr "持仓均价"
-
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/positions-tab.tsx
 msgid "Entry Price"
 msgstr "开仓价格"
 
@@ -1706,10 +1525,6 @@ msgstr "建立连接"
 msgid "Estimated fee"
 msgstr "预估费用"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Estimated PnL"
-msgstr "预估盈亏"
-
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -1731,7 +1546,6 @@ msgstr "已执行"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
-#: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 msgid "Execution"
 msgstr "执行"
@@ -1749,10 +1563,6 @@ msgstr "由于订单簿滑点，无法保证完全成交。如果滑点超过 {D
 #~ msgstr "展开账户面板"
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Expand market details"
 msgstr "展开市场详情"
 
@@ -1764,19 +1574,10 @@ msgstr "展开市场详情"
 msgid "Expires {expiresAtLabel}."
 msgstr "{expiresAtLabel} 到期。"
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 msgid "Explorer"
 msgstr "区块浏览器"
-
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Export CSV"
-msgstr "导出 CSV"
-
-#: src/hooks/trade/use-account-ledger-csv.ts
-msgid "Exporting deposits and withdrawals..."
-msgstr "正在导出存款和提款记录..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "failed"
@@ -1791,7 +1592,8 @@ msgstr "TWAP 订单撤销失败。"
 msgid "Failed to change language"
 msgstr "切换语言失败"
 
-#: src/hooks/trade/use-position-market-close-submit.ts
+#: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Failed to close position"
 msgstr "平仓失败"
@@ -1814,10 +1616,6 @@ msgstr "复制失败"
 msgid "Failed to enable trading"
 msgstr "启用交易失败"
 
-#: src/hooks/trade/use-account-ledger-csv.ts
-msgid "Failed to export deposits and withdrawals."
-msgstr "存款和提款记录导出失败。"
-
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Failed to link desktop wallet"
 #~ msgstr ""
@@ -1826,8 +1624,8 @@ msgstr "存款和提款记录导出失败。"
 msgid "Failed to load balances"
 msgstr "加载余额失败"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -1837,11 +1635,6 @@ msgstr "加载余额失败"
 #: src/lib/trade/use-button-content.ts
 msgid "Failed to load balances."
 msgstr "加载余额失败。"
-
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Failed to load deposits and withdrawals."
-msgstr "存款和提款记录加载失败。"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -1923,7 +1716,6 @@ msgid "Failed to update account mode"
 msgstr "账户模式更新失败"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Failed to update isolated margin"
 msgstr "调整逐仓保证金失败"
 
@@ -1935,10 +1727,10 @@ msgstr "更新 TP/SL 委托失败"
 msgid "Favorites"
 msgstr "收藏夹"
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
-#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "手续费"
@@ -1989,14 +1781,6 @@ msgstr "已成交"
 msgid "Filter by {label}"
 msgstr "按 {label} 筛选"
 
-#: src/components/trade/positions/position-filter-toolbar.tsx
-msgid "Filter positions by direction"
-msgstr "按方向筛选仓位"
-
-#: src/components/trade/positions/position-market-filter.tsx
-msgid "Filter positions by market"
-msgstr "按市场筛选仓位"
-
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Flip transfer direction"
 msgstr "切换划转方向"
@@ -2029,15 +1813,11 @@ msgstr "从"
 #~ msgid "Full Position"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/positions-tab.tsx
 #: src/config/trade.ts
 msgid "Funding"
 msgstr "资金费率"
-
-#: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/positions-tab.tsx
-msgctxt "Cumulative position funding"
-msgid "Funding"
-msgstr "资金费"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -2062,10 +1842,6 @@ msgstr "资金费率历史"
 msgid "Funds are in Spot account"
 msgstr "资金在现货账户"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-#~ msgid "Future Market clicks will immediately close the full position for this account and network."
-#~ msgstr "以后在此账户和网络中点击“市价”将立即平掉全部仓位。"
-
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Gas ({0})"
@@ -2074,10 +1850,6 @@ msgstr "Gas（{0}）"
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
 #~ msgstr "Gas:"
-
-#: src/config/account-ledger.ts
-msgid "Genesis Distribution"
-msgstr "创世分配"
 
 #: src/components/ui/pagination.tsx
 #~ msgid "Go to next page"
@@ -2119,10 +1891,6 @@ msgstr "HIP-3 部署者免责声明"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold for 4 seconds to reveal phone access QR"
 msgstr "按住 4 秒以显示手机访问二维码"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Hold to confirm · Filled trades cannot be reversed"
-msgstr "长按确认 · 成交后不可撤销"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold to reveal QR"
@@ -2262,8 +2030,6 @@ msgstr "目的地址无效"
 msgid "IOC (Immediate Or Cancel)"
 msgstr "IOC（立即成交或取消）"
 
-#: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -2330,7 +2096,6 @@ msgstr "排行榜"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
-#: src/components/trade/tradebox/leverage-slider.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage"
 msgstr "杠杆"
@@ -2343,13 +2108,13 @@ msgstr "杠杆"
 #~ msgid "limit"
 #~ msgstr "限价"
 
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Limit"
 msgstr "限价"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -2360,7 +2125,6 @@ msgstr "限价"
 msgid "Limit Buy"
 msgstr "限价买入"
 
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 msgid "Limit Close"
@@ -2370,6 +2134,7 @@ msgstr "限价平仓"
 msgid "Limit close order placed"
 msgstr "限价平仓委托已提交"
 
+#: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -2404,8 +2169,9 @@ msgid "Link mobile device"
 msgstr "关联移动设备"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#~ msgid "Liq"
-#~ msgstr "清算"
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Liq"
+msgstr "清算"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/order-summary.tsx
@@ -2419,27 +2185,13 @@ msgstr "清算价"
 msgid "Liquidated"
 msgstr "已强平"
 
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/positions-tab.tsx
 msgid "Liquidation Price"
 msgstr "强平价格"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Live position data is stale. Wait for the account connection to recover."
-msgstr "实时仓位数据不是最新状态。请等待账户连接恢复。"
-
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Live position data is unavailable. Wait for the account connection to recover before adjusting margin."
 msgstr "无法获取实时仓位数据。请等待账户连接恢复后再调整保证金。"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Live position data is unavailable. Wait for the account connection to recover."
-msgstr "实时仓位数据不可用。请等待账户连接恢复。"
 
 #: src/components/ui/spinner.tsx
 msgid "Loading"
@@ -2457,10 +2209,6 @@ msgstr "正在加载所有链上的余额…"
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Loading balances..."
 msgstr "加载余额中..."
-
-#: src/components/trade/positions/account-transfers-tab.tsx
-msgid "Loading deposits and withdrawals..."
-msgstr "正在加载存款和提款记录..."
 
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Loading funding history..."
@@ -2486,10 +2234,6 @@ msgstr "正在加载仓位..."
 msgid "Loading positions..."
 msgstr "加载仓位中..."
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Loading the latest position..."
-msgstr "正在加载最新仓位..."
-
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Loading token metadata..."
 msgstr "正在加载代币元数据..."
@@ -2506,10 +2250,10 @@ msgstr "加载 TWAP 订单中..."
 msgid "Loading wallet..."
 msgstr "加载钱包中..."
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -2533,7 +2277,7 @@ msgid "Log in with Email"
 msgstr "使用邮箱登录"
 
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
-#: src/components/trade/positions/position-filter-toolbar.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
@@ -2608,8 +2352,8 @@ msgid "Margin"
 msgstr "保证金"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#~ msgid "Margin · Iso"
-#~ msgstr "保证金 · 逐仓"
+msgid "Margin · Iso"
+msgstr "保证金 · 逐仓"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin & leverage"
@@ -2646,6 +2390,8 @@ msgstr "已用保证金"
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/positions-tab.tsx
 msgid "Mark"
 msgstr "标记价"
 
@@ -2653,14 +2399,8 @@ msgstr "标记价"
 #~ msgid "MARK"
 #~ msgstr "标记"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Mark price"
-msgstr "标记价格"
-
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/positions-tab.tsx
 msgid "Mark Price"
 msgstr "标记价格"
 
@@ -2678,10 +2418,7 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/positions/position-market-filter.tsx
-#: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2689,8 +2426,6 @@ msgid "Market"
 msgstr "市场"
 
 #: src/components/trade/components/historical-order-price.tsx
-#: src/components/trade/components/historical-order-price.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -2707,31 +2442,10 @@ msgstr "来自本地资料和 Hyperliquid 元数据的市场与代币信息。"
 msgid "Market Cap"
 msgstr "市场总值"
 
-#: src/components/trade/components/global-settings-modal.tsx
-msgid "Market clicks currently close the full position immediately for this account and network."
-msgstr "当前在此账户和网络中点击“市价”会立即平掉全部仓位。"
-
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "市价平仓"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Market Close {formattedCloseSize} {sizeSymbol}"
-msgstr "市价平仓 {formattedCloseSize} {sizeSymbol}"
-
-#: src/components/trade/components/global-settings-modal.tsx
-msgid "Market close confirmation"
-msgstr "市价平仓确认"
-
-#: src/components/trade/components/global-settings-modal.tsx
-msgid "Market close confirmation could not be restored in this browser."
-msgstr "当前浏览器无法恢复市价平仓确认。"
-
-#: src/components/trade/components/global-settings-modal.tsx
-msgid "Market close confirmation restored."
-msgstr "已恢复市价平仓确认。"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Market metadata unavailable."
@@ -2763,9 +2477,9 @@ msgid "Master wallet"
 msgstr "主钱包"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Max"
 msgstr "最大"
 
@@ -2788,10 +2502,6 @@ msgstr "最大回撤"
 #: src/components/pages/builder-page.tsx
 #~ msgid "Max Fee Rate (%)"
 #~ msgstr ""
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-#~ msgid "Max Slippage"
-#~ msgstr "最大滑点"
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Max slippage allowed for market orders."
@@ -2985,7 +2695,6 @@ msgstr "否"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "No active positions."
 msgstr "无活跃仓位。"
 
@@ -3029,11 +2738,6 @@ msgstr "未找到余额。存入资金开始交易。"
 #~ msgid "No camera was found on this device."
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/positions/account-transfers-tab.tsx
-msgid "No deposits or withdrawals found."
-msgstr "未找到存款或提款记录。"
-
 #: src/components/trade/components/market-asset-info.tsx
 msgid "No description has been provided for this market."
 msgstr "该市场尚未提供说明。"
@@ -3075,7 +2779,6 @@ msgid "No market"
 msgstr "无市场"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/positions/position-market-filter.tsx
 msgid "No markets found."
 msgstr "未找到市场。"
 
@@ -3092,11 +2795,6 @@ msgstr "无未成交订单。"
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "No order history found."
 msgstr "未找到订单历史。"
-
-#: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/positions/positions-tab.tsx
-msgid "No positions match the selected filters."
-msgstr "没有符合所选筛选条件的仓位。"
 
 #: src/components/trade/orderbook/trades-panel.tsx
 msgid "No recent trades."
@@ -3346,7 +3044,6 @@ msgstr "委托已提交"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "订单已提交，正在确认交易所状态；请勿重试。"
 
@@ -3468,9 +3165,9 @@ msgstr "永续"
 msgid "Perpetuals"
 msgstr "永续合约"
 
-#: src/components/portfolio/portfolio-overview.tsx
-#: src/components/portfolio/portfolio-overview.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/portfolio/portfolio-overview.tsx
+#: src/components/portfolio/portfolio-overview.tsx
 #: src/config/account-ledger.ts
 msgid "Perps"
 msgstr "永续合约"
@@ -3591,7 +3288,6 @@ msgstr "平台"
 
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -3662,12 +3358,8 @@ msgstr "平仓操作"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Position closed — {coin}"
-#~ msgstr "仓位已平 — {coin}"
-
-#: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
-msgstr "仓位数据暂不可用。请等待账户连接恢复后再更改保证金模式。"
+msgid "Position closed — {coin}"
+msgstr "仓位已平 — {coin}"
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Position reversed"
@@ -3678,26 +3370,9 @@ msgstr "仓位数据暂不可用。请等待账户连接恢复后再更改保证
 msgid "Position reversed — {coin}"
 msgstr "仓位已反向 — {coin}"
 
-#: src/lib/trade/position-market-close-errors.ts
-msgid "Position size is below market precision"
-msgstr "仓位数量低于市场精度"
-
-#: src/lib/trade/position-market-close-errors.ts
-msgid "Position size must be a non-zero number"
-msgstr "仓位数量必须为非零数值"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Position summary"
-msgstr "持仓摘要"
-
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Position Value"
-msgstr "仓位价值"
-
-#: src/components/trade/positions/positions-tab.tsx
-#~ msgid "positions"
-#~ msgstr "仓位"
+msgid "positions"
+msgstr "仓位"
 
 #: src/config/trade.ts
 #: src/config/trade.ts
@@ -3769,11 +3444,6 @@ msgstr "价格低于 {price}"
 msgid "Price grouping"
 msgstr "价格合并"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Price: Market"
-msgstr "价格：市价"
-
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-bottom-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -3807,11 +3477,6 @@ msgstr "处理中…"
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Progress"
 #~ msgstr "进度"
-
-#: src/components/trade/components/historical-order-price.tsx
-#: src/components/trade/components/historical-order-price.tsx
-msgid "Protection price"
-msgstr "保护价"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "QR reveal progress"
@@ -3918,10 +3583,6 @@ msgstr "已在此标签页中恢复。将于 {expiresAtLabel} 过期。"
 msgid "Reduce Only"
 msgstr "只减仓"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
-msgstr "以当前市场价格减仓，成交后不可撤销。"
-
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 #~ msgid "Reduce-only orders only"
@@ -3943,10 +3604,6 @@ msgstr "刷新报价"
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "已拒绝"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-#~ msgid "Remaining"
-#~ msgstr "剩余"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Remote access is revoked, but this browser could not fully clear its local mobile state. Clear this site's data before using mobile access here again."
@@ -3988,10 +3645,6 @@ msgstr "移除保证金会增加强平风险。超出保证金要求的金额将
 msgid "Rendering QR"
 msgstr "正在生成二维码"
 
-#: src/config/account-ledger.ts
-msgid "Repay"
-msgstr "偿还"
-
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Replaces the current mobile Agent with a temporary inaccessible key."
 msgstr "使用一个临时且不可访问的密钥替换当前移动交易密钥。"
@@ -3999,11 +3652,6 @@ msgstr "使用一个临时且不可访问的密钥替换当前移动交易密钥
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Replaces the current phone key. The old phone must link again."
 #~ msgstr "将替换当前手机密钥。旧手机需重新关联。"
-
-#: src/lib/errors/format.ts
-#: src/lib/lifi/use-bridge.ts
-msgid "Request status could not be confirmed. Check balances and transfer history before retrying."
-msgstr "无法确认请求状态。重试前请检查余额和转账历史。"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Requirements:"
@@ -4027,10 +3675,6 @@ msgstr "重置倒计时"
 #~ msgid "Resetting..."
 #~ msgstr "正在重置…"
 
-#: src/components/trade/components/global-settings-modal.tsx
-msgid "Restore"
-msgstr "恢复"
-
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 msgid "Resume tracking"
 msgstr ""
@@ -4041,12 +3685,12 @@ msgstr ""
 #: src/components/trade/components/legal-acceptance-modal.tsx
 #: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/market-asset-info.tsx
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/offline-banner.tsx
-#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Retry"
 msgstr "重试"
 
@@ -4063,7 +3707,6 @@ msgstr "重试验证"
 #~ msgstr "重试创建钱包"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Reverse"
 msgstr "反向"
@@ -4104,10 +3747,6 @@ msgstr "撤销请求已提交，但尚未确认。"
 msgid "Revoke mobile access"
 msgstr "撤销移动访问权限"
 
-#: src/config/account-ledger.ts
-msgid "Rewards Claim"
-msgstr "领取奖励"
-
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -4136,22 +3775,6 @@ msgstr "运行时长（{TWAP_MINUTES_MIN}m - {0}h）"
 msgid "Runtime"
 msgstr "运行时长"
 
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-tracked-twap-order.ts
-#: src/hooks/trade/use-twap-cancel.ts
-#: src/hooks/trade/use-twap-cancel.ts
-msgid "Safe order coordination across tabs is unavailable in this browser."
-msgstr "当前浏览器无法安全协调多个标签页的订单。"
-
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Saved phone link was invalid. Paste the link again."
@@ -4163,22 +3786,18 @@ msgid "Scale"
 msgstr "分段订单"
 
 #: src/lib/errors/definitions/scale.ts
-#: src/lib/errors/format.ts
 msgid "Scale level below min notional"
 msgstr "梯度档位低于最小名义价值"
 
 #: src/lib/errors/definitions/scale.ts
-#: src/lib/errors/format.ts
 msgid "Scale levels must be {SCALE_LEVELS_MIN}-{SCALE_LEVELS_MAX}"
 msgstr "梯度档位须为{SCALE_LEVELS_MIN}-{SCALE_LEVELS_MAX}"
 
 #: src/lib/errors/definitions/scale.ts
-#: src/lib/errors/format.ts
 msgid "Scale prices must resolve to distinct ticks"
 msgstr "分段订单价格必须对应不同的价格档位"
 
 #: src/lib/errors/definitions/scale.ts
-#: src/lib/errors/format.ts
 msgid "Scale size is too small for the selected number of orders"
 msgstr "分段订单总数量不足以分配到所选订单数量"
 
@@ -4224,7 +3843,6 @@ msgstr "扫描桌面端“关联移动设备”显示的二维码。"
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/positions/position-market-filter.tsx
 msgid "Search markets..."
 msgstr "搜索市场..."
 
@@ -4334,9 +3952,9 @@ msgstr "卖出"
 msgid "Sell Short"
 msgstr "卖出做空"
 
-#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/send-modal.tsx
+#: src/components/portfolio/portfolio-page.tsx
 #: src/config/account-ledger.ts
 msgid "Send"
 msgstr "发送"
@@ -4426,7 +4044,7 @@ msgid "Settings"
 msgstr "设置"
 
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
-#: src/components/trade/positions/position-filter-toolbar.tsx
+#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
@@ -4515,7 +4133,6 @@ msgstr "签名中..."
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
@@ -4529,7 +4146,6 @@ msgstr "签名中..."
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 msgid "Size"
@@ -4542,10 +4158,6 @@ msgstr "数量超过仓位"
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Size per Suborder"
 msgstr "每笔子订单数量"
-
-#: src/lib/trade/position-market-close-errors.ts
-msgid "Size precision must be a non-negative integer"
-msgstr "数量精度必须为非负整数"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "SL"
@@ -4574,7 +4186,6 @@ msgid "Slippage"
 msgstr "滑点"
 
 #: src/components/trade/components/global-settings-modal.tsx
-#: src/components/trade/components/global-settings-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Slippage tolerance"
 msgstr "滑点容忍度"
@@ -4584,7 +4195,6 @@ msgid "Smart wallet client not ready"
 msgstr "智能钱包客户端尚未就绪"
 
 #: src/lib/errors/format.ts
-#: src/lib/hyperliquid/use-deposit.ts
 msgid "Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked."
 msgstr "智能钱包入金状态正在同步。余额核对完成前，请勿再次提交入金。"
 
@@ -4603,7 +4213,6 @@ msgstr "当前网络未启用智能钱包存款。"
 msgid "Solana is a blockchain for smart contracts and decentralized applications designed for high-throughput execution."
 msgstr "Solana 是一个面向智能合约和去中心化应用、专为高吞吐执行而设计的区块链。"
 
-#: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
 msgid "Some orders were accepted. Review open orders before retrying."
 msgstr "部分订单已被接受。重试前请检查当前委托。"
@@ -4635,11 +4244,11 @@ msgstr "按{sortLabel}排序"
 msgid "Sorted by {0}"
 msgstr "已按 {0} 排序"
 
-#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
-#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Source"
 msgstr "来源"
@@ -4648,11 +4257,11 @@ msgstr "来源"
 #~ msgid "spot"
 #~ msgstr "现货"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -4682,12 +4291,8 @@ msgstr "现货可用"
 msgid "Spread"
 msgstr "价差"
 
-#: src/config/account-ledger.ts
-msgid "Stake"
-msgstr "质押"
-
-#: src/config/account-ledger.ts
 #: src/config/nav.tsx
+#: src/config/account-ledger.ts
 msgid "Staking"
 msgstr "质押"
 
@@ -4713,8 +4318,8 @@ msgstr "起始价"
 msgid "Starting camera..."
 msgstr "正在启动相机…"
 
-#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Status"
 msgstr "状态"
 
@@ -4755,23 +4360,15 @@ msgstr "止损触发价须高于标记价"
 msgid "Stop trigger must be below mark"
 msgstr "止损触发价须低于标记价"
 
-#: src/config/account-ledger.ts
-msgid "Sub-account Transfer"
-msgstr "子账户转账"
-
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Submitting..."
 msgstr "提交中..."
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Successful"
 msgstr "成功"
-
-#: src/config/account-ledger.ts
-msgid "Supply"
-msgstr "存入借贷"
 
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx
@@ -4991,12 +4588,8 @@ msgstr "授权结果尚未确认。请先重试只读验证，再进行其他操
 msgid "The exchange did not accept every order."
 msgstr "交易所未接受全部订单。"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/order-reconciliation.tsx
 #: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/order-reconciliation.tsx
-#: src/components/trade/order-reconciliation.tsx
-#: src/hooks/trade/use-order-submit.ts
 msgid "The exchange did not accept the order."
 msgstr "交易所未接受该订单。"
 
@@ -5024,14 +4617,6 @@ msgstr ""
 msgid "The one-time QR service is unavailable. Check your connection and retry."
 msgstr ""
 
-#: src/hooks/trade/use-position-market-close-submit.ts
-msgid "The order can continue, but this confirmation preference could not be saved."
-msgstr "订单可继续提交，但无法保存此确认偏好。"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "The order is still being confirmed."
-msgstr "订单仍在确认中。"
-
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "您查找的页面不存在。"
@@ -5045,8 +4630,8 @@ msgid "The private key is created on this desktop and embedded in the QR code."
 msgstr "私钥在此桌面设备上创建，并嵌入二维码中。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-#~ msgid "The QR expired before it could be displayed. Create a new key."
-#~ msgstr "二维码在显示前已过期。请创建新密钥。"
+msgid "The QR expired before it could be displayed. Create a new key."
+msgstr "二维码在显示前已过期。请创建新密钥。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The QR stays hidden until you deliberately reveal it."
@@ -5065,12 +4650,6 @@ msgstr "替代密钥在 Hyperliquid 确认前已过期。请重新检查并签�
 #: src/routes/mobile-agent-sync.tsx
 msgid "The saved desktop QR was invalid. Scan a fresh QR."
 msgstr "已保存的桌面二维码无效。请扫描新二维码。"
-
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
-msgstr "所选市场已发生变化。请重新打开保证金调整窗口后再操作。"
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -5187,8 +4766,6 @@ msgstr "这不是有效的 gatu 桌面钱包二维码。"
 #~ msgstr ""
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "This isolated position is no longer open."
 msgstr "该逐仓仓位已不再持有。"
 
@@ -5199,10 +4776,6 @@ msgstr "该逐仓仓位已不再持有。"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This link was created for a different site."
 #~ msgstr "此链接是为其他站点创建的。"
-
-#: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "This market only supports isolated margin mode."
-msgstr "该市场仅支持逐仓保证金模式。"
 
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
@@ -5219,11 +4792,6 @@ msgid "This mobile trading key has expired."
 msgstr "此移动交易密钥已过期。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
-msgid "This one-time QR closes automatically within 60 seconds."
-msgstr "此一次性二维码会在 60 秒内自动关闭。"
-
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
-#: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This one-time QR could not be created. Try revealing a new QR."
 msgstr ""
 
@@ -5239,31 +4807,17 @@ msgstr ""
 #~ msgid "This phone link is not approved on Hyperliquid."
 #~ msgstr "此手机链接未在 Hyperliquid 上获得授权。"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "This position changed sides. Close and reopen this dialog before submitting."
-msgstr "仓位方向已发生变化。请关闭并重新打开此弹窗后再提交。"
-
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
-msgstr "该仓位的方向已发生变化。请重新打开保证金调整窗口后再操作。"
-
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "This position is no longer open."
-msgstr "该仓位已不再持有。"
-
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "This position is no longer using isolated margin."
 msgstr "该仓位已不再使用逐仓保证金。"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-#~ msgid "This preference is available only when closing the full position."
-#~ msgstr "仅在平掉全部仓位时可启用此选项。"
-
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR belongs to a different owner account."
 msgstr "此二维码属于其他所有者账户。"
+
+#: src/components/trade/components/mobile-agent-sync-modal.tsx
+msgid "This one-time QR closes automatically within 60 seconds."
+msgstr "此一次性二维码会在 60 秒内自动关闭。"
 
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "This QR is invalid or incomplete. Create a new QR on desktop."
@@ -5292,7 +4846,6 @@ msgid "This spot market trades {0} against {1} on Hyperliquid."
 msgstr "该现货市场在 Hyperliquid 上交易 {0}/{1}。"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "This strict isolated market does not allow margin to be removed from an open position."
 msgstr "该严格逐仓市场不允许从未平仓仓位中移除保证金。"
 
@@ -5314,11 +4867,11 @@ msgstr "TIF"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
-#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Time"
 msgstr "时间"
@@ -5482,25 +5035,7 @@ msgstr "成交"
 msgid "Trading"
 msgstr "交易中"
 
-#: src/components/trade/positions/send-modal.tsx
-msgid "Trading Account"
-msgstr "交易账户"
-
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
-#: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
 msgstr "此弹窗打开期间交易数据已发生变化。请关闭并重新打开后再提交。"
@@ -5545,7 +5080,6 @@ msgid "Transaction was not broadcast. Please retry."
 msgstr "交易未广播。请重试。"
 
 #: src/lib/errors/format.ts
-#: src/lib/lifi/use-bridge.ts
 msgid "Transaction was rejected"
 msgstr "交易被拒绝"
 
@@ -5576,10 +5110,10 @@ msgstr "划转 USDC"
 msgid "Transferring..."
 msgstr "划转中..."
 
-#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/account-panel.tsx
+#: src/components/portfolio/portfolio-page.tsx
 msgid "Transfers between Spot and Perps are unavailable in unified account mode."
 msgstr "启用统一账户后，现货与合约之间的划转不可用。"
 
@@ -5776,10 +5310,6 @@ msgstr "未实现盈亏"
 msgid "Unrealized PNL"
 msgstr "未实现盈亏"
 
-#: src/config/account-ledger.ts
-msgid "Unstake"
-msgstr "解除质押"
-
 #. placeholder {0}: String(resolution)
 #: src/components/trade/chart/datafeed.ts
 msgid "Unsupported resolution: {0}"
@@ -5842,29 +5372,9 @@ msgstr "USDC 将发送到此 Arbitrum 地址。"
 #~ msgid "Using"
 #~ msgstr "使用中"
 
-#: src/components/trade/positions/position-market-close-modal.tsx
-msgid "Validating..."
-msgstr "验证中..."
-
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Value"
 #~ msgstr "价值"
-
-#: src/config/account-ledger.ts
-msgid "Vault Commission"
-msgstr "金库佣金"
-
-#: src/config/account-ledger.ts
-msgid "Vault Deposit"
-msgstr "金库存款"
-
-#: src/config/account-ledger.ts
-msgid "Vault Distribution"
-msgstr "金库分配"
-
-#: src/config/account-ledger.ts
-msgid "Vault Withdrawal"
-msgstr "金库提款"
 
 #: src/config/nav.tsx
 msgid "Vaults"
@@ -5875,7 +5385,6 @@ msgstr "金库"
 msgid "Verifying approval..."
 msgstr "正在验证授权…"
 
-#: src/components/trade/components/establish-connection-modal.tsx
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "验证中..."
@@ -6046,11 +5555,6 @@ msgstr "提现至 Arbitrum"
 #~ msgid "Withdrawable"
 #~ msgstr "可提"
 
-#: src/config/account-ledger.ts
-msgid "Withdrawal"
-msgstr "提款"
-
-#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal failed"
 msgstr "提现失败"
@@ -6142,3 +5646,392 @@ msgstr "您的交易正在处理中"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Your wallet approves one trading key for this phone. It cannot withdraw funds."
 #~ msgstr "您的钱包为此手机授权一个交易密钥。它无法提取资金。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
+msgstr "设定 {requestedPercent}%；受数量精度限制，实际为 {effectivePercent}%"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "{sliderValue}% selected; {effectivePercent}% after size precision"
+msgstr "已选择 {sliderValue}%；受数量精度限制，实际为 {effectivePercent}%"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Don't show this confirmation again"
+msgstr "以后不再提示"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Future Market clicks will immediately close the full position for this account and network."
+msgstr "以后在此账户和网络中点击“市价”将立即平掉全部仓位。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "This preference is available only when closing the full position."
+msgstr "仅在平掉全部仓位时可启用此选项。"
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+msgid "The order can continue, but this confirmation preference could not be saved."
+msgstr "订单可继续提交，但无法保存此确认偏好。"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Market close confirmation"
+msgstr "市价平仓确认"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Market clicks currently close the full position immediately for this account and network."
+msgstr "当前在此账户和网络中点击“市价”会立即平掉全部仓位。"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "A confirmation is shown before each market close."
+msgstr "每次市价平仓前都会显示确认。"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Connect an account with browser storage available to manage this preference."
+msgstr "请连接账户并确保浏览器存储可用，以管理此偏好。"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Restore"
+msgstr "恢复"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Market close confirmation restored."
+msgstr "已恢复市价平仓确认。"
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Market close confirmation could not be restored in this browser."
+msgstr "当前浏览器无法恢复市价平仓确认。"
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+msgid "Accept the HIP-3 deployer disclaimer before trading this market."
+msgstr "请先接受该市场的 HIP-3 部署者免责声明再交易。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Choose how much of this position to close with a reduce-only market order."
+msgstr "选择要通过只减仓市价单平掉的仓位数量。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close percentage"
+msgstr "平仓比例"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close percentage slider"
+msgstr "平仓比例滑块"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close size"
+msgstr "平仓数量"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Closing this dialog will not cancel it."
+msgstr "关闭此弹窗不会取消该订单。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Confirming..."
+msgstr "确认中..."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Live position data is stale. Wait for the account connection to recover."
+msgstr "实时仓位数据不是最新状态。请等待账户连接恢复。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Live position data is unavailable. Wait for the account connection to recover."
+msgstr "实时仓位数据不可用。请等待账户连接恢复。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Loading the latest position..."
+msgstr "正在加载最新仓位..."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Max Slippage"
+msgstr "最大滑点"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Remaining"
+msgstr "剩余"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "The order is still being confirmed."
+msgstr "订单仍在确认中。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "This position changed sides. Close and reopen this dialog before submitting."
+msgstr "仓位方向已发生变化。请关闭并重新打开此弹窗后再提交。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "This position is no longer open."
+msgstr "该仓位已不再持有。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Validating..."
+msgstr "验证中..."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgctxt "Position market close summary"
+msgid "Close"
+msgstr "平仓"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close percentage must be a decimal number"
+msgstr "平仓比例必须为十进制数"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close percentage must be between 0 and 100"
+msgstr "平仓比例必须在 0 到 100 之间"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size exceeds current position"
+msgstr "平仓数量超过当前仓位"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size is below market precision"
+msgstr "平仓数量低于市场精度"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size must be a decimal number"
+msgstr "平仓数量必须为十进制数"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size must be greater than zero"
+msgstr "平仓数量必须大于零"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Position size is below market precision"
+msgstr "仓位数量低于市场精度"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Position size must be a non-zero number"
+msgstr "仓位数量必须为非零数值"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Size precision must be a non-negative integer"
+msgstr "数量精度必须为非负整数"
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-tracked-order.ts
+#: src/hooks/trade/use-tracked-twap-order.ts
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "Safe order coordination across tabs is unavailable in this browser."
+msgstr "当前浏览器无法安全协调多个标签页的订单。"
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Account Value Change"
+msgstr "账户价值变化"
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Action"
+msgstr "操作"
+
+#: src/config/account-ledger.ts
+msgid "Activate DEX"
+msgstr "激活 DEX"
+
+#: src/config/account-ledger.ts
+msgid "Borrow"
+msgstr "借入"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Completed"
+msgstr "已完成"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Connect your wallet to view deposits and withdrawals."
+msgstr "请连接钱包以查看存款和提款记录。"
+
+#: src/config/account-ledger.ts
+msgid "Create Vault"
+msgstr "创建金库"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "CSV export reached the history limit. Some older records were not included."
+msgstr "CSV 导出已达历史记录上限，部分较早记录未包含。"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "CSV exported."
+msgstr "CSV 已导出。"
+
+#: src/config/account-ledger.ts
+msgid "Deploy Gas Auction"
+msgstr "部署 Gas 拍卖"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/config/account-ledger.ts
+msgid "Deposits & Withdrawals"
+msgstr "存款和提款"
+
+#: src/config/account-ledger.ts
+msgid "Earn"
+msgstr "收益"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Export CSV"
+msgstr "导出 CSV"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Exporting deposits and withdrawals..."
+msgstr "正在导出存款和提款记录..."
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+msgid "Failed to export deposits and withdrawals."
+msgstr "存款和提款记录导出失败。"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Failed to load deposits and withdrawals."
+msgstr "存款和提款记录加载失败。"
+
+#: src/config/account-ledger.ts
+msgid "Genesis Distribution"
+msgstr "创世分配"
+
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "Loading deposits and withdrawals..."
+msgstr "正在加载存款和提款记录..."
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+msgid "No deposits or withdrawals found."
+msgstr "未找到存款或提款记录。"
+
+#: src/config/account-ledger.ts
+msgid "Repay"
+msgstr "偿还"
+
+#: src/lib/errors/format.ts
+msgid "Request status could not be confirmed. Check balances and transfer history before retrying."
+msgstr "无法确认请求状态。重试前请检查余额和转账历史。"
+
+#: src/config/account-ledger.ts
+msgid "Rewards Claim"
+msgstr "领取奖励"
+
+#: src/config/account-ledger.ts
+msgid "Stake"
+msgstr "质押"
+
+#: src/config/account-ledger.ts
+msgid "Sub-account Transfer"
+msgstr "子账户转账"
+
+#: src/config/account-ledger.ts
+msgid "Supply"
+msgstr "存入借贷"
+
+#: src/components/trade/positions/send-modal.tsx
+msgid "Trading Account"
+msgstr "交易账户"
+
+#: src/config/account-ledger.ts
+msgid "Unstake"
+msgstr "解除质押"
+
+#: src/config/account-ledger.ts
+msgid "Vault Commission"
+msgstr "金库佣金"
+
+#: src/config/account-ledger.ts
+msgid "Vault Deposit"
+msgstr "金库存款"
+
+#: src/config/account-ledger.ts
+msgid "Vault Distribution"
+msgstr "金库分配"
+
+#: src/config/account-ledger.ts
+msgid "Vault Withdrawal"
+msgstr "金库提款"
+
+#: src/config/account-ledger.ts
+msgid "Withdrawal"
+msgstr "提款"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Direction"
+msgstr "方向"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Filter positions by direction"
+msgstr "按方向筛选仓位"
+
+#: src/components/trade/positions/position-market-filter.tsx
+msgid "Filter positions by market"
+msgstr "按市场筛选仓位"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgctxt "Cumulative position funding"
+msgid "Funding"
+msgstr "资金费"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "No positions match the selected filters."
+msgstr "没有符合所选筛选条件的仓位。"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Position Value"
+msgstr "仓位价值"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
+msgstr "每个仓位仅使用分配给它的保证金。如果保证金率达到 100%，仓位将被强平。可以追加保证金，但在仓位未平仓时无法移除保证金。"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
+msgstr "仓位数据暂不可用。请等待账户连接恢复后再更改保证金模式。"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "The selected market changed. Reopen the margin dialog before adjusting margin."
+msgstr "所选市场已发生变化。请重新打开保证金调整窗口后再操作。"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "This market only supports isolated margin mode."
+msgstr "该市场仅支持逐仓保证金模式。"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
+msgstr "该仓位的方向已发生变化。请重新打开保证金调整窗口后再操作。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Available to close"
+msgstr "可平数量"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Click to submit · Filled trades cannot be reversed"
+msgstr "点击提交 · 成交后不可撤销"
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+msgid "Close order submitted"
+msgstr "已提交平仓委托"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Entry price"
+msgstr "持仓均价"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Estimated PnL"
+msgstr "预估盈亏"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Hold to confirm · Filled trades cannot be reversed"
+msgstr "长按确认 · 成交后不可撤销"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Mark price"
+msgstr "标记价格"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Market Close {formattedCloseSize} {sizeSymbol}"
+msgstr "市价平仓 {formattedCloseSize} {sizeSymbol}"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Position summary"
+msgstr "持仓摘要"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Price: Market"
+msgstr "价格：市价"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
+msgstr "以当前市场价格减仓，成交后不可撤销。"
