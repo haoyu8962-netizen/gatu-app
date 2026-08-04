@@ -18,11 +18,12 @@ import {
 	type OpenOrderModifyFormTarget,
 } from "@/domain/trade/open-order-modification-form";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
+import { getToolbarOrderMetrics } from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPrice, formatToken } from "@/lib/format";
+import { formatDateTime, formatPercent, formatPrice, formatToken } from "@/lib/format";
 import {
 	type ExchangeParams,
 	type SubscriptionStatus,
@@ -40,6 +41,7 @@ import { CancelAllOrdersModal } from "../positions/cancel-all-orders-modal";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import { MobileOrderModificationModal } from "./mobile-order-modification-modal";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { useMobileDisclosureSet } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
@@ -73,6 +75,50 @@ interface ModifyLiveContext {
 	isSnapshotStale: boolean;
 	orders: readonly OpenOrder[];
 	getMarketBinding: (coin: string) => OpenOrderModifyMarketBinding | null;
+}
+
+interface MobileOrderBulkDetailsActionsProps {
+	orderKeys: readonly string[];
+	expandedOrderKeys: ReadonlySet<string>;
+	onExpandAll: () => void;
+	onCollapseAll: () => void;
+}
+
+const mobileOrderBulkActionClass =
+	"relative min-h-0 whitespace-nowrap p-0 text-xs leading-4 transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled";
+
+export function MobileOrderBulkDetailsActions({
+	orderKeys,
+	expandedOrderKeys,
+	onExpandAll,
+	onCollapseAll,
+}: MobileOrderBulkDetailsActionsProps) {
+	const { t } = useLingui();
+	const canExpand = orderKeys.some((key) => !expandedOrderKeys.has(key));
+	const canCollapse = orderKeys.some((key) => expandedOrderKeys.has(key));
+
+	return (
+		<div data-testid="mobile-order-bulk-details-actions" className="flex shrink-0 items-center gap-3">
+			<button
+				type="button"
+				data-testid="expand-all-order-details"
+				onClick={onExpandAll}
+				disabled={!canExpand}
+				className={cn(mobileOrderBulkActionClass, "font-semibold text-market-close-fg")}
+			>
+				{t`Expand all`}
+			</button>
+			<button
+				type="button"
+				data-testid="collapse-all-order-details"
+				onClick={onCollapseAll}
+				disabled={!canCollapse}
+				className={cn(mobileOrderBulkActionClass, "font-normal text-market-close-muted")}
+			>
+				{t`Collapse all`}
+			</button>
+		</div>
+	);
 }
 
 export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) {
@@ -126,6 +172,13 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 
 	const openOrders = openOrdersEvent?.orders ?? [];
 	const isPageScroll = scrollMode === "page";
+	const orderKeys = openOrders.map((order) => `${order.coin}:${order.oid}`);
+	const {
+		expandedKeys: expandedOrderKeys,
+		setExpanded: setOrderExpanded,
+		expandAll: expandAllOrders,
+		collapseAll: collapseAllOrders,
+	} = useMobileDisclosureSet(`${env}:${address?.toLowerCase() ?? "disconnected"}`, orderKeys);
 
 	function getMarketBinding(coin: string): OpenOrderModifyMarketBinding | null {
 		if (markets.isLoading || markets.error) return null;
@@ -599,11 +652,19 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 					<ListNumbersIcon className="size-3" />
 					{t`Open Orders`}
 					<span className="font-semibold text-brand tabular-nums">{headerCount}</span>
+					<div className="ml-auto">
+						<MobileOrderBulkDetailsActions
+							orderKeys={orderKeys}
+							expandedOrderKeys={expandedOrderKeys}
+							onExpandAll={() => expandAllOrders(orderKeys)}
+							onCollapseAll={() => collapseAllOrders(orderKeys)}
+						/>
+					</div>
 					<Button
 						variant="ghost"
 						intent="error"
 						size="sm"
-						className="ml-auto touch-target"
+						className="touch-target"
 						onClick={handleRequestCancelAll}
 						disabled={pendingScopes.has("all") || openOrders.length === 0 || isModifyBusy}
 					>
@@ -616,20 +677,26 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 					</div>
 				)}
 				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
-					{openOrders.map((order) => (
-						<MobileOrderCard
-							key={order.oid}
-							order={order}
-							szDecimals={markets.getSzDecimals(order.coin)}
-							marketLabel={markets.getMarket(order.coin)?.shortName ?? order.coin}
-							isCancelling={cancellingOids.has(order.oid)}
-							actionsDisabled={isModifyBusy || pendingScopes.size > 0}
-							modifyDisabled={isModifyInteractionLocked || cancellingOids.has(order.oid)}
-							onCancel={handleCancelRow}
-							onModify={handleRequestModify}
-							onSelectMarket={handleSelectMarket}
-						/>
-					))}
+					{openOrders.map((order) => {
+						const orderKey = `${order.coin}:${order.oid}`;
+						return (
+							<MobileOrderCard
+								key={orderKey}
+								order={order}
+								szDecimals={markets.getSzDecimals(order.coin)}
+								marketLabel={markets.getMarket(order.coin)?.shortName ?? order.coin}
+								markPx={getMarketInfo(order.coin)?.markPx ?? ""}
+								expanded={expandedOrderKeys.has(orderKey)}
+								isCancelling={cancellingOids.has(order.oid)}
+								actionsDisabled={isModifyBusy || pendingScopes.size > 0}
+								modifyDisabled={isModifyInteractionLocked || cancellingOids.has(order.oid)}
+								onCancel={handleCancelRow}
+								onModify={handleRequestModify}
+								onSelectMarket={handleSelectMarket}
+								onExpandedChange={(expanded) => setOrderExpanded(orderKey, expanded)}
+							/>
+						);
+					})}
 				</div>
 				<CancelAllOrdersModal
 					open={cancelAllOpen}
@@ -670,12 +737,15 @@ interface MobileOrderCardProps {
 	order: OpenOrder;
 	szDecimals: number;
 	marketLabel: string;
+	markPx: string;
+	expanded: boolean;
 	isCancelling: boolean;
 	actionsDisabled: boolean;
 	modifyDisabled: boolean;
 	onCancel: (orders: OpenOrder[]) => void;
 	onModify: (order: OpenOrder) => void;
 	onSelectMarket: (marketName: string, side: Side) => void;
+	onExpandedChange: (expanded: boolean) => void;
 }
 
 interface OrderMetricProps {
@@ -704,15 +774,17 @@ function MobileOrderCard({
 	order,
 	szDecimals,
 	marketLabel,
+	markPx,
+	expanded,
 	isCancelling,
 	actionsDisabled,
 	modifyDisabled,
 	onCancel,
 	onModify,
 	onSelectMarket,
+	onExpandedChange,
 }: MobileOrderCardProps) {
 	const { t } = useLingui();
-	const [expanded, setExpanded] = useState(false);
 	const detailsId = useId();
 	const { getFullOrderTypeLabel, getOrderSideLabel, getTriggerConditionLabel } = useOrderDisplayLabels();
 	const sideLabel = getOrderSideLabel(order.side, order.reduceOnly);
@@ -730,6 +802,17 @@ function MobileOrderCard({
 		? getTriggerConditionLabel(order.triggerCondition)
 		: FALLBACK_VALUE_PLACEHOLDER;
 	const canModify = getOpenOrderModifyCapabilities(order).size.supported;
+	const metrics = getToolbarOrderMetrics({
+		isTrigger: order.isTrigger,
+		limitPx: order.limitPx,
+		triggerPx: order.triggerPx,
+		sz: order.sz,
+		markPx,
+	});
+	const markDistanceLabel = metrics.markDistanceRatio
+		? formatPercent(metrics.markDistanceRatio, { decimals: 1, signDisplay: "never" })
+		: null;
+	const isNearMark = toBig(metrics.markDistanceRatio)?.lt("0.1") ?? false;
 
 	return (
 		<article className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal">
@@ -737,7 +820,7 @@ function MobileOrderCard({
 				expanded={expanded}
 				label={expanded ? t`Collapse ${marketLabel} order details` : t`Expand ${marketLabel} order details`}
 				controls={detailsId}
-				onToggle={() => setExpanded((value) => !value)}
+				onToggle={() => onExpandedChange(!expanded)}
 				className="grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_16px] gap-2.5 px-3.5 py-[11px]"
 			>
 				<div className="min-w-0">
@@ -746,7 +829,7 @@ function MobileOrderCard({
 						type="button"
 						onClick={() => onSelectMarket(order.coin, side)}
 						aria-label={t`Switch to ${marketLabel} market`}
-						className="pointer-events-auto relative z-10 max-w-full truncate rounded-xs text-xs font-bold leading-[17px] text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+						className="pointer-events-auto relative z-10 max-w-full truncate rounded-xs text-xs font-bold leading-[17px] text-market-close-fg after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
 					>
 						{marketLabel}
 					</button>
@@ -768,7 +851,19 @@ function MobileOrderCard({
 							valueClassName={isBuy ? "text-market-close-success" : "text-market-close-danger"}
 						/>
 						<OrderMetric label={t`Price`} value={priceLabel} />
-						<OrderMetric label={t`Trigger Condition`} value={triggerConditionLabel} />
+						<div className="min-w-0">
+							<OrderMetric label={t`Trigger Condition`} value={triggerConditionLabel} />
+							{markDistanceLabel ? (
+								<div
+									className={cn(
+										"truncate text-[10px] leading-[14px] tabular-nums",
+										isNearMark ? "text-warning" : "text-market-close-subtle",
+									)}
+								>
+									{t`Distance to mark ${markDistanceLabel}`}
+								</div>
+							) : null}
+						</div>
 						<OrderMetric label={t`Original Size`} value={originalSizeLabel} />
 						<OrderMetric label={t`Reduce Only`} value={order.reduceOnly ? t`Yes` : t`No`} />
 					</div>
@@ -799,7 +894,7 @@ function MobileOrderCard({
 							type="button"
 							aria-label={t`Collapse ${marketLabel} order details`}
 							aria-controls={detailsId}
-							onClick={() => setExpanded(false)}
+							onClick={() => onExpandedChange(false)}
 							className="-mr-3.5 inline-flex size-11 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
 						>
 							<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">

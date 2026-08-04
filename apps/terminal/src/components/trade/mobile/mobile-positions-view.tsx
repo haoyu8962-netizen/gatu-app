@@ -2,16 +2,18 @@ import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
-import { type ReactNode, Suspense, useEffect, useState, useTransition } from "react";
+import { type ReactNode, Suspense, useEffect, useMemo, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
 import { MOBILE_POSITIONS_TABS, type MobilePositionsTabValue } from "@/config/trade";
+import { getReadyItemCount } from "@/domain/trade/position-toolbar";
+import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
-import { toNumber } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
 import { MobileFundingTab } from "./mobile-funding-tab";
@@ -52,45 +54,90 @@ export function MobilePositionsView({
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useWalletSession();
-	const { positions, isLoading: isLoadingState } = useUserPositions();
+	const {
+		perpSummary,
+		spotBalances,
+		hasAllDexsSnapshot,
+		hasSpotStateSnapshot,
+		hasError: balancesError,
+		isLoading: balancesLoading,
+	} = useDefaultDexBalances();
+	const { positions, isLoading: isLoadingState, hasError: positionsError } = useUserPositions();
 	const isPageScroll = scrollMode === "page";
 
-	const { data: ordersEvent, status: ordersStatus } = useSubscription(
+	const {
+		data: ordersEvent,
+		status: ordersStatus,
+		isStale: ordersStale,
+	} = useSubscription(
 		"openOrders",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
 		{ enabled: isConnected && !!address },
 	);
 	const openOrders = ordersEvent?.orders;
+	const {
+		data: twapStatesEvent,
+		status: twapStatesStatus,
+		isStale: twapStatesStale,
+	} = useSubscription(
+		"twapStates",
+		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
+		{ enabled: isConnected && !!address },
+	);
 	const isLoadingOrders = ordersStatus === "subscribing" || ordersStatus === "idle";
+	const isLoadingTwap = twapStatesStatus === "subscribing" || twapStatesStatus === "idle";
 
 	useEffect(() => {
 		if (storedActiveTab === activeTab) return;
 		setPositionsActiveTab(activeTab);
 	}, [activeTab, setPositionsActiveTab, storedActiveTab]);
 
-	const positionsCount = isConnected
-		? positions.reduce((count, entry) => {
-				const size = toNumber(entry.szi);
-				return size ? count + 1 : count;
-			}, 0)
-		: 0;
-
-	const ordersCount = isConnected ? (openOrders?.length ?? 0) : 0;
+	const positionsCount = getReadyItemCount({
+		isConnected,
+		isReady: hasAllDexsSnapshot && !isLoadingState && !positionsError,
+		count: positions.reduce((count, entry) => {
+			const size = toBig(entry.szi);
+			return size && !size.eq(0) ? count + 1 : count;
+		}, 0),
+	});
+	const ordersCount = getReadyItemCount({
+		isConnected,
+		isReady: ordersStatus === "active" && !ordersStale && ordersEvent !== undefined,
+		count: openOrders?.length ?? 0,
+	});
+	const twapCount = getReadyItemCount({
+		isConnected,
+		isReady: twapStatesStatus === "active" && !twapStatesStale && twapStatesEvent !== undefined,
+		count: twapStatesEvent?.states?.length ?? 0,
+	});
+	const balancesCount = useMemo(() => {
+		if (!isConnected || balancesError || !hasAllDexsSnapshot || !hasSpotStateSnapshot) return null;
+		let count = 0;
+		if (toBig(perpSummary?.accountValue)?.gt(0)) count++;
+		for (const balance of spotBalances) {
+			if (toBig(balance.total)?.gt(0)) count++;
+		}
+		return count;
+	}, [balancesError, hasAllDexsSnapshot, hasSpotStateSnapshot, isConnected, perpSummary?.accountValue, spotBalances]);
 
 	function handleTabChange(value: string) {
 		startTransition(() => setPositionsActiveTab(resolveMobilePositionsTab(value, hasTransfersTab)));
 	}
 
 	function getTabCount(tabValue: TabValue): number | null {
+		if (tabValue === "balances") return balancesCount;
 		if (tabValue === "positions") return positionsCount;
 		if (tabValue === "orders") return ordersCount;
+		if (tabValue === "twap") return twapCount;
 		return null;
 	}
 
 	function isTabLoading(tabValue: TabValue): boolean {
 		if (!isConnected) return false;
+		if (tabValue === "balances") return balancesLoading;
 		if (tabValue === "positions") return isLoadingState;
 		if (tabValue === "orders") return isLoadingOrders;
+		if (tabValue === "twap") return isLoadingTwap;
 		return false;
 	}
 
@@ -133,8 +180,8 @@ export function MobilePositionsView({
 										<span>{_(tab.label)}</span>
 										{loading ? (
 											<Spinner className="size-3 shrink-0" />
-										) : typeof count === "number" && count > 0 ? (
-											<span className="shrink-0">({count})</span>
+										) : typeof count === "number" ? (
+											<span className="shrink-0 tabular-nums">({count})</span>
 										) : null}
 									</TabsTrigger>
 								);

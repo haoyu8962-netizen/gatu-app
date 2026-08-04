@@ -7,6 +7,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+	downloadCsv: vi.fn(),
 	navigateToMarket: vi.fn(),
 	setActiveTab: vi.fn(),
 }));
@@ -98,6 +99,11 @@ vi.mock("@/hooks/trade/use-order-display-labels", () => ({
 			reduceOnly ? (side === "B" ? "Close Short" : "Close Long") : side === "B" ? "Buy" : "Sell",
 		getOrderTypeLabel: (type: string) => type,
 	}),
+}));
+
+vi.mock("@/lib/csv", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/csv")>()),
+	downloadCsv: mocks.downloadCsv,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -223,6 +229,11 @@ describe("mobile history disclosure cards", () => {
 		expect(mocks.setActiveTab).toHaveBeenCalledWith("trade");
 		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("true");
 		expectDisclosureControls();
+		clickButton("Export CSV");
+		expect(mocks.downloadCsv).toHaveBeenCalledWith(
+			"trade_history.csv",
+			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Transaction"])]),
+		);
 	});
 
 	it("keeps funding position, payment, rate, and direction semantics", () => {
@@ -233,7 +244,13 @@ describe("mobile history disclosure cards", () => {
 		expect(container.textContent).toContain("Payment");
 		expect(container.textContent).toContain("Rate");
 		expect(container.textContent).toContain("Short");
+		expect(container.textContent).toContain("Cumulative funding");
 		expectDisclosureControls();
+		clickButton("Export CSV");
+		expect(mocks.downloadCsv).toHaveBeenCalledWith(
+			"funding_history.csv",
+			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Position", "Rate", "Payment"])]),
+		);
 	});
 
 	it("keeps historical order labels and expands cards independently", () => {
@@ -244,8 +261,19 @@ describe("mobile history disclosure cards", () => {
 		expect(container.textContent).toContain("Buy");
 		expect(container.textContent).toContain("Filled");
 		expect(container.textContent).toContain("Updated");
+		expect(container.textContent).toContain("All types");
+		expect(container.textContent).toContain("All statuses");
+		expect(Array.from(container.querySelectorAll("label"), (label) => label.textContent)).toEqual([
+			"Order type",
+			"Order status",
+		]);
 		expectDisclosureControls();
 		expect(container.textContent).toContain("Close Long");
 		expect(container.textContent).not.toContain("Short order");
+		clickButton("Export CSV");
+		expect(mocks.downloadCsv).toHaveBeenCalledWith(
+			"order_history.csv",
+			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Type", "Status"])]),
+		);
 	});
 });

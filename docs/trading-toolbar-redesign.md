@@ -17,8 +17,8 @@ Financial values remain decimal strings until they reach the locale formatter. D
 | Liquidation price | `liquidationPx` | Preserve the nullable decimal string | `packages/hl-react/src/account/use-user-positions.ts` |
 | Position value | `positionValue` | Preserve the SDK decimal string | `packages/hl-react/src/account/use-user-positions.ts` |
 | Position margin | `marginUsed` | Preserve the SDK decimal string | `packages/hl-react/src/account/use-user-positions.ts` |
-| Account equity | Existing account-abstraction-aware balance summary | Do not blindly add values from independent DEX accounts | `apps/terminal/src/domain/trade/balances.ts`, `apps/terminal/src/components/trade/tradebox/account-panel.tsx` |
-| Account maintenance-margin ratio | `crossMaintenanceMarginUsed / accountEquity` | Reuse the account-panel meaning and handle a zero denominator | `apps/terminal/src/domain/trade/balances.ts`, `apps/terminal/src/components/trade/tradebox/account-panel.tsx` |
+| Account equity | Account-abstraction-aware balance summary | Unified and portfolio-margin modes use the Spot account value shared by every DEX; separate accounts use the selected DEX `marginSummary.accountValue` | `apps/terminal/src/domain/trade/balances.ts`, `apps/terminal/src/components/trade/positions/positions-panel.tsx` |
+| Account maintenance-margin ratio | Mode-dependent derivation | Separate accounts use `crossMaintenanceMarginUsed / accountEquity`; unified accounts use the official maximum, per collateral token, of `crossMaintenanceMarginUsed / (spot total - isolated margin used)`; portfolio margin remains unavailable because the protocol does not expose an equivalent scalar | `apps/terminal/src/domain/trade/balances.ts`, `apps/terminal/src/components/trade/positions/positions-panel.tsx` |
 | Position maintenance-margin ratio | Not returned by `clearinghouseState` | **Unresolved:** the prototype's `risk` value is fixture data and must not be treated as an API field | Hyperliquid `ClearinghouseStateResponse`, `packages/hl-react/src/account/use-user-positions.ts` |
 | Unrealized PnL | `unrealizedPnl` | Prefer the exchange value for a whole position | `packages/hl-react/src/account/use-user-positions.ts` |
 | ROE | `returnOnEquity` | Prefer the exchange value for a whole position | `packages/hl-react/src/account/use-user-positions.ts` |
@@ -26,7 +26,9 @@ Financial values remain decimal strings until they reach the locale formatter. D
 | Estimated partial-close PnL | Pro-rate whole-position `unrealizedPnl`; fallback `(markPx - entryPx) * closeSize * direction` | Long direction is `+1`; short direction is `-1` | `apps/terminal/src/domain/trade/position-market-close.ts` |
 | Cumulative funding | `cumFunding.sinceOpen` | Preserve the existing UI sign convention and derive `-sinceOpen` with `Big.js` | `apps/terminal/src/domain/trade/position-toolbar.ts` |
 
-Official schema: [Perpetuals info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals).
+Official schemas: [Perpetuals info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals) and [account abstraction modes](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/account-abstraction-modes).
+
+The summary fails closed while account-abstraction metadata, collateral-token metadata, or a complete account snapshot is unavailable. It never substitutes liquidation distance for a maintenance-margin ratio. Decimal aggregation is performed with `Big.js`; only the locale formatter receives the final string.
 
 ### Open orders
 
@@ -71,6 +73,12 @@ Official action schema: [Exchange endpoint](https://hyperliquid.gitbook.io/hyper
 The reverse action has no dedicated endpoint and the exchange does not return a pre-trade reverse liquidation price. The production flow therefore shows the estimate as unavailable. It binds the confirmed position size, owner, environment, DEX and asset metadata; obtains a fresh clearinghouse snapshot under an exclusive asset lock; rejects active/pending TWAP or order coordination; and requires a filled exchange confirmation before reporting success.
 
 Ordinary order modification is also fail-closed. The UI exposes only ordinary limit orders and the four supported trigger-order shapes. It withholds direct modification for client-order-id orders, grouped orders, position TP/SL, market/system/TWAP-slice orders, and unsupported TIF values. Both desktop inline editing and the mobile bottom sheet preserve raw input, reconstruct a complete exchange order, revalidate the live subscription and market binding at the execution boundary, and report success only after the open-orders subscription confirms the requested value. A 15-second subscription timeout never reports success and leaves cancellation available.
+
+The whole-position TP/SL dialog also keeps position size, entry/mark/trigger prices, estimated PnL, risk/reward, and the 10% trigger-market protection price as decimal strings through its `Big.js` path. Its SDK output remains a reduce-only market trigger with size `"0"`; this precision change does not add partial-size or trigger-limit behavior.
+
+## Desktop grid behavior
+
+At the compact-desktop breakpoint the account table owns the fixed ten-column left region. It can be resized vertically from its south edge, but not horizontally: horizontal resizing previously collided with the right-column market-data/account panels, pushed those panels down, and created excess document height. The active width constraint also rejects a previously persisted narrowed geometry and restores the default layout. The 14-column compact layout still intentionally stacks the right-side trading, market-data, and account-information panels, so document scrolling at this breakpoint is part of the existing terminal layout contract; the positions table itself uses the available panel height and its own overflow viewport.
 
 ## Theme-token mapping
 
@@ -122,7 +130,6 @@ The toolbar messages include:
 3. Extend TP/SL to fixed partial-size and trigger-limit orders as a separately tested order path.
 4. Replace the reverse liquidation-price placeholder only if a verified margin model becomes available.
 5. Keep the existing exchange-validated margin-removal behavior instead of the prototype's fixed 50% maximum.
-6. Define cross-DEX equity and maintenance-margin aggregation before adding those summary fields.
-7. Define close-all partial-failure/retry behavior before exposing the cross-DEX destructive action.
-8. Define the share target/link/QR lifecycle and approve theme-aware share-card tokens before adding PnL sharing.
-9. Add the missing shared semantic theme tokens, or accept small light-mode visual differences by using the closest existing tokens.
+6. Define close-all partial-failure/retry behavior before exposing the cross-DEX destructive action.
+7. Define the share target/link/QR lifecycle and approve theme-aware share-card tokens before adding PnL sharing.
+8. Add the missing shared semantic theme tokens, or accept small light-mode visual differences by using the closest existing tokens.

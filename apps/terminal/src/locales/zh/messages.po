@@ -13,8 +13,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. placeholder {0}: orders.length
+#. placeholder {0}: filteredOrders.length
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 msgid "{0, plural, one {# order} other {# orders}}"
 msgstr "{0, plural, other {# 笔委托}}"
 
@@ -192,9 +193,9 @@ msgstr "账户活动"
 msgid "Account and wallet"
 msgstr "账户与钱包"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Account Equity"
-#~ msgstr "账户权益"
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Account Equity"
+msgstr "账户权益"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
@@ -351,9 +352,27 @@ msgstr "所有全仓仓位共用同一笔全仓保证金作为抵押。一旦发
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr ""
 
+#: src/components/trade/positions/orders-tab.tsx
+msgid "All Directions"
+msgstr "全部方向"
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "All statuses"
+msgstr "全部状态"
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "All Time"
 msgstr "全部时间"
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "All types"
+msgstr "全部类型"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "All Types"
+msgstr "全部类型"
 
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
@@ -448,9 +467,15 @@ msgstr "授权新的移动交易密钥将替换旧密钥。"
 msgid "Arbitrum network switch was rejected."
 msgstr "已拒绝切换到 Arbitrum 网络。"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -658,6 +683,7 @@ msgstr "构建者费用"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -742,7 +768,9 @@ msgstr "取消选中的订单"
 #~ msgid "Cancel TWAP order"
 #~ msgstr "取消 TWAP 订单"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Canceled"
@@ -941,6 +969,7 @@ msgstr "收起 {marketName} 历史详情"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Collapse all"
 msgstr "全部收起"
@@ -1154,6 +1183,7 @@ msgstr "连接钱包以发送资金。"
 msgid "Connect your wallet to transfer funds."
 msgstr "连接钱包以划转资金。"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "连接钱包查看余额。"
@@ -1342,6 +1372,11 @@ msgstr "创建手机访问权限"
 #~ msgid "Create secure phone access for trading from this account."
 #~ msgstr "为通过此账户进行交易创建安全的手机访问权限。"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Create TWAP"
+msgstr "创建 TWAP"
+
 #: src/config/account-ledger.ts
 msgid "Create Vault"
 msgstr "创建金库"
@@ -1399,6 +1434,11 @@ msgstr "CSV 导出已达历史记录上限，部分较早记录未包含。"
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "CSV exported."
 msgstr "CSV 已导出。"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Cumulative funding"
+msgstr "累计资金费"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
@@ -1463,8 +1503,10 @@ msgstr "部署者"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1602,9 +1644,13 @@ msgstr "目标地址"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -1651,6 +1697,7 @@ msgstr "显示"
 #~ msgid "Displays the mobile sidebar."
 #~ msgstr "显示移动端侧边栏。"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Distance to mark {markDistanceLabel}"
 msgstr "距标记价 {markDistanceLabel}"
@@ -1940,6 +1987,7 @@ msgstr "展开 {marketName} 历史详情"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Expand all"
 msgstr "全部展开"
@@ -1966,7 +2014,13 @@ msgid "Explorer"
 msgstr "区块浏览器"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 msgid "Export CSV"
 msgstr "导出 CSV"
 
@@ -2143,7 +2197,9 @@ msgstr "收藏夹"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
@@ -2182,6 +2238,8 @@ msgstr "桥接费用高于桥接金额。"
 msgid "Fill status"
 msgstr "成交状态"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
@@ -2556,6 +2614,7 @@ msgstr "杠杆"
 #~ msgid "limit"
 #~ msgstr "限价"
 
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2628,6 +2687,8 @@ msgid "Liq. Price"
 msgstr "清算价"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
 msgid "Liquidated"
@@ -2635,6 +2696,7 @@ msgstr "已强平"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Liquidation Price"
 msgstr "强平价格"
@@ -2796,6 +2858,10 @@ msgstr "主网"
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Maintenance Margin"
 msgstr "维持保证金"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Maintenance Margin Ratio"
+msgstr "维持保证金率"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Manage TP/SL"
@@ -3358,6 +3424,15 @@ msgstr "无未成交订单。"
 msgid "No order history found."
 msgstr "未找到订单历史。"
 
+#: src/components/trade/positions/orders-tab.tsx
+msgid "No orders match the selected filters."
+msgstr "没有符合所选筛选条件的委托。"
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "No orders match these filters."
+msgstr "没有符合筛选条件的委托。"
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No positions match the selected filters."
@@ -3463,6 +3538,8 @@ msgstr "请只扫描此终端在桌面端显示的二维码。"
 #~ msgid "open"
 #~ msgstr "未成交"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
 msgstr "未成交"
@@ -3623,6 +3700,11 @@ msgstr "委托修改已提交，正在等待当前委托更新。"
 msgid "Order Queue"
 msgstr "订单队列"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "Order status"
+msgstr "委托状态"
+
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Order submitted"
 msgstr "委托已提交"
@@ -3638,6 +3720,8 @@ msgstr "委托已提交"
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "订单已提交，正在确认交易所状态；请勿重试。"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Order type"
 msgstr "订单类型"
@@ -3660,7 +3744,6 @@ msgstr "委托将仅作为限价单挂在订单簿上，即只挂单（post-only
 msgid "Order will rest until filled or canceled."
 msgstr "委托将一直挂单，直至成交或取消。"
 
-#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "orders"
 msgstr "委托"
@@ -3684,6 +3767,8 @@ msgstr "关联止盈止损的委托不能在此修改。"
 msgid "Original Size"
 msgstr "原始数量"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3753,6 +3838,8 @@ msgstr "部分成功"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "支付"
@@ -3898,8 +3985,10 @@ msgstr "平台"
 
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "PNL"
 msgstr "盈亏"
@@ -3956,6 +4045,8 @@ msgid "Portfolio Value"
 msgstr "投资组合价值"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Position"
@@ -4065,11 +4156,15 @@ msgstr "按住 4 秒"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -4168,6 +4263,8 @@ msgstr "随机化时间"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "费率"
@@ -4275,6 +4372,8 @@ msgstr "刷新报价"
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "已拒绝"
@@ -4686,6 +4785,7 @@ msgstr "所选钱包与当前连接账户不一致。请重新连接钱包后重
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4892,8 +4992,10 @@ msgstr "签名中..."
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -4902,6 +5004,8 @@ msgstr "签名中..."
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -5107,7 +5211,9 @@ msgid "Starting camera..."
 msgstr "正在启动相机…"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Status"
 msgstr "状态"
@@ -5815,13 +5921,19 @@ msgid "TIF"
 msgstr "TIF"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
@@ -5897,8 +6009,13 @@ msgid "Total"
 msgstr "合计"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "Total balance"
-msgstr "总余额"
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Total assets"
+msgstr "总资产"
+
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#~ msgid "Total balance"
+#~ msgstr "总余额"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
@@ -5947,6 +6064,10 @@ msgstr "止盈价"
 #: src/config/ui-text.ts
 msgid "TP/SL"
 msgstr "止盈止损"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "TP/SL orders updated"
+msgstr "止盈/止损委托已更新"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Track on LI.FI Explorer"
@@ -6046,6 +6167,11 @@ msgstr "交易密钥已授权"
 msgid "Traditional Finance"
 msgstr "传统金融"
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+msgid "Transaction"
+msgstr "交易哈希"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "交易明细"
@@ -6103,6 +6229,7 @@ msgstr "启用统一账户后，现货与合约之间的划转不可用。"
 #~ msgstr "热门"
 
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
@@ -6119,7 +6246,9 @@ msgstr "触发订单必须减少当前仓位"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
 msgstr "触发价"
@@ -6132,6 +6261,8 @@ msgstr "触发价"
 msgid "Trigger size exceeds position size"
 msgstr "触发订单数量超过当前仓位数量"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Triggered"
 msgstr "已触发"
@@ -6204,8 +6335,10 @@ msgstr "双边开放利益：该合约上的多头和空头头寸之和。"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Type"
@@ -6326,6 +6459,8 @@ msgid "Update failed"
 msgstr "更新失败"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -6586,9 +6721,10 @@ msgstr "提款"
 msgid "Withdraw to Arbitrum"
 msgstr "提现至 Arbitrum"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Withdrawable"
-#~ msgstr "可提"
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Withdrawable"
+msgstr "可提"
 
 #: src/config/account-ledger.ts
 msgid "Withdrawal"

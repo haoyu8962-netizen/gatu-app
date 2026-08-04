@@ -42,6 +42,7 @@ import { PositionReverseConfirmationController } from "../positions/position-rev
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { useMobileDisclosureSet } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
@@ -121,7 +122,6 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
 		useState<IsolatedMarginPositionRef | null>(null);
 	const [selectedReverseTarget, setSelectedReverseTarget] = useState<PositionReverseTarget | null>(null);
-	const [expandedPositionKeys, setExpandedPositionKeys] = useState<Set<string>>(() => new Set());
 	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
 		ownerKey,
 		direction: "all",
@@ -168,6 +168,12 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const filteredPositionKeys = filteredPositions.map(
 		(position) => `${ownerKey ?? "disconnected"}:${position.dex}:${position.coin}`,
 	);
+	const {
+		expandedKeys: expandedPositionKeys,
+		setExpanded: setPositionExpanded,
+		expandAll: expandAllPositions,
+		collapseAll: collapseAllPositions,
+	} = useMobileDisclosureSet(ownerKey, filteredPositionKeys);
 
 	function handlePositionDirectionChange(direction: PositionDirectionFilter) {
 		setPositionFilters((current) => ({
@@ -186,29 +192,16 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	}
 
 	function handlePositionExpandedChange(key: string, expanded: boolean) {
-		setExpandedPositionKeys((current) => {
-			if (current.has(key) === expanded) return current;
-			const next = new Set(current);
-			if (expanded) next.add(key);
-			else next.delete(key);
-			return next;
-		});
+		if (expandedPositionKeys.has(key) === expanded) return;
+		setPositionExpanded(key, expanded);
 	}
 
 	function handleExpandAllDetails() {
-		setExpandedPositionKeys((current) => {
-			const next = new Set(current);
-			for (const key of filteredPositionKeys) next.add(key);
-			return next;
-		});
+		expandAllPositions(filteredPositionKeys);
 	}
 
 	function handleCollapseAllDetails() {
-		setExpandedPositionKeys((current) => {
-			const next = new Set(current);
-			for (const key of filteredPositionKeys) next.delete(key);
-			return next;
-		});
+		collapseAllPositions(filteredPositionKeys);
 	}
 
 	function handleOpenMarketClose(position: PositionMarketCloseRef) {

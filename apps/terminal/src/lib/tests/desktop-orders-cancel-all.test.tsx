@@ -172,6 +172,8 @@ describe("desktop cancel all orders confirmation", () => {
 
 	it("renders the twelve production order fields and derives remaining metrics from sz", () => {
 		act(() => root.render(<OrdersTab />));
+		expect(container.textContent).toContain("All Types");
+		expect(container.textContent).toContain("All Directions");
 
 		const headers = [...container.querySelectorAll("thead th")].map((cell) => cell.textContent?.trim() ?? "");
 		expect(headers).toEqual([

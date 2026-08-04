@@ -282,6 +282,19 @@ describe("position TP/SL order planning", () => {
 		});
 	});
 
+	it("keeps exact string trigger prices through market-trigger protection pricing", () => {
+		const plan = buildOrderPlan(positionTpSl({ szDecimals: 0, tpPriceNum: "1.2345499999999999", slPriceNum: null }));
+
+		expect(plan.orders[0]).toEqual({
+			a: 0,
+			b: false,
+			p: "1.1111",
+			s: "0",
+			r: true,
+			t: { trigger: { isMarket: true, triggerPx: "1.2345", tpsl: "tp" } },
+		});
+	});
+
 	it("modifies an existing leg and creates a missing leg", () => {
 		const plan = buildPositionTpSlUpdatePlan({
 			...positionTpSl({ tpPriceNum: 115 }),

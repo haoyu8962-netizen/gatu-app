@@ -34,11 +34,11 @@ const MOBILE_POSITION_CARD_SOURCE = readMobilePositionSource("mobile-position-ca
 describe("positions table visual contract", () => {
 	it("uses the compact official-style hierarchy with a sticky table header", () => {
 		expect(positionTableHeadClass).toContain("sticky top-0");
-		expect(positionTableHeadClass).toContain("h-8");
+		expect(positionTableHeadClass).toContain("h-[33px]");
 		expect(positionTableHeadClass).toContain("text-[11px]");
 		expect(positionTableHeadClass).toContain("font-semibold");
 		expect(positionTableHeadClass).not.toContain("overflow-hidden");
-		expect(positionTableCellClass).toContain("h-[46px]");
+		expect(positionTableCellClass).toContain("h-14");
 		expect(positionTableCellClass).not.toContain("overflow-hidden");
 		expect(positionTableCellClass).toContain("whitespace-nowrap");
 		expect(positionTableCellClass).toContain("leading-4");
@@ -76,21 +76,18 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_TAB_SOURCE).toContain("{t`Size`} / {t`Position Value`}");
 		expect(POSITIONS_TAB_SOURCE).toContain("{t`Entry Price`} / {t`Mark Price`}");
 		expect(POSITIONS_TAB_SOURCE).toContain("{t`Liquidation Price`}");
-		expect(POSITIONS_TAB_SOURCE).not.toContain("Margin Ratio");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("{t`Margin Ratio`}");
 		expect(POSITION_ROW_SOURCE).toContain("liqIsNear");
 		expect(POSITION_ROW_SOURCE).not.toContain("riskFill");
 	});
 
-	it("shows only the safely scoped all-DEX unrealized PNL summary", () => {
+	it("shows the production-scoped account summary without deriving finance in the row component", () => {
 		expect(POSITIONS_TAB_SOURCE).toContain('data-testid="positions-summary-bar"');
 		expect(POSITIONS_TAB_SOURCE).toContain("getTotalPositionUnrealizedPnl(positions)");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("getTotalPositionUnrealizedPnl(filteredPositions)");
 		expect(POSITIONS_TAB_SOURCE).toContain("{t`Unrealized PNL`}");
-		expect(POSITIONS_TAB_SOURCE).toContain(
-			'formatUSD(totalUnrealizedPnl, { compact: false, signDisplay: "exceptZero" })',
-		);
-		expect(POSITIONS_TAB_SOURCE).not.toContain("Account Equity");
-		expect(POSITIONS_TAB_SOURCE).not.toContain("Maintenance Margin Ratio");
+		expect(POSITIONS_TAB_SOURCE).toContain("Account Equity");
+		expect(POSITIONS_TAB_SOURCE).toContain("Maintenance Margin Ratio");
 		expect(POSITIONS_TAB_SOURCE).not.toContain("getToolbarAccountMarginRatio");
 	});
 
@@ -122,14 +119,14 @@ describe("positions table visual contract", () => {
 		expect(POSITION_ROW_SOURCE).toContain('pnlMode === "roe" ? roeDisplay : formatPercent(priceChangeRatio, 1)');
 	});
 
-	it("switches striped row backgrounds synchronously with the active theme", () => {
+	it("uses non-striped rows and synchronous hover backgrounds", () => {
 		const rowClassTokens = positionsPanelRowHoverClass.split(/\s+/);
 
 		expect(positionsPanelRowHoverClass).toContain("bg-fill-hover");
 		expect(rowClassTokens).not.toContain("transition-colors");
 		expect(rowClassTokens).not.toContain("transition-all");
 		expect(rowClassTokens.some((token) => token.includes("background-color"))).toBe(false);
-		expect(positionsPanelRowStripeClass).toBe("bg-alternate");
+		expect(positionsPanelRowStripeClass).toBe("");
 	});
 
 	it("keys desktop positions by their dex and coin identity", () => {

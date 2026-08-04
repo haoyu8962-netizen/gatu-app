@@ -135,22 +135,43 @@ describe("MobileOrdersTab disclosure card", () => {
 		vi.clearAllMocks();
 	});
 
-	it("uses remaining size in the summary and exposes details on demand", () => {
+	it("uses remaining size, expands the first card, and supports bulk disclosure controls", () => {
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 
 		expect(container.textContent).toContain("2.000 ORCL");
-		expect(container.textContent).not.toContain("Original Size");
-
-		const expand = container.querySelector<HTMLButtonElement>('button[aria-label="Expand ORCL order details"]');
-		expect(expand?.parentElement?.className).toContain("min-h-11");
-		act(() => expand?.click());
-
 		expect(container.textContent).toContain("Original Size");
 		expect(container.textContent).toContain("5.000 ORCL");
 		expect(container.textContent).toContain("Reduce Only");
 		expect(container.textContent).toContain("Yes");
 		expect(container.textContent).toContain("Close Short");
 		expect(container.textContent).not.toContain("Long");
+
+		const expandAll = container.querySelector<HTMLButtonElement>('[data-testid="expand-all-order-details"]');
+		const collapseAll = container.querySelector<HTMLButtonElement>('[data-testid="collapse-all-order-details"]');
+		expect(expandAll?.disabled).toBe(true);
+		expect(collapseAll?.disabled).toBe(false);
+		expect(expandAll?.className).toContain("after:h-11");
+		expect(collapseAll?.className).toContain("after:h-11");
+
+		act(() => collapseAll?.click());
+		expect(container.textContent).not.toContain("Original Size");
+		expect(expandAll?.disabled).toBe(false);
+		act(() => expandAll?.click());
+		expect(container.textContent).toContain("Original Size");
+	});
+
+	it("shows the SDK-derived mark distance and warns below ten percent", () => {
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+
+		const distance = [...container.querySelectorAll<HTMLElement>("div")].find(
+			(element) => element.textContent?.trim() === "Distance to mark 6.9%",
+		);
+		expect(distance?.className).toContain("text-warning");
+		expect(distance?.className).toContain("tabular-nums");
+
+		const market = container.querySelector<HTMLButtonElement>('button[aria-label="Switch to ORCL market"]');
+		expect(market?.className).toContain("after:h-11");
+		expect(market?.className).toContain("after:min-w-11");
 	});
 
 	it("preserves market navigation and the exact cancel payload", () => {

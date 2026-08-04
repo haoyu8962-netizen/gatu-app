@@ -2,14 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
 	addSpotMarketPriceAliases,
 	getAccountBalanceSummary,
+	getAccountEquityValue,
 	getAvailableFromTotals,
 	getPerpBalanceRows,
+	getPerpRiskSummaryValue,
 	getSpotAvailable,
 	getSpotAvailableValue,
 	getSpotBalanceData,
 	getSpotBalanceRows,
 	getSpotTransferable,
 	getSpotTransferableValue,
+	getUnifiedAccountMarginRatioValue,
 	isQuoteBalanceSharedWithPerps,
 	type SpotAvailableAfterMaintenance,
 } from "@/domain/trade/balances";
@@ -286,6 +289,80 @@ describe("trade balances", () => {
 			tokenUsdPrices: { HYPE: "30" },
 		});
 		expect(summary.accountEquity).toBeCloseTo(867.680532);
+		expect(
+			getAccountEquityValue({
+				accountAbstraction: "unifiedAccount",
+				marginSummary: null,
+				perpSummary: null,
+				spotBalances: [settledSpotUsdcBalance, hypeBalance],
+				tokenUsdPrices: { HYPE: "30" },
+			}),
+		).toBe("867.680532");
+	});
+
+	it("aggregates cross-DEX risk values without floating-point loss", () => {
+		const summary = getPerpRiskSummaryValue([
+			{
+				marginSummary: { totalNtlPos: "9007199254740992.1", totalMarginUsed: "0.000000000000000001" } as never,
+				crossMaintenanceMarginUsed: "0.02",
+				assetPositions: [{ position: { unrealizedPnl: "0.1" } }] as never,
+			},
+			{
+				marginSummary: { totalNtlPos: "-9007199254740992", totalMarginUsed: "0.000000000000000002" } as never,
+				crossMaintenanceMarginUsed: "0.03",
+				assetPositions: [{ position: { unrealizedPnl: "-0.025" } }] as never,
+			},
+		]);
+
+		expect(summary).toEqual({
+			totalNtlPos: "0.1",
+			totalMarginUsed: "3e-18",
+			crossMaintenanceMarginUsed: "0.05",
+			unrealizedPnl: "0.075",
+		});
+	});
+
+	it("computes the official unified-account ratio per collateral token", () => {
+		const ratio = getUnifiedAccountMarginRatioValue({
+			states: [
+				{
+					dex: "",
+					crossMaintenanceMarginUsed: "20",
+					assetPositions: [
+						{ position: { leverage: { type: "cross" }, marginUsed: "10" } },
+						{ position: { leverage: { type: "isolated" }, marginUsed: "100" } },
+					] as never,
+				},
+				{
+					dex: "cash",
+					crossMaintenanceMarginUsed: "15",
+					assetPositions: [{ position: { leverage: { type: "isolated" }, marginUsed: "50" } }] as never,
+				},
+			],
+			collaterals: [
+				{ dex: "", token: 0 },
+				{ dex: "cash", token: 1 },
+			],
+			spotBalances: [
+				{ coin: "USDC", token: 0, total: "1100", hold: "0", entryNtl: "0" },
+				{ coin: "USDT", token: 1, total: "200", hold: "0", entryNtl: "0" },
+			],
+		});
+
+		// USDC: 20 / (1100 - 100); USDT: 15 / (200 - 50). The maximum is 10%.
+		expect(ratio).toBe("0.1");
+	});
+
+	it("fails closed when unified collateral metadata or available collateral is missing", () => {
+		const state = { dex: "cash", crossMaintenanceMarginUsed: "1", assetPositions: [] };
+		expect(getUnifiedAccountMarginRatioValue({ states: [state], collaterals: [], spotBalances: [] })).toBeNull();
+		expect(
+			getUnifiedAccountMarginRatioValue({
+				states: [state],
+				collaterals: [{ dex: "cash", token: 1 }],
+				spotBalances: [{ coin: "USDT", token: 1, total: "0", hold: "0", entryNtl: "0" }],
+			}),
+		).toBeNull();
 	});
 
 	it("maps canonical spot mids back to raw balance token names", () => {

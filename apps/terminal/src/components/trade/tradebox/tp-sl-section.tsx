@@ -5,9 +5,11 @@ import { SL_QUICK_PERCENT_OPTIONS, TP_QUICK_PERCENT_OPTIONS } from "@/config/tra
 import { getRiskRewardRatio } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
-import { isPositive, toNumber } from "@/lib/trade/numbers";
+import { isPositive, toBig, toNumber } from "@/lib/trade/numbers";
 import {
 	calculateEstimatedPnl,
+	calculateEstimatedPnlExact,
+	calculateRiskRewardRatioExact,
 	calculateSlPrice,
 	calculateSlPriceFromRoe,
 	calculateTpPrice,
@@ -20,8 +22,8 @@ import { PriceInputWithPercent } from "./price-input-with-percent";
 
 interface Props {
 	side: "buy" | "sell";
-	referencePrice: number;
-	size: number;
+	referencePrice: string | number;
+	size: string | number;
 	szDecimals?: number;
 	tpPrice: string;
 	slPrice: string;
@@ -33,8 +35,9 @@ interface Props {
 	compact?: boolean;
 	quickPercentMode?: "price" | "roe";
 	leverage?: number;
-	triggerValidationPrice?: number | null;
+	triggerValidationPrice?: string | number | null;
 	mobileTouchSafe?: boolean;
+	preserveFinancialPrecision?: boolean;
 }
 
 export function TpSlSection({
@@ -54,23 +57,36 @@ export function TpSlSection({
 	leverage,
 	triggerValidationPrice,
 	mobileTouchSafe = false,
+	preserveFinancialPrecision = false,
 }: Props) {
 	const tpPriceNum = toNumber(tpPrice);
 	const slPriceNum = toNumber(slPrice);
+	const exactReferenceReady = toBig(referencePrice)?.gt(0) ?? false;
+	const exactSizeReady = toBig(size)?.gt(0) ?? false;
+	const exactTpReady = toBig(tpPrice)?.gt(0) ?? false;
+	const exactSlReady = toBig(slPrice)?.gt(0) ?? false;
 
-	const tpPnl =
-		isPositive(tpPriceNum) && isPositive(referencePrice) && isPositive(size)
+	const tpPnl = preserveFinancialPrecision
+		? exactTpReady && exactReferenceReady && exactSizeReady
+			? calculateEstimatedPnlExact({ referencePrice, side, size }, tpPrice)
+			: null
+		: isPositive(tpPriceNum) && isPositive(referencePrice) && isPositive(size)
 			? calculateEstimatedPnl({ referencePrice, side, size }, tpPriceNum)
 			: null;
-	const slPnl =
-		isPositive(slPriceNum) && isPositive(referencePrice) && isPositive(size)
+	const slPnl = preserveFinancialPrecision
+		? exactSlReady && exactReferenceReady && exactSizeReady
+			? calculateEstimatedPnlExact({ referencePrice, side, size }, slPrice)
+			: null
+		: isPositive(slPriceNum) && isPositive(referencePrice) && isPositive(size)
 			? calculateEstimatedPnl({ referencePrice, side, size }, slPriceNum)
 			: null;
-	const riskRewardRatio = getRiskRewardRatio(tpPnl, slPnl);
+	const riskRewardRatio = preserveFinancialPrecision
+		? calculateRiskRewardRatioExact(tpPnl, slPnl)
+		: getRiskRewardRatio(typeof tpPnl === "number" ? tpPnl : null, typeof slPnl === "number" ? slPnl : null);
 	let riskRewardDisplay: {
 		rrDisplay: NonNullable<ReturnType<typeof formatRiskRewardRatio>>;
-		tpPnl: number;
-		slPnl: number;
+		tpPnl: string | number;
+		slPnl: string | number;
 	} | null = null;
 	if (riskRewardRatio !== null && tpPnl !== null && slPnl !== null) {
 		const rrDisplay = formatRiskRewardRatio(riskRewardRatio);

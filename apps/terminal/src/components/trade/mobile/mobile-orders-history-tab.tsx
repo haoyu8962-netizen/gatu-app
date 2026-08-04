@@ -1,4 +1,7 @@
+import { Select } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
+import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
+import { DownloadSimpleIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -7,12 +10,39 @@ import { useHistoricalOrders } from "@/hooks/trade/use-historical-orders";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatToken } from "@/lib/format";
+import { buildCsvRows, downloadCsv } from "@/lib/csv";
+import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { HistoricalOrderPrice } from "../components/historical-order-price";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
+
+type HistoricalOrderStatus = HistoricalOrdersResponse[number]["status"];
+type OrderHistoryStatusFilter = "all" | "open" | "filled" | "triggered" | "canceled" | "rejected" | "other";
+
+function getOrderHistoryStatusFilter(status: HistoricalOrderStatus): Exclude<OrderHistoryStatusFilter, "all"> {
+	if (isCanceledOrderStatus(status)) return "canceled";
+	if (status === "open" || status === "filled" || status === "triggered") return status;
+	if (status === "rejected" || status.endsWith("Rejected")) return "rejected";
+	return "other";
+}
+
+function isOrderHistoryStatusFilter(value: string | null): value is OrderHistoryStatusFilter {
+	return (
+		value === "all" ||
+		value === "open" ||
+		value === "filled" ||
+		value === "triggered" ||
+		value === "canceled" ||
+		value === "rejected" ||
+		value === "other"
+	);
+}
+
+function hasTriggerPrice(order: HistoricalOrdersResponse[number]["order"]): boolean {
+	return order.isTrigger || order.orderType.startsWith("Stop ") || order.orderType.startsWith("Take Profit ");
+}
 
 interface Props {
 	className?: string;
@@ -27,9 +57,31 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
 	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
+	const [typeFilter, setTypeFilter] = useState("all");
+	const [statusFilter, setStatusFilter] = useState<OrderHistoryStatusFilter>("all");
+
+	const filteredOrders = orders.filter(
+		(entry) =>
+			(typeFilter === "all" || entry.order.orderType === typeFilter) &&
+			(statusFilter === "all" || getOrderHistoryStatusFilter(entry.status) === statusFilter),
+	);
+	const typeOptions = [
+		{ value: "all", label: t`All types` },
+		...Array.from(new Set(orders.map((entry) => entry.order.orderType))).map((value) => ({
+			value,
+			label: getOrderTypeLabel(value),
+		})),
+	];
+	const availableStatusFilters = new Set(orders.map((entry) => getOrderHistoryStatusFilter(entry.status)));
+	const statusOptions = [
+		{ value: "all", label: t`All statuses` },
+		...(["open", "filled", "triggered", "canceled", "rejected", "other"] as const)
+			.filter((value) => availableStatusFilters.has(value))
+			.map((value) => ({ value, label: getStatusFilterLabel(value) })),
+	];
 
 	const headerCount = isConnected ? (
-		<Plural value={orders.length} one="# order" other="# orders" />
+		<Plural value={filteredOrders.length} one="# order" other="# orders" />
 	) : (
 		FALLBACK_VALUE_PLACEHOLDER
 	);
@@ -42,7 +94,51 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 
 	function handleSetAllExpanded(expanded: boolean) {
 		setExpandedByKey(
-			Object.fromEntries(orders.map((entry) => [`${entry.order.oid}-${entry.statusTimestamp}`, expanded])),
+			Object.fromEntries(filteredOrders.map((entry) => [`${entry.order.oid}-${entry.statusTimestamp}`, expanded])),
+		);
+	}
+
+	function getStatusFilterLabel(filter: Exclude<OrderHistoryStatusFilter, "all">) {
+		if (filter === "open") return t`Open`;
+		if (filter === "filled") return t`Filled`;
+		if (filter === "triggered") return t`Triggered`;
+		if (filter === "canceled") return t`Canceled`;
+		if (filter === "rejected") return t`Rejected`;
+		return t`Other`;
+	}
+
+	function handleExportCsv() {
+		downloadCsv(
+			"order_history.csv",
+			buildCsvRows(filteredOrders, [
+				{
+					header: t`Time`,
+					getValue: (entry) => formatDateTime(entry.order.timestamp, { dateStyle: "short", timeStyle: "short" }),
+				},
+				{ header: t`Asset`, getValue: (entry) => entry.order.coin },
+				{
+					header: t`Direction`,
+					getValue: (entry) => getOrderSideLabel(entry.order.side, entry.order.reduceOnly),
+				},
+				{ header: t`Type`, getValue: (entry) => getOrderTypeLabel(entry.order.orderType) },
+				{ header: t`Price`, getValue: (entry) => formatUSD(entry.order.limitPx, { compact: false }) },
+				{
+					header: t`Trigger Price`,
+					getValue: (entry) =>
+						hasTriggerPrice(entry.order)
+							? formatUSD(entry.order.triggerPx, { compact: false })
+							: FALLBACK_VALUE_PLACEHOLDER,
+				},
+				{
+					header: t`Size`,
+					getValue: (entry) => formatToken(entry.order.origSz, markets.getMarket(entry.order.coin)?.szDecimals),
+				},
+				{ header: t`Status`, getValue: (entry) => getHistoricalOrderStatusLabel(entry.status) },
+				{
+					header: t`Updated`,
+					getValue: (entry) => formatDateTime(entry.statusTimestamp, { dateStyle: "short", timeStyle: "short" }),
+				},
+			]),
 		);
 	}
 
@@ -74,11 +170,31 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 	return (
 		<Skeleton name="orders-history-tab" loading={status === "loading" || status === "idle"}>
 			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-				<div className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-market-close-stroke-card px-3.5">
-					<span className="min-w-0 flex-1 truncate text-[11px] text-market-close-muted tabular-nums">
+				<div className="flex min-h-11 shrink-0 items-center gap-2 overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					<span className="sr-only" aria-live="polite">
 						{headerCount}
 					</span>
-					<div className="flex shrink-0 items-center gap-3">
+					<Select
+						size="xxs"
+						label={t`Order type`}
+						value={typeFilter}
+						onValueChange={(value) => setTypeFilter(value ?? "all")}
+						options={typeOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName="min-h-11 rounded-[7px] border-market-close-stroke-card bg-modal"
+					/>
+					<Select
+						size="xxs"
+						label={t`Order status`}
+						value={statusFilter}
+						onValueChange={(value) => {
+							if (isOrderHistoryStatusFilter(value)) setStatusFilter(value);
+						}}
+						options={statusOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName="min-h-11 rounded-[7px] border-market-close-stroke-card bg-modal"
+					/>
+					<div className="ml-auto flex shrink-0 items-center gap-2">
 						<button
 							type="button"
 							onClick={() => handleSetAllExpanded(true)}
@@ -101,7 +217,12 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 						!isPageScroll && "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
 					)}
 				>
-					{orders.map((entry, index) => {
+					{filteredOrders.length === 0 ? (
+						<div className="flex min-h-28 items-center justify-center text-center text-sm text-market-close-muted">
+							{t`No orders match these filters.`}
+						</div>
+					) : null}
+					{filteredOrders.map((entry, index) => {
 						const { order } = entry;
 						const marketName = order.coin;
 						const cardKey = `${order.oid}-${entry.statusTimestamp}`;
@@ -227,6 +348,17 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 							</article>
 						);
 					})}
+					<div className="flex shrink-0 items-center gap-4" data-testid="mobile-order-history-footer">
+						<button
+							type="button"
+							disabled={filteredOrders.length === 0}
+							onClick={handleExportCsv}
+							className="inline-flex min-h-11 items-center gap-1.5 text-xs text-market-close-muted transition-colors duration-[120ms] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle"
+						>
+							<DownloadSimpleIcon className="size-3.5" aria-hidden="true" />
+							{t`Export CSV`}
+						</button>
+					</div>
 				</div>
 			</div>
 		</Skeleton>

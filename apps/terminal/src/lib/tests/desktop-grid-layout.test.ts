@@ -86,8 +86,9 @@ describe("desktop grid layout", () => {
 			y: 20.6,
 			w: 10,
 			h: 30.4,
+			minW: 10,
 			maxW: 10,
-			resizeHandles: ["e", "s", "se"],
+			resizeHandles: ["s"],
 		});
 		expect((compactAccountTable?.y ?? 0) + (compactAccountTable?.h ?? 0)).toBeCloseTo(compactRightColumnBottom);
 	});
@@ -100,6 +101,16 @@ describe("desktop grid layout", () => {
 
 		const restoredChart = readDesktopGridLayouts().lg?.find((item) => item.i === "chart");
 		expect(restoredChart).toMatchObject({ x: 0, w: 9, minW: 4 });
+	});
+
+	it("resets a previously narrowed compact account table to the fixed column width", () => {
+		const md = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.map((item) =>
+			item.i === "accountTable" ? { ...item, w: 8, minW: 4 } : item,
+		);
+		writeDesktopGridLayouts({ ...DEFAULT_DESKTOP_GRID_LAYOUTS, md });
+
+		const restoredAccountTable = readDesktopGridLayouts().md?.find((item) => item.i === "accountTable");
+		expect(restoredAccountTable).toMatchObject({ x: 0, w: 10, minW: 10, maxW: 10 });
 	});
 
 	it("rejects stored geometry that exceeds the active column bounds", () => {

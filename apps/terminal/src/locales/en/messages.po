@@ -13,8 +13,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. placeholder {0}: orders.length
+#. placeholder {0}: filteredOrders.length
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 msgid "{0, plural, one {# order} other {# orders}}"
 msgstr "{0, plural, one {# order} other {# orders}}"
 
@@ -192,9 +193,9 @@ msgstr "Account activity"
 msgid "Account and wallet"
 msgstr "Account and wallet"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Account Equity"
-#~ msgstr "Account Equity"
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Account Equity"
+msgstr "Account Equity"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
@@ -351,9 +352,27 @@ msgstr "All cross positions share the same cross margin as collateral. In the ev
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 
+#: src/components/trade/positions/orders-tab.tsx
+msgid "All Directions"
+msgstr "All Directions"
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "All statuses"
+msgstr "All statuses"
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "All Time"
 msgstr "All Time"
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "All types"
+msgstr "All types"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "All Types"
+msgstr "All Types"
 
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
@@ -448,9 +467,15 @@ msgstr "Approving a new mobile key replaces the previous mobile key."
 msgid "Arbitrum network switch was rejected."
 msgstr "Arbitrum network switch was rejected."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -658,6 +683,7 @@ msgstr "Builder Fee"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -742,7 +768,9 @@ msgstr "Cancel selected orders"
 #~ msgid "Cancel TWAP order"
 #~ msgstr "Cancel TWAP order"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Canceled"
@@ -941,6 +969,7 @@ msgstr "Collapse {marketName} history details"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Collapse all"
 msgstr "Collapse all"
@@ -1154,6 +1183,7 @@ msgstr "Connect your wallet to send funds."
 msgid "Connect your wallet to transfer funds."
 msgstr "Connect your wallet to transfer funds."
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "Connect your wallet to view balances."
@@ -1342,6 +1372,11 @@ msgstr "Create phone access"
 #~ msgid "Create secure phone access for trading from this account."
 #~ msgstr "Create secure phone access for trading from this account."
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Create TWAP"
+msgstr "Create TWAP"
+
 #: src/config/account-ledger.ts
 msgid "Create Vault"
 msgstr "Create Vault"
@@ -1399,6 +1434,11 @@ msgstr "CSV export reached the history limit. Some older records were not includ
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "CSV exported."
 msgstr "CSV exported."
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Cumulative funding"
+msgstr "Cumulative funding"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
@@ -1463,8 +1503,10 @@ msgstr "Deployer"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1602,9 +1644,13 @@ msgstr "Destination address"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -1651,6 +1697,7 @@ msgstr "Display"
 #~ msgid "Displays the mobile sidebar."
 #~ msgstr "Displays the mobile sidebar."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Distance to mark {markDistanceLabel}"
 msgstr "Distance to mark {markDistanceLabel}"
@@ -1940,6 +1987,7 @@ msgstr "Expand {marketName} history details"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Expand all"
 msgstr "Expand all"
@@ -1966,7 +2014,13 @@ msgid "Explorer"
 msgstr "Explorer"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 msgid "Export CSV"
 msgstr "Export CSV"
 
@@ -2143,7 +2197,9 @@ msgstr "Favorites"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
@@ -2182,6 +2238,8 @@ msgstr "Fees are higher than the bridge amount."
 msgid "Fill status"
 msgstr "Fill status"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
@@ -2556,6 +2614,7 @@ msgstr "Leverage"
 #~ msgid "limit"
 #~ msgstr "limit"
 
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2628,6 +2687,8 @@ msgid "Liq. Price"
 msgstr "Liq. Price"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
 msgid "Liquidated"
@@ -2635,6 +2696,7 @@ msgstr "Liquidated"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Liquidation Price"
 msgstr "Liquidation Price"
@@ -2796,6 +2858,10 @@ msgstr "Mainnet"
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Maintenance Margin"
 msgstr "Maintenance Margin"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Maintenance Margin Ratio"
+msgstr "Maintenance Margin Ratio"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Manage TP/SL"
@@ -3358,6 +3424,15 @@ msgstr "No open orders."
 msgid "No order history found."
 msgstr "No order history found."
 
+#: src/components/trade/positions/orders-tab.tsx
+msgid "No orders match the selected filters."
+msgstr "No orders match the selected filters."
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "No orders match these filters."
+msgstr "No orders match these filters."
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No positions match the selected filters."
@@ -3463,6 +3538,8 @@ msgstr "Only scan a QR displayed by this terminal on your desktop."
 #~ msgid "open"
 #~ msgstr "open"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
 msgstr "Open"
@@ -3623,6 +3700,11 @@ msgstr "Order modification submitted. Waiting for the open-orders update."
 msgid "Order Queue"
 msgstr "Order Queue"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "Order status"
+msgstr "Order status"
+
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Order submitted"
 msgstr "Order submitted"
@@ -3638,6 +3720,8 @@ msgstr "Order submitted"
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "Order submitted. Confirming exchange status; do not retry."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Order type"
 msgstr "Order type"
@@ -3660,7 +3744,6 @@ msgstr "Order will exist only as a limit order on the book. Also known as post-o
 msgid "Order will rest until filled or canceled."
 msgstr "Order will rest until filled or canceled."
 
-#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "orders"
 msgstr "orders"
@@ -3684,6 +3767,8 @@ msgstr "Orders with linked TP/SL orders cannot be modified here."
 msgid "Original Size"
 msgstr "Original Size"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3753,6 +3838,8 @@ msgstr "partial"
 #~ msgstr "Paste WalletConnect URI"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "Payment"
@@ -3898,8 +3985,10 @@ msgstr "Platform"
 
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "PNL"
 msgstr "PNL"
@@ -3956,6 +4045,8 @@ msgid "Portfolio Value"
 msgstr "Portfolio Value"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Position"
@@ -4065,11 +4156,15 @@ msgstr "Press and hold for 4 seconds"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -4168,6 +4263,8 @@ msgstr "Randomize timing"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "Rate"
@@ -4275,6 +4372,8 @@ msgstr "Refresh quote"
 #~ msgid "Register Builder Code"
 #~ msgstr "Register Builder Code"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "Rejected"
@@ -4686,6 +4785,7 @@ msgstr "Selected wallet does not match the connected account. Reconnect your wal
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4892,8 +4992,10 @@ msgstr "Signing..."
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -4902,6 +5004,8 @@ msgstr "Signing..."
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -5107,7 +5211,9 @@ msgid "Starting camera..."
 msgstr "Starting camera..."
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Status"
 msgstr "Status"
@@ -5815,13 +5921,19 @@ msgid "TIF"
 msgstr "TIF"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
@@ -5897,8 +6009,13 @@ msgid "Total"
 msgstr "Total"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "Total balance"
-msgstr "Total balance"
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Total assets"
+msgstr "Total assets"
+
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#~ msgid "Total balance"
+#~ msgstr "Total balance"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
@@ -5947,6 +6064,10 @@ msgstr "TP Price"
 #: src/config/ui-text.ts
 msgid "TP/SL"
 msgstr "TP/SL"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "TP/SL orders updated"
+msgstr "TP/SL orders updated"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Track on LI.FI Explorer"
@@ -6046,6 +6167,11 @@ msgstr "Trading key approved"
 msgid "Traditional Finance"
 msgstr "Traditional Finance"
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+msgid "Transaction"
+msgstr "Transaction"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "Transaction breakdown"
@@ -6103,6 +6229,7 @@ msgstr "Transfers between Spot and Perps are unavailable in unified account mode
 #~ msgstr "Trending"
 
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
@@ -6119,7 +6246,9 @@ msgstr "Trigger order must reduce your current position"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
 msgstr "Trigger Price"
@@ -6132,6 +6261,8 @@ msgstr "Trigger Price"
 msgid "Trigger size exceeds position size"
 msgstr "Trigger size exceeds position size"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Triggered"
 msgstr "Triggered"
@@ -6204,8 +6335,10 @@ msgstr "Two-sided open interest: the sum of long and short positions on this con
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Type"
@@ -6326,6 +6459,8 @@ msgid "Update failed"
 msgstr "Update failed"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -6586,9 +6721,10 @@ msgstr "Withdraw"
 msgid "Withdraw to Arbitrum"
 msgstr "Withdraw to Arbitrum"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Withdrawable"
-#~ msgstr "Withdrawable"
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Withdrawable"
+msgstr "Withdrawable"
 
 #: src/config/account-ledger.ts
 msgid "Withdrawal"

@@ -1,11 +1,13 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
+import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
+import { DownloadSimpleIcon } from "@phosphor-icons/react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { buildCsvRows, downloadCsv } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
@@ -41,6 +43,32 @@ export function FundingTab() {
 	const headerTotal = formatUSD(totalFunding, { signDisplay: "exceptZero" });
 	const headerClass = totalFunding === null ? "text-fg-muted" : getValueColorClass(totalFunding);
 
+	function handleExportCsv() {
+		downloadCsv(
+			"funding_history.csv",
+			buildCsvRows(updates, [
+				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time) },
+				{ header: t`Asset`, getValue: (update) => update.coin },
+				{
+					header: t`Position`,
+					getValue: (update) => {
+						const market = markets.getMarket(update.coin);
+						return formatToken(getToolbarAbsoluteSize(update.szi), {
+							decimals: market?.szDecimals,
+							symbol: market?.shortName,
+						});
+					},
+				},
+				{
+					header: t`Rate`,
+					getValue: (update) =>
+						formatPercent(update.fundingRate, { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
+				},
+				{ header: t`Payment`, getValue: (update) => formatToken(update.usdc, { symbol: "USDC" }) },
+			]),
+		);
+	}
+
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view funding payments.`}</Placeholder>;
 		if (status === "subscribing" || status === "idle")
@@ -63,7 +91,9 @@ export function FundingTab() {
 		<div className={positionsPanelTabRootClass}>
 			<div className={positionsPanelTableCaptionRowClass}>
 				{isConnected && status === "active" ? (
-					<span className={cn("tabular-nums text-3xs font-medium", headerClass)}>{headerTotal}</span>
+					<span className="text-3xs text-fg-muted">
+						{t`Cumulative funding`} <span className={cn("font-medium tabular-nums", headerClass)}>{headerTotal}</span>
+					</span>
 				) : null}
 			</div>
 			<div className={positionsPanelTableShellClass}>
@@ -155,6 +185,20 @@ export function FundingTab() {
 					</ScrollArea>
 				)}
 			</div>
+			{isConnected && status === "active" ? (
+				<div className="flex shrink-0 items-center gap-4 px-5 py-2.5" data-testid="funding-history-footer">
+					<Button
+						variant="ghost"
+						intent="neutral"
+						size="xxs"
+						disabled={updates.length === 0}
+						onClick={handleExportCsv}
+						iconLeft={<DownloadSimpleIcon className="size-3" aria-hidden="true" />}
+					>
+						{t`Export CSV`}
+					</Button>
+				</div>
+			) : null}
 		</div>
 	);
 }

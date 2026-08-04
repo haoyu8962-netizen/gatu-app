@@ -14,7 +14,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { type Position, useExchange, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
-import { isPositive, toBig, toNumber } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
 import { areTpSlOrderInfosEqual, buildTpSlOrdersByCoin, type TpSlOrderInfo } from "@/lib/trade/open-orders";
 import { validateSlPrice, validateTpPrice } from "@/lib/trade/tpsl";
 import { getValueColorClass } from "@/lib/ui/value-color";
@@ -56,9 +56,9 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 	const { getPosition, isLoading: positionLoading, hasError: positionError } = useUserPositions();
 	const { getMarketInfo } = useMarketsInfo();
 	const currentPosition = getPosition(position.coin, position.dex);
-	const marketMarkPx = toNumber(getMarketInfo(position.coin)?.markPx);
+	const marketMarkPx = getMarketInfo(position.coin)?.markPx;
 	const { data: liveAssetCtx } = useSubscription("activeAssetCtx", { coin: position.coin }, { enabled: open });
-	const liveMarkPx = toNumber(liveAssetCtx?.ctx?.markPx) ?? marketMarkPx;
+	const liveMarkPx = liveAssetCtx?.ctx?.markPx ?? marketMarkPx ?? null;
 	const { data: openOrdersEvent, status: openOrdersStatus } = useSubscription(
 		"openOrders",
 		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
@@ -154,7 +154,7 @@ interface FormProps {
 	isMobile: boolean;
 	positionRef: TpSlPositionRef;
 	position: Position;
-	markPx: number | null;
+	markPx: string | null;
 	currentTpSlInfo: TpSlOrderInfo | undefined;
 	liveDataReady: boolean;
 	liveDataMessage: string | null;
@@ -177,8 +177,8 @@ function PositionTpSlForm({
 	const [initialSlPrice] = useState(currentTpSlInfo?.slPrice);
 	const [initialTpOrderId] = useState(currentTpSlInfo?.tpOrderId);
 	const [initialSlOrderId] = useState(currentTpSlInfo?.slOrderId);
-	const [tpPriceInput, setTpPriceInput] = useState(initialTpPrice ? initialTpPrice.toFixed(decimals) : "");
-	const [slPriceInput, setSlPriceInput] = useState(initialSlPrice ? initialSlPrice.toFixed(decimals) : "");
+	const [tpPriceInput, setTpPriceInput] = useState(() => toBig(initialTpPrice)?.toFixed(decimals) ?? "");
+	const [slPriceInput, setSlPriceInput] = useState(() => toBig(initialSlPrice)?.toFixed(decimals) ?? "");
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [requiresRefresh, setRequiresRefresh] = useState(false);
 
@@ -187,12 +187,12 @@ function PositionTpSlForm({
 	const { mutateAsync: cancelOrders, isPending: isCancelling, error: cancelError } = useExchange("cancel");
 	const isSubmitting = isPlacing || isModifying || isCancelling;
 
-	const signedSize = toNumber(position.szi) ?? 0;
-	const isLong = signedSize > 0;
-	const size = Math.abs(signedSize);
-	const entryPx = toNumber(position.entryPx) ?? 0;
-	const unrealizedPnl = toNumber(position.unrealizedPnl) ?? 0;
-	const roe = toNumber(position.returnOnEquity) ?? 0;
+	const signedSize = toBig(position.szi);
+	const isLong = signedSize?.gt(0) ?? false;
+	const size = signedSize?.abs().toString() ?? "0";
+	const entryPx = position.entryPx;
+	const unrealizedPnl = position.unrealizedPnl;
+	const roe = position.returnOnEquity;
 	const leverage = position.leverage.value;
 	const side = isLong ? "buy" : "sell";
 
@@ -205,17 +205,17 @@ function PositionTpSlForm({
 	const positionChanged = isLong !== positionRef.isLong;
 	const ordersChanged = !areTpSlOrderInfosEqual(initialTpSlInfo, currentTpSlInfo);
 
-	const tpPriceNum = toNumber(tpPriceInput);
-	const slPriceNum = toNumber(slPriceInput);
-	const hasTp = isPositive(tpPriceNum);
-	const hasSl = isPositive(slPriceNum);
+	const tpPriceValue = toBig(tpPriceInput);
+	const slPriceValue = toBig(slPriceInput);
+	const hasTp = tpPriceValue?.gt(0) ?? false;
+	const hasSl = slPriceValue?.gt(0) ?? false;
 	const updatePlan = buildPositionTpSlUpdatePlan({
 		kind: "positionTpsl",
 		assetId: positionRef.assetId,
 		szDecimals: positionRef.szDecimals,
 		isLong,
-		tpPriceNum: hasTp ? tpPriceNum : null,
-		slPriceNum: hasSl ? slPriceNum : null,
+		tpPriceNum: hasTp ? tpPriceInput : null,
+		slPriceNum: hasSl ? slPriceInput : null,
 		existingTpPrice: currentTpSlInfo?.tpPrice,
 		existingSlPrice: currentTpSlInfo?.slPrice,
 		existingTpOrderId: currentTpSlInfo?.tpOrderId,
@@ -223,9 +223,9 @@ function PositionTpSlForm({
 	});
 	const tpNeedsMark = hasPositionTpSlTriggerMutation(updatePlan, "tp");
 	const slNeedsMark = hasPositionTpSlTriggerMutation(updatePlan, "sl");
-	const markReady = isPositive(markPx);
-	const tpValid = !tpNeedsMark || (markReady && validateTpPrice(markPx, tpPriceNum, side));
-	const slValid = !slNeedsMark || (markReady && validateSlPrice(markPx, slPriceNum, side));
+	const markReady = toBig(markPx)?.gt(0) ?? false;
+	const tpValid = !tpNeedsMark || (markReady && validateTpPrice(markPx, tpPriceInput, side));
+	const slValid = !slNeedsMark || (markReady && validateSlPrice(markPx, slPriceInput, side));
 	const dataChanged = positionChanged || ordersChanged;
 	const canSubmit =
 		updatePlan.hasChanges && tpValid && slValid && !dataChanged && !requiresRefresh && liveDataReady && !isSubmitting;
@@ -274,6 +274,7 @@ function PositionTpSlForm({
 				const result = await cancelOrders({ cancels: updatePlan.cancels });
 				throwIfAnyResponseError(result.response?.data?.statuses);
 			}
+			toast.success(t`TP/SL orders updated`);
 			onOpenChange(false);
 		} catch (err) {
 			const message = err instanceof Error ? err.message : t`Failed to update TP/SL orders`;
@@ -328,6 +329,12 @@ function PositionTpSlForm({
 						valueClassName={cn("font-medium", markReady ? "text-warning" : "text-fg-muted")}
 					/>
 					<InfoRow
+						className="p-0"
+						label={t`Liquidation Price`}
+						value={formatPrice(position.liquidationPx, { szDecimals: positionRef.szDecimals })}
+						valueClassName="font-medium"
+					/>
+					<InfoRow
 						className="p-0 border-t border-stroke-weak pt-3"
 						label={t`Unrealized P&L`}
 						value={
@@ -357,6 +364,7 @@ function PositionTpSlForm({
 					leverage={leverage}
 					triggerValidationPrice={markPx}
 					mobileTouchSafe
+					preserveFinancialPrecision
 				/>
 
 				{guardMessage && (

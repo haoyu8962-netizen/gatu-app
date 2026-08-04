@@ -1,4 +1,15 @@
-import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
+import {
+	Button,
+	Checkbox,
+	Select,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+	Tooltip,
+} from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { PencilIcon } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState } from "react";
@@ -16,7 +27,12 @@ import {
 	openOrderModifyParamsEqual,
 } from "@/domain/trade/open-order-modification";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
-import { getToolbarOrderMetrics } from "@/domain/trade/trading-toolbar-metrics";
+import {
+	getToolbarOrderMetrics,
+	matchesToolbarOrderFilters,
+	type ToolbarOrderDirectionFilter,
+	type ToolbarOrderTypeFilter,
+} from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -114,6 +130,8 @@ export function OrdersTab() {
 	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
 	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
 	const [cancelAllOpen, setCancelAllOpen] = useState(false);
+	const [orderTypeFilter, setOrderTypeFilter] = useState<ToolbarOrderTypeFilter>("all");
+	const [orderDirectionFilter, setOrderDirectionFilter] = useState<ToolbarOrderDirectionFilter>("all");
 	const [cancelValidationError, setCancelValidationError] = useState<string | null>(null);
 	const [editTarget, setEditTarget] = useState<OpenOrderModifyTarget | null>(null);
 	const [editValue, setEditValue] = useState("");
@@ -268,21 +286,31 @@ export function OrdersTab() {
 	}, []);
 
 	const openIds = new Set(openOrders.map((order) => order.oid));
+	const displayedOrders = openOrders.filter((order) =>
+		matchesToolbarOrderFilters(order, orderTypeFilter, orderDirectionFilter),
+	);
 	const validSelectedIds = new Set<number>();
 	for (const id of selectedOrderIds) {
 		if (openIds.has(id)) validSelectedIds.add(id);
 	}
 
 	const selectedCount = validSelectedIds.size;
-	const allSelected = selectedCount > 0 && selectedCount === openOrders.length;
-	const someSelected = selectedCount > 0 && selectedCount < openOrders.length;
+	const displayedSelectedCount = displayedOrders.reduce(
+		(count, order) => count + (validSelectedIds.has(order.oid) ? 1 : 0),
+		0,
+	);
+	const allSelected = displayedOrders.length > 0 && displayedSelectedCount === displayedOrders.length;
+	const someSelected = displayedSelectedCount > 0 && displayedSelectedCount < displayedOrders.length;
 
 	function handleToggleAll(value: boolean | "indeterminate") {
-		if (value === true) {
-			setSelectedOrderIds(new Set(openOrders.map((order) => order.oid)));
-		} else {
-			setSelectedOrderIds(new Set());
-		}
+		setSelectedOrderIds((current) => {
+			const next = new Set(current);
+			for (const order of displayedOrders) {
+				if (value === true) next.add(order.oid);
+				else next.delete(order.oid);
+			}
+			return next;
+		});
 	}
 
 	function handleToggleOrder(orderId: number, value: boolean | "indeterminate") {
@@ -602,7 +630,30 @@ export function OrdersTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className={positionsPanelTableCaptionRowClass}>
+			<div className={cn(positionsPanelTableCaptionRowClass, "min-h-9 flex-wrap")}>
+				<Select
+					size="xxs"
+					value={orderTypeFilter}
+					onValueChange={(value) => setOrderTypeFilter((value as ToolbarOrderTypeFilter | null) ?? "all")}
+					options={[
+						{ value: "all", label: t`All Types` },
+						{ value: "limit", label: t`Limit` },
+						{ value: "trigger", label: t`Trigger` },
+					]}
+					triggerClassName="min-w-[6.5rem] !rounded-[7px] border-market-close-stroke-card bg-surface"
+					className="mr-auto"
+				/>
+				<Select
+					size="xxs"
+					value={orderDirectionFilter}
+					onValueChange={(value) => setOrderDirectionFilter((value as ToolbarOrderDirectionFilter | null) ?? "all")}
+					options={[
+						{ value: "all", label: t`All Directions` },
+						{ value: "buy", label: t`Buy` },
+						{ value: "sell", label: t`Sell` },
+					]}
+					triggerClassName="min-w-[7rem] !rounded-[7px] border-market-close-stroke-card bg-surface"
+				/>
 				{isConnected ? (
 					<span className="tabular-nums text-3xs text-fg-muted">
 						{openOrders.length} {t`orders`}
@@ -642,148 +693,151 @@ export function OrdersTab() {
 				</div>
 			) : null}
 			<div className={positionsPanelTableShellClass}>
-				{placeholder ?? (
-					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[84rem] w-full">
-							<TableHeader className={positionsPanelTableHeaderClass}>
-								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-10 px-2 text-center")}
-									>
-										<Checkbox
-											checked={allSelected}
-											indeterminate={someSelected && !allSelected}
-											onCheckedChange={handleToggleAll}
-											aria-label={t`Select all orders`}
-											disabled={openOrders.length === 0}
-										/>
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-28 px-2 text-left")}
-									>
-										{t`Time`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-left")}
-									>
-										{t`Type`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-left")}
-									>
-										{t`Market`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-20 px-2 text-left")}
-									>
-										{t`Direction`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-36 px-2 text-right")}
-									>
-										{t`Size`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-right")}
-									>
-										{t`Original Size`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-28 px-2 text-right")}
-									>
-										{t`Order Value`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-right")}
-									>
-										{t`Price`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-20 px-2 text-left")}
-									>
-										{t`Reduce Only`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-48 px-2 text-left")}
-									>
-										{t`Trigger Condition`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-32 px-2 text-left")}
-									>
-										{t`TP/SL`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-20 px-2 text-right")}
-									>
-										{t`Actions`}
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody className={positionsPanelTableBodyClass}>
-								{openOrders.map((order, i) => {
-									const marketInfo = getMarketInfo(order.coin);
-									return (
-										<OrderRow
-											key={order.oid}
-											order={order}
-											szDecimals={markets.getSzDecimals(order.coin)}
-											markPx={marketInfo?.markPx ?? ""}
-											isSelected={validSelectedIds.has(order.oid)}
-											isCancelling={cancellingOids.has(order.oid)}
-											editField={editTarget?.order.oid === order.oid ? editTarget.field : null}
-											editValue={editValue}
-											editDisabled={
-												isModifyLocked ||
-												unconfirmedModifyOid !== null ||
-												pendingScopes.size > 0 ||
-												cancellingOids.has(order.oid)
-											}
-											editInvalid={editTarget?.order.oid === order.oid && !!modifyValidationError}
-											editErrorId={modifyActionErrorId}
-											cancelDisabled={isModifyLocked || pendingScopes.size > 0 || cancellingOids.has(order.oid)}
-											isEven={i % 2 === 1}
-											onToggle={handleToggleOrder}
-											onCancel={handleCancelRow}
-											onSelectMarket={handleSelectMarket}
-											onStartEdit={handleStartEdit}
-											onEditValueChange={handleEditValueChange}
-											onCancelEdit={handleCancelEdit}
-											onConfirmEdit={handleConfirmEdit}
-										/>
-									);
-								})}
-							</TableBody>
-						</Table>
-						<ScrollBar orientation="horizontal" />
-					</ScrollArea>
-				)}
+				{placeholder ??
+					(displayedOrders.length === 0 ? (
+						<Placeholder>{t`No orders match the selected filters.`}</Placeholder>
+					) : (
+						<ScrollArea className="h-full w-full">
+							<Table className="table-fixed min-w-[84rem] w-full">
+								<TableHeader className={positionsPanelTableHeaderClass}>
+									<TableRow className={positionsPanelTableHeaderRowClass}>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-10 px-2 text-center")}
+										>
+											<Checkbox
+												checked={allSelected}
+												indeterminate={someSelected && !allSelected}
+												onCheckedChange={handleToggleAll}
+												aria-label={t`Select all orders`}
+												disabled={displayedOrders.length === 0}
+											/>
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-28 px-2 text-left")}
+										>
+											{t`Time`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-left")}
+										>
+											{t`Type`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-left")}
+										>
+											{t`Market`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-20 px-2 text-left")}
+										>
+											{t`Direction`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-36 px-2 text-right")}
+										>
+											{t`Size`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-right")}
+										>
+											{t`Original Size`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-28 px-2 text-right")}
+										>
+											{t`Order Value`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-right")}
+										>
+											{t`Price`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-20 px-2 text-left")}
+										>
+											{t`Reduce Only`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-48 px-2 text-left")}
+										>
+											{t`Trigger Condition`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-32 px-2 text-left")}
+										>
+											{t`TP/SL`}
+										</TableHead>
+										<TableHead
+											scope="col"
+											size="dense"
+											className={cn(positionsPanelTableHeadClass, "w-20 px-2 text-right")}
+										>
+											{t`Actions`}
+										</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody className={positionsPanelTableBodyClass}>
+									{displayedOrders.map((order, i) => {
+										const marketInfo = getMarketInfo(order.coin);
+										return (
+											<OrderRow
+												key={order.oid}
+												order={order}
+												szDecimals={markets.getSzDecimals(order.coin)}
+												markPx={marketInfo?.markPx ?? ""}
+												isSelected={validSelectedIds.has(order.oid)}
+												isCancelling={cancellingOids.has(order.oid)}
+												editField={editTarget?.order.oid === order.oid ? editTarget.field : null}
+												editValue={editValue}
+												editDisabled={
+													isModifyLocked ||
+													unconfirmedModifyOid !== null ||
+													pendingScopes.size > 0 ||
+													cancellingOids.has(order.oid)
+												}
+												editInvalid={editTarget?.order.oid === order.oid && !!modifyValidationError}
+												editErrorId={modifyActionErrorId}
+												cancelDisabled={isModifyLocked || pendingScopes.size > 0 || cancellingOids.has(order.oid)}
+												isEven={i % 2 === 1}
+												onToggle={handleToggleOrder}
+												onCancel={handleCancelRow}
+												onSelectMarket={handleSelectMarket}
+												onStartEdit={handleStartEdit}
+												onEditValueChange={handleEditValueChange}
+												onCancelEdit={handleCancelEdit}
+												onConfirmEdit={handleConfirmEdit}
+											/>
+										);
+									})}
+								</TableBody>
+							</Table>
+							<ScrollBar orientation="horizontal" />
+						</ScrollArea>
+					))}
 			</div>
 			<CancelAllOrdersModal
 				open={cancelAllOpen}

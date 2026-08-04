@@ -30,7 +30,7 @@ export function CancelAllOrdersModal({ open, orderCount, isSubmitting, errorMess
 			showClose={false}
 			showHandle={isMobile}
 			handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
-			overlayClassName="!transition-none data-starting-style:!opacity-100 data-ending-style:!opacity-100"
+			overlayClassName="!bg-scrim/60 !backdrop-blur-none !transition-none data-starting-style:!opacity-100 data-ending-style:!opacity-100"
 			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[18px] !border-0 !bg-modal !shadow-none !transition-none data-starting-style:!translate-y-0 data-starting-style:!scale-100 data-starting-style:!opacity-100 data-ending-style:!translate-y-0 data-ending-style:!scale-100 data-ending-style:!opacity-100 min-[1001px]:max-w-[21.25rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay"
 		>
 			<ModalHeader

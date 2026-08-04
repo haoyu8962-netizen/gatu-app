@@ -1,11 +1,13 @@
 import { Plural, useLingui } from "@lingui/react/macro";
-import { ArrowSquareOutIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { cn } from "@/lib/cn";
+import { buildCsvRows, downloadCsv } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { toNumber } from "@/lib/trade/numbers";
@@ -43,6 +45,36 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 
 	function handleSetAllExpanded(expanded: boolean) {
 		setExpandedByKey(Object.fromEntries(fills.map((fill) => [`${fill.hash}-${fill.tid}`, expanded])));
+	}
+
+	function getDirectionLabel(direction: string) {
+		if (direction === "Open Long") return t`Open Long`;
+		if (direction === "Close Long") return t`Close Long`;
+		if (direction === "Open Short") return t`Open Short`;
+		if (direction === "Close Short") return t`Close Short`;
+		return direction;
+	}
+
+	function handleExportCsv() {
+		downloadCsv(
+			"trade_history.csv",
+			buildCsvRows(fills, [
+				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
+				{ header: t`Asset`, getValue: (fill) => fill.coin },
+				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
+				{ header: t`Price`, getValue: (fill) => formatUSD(fill.px) },
+				{ header: t`Size`, getValue: (fill) => formatNumber(fill.sz, markets.getSzDecimals(fill.coin)) },
+				{ header: t`Fee`, getValue: (fill) => formatToken(fill.fee, { symbol: fill.feeToken }) },
+				{
+					header: t`PNL`,
+					getValue: (fill) => {
+						const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+						return closedPnl ? formatUSD(closedPnl, { signDisplay: "exceptZero" }) : FALLBACK_VALUE_PLACEHOLDER;
+					},
+				},
+				{ header: t`Transaction`, getValue: (fill) => fill.hash },
+			]),
+		);
 	}
 
 	if (!isConnected) {
@@ -109,16 +141,7 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 						const showPnl = closedPnl !== null && closedPnl !== 0;
 						const isLiquidation = !!fill.liquidation;
 						const isBuy = fill.dir.startsWith("Open Long") || fill.dir.startsWith("Close Short");
-						const directionLabel =
-							fill.dir === "Open Long"
-								? t`Open Long`
-								: fill.dir === "Close Long"
-									? t`Close Long`
-									: fill.dir === "Open Short"
-										? t`Open Short`
-										: fill.dir === "Close Short"
-											? t`Close Short`
-											: fill.dir;
+						const directionLabel = getDirectionLabel(fill.dir);
 						const explorerUrl = getExplorerTxUrl(fill.hash, isTestnet);
 						const sizeDisplay = formatNumber(fill.sz, markets.getSzDecimals(fill.coin));
 
@@ -250,6 +273,16 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 							</article>
 						);
 					})}
+					<div className="flex shrink-0 items-center gap-4" data-testid="mobile-trade-history-footer">
+						<button
+							type="button"
+							onClick={handleExportCsv}
+							className="inline-flex min-h-11 items-center gap-1.5 text-xs text-market-close-muted transition-colors duration-[120ms] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+						>
+							<DownloadSimpleIcon className="size-3.5" aria-hidden="true" />
+							{t`Export CSV`}
+						</button>
+					</div>
 				</div>
 			</div>
 		</Skeleton>

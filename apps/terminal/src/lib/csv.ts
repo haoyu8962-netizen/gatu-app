@@ -8,6 +8,15 @@ export function serializeCsv(rows: readonly (readonly string[])[]): string {
 	return rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n");
 }
 
+interface CsvColumn<T> {
+	header: string;
+	getValue: (row: T) => string;
+}
+
+export function buildCsvRows<T>(rows: readonly T[], columns: readonly CsvColumn<T>[]): string[][] {
+	return [columns.map((column) => column.header), ...rows.map((row) => columns.map((column) => column.getValue(row)))];
+}
+
 export function downloadCsv(filename: string, rows: readonly (readonly string[])[]): void {
 	const blob = new Blob(["\uFEFF", serializeCsv(rows)], { type: "text/csv;charset=utf-8" });
 	const url = URL.createObjectURL(blob);

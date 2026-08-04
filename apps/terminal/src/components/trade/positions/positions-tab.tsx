@@ -10,12 +10,13 @@ import {
 	type PositionMarketFilter,
 	type PositionMarketIdentity,
 } from "@/domain/trade/position-toolbar";
+import { getToolbarAccountRiskPresentation } from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
 import type { PositionReverseTarget } from "@/hooks/trade/use-position-reverse-submit";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatUSD } from "@/lib/format";
+import { formatPercent, formatUSD } from "@/lib/format";
 import { useHyperliquid, useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
@@ -53,9 +54,14 @@ interface Props {
 	directionFilter: PositionDirectionFilter;
 	marketFilter: PositionMarketFilter;
 	currentMarket: PositionMarketIdentity | null;
+	accountSummary: {
+		accountEquity: string;
+		unrealizedPnl: string;
+		maintenanceMarginRatio: string | null;
+	} | null;
 }
 
-export function PositionsTab({ directionFilter, marketFilter, currentMarket }: Props) {
+export function PositionsTab({ directionFilter, marketFilter, currentMarket, accountSummary }: Props) {
 	const { address, isConnected } = useWalletSession();
 	const { env } = useHyperliquid();
 	const navigateToMarket = useMarketNavigation();
@@ -91,6 +97,8 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 	const filteredPositions = filterPositions(positions, directionFilter, marketFilter, currentMarket);
 	const totalUnrealizedPnl = getTotalPositionUnrealizedPnl(positions);
+	const summaryUnrealizedPnl = accountSummary?.unrealizedPnl ?? totalUnrealizedPnl;
+	const accountRisk = getToolbarAccountRiskPresentation(accountSummary?.maintenanceMarginRatio ?? null);
 
 	const pnlHeader = pnlMode === "roe" ? t`PNL (ROE %)` : t`PNL (Price Change %)`;
 
@@ -144,19 +152,68 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 				{!placeholder ? (
 					<dl
 						data-testid="positions-summary-bar"
-						className={cn(positionsPanelTableCaptionRowClass, "h-8 justify-start gap-2 px-5 py-0 font-market-close")}
+						className={cn(
+							positionsPanelTableCaptionRowClass,
+							"h-[58px] justify-start gap-8 bg-market-close-card px-5 py-0 font-market-close",
+						)}
 					>
-						<dt className="text-[11px] font-medium text-market-close-subtle">{t`Unrealized PNL`}</dt>
-						<dd
-							className={cn(
-								"m-0 text-xs font-semibold tabular-nums",
-								totalUnrealizedPnl === null
-									? "text-market-close-subtle"
-									: getMarketCloseValueColorClass(totalUnrealizedPnl),
-							)}
-						>
-							{formatUSD(totalUnrealizedPnl, { compact: false, signDisplay: "exceptZero" })}
-						</dd>
+						<div className="flex min-w-[7rem] flex-col gap-[3px]">
+							<dt className="text-[10px] leading-[14px] font-medium text-market-close-subtle">{t`Account Equity`}</dt>
+							<dd className="m-0 text-xs leading-[17px] font-semibold text-market-close-fg tabular-nums">
+								{formatUSD(accountSummary?.accountEquity ?? null, { compact: false })}
+							</dd>
+						</div>
+						<div className="flex min-w-[7rem] flex-col gap-[3px]">
+							<dt className="text-[10px] leading-[14px] font-medium text-market-close-subtle">{t`Unrealized PNL`}</dt>
+							<dd
+								className={cn(
+									"m-0 text-xs leading-[17px] font-semibold tabular-nums",
+									summaryUnrealizedPnl === null
+										? "text-market-close-subtle"
+										: getMarketCloseValueColorClass(summaryUnrealizedPnl),
+								)}
+							>
+								{formatUSD(summaryUnrealizedPnl, { compact: false, signDisplay: "exceptZero" })}
+							</dd>
+						</div>
+						<div className="flex min-w-[10rem] flex-col gap-[3px]">
+							<dt className="text-[10px] leading-[14px] font-medium text-market-close-subtle">
+								{t`Maintenance Margin Ratio`}
+							</dt>
+							<dd className="m-0 flex items-center gap-1.5">
+								<span className="h-1 w-14 overflow-hidden rounded-[2px] bg-market-close-stroke-card">
+									<span
+										className={cn(
+											"block h-full rounded-[2px] transition-[width] duration-150",
+											accountRisk.tone === "danger"
+												? "bg-market-close-danger"
+												: accountRisk.tone === "warning"
+													? "bg-warning"
+													: "bg-market-close-profit",
+										)}
+										style={{ width: `${accountRisk.progressPercent ?? "0"}%` }}
+									/>
+								</span>
+								<span
+									className={cn(
+										"text-xs leading-[17px] font-semibold tabular-nums",
+										accountSummary?.maintenanceMarginRatio === null || !accountSummary
+											? "text-market-close-subtle"
+											: accountRisk.tone === "danger"
+												? "text-market-close-danger"
+												: accountRisk.tone === "warning"
+													? "text-warning"
+													: "text-market-close-profit",
+									)}
+								>
+									{formatPercent(accountSummary?.maintenanceMarginRatio ?? null, {
+										minimumFractionDigits: 1,
+										maximumFractionDigits: 1,
+										signDisplay: "never",
+									})}
+								</span>
+							</dd>
+						</div>
 					</dl>
 				) : null}
 				{placeholder || filteredPlaceholder ? (

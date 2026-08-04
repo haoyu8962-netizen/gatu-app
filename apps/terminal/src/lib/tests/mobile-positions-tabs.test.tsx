@@ -7,15 +7,30 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MOBILE_POSITIONS_TABS } from "@/config/trade";
 
-const storeState = vi.hoisted(() => ({ activeTab: "positions" }));
+const storeState = vi.hoisted(() => ({ activeTab: "positions", snapshotsReady: true }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({ address: "0x1234", isConnected: true }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useSubscription: () => ({ data: { orders: [] }, status: "active" }),
-	useUserPositions: () => ({ positions: [], isLoading: false }),
+	useSubscription: (type: string) => ({
+		data: type === "twapStates" ? { states: [] } : { orders: [] },
+		isStale: false,
+		status: storeState.snapshotsReady ? "active" : "subscribing",
+	}),
+	useUserPositions: () => ({ positions: [], isLoading: !storeState.snapshotsReady, hasError: false }),
+}));
+
+vi.mock("@/hooks/trade/use-account-balances", () => ({
+	useDefaultDexBalances: () => ({
+		perpSummary: { accountValue: "0" },
+		spotBalances: [],
+		hasAllDexsSnapshot: storeState.snapshotsReady,
+		hasSpotStateSnapshot: storeState.snapshotsReady,
+		hasError: false,
+		isLoading: !storeState.snapshotsReady,
+	}),
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
@@ -59,6 +74,7 @@ describe("MobilePositionsView tabs", () => {
 
 	beforeEach(() => {
 		storeState.activeTab = "positions";
+		storeState.snapshotsReady = true;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -95,19 +111,36 @@ describe("MobilePositionsView tabs", () => {
 		const tabs = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]'));
 		expect(tabs).toHaveLength(7);
 		expect(tabs.map((tab) => tab.textContent)).toEqual([
-			"Balances",
-			"Positions",
-			"Open Orders",
-			"TWAP",
+			"Balances(0)",
+			"Positions(0)",
+			"Open Orders(0)",
+			"TWAP(0)",
 			"Trade History",
 			"Funding History",
 			"Order History",
 		]);
-		expect(tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.textContent).toBe("Positions");
+		expect(tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.textContent).toBe("Positions(0)");
 
 		storeState.activeTab = "balances";
 		render(<div data-testid="injected-balances" />);
 		expect(container.querySelector('[data-testid="injected-balances"]')).not.toBeNull();
+	});
+
+	it("shows zero counts only after each live snapshot is ready", () => {
+		storeState.snapshotsReady = false;
+		render();
+
+		const loadingLabels = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]')).map(
+			(tab) => tab.textContent,
+		);
+		expect(loadingLabels.slice(0, 4)).toEqual(["Balances", "Positions", "Open Orders", "TWAP"]);
+
+		storeState.snapshotsReady = true;
+		render();
+		const readyLabels = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]')).map(
+			(tab) => tab.textContent,
+		);
+		expect(readyLabels.slice(0, 4)).toEqual(["Balances(0)", "Positions(0)", "Open Orders(0)", "TWAP(0)"]);
 	});
 
 	it("keeps the horizontal scroller hidden and renders a non-interactive 28px edge fade", () => {

@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
 	getToolbarAbsoluteSize,
 	getToolbarAccountMarginRatio,
+	getToolbarAccountRiskPresentation,
 	getToolbarFundingTotal,
 	getToolbarNonZeroPnl,
 	getToolbarOrderMetrics,
 	getToolbarPositionChangeRatio,
 	getToolbarTwapMetrics,
+	matchesToolbarOrderFilters,
 } from "@/domain/trade/trading-toolbar-metrics";
 
 describe("trading toolbar position metrics", () => {
@@ -82,9 +84,28 @@ describe("trading toolbar account metrics", () => {
 			}),
 		).toBeNull();
 	});
+
+	it("clamps the progress bar and applies the documented account risk tiers", () => {
+		expect(getToolbarAccountRiskPresentation("0.21")).toEqual({ progressPercent: "21", tone: "safe" });
+		expect(getToolbarAccountRiskPresentation("0.5")).toEqual({ progressPercent: "50", tone: "warning" });
+		expect(getToolbarAccountRiskPresentation("0.75")).toEqual({ progressPercent: "75", tone: "danger" });
+		expect(getToolbarAccountRiskPresentation("1.25")).toEqual({ progressPercent: "100", tone: "danger" });
+		expect(getToolbarAccountRiskPresentation(null)).toEqual({ progressPercent: null, tone: "safe" });
+	});
 });
 
 describe("trading toolbar order metrics", () => {
+	it("matches order type and raw exchange-side filters", () => {
+		const triggerBuy = { isTrigger: true, side: "B" };
+		const limitSell = { isTrigger: false, side: "A" };
+
+		expect(matchesToolbarOrderFilters(triggerBuy, "all", "all")).toBe(true);
+		expect(matchesToolbarOrderFilters(triggerBuy, "trigger", "buy")).toBe(true);
+		expect(matchesToolbarOrderFilters(triggerBuy, "limit", "buy")).toBe(false);
+		expect(matchesToolbarOrderFilters(limitSell, "limit", "sell")).toBe(true);
+		expect(matchesToolbarOrderFilters(limitSell, "trigger", "sell")).toBe(false);
+	});
+
 	it("uses limit price and remaining size for ordinary orders", () => {
 		expect(
 			getToolbarOrderMetrics({

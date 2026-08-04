@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
 	calculateEstimatedPnl,
+	calculateEstimatedPnlExact,
+	calculateRiskRewardRatioExact,
 	calculateSlPrice,
 	calculateSlPriceFromRoe,
 	calculateTpPrice,
@@ -33,5 +35,15 @@ describe("position TP/SL ROE pricing", () => {
 	it("preserves price-percentage helpers used by pre-entry TP/SL", () => {
 		expect(calculateTpPrice(100, "buy", 25, 2)).toBe("125.00");
 		expect(calculateSlPrice(100, "buy", 5, 2)).toBe("95.00");
+	});
+
+	it("keeps position PnL and risk/reward calculations exact as strings", () => {
+		const pnl = calculateEstimatedPnlExact(
+			{ referencePrice: "9007199254740993", side: "buy", size: "0.123456789012345678" },
+			"9007199254740994",
+		);
+
+		expect(pnl).toBe("0.123456789012345678");
+		expect(calculateRiskRewardRatioExact(pnl, "-0.041152263004115226")).toBe("3");
 	});
 });

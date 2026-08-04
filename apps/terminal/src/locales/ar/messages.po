@@ -13,8 +13,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. placeholder {0}: orders.length
+#. placeholder {0}: filteredOrders.length
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 msgid "{0, plural, one {# order} other {# orders}}"
 msgstr ""
 
@@ -188,9 +189,9 @@ msgstr "نشاط الحساب"
 msgid "Account and wallet"
 msgstr "الحساب والمحفظة"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Account Equity"
-#~ msgstr "حقوق ملكية الحساب"
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Account Equity"
+msgstr "حقوق ملكية الحساب"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
@@ -347,9 +348,27 @@ msgstr "تتشارك جميع مراكز هامش المحفظة (cross) في ن
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr ""
 
+#: src/components/trade/positions/orders-tab.tsx
+msgid "All Directions"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "All statuses"
+msgstr ""
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "All Time"
 msgstr "كل الوقت"
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "All types"
+msgstr ""
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "All Types"
+msgstr ""
 
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
@@ -444,9 +463,15 @@ msgstr ""
 msgid "Arbitrum network switch was rejected."
 msgstr "تم رفض التبديل إلى شبكة Arbitrum."
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -654,6 +679,7 @@ msgstr "رسوم المُنشئ"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -738,7 +764,9 @@ msgstr "إلغاء الأوامر المحددة"
 #~ msgid "Cancel TWAP order"
 #~ msgstr "إلغاء أمر TWAP"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Canceled"
@@ -928,6 +956,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Collapse all"
 msgstr ""
@@ -1141,6 +1170,7 @@ msgstr "وصّل محفظتك لإرسال الأموال."
 msgid "Connect your wallet to transfer funds."
 msgstr "وصّل محفظتك لتحويل الأموال."
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "اربط محفظتك لعرض الأرصدة."
@@ -1329,6 +1359,11 @@ msgstr "إنشاء وصول الهاتف"
 #~ msgid "Create secure phone access for trading from this account."
 #~ msgstr "أنشئ وصولاً آمنًا للهاتف للتداول من هذا الحساب."
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Create TWAP"
+msgstr ""
+
 #: src/config/account-ledger.ts
 msgid "Create Vault"
 msgstr "إنشاء خزنة"
@@ -1386,6 +1421,11 @@ msgstr "وصل تصدير CSV إلى حد السجل. لم يتم تضمين ب�
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "CSV exported."
 msgstr "تم تصدير CSV."
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Cumulative funding"
+msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
@@ -1450,8 +1490,10 @@ msgstr "جهة النشر"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1589,9 +1631,13 @@ msgstr "عنوان الوجهة"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -1638,6 +1684,7 @@ msgstr "العرض"
 #~ msgid "Displays the mobile sidebar."
 #~ msgstr "يعرض الشريط الجانبي للجوال."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Distance to mark {markDistanceLabel}"
 msgstr ""
@@ -1927,6 +1974,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Expand all"
 msgstr ""
@@ -1953,7 +2001,13 @@ msgid "Explorer"
 msgstr "المستكشف"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 msgid "Export CSV"
 msgstr "تصدير CSV"
 
@@ -2130,7 +2184,9 @@ msgstr "المفضلة"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
@@ -2169,6 +2225,8 @@ msgstr "الرسوم أعلى من مبلغ التحويل عبر الجسر."
 msgid "Fill status"
 msgstr "حالة التنفيذ"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
@@ -2539,6 +2597,7 @@ msgstr "الرافعة المالية"
 #~ msgid "limit"
 #~ msgstr "محدد"
 
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2611,6 +2670,8 @@ msgid "Liq. Price"
 msgstr "سعر التصفية"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
 msgid "Liquidated"
@@ -2618,6 +2679,7 @@ msgstr "تمت التصفية"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Liquidation Price"
 msgstr "سعر التصفية"
@@ -2779,6 +2841,10 @@ msgstr "الشبكة الرئيسية"
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Maintenance Margin"
 msgstr "هامش الصيانة"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Maintenance Margin Ratio"
+msgstr ""
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Manage TP/SL"
@@ -3337,6 +3403,15 @@ msgstr "لا توجد أوامر مفتوحة."
 msgid "No order history found."
 msgstr "لم يُعثر على سجل أوامر."
 
+#: src/components/trade/positions/orders-tab.tsx
+msgid "No orders match the selected filters."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "No orders match these filters."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No positions match the selected filters."
@@ -3442,6 +3517,8 @@ msgstr ""
 #~ msgid "open"
 #~ msgstr "مفتوح"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
 msgstr "مفتوح"
@@ -3602,6 +3679,11 @@ msgstr ""
 msgid "Order Queue"
 msgstr "قائمة الأوامر"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "Order status"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Order submitted"
 msgstr "تم إرسال الأمر"
@@ -3617,6 +3699,8 @@ msgstr "تم إرسال الأمر"
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "تم إرسال الطلب. جارٍ تأكيد حالته لدى المنصة؛ لا تحاول مرة أخرى."
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Order type"
 msgstr "نوع الأمر"
@@ -3639,7 +3723,6 @@ msgstr "سيوجد الأمر فقط كأمر محدد في الدفتر. يُع
 msgid "Order will rest until filled or canceled."
 msgstr "سيبقى الأمر قائماً حتى يُنفَّذ أو يُلغى."
 
-#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "orders"
 msgstr "أوامر"
@@ -3663,6 +3746,8 @@ msgstr ""
 msgid "Original Size"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3732,6 +3817,8 @@ msgstr "جزئي"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "الدفعة"
@@ -3877,8 +3964,10 @@ msgstr "المنصة"
 
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "PNL"
 msgstr "الربح والخسارة"
@@ -3935,6 +4024,8 @@ msgid "Portfolio Value"
 msgstr "قيمة المحفظة"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Position"
@@ -4044,11 +4135,15 @@ msgstr ""
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -4147,6 +4242,8 @@ msgstr "عشوائية التوقيت"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "المعدل"
@@ -4254,6 +4351,8 @@ msgstr "تحديث عرض السعر"
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "مرفوض"
@@ -4665,6 +4764,7 @@ msgstr "المحفظة المحددة لا تطابق الحساب المتصل.
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4871,8 +4971,10 @@ msgstr "جاري التوقيع..."
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -4881,6 +4983,8 @@ msgstr "جاري التوقيع..."
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -5086,7 +5190,9 @@ msgid "Starting camera..."
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Status"
 msgstr "الحالة"
@@ -5790,13 +5896,19 @@ msgid "TIF"
 msgstr "TIF"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
@@ -5872,8 +5984,13 @@ msgid "Total"
 msgstr "الإجمالي"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "Total balance"
-msgstr "الرصيد الإجمالي"
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Total assets"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#~ msgid "Total balance"
+#~ msgstr "الرصيد الإجمالي"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
@@ -5922,6 +6039,10 @@ msgstr "سعر TP"
 #: src/config/ui-text.ts
 msgid "TP/SL"
 msgstr "TP/SL"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "TP/SL orders updated"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Track on LI.FI Explorer"
@@ -6021,6 +6142,11 @@ msgstr "تمت الموافقة على مفتاح التداول"
 msgid "Traditional Finance"
 msgstr "التمويل التقليدي"
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+msgid "Transaction"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "تفاصيل المعاملة"
@@ -6078,6 +6204,7 @@ msgstr "لا تتوفر التحويلات بين Spot وPerps في وضع ال�
 #~ msgstr "الرائج"
 
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
@@ -6094,7 +6221,9 @@ msgstr "يجب أن يقلل الأمر المشروط مركزك الحالي"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
 msgstr "سعر التحفيز"
@@ -6107,6 +6236,8 @@ msgstr "سعر التحفيز"
 msgid "Trigger size exceeds position size"
 msgstr "حجم الأمر المشروط يتجاوز حجم المركز"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Triggered"
 msgstr "تم التفعيل"
@@ -6179,8 +6310,10 @@ msgstr "الفائدة المفتوحة ثنائية الجانب: مجموع ا
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Type"
@@ -6301,6 +6434,8 @@ msgid "Update failed"
 msgstr "فشل التحديث"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -6561,9 +6696,10 @@ msgstr "سحب"
 msgid "Withdraw to Arbitrum"
 msgstr "السحب إلى Arbitrum"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Withdrawable"
-#~ msgstr "قابل للسحب"
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Withdrawable"
+msgstr "قابل للسحب"
 
 #: src/config/account-ledger.ts
 msgid "Withdrawal"

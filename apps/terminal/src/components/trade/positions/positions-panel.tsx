@@ -3,8 +3,14 @@ import { useLingui } from "@lingui/react";
 import { Suspense, useMemo, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
-import { HL_ALL_DEXS } from "@/config/app";
+import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
 import { POSITIONS_TABS } from "@/config/trade";
+import {
+	getAccountEquityValue,
+	getPerpRiskSummaryValue,
+	getUnifiedAccountMarginRatioValue,
+	isQuoteBalanceSharedWithPerps,
+} from "@/domain/trade/balances";
 import {
 	ALL_POSITION_MARKETS,
 	getReadyItemCount,
@@ -12,7 +18,9 @@ import {
 	type PositionMarketFilter,
 	type PositionMarketIdentity,
 } from "@/domain/trade/position-toolbar";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { getToolbarAccountMarginRatio } from "@/domain/trade/trading-toolbar-metrics";
+import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useMarkets, useSelectedMarketInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
@@ -63,15 +71,64 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 	});
 	const positionDirectionFilter = positionFilters.ownerKey === ownerKey ? positionFilters.direction : "all";
 	const positionMarketFilter = positionFilters.ownerKey === ownerKey ? positionFilters.market : ALL_POSITION_MARKETS;
+	const markets = useMarkets();
+	const defaultBalances = useDefaultDexBalances();
+	const selectedBalances = useSelectedDexBalances();
 	const {
 		perpSummary,
 		spotBalances,
 		hasAllDexsSnapshot,
 		hasSpotStateSnapshot,
 		hasError: balancesError,
-	} = useDefaultDexBalances();
+	} = defaultBalances;
+	const tokenUsdPrices = useSpotTokenUsdPrices(isConnected);
+	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(selectedBalances.accountAbstraction);
+	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
+	const accountEquity = getAccountEquityValue({
+		accountAbstraction: selectedBalances.accountAbstraction,
+		marginSummary: summaryBalances.marginSummary,
+		perpSummary: summaryBalances.perpSummary,
+		spotBalances: summaryBalances.spotBalances,
+		tokenUsdPrices,
+	});
+	const riskSummary = getPerpRiskSummaryValue(
+		usesSharedQuoteBalance
+			? selectedBalances.allDexClearinghouseStates.map(([, state]) => state)
+			: [
+					{
+						marginSummary: summaryBalances.marginSummary,
+						crossMaintenanceMarginUsed: summaryBalances.crossMaintenanceMarginUsed,
+						assetPositions: summaryBalances.perpPositions,
+					},
+				],
+	);
+	const accountAbstraction = selectedBalances.accountAbstraction;
+	const defaultCollateralToken = markets.getToken(DEFAULT_QUOTE_TOKEN);
+	const maintenanceMarginRatio =
+		accountAbstraction === "unifiedAccount"
+			? getUnifiedAccountMarginRatioValue({
+					states: selectedBalances.allDexClearinghouseStates.map(([dex, state]) => ({ dex, ...state })),
+					collaterals: [
+						...(defaultCollateralToken ? [{ dex: "", token: defaultCollateralToken.index }] : []),
+						...markets.builderPerp.flatMap((market) =>
+							market.quoteToken ? [{ dex: market.dex, token: market.quoteToken.index }] : [],
+						),
+					],
+					spotBalances: summaryBalances.spotBalances,
+				})
+			: accountAbstraction === "portfolioMargin"
+				? null
+				: getToolbarAccountMarginRatio({
+						crossMaintenanceMarginUsed: riskSummary.crossMaintenanceMarginUsed,
+						accountEquity,
+					});
+	const accountSummaryReady =
+		isConnected &&
+		accountAbstraction !== null &&
+		!summaryBalances.hasError &&
+		summaryBalances.hasAllDexsSnapshot &&
+		(!usesSharedQuoteBalance || summaryBalances.hasSpotStateSnapshot);
 	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
-	const markets = useMarkets();
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const {
 		data: ordersEvent,
@@ -179,7 +236,7 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 			>
 				<div
 					data-testid="positions-toolbar-header"
-					className="font-market-close flex h-[43px] shrink-0 items-stretch overflow-hidden border-b border-market-close-stroke-card px-5"
+					className="font-market-close flex h-[45px] shrink-0 items-stretch overflow-hidden border-b border-market-close-stroke-card px-5"
 				>
 					<div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 						<TabsList
@@ -223,6 +280,15 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 							directionFilter={positionDirectionFilter}
 							marketFilter={positionMarketFilter}
 							currentMarket={currentPositionMarket}
+							accountSummary={
+								accountSummaryReady
+									? {
+											accountEquity,
+											unrealizedPnl: riskSummary.unrealizedPnl,
+											maintenanceMarginRatio,
+										}
+									: null
+							}
 						/>
 					</Suspense>
 				</TabsContent>

@@ -78,7 +78,7 @@ export function OrderInlineEdit({
 				aria-invalid={invalid || undefined}
 				aria-describedby={describedBy}
 				className={cn(
-					"h-7 min-w-0 rounded-6 border border-stroke bg-background px-2 text-xs tabular-nums text-fg outline-none transition-colors duration-150",
+					"h-7 min-w-0 rounded-6 border-[1.5px] border-stroke bg-background px-2 text-xs tabular-nums text-fg outline-none transition-colors duration-150",
 					"focus:border-fg focus:ring-1 focus:ring-fg/15",
 					"disabled:cursor-not-allowed disabled:opacity-70",
 					invalid && "border-error focus:border-error focus:ring-error/15",

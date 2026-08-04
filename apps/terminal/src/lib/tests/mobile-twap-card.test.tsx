@@ -8,8 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	cancelTwap: vi.fn(),
+	hasActiveOrder: true,
 	navigateToMarket: vi.fn(),
 	setActiveTab: vi.fn(),
+	setOrderType: vi.fn(),
 	side: "B" as "A" | "B",
 }));
 
@@ -49,30 +51,36 @@ vi.mock("@/lib/hyperliquid", () => ({
 		data: {
 			dex: "",
 			user: "0x1111111111111111111111111111111111111111",
-			states: [
-				[
-					42,
-					{
-						coin: "GOOGL",
-						executedNtl: "2298.76416",
-						executedSz: "6.132",
-						minutes: 30,
-						randomize: false,
-						reduceOnly: false,
-						side: mocks.side,
-						stopPx: null,
-						sz: "15.33",
-						timestamp: Date.now() - 696_000,
-						trigger: null,
-						user: "0x1111111111111111111111111111111111111111",
-					},
-				],
-			],
+			states: mocks.hasActiveOrder
+				? [
+						[
+							42,
+							{
+								coin: "GOOGL",
+								executedNtl: "2298.76416",
+								executedSz: "6.132",
+								minutes: 30,
+								randomize: false,
+								reduceOnly: false,
+								side: mocks.side,
+								stopPx: null,
+								sz: "15.33",
+								timestamp: Date.now() - 696_000,
+								trigger: null,
+								user: "0x1111111111111111111111111111111111111111",
+							},
+						],
+					]
+				: [],
 		},
 		status: "active",
 		error: null,
 		isStale: false,
 	}),
+}));
+
+vi.mock("@/stores/use-order-entry-store", () => ({
+	useOrderEntryActions: () => ({ setOrderType: mocks.setOrderType }),
 }));
 
 vi.mock("@/components/trade/mobile/use-mobile-terminal-tab", () => ({
@@ -87,6 +95,7 @@ describe("MobileTwapTab card", () => {
 
 	beforeEach(() => {
 		mocks.side = "B";
+		mocks.hasActiveOrder = true;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -143,5 +152,18 @@ describe("MobileTwapTab card", () => {
 		expect(container.querySelector('[data-testid="mobile-twap-progress"]')?.className).toContain(
 			"bg-market-close-danger",
 		);
+	});
+
+	it("opens the existing TWAP order form from the empty state", () => {
+		mocks.hasActiveOrder = false;
+		render();
+
+		const createButton = Array.from(container.querySelectorAll("button")).find(
+			(button) => button.textContent === "Create TWAP",
+		);
+		expect(createButton?.className).toContain("min-h-11");
+		act(() => createButton?.click());
+		expect(mocks.setOrderType).toHaveBeenCalledWith("twap");
+		expect(mocks.setActiveTab).toHaveBeenCalledWith("trade");
 	});
 });

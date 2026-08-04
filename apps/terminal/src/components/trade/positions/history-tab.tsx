@@ -1,12 +1,13 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
+import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowSquareOutIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { cn } from "@/lib/cn";
+import { buildCsvRows, downloadCsv } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { getValueColorClass } from "@/lib/ui/value-color";
@@ -33,6 +34,36 @@ export function HistoryTab() {
 	const isTestnet = useIsTestnet();
 
 	const headerCount = isConnected ? `${fills.length} ${t`trades`}` : null;
+
+	function getDirectionLabel(direction: string) {
+		if (direction === "Open Long") return t`Open Long`;
+		if (direction === "Close Long") return t`Close Long`;
+		if (direction === "Open Short") return t`Open Short`;
+		if (direction === "Close Short") return t`Close Short`;
+		return direction;
+	}
+
+	function handleExportCsv() {
+		downloadCsv(
+			"trade_history.csv",
+			buildCsvRows(fills, [
+				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
+				{ header: t`Asset`, getValue: (fill) => fill.coin },
+				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
+				{ header: t`Price`, getValue: (fill) => formatUSD(fill.px) },
+				{ header: t`Size`, getValue: (fill) => formatNumber(fill.sz, markets.getSzDecimals(fill.coin)) },
+				{ header: t`Fee`, getValue: (fill) => formatToken(fill.fee, { symbol: fill.feeToken }) },
+				{
+					header: t`PNL`,
+					getValue: (fill) => {
+						const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+						return closedPnl ? formatUSD(closedPnl, { signDisplay: "exceptZero" }) : FALLBACK_VALUE_PLACEHOLDER;
+					},
+				},
+				{ header: t`Transaction`, getValue: (fill) => fill.hash },
+			]),
+		);
+	}
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view trade history.`}</Placeholder>;
@@ -108,16 +139,7 @@ export function HistoryTab() {
 							<TableBody className={positionsPanelTableBodyClass}>
 								{fills.map((fill, i) => {
 									const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
-									const directionLabel =
-										fill.dir === "Open Long"
-											? t`Open Long`
-											: fill.dir === "Close Long"
-												? t`Close Long`
-												: fill.dir === "Open Short"
-													? t`Open Short`
-													: fill.dir === "Close Short"
-														? t`Close Short`
-														: fill.dir;
+									const directionLabel = getDirectionLabel(fill.dir);
 
 									return (
 										<TableRow
@@ -197,6 +219,20 @@ export function HistoryTab() {
 					</ScrollArea>
 				)}
 			</div>
+			{isConnected && status === "ready" ? (
+				<div className="flex shrink-0 items-center gap-4 px-5 py-2.5" data-testid="trade-history-footer">
+					<Button
+						variant="ghost"
+						intent="neutral"
+						size="xxs"
+						disabled={fills.length === 0}
+						onClick={handleExportCsv}
+						iconLeft={<DownloadSimpleIcon className="size-3" aria-hidden="true" />}
+					>
+						{t`Export CSV`}
+					</Button>
+				</div>
+			) : null}
 		</div>
 	);
 }

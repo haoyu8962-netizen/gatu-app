@@ -6,21 +6,24 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import {
+	getTradingToolbarBalanceSummary,
+	getTradingToolbarSpotPnl,
+	isTradingToolbarBalancePositive,
+} from "@/domain/trade/balance-toolbar";
+import {
 	type BalanceRow,
 	filterBalanceRowsByUsdValue,
 	getPerpBalanceRows,
 	getSpotBalanceRows,
-	getTotalUsdValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatToken, formatUSD } from "@/lib/format";
+import { formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
-import { toNumberOrZero } from "@/lib/trade/numbers";
-import { useSwapModalActions } from "@/stores/use-global-modal-store";
+import { useDepositModalActions, useSwapModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-global-settings-store";
 import { AssetDisplay } from "../components/asset-display";
 import {
@@ -29,7 +32,6 @@ import {
 	balancesTableGroupCellClass,
 	balancesTableHeadClass,
 	balancesTableHeaderClass,
-	balancesToolbarClass,
 } from "./balances-table-styles";
 import { Placeholder } from "./placeholder";
 import {
@@ -49,6 +51,7 @@ export function BalancesTab() {
 	const { getToken } = useSpotTokens();
 	const hideSmallBalances = useHideSmallBalances();
 	const { setHideSmallBalances } = useGlobalSettingsActions();
+	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openSwapModal } = useSwapModalActions();
 	const [transferState, setTransferState] = useState<{
 		open: boolean;
@@ -68,6 +71,7 @@ export function BalancesTab() {
 	});
 
 	const {
+		marginSummary,
 		perpSummary,
 		spotBalances,
 		spotAvailableAfterMaintenance,
@@ -90,21 +94,18 @@ export function BalancesTab() {
 	);
 	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
 	const internalTransfersEnabled = !isQuoteBalanceSharedWithPerps(accountAbstraction);
-
-	function getPnl(row: BalanceRow): { pnl: number; pnlPercent: number } | null {
-		if (row.type === "perp") return null;
-		const entryNtl = toNumberOrZero(row.entryNtl);
-		if (entryNtl === 0) return null;
-
-		const midPx = toNumberOrZero(mids?.[row.asset]);
-		if (midPx === 0) return null;
-
-		const total = toNumberOrZero(row.total);
-		const currentValue = total * midPx;
-		const pnl = currentValue - entryNtl;
-		const pnlPercent = (pnl / entryNtl) * 100;
-		return { pnl, pnlPercent };
-	}
+	const summary = useMemo(
+		() =>
+			getTradingToolbarBalanceSummary({
+				accountAbstraction,
+				marginSummary,
+				perpSummary,
+				spotBalances,
+				tokenUsdPrices: mids,
+				withdrawable,
+			}),
+		[accountAbstraction, marginSummary, mids, perpSummary, spotBalances, withdrawable],
+	);
 
 	const filteredPerpBalances = useMemo(() => {
 		if (!hideSmallBalances) return perpBalances;
@@ -115,8 +116,6 @@ export function BalancesTab() {
 		if (!hideSmallBalances) return spotBalanceRows;
 		return filterBalanceRowsByUsdValue(spotBalanceRows, SMALL_BALANCE_THRESHOLD_USD);
 	}, [hideSmallBalances, spotBalanceRows]);
-
-	const totalValue = useMemo(() => getTotalUsdValue(balances), [balances]);
 
 	function handleTransferClick(row: BalanceRow) {
 		if (row.asset !== DEFAULT_QUOTE_TOKEN) return;
@@ -138,33 +137,41 @@ export function BalancesTab() {
 	function renderBalanceRow(row: BalanceRow) {
 		const token = getToken(row.asset);
 		const decimals = row.type === "perp" ? 2 : (token?.szDecimals ?? 2);
-		const canTransfer = internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && parseFloat(row.available) > 0;
-		const canSwap = row.type === "spot" && parseFloat(row.available) > 0;
+		const hasAvailableBalance = isTradingToolbarBalancePositive(row.available);
+		const canTransfer = internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasAvailableBalance;
+		const canSwap = row.type === "spot" && hasAvailableBalance;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
-		const pnlData = getPnl(row);
+		const pnlData = getTradingToolbarSpotPnl(row, mids?.[row.asset]);
 		return (
 			<TableRow key={`${row.type}-${row.asset}`} className={positionsPanelRowHoverClass}>
-				<TableCell size="dense" className={cn(balancesTableCellClass, "font-medium text-fg")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "font-medium text-market-close-fg")}>
 					<AssetDisplay coin={row.asset} />
 				</TableCell>
-				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
 					{formatToken(row.available, decimals)}
 				</TableCell>
-				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
 					{formatToken(row.total, decimals)}
 				</TableCell>
-				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
 					{formatUSD(row.usdValue, { compact: true })}
 				</TableCell>
-				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-fg")}>
+				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
 					{pnlData ? (
-						<span className={pnlData.pnl >= 0 ? "text-success" : "text-error"}>
-							{pnlData.pnl >= 0 ? "+" : ""}
-							{formatUSD(pnlData.pnl, { compact: true })} ({pnlData.pnlPercent >= 0 ? "+" : ""}
-							{pnlData.pnlPercent.toFixed(1)}%)
+						<span
+							className={
+								pnlData.tone === "profit"
+									? "text-market-close-success"
+									: pnlData.tone === "loss"
+										? "text-market-close-danger"
+										: "text-market-close-fg"
+							}
+						>
+							{formatUSD(pnlData.pnl, { compact: true, signDisplay: "exceptZero" })} (
+							{formatPercent(pnlData.pnlRatio, { maximumFractionDigits: 1, minimumFractionDigits: 1 })})
 						</span>
 					) : (
-						<span className="text-fg-muted">—</span>
+						<span className="text-market-close-subtle">—</span>
 					)}
 				</TableCell>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right")}>
@@ -193,7 +200,7 @@ export function BalancesTab() {
 								{t`Swap`}
 							</Button>
 						)}
-						{parseFloat(row.available) > 0 && (
+						{hasAvailableBalance && (
 							<Button
 								variant="ghost"
 								intent="neutral"
@@ -215,8 +222,24 @@ export function BalancesTab() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view balances.`}</Placeholder>;
 		if (hasError) return <Placeholder variant="error">{t`Failed to load balances.`}</Placeholder>;
 		if (isLoading) return <Placeholder>{t`Loading balances...`}</Placeholder>;
-		if (balances.length === 0)
-			return <Placeholder>{t`No balances found. Deposit funds to start trading.`}</Placeholder>;
+		if (balances.length === 0) {
+			return (
+				<Placeholder>
+					<div className="flex flex-col items-center gap-2.5 text-center">
+						<span>{t`No balances found. Deposit funds to start trading.`}</span>
+						<Button
+							variant="outline"
+							intent="neutral"
+							size="xs"
+							onClick={() => openDepositModal("deposit")}
+							className="rounded-[7px] border-market-close-stroke-control px-3 text-market-close-fg"
+						>
+							{t`Deposit`}
+						</Button>
+					</div>
+				</Placeholder>
+			);
+		}
 		return null;
 	}
 
@@ -224,22 +247,37 @@ export function BalancesTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className={balancesToolbarClass}>
+			<div
+				data-testid="balances-summary-bar"
+				className="flex h-[58px] shrink-0 items-center justify-between gap-6 border-b border-market-close-stroke-card bg-market-close-card px-5 font-market-close"
+			>
+				<dl className="flex min-w-0 items-center gap-7">
+					<div className="flex min-w-[7rem] flex-col gap-[3px]">
+						<dt className="text-[10px] leading-[14px] font-medium text-market-close-subtle">{t`Total assets`}</dt>
+						<dd className="m-0 inline-flex items-center gap-1 text-sm leading-[17px] font-bold text-market-close-fg tabular-nums">
+							{isSpotStateStale && isConnected && !isLoading && !hasError ? (
+								<SpinnerGapIcon className="size-3 animate-spin text-warning" aria-label={t`Loading...`} />
+							) : null}
+							{formatUSD(isConnected && !isLoading && !hasError ? summary.totalAssets : null, { compact: false })}
+						</dd>
+					</div>
+					<div className="flex min-w-[7rem] flex-col gap-[3px]">
+						<dt className="text-[10px] leading-[14px] font-medium text-market-close-subtle">{t`Withdrawable`}</dt>
+						<dd className="m-0 text-sm leading-[17px] font-semibold text-market-close-fg tabular-nums">
+							{formatUSD(isConnected && !isLoading && !hasError ? summary.withdrawable : null, { compact: false })}
+						</dd>
+					</div>
+				</dl>
 				<Checkbox
-					size="xxs"
+					size="xs"
 					checked={hideSmallBalances}
 					onCheckedChange={(checked: boolean | "indeterminate") => setHideSmallBalances(Boolean(checked))}
-					label={<span className="text-xs font-normal normal-case tracking-normal text-fg-muted">{t`Hide small`}</span>}
-					className="gap-1.5 items-center"
+					label={t`Hide small`}
+					className="shrink-0 items-center gap-[7px]"
+					controlClassName="size-3.5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-control focus-visible:outline-none data-checked:border-market-close-control data-checked:bg-market-close-control"
+					indicatorClassName="text-market-close-on-control [&>svg]:size-2.5"
+					labelClassName="whitespace-nowrap text-[13px] leading-[18px] font-normal normal-case tracking-normal text-market-close-muted"
 				/>
-				{isConnected && !isLoading && !hasError ? (
-					<span className="inline-flex items-center gap-1 tabular-nums text-xs font-medium text-fg">
-						{isSpotStateStale ? (
-							<SpinnerGapIcon className="size-3 animate-spin text-warning" aria-label={t`Loading...`} />
-						) : null}
-						<span>{formatUSD(totalValue, { compact: true })}</span>
-					</span>
-				) : null}
 			</div>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (

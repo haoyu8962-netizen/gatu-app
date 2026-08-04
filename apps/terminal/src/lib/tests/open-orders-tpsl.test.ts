@@ -34,9 +34,9 @@ describe("buildTpSlOrdersByCoin", () => {
 		];
 
 		expect(buildTpSlOrdersByCoin(orders).get("BTC")).toEqual({
-			tpPrice: 110,
+			tpPrice: "110",
 			tpOrderId: 1,
-			slPrice: 90,
+			slPrice: "90",
 			slOrderId: 2,
 		});
 	});
@@ -46,17 +46,17 @@ describe("areTpSlOrderInfosEqual", () => {
 	it("treats equivalent prices and order ids as the same snapshot", () => {
 		expect(
 			areTpSlOrderInfosEqual(
-				{ tpPrice: 110, tpOrderId: 1, slPrice: 90, slOrderId: 2 },
-				{ tpPrice: 110.0, tpOrderId: 1, slPrice: 90.0, slOrderId: 2 },
+				{ tpPrice: "110", tpOrderId: 1, slPrice: "90", slOrderId: 2 },
+				{ tpPrice: "110.0", tpOrderId: 1, slPrice: "90.0", slOrderId: 2 },
 			),
 		).toBe(true);
 	});
 
 	it("detects price, order-id, and leg changes", () => {
-		const snapshot = { tpPrice: 110, tpOrderId: 1, slPrice: 90, slOrderId: 2 };
+		const snapshot = { tpPrice: "110", tpOrderId: 1, slPrice: "90", slOrderId: 2 };
 
-		expect(areTpSlOrderInfosEqual(snapshot, { ...snapshot, tpPrice: 111 })).toBe(false);
+		expect(areTpSlOrderInfosEqual(snapshot, { ...snapshot, tpPrice: "111" })).toBe(false);
 		expect(areTpSlOrderInfosEqual(snapshot, { ...snapshot, slOrderId: 3 })).toBe(false);
-		expect(areTpSlOrderInfosEqual(snapshot, { tpPrice: 110, tpOrderId: 1 })).toBe(false);
+		expect(areTpSlOrderInfosEqual(snapshot, { tpPrice: "110", tpOrderId: 1 })).toBe(false);
 	});
 });

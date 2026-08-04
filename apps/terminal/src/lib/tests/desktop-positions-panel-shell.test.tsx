@@ -11,14 +11,28 @@ const testState = vi.hoisted(() => ({
 	setPositionsActiveTab: vi.fn(),
 }));
 
+const accountBalances = {
+	accountAbstraction: "disabled" as const,
+	allDexClearinghouseStates: [],
+	crossMaintenanceMarginUsed: "2",
+	marginSummary: { accountValue: "100", totalNtlPos: "0", totalMarginUsed: "0" },
+	perpPositions: [],
+	perpSummary: { accountValue: "100" },
+	spotBalances: [{ total: "2" }],
+	spotAvailableAfterMaintenance: [],
+	withdrawable: "100",
+	hasAllDexsSnapshot: true,
+	hasSpotStateSnapshot: true,
+	hasError: false,
+};
+
 vi.mock("@/hooks/trade/use-account-balances", () => ({
-	useDefaultDexBalances: () => ({
-		perpSummary: { accountValue: "100" },
-		spotBalances: [{ total: "2" }],
-		hasAllDexsSnapshot: true,
-		hasSpotStateSnapshot: true,
-		hasError: false,
-	}),
+	useDefaultDexBalances: () => accountBalances,
+	useSelectedDexBalances: () => accountBalances,
+}));
+
+vi.mock("@/hooks/trade/use-spot-token-usd-prices", () => ({
+	useSpotTokenUsdPrices: () => null,
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
@@ -26,7 +40,11 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useMarkets: () => ({ getMarket: () => ({ shortName: "GOOGL" }) }),
+	useMarkets: () => ({
+		builderPerp: [],
+		getMarket: () => ({ shortName: "GOOGL" }),
+		getToken: () => ({ index: 0 }),
+	}),
 	useSelectedMarketInfo: () => ({ data: { name: "xyz:GOOGL", kind: "builderPerp", dex: "xyz" } }),
 	useSubscription: (name: string) =>
 		name === "openOrders"
@@ -100,7 +118,7 @@ describe("desktop positions panel shell", () => {
 		render();
 
 		const header = container.querySelector<HTMLElement>('[data-testid="positions-toolbar-header"]');
-		expect(header?.className).toContain("h-[43px]");
+		expect(header?.className).toContain("h-[45px]");
 		expect(header?.className).toContain("px-5");
 		expect(header?.className).toContain("border-market-close-stroke-card");
 

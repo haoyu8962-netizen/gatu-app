@@ -7,13 +7,13 @@ export type OpenOrder = FrontendOpenOrdersResponse[number];
 export type OrderSide = OpenOrder["side"];
 
 export interface TpSlOrderInfo {
-	tpPrice?: number;
-	slPrice?: number;
+	tpPrice?: string;
+	slPrice?: string;
 	tpOrderId?: number;
 	slOrderId?: number;
 }
 
-function optionalPricesEqual(left: number | undefined, right: number | undefined): boolean {
+function optionalPricesEqual(left: string | undefined, right: string | undefined): boolean {
 	if (left === undefined || right === undefined) return left === right;
 	const leftPrice = toBig(left);
 	const rightPrice = toBig(right);
@@ -73,15 +73,15 @@ export function buildTpSlOrdersByCoin(orders: readonly OpenOrder[]): Map<string,
 	for (const order of orders) {
 		if (!order.isTrigger || !isClosePositionOrder(order)) continue;
 
-		const triggerPx = toBig(order.triggerPx)?.toNumber();
-		if (!triggerPx || triggerPx <= 0) continue;
+		const triggerPx = toBig(order.triggerPx);
+		if (!triggerPx?.gt(0)) continue;
 
 		const existing = map.get(order.coin) ?? {};
 		if (isTakeProfitOrder(order) && !existing.tpPrice) {
-			existing.tpPrice = triggerPx;
+			existing.tpPrice = triggerPx.toString();
 			existing.tpOrderId = order.oid;
 		} else if (isStopOrder(order) && !existing.slPrice) {
-			existing.slPrice = triggerPx;
+			existing.slPrice = triggerPx.toString();
 			existing.slOrderId = order.oid;
 		}
 		map.set(order.coin, existing);

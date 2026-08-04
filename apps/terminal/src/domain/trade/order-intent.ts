@@ -7,11 +7,11 @@ import {
 	type LimitTif,
 	MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
 	type OrderType,
+	TRIGGER_MARKET_SLIPPAGE_BPS,
 } from "@/config/trade";
-import { getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
 import { buildFrontendMarketOrder, buildOrders, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import { resolvePositionMarketCloseSize } from "@/domain/trade/position-market-close";
-import { isPositive, toBig } from "@/lib/trade/numbers";
+import { isPositive, type Numeric, toBig } from "@/lib/trade/numbers";
 import { isScaleOrderType, isStopOrderType, isTriggerOrderType, usesLimitPrice } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
 
@@ -50,13 +50,13 @@ export type PositionTpSlIntent = {
 	assetId: number;
 	szDecimals: number;
 	isLong: boolean;
-	tpPriceNum: number | null;
-	slPriceNum: number | null;
+	tpPriceNum: string | number | null;
+	slPriceNum: string | number | null;
 };
 
 export type PositionTpSlUpdateIntent = PositionTpSlIntent & {
-	existingTpPrice?: number;
-	existingSlPrice?: number;
+	existingTpPrice?: string | number;
+	existingSlPrice?: string | number;
 	existingTpOrderId?: number;
 	existingSlOrderId?: number;
 };
@@ -161,13 +161,15 @@ function buildEntryPlan(intent: EntryOrderIntent): OrderPlan {
 function buildPositionTpSlPlan(intent: PositionTpSlIntent): OrderPlan {
 	const orders: ExchangeOrder[] = [];
 	const isBuy = !intent.isLong;
+	const tpPrice = toBig(intent.tpPriceNum);
+	const slPrice = toBig(intent.slPriceNum);
 
-	if (intent.tpPriceNum && isPositive(intent.tpPriceNum)) {
-		orders.push(buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, intent.tpPriceNum, "tp"));
+	if (tpPrice?.gt(0)) {
+		orders.push(buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, tpPrice, "tp"));
 	}
 
-	if (intent.slPriceNum && isPositive(intent.slPriceNum)) {
-		orders.push(buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, intent.slPriceNum, "sl"));
+	if (slPrice?.gt(0)) {
+		orders.push(buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, slPrice, "sl"));
 	}
 
 	return {
@@ -180,14 +182,14 @@ function buildPositionTpSlPlan(intent: PositionTpSlIntent): OrderPlan {
 
 export function buildPositionTpSlUpdatePlan(intent: PositionTpSlUpdateIntent): PositionTpSlUpdatePlan {
 	const isBuy = !intent.isLong;
-	const tpOrder =
-		intent.tpPriceNum && isPositive(intent.tpPriceNum)
-			? buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, intent.tpPriceNum, "tp")
-			: null;
-	const slOrder =
-		intent.slPriceNum && isPositive(intent.slPriceNum)
-			? buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, intent.slPriceNum, "sl")
-			: null;
+	const tpPrice = toBig(intent.tpPriceNum);
+	const slPrice = toBig(intent.slPriceNum);
+	const tpOrder = tpPrice?.gt(0)
+		? buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, tpPrice, "tp")
+		: null;
+	const slOrder = slPrice?.gt(0)
+		? buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, slPrice, "sl")
+		: null;
 
 	const orders: ExchangeOrder[] = [];
 	const modifies: Array<{ oid: number; order: ExchangeOrder }> = [];
@@ -224,7 +226,7 @@ interface ReconcilePositionTpSlParams {
 	assetId: number;
 	desiredOrder: ExchangeOrder | null;
 	existingOrderId?: number;
-	existingPrice?: number;
+	existingPrice?: string | number;
 	orders: ExchangeOrder[];
 	modifies: Array<{ oid: number; order: ExchangeOrder }>;
 	cancels: Array<{ a: number; o: number }>;
@@ -246,7 +248,7 @@ function reconcilePositionTpSlOrder(params: ReconcilePositionTpSlParams): void {
 	}
 }
 
-function hasSameTriggerPrice(order: ExchangeOrder, existingPrice: number | undefined): boolean {
+function hasSameTriggerPrice(order: ExchangeOrder, existingPrice: string | number | undefined): boolean {
 	if (existingPrice === undefined || !("trigger" in order.t)) return false;
 	const existing = toBig(existingPrice);
 	const desired = toBig(order.t.trigger.triggerPx);
@@ -350,11 +352,15 @@ function buildPositionTpSlOrder(
 	assetId: number,
 	szDecimals: number,
 	isBuy: boolean,
-	triggerPrice: number,
+	triggerPrice: Numeric,
 	tpsl: "tp" | "sl",
 ): ExchangeOrder {
-	const triggerPx = formatPriceForOrder(triggerPrice, { assetId, szDecimals });
-	const orderPx = formatPriceForOrder(getTriggerMarketExecutionPrice(isBuy ? "buy" : "sell", triggerPrice), {
+	const triggerPriceValue = toBig(triggerPrice);
+	if (!triggerPriceValue || triggerPriceValue.lte(0)) throw new Error("Trigger price must be greater than zero");
+	const triggerPx = formatPriceForOrder(triggerPriceValue, { assetId, szDecimals });
+	const slippage = Big(TRIGGER_MARKET_SLIPPAGE_BPS).div(10_000);
+	const orderPrice = triggerPriceValue.times(isBuy ? Big(1).plus(slippage) : Big(1).minus(slippage));
+	const orderPx = formatPriceForOrder(orderPrice, {
 		assetId,
 		szDecimals,
 	});

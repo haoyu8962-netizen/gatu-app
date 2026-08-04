@@ -260,7 +260,7 @@ export function MobilePositionCard({
 									? t`Switch to ${displayName} market, long position`
 									: t`Switch to ${displayName} market, short position`
 							}
-							className="pointer-events-auto relative z-10 flex max-w-full min-w-0 items-baseline gap-1 rounded-xs text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+							className="pointer-events-auto relative z-10 flex max-w-full min-w-0 items-baseline gap-1 rounded-xs text-left after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
 						>
 							<span className="truncate text-[13px] font-bold leading-[18px] text-market-close-fg">{sizeSymbol}</span>
 							<span
@@ -308,7 +308,7 @@ export function MobilePositionCard({
 								type="button"
 								onClick={handleAdjustMargin}
 								aria-label={t`Adjust isolated margin for ${displayName}`}
-								className="group min-w-0 cursor-pointer rounded-xs text-left transition-colors duration-[120ms] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+								className="group relative min-w-0 cursor-pointer rounded-xs text-left transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
 							>
 								{marginMetric}
 							</button>
@@ -332,7 +332,7 @@ export function MobilePositionCard({
 							type="button"
 							onClick={handleOpenTpSl}
 							disabled={typeof assetId !== "number"}
-							className="group min-w-0 rounded-xs text-left transition-colors duration-[120ms] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
+							className="group relative min-w-0 rounded-xs text-left transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
 						>
 							<PositionMetric
 								label={t`TP/SL`}

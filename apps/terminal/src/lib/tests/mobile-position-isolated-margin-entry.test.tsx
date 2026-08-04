@@ -79,6 +79,8 @@ describe("MobilePositionCard isolated margin entry", () => {
 
 		const button = container.querySelector('button[aria-label="Adjust isolated margin for CXMT-USDC"]');
 		if (!(button instanceof HTMLButtonElement)) throw new Error("Isolated margin entry was not rendered");
+		expect(button.className).toContain("after:h-11");
+		expect(button.className).toContain("after:min-w-11");
 
 		act(() => button.click());
 
@@ -100,6 +102,8 @@ describe("MobilePositionCard isolated margin entry", () => {
 			element.textContent?.startsWith("TP/SL"),
 		);
 		expect(tpSlButton?.textContent).toContain("--/--");
+		expect(tpSlButton?.className).toContain("after:h-11");
+		expect(tpSlButton?.className).toContain("after:min-w-11");
 	});
 
 	it("preserves limit close, market close, and reverse actions in the expanded card", () => {
@@ -229,6 +233,8 @@ describe("MobilePositionCard isolated margin entry", () => {
 
 		const marketButton = container.querySelector('button[aria-label="Switch to CXMT-USDC market, long position"]');
 		if (!(marketButton instanceof HTMLButtonElement)) throw new Error("Market identity button was not rendered");
+		expect(marketButton.className).toContain("after:h-11");
+		expect(marketButton.className).toContain("after:min-w-11");
 		act(() => marketButton.click());
 		expect(onSelectMarket).toHaveBeenCalledWith("xyz:CXMT", "buy");
 

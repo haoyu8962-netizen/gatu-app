@@ -83,7 +83,7 @@ vi.mock("@gatu/ui", () => ({
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 }));
 
-vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
@@ -117,12 +117,18 @@ vi.mock("@/components/trade/tradebox/tp-sl-section", () => ({
 		leverage,
 		onSlPriceChange,
 		onTpPriceChange,
+		preserveFinancialPrecision,
+		referencePrice,
+		size,
 		slPrice,
 		tpPrice,
 	}: {
 		leverage?: number;
 		onSlPriceChange: (value: string) => void;
 		onTpPriceChange: (value: string) => void;
+		preserveFinancialPrecision?: boolean;
+		referencePrice: string | number;
+		size: string | number;
 		slPrice: string;
 		tpPrice: string;
 	}) =>
@@ -140,6 +146,9 @@ vi.mock("@/components/trade/tradebox/tp-sl-section", () => ({
 				value: slPrice,
 			}),
 			createElement("span", { "data-testid": "leverage" }, String(leverage)),
+			createElement("span", { "data-testid": "reference-price" }, String(referencePrice)),
+			createElement("span", { "data-testid": "position-size" }, String(size)),
+			createElement("span", { "data-testid": "precision-mode" }, String(preserveFinancialPrecision)),
 		),
 }));
 
@@ -327,6 +336,21 @@ describe("PositionTpSlModal live data", () => {
 		expect(container.textContent).toContain("Short position");
 		expect(container.textContent).toContain("28,595.5");
 		expect(container.textContent).not.toContain("No active positions.");
+	});
+
+	it("passes exchange strings to the precision-preserving TP/SL path", () => {
+		if (testState.position) {
+			testState.position = {
+				...testState.position,
+				entryPx: "9007199254740993.123",
+				szi: "-0.301000000000000001",
+			};
+		}
+		renderModal();
+
+		expect(container.querySelector('[data-testid="reference-price"]')?.textContent).toBe("9007199254740993.123");
+		expect(container.querySelector('[data-testid="position-size"]')?.textContent).toBe("0.301000000000000001");
+		expect(container.querySelector('[data-testid="precision-mode"]')?.textContent).toBe("true");
 	});
 
 	it("updates live mark and position values without replacing the user's TP draft", () => {

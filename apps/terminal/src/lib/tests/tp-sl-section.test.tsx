@@ -77,4 +77,29 @@ describe("TpSlSection position ROE shortcuts", () => {
 			expect(button.className).toContain("max-[1000px]:min-w-11");
 		}
 	});
+
+	it("preserves exact string prices in the position-dialog precision mode", () => {
+		const onTpPriceChange = vi.fn();
+		act(() => {
+			root.render(
+				createElement(TpSlSection, {
+					leverage: 20,
+					onSlPriceChange: vi.fn(),
+					onTpPriceChange,
+					preserveFinancialPrecision: true,
+					quickPercentMode: "roe",
+					referencePrice: "9007199254740993",
+					side: "buy",
+					size: "0.123456789012345678",
+					slPrice: "",
+					szDecimals: 2,
+					tpPrice: "",
+				}),
+			);
+		});
+
+		const buttons = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Set to 25%"]');
+		act(() => buttons[0]?.click());
+		expect(onTpPriceChange).toHaveBeenCalledWith("9119789245425255.4125");
+	});
 });

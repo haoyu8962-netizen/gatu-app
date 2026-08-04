@@ -95,6 +95,27 @@ export function calculateEstimatedPnl(params: TpSlCalcParams, targetPrice: Numer
 	return params.side === "buy" ? pnl : -pnl;
 }
 
+/**
+ * Exact-string variant for position dialogs that keep exchange values as strings.
+ * Conversion to `number` is intentionally left to the final display boundary.
+ */
+export function calculateEstimatedPnlExact(params: TpSlCalcParams, targetPrice: Numeric): string | null {
+	const ref = toBig(params.referencePrice);
+	const target = toBig(targetPrice);
+	const size = toBig(params.size);
+	if (!ref || !target || !size || ref.lte(0) || target.lte(0) || size.lte(0)) return null;
+
+	const pnl = target.minus(ref).times(size);
+	return (params.side === "buy" ? pnl : pnl.times(-1)).toString();
+}
+
+export function calculateRiskRewardRatioExact(tpPnl: Numeric, slPnl: Numeric): string | null {
+	const takeProfit = toBig(tpPnl);
+	const stopLoss = toBig(slPnl);
+	if (!takeProfit || !stopLoss || stopLoss.gte(0)) return null;
+	return takeProfit.abs().div(stopLoss.abs()).toString();
+}
+
 export function validateTpPrice(referencePrice: Numeric, tpPrice: Numeric, side: Side): boolean {
 	const ref = toSafeBig(referencePrice);
 	const tp = toSafeBig(tpPrice);

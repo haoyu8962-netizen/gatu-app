@@ -13,8 +13,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. placeholder {0}: orders.length
+#. placeholder {0}: filteredOrders.length
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 msgid "{0, plural, one {# order} other {# orders}}"
 msgstr ""
 
@@ -188,9 +189,9 @@ msgstr "खाता गतिविधि"
 msgid "Account and wallet"
 msgstr "खाता और वॉलेट"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Account Equity"
-#~ msgstr "खाता इक्विटी"
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Account Equity"
+msgstr "खाता इक्विटी"
 
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
@@ -347,9 +348,27 @@ msgstr "सभी क्रॉस पोज़िशन समान क्र�
 #~ msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions under assets in this mode may be forfeited."
 #~ msgstr ""
 
+#: src/components/trade/positions/orders-tab.tsx
+msgid "All Directions"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "All statuses"
+msgstr ""
+
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "All Time"
 msgstr "सभी समय"
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "All types"
+msgstr ""
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "All Types"
+msgstr ""
 
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
@@ -444,9 +463,15 @@ msgstr ""
 msgid "Arbitrum network switch was rejected."
 msgstr "Arbitrum नेटवर्क स्विच अस्वीकार कर दिया गया।"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -654,6 +679,7 @@ msgstr "बिल्डर फ़ीस"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -738,7 +764,9 @@ msgstr "चयनित ऑर्डर रद्द करें"
 #~ msgid "Cancel TWAP order"
 #~ msgstr "TWAP ऑर्डर रद्द करें"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/order-reconciliation.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Canceled"
@@ -928,6 +956,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Collapse all"
 msgstr ""
@@ -1141,6 +1170,7 @@ msgstr "धन भेजने के लिए अपना वॉलेट क
 msgid "Connect your wallet to transfer funds."
 msgstr "धन ट्रांसफ़र करने के लिए अपना वॉलेट कनेक्ट करें।"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "शेष देखने के लिए अपना वॉलेट कनेक्ट करें।"
@@ -1329,6 +1359,11 @@ msgstr "फ़ोन एक्सेस बनाएं"
 #~ msgid "Create secure phone access for trading from this account."
 #~ msgstr "इस खाते से ट्रेडिंग के लिए सुरक्षित फ़ोन एक्सेस बनाएं।"
 
+#: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Create TWAP"
+msgstr ""
+
 #: src/config/account-ledger.ts
 msgid "Create Vault"
 msgstr "वॉल्ट बनाएँ"
@@ -1386,6 +1421,11 @@ msgstr "CSV निर्यात इतिहास सीमा तक पह�
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "CSV exported."
 msgstr "CSV निर्यात हो गया।"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Cumulative funding"
+msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
@@ -1450,8 +1490,10 @@ msgstr "डिप्लॉयर"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1589,9 +1631,13 @@ msgstr "गंतव्य पता"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -1638,6 +1684,7 @@ msgstr "डिस्प्ले"
 #~ msgid "Displays the mobile sidebar."
 #~ msgstr "मोबाइल साइडबार दिखाता है।"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Distance to mark {markDistanceLabel}"
 msgstr ""
@@ -1927,6 +1974,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Expand all"
 msgstr ""
@@ -1953,7 +2001,13 @@ msgid "Explorer"
 msgstr "एक्सप्लोरर"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 msgid "Export CSV"
 msgstr "CSV निर्यात करें"
 
@@ -2130,7 +2184,9 @@ msgstr "पसंदीदा"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
@@ -2169,6 +2225,8 @@ msgstr "शुल्क ब्रिज राशि से अधिक है�
 msgid "Fill status"
 msgstr "फिल स्थिति"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
@@ -2539,6 +2597,7 @@ msgstr "Leverage"
 #~ msgid "limit"
 #~ msgstr "लिमिट"
 
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2611,6 +2670,8 @@ msgid "Liq. Price"
 msgstr "लिक्विडेशन प्राइस"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/config/account-ledger.ts
 msgid "Liquidated"
@@ -2618,6 +2679,7 @@ msgstr "लिक्विडेट हो गया"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Liquidation Price"
 msgstr "लिक्विडेशन मूल्य"
@@ -2779,6 +2841,10 @@ msgstr "Mainnet"
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Maintenance Margin"
 msgstr "मेंटेनेंस Margin"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Maintenance Margin Ratio"
+msgstr ""
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Manage TP/SL"
@@ -3337,6 +3403,15 @@ msgstr "कोई खुला ऑर्डर नहीं।"
 msgid "No order history found."
 msgstr "कोई ऑर्डर हिस्ट्री नहीं मिली।"
 
+#: src/components/trade/positions/orders-tab.tsx
+msgid "No orders match the selected filters."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "No orders match these filters."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "No positions match the selected filters."
@@ -3442,6 +3517,8 @@ msgstr ""
 #~ msgid "open"
 #~ msgstr "खुला"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
 msgstr "खुला"
@@ -3602,6 +3679,11 @@ msgstr ""
 msgid "Order Queue"
 msgstr "ऑर्डर कतार"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "Order status"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "Order submitted"
 msgstr "ऑर्डर सबमिट किया गया"
@@ -3617,6 +3699,8 @@ msgstr "ऑर्डर सबमिट किया गया"
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "ऑर्डर सबमिट हो गया है। एक्सचेंज की स्थिति की पुष्टि की जा रही है; दोबारा प्रयास न करें।"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Order type"
 msgstr "ऑर्डर प्रकार"
@@ -3639,7 +3723,6 @@ msgstr "ऑर्डर बुक पर केवल एक Limit ऑर्ड�
 msgid "Order will rest until filled or canceled."
 msgstr "ऑर्डर तब तक बना रहेगा जब तक भर न जाए या रद्द न हो।"
 
-#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "orders"
 msgstr "ऑर्डर"
@@ -3663,6 +3746,8 @@ msgstr ""
 msgid "Original Size"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3732,6 +3817,8 @@ msgstr "आंशिक"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Payment"
 msgstr "भुगतान"
@@ -3877,8 +3964,10 @@ msgstr "प्लेटफ़ॉर्म"
 
 #: src/components/portfolio/portfolio-overview.tsx
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "PNL"
 msgstr "PNL"
@@ -3935,6 +4024,8 @@ msgid "Portfolio Value"
 msgstr "पोर्टफोलियो मूल्य"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Position"
@@ -4044,11 +4135,15 @@ msgstr ""
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
@@ -4147,6 +4242,8 @@ msgstr "टाइमिंग को रैंडमाइज़ करें"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Rate"
 msgstr "दर"
@@ -4254,6 +4351,8 @@ msgstr "कोट रीफ़्रेश करें"
 #~ msgid "Register Builder Code"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Rejected"
 msgstr "अस्वीकृत"
@@ -4665,6 +4764,7 @@ msgstr "चयनित वॉलेट कनेक्टेड खाते �
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-entry-data.ts
@@ -4871,8 +4971,10 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -4881,6 +4983,8 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -5086,7 +5190,9 @@ msgid "Starting camera..."
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Status"
 msgstr "स्थिति"
@@ -5790,13 +5896,19 @@ msgid "TIF"
 msgstr "TIF"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
@@ -5872,8 +5984,13 @@ msgid "Total"
 msgstr "कुल"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "Total balance"
-msgstr "कुल बैलेंस"
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Total assets"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#~ msgid "Total balance"
+#~ msgstr "कुल बैलेंस"
 
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
@@ -5922,6 +6039,10 @@ msgstr "TP मूल्य"
 #: src/config/ui-text.ts
 msgid "TP/SL"
 msgstr "TP/SL"
+
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "TP/SL orders updated"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Track on LI.FI Explorer"
@@ -6021,6 +6142,11 @@ msgstr "ट्रेडिंग की स्वीकृत हुई"
 msgid "Traditional Finance"
 msgstr "पारंपरिक वित्त"
 
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+msgid "Transaction"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Transaction breakdown"
 msgstr "लेन-देन विवरण"
@@ -6078,6 +6204,7 @@ msgstr "यूनिफाइड अकाउंट मोड में Spot औ
 #~ msgstr "ट्रेंडिंग"
 
 #: src/components/trade/components/historical-order-price.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
@@ -6094,7 +6221,9 @@ msgstr "ट्रिगर ऑर्डर को आपकी मौजूद�
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
 msgstr "ट्रिगर मूल्य"
@@ -6107,6 +6236,8 @@ msgstr "ट्रिगर मूल्य"
 msgid "Trigger size exceeds position size"
 msgstr "ट्रिगर का आकार पोज़िशन के आकार से अधिक है"
 
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Triggered"
 msgstr "ट्रिगर हुआ"
@@ -6179,8 +6310,10 @@ msgstr "दो-तरफ़ा ओपन इंटरेस्ट: इस कॉ
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Type"
@@ -6301,6 +6434,8 @@ msgid "Update failed"
 msgstr "अपडेट विफल रहा"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -6561,9 +6696,10 @@ msgstr "निकासी"
 msgid "Withdraw to Arbitrum"
 msgstr "Arbitrum पर निकासी"
 
-#: src/components/trade/tradebox/account-panel.tsx
-#~ msgid "Withdrawable"
-#~ msgstr "निकासी योग्य"
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Withdrawable"
+msgstr "निकासी योग्य"
 
 #: src/config/account-ledger.ts
 msgid "Withdrawal"

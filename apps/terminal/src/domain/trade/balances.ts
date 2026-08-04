@@ -127,10 +127,26 @@ export interface PerpRiskSummary {
 	unrealizedPnl: number;
 }
 
+export interface PerpRiskSummaryValue {
+	totalNtlPos: string;
+	totalMarginUsed: string;
+	crossMaintenanceMarginUsed: string;
+	unrealizedPnl: string;
+}
+
 interface PerpRiskState {
 	marginSummary?: MarginSummary | null;
 	crossMaintenanceMarginUsed?: string | number | null;
 	assetPositions?: PerpPosition[] | null;
+}
+
+interface PerpDexRiskState extends PerpRiskState {
+	dex: string;
+}
+
+interface PerpDexCollateralToken {
+	dex: string;
+	token: number;
 }
 
 function getBalanceMode(accountAbstraction: AccountAbstraction | null | undefined): BalanceAccountMode {
@@ -139,33 +155,126 @@ function getBalanceMode(accountAbstraction: AccountAbstraction | null | undefine
 	return "separate";
 }
 
+export function getPerpRiskSummaryValue(states: PerpRiskState[]): PerpRiskSummaryValue {
+	let totalNtlPos = Big(0);
+	let totalMarginUsed = Big(0);
+	let crossMaintenanceMarginUsed = Big(0);
+	let unrealizedPnl = Big(0);
+
+	for (const state of states) {
+		totalNtlPos = totalNtlPos.plus(toSafeBig(state.marginSummary?.totalNtlPos));
+		totalMarginUsed = totalMarginUsed.plus(toSafeBig(state.marginSummary?.totalMarginUsed));
+		crossMaintenanceMarginUsed = crossMaintenanceMarginUsed.plus(toSafeBig(state.crossMaintenanceMarginUsed));
+		for (const pos of state.assetPositions ?? []) {
+			unrealizedPnl = unrealizedPnl.plus(toSafeBig(pos.position.unrealizedPnl));
+		}
+	}
+
+	return {
+		totalNtlPos: totalNtlPos.toString(),
+		totalMarginUsed: totalMarginUsed.toString(),
+		crossMaintenanceMarginUsed: crossMaintenanceMarginUsed.toString(),
+		unrealizedPnl: unrealizedPnl.toString(),
+	};
+}
+
 export function getPerpRiskSummary(states: PerpRiskState[]): PerpRiskSummary {
-	return states.reduce<PerpRiskSummary>(
-		(summary, state) => {
-			summary.totalNtlPos += toSafeBig(state.marginSummary?.totalNtlPos).toNumber();
-			summary.totalMarginUsed += toSafeBig(state.marginSummary?.totalMarginUsed).toNumber();
-			summary.crossMaintenanceMarginUsed += toSafeBig(state.crossMaintenanceMarginUsed).toNumber();
-			for (const pos of state.assetPositions ?? []) {
-				summary.unrealizedPnl += toSafeBig(pos.position.unrealizedPnl).toNumber();
-			}
-			return summary;
-		},
-		{
-			totalNtlPos: 0,
-			totalMarginUsed: 0,
-			crossMaintenanceMarginUsed: 0,
-			unrealizedPnl: 0,
-		},
-	);
+	const summary = getPerpRiskSummaryValue(states);
+	return {
+		totalNtlPos: Number(summary.totalNtlPos),
+		totalMarginUsed: Number(summary.totalMarginUsed),
+		crossMaintenanceMarginUsed: Number(summary.crossMaintenanceMarginUsed),
+		unrealizedPnl: Number(summary.unrealizedPnl),
+	};
+}
+
+export function getUnifiedAccountMarginRatioValue({
+	states,
+	collaterals,
+	spotBalances,
+}: {
+	states: readonly PerpDexRiskState[];
+	collaterals: readonly PerpDexCollateralToken[];
+	spotBalances: SpotBalance[] | null | undefined;
+}): string | null {
+	const collateralTokenByDex = new Map(collaterals.map(({ dex, token }) => [dex, token]));
+	const crossMaintenanceByToken = new Map<number, Big>();
+	const isolatedMarginByToken = new Map<number, Big>();
+
+	for (const state of states) {
+		const token = collateralTokenByDex.get(state.dex);
+		const crossMaintenance = toBig(state.crossMaintenanceMarginUsed);
+		if (!crossMaintenance || crossMaintenance.lt(0)) return null;
+		if (token === undefined) {
+			if (!crossMaintenance.eq(0) || (state.assetPositions?.length ?? 0) > 0) return null;
+			continue;
+		}
+
+		crossMaintenanceByToken.set(token, (crossMaintenanceByToken.get(token) ?? Big(0)).plus(crossMaintenance));
+		for (const position of state.assetPositions ?? []) {
+			if (position.position.leverage.type !== "isolated") continue;
+			const marginUsed = toBig(position.position.marginUsed);
+			if (!marginUsed || marginUsed.lt(0)) return null;
+			isolatedMarginByToken.set(token, (isolatedMarginByToken.get(token) ?? Big(0)).plus(marginUsed));
+		}
+	}
+
+	const spotTotalByToken = new Map<number, Big>();
+	for (const balance of spotBalances ?? []) {
+		if (!("token" in balance) || typeof balance.token !== "number") continue;
+		const total = toBig(balance.total);
+		if (!total) return null;
+		spotTotalByToken.set(balance.token, total);
+	}
+
+	let maxRatio = Big(0);
+	for (const [token, crossMaintenance] of crossMaintenanceByToken) {
+		if (crossMaintenance.eq(0)) continue;
+		const spotTotal = spotTotalByToken.get(token);
+		if (!spotTotal) return null;
+		const available = spotTotal.minus(isolatedMarginByToken.get(token) ?? Big(0));
+		if (available.lte(0)) return null;
+		const ratio = crossMaintenance.div(available);
+		if (ratio.gt(maxRatio)) maxRatio = ratio;
+	}
+
+	return maxRatio.toString();
+}
+
+export function getSpotAccountValueValue(
+	spotBalances: SpotBalance[] | null | undefined,
+	tokenUsdPrices?: TokenUsdPrices,
+): string {
+	return (spotBalances ?? [])
+		.reduce((sum, balance) => sum.plus(toSafeBig(getSpotUsdValue(balance, tokenUsdPrices))), Big(0))
+		.toString();
 }
 
 export function getSpotAccountValue(
 	spotBalances: SpotBalance[] | null | undefined,
 	tokenUsdPrices?: TokenUsdPrices,
 ): number {
-	return (spotBalances ?? [])
-		.reduce((sum, balance) => sum.plus(toSafeBig(getSpotUsdValue(balance, tokenUsdPrices))), Big(0))
-		.toNumber();
+	return Number(getSpotAccountValueValue(spotBalances, tokenUsdPrices));
+}
+
+export function getAccountEquityValue({
+	accountAbstraction,
+	marginSummary,
+	perpSummary,
+	spotBalances,
+	tokenUsdPrices,
+}: {
+	accountAbstraction: AccountAbstraction | null | undefined;
+	marginSummary: MarginSummary | null | undefined;
+	perpSummary: PerpSummary | null | undefined;
+	spotBalances: SpotBalance[] | null | undefined;
+	tokenUsdPrices?: TokenUsdPrices;
+}): string {
+	if (isQuoteBalanceSharedWithPerps(accountAbstraction)) {
+		return getSpotAccountValueValue(spotBalances, tokenUsdPrices);
+	}
+
+	return toSafeBig(marginSummary?.accountValue ?? perpSummary?.accountValue).toString();
 }
 
 export function getAccountBalanceSummary({

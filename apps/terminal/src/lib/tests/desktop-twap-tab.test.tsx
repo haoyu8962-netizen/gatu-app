@@ -9,7 +9,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const testState = vi.hoisted(() => ({
 	cancelTwap: vi.fn(),
 	cancellingTwapId: null as number | null,
+	hasActiveOrder: true,
 	navigateToMarket: vi.fn(),
+	setOrderType: vi.fn(),
 	twap: {
 		coin: "xyz:GOOGL",
 		side: "B",
@@ -53,11 +55,15 @@ vi.mock("@/lib/hyperliquid", () => ({
 		getSzDecimals: () => 2,
 	}),
 	useSubscription: () => ({
-		data: { states: [[45, testState.twap]] },
+		data: { states: testState.hasActiveOrder ? [[45, testState.twap]] : [] },
 		status: "active",
 		error: null,
 		isStale: false,
 	}),
+}));
+
+vi.mock("@/stores/use-order-entry-store", () => ({
+	useOrderEntryActions: () => ({ setOrderType: testState.setOrderType }),
 }));
 
 import { TwapTab } from "@/components/trade/positions/twap-tab";
@@ -71,8 +77,10 @@ describe("desktop TWAP toolbar", () => {
 		vi.setSystemTime(testState.twap.timestamp + 5 * 60_000);
 		testState.twap.side = "B";
 		testState.cancellingTwapId = null;
+		testState.hasActiveOrder = true;
 		testState.cancelTwap.mockReset();
 		testState.navigateToMarket.mockReset();
+		testState.setOrderType.mockReset();
 		i18n.load("en", {});
 		i18n.activate("en");
 		container = document.createElement("div");
@@ -145,5 +153,17 @@ describe("desktop TWAP toolbar", () => {
 		expect(busyTerminate?.disabled).toBe(true);
 		expect(busyTerminate?.getAttribute("aria-busy")).toBe("true");
 		expect(busyTerminate?.textContent).toBe("Terminating...");
+	});
+
+	it("reuses the existing order-entry action for the empty-state CTA", () => {
+		testState.hasActiveOrder = false;
+		render();
+
+		const createButton = Array.from(container.querySelectorAll("button")).find(
+			(button) => button.textContent === "Create TWAP",
+		);
+		expect(createButton).toBeDefined();
+		act(() => createButton?.click());
+		expect(testState.setOrderType).toHaveBeenCalledWith("twap");
 	});
 });

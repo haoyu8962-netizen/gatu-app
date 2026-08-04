@@ -126,10 +126,10 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 			w: 10,
 			h: 30.4,
 			minH: 10,
-			minW: 4,
+			minW: 10,
 			maxW: 10,
 			isDraggable: false,
-			resizeHandles: ["e", "s", "se"],
+			resizeHandles: ["s"],
 		},
 		{
 			i: "accountInfo",

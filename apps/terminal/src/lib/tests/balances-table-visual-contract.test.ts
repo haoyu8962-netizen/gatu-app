@@ -44,7 +44,7 @@ describe("balances table visual contract", () => {
 
 	it("keeps the positions toolbar dense and removes inherited tab-panel padding", () => {
 		expect(POSITIONS_PANEL_SOURCE).toContain('size="xs"');
-		expect(POSITIONS_PANEL_SOURCE).toContain("flex h-9 shrink-0");
+		expect(POSITIONS_PANEL_SOURCE).toContain("flex h-[45px] shrink-0");
 		expect(POSITIONS_PANEL_SOURCE).toContain("flex-col pt-0");
 	});
 });

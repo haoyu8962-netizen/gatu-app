@@ -12,6 +12,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatClockDuration, formatNumber, formatPercent, formatPrice } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
@@ -37,6 +38,7 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 	);
 	const markets = useMarkets();
 	const { cancelTwap, cancellingTwapId, feedback } = useTwapCancel();
+	const { setOrderType } = useOrderEntryActions();
 
 	const twapStates = twapStatesEvent?.states ?? [];
 	const activeOrders = useMemo(
@@ -51,6 +53,11 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 
 	function handleSelectMarket(name: string) {
 		navigateToMarket(name, undefined, { displayedContent: "trade" });
+		setActiveTab("trade");
+	}
+
+	function handleCreateTwap() {
+		setOrderType("twap");
 		setActiveTab("trade");
 	}
 
@@ -81,6 +88,13 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 					≡
 				</div>
 				<span className="text-[13px] font-semibold text-market-close-muted">{t`No active TWAP orders.`}</span>
+				<button
+					type="button"
+					onClick={handleCreateTwap}
+					className="mt-1 min-h-11 rounded-[7px] border border-market-close-stroke-control px-3.5 text-xs font-semibold text-market-close-fg outline-none transition-colors duration-[120ms] active:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+				>
+					{t`Create TWAP`}
+				</button>
 			</div>
 		);
 	}

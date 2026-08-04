@@ -7,6 +7,8 @@ import { formatUSD } from "@/lib/format";
 import { isPositive } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 
+type FinancialDisplayValue = string | number;
+
 interface Props {
 	label: string;
 	icon: Icon;
@@ -14,12 +16,12 @@ interface Props {
 	onChange: (value: string) => void;
 	percentOptions: readonly number[];
 	onPercentClick: (percent: number) => void;
-	pnlValue: number | null;
+	pnlValue: FinancialDisplayValue | null;
 	error?: string | null;
 	disabled?: boolean;
 	quickPercentDisabled?: boolean;
 	isPercentDisabled?: (percent: number) => boolean;
-	referencePrice: number;
+	referencePrice: FinancialDisplayValue;
 	mobileTouchSafe?: boolean;
 }
 

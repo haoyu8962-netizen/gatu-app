@@ -12,6 +12,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatClockDuration, formatNumber, formatPercent, formatPrice } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
 import { positionsPanelTableShellClass, positionsPanelTabRootClass } from "./positions-panel-table-styles";
 
@@ -34,6 +35,7 @@ export function TwapTab() {
 	);
 	const markets = useMarkets();
 	const { cancelTwap, cancellingTwapId, feedback } = useTwapCancel();
+	const { setOrderType } = useOrderEntryActions();
 
 	const twapStates = twapStatesEvent?.states ?? [];
 	const activeOrders = useMemo(
@@ -67,6 +69,15 @@ export function TwapTab() {
 					<span className="text-xs text-market-close-subtle">
 						{t`Create a TWAP order from Advanced order settings to execute it in smaller batches.`}
 					</span>
+					{viewState === "ready" ? (
+						<button
+							type="button"
+							onClick={() => setOrderType("twap")}
+							className="mt-1 rounded-[7px] border border-market-close-stroke-control px-3.5 py-1.5 text-xs font-semibold text-market-close-fg transition-colors duration-[120ms] hover:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+						>
+							{t`Create TWAP`}
+						</button>
+					) : null}
 				</div>
 			);
 		}

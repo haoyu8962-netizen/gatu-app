@@ -1,14 +1,17 @@
 import { useLingui } from "@lingui/react/macro";
+import { DownloadSimpleIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { buildCsvRows, downloadCsv } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { toNumber } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -33,7 +36,7 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
 
 	const updates = fundingEvent?.fundings?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
-	const totalFunding = updates.reduce((acc, funding) => acc + toNumberOrZero(funding.usdc), 0);
+	const totalFunding = getToolbarFundingTotal(updates);
 	const headerTotal =
 		isConnected && status === "active"
 			? formatUSD(totalFunding, { signDisplay: "exceptZero" })
@@ -54,6 +57,32 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 					expanded,
 				]),
 			),
+		);
+	}
+
+	function handleExportCsv() {
+		downloadCsv(
+			"funding_history.csv",
+			buildCsvRows(updates, [
+				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time) },
+				{ header: t`Asset`, getValue: (update) => update.coin },
+				{
+					header: t`Position`,
+					getValue: (update) => {
+						const market = markets.getMarket(update.coin);
+						return formatToken(getToolbarAbsoluteSize(update.szi), {
+							decimals: market?.szDecimals,
+							symbol: market?.shortName,
+						});
+					},
+				},
+				{
+					header: t`Rate`,
+					getValue: (update) =>
+						formatPercent(update.fundingRate, { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
+				},
+				{ header: t`Payment`, getValue: (update) => formatToken(update.usdc, { symbol: "USDC" }) },
+			]),
 		);
 	}
 
@@ -86,8 +115,8 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 		<Skeleton name="funding-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
 				<div className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-market-close-stroke-card px-3.5">
-					<span className={cn("min-w-0 flex-1 truncate text-[11px] font-semibold tabular-nums", headerClass)}>
-						{headerTotal}
+					<span className="min-w-0 flex-1 truncate text-[11px] text-market-close-muted">
+						{t`Cumulative funding`} <span className={cn("font-semibold tabular-nums", headerClass)}>{headerTotal}</span>
 					</span>
 					<div className="flex shrink-0 items-center gap-3">
 						<button
@@ -121,8 +150,7 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 						const szi = toNumber(update.szi);
 						const rate = toNumber(update.fundingRate);
 						const usdc = toNumber(update.usdc);
-						const positionSize = szi !== null ? Math.abs(szi) : null;
-						const positionDisplay = formatToken(positionSize, {
+						const positionDisplay = formatToken(getToolbarAbsoluteSize(update.szi), {
 							decimals: market?.szDecimals,
 							symbol: market?.shortName,
 						});
@@ -230,6 +258,16 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 							</article>
 						);
 					})}
+					<div className="flex shrink-0 items-center gap-4" data-testid="mobile-funding-history-footer">
+						<button
+							type="button"
+							onClick={handleExportCsv}
+							className="inline-flex min-h-11 items-center gap-1.5 text-xs text-market-close-muted transition-colors duration-[120ms] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+						>
+							<DownloadSimpleIcon className="size-3.5" aria-hidden="true" />
+							{t`Export CSV`}
+						</button>
+					</div>
 				</div>
 			</div>
 		</Skeleton>

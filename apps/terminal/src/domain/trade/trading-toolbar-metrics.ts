@@ -45,6 +45,10 @@ export interface ToolbarFundingUpdateInput {
 	usdc: string;
 }
 
+export type ToolbarAccountRiskTone = "safe" | "warning" | "danger";
+export type ToolbarOrderTypeFilter = "all" | "limit" | "trigger";
+export type ToolbarOrderDirectionFilter = "all" | "buy" | "sell";
+
 function getPositive(value: string): Big | null {
 	const parsed = toBig(value);
 	return parsed?.gt(0) ? parsed : null;
@@ -70,6 +74,31 @@ export function getToolbarAccountMarginRatio(input: ToolbarAccountMarginInput): 
 
 	if (!maintenanceMargin || !accountEquity) return null;
 	return maintenanceMargin.div(accountEquity).toString();
+}
+
+export function getToolbarAccountRiskPresentation(ratioValue: string | null): {
+	progressPercent: string | null;
+	tone: ToolbarAccountRiskTone;
+} {
+	const ratio = toBig(ratioValue);
+	if (!ratio || ratio.lt(0)) return { progressPercent: null, tone: "safe" };
+
+	const clampedRatio = ratio.gt(1) ? Big(1) : ratio;
+	return {
+		progressPercent: clampedRatio.times(100).toString(),
+		tone: ratio.gte("0.75") ? "danger" : ratio.gte("0.5") ? "warning" : "safe",
+	};
+}
+
+export function matchesToolbarOrderFilters(
+	order: { isTrigger: boolean; side: string },
+	typeFilter: ToolbarOrderTypeFilter,
+	directionFilter: ToolbarOrderDirectionFilter,
+): boolean {
+	return (
+		(typeFilter === "all" || (typeFilter === "trigger") === order.isTrigger) &&
+		(directionFilter === "all" || (directionFilter === "buy") === (order.side === "B"))
+	);
 }
 
 export function getToolbarOrderMetrics(input: ToolbarOrderMetricsInput): ToolbarOrderMetrics {
