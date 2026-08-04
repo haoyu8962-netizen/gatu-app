@@ -244,7 +244,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 										marketCloseSession.phase !== "idle";
 									return (
 										<PositionRow
-											key={p.coin}
+											key={`${p.dex}:${p.coin}`}
 											position={p}
 											markets={markets}
 											markPx={getMarketInfo(p.coin)?.markPx}

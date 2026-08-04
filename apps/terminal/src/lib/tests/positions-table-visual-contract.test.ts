@@ -9,6 +9,10 @@ import {
 	positionTableHeadClass,
 	positionTableInlineActionClass,
 } from "@/components/trade/positions/position-table-styles";
+import {
+	positionsPanelRowHoverClass,
+	positionsPanelRowStripeClass,
+} from "@/components/trade/positions/positions-panel-table-styles";
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -67,6 +71,21 @@ describe("positions table visual contract", () => {
 		expect(POSITION_ROW_SOURCE).toContain("formatQuoteAmount(p.positionValue, quoteSymbol");
 		expect(POSITION_ROW_SOURCE).toContain('style: "decimal"');
 		expect(POSITION_ROW_SOURCE).toContain('currencyDisplay: "narrowSymbol"');
+	});
+
+	it("switches striped row backgrounds synchronously with the active theme", () => {
+		const rowClassTokens = positionsPanelRowHoverClass.split(/\s+/);
+
+		expect(positionsPanelRowHoverClass).toContain("bg-fill-hover");
+		expect(rowClassTokens).not.toContain("transition-colors");
+		expect(rowClassTokens).not.toContain("transition-all");
+		expect(rowClassTokens.some((token) => token.includes("background-color"))).toBe(false);
+		expect(positionsPanelRowStripeClass).toBe("bg-alternate");
+	});
+
+	it("keys desktop positions by their dex and coin identity", () => {
+		expect(POSITIONS_TAB_SOURCE).toMatch(/key=\{`\$\{p\.dex\}:\$\{p\.coin\}`\}/);
+		expect(POSITIONS_TAB_SOURCE).not.toContain("key={p.coin}");
 	});
 
 	it("places direction and market filters beside the active positions tab", () => {
