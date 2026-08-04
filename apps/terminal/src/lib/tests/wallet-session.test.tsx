@@ -108,12 +108,13 @@ function DisconnectButton() {
 }
 
 function SessionProbe() {
-	const { displayAddress, hasWalletAccess, isConnected } = useWalletSession();
+	const { displayAddress, hasWalletAccess, isConnected, ready } = useWalletSession();
 
 	return createElement("output", {
 		"data-display-address": displayAddress ?? "",
 		"data-has-wallet-access": String(hasWalletAccess),
 		"data-is-connected": String(isConnected),
+		"data-ready": String(ready),
 	});
 }
 
@@ -499,10 +500,88 @@ describe("useDisconnectWallet", () => {
 		expect(probe?.getAttribute("data-is-connected")).toBe("false");
 	});
 
+	it("does not trust a lingering wagmi address after its connection is no longer active", () => {
+		testState.walletConnected = false;
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
 	it("does not expose an email wallet until wagmi activates its exact signer", () => {
 		testState.embeddedWalletAddress = USER_ADDRESS;
 		testState.shouldUseEmbeddedWallet = true;
 		testState.walletAddress = "0x3333333333333333333333333333333333333333";
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
+	it("does not expose a signer until Privy has finished resolving connected wallets", () => {
+		testState.embeddedWalletAddress = USER_ADDRESS;
+		testState.shouldUseEmbeddedWallet = true;
+		testState.walletsReady = false;
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-ready")).toBe("false");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
+	it("does not expose a signer before Privy authentication initialization is ready", () => {
+		testState.embeddedWalletAddress = USER_ADDRESS;
+		testState.shouldUseEmbeddedWallet = true;
+		testState.selectedWallet = { address: USER_ADDRESS };
+		testState.wallets = [testState.selectedWallet];
+		testState.ready = false;
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-ready")).toBe("false");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
+	it("does not expose a linked email wallet that is absent from Privy's connected-wallet directory", () => {
+		testState.embeddedWalletAddress = USER_ADDRESS;
+		testState.shouldUseEmbeddedWallet = true;
+
+		act(() => {
+			root.render(createElement(SessionProbe));
+		});
+
+		const probe = container.querySelector("output");
+		expect(probe?.getAttribute("data-display-address")).toBe("");
+		expect(probe?.getAttribute("data-has-wallet-access")).toBe("false");
+		expect(probe?.getAttribute("data-is-connected")).toBe("false");
+	});
+
+	it("fails closed while wagmi is still activating the exact signer", () => {
+		testState.embeddedWalletAddress = USER_ADDRESS;
+		testState.shouldUseEmbeddedWallet = true;
+		testState.selectedWallet = { address: USER_ADDRESS };
+		testState.wallets = [testState.selectedWallet];
+		testState.walletConnecting = true;
 
 		act(() => {
 			root.render(createElement(SessionProbe));
@@ -532,6 +611,8 @@ describe("useDisconnectWallet", () => {
 	it("exposes the email wallet after wagmi activates the matching signer", () => {
 		testState.embeddedWalletAddress = USER_ADDRESS;
 		testState.shouldUseEmbeddedWallet = true;
+		testState.selectedWallet = { address: USER_ADDRESS };
+		testState.wallets = [testState.selectedWallet];
 
 		act(() => {
 			root.render(createElement(SessionProbe));

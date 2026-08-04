@@ -60,13 +60,14 @@ export function getRootProviderContext() {
 }
 
 function HyperliquidBridge({ children }: { children: React.ReactNode }) {
-	const { address } = useWalletSession();
+	const { address, authenticated, ready } = useWalletSession();
 
 	return (
 		<HyperliquidExchangePolicyProvider portfolioMarginActivationEnabled={PORTFOLIO_MARGIN_FEATURES.activationEnabled}>
 			<HyperliquidProvider
 				env={env}
 				userAddress={address}
+				allowAgentOnlySession={ready && !authenticated}
 				builderConfig={DEFAULT_BUILDER_CONFIG}
 				agentName={APP_NAME}
 				onAgentCleanupFailure={() => {

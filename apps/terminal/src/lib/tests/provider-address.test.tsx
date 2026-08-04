@@ -120,7 +120,47 @@ describe("HyperliquidProvider userAddress prop", () => {
 		});
 	});
 
-	it("removes the exact Agent when a wallet disconnects outside the logout button", async () => {
+	it("does not fall back to an agent-only owner while wallet restoration is unresolved", async () => {
+		const { clearActiveAgentOwner, setActiveAgentOwnerAndVerify } = await import(
+			"@gatu/hl-react/signing/agent-session"
+		);
+		const { HyperliquidProvider, useHyperliquid } = await import("@gatu/hl-react/provider");
+		clearActiveAgentOwner();
+		expect(setActiveAgentOwnerAndVerify("Testnet", ADDRESS_B)).toBe(true);
+		let capturedKey: string | undefined;
+		let capturedMode: string | undefined;
+		function Consumer() {
+			const context = useHyperliquid();
+			capturedKey = context.clientKey;
+			capturedMode = context.sessionMode;
+			return null;
+		}
+		const container = document.createElement("div");
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<HyperliquidProvider
+					env="Testnet"
+					userAddress={undefined}
+					allowAgentOnlySession={false}
+					builderConfig={TEST_BUILDER_CONFIG}
+				>
+					<Consumer />
+				</HyperliquidProvider>,
+			);
+		});
+
+		expect(capturedKey).toBe("disconnected");
+		expect(capturedMode).toBe("disconnected");
+		await act(async () => {
+			root.unmount();
+			await Promise.resolve();
+		});
+		clearActiveAgentOwner();
+	});
+
+	it("keeps the exact Agent while a wallet signer is transiently unavailable", async () => {
 		const { HyperliquidProvider } = await import("@gatu/hl-react/provider");
 		const container = document.createElement("div");
 		const root = createRoot(container);
@@ -140,10 +180,81 @@ describe("HyperliquidProvider userAddress prop", () => {
 			);
 		});
 
+		expect(sessionMocks.closeAndRemove).not.toHaveBeenCalled();
+		expect(schedulerMocks.invalidateIdentity).toHaveBeenCalledWith("Testnet", ADDRESS_A, "wallet");
+		await act(async () => {
+			root.unmount();
+			await Promise.resolve();
+		});
+	});
+
+	it("restores the same wallet after a transient disconnect without deleting its Agent", async () => {
+		const { HyperliquidProvider } = await import("@gatu/hl-react/provider");
+		const container = document.createElement("div");
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<HyperliquidProvider env="Testnet" userAddress={ADDRESS_A} builderConfig={TEST_BUILDER_CONFIG}>
+					<div />
+				</HyperliquidProvider>,
+			);
+		});
+		await act(async () => {
+			root.render(
+				<HyperliquidProvider env="Testnet" userAddress={undefined} builderConfig={TEST_BUILDER_CONFIG}>
+					<div />
+				</HyperliquidProvider>,
+			);
+		});
+		await act(async () => {
+			root.render(
+				<HyperliquidProvider env="Testnet" userAddress={ADDRESS_A} builderConfig={TEST_BUILDER_CONFIG}>
+					<div />
+				</HyperliquidProvider>,
+			);
+		});
+
+		expect(sessionMocks.closeAndRemove).not.toHaveBeenCalled();
+		expect(sessionMocks.activate).toHaveBeenLastCalledWith("Testnet", ADDRESS_A);
+		await act(async () => {
+			root.unmount();
+			await Promise.resolve();
+		});
+	});
+
+	it("cleans account A when a transient disconnect resolves to account B", async () => {
+		const { HyperliquidProvider } = await import("@gatu/hl-react/provider");
+		const container = document.createElement("div");
+		const root = createRoot(container);
+
+		await act(async () => {
+			root.render(
+				<HyperliquidProvider env="Testnet" userAddress={ADDRESS_A} builderConfig={TEST_BUILDER_CONFIG}>
+					<div />
+				</HyperliquidProvider>,
+			);
+		});
+		await act(async () => {
+			root.render(
+				<HyperliquidProvider env="Testnet" userAddress={undefined} builderConfig={TEST_BUILDER_CONFIG}>
+					<div />
+				</HyperliquidProvider>,
+			);
+		});
+		await act(async () => {
+			root.render(
+				<HyperliquidProvider env="Testnet" userAddress={ADDRESS_B} builderConfig={TEST_BUILDER_CONFIG}>
+					<div />
+				</HyperliquidProvider>,
+			);
+		});
+
+		expect(sessionMocks.closeAndRemove).toHaveBeenCalledOnce();
 		expect(sessionMocks.closeAndRemove).toHaveBeenCalledWith("Testnet", ADDRESS_A, {
 			restoreOnFailure: false,
 		});
-		expect(schedulerMocks.invalidateIdentity).toHaveBeenCalledWith("Testnet", ADDRESS_A, "wallet");
+		expect(sessionMocks.activate).toHaveBeenLastCalledWith("Testnet", ADDRESS_B);
 		await act(async () => {
 			root.unmount();
 			await Promise.resolve();
@@ -204,7 +315,7 @@ describe("HyperliquidProvider userAddress prop", () => {
 			root.render(
 				<HyperliquidProvider
 					env="Testnet"
-					userAddress={undefined}
+					userAddress={ADDRESS_B}
 					builderConfig={TEST_BUILDER_CONFIG}
 					onAgentCleanupFailure={onCleanupFailure}
 				>

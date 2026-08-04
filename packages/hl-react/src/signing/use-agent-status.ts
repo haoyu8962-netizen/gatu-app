@@ -18,14 +18,36 @@ export interface AgentRequirements {
 	isReady: boolean;
 }
 
+export type AgentVerificationStatus = "unknown" | "loading" | "ready" | "missing" | "error";
+
 export interface UseAgentStatusResult extends AgentRequirements {
 	isLoading: boolean;
 	isAgentLoading: boolean;
 	isBuilderFeeLoading: boolean;
+	agentVerificationStatus: AgentVerificationStatus;
+	agentError: Error | null;
 	agentAddress: Address | null;
 	refetch: (agentAddressOverride?: Address) => Promise<AgentRequirements>;
-	refetchAgent: () => Promise<AgentRequirements>;
+	refetchAgent: (agentAddressOverride?: Address) => Promise<AgentRequirements>;
 	refetchBuilderFee: () => Promise<AgentRequirements>;
+}
+
+/** @internal Exported for contract tests. */
+export function deriveAgentVerificationStatus(
+	hasOwner: boolean,
+	extraAgentsData: ExtraAgentsResponse | undefined,
+	error: unknown,
+	isFetching: boolean,
+	currentRequirements: AgentRequirements,
+): AgentVerificationStatus {
+	if (!hasOwner) return "unknown";
+	if (error) return "error";
+	// A matching cached Agent remains usable during a background refresh. In
+	// contrast, a cached miss cannot trigger registration until refresh settles.
+	if (currentRequirements.isAgentReady) return "ready";
+	if (isFetching) return "loading";
+	if (extraAgentsData === undefined) return "unknown";
+	return "missing";
 }
 
 export function getDefinitiveMobileAgentStaleReason(
@@ -133,43 +155,63 @@ export function useAgentStatus(): UseAgentStatusResult {
 		void cleanupAgentRegistrationIfMatches(env, address, target);
 	}, [address, env, hasInvalidStorageRecord, localAgent, staleMobileReason]);
 
-	const isAgentLoading = extraAgentsQuery.isLoading;
+	const currentRequirements = deriveAgentRequirements(
+		builderFeeQuery.data,
+		extraAgentsQuery.data,
+		localAgent,
+		builderConfig,
+	);
+	const agentVerificationStatus = deriveAgentVerificationStatus(
+		!!address,
+		extraAgentsQuery.data,
+		extraAgentsQuery.error,
+		extraAgentsQuery.isFetching,
+		currentRequirements,
+	);
+	const verifiedAgentData =
+		agentVerificationStatus === "ready" || agentVerificationStatus === "missing" ? extraAgentsQuery.data : undefined;
+	const isAgentLoading = agentVerificationStatus === "loading";
 	const isBuilderFeeLoading = hasBuilderConfig && builderFeeQuery.isLoading;
 	const isLoading = isAgentLoading || isBuilderFeeLoading;
-	const requirements = deriveAgentRequirements(builderFeeQuery.data, extraAgentsQuery.data, localAgent, builderConfig);
+	const requirements = deriveAgentRequirements(builderFeeQuery.data, verifiedAgentData, localAgent, builderConfig);
 
-	async function refetchAgent(): Promise<AgentRequirements> {
+	async function refetchAgent(agentAddressOverride?: Address): Promise<AgentRequirements> {
 		const agentsResult = await extraAgentsQuery.refetch();
-		if (agentsResult.data === undefined) throw new Error("Could not load agent status");
-		return deriveAgentRequirements(builderFeeQuery.data, agentsResult.data, localAgent, builderConfig);
+		if (agentsResult.error || agentsResult.data === undefined) throw new Error("Could not load agent status");
+		return deriveAgentRequirements(
+			builderFeeQuery.data,
+			agentsResult.data,
+			localAgent,
+			builderConfig,
+			Date.now(),
+			agentAddressOverride,
+		);
 	}
 
 	async function refetchBuilderFee(): Promise<AgentRequirements> {
 		if (!hasBuilderConfig) {
-			return deriveAgentRequirements(undefined, extraAgentsQuery.data, localAgent, builderConfig);
+			return deriveAgentRequirements(undefined, verifiedAgentData, localAgent, builderConfig);
 		}
 
 		const feeResult = await builderFeeQuery.refetch();
-		if (feeResult.data === undefined) throw new Error("Could not load builder fee status");
-		return deriveAgentRequirements(feeResult.data, extraAgentsQuery.data, localAgent, builderConfig);
+		if (feeResult.error || feeResult.data === undefined) throw new Error("Could not load builder fee status");
+		return deriveAgentRequirements(feeResult.data, verifiedAgentData, localAgent, builderConfig);
 	}
 
 	async function refetch(agentAddressOverride?: Address): Promise<AgentRequirements> {
-		const [builderFeeData, agentsResult] = await Promise.all([
-			hasBuilderConfig
-				? builderFeeQuery.refetch().then((result) => {
-						if (result.data === undefined) throw new Error("Could not load builder fee status");
-						return result.data;
-					})
-				: Promise.resolve(undefined),
+		const [builderFeeResult, agentsResult] = await Promise.all([
+			hasBuilderConfig ? builderFeeQuery.refetch() : Promise.resolve({ data: undefined, error: null }),
 			extraAgentsQuery.refetch(),
 		]);
-		if (agentsResult.data === undefined) {
+		if (builderFeeResult.error || (hasBuilderConfig && builderFeeResult.data === undefined)) {
+			throw new Error("Could not load builder fee status");
+		}
+		if (agentsResult.error || agentsResult.data === undefined) {
 			throw new Error("Could not load agent status");
 		}
 
 		return deriveAgentRequirements(
-			builderFeeData,
+			builderFeeResult.data,
 			agentsResult.data,
 			localAgent,
 			builderConfig,
@@ -184,6 +226,8 @@ export function useAgentStatus(): UseAgentStatusResult {
 		isLoading,
 		isAgentLoading,
 		isBuilderFeeLoading,
+		agentVerificationStatus,
+		agentError: extraAgentsQuery.error,
 		agentAddress: localAgent?.publicKey ?? null,
 		refetch,
 		refetchAgent,

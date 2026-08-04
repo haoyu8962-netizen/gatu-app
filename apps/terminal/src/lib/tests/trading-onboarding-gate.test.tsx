@@ -4,13 +4,14 @@ import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TradingOnboardingGate } from "@/components/trade/components/trading-onboarding-gate";
+import { resetTradingOnboardingStore } from "@/stores/use-trading-onboarding-store";
 
 const OWNER = "0x1111111111111111111111111111111111111111";
 
 const testState = vi.hoisted(() => ({
 	activeModal: null as string | null,
-	agentLoading: false,
 	agentReady: false,
+	agentVerificationStatus: "missing" as "unknown" | "loading" | "ready" | "missing" | "error",
 	balances: {
 		allDexClearinghouseStates: [["", { marginSummary: { accountValue: "0" } }]],
 		hasAllDexsSnapshot: true,
@@ -24,6 +25,7 @@ const testState = vi.hoisted(() => ({
 	connectionProps: null as { onClose: () => void; onConnected: () => void } | null,
 	hasWalletAccess: true,
 	openDeposit: vi.fn(),
+	env: "Mainnet" as "Mainnet" | "Testnet",
 	walletAddress: "0x1111111111111111111111111111111111111111" as string | undefined,
 }));
 
@@ -36,9 +38,10 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useAgentStatus: () => ({
-		isAgentLoading: testState.agentLoading,
 		isAgentReady: testState.agentReady,
+		agentVerificationStatus: testState.agentVerificationStatus,
 	}),
+	useHyperliquid: () => ({ env: testState.env }),
 }));
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
@@ -69,8 +72,8 @@ describe("TradingOnboardingGate", () => {
 		document.body.appendChild(container);
 		root = createRoot(container);
 		testState.activeModal = null;
-		testState.agentLoading = false;
 		testState.agentReady = false;
+		testState.agentVerificationStatus = "missing";
 		testState.balances = {
 			allDexClearinghouseStates: [["", { marginSummary: { accountValue: "0" } }]],
 			hasAllDexsSnapshot: true,
@@ -82,9 +85,11 @@ describe("TradingOnboardingGate", () => {
 		};
 		testState.closeConnection.mockReset();
 		testState.connectionProps = null;
+		testState.env = "Mainnet";
 		testState.hasWalletAccess = true;
 		testState.openDeposit.mockReset();
 		testState.walletAddress = OWNER;
+		resetTradingOnboardingStore();
 	});
 
 	afterEach(() => {
@@ -111,6 +116,64 @@ describe("TradingOnboardingGate", () => {
 		expect(container.querySelector('[data-testid="connection-modal"]')).toBeNull();
 		expect(container.querySelector('[data-testid="content"]')).not.toBeNull();
 		expect(testState.closeConnection).not.toHaveBeenCalled();
+	});
+
+	it.each(["unknown", "loading", "error"] as const)(
+		"does not automatically prompt while Agent status is %s",
+		(agentVerificationStatus) => {
+			testState.agentVerificationStatus = agentVerificationStatus;
+			renderGate();
+
+			expect(container.querySelector('[data-testid="connection-modal"]')).toBeNull();
+			expect(container.querySelector('[data-testid="content"]')).not.toBeNull();
+		},
+	);
+
+	it("preserves dismissal for the same environment and owner across a route remount", () => {
+		renderGate();
+		act(() => testState.connectionProps?.onClose());
+		act(() => root.unmount());
+		root = createRoot(container);
+		testState.connectionProps = null;
+
+		renderGate();
+
+		expect(container.querySelector('[data-testid="connection-modal"]')).toBeNull();
+		expect(container.querySelector('[data-testid="content"]')).not.toBeNull();
+	});
+
+	it("allows an explicit request to override a remembered dismissal", () => {
+		renderGate();
+		act(() => testState.connectionProps?.onClose());
+		testState.activeModal = "establishConnection";
+
+		renderGate();
+
+		expect(container.querySelector('[data-testid="connection-modal"]')).not.toBeNull();
+	});
+
+	it("allows a different environment to prompt independently", () => {
+		renderGate();
+		act(() => testState.connectionProps?.onClose());
+		testState.env = "Testnet";
+
+		renderGate();
+
+		expect(container.querySelector('[data-testid="connection-modal"]')).not.toBeNull();
+	});
+
+	it("clears remembered dismissal after the Agent is definitively ready", () => {
+		renderGate();
+		act(() => testState.connectionProps?.onClose());
+		testState.agentReady = true;
+		testState.agentVerificationStatus = "ready";
+		renderGate();
+
+		testState.agentReady = false;
+		testState.agentVerificationStatus = "missing";
+		renderGate();
+
+		expect(container.querySelector('[data-testid="connection-modal"]')).not.toBeNull();
 	});
 
 	it("closes an explicitly requested connection modal", () => {

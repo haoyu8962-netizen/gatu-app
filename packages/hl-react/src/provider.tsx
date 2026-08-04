@@ -54,6 +54,7 @@ export interface HyperliquidProviderProps {
 	children: ReactNode;
 	env: HyperliquidEnv;
 	userAddress: `0x${string}` | undefined;
+	allowAgentOnlySession?: boolean;
 	builderConfig: BuilderConfig;
 	agentName?: string;
 	onAgentCleanupFailure?: (failure: { env: HyperliquidEnv; owner: `0x${string}`; reason: string }) => void;
@@ -85,6 +86,7 @@ export function HyperliquidProvider({
 	children,
 	env,
 	userAddress,
+	allowAgentOnlySession = true,
 	builderConfig,
 	agentName = "app",
 	onAgentCleanupFailure,
@@ -116,7 +118,7 @@ export function HyperliquidProvider({
 	}
 
 	const activeAgentOwner = useActiveAgentOwner();
-	const { clientKey, sessionMode } = resolveSession(userAddress, activeAgentOwner, env);
+	const { clientKey, sessionMode } = resolveSession(userAddress, allowAgentOnlySession ? activeAgentOwner : null, env);
 	const exchangeLifecycleRef = useRef<ExchangeProviderLifecycleLease | null>(null);
 	if (!exchangeLifecycleRef.current) {
 		exchangeLifecycleRef.current = { id: Symbol("hyperliquid-provider"), active: true };
@@ -158,6 +160,13 @@ export function HyperliquidProvider({
 	useLayoutEffect(() => {
 		const previous = previousRegistrationIdentityRef.current;
 		const next = clientKey === "disconnected" ? null : { env, owner: clientKey.toLowerCase() as `0x${string}` };
+		if (!next) {
+			// A wallet connector can briefly lose its active signer while Privy
+			// restores an embedded wallet. Keep the last confirmed owner so that
+			// this fail-closed execution state cannot destroy its stored Agent.
+			// Explicit logout performs verified cleanup in useDisconnectWallet.
+			return;
+		}
 		const changed = previous?.env !== next?.env || previous?.owner.toLowerCase() !== next?.owner.toLowerCase();
 
 		if (changed && previous) {
@@ -181,15 +190,11 @@ export function HyperliquidProvider({
 					});
 				});
 		}
-		if (changed && next) {
-			void activateAgentRegistrationSession(next.env, next.owner).then((active) => {
-				if (active && sessionMode === "agent-only") {
-					void ensureActiveAgentOwnerRevision(next.env, next.owner);
-				}
-			});
-		} else if (next && sessionMode === "agent-only") {
-			void ensureActiveAgentOwnerRevision(next.env, next.owner);
-		}
+		void activateAgentRegistrationSession(next.env, next.owner).then((active) => {
+			if (active && sessionMode === "agent-only") {
+				void ensureActiveAgentOwnerRevision(next.env, next.owner);
+			}
+		});
 		previousRegistrationIdentityRef.current = next;
 	}, [clientKey, env, sessionMode]);
 

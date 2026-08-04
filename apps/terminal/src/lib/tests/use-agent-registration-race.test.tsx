@@ -151,14 +151,14 @@ describe("useAgentRegistration logout races", () => {
 		testState.approveBuilderFee.mockReset();
 		testState.approveBuilderFee.mockResolvedValue(undefined);
 		testState.refetchAgent.mockReset();
-		testState.refetchAgent.mockResolvedValue({
-			isAgentReady: false,
+		testState.refetchAgent.mockImplementation(async (agentAddressOverride?: Address) => ({
+			isAgentReady: !!agentAddressOverride,
 			isBuilderFeeReady: true,
-			isReady: false,
-			needsAgent: true,
+			isReady: !!agentAddressOverride,
+			needsAgent: !agentAddressOverride,
 			needsBuilderFee: false,
-			signaturesRequired: 1,
-		});
+			signaturesRequired: agentAddressOverride ? 0 : 1,
+		}));
 	});
 
 	afterEach(() => {
@@ -193,9 +193,85 @@ describe("useAgentRegistration logout races", () => {
 			agentName: "HypeTerminal",
 		});
 		expect(testState.approveBuilderFee).not.toHaveBeenCalled();
+		expect(testState.refetchAgent).toHaveBeenLastCalledWith(registeredAddress);
 		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
 			publicKey: registeredAddress.toLowerCase(),
 			source: "local-registration",
+		});
+	});
+
+	it("does not sign when the initial Agent status cannot be loaded", async () => {
+		testState.refetchAgent.mockRejectedValue(new Error("Could not load agent status"));
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushMicrotasks();
+
+		await expect(registrationPromise).rejects.toThrow("Could not load agent status");
+		expect(testState.approveAgent).not.toHaveBeenCalled();
+		expect(window.localStorage.getItem(AGENT_STORAGE_KEY)).toBeNull();
+	});
+
+	it("does not report success until extraAgents confirms the newly generated public key", async () => {
+		testState.approveAgent.mockResolvedValue(undefined);
+		testState.refetchAgent.mockResolvedValue({
+			isAgentReady: false,
+			isBuilderFeeReady: true,
+			isReady: false,
+			needsAgent: true,
+			needsBuilderFee: false,
+			signaturesRequired: 1,
+		});
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushMicrotasks();
+
+		await expect(registrationPromise).rejects.toThrow("Agent approval could not be confirmed");
+		expect(testState.approveAgent).toHaveBeenCalledOnce();
+		const approvedAddress = testState.approveAgent.mock.calls[0]?.[0]?.agentAddress as Address;
+		expect(testState.refetchAgent).toHaveBeenLastCalledWith(approvedAddress);
+		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
+			publicKey: approvedAddress.toLowerCase(),
+		});
+	});
+
+	it("keeps an approved key inert when post-approval verification is temporarily unavailable", async () => {
+		testState.approveAgent.mockResolvedValue(undefined);
+		testState.refetchAgent.mockImplementation(async (agentAddressOverride?: Address) => {
+			if (agentAddressOverride) throw new Error("Could not load agent status");
+			return {
+				isAgentReady: false,
+				isBuilderFeeReady: true,
+				isReady: false,
+				needsAgent: true,
+				needsBuilderFee: false,
+				signaturesRequired: 1,
+			};
+		});
+
+		await act(async () => {
+			root.render(createElement(QueryClientProvider, { client: queryClient }, createElement(RegistrationButton)));
+		});
+		act(() => {
+			container.querySelector("button")?.click();
+		});
+		await flushMicrotasks();
+
+		await expect(registrationPromise).rejects.toThrow("Could not load agent status");
+		expect(testState.approveAgent).toHaveBeenCalledOnce();
+		const approvedAddress = testState.approveAgent.mock.calls[0]?.[0]?.agentAddress as Address;
+		expect(testState.refetchAgent).toHaveBeenLastCalledWith(approvedAddress);
+		expect(JSON.parse(window.localStorage.getItem(AGENT_STORAGE_KEY) ?? "{}")).toMatchObject({
+			publicKey: approvedAddress.toLowerCase(),
 		});
 	});
 

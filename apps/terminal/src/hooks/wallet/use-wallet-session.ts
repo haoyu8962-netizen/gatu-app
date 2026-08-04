@@ -54,19 +54,28 @@ export function clearVerifiedExternalWalletOwner(): void {
 
 export function useWalletSession() {
 	const { ready, authenticated, login, logout, user } = usePrivy();
+	const { ready: walletsReady, wallets } = useWallets();
 	const { address: connectedWalletAddress, isConnected: walletConnected, isConnecting } = useConnection();
 	const hyperliquid = useHyperliquidOptional();
+	const sessionReady = ready && walletsReady;
+	const signerReady = sessionReady && walletConnected && !isConnecting;
 
-	const embeddedWalletAddress = ready && authenticated ? getPrivyEmbeddedWalletAddress(user) : undefined;
-	const shouldUseEmbeddedWallet = ready && authenticated && shouldUsePrivyEmbeddedWallet(user);
-	const embeddedWalletIsActive = hasSameWalletAddress(embeddedWalletAddress, connectedWalletAddress);
+	const embeddedWalletAddress = sessionReady && authenticated ? getPrivyEmbeddedWalletAddress(user) : undefined;
+	const shouldUseEmbeddedWallet = sessionReady && authenticated && shouldUsePrivyEmbeddedWallet(user);
+	const connectedPrivyWallet =
+		shouldUseEmbeddedWallet && sessionReady ? selectPrivyWagmiWallet({ wallets, user }) : undefined;
+	const embeddedWalletIsActive =
+		signerReady &&
+		!!connectedPrivyWallet &&
+		hasSameWalletAddress(connectedPrivyWallet.address, embeddedWalletAddress) &&
+		hasSameWalletAddress(embeddedWalletAddress, connectedWalletAddress);
 	const walletAddress = resolveSessionWalletAddress({
 		shouldUseEmbeddedWallet,
 		embeddedWalletIsActive,
 		embeddedWalletAddress,
 		connectedWalletAddress,
 	});
-	const hasWalletSession = ready && authenticated && !!walletAddress;
+	const hasWalletSession = signerReady && authenticated && !!walletAddress;
 	const agentAddress =
 		hyperliquid?.sessionMode === "agent-only" && hyperliquid.clientKey !== "disconnected"
 			? (hyperliquid.clientKey as `0x${string}`)
@@ -76,7 +85,7 @@ export function useWalletSession() {
 	const sessionMode = hyperliquid?.sessionMode ?? (hasWalletSession ? "wallet" : "disconnected");
 
 	return {
-		ready,
+		ready: sessionReady,
 		authenticated,
 		login,
 		logout,
@@ -90,7 +99,7 @@ export function useWalletSession() {
 		isConnected: !!address,
 		isConnecting,
 		sessionMode,
-		hasWalletAccess: sessionMode === "wallet" && !!walletAddress,
+		hasWalletAccess: sessionMode === "wallet" && hasWalletSession,
 	};
 }
 

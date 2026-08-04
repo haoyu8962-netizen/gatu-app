@@ -137,6 +137,12 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 						);
 					}
 					await verifyStoredAgent(publicKey);
+
+					const remoteVerification = await agentStatus.refetchAgent(publicKey);
+					if (!remoteVerification.isAgentReady) {
+						throw new Error("Agent approval could not be confirmed");
+					}
+					await verifyStoredAgent(publicKey);
 				}
 
 				const requirements = await agentStatus.refetchAgent();
@@ -156,8 +162,6 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 						approveAgentPromise
 							.then(async () => {
 								await persistAndVerifyAgent(privateKey, publicKey);
-								await agentStatus.refetchAgent();
-								await verifyStoredAgent(publicKey);
 							})
 							.catch(() => {});
 						throw error;
@@ -165,8 +169,6 @@ export function useAgentRegistration(): UseAgentRegistrationResult {
 					await assertRegistrationCurrent();
 
 					await persistAndVerifyAgent(privateKey, publicKey);
-					await agentStatus.refetchAgent();
-					await verifyStoredAgent(publicKey);
 
 					return publicKey;
 				}

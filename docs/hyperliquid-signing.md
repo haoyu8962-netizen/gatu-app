@@ -415,7 +415,10 @@ const register = async (options: { persistConnection: boolean }) => {
     { source: "local-registration" },
     { scope: storageScope },
   );
-  await refetchAgent(account.address);
+  const requirements = await refetchAgent(account.address);
+  if (!requirements.isAgentReady) {
+    throw new Error("Agent approval could not be confirmed");
+  }
   await verifyStoredAgent(account.address);
 };
 

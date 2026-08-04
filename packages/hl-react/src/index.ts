@@ -194,7 +194,9 @@ export {
 } from "./signing/use-agent-registration";
 export {
 	type AgentRequirements,
+	type AgentVerificationStatus,
 	deriveAgentRequirements,
+	deriveAgentVerificationStatus,
 	getDefinitiveMobileAgentStaleReason,
 	type UseAgentStatusResult,
 	useAgentStatus,

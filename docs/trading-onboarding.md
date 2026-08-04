@@ -12,6 +12,8 @@ loading, or deposit behavior changes.
 - [Nonces and API wallets](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/nonces-and-api-wallets)
 - [Builder codes](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/builder-codes)
 - [Bridge2](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/bridge2)
+- [Privy React setup](https://docs.privy.io/basics/react/setup)
+- [Privy connected-wallet lifecycle](https://docs.privy.io/wallets/wallets/get-a-wallet/get-connected-wallet)
 
 ## Required Sequence
 
@@ -25,9 +27,11 @@ The terminal must preserve this ordering:
 3. **Accept required policies.** The blocking legal dialog requires both
    policy acknowledgements. Acceptance signs and submits Hyperliquid's
    `acceptTerms2` request, then re-queries `legalCheck` before continuing.
-4. **Establish the trading connection.** If no locally available Agent is
-   approved for this exact owner and environment, the owner signs
-   `approveAgent`. Agent registration is separate from builder-fee approval.
+4. **Establish the trading connection.** Only a completed `extraAgents`
+   response may establish that no locally available Agent is approved for
+   this exact owner and environment. Loading, refreshing, absent, and failed
+   responses remain non-definitive and must not trigger `approveAgent`. Agent
+   registration is separate from builder-fee approval.
 5. **Verify the new Agent.** Persist the generated Agent key only in the
    selected storage scope, refetch the server-side Agent status, and confirm
    the freshly generated public address before reporting success.
@@ -75,6 +79,16 @@ while the original owner, registration epoch, and generated Agent still match.
 Wallet changes and stale registration epochs fail closed and remove the
 unverified local key.
 
+Wallet-backed sessions wait for both Privy's authentication readiness and
+`useWallets().ready`. Linked wallet metadata proves ownership but does not make
+an embedded or external wallet available for signing; the exact wallet must
+also be present in Privy's connected-wallet directory and active in Wagmi.
+While the exact signer is being restored, trading remains disconnected and
+must not fall back to a different wallet or a persisted agent-only owner. This
+transient state also must not delete the last confirmed owner's Agent. Agent
+cleanup belongs to verified explicit logout, confirmed owner replacement, or
+an explicit security reset.
+
 ## State Boundaries
 
 - Wallet connection, legal acceptance, Agent approval, local Agent key,
@@ -85,13 +99,23 @@ unverified local key.
 - A balance-loading or balance-error state is not equivalent to an empty
   account.
 - A successful `approveAgent` response is not enough by itself; post-write
-  storage and server verification are required.
+  storage and server verification of the newly generated public address are
+  required. Verification failure must not report onboarding success. A key
+  whose approval write succeeded but cannot yet be confirmed remains stored
+  but inert; only a later successful exact-address check may make it usable.
+- An `extraAgents` error, absent response, or cached miss being refreshed is
+  not proof that an Agent is missing and must not open the automatic prompt.
+- Closing the automatic Agent prompt is remembered by environment and owner
+  for the current SPA session. A verified ready state clears that dismissal;
+  an explicit user request always remains available.
 - Builder-fee approval must not be coupled back into `useAgentRegistration`.
 
 ## Implementation Map
 
 | Responsibility | Primary implementation |
 |---|---|
+| Privy/Wagmi wallet readiness | `apps/terminal/src/hooks/wallet/use-wallet-session.ts` |
+| Wallet/agent-only identity bridge | `apps/terminal/src/providers/root.tsx`, `packages/hl-react/src/provider.tsx` |
 | Legal API contract | `packages/hl-react/src/legal.ts` |
 | Legal query and acceptance hooks | `packages/hl-react/src/signing/use-legal-status.ts`, `use-terms-acceptance.ts` |
 | Legal UI state | `apps/terminal/src/hooks/trade/use-legal-gate.ts` |
@@ -102,6 +126,7 @@ unverified local key.
 | Action authorization | `packages/hl-react/src/signing/use-trading-authorization.ts` |
 | Funding-state derivation | `apps/terminal/src/domain/trade/onboarding.ts` |
 | Runtime flow orchestration | `apps/terminal/src/components/trade/components/trading-onboarding-gate.tsx` |
+| Session-scoped prompt dismissal | `apps/terminal/src/stores/use-trading-onboarding-store.ts` |
 | Modal precedence | `apps/terminal/src/components/trade/components/global-modals.tsx` |
 
 ## Regression Checklist
@@ -113,9 +138,10 @@ At minimum, changes to this flow must cover:
 - both policy checkboxes and the non-dismissible blocking dialog;
 - an existing approved Agent without a redundant signature;
 - new Agent verification using the newly generated address;
+- Agent status errors, unknown results, and cached misses during refresh;
 - session-only and persistent Agent storage;
-- wallet changes, duplicate registration, timeout, and background/foreground
-  transitions;
+- temporary signer loss and restoration, confirmed wallet changes, explicit
+  logout, duplicate registration, timeout, and background/foreground transitions;
 - funded, empty, loading, and failed account snapshots;
 - builder-fee approval remaining separate from Agent registration;
 - desktop and mobile modal presentation.
