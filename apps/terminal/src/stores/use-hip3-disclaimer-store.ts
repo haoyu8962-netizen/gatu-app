@@ -51,6 +51,10 @@ export function useHasAcceptedHip3Disclaimer(): boolean {
 	return useHip3DisclaimerStore((state) => state.acceptedVersion >= HIP3_DISCLAIMER_VERSION);
 }
 
+export function hasAcceptedHip3Disclaimer(): boolean {
+	return useHip3DisclaimerStore.getState().acceptedVersion >= HIP3_DISCLAIMER_VERSION;
+}
+
 export function useHip3DisclaimerActions() {
 	return useHip3DisclaimerStore((state) => state.actions);
 }

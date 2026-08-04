@@ -25,6 +25,7 @@ import type {
 	ClosePositionData,
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
+	PositionMarketCloseRef,
 	TpSlPositionRef,
 } from "./position-dialog-types";
 import { positionTableCellClass } from "./position-table-styles";
@@ -37,7 +38,7 @@ interface Props {
 	tpSlInfo: TpSlOrderInfo | undefined;
 	isRowClosing: boolean;
 	isEven: boolean;
-	onClose: (data: ClosePositionData) => void;
+	onMarketClose: (data: PositionMarketCloseRef) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onReverse: (data: ClosePositionData) => void;
 	onOpenTpSl: (data: TpSlPositionRef) => void;
@@ -52,7 +53,7 @@ export function PositionRow({
 	tpSlInfo,
 	isRowClosing,
 	isEven,
-	onClose,
+	onMarketClose,
 	onLimitClose,
 	onReverse,
 	onOpenTpSl,
@@ -157,9 +158,17 @@ export function PositionRow({
 		};
 	}
 
-	function handleClose() {
-		const data = buildCloseData();
-		if (data) onClose(data);
+	function handleMarketClose() {
+		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		onMarketClose({
+			coin: p.coin,
+			dex: p.dex,
+			assetId,
+			szDecimals,
+			signedPositionSize: p.szi,
+			markPx: markPxRaw,
+			marginMode: p.leverage.type,
+		});
 	}
 
 	function handleLimitClose() {
@@ -300,7 +309,7 @@ export function PositionRow({
 				<PositionActionsDropdown
 					canClose={canClose}
 					isRowClosing={isRowClosing}
-					onMarketClose={handleClose}
+					onMarketClose={handleMarketClose}
 					onLimitClose={handleLimitClose}
 					onReverse={handleReverse}
 				/>

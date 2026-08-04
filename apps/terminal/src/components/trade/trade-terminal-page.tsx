@@ -88,7 +88,7 @@ function TradeTerminalContent() {
 			)}
 			<OrderToast />
 			<Suspense fallback={null}>
-				<GlobalModals enableHip3Disclaimer enableLegalGate enableTradingOnboarding />
+				<GlobalModals enableHip3Disclaimer enableLegalGate enablePositionMarketClose enableTradingOnboarding />
 			</Suspense>
 		</>
 	);

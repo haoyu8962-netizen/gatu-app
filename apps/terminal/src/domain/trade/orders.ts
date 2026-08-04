@@ -47,6 +47,37 @@ export interface OrderBuildResult {
 	grouping: "normalTpsl" | "positionTpsl" | "na";
 }
 
+export interface FrontendMarketOrderParams {
+	assetId: number;
+	side: Side;
+	size: Numeric;
+	szDecimals: number;
+	markPx: Numeric;
+	slippageBps: Numeric;
+	reduceOnly: boolean;
+}
+
+export function buildFrontendMarketOrder(params: FrontendMarketOrderParams): ExchangeOrder {
+	const markPx = toBig(params.markPx);
+	const slippageBps = toBig(params.slippageBps);
+	let orderPrice = Big(0);
+
+	if (markPx?.gt(0) && slippageBps?.gte(0)) {
+		const slippage = slippageBps.div(10000);
+		const multiplier = params.side === "buy" ? Big(1).plus(slippage) : Big(1).minus(slippage);
+		orderPrice = markPx.times(multiplier);
+	}
+
+	return {
+		a: params.assetId,
+		b: params.side === "buy",
+		p: formatPriceForOrder(orderPrice, params),
+		s: formatSizeForOrder(params.size, params.szDecimals),
+		r: params.reduceOnly,
+		t: { limit: { tif: "FrontendMarket" } },
+	};
+}
+
 export function buildOrders(params: OrderBuildParams): OrderBuildResult {
 	const {
 		assetId,
@@ -419,6 +450,10 @@ export function formatPriceForOrder(value: Numeric, options?: PriceFormatOptions
 	return fixed.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 }
 
-export function formatSizeForOrder(size: string | number, szDecimals: number): string {
-	return formatDecimalFloor(size, szDecimals);
+export function formatSizeForOrder(size: Numeric, szDecimals: number): string {
+	const sizeValue = toBig(size);
+	if (!sizeValue) return "0";
+	const fixed = sizeValue.round(szDecimals, Big.roundDown).toFixed(szDecimals);
+	if (!fixed.includes(".")) return fixed;
+	return fixed.replace(/\.?0+$/, "");
 }

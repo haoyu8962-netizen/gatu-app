@@ -68,7 +68,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					tpSlInfo: undefined,
 					isRowClosing: false,
 					closeErrorMessage: null,
-					onClose: vi.fn(),
+					onMarketClose: vi.fn(),
 					onReverse: vi.fn(),
 					onLimitClose: vi.fn(),
 					onOpenTpSl: vi.fn(),
@@ -104,7 +104,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 	});
 
 	it("preserves limit close, market close, and reverse actions in the expanded card", () => {
-		const onClose = vi.fn();
+		const onMarketClose = vi.fn();
 		const onReverse = vi.fn();
 		const onLimitClose = vi.fn();
 
@@ -117,7 +117,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					tpSlInfo: undefined,
 					isRowClosing: false,
 					closeErrorMessage: null,
-					onClose,
+					onMarketClose,
 					onReverse,
 					onLimitClose,
 					onOpenTpSl: vi.fn(),
@@ -137,10 +137,19 @@ describe("MobilePositionCard isolated margin entry", () => {
 		expect(onLimitClose).toHaveBeenCalledTimes(1);
 
 		act(() => getButton("Market Close").click());
-		act(() => getButton("Cancel").click());
-		expect(onClose).not.toHaveBeenCalled();
+		expect(onMarketClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			szDecimals: 1,
+			signedPositionSize: "205.9",
+			markPx: "7.5759",
+			marginMode: "isolated",
+		});
+		expect(container.textContent).not.toContain("Confirm Close");
 
 		act(() => getButton("Reverse").click());
+		expect(onReverse).not.toHaveBeenCalled();
 		act(() => getButton("Confirm Reverse").click());
 		expect(onReverse).toHaveBeenCalledTimes(1);
 	});
@@ -160,7 +169,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					closeErrorMessage: null,
 					expanded: false,
 					onExpandedChange,
-					onClose: vi.fn(),
+					onMarketClose: vi.fn(),
 					onReverse: vi.fn(),
 					onLimitClose: vi.fn(),
 					onOpenTpSl: vi.fn(),
@@ -204,7 +213,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 					tpSlInfo: undefined,
 					isRowClosing: false,
 					closeErrorMessage: null,
-					onClose: vi.fn(),
+					onMarketClose: vi.fn(),
 					onReverse: vi.fn(),
 					onLimitClose: vi.fn(),
 					onOpenTpSl: vi.fn(),

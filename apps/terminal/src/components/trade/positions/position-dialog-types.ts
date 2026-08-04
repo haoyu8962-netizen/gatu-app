@@ -22,6 +22,16 @@ export interface TpSlPositionRef {
 	marginMode: MarginMode;
 }
 
+export interface PositionMarketCloseRef {
+	coin: string;
+	dex: string;
+	assetId: number;
+	szDecimals: number;
+	signedPositionSize: string;
+	markPx: string;
+	marginMode: MarginMode;
+}
+
 export interface ClosePositionData {
 	assetId: number;
 	coin: string;

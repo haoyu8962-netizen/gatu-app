@@ -1,7 +1,8 @@
 import Big from "big.js";
-import type { ExchangeOrder, LimitTif, OrderType } from "@/config/trade";
+import { type ExchangeOrder, type LimitTif, MARKET_ORDER_SLIPPAGE_MAX_PERCENT, type OrderType } from "@/config/trade";
 import { getExecutedPrice, getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
-import { buildOrders, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
+import { buildFrontendMarketOrder, buildOrders, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
+import { resolvePositionMarketCloseSize } from "@/domain/trade/position-market-close";
 import { isPositive, toBig } from "@/lib/trade/numbers";
 import { isScaleOrderType, isStopOrderType, isTriggerOrderType, usesLimitPrice } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
@@ -67,10 +68,10 @@ export function hasPositionTpSlTriggerMutation(plan: PositionTpSlUpdatePlan, tps
 export type MarketCloseIntent = {
 	kind: "marketClose";
 	assetId: number;
-	size: number;
+	signedPositionSize: string;
+	closeSize: string;
 	szDecimals: number;
-	isLong: boolean;
-	markPx: number;
+	markPx: string;
 	slippageBps: number;
 };
 
@@ -256,30 +257,44 @@ function hasSameTriggerPrice(order: ExchangeOrder, existingPrice: number | undef
 	return existing !== null && desired !== null && existing.eq(desired);
 }
 
-function buildMarketClosePlan({
-	assetId,
-	size,
-	szDecimals,
-	isLong,
-	markPx,
-	slippageBps,
-}: MarketCloseIntent): OrderPlan {
-	const side = getCloseSide(isLong);
-	const orderPrice = getExecutedPrice("market", side, markPx, slippageBps, markPx);
+function buildMarketClosePlan(intent: MarketCloseIntent): OrderPlan {
+	const resolution = resolvePositionMarketCloseSize(intent);
+	const errors = [...resolution.errors];
+
+	if (!Number.isSafeInteger(intent.assetId) || intent.assetId < 0) {
+		errors.push("Asset id must be a non-negative integer");
+	}
+
+	const markPx = toBig(intent.markPx);
+	if (!markPx || markPx.lte(0)) errors.push("Mark price must be greater than zero");
+
+	const slippageBps = toBig(intent.slippageBps);
+	const maxSlippageBps = Big(MARKET_ORDER_SLIPPAGE_MAX_PERCENT).times(100);
+	if (!slippageBps || slippageBps.lt(0) || slippageBps.gt(maxSlippageBps)) {
+		errors.push(`Slippage must be between 0 and ${maxSlippageBps.toString()} basis points`);
+	}
+
+	if (errors.length > 0 || resolution.side === null) {
+		return { orders: [], grouping: "na", errors, warnings: [] };
+	}
+
+	const order = buildFrontendMarketOrder({
+		assetId: intent.assetId,
+		side: resolution.side,
+		size: resolution.normalizedSize,
+		szDecimals: intent.szDecimals,
+		markPx: intent.markPx,
+		slippageBps: intent.slippageBps,
+		reduceOnly: true,
+	});
+
+	if (order.s === "0") errors.push("Close size is below market precision");
+	if (order.p === "0") errors.push("Market close price is invalid");
 
 	return {
-		orders: [
-			{
-				a: assetId,
-				b: side === "buy",
-				p: formatPriceForOrder(orderPrice, { assetId, szDecimals }),
-				s: formatSizeForOrder(size, szDecimals),
-				r: true,
-				t: { limit: { tif: "FrontendMarket" } },
-			},
-		],
+		orders: errors.length === 0 ? [order] : [],
 		grouping: "na",
-		errors: [],
+		errors,
 		warnings: [],
 	};
 }

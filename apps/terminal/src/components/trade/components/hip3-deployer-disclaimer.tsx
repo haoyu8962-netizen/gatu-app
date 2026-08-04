@@ -16,11 +16,12 @@ import { useHip3DisclaimerActions } from "@/stores/use-hip3-disclaimer-store";
 
 interface Props {
 	documentationUrl: string | undefined;
+	onCancel?: () => void;
 }
 
 const LINK_CLASS = "text-brand no-underline hover:text-brand/80";
 
-export function Hip3DeployerDisclaimer({ documentationUrl }: Props) {
+export function Hip3DeployerDisclaimer({ documentationUrl, onCancel }: Props) {
 	const isMobile = useIsMobile();
 	const [isAcknowledged, setIsAcknowledged] = useState(false);
 	const { accept } = useHip3DisclaimerActions();
@@ -33,10 +34,10 @@ export function Hip3DeployerDisclaimer({ documentationUrl }: Props) {
 	return (
 		<AdaptiveModal
 			open
-			onOpenChange={() => undefined}
+			onOpenChange={(open) => !open && onCancel?.()}
 			size="lg"
-			showClose={false}
-			dismissible={false}
+			showClose={!!onCancel}
+			dismissible={!!onCancel}
 			presentation={isMobile ? "drawer" : "modal"}
 			layer="blocking"
 			overlayClassName="backdrop-blur-[2px] duration-100"
@@ -106,10 +107,15 @@ export function Hip3DeployerDisclaimer({ documentationUrl }: Props) {
 			</ModalContent>
 
 			<ModalFooter className="px-6 pt-0 pb-5">
+				{onCancel && (
+					<Button type="button" variant="outline" intent="neutral" size="md" className="h-10 flex-1" onClick={onCancel}>
+						<Trans>Cancel</Trans>
+					</Button>
+				)}
 				<Button
 					type="button"
 					size="md"
-					className="h-10 w-full py-0 text-xs font-normal !shadow-none data-disabled:cursor-default data-disabled:bg-brand/30 data-disabled:text-fg-inverse/60"
+					className="h-10 flex-1 py-0 text-xs font-normal !shadow-none data-disabled:cursor-default data-disabled:bg-brand/30 data-disabled:text-fg-inverse/60"
 					disabled={!isAcknowledged}
 					onClick={handleConfirm}
 				>

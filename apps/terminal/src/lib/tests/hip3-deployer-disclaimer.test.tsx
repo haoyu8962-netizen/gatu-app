@@ -190,4 +190,23 @@ describe("Hip3DeployerDisclaimer", () => {
 		expect(container.querySelectorAll('a[target="_blank"]')).toHaveLength(1);
 		expect(container.querySelector('a[href="/terms"]')).not.toBeNull();
 	});
+
+	it("allows an action-scoped disclaimer to cancel the pending market-close flow", async () => {
+		const onCancel = vi.fn();
+		const { Hip3DeployerDisclaimer } = await import("@/components/trade/components/hip3-deployer-disclaimer");
+
+		act(() => {
+			root.render(createElement(Hip3DeployerDisclaimer, { documentationUrl: undefined, onCancel }));
+		});
+
+		const dialog = container.querySelector('[role="dialog"]');
+		expect(dialog?.getAttribute("data-dismissible")).toBe("true");
+		expect(dialog?.getAttribute("data-show-close")).toBe("true");
+		const cancelButton = [...container.querySelectorAll("button")].find(
+			(candidate) => candidate.textContent === "Cancel",
+		);
+		if (!(cancelButton instanceof HTMLButtonElement)) throw new Error("Cancel button not found");
+		act(() => cancelButton.click());
+		expect(onCancel).toHaveBeenCalledOnce();
+	});
 });

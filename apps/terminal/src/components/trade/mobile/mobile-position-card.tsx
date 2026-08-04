@@ -26,6 +26,7 @@ import type {
 	ClosePositionData,
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
+	PositionMarketCloseRef,
 	TpSlPositionRef,
 } from "../positions/position-dialog-types";
 
@@ -38,7 +39,7 @@ interface Props {
 	closeErrorMessage: string | null;
 	expanded?: boolean;
 	onExpandedChange?: (expanded: boolean) => void;
-	onClose: (data: ClosePositionData) => void;
+	onMarketClose: (data: PositionMarketCloseRef) => void;
 	onReverse: (data: ClosePositionData) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onOpenTpSl: (data: TpSlPositionRef) => void;
@@ -89,14 +90,14 @@ export function MobilePositionCard({
 	closeErrorMessage,
 	expanded,
 	onExpandedChange,
-	onClose,
+	onMarketClose,
 	onReverse,
 	onLimitClose,
 	onOpenTpSl,
 	onAdjustMargin,
 	onSelectMarket,
 }: Props) {
-	const [confirming, setConfirming] = useState<"close" | "reverse" | null>(null);
+	const [confirmingReverse, setConfirmingReverse] = useState(false);
 	const [internalExpanded, setInternalExpanded] = useState(true);
 	const detailsId = useId();
 	const isExpanded = expanded ?? internalExpanded;
@@ -160,11 +161,23 @@ export function MobilePositionCard({
 		};
 	}
 
-	function handleConfirm() {
+	function handleConfirmReverse() {
 		const data = buildCloseData();
 		if (!data) return;
-		if (confirming === "reverse") onReverse(data);
-		else onClose(data);
+		onReverse(data);
+	}
+
+	function handleMarketClose() {
+		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
+		onMarketClose({
+			coin: p.coin,
+			dex: p.dex,
+			assetId,
+			szDecimals,
+			signedPositionSize: p.szi,
+			markPx: markPxRaw,
+			marginMode: p.leverage.type,
+		});
 	}
 
 	function handleLimitClose() {
@@ -212,7 +225,7 @@ export function MobilePositionCard({
 
 	function handleToggleDetails() {
 		const nextExpanded = !isExpanded;
-		if (!nextExpanded) setConfirming(null);
+		if (!nextExpanded) setConfirmingReverse(false);
 		if (onExpandedChange) onExpandedChange(nextExpanded);
 		else setInternalExpanded(nextExpanded);
 	}
@@ -379,27 +392,27 @@ export function MobilePositionCard({
 
 					<div className="mt-3 grid grid-cols-[minmax(0,1fr)_1rem] items-center gap-3 border-t border-stroke-weak pt-2">
 						<div className="flex min-w-0 items-center gap-1">
-							{confirming !== null ? (
+							{confirmingReverse ? (
 								<>
 									<Button
 										variant="outline"
 										intent="neutral"
 										size="xs"
 										className="flex-1 justify-center"
-										onClick={() => setConfirming(null)}
+										onClick={() => setConfirmingReverse(false)}
 									>
 										{t`Cancel`}
 									</Button>
 									<Button
 										variant="outline"
-										intent={confirming === "close" ? "error" : "neutral"}
+										intent="neutral"
 										size="xs"
 										className="flex-1 justify-center"
-										onClick={handleConfirm}
+										onClick={handleConfirmReverse}
 										disabled={!canClose || isRowClosing}
 										iconLeft={isRowClosing ? <Spinner className="size-3" /> : undefined}
 									>
-										{confirming === "close" ? t`Confirm Close` : t`Confirm Reverse`}
+										{t`Confirm Reverse`}
 									</Button>
 								</>
 							) : (
@@ -419,17 +432,17 @@ export function MobilePositionCard({
 										intent="brand"
 										size="xxs"
 										className="min-h-8 flex-none justify-center px-1 touch-target"
-										onClick={() => setConfirming("close")}
+										onClick={handleMarketClose}
 										disabled={!canClose || isRowClosing}
 									>
-										{isRowClosing ? t`Closing...` : t`Market Close`}
+										{t`Market Close`}
 									</Button>
 									<Button
 										variant="ghost"
 										intent="brand"
 										size="xxs"
 										className="min-h-8 flex-none justify-center px-1 touch-target"
-										onClick={() => setConfirming("reverse")}
+										onClick={() => setConfirmingReverse(true)}
 										disabled={!canClose || isRowClosing}
 									>
 										{t`Reverse`}

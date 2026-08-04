@@ -14,6 +14,7 @@ interface SliderProps
 	extends Omit<React.ComponentPropsWithoutRef<typeof BaseSlider.Root>, "className">,
 		VariantProps<typeof sliderVariants> {
 	className?: string;
+	getAriaValueText?: React.ComponentPropsWithoutRef<typeof BaseSlider.Thumb>["getAriaValueText"];
 	label?: string;
 	showValue?: boolean;
 	thumbSize?: SliderThumbSize;
@@ -44,7 +45,7 @@ const trackHeightClasses: Record<SliderThumbSize, string> = {
 };
 
 const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
-	({ className, label, showValue, thumbSize = "md", ...props }, ref) => {
+	({ className, getAriaValueText, label, showValue, thumbSize = "md", ...props }, ref) => {
 		const val = props.value ?? props.defaultValue;
 		const thumbCount = Array.isArray(val) ? val.length : 1;
 
@@ -71,6 +72,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 						<BaseSlider.Thumb
 							key={i}
 							index={i}
+							getAriaValueText={getAriaValueText}
 							className={cn(
 								"relative rounded-full bg-white",
 								"border-2 border-stroke-focus shadow-md",

@@ -33,9 +33,16 @@ describe("TradeSizeSlider", () => {
 		container.remove();
 	});
 
-	function render(value: number, onPercentChange: (value: number) => void) {
+	function render(value: number, onPercentChange: (value: number) => void, ariaLabel?: string, ariaValueText?: string) {
 		act(() => {
-			root.render(<TradeSizeSlider value={value} onPercentChange={onPercentChange} />);
+			root.render(
+				<TradeSizeSlider
+					value={value}
+					onPercentChange={onPercentChange}
+					ariaLabel={ariaLabel}
+					ariaValueText={ariaValueText}
+				/>,
+			);
 		});
 	}
 
@@ -69,5 +76,19 @@ describe("TradeSizeSlider", () => {
 
 		expect(onPercentChange).not.toHaveBeenCalled();
 		expect(sliderMock.props?.value).toBe(25);
+	});
+
+	it("provides the Base UI thumb an accessible label and percentage formatter", () => {
+		render(50, vi.fn(), "Close percentage", "50% requested; 46.6% after size precision");
+
+		expect(sliderMock.props?.label).toBe("Close percentage");
+		expect(sliderMock.props?.format).toEqual({
+			style: "unit",
+			unit: "percent",
+			maximumFractionDigits: 1,
+		});
+		expect(sliderMock.props?.["aria-label"]).toBeUndefined();
+		const getAriaValueText = sliderMock.props?.getAriaValueText as (() => string) | undefined;
+		expect(getAriaValueText?.()).toBe("50% requested; 46.6% after size precision");
 	});
 });

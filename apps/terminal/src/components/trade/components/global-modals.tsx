@@ -3,8 +3,10 @@ import { type Hip3DisclaimerRequirement, useHip3DisclaimerRequirement } from "@/
 import { useLegalGate } from "@/hooks/trade/use-legal-gate";
 import { createLazyComponent } from "@/lib/lazy";
 import {
+	discardPositionMarketCloseModal,
 	useCommandMenuActions,
 	useGlobalModalType,
+	usePositionMarketCloseSession,
 	useSendModalAccountType,
 	useSendModalActions,
 	useSendModalAsset,
@@ -21,36 +23,57 @@ const SpotSwapModal = createLazyComponent(() => import("./spot-swap-modal"), "Sp
 const CommandMenu = createLazyComponent(() => import("./command-menu"), "CommandMenu");
 const TransferModal = createLazyComponent(() => import("../positions/transfer-modal"), "TransferModal");
 const SendModal = createLazyComponent(() => import("../positions/send-modal"), "SendModal");
+const PositionMarketCloseModal = createLazyComponent(
+	() => import("../positions/position-market-close-modal"),
+	"PositionMarketCloseModal",
+);
 
 interface Props {
 	enableHip3Disclaimer?: boolean;
 	enableLegalGate?: boolean;
+	enablePositionMarketClose?: boolean;
+	enableSelectedMarketHip3Disclaimer?: boolean;
 	enableTradingOnboarding?: boolean;
 }
 
 export function GlobalModals({
 	enableHip3Disclaimer = false,
 	enableLegalGate = false,
+	enablePositionMarketClose = false,
+	enableSelectedMarketHip3Disclaimer = true,
 	enableTradingOnboarding = false,
 }: Props) {
 	if (enableLegalGate) {
 		return (
 			<LegalAwareGlobalModals
 				enableHip3Disclaimer={enableHip3Disclaimer}
+				enablePositionMarketClose={enablePositionMarketClose}
+				enableSelectedMarketHip3Disclaimer={enableSelectedMarketHip3Disclaimer}
 				enableTradingOnboarding={enableTradingOnboarding}
 			/>
 		);
 	}
 
-	const content = enableHip3Disclaimer ? <Hip3AwareGlobalModals /> : <SharedGlobalModals />;
+	const content = enableHip3Disclaimer ? (
+		<Hip3AwareGlobalModals
+			enablePositionMarketClose={enablePositionMarketClose}
+			enableSelectedMarketHip3Disclaimer={enableSelectedMarketHip3Disclaimer}
+		/>
+	) : (
+		<SharedGlobalModals enablePositionMarketClose={enablePositionMarketClose} />
+	);
 	return enableTradingOnboarding ? <TradingOnboardingGate>{content}</TradingOnboardingGate> : content;
 }
 
 function LegalAwareGlobalModals({
 	enableHip3Disclaimer,
+	enablePositionMarketClose,
+	enableSelectedMarketHip3Disclaimer,
 	enableTradingOnboarding,
 }: {
 	enableHip3Disclaimer: boolean;
+	enablePositionMarketClose: boolean;
+	enableSelectedMarketHip3Disclaimer: boolean;
 	enableTradingOnboarding: boolean;
 }) {
 	const legalGate = useLegalGate();
@@ -69,16 +92,49 @@ function LegalAwareGlobalModals({
 		);
 	}
 
-	const content = enableHip3Disclaimer ? <Hip3AwareGlobalModals /> : <SharedGlobalModals />;
+	const content = enableHip3Disclaimer ? (
+		<Hip3AwareGlobalModals
+			enablePositionMarketClose={enablePositionMarketClose}
+			enableSelectedMarketHip3Disclaimer={enableSelectedMarketHip3Disclaimer}
+		/>
+	) : (
+		<SharedGlobalModals enablePositionMarketClose={enablePositionMarketClose} />
+	);
 	return enableTradingOnboarding ? <TradingOnboardingGate>{content}</TradingOnboardingGate> : content;
 }
 
-function Hip3AwareGlobalModals() {
-	const hip3Disclaimer = useHip3DisclaimerRequirement();
-	return <SharedGlobalModals hip3Disclaimer={hip3Disclaimer} />;
+function Hip3AwareGlobalModals({
+	enablePositionMarketClose,
+	enableSelectedMarketHip3Disclaimer,
+}: {
+	enablePositionMarketClose: boolean;
+	enableSelectedMarketHip3Disclaimer: boolean;
+}) {
+	const marketCloseSession = usePositionMarketCloseSession();
+	const targetMarketName = marketCloseSession
+		? marketCloseSession.position.coin
+		: enableSelectedMarketHip3Disclaimer
+			? undefined
+			: null;
+	const hip3Disclaimer = useHip3DisclaimerRequirement(targetMarketName);
+	return (
+		<SharedGlobalModals
+			hip3Disclaimer={hip3Disclaimer}
+			onHip3DisclaimerCancel={marketCloseSession ? discardPositionMarketCloseModal : undefined}
+			enablePositionMarketClose={enablePositionMarketClose}
+		/>
+	);
 }
 
-function SharedGlobalModals({ hip3Disclaimer }: { hip3Disclaimer?: Hip3DisclaimerRequirement }) {
+function SharedGlobalModals({
+	hip3Disclaimer,
+	onHip3DisclaimerCancel,
+	enablePositionMarketClose,
+}: {
+	hip3Disclaimer?: Hip3DisclaimerRequirement;
+	onHip3DisclaimerCancel?: () => void;
+	enablePositionMarketClose: boolean;
+}) {
 	const activeModal = useGlobalModalType();
 	const isHip3DisclaimerRequired = hip3Disclaimer?.isRequired === true;
 	const { open: openCommandMenu, close: closeCommandMenu } = useCommandMenuActions();
@@ -89,10 +145,18 @@ function SharedGlobalModals({ hip3Disclaimer }: { hip3Disclaimer?: Hip3Disclaime
 	const { close: closeSendModal } = useSendModalActions();
 
 	useEffect(() => {
+		if (!enablePositionMarketClose && activeModal === "positionMarketClose") {
+			discardPositionMarketCloseModal();
+		}
+	}, [activeModal, enablePositionMarketClose]);
+
+	useEffect(() => () => discardPositionMarketCloseModal(), []);
+
+	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
 			if (e.key !== "k" || (!e.metaKey && !e.ctrlKey)) return;
 			e.preventDefault();
-			if (isHip3DisclaimerRequired) return;
+			if (isHip3DisclaimerRequired || activeModal === "positionMarketClose") return;
 			if (activeModal === "commandMenu") {
 				closeCommandMenu();
 			} else {
@@ -105,7 +169,13 @@ function SharedGlobalModals({ hip3Disclaimer }: { hip3Disclaimer?: Hip3Disclaime
 	}, [activeModal, closeCommandMenu, isHip3DisclaimerRequired, openCommandMenu]);
 
 	if (isHip3DisclaimerRequired && hip3Disclaimer.dex) {
-		return <Hip3DeployerDisclaimer key={hip3Disclaimer.dex} documentationUrl={hip3Disclaimer.documentationUrl} />;
+		return (
+			<Hip3DeployerDisclaimer
+				key={hip3Disclaimer.dex}
+				documentationUrl={hip3Disclaimer.documentationUrl}
+				onCancel={onHip3DisclaimerCancel}
+			/>
+		);
 	}
 
 	if (!activeModal) return null;
@@ -131,6 +201,7 @@ function SharedGlobalModals({ hip3Disclaimer }: { hip3Disclaimer?: Hip3Disclaime
 			{activeModal === "settings" && <GlobalSettingsModal />}
 			{activeModal === "swap" && <SpotSwapModal />}
 			{activeModal === "commandMenu" && <CommandMenu />}
+			{activeModal === "positionMarketClose" && enablePositionMarketClose && <PositionMarketCloseModal />}
 		</Suspense>
 	);
 }

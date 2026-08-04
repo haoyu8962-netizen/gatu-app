@@ -4,6 +4,7 @@ import {
 	buildPositionTpSlUpdatePlan,
 	type EntryOrderIntent,
 	hasPositionTpSlTriggerMutation,
+	type MarketCloseIntent,
 	type PositionTpSlIntent,
 } from "@/domain/trade/order-intent";
 import { buildOrders, type OrderBuildParams } from "@/domain/trade/orders";
@@ -82,6 +83,19 @@ function positionTpSl(overrides: Partial<PositionTpSlIntent> = {}): PositionTpSl
 		isLong: true,
 		tpPriceNum: 110,
 		slPriceNum: 90,
+		...overrides,
+	};
+}
+
+function marketClose(overrides: Partial<MarketCloseIntent> = {}): MarketCloseIntent {
+	return {
+		kind: "marketClose",
+		assetId: 0,
+		signedPositionSize: "1.234",
+		closeSize: "1.234",
+		szDecimals: 3,
+		markPx: "100",
+		slippageBps: 50,
 		...overrides,
 	};
 }
@@ -329,5 +343,106 @@ describe("position TP/SL order planning", () => {
 		expect(cancelled.cancels).toEqual([{ a: 0, o: 7 }]);
 		expect(hasPositionTpSlTriggerMutation(cancelled, "tp")).toBe(false);
 		expect(hasPositionTpSlTriggerMutation(cancelled, "sl")).toBe(false);
+	});
+});
+
+describe("market close order planning", () => {
+	it("builds a reduce-only FrontendMarket sell from a positive signed position", () => {
+		const plan = buildOrderPlan(marketClose());
+
+		expect(plan).toEqual({
+			orders: [
+				{
+					a: 0,
+					b: false,
+					p: "99.5",
+					s: "1.234",
+					r: true,
+					t: { limit: { tif: "FrontendMarket" } },
+				},
+			],
+			grouping: "na",
+			errors: [],
+			warnings: [],
+		});
+	});
+
+	it("derives a buy close from a negative signed position without losing string precision", () => {
+		const plan = buildOrderPlan(
+			marketClose({
+				signedPositionSize: "-12345678901234567890.123456",
+				closeSize: "12345678901234567890.123456",
+				szDecimals: 6,
+			}),
+		);
+
+		expect(plan.orders[0]).toMatchObject({
+			b: true,
+			p: "101",
+			s: "12345678901234567890.123456",
+			r: true,
+			t: { limit: { tif: "FrontendMarket" } },
+		});
+	});
+
+	it("floors a partial manual close to size precision", () => {
+		const plan = buildOrderPlan(
+			marketClose({
+				signedPositionSize: "2",
+				closeSize: "1.239",
+				szDecimals: 2,
+			}),
+		);
+
+		expect(plan.orders[0]?.s).toBe("1.23");
+		expect(plan.errors).toEqual([]);
+	});
+
+	it.each([
+		[marketClose({ signedPositionSize: "invalid" }), "Position size must be a non-zero number"],
+		[marketClose({ closeSize: "invalid" }), "Close size must be a decimal number"],
+		[marketClose({ closeSize: "1e-3" }), "Close size must be a decimal number"],
+		[marketClose({ signedPositionSize: "1", closeSize: "1.1" }), "Close size exceeds current position"],
+		[
+			marketClose({ signedPositionSize: "1", closeSize: "0.0009", szDecimals: 3 }),
+			"Close size is below market precision",
+		],
+		[marketClose({ markPx: "0" }), "Mark price must be greater than zero"],
+		[marketClose({ slippageBps: 501 }), "Slippage must be between 0 and 500 basis points"],
+	] as const)("fails closed for an invalid market-close intent", (intent, error) => {
+		const plan = buildOrderPlan(intent);
+
+		expect(plan.orders).toEqual([]);
+		expect(plan.grouping).toBe("na");
+		expect(plan.errors).toContain(error);
+	});
+
+	it("keeps limit-close and reverse intent behavior unchanged", () => {
+		const limit = buildOrderPlan({
+			kind: "limitClose",
+			assetId: 0,
+			size: 1.239,
+			szDecimals: 2,
+			isLong: true,
+			price: 100,
+		});
+		const reverse = buildOrderPlan({
+			kind: "reverse",
+			assetId: 0,
+			size: 1.2,
+			szDecimals: 2,
+			isLong: false,
+			markPx: 100,
+			slippageBps: 50,
+		});
+
+		expect(limit.orders[0]).toMatchObject({ b: false, p: "100", s: "1.23", r: true, t: { limit: { tif: "Gtc" } } });
+		expect(reverse.orders[0]).toMatchObject({
+			b: true,
+			p: "100.5",
+			s: "2.4",
+			r: false,
+			t: { limit: { tif: "FrontendMarket" } },
+		});
 	});
 });

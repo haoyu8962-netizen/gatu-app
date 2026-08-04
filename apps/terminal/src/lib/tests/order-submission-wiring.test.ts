@@ -8,7 +8,7 @@ describe("order submission wiring", () => {
 	it("routes every production order action through the tracked submitter", () => {
 		const matches = collectSourceFiles(SOURCE_ROOT)
 			.filter((path) => /\.(ts|tsx)$/.test(path) && !path.includes("/lib/tests/"))
-			.filter((path) => readFileSync(path, "utf8").includes('useExchange("order")'));
+			.filter((path) => /useExchange\(\s*["']order["']\s*[,)]/.test(readFileSync(path, "utf8")));
 
 		expect(matches.map((path) => path.replace(`${SOURCE_ROOT}/`, ""))).toEqual(["hooks/trade/use-tracked-order.ts"]);
 	});

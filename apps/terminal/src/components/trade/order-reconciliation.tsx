@@ -8,9 +8,12 @@ import {
 	type OrderProcessingStatus,
 } from "@/domain/trade/order-tracking";
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
+import { releaseOrderAssetReservations } from "@/lib/trade/order-asset-lock";
+import { getPositionMarketCloseActions, getPositionMarketCloseModal } from "@/stores/use-global-modal-store";
 import { hasOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import {
 	getPendingOrderActions,
+	isOrderStatusFinalForSubmission,
 	isPendingOrderSubmissionActive,
 	type PendingOrderSubmission,
 	usePendingOrderActiveSubmissionIds,
@@ -86,7 +89,11 @@ export function OrderReconciliation() {
 						now - submission.createdAt < ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS &&
 						!activeSubmissionIds.has(submission.id),
 				)
-				.flatMap((submission) => submission.children.filter((child) => !child.status && child.nextCheckAt <= now))
+				.flatMap((submission) =>
+					submission.children.filter(
+						(child) => !isOrderStatusFinalForSubmission(submission, child.status) && child.nextCheckAt <= now,
+					),
+				)
 				.slice(0, ORDER_RECONCILIATION_POLL_LIMIT);
 			if (due.length === 0) return;
 
@@ -127,7 +134,9 @@ function markExpiredSubmissions(submissions: PendingOrderSubmission[], now: numb
 }
 
 function completeUnconfirmedReconciliation(submission: PendingOrderSubmission): void {
+	releaseSubmissionAssetReservations(submission);
 	const message = t`The exchange did not return a final order status. Review open orders and positions before retrying.`;
+	updatePositionMarketCloseReconciliation(submission, "unconfirmed", message);
 	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
 
 	if (submission.queueId && queueVisible) {
@@ -139,11 +148,17 @@ function completeUnconfirmedReconciliation(submission: PendingOrderSubmission): 
 }
 
 function completeReconciliation(submission: PendingOrderSubmission): void {
+	releaseSubmissionAssetReservations(submission);
 	const statuses = submission.children.map((child) => child.status).filter((status) => status !== undefined);
 	const acceptedCount = statuses.filter(isAcceptedOrderStatus).length;
 	const allAccepted = acceptedCount === submission.children.length;
 	const partiallyAccepted = acceptedCount > 0 && !allAccepted;
 	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
+	updatePositionMarketCloseReconciliation(
+		submission,
+		allAccepted && statuses.every((status) => status === "filled") ? "filled" : "rejected",
+		allAccepted ? undefined : t`The exchange did not accept the order.`,
+	);
 
 	if (submission.queueId && queueVisible) {
 		if (allAccepted) {
@@ -167,6 +182,35 @@ function completeReconciliation(submission: PendingOrderSubmission): void {
 	if (allAccepted) toast.success(t`Order confirmed by the exchange.`);
 	else if (partiallyAccepted) toast.warning(t`Some orders were accepted. Review open orders before retrying.`);
 	else toast.error(t`The exchange did not accept the order.`);
+}
+
+function releaseSubmissionAssetReservations(submission: PendingOrderSubmission): void {
+	void releaseOrderAssetReservations(
+		{
+			env: submission.env,
+			owner: submission.user,
+			assetIds: submission.children.map((child) => child.assetId),
+		},
+		submission.id,
+	);
+}
+
+function updatePositionMarketCloseReconciliation(
+	submission: PendingOrderSubmission,
+	outcome: "filled" | "rejected" | "unconfirmed",
+	message?: string,
+): void {
+	if (submission.origin?.type !== "positionMarketClose") return;
+	const session = getPositionMarketCloseModal();
+	if (!session || session.sessionId !== submission.origin.sessionId) return;
+	const actions = getPositionMarketCloseActions();
+	if (outcome === "filled") {
+		actions.updatePhase(session.sessionId, "idle");
+		actions.close(session.sessionId);
+		return;
+	}
+	if (outcome === "rejected") actions.updatePhase(session.sessionId, "idle");
+	actions.setError(session.sessionId, message ?? t`The exchange did not accept the order.`);
 }
 
 function getReconciledOutcome(statuses: OrderProcessingStatus[]) {

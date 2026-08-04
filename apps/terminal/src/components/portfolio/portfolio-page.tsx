@@ -157,7 +157,12 @@ export function PortfolioPage() {
 				)}
 			</div>
 			<Suspense fallback={null}>
-				<GlobalModals enableLegalGate />
+				<GlobalModals
+					enableHip3Disclaimer
+					enableLegalGate
+					enablePositionMarketClose
+					enableSelectedMarketHip3Disclaimer={false}
+				/>
 			</Suspense>
 		</>
 	);

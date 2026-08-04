@@ -5637,6 +5637,122 @@ msgstr "您的交易正在处理中"
 #~ msgid "Your wallet approves one trading key for this phone. It cannot withdraw funds."
 #~ msgstr "您的钱包为此手机授权一个交易密钥。它无法提取资金。"
 
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
+msgstr "设定 {requestedPercent}%；受数量精度限制，实际为 {effectivePercent}%"
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+msgid "Accept the HIP-3 deployer disclaimer before trading this market."
+msgstr "请先接受该市场的 HIP-3 部署者免责声明再交易。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Choose how much of this position to close with a reduce-only market order."
+msgstr "选择要通过只减仓市价单平掉的仓位数量。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close percentage"
+msgstr "平仓比例"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close percentage slider"
+msgstr "平仓比例滑块"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close size"
+msgstr "平仓数量"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Closing this dialog will not cancel it."
+msgstr "关闭此弹窗不会取消该订单。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Confirming..."
+msgstr "确认中..."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Live position data is stale. Wait for the account connection to recover."
+msgstr "实时仓位数据不是最新状态。请等待账户连接恢复。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Live position data is unavailable. Wait for the account connection to recover."
+msgstr "实时仓位数据不可用。请等待账户连接恢复。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Loading the latest position..."
+msgstr "正在加载最新仓位..."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Max Slippage"
+msgstr "最大滑点"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Remaining"
+msgstr "剩余"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "The order is still being confirmed."
+msgstr "订单仍在确认中。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "This position changed sides. Close and reopen this dialog before submitting."
+msgstr "仓位方向已发生变化。请关闭并重新打开此弹窗后再提交。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "This position is no longer open."
+msgstr "该仓位已不再持有。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Validating..."
+msgstr "验证中..."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgctxt "Position market close summary"
+msgid "Close"
+msgstr "平仓"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close percentage must be a decimal number"
+msgstr "平仓比例必须为十进制数"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close percentage must be between 0 and 100"
+msgstr "平仓比例必须在 0 到 100 之间"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size exceeds current position"
+msgstr "平仓数量超过当前仓位"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size is below market precision"
+msgstr "平仓数量低于市场精度"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size must be a decimal number"
+msgstr "平仓数量必须为十进制数"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size must be greater than zero"
+msgstr "平仓数量必须大于零"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Position size is below market precision"
+msgstr "仓位数量低于市场精度"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Position size must be a non-zero number"
+msgstr "仓位数量必须为非零数值"
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Size precision must be a non-negative integer"
+msgstr "数量精度必须为非负整数"
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-tracked-order.ts
+#: src/hooks/trade/use-tracked-twap-order.ts
+#: src/hooks/trade/use-twap-cancel.ts
+msgid "Safe order coordination across tabs is unavailable in this browser."
+msgstr "当前浏览器无法安全协调多个标签页的订单。"
+
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Account Value Change"

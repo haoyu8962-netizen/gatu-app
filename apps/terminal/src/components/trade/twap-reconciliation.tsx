@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { HL_ALL_DEXS } from "@/config/app";
 import { matchesTwapIntent, TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS, type TwapStateLike } from "@/domain/trade/twap";
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
+import { reconcileTwapOrderAssetReservation } from "@/lib/trade/twap-order-asset-reservation";
 import { hasOrderQueueItem, updateOrderQueueItem } from "@/stores/use-order-queue-store";
 import {
 	getPendingTwapActions,
@@ -18,6 +19,8 @@ interface TwapCandidate {
 	status: "activated" | "terminated" | "finished" | "error";
 	error?: string;
 }
+
+const TWAP_RECONCILIATION_RETRY_MS = 1_000;
 
 export function TwapReconciliation() {
 	const { clientKey, env } = useHyperliquid();
@@ -91,8 +94,8 @@ export function TwapReconciliation() {
 
 			const candidate = findMatchingCandidate(submission, activeCandidates, historyCandidates);
 			if (!candidate) continue;
-			const completed = getPendingTwapActions().resolve(submission.id);
-			if (completed) completeTwapReconciliation(completed, candidate);
+			getPendingTwapActions().markActive(submission.id);
+			void coordinateTwapReconciliation(submission, candidate);
 		}
 	}, [activeSubmissionIds, activeTwaps, address, env, submissions, twapHistory]);
 
@@ -108,6 +111,11 @@ function markExpiredSubmissions(submissions: PendingTwapSubmission[], now: numbe
 }
 
 function completeUnconfirmedTwapReconciliation(submission: PendingTwapSubmission): void {
+	void reconcileTwapOrderAssetReservation({
+		identity: { env: submission.env, owner: submission.user, assetIds: [submission.intent.assetId] },
+		intent: submission.intent,
+		pendingSubmissionId: submission.id,
+	});
 	const message = t`The exchange did not return a final TWAP status. Review active TWAP orders before retrying.`;
 	const queueVisible = submission.queueId ? hasOrderQueueItem(submission.queueId) : false;
 
@@ -145,6 +153,30 @@ function findMatchingCandidate(
 	}
 
 	return [...eligibleCandidates.values()].sort((left, right) => right.state.timestamp - left.state.timestamp)[0];
+}
+
+async function coordinateTwapReconciliation(
+	submission: PendingTwapSubmission,
+	candidate: TwapCandidate,
+): Promise<void> {
+	const coordinated = await reconcileTwapOrderAssetReservation({
+		identity: { env: submission.env, owner: submission.user, assetIds: [submission.intent.assetId] },
+		intent: submission.intent,
+		pendingSubmissionId: submission.id,
+		active:
+			candidate.status === "activated" ? { twapId: candidate.twapId, startedAt: candidate.state.timestamp } : undefined,
+	});
+	if (!coordinated) {
+		window.setTimeout(() => getPendingTwapActions().clearActive(submission.id), TWAP_RECONCILIATION_RETRY_MS);
+		return;
+	}
+
+	const completed = getPendingTwapActions().resolve(submission.id);
+	if (!completed) {
+		getPendingTwapActions().clearActive(submission.id);
+		return;
+	}
+	completeTwapReconciliation(completed, candidate);
 }
 
 function completeTwapReconciliation(submission: PendingTwapSubmission, candidate: TwapCandidate): void {

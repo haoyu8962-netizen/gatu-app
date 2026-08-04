@@ -28,12 +28,14 @@ import {
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
+import { usePositionMarketCloseActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type {
 	ClosePositionData,
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
+	PositionMarketCloseRef,
 	TpSlPositionRef,
 } from "../positions/position-dialog-types";
 import { PositionFilterToolbar } from "../positions/position-filter-toolbar";
@@ -44,8 +46,6 @@ import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
-
-type CloseIntent = "close" | "reverse";
 
 interface Props {
 	scrollMode?: MobileDataScrollMode;
@@ -64,6 +64,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const { setSide } = useOrderEntryActions();
+	const positionMarketCloseActions = usePositionMarketCloseActions();
 
 	function handleSelectMarket(name: string, side: Side) {
 		navigateToMarket(name, undefined, { displayedContent: "trade" });
@@ -167,7 +168,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		});
 	}
 
-	async function submitCloseOrReverse(intent: CloseIntent, data: ClosePositionData) {
+	async function submitReverse(data: ClosePositionData) {
 		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe, marginMode } = data;
 		if (closingAssetIds.has(assetId)) return;
 		resetCloseError();
@@ -184,7 +185,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		});
 
 		const { orders, grouping } = buildOrderPlan({
-			kind: intent === "close" ? "marketClose" : "reverse",
+			kind: "reverse",
 			assetId,
 			size,
 			szDecimals,
@@ -192,9 +193,6 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 			markPx,
 			slippageBps,
 		});
-
-		const title = intent === "close" ? t`Position closed — ${coin}` : t`Position reversed — ${coin}`;
-		const failureMessage = intent === "close" ? t`Failed to close position` : t`Failed to reverse position`;
 
 		try {
 			const submission = await submitOrder({ orders, grouping }, { riskContext: { marketKind: "perp", marginMode } });
@@ -207,11 +205,11 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 				return;
 			}
 			throwIfAnyResponseError(submission.result.response?.data?.statuses);
-			toast.success(title, {
+			toast.success(t`Position reversed — ${coin}`, {
 				description: buildClosePositionDescription({ size, szDecimals, coin, unrealizedPnl, roe }),
 			});
 		} catch (error) {
-			const message = error instanceof Error ? error.message : failureMessage;
+			const message = error instanceof Error ? error.message : t`Failed to reverse position`;
 			toast.error(message);
 			setCloseErrors((prev) => {
 				const next = new Map(prev);
@@ -227,12 +225,12 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		}
 	}
 
-	function handleClosePosition(data: ClosePositionData) {
-		void submitCloseOrReverse("close", data);
+	function handleOpenMarketClose(position: PositionMarketCloseRef) {
+		positionMarketCloseActions.open(position);
 	}
 
 	function handleReverse(data: ClosePositionData) {
-		void submitCloseOrReverse("reverse", data);
+		void submitReverse(data);
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {
@@ -337,7 +335,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 								closeErrorMessage={closeErrorMessage}
 								expanded={expandedPositionKeys.has(positionKey)}
 								onExpandedChange={(expanded) => handlePositionExpandedChange(positionKey, expanded)}
-								onClose={handleClosePosition}
+								onMarketClose={handleOpenMarketClose}
 								onReverse={handleReverse}
 								onLimitClose={handleOpenLimitCloseModal}
 								onOpenTpSl={handleOpenTpSlModal}

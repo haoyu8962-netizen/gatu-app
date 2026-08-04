@@ -12,23 +12,29 @@ interface Props extends Omit<ButtonProps, "onClick"> {
 	onClick: () => void | Promise<void>;
 	children: ReactNode;
 	containerClassName?: string;
+	requireReadyConfirmation?: boolean;
 }
 
 export function TradingActionButton({
 	onClick,
 	children,
 	containerClassName,
+	requireReadyConfirmation = false,
 	disabled,
 	className,
 	variant = "filled",
 	intent = "neutral",
 	...buttonProps
 }: Props) {
-	const { isReady, isEnabling, needsTrading, guardAction, error } = useTradingGuard();
+	const { isReady, isEnabling, needsTrading, enableTrading, guardAction, error } = useTradingGuard();
 
 	const handleClick = useCallback(() => {
+		if (requireReadyConfirmation && !isReady) {
+			enableTrading();
+			return;
+		}
 		guardAction(onClick);
-	}, [guardAction, onClick]);
+	}, [enableTrading, guardAction, isReady, onClick, requireReadyConfirmation]);
 
 	const showEnableTrading = needsTrading && !isEnabling;
 

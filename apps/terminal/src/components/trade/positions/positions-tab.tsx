@@ -20,6 +20,7 @@ import { useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
+import { usePositionMarketCloseActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
@@ -27,6 +28,7 @@ import type {
 	ClosePositionData,
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
+	PositionMarketCloseRef,
 	TpSlPositionRef,
 } from "./position-dialog-types";
 import { PositionIsolatedMarginModal } from "./position-isolated-margin-modal";
@@ -46,8 +48,6 @@ import {
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
 
-type CloseIntent = "close" | "reverse";
-
 interface Props {
 	directionFilter: PositionDirectionFilter;
 	marketFilter: PositionMarketFilter;
@@ -59,6 +59,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	const slippageBps = useMarketOrderSlippageBps();
 	const navigateToMarket = useMarketNavigation();
 	const { setSide } = useOrderEntryActions();
+	const positionMarketCloseActions = usePositionMarketCloseActions();
 
 	function handleSelectMarket(name: string, side: Side) {
 		navigateToMarket(name);
@@ -92,7 +93,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 
 	const actionError = closeError?.message;
 
-	async function submitCloseOrReverse(intent: CloseIntent, data: ClosePositionData) {
+	async function submitReverse(data: ClosePositionData) {
 		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe, marginMode } = data;
 		if (closingAssetIds.has(assetId)) return;
 
@@ -104,7 +105,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 		});
 
 		const { orders, grouping } = buildOrderPlan({
-			kind: intent === "close" ? "marketClose" : "reverse",
+			kind: "reverse",
 			assetId,
 			size,
 			szDecimals,
@@ -112,9 +113,6 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 			markPx,
 			slippageBps,
 		});
-
-		const title = intent === "close" ? t`Position closed — ${coin}` : t`Position reversed — ${coin}`;
-		const failureMessage = intent === "close" ? t`Failed to close position` : t`Failed to reverse position`;
 
 		try {
 			const submission = await submitOrder({ orders, grouping }, { riskContext: { marketKind: "perp", marginMode } });
@@ -127,11 +125,11 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 				return;
 			}
 			throwIfAnyResponseError(submission.result.response?.data?.statuses);
-			toast.success(title, {
+			toast.success(t`Position reversed — ${coin}`, {
 				description: buildClosePositionDescription({ size, szDecimals, coin, unrealizedPnl, roe }),
 			});
 		} catch (error) {
-			toast.error(error instanceof Error ? error.message : failureMessage);
+			toast.error(error instanceof Error ? error.message : t`Failed to reverse position`);
 		} finally {
 			setClosingAssetIds((prev) => {
 				const next = new Set(prev);
@@ -141,12 +139,12 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 		}
 	}
 
-	function handleClosePosition(data: ClosePositionData) {
-		void submitCloseOrReverse("close", data);
+	function handleOpenMarketClose(position: PositionMarketCloseRef) {
+		positionMarketCloseActions.open(position);
 	}
 
 	function handleReverse(data: ClosePositionData) {
-		void submitCloseOrReverse("reverse", data);
+		void submitReverse(data);
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {
@@ -248,7 +246,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 											tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
 											isRowClosing={typeof assetId === "number" && closingAssetIds.has(assetId)}
 											isEven={i % 2 === 1}
-											onClose={handleClosePosition}
+											onMarketClose={handleOpenMarketClose}
 											onLimitClose={handleOpenLimitCloseModal}
 											onReverse={handleReverse}
 											onOpenTpSl={handleOpenTpSlModal}

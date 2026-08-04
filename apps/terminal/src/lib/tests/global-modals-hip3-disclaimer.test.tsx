@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const testState = vi.hoisted(() => ({
 	activeModal: "deposit" as string | null,
 	closeCommandMenu: vi.fn(),
+	discardPositionMarketCloseModal: vi.fn(),
 	hip3Disclaimer: {
 		isRequired: true,
 		dex: "xyz" as string | undefined,
@@ -27,8 +28,9 @@ const testState = vi.hoisted(() => ({
 }));
 
 vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
-	useHip3DisclaimerRequirement: () => {
-		testState.hip3RequirementHook();
+	useHip3DisclaimerRequirement: (targetMarketName?: string | null) => {
+		testState.hip3RequirementHook(targetMarketName);
+		if (targetMarketName === null) return { isRequired: false, dex: undefined, documentationUrl: undefined };
 		return testState.hip3Disclaimer;
 	},
 }));
@@ -63,6 +65,7 @@ vi.mock("@/lib/lazy", () => ({
 }));
 
 vi.mock("@/stores/use-global-modal-store", () => ({
+	discardPositionMarketCloseModal: testState.discardPositionMarketCloseModal,
 	useCommandMenuActions: () => ({ open: testState.openCommandMenu, close: testState.closeCommandMenu }),
 	useGlobalModalType: () => testState.activeModal,
 	useSendModalAccountType: () => "spot",
@@ -70,6 +73,8 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 	useSendModalAsset: () => "USDC",
 	useTransferModalActions: () => ({ close: vi.fn() }),
 	useTransferModalDirection: () => "toPerp",
+	usePositionMarketCloseSession: () =>
+		testState.activeModal === "positionMarketClose" ? { position: { coin: "xyz:CXMT" } } : null,
 }));
 
 describe("GlobalModals HIP-3 disclaimer priority", () => {
@@ -87,6 +92,7 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 			documentationUrl: "https://docs.trade.xyz/consolidated-resources/specification-index",
 		};
 		testState.closeCommandMenu.mockReset();
+		testState.discardPositionMarketCloseModal.mockReset();
 		testState.closeSendModal.mockReset();
 		testState.hip3RequirementHook.mockReset();
 		testState.legalGate = {
@@ -190,5 +196,51 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		expect(sendModal).not.toBeNull();
 		expect(sendModal?.getAttribute("data-props")).toContain('"initialAsset":"USDC"');
 		expect(sendModal?.getAttribute("data-props")).toContain('"initialAccountType":"spot"');
+	});
+
+	it("mounts market close only in enabled scopes and does not replace it with Command-K", async () => {
+		testState.activeModal = "positionMarketClose";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(GlobalModals, { enablePositionMarketClose: true })));
+		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).not.toBeNull();
+
+		act(() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true })));
+		expect(testState.openCommandMenu).not.toHaveBeenCalled();
+
+		act(() => root.render(createElement(GlobalModals)));
+		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).toBeNull();
+		expect(testState.discardPositionMarketCloseModal).toHaveBeenCalledOnce();
+	});
+
+	it("binds the HIP-3 gate to the market-close target instead of the selected terminal market", async () => {
+		testState.activeModal = "positionMarketClose";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() =>
+			root.render(createElement(GlobalModals, { enableHip3Disclaimer: true, enablePositionMarketClose: true })),
+		);
+
+		expect(testState.hip3RequirementHook).toHaveBeenCalledWith("xyz:CXMT");
+		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).not.toBeNull();
+		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).toBeNull();
+	});
+
+	it("does not show a selected-market disclaimer on position-close-only pages", async () => {
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() =>
+			root.render(
+				createElement(GlobalModals, {
+					enableHip3Disclaimer: true,
+					enablePositionMarketClose: true,
+					enableSelectedMarketHip3Disclaimer: false,
+				}),
+			),
+		);
+
+		expect(testState.hip3RequirementHook).toHaveBeenCalledWith(null);
+		expect(container.querySelector('[data-testid="Hip3DeployerDisclaimer"]')).toBeNull();
+		expect(container.querySelector('[data-testid="DepositModal"]')).not.toBeNull();
 	});
 });

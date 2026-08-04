@@ -6,6 +6,14 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTwapCancel } from "@/hooks/trade/use-twap-cancel";
+import {
+	getOrderAssetReservationState,
+	reserveOrderAssets,
+	runWithOrderAssetLocks,
+} from "@/lib/trade/order-asset-lock";
+import { getActiveTwapReservationId } from "@/lib/trade/twap-order-asset-reservation";
+
+const USER = "0x1111111111111111111111111111111111111111" as const;
 
 const mocks = vi.hoisted(() => ({
 	assetId: 7 as number | undefined,
@@ -22,6 +30,7 @@ vi.mock("sonner", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useExchange: () => ({ mutateAsync: mocks.mutateAsync, reset: mocks.reset }),
+	useHyperliquid: () => ({ clientKey: USER, env: "Mainnet" }),
 	useMarkets: () => ({ getAssetId: () => mocks.assetId }),
 }));
 
@@ -30,6 +39,15 @@ let hookValue: ReturnType<typeof useTwapCancel> | null = null;
 function Probe() {
 	hookValue = useTwapCancel();
 	return null;
+}
+
+function installExclusiveLockManager(): void {
+	const manager = {
+		request<T>(name: string, _options: LockOptions, callback: (lock: Lock | null) => T | PromiseLike<T>): Promise<T> {
+			return Promise.resolve(callback({ name, mode: "exclusive" } as Lock));
+		},
+	} as unknown as LockManager;
+	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
 }
 
 describe("useTwapCancel", () => {
@@ -44,6 +62,8 @@ describe("useTwapCancel", () => {
 		mocks.successToast.mockReset();
 		mocks.errorToast.mockReset();
 		mocks.warningToast.mockReset();
+		window.localStorage.clear();
+		installExclusiveLockManager();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -54,6 +74,7 @@ describe("useTwapCancel", () => {
 		act(() => root.unmount());
 		container.remove();
 		hookValue = null;
+		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 	});
 
 	it("submits the exact SDK asset and TWAP ID fields and confirms success", async () => {
@@ -118,5 +139,38 @@ describe("useTwapCancel", () => {
 		expect(mocks.errorToast).toHaveBeenCalledOnce();
 		expect(mocks.warningToast).not.toHaveBeenCalled();
 		expect(hookValue?.feedback?.tone).toBe("error");
+	});
+
+	it("releases the active TWAP asset reservation only after cancellation is confirmed", async () => {
+		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
+			expect(
+				reserveOrderAssets(lease, {
+					submissionId: getActiveTwapReservationId(47),
+					intentKey: "twap:7",
+					exclusiveAssetLock: false,
+					isRiskReducing: false,
+					createdAt: Date.now(),
+					expiresAt: Date.now() + 60_000,
+				}),
+			).toBe(true);
+		});
+		mocks.mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "twapCancel", data: { status: "success" } },
+		});
+
+		await act(async () => {
+			await hookValue?.cancelTwap("BTC", 47);
+		});
+
+		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
+			expect(
+				getOrderAssetReservationState(lease, {
+					intentKey: "entry-after-cancel",
+					exclusiveAssetLock: false,
+					isRiskReducing: false,
+				}),
+			).toBe("clear");
+		});
 	});
 });
