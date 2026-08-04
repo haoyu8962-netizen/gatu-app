@@ -49,4 +49,32 @@ describe("TpSlSection position ROE shortcuts", () => {
 		act(() => fiftyPercentButtons[0]?.click());
 		expect(onTpPriceChange).toHaveBeenCalledWith("102.5000");
 	});
+
+	it("provides 44px input and shortcut targets when embedded in a mobile sheet", () => {
+		act(() => {
+			root.render(
+				createElement(TpSlSection, {
+					mobileTouchSafe: true,
+					onSlPriceChange: vi.fn(),
+					onTpPriceChange: vi.fn(),
+					referencePrice: 100,
+					side: "buy",
+					size: 1,
+					slPrice: "",
+					tpPrice: "",
+				}),
+			);
+		});
+
+		const inputs = container.querySelectorAll<HTMLInputElement>('input[placeholder="Price"]');
+		expect(inputs).toHaveLength(2);
+		for (const input of inputs) expect(input.className).toContain("max-[1000px]:h-11");
+
+		const shortcutButtons = container.querySelectorAll<HTMLButtonElement>('button[aria-label^="Set to"]');
+		expect(shortcutButtons.length).toBeGreaterThan(0);
+		for (const button of shortcutButtons) {
+			expect(button.className).toContain("max-[1000px]:min-h-11");
+			expect(button.className).toContain("max-[1000px]:min-w-11");
+		}
+	});
 });

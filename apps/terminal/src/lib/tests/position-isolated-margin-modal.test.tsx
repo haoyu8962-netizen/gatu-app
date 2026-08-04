@@ -43,6 +43,8 @@ const testState = vi.hoisted(() => ({
 	positionLoading: false,
 	positionError: false,
 	positionStale: false,
+	isMobile: false,
+	pendingMethods: new Set<string>(),
 	updateMargin: vi.fn(),
 	topUpMargin: vi.fn(),
 	beforeQueuedExecution: null as null | ((method: string) => Promise<void>),
@@ -57,6 +59,38 @@ vi.mock("@gatu/ui", async () => {
 	const SegmentedContext = React.createContext<((value: string) => void) | null>(null);
 
 	return {
+		AdaptiveModal: ({
+			children,
+			dismissible,
+			onOpenChange,
+			open,
+			presentation,
+			showHandle,
+		}: {
+			children: ReactNode;
+			dismissible: boolean;
+			onOpenChange: (open: boolean) => void;
+			open: boolean;
+			presentation: string;
+			showHandle: boolean;
+		}) =>
+			open
+				? createElement(
+						"section",
+						{
+							"data-testid": "position-risk-dialog",
+							"data-presentation": presentation,
+							"data-dismissible": String(dismissible),
+							"data-show-handle": String(showHandle),
+						},
+						createElement("button", {
+							"aria-label": "Request adaptive dismiss",
+							type: "button",
+							onClick: () => onOpenChange(false),
+						}),
+						children,
+					)
+				: null,
 		Button: ({
 			children,
 			iconLeft: _iconLeft,
@@ -68,30 +102,22 @@ vi.mock("@gatu/ui", async () => {
 			children: ReactNode;
 			[key: string]: unknown;
 		}) => createElement("button", { ...props, type: "button" }, children),
-		Modal: ({ children, open }: { children: ReactNode; open: boolean }) => (open ? children : null),
 		ModalContent: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
 			createElement("div", props, children),
 		ModalDescription: ({ children }: { children: ReactNode }) => createElement("p", null, children),
 		ModalFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
 		ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
-		ModalPopup: ({
-			children,
-			showClose: _showClose,
-			size: _size,
-			...props
-		}: {
-			children: ReactNode;
-			[key: string]: unknown;
-		}) => createElement("section", props, children),
 		ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 		SegmentedControls: ({ children, onValueChange }: { children: ReactNode; onValueChange: (value: string) => void }) =>
 			createElement(SegmentedContext.Provider, { value: onValueChange }, children),
 		SegmentedControlItem: ({
 			children,
+			className,
 			disabled,
 			value,
 		}: {
 			children: ReactNode;
+			className?: string;
 			disabled?: boolean;
 			value: string;
 		}) => {
@@ -100,6 +126,7 @@ vi.mock("@gatu/ui", async () => {
 				"button",
 				{
 					type: "button",
+					className,
 					disabled,
 					onClick: () => onValueChange?.(value),
 				},
@@ -117,18 +144,31 @@ vi.mock("@/components/ui/info-row", () => ({
 vi.mock("@/components/ui/number-input", () => ({
 	NumberInput: ({
 		"aria-label": ariaLabel,
+		className,
 		onChange,
 		value,
 	}: {
 		"aria-label": string;
+		className?: string;
 		onChange: (event: { target: { value: string } }) => void;
 		value: string;
-	}) => createElement("input", { "aria-label": ariaLabel, onChange, value }),
+	}) => createElement("input", { "aria-label": ariaLabel, className, onChange, value }),
 }));
 
 vi.mock("@/components/trade/components/trading-action-button", () => ({
-	TradingActionButton: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
-		createElement("button", { ...props, type: "button" }, children),
+	TradingActionButton: ({
+		children,
+		containerClassName: _containerClassName,
+		...props
+	}: {
+		children: ReactNode;
+		containerClassName?: string;
+		[key: string]: unknown;
+	}) => createElement("button", { ...props, type: "button" }, children),
+}));
+
+vi.mock("@/hooks/use-mobile", () => ({
+	useIsMobile: () => testState.isMobile,
 }));
 
 vi.mock("sonner", () => ({
@@ -147,7 +187,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	) => {
 		testState.executionGuards[method] = options?.executionGuard;
 		return {
-			isPending: false,
+			isPending: testState.pendingMethods.has(method),
 			mutateAsync: async (params: { asset: number; isBuy?: boolean; ntli?: number; leverage?: string }) => {
 				options?.executionGuard?.(params);
 				await testState.beforeQueuedExecution?.(method);
@@ -233,6 +273,8 @@ describe("PositionIsolatedMarginModal", () => {
 		testState.positionLoading = false;
 		testState.positionError = false;
 		testState.positionStale = false;
+		testState.isMobile = false;
+		testState.pendingMethods.clear();
 		testState.marketLoading = false;
 		testState.marketError = null;
 		testState.market = {
@@ -281,6 +323,47 @@ describe("PositionIsolatedMarginModal", () => {
 		});
 		return onOpenChange;
 	}
+
+	it("uses the terminal breakpoint for a touch-safe mobile bottom sheet while retaining the desktop modal", () => {
+		testState.isMobile = true;
+		renderModal();
+
+		let dialog = container.querySelector<HTMLElement>('[data-testid="position-risk-dialog"]');
+		expect(dialog?.dataset.presentation).toBe("drawer");
+		expect(dialog?.dataset.dismissible).toBe("true");
+		expect(dialog?.dataset.showHandle).toBe("true");
+		expect(getInput(container, "Margin amount").className).toContain("max-[1000px]:h-11");
+		for (const label of ["USDC Amount", "Target Leverage", "Add", "Remove", "Cancel", "Add Margin"]) {
+			expect(getButton(container, label).className).toContain("max-[1000px]:min-h-11");
+		}
+
+		testState.isMobile = false;
+		act(() => {
+			root.render(
+				createElement(PositionIsolatedMarginModal, {
+					open: true,
+					onOpenChange: vi.fn(),
+					position: basePositionRef,
+				}),
+			);
+		});
+		dialog = container.querySelector<HTMLElement>('[data-testid="position-risk-dialog"]');
+		expect(dialog?.dataset.presentation).toBe("modal");
+		expect(dialog?.dataset.showHandle).toBe("false");
+	});
+
+	it("blocks adaptive dismissal while an isolated-margin mutation is pending", () => {
+		testState.isMobile = true;
+		testState.pendingMethods.add("updateIsolatedMargin");
+		const onOpenChange = renderModal();
+
+		const dialog = container.querySelector<HTMLElement>('[data-testid="position-risk-dialog"]');
+		expect(dialog?.dataset.dismissible).toBe("false");
+		expect(dialog?.dataset.showHandle).toBe("false");
+		act(() => container.querySelector<HTMLButtonElement>('[aria-label="Request adaptive dismiss"]')?.click());
+		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(getButton(container, "Cancel").disabled).toBe(true);
+	});
 
 	it("submits an exact HIP-3 micro-USDC margin addition", async () => {
 		const onOpenChange = renderModal();

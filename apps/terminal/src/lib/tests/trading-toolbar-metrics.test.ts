@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+	getToolbarAbsoluteSize,
 	getToolbarAccountMarginRatio,
+	getToolbarFundingTotal,
+	getToolbarNonZeroPnl,
 	getToolbarOrderMetrics,
 	getToolbarPositionChangeRatio,
 	getToolbarTwapMetrics,
@@ -38,6 +41,20 @@ describe("trading toolbar position metrics", () => {
 		expect(getToolbarPositionChangeRatio({ unrealizedPnl: "1", szi: "0", entryPx: "100" })).toBeNull();
 		expect(getToolbarPositionChangeRatio({ unrealizedPnl: "1", szi: "1", entryPx: "0" })).toBeNull();
 		expect(getToolbarPositionChangeRatio({ unrealizedPnl: "invalid", szi: "1", entryPx: "100" })).toBeNull();
+	});
+});
+
+describe("trading toolbar history metrics", () => {
+	it("keeps history totals and absolute sizes exact", () => {
+		expect(getToolbarFundingTotal([{ usdc: "9007199254740992.1" }, { usdc: "-9007199254740992" }])).toBe("0.1");
+		expect(getToolbarAbsoluteSize("-0.000000000000000001")).toBe("0.000000000000000001");
+	});
+
+	it("fails closed on invalid protocol values and hides zero PNL", () => {
+		expect(getToolbarFundingTotal([{ usdc: "invalid" }])).toBeNull();
+		expect(getToolbarAbsoluteSize("invalid")).toBeNull();
+		expect(getToolbarNonZeroPnl("0.000")).toBeNull();
+		expect(getToolbarNonZeroPnl("-1.25")).toBe("-1.25");
 	});
 });
 

@@ -1,40 +1,40 @@
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@gatu/ui";
+import { Table, TableBody, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
-import { buildOrderPlan } from "@/domain/trade/order-intent";
-import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import {
 	filterPositions,
+	getTotalPositionUnrealizedPnl,
 	type PositionDirectionFilter,
 	type PositionMarketFilter,
 	type PositionMarketIdentity,
 } from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
-import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
+import type { PositionReverseTarget } from "@/hooks/trade/use-position-reverse-submit";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
-import { buildClosePositionDescription } from "@/lib/trade/close-toast";
+import { formatUSD } from "@/lib/format";
+import { useHyperliquid, useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
-import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
+import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
 import type {
-	ClosePositionData,
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
+	PositionReverseRef,
 	TpSlPositionRef,
 } from "./position-dialog-types";
 import { PositionIsolatedMarginModal } from "./position-isolated-margin-modal";
 import { PositionLimitCloseModal } from "./position-limit-close-modal";
-import { PositionRow } from "./position-row";
+import { PositionReverseConfirmationController } from "./position-reverse-confirmation-controller";
+import { type PositionPnlMode, PositionRow } from "./position-row";
 import {
+	POSITION_TABLE_COLUMNS,
 	POSITION_TABLE_MIN_WIDTH,
 	positionTableBodyClass,
 	positionTableHeadClass,
@@ -43,6 +43,7 @@ import {
 import { PositionTpSlModal } from "./position-tpsl-modal";
 import {
 	positionsPanelTableBodyClass,
+	positionsPanelTableCaptionRowClass,
 	positionsPanelTableHeaderRowClass,
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
@@ -56,7 +57,7 @@ interface Props {
 
 export function PositionsTab({ directionFilter, marketFilter, currentMarket }: Props) {
 	const { address, isConnected } = useWalletSession();
-	const slippageBps = useMarketOrderSlippageBps();
+	const { env } = useHyperliquid();
 	const navigateToMarket = useMarketNavigation();
 	const { setSide } = useOrderEntryActions();
 	const positionMarketClose = usePositionMarketCloseAction();
@@ -72,9 +73,8 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	const [isolatedMarginModalOpen, setIsolatedMarginModalOpen] = useState(false);
 	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
 		useState<IsolatedMarginPositionRef | null>(null);
-	const [closingAssetIds, setClosingAssetIds] = useState<Set<number>>(() => new Set());
-
-	const { submitOrder, error: closeError, reset: resetCloseError } = useTrackedOrder();
+	const [selectedReverseTarget, setSelectedReverseTarget] = useState<PositionReverseTarget | null>(null);
+	const [pnlMode, setPnlMode] = useState<PositionPnlMode>("roe");
 
 	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
 
@@ -90,61 +90,17 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 	const filteredPositions = filterPositions(positions, directionFilter, marketFilter, currentMarket);
+	const totalUnrealizedPnl = getTotalPositionUnrealizedPnl(positions);
 
-	const actionError = closeError?.message;
-
-	async function submitReverse(data: ClosePositionData) {
-		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe, marginMode } = data;
-		if (closingAssetIds.has(assetId)) return;
-
-		resetCloseError();
-		setClosingAssetIds((prev) => {
-			const next = new Set(prev);
-			next.add(assetId);
-			return next;
-		});
-
-		const { orders, grouping } = buildOrderPlan({
-			kind: "reverse",
-			assetId,
-			size,
-			szDecimals,
-			isLong,
-			markPx,
-			slippageBps,
-		});
-
-		try {
-			const submission = await submitOrder({ orders, grouping }, { riskContext: { marketKind: "perp", marginMode } });
-			if (submission.state === "blocked") {
-				toast.warning(t`Another order for this market is still being confirmed.`);
-				return;
-			}
-			if (submission.state === "reconciling") {
-				toast.info(t`Order submitted. Confirming exchange status; do not retry.`);
-				return;
-			}
-			throwIfAnyResponseError(submission.result.response?.data?.statuses);
-			toast.success(t`Position reversed — ${coin}`, {
-				description: buildClosePositionDescription({ size, szDecimals, coin, unrealizedPnl, roe }),
-			});
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : t`Failed to reverse position`);
-		} finally {
-			setClosingAssetIds((prev) => {
-				const next = new Set(prev);
-				next.delete(assetId);
-				return next;
-			});
-		}
-	}
+	const pnlHeader = pnlMode === "roe" ? t`PNL (ROE %)` : t`PNL (Price Change %)`;
 
 	function handleOpenMarketClose(position: PositionMarketCloseRef) {
 		positionMarketClose.open(position);
 	}
 
-	function handleReverse(data: ClosePositionData) {
-		void submitReverse(data);
+	function handleReverse(data: PositionReverseRef) {
+		if (!address) return;
+		setSelectedReverseTarget({ ...data, owner: address.toLowerCase(), env });
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {
@@ -184,8 +140,25 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			{actionError ? <div className="px-2.5 py-1 text-2xs text-error">{actionError}</div> : null}
 			<div className={positionsPanelTableShellClass}>
+				{!placeholder ? (
+					<dl
+						data-testid="positions-summary-bar"
+						className={cn(positionsPanelTableCaptionRowClass, "h-8 justify-start gap-2 px-5 py-0 font-market-close")}
+					>
+						<dt className="text-[11px] font-medium text-market-close-subtle">{t`Unrealized PNL`}</dt>
+						<dd
+							className={cn(
+								"m-0 text-xs font-semibold tabular-nums",
+								totalUnrealizedPnl === null
+									? "text-market-close-subtle"
+									: getMarketCloseValueColorClass(totalUnrealizedPnl),
+							)}
+						>
+							{formatUSD(totalUnrealizedPnl, { compact: false, signDisplay: "exceptZero" })}
+						</dd>
+					</dl>
+				) : null}
 				{placeholder || filteredPlaceholder ? (
 					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 						{placeholder ?? filteredPlaceholder}
@@ -194,43 +167,84 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 					<ScrollArea className="min-h-0 w-full flex-1 [&_[data-slot=scroll-area-viewport]]:overscroll-x-none">
 						<Table
 							containerClassName="overflow-visible"
-							className="table-auto w-full"
+							className="table-fixed w-full"
 							style={{ minWidth: POSITION_TABLE_MIN_WIDTH }}
 						>
+							<colgroup>
+								{POSITION_TABLE_COLUMNS.map((column) => (
+									<col key={column.id} style={{ width: column.width }} />
+								))}
+							</colgroup>
 							<TableHeader className={positionTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(positionTableHeadClass, "min-w-0 pl-3")}>
+									<TableHead scope="col" size="dense" className={cn(positionTableHeadClass, "min-w-0 pl-5 text-left")}>
 										{t`Market`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
-										{t`Size`}
+										{t`Size`} / {t`Position Value`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
-										{t`Position Value`}
+										<Tooltip
+											content={t`Mark price is derived from oracle prices and is used to calculate unrealized PnL and liquidation.`}
+											side="top"
+										>
+											<button
+												type="button"
+												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+											>
+												{t`Entry Price`} / {t`Mark Price`}
+											</button>
+										</Tooltip>
 									</TableHead>
 									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
-										{t`Entry Price`}
+										<Tooltip
+											content={t`Unrealized PnL is estimated using the mark price. Click to switch the percentage display.`}
+											side="top"
+										>
+											<button
+												type="button"
+												onClick={() => setPnlMode((current) => (current === "roe" ? "priceChange" : "roe"))}
+												aria-label={pnlMode === "roe" ? t`Show price change percentage` : t`Show ROE percentage`}
+												className="cursor-pointer border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-market-close-muted transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+											>
+												{pnlHeader} <span aria-hidden="true">▾</span>
+											</button>
+										</Tooltip>
 									</TableHead>
 									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
-										{t`Mark Price`}
+										<Tooltip
+											content={t`A position may be liquidated when the mark price reaches its liquidation price.`}
+											side="top"
+										>
+											<button
+												type="button"
+												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+											>
+												{t`Liquidation Price`}
+											</button>
+										</Tooltip>
 									</TableHead>
 									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
-										{t`PNL`} (ROE)
-									</TableHead>
-									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
-										{t`Liquidation Price`}
+										{t`TP/SL`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
 										{t`Margin`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
-										{t({ message: "Funding", context: "Cumulative position funding" })}
+										<Tooltip
+											content={t`Cumulative funding paid or received since this position was opened.`}
+											side="top"
+										>
+											<button
+												type="button"
+												className="cursor-help border-0 border-b border-dotted border-market-close-stroke-control bg-transparent p-0 text-inherit focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+											>
+												{t({ message: "Funding", context: "Cumulative position funding" })}
+											</button>
+										</Tooltip>
 									</TableHead>
-									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
+									<TableHead scope="col" size="dense" className={cn(positionTableHeadClass, "pr-5")}>
 										{t`Actions`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={positionTableHeadClass}>
-										{t`TP/SL`}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
@@ -249,10 +263,9 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 											markets={markets}
 											markPx={getMarketInfo(p.coin)?.markPx}
 											tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
-											isRowClosing={
-												(typeof assetId === "number" && closingAssetIds.has(assetId)) || isMarketClosePending
-											}
+											isRowClosing={isMarketClosePending}
 											isEven={i % 2 === 1}
+											pnlMode={pnlMode}
 											onMarketClose={handleOpenMarketClose}
 											onLimitClose={handleOpenLimitCloseModal}
 											onReverse={handleReverse}
@@ -278,6 +291,12 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 				open={isolatedMarginModalOpen}
 				onOpenChange={setIsolatedMarginModalOpen}
 				position={selectedIsolatedMarginPosition}
+			/>
+			<PositionReverseConfirmationController
+				target={selectedReverseTarget}
+				onOpenChange={(open) => {
+					if (!open) setSelectedReverseTarget(null);
+				}}
 			/>
 		</div>
 	);

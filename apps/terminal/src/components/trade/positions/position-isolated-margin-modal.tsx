@@ -1,11 +1,9 @@
 import {
 	Button,
-	Modal,
 	ModalContent,
 	ModalDescription,
 	ModalFooter,
 	ModalHeader,
-	ModalPopup,
 	ModalTitle,
 	SegmentedControlItem,
 	SegmentedControls,
@@ -30,11 +28,13 @@ import {
 	type IsolatedMarginDirection,
 	validateIsolatedMarginTarget,
 } from "@/domain/trade/isolated-margin";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { formatLiquidationPrice, formatNumber, formatUSD } from "@/lib/format";
 import { useExchange, useMarkets, useUserPositions } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { TradingActionButton } from "../components/trading-action-button";
 import type { IsolatedMarginPositionRef } from "./position-dialog-types";
+import { PositionRiskDialogShell } from "./position-risk-dialog-ui";
 
 type AdjustmentMode = "amount" | "target";
 
@@ -45,27 +45,28 @@ interface Props {
 }
 
 export function PositionIsolatedMarginModal({ open, onOpenChange, position }: Props) {
+	const isMobile = useIsMobile();
 	if (!position) return null;
 
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm" showClose={false}>
-				<PositionIsolatedMarginModalBody
-					key={`${position.assetId}:${open ? "open" : "closed"}`}
-					position={position}
-					onOpenChange={onOpenChange}
-				/>
-			</ModalPopup>
-		</Modal>
+		<PositionIsolatedMarginModalBody
+			key={`${position.assetId}:${open ? "open" : "closed"}`}
+			open={open}
+			isMobile={isMobile}
+			position={position}
+			onOpenChange={onOpenChange}
+		/>
 	);
 }
 
 interface BodyProps {
+	open: boolean;
+	isMobile: boolean;
 	position: IsolatedMarginPositionRef;
 	onOpenChange: (open: boolean) => void;
 }
 
-function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) {
+function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChange }: BodyProps) {
 	const [mode, setMode] = useState<AdjustmentMode>("amount");
 	const [direction, setDirection] = useState<IsolatedMarginDirection>("add");
 	const [amountInput, setAmountInput] = useState("");
@@ -252,6 +253,11 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 		}
 	}
 
+	function handleOpenChange(nextOpen: boolean) {
+		if (!nextOpen && isSubmitting) return;
+		onOpenChange(nextOpen);
+	}
+
 	function renderPositionStatus() {
 		if (!hasLiveMarket) {
 			return t`The selected market changed. Reopen the margin dialog before adjusting margin.`;
@@ -284,14 +290,19 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 	}
 
 	return (
-		<>
-			<ModalHeader>
+		<PositionRiskDialogShell
+			open={open}
+			onOpenChange={handleOpenChange}
+			isMobile={isMobile}
+			dismissible={!isSubmitting}
+		>
+			<ModalHeader className="max-[1000px]:gap-1 max-[1000px]:border-b-0 max-[1000px]:px-4 max-[1000px]:pt-7 max-[1000px]:pr-4 max-[1000px]:pb-0">
 				<ModalTitle>{t`Adjust Isolated Margin`}</ModalTitle>
 				<ModalDescription>{position.coin}</ModalDescription>
 			</ModalHeader>
 
-			<ModalContent className="space-y-4">
-				<div className="rounded-xs border border-stroke-weak bg-surface p-3 space-y-1 text-xs">
+			<ModalContent className="space-y-4 max-[1000px]:px-4 max-[1000px]:pt-4 max-[1000px]:pb-0">
+				<div className="rounded-[12px] border border-market-close-stroke-card bg-market-close-card p-3 space-y-1 text-xs">
 					<InfoRow
 						className="p-0"
 						label={t`Current Margin`}
@@ -318,16 +329,22 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 
 				{supportsTargetLeverage ? (
 					<SegmentedControls value={mode} onValueChange={handleModeChange} fullWidth>
-						<SegmentedControlItem value="amount">{t`USDC Amount`}</SegmentedControlItem>
-						<SegmentedControlItem value="target">{t`Target Leverage`}</SegmentedControlItem>
+						<SegmentedControlItem value="amount" className="max-[1000px]:min-h-11">
+							{t`USDC Amount`}
+						</SegmentedControlItem>
+						<SegmentedControlItem value="target" className="max-[1000px]:min-h-11">
+							{t`Target Leverage`}
+						</SegmentedControlItem>
 					</SegmentedControls>
 				) : null}
 
 				{mode === "amount" ? (
 					<div className="space-y-3">
 						<SegmentedControls value={direction} onValueChange={handleDirectionChange} fullWidth>
-							<SegmentedControlItem value="add">{t`Add`}</SegmentedControlItem>
-							<SegmentedControlItem value="remove" disabled={!allowsRemoval}>
+							<SegmentedControlItem value="add" className="max-[1000px]:min-h-11">
+								{t`Add`}
+							</SegmentedControlItem>
+							<SegmentedControlItem value="remove" disabled={!allowsRemoval} className="max-[1000px]:min-h-11">
 								{t`Remove`}
 							</SegmentedControlItem>
 						</SegmentedControls>
@@ -345,6 +362,7 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 							suffix="USDC"
 							inputSize="sm"
 							mobileSafe
+							className="max-[1000px]:h-11 max-[1000px]:rounded-[10px] max-[1000px]:border-market-close-stroke-input max-[1000px]:bg-modal"
 						/>
 						{amountInvalid ? (
 							<p className="text-xs text-error">{t`Enter a positive amount with up to 6 decimal places.`}</p>
@@ -388,6 +406,7 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 							suffix="×"
 							inputSize="sm"
 							mobileSafe
+							className="max-[1000px]:h-11 max-[1000px]:rounded-[10px] max-[1000px]:border-market-close-stroke-input max-[1000px]:bg-modal"
 						/>
 						{targetInvalid ? <p className="text-xs text-error">{t`Enter a positive target leverage.`}</p> : null}
 						{targetNotBelowCurrent ? (
@@ -419,11 +438,23 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 				) : null}
 			</ModalContent>
 
-			<ModalFooter>
-				<Button size="sm" variant="ghost" intent="neutral" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+			<ModalFooter className="max-[1000px]:grid max-[1000px]:grid-cols-2 max-[1000px]:gap-2 max-[1000px]:px-4 max-[1000px]:pt-4 max-[1000px]:pb-4">
+				<Button
+					size="sm"
+					variant="ghost"
+					intent="neutral"
+					onClick={() => handleOpenChange(false)}
+					disabled={isSubmitting}
+					className="max-[1000px]:min-h-11 max-[1000px]:rounded-[10px] max-[1000px]:border max-[1000px]:border-market-close-stroke-input max-[1000px]:text-market-close-fg"
+				>
 					{t`Cancel`}
 				</Button>
-				<TradingActionButton onClick={handleSubmit} disabled={!canSubmit} className="min-w-24">
+				<TradingActionButton
+					onClick={handleSubmit}
+					disabled={!canSubmit}
+					containerClassName="max-[1000px]:w-full"
+					className="min-w-24 max-[1000px]:min-h-11 max-[1000px]:w-full max-[1000px]:rounded-[10px]"
+				>
 					{isSubmitting ? (
 						<>
 							<SpinnerGapIcon className="size-3.5 animate-spin" />
@@ -434,6 +465,6 @@ function PositionIsolatedMarginModalBody({ position, onOpenChange }: BodyProps) 
 					)}
 				</TradingActionButton>
 			</ModalFooter>
-		</>
+		</PositionRiskDialogShell>
 	);
 }

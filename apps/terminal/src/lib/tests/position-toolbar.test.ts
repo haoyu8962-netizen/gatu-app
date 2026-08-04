@@ -3,7 +3,10 @@ import {
 	ALL_POSITION_MARKETS,
 	CURRENT_POSITION_MARKET,
 	filterPositions,
+	getPositionFundingPayment,
 	getReadyItemCount,
+	getTotalPositionUnrealizedPnl,
+	isLiquidationPriceNear,
 } from "@/domain/trade/position-toolbar";
 
 const positions = [
@@ -46,11 +49,43 @@ describe("position toolbar filtering", () => {
 	});
 });
 
+describe("position financial display helpers", () => {
+	it("negates cumulative funding without converting through a JavaScript number", () => {
+		expect(getPositionFundingPayment("0.123456789123456789")).toBe("-0.123456789123456789");
+		expect(getPositionFundingPayment("-2.5")).toBe("2.5");
+		expect(getPositionFundingPayment("invalid")).toBeNull();
+	});
+
+	it("evaluates liquidation proximity with exact decimal arithmetic", () => {
+		expect(isLiquidationPriceNear({ markPx: "100", liquidationPx: "90", proximity: "0.1" })).toBe(true);
+		expect(isLiquidationPriceNear({ markPx: "100", liquidationPx: "89.999999999999", proximity: "0.1" })).toBe(false);
+		expect(isLiquidationPriceNear({ markPx: "0", liquidationPx: "90", proximity: "0.1" })).toBe(false);
+		expect(isLiquidationPriceNear({ markPx: "100", liquidationPx: null, proximity: "0.1" })).toBe(false);
+	});
+});
+
 describe("position toolbar counts", () => {
 	it("hides counts until a connected subscription has a complete snapshot", () => {
 		expect(getReadyItemCount({ isConnected: false, isReady: true, count: 0 })).toBeNull();
 		expect(getReadyItemCount({ isConnected: true, isReady: false, count: 0 })).toBeNull();
 		expect(getReadyItemCount({ isConnected: true, isReady: true, count: 0 })).toBe(0);
 		expect(getReadyItemCount({ isConnected: true, isReady: true, count: 3 })).toBe(3);
+	});
+});
+
+describe("position summary", () => {
+	it("sums unrealized PNL across every position without floating-point loss", () => {
+		expect(
+			getTotalPositionUnrealizedPnl([
+				{ unrealizedPnl: "9007199254740992.1" },
+				{ unrealizedPnl: "-9007199254740992" },
+				{ unrealizedPnl: "-0.004" },
+			]),
+		).toBe("0.096");
+	});
+
+	it("returns zero for no positions and fails closed on invalid protocol data", () => {
+		expect(getTotalPositionUnrealizedPnl([])).toBe("0");
+		expect(getTotalPositionUnrealizedPnl([{ unrealizedPnl: "invalid" }])).toBeNull();
 	});
 });

@@ -2,12 +2,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { t } from "@lingui/core/macro";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
@@ -35,10 +36,10 @@ export function FundingTab() {
 	const markets = useMarkets();
 
 	const updates = fundingEvent?.fundings?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
-	const totalFunding = updates.reduce((acc, f) => acc + toNumberOrZero(f.usdc), 0);
+	const totalFunding = getToolbarFundingTotal(updates);
 
 	const headerTotal = formatUSD(totalFunding, { signDisplay: "exceptZero" });
-	const headerClass = getValueColorClass(totalFunding);
+	const headerClass = totalFunding === null ? "text-fg-muted" : getValueColorClass(totalFunding);
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view funding payments.`}</Placeholder>;
@@ -107,10 +108,8 @@ export function FundingTab() {
 							<TableBody className={positionsPanelTableBodyClass}>
 								{updates.map((update, index) => {
 									const market = markets.getMarket(update.coin);
-									const szi = toNumber(update.szi);
-									const rate = toNumber(update.fundingRate);
-									const usdc = toNumber(update.usdc);
-									const positionSize = szi !== null ? Math.abs(szi) : null;
+									const positionSize = getToolbarAbsoluteSize(update.szi);
+									const paymentClass = toBig(update.usdc) ? getValueColorClass(update.usdc) : "text-fg-muted";
 
 									return (
 										<TableRow
@@ -131,12 +130,12 @@ export function FundingTab() {
 												{formatToken(positionSize, { decimals: market?.szDecimals, symbol: market?.shortName })}
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
-												<span className={getValueColorClass(rate)}>
-													{formatPercent(rate, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
+												<span className="text-fg-muted">
+													{formatPercent(update.fundingRate, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
 												</span>
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
-												<span className={getValueColorClass(usdc)}>{formatToken(usdc, { symbol: "USDC" })}</span>
+												<span className={paymentClass}>{formatToken(update.usdc, { symbol: "USDC" })}</span>
 											</TableCell>
 
 											<TableCell

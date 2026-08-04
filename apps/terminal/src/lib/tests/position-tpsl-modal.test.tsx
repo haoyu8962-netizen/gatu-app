@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { FrontendOpenOrdersResponse } from "@nktkas/hyperliquid";
-import { act, createElement, Fragment, type ReactNode } from "react";
+import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TpSlPositionRef } from "@/components/trade/positions/position-dialog-types";
@@ -38,21 +38,48 @@ const testState = vi.hoisted(() => ({
 	placeOrder: vi.fn(),
 	modifyOrders: vi.fn(),
 	cancelOrders: vi.fn(),
+	isMobile: false,
+	pendingMethods: new Set<string>(),
 }));
 
-function renderChildren(children: ReactNode) {
-	return createElement(Fragment, null, children);
-}
-
 vi.mock("@gatu/ui", () => ({
+	AdaptiveModal: ({
+		children,
+		dismissible,
+		onOpenChange,
+		open,
+		presentation,
+		showHandle,
+	}: {
+		children: ReactNode;
+		dismissible: boolean;
+		onOpenChange: (open: boolean) => void;
+		open: boolean;
+		presentation: string;
+		showHandle: boolean;
+	}) =>
+		open
+			? createElement(
+					"section",
+					{
+						"data-testid": "position-risk-dialog",
+						"data-presentation": presentation,
+						"data-dismissible": String(dismissible),
+						"data-show-handle": String(showHandle),
+					},
+					createElement("button", {
+						"aria-label": "Request adaptive dismiss",
+						type: "button",
+						onClick: () => onOpenChange(false),
+					}),
+					children,
+				)
+			: null,
 	Button: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
 		createElement("button", { ...props, type: "button" }, children),
-	Modal: ({ children, open }: { children: ReactNode; open: boolean }) => (open ? renderChildren(children) : null),
 	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
 	ModalFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
-	ModalPopup: ({ children, showClose: _showClose, ...props }: { children: ReactNode; [key: string]: unknown }) =>
-		createElement("section", props, children),
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 }));
 
@@ -65,13 +92,24 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	}),
 }));
 
+vi.mock("@/hooks/use-mobile", () => ({
+	useIsMobile: () => testState.isMobile,
+}));
+
 vi.mock("@/components/trade/components/asset-display", () => ({
 	AssetDisplay: ({ coin }: { coin: string }) => createElement("span", null, coin),
 }));
 
 vi.mock("@/components/trade/components/trading-action-button", () => ({
-	TradingActionButton: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
-		createElement("button", { ...props, type: "button" }, children),
+	TradingActionButton: ({
+		children,
+		containerClassName: _containerClassName,
+		...props
+	}: {
+		children: ReactNode;
+		containerClassName?: string;
+		[key: string]: unknown;
+	}) => createElement("button", { ...props, type: "button" }, children),
 }));
 
 vi.mock("@/components/trade/tradebox/tp-sl-section", () => ({
@@ -108,7 +146,7 @@ vi.mock("@/components/trade/tradebox/tp-sl-section", () => ({
 vi.mock("@/lib/hyperliquid", () => ({
 	useExchange: (method: string) => ({
 		error: null,
-		isPending: false,
+		isPending: testState.pendingMethods.has(method),
 		mutateAsync:
 			method === "order"
 				? testState.placeOrder
@@ -226,6 +264,8 @@ describe("PositionTpSlModal live data", () => {
 			cumFunding: { allTime: "0", sinceChange: "0", sinceOpen: "0" },
 		} as Position;
 		testState.orders = [];
+		testState.isMobile = false;
+		testState.pendingMethods.clear();
 		testState.subscriptions = [];
 		testState.getPosition.mockReset();
 		testState.placeOrder.mockReset().mockResolvedValue({});
@@ -245,6 +285,39 @@ describe("PositionTpSlModal live data", () => {
 		});
 		return onOpenChange;
 	}
+
+	it("uses the terminal breakpoint for a touch-safe mobile bottom sheet while retaining the desktop modal", () => {
+		testState.isMobile = true;
+		renderModal();
+
+		let dialog = container.querySelector<HTMLElement>('[data-testid="position-risk-dialog"]');
+		expect(dialog?.dataset.presentation).toBe("drawer");
+		expect(dialog?.dataset.dismissible).toBe("true");
+		expect(dialog?.dataset.showHandle).toBe("true");
+		expect(getButton(container, "Cancel").className).toContain("max-[1000px]:min-h-11");
+		expect(getButton(container, "Confirm").className).toContain("max-[1000px]:min-h-11");
+
+		testState.isMobile = false;
+		act(() => {
+			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+		});
+		dialog = container.querySelector<HTMLElement>('[data-testid="position-risk-dialog"]');
+		expect(dialog?.dataset.presentation).toBe("modal");
+		expect(dialog?.dataset.showHandle).toBe("false");
+	});
+
+	it("blocks adaptive dismissal while a TP/SL mutation is pending", () => {
+		testState.isMobile = true;
+		testState.pendingMethods.add("batchModify");
+		const onOpenChange = renderModal();
+
+		const dialog = container.querySelector<HTMLElement>('[data-testid="position-risk-dialog"]');
+		expect(dialog?.dataset.dismissible).toBe("false");
+		expect(dialog?.dataset.showHandle).toBe("false");
+		act(() => container.querySelector<HTMLButtonElement>('[aria-label="Request adaptive dismiss"]')?.click());
+		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(getButton(container, "Cancel").disabled).toBe(true);
+	});
 
 	it("queries the exact HIP-3 dex and accepts a negative short size as an active position", () => {
 		renderModal();

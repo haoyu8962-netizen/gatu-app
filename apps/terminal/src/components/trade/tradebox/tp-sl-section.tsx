@@ -34,6 +34,7 @@ interface Props {
 	quickPercentMode?: "price" | "roe";
 	leverage?: number;
 	triggerValidationPrice?: number | null;
+	mobileTouchSafe?: boolean;
 }
 
 export function TpSlSection({
@@ -52,6 +53,7 @@ export function TpSlSection({
 	quickPercentMode = "price",
 	leverage,
 	triggerValidationPrice,
+	mobileTouchSafe = false,
 }: Props) {
 	const tpPriceNum = toNumber(tpPrice);
 	const slPriceNum = toNumber(slPrice);
@@ -168,6 +170,7 @@ export function TpSlSection({
 				quickPercentDisabled={quickPercentDisabled}
 				isPercentDisabled={isTpPercentDisabled}
 				referencePrice={referencePrice}
+				mobileTouchSafe={mobileTouchSafe}
 			/>
 
 			<PriceInputWithPercent
@@ -183,6 +186,7 @@ export function TpSlSection({
 				quickPercentDisabled={quickPercentDisabled}
 				isPercentDisabled={isSlPercentDisabled}
 				referencePrice={referencePrice}
+				mobileTouchSafe={mobileTouchSafe}
 			/>
 
 			{riskRewardDisplay && (

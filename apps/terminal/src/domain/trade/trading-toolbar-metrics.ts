@@ -41,6 +41,10 @@ export interface ToolbarTwapMetrics {
 	remainingMs: string | null;
 }
 
+export interface ToolbarFundingUpdateInput {
+	usdc: string;
+}
+
 function getPositive(value: string): Big | null {
 	const parsed = toBig(value);
 	return parsed?.gt(0) ? parsed : null;
@@ -104,4 +108,24 @@ export function getToolbarTwapMetrics(input: ToolbarTwapMetricsInput): ToolbarTw
 	}
 
 	return { progressRatio, executedAvgPx, remainingMs };
+}
+
+export function getToolbarNonZeroPnl(value: string): string | null {
+	const pnl = toBig(value);
+	return pnl && !pnl.eq(0) ? pnl.toFixed() : null;
+}
+
+export function getToolbarFundingTotal(updates: readonly ToolbarFundingUpdateInput[]): string | null {
+	let total = Big(0);
+	for (const update of updates) {
+		const payment = toBig(update.usdc);
+		if (!payment) return null;
+		total = total.plus(payment);
+	}
+	return total.toFixed();
+}
+
+export function getToolbarAbsoluteSize(value: string): string | null {
+	const size = toBig(value);
+	return size ? size.abs().toFixed() : null;
 }

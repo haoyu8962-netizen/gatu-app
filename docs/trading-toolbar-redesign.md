@@ -24,7 +24,7 @@ Financial values remain decimal strings until they reach the locale formatter. D
 | ROE | `returnOnEquity` | Prefer the exchange value for a whole position | `packages/hl-react/src/account/use-user-positions.ts` |
 | Price-change return | `unrealizedPnl / (abs(szi) * entryPx)` | Derived with `Big.js`; return unavailable for a zero denominator | Toolbar domain view model |
 | Estimated partial-close PnL | Pro-rate whole-position `unrealizedPnl`; fallback `(markPx - entryPx) * closeSize * direction` | Long direction is `+1`; short direction is `-1` | `apps/terminal/src/domain/trade/position-market-close.ts` |
-| Cumulative funding | `cumFunding.sinceOpen` | Preserve the existing UI sign convention and display `-sinceOpen` | `apps/terminal/src/components/trade/positions/position-row.tsx`, `apps/terminal/src/components/trade/mobile/mobile-position-card.tsx` |
+| Cumulative funding | `cumFunding.sinceOpen` | Preserve the existing UI sign convention and derive `-sinceOpen` with `Big.js` | `apps/terminal/src/domain/trade/position-toolbar.ts` |
 
 Official schema: [Perpetuals info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals).
 
@@ -34,7 +34,7 @@ Official schema: [Perpetuals info endpoint](https://hyperliquid.gitbook.io/hyper
 | --- | --- | --- |
 | Time | `timestamp` | Millisecond timestamp |
 | Market | `coin` | Preserve the HIP-3 DEX-qualified identity |
-| Side | `side` | `B` means buy and `A` means sell; this is not always equivalent to long/short because a reduce-only buy can close a short |
+| Side | `side` plus `reduceOnly` | Ordinary `B/A` displays Buy/Sell; reduce-only `B` displays Close Short and reduce-only `A` displays Close Long. No long/short opening direction is inferred. |
 | Remaining size | `sz` | The design's current quantity |
 | Original size | `origSz` | Never changes when the remaining order is modified or partially filled |
 | Limit price | `limitPx` | For a trigger-market order this may be an execution-protection price, not the trigger price |
@@ -45,7 +45,7 @@ Official schema: [Perpetuals info endpoint](https://hyperliquid.gitbook.io/hyper
 | Position TP/SL | `isPositionTpsl` | Position-level TP/SL orders commonly use size `0` |
 | Child orders | `children` | Attached TP/SL orders |
 | Client order id | `cloid` | Nullable 128-bit hex identifier |
-| Remaining order value | Non-trigger: `limitPx * sz`; trigger: `triggerPx * sz` | Derived with `Big.js`; **pending product confirmation** |
+| Remaining order value | Non-trigger: `limitPx * sz`; trigger: `triggerPx * sz` | Derived with `Big.js`; the toolbar intentionally shows the remaining, not original, notional |
 | Distance to mark | `abs(orderPrice - markPx) / markPx` | Derived with `Big.js`; unavailable for a zero mark |
 
 SDK type: `@nktkas/hyperliquid` `FrontendOpenOrder`. Official schema: [Info endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint).
@@ -58,9 +58,9 @@ Hyperliquid does not have a standalone `type: "market"` order parameter. The pro
 | --- | --- | --- |
 | Market close | Opposite side, `r: true`, `t: { limit: { tif: "FrontendMarket" } }` | `apps/terminal/src/domain/trade/order-intent.ts`, `apps/terminal/src/hooks/trade/use-position-market-close-submit.ts` |
 | Limit close | Opposite side, `r: true`, `t: { limit: { tif: "Gtc" } }` | `apps/terminal/src/domain/trade/order-intent.ts`, `apps/terminal/src/hooks/trade/use-position-limit-close-submit.ts` |
-| Reverse | Opposite side, size `2 * abs(szi)`, `r: false`, `FrontendMarket` | `apps/terminal/src/domain/trade/order-intent.ts` |
+| Reverse | Opposite side, size `2 * abs(szi)`, `r: false`, `FrontendMarket` | `apps/terminal/src/domain/trade/position-reverse.ts`, `apps/terminal/src/hooks/trade/use-position-reverse-submit.ts` |
 | Whole-position market TP/SL | Opposite side, `s: "0"`, `r: true`, market trigger, grouping `positionTpsl` | `apps/terminal/src/domain/trade/order-intent.ts`, `apps/terminal/src/components/trade/positions/position-tpsl-modal.tsx` |
-| Modify order | `batchModify({ modifies: [{ oid, order: { a, b, p, s, r, t, c? } }] })` | Exchange registry and the existing TP/SL modification path |
+| Modify order | `batchModify({ modifies: [{ oid, order: { a, b, p, s, r, t, c? } }] })` | `apps/terminal/src/domain/trade/open-order-modification.ts`, `apps/terminal/src/domain/trade/open-order-modification-form.ts` |
 | Cancel order(s) | `cancel({ cancels: [{ a, o }] })` | Desktop and mobile open-order tabs |
 | Cancel TWAP | `twapCancel({ a, t })` | `apps/terminal/src/hooks/trade/use-twap-cancel.ts` |
 | Pause or resume TWAP | Not available | **Unresolved:** do not emulate pause with a cancel/recreate sequence |
@@ -68,7 +68,9 @@ Hyperliquid does not have a standalone `type: "market"` order parameter. The pro
 
 Official action schema: [Exchange endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint).
 
-The reverse action has no dedicated endpoint and the exchange does not return a pre-trade reverse liquidation price. The design fixture's estimated liquidation price must not be used in production without a separately verified margin model.
+The reverse action has no dedicated endpoint and the exchange does not return a pre-trade reverse liquidation price. The production flow therefore shows the estimate as unavailable. It binds the confirmed position size, owner, environment, DEX and asset metadata; obtains a fresh clearinghouse snapshot under an exclusive asset lock; rejects active/pending TWAP or order coordination; and requires a filled exchange confirmation before reporting success.
+
+Ordinary order modification is also fail-closed. The UI exposes only ordinary limit orders and the four supported trigger-order shapes. It withholds direct modification for client-order-id orders, grouped orders, position TP/SL, market/system/TWAP-slice orders, and unsupported TIF values. Both desktop inline editing and the mobile bottom sheet preserve raw input, reconstruct a complete exchange order, revalidate the live subscription and market binding at the execution boundary, and report success only after the open-orders subscription confirms the requested value. A 15-second subscription timeout never reports success and leaves cancellation available.
 
 ## Theme-token mapping
 
@@ -103,7 +105,7 @@ Lingui source messages remain English. The existing catalogs cover English, Chin
 
 Existing keys cover the seven tabs and most base field labels, including `Balances`, `Positions`, `Open Orders`, `TWAP`, `Trade History`, `Funding History`, `Order History`, `Account Value`, `Margin Ratio`, `Entry Price`, `Mark Price`, `Liquidation Price`, `Funding`, `TP/SL`, `Limit Close`, `Market Close`, `Reverse`, `Cancel All`, and `Export CSV`.
 
-New messages are required for:
+The toolbar messages include:
 
 - account-summary labels, PnL display-mode labels, and the four column-help tooltips;
 - expand/collapse-all controls, asset/type/direction/status filters, and empty-state copy;
@@ -111,14 +113,16 @@ New messages are required for:
 - remaining order value, distance to mark, TWAP progress/frequency/remaining time, and operation results;
 - interpolated quantities, symbols, order counts, and submission toasts.
 
-Run `pnpm i18n:extract` after implementation, fill the English and Chinese catalog entries, and leave explicit English fallbacks for untranslated non-Chinese locales rather than hard-coding UI text.
+`pnpm --filter @gatu/terminal i18n:extract` and `i18n:compile` are part of the verification pass. English source messages and Chinese translations are registered. Existing untranslated Arabic, Spanish, French, and Hindi entries continue to use the project's English fallback rather than hard-coded UI text.
 
 ## Decisions pending confirmation
 
 1. Replace the unavailable position-level margin ratio with a documented liquidation-distance metric using the project's existing 10% warning and 5% danger thresholds, or omit the row-level bar.
 2. Remove the unsupported TWAP pause action, or display it disabled with an explanation.
-3. Display remaining order value rather than original order value.
-4. Extend TP/SL to fixed partial-size and trigger-limit orders as a separately tested order path.
-5. Hide the reverse liquidation-price estimate until a verified margin model is available.
-6. Keep the existing exchange-validated margin-removal behavior instead of the prototype's fixed 50% maximum.
-7. Add the missing shared semantic theme tokens, or accept small light-mode visual differences by using the closest existing tokens.
+3. Extend TP/SL to fixed partial-size and trigger-limit orders as a separately tested order path.
+4. Replace the reverse liquidation-price placeholder only if a verified margin model becomes available.
+5. Keep the existing exchange-validated margin-removal behavior instead of the prototype's fixed 50% maximum.
+6. Define cross-DEX equity and maintenance-margin aggregation before adding those summary fields.
+7. Define close-all partial-failure/retry behavior before exposing the cross-DEX destructive action.
+8. Define the share target/link/QR lifecycle and approve theme-aware share-card tokens before adding PnL sharing.
+9. Add the missing shared semantic theme tokens, or accept small light-mode visual differences by using the closest existing tokens.

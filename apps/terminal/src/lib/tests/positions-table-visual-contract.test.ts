@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
+	POSITION_TABLE_COLUMNS,
 	POSITION_TABLE_MIN_WIDTH,
 	positionTableBodyClass,
 	positionTableCellClass,
@@ -33,30 +34,64 @@ const MOBILE_POSITION_CARD_SOURCE = readMobilePositionSource("mobile-position-ca
 describe("positions table visual contract", () => {
 	it("uses the compact official-style hierarchy with a sticky table header", () => {
 		expect(positionTableHeadClass).toContain("sticky top-0");
-		expect(positionTableHeadClass).toContain("h-6");
-		expect(positionTableHeadClass).toContain("font-normal");
+		expect(positionTableHeadClass).toContain("h-8");
+		expect(positionTableHeadClass).toContain("text-[11px]");
+		expect(positionTableHeadClass).toContain("font-semibold");
 		expect(positionTableHeadClass).not.toContain("overflow-hidden");
-		expect(positionTableCellClass).toContain("h-6");
-		expect(positionTableCellClass).toContain("overflow-y-hidden");
+		expect(positionTableCellClass).toContain("h-[46px]");
 		expect(positionTableCellClass).not.toContain("overflow-hidden");
 		expect(positionTableCellClass).toContain("whitespace-nowrap");
-		expect(positionTableCellClass).toContain("leading-none");
+		expect(positionTableCellClass).toContain("leading-4");
 		expect(positionTableBodyClass).toContain("[&_tr]:border-0");
 		expect(POSITIONS_TAB_SOURCE).toContain('containerClassName="overflow-visible"');
-		expect(POSITIONS_TAB_SOURCE).toContain("table-auto w-full");
-		expect(POSITIONS_TAB_SOURCE).not.toContain("table-fixed");
+		expect(POSITIONS_TAB_SOURCE).toContain("table-fixed w-full");
 		expect(POSITIONS_TAB_SOURCE).toContain("style={{ minWidth: POSITION_TABLE_MIN_WIDTH }}");
-		expect(POSITIONS_TAB_SOURCE).not.toContain("<colgroup>");
-		expect(POSITIONS_TAB_SOURCE).not.toContain("positionsPanelTableCaptionRowClass");
+		expect(POSITIONS_TAB_SOURCE).toContain("<colgroup>");
+		expect(POSITIONS_TAB_SOURCE).toContain("positionsPanelTableCaptionRowClass");
 	});
 
-	it("keeps minimum column geometry while allowing content to expand the table", () => {
-		expect(POSITION_TABLE_MIN_WIDTH).toBe(1096);
+	it("uses the handoff's fixed 1280px nine-column geometry", () => {
+		expect(POSITION_TABLE_MIN_WIDTH).toBe(1280);
+		expect(POSITION_TABLE_COLUMNS.map(({ id, width }) => [id, width])).toEqual([
+			["market", 177],
+			["size", 166],
+			["prices", 166],
+			["pnl", 154],
+			["liquidation", 144],
+			["tpsl", 119],
+			["margin", 119],
+			["funding", 90],
+			["actions", 145],
+		]);
+		expect(POSITION_TABLE_COLUMNS.reduce((total, column) => total + column.width, 0)).toBe(POSITION_TABLE_MIN_WIDTH);
 		expect(POSITION_ROW_SOURCE).not.toContain("truncate");
 		expect(POSITION_ROW_SOURCE).toContain("<AssetBadge");
-		expect(POSITION_ROW_SOURCE).toContain('side={isLong ? "buy" : "sell"}');
-		expect(POSITION_ROW_SOURCE).toContain("{p.leverage.value}x");
+		expect(POSITION_ROW_SOURCE).toContain("{directionLabel} · {p.leverage.value}x");
 		expect(POSITION_ROW_SOURCE).toContain("{p.dex}");
+	});
+
+	it("uses the handoff's nine combined position columns", () => {
+		expect(POSITIONS_TAB_SOURCE.match(/<TableHead\b/g)).toHaveLength(9);
+		expect(POSITION_ROW_SOURCE.match(/<TableCell\b/g)).toHaveLength(9);
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Size`} / {t`Position Value`}");
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Entry Price`} / {t`Mark Price`}");
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Liquidation Price`}");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("Margin Ratio");
+		expect(POSITION_ROW_SOURCE).toContain("liqIsNear");
+		expect(POSITION_ROW_SOURCE).not.toContain("riskFill");
+	});
+
+	it("shows only the safely scoped all-DEX unrealized PNL summary", () => {
+		expect(POSITIONS_TAB_SOURCE).toContain('data-testid="positions-summary-bar"');
+		expect(POSITIONS_TAB_SOURCE).toContain("getTotalPositionUnrealizedPnl(positions)");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("getTotalPositionUnrealizedPnl(filteredPositions)");
+		expect(POSITIONS_TAB_SOURCE).toContain("{t`Unrealized PNL`}");
+		expect(POSITIONS_TAB_SOURCE).toContain(
+			'formatUSD(totalUnrealizedPnl, { compact: false, signDisplay: "exceptZero" })',
+		);
+		expect(POSITIONS_TAB_SOURCE).not.toContain("Account Equity");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("Maintenance Margin Ratio");
+		expect(POSITIONS_TAB_SOURCE).not.toContain("getToolbarAccountMarginRatio");
 	});
 
 	it("uses native horizontal overflow without hiding the vertical scroll affordance", () => {
@@ -71,6 +106,20 @@ describe("positions table visual contract", () => {
 		expect(POSITION_ROW_SOURCE).toContain("formatQuoteAmount(p.positionValue, quoteSymbol");
 		expect(POSITION_ROW_SOURCE).toContain('style: "decimal"');
 		expect(POSITION_ROW_SOURCE).toContain('currencyDisplay: "narrowSymbol"');
+		expect(POSITION_ROW_SOURCE).not.toContain(".toNumber()");
+		expect(POSITION_ROW_SOURCE).not.toContain("Math.abs(");
+		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain(".toNumber()");
+		expect(MOBILE_POSITION_CARD_SOURCE).not.toContain("Math.abs(");
+	});
+
+	it("provides header help and switches PNL percentage modes through the Big.js domain metric", () => {
+		expect(POSITIONS_TAB_SOURCE.match(/<Tooltip\b/g)).toHaveLength(4);
+		expect(POSITIONS_TAB_SOURCE).toContain("border-dotted");
+		expect(POSITIONS_TAB_SOURCE).toContain('useState<PositionPnlMode>("roe")');
+		expect(POSITIONS_TAB_SOURCE).toContain('current === "roe" ? "priceChange" : "roe"');
+		expect(POSITIONS_TAB_SOURCE).toContain("pnlMode={pnlMode}");
+		expect(POSITION_ROW_SOURCE).toContain("getToolbarPositionChangeRatio");
+		expect(POSITION_ROW_SOURCE).toContain('pnlMode === "roe" ? roeDisplay : formatPercent(priceChangeRatio, 1)');
 	});
 
 	it("switches striped row backgrounds synchronously with the active theme", () => {
@@ -98,14 +147,18 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_PANEL_SOURCE).toContain("twapStatesEvent !== undefined");
 	});
 
-	it("uses direct close commands on wide desktop and preserves the compact dropdown", () => {
-		expect(positionTableInlineActionClass).toContain("h-6");
-		expect(POSITION_ACTIONS_SOURCE).toContain("min-[1180px]:flex");
-		expect(POSITION_ACTIONS_SOURCE).toContain("min-[1180px]:hidden");
-		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onLimitClose}");
+	it("uses a market-close button plus the complete 1a overflow menu", () => {
+		expect(positionTableInlineActionClass).toContain("h-[26px]");
 		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onMarketClose}");
-		expect(POSITION_ACTIONS_SOURCE).toContain("onClick={onReverse}");
 		expect(POSITION_ACTIONS_SOURCE).toContain("<Dropdown");
+		expect(POSITION_ACTIONS_SOURCE).toContain("hideCaret");
+		expect(POSITION_ACTIONS_SOURCE).toContain("t`Limit Close`");
+		expect(POSITION_ACTIONS_SOURCE).toContain("t`Adjust Margin`");
+		expect(POSITION_ACTIONS_SOURCE).toContain("t`Set TP/SL`");
+		expect(POSITION_ACTIONS_SOURCE).toContain("t`Reverse Position`");
+		expect(POSITION_ACTIONS_SOURCE).toContain("danger: true");
+		expect(POSITION_ROW_SOURCE).toContain("onAdjustMargin={handleAdjustMargin}");
+		expect(POSITION_ROW_SOURCE).toContain("onOpenTpSl={handleOpenTpSl}");
 	});
 
 	it("uses the handoff mobile disclosure card without internal cell dividers", () => {

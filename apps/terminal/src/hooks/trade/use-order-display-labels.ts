@@ -1,9 +1,10 @@
 import { useLingui } from "@lingui/react/macro";
 import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
+import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import type { AdvancedOrderType, OrderType } from "@/config/trade";
-import type { MarketKind } from "@/lib/hyperliquid/markets";
 import type { OrderOutcome } from "@/lib/trade/extract-order-status";
 import type { OpenOrder, OrderSide, OrderTypeConfig } from "@/lib/trade/open-orders";
+import { getOrderDirection } from "@/lib/trade/order-direction";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
 
 type HistoricalOrderStatus = HistoricalOrdersResponse[number]["status"];
@@ -114,9 +115,19 @@ export function useOrderDisplayLabels() {
 		return order.reduceOnly ? `${orderTypeLabel} · ${t`Reduce Only`}` : orderTypeLabel;
 	}
 
-	function getOrderSideLabel(side: OrderSide, kind?: MarketKind): string {
-		if (kind === "spot") return side === "B" ? t`Buy` : t`Sell`;
-		return side === "B" ? t`Long` : t`Short`;
+	function getOrderSideLabel(side: OrderSide, reduceOnly: boolean): string {
+		switch (getOrderDirection(side, reduceOnly)) {
+			case "buy":
+				return t`Buy`;
+			case "sell":
+				return t`Sell`;
+			case "closeLong":
+				return t`Close Long`;
+			case "closeShort":
+				return t`Close Short`;
+			default:
+				return FALLBACK_VALUE_PLACEHOLDER;
+		}
 	}
 
 	function getTriggerConditionLabel(condition: string): string {

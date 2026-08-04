@@ -67,7 +67,6 @@ describe("MobilePositionCard isolated margin entry", () => {
 					markPx: "7.5759",
 					tpSlInfo: undefined,
 					isRowClosing: false,
-					closeErrorMessage: null,
 					onMarketClose: vi.fn(),
 					onReverse: vi.fn(),
 					onLimitClose: vi.fn(),
@@ -116,7 +115,6 @@ describe("MobilePositionCard isolated margin entry", () => {
 					markPx: "7.5759",
 					tpSlInfo: undefined,
 					isRowClosing: false,
-					closeErrorMessage: null,
 					onMarketClose,
 					onReverse,
 					onLimitClose,
@@ -158,9 +156,45 @@ describe("MobilePositionCard isolated margin entry", () => {
 		expect(container.textContent).not.toContain("Confirm Close");
 
 		act(() => getButton("Reverse").click());
-		expect(onReverse).not.toHaveBeenCalled();
-		act(() => getButton("Confirm Reverse").click());
-		expect(onReverse).toHaveBeenCalledTimes(1);
+		expect(onReverse).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			signedPositionSize: "205.9",
+			szDecimals: 1,
+			marginMode: "isolated",
+		});
+	});
+
+	it("keeps reverse available while cached mark data is temporarily unavailable", () => {
+		const onReverse = vi.fn();
+		act(() => {
+			root.render(
+				createElement(MobilePositionCard, {
+					position: isolatedPosition,
+					markets,
+					markPx: undefined,
+					tpSlInfo: undefined,
+					isRowClosing: false,
+					onMarketClose: vi.fn(),
+					onReverse,
+					onLimitClose: vi.fn(),
+					onOpenTpSl: vi.fn(),
+					onAdjustMargin: vi.fn(),
+					onSelectMarket: vi.fn(),
+				}),
+			);
+		});
+
+		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
+		const marketClose = buttons.find((button) => button.textContent?.trim() === "Market Close");
+		const limitClose = buttons.find((button) => button.textContent?.trim() === "Limit Close");
+		const reverse = buttons.find((button) => button.textContent?.trim() === "Reverse");
+		expect(marketClose?.disabled).toBe(true);
+		expect(limitClose?.disabled).toBe(true);
+		expect(reverse?.disabled).toBe(false);
+		act(() => reverse?.click());
+		expect(onReverse).toHaveBeenCalledOnce();
 	});
 
 	it("keeps the mobile summary compact until the user expands the position", () => {
@@ -175,7 +209,6 @@ describe("MobilePositionCard isolated margin entry", () => {
 					markPx: "7.5759",
 					tpSlInfo: undefined,
 					isRowClosing: false,
-					closeErrorMessage: null,
 					expanded: false,
 					onExpandedChange,
 					onMarketClose: vi.fn(),
@@ -221,7 +254,6 @@ describe("MobilePositionCard isolated margin entry", () => {
 					markPx: "7.5759",
 					tpSlInfo: undefined,
 					isRowClosing: false,
-					closeErrorMessage: null,
 					onMarketClose: vi.fn(),
 					onReverse: vi.fn(),
 					onLimitClose: vi.fn(),

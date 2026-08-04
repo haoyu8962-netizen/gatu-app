@@ -3,10 +3,7 @@ import { useLingui } from "@lingui/react/macro";
 import { ChartLineIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { HL_ALL_DEXS } from "@/config/app";
-import { buildOrderPlan } from "@/domain/trade/order-intent";
-import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import {
 	ALL_POSITION_MARKETS,
 	filterPositions,
@@ -16,32 +13,32 @@ import {
 } from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
-import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
+import type { PositionReverseTarget } from "@/hooks/trade/use-position-reverse-submit";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import {
+	useHyperliquid,
 	useMarkets,
 	useMarketsInfo,
 	useSelectedMarketInfo,
 	useSubscription,
 	useUserPositions,
 } from "@/lib/hyperliquid";
-import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
-import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type {
-	ClosePositionData,
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
+	PositionReverseRef,
 	TpSlPositionRef,
 } from "../positions/position-dialog-types";
 import { PositionFilterToolbar } from "../positions/position-filter-toolbar";
 import { PositionIsolatedMarginModal } from "../positions/position-isolated-margin-modal";
 import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
 import type { PositionMarketOption } from "../positions/position-market-filter";
+import { PositionReverseConfirmationController } from "../positions/position-reverse-confirmation-controller";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -104,8 +101,8 @@ export function MobilePositionBulkDetailsActions({
 export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
+	const { env } = useHyperliquid();
 	const ownerKey = address?.toLowerCase() ?? null;
-	const slippageBps = useMarketOrderSlippageBps();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const { setSide } = useOrderEntryActions();
@@ -123,8 +120,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const [isolatedMarginModalOpen, setIsolatedMarginModalOpen] = useState(false);
 	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
 		useState<IsolatedMarginPositionRef | null>(null);
-	const [closingAssetIds, setClosingAssetIds] = useState<Set<number>>(() => new Set());
-	const [closeErrors, setCloseErrors] = useState<Map<number, string>>(() => new Map());
+	const [selectedReverseTarget, setSelectedReverseTarget] = useState<PositionReverseTarget | null>(null);
 	const [expandedPositionKeys, setExpandedPositionKeys] = useState<Set<string>>(() => new Set());
 	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
 		ownerKey,
@@ -132,7 +128,6 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		market: ALL_POSITION_MARKETS,
 	});
 
-	const { submitOrder, reset: resetCloseError } = useTrackedOrder();
 	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
 	const markets = useMarkets();
 	const { getMarketInfo } = useMarketsInfo();
@@ -216,69 +211,13 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		});
 	}
 
-	async function submitReverse(data: ClosePositionData) {
-		const { assetId, size, markPx, szDecimals, isLong, coin, unrealizedPnl, roe, marginMode } = data;
-		if (closingAssetIds.has(assetId)) return;
-		resetCloseError();
-		setCloseErrors((prev) => {
-			if (!prev.has(assetId)) return prev;
-			const next = new Map(prev);
-			next.delete(assetId);
-			return next;
-		});
-		setClosingAssetIds((prev) => {
-			const next = new Set(prev);
-			next.add(assetId);
-			return next;
-		});
-
-		const { orders, grouping } = buildOrderPlan({
-			kind: "reverse",
-			assetId,
-			size,
-			szDecimals,
-			isLong,
-			markPx,
-			slippageBps,
-		});
-
-		try {
-			const submission = await submitOrder({ orders, grouping }, { riskContext: { marketKind: "perp", marginMode } });
-			if (submission.state === "blocked") {
-				toast.warning(t`Another order for this market is still being confirmed.`);
-				return;
-			}
-			if (submission.state === "reconciling") {
-				toast.info(t`Order submitted. Confirming exchange status; do not retry.`);
-				return;
-			}
-			throwIfAnyResponseError(submission.result.response?.data?.statuses);
-			toast.success(t`Position reversed — ${coin}`, {
-				description: buildClosePositionDescription({ size, szDecimals, coin, unrealizedPnl, roe }),
-			});
-		} catch (error) {
-			const message = error instanceof Error ? error.message : t`Failed to reverse position`;
-			toast.error(message);
-			setCloseErrors((prev) => {
-				const next = new Map(prev);
-				next.set(assetId, message);
-				return next;
-			});
-		} finally {
-			setClosingAssetIds((prev) => {
-				const next = new Set(prev);
-				next.delete(assetId);
-				return next;
-			});
-		}
-	}
-
 	function handleOpenMarketClose(position: PositionMarketCloseRef) {
 		positionMarketClose.open(position);
 	}
 
-	function handleReverse(data: ClosePositionData) {
-		void submitReverse(data);
+	function handleReverse(data: PositionReverseRef) {
+		if (!address) return;
+		setSelectedReverseTarget({ ...data, owner: address.toLowerCase(), env });
 	}
 
 	function handleOpenLimitCloseModal(data: LimitClosePositionData) {
@@ -367,8 +306,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 							marketCloseSession !== null &&
 							marketCloseSession.position.assetId === assetId &&
 							marketCloseSession.phase !== "idle";
-						const isRowClosing = (typeof assetId === "number" && closingAssetIds.has(assetId)) || isMarketClosePending;
-						const closeErrorMessage = typeof assetId === "number" ? (closeErrors.get(assetId) ?? null) : null;
+						const isRowClosing = isMarketClosePending;
 						const positionKey = `${ownerKey ?? "disconnected"}:${p.dex}:${p.coin}`;
 						return (
 							<MobilePositionCard
@@ -378,7 +316,6 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 								markPx={getMarketInfo(p.coin)?.markPx}
 								tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
 								isRowClosing={isRowClosing}
-								closeErrorMessage={closeErrorMessage}
 								expanded={expandedPositionKeys.has(positionKey)}
 								onExpandedChange={(expanded) => handlePositionExpandedChange(positionKey, expanded)}
 								onMarketClose={handleOpenMarketClose}
@@ -402,6 +339,12 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 					open={isolatedMarginModalOpen}
 					onOpenChange={setIsolatedMarginModalOpen}
 					position={selectedIsolatedMarginPosition}
+				/>
+				<PositionReverseConfirmationController
+					target={selectedReverseTarget}
+					onOpenChange={(open) => {
+						if (!open) setSelectedReverseTarget(null);
+					}}
 				/>
 			</div>
 		</Skeleton>

@@ -25,7 +25,7 @@ import {
 
 export function OrdersHistoryTab() {
 	const { t } = useLingui();
-	const { getHistoricalOrderStatusLabel, getOrderTypeLabel } = useOrderDisplayLabels();
+	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { error, isConnected, orders, status } = useHistoricalOrders();
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
@@ -99,7 +99,8 @@ export function OrdersHistoryTab() {
 								{orders.map((entry, i) => {
 									const { order } = entry;
 									const market = markets.getMarket(order.coin);
-									const isLong = order.side === "B";
+									const isBuy = order.side === "B";
+									const sideLabel = getOrderSideLabel(order.side, order.reduceOnly);
 
 									return (
 										<TableRow
@@ -115,13 +116,9 @@ export function OrdersHistoryTab() {
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
 												<AssetBadge
 													coin={order.coin}
-													side={isLong ? "buy" : "sell"}
+													side={isBuy ? "buy" : "sell"}
 													onClick={() => navigateToMarket(order.coin)}
-													aria-label={
-														isLong
-															? t`Switch to ${order.coin} market, long order`
-															: t`Switch to ${order.coin} market, short order`
-													}
+													aria-label={t`Switch to ${order.coin} market, ${sideLabel} order`}
 												/>
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>

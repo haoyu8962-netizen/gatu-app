@@ -38,6 +38,10 @@ msgstr "{0} Hyperliquid के मूल परपेचुअल मार्�
 msgid "{0} of {1} orders were accepted. Review open orders before retrying."
 msgstr "{1} में से {0} ऑर्डर स्वीकार किए गए। पुनः प्रयास करने से पहले खुले ऑर्डर जाँचें।"
 
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+msgid "{currentDirectionLabel} to {targetDirectionLabel}"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "{formatted} USDC deposited to Hyperliquid"
 #~ msgstr ""
@@ -144,6 +148,14 @@ msgstr ""
 #~ msgid "A crypto wallet lets you store and manage your digital assets securely."
 #~ msgstr ""
 
+#: src/components/trade/positions/positions-tab.tsx
+msgid "A position may be liquidated when the mark price reaches its liquidation price."
+msgstr ""
+
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+msgid "A reliable pre-trade liquidation price is not available for a reverse order. Review the resulting position after execution."
+msgstr ""
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "About Builder Codes"
 #~ msgstr ""
@@ -154,6 +166,7 @@ msgstr "स्वीकार करें"
 
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Accept the HIP-3 deployer disclaimer before trading this market."
 msgstr ""
 
@@ -283,17 +296,20 @@ msgid "Adding margin lowers effective leverage and moves the liquidation price f
 msgstr "मार्जिन जोड़ने से प्रभावी लीवरेज कम होता है और लिक्विडेशन मूल्य दूर जाता है।"
 
 #: src/components/trade/positions/position-row.tsx
-msgid "Adjust isolated margin"
-msgstr "आइसोलेटेड मार्जिन समायोजित करें"
+#~ msgid "Adjust isolated margin"
+#~ msgstr "आइसोलेटेड मार्जिन समायोजित करें"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Adjust Isolated Margin"
 msgstr "आइसोलेटेड मार्जिन समायोजित करें"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-row.tsx
 msgid "Adjust isolated margin for {displayName}"
 msgstr "{displayName} का आइसोलेटेड मार्जिन समायोजित करें"
+
+#: src/components/trade/positions/position-actions-dropdown.tsx
+msgid "Adjust Margin"
+msgstr ""
 
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -363,16 +379,19 @@ msgid "Another mobile approval is being prepared for this wallet."
 msgstr ""
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-order-submit.ts
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Another order for this market is still being confirmed."
 msgstr "इस बाज़ार के लिए एक अन्य ऑर्डर की पुष्टि अभी जारी है।"
 
@@ -429,7 +448,6 @@ msgstr "Arbitrum नेटवर्क स्विच अस्वीकार 
 #: src/components/trade/positions/funding-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/positions/twap-tab.tsx
 #: src/components/trade/tradebox/deposit/asset-select.tsx
@@ -508,6 +526,7 @@ msgstr "औसत मूल्य"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -642,6 +661,7 @@ msgstr "बिल्डर फ़ीस"
 msgid "Buy"
 msgstr "खरीदें"
 
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Buy / Long"
 msgstr ""
@@ -672,7 +692,6 @@ msgstr ""
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -782,7 +801,6 @@ msgstr ""
 #~ msgstr "क्लिपबोर्ड पेस्ट ब्लॉक हो गया। कीबोर्ड मेन्यू से पेस्ट करें या कोड मैन्युअल रूप से टाइप करें।"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -794,12 +812,18 @@ msgid "Close"
 msgstr "बंद करें"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Close Long"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Close navigation"
 msgstr "नेविगेशन बंद करें"
+
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+msgid "Close order modification"
+msgstr ""
 
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Close order submitted"
@@ -828,10 +852,17 @@ msgstr ""
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "Close Position"
 msgstr "पोज़िशन बंद करें"
 
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+msgid "Close reverse confirmation"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Close Short"
 msgstr ""
 
@@ -867,7 +898,6 @@ msgstr ""
 msgid "Closing this dialog will not cancel it."
 msgstr ""
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Closing..."
 msgstr "बंद हो रहा है..."
@@ -929,6 +959,8 @@ msgid "Completed"
 msgstr "पूर्ण"
 
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -951,9 +983,13 @@ msgstr "पुष्टि करें"
 msgid "Confirm in wallet"
 msgstr "वॉलेट में पुष्टि करें"
 
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Confirm order size change"
+msgstr ""
+
 #: src/components/trade/mobile/mobile-position-card.tsx
-msgid "Confirm Reverse"
-msgstr "रिवर्स की पुष्टि करें"
+#~ msgid "Confirm Reverse"
+#~ msgstr "रिवर्स की पुष्टि करें"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Confirm revoke in wallet"
@@ -967,6 +1003,10 @@ msgstr ""
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 msgid "Confirm transaction in your wallet"
 msgstr "अपने वॉलेट में लेनदेन की पुष्टि करें"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Confirm trigger price change"
+msgstr ""
 
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Confirmation screen coming in next slice"
@@ -1347,6 +1387,10 @@ msgstr "CSV निर्यात इतिहास सीमा तक पह�
 msgid "CSV exported."
 msgstr "CSV निर्यात हो गया।"
 
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Cumulative funding paid or received since this position was opened."
+msgstr ""
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
@@ -1545,9 +1589,12 @@ msgstr "गंतव्य पता"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Direction"
 msgstr "दिशा"
@@ -1590,6 +1637,10 @@ msgstr "डिस्प्ले"
 #: src/components/ui/sidebar.tsx
 #~ msgid "Displays the mobile sidebar."
 #~ msgstr "मोबाइल साइडबार दिखाता है।"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Distance to mark {markDistanceLabel}"
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Do not photograph, copy, share, or screen-record the QR code."
@@ -1636,6 +1687,18 @@ msgstr "अर्न"
 msgid "Earn Balance"
 msgstr "अर्न बैलेंस"
 
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Edit {0} order size"
+msgstr ""
+
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Edit {0} trigger price"
+msgstr ""
+
 #: src/components/trade/positions/position-row.tsx
 msgid "Edit TP/SL"
 msgstr "TP/SL संपादित करें"
@@ -1680,6 +1743,11 @@ msgstr "अंतिम कीमत"
 #~ msgid "End Price (USDC)"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Enter a different value before confirming."
+msgstr ""
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Enter a positive amount with up to 6 decimal places."
 msgstr "अधिकतम 6 दशमलव स्थानों वाली धनात्मक राशि दर्ज करें।"
@@ -1689,6 +1757,16 @@ msgstr "अधिकतम 6 दशमलव स्थानों वाली 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Enter a positive target leverage."
 msgstr "धनात्मक लक्ष्य लीवरेज दर्ज करें।"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Enter a valid size using the market's size precision."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Enter a valid trigger price using the market's price precision."
+msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
@@ -1776,6 +1854,10 @@ msgstr "कनेक्शन स्थापित करें"
 #: src/components/trade/components/spot-swap-modal.tsx
 msgid "Estimated fee"
 msgstr "अनुमानित शुल्क"
+
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+msgid "Estimated Liquidation Price"
+msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -1978,6 +2060,7 @@ msgstr "ऑर्डर इतिहास लोड करने में व�
 #: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Failed to load positions."
 msgstr "पोजीशन लोड करने में विफल।"
 
@@ -1999,6 +2082,11 @@ msgstr "ट्रेड लोड करने में विफल।"
 msgid "Failed to load TWAP orders."
 msgstr "TWAP ऑर्डर लोड नहीं किए जा सके।"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Failed to modify order."
+msgstr ""
+
 #: src/components/trade/header/user-menu.tsx
 #~ msgid "Failed to open deposit flow"
 #~ msgstr "जमा प्रक्रिया खोलने में विफल"
@@ -2013,8 +2101,9 @@ msgstr "लिमिट क्लोज़ ऑर्डर देने मे�
 #~ msgid "Failed to register builder code"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-positions-tab.tsx
-#: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/positions/position-reverse-confirmation-controller.tsx
+#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Failed to reverse position"
 msgstr "पोज़िशन रिवर्स करने में विफल"
 
@@ -2456,7 +2545,6 @@ msgstr "Leverage"
 msgid "Limit"
 msgstr "लिमिट"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -2648,7 +2736,9 @@ msgstr "ईमेल से लॉग इन करें"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Long"
 msgstr "लॉन्ग"
@@ -2698,15 +2788,13 @@ msgstr "TP/SL प्रबंधित करें"
 #~ msgid "Manage TP/SL for {0} {1} position"
 #~ msgstr ""
 
-#. placeholder {0}: position.coin
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Manage TP/SL for {0} long position"
-msgstr "{0} Long पोज़िशन के लिए TP/SL प्रबंधित करें"
+#~ msgid "Manage TP/SL for {0} long position"
+#~ msgstr "{0} Long पोज़िशन के लिए TP/SL प्रबंधित करें"
 
-#. placeholder {0}: position.coin
 #: src/components/trade/positions/position-tpsl-modal.tsx
-msgid "Manage TP/SL for {0} short position"
-msgstr "{0} Short पोज़िशन के लिए TP/SL प्रबंधित करें"
+#~ msgid "Manage TP/SL for {0} short position"
+#~ msgstr "{0} Short पोज़िशन के लिए TP/SL प्रबंधित करें"
 
 #: src/components/trade/tradebox/margin-mode-dialog.tsx
 #~ msgid "Manage your risk on individual positions by restricting the amount of margin allocated to each. If the margin ratio of an isolated position reaches 100%, the position will be liquidated. Margin can be added or removed to individual positions in this mode."
@@ -2778,6 +2866,15 @@ msgstr ""
 msgid "Mark Price"
 msgstr "Mark प्राइस"
 
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Mark price is derived from oracle prices and is used to calculate unrealized PnL and liquidation."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Mark price is unavailable. Wait for market data and try again."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details."
 msgstr "मार्क प्राइस: मार्जिन गणना, अवास्तविक PnL, लिक्विडेशन और TP/SL ऑर्डर ट्रिगर करने के लिए उपयोग होता है। ऑरेकल प्राइस: फंडिंग भुगतान के लिए संदर्भ कीमत। विवरण के लिए HIP-3 डिप्लॉयर के दस्तावेज़ देखें।"
@@ -2793,12 +2890,16 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-market-filter.tsx
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -2808,7 +2909,6 @@ msgstr "बाज़ार"
 
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgctxt "Order type"
@@ -2851,6 +2951,11 @@ msgstr ""
 msgid "Market close confirmation restored."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Market metadata changed. Refresh and try again."
+msgstr ""
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Market metadata unavailable."
 #~ msgstr "बाज़ार मेटाडेटा उपलब्ध नहीं है।"
@@ -2862,6 +2967,11 @@ msgstr "मार्केट तैयार नहीं"
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Market Order Slippage"
 #~ msgstr "मार्केट ऑर्डर स्लिपेज"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Market orders cannot be modified after submission."
+msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "markets"
@@ -3007,6 +3117,16 @@ msgstr ""
 #~ msgid "Mode"
 #~ msgstr "मोड"
 
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "Modify Order"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+msgid "Modifying..."
+msgstr ""
+
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 msgid "More"
@@ -3031,6 +3151,10 @@ msgstr "अधिक जानकारी"
 #: src/components/ui/pagination.tsx
 #~ msgid "More pages"
 #~ msgstr "और पृष्ठ"
+
+#: src/components/trade/positions/position-actions-dropdown.tsx
+msgid "More position actions"
+msgstr ""
 
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Move USDC between your Perp and Spot accounts."
@@ -3092,6 +3216,7 @@ msgstr ""
 #~ msgstr "अगला"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "No"
 msgstr "नहीं"
 
@@ -3102,6 +3227,9 @@ msgstr "नहीं"
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
 msgid "No active positions."
 msgstr "कोई सक्रिय पोजीशन नहीं।"
 
@@ -3340,6 +3468,7 @@ msgid "Open Interest"
 msgstr "ओपन इंटरेस्ट"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 msgid "Open Long"
 msgstr ""
 
@@ -3352,11 +3481,17 @@ msgstr "नेविगेशन खोलें"
 msgid "Open Orders"
 msgstr "खुले ऑर्डर"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Open orders are refreshing. Wait for live data and try again."
+msgstr ""
+
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Open positions count"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 msgid "Open Short"
 msgstr ""
 
@@ -3453,6 +3588,16 @@ msgstr "ऑर्डर हिस्ट्री"
 msgid "Order market context does not match the submitted asset."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Order modification confirmed."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Order modification submitted. Waiting for the open-orders update."
+msgstr ""
+
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Order Queue"
 msgstr "ऑर्डर कतार"
@@ -3462,13 +3607,13 @@ msgid "Order submitted"
 msgstr "ऑर्डर सबमिट किया गया"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
+#: src/components/trade/positions/position-reverse-confirmation-controller.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "ऑर्डर सबमिट हो गया है। एक्सचेंज की स्थिति की पुष्टि की जा रही है; दोबारा प्रयास न करें।"
 
@@ -3477,6 +3622,7 @@ msgid "Order type"
 msgstr "ऑर्डर प्रकार"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
@@ -3503,6 +3649,17 @@ msgstr "ऑर्डर"
 #~ msgstr "ऑर्डर"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Orders with a client order ID cannot be modified here. Cancel and replace the order instead."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Orders with linked TP/SL orders cannot be modified here."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "Original Size"
 msgstr ""
 
@@ -3723,9 +3880,16 @@ msgstr "प्लेटफ़ॉर्म"
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
-#: src/components/trade/positions/positions-tab.tsx
 msgid "PNL"
 msgstr "PNL"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "PNL (Price Change %)"
+msgstr ""
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "PNL (ROE %)"
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Point your camera at the WalletConnect QR code on your desktop wallet."
@@ -3781,8 +3945,8 @@ msgstr "पोजीशन"
 #~ msgstr ""
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
-msgid "Position close actions"
-msgstr "पोज़िशन क्लोज़ करने की क्रियाएँ"
+#~ msgid "Position close actions"
+#~ msgstr "पोज़िशन क्लोज़ करने की क्रियाएँ"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -3804,9 +3968,14 @@ msgstr "पोज़िशन डेटा उपलब्ध नहीं ह�
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
-msgid "Position reversed — {coin}"
-msgstr "पोज़िशन रिवर्स हो गई — {coin}"
+#~ msgid "Position reversed — {coin}"
+#~ msgstr "पोज़िशन रिवर्स हो गई — {coin}"
 
+#: src/components/trade/positions/position-reverse-confirmation-controller.tsx
+msgid "Position reversed — {marketLabel}"
+msgstr ""
+
+#: src/hooks/trade/use-position-reverse-submit.ts
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Position size is below market precision"
 msgstr ""
@@ -3818,6 +3987,11 @@ msgstr ""
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Position summary"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Position TP/SL orders must be edited from the position controls."
 msgstr ""
 
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -3877,6 +4051,7 @@ msgstr ""
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/config/ui-text.ts
 msgid "Price"
@@ -4024,6 +4199,11 @@ msgstr "केवल स्वचालित ट्रेडरों के �
 msgid "Reconnect the bridge wallet"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Reconnect the trading account before modifying this order."
+msgstr ""
+
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/header/user-menu.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -4044,6 +4224,7 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
@@ -4200,10 +4381,29 @@ msgstr ""
 #~ msgstr "वॉलेट बनाना फिर से आज़माएं"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
-#: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Reverse"
 msgstr "रिवर्स"
+
+#: src/components/trade/positions/position-reverse-confirmation-controller.tsx
+msgid "Reverse order filled for {filledSizeLabel}."
+msgstr ""
+
+#: src/components/trade/positions/position-reverse-confirmation-controller.tsx
+msgid "Reverse order filled."
+msgstr ""
+
+#: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+msgid "Reverse Position"
+msgstr ""
+
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+msgid "Reverse quantity (2× position)"
+msgstr ""
+
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+msgid "Reversing..."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Review again"
@@ -4274,6 +4474,8 @@ msgstr "रनटाइम"
 
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
 #: src/hooks/trade/use-tracked-order.ts
 #: src/hooks/trade/use-tracked-order.ts
 #: src/hooks/trade/use-tracked-order.ts
@@ -4470,6 +4672,7 @@ msgstr "चयनित वॉलेट कनेक्टेड खाते �
 msgid "Sell"
 msgstr "बेचें"
 
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Sell / Short"
 msgstr ""
@@ -4554,9 +4757,9 @@ msgstr "{p}% पर सेट करें"
 #~ msgid "Set TP to {p}%"
 #~ msgstr ""
 
-#: src/components/trade/positions/positions-tab.tsx
-#~ msgid "Set TP/SL"
-#~ msgstr "TP/SL सेट करें"
+#: src/components/trade/positions/position-actions-dropdown.tsx
+msgid "Set TP/SL"
+msgstr "TP/SL सेट करें"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #~ msgid "Set TP/SL for {0}"
@@ -4573,7 +4776,9 @@ msgstr "सेटिंग्स"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
-#: src/hooks/trade/use-order-display-labels.ts
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/position-row.tsx
 #: src/hooks/trade/use-order-entry-data.ts
 msgid "Short"
 msgstr "शॉर्ट"
@@ -4618,9 +4823,17 @@ msgstr "Short पोज़िशन"
 #~ msgid "Show Positions on Chart"
 #~ msgstr "चार्ट पर पोजीशन दिखाएं"
 
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Show price change percentage"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Show QR"
 #~ msgstr "QR दिखाएँ"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Show ROE percentage"
+msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Scanlines"
@@ -4658,6 +4871,8 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
@@ -4677,6 +4892,11 @@ msgstr "साइन हो रहा है..."
 #: src/config/ui-text.ts
 msgid "Size"
 msgstr "आकार"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Size cannot exceed the order's remaining size."
+msgstr ""
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #~ msgid "Size exceeds position"
@@ -4980,25 +5200,27 @@ msgstr "स्वैप किया जा रहा है..."
 msgid "Switch to {0} market"
 msgstr "{0} मार्केट पर स्विच करें"
 
+#. placeholder {0}: order.coin
+#: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Switch to {0} market, {sideLabel} order"
+msgstr ""
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Switch to {0} market, buy TWAP"
 #~ msgstr "{0} मार्केट पर स्विच करें, TWAP खरीदें"
 
-#. placeholder {0}: order.coin
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
-msgid "Switch to {0} market, long order"
-msgstr "{0} मार्केट पर स्विच करें, Long ऑर्डर"
+#~ msgid "Switch to {0} market, long order"
+#~ msgstr "{0} मार्केट पर स्विच करें, Long ऑर्डर"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Switch to {0} market, sell TWAP"
 #~ msgstr "{0} मार्केट पर स्विच करें, TWAP बेचें"
 
-#. placeholder {0}: order.coin
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
-msgid "Switch to {0} market, short order"
-msgstr "{0} मार्केट पर स्विच करें, Short ऑर्डर"
+#~ msgid "Switch to {0} market, short order"
+#~ msgstr "{0} मार्केट पर स्विच करें, Short ऑर्डर"
 
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Switch to {displayCoin} market"
@@ -5030,12 +5252,16 @@ msgid "Switch to {marketName} market"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-msgid "Switch to {marketName} market, long order"
+msgid "Switch to {marketName} market, {sideLabel} order"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-msgid "Switch to {marketName} market, short order"
-msgstr ""
+#~ msgid "Switch to {marketName} market, long order"
+#~ msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#~ msgid "Switch to {marketName} market, short order"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Switch to {selectedModeLabel}"
@@ -5205,6 +5431,11 @@ msgstr "एक्सचेंज ने TWAP की अंतिम स्थि
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "The modified order is no longer open."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "The one-time QR could not be verified. Check your connection and retry."
 msgstr ""
@@ -5217,14 +5448,28 @@ msgstr ""
 msgid "The order can continue, but this confirmation preference could not be saved."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "The order changed before the requested modification was confirmed. Review the latest order before retrying."
+msgstr ""
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "The order is still being confirmed."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "The order update was not confirmed by live data. Refresh before retrying; cancellation remains available."
+msgstr ""
+
 #: src/components/pages/not-found-page.tsx
 msgid "The page you are looking for does not exist."
 msgstr "आप जो पृष्ठ ढूंढ रहे हैं वह मौजूद नहीं है।"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "The previous order modification is still unconfirmed. Refresh open orders before retrying."
+msgstr ""
 
 #: src/providers/root.tsx
 msgid "The previous wallet disconnected, but its local trading key could not be removed. Clear this site's data before reconnecting it."
@@ -5278,6 +5523,16 @@ msgstr ""
 msgid "The terms could not be accepted. Confirm the request in the selected wallet and try again."
 msgstr "शर्तें स्वीकार नहीं की जा सकीं। चुने गए वॉलेट में अनुरोध की पुष्टि करें और फिर प्रयास करें।"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "The trading account or network changed. Reopen the editor and try again."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "The trigger price is invalid for this order direction."
+msgstr ""
+
 #: src/hooks/wallet/use-wallet-session.ts
 #~ msgid "The wallet session could not be closed and local Agent registration remains disabled. Reload, then retry disconnecting."
 #~ msgstr ""
@@ -5289,6 +5544,10 @@ msgstr ""
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "This account is not currently permitted to perform trading actions on Hyperliquid."
 msgstr "इस खाते को अभी Hyperliquid पर ट्रेडिंग कार्रवाई करने की अनुमति नहीं है।"
+
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+msgid "This action cannot be undone after execution."
+msgstr ""
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "This action must be signed by your main wallet (not an agent/API wallet). The builder must have at least 100 USDC in perps account value."
@@ -5421,6 +5680,28 @@ msgstr ""
 msgid "This one-time QR was already used or is no longer active. Scan a new QR."
 msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "This order changed or is no longer open. Refresh and try again."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "This order does not have an editable trigger price."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "This order has incomplete data and cannot be modified. Refresh and try again."
+msgstr ""
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "This order type cannot be modified safely. Cancel and replace it instead."
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "This phone link belongs to a different owner account."
 #~ msgstr "यह फ़ोन लिंक किसी दूसरे स्वामी खाते से संबंधित है।"
@@ -5491,6 +5772,10 @@ msgstr ""
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 #~ msgid "This will cancel all {orderCount} open orders, including protective stop orders. Your positions will no longer be protected."
 #~ msgstr ""
+
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+msgid "This will close the current position and open an equal position in the opposite direction at market price."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "This will replace any current mobile trading key with an inaccessible key. Existing phones will stop trading after Hyperliquid confirms the replacement."
@@ -5631,6 +5916,7 @@ msgstr "TP मूल्य"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
@@ -5679,6 +5965,15 @@ msgstr "ट्रेडिंग"
 msgid "Trading Account"
 msgstr "ट्रेडिंग खाता"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Trading data changed before the order modification could be submitted."
+msgstr ""
+
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
@@ -5696,6 +5991,7 @@ msgstr "ट्रेडिंग खाता"
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
+#: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
 msgstr "इस संवाद के खुले रहने के दौरान ट्रेडिंग डेटा बदल गया। सबमिट करने से पहले इसे बंद करके फिर से खोलें।"
 
@@ -5782,13 +6078,13 @@ msgstr "यूनिफाइड अकाउंट मोड में Spot औ
 #~ msgstr "ट्रेंडिंग"
 
 #: src/components/trade/components/historical-order-price.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
 msgstr "ट्रिगर"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "Trigger Condition"
 msgstr ""
 
@@ -5796,6 +6092,8 @@ msgstr ""
 msgid "Trigger order must reduce your current position"
 msgstr "ट्रिगर ऑर्डर को आपकी मौजूदा पोज़िशन कम करनी चाहिए"
 
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
@@ -5879,6 +6177,7 @@ msgstr "TWAP ऑर्डर का भाग"
 msgid "Two-sided open interest: the sum of long and short positions on this contract."
 msgstr "दो-तरफ़ा ओपन इंटरेस्ट: इस कॉन्ट्रैक्ट पर लॉन्ग और शॉर्ट पोज़िशन का योग।"
 
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5930,6 +6229,7 @@ msgstr "वॉलेट को Arbitrum पर स्विच नहीं क�
 msgid "Unable to verify access"
 msgstr "पहुँच सत्यापित नहीं हो सकी"
 
+#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unavailable"
@@ -5976,10 +6276,15 @@ msgid "Unrealized P&L"
 msgstr "अवास्तविक P&L"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/config/ui-text.ts
 msgid "Unrealized PNL"
 msgstr "अवास्तविक PNL"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Unrealized PnL is estimated using the mark price. Click to switch the percentage display."
+msgstr ""
 
 #: src/config/account-ledger.ts
 msgid "Unstake"
@@ -6118,6 +6423,10 @@ msgstr "वॉल्यूम"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Waiting for chain confirmation"
 msgstr "ऑन-चेन पुष्टि की प्रतीक्षा है"
+
+#: src/components/trade/mobile/mobile-order-modification-modal.tsx
+msgid "Waiting for confirmation..."
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Waiting for native USDC to arrive on Arbitrum."
@@ -6278,6 +6587,7 @@ msgstr "निकासी सबमिट की गई"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "Yes"
 msgstr "हाँ"
 

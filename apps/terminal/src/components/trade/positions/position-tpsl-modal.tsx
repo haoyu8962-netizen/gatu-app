@@ -1,4 +1,4 @@
-import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
+import { Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useState } from "react";
@@ -9,6 +9,7 @@ import { buildPositionTpSlUpdatePlan, hasPositionTpSlTriggerMutation } from "@/d
 import { doesOrderBatchMatchRiskContext } from "@/domain/trade/order-risk-context";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
@@ -21,6 +22,7 @@ import { AssetDisplay } from "../components/asset-display";
 import { TradingActionButton } from "../components/trading-action-button";
 import { TpSlSection } from "../tradebox/tp-sl-section";
 import type { TpSlPositionRef } from "./position-dialog-types";
+import { PositionRiskDialogShell } from "./position-risk-dialog-ui";
 
 interface Props {
 	open: boolean;
@@ -29,28 +31,27 @@ interface Props {
 }
 
 export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
+	const isMobile = useIsMobile();
 	if (!position) return null;
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm" showClose={false} aria-label={getTpSlModalAriaLabel(position)}>
-				<PositionTpSlModalBody
-					key={`${position.dex}:${position.assetId}:${open ? "open" : "closed"}`}
-					open={open}
-					position={position}
-					onOpenChange={onOpenChange}
-				/>
-			</ModalPopup>
-		</Modal>
+		<PositionTpSlModalBody
+			key={`${position.dex}:${position.assetId}:${open ? "open" : "closed"}`}
+			open={open}
+			position={position}
+			isMobile={isMobile}
+			onOpenChange={onOpenChange}
+		/>
 	);
 }
 
 interface BodyProps {
 	open: boolean;
 	position: TpSlPositionRef;
+	isMobile: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
-function PositionTpSlModalBody({ open, position, onOpenChange }: BodyProps) {
+function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyProps) {
 	const { address, isConnected } = useWalletSession();
 	const { getPosition, isLoading: positionLoading, hasError: positionError } = useUserPositions();
 	const { getMarketInfo } = useMarketsInfo();
@@ -69,20 +70,59 @@ function PositionTpSlModalBody({ open, position, onOpenChange }: BodyProps) {
 
 	if (!isConnected || !address) {
 		return (
-			<PositionTpSlStatus position={position} message={t`Connect wallet to view positions`} onClose={onOpenChange} />
+			<PositionTpSlStatus
+				open={open}
+				isMobile={isMobile}
+				position={position}
+				message={t`Connect wallet to view positions`}
+				onClose={onOpenChange}
+			/>
 		);
 	}
 	if (positionError && !currentPosition) {
-		return <PositionTpSlStatus position={position} message={t`Failed to load positions.`} onClose={onOpenChange} />;
+		return (
+			<PositionTpSlStatus
+				open={open}
+				isMobile={isMobile}
+				position={position}
+				message={t`Failed to load positions.`}
+				onClose={onOpenChange}
+			/>
+		);
 	}
 	if (openOrdersStatus === "error" && !hasOpenOrdersSnapshot) {
-		return <PositionTpSlStatus position={position} message={t`Failed to load open orders.`} onClose={onOpenChange} />;
+		return (
+			<PositionTpSlStatus
+				open={open}
+				isMobile={isMobile}
+				position={position}
+				message={t`Failed to load open orders.`}
+				onClose={onOpenChange}
+			/>
+		);
 	}
 	if ((positionLoading && !currentPosition) || !hasOpenOrdersSnapshot) {
-		return <PositionTpSlStatus position={position} message={t`Loading...`} loading onClose={onOpenChange} />;
+		return (
+			<PositionTpSlStatus
+				open={open}
+				isMobile={isMobile}
+				position={position}
+				message={t`Loading...`}
+				loading
+				onClose={onOpenChange}
+			/>
+		);
 	}
 	if (!currentPosition || !currentPositionSize || currentPositionSize.eq(0)) {
-		return <PositionTpSlStatus position={position} message={t`No active positions.`} onClose={onOpenChange} />;
+		return (
+			<PositionTpSlStatus
+				open={open}
+				isMobile={isMobile}
+				position={position}
+				message={t`No active positions.`}
+				onClose={onOpenChange}
+			/>
+		);
 	}
 	const liveDataReady = !positionLoading && !positionError && openOrdersStatus === "active";
 	let liveDataMessage: string | null = null;
@@ -96,6 +136,8 @@ function PositionTpSlModalBody({ open, position, onOpenChange }: BodyProps) {
 
 	return (
 		<PositionTpSlForm
+			open={open}
+			isMobile={isMobile}
 			positionRef={position}
 			position={currentPosition}
 			markPx={liveMarkPx}
@@ -108,6 +150,8 @@ function PositionTpSlModalBody({ open, position, onOpenChange }: BodyProps) {
 }
 
 interface FormProps {
+	open: boolean;
+	isMobile: boolean;
 	positionRef: TpSlPositionRef;
 	position: Position;
 	markPx: number | null;
@@ -118,6 +162,8 @@ interface FormProps {
 }
 
 function PositionTpSlForm({
+	open,
+	isMobile,
 	positionRef,
 	position,
 	markPx,
@@ -237,6 +283,11 @@ function PositionTpSlForm({
 		}
 	}
 
+	function handleOpenChange(nextOpen: boolean) {
+		if (!nextOpen && isSubmitting) return;
+		onOpenChange(nextOpen);
+	}
+
 	let guardMessage: string | null = null;
 	if (requiresRefresh || dataChanged) {
 		guardMessage = t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
@@ -248,11 +299,16 @@ function PositionTpSlForm({
 	const visibleError = submitError ?? placeError?.message ?? modifyError?.message ?? cancelError?.message;
 
 	return (
-		<>
+		<PositionRiskDialogShell
+			open={open}
+			onOpenChange={handleOpenChange}
+			isMobile={isMobile}
+			dismissible={!isSubmitting}
+		>
 			{renderPositionHeader(positionRef.coin, isLong)}
 
-			<ModalContent>
-				<div className="rounded-8 border border-stroke-weak bg-surface p-3 space-y-1 text-xs">
+			<ModalContent className="max-[1000px]:px-4 max-[1000px]:pt-3 max-[1000px]:pb-0">
+				<div className="rounded-[12px] border border-market-close-stroke-card bg-market-close-card p-3 space-y-1 text-xs">
 					<InfoRow
 						className="p-0"
 						label={t`Size`}
@@ -285,7 +341,7 @@ function PositionTpSlForm({
 				</div>
 			</ModalContent>
 
-			<div className="px-4 pb-4">
+			<div className="px-4 pb-4 max-[1000px]:pt-4">
 				<TpSlSection
 					side={side}
 					referencePrice={entryPx}
@@ -300,6 +356,7 @@ function PositionTpSlForm({
 					quickPercentMode="roe"
 					leverage={leverage}
 					triggerValidationPrice={markPx}
+					mobileTouchSafe
 				/>
 
 				{guardMessage && (
@@ -314,11 +371,23 @@ function PositionTpSlForm({
 				)}
 			</div>
 
-			<ModalFooter>
-				<Button size="sm" variant="ghost" intent="neutral" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+			<ModalFooter className="max-[1000px]:grid max-[1000px]:grid-cols-2 max-[1000px]:gap-2 max-[1000px]:px-4 max-[1000px]:pt-0 max-[1000px]:pb-4">
+				<Button
+					size="sm"
+					variant="ghost"
+					intent="neutral"
+					onClick={() => handleOpenChange(false)}
+					disabled={isSubmitting}
+					className="max-[1000px]:min-h-11 max-[1000px]:rounded-[10px] max-[1000px]:border max-[1000px]:border-market-close-stroke-input max-[1000px]:text-market-close-fg"
+				>
 					{t`Cancel`}
 				</Button>
-				<TradingActionButton onClick={handleSubmit} disabled={!canSubmit} className="min-w-24">
+				<TradingActionButton
+					onClick={handleSubmit}
+					disabled={!canSubmit}
+					containerClassName="max-[1000px]:w-full"
+					className="min-w-24 max-[1000px]:min-h-11 max-[1000px]:w-full max-[1000px]:rounded-[10px]"
+				>
 					{isSubmitting ? (
 						<>
 							<SpinnerGapIcon className="size-3.5 animate-spin" />
@@ -329,39 +398,47 @@ function PositionTpSlForm({
 					)}
 				</TradingActionButton>
 			</ModalFooter>
-		</>
+		</PositionRiskDialogShell>
 	);
 }
 
 interface StatusProps {
+	open: boolean;
+	isMobile: boolean;
 	position: TpSlPositionRef;
 	message: string;
 	loading?: boolean;
 	onClose: (open: boolean) => void;
 }
 
-function PositionTpSlStatus({ position, message, loading = false, onClose }: StatusProps) {
+function PositionTpSlStatus({ open, isMobile, position, message, loading = false, onClose }: StatusProps) {
 	return (
-		<>
+		<PositionRiskDialogShell open={open} onOpenChange={onClose} isMobile={isMobile} dismissible>
 			{renderPositionHeader(position.coin, position.isLong)}
-			<ModalContent>
+			<ModalContent className="max-[1000px]:px-4 max-[1000px]:pt-3">
 				<div className="flex min-h-28 items-center justify-center gap-2 text-sm text-fg-muted">
 					{loading && <SpinnerGapIcon className="size-4 animate-spin" />}
 					<span>{message}</span>
 				</div>
 			</ModalContent>
-			<ModalFooter>
-				<Button size="sm" variant="ghost" intent="neutral" onClick={() => onClose(false)}>
+			<ModalFooter className="max-[1000px]:px-4 max-[1000px]:pt-0 max-[1000px]:pb-4">
+				<Button
+					size="sm"
+					variant="ghost"
+					intent="neutral"
+					onClick={() => onClose(false)}
+					className="max-[1000px]:min-h-11 max-[1000px]:w-full max-[1000px]:rounded-[10px] max-[1000px]:border max-[1000px]:border-market-close-stroke-input"
+				>
 					{t`Close`}
 				</Button>
 			</ModalFooter>
-		</>
+		</PositionRiskDialogShell>
 	);
 }
 
 function renderPositionHeader(coin: string, isLong: boolean) {
 	return (
-		<ModalHeader>
+		<ModalHeader className="max-[1000px]:gap-1 max-[1000px]:border-b-0 max-[1000px]:px-4 max-[1000px]:pt-7 max-[1000px]:pr-4 max-[1000px]:pb-0">
 			<ModalTitle>{t`Manage TP/SL`}</ModalTitle>
 			<div className="flex items-center gap-1.5">
 				<span
@@ -373,9 +450,4 @@ function renderPositionHeader(coin: string, isLong: boolean) {
 			</div>
 		</ModalHeader>
 	);
-}
-
-function getTpSlModalAriaLabel(position: TpSlPositionRef): string {
-	if (position.isLong) return t`Manage TP/SL for ${position.coin} long position`;
-	return t`Manage TP/SL for ${position.coin} short position`;
 }

@@ -1,11 +1,10 @@
-import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { PencilIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId, useState } from "react";
-import { Spinner } from "@/components/ui/spinner";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
+import { getPositionFundingPayment, isLiquidationPriceNear } from "@/domain/trade/position-toolbar";
 import { cn } from "@/lib/cn";
 import {
 	formatLiquidationPrice,
@@ -22,10 +21,10 @@ import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import type {
-	ClosePositionData,
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
+	PositionReverseRef,
 	TpSlPositionRef,
 } from "../positions/position-dialog-types";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
@@ -36,11 +35,10 @@ interface Props {
 	markPx: string | undefined;
 	tpSlInfo: TpSlOrderInfo | undefined;
 	isRowClosing: boolean;
-	closeErrorMessage: string | null;
 	expanded?: boolean;
 	onExpandedChange?: (expanded: boolean) => void;
 	onMarketClose: (data: PositionMarketCloseRef) => void;
-	onReverse: (data: ClosePositionData) => void;
+	onReverse: (data: PositionReverseRef) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onOpenTpSl: (data: TpSlPositionRef) => void;
 	onAdjustMargin: (data: IsolatedMarginPositionRef) => void;
@@ -87,7 +85,6 @@ export function MobilePositionCard({
 	markPx: markPxRaw,
 	tpSlInfo,
 	isRowClosing,
-	closeErrorMessage,
 	expanded,
 	onExpandedChange,
 	onMarketClose,
@@ -98,14 +95,13 @@ export function MobilePositionCard({
 	onSelectMarket,
 }: Props) {
 	const { t } = useLingui();
-	const [confirmingReverse, setConfirmingReverse] = useState(false);
 	const [internalExpanded, setInternalExpanded] = useState(true);
 	const detailsId = useId();
 	const isExpanded = expanded ?? internalExpanded;
 
 	const sizeValue = toBig(p.szi);
 	const isLong = sizeValue?.gt(0) ?? false;
-	const absSize = sizeValue?.abs().toNumber() ?? Number.NaN;
+	const absSize = sizeValue?.abs().toString();
 	const market = markets.getMarket(p.coin);
 	const displayName = market?.pairName ?? p.coin;
 	const sizeSymbol = market?.shortName ?? p.coin.split(":").pop() ?? p.coin;
@@ -115,32 +111,29 @@ export function MobilePositionCard({
 	const szDecimals = market?.szDecimals ?? 4;
 	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
 	const markPxValue = toBig(markPxRaw);
-	const markPx = markPxValue?.toNumber() ?? Number.NaN;
-	const entryPx = toBig(p.entryPx)?.toNumber() ?? Number.NaN;
-	const unrealizedPnl = toBig(p.unrealizedPnl)?.toNumber() ?? Number.NaN;
-	const roe = toBig(p.returnOnEquity)?.toNumber() ?? Number.NaN;
-	const liqPx = toBig(p.liquidationPx)?.toNumber();
-	const liqIsNear =
-		liqPx != null &&
-		Number.isFinite(markPx) &&
-		Number.isFinite(liqPx) &&
-		Math.abs(liqPx - markPx) / markPx <= LIQ_WARNING_PROXIMITY;
+	const liqIsNear = isLiquidationPriceNear({
+		markPx: markPxRaw,
+		liquidationPx: p.liquidationPx,
+		proximity: LIQ_WARNING_PROXIMITY,
+	});
 
-	const fundingRaw = toBig(p.cumFunding.sinceOpen)?.toNumber();
-	const fundingAmount = fundingRaw != null ? -fundingRaw : null;
+	const fundingAmount = getPositionFundingPayment(p.cumFunding.sinceOpen);
 	const fundingValue = formatUSD(fundingAmount, {
 		compact: false,
 		currencyDisplay: "narrowSymbol",
 		signDisplay: "exceptZero",
 	});
-	const fundingClass = getMarketCloseValueColorClass(fundingAmount ?? 0);
+	const fundingClass =
+		fundingAmount === null ? "text-market-close-subtle" : getMarketCloseValueColorClass(fundingAmount);
 
 	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
-	const pnlClass = getMarketCloseValueColorClass(unrealizedPnl);
+	const canReverse =
+		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
+	const pnlClass = getMarketCloseValueColorClass(p.unrealizedPnl);
 	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
 	const sizeDisplay = formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol });
 	const positionValueDisplay = formatQuoteAmount(p.positionValue, quoteSymbol, { decimals: 2, compact: false });
-	const pnlDisplay = formatUSD(unrealizedPnl, {
+	const pnlDisplay = formatUSD(p.unrealizedPnl, {
 		compact: false,
 		currencyDisplay: "narrowSymbol",
 		signDisplay: "exceptZero",
@@ -148,23 +141,20 @@ export function MobilePositionCard({
 	const roeDisplay = formatPercent(p.returnOnEquity, 1);
 	const marginDisplay = formatUSD(p.marginUsed, { compact: false, currencyDisplay: "narrowSymbol" });
 
-	function buildCloseData(): ClosePositionData | null {
-		if (!canClose || typeof assetId !== "number") return null;
+	function buildReverseRef(): PositionReverseRef | null {
+		if (!canReverse || typeof assetId !== "number") return null;
 		return {
 			assetId,
 			coin: p.coin,
-			size: absSize,
-			markPx,
+			dex: p.dex,
+			signedPositionSize: p.szi,
 			szDecimals,
-			isLong,
-			unrealizedPnl,
-			roe,
 			marginMode: p.leverage.type,
 		};
 	}
 
-	function handleConfirmReverse() {
-		const data = buildCloseData();
+	function handleReverse() {
+		const data = buildReverseRef();
 		if (!data) return;
 		onReverse(data);
 	}
@@ -225,7 +215,6 @@ export function MobilePositionCard({
 
 	function handleToggleDetails() {
 		const nextExpanded = !isExpanded;
-		if (!nextExpanded) setConfirmingReverse(false);
 		if (onExpandedChange) onExpandedChange(nextExpanded);
 		else setInternalExpanded(nextExpanded);
 	}
@@ -332,8 +321,8 @@ export function MobilePositionCard({
 							valueClassName={fundingClass}
 							valueTitle={fundingValue}
 						/>
-						<PositionMetric label={t`Entry Price`} value={formatPrice(entryPx, { szDecimals, style: "decimal" })} />
-						<PositionMetric label={t`Mark Price`} value={formatPrice(markPx, { szDecimals, style: "decimal" })} />
+						<PositionMetric label={t`Entry Price`} value={formatPrice(p.entryPx, { szDecimals, style: "decimal" })} />
+						<PositionMetric label={t`Mark Price`} value={formatPrice(markPxRaw, { szDecimals, style: "decimal" })} />
 						<PositionMetric
 							label={t`Liquidation Price`}
 							value={formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" })}
@@ -366,57 +355,30 @@ export function MobilePositionCard({
 
 					<div className="flex items-center justify-between border-t border-market-close-stroke-card pt-[11px]">
 						<div className="flex min-w-0 items-center gap-4">
-							{confirmingReverse ? (
-								<>
-									<Button
-										variant="outline"
-										intent="neutral"
-										size="xs"
-										className="flex-1 justify-center"
-										onClick={() => setConfirmingReverse(false)}
-									>
-										{t`Cancel`}
-									</Button>
-									<Button
-										variant="outline"
-										intent="neutral"
-										size="xs"
-										className="flex-1 justify-center"
-										onClick={handleConfirmReverse}
-										disabled={!canClose || isRowClosing}
-										iconLeft={isRowClosing ? <Spinner className="size-3" /> : undefined}
-									>
-										{t`Confirm Reverse`}
-									</Button>
-								</>
-							) : (
-								<>
-									<button
-										type="button"
-										className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-fg transition-colors duration-[120ms] min-[1001px]:hover:text-fg-muted focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
-										onClick={handleLimitClose}
-										disabled={!canClose || isRowClosing}
-									>
-										{t`Limit Close`}
-									</button>
-									<button
-										type="button"
-										className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
-										onClick={handleMarketClose}
-										disabled={!canClose || isRowClosing}
-									>
-										{t`Market Close`}
-									</button>
-									<button
-										type="button"
-										className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
-										onClick={() => setConfirmingReverse(true)}
-										disabled={!canClose || isRowClosing}
-									>
-										{t`Reverse`}
-									</button>
-								</>
-							)}
+							<button
+								type="button"
+								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-fg transition-colors duration-[120ms] min-[1001px]:hover:text-fg-muted focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
+								onClick={handleLimitClose}
+								disabled={!canClose || isRowClosing}
+							>
+								{t`Limit Close`}
+							</button>
+							<button
+								type="button"
+								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
+								onClick={handleMarketClose}
+								disabled={!canClose || isRowClosing}
+							>
+								{t`Market Close`}
+							</button>
+							<button
+								type="button"
+								className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
+								onClick={handleReverse}
+								disabled={!canReverse || isRowClosing}
+							>
+								{t`Reverse`}
+							</button>
 						</div>
 						<button
 							type="button"
@@ -436,11 +398,7 @@ export function MobilePositionCard({
 							</svg>
 						</button>
 					</div>
-					{closeErrorMessage ? <div className="text-xs text-error">{closeErrorMessage}</div> : null}
 				</div>
-			) : null}
-			{!isExpanded && closeErrorMessage ? (
-				<div className="px-3.5 py-2 text-xs text-error">{closeErrorMessage}</div>
 			) : null}
 		</div>
 	);

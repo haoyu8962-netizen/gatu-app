@@ -32,15 +32,12 @@ export interface PositionMarketCloseRef {
 	marginMode: MarginMode;
 }
 
-export interface ClosePositionData {
+export interface PositionReverseRef {
 	assetId: number;
 	coin: string;
-	size: number;
-	markPx: number;
+	dex: string;
+	signedPositionSize: string;
 	szDecimals: number;
-	isLong: boolean;
-	unrealizedPnl: number;
-	roe: number;
 	marginMode: MarginMode;
 }
 

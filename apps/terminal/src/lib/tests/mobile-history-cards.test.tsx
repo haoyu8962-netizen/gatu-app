@@ -65,6 +65,7 @@ vi.mock("@/hooks/trade/use-historical-orders", () => ({
 					oid: 11,
 					orderType: "Limit",
 					origSz: "0.02",
+					reduceOnly: false,
 					side: "B",
 					timestamp: 1_754_350_400_000,
 				},
@@ -77,6 +78,7 @@ vi.mock("@/hooks/trade/use-historical-orders", () => ({
 					oid: 12,
 					orderType: "Stop Market",
 					origSz: "0.2",
+					reduceOnly: true,
 					side: "A",
 					timestamp: 1_754_350_500_000,
 				},
@@ -92,7 +94,8 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({
 vi.mock("@/hooks/trade/use-order-display-labels", () => ({
 	useOrderDisplayLabels: () => ({
 		getHistoricalOrderStatusLabel: (status: string) => (status === "filled" ? "Filled" : "Canceled"),
-		getOrderSideLabel: (side: string) => (side === "B" ? "Buy" : "Sell"),
+		getOrderSideLabel: (side: "A" | "B", reduceOnly: boolean) =>
+			reduceOnly ? (side === "B" ? "Close Short" : "Close Long") : side === "B" ? "Buy" : "Sell",
 		getOrderTypeLabel: (type: string) => type,
 	}),
 }));
@@ -242,5 +245,7 @@ describe("mobile history disclosure cards", () => {
 		expect(container.textContent).toContain("Filled");
 		expect(container.textContent).toContain("Updated");
 		expectDisclosureControls();
+		expect(container.textContent).toContain("Close Long");
+		expect(container.textContent).not.toContain("Short order");
 	});
 });

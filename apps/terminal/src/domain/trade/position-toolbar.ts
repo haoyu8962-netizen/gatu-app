@@ -1,3 +1,4 @@
+import Big from "big.js";
 import { toBig } from "@/lib/trade/numbers";
 
 export type PositionDirectionFilter = "all" | "long" | "short";
@@ -20,6 +21,16 @@ interface ReadyItemCountInput {
 	isConnected: boolean;
 	isReady: boolean;
 	count: number;
+}
+
+interface PositionPnlInput {
+	unrealizedPnl: string;
+}
+
+interface LiquidationProximityInput {
+	markPx: string | null | undefined;
+	liquidationPx: string | null | undefined;
+	proximity: string | number;
 }
 
 export const ALL_POSITION_MARKETS: PositionMarketFilter = { type: "all" };
@@ -53,4 +64,29 @@ export function filterPositions<T extends FilterablePosition>(
 
 export function getReadyItemCount({ isConnected, isReady, count }: ReadyItemCountInput): number | null {
 	return isConnected && isReady ? count : null;
+}
+
+export function getTotalPositionUnrealizedPnl(positions: readonly PositionPnlInput[]): string | null {
+	let total = Big(0);
+
+	for (const position of positions) {
+		const unrealizedPnl = toBig(position.unrealizedPnl);
+		if (!unrealizedPnl) return null;
+		total = total.plus(unrealizedPnl);
+	}
+
+	return total.toString();
+}
+
+export function getPositionFundingPayment(sinceOpen: string): string | null {
+	const funding = toBig(sinceOpen);
+	return funding ? funding.times(-1).toFixed() : null;
+}
+
+export function isLiquidationPriceNear({ markPx, liquidationPx, proximity }: LiquidationProximityInput): boolean {
+	const mark = toBig(markPx);
+	const liquidation = toBig(liquidationPx);
+	const threshold = toBig(proximity);
+	if (!mark?.gt(0) || !liquidation?.gt(0) || !threshold?.gte(0)) return false;
+	return liquidation.minus(mark).abs().div(mark).lte(threshold);
 }

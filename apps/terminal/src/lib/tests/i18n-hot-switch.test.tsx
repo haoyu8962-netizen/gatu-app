@@ -38,7 +38,10 @@ const zhTranslations: Record<string, string> = {
 	"TWAP Slice": "TWAP 分片",
 	"Vault Close": "金库平仓",
 	"Spot Dust Conversion": "现货零头转换",
-	Long: "多",
+	Buy: "买入",
+	"Close Long": "平多",
+	"Close Short": "平空",
+	Sell: "卖出",
 	Trigger: "触发",
 };
 
@@ -186,7 +189,10 @@ function OrderLabelsProbe() {
 			<span data-label="condition">{getTriggerConditionLabel("Price above 70")}</span>
 			<span data-label="status">{getHistoricalOrderStatusLabel("internalCancel")}</span>
 			<span data-label="rejected-status">{getHistoricalOrderStatusLabel("tooManyOpenOrdersRejected")}</span>
-			<span data-label="side">{getOrderSideLabel("B", "perp")}</span>
+			<span data-label="buy-side">{getOrderSideLabel("B", false)}</span>
+			<span data-label="sell-side">{getOrderSideLabel("A", false)}</span>
+			<span data-label="close-short-side">{getOrderSideLabel("B", true)}</span>
+			<span data-label="close-long-side">{getOrderSideLabel("A", true)}</span>
 			<span data-label="queue-type">{getQueueOrderTypeLabel("trigger")}</span>
 		</div>
 	);
@@ -262,7 +268,10 @@ describe("language hot switching", () => {
 		expect(orderLabels?.querySelector('[data-label="condition"]')?.textContent).toBe("价格高于 70");
 		expect(orderLabels?.querySelector('[data-label="status"]')?.textContent).toBe("已取消");
 		expect(orderLabels?.querySelector('[data-label="rejected-status"]')?.textContent).toBe("已拒绝");
-		expect(orderLabels?.querySelector('[data-label="side"]')?.textContent).toBe("多");
+		expect(orderLabels?.querySelector('[data-label="buy-side"]')?.textContent).toBe("买入");
+		expect(orderLabels?.querySelector('[data-label="sell-side"]')?.textContent).toBe("卖出");
+		expect(orderLabels?.querySelector('[data-label="close-short-side"]')?.textContent).toBe("平空");
+		expect(orderLabels?.querySelector('[data-label="close-long-side"]')?.textContent).toBe("平多");
 		expect(orderLabels?.querySelector('[data-label="queue-type"]')?.textContent).toBe("触发");
 	});
 

@@ -1,90 +1,83 @@
 import { Button, Dropdown } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowsClockwiseIcon, LightningIcon, TagIcon } from "@phosphor-icons/react";
+import { DotsThreeIcon } from "@phosphor-icons/react";
 import { positionTableInlineActionClass } from "./position-table-styles";
 
 interface Props {
 	canClose: boolean;
+	canManage: boolean;
+	canReverse: boolean;
+	isIsolated: boolean;
 	isRowClosing: boolean;
 	onMarketClose: () => void;
 	onLimitClose: () => void;
+	onAdjustMargin: () => void;
+	onOpenTpSl: () => void;
 	onReverse: () => void;
 }
 
-export function PositionActionsDropdown({ canClose, isRowClosing, onMarketClose, onLimitClose, onReverse }: Props) {
+export function PositionActionsDropdown({
+	canClose,
+	canManage,
+	canReverse,
+	isIsolated,
+	isRowClosing,
+	onMarketClose,
+	onLimitClose,
+	onAdjustMargin,
+	onOpenTpSl,
+	onReverse,
+}: Props) {
 	return (
-		<>
-			<div className="hidden items-center justify-start gap-0.5 whitespace-nowrap min-[1180px]:flex">
-				<Button
-					type="button"
-					variant="ghost"
-					intent="brand"
-					size="xxs"
-					disabled={!canClose || isRowClosing}
-					onClick={onLimitClose}
-					className={positionTableInlineActionClass}
-				>
-					{t({ message: "Limit", context: "Order type" })}
-				</Button>
-				<Button
-					type="button"
-					variant="ghost"
-					intent="brand"
-					size="xxs"
-					disabled={!canClose || isRowClosing}
-					onClick={onMarketClose}
-					className={positionTableInlineActionClass}
-				>
-					{isRowClosing ? t`Closing...` : t({ message: "Market", context: "Order type" })}
-				</Button>
-				<Button
-					type="button"
-					variant="ghost"
-					intent="brand"
-					size="xxs"
-					disabled={!canClose || isRowClosing}
-					onClick={onReverse}
-					className={positionTableInlineActionClass}
-				>
-					{t`Reverse`}
-				</Button>
-			</div>
-			<div className="min-[1180px]:hidden">
-				<Dropdown
-					className="flex justify-start text-xs text-fg-muted"
-					triggerVariant="minimal"
-					triggerClassName="font-medium"
-					triggerAriaLabel={t`Position close actions`}
-					trigger={isRowClosing ? t`Closing...` : t`Close`}
-					disabled={!canClose || isRowClosing}
-					align="start"
-					groups={[
-						{
-							items: [
+		<div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+			<Button
+				type="button"
+				variant="outline"
+				intent="error"
+				size="xxs"
+				disabled={!canClose || isRowClosing}
+				onClick={onMarketClose}
+				className={`${positionTableInlineActionClass} border-market-close-danger-disabled text-market-close-danger transition-all duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:!outline-market-close-control`}
+			>
+				{isRowClosing ? t`Closing...` : t`Market Close`}
+			</Button>
+			<Dropdown
+				size="xxs"
+				className="flex shrink-0 text-market-close-subtle"
+				triggerVariant="minimal"
+				triggerClassName="size-[26px] rounded-[7px] p-0 transition-all duration-[120ms] hover:bg-market-close-hover focus-visible:!outline-market-close-control"
+				triggerAriaLabel={t`More position actions`}
+				trigger={<DotsThreeIcon className="size-[18px]" weight="bold" aria-hidden="true" />}
+				hideCaret
+				disabled={!canManage || isRowClosing}
+				align="end"
+				popupClassName="min-w-32 rounded-[10px] border-market-close-stroke-card bg-modal p-1.5 shadow-overlay"
+				items={[
+					{
+						label: t`Limit Close`,
+						disabled: !canClose,
+						onSelect: onLimitClose,
+					},
+					...(isIsolated
+						? [
 								{
-									label: t`Market Close`,
-									icon: <LightningIcon className="size-3.5" />,
-									onSelect: onMarketClose,
+									label: t`Adjust Margin`,
+									onSelect: onAdjustMargin,
 								},
-								{
-									label: t`Limit Close`,
-									icon: <TagIcon className="size-3.5" />,
-									onSelect: onLimitClose,
-								},
-							],
-						},
-						{
-							items: [
-								{
-									label: t`Reverse`,
-									icon: <ArrowsClockwiseIcon className="size-3.5" />,
-									onSelect: onReverse,
-								},
-							],
-						},
-					]}
-				/>
-			</div>
-		</>
+							]
+						: []),
+					{
+						label: t`Set TP/SL`,
+						onSelect: onOpenTpSl,
+					},
+					{
+						label: t`Reverse Position`,
+						danger: true,
+						disabled: !canReverse,
+						onSelect: onReverse,
+					},
+				]}
+			/>
+		</div>
 	);
 }

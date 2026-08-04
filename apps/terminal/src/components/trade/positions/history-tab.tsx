@@ -3,12 +3,12 @@ import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
+import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
-import { toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { AssetBadge } from "../components/asset-badge";
@@ -107,10 +107,17 @@ export function HistoryTab() {
 							</TableHeader>
 							<TableBody className={positionsPanelTableBodyClass}>
 								{fills.map((fill, i) => {
-									const fee = toNumber(fill.fee);
-									const feeClass = getValueColorClass(fee);
-									const closedPnl = toNumber(fill.closedPnl);
-									const showPnl = closedPnl !== null && closedPnl !== 0;
+									const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+									const directionLabel =
+										fill.dir === "Open Long"
+											? t`Open Long`
+											: fill.dir === "Close Long"
+												? t`Close Long`
+												: fill.dir === "Open Short"
+													? t`Open Short`
+													: fill.dir === "Close Short"
+														? t`Close Short`
+														: fill.dir;
 
 									return (
 										<TableRow
@@ -132,7 +139,7 @@ export function HistoryTab() {
 														fill.liquidation ? "bg-error-soft text-error" : "bg-surface/50",
 													)}
 												>
-													{fill.liquidation ? t`Liquidated` : fill.dir}
+													{fill.liquidation ? t`Liquidated` : directionLabel}
 												</span>
 											</TableCell>
 											<TableCell
@@ -148,14 +155,14 @@ export function HistoryTab() {
 												{formatNumber(fill.sz, markets.getSzDecimals(fill.coin))}
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
-												<span className={feeClass}>
+												<span className="text-fg-muted">
 													{formatToken(fill.fee, {
 														symbol: fill.feeToken,
 													})}
 												</span>
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
-												{showPnl ? (
+												{closedPnl ? (
 													<span className={getValueColorClass(closedPnl)}>
 														{formatUSD(closedPnl, {
 															signDisplay: "exceptZero",

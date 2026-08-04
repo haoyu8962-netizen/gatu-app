@@ -8,7 +8,7 @@ import {
 	MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
 	type OrderType,
 } from "@/config/trade";
-import { getExecutedPrice, getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
+import { getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
 import { buildFrontendMarketOrder, buildOrders, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import { resolvePositionMarketCloseSize } from "@/domain/trade/position-market-close";
 import { isPositive, toBig } from "@/lib/trade/numbers";
@@ -92,17 +92,7 @@ export type LimitCloseIntent = {
 	price: string;
 };
 
-export type ReverseIntent = {
-	kind: "reverse";
-	assetId: number;
-	size: number;
-	szDecimals: number;
-	isLong: boolean;
-	markPx: number;
-	slippageBps: number;
-};
-
-export type OrderIntent = EntryOrderIntent | PositionTpSlIntent | MarketCloseIntent | LimitCloseIntent | ReverseIntent;
+export type OrderIntent = EntryOrderIntent | PositionTpSlIntent | MarketCloseIntent | LimitCloseIntent;
 
 export function buildOrderPlan(intent: OrderIntent): OrderPlan {
 	switch (intent.kind) {
@@ -114,8 +104,6 @@ export function buildOrderPlan(intent: OrderIntent): OrderPlan {
 			return buildMarketClosePlan(intent);
 		case "limitClose":
 			return buildLimitClosePlan(intent);
-		case "reverse":
-			return buildReversePlan(intent);
 		default:
 			return assertNever(intent);
 	}
@@ -350,27 +338,6 @@ function buildLimitClosePlan({ assetId, size, szDecimals, isLong, price }: Limit
 				s: formattedSize,
 				r: true,
 				t: { limit: { tif: "Gtc" } },
-			},
-		],
-		grouping: "na",
-		errors: [],
-		warnings: [],
-	};
-}
-
-function buildReversePlan({ assetId, size, szDecimals, isLong, markPx, slippageBps }: ReverseIntent): OrderPlan {
-	const side = getCloseSide(isLong);
-	const orderPrice = getExecutedPrice("market", side, markPx, slippageBps, markPx);
-
-	return {
-		orders: [
-			{
-				a: assetId,
-				b: side === "buy",
-				p: formatPriceForOrder(orderPrice, { assetId, szDecimals }),
-				s: formatSizeForOrder(Big(size).times(2).toNumber(), szDecimals),
-				r: false,
-				t: { limit: { tif: "FrontendMarket" } },
 			},
 		],
 		grouping: "na",

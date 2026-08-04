@@ -108,8 +108,9 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 						const detailsId = `mobile-order-history-${order.oid}-${entry.statusTimestamp}`;
 						const isExpanded = expandedByKey[cardKey] ?? index === 0;
 						const market = markets.getMarket(order.coin);
-						const isLong = order.side === "B";
+						const isBuy = order.side === "B";
 						const orderTypeLabel = getOrderTypeLabel(order.orderType);
+						const sideLabel = getOrderSideLabel(order.side, order.reduceOnly);
 
 						function handleToggle() {
 							setExpandedByKey((current) => ({ ...current, [cardKey]: !isExpanded }));
@@ -132,11 +133,7 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 									<button
 										type="button"
 										onClick={() => handleSelectMarket(marketName)}
-										aria-label={
-											isLong
-												? t`Switch to ${marketName} market, long order`
-												: t`Switch to ${marketName} market, short order`
-										}
+										aria-label={t`Switch to ${marketName} market, ${sideLabel} order`}
 										className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
 									>
 										<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
@@ -166,10 +163,10 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 												<div
 													className={cn(
 														"truncate whitespace-nowrap text-xs font-semibold leading-[17px]",
-														isLong ? "text-market-close-success" : "text-market-close-danger",
+														isBuy ? "text-market-close-success" : "text-market-close-danger",
 													)}
 												>
-													{getOrderSideLabel(order.side, market?.kind)}
+													{sideLabel}
 												</div>
 											</div>
 											<div className="min-w-0">

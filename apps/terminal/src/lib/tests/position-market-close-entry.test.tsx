@@ -55,9 +55,12 @@ describe("PositionRow market close entry", () => {
 		vi.clearAllMocks();
 	});
 
-	it("opens the shared market-close flow with exact exchange strings", () => {
+	it("opens the shared market-close flow with exact exchange strings", async () => {
 		const onMarketClose = vi.fn();
 		const onLimitClose = vi.fn();
+		const onReverse = vi.fn();
+		const onOpenTpSl = vi.fn();
+		const onAdjustMargin = vi.fn();
 
 		act(() => {
 			root.render(
@@ -74,11 +77,12 @@ describe("PositionRow market close entry", () => {
 							tpSlInfo: undefined,
 							isRowClosing: false,
 							isEven: false,
+							pnlMode: "roe",
 							onMarketClose,
 							onLimitClose,
-							onReverse: vi.fn(),
-							onOpenTpSl: vi.fn(),
-							onAdjustMargin: vi.fn(),
+							onReverse,
+							onOpenTpSl,
+							onAdjustMargin,
 							onSelectMarket: vi.fn(),
 						}),
 					),
@@ -87,7 +91,7 @@ describe("PositionRow market close entry", () => {
 		});
 
 		const marketButton = [...container.querySelectorAll("button")].find(
-			(button) => button.textContent?.trim() === "Market",
+			(button) => button.textContent?.trim() === "Market Close",
 		);
 		if (!(marketButton instanceof HTMLButtonElement)) throw new Error("Desktop market close entry was not rendered");
 
@@ -103,12 +107,47 @@ describe("PositionRow market close entry", () => {
 			marginMode: "isolated",
 		});
 
-		const limitButton = [...container.querySelectorAll("button")].find(
-			(button) => button.textContent?.trim() === "Limit",
-		);
-		if (!(limitButton instanceof HTMLButtonElement)) throw new Error("Desktop limit close entry was not rendered");
+		const moreActions = container.querySelector<HTMLButtonElement>('button[aria-label="More position actions"]');
+		if (!moreActions) throw new Error("Desktop position overflow menu was not rendered");
 
-		act(() => limitButton.click());
+		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		let menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+		expect(menuItems.map((item) => item.textContent?.trim())).toEqual([
+			"Limit Close",
+			"Adjust Margin",
+			"Set TP/SL",
+			"Reverse Position",
+		]);
+
+		const adjustMarginButton = menuItems.find((button) => button.textContent?.trim() === "Adjust Margin");
+		await act(async () => adjustMarginButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		expect(onAdjustMargin).toHaveBeenCalledOnce();
+
+		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+		const tpSlButton = menuItems.find((button) => button.textContent?.trim() === "Set TP/SL");
+		await act(async () => tpSlButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		expect(onOpenTpSl).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			isLong: false,
+			szDecimals: 1,
+			marginMode: "isolated",
+		});
+
+		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+		const reverseButton = menuItems.find((button) => button.textContent?.trim() === "Reverse Position");
+		await act(async () => reverseButton?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		expect(onReverse).toHaveBeenCalledOnce();
+
+		await act(async () => moreActions.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+		const limitButton = menuItems.find((button) => button.textContent?.trim() === "Limit Close");
+		if (!(limitButton instanceof HTMLElement)) throw new Error("Desktop limit close entry was not rendered");
+
+		await act(async () => limitButton.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 
 		expect(onLimitClose).toHaveBeenCalledWith({
 			coin: "xyz:CXMT",
@@ -120,5 +159,42 @@ describe("PositionRow market close entry", () => {
 			szDecimals: 1,
 			marginMode: "isolated",
 		});
+	});
+
+	it("renders ROE or entry-notional price change from the selected PNL mode", () => {
+		function render(pnlMode: "roe" | "priceChange") {
+			root.render(
+				createElement(
+					"table",
+					null,
+					createElement(
+						"tbody",
+						null,
+						createElement(PositionRow, {
+							position,
+							markets,
+							markPx: "7.575900",
+							tpSlInfo: undefined,
+							isRowClosing: false,
+							isEven: false,
+							pnlMode,
+							onMarketClose: vi.fn(),
+							onLimitClose: vi.fn(),
+							onReverse: vi.fn(),
+							onOpenTpSl: vi.fn(),
+							onAdjustMargin: vi.fn(),
+							onSelectMarket: vi.fn(),
+						}),
+					),
+				),
+			);
+		}
+
+		act(() => render("roe"));
+		expect(container.textContent).toMatch(/33\.7%/);
+
+		act(() => render("priceChange"));
+		expect(container.textContent).toMatch(/2\.9%/);
+		expect(container.textContent).not.toMatch(/33\.7%/);
 	});
 });

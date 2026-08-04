@@ -9,9 +9,12 @@ import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
 	assetId: 120_001 as number | undefined,
+	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
 	cancelOrders: vi.fn(),
+	modifyOrders: vi.fn(),
 	navigateToMarket: vi.fn(),
 	resetCancelError: vi.fn(),
+	resetModifyError: vi.fn(),
 	setActiveTab: vi.fn(),
 	setSide: vi.fn(),
 }));
@@ -50,7 +53,8 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({
 vi.mock("@/hooks/trade/use-order-display-labels", () => ({
 	useOrderDisplayLabels: () => ({
 		getFullOrderTypeLabel: () => "Stop Market",
-		getOrderSideLabel: () => "Buy / Long",
+		getOrderSideLabel: (side: "A" | "B", reduceOnly: boolean) =>
+			reduceOnly ? (side === "B" ? "Close Short" : "Close Long") : side === "B" ? "Buy" : "Sell",
 		getTriggerConditionLabel: () => "Price below 149.00",
 	}),
 }));
@@ -63,19 +67,29 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useExchange: () => ({
-		mutate: mocks.cancelOrders,
-		error: null,
-		reset: mocks.resetCancelError,
-	}),
+	useExchange: (method: string, options?: { executionGuard?: (params: unknown) => void }) => {
+		if (method === "batchModify") {
+			mocks.batchModifyGuard = options?.executionGuard;
+			return { mutateAsync: mocks.modifyOrders, error: null, reset: mocks.resetModifyError };
+		}
+		return { mutate: mocks.cancelOrders, error: null, reset: mocks.resetCancelError };
+	},
+	useHyperliquid: () => ({ clientKey: "0x1111111111111111111111111111111111111111", env: "Mainnet" }),
 	useMarkets: () => ({
+		error: null,
 		getAssetId: () => mocks.assetId,
-		getMarket: () => ({ kind: "builderPerp", shortName: "ORCL" }),
+		getMarket: () =>
+			mocks.assetId === undefined
+				? undefined
+				: { assetId: mocks.assetId, kind: "builderPerp", shortName: "ORCL", szDecimals: 3 },
 		getSzDecimals: () => 3,
+		isLoading: false,
 	}),
+	useMarketsInfo: () => ({ getMarketInfo: () => ({ markPx: "160" }) }),
 	useSubscription: () => ({
 		data: { orders: [order] },
 		error: null,
+		isStale: false,
 		status: "active",
 	}),
 }));
@@ -135,6 +149,8 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(container.textContent).toContain("5.000 ORCL");
 		expect(container.textContent).toContain("Reduce Only");
 		expect(container.textContent).toContain("Yes");
+		expect(container.textContent).toContain("Close Short");
+		expect(container.textContent).not.toContain("Long");
 	});
 
 	it("preserves market navigation and the exact cancel payload", () => {

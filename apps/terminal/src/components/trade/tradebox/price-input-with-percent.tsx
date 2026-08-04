@@ -20,6 +20,7 @@ interface Props {
 	quickPercentDisabled?: boolean;
 	isPercentDisabled?: (percent: number) => boolean;
 	referencePrice: number;
+	mobileTouchSafe?: boolean;
 }
 
 export function PriceInputWithPercent({
@@ -35,6 +36,7 @@ export function PriceInputWithPercent({
 	quickPercentDisabled,
 	isPercentDisabled,
 	referencePrice,
+	mobileTouchSafe = false,
 }: Props) {
 	return (
 		<div className="min-w-0 space-y-1.5">
@@ -63,7 +65,11 @@ export function PriceInputWithPercent({
 					placeholder={t`Price`}
 					value={value}
 					onChange={(e) => onChange(e.target.value)}
-					className="min-w-0 flex-1 border-0 bg-transparent tabular-nums focus-visible:border-transparent focus-visible:ring-0"
+					className={cn(
+						"min-w-0 flex-1 border-0 bg-transparent tabular-nums focus-visible:border-transparent focus-visible:ring-0",
+						mobileTouchSafe && "max-[1000px]:h-11",
+					)}
+					mobileSafe={mobileTouchSafe}
 					disabled={disabled}
 				/>
 				<div className="flex shrink-0 items-center gap-0.5 border-l border-stroke-weak/40 px-1.5">
@@ -73,7 +79,10 @@ export function PriceInputWithPercent({
 							type="button"
 							onClick={() => onPercentClick(p)}
 							disabled={disabled || quickPercentDisabled || !isPositive(referencePrice) || isPercentDisabled?.(p)}
-							className="rounded-xs px-1.5 py-1 text-xs font-medium text-fg-muted transition-colors hover:bg-fill-weak hover:text-fg disabled:opacity-50"
+							className={cn(
+								"rounded-xs px-1.5 py-1 text-xs font-medium text-fg-muted transition-colors hover:bg-fill-weak hover:text-fg disabled:opacity-50",
+								mobileTouchSafe && "max-[1000px]:min-h-11 max-[1000px]:min-w-11 max-[1000px]:px-2",
+							)}
 							aria-label={t`Set to ${p}%`}
 						>
 							{p}%

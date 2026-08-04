@@ -9,9 +9,20 @@ import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
 	assetId: 120_001 as number | undefined,
+	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
 	cancelOrders: vi.fn(),
+	clientKey: "0x1111111111111111111111111111111111111111",
+	env: "Mainnet" as "Mainnet" | "Testnet",
+	getOrderSideLabel: vi.fn(() => "Close Short"),
+	markPx: "160",
+	modifyOrders: vi.fn(),
+	orders: [] as OpenOrder[],
 	resetCancelError: vi.fn(),
+	resetModifyError: vi.fn(),
 	setSide: vi.fn(),
+	toastError: vi.fn(),
+	toastInfo: vi.fn(),
+	toastSuccess: vi.fn(),
 }));
 
 const order = {
@@ -54,6 +65,7 @@ vi.mock("@/hooks/trade/use-order-display-labels", () => ({
 	useOrderDisplayLabels: () => ({
 		getExecutionKindLabel: () => "Market",
 		getFullOrderTypeLabel: () => "Stop Market",
+		getOrderSideLabel: mocks.getOrderSideLabel,
 		getTriggerConditionLabel: () => "Price below 149.00",
 		getTriggerKindLabel: () => "Stop",
 	}),
@@ -64,17 +76,49 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useExchange: () => ({ mutate: mocks.cancelOrders, error: null, reset: mocks.resetCancelError }),
+	useExchange: (method: string, options?: { executionGuard?: (params: unknown) => void }) => {
+		if (method === "batchModify") {
+			mocks.batchModifyGuard = options?.executionGuard;
+			return { mutateAsync: mocks.modifyOrders, error: null, reset: mocks.resetModifyError };
+		}
+		return { mutate: mocks.cancelOrders, error: null, reset: mocks.resetCancelError };
+	},
+	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
 	useMarkets: () => ({
+		error: null,
 		getAssetId: () => mocks.assetId,
+		getMarket: () =>
+			mocks.assetId === undefined
+				? undefined
+				: { assetId: mocks.assetId, kind: "builderPerp", name: "xyz:ORCL", szDecimals: 3 },
 		getSzDecimals: () => 3,
+		isLoading: false,
 	}),
-	useSubscription: () => ({ data: { orders: [order] }, error: null, status: "active" }),
+	useMarketsInfo: () => ({ getMarketInfo: () => ({ markPx: mocks.markPx }) }),
+	useSubscription: () => ({ data: { orders: mocks.orders }, error: null, isStale: false, status: "active" }),
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		error: mocks.toastError,
+		info: mocks.toastInfo,
+		success: mocks.toastSuccess,
+	},
 }));
 
 vi.mock("@/stores/use-order-entry-store", () => ({
 	useOrderEntryActions: () => ({ setSide: mocks.setSide }),
 }));
+
+function changeInput(input: HTMLInputElement, value: string) {
+	const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+	setter?.call(input, value);
+	input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function pressKey(input: HTMLInputElement, key: string) {
+	input.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key }));
+}
 
 describe("desktop cancel all orders confirmation", () => {
 	let container: HTMLDivElement;
@@ -101,13 +145,289 @@ describe("desktop cancel all orders confirmation", () => {
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
 		mocks.assetId = 120_001;
+		mocks.batchModifyGuard = undefined;
+		mocks.clientKey = "0x1111111111111111111111111111111111111111";
+		mocks.env = "Mainnet";
+		mocks.markPx = "160";
+		mocks.orders = [order];
 		mocks.cancelOrders.mockReset();
+		mocks.getOrderSideLabel.mockClear();
+		mocks.modifyOrders.mockReset();
+		mocks.modifyOrders.mockImplementation(async (params: unknown) => {
+			mocks.batchModifyGuard?.(params);
+			mocks.batchModifyGuard?.(params);
+			return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+		});
 		mocks.resetCancelError.mockReset();
+		mocks.resetModifyError.mockReset();
+		mocks.toastError.mockReset();
+		mocks.toastInfo.mockReset();
+		mocks.toastSuccess.mockReset();
 	});
 
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+	});
+
+	it("renders the twelve production order fields and derives remaining metrics from sz", () => {
+		act(() => root.render(<OrdersTab />));
+
+		const headers = [...container.querySelectorAll("thead th")].map((cell) => cell.textContent?.trim() ?? "");
+		expect(headers).toEqual([
+			"Select all orders",
+			"Time",
+			"Type",
+			"Market",
+			"Direction",
+			"Size",
+			"Original Size",
+			"Order Value",
+			"Price",
+			"Reduce Only",
+			"Trigger Condition",
+			"TP/SL",
+			"Actions",
+		]);
+
+		const cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
+		expect(cells).toHaveLength(13);
+		expect(cells[2]).toContain("Stop");
+		expect(cells[3]).toContain("xyz:ORCL");
+		expect(cells[4]).toBe("Close Short");
+		expect(cells[5]).toBe("2.000");
+		expect(cells[6]).toBe("5.000");
+		expect(cells[7]).toBe("$298.00");
+		expect(cells[8]).toBe("Market");
+		expect(cells[9]).toBe("Yes");
+		expect(cells[10]).toContain("Price below 149.00");
+		expect(cells[10]).toContain("Distance to mark 6.9%");
+		expect(cells[11]).toBe("- / -");
+		expect(mocks.getOrderSideLabel).toHaveBeenCalledWith("B", true);
+		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).not.toBeNull();
+		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).not.toBeNull();
+	});
+
+	it("shows edit controls only for fields supported by the order capability", () => {
+		mocks.orders = [{ ...order, cloid: "0x1234" } as OpenOrder];
+		act(() => root.render(<OrdersTab />));
+
+		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
+		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).toBeNull();
+	});
+
+	it("preserves raw input, focuses the editor, and cancels with Escape or an outside pointer", () => {
+		act(() => root.render(<OrdersTab />));
+
+		const sizeEdit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+		act(() => sizeEdit?.click());
+		const sizeInput = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
+		expect(sizeInput?.value).toBe("2.000");
+		expect(document.activeElement).toBe(sizeInput);
+
+		act(() => {
+			if (sizeInput) changeInput(sizeInput, "1.");
+		});
+		expect(sizeInput?.value).toBe("1.");
+		act(() => {
+			if (sizeInput) pressKey(sizeInput, "Escape");
+		});
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
+
+		const triggerEdit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL trigger price"]');
+		act(() => triggerEdit?.click());
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL trigger price"]')).not.toBeNull();
+		act(() => document.body.dispatchEvent(new Event("pointerdown", { bubbles: true })));
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL trigger price"]')).toBeNull();
+		expect(mocks.modifyOrders).not.toHaveBeenCalled();
+	});
+
+	it("maps a blocked size plan to an i18n error without reaching the SDK", () => {
+		act(() => root.render(<OrdersTab />));
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
+		act(() => {
+			if (!input) return;
+			changeInput(input, "3.000");
+			pressKey(input, "Enter");
+		});
+
+		expect(mocks.modifyOrders).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Size cannot exceed the order's remaining size.");
+		expect(input?.getAttribute("aria-invalid")).toBe("true");
+	});
+
+	it("guards both SDK boundaries, locks duplicate submits, and waits for the subscription writeback", async () => {
+		act(() => root.render(<OrdersTab />));
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
+
+		await act(async () => {
+			if (!input) return;
+			changeInput(input, "1.000");
+			pressKey(input, "Enter");
+			pressKey(input, "Enter");
+			await Promise.resolve();
+		});
+
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+		const params = mocks.modifyOrders.mock.calls[0]?.[0] as {
+			a: boolean;
+			modifies: { oid: number; order: { a: number; s: string } }[];
+		};
+		expect(params.a).toBe(true);
+		expect(params.modifies).toEqual([
+			expect.objectContaining({ oid: 42, order: expect.objectContaining({ a: 120_001, s: "1" }) }),
+		]);
+		expect(input?.disabled).toBe(true);
+		expect(mocks.toastInfo).toHaveBeenCalledWith("Order modification submitted. Waiting for the open-orders update.");
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+
+		mocks.orders = [{ ...order, sz: "1.000" } as OpenOrder];
+		await act(async () => {
+			root.render(<OrdersTab />);
+			await Promise.resolve();
+		});
+
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
+		expect(mocks.toastSuccess).toHaveBeenCalledWith("Order modification confirmed.");
+	});
+
+	it("fails a queued SDK execution when the owner changes before its final guard", async () => {
+		let releaseBoundary: (() => void) | undefined;
+		const boundary = new Promise<void>((resolve) => {
+			releaseBoundary = resolve;
+		});
+		mocks.modifyOrders.mockImplementationOnce(async (params: unknown) => {
+			mocks.batchModifyGuard?.(params);
+			await boundary;
+			mocks.batchModifyGuard?.(params);
+			return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+		});
+		act(() => root.render(<OrdersTab />));
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
+		act(() => {
+			if (!input) return;
+			changeInput(input, "1.000");
+			pressKey(input, "Enter");
+		});
+		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
+
+		mocks.clientKey = "0x2222222222222222222222222222222222222222";
+		act(() => root.render(<OrdersTab />));
+		await act(async () => {
+			releaseBoundary?.();
+			await boundary;
+			await Promise.resolve();
+		});
+
+		expect(mocks.toastInfo).not.toHaveBeenCalled();
+		expect(mocks.toastError).toHaveBeenCalledWith(
+			"The trading account or network changed. Reopen the editor and try again.",
+		);
+		expect(input?.disabled).toBe(false);
+	});
+
+	it("fails a queued SDK execution when the environment changes before its final guard", async () => {
+		let releaseBoundary: (() => void) | undefined;
+		const boundary = new Promise<void>((resolve) => {
+			releaseBoundary = resolve;
+		});
+		mocks.modifyOrders.mockImplementationOnce(async (params: unknown) => {
+			mocks.batchModifyGuard?.(params);
+			await boundary;
+			mocks.batchModifyGuard?.(params);
+			return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+		});
+		act(() => root.render(<OrdersTab />));
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
+		act(() => {
+			if (!input) return;
+			changeInput(input, "1.000");
+			pressKey(input, "Enter");
+		});
+
+		mocks.env = "Testnet";
+		act(() => root.render(<OrdersTab />));
+		await act(async () => {
+			releaseBoundary?.();
+			await boundary;
+			await Promise.resolve();
+		});
+
+		expect(mocks.toastInfo).not.toHaveBeenCalled();
+		expect(mocks.toastError).toHaveBeenCalledWith(
+			"The trading account or network changed. Reopen the editor and try again.",
+		);
+	});
+
+	it("unlocks cancellation after an unconfirmed writeback timeout without claiming success", async () => {
+		vi.useFakeTimers();
+		try {
+			act(() => root.render(<OrdersTab />));
+			const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+			act(() => edit?.click());
+			const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
+			await act(async () => {
+				if (!input) return;
+				changeInput(input, "1.000");
+				pressKey(input, "Enter");
+				await Promise.resolve();
+			});
+			expect(input?.disabled).toBe(true);
+
+			act(() => vi.advanceTimersByTime(15_000));
+
+			expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
+			expect(container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.disabled).toBe(false);
+			expect(
+				container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]')?.disabled,
+			).toBe(true);
+			expect(container.textContent).toContain("Refresh before retrying; cancellation remains available.");
+			expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("invalidates the asynchronous execution when the component unmounts", async () => {
+		let releaseBoundary: (() => void) | undefined;
+		const boundary = new Promise<void>((resolve) => {
+			releaseBoundary = resolve;
+		});
+		mocks.modifyOrders.mockImplementationOnce(async (params: unknown) => {
+			mocks.batchModifyGuard?.(params);
+			await boundary;
+			mocks.batchModifyGuard?.(params);
+			return { response: { data: { statuses: [{ resting: { oid: 42 } }] } } };
+		});
+		act(() => root.render(<OrdersTab />));
+		const edit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+		act(() => edit?.click());
+		const input = container.querySelector<HTMLInputElement>('input[aria-label="Edit xyz:ORCL order size"]');
+		act(() => {
+			if (!input) return;
+			changeInput(input, "1.000");
+			pressKey(input, "Enter");
+		});
+		act(() => root.unmount());
+
+		await act(async () => {
+			releaseBoundary?.();
+			await boundary;
+			await Promise.resolve();
+		});
+
+		expect(mocks.toastInfo).not.toHaveBeenCalled();
+		expect(mocks.toastError).not.toHaveBeenCalled();
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		root = createI18nRoot(container);
 	});
 
 	it("opens the warning before submitting and rejects a synchronous double confirmation", () => {

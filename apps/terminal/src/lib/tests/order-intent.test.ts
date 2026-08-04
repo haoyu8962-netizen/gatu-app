@@ -429,26 +429,6 @@ describe("market close order planning", () => {
 		expect(plan.grouping).toBe("na");
 		expect(plan.errors).toContain(error);
 	});
-
-	it("keeps reverse intent behavior unchanged", () => {
-		const reverse = buildOrderPlan({
-			kind: "reverse",
-			assetId: 0,
-			size: 1.2,
-			szDecimals: 2,
-			isLong: false,
-			markPx: 100,
-			slippageBps: 50,
-		});
-
-		expect(reverse.orders[0]).toMatchObject({
-			b: true,
-			p: "100.5",
-			s: "2.4",
-			r: false,
-			t: { limit: { tif: "FrontendMarket" } },
-		});
-	});
 });
 
 describe("limit close order planning", () => {
