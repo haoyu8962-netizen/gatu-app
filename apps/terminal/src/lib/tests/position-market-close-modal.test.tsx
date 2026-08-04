@@ -55,6 +55,8 @@ vi.mock("@gatu/ui", () => ({
 		createElement("div", props, children),
 	ModalDescription: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
 		createElement("p", props, children),
+	ModalFooter: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
+		createElement("footer", props, children),
 	ModalHeader: ({ children, divider: _divider, ...props }: { children: ReactNode; divider?: boolean }) =>
 		createElement("header", props, children),
 	ModalTitle: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
@@ -240,10 +242,15 @@ describe("PositionMarketCloseModal", () => {
 			showClose: true,
 		});
 		expect(container.textContent).toContain("Market Close");
+		expect(container.textContent).toContain("Long position");
+		expect(container.textContent).toContain("Reduce Only");
 		expect(container.textContent).toContain("Remaining");
 		expect(container.textContent).toContain("0.0000 BTC");
 		expect(container.textContent).toContain("102,000 USDC");
 		expect(container.textContent).toContain("Max Slippage");
+		expect(container.querySelector('[data-testid="position-market-close-sizing"]')?.className).toContain("rounded-12");
+		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.className).toContain("rounded-12");
+		expect(container.querySelector("footer")).not.toBeNull();
 		expect(container.textContent).not.toContain("Cancel");
 		expect(container.textContent).toContain("Don't show this confirmation again");
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("2.5");
@@ -353,7 +360,8 @@ describe("PositionMarketCloseModal", () => {
 		expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuetext")).toBe(
 			"50% selected; 33.3% after size precision",
 		);
-		expect(container.textContent).toContain("1 BTC (33.3%)");
+		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.textContent).toContain("1 BTC");
+		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.textContent).toContain("33.3%");
 		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.disabled).toBe(false);
 
 		testState.livePosition = { szi: "4" };
@@ -383,11 +391,14 @@ describe("PositionMarketCloseModal", () => {
 		testState.positionIsLoading = true;
 		render();
 		expect(container.textContent).toContain("Loading the latest position");
+		expect(container.querySelector('[role="status"]')?.textContent).toContain("Loading the latest position");
+		expect(container.querySelector('[role="alert"]')).toBeNull();
 
 		testState.positionIsLoading = false;
 		testState.positionHasError = true;
 		render();
 		expect(container.textContent).toContain("Live position data is unavailable");
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Live position data is unavailable");
 
 		testState.positionHasError = false;
 		testState.livePosition = null;
