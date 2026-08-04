@@ -18,8 +18,6 @@ const testState = vi.hoisted(() => ({
 	positionIsLoading: false,
 	positionIsStale: false,
 	preferenceStatus: "required" as "dismissed" | "required" | "unavailable",
-	marketDataStatus: "active" as "idle" | "subscribing" | "active" | "error",
-	marketDataIsStale: false,
 	resetError: vi.fn(),
 	session: {
 		sessionId: "session-1",
@@ -155,11 +153,6 @@ vi.mock("@/hooks/trade/use-position-market-close-submit", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useMarketsInfo: () => ({ getMarketInfo: () => testState.marketsInfo }),
-	useSubscription: () => ({
-		data: { ctx: { markPx: "102000" } },
-		status: testState.marketDataStatus,
-		isStale: testState.marketDataIsStale,
-	}),
 	useUserPositions: () => ({
 		getPosition: () => testState.livePosition,
 		isLoading: testState.positionIsLoading,
@@ -170,7 +163,6 @@ vi.mock("@/lib/hyperliquid", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	getResolvedFormatLocale: () => "en-US",
-	useMarketOrderSlippagePercent: () => 0.5,
 }));
 
 vi.mock("@/lib/trade/position-market-close-confirmation-preference", () => ({
@@ -215,8 +207,6 @@ describe("PositionMarketCloseModal", () => {
 		testState.positionIsLoading = false;
 		testState.positionIsStale = false;
 		testState.preferenceStatus = "required";
-		testState.marketDataStatus = "active";
-		testState.marketDataIsStale = false;
 		testState.session.position.signedPositionSize = "2.5";
 		testState.session.position.szDecimals = 4;
 		testState.resetError.mockReset();
@@ -240,19 +230,27 @@ describe("PositionMarketCloseModal", () => {
 			presentation: "modal",
 			dismissible: true,
 			showClose: true,
+			showHandle: false,
 		});
 		expect(container.textContent).toContain("Market Close");
-		expect(container.textContent).toContain("Long position");
-		expect(container.textContent).toContain("Reduce Only");
-		expect(container.textContent).toContain("Remaining");
-		expect(container.textContent).toContain("0.0000 BTC");
-		expect(container.textContent).toContain("102,000 USDC");
-		expect(container.textContent).toContain("Max Slippage");
-		expect(container.querySelector('[data-testid="position-market-close-sizing"]')?.className).toContain("rounded-12");
-		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.className).toContain("rounded-12");
-		expect(container.querySelector("footer")).not.toBeNull();
+		expect(container.textContent).toContain("2.5000 BTC");
+		expect(container.textContent).toContain("Price");
+		expect(container.textContent).toContain("Market");
+		expect(container.textContent).not.toContain("Long position");
+		expect(container.textContent).not.toContain("Reduce Only");
+		expect(container.textContent).not.toContain("Remaining");
+		expect(container.textContent).not.toContain("Max Slippage");
+		const sizingSection = container.querySelector<HTMLElement>('[data-testid="position-market-close-sizing"]');
+		const summarySection = container.querySelector<HTMLElement>('[data-testid="position-market-close-summary"]');
+		const footer = container.querySelector<HTMLElement>("footer");
+		expect(sizingSection?.className).not.toMatch(/\bborder\b|\bbg-/);
+		expect(summarySection?.className).not.toMatch(/\bborder\b|\bbg-/);
+		expect(footer?.className).not.toMatch(/\bborder\b|\bbg-|\bsticky\b/);
 		expect(container.textContent).not.toContain("Cancel");
 		expect(container.textContent).toContain("Don't show this confirmation again");
+		expect(container.textContent).not.toContain(
+			"Future Market clicks will immediately close the full position for this account and network.",
+		);
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("2.5");
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("100");
 		expect(testState.numberInputs.get("Close percentage")?.className).toContain("w-full");
@@ -290,9 +288,6 @@ describe("PositionMarketCloseModal", () => {
 		render();
 		const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
 		expect(checkbox).toMatchObject({ checked: false, disabled: false });
-		expect(container.textContent).toContain(
-			"Future Market clicks will immediately close the full position for this account and network.",
-		);
 
 		act(() => checkbox?.click());
 		act(() => {
@@ -361,7 +356,6 @@ describe("PositionMarketCloseModal", () => {
 			"50% selected; 33.3% after size precision",
 		);
 		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.textContent).toContain("1 BTC");
-		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.textContent).toContain("33.3%");
 		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.disabled).toBe(false);
 
 		testState.livePosition = { szi: "4" };
@@ -411,11 +405,12 @@ describe("PositionMarketCloseModal", () => {
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
 	});
 
-	it("does not present stale market data as a current execution price", () => {
-		testState.marketDataIsStale = true;
+	it("labels the execution price as market without presenting a reference price", () => {
 		render();
 
-		expect(container.textContent).toContain("BTC · Unavailable");
+		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.textContent).toContain(
+			"PriceMarket",
+		);
 		expect(container.textContent).not.toContain("102,000 USDC");
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(false);
 	});
@@ -431,7 +426,7 @@ describe("PositionMarketCloseModal", () => {
 			presentation: "drawer",
 			dismissible: true,
 			showClose: true,
-			showHandle: true,
+			showHandle: false,
 		});
 		expect(container.textContent).toContain("Closing this dialog will not cancel it.");
 		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).toBeNull();
