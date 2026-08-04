@@ -105,6 +105,10 @@ an explicit security reset.
   but inert; only a later successful exact-address check may make it usable.
 - An `extraAgents` error, absent response, or cached miss being refreshed is
   not proof that an Agent is missing and must not open the automatic prompt.
+- Keep that verification state separate from action-level loading UI. An
+  initial Agent query may block the action, but background revalidation must
+  not repeatedly disable the explicit Enable Trading entry; registration
+  still refetches the definitive status before requesting a signature.
 - Closing the automatic Agent prompt is remembered by environment and owner
   for the current SPA session. A verified ready state clears that dismissal;
   an explicit user request always remains available.

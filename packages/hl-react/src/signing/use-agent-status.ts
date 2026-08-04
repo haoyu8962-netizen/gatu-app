@@ -170,7 +170,10 @@ export function useAgentStatus(): UseAgentStatusResult {
 	);
 	const verifiedAgentData =
 		agentVerificationStatus === "ready" || agentVerificationStatus === "missing" ? extraAgentsQuery.data : undefined;
-	const isAgentLoading = agentVerificationStatus === "loading";
+	// Keep the action-level loading state scoped to the initial fetch. Background
+	// revalidation remains fail-closed through agentVerificationStatus without
+	// repeatedly disabling the trading action.
+	const isAgentLoading = extraAgentsQuery.isLoading;
 	const isBuilderFeeLoading = hasBuilderConfig && builderFeeQuery.isLoading;
 	const isLoading = isAgentLoading || isBuilderFeeLoading;
 	const requirements = deriveAgentRequirements(builderFeeQuery.data, verifiedAgentData, localAgent, builderConfig);

@@ -57,8 +57,11 @@ function Probe() {
 	const status = useAgentStatus();
 	return createElement("output", {
 		"data-status": status.agentVerificationStatus,
+		"data-loading": String(status.isAgentLoading),
+		"data-total-loading": String(status.isLoading),
 		"data-needs-agent": String(status.needsAgent),
 		"data-ready": String(status.isAgentReady),
+		"data-total-ready": String(status.isReady),
 	});
 }
 
@@ -90,8 +93,24 @@ describe("useAgentStatus definitive verification", () => {
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("loading");
+		expect(probe?.getAttribute("data-loading")).toBe("false");
+		expect(probe?.getAttribute("data-total-loading")).toBe("false");
 		expect(probe?.getAttribute("data-needs-agent")).toBe("false");
 		expect(probe?.getAttribute("data-ready")).toBe("false");
+		expect(probe?.getAttribute("data-total-ready")).toBe("false");
+	});
+
+	it("keeps the action loading state for the initial fetch only", () => {
+		testState.data = undefined;
+		testState.isFetching = true;
+		const probe = renderProbe();
+
+		expect(probe?.getAttribute("data-status")).toBe("loading");
+		expect(probe?.getAttribute("data-loading")).toBe("true");
+		expect(probe?.getAttribute("data-total-loading")).toBe("true");
+		expect(probe?.getAttribute("data-needs-agent")).toBe("false");
+		expect(probe?.getAttribute("data-ready")).toBe("false");
+		expect(probe?.getAttribute("data-total-ready")).toBe("false");
 	});
 
 	it("fails closed instead of trusting cached data after an error", () => {
@@ -100,24 +119,34 @@ describe("useAgentStatus definitive verification", () => {
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("error");
+		expect(probe?.getAttribute("data-loading")).toBe("false");
+		expect(probe?.getAttribute("data-total-loading")).toBe("false");
 		expect(probe?.getAttribute("data-needs-agent")).toBe("false");
 		expect(probe?.getAttribute("data-ready")).toBe("false");
+		expect(probe?.getAttribute("data-total-ready")).toBe("false");
 	});
 
 	it("requests registration only after a settled successful miss", () => {
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("missing");
+		expect(probe?.getAttribute("data-loading")).toBe("false");
+		expect(probe?.getAttribute("data-total-loading")).toBe("false");
 		expect(probe?.getAttribute("data-needs-agent")).toBe("true");
 		expect(probe?.getAttribute("data-ready")).toBe("false");
+		expect(probe?.getAttribute("data-total-ready")).toBe("false");
 	});
 
-	it("becomes ready only for an exact unexpired Agent", () => {
+	it("keeps an exact unexpired Agent ready during background verification", () => {
 		testState.data = [{ address: AGENT, name: "HypeTerminal", validUntil: null }];
+		testState.isFetching = true;
 		const probe = renderProbe();
 
 		expect(probe?.getAttribute("data-status")).toBe("ready");
+		expect(probe?.getAttribute("data-loading")).toBe("false");
+		expect(probe?.getAttribute("data-total-loading")).toBe("false");
 		expect(probe?.getAttribute("data-needs-agent")).toBe("false");
 		expect(probe?.getAttribute("data-ready")).toBe("true");
+		expect(probe?.getAttribute("data-total-ready")).toBe("true");
 	});
 });
