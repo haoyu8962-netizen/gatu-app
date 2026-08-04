@@ -1,6 +1,4 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
-import type { MessageDescriptor } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
@@ -23,12 +21,11 @@ import { MobileOrdersTab } from "./mobile-orders-tab";
 import { MobilePositionsTab } from "./mobile-positions-tab";
 import { MobileTwapTab } from "./mobile-twap-tab";
 
-type TabValue = MobilePositionsTabValue | "balances" | "transfers";
+type TabValue = MobilePositionsTabValue | "transfers";
 export type MobileDataScrollMode = "contained" | "page";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 const MOBILE_POSITIONS_TAB_VALUES = new Set<string>(MOBILE_POSITIONS_TABS.map((tab) => tab.value));
-const BALANCES_TAB = { value: "balances", label: msg`Balances` } as const;
 
 interface Props {
 	className?: string;
@@ -49,14 +46,9 @@ export function MobilePositionsView({
 }: Props) {
 	const { _ } = useLingui();
 	const storedActiveTab = usePositionsActiveTab();
-	const hasBalancesTab = balancesContent != null;
 	const hasTransfersTab = transfersContent != null;
-	const activeTab = resolveMobilePositionsTab(storedActiveTab, hasBalancesTab, hasTransfersTab);
-	const tabs: ReadonlyArray<{ value: TabValue; label: MessageDescriptor }> = [
-		...(hasBalancesTab ? [BALANCES_TAB] : []),
-		...MOBILE_POSITIONS_TABS,
-		...(hasTransfersTab ? [PORTFOLIO_TRANSFERS_TAB] : []),
-	];
+	const activeTab = resolveMobilePositionsTab(storedActiveTab, hasTransfersTab);
+	const tabs = [...MOBILE_POSITIONS_TABS, ...(hasTransfersTab ? [PORTFOLIO_TRANSFERS_TAB] : [])];
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useWalletSession();
@@ -86,7 +78,7 @@ export function MobilePositionsView({
 	const ordersCount = isConnected ? (openOrders?.length ?? 0) : 0;
 
 	function handleTabChange(value: string) {
-		startTransition(() => setPositionsActiveTab(resolveMobilePositionsTab(value, hasBalancesTab, hasTransfersTab)));
+		startTransition(() => setPositionsActiveTab(resolveMobilePositionsTab(value, hasTransfersTab)));
 	}
 
 	function getTabCount(tabValue: TabValue): number | null {
@@ -119,34 +111,49 @@ export function MobilePositionsView({
 						: "flex-1 min-h-0 flex flex-col overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
 				)}
 			>
-				<div className="shrink-0 min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<TabsList className="w-full min-w-max justify-between px-1">
-						{tabs.map((tab) => {
-							const count = getTabCount(tab.value);
-							const loading = isTabLoading(tab.value);
+				<div className="relative min-w-0 shrink-0">
+					<div
+						data-testid="mobile-account-tabs-scroll"
+						className="min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					>
+						<TabsList
+							className="min-w-max gap-0 border-b border-market-close-stroke-card px-3.5 pr-7"
+							indicatorClassName="bg-market-close-fg duration-[120ms] ease-linear"
+						>
+							{tabs.map((tab) => {
+								const count = getTabCount(tab.value);
+								const loading = isTabLoading(tab.value);
 
-							return (
-								<TabsTrigger key={tab.value} value={tab.value} className="shrink-0 px-1 text-3xs leading-7">
-									<span>{_(tab.label)}</span>
-									{loading ? (
-										<Spinner className="size-3 shrink-0" />
-									) : typeof count === "number" && count > 0 ? (
-										<span className="shrink-0">({count})</span>
-									) : null}
-								</TabsTrigger>
-							);
-						})}
-					</TabsList>
+								return (
+									<TabsTrigger
+										key={tab.value}
+										value={tab.value}
+										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none transition-colors duration-[120ms] focus-visible:outline-market-close-control data-active:font-bold"
+									>
+										<span>{_(tab.label)}</span>
+										{loading ? (
+											<Spinner className="size-3 shrink-0" />
+										) : typeof count === "number" && count > 0 ? (
+											<span className="shrink-0">({count})</span>
+										) : null}
+									</TabsTrigger>
+								);
+							})}
+						</TabsList>
+					</div>
+					<div
+						data-testid="mobile-account-tabs-fade"
+						aria-hidden="true"
+						className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-linear-to-r from-transparent to-modal"
+					/>
 				</div>
 				{!isConnected ? (
 					<EmptyState description={emptyDescription} />
 				) : (
 					<>
-						{balancesContent != null ? (
-							<TabsContent value="balances" className={tabContentClass}>
-								{balancesContent}
-							</TabsContent>
-						) : null}
+						<TabsContent value="balances" className={tabContentClass}>
+							{balancesContent}
+						</TabsContent>
 						<TabsContent value="positions" className={tabContentClass}>
 							<MobilePositionsTab scrollMode={scrollMode} />
 						</TabsContent>
@@ -178,8 +185,7 @@ export function MobilePositionsView({
 	);
 }
 
-function resolveMobilePositionsTab(value: string, hasBalancesTab: boolean, hasTransfersTab: boolean): TabValue {
-	if (hasBalancesTab && value === "balances") return "balances";
+function resolveMobilePositionsTab(value: string, hasTransfersTab: boolean): TabValue {
 	if (hasTransfersTab && value === PORTFOLIO_TRANSFERS_TAB.value) return PORTFOLIO_TRANSFERS_TAB.value;
 	return MOBILE_POSITIONS_TAB_VALUES.has(value) ? (value as TabValue) : "positions";
 }

@@ -58,10 +58,11 @@ const tabsListVariants = cva("relative flex items-center", {
 
 interface TabsListProps extends React.ComponentPropsWithoutRef<typeof Tabs.List> {
 	hideIndicator?: boolean;
+	indicatorClassName?: string;
 }
 
 const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
-	({ className, children, hideIndicator, ...props }, ref) => {
+	({ className, children, hideIndicator, indicatorClassName, ...props }, ref) => {
 		const { variant, fullWidth } = React.useContext(TabsContext);
 
 		return (
@@ -69,7 +70,10 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
 				{!hideIndicator &&
 					(variant === "underline" ? (
 						<Tabs.Indicator
-							className="absolute -bottom-px h-0.5 bg-brand transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none"
+							className={cn(
+								"absolute -bottom-px h-0.5 bg-brand transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none",
+								indicatorClassName,
+							)}
 							style={{
 								left: "var(--active-tab-left)",
 								width: "var(--active-tab-width)",
@@ -77,7 +81,10 @@ const TabsList = React.forwardRef<HTMLDivElement, TabsListProps>(
 						/>
 					) : (
 						<Tabs.Indicator
-							className="absolute inset-y-0 rounded-8 bg-overlay border border-stroke-strong shadow-raised transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none"
+							className={cn(
+								"absolute inset-y-0 rounded-8 bg-overlay border border-stroke-strong shadow-raised transition-[left,width] duration-200 ease-in-out motion-reduce:transition-none",
+								indicatorClassName,
+							)}
 							style={{
 								left: "var(--active-tab-left)",
 								width: "var(--active-tab-width)",

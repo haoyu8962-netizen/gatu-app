@@ -108,11 +108,13 @@ describe("positions table visual contract", () => {
 		expect(POSITION_ACTIONS_SOURCE).toContain("<Dropdown");
 	});
 
-	it("uses the official-style mobile information grid without internal cell dividers", () => {
-		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-7");
-		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-8");
-		expect(MOBILE_POSITION_CARD_SOURCE).toContain("<AssetDisplay");
-		expect(MOBILE_POSITION_CARD_SOURCE).toContain('iconClassName="size-4 shrink-0"');
+	it("uses the handoff mobile disclosure card without internal cell dividers", () => {
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("<MobileDisclosureHeader");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-3");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_16px]");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("rounded-[14px]");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("border-market-close-stroke-card");
+		expect(MOBILE_POSITION_CARD_SOURCE).toContain("bg-modal");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain('context: "Cumulative position funding"');
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("formatQuoteAmount(p.positionValue, quoteSymbol");
 		expect(MOBILE_POSITION_CARD_SOURCE).toContain("t`Entry Price`");

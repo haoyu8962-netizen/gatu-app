@@ -1,6 +1,6 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { CaretDownIcon, CaretUpIcon, PencilIcon } from "@phosphor-icons/react";
+import { useLingui } from "@lingui/react/macro";
+import { PencilIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -20,8 +20,7 @@ import type { Markets } from "@/lib/hyperliquid/markets";
 import { toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
-import { getValueColorClass } from "@/lib/ui/value-color";
-import { AssetDisplay } from "../components/asset-display";
+import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import type {
 	ClosePositionData,
 	IsolatedMarginPositionRef,
@@ -29,6 +28,7 @@ import type {
 	PositionMarketCloseRef,
 	TpSlPositionRef,
 } from "../positions/position-dialog-types";
+import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 
 interface Props {
 	position: Position;
@@ -66,10 +66,10 @@ function PositionMetric({
 }: PositionMetricProps) {
 	return (
 		<div className={cn("min-w-0", className)}>
-			<div className="truncate text-xs leading-4 text-fg-muted">{label}</div>
+			<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{label}</div>
 			<div
 				className={cn(
-					"min-w-0 text-xs font-medium leading-4 tabular-nums text-fg",
+					"min-w-0 text-[13px] font-semibold leading-[18px] tabular-nums text-market-close-fg",
 					wrapValue ? "whitespace-normal" : "truncate",
 					valueClassName,
 				)}
@@ -97,6 +97,7 @@ export function MobilePositionCard({
 	onAdjustMargin,
 	onSelectMarket,
 }: Props) {
+	const { t } = useLingui();
 	const [confirmingReverse, setConfirmingReverse] = useState(false);
 	const [internalExpanded, setInternalExpanded] = useState(true);
 	const detailsId = useId();
@@ -132,10 +133,10 @@ export function MobilePositionCard({
 		currencyDisplay: "narrowSymbol",
 		signDisplay: "exceptZero",
 	});
-	const fundingClass = getValueColorClass(fundingAmount ?? 0);
+	const fundingClass = getMarketCloseValueColorClass(fundingAmount ?? 0);
 
 	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
-	const pnlClass = getValueColorClass(unrealizedPnl);
+	const pnlClass = getMarketCloseValueColorClass(unrealizedPnl);
 	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
 	const sizeDisplay = formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol });
 	const positionValueDisplay = formatQuoteAmount(p.positionValue, quoteSymbol, { decimals: 2, compact: false });
@@ -243,103 +244,71 @@ export function MobilePositionCard({
 			wrapValue
 		/>
 	);
-	const detailsToggle = (
-		<button
-			type="button"
-			aria-label={isExpanded ? t`Collapse market details` : t`Expand market details`}
-			aria-expanded={isExpanded}
-			aria-controls={detailsId}
-			onClick={handleToggleDetails}
-			className="-m-2 inline-flex size-8 items-center justify-center justify-self-center rounded-xs text-fg-muted transition-colors hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus"
-		>
-			{isExpanded ? <CaretUpIcon className="size-3.5" /> : <CaretDownIcon className="size-3.5" />}
-		</button>
-	);
-
 	return (
-		<div className="overflow-hidden rounded-8 border border-stroke-weak bg-fill-weaker p-3">
-			<div className={cn("grid items-start", isExpanded ? "grid-cols-1" : "grid-cols-[minmax(0,1fr)_1rem] gap-3")}>
-				<div className="min-w-0">
-					<div className="grid min-w-0 grid-cols-8 gap-x-3 gap-y-3">
-						<div className="col-span-3 min-w-0">
-							<div className="truncate text-xs leading-4 text-fg-muted">{t`Market`}</div>
-							<button
-								type="button"
-								onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
-								aria-label={
-									isLong
-										? t`Switch to ${displayName} market, long position`
-										: t`Switch to ${displayName} market, short position`
-								}
-								className="mt-0.5 flex max-w-full min-w-0 items-center gap-1 rounded-xs text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
-							>
-								<AssetDisplay coin={p.coin} iconUrl={market?.iconUrl} hideName iconClassName="size-4 shrink-0" />
-								<span className="flex min-w-0 flex-1 flex-col items-start leading-none">
-									<span
-										className={cn(
-											"max-w-full truncate text-xs font-semibold leading-4",
-											isLong ? "text-success" : "text-error",
-										)}
-										title={sizeSymbol}
-									>
-										{sizeSymbol}
-									</span>
-									<span className="flex max-w-full min-w-0 items-center gap-1 text-3xs font-medium leading-3 text-fg-muted">
-										<span className="shrink-0">{p.leverage.value}x</span>
-										{p.dex ? (
-											<span className="max-w-full truncate rounded-xs bg-brand/10 px-1 py-px text-brand">{p.dex}</span>
-										) : null}
-									</span>
-								</span>
-							</button>
-						</div>
-						<PositionMetric
-							className="col-span-2"
-							label={t`Size`}
-							value={sizeDisplay}
-							valueClassName={isLong ? "text-success" : "text-error"}
-							valueTitle={sizeDisplay}
-							wrapValue
-						/>
-						<PositionMetric
-							className="col-span-3"
-							label={<>{t`PNL`} (ROE %)</>}
-							value={
-								<span className="inline-flex flex-wrap gap-x-1">
-									<span>{pnlDisplay}</span>
-									<span>({roeDisplay})</span>
-								</span>
+		<div className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal">
+			<MobileDisclosureHeader
+				expanded={isExpanded}
+				label={isExpanded ? t`Collapse ${displayName} position details` : t`Expand ${displayName} position details`}
+				controls={detailsId}
+				onToggle={handleToggleDetails}
+				className="grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_16px] gap-2.5 px-3.5 py-[11px]"
+			>
+				<div className="flex min-w-0 items-center gap-[7px]">
+					<span
+						aria-hidden="true"
+						className={cn(
+							"h-[26px] w-[3px] shrink-0 rounded-[2px]",
+							isLong ? "bg-market-close-success" : "bg-market-close-danger",
+						)}
+					/>
+					<div className="min-w-0">
+						<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</div>
+						<button
+							type="button"
+							onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
+							aria-label={
+								isLong
+									? t`Switch to ${displayName} market, long position`
+									: t`Switch to ${displayName} market, short position`
 							}
-							valueClassName={pnlClass}
-							valueTitle={`${pnlDisplay} (${roeDisplay})`}
-							wrapValue
-						/>
+							className="pointer-events-auto relative z-10 flex max-w-full min-w-0 items-baseline gap-1 rounded-xs text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+						>
+							<span className="truncate text-[13px] font-bold leading-[18px] text-market-close-fg">{sizeSymbol}</span>
+							<span
+								className={cn(
+									"shrink-0 text-[11px] font-semibold leading-4",
+									isLong ? "text-market-close-success" : "text-market-close-danger",
+								)}
+							>
+								{isLong ? t`Long` : t`Short`} {p.leverage.value}x
+							</span>
+						</button>
 					</div>
 				</div>
-				{!isExpanded ? detailsToggle : null}
-			</div>
+				<div className="min-w-0">
+					<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Size`}</div>
+					<div
+						className="truncate text-xs font-semibold leading-[17px] tabular-nums text-market-close-fg"
+						title={sizeDisplay}
+					>
+						{sizeDisplay}
+					</div>
+				</div>
+				<div className="min-w-0">
+					<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`PNL`} (ROE %)</div>
+					<div
+						className={cn("truncate text-xs font-bold leading-[17px] tabular-nums", pnlClass)}
+						title={`${pnlDisplay} (${roeDisplay})`}
+					>
+						{pnlDisplay} ({roeDisplay})
+					</div>
+				</div>
+			</MobileDisclosureHeader>
 
 			{isExpanded ? (
-				<>
-					<div id={detailsId} className="mt-3 grid min-w-0 grid-cols-7 gap-x-3 gap-y-3">
+				<div id={detailsId} className="flex flex-col gap-3 px-3.5 py-3">
+					<div className="grid min-w-0 grid-cols-3 gap-x-2.5 gap-y-3">
 						<PositionMetric
-							className="col-span-2"
-							label={t`Entry Price`}
-							value={formatPrice(entryPx, { szDecimals, style: "decimal" })}
-						/>
-						<PositionMetric
-							className="col-span-2"
-							label={t`Mark Price`}
-							value={formatPrice(markPx, { szDecimals, style: "decimal" })}
-						/>
-						<PositionMetric
-							className="col-span-3"
-							label={t`Liquidation Price`}
-							value={formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" })}
-							valueClassName={liqIsNear ? "text-error" : undefined}
-						/>
-						<PositionMetric
-							className="col-span-2"
 							label={t`Position Value`}
 							value={positionValueDisplay}
 							valueTitle={positionValueDisplay}
@@ -350,28 +319,41 @@ export function MobilePositionCard({
 								type="button"
 								onClick={handleAdjustMargin}
 								aria-label={t`Adjust isolated margin for ${displayName}`}
-								className="group col-span-2 min-w-0 cursor-pointer rounded-xs text-left transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+								className="group min-w-0 cursor-pointer rounded-xs text-left transition-colors duration-[120ms] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
 							>
 								{marginMetric}
 							</button>
 						) : (
-							<div className="col-span-2 min-w-0">{marginMetric}</div>
+							<div className="min-w-0">{marginMetric}</div>
 						)}
+						<PositionMetric
+							label={t({ message: "Funding", context: "Cumulative position funding" })}
+							value={fundingValue}
+							valueClassName={fundingClass}
+							valueTitle={fundingValue}
+						/>
+						<PositionMetric label={t`Entry Price`} value={formatPrice(entryPx, { szDecimals, style: "decimal" })} />
+						<PositionMetric label={t`Mark Price`} value={formatPrice(markPx, { szDecimals, style: "decimal" })} />
+						<PositionMetric
+							label={t`Liquidation Price`}
+							value={formatLiquidationPrice(p.liquidationPx, szDecimals, { style: "decimal" })}
+							valueClassName={liqIsNear ? "text-error" : undefined}
+						/>
 						<button
 							type="button"
 							onClick={handleOpenTpSl}
 							disabled={typeof assetId !== "number"}
-							className="group col-span-3 min-w-0 rounded-xs text-left transition-colors hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed disabled:text-fg-disabled"
+							className="group min-w-0 rounded-xs text-left transition-colors duration-[120ms] min-[1001px]:hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
 						>
 							<PositionMetric
 								label={t`TP/SL`}
 								value={
 									<span className="inline-flex max-w-full items-center gap-1">
-										<span className={tpSlInfo?.tpPrice ? "text-success" : "text-fg-muted"}>
+										<span className={tpSlInfo?.tpPrice ? "text-market-close-success" : "text-fg-muted"}>
 											{tpSlInfo?.tpPrice ? formatPrice(tpSlInfo.tpPrice, { szDecimals, style: "decimal" }) : "--"}
 										</span>
 										<span className="text-fg-muted">/</span>
-										<span className={tpSlInfo?.slPrice ? "text-error" : "text-fg-muted"}>
+										<span className={tpSlInfo?.slPrice ? "text-market-close-danger" : "text-fg-muted"}>
 											{tpSlInfo?.slPrice ? formatPrice(tpSlInfo.slPrice, { szDecimals, style: "decimal" }) : "--"}
 										</span>
 										<PencilIcon className={cn("size-3 shrink-0", hasTpSl ? "text-fg-muted" : "text-fg-disabled")} />
@@ -380,17 +362,10 @@ export function MobilePositionCard({
 								wrapValue
 							/>
 						</button>
-						<PositionMetric
-							className="col-span-2"
-							label={t({ message: "Funding", context: "Cumulative position funding" })}
-							value={fundingValue}
-							valueClassName={fundingClass}
-							valueTitle={fundingValue}
-						/>
 					</div>
 
-					<div className="mt-3 grid grid-cols-[minmax(0,1fr)_1rem] items-center gap-3 border-t border-stroke-weak pt-2">
-						<div className="flex min-w-0 items-center gap-1">
+					<div className="flex items-center justify-between border-t border-market-close-stroke-card pt-[11px]">
+						<div className="flex min-w-0 items-center gap-4">
 							{confirmingReverse ? (
 								<>
 									<Button
@@ -416,44 +391,57 @@ export function MobilePositionCard({
 								</>
 							) : (
 								<>
-									<Button
-										variant="ghost"
-										intent="brand"
-										size="xxs"
-										className="min-h-8 flex-none justify-center px-1 touch-target"
+									<button
+										type="button"
+										className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-fg transition-colors duration-[120ms] min-[1001px]:hover:text-fg-muted focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
 										onClick={handleLimitClose}
 										disabled={!canClose || isRowClosing}
 									>
 										{t`Limit Close`}
-									</Button>
-									<Button
-										variant="ghost"
-										intent="brand"
-										size="xxs"
-										className="min-h-8 flex-none justify-center px-1 touch-target"
+									</button>
+									<button
+										type="button"
+										className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
 										onClick={handleMarketClose}
 										disabled={!canClose || isRowClosing}
 									>
 										{t`Market Close`}
-									</Button>
-									<Button
-										variant="ghost"
-										intent="brand"
-										size="xxs"
-										className="min-h-8 flex-none justify-center px-1 touch-target"
+									</button>
+									<button
+										type="button"
+										className="min-h-11 shrink-0 text-[13px] font-semibold leading-[18px] text-market-close-danger transition-colors duration-[120ms] min-[1001px]:hover:opacity-80 focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled"
 										onClick={() => setConfirmingReverse(true)}
 										disabled={!canClose || isRowClosing}
 									>
 										{t`Reverse`}
-									</Button>
+									</button>
 								</>
 							)}
 						</div>
-						{detailsToggle}
+						<button
+							type="button"
+							aria-label={t`Collapse ${displayName} position details`}
+							aria-controls={detailsId}
+							onClick={handleToggleDetails}
+							className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+						>
+							<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
+								<path
+									d="M3.5 10 8 5.5l4.5 4.5"
+									stroke="currentColor"
+									strokeWidth="1.5"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								/>
+							</svg>
+						</button>
 					</div>
-				</>
+					{closeErrorMessage ? <div className="text-xs text-error">{closeErrorMessage}</div> : null}
+				</div>
 			) : null}
-			{closeErrorMessage ? <div className="mt-2 text-xs text-error">{closeErrorMessage}</div> : null}
+			{!isExpanded && closeErrorMessage ? (
+				<div className="px-3.5 py-2 text-xs text-error">{closeErrorMessage}</div>
+			) : null}
 		</div>
 	);
 }

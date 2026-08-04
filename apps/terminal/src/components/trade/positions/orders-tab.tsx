@@ -1,6 +1,6 @@
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -19,6 +19,7 @@ import {
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { AssetBadge } from "../components/asset-badge";
+import { CancelAllOrdersModal } from "./cancel-all-orders-modal";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelRowHoverClass,
@@ -34,6 +35,11 @@ import {
 } from "./positions-panel-table-styles";
 
 type CancelScope = "row" | "selected" | "all";
+
+interface CancelCallbacks {
+	onSuccess?: () => void;
+	onSettled?: () => void;
+}
 
 export function OrdersTab() {
 	const { t } = useLingui();
@@ -58,6 +64,9 @@ export function OrdersTab() {
 	const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(() => new Set());
 	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
 	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
+	const [cancelAllOpen, setCancelAllOpen] = useState(false);
+	const [cancelValidationError, setCancelValidationError] = useState<string | null>(null);
+	const cancelAllSubmittingRef = useRef(false);
 
 	const { mutate: cancelOrders, error: cancelError, reset: resetCancelError } = useExchange("cancel");
 
@@ -93,11 +102,12 @@ export function OrdersTab() {
 		});
 	}
 
-	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope) {
-		if (ordersToCancel.length === 0) return;
+	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope, callbacks?: CancelCallbacks): boolean {
+		if (ordersToCancel.length === 0) return false;
+		setCancelValidationError(null);
 
 		const fresh = ordersToCancel.filter((order) => !cancellingOids.has(order.oid));
-		if (fresh.length === 0) return;
+		if (fresh.length === 0) return false;
 
 		const cancels = fresh.reduce<{ a: number; o: number }[]>((acc, order) => {
 			const assetId = markets.getAssetId(order.coin);
@@ -106,7 +116,10 @@ export function OrdersTab() {
 			return acc;
 		}, []);
 
-		if (cancels.length === 0) return;
+		if (cancels.length !== fresh.length) {
+			setCancelValidationError(t`Some order markets are unavailable. Refresh and try again.`);
+			return false;
+		}
 
 		const oids = fresh.map((order) => order.oid);
 		setCancellingOids((prev) => {
@@ -131,6 +144,7 @@ export function OrdersTab() {
 						}
 						return next;
 					});
+					callbacks?.onSuccess?.();
 				},
 				onSettled: () => {
 					setCancellingOids((prev) => {
@@ -143,9 +157,11 @@ export function OrdersTab() {
 						next.delete(nextScope);
 						return next;
 					});
+					callbacks?.onSettled?.();
 				},
 			},
 		);
+		return true;
 	}
 
 	function handleCancelRow(ordersToCancel: OpenOrder[]) {
@@ -157,13 +173,33 @@ export function OrdersTab() {
 		handleCancel(ordersToCancel, "selected");
 	}
 
-	function handleCancelAll() {
-		handleCancel(openOrders, "all");
+	function handleRequestCancelAll() {
+		if (openOrders.length === 0 || pendingScopes.has("all") || cancelAllSubmittingRef.current) return;
+		resetCancelError();
+		setCancelValidationError(null);
+		setCancelAllOpen(true);
+	}
+
+	function handleConfirmCancelAll() {
+		if (cancelAllSubmittingRef.current || pendingScopes.has("all")) return;
+		cancelAllSubmittingRef.current = true;
+		const started = handleCancel(openOrders, "all", {
+			onSuccess: () => setCancelAllOpen(false),
+			onSettled: () => {
+				cancelAllSubmittingRef.current = false;
+			},
+		});
+		if (!started) cancelAllSubmittingRef.current = false;
+	}
+
+	function handleCancelAllOpenChange(open: boolean) {
+		if (cancelAllSubmittingRef.current || pendingScopes.has("all")) return;
+		setCancelAllOpen(open);
 	}
 
 	const disableCancelSelected = pendingScopes.has("selected") || selectedCount === 0;
 	const disableCancelAll = pendingScopes.has("all") || openOrders.length === 0;
-	const actionError = cancelError?.message;
+	const actionError = cancelValidationError ?? cancelError?.message;
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view open orders.`}</Placeholder>;
@@ -208,7 +244,7 @@ export function OrdersTab() {
 					variant="link"
 					size="xs"
 					aria-label={t`Cancel all orders`}
-					onClick={handleCancelAll}
+					onClick={handleRequestCancelAll}
 					disabled={disableCancelAll}
 				>
 					{pendingScopes.has("all") ? t`Canceling...` : t`Cancel all`}
@@ -291,6 +327,14 @@ export function OrdersTab() {
 					</ScrollArea>
 				)}
 			</div>
+			<CancelAllOrdersModal
+				open={cancelAllOpen}
+				orderCount={openOrders.length}
+				isSubmitting={pendingScopes.has("all")}
+				errorMessage={cancelAllOpen ? actionError : null}
+				onOpenChange={handleCancelAllOpenChange}
+				onConfirm={handleConfirmCancelAll}
+			/>
 		</div>
 	);
 }

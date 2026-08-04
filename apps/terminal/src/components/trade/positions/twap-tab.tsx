@@ -1,32 +1,22 @@
-import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { HL_ALL_DEXS } from "@/config/app";
-import { getAvgPrice } from "@/domain/market";
+import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
+import { getToolbarTwapMetrics } from "@/domain/trade/trading-toolbar-metrics";
 import { getTwapViewState } from "@/domain/trade/twap";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useTwapCancel } from "@/hooks/trade/use-twap-cancel";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatDuration, formatNumber, formatPrice } from "@/lib/format";
+import { formatClockDuration, formatNumber, formatPercent, formatPrice } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { toBig } from "@/lib/trade/numbers";
-import { AssetBadge } from "../components/asset-badge";
 import { Placeholder } from "./placeholder";
-import {
-	positionsPanelRowHoverClass,
-	positionsPanelRowStripeClass,
-	positionsPanelTableBodyClass,
-	positionsPanelTableCaptionRowClass,
-	positionsPanelTableCellClass,
-	positionsPanelTableHeadClass,
-	positionsPanelTableHeaderClass,
-	positionsPanelTableHeaderRowClass,
-	positionsPanelTableShellClass,
-	positionsPanelTabRootClass,
-} from "./positions-panel-table-styles";
+import { positionsPanelTableShellClass, positionsPanelTabRootClass } from "./positions-panel-table-styles";
+
+const twapGridClass =
+	"grid min-w-[80rem] grid-cols-[110px_90px_minmax(18rem,1fr)_130px_130px_110px_150px] gap-x-4 px-5";
 
 export function TwapTab() {
 	const { t } = useLingui();
@@ -46,17 +36,12 @@ export function TwapTab() {
 	const { cancelTwap, cancellingTwapId, feedback } = useTwapCancel();
 
 	const twapStates = twapStatesEvent?.states ?? [];
-
 	const activeOrders = useMemo(
 		() =>
 			twapStates.map(([twapId, state]) => ({ twapId, state })).sort((a, b) => b.state.timestamp - a.state.timestamp),
 		[twapStates],
 	);
-
-	const activeCount = activeOrders.length;
-
 	const viewState = getTwapViewState({ isConnected, status, hasData: twapStatesEvent !== undefined, isStale });
-	const headerCount = viewState === "ready" || viewState === "stale" ? `${activeCount} ${t`active`}` : null;
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view TWAP orders.`}</Placeholder>;
@@ -69,158 +54,186 @@ export function TwapTab() {
 				</Placeholder>
 			);
 		}
-		if (activeOrders.length === 0) return <Placeholder>{t`No active TWAP orders.`}</Placeholder>;
+		if (activeOrders.length === 0) {
+			return (
+				<div className="flex h-full w-full flex-col items-center justify-center gap-2.5 px-2 py-14">
+					<span
+						className="grid size-11 place-items-center rounded-full bg-market-close-hover text-lg text-market-close-subtle"
+						aria-hidden="true"
+					>
+						⏱
+					</span>
+					<span className="text-[13px] font-semibold text-market-close-muted">{t`No active TWAP orders.`}</span>
+					<span className="text-xs text-market-close-subtle">
+						{t`Create a TWAP order from Advanced order settings to execute it in smaller batches.`}
+					</span>
+				</div>
+			);
+		}
 		return null;
 	}
 
 	const placeholder = renderPlaceholder();
+	const renderTimeMs = Date.now();
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className={positionsPanelTableCaptionRowClass}>
-				{headerCount ? <span className="tabular-nums text-3xs text-fg-muted">{headerCount}</span> : null}
-			</div>
 			{feedback ? (
 				<div
 					role={feedback.tone === "error" ? "alert" : "status"}
-					className={cn("px-2.5 py-1 text-2xs", feedback.tone === "error" ? "text-error" : "text-warning")}
+					className={cn("px-5 py-1 text-xs", feedback.tone === "error" ? "text-error" : "text-warning")}
 				>
 					{feedback.message}
 				</div>
 			) : null}
 			{viewState === "stale" ? (
-				<output className="block px-2.5 py-1 text-2xs text-warning">
+				<output className="block px-5 py-1 text-xs text-warning">
 					{t`TWAP data may be stale while the connection recovers.`}
 				</output>
 			) : null}
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[58rem] w-full">
-							<TableHeader className={positionsPanelTableHeaderClass}>
-								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[18%] text-left")}>
+						<table aria-label={t`Active TWAP orders`} className="block min-w-[80rem] border-collapse">
+							<thead className="block">
+								<tr
+									className={cn(
+										twapGridClass,
+										"border-b border-market-close-stroke-card py-2 text-[11px] font-semibold text-market-close-subtle",
+									)}
+								>
+									<th scope="col" className="p-0 text-left font-semibold">
 										{t`Asset`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
-									>
-										{t`Size`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
-									>
-										{t`Executed`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
-										{t`Avg Price`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
-										{t`Time / Total`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[10%] text-left")}>
-										{t`Reduce Only`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
-										{t`Created`}
-									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[10%] text-right")}
-									>
+									</th>
+									<th scope="col" className="p-0 text-left font-semibold">
+										{t`Direction`}
+									</th>
+									<th scope="col" className="p-0 text-left font-semibold">
+										{t`Execution Progress`}
+									</th>
+									<th scope="col" className="p-0 text-right font-semibold">
+										{t`Average Fill Price`}
+									</th>
+									<th scope="col" className="p-0 text-right font-semibold">
+										{t`Suborder Frequency`}
+									</th>
+									<th scope="col" className="p-0 text-right font-semibold">
+										{t`Remaining Time`}
+									</th>
+									<th scope="col" className="p-0 text-right font-semibold">
 										{t`Actions`}
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody className={positionsPanelTableBodyClass}>
-								{activeOrders.map(({ twapId, state }, i) => {
+									</th>
+								</tr>
+							</thead>
+							<tbody className="block">
+								{activeOrders.map(({ twapId, state }) => {
 									const isBuy = state.side === "B";
-									const totalSize = toBig(state.sz)?.toNumber() ?? Number.NaN;
-									const executedSize = toBig(state.executedSz)?.toNumber() ?? 0;
-									const avgPrice = getAvgPrice(state.executedNtl, state.executedSz);
+									const market = markets.getMarket(state.coin);
+									const marketLabel = market?.shortName ?? state.coin;
 									const szDecimals = markets.getSzDecimals(state.coin);
-									const creationTime = state.timestamp;
-									const totalMinutes = state.minutes;
+									const metrics = getToolbarTwapMetrics({
+										sz: state.sz,
+										executedSz: state.executedSz,
+										executedNtl: state.executedNtl,
+										timestampMs: String(state.timestamp),
+										minutes: String(state.minutes),
+										nowMs: String(renderTimeMs),
+									});
+									const progressLabel = formatPercent(metrics.progressRatio, { decimals: 1, signDisplay: "never" });
+									const remainingMs = metrics.remainingMs === null ? null : Number(metrics.remainingMs);
 
 									return (
-										<TableRow
+										<tr
 											key={twapId}
-											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
+											className={cn(
+												twapGridClass,
+												"items-center border-b border-market-close-stroke-card/60 py-3.5 transition-colors duration-[120ms] hover:bg-market-close-card",
+											)}
 										>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
-												<AssetBadge
-													coin={state.coin}
-													side={isBuy ? "buy" : "sell"}
+											<td className="p-0">
+												<button
+													type="button"
+													className="rounded-[4px] text-[13px] font-bold text-market-close-fg transition-colors duration-[120ms] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
 													onClick={() => navigateToMarket(state.coin)}
-													aria-label={
-														isBuy
-															? t`Switch to ${state.coin} market, buy TWAP`
-															: t`Switch to ${state.coin} market, sell TWAP`
-													}
-												/>
-											</TableCell>
-											<TableCell
-												size="dense"
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
+													aria-label={t`Switch to ${marketLabel} market`}
+												>
+													{marketLabel}
+												</button>
+											</td>
+											<td
+												className={cn(
+													"p-0 whitespace-nowrap text-[11px] font-semibold",
+													isBuy ? "text-market-close-success" : "text-market-close-danger",
+												)}
 											>
-												{formatNumber(totalSize, szDecimals)}
-											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right tabular-nums")}>
-												<span className={cn(isBuy ? "text-success" : "text-error")}>
-													{formatNumber(executedSize, szDecimals)}
-												</span>
-											</TableCell>
-											<TableCell
-												size="dense"
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
-											>
-												{formatPrice(avgPrice, { szDecimals })}
-											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "tabular-nums text-fg")}>
-												<TimeTicker startTime={creationTime} durationMs={totalMinutes * 60 * 1000} isActive={true} /> /{" "}
-												{formatDuration(totalMinutes)}
-											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg")}>
-												{state.reduceOnly ? t`Yes` : t`No`}
-											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "tabular-nums text-fg")}>
-												{formatDateTime(creationTime, {
-													day: "2-digit",
-													month: "2-digit",
-													year: "numeric",
-													hour: "2-digit",
-													minute: "2-digit",
-													second: "2-digit",
-													hour12: false,
+												{isBuy ? t`Buy / Long` : t`Sell / Short`}
+											</td>
+											<td className="flex min-w-0 flex-col gap-1 p-0">
+												<div className="flex items-center justify-between gap-3 text-[11px] tabular-nums">
+													<span className="shrink-0 whitespace-nowrap text-market-close-muted">
+														{formatNumber(state.executedSz, szDecimals)} / {formatNumber(state.sz, szDecimals)}{" "}
+														{marketLabel}
+													</span>
+													<span className="shrink-0 whitespace-nowrap font-bold text-market-close-fg">
+														{progressLabel}
+													</span>
+												</div>
+												<div
+													role="progressbar"
+													aria-valuemin={0}
+													aria-valuemax={1}
+													aria-valuenow={metrics.progressRatio === null ? undefined : Number(metrics.progressRatio)}
+													aria-valuetext={progressLabel}
+													aria-label={t`TWAP execution progress`}
+													className="h-[5px] overflow-hidden rounded-[3px] bg-market-close-stroke-card"
+												>
+													<span
+														className={cn(
+															"block h-full origin-left rounded-[3px]",
+															isBuy ? "bg-market-close-success" : "bg-market-close-danger",
+														)}
+														style={{ transform: `scaleX(${metrics.progressRatio ?? "0"})` }}
+													/>
+												</div>
+											</td>
+											<td className="p-0 text-right text-[13px] font-semibold text-market-close-fg tabular-nums">
+												{formatPrice(metrics.executedAvgPx, {
+													szDecimals,
+													marketType: market?.kind === "spot" ? "spot" : "perp",
 												})}
-											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-right")}>
-												<Button
-													variant="outline"
-													intent="error"
-													size="sm"
-													aria-label={t`Cancel TWAP order`}
+											</td>
+											<td className="p-0 whitespace-nowrap text-right text-xs text-market-close-muted tabular-nums">
+												{t`Every ${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}
+											</td>
+											<td className="p-0 whitespace-nowrap text-right text-[13px] text-market-close-fg tabular-nums">
+												{remainingMs === null ? (
+													"—"
+												) : (
+													<TimeTicker
+														startTime={renderTimeMs}
+														durationMs={remainingMs}
+														isActive={remainingMs > 0}
+														format={(elapsedMs) => formatClockDuration(remainingMs - elapsedMs)}
+													/>
+												)}
+											</td>
+											<td className="flex justify-end p-0">
+												<button
+													type="button"
+													className="whitespace-nowrap rounded-[7px] border border-market-close-danger-disabled px-3 py-1 text-xs font-semibold text-market-close-danger transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"
+													aria-label={t`Terminate TWAP order`}
 													aria-busy={cancellingTwapId === twapId}
 													disabled={cancellingTwapId !== null}
 													onClick={() => void cancelTwap(state.coin, twapId)}
 												>
-													{cancellingTwapId === twapId ? t`Canceling...` : t`Cancel`}
-												</Button>
-											</TableCell>
-										</TableRow>
+													{cancellingTwapId === twapId ? t`Terminating...` : t`Terminate`}
+												</button>
+											</td>
+										</tr>
 									);
 								})}
-							</TableBody>
-						</Table>
+							</tbody>
+						</table>
 						<ScrollBar orientation="horizontal" />
 					</ScrollArea>
 				)}

@@ -1,6 +1,6 @@
-import { t } from "@lingui/core/macro";
-import { PercentIcon } from "@phosphor-icons/react";
+import { useLingui } from "@lingui/react/macro";
 import { Skeleton } from "boneyard-js/react";
+import { useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -9,9 +9,8 @@ import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
-import { getValueColorClass } from "@/lib/ui/value-color";
-import { AssetBadge } from "../components/asset-badge";
-import { MetricCell } from "./metric-cell";
+import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
+import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
@@ -21,6 +20,7 @@ interface Props {
 }
 
 export function MobileFundingTab({ className, scrollMode = "contained" }: Props) {
+	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -30,14 +30,15 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 		error,
 	} = useSubscription("userFundings", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
 	const markets = useMarkets();
+	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
 
 	const updates = fundingEvent?.fundings?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
-	const totalFunding = updates.reduce((acc, f) => acc + toNumberOrZero(f.usdc), 0);
+	const totalFunding = updates.reduce((acc, funding) => acc + toNumberOrZero(funding.usdc), 0);
 	const headerTotal =
 		isConnected && status === "active"
 			? formatUSD(totalFunding, { signDisplay: "exceptZero" })
 			: FALLBACK_VALUE_PLACEHOLDER;
-	const headerClass = getValueColorClass(totalFunding);
+	const headerClass = getMarketCloseValueColorClass(totalFunding);
 	const isPageScroll = scrollMode === "page";
 
 	function handleSelectMarket(name: string) {
@@ -45,9 +46,20 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 		setActiveTab("trade");
 	}
 
+	function handleSetAllExpanded(expanded: boolean) {
+		setExpandedByKey(
+			Object.fromEntries(
+				updates.map((update) => [
+					`${update.coin}-${update.time}-${update.szi}-${update.fundingRate}-${update.usdc}`,
+					expanded,
+				]),
+			),
+		);
+	}
+
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
+			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
 				{t`Connect your wallet to view funding payments.`}
 			</div>
 		);
@@ -55,16 +67,16 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 
 	if (status === "error") {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
+			<div className="flex flex-1 flex-col items-center justify-center p-6 text-sm text-market-close-danger">
 				<span>{t`Failed to load funding history.`}</span>
-				{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
+				{error instanceof Error && <span className="mt-1 text-xs text-market-close-muted">{error.message}</span>}
 			</div>
 		);
 	}
 
 	if (status === "active" && updates.length === 0) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
+			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
 				{t`No funding payments found.`}
 			</div>
 		);
@@ -72,50 +84,150 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 
 	return (
 		<Skeleton name="funding-tab" loading={status === "subscribing" || status === "idle"}>
-			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
-					<PercentIcon className="size-3" />
-					{t`Funding History`}
-					<span className={cn("font-semibold ml-auto tabular-nums", headerClass)}>{headerTotal}</span>
+			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
+				<div className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-market-close-stroke-card px-3.5">
+					<span className={cn("min-w-0 flex-1 truncate text-[11px] font-semibold tabular-nums", headerClass)}>
+						{headerTotal}
+					</span>
+					<div className="flex shrink-0 items-center gap-3">
+						<button
+							type="button"
+							onClick={() => handleSetAllExpanded(true)}
+							className="min-h-11 whitespace-nowrap text-xs font-semibold text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+						>
+							{t`Expand all`}
+						</button>
+						<button
+							type="button"
+							onClick={() => handleSetAllExpanded(false)}
+							className="min-h-11 whitespace-nowrap text-xs text-market-close-muted focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+						>
+							{t`Collapse all`}
+						</button>
+					</div>
 				</div>
-				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
+				<div
+					className={cn(
+						"flex flex-col gap-2.5 px-3.5 py-3",
+						!isPageScroll && "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
+					)}
+				>
 					{updates.map((update, index) => {
+						const marketName = update.coin;
+						const cardKey = `${update.coin}-${update.time}-${update.szi}-${update.fundingRate}-${update.usdc}`;
+						const detailsId = `mobile-funding-history-${cardKey}`;
+						const isExpanded = expandedByKey[cardKey] ?? index === 0;
 						const market = markets.getMarket(update.coin);
 						const szi = toNumber(update.szi);
 						const rate = toNumber(update.fundingRate);
 						const usdc = toNumber(update.usdc);
 						const positionSize = szi !== null ? Math.abs(szi) : null;
+						const positionDisplay = formatToken(positionSize, {
+							decimals: market?.szDecimals,
+							symbol: market?.shortName,
+						});
+
+						function handleToggle() {
+							setExpandedByKey((current) => ({ ...current, [cardKey]: !isExpanded }));
+						}
 
 						return (
-							<div
-								key={`${update.coin}-${update.time}-${index}`}
-								className="rounded-xs border border-stroke-weak bg-surface overflow-hidden"
+							<article
+								key={cardKey}
+								className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal"
 							>
-								<div className="flex items-center justify-between px-3 py-1.5 border-b border-stroke-weak">
-									<AssetBadge
-										coin={update.coin}
-										onClick={() => handleSelectMarket(update.coin)}
-										aria-label={t`Switch to ${update.coin} market`}
-										nameClassName="text-sm"
-									/>
-									<div className={cn("text-xs font-medium tabular-nums", getValueColorClass(usdc))}>
-										{formatToken(usdc, { symbol: "USDC" })}
+								<MobileDisclosureHeader
+									expanded={isExpanded}
+									label={
+										isExpanded ? t`Collapse ${marketName} history details` : t`Expand ${marketName} history details`
+									}
+									controls={detailsId}
+									onToggle={handleToggle}
+									className="min-h-[54px] grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_16px] gap-2.5 px-3.5"
+								>
+									<button
+										type="button"
+										onClick={() => handleSelectMarket(marketName)}
+										aria-label={t`Switch to ${marketName} market`}
+										className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+									>
+										<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
+										<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">{marketName}</span>
+									</button>
+									<div className="min-w-0">
+										<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Time`}</div>
+										<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
+											{formatDateTimeShort(update.time)}
+										</div>
 									</div>
-								</div>
+									<div className="min-w-0">
+										<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Position`}</div>
+										<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
+											{positionDisplay}
+										</div>
+									</div>
+								</MobileDisclosureHeader>
 
-								<div className="grid grid-cols-3 divide-x divide-stroke-weak">
-									<MetricCell
-										label={t`Position`}
-										value={formatToken(positionSize, { decimals: market?.szDecimals, symbol: market?.shortName })}
-									/>
-									<MetricCell
-										label={t`Rate`}
-										value={formatPercent(rate, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
-										valueClass={rate !== null ? getValueColorClass(rate) : undefined}
-									/>
-									<MetricCell label={t`Time`} value={formatDateTimeShort(update.time)} />
-								</div>
-							</div>
+								{isExpanded ? (
+									<div id={detailsId} className="flex flex-col gap-2.5 px-3.5 py-3">
+										<div className="grid min-w-0 grid-cols-3 gap-x-2.5 gap-y-3">
+											<div className="min-w-0">
+												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">
+													{t`Direction`}
+												</div>
+												<div
+													className={cn(
+														"truncate whitespace-nowrap text-xs font-semibold leading-[17px]",
+														szi === null || szi === 0
+															? "text-market-close-muted"
+															: szi > 0
+																? "text-market-close-success"
+																: "text-market-close-danger",
+													)}
+												>
+													{szi === null || szi === 0 ? FALLBACK_VALUE_PLACEHOLDER : szi > 0 ? t`Long` : t`Short`}
+												</div>
+											</div>
+											<div className="min-w-0">
+												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Payment`}</div>
+												<div
+													className={cn(
+														"truncate whitespace-nowrap text-xs font-semibold leading-[17px] tabular-nums",
+														getMarketCloseValueColorClass(usdc),
+													)}
+												>
+													{formatToken(usdc, { symbol: "USDC" })}
+												</div>
+											</div>
+											<div className="min-w-0">
+												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Rate`}</div>
+												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
+													{formatPercent(rate, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
+												</div>
+											</div>
+										</div>
+										<div className="flex min-h-11 items-center justify-end border-t border-market-close-stroke-card">
+											<button
+												type="button"
+												aria-label={t`Collapse ${marketName} history details`}
+												aria-controls={detailsId}
+												onClick={handleToggle}
+												className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+											>
+												<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
+													<path
+														d="M3.5 10 8 5.5l4.5 4.5"
+														stroke="currentColor"
+														strokeWidth="1.5"
+														strokeLinecap="round"
+														strokeLinejoin="round"
+													/>
+												</svg>
+											</button>
+										</div>
+									</div>
+								) : null}
+							</article>
 						);
 					})}
 				</div>

@@ -1,6 +1,6 @@
 import { Button } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
-import { CaretDownIcon, CaretUpIcon, ChartLineIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { useLingui } from "@lingui/react/macro";
+import { ChartLineIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -57,7 +57,52 @@ interface PositionFiltersState {
 	market: PositionMarketFilter;
 }
 
+interface MobilePositionBulkDetailsActionsProps {
+	filteredPositionKeys: readonly string[];
+	expandedPositionKeys: ReadonlySet<string>;
+	onExpandAll: () => void;
+	onCollapseAll: () => void;
+}
+
+const mobileBulkActionClass =
+	"relative min-h-0 whitespace-nowrap p-0 text-xs leading-4 transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-fg-disabled";
+
+export function MobilePositionBulkDetailsActions({
+	filteredPositionKeys,
+	expandedPositionKeys,
+	onExpandAll,
+	onCollapseAll,
+}: MobilePositionBulkDetailsActionsProps) {
+	const { t } = useLingui();
+	const canExpand = filteredPositionKeys.some((key) => !expandedPositionKeys.has(key));
+	const canCollapse = filteredPositionKeys.some((key) => expandedPositionKeys.has(key));
+
+	return (
+		<div data-testid="mobile-position-bulk-details-actions" className="flex shrink-0 items-center gap-3">
+			<button
+				type="button"
+				data-testid="expand-all-position-details"
+				onClick={onExpandAll}
+				disabled={!canExpand}
+				className={cn(mobileBulkActionClass, "font-semibold text-market-close-fg")}
+			>
+				{t`Expand all`}
+			</button>
+			<button
+				type="button"
+				data-testid="collapse-all-position-details"
+				onClick={onCollapseAll}
+				disabled={!canCollapse}
+				className={cn(mobileBulkActionClass, "font-normal text-market-close-muted")}
+			>
+				{t`Collapse all`}
+			</button>
+		</div>
+	);
+}
+
 export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
+	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const ownerKey = address?.toLowerCase() ?? null;
 	const slippageBps = useMarketOrderSlippageBps();
@@ -128,8 +173,6 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const filteredPositionKeys = filteredPositions.map(
 		(position) => `${ownerKey ?? "disconnected"}:${position.dex}:${position.coin}`,
 	);
-	const allFilteredExpanded =
-		filteredPositionKeys.length > 0 && filteredPositionKeys.every((key) => expandedPositionKeys.has(key));
 
 	function handlePositionDirectionChange(direction: PositionDirectionFilter) {
 		setPositionFilters((current) => ({
@@ -157,13 +200,18 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		});
 	}
 
-	function handleToggleAllDetails() {
+	function handleExpandAllDetails() {
 		setExpandedPositionKeys((current) => {
 			const next = new Set(current);
-			for (const key of filteredPositionKeys) {
-				if (allFilteredExpanded) next.delete(key);
-				else next.add(key);
-			}
+			for (const key of filteredPositionKeys) next.add(key);
+			return next;
+		});
+	}
+
+	function handleCollapseAllDetails() {
+		setExpandedPositionKeys((current) => {
+			const next = new Set(current);
+			for (const key of filteredPositionKeys) next.delete(key);
 			return next;
 		});
 	}
@@ -287,7 +335,10 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	return (
 		<Skeleton name="positions-tab" loading={positionsLoading}>
 			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col")}>
-				<div className="flex h-9 shrink-0 items-center border-y border-stroke-weak px-1">
+				<div
+					data-testid="mobile-position-filter-row"
+					className="flex shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5 py-2.5"
+				>
 					<PositionFilterToolbar
 						direction={positionDirectionFilter}
 						market={positionMarketFilter}
@@ -296,24 +347,14 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 						onMarketChange={handlePositionMarketChange}
 						mobile
 					/>
-					<Button
-						type="button"
-						variant="ghost"
-						intent="neutral"
-						size="xxs"
-						aria-label={allFilteredExpanded ? t`Collapse market details` : t`Expand market details`}
-						title={allFilteredExpanded ? t`Collapse market details` : t`Expand market details`}
-						onClick={handleToggleAllDetails}
-						disabled={filteredPositionKeys.length === 0}
-						className="h-8 shrink-0 gap-1 rounded-xs px-2 font-normal text-fg-muted hover:text-fg"
-						iconLeft={allFilteredExpanded ? <CaretUpIcon className="size-3" /> : <CaretDownIcon className="size-3" />}
-					>
-						<span className="hidden min-[360px]:inline">
-							{allFilteredExpanded ? t`Collapse market details` : t`Expand market details`}
-						</span>
-					</Button>
+					<MobilePositionBulkDetailsActions
+						filteredPositionKeys={filteredPositionKeys}
+						expandedPositionKeys={expandedPositionKeys}
+						onExpandAll={handleExpandAllDetails}
+						onCollapseAll={handleCollapseAllDetails}
+					/>
 				</div>
-				<div className={cn("space-y-2 px-2.5 py-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
+				<div className={cn("space-y-2.5 px-3.5 py-3", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 					{filteredPositions.length === 0 ? (
 						<div className="flex min-h-28 items-center justify-center px-4 text-center text-xs text-fg-muted">
 							{t`No positions match the selected filters.`}

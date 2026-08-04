@@ -57,14 +57,7 @@ export const POSITIONS_TABS = [
 	{ value: "orders-history", label: msg`Order History` },
 ] as const;
 
-export const MOBILE_POSITIONS_TABS = [
-	{ value: "positions", label: msg`Positions` },
-	{ value: "orders", label: msg`Open Orders` },
-	{ value: "twap", label: msg`TWAP` },
-	{ value: "history", label: msg`Trade History` },
-	{ value: "orders-history", label: msg`Order History` },
-	{ value: "funding", label: msg`Funding` },
-] as const;
+export const MOBILE_POSITIONS_TABS = POSITIONS_TABS;
 
 export type MobilePositionsTabValue = (typeof MOBILE_POSITIONS_TABS)[number]["value"];
 

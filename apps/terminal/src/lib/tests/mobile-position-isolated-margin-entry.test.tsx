@@ -190,8 +190,8 @@ describe("MobilePositionCard isolated margin entry", () => {
 
 		expect(container.textContent).toContain("205.9 CXMT");
 		expect(container.textContent).toContain("10x");
-		expect(container.textContent).toContain("xyz");
-		expect(container.querySelector('[data-testid="position-asset-logo"]')?.getAttribute("data-coin")).toBe("xyz:CXMT");
+		expect(container.textContent).toContain("Long 10x");
+		expect(container.querySelector('[data-testid="position-asset-logo"]')).toBeNull();
 		expect(container.querySelector('button[aria-label="Adjust isolated margin for CXMT-USDC"]')).toBeNull();
 
 		const marketButton = container.querySelector('button[aria-label="Switch to CXMT-USDC market, long position"]');
@@ -199,7 +199,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 		act(() => marketButton.click());
 		expect(onSelectMarket).toHaveBeenCalledWith("xyz:CXMT", "buy");
 
-		const expandButton = container.querySelector('button[aria-label="Expand market details"]');
+		const expandButton = container.querySelector('button[aria-label="Expand CXMT-USDC position details"]');
 		if (!(expandButton instanceof HTMLButtonElement)) throw new Error("Position details trigger was not rendered");
 
 		act(() => expandButton.click());

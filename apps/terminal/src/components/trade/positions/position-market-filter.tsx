@@ -28,6 +28,7 @@ interface Props {
 const allMessage = msg`All`;
 const currentMessage = msg`Current`;
 const marketMessage = msg`Market`;
+const assetMessage = msg`Asset`;
 
 function isSelectedMarket(value: PositionMarketFilter, option: PositionMarketOption): boolean {
 	return value.type === "market" && value.market.coin === option.coin && value.market.dex === option.dex;
@@ -48,6 +49,8 @@ export function PositionMarketFilterControl({ value, options, onChange, mobile =
 	if (value.type === "current") triggerLabel = _(currentMessage);
 	if (value.type === "market")
 		triggerLabel = selectedOption?.label ?? getMarketFilterFallbackLabel(value) ?? _(marketMessage);
+	const desktopTriggerLabel = `${_(assetMessage)}: ${value.type === "all" ? _(allMessage) : triggerLabel}`;
+	const ariaValue = mobile ? triggerLabel : desktopTriggerLabel;
 
 	function handleChange(nextValue: PositionMarketFilter) {
 		onChange(nextValue);
@@ -62,29 +65,41 @@ export function PositionMarketFilterControl({ value, options, onChange, mobile =
 					variant="ghost"
 					intent="neutral"
 					size="xxs"
-					aria-label={_(msg`Filter positions by market`)}
+					aria-label={_(msg`Filter positions by market: ${ariaValue}`)}
 					className={cn(
-						"h-full min-h-0 gap-1 rounded-xs px-2 py-0 font-normal text-fg-muted hover:bg-fill-hover hover:text-fg",
-						mobile ? "h-8 max-w-24 text-xs" : "max-w-32",
+						"min-h-0 gap-1 font-normal focus-visible:border-market-close-control focus-visible:outline-none active:not-data-disabled:scale-100",
+						mobile
+							? "relative max-w-24 rounded-[7px] border border-market-close-stroke-card bg-modal px-[9px] py-1 text-xs leading-4 text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:border-market-close-control hover:bg-modal hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg"
+							: "h-[27px] max-w-40 rounded-[7px] border border-market-close-stroke-card bg-modal px-2.5 py-1 text-xs text-market-close-muted transition-colors duration-[120ms] hover:border-market-close-control hover:bg-modal hover:text-market-close-fg data-popup-open:border-market-close-control data-popup-open:text-market-close-fg",
 					)}
 				>
-					<span className="truncate">{triggerLabel}</span>
-					<CaretDownIcon className={cn("size-3 shrink-0 transition-transform duration-150", open && "rotate-180")} />
+					<span className="truncate">{mobile ? triggerLabel : desktopTriggerLabel}</span>
+					<CaretDownIcon
+						className={cn("size-3 shrink-0 transition-transform duration-[120ms]", open && "rotate-180")}
+					/>
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent align={mobile ? "start" : "end"} className="w-[min(14rem,calc(100vw-1rem))] rounded-8 p-1">
 				<Command className="rounded-8">
-					<CommandInput placeholder={_(msg`Search markets...`)} className="text-xs" />
+					<CommandInput
+						aria-label={_(msg`Search markets`)}
+						placeholder={_(msg`Search markets...`)}
+						className="text-xs"
+					/>
 					<CommandList className="max-h-56 py-1">
 						<CommandEmpty className="py-4 text-xs text-fg-muted">{_(msg`No markets found.`)}</CommandEmpty>
-						<CommandItem value={_(allMessage)} onSelect={() => handleChange(ALL_POSITION_MARKETS)} className="text-xs">
+						<CommandItem
+							value={_(allMessage)}
+							onSelect={() => handleChange(ALL_POSITION_MARKETS)}
+							className="text-xs data-[selected=true]:bg-market-close-hover"
+						>
 							<span>{_(allMessage)}</span>
 							{value.type === "all" ? <CheckIcon className="ml-auto size-3 text-brand" weight="bold" /> : null}
 						</CommandItem>
 						<CommandItem
 							value={_(currentMessage)}
 							onSelect={() => handleChange(CURRENT_POSITION_MARKET)}
-							className="text-xs"
+							className="text-xs data-[selected=true]:bg-market-close-hover"
 						>
 							<span>{_(currentMessage)}</span>
 							{value.type === "current" ? <CheckIcon className="ml-auto size-3 text-brand" weight="bold" /> : null}
@@ -96,7 +111,7 @@ export function PositionMarketFilterControl({ value, options, onChange, mobile =
 									key={`${option.dex}:${option.coin}`}
 									value={`${option.label} ${option.coin} ${option.dex}`}
 									onSelect={() => handleChange({ type: "market", market: { coin: option.coin, dex: option.dex } })}
-									className="text-xs"
+									className="text-xs data-[selected=true]:bg-market-close-hover"
 								>
 									<span className="truncate">{option.label}</span>
 									{selected ? <CheckIcon className="ml-auto size-3 shrink-0 text-brand" weight="bold" /> : null}

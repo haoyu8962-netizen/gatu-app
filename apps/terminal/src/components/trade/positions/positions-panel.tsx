@@ -177,9 +177,15 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 				size="xs"
 				variant="underline"
 			>
-				<div className="flex h-9 shrink-0 items-stretch overflow-hidden border-b border-stroke-weak">
-					<div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-						<TabsList className="h-full min-w-max gap-1 border-b-0">
+				<div
+					data-testid="positions-toolbar-header"
+					className="font-market-close flex h-[43px] shrink-0 items-stretch overflow-hidden border-b border-market-close-stroke-card px-5"
+				>
+					<div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+						<TabsList
+							className="h-full min-w-max gap-0.5 border-b-0"
+							indicatorClassName="bg-market-close-fg duration-[120ms] ease-linear"
+						>
 							{tabs.map((tab) => {
 								const count = getTabCount(tab.value);
 
@@ -187,10 +193,10 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 									<TabsTrigger
 										key={tab.value}
 										value={tab.value}
-										className="inline-flex h-full items-center gap-1 whitespace-nowrap"
+										className="inline-flex h-full items-center gap-1 px-3 py-0 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:font-bold data-active:text-market-close-fg"
 									>
 										<span>{_(tab.label)}</span>
-										{typeof count === "number" ? <span className="text-fg-muted">({count})</span> : null}
+										{typeof count === "number" ? <span className="tabular-nums">({count})</span> : null}
 									</TabsTrigger>
 								);
 							})}
