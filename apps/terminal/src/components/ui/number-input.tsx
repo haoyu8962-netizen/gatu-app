@@ -109,6 +109,7 @@ interface Props extends Omit<React.ComponentProps<"input">, "type" | "onChange" 
 	maxLabel?: React.ReactNode;
 	onMaxClick?: () => void;
 	suffix?: React.ReactNode;
+	suffixClassName?: string;
 	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	label?: string;
 	labelValue?: React.ReactNode;
@@ -128,6 +129,7 @@ export function NumberInput({
 	maxLabel,
 	onMaxClick,
 	suffix,
+	suffixClassName,
 	value,
 	onChange,
 	onKeyDown,
@@ -278,7 +280,12 @@ export function NumberInput({
 			return (
 				<div className="relative min-w-0">
 					{inputEl}
-					<span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-fg-muted whitespace-nowrap tabular-nums">
+					<span
+						className={cn(
+							"pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs text-fg-muted tabular-nums",
+							suffixClassName,
+						)}
+					>
 						{suffix}
 					</span>
 				</div>

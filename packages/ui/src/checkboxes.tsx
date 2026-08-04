@@ -49,6 +49,9 @@ interface CheckboxProps
 	extends Omit<React.ComponentPropsWithoutRef<typeof BaseCheckbox.Root>, "className">,
 		VariantProps<typeof checkboxVariants> {
 	className?: string;
+	controlClassName?: string;
+	indicatorClassName?: string;
+	labelClassName?: string;
 	label?: React.ReactNode;
 	description?: React.ReactNode;
 	errorMessage?: string;
@@ -61,6 +64,9 @@ const Checkbox = React.forwardRef<HTMLElement, CheckboxProps>(
 			"aria-describedby": ariaDescribedBy,
 			"aria-labelledby": ariaLabelledBy,
 			className,
+			controlClassName,
+			indicatorClassName,
+			labelClassName,
 			size: sizeProp,
 			error,
 			label,
@@ -104,17 +110,19 @@ const Checkbox = React.forwardRef<HTMLElement, CheckboxProps>(
 					aria-labelledby={generatedLabelledBy}
 					disabled={disabled}
 					indeterminate={indeterminate}
-					className={cn(checkboxVariants({ size, error }))}
+					className={cn(checkboxVariants({ size, error }), controlClassName)}
 					{...props}
 				>
-					<BaseCheckbox.Indicator className="flex items-center justify-center text-icon-inverse-strong">
+					<BaseCheckbox.Indicator
+						className={cn("flex items-center justify-center text-icon-inverse-strong", indicatorClassName)}
+					>
 						{indeterminate ? <MinusIcon size={iconSize} weight="bold" /> : <CheckIcon size={iconSize} weight="bold" />}
 					</BaseCheckbox.Indicator>
 				</BaseCheckbox.Root>
 				{(label || description || (error && errorMessage)) && (
 					<span className="flex flex-col gap-1">
 						{label && (
-							<span id={labelId} className="text-xs text-fg">
+							<span id={labelId} className={cn("text-xs text-fg", labelClassName)}>
 								{label}
 							</span>
 						)}

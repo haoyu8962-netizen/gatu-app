@@ -5,6 +5,18 @@
 @import "react-grid-layout/css/styles.css";
 @source "../../../packages/ui/src";
 
+@font-face {
+  font-family: "IBM Plex Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 700;
+  src: url("@fontsource-variable/ibm-plex-sans/files/ibm-plex-sans-latin-wght-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 /* ============================================
    HyperTerminal UI — Design Tokens
    Source: Figma variable exports
@@ -20,6 +32,7 @@
 @theme {
   /* ---- Font Families ---- */
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-market-close: "IBM Plex Sans Variable", "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-mono: ui-monospace, "SF Mono", monospace;
 
   /* ---- Typography Scale (Desktop) ----
@@ -203,6 +216,22 @@
     --scope-spot: #0F766E;
     --scope-builders: #B45309;
     --sel: rgba(37, 99, 235, 0.15);
+
+    /* Market-close confirmation — design handoff semantic colors. */
+    --market-close-text-strong: #1a2330;
+    --market-close-text-muted: #6b7686;
+    --market-close-text-subtle: #98a2b0;
+    --market-close-stroke-card: #e3e8ee;
+    --market-close-stroke-input: #d8dfe7;
+    --market-close-stroke-control: #c6cfd9;
+    --market-close-surface-card: #f7f9fb;
+    --market-close-surface-hover: #f1f4f8;
+    --market-close-control-active: #1a2330;
+    --market-close-control-active-text: #ffffff;
+    --market-close-danger: #d6453d;
+    --market-close-danger-text: #ffffff;
+    --market-close-danger-disabled: #e9b5b2;
+    --market-close-success: #1f8a5a;
   }
 
   /* ==================== DARK MODE ==================== */
@@ -307,6 +336,22 @@
     --scope-spot: #2DD4BF;
     --scope-builders: #F59E0B;
     --sel: rgba(79, 125, 255, 0.15);
+
+    /* Dark mode follows the terminal's existing semantic contrast system. */
+    --market-close-text-strong: var(--text-strong);
+    --market-close-text-muted: var(--text-weak);
+    --market-close-text-subtle: var(--text-weak);
+    --market-close-stroke-card: var(--stroke-weak);
+    --market-close-stroke-input: var(--stroke-strong);
+    --market-close-stroke-control: var(--stroke-strong);
+    --market-close-surface-card: var(--fill-weak);
+    --market-close-surface-hover: var(--fill-hover);
+    --market-close-control-active: var(--fill-selected);
+    --market-close-control-active-text: var(--text-inverse-strong);
+    --market-close-danger: var(--fill-error-strong);
+    --market-close-danger-text: var(--text-inverse-strong);
+    --market-close-danger-disabled: var(--fill-disabled);
+    --market-close-success: var(--fill-success-strong);
   }
 }
 
@@ -363,6 +408,22 @@
   --color-fill-inverse-disabled: var(--fill-inverse-disabled);
   --color-white: var(--fill-white);
   --color-yellow: var(--fill-yellow);
+
+  /* Market-close confirmation */
+  --color-market-close-fg: var(--market-close-text-strong);
+  --color-market-close-muted: var(--market-close-text-muted);
+  --color-market-close-subtle: var(--market-close-text-subtle);
+  --color-market-close-stroke-card: var(--market-close-stroke-card);
+  --color-market-close-stroke-input: var(--market-close-stroke-input);
+  --color-market-close-stroke-control: var(--market-close-stroke-control);
+  --color-market-close-card: var(--market-close-surface-card);
+  --color-market-close-hover: var(--market-close-surface-hover);
+  --color-market-close-control: var(--market-close-control-active);
+  --color-market-close-on-control: var(--market-close-control-active-text);
+  --color-market-close-danger: var(--market-close-danger);
+  --color-market-close-danger-text: var(--market-close-danger-text);
+  --color-market-close-danger-disabled: var(--market-close-danger-disabled);
+  --color-market-close-success: var(--market-close-success);
 
   /* Strokes (kept as `stroke-` — border ≠ stroke, so no stutter) */
   --color-stroke-weak: var(--stroke-weak);

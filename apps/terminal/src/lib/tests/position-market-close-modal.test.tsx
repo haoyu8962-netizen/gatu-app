@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const testState = vi.hoisted(() => ({
 	actionButtonProps: null as Record<string, unknown> | null,
 	adaptiveProps: null as Record<string, unknown> | null,
+	checkboxProps: null as Record<string, unknown> | null,
 	close: vi.fn(),
 	error: null as string | null,
 	isMobile: false,
@@ -81,20 +82,16 @@ vi.mock("@gatu/ui", () => ({
 	},
 	Button: ({ children, variant: _variant, intent: _intent, size: _size, ...props }: Record<string, unknown>) =>
 		createElement("button", { type: "button", ...props }, children as ReactNode),
-	Checkbox: ({
-		checked,
-		disabled,
-		label,
-		description,
-		onCheckedChange,
-	}: {
-		checked: boolean;
-		disabled?: boolean;
-		label: ReactNode;
-		description?: ReactNode;
-		onCheckedChange: (checked: boolean) => void;
-	}) =>
-		createElement(
+	Checkbox: (props: Record<string, unknown>) => {
+		testState.checkboxProps = props;
+		const { checked, disabled, label, description, onCheckedChange } = props as {
+			checked: boolean;
+			disabled?: boolean;
+			label: ReactNode;
+			description?: ReactNode;
+			onCheckedChange: (checked: boolean) => void;
+		};
+		return createElement(
 			"label",
 			null,
 			createElement("input", {
@@ -106,7 +103,8 @@ vi.mock("@gatu/ui", () => ({
 			}),
 			label,
 			description,
-		),
+		);
+	},
 	ModalContent: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
 		createElement("div", props, children),
 	ModalDescription: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
@@ -259,6 +257,7 @@ describe("PositionMarketCloseModal", () => {
 		root = createRoot(container);
 		testState.actionButtonProps = null;
 		testState.adaptiveProps = null;
+		testState.checkboxProps = null;
 		testState.close.mockReset();
 		testState.error = null;
 		testState.isMobile = false;
@@ -300,21 +299,49 @@ describe("PositionMarketCloseModal", () => {
 			closeLabel: "Close",
 		});
 		expect(testState.adaptiveProps?.className).toContain("min-[1001px]:max-w-[27.5rem]");
+		expect(testState.adaptiveProps?.className).toContain("!rounded-t-[20px]");
+		expect(testState.adaptiveProps?.className).toContain("min-[1001px]:!rounded-[16px]");
+		expect(testState.adaptiveProps?.className).not.toContain("rounded-t-20");
+		expect(testState.adaptiveProps?.className).not.toContain("min-[1001px]:rounded-16");
 		expect(getSummaryValue("Available to close")?.textContent).toBe("2.5000 BTC");
 		expect(getSummaryValue("Entry price")?.textContent).toBe("$100,000");
 		expect(getSummaryValue("Mark price")?.textContent).toBe("$101,000");
 		expect(getSummaryValue("Estimated PnL")?.textContent).toBe("-$25.00");
-		expect(getSummaryValue("Estimated PnL")?.className).toContain("text-error");
+		expect(getSummaryValue("Estimated PnL")?.className).toContain("text-market-close-danger");
 		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.className).toMatch(
-			/rounded-12.*border.*bg-fill-weak/,
+			/rounded-\[12px\].*border.*bg-market-close-card/,
 		);
+		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.className).not.toContain(
+			"rounded-12",
+		);
+		expect(testState.numberInputs.get("Close size")?.className).toContain("!rounded-[10px]");
+		expect(testState.numberInputs.get("Close percentage")?.className).toContain("!rounded-[10px]");
+		expect(testState.numberInputs.get("Close size")?.suffixClassName).toContain("right-3");
+		expect(testState.numberInputs.get("Close percentage")?.suffixClassName).toContain("right-2.5");
+		const quickChip = container.querySelector<HTMLButtonElement>('button[aria-pressed="false"]');
+		const selectedChip = container.querySelector<HTMLButtonElement>('button[aria-pressed="true"]');
+		expect(quickChip?.className).toContain("!rounded-[8px]");
+		expect(selectedChip?.className).toContain("!bg-market-close-control");
+		expect(selectedChip?.className).toContain("!text-market-close-on-control");
+		expect(testState.sliderProps).toMatchObject({
+			thumbAlignment: "center",
+			controlClassName: "h-9 min-[1001px]:h-8",
+		});
+		expect(testState.sliderProps?.thumbClassName).toContain("size-[30px]");
+		expect(testState.sliderProps?.thumbClassName).toContain("min-[1001px]:size-[26px]");
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.textContent).toContain(
 			"Market Close 1.2500 BTC",
 		);
 		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).not.toBeNull();
+		expect(testState.checkboxProps).toMatchObject({
+			controlClassName: expect.stringContaining("size-5 !rounded-[5px]"),
+			labelClassName: expect.stringContaining("text-[13px]"),
+		});
+		expect(testState.actionButtonProps?.className).toContain("!rounded-[12px]");
+		expect(testState.actionButtonProps?.className).toContain("!text-market-close-danger-text");
 	});
 
-	it("uses a mobile drawer handle and omits the desktop opt-out", () => {
+	it("uses the design-sized mobile drawer and keeps the opt-out visible", () => {
 		testState.isMobile = true;
 		render();
 
@@ -323,12 +350,16 @@ describe("PositionMarketCloseModal", () => {
 			dismissible: true,
 			showClose: false,
 			showHandle: true,
-			handleClassName: "top-2.5 h-1 w-9 bg-stroke-weak",
+			handleClassName: "top-2.5 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input",
 		});
-		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).toBeNull();
+		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).not.toBeNull();
+		expect(getSummaryValue("Available to close")?.textContent).toBe("2.5000");
 		expect(container.querySelector('[data-testid="position-market-close-summary"] div')?.className).toContain(
-			"grid-cols-4",
+			"justify-between",
 		);
+		expect(testState.adaptiveProps?.className).toContain("!rounded-t-[20px]");
+		expect(testState.numberInputs.get("Close percentage")?.className).toContain("h-[46px]");
+		expect(testState.checkboxProps?.controlClassName).toContain("!rounded-[5px]");
 	});
 
 	it("normalizes size on blur with the market's current szDecimals", () => {
@@ -408,7 +439,7 @@ describe("PositionMarketCloseModal", () => {
 		render();
 		expect(testState.actionButtonProps).toMatchObject({
 			holdDurationMs: 800,
-			holdProgressClassName: "bg-black/20",
+			holdProgressClassName: "bg-black/[0.22]",
 		});
 		expect(container.textContent).toContain("Hold to confirm · Filled trades cannot be reversed");
 

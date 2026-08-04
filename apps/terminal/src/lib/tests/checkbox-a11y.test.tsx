@@ -63,4 +63,33 @@ describe("Checkbox accessibility", () => {
 		const describedBy = checkbox?.getAttribute("aria-describedby") ?? "";
 		expect(document.getElementById(describedBy)?.textContent).toBe("Control description");
 	});
+
+	it("applies visual slot classes to the control, indicator, and label nodes", () => {
+		const container = renderCheckbox(
+			<Checkbox
+				checked
+				className="items-center"
+				controlClassName="size-5 !rounded-[5px] transition-all duration-[120ms]"
+				indicatorClassName="text-white [&>svg]:size-3"
+				label="Visual label"
+				labelClassName="text-[13px] text-market-close-muted"
+				onCheckedChange={() => {}}
+			/>,
+		);
+		const checkbox = container.querySelector<HTMLElement>('[role="checkbox"]');
+		const labelledBy = checkbox?.getAttribute("aria-labelledby") ?? "";
+		const indicator = checkbox?.firstElementChild;
+		const label = document.getElementById(labelledBy);
+
+		expect(checkbox?.className).toContain("size-5");
+		expect(checkbox?.className).toContain("!rounded-[5px]");
+		expect(checkbox?.className).toContain("transition-all");
+		expect(checkbox?.className).toContain("duration-[120ms]");
+		expect(checkbox?.className).not.toContain("transition-colors");
+		expect(checkbox?.className).not.toContain("duration-150");
+		expect(indicator?.className).toContain("text-white");
+		expect(indicator?.className).toContain("[&>svg]:size-3");
+		expect(label?.className).toContain("text-[13px]");
+		expect(label?.className).toContain("text-market-close-muted");
+	});
 });

@@ -60,11 +60,24 @@ describe("NumberInput keyboard stepping", () => {
 
 	it("lets suffixed inputs shrink to fit responsive grid columns", () => {
 		act(() => {
-			root.render(<NumberInput value="100.0" suffix="%" onChange={vi.fn()} />);
+			root.render(
+				<NumberInput
+					className="!rounded-[10px]"
+					onChange={vi.fn()}
+					suffix="%"
+					suffixClassName="right-2.5 text-[13px]"
+					value="100.0"
+				/>,
+			);
 		});
 
 		const input = container.querySelector<HTMLInputElement>("input");
+		const suffix = input?.parentElement?.querySelector("span");
 		expect(input?.className).toContain("w-full");
+		expect(input?.className).toContain("!rounded-[10px]");
 		expect(input?.parentElement?.className).toContain("min-w-0");
+		expect(suffix?.className).toContain("right-2.5");
+		expect(suffix?.className).toContain("text-[13px]");
+		expect(suffix?.className).not.toContain("right-2 ");
 	});
 });

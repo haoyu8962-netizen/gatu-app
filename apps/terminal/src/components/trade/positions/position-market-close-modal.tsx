@@ -135,27 +135,32 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 		markPx,
 	});
 	const formattedCloseSize = formatToken(sizing.normalizedSize, { decimals: position.szDecimals });
+	const pnlColorClass = estimatedPnl
+		? getValueColorClass(estimatedPnl) === "text-success"
+			? "text-market-close-success"
+			: "text-market-close-danger"
+		: undefined;
 	const summaryItems = [
 		{
 			key: "available",
 			label: t`Available to close`,
 			value: formatToken(positionStatusMessage === null ? sizing.maxSize : null, {
 				decimals: position.szDecimals,
-				symbol: sizeSymbol,
+				symbol: isMobile ? undefined : sizeSymbol,
 			}),
-			valueClassName: "font-semibold text-fg",
+			valueClassName: "font-semibold text-market-close-fg",
 		},
 		{
 			key: "entry",
 			label: t`Entry price`,
 			value: formatPrice(livePosition?.entryPx, { szDecimals: position.szDecimals }),
-			valueClassName: "font-medium text-fg",
+			valueClassName: "font-semibold text-market-close-fg min-[1001px]:font-normal",
 		},
 		{
 			key: "mark",
 			label: t`Mark price`,
 			value: formatPrice(markPx, { szDecimals: position.szDecimals }),
-			valueClassName: "font-medium text-fg",
+			valueClassName: "font-semibold text-market-close-fg min-[1001px]:font-normal",
 		},
 		...(showPnl
 			? [
@@ -163,7 +168,7 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 						key: "pnl",
 						label: t`Estimated PnL`,
 						value: formatUSD(estimatedPnl, { compact: false, signDisplay: "exceptZero" }),
-						valueClassName: cn("font-semibold", estimatedPnl && getValueColorClass(estimatedPnl)),
+						valueClassName: cn("font-semibold", pnlColorClass),
 					},
 				]
 			: []),
@@ -221,52 +226,50 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 			showClose={!isMobile && canDismiss}
 			showHandle={isMobile && canDismiss}
 			closeLabel={t`Close`}
-			handleClassName="top-2.5 h-1 w-9 bg-stroke-weak"
-			overlayClassName="backdrop-blur-[2px] duration-100"
-			className="max-h-[calc(100dvh-1rem)] rounded-t-20 border-0 shadow-overlay min-[1001px]:max-w-[27.5rem] min-[1001px]:rounded-16"
+			handleClassName="top-2.5 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
+			overlayClassName="backdrop-blur-[2px] !transition-none data-starting-style:!opacity-100 data-ending-style:!opacity-100"
+			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[20px] !border-0 !shadow-none !transition-none data-starting-style:!translate-y-0 data-starting-style:!scale-100 data-starting-style:!opacity-100 data-ending-style:!translate-y-0 data-ending-style:!scale-100 data-ending-style:!opacity-100 min-[1001px]:max-w-[27.5rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-[0_24px_64px_rgba(20,30,45,0.14),0_2px_8px_rgba(20,30,45,0.06)] min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button]:!rounded-[8px] min-[1001px]:[&>button]:text-market-close-muted min-[1001px]:[&>button:hover]:bg-market-close-hover min-[1001px]:[&>button:hover]:text-market-close-fg min-[1001px]:[&>button:active]:bg-market-close-hover min-[1001px]:[&>button>svg]:size-[18px]"
 		>
 			<ModalHeader divider={false} className="gap-1 px-5 pt-7 pb-0 text-left min-[1001px]:px-6 min-[1001px]:pt-6">
 				<div className="flex min-w-0 items-center justify-between gap-3">
-					<ModalTitle className="flex min-w-0 items-baseline gap-1.5 text-[17px] leading-6 font-bold min-[1001px]:text-[18px]">
+					<ModalTitle className="flex h-6 min-w-0 items-baseline gap-1.5 text-[17px] leading-6 font-bold text-market-close-fg min-[1001px]:h-auto min-[1001px]:text-[18px] min-[1001px]:leading-[25px]">
 						<span>{t`Market Close`}</span>
-						<span className="truncate text-[13px] font-medium text-fg-muted min-[1001px]:hidden">{sizeSymbol}</span>
+						<span className="truncate text-[13px] font-medium text-market-close-muted min-[1001px]:hidden">
+							{sizeSymbol}
+						</span>
 					</ModalTitle>
-					<span className="shrink-0 text-[13px] text-fg-muted tabular-nums min-[1001px]:hidden">
+					<span className="shrink-0 text-[13px] leading-[18px] text-market-close-muted tabular-nums min-[1001px]:hidden">
 						{t`Price: Market`}
 					</span>
 				</div>
-				<ModalDescription className="sr-only max-w-sm text-[13px] leading-5 min-[1001px]:not-sr-only">
+				<ModalDescription className="sr-only max-w-sm text-[13px] leading-[18px] text-market-close-muted min-[1001px]:not-sr-only">
 					{t`Reduce this position at the current market price. Filled trades cannot be reversed.`}
 				</ModalDescription>
 			</ModalHeader>
 
-			<ModalContent className="space-y-5 px-5 pt-5 pb-0 min-[1001px]:px-6">
+			<ModalContent className="flex flex-col gap-3.5 px-5 pt-3.5 pb-0 min-[1001px]:gap-5 min-[1001px]:px-6 min-[1001px]:pt-5">
 				<section
 					data-testid="position-market-close-summary"
 					aria-label={t`Position summary`}
-					className="rounded-12 border border-stroke-weak bg-fill-weak px-3 py-3.5 min-[1001px]:px-4"
+					className="rounded-[12px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3 min-[1001px]:px-4 min-[1001px]:py-3.5"
 				>
-					<div
-						className={cn(
-							"grid gap-2 min-[1001px]:block min-[1001px]:space-y-2.5",
-							showPnl ? "grid-cols-4" : "grid-cols-3",
-						)}
-					>
+					<div className="flex justify-between gap-2 min-[1001px]:block min-[1001px]:space-y-2.5">
 						{summaryItems.map((item) => (
 							<div
 								key={item.key}
 								className={cn(
-									"flex min-w-0 flex-col gap-1 text-center min-[1001px]:flex-row min-[1001px]:items-center min-[1001px]:justify-between min-[1001px]:gap-4 min-[1001px]:text-left",
+									"flex min-w-0 flex-col gap-[3px] text-left min-[1001px]:flex-row min-[1001px]:items-center min-[1001px]:justify-between min-[1001px]:gap-4",
+									item.key === "pnl" && "items-end text-right min-[1001px]:items-center min-[1001px]:text-left",
 									item.key === "pnl" &&
-										"min-[1001px]:border-t min-[1001px]:border-dashed min-[1001px]:border-stroke-weak min-[1001px]:pt-2.5",
+										"min-[1001px]:border-t min-[1001px]:border-dashed min-[1001px]:border-market-close-stroke-card min-[1001px]:pt-2.5",
 								)}
 							>
-								<span className="truncate text-[11px] leading-4 text-fg-muted min-[1001px]:text-[13px]">
+								<span className="max-w-full truncate text-[11px] leading-4 text-market-close-muted min-[1001px]:text-[13px] min-[1001px]:leading-[18px]">
 									{item.label}
 								</span>
 								<span
 									className={cn(
-										"truncate text-sm leading-5 tabular-nums min-[1001px]:text-[13px]",
+										"max-w-full truncate text-sm leading-[18px] tabular-nums min-[1001px]:text-[13px]",
 										item.valueClassName,
 									)}
 								>
@@ -277,13 +280,17 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 					</div>
 				</section>
 
-				<section data-testid="position-market-close-sizing" aria-label={t`Close size`} className="space-y-2.5">
+				<section
+					data-testid="position-market-close-sizing"
+					aria-label={t`Close size`}
+					className="flex flex-col gap-3.5 min-[1001px]:gap-2.5"
+				>
 					<div className="hidden items-center justify-between gap-3 min-[1001px]:flex">
-						<span className="text-[13px] font-semibold text-fg">{t`Close size`}</span>
-						<span className="text-xs text-fg-muted">{t`Price: Market`}</span>
+						<span className="text-[13px] leading-[18px] font-semibold text-market-close-fg">{t`Close size`}</span>
+						<span className="text-xs leading-[18px] text-market-close-muted">{t`Price: Market`}</span>
 					</div>
 
-					<div className="grid grid-cols-[minmax(0,1fr)_5.25rem] gap-2.5 min-[1001px]:grid-cols-[minmax(0,1fr)_5.75rem]">
+					<div className="grid grid-cols-[minmax(0,1fr)_94px] gap-2.5 min-[1001px]:grid-cols-[minmax(0,1fr)_114px]">
 						<NumberInput
 							aria-label={t`Close size`}
 							aria-describedby={visibleError ? errorId : undefined}
@@ -297,7 +304,8 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 							inputSize="xl"
 							mobileSafe
 							dir="ltr"
-							className="h-12 rounded-10 pr-16 text-base font-semibold tabular-nums min-[1001px]:h-11"
+							className="h-[46px] !rounded-[10px] border-market-close-stroke-input bg-modal px-3 pr-12 text-base leading-5 font-semibold text-market-close-fg tabular-nums transition-[border-color] duration-[120ms] focus-visible:border-market-close-control focus-visible:ring-0 min-[1001px]:h-11"
+							suffixClassName="right-3 text-[13px] leading-[18px] font-normal text-market-close-muted min-[1001px]:font-medium"
 						/>
 
 						<NumberInput
@@ -313,7 +321,8 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 							inputSize="xl"
 							mobileSafe
 							dir="ltr"
-							className="h-12 rounded-10 pr-7 text-right text-base font-semibold tabular-nums min-[1001px]:h-11"
+							className="h-[46px] !rounded-[10px] border-market-close-stroke-input bg-modal px-2.5 pr-[22px] text-right text-base leading-5 font-semibold text-market-close-fg tabular-nums transition-[border-color] duration-[120ms] focus-visible:border-market-close-control focus-visible:ring-0 min-[1001px]:h-11"
+							suffixClassName="right-2.5 text-[13px] leading-[18px] font-normal text-market-close-muted"
 						/>
 					</div>
 
@@ -324,7 +333,7 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 								<Button
 									key={percent}
 									type="button"
-									variant={selected ? "filled" : "outline"}
+									variant="outline"
 									intent="neutral"
 									size="xs"
 									aria-pressed={selected}
@@ -332,7 +341,12 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 									onClick={() =>
 										setSizingIntent(percent === 100 ? { kind: "max" } : { kind: "percent", value: String(percent) })
 									}
-									className="h-9 rounded-8 px-0 text-[13px] font-semibold shadow-none tabular-nums transition-all duration-100 min-[1001px]:h-8"
+									className={cn(
+										"h-auto min-h-0 !rounded-[8px] px-0 py-2 text-[13px] leading-[18px] font-semibold tabular-nums !shadow-none transition-all duration-[120ms] focus-visible:!border-market-close-control focus-visible:!outline-none active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!border-market-close-stroke-card data-disabled:!bg-modal data-disabled:!text-market-close-subtle min-[1001px]:py-[7px]",
+										selected
+											? "!border-market-close-control !bg-market-close-control !text-market-close-on-control hover:!bg-market-close-control active:!bg-market-close-control"
+											: "!border-market-close-stroke-card !bg-modal !text-market-close-muted hover:!bg-modal active:!bg-modal min-[1001px]:hover:!border-market-close-control min-[1001px]:hover:!text-market-close-control",
+									)}
 								>
 									{percent === 100 ? t`Max` : `${percent}%`}
 								</Button>
@@ -340,49 +354,56 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 						})}
 					</div>
 
-					<div className="relative flex min-h-11 items-center" data-testid="position-market-close-slider">
+					<div
+						className="relative h-9 min-h-0 min-[1001px]:mt-0.5 min-[1001px]:h-8"
+						data-testid="position-market-close-slider"
+					>
 						<TradeSizeSlider
 							value={sliderValue}
 							onPercentChange={handleSliderChange}
 							disabled={!canEdit}
 							thumbSize="lg"
-							thumbAlignment="edge"
+							thumbAlignment="center"
 							ariaLabel={t`Close percentage slider`}
 							ariaDescribedBy={visibleError ? errorId : undefined}
 							ariaInvalid={visibleSizingError !== null}
 							ariaValueText={t`${requestedPercent}% requested; ${effectivePercent}% after size precision`}
 							className="relative z-10"
 							controlClassName="h-9 min-[1001px]:h-8"
-							trackClassName="h-1 rounded-full bg-stroke-weak ring-0 shadow-none"
-							indicatorClassName="min-w-0 rounded-full bg-fill shadow-none"
-							thumbClassName="z-20 size-6 border-[3px] border-stroke-strong bg-modal shadow-md before:-inset-2.5 min-[1001px]:size-5 min-[1001px]:before:-inset-1.5"
+							trackClassName="h-1 !rounded-[2px] bg-market-close-stroke-card ring-0 !shadow-none"
+							indicatorClassName="min-w-0 !rounded-[2px] bg-market-close-control !shadow-none"
+							thumbClassName="z-20 size-[30px] border-[3px] border-market-close-control bg-modal shadow-[0_2px_6px_rgba(20,30,45,0.2)] before:-inset-[7px] [&:has(input:focus-visible)]:!outline-none min-[1001px]:size-[26px] min-[1001px]:before:-inset-[3px]"
 						/>
-						<div
-							className="pointer-events-none absolute inset-x-3 top-1/2 z-10 flex -translate-y-1/2 justify-between min-[1001px]:inset-x-2.5"
-							aria-hidden="true"
-						>
+						<div className="pointer-events-none absolute inset-0 z-10" aria-hidden="true">
 							{SLIDER_MARKS.map((mark) => (
 								<span
 									key={mark}
+									style={{ left: `${mark}%` }}
 									className={cn(
-										"size-2 rounded-full",
-										mark <= sliderValue ? "border-2 border-fill bg-fill" : "border-2 border-stroke-weak bg-modal",
+										"absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full",
+										mark <= sliderValue
+											? "border-2 border-market-close-control bg-market-close-control"
+											: "border-2 border-market-close-stroke-input bg-modal",
 									)}
 								/>
 							))}
 						</div>
 					</div>
 
-					{!isMobile && (
-						<Checkbox
-							size="md"
-							checked={confirmationPreferenceAlreadyDismissed || dismissFutureConfirmation}
-							onCheckedChange={setDismissFutureConfirmation}
-							disabled={confirmationPreferenceAlreadyDismissed || !canEdit}
-							className={cn("w-fit", confirmationPreferenceAlreadyDismissed && canEdit && "opacity-100")}
-							label={t`Don't show this confirmation again`}
-						/>
-					)}
+					<Checkbox
+						size="md"
+						checked={confirmationPreferenceAlreadyDismissed || dismissFutureConfirmation}
+						onCheckedChange={setDismissFutureConfirmation}
+						disabled={confirmationPreferenceAlreadyDismissed || !canEdit}
+						className={cn(
+							"w-fit items-center gap-2 min-[1001px]:mt-0.5",
+							confirmationPreferenceAlreadyDismissed && canEdit && "opacity-100",
+						)}
+						controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-control focus-visible:outline-none data-checked:border-market-close-control data-checked:bg-market-close-control"
+						indicatorClassName="text-market-close-on-control [&>svg]:size-3"
+						labelClassName="whitespace-nowrap text-[13px] leading-[18px] font-normal text-market-close-muted"
+						label={t`Don't show this confirmation again`}
+					/>
 				</section>
 
 				{phase === "reconciling" && (
@@ -426,7 +447,7 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 				</p>
 			</ModalContent>
 
-			<ModalFooter className="flex-col items-stretch gap-2 px-5 pt-5 pb-5 min-[1001px]:px-6 min-[1001px]:pb-6">
+			<ModalFooter className="flex-col items-stretch gap-2 px-5 pt-3.5 pb-5 min-[1001px]:px-6 min-[1001px]:pt-5 min-[1001px]:pb-6">
 				<TradingActionButton
 					onClick={handleSubmit}
 					requireReadyConfirmation
@@ -434,10 +455,10 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 					intent="error"
 					size="lg"
 					holdDurationMs={holdToConfirm ? HOLD_TO_CONFIRM_DURATION_MS : undefined}
-					holdProgressClassName="bg-black/20"
+					holdProgressClassName="bg-black/[0.22]"
 					aria-describedby={helperId}
 					containerClassName="w-full items-stretch"
-					className="relative min-h-12 w-full overflow-hidden rounded-12 text-[15px] data-disabled:!bg-fill-disabled data-disabled:!text-fg-muted"
+					className="relative min-h-0 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger py-[15px] text-[15px] leading-[21px] font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-[background-color] duration-150 hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-white min-[1001px]:py-[14px]"
 				>
 					{progressLabel ? (
 						<>
@@ -448,7 +469,7 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 						t`Market Close ${formattedCloseSize} ${sizeSymbol}`
 					)}
 				</TradingActionButton>
-				<p id={helperId} className="text-center text-xs leading-4 text-fg-muted/70">
+				<p id={helperId} className="text-center text-xs leading-[17px] text-market-close-subtle">
 					{holdToConfirm
 						? t`Hold to confirm · Filled trades cannot be reversed`
 						: t`Click to submit · Filled trades cannot be reversed`}
