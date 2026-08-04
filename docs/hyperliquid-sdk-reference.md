@@ -50,6 +50,7 @@ For each API-dependent change:
 - A TWAP with history status `waitingForTrigger` is live and must retain its asset reservation. `stopped` is terminal and releases it. `TwapState.stopPx` and `TwapState.trigger` are required nullable response fields.
 - `userSetAbstraction` accepts only `disabled`, `unifiedAccount`, or `portfolioMargin`. Legacy `dexAbstraction` may still be normalized when reading old account state, but must not be sent as a `userSetAbstraction` action.
 - `activateOutcomeDeployer` is an L1 action and therefore uses the trading/Agent client, not the principal user-signed client.
+- `userFees.stakingLink` is `null` or a discriminated union. The `requested` and `tradingUser` variants carry `stakingUser`; the `stakingUser` variant carries `tradingUser`. Narrow on `type` before reading either address.
 - HTTP 429 is a deterministic rate-limit response and must not enter ambiguous-delivery reconciliation. Transport failures without a response, HTTP 408, and HTTP 5xx remain ambiguous.
 - The SDK does not document whether `batchModify` preserves `positionTpsl` grouping for `s: "0"`. Keep this as a testnet verification requirement; do not replace or endorse that path based on inference alone.
 

@@ -4283,7 +4283,7 @@ msgstr "المتاح في Spot"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Spot Dust Conversion"
-msgstr ""
+msgstr "تحويل أرصدة التداول الفوري المتبقية"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Spot: Max 1% (100 basis points)"
@@ -5210,7 +5210,7 @@ msgstr "أوامر TWAP"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "TWAP Slice"
-msgstr ""
+msgstr "شريحة من أمر TWAP"
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Two-sided open interest: the sum of long and short positions on this contract."
@@ -5773,7 +5773,7 @@ msgstr "إلغاء الرهن"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Vault Close"
-msgstr ""
+msgstr "إغلاق مركز الخزنة"
 
 #: src/config/account-ledger.ts
 msgid "Vault Commission"

@@ -15,6 +15,7 @@ import type {
 	SubscriptionClient,
 	TradesWsEvent,
 	TradesWsParameters,
+	UserFeesResponse,
 	UserFillsWsEvent,
 	UserFillsWsParameters,
 } from "@nktkas/hyperliquid";
@@ -59,6 +60,17 @@ describe("InfoClient mapped types", () => {
 	it("includes the Info methods added in SDK 0.33.3", () => {
 		expectTypeOf<"outcomeTemplates">().toMatchTypeOf<InfoMethod>();
 		expectTypeOf<"usdcRouting">().toMatchTypeOf<InfoMethod>();
+	});
+
+	it("preserves the userFees staking-link discriminant added in SDK 0.33.3", () => {
+		type StakingLink = NonNullable<UserFeesResponse["stakingLink"]>;
+		type StakingUserView = Extract<StakingLink, { type: "stakingUser" }>;
+		type TradingUserView = Exclude<StakingLink, StakingUserView>;
+
+		expectTypeOf<StakingUserView>().toHaveProperty("tradingUser");
+		expectTypeOf<StakingUserView>().not.toHaveProperty("stakingUser");
+		expectTypeOf<TradingUserView>().toHaveProperty("stakingUser");
+		expectTypeOf<TradingUserView>().not.toHaveProperty("tradingUser");
 	});
 
 	it("covers all InfoClient methods", () => {
