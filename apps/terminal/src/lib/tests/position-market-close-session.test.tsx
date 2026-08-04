@@ -83,11 +83,59 @@ describe("position market close session", () => {
 			env: "Mainnet",
 			position: POSITION,
 			sizingIntent: { kind: "max" },
+			presentation: "confirmation",
 			phase: "idle",
 		});
 
 		act(() => commandMenuActions.open());
 		expect(getPositionMarketCloseModal()?.sessionId).toBe(sessionId);
+	});
+
+	it("does not replace an existing idle session and records direct presentation explicitly", () => {
+		let sessionId: string | null = null;
+		act(() => {
+			sessionId = closeActions.open(POSITION, "direct");
+		});
+
+		let duplicateId: string | null = "unexpected";
+		act(() => {
+			duplicateId = closeActions.open({ ...POSITION, assetId: 1 });
+		});
+
+		expect(duplicateId).toBeNull();
+		expect(getPositionMarketCloseModal()).toMatchObject({ sessionId, presentation: "direct", position: POSITION });
+	});
+
+	it("permanently reveals a direct session after an error or reconciliation requires attention", () => {
+		let errorSessionId = "";
+		act(() => {
+			errorSessionId = closeActions.open(POSITION, "direct") ?? "";
+		});
+		const actions = getPositionMarketCloseActions();
+
+		act(() => {
+			actions.setError(errorSessionId, "Order rejected");
+			actions.setError(errorSessionId, null);
+			actions.setSizingIntent(errorSessionId, { kind: "percent", value: "50" });
+		});
+		expect(getPositionMarketCloseModal()).toMatchObject({
+			presentation: "confirmation",
+			phase: "idle",
+			error: null,
+			sizingIntent: { kind: "percent", value: "50" },
+		});
+
+		act(() => actions.close(errorSessionId));
+		let reconcilingSessionId = "";
+		act(() => {
+			reconcilingSessionId = closeActions.open(POSITION, "direct") ?? "";
+			actions.updatePhase(reconcilingSessionId, "reconciling");
+			actions.updatePhase(reconcilingSessionId, "idle");
+		});
+		expect(getPositionMarketCloseModal()).toMatchObject({
+			presentation: "confirmation",
+			phase: "idle",
+		});
 	});
 
 	it("rejects late close callbacks and locks validating and submitting sessions", () => {

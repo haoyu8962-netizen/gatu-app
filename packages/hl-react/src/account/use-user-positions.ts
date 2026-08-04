@@ -5,6 +5,7 @@ import { getAccountLedgerRefreshKey } from "./ledger-refresh";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
 type RawPosition = RawClearinghouseState["assetPositions"][number];
+const SIGNED_DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
 
 export interface Position {
 	dex: string;
@@ -46,8 +47,7 @@ function normalizePositions(event: AllDexsClearinghouseStateWsEvent | undefined)
 			const position = assetPosition?.position;
 			if (!position) continue;
 
-			const size = Number(position.szi);
-			if (!Number.isFinite(size) || size === 0) continue;
+			if (!isNonZeroPositionSize(position.szi)) continue;
 
 			positions.push({
 				dex,
@@ -66,6 +66,12 @@ function normalizePositions(event: AllDexsClearinghouseStateWsEvent | undefined)
 		}
 	}
 	return positions;
+}
+
+/** @internal Exact string gate used before preserving protocol position values. */
+export function isNonZeroPositionSize(value: string): boolean {
+	const normalized = value.trim();
+	return SIGNED_DECIMAL_PATTERN.test(normalized) && /[1-9]/.test(normalized);
 }
 
 function getWithdrawable(event: AllDexsClearinghouseStateWsEvent | undefined): string {

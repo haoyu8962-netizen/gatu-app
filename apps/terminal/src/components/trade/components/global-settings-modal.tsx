@@ -12,10 +12,16 @@ import {
 } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import type { ChangeEvent, ReactNode } from "react";
-import { useState } from "react";
+import { useReducer, useState } from "react";
+import { toast } from "sonner";
 import { NumberInput } from "@/components/ui/number-input";
 import { resetDesktopGridLayouts } from "@/config/desktop-grid-layout";
 import { MARKET_ORDER_SLIPPAGE_MAX_PERCENT, MARKET_ORDER_SLIPPAGE_MIN_PERCENT } from "@/config/trade";
+import { useHyperliquid } from "@/lib/hyperliquid";
+import {
+	readPositionMarketCloseConfirmationPreference,
+	resetPositionMarketCloseConfirmation,
+} from "@/lib/trade/position-market-close-confirmation-preference";
 import { useSettingsDialogActions, useSettingsDialogOpen } from "@/stores/use-global-modal-store";
 import {
 	useGlobalSettings,
@@ -32,6 +38,10 @@ export function GlobalSettingsModal() {
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const { setShowOrderbookInQuote, setMarketOrderSlippagePercent, setNetwork } = useGlobalSettingsActions();
 	const network = useNetwork();
+	const { clientKey, env } = useHyperliquid();
+	const [, refreshConfirmationPreference] = useReducer((revision: number) => revision + 1, 0);
+	const confirmationIdentity = { owner: clientKey, env };
+	const confirmationPreference = readPositionMarketCloseConfirmationPreference(confirmationIdentity);
 
 	const [localSlippageInput, setLocalSlippageInput] = useState<string | null>(null);
 	const slippageInputValue = localSlippageInput ?? String(slippagePercent);
@@ -58,6 +68,13 @@ export function GlobalSettingsModal() {
 	function handleDesktopLayoutReset() {
 		resetDesktopGridLayouts();
 		window.location.reload();
+	}
+
+	function handleMarketCloseConfirmationReset() {
+		const result = resetPositionMarketCloseConfirmation(confirmationIdentity);
+		refreshConfirmationPreference();
+		if (result === "required") toast.success(t`Market close confirmation restored.`);
+		else toast.error(t`Market close confirmation could not be restored in this browser.`);
 	}
 
 	return (
@@ -87,6 +104,8 @@ export function GlobalSettingsModal() {
 								</div>
 							</div>
 							<Slider
+								label={t`Slippage tolerance`}
+								labelHidden
 								value={slippagePercent}
 								onValueChange={handleSlippageSliderChange}
 								min={MARKET_ORDER_SLIPPAGE_MIN_PERCENT}
@@ -99,6 +118,26 @@ export function GlobalSettingsModal() {
 								<span>{MARKET_ORDER_SLIPPAGE_MAX_PERCENT}%</span>
 							</div>
 						</div>
+						<SettingRow
+							label={t`Market close confirmation`}
+							hint={
+								confirmationPreference === "dismissed"
+									? t`Market clicks currently close the full position immediately for this account and network.`
+									: confirmationPreference === "required"
+										? t`A confirmation is shown before each market close.`
+										: t`Connect an account with browser storage available to manage this preference.`
+							}
+						>
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="xs"
+								disabled={confirmationPreference !== "dismissed"}
+								onClick={handleMarketCloseConfirmationReset}
+							>
+								{t`Restore`}
+							</Button>
+						</SettingRow>
 					</SettingsGroup>
 
 					<SettingsGroup label={t`Display`}>

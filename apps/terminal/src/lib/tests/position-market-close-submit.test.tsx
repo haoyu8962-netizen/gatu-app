@@ -6,6 +6,7 @@ import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
 import { reserveOrderAssets, runWithOrderAssetLocks } from "@/lib/trade/order-asset-lock";
+import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import {
 	getPositionMarketCloseActions,
 	getPositionMarketCloseModal,
@@ -58,6 +59,7 @@ const mocks = vi.hoisted(() => ({
 	restPositionSize: "2.500",
 	restMarginMode: "isolated" as "cross" | "isolated",
 	restMarkPx: "100",
+	restMidPx: null as string | null,
 	clearinghouseState: vi.fn(),
 	metaAndAssetCtxs: vi.fn(),
 	mutateOrder: vi.fn(),
@@ -70,12 +72,14 @@ const mocks = vi.hoisted(() => ({
 	hip3Accepted: true,
 	toastSuccess: vi.fn(),
 	toastError: vi.fn(),
+	toastWarning: vi.fn(),
 }));
 
 vi.mock("sonner", () => ({
 	toast: {
 		error: mocks.toastError,
 		success: mocks.toastSuccess,
+		warning: mocks.toastWarning,
 	},
 }));
 
@@ -83,7 +87,7 @@ vi.mock("@/stores/use-global-settings-store", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("@/stores/use-global-settings-store")>();
 	return {
 		...actual,
-		useMarketOrderSlippageBps: () => 50,
+		useMarketOrderSlippageBpsString: () => "50",
 	};
 });
 
@@ -266,6 +270,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		mocks.restPositionSize = "2.500";
 		mocks.restMarginMode = "isolated";
 		mocks.restMarkPx = "100";
+		mocks.restMidPx = null;
 		mocks.guardCalls = 0;
 		mocks.lockRequest
 			.mockReset()
@@ -298,6 +303,7 @@ describe("usePositionMarketCloseSubmit", () => {
 			}));
 			const contexts = universe.map((_, index) => ({
 				markPx: index === mocks.freshCtxIndex ? mocks.restMarkPx : "1",
+				midPx: index === mocks.freshCtxIndex ? mocks.restMidPx : null,
 			}));
 			return [{ universe }, contexts];
 		});
@@ -313,6 +319,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		mocks.resetMutation.mockReset();
 		mocks.toastSuccess.mockReset();
 		mocks.toastError.mockReset();
+		mocks.toastWarning.mockReset();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -361,6 +368,41 @@ describe("usePositionMarketCloseSubmit", () => {
 			"Order filled",
 			expect.objectContaining({ description: "2.500 CXMT" }),
 		);
+	});
+
+	it("uses the fresh mid price as the market protection reference", async () => {
+		mocks.restMidPx = "110";
+		const sessionId = openSession();
+
+		await act(async () => {
+			await currentHook().submit({ sessionId });
+		});
+
+		const submitted = mocks.executeOrder.mock.calls[0]?.[0] as OrderParams;
+		expect(submitted.orders[0]?.p).toBe("109.45");
+	});
+
+	it("saves the scoped preference only after a fresh full-close plan validates", async () => {
+		const sessionId = openSession();
+
+		await act(async () => {
+			await currentHook().submit({ sessionId, dismissFutureConfirmation: true });
+		});
+
+		expect(readPositionMarketCloseConfirmationPreference({ owner: USER, env: "Mainnet" })).toBe("dismissed");
+		expect(mocks.executeOrder).toHaveBeenCalledOnce();
+	});
+
+	it("does not save the preference for a partial close", async () => {
+		const sessionId = openSession();
+		act(() => getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "percent", value: "50" }));
+
+		await act(async () => {
+			await currentHook().submit({ sessionId, dismissFutureConfirmation: true });
+		});
+
+		expect(readPositionMarketCloseConfirmationPreference({ owner: USER, env: "Mainnet" })).toBe("required");
+		expect(mocks.executeOrder).toHaveBeenCalledOnce();
 	});
 
 	it("fails closed when cross-tab asset locking is unavailable", async () => {

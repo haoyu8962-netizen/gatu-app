@@ -16,6 +16,7 @@ export type PositionMarketCloseSizingIntent =
 	| { kind: "size"; value: string };
 
 export type PositionMarketClosePhase = "idle" | "validating" | "submitting" | "reconciling";
+export type PositionMarketClosePresentation = "confirmation" | "direct";
 
 export interface PositionMarketCloseSession {
 	sessionId: string;
@@ -23,6 +24,7 @@ export interface PositionMarketCloseSession {
 	env: HyperliquidEnv;
 	position: PositionMarketCloseRef;
 	sizingIntent: PositionMarketCloseSizingIntent;
+	presentation: PositionMarketClosePresentation;
 	phase: PositionMarketClosePhase;
 	error: string | null;
 }
@@ -81,7 +83,11 @@ export interface PositionMarketCloseIdentity {
 }
 
 export interface PositionMarketCloseStoreActions {
-	open: (position: PositionMarketCloseRef, identity: PositionMarketCloseIdentity) => string | null;
+	open: (
+		position: PositionMarketCloseRef,
+		identity: PositionMarketCloseIdentity,
+		presentation?: PositionMarketClosePresentation,
+	) => string | null;
 	close: (sessionId: string) => void;
 	setSizingIntent: (sessionId: string, sizingIntent: PositionMarketCloseSizingIntent) => void;
 	updatePhase: (sessionId: string, phase: PositionMarketClosePhase) => void;
@@ -89,7 +95,7 @@ export interface PositionMarketCloseStoreActions {
 }
 
 export interface PositionMarketCloseActions extends Omit<PositionMarketCloseStoreActions, "open"> {
-	open: (position: PositionMarketCloseRef) => string | null;
+	open: (position: PositionMarketCloseRef, presentation?: PositionMarketClosePresentation) => string | null;
 }
 
 interface GlobalModalState {
@@ -157,13 +163,13 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 			close,
 		},
 		positionMarketCloseActions: {
-			open: (position, identity) => {
+			open: (position, identity, presentation = "confirmation") => {
 				const owner = identity.owner.trim().toLowerCase();
 				if (!EVM_ADDRESS_PATTERN.test(owner)) return null;
 				const sessionId = createPositionMarketCloseSessionId();
 				let didOpen = false;
 				set((state) => {
-					if (isPositionMarketCloseModal(state.modal) && state.modal.session.phase !== "idle") return state;
+					if (isPositionMarketCloseModal(state.modal)) return state;
 					didOpen = true;
 					return {
 						modal: {
@@ -174,6 +180,7 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 								env: identity.env,
 								position,
 								sizingIntent: { kind: "max" },
+								presentation,
 								phase: "idle",
 								error: null,
 							},
@@ -207,12 +214,30 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 			updatePhase: (sessionId, phase) =>
 				set((state) => {
 					if (!isPositionMarketCloseModal(state.modal) || state.modal.session.sessionId !== sessionId) return state;
-					return { modal: { ...state.modal, session: { ...state.modal.session, phase } } };
+					return {
+						modal: {
+							...state.modal,
+							session: {
+								...state.modal.session,
+								phase,
+								presentation: phase === "reconciling" ? "confirmation" : state.modal.session.presentation,
+							},
+						},
+					};
 				}),
 			setError: (sessionId, error) =>
 				set((state) => {
 					if (!isPositionMarketCloseModal(state.modal) || state.modal.session.sessionId !== sessionId) return state;
-					return { modal: { ...state.modal, session: { ...state.modal.session, error } } };
+					return {
+						modal: {
+							...state.modal,
+							session: {
+								...state.modal.session,
+								error,
+								presentation: error === null ? state.modal.session.presentation : "confirmation",
+							},
+						},
+					};
 				}),
 		},
 	};
@@ -300,10 +325,10 @@ export function usePositionMarketCloseActions(): PositionMarketCloseActions {
 
 	return {
 		...actions,
-		open: (position) => {
+		open: (position, presentation) => {
 			const owner = clientKey.trim().toLowerCase();
 			if (!EVM_ADDRESS_PATTERN.test(owner)) return null;
-			return actions.open(position, { owner: owner as `0x${string}`, env });
+			return actions.open(position, { owner: owner as `0x${string}`, env }, presentation);
 		},
 	};
 }

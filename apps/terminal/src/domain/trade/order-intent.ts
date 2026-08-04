@@ -71,8 +71,8 @@ export type MarketCloseIntent = {
 	signedPositionSize: string;
 	closeSize: string;
 	szDecimals: number;
-	markPx: string;
-	slippageBps: number;
+	referencePx: string;
+	slippageBps: string;
 };
 
 export type LimitCloseIntent = {
@@ -265,8 +265,8 @@ function buildMarketClosePlan(intent: MarketCloseIntent): OrderPlan {
 		errors.push("Asset id must be a non-negative integer");
 	}
 
-	const markPx = toBig(intent.markPx);
-	if (!markPx || markPx.lte(0)) errors.push("Mark price must be greater than zero");
+	const referencePx = toBig(intent.referencePx);
+	if (!referencePx || referencePx.lte(0)) errors.push("Market reference price must be greater than zero");
 
 	const slippageBps = toBig(intent.slippageBps);
 	const maxSlippageBps = Big(MARKET_ORDER_SLIPPAGE_MAX_PERCENT).times(100);
@@ -283,7 +283,7 @@ function buildMarketClosePlan(intent: MarketCloseIntent): OrderPlan {
 		side: resolution.side,
 		size: resolution.normalizedSize,
 		szDecimals: intent.szDecimals,
-		markPx: intent.markPx,
+		markPx: intent.referencePx,
 		slippageBps: intent.slippageBps,
 		reduceOnly: true,
 	});

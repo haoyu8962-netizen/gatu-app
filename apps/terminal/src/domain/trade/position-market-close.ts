@@ -80,7 +80,7 @@ export function resolvePositionMarketClosePercent(
 		return createResolution(context, "0", ["Close percentage must be between 0 and 100"]);
 	}
 
-	const closeSize = percent.eq(100)
+	const closeSize = percent.gt("99.5")
 		? context.maxSize.toString()
 		: formatSizeForOrder(context.maxSize.times(percent).div(100), input.szDecimals);
 	if (percent.gt(0) && closeSize === "0") {

@@ -94,8 +94,8 @@ function marketClose(overrides: Partial<MarketCloseIntent> = {}): MarketCloseInt
 		signedPositionSize: "1.234",
 		closeSize: "1.234",
 		szDecimals: 3,
-		markPx: "100",
-		slippageBps: 50,
+		referencePx: "100",
+		slippageBps: "50",
 		...overrides,
 	};
 }
@@ -378,7 +378,7 @@ describe("market close order planning", () => {
 
 		expect(plan.orders[0]).toMatchObject({
 			b: true,
-			p: "101",
+			p: "100",
 			s: "12345678901234567890.123456",
 			r: true,
 			t: { limit: { tif: "FrontendMarket" } },
@@ -407,8 +407,8 @@ describe("market close order planning", () => {
 			marketClose({ signedPositionSize: "1", closeSize: "0.0009", szDecimals: 3 }),
 			"Close size is below market precision",
 		],
-		[marketClose({ markPx: "0" }), "Mark price must be greater than zero"],
-		[marketClose({ slippageBps: 501 }), "Slippage must be between 0 and 500 basis points"],
+		[marketClose({ referencePx: "0" }), "Market reference price must be greater than zero"],
+		[marketClose({ slippageBps: "501" }), "Slippage must be between 0 and 500 basis points"],
 	] as const)("fails closed for an invalid market-close intent", (intent, error) => {
 		const plan = buildOrderPlan(intent);
 

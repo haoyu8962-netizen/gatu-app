@@ -15,6 +15,7 @@ import {
 	type PositionMarketIdentity,
 } from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -28,7 +29,6 @@ import {
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
-import { usePositionMarketCloseActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type {
@@ -64,7 +64,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const { setSide } = useOrderEntryActions();
-	const positionMarketCloseActions = usePositionMarketCloseActions();
+	const positionMarketClose = usePositionMarketCloseAction();
 
 	function handleSelectMarket(name: string, side: Side) {
 		navigateToMarket(name, undefined, { displayedContent: "trade" });
@@ -226,7 +226,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	}
 
 	function handleOpenMarketClose(position: PositionMarketCloseRef) {
-		positionMarketCloseActions.open(position);
+		positionMarketClose.open(position);
 	}
 
 	function handleReverse(data: ClosePositionData) {
@@ -321,7 +321,12 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 					) : null}
 					{filteredPositions.map((p) => {
 						const assetId = markets.getAssetId(p.coin);
-						const isRowClosing = typeof assetId === "number" && closingAssetIds.has(assetId);
+						const marketCloseSession = positionMarketClose.session;
+						const isMarketClosePending =
+							marketCloseSession !== null &&
+							marketCloseSession.position.assetId === assetId &&
+							marketCloseSession.phase !== "idle";
+						const isRowClosing = (typeof assetId === "number" && closingAssetIds.has(assetId)) || isMarketClosePending;
 						const closeErrorMessage = typeof assetId === "number" ? (closeErrors.get(assetId) ?? null) : null;
 						const positionKey = `${ownerKey ?? "disconnected"}:${p.dex}:${p.coin}`;
 						return (

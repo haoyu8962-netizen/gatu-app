@@ -23,6 +23,7 @@ import { MarketsProvider } from "@/lib/hyperliquid/markets";
 import { getNetwork } from "@/lib/network";
 import { getQueryRetryDelayMs, shouldRetryQuery } from "@/lib/query-retry";
 import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
+import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
 import { PwaInstallProvider } from "@/providers/pwa-install";
 import { useTheme } from "@/stores/use-global-settings-store";
 import "@/lib/i18n";
@@ -85,7 +86,9 @@ function HyperliquidBridge({ children }: { children: React.ReactNode }) {
 function ServerProviders({ children, queryClient }: { children: React.ReactNode; queryClient: QueryClient }) {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<I18nProvider i18n={i18n}>{children}</I18nProvider>
+			<I18nProvider i18n={i18n}>
+				<BaseUiDirectionProvider>{children}</BaseUiDirectionProvider>
+			</I18nProvider>
 		</QueryClientProvider>
 	);
 }
@@ -113,12 +116,14 @@ function ClientProviders({ children, queryClient }: { children: React.ReactNode;
 					>
 						<WagmiProvider config={config} setActiveWalletForWagmi={selectPrivyWagmiWallet}>
 							<I18nProvider i18n={i18n}>
-								<HyperliquidBridge>
-									<EmbeddedDepositAutoBridge />
-									<OrderReconciliation />
-									<TwapReconciliation />
-									{children}
-								</HyperliquidBridge>
+								<BaseUiDirectionProvider>
+									<HyperliquidBridge>
+										<EmbeddedDepositAutoBridge />
+										<OrderReconciliation />
+										<TwapReconciliation />
+										{children}
+									</HyperliquidBridge>
+								</BaseUiDirectionProvider>
 							</I18nProvider>
 						</WagmiProvider>
 					</PersistQueryClientProvider>

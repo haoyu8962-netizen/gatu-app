@@ -71,7 +71,7 @@ export function buildFrontendMarketOrder(params: FrontendMarketOrderParams): Exc
 	return {
 		a: params.assetId,
 		b: params.side === "buy",
-		p: formatPriceForOrder(orderPrice, params),
+		p: formatPriceForOrderWithRounding(orderPrice, params, Big.roundDown),
 		s: formatSizeForOrder(params.size, params.szDecimals),
 		r: params.reduceOnly,
 		t: { limit: { tif: "FrontendMarket" } },
@@ -429,6 +429,14 @@ interface PriceFormatOptions {
 }
 
 export function formatPriceForOrder(value: Numeric, options?: PriceFormatOptions): string {
+	return formatPriceForOrderWithRounding(value, options, Big.roundHalfUp);
+}
+
+function formatPriceForOrderWithRounding(
+	value: Numeric,
+	options: PriceFormatOptions | undefined,
+	roundingMode: Big.RoundingMode,
+): string {
 	const price = toBig(value);
 	if (!price || price.lte(0)) return "0";
 
@@ -445,7 +453,7 @@ export function formatPriceForOrder(value: Numeric, options?: PriceFormatOptions
 		: HL_PRICE_MAX_DECIMALS;
 	decimals = Math.min(decimals, protocolMaxDecimals);
 
-	const fixed = price.toFixed(decimals, Big.roundHalfUp);
+	const fixed = price.toFixed(decimals, roundingMode);
 	if (decimals === 0) return fixed;
 	return fixed.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 }

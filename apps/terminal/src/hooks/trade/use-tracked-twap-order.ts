@@ -22,7 +22,7 @@ import {
 	promoteTwapReservationToActive,
 } from "@/lib/trade/twap-order-asset-reservation";
 import { updateOrderQueueItem } from "@/stores/use-order-queue-store";
-import { hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
+import { getPersistedPendingOrderAssetState } from "@/stores/use-pending-order-store";
 import {
 	getPendingTwapActions,
 	getPersistedPendingTwapAssetState,
@@ -88,14 +88,15 @@ export function useTrackedTwapOrder() {
 			const reservationIntent = getTwapOrderAssetReservationIntent(intent);
 			const reservationState = getOrderAssetReservationState(lease, reservationIntent);
 			const pendingTwapState = getPersistedPendingTwapAssetState(env, address, intent.assetId);
-			if (reservationState === "unavailable" || pendingTwapState === "unavailable") {
+			const pendingOrderState = getPersistedPendingOrderAssetState(env, address, [intent.assetId]);
+			if (
+				reservationState === "unavailable" ||
+				pendingTwapState === "unavailable" ||
+				pendingOrderState === "unavailable"
+			) {
 				throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
 			}
-			if (
-				reservationState === "conflict" ||
-				hasPendingOrderForAssets(env, address, [intent.assetId]) ||
-				pendingTwapState === "pending"
-			) {
+			if (reservationState === "conflict" || pendingOrderState === "pending" || pendingTwapState === "pending") {
 				return { state: "blocked", reason: "pending" } as const;
 			}
 

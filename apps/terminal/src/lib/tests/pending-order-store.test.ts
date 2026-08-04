@@ -9,6 +9,7 @@ import {
 import {
 	createPendingOrderStore,
 	getPendingOrderActions,
+	getPersistedPendingOrderAssetState,
 	hasExclusivePendingOrderForAssets,
 	hasPendingOrderForAssets,
 	hasPendingOrderIntent,
@@ -49,6 +50,7 @@ class MemoryStorage implements Storage {
 describe("pending order store", () => {
 	beforeEach(() => {
 		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
+		window.localStorage.clear();
 	});
 
 	afterEach(() => {
@@ -90,6 +92,41 @@ describe("pending order store", () => {
 		expect(hasPendingOrderForAssets("Mainnet", USER, [10])).toBe(true);
 		expect(hasPendingOrderForAssets("Testnet", USER, [10])).toBe(false);
 		expect(hasPendingOrderForAssets("Mainnet", "0x2222222222222222222222222222222222222222", [10])).toBe(false);
+	});
+
+	it("fresh-reads the persisted asset state for cross-tab coordination", () => {
+		getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "persisted-order",
+			children: [{ assetId: 17, cloid: "0x00000000000000000000000000000017" }],
+		});
+
+		expect(getPersistedPendingOrderAssetState("Mainnet", USER, [17])).toBe("pending");
+		expect(getPersistedPendingOrderAssetState("Mainnet", USER, [18])).toBe("clear");
+		expect(getPersistedPendingOrderAssetState("Testnet", USER, [17])).toBe("clear");
+	});
+
+	it("reports unavailable instead of trusting a stale in-memory snapshot", () => {
+		const descriptor = Object.getOwnPropertyDescriptor(window, "localStorage");
+		Object.defineProperty(window, "localStorage", {
+			configurable: true,
+			get() {
+				throw new Error("storage unavailable");
+			},
+		});
+
+		try {
+			expect(getPersistedPendingOrderAssetState("Mainnet", USER, [17])).toBe("unavailable");
+		} finally {
+			if (descriptor) Object.defineProperty(window, "localStorage", descriptor);
+		}
+	});
+
+	it("fails closed when any shared pending-order record is malformed", () => {
+		window.localStorage.setItem(`${SUBMISSION_STORAGE_PREFIX}Mainnet:${USER}:corrupt`, "{not-json");
+
+		expect(getPersistedPendingOrderAssetState("Mainnet", USER, [17])).toBe("unavailable");
 	});
 
 	it("distinguishes an exclusive asset lock from an ordinary pending submission", () => {

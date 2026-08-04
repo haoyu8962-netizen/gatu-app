@@ -1,4 +1,5 @@
 import { Slider } from "@gatu/ui";
+import { t } from "@lingui/core/macro";
 
 interface Props {
 	value: number;
@@ -12,6 +13,8 @@ export function LeverageSlider({ value, onChange, max, disabled, className }: Pr
 	return (
 		<Slider
 			className={className}
+			label={t`Leverage`}
+			labelHidden
 			value={value}
 			onValueChange={(v) => {
 				if (typeof v === "number") onChange(v);

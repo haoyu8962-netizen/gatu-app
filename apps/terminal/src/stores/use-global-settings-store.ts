@@ -1,4 +1,5 @@
 import { i18n } from "@lingui/core";
+import Big from "big.js";
 import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -188,8 +189,16 @@ export function useMarketOrderSlippagePercent() {
 	return useGlobalSettingsStore((state) => state.marketOrderSlippagePercent);
 }
 
+export function marketOrderSlippagePercentToBpsString(percent: number): string {
+	return Big(String(percent)).times(100).toString();
+}
+
+export function useMarketOrderSlippageBpsString(): string {
+	return useGlobalSettingsStore((state) => marketOrderSlippagePercentToBpsString(state.marketOrderSlippagePercent));
+}
+
 export function useMarketOrderSlippageBps() {
-	return useGlobalSettingsStore((state) => state.marketOrderSlippagePercent * 100);
+	return Number(useMarketOrderSlippageBpsString());
 }
 
 export function useMarginMode() {

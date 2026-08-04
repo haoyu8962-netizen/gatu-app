@@ -136,6 +136,7 @@ function SharedGlobalModals({
 	enablePositionMarketClose: boolean;
 }) {
 	const activeModal = useGlobalModalType();
+	const marketCloseSession = usePositionMarketCloseSession();
 	const isHip3DisclaimerRequired = hip3Disclaimer?.isRequired === true;
 	const { open: openCommandMenu, close: closeCommandMenu } = useCommandMenuActions();
 	const transferDirection = useTransferModalDirection();
@@ -201,7 +202,14 @@ function SharedGlobalModals({
 			{activeModal === "settings" && <GlobalSettingsModal />}
 			{activeModal === "swap" && <SpotSwapModal />}
 			{activeModal === "commandMenu" && <CommandMenu />}
-			{activeModal === "positionMarketClose" && enablePositionMarketClose && <PositionMarketCloseModal />}
+			{activeModal === "positionMarketClose" &&
+				enablePositionMarketClose &&
+				marketCloseSession &&
+				(marketCloseSession.presentation === "confirmation" ||
+					marketCloseSession.error !== null ||
+					marketCloseSession.phase === "reconciling") && (
+					<PositionMarketCloseModal key={marketCloseSession.sessionId} />
+				)}
 		</Suspense>
 	);
 }

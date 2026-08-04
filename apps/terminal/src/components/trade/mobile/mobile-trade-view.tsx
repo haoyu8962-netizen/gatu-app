@@ -582,6 +582,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 								value={sliderValue}
 								onPercentChange={applySizeFromPercent}
 								disabled={isFormDisabled || maxSize <= 0}
+								ariaLabel={`${t`Size`} (%)`}
 							/>
 							<div className="flex items-center justify-between text-2xs text-fg-muted tabular-nums leading-none">
 								{SIZE_PERCENT_OPTIONS.map((pct) =>

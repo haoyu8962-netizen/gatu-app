@@ -1,6 +1,7 @@
 import Big from "big.js";
 import { describe, expect, it, vi } from "vitest";
 import {
+	buildFrontendMarketOrder,
 	createScaleOrderLevelPlan,
 	formatPriceForOrder,
 	formatSizeForOrder,
@@ -54,6 +55,31 @@ describe("orders", () => {
 		expect(formatPriceForOrder("0.00012345", { assetId: 0, szDecimals: 0 })).toBe("0.000123");
 		expect(formatPriceForOrder("0.00012345", { assetId: 10000, szDecimals: 0 })).toBe("0.00012345");
 		expect(formatPriceForOrder(123456, { assetId: 0, szDecimals: 5 })).toBe("123456");
+	});
+
+	it.each([
+		["buy", "0.5", "100"],
+		["sell", "0.05", "99.999"],
+	] as const)(
+		"rounds %s FrontendMarket protection prices down at exact half-tick boundaries",
+		(side, slippageBps, price) => {
+			const order = buildFrontendMarketOrder({
+				assetId: 0,
+				side,
+				size: "1",
+				szDecimals: 3,
+				markPx: "100",
+				slippageBps,
+				reduceOnly: true,
+			});
+
+			expect(order.p).toBe(price);
+		},
+	);
+
+	it("keeps half-up rounding for non-FrontendMarket price formatting", () => {
+		expect(formatPriceForOrder("100.005", { assetId: 0, szDecimals: 3 })).toBe("100.01");
+		expect(formatPriceForOrder("99.9995", { assetId: 0, szDecimals: 3 })).toBe("100");
 	});
 
 	it("formats order sizes using size decimals", () => {

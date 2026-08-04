@@ -114,33 +114,36 @@ function getPendingTwapStorageKeys(storage: PendingTwapStorage): string[] | null
 	}
 }
 
-function readPersistedPendingTwaps(storage: PendingTwapStorage | null): PendingTwapSubmission[] | null {
+function readPersistedPendingTwaps(
+	storage: PendingTwapStorage | null,
+	failClosedOnInvalidRecord = false,
+): PendingTwapSubmission[] | null {
 	if (!storage) return null;
 	const keys = getPendingTwapStorageKeys(storage);
 	if (!keys) return null;
 
 	try {
-		const submissions = keys.flatMap((key) => {
+		const submissions: PendingTwapSubmission[] = [];
+		for (const key of keys) {
 			const serialized = storage.getItem(key);
-			if (!serialized) return [];
+			if (!serialized) continue;
 
 			try {
 				const parsed = pendingTwapSubmissionSchema.safeParse(JSON.parse(serialized));
 				if (!parsed.success) {
+					if (failClosedOnInvalidRecord) return null;
 					storage.removeItem(key);
-					return [];
+					continue;
 				}
-				return [
-					{
-						...parsed.data,
-						user: parsed.data.user.toLowerCase() as `0x${string}`,
-					} as PendingTwapSubmission,
-				];
+				submissions.push({
+					...parsed.data,
+					user: parsed.data.user.toLowerCase() as `0x${string}`,
+				} as PendingTwapSubmission);
 			} catch {
+				if (failClosedOnInvalidRecord) return null;
 				storage.removeItem(key);
-				return [];
 			}
-		});
+		}
 		submissions.sort((left, right) => left.createdAt - right.createdAt || left.id.localeCompare(right.id));
 		return submissions;
 	} catch {
@@ -396,7 +399,7 @@ export function getPersistedPendingTwapAssetState(
 	user: string,
 	assetId: number,
 ): PersistedPendingTwapAssetState {
-	const submissions = readPersistedPendingTwaps(getBrowserPendingTwapStorage());
+	const submissions = readPersistedPendingTwaps(getBrowserPendingTwapStorage(), true);
 	if (!submissions) return "unavailable";
 	const normalizedUser = user.toLowerCase();
 	const now = Date.now();

@@ -7,7 +7,12 @@ export {
 	type WebSocketTransportOptions,
 } from "@nktkas/hyperliquid";
 export { getAccountLedgerRefreshKey } from "./account/ledger-refresh";
-export { type Position, type UserPositions, useUserPositions } from "./account/use-user-positions";
+export {
+	isNonZeroPositionSize,
+	type Position,
+	type UserPositions,
+	useUserPositions,
+} from "./account/use-user-positions";
 export {
 	calculateAssetId,
 	getAssetIdKind,

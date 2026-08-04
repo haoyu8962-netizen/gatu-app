@@ -236,6 +236,19 @@ describe("pending TWAP store", () => {
 		expect(hasPendingTwapForAsset("Mainnet", USER, 70)).toBe(true);
 	});
 
+	it("fails closed when any shared pending-TWAP record is malformed", () => {
+		const storageKey = `${SUBMISSION_STORAGE_PREFIX}Mainnet:${USER}:corrupt`;
+		window.localStorage.setItem(storageKey, "{not-json");
+
+		try {
+			expect(getPersistedPendingTwapAssetState("Mainnet", USER, 70)).toBe("unavailable");
+			expect(hasPendingTwapForAsset("Mainnet", USER, 70)).toBe(true);
+			expect(window.localStorage.getItem(storageKey)).toBe("{not-json");
+		} finally {
+			window.localStorage.removeItem(storageKey);
+		}
+	});
+
 	it("refreshes an existing tab snapshot on storage events", () => {
 		const storage = new MemoryStorage();
 		const eventTarget = new EventTarget();

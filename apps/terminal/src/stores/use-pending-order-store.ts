@@ -129,33 +129,36 @@ function getPendingOrderStorageKeys(storage: PendingOrderStorage): string[] | nu
 	}
 }
 
-function readPersistedPendingOrders(storage: PendingOrderStorage | null): PendingOrderSubmission[] | null {
+function readPersistedPendingOrders(
+	storage: PendingOrderStorage | null,
+	failClosedOnInvalidRecord = false,
+): PendingOrderSubmission[] | null {
 	if (!storage) return null;
 	const keys = getPendingOrderStorageKeys(storage);
 	if (!keys) return null;
 
 	try {
-		const submissions = keys.flatMap((key) => {
+		const submissions: PendingOrderSubmission[] = [];
+		for (const key of keys) {
 			const serialized = storage.getItem(key);
-			if (!serialized) return [];
+			if (!serialized) continue;
 
 			try {
 				const parsed = pendingOrderSubmissionSchema.safeParse(JSON.parse(serialized));
 				if (!parsed.success) {
+					if (failClosedOnInvalidRecord) return null;
 					storage.removeItem(key);
-					return [];
+					continue;
 				}
-				return [
-					{
-						...parsed.data,
-						user: parsed.data.user.toLowerCase() as `0x${string}`,
-					} as PendingOrderSubmission,
-				];
+				submissions.push({
+					...parsed.data,
+					user: parsed.data.user.toLowerCase() as `0x${string}`,
+				} as PendingOrderSubmission);
 			} catch {
+				if (failClosedOnInvalidRecord) return null;
 				storage.removeItem(key);
-				return [];
 			}
-		});
+		}
 		submissions.sort((left, right) => left.createdAt - right.createdAt || left.id.localeCompare(right.id));
 		return submissions;
 	} catch {
@@ -476,6 +479,33 @@ export function hasPendingOrderForAssets(
 				isPendingOrderSubmissionBlocking(submission, now) &&
 				submission.children.some((child) => assets.has(child.assetId)),
 		);
+}
+
+export type PersistedPendingOrderAssetState = "pending" | "clear" | "unavailable";
+
+/**
+ * Reads the shared persistence snapshot synchronously. Call this while holding the
+ * cross-tab asset lock so a delayed `storage` event cannot permit a duplicate order.
+ */
+export function getPersistedPendingOrderAssetState(
+	env: PendingOrderSubmission["env"],
+	user: string,
+	assetIds: readonly number[],
+): PersistedPendingOrderAssetState {
+	const submissions = readPersistedPendingOrders(getBrowserPendingOrderStorage(), true);
+	if (!submissions) return "unavailable";
+	const normalizedUser = user.toLowerCase();
+	const assets = new Set(assetIds);
+	const now = Date.now();
+	return submissions.some(
+		(submission) =>
+			submission.env === env &&
+			submission.user === normalizedUser &&
+			isPendingOrderSubmissionBlocking(submission, now) &&
+			submission.children.some((child) => assets.has(child.assetId)),
+	)
+		? "pending"
+		: "clear";
 }
 
 export function hasExclusivePendingOrderForAssets(

@@ -1,13 +1,16 @@
-import { Slider, type SliderThumbSize } from "@gatu/ui";
-import { cn } from "@/lib/cn";
+import { Slider, type SliderProps, type SliderThumbSize } from "@gatu/ui";
+import Big from "big.js";
 
 interface Props {
 	value: number;
 	onPercentChange: (value: number) => void;
 	disabled?: boolean;
 	thumbSize?: SliderThumbSize;
-	ariaLabel?: string;
+	ariaLabel: string;
 	ariaValueText?: string;
+	ariaDescribedBy?: string;
+	ariaInvalid?: boolean;
+	thumbAlignment?: SliderProps["thumbAlignment"];
 	className?: string;
 }
 
@@ -18,23 +21,41 @@ export function TradeSizeSlider({
 	thumbSize,
 	ariaLabel,
 	ariaValueText,
+	ariaDescribedBy,
+	ariaInvalid,
+	thumbAlignment,
 	className,
 }: Props) {
 	return (
 		<Slider
-			className={cn(ariaLabel && "[&>div:first-child]:sr-only", className)}
+			aria-describedby={ariaDescribedBy}
+			aria-invalid={ariaInvalid}
+			className={className}
 			label={ariaLabel}
-			format={ariaLabel ? { style: "unit", unit: "percent", maximumFractionDigits: 1 } : undefined}
+			labelHidden
+			format={{ style: "unit", unit: "percent", maximumFractionDigits: 1 }}
 			getAriaValueText={ariaValueText ? () => ariaValueText : undefined}
 			thumbSize={thumbSize}
+			thumbAlignment={thumbAlignment}
 			value={value}
 			onValueChange={(nextValue, eventDetails) => {
 				if (typeof nextValue !== "number" || eventDetails.reason === "none") return;
-				onPercentChange(nextValue);
+				onPercentChange(normalizePercent(nextValue));
 			}}
 			max={100}
 			step={0.1}
 			disabled={disabled}
 		/>
 	);
+}
+
+function normalizePercent(value: number): number {
+	try {
+		const normalized = Big(String(value)).round(1, Big.roundHalfUp);
+		if (normalized.lt(0)) return 0;
+		if (normalized.gt(100)) return 100;
+		return normalized.toNumber();
+	} catch {
+		return 0;
+	}
 }

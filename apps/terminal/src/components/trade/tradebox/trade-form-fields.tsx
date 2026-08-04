@@ -272,6 +272,7 @@ export function TradeFormFields({
 						value={sliderValue}
 						onPercentChange={handleSizePercentApply}
 						disabled={isFormDisabled || maxSize <= 0}
+						ariaLabel={`${t`Size`} (%)`}
 					/>
 					<div className="flex items-center justify-between pt-1 text-3xs text-fg-muted tabular-nums leading-none">
 						{SIZE_PERCENT_OPTIONS.map((pct) => (

@@ -50,6 +50,23 @@ describe("position market close sizing", () => {
 		});
 	});
 
+	it.each([
+		["99.5", "0.995", "0.005", "99.5"],
+		["99.6", "1", "0", "100"],
+		["99.9", "1", "0", "100"],
+		["100", "1", "0", "100"],
+	])(
+		"snaps only percentages strictly above 99.5 to the full position: %s percent",
+		(percent, normalizedSize, remainingSize, effectivePercent) => {
+			const resolution = resolvePositionMarketClosePercent({ signedPositionSize: "1", percent, szDecimals: 3 });
+
+			expect(resolution.normalizedSize).toBe(normalizedSize);
+			expect(resolution.remainingSize).toBe(remainingSize);
+			expect(resolution.effectivePercent).toBe(effectivePercent);
+			expect(resolution.errors).toEqual([]);
+		},
+	);
+
 	it("floors a decimal percentage to the market size precision", () => {
 		const resolution = resolvePositionMarketClosePercent({
 			signedPositionSize: "3.333",
@@ -167,7 +184,7 @@ describe("position market close sizing", () => {
 	it("rejects a positive percentage that floors below one size unit", () => {
 		const resolution = resolvePositionMarketClosePercent({
 			signedPositionSize: "0.001",
-			percent: "99.999",
+			percent: "99.5",
 			szDecimals: 3,
 		});
 

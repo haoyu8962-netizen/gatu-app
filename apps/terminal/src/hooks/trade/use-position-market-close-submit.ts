@@ -7,6 +7,7 @@ import { getPositionDex } from "@/domain/market";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import {
+	type PositionMarketCloseResolution,
 	resolvePositionMarketClosePercent,
 	resolvePositionMarketCloseSize,
 } from "@/domain/trade/position-market-close";
@@ -25,6 +26,7 @@ import {
 } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { getOrderAssetReservationState, runWithAvailableOrderAssetLocks } from "@/lib/trade/order-asset-lock";
+import { dismissPositionMarketCloseConfirmation } from "@/lib/trade/position-market-close-confirmation-preference";
 import { getPositionMarketCloseErrorMessage } from "@/lib/trade/position-market-close-errors";
 import {
 	getPositionMarketCloseActions,
@@ -32,18 +34,19 @@ import {
 	type PositionMarketCloseSession,
 	usePositionMarketCloseSession,
 } from "@/stores/use-global-modal-store";
-import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
+import { useMarketOrderSlippageBpsString } from "@/stores/use-global-settings-store";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
-import { hasPendingOrderForAssets } from "@/stores/use-pending-order-store";
+import { getPersistedPendingOrderAssetState } from "@/stores/use-pending-order-store";
 import { getPersistedPendingTwapAssetState } from "@/stores/use-pending-twap-store";
 
 interface SubmitInput {
 	sessionId: string;
+	dismissFutureConfirmation?: boolean;
 }
 
 interface FreshCloseSnapshot {
 	signedPositionSize: string;
-	markPx: string;
+	referencePx: string;
 	marginMode: "cross" | "isolated";
 }
 
@@ -81,7 +84,7 @@ export function usePositionMarketCloseSubmit() {
 		{ user: address ?? "0x0000000000000000000000000000000000000000", dex: HL_ALL_DEXS },
 		{ enabled: !!address },
 	);
-	const slippageBps = useMarketOrderSlippageBps();
+	const slippageBps = useMarketOrderSlippageBpsString();
 	const liveContextRef = useRef<LiveContext>({ clientKey, env, markets, userPositions, activeTwaps });
 	const executionContextRef = useRef<ExecutionContext | null>(null);
 	liveContextRef.current = { clientKey, env, markets, userPositions, activeTwaps };
@@ -142,14 +145,17 @@ export function usePositionMarketCloseSubmit() {
 						lockedSession.owner,
 						lockedSession.position.assetId,
 					);
-					if (reservationState === "unavailable" || pendingTwapState === "unavailable") {
+					const pendingOrderState = getPersistedPendingOrderAssetState(lockedSession.env, lockedSession.owner, [
+						lockedSession.position.assetId,
+					]);
+					if (
+						reservationState === "unavailable" ||
+						pendingTwapState === "unavailable" ||
+						pendingOrderState === "unavailable"
+					) {
 						throw new Error(t`Safe order coordination across tabs is unavailable in this browser.`);
 					}
-					if (
-						reservationState === "conflict" ||
-						pendingTwapState === "pending" ||
-						hasPendingOrderForAssets(lockedSession.env, lockedSession.owner, [lockedSession.position.assetId])
-					) {
+					if (reservationState === "conflict" || pendingTwapState === "pending" || pendingOrderState === "pending") {
 						throw new Error(t`Another order for this market is still being confirmed.`);
 					}
 
@@ -165,21 +171,30 @@ export function usePositionMarketCloseSubmit() {
 					}
 					assertSessionIdentity(refreshedSession, liveContextRef.current.clientKey, liveContextRef.current.env);
 					assertFreshSnapshotCompatibleWithLive(refreshedSession, fresh, liveContextRef.current);
-					const requestedCloseSize = resolveCurrentCloseSize(refreshedSession, fresh.signedPositionSize);
+					const closeResolution = resolveCurrentCloseSize(refreshedSession, fresh.signedPositionSize);
 
 					const plan = buildOrderPlan({
 						kind: "marketClose",
 						assetId: refreshedSession.position.assetId,
 						signedPositionSize: fresh.signedPositionSize,
-						closeSize: requestedCloseSize,
+						closeSize: closeResolution.normalizedSize,
 						szDecimals: refreshedSession.position.szDecimals,
-						markPx: fresh.markPx,
+						referencePx: fresh.referencePx,
 						slippageBps,
 					});
 					if (plan.errors.length > 0 || plan.orders.length !== 1) {
 						throw new Error(
 							plan.errors[0] ? getPositionMarketCloseErrorMessage(plan.errors[0]) : t`Failed to close position`,
 						);
+					}
+					if (input.dismissFutureConfirmation && toBig(closeResolution.remainingSize)?.eq(0)) {
+						const preferenceStatus = dismissPositionMarketCloseConfirmation({
+							owner: refreshedSession.owner,
+							env: refreshedSession.env,
+						});
+						if (preferenceStatus !== "dismissed") {
+							toast.warning(t`The order can continue, but this confirmation preference could not be saved.`);
+						}
 					}
 
 					const order = plan.orders[0];
@@ -319,7 +334,10 @@ function assertNoActiveTwap(session: PositionMarketCloseSession, live: LiveConte
 	}
 }
 
-function resolveCurrentCloseSize(session: PositionMarketCloseSession, freshSignedPositionSize: string): string {
+function resolveCurrentCloseSize(
+	session: PositionMarketCloseSession,
+	freshSignedPositionSize: string,
+): PositionMarketCloseResolution {
 	const input = {
 		signedPositionSize: freshSignedPositionSize,
 		szDecimals: session.position.szDecimals,
@@ -332,7 +350,7 @@ function resolveCurrentCloseSize(session: PositionMarketCloseSession, freshSigne
 					percent: session.sizingIntent.kind === "max" ? "100" : session.sizingIntent.value,
 				});
 	if (resolution.errors.length > 0) throw new Error(getPositionMarketCloseErrorMessage(resolution.errors[0]));
-	return resolution.normalizedSize;
+	return resolution;
 }
 
 function assertFreshSnapshotCompatibleWithLive(
@@ -407,12 +425,13 @@ async function fetchFreshCloseSnapshot(
 	const marketIndex = meta.universe.findIndex((asset) => asset.name === session.position.coin);
 	const metadata = meta.universe[marketIndex];
 	const context = assetContexts[marketIndex];
+	const referencePx = toBig(context?.midPx)?.gt(0) ? context?.midPx : context?.markPx;
 	if (
 		marketIndex < 0 ||
 		!metadata ||
 		metadata.szDecimals !== session.position.szDecimals ||
 		!context ||
-		!toBig(context.markPx)?.gt(0)
+		!toBig(referencePx)?.gt(0)
 	) {
 		throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
 	}
@@ -434,7 +453,7 @@ async function fetchFreshCloseSnapshot(
 
 	return {
 		signedPositionSize: position.szi,
-		markPx: context.markPx,
+		referencePx: String(referencePx),
 		marginMode: position.leverage.type,
 	};
 }

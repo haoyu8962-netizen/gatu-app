@@ -12,6 +12,7 @@ import {
 	runWithOrderAssetLocks,
 } from "@/lib/trade/order-asset-lock";
 import { getActiveTwapReservationId } from "@/lib/trade/twap-order-asset-reservation";
+import { getPendingOrderActions } from "@/stores/use-pending-order-store";
 import { getPendingTwapActions, hasPendingTwapForAsset } from "@/stores/use-pending-twap-store";
 
 const USER = "0x1111111111111111111111111111111111111111" as const;
@@ -122,12 +123,34 @@ describe("useTrackedTwapOrder", () => {
 		mocks.historyStatus = "active";
 		mocks.historyStale = false;
 		getPendingTwapActions().prune(Number.MAX_SAFE_INTEGER);
+		getPendingOrderActions().prune(Number.MAX_SAFE_INTEGER);
 		window.localStorage.clear();
 		installExclusiveLockManager();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
 		act(() => root.render(createElement(Probe)));
+	});
+
+	it("blocks a TWAP when a persisted ordinary order already targets the asset", async () => {
+		getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "other-tab-order",
+			children: [{ assetId: 19, cloid: "0x00000000000000000000000000000019" }],
+		});
+		if (!hookValue) throw new Error("Expected tracked TWAP hook");
+
+		let result: Awaited<ReturnType<typeof hookValue.submitTwap>> | undefined;
+		await act(async () => {
+			result = await hookValue?.submitTwap(createParams(19), {
+				coin: "BTC",
+				riskContext: CROSS_PERP_RISK_CONTEXT,
+			});
+		});
+
+		expect(result).toEqual({ state: "blocked", reason: "pending" });
+		expect(mocks.mutateAsync).not.toHaveBeenCalled();
 	});
 
 	afterEach(() => {

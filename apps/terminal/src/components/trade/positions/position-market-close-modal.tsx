@@ -1,6 +1,7 @@
-import { AdaptiveModal, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
+import { AdaptiveModal, Checkbox, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
+import { useState } from "react";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
@@ -14,6 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { formatNumber, formatPrice, formatToken } from "@/lib/format";
 import { useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
+import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import { getPositionMarketCloseErrorMessage } from "@/lib/trade/position-market-close-errors";
 import {
 	type PositionMarketCloseSizingIntent,
@@ -28,6 +30,7 @@ const SLIDER_MARKS = [0, 25, 50, 75, 100] as const;
 
 export function PositionMarketCloseModal() {
 	const isMobile = useIsMobile();
+	const [dismissFutureConfirmation, setDismissFutureConfirmation] = useState(false);
 	const session = usePositionMarketCloseSession();
 	const actions = usePositionMarketCloseActions();
 	const { submit, isPending, isReconciling, error, resetError } = usePositionMarketCloseSubmit();
@@ -92,6 +95,9 @@ export function PositionMarketCloseModal() {
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
 	const visibleError = positionStatus ?? error ?? sizingError;
 	const canSubmit = canEdit && sizing.errors.length === 0;
+	const isFullClose = sizing.errors.length === 0 && toBig(sizing.remainingSize)?.eq(0) === true;
+	const confirmationPreferenceAlreadyDismissed =
+		readPositionMarketCloseConfirmationPreference({ owner: session.owner, env: session.env }) === "dismissed";
 	const errorId = `position-market-close-error-${sessionId}`;
 	const marketInfo = getMarketInfo(position.coin);
 	const displayName = marketInfo?.pairName ?? position.coin;
@@ -100,12 +106,13 @@ export function PositionMarketCloseModal() {
 		marketInfo?.kind === "builderPerp"
 			? (marketInfo.quoteToken?.displayName ?? DEFAULT_QUOTE_TOKEN)
 			: DEFAULT_QUOTE_TOKEN;
-	const liveMarkPx = liveAssetCtx?.ctx?.markPx;
-	const liveMarkValue = toBig(liveMarkPx);
-	const hasFreshMarketPrice = marketDataStatus === "active" && !isMarketDataStale && !!liveMarkValue?.gt(0);
+	const liveReferencePx = liveAssetCtx?.ctx?.midPx ?? liveAssetCtx?.ctx?.markPx;
+	const liveReferenceValue = toBig(liveReferencePx);
+	const hasFreshMarketPrice = marketDataStatus === "active" && !isMarketDataStale && !!liveReferenceValue?.gt(0);
 
 	function setSizingIntent(nextIntent: PositionMarketCloseSizingIntent) {
 		if (!canEdit) return;
+		setDismissFutureConfirmation(false);
 		resetError();
 		actions.setSizingIntent(sessionId, nextIntent);
 	}
@@ -120,7 +127,7 @@ export function PositionMarketCloseModal() {
 
 	function handleSubmit() {
 		if (!canSubmit) return;
-		return submit({ sessionId });
+		return submit({ sessionId, dismissFutureConfirmation: dismissFutureConfirmation && isFullClose });
 	}
 
 	const progressLabel = getProgressLabel(phase);
@@ -166,7 +173,7 @@ export function PositionMarketCloseModal() {
 						label={t`Market`}
 						value={
 							hasFreshMarketPrice
-								? `${displayName} · ${formatPrice(liveMarkPx, {
+								? `${displayName} · ${formatPrice(liveReferencePx, {
 										szDecimals: position.szDecimals,
 										style: "decimal",
 									})} ${quoteSymbol}`
@@ -205,8 +212,11 @@ export function PositionMarketCloseModal() {
 							onPercentChange={handleSliderChange}
 							disabled={!canEdit}
 							thumbSize="lg"
-							ariaLabel={t`Close percentage slider`}
-							ariaValueText={t`${requestedPercent}% requested; ${effectivePercent}% after size precision`}
+							thumbAlignment="edge"
+							ariaLabel={t`Close percentage`}
+							ariaDescribedBy={visibleError ? errorId : undefined}
+							ariaInvalid={sizing.errors.length > 0}
+							ariaValueText={t`${sliderValue}% selected; ${effectivePercent}% after size precision`}
 						/>
 						<div
 							className="pointer-events-none absolute inset-x-3 top-[13px] z-20 flex justify-between"
@@ -243,6 +253,19 @@ export function PositionMarketCloseModal() {
 						className="w-full pr-7 text-right tabular-nums"
 					/>
 				</div>
+
+				<Checkbox
+					size="md"
+					checked={confirmationPreferenceAlreadyDismissed || dismissFutureConfirmation}
+					onCheckedChange={setDismissFutureConfirmation}
+					disabled={confirmationPreferenceAlreadyDismissed || !canEdit || !isFullClose}
+					label={t`Don't show this confirmation again`}
+					description={
+						confirmationPreferenceAlreadyDismissed || isFullClose
+							? t`Future Market clicks will immediately close the full position for this account and network.`
+							: t`This preference is available only when closing the full position.`
+					}
+				/>
 
 				{phase === "reconciling" && (
 					<output
@@ -297,9 +320,11 @@ export function PositionMarketCloseModal() {
 }
 
 function getSliderValue(value: string): number {
-	const parsed = Number(value);
-	if (!Number.isFinite(parsed)) return 0;
-	return Math.min(100, Math.max(0, parsed));
+	const parsed = toBig(value);
+	if (!parsed) return 0;
+	if (parsed.lte(0)) return 0;
+	if (parsed.gte(100)) return 100;
+	return parsed.toNumber();
 }
 
 function getProgressLabel(phase: "idle" | "validating" | "submitting" | "reconciling"): string | null {

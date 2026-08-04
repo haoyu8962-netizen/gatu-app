@@ -13,6 +13,7 @@ import {
 	type PositionMarketIdentity,
 } from "@/domain/trade/position-toolbar";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { usePositionMarketCloseAction } from "@/hooks/trade/use-position-market-close-action";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -20,7 +21,6 @@ import { useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@
 import { buildClosePositionDescription } from "@/lib/trade/close-toast";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
-import { usePositionMarketCloseActions } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps } from "@/stores/use-global-settings-store";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
@@ -59,7 +59,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	const slippageBps = useMarketOrderSlippageBps();
 	const navigateToMarket = useMarketNavigation();
 	const { setSide } = useOrderEntryActions();
-	const positionMarketCloseActions = usePositionMarketCloseActions();
+	const positionMarketClose = usePositionMarketCloseAction();
 
 	function handleSelectMarket(name: string, side: Side) {
 		navigateToMarket(name);
@@ -140,7 +140,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 	}
 
 	function handleOpenMarketClose(position: PositionMarketCloseRef) {
-		positionMarketCloseActions.open(position);
+		positionMarketClose.open(position);
 	}
 
 	function handleReverse(data: ClosePositionData) {
@@ -237,6 +237,11 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 							<TableBody className={cn(positionsPanelTableBodyClass, positionTableBodyClass)}>
 								{filteredPositions.map((p, i) => {
 									const assetId = markets.getAssetId(p.coin);
+									const marketCloseSession = positionMarketClose.session;
+									const isMarketClosePending =
+										marketCloseSession !== null &&
+										marketCloseSession.position.assetId === assetId &&
+										marketCloseSession.phase !== "idle";
 									return (
 										<PositionRow
 											key={p.coin}
@@ -244,7 +249,9 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 											markets={markets}
 											markPx={getMarketInfo(p.coin)?.markPx}
 											tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
-											isRowClosing={typeof assetId === "number" && closingAssetIds.has(assetId)}
+											isRowClosing={
+												(typeof assetId === "number" && closingAssetIds.has(assetId)) || isMarketClosePending
+											}
 											isEven={i % 2 === 1}
 											onMarketClose={handleOpenMarketClose}
 											onLimitClose={handleOpenLimitCloseModal}

@@ -15,7 +15,7 @@ import {
 } from "@/lib/format";
 import type { Position } from "@/lib/hyperliquid";
 import type { Markets } from "@/lib/hyperliquid/markets";
-import { isPositive, toBig } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
 import type { TpSlOrderInfo } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getValueColorClass } from "@/lib/ui/value-color";
@@ -60,13 +60,14 @@ export function PositionRow({
 	onAdjustMargin,
 	onSelectMarket,
 }: Props) {
-	const size = toBig(p.szi)?.toNumber() ?? Number.NaN;
-	const isLong = size > 0;
-	const absSize = Math.abs(size);
+	const sizeValue = toBig(p.szi);
+	const isLong = sizeValue?.gt(0) ?? false;
+	const absSize = sizeValue?.abs().toNumber() ?? Number.NaN;
 	const market = markets.getMarket(p.coin);
 	const assetId = market?.assetId;
 	const szDecimals = market?.szDecimals ?? 4;
-	const markPx = toBig(markPxRaw)?.toNumber() ?? Number.NaN;
+	const markPxValue = toBig(markPxRaw);
+	const markPx = markPxValue?.toNumber() ?? Number.NaN;
 	const displayName = market?.pairName ?? p.coin;
 	const sizeSymbol = market?.shortName ?? p.coin.split(":").pop() ?? p.coin;
 	const marginConstraint = market?.kind === "spot" ? undefined : getPerpMarginConstraint(market);
@@ -84,7 +85,7 @@ export function PositionRow({
 	const unrealizedPnl = toBig(p.unrealizedPnl)?.toNumber() ?? Number.NaN;
 	const roe = toBig(p.returnOnEquity)?.toNumber() ?? Number.NaN;
 	const cumFunding = toBig(p.cumFunding.sinceOpen)?.toNumber() ?? Number.NaN;
-	const canClose = isPositive(absSize) && typeof assetId === "number" && isPositive(markPx);
+	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
 
 	const pnlClass = getValueColorClass(unrealizedPnl);
 	const fundingClass = getValueColorClass(cumFunding ? -cumFunding : null);

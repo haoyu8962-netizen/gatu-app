@@ -17,6 +17,7 @@ const testState = vi.hoisted(() => ({
 	positionHasError: false,
 	positionIsLoading: false,
 	positionIsStale: false,
+	preferenceStatus: "required" as "dismissed" | "required" | "unavailable",
 	marketDataStatus: "active" as "idle" | "subscribing" | "active" | "error",
 	marketDataIsStale: false,
 	resetError: vi.fn(),
@@ -58,6 +59,32 @@ vi.mock("@gatu/ui", () => ({
 		createElement("header", props, children),
 	ModalTitle: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
 		createElement("h2", props, children),
+	Checkbox: ({
+		checked,
+		disabled,
+		label,
+		description,
+		onCheckedChange,
+	}: {
+		checked: boolean;
+		disabled?: boolean;
+		label: ReactNode;
+		description?: ReactNode;
+		onCheckedChange: (checked: boolean) => void;
+	}) =>
+		createElement(
+			"label",
+			null,
+			createElement("input", {
+				type: "checkbox",
+				checked,
+				disabled,
+				"aria-label": String(label),
+				onChange: (event: { target: { checked: boolean } }) => onCheckedChange(event.target.checked),
+			}),
+			label,
+			description,
+		),
 }));
 
 vi.mock("@/components/ui/number-input", () => ({
@@ -144,6 +171,10 @@ vi.mock("@/stores/use-global-settings-store", () => ({
 	useMarketOrderSlippagePercent: () => 0.5,
 }));
 
+vi.mock("@/lib/trade/position-market-close-confirmation-preference", () => ({
+	readPositionMarketCloseConfirmationPreference: () => testState.preferenceStatus,
+}));
+
 vi.mock("@/stores/use-global-modal-store", () => ({
 	usePositionMarketCloseSession: () => testState.session,
 	usePositionMarketCloseActions: () => ({
@@ -181,6 +212,7 @@ describe("PositionMarketCloseModal", () => {
 		testState.positionHasError = false;
 		testState.positionIsLoading = false;
 		testState.positionIsStale = false;
+		testState.preferenceStatus = "required";
 		testState.marketDataStatus = "active";
 		testState.marketDataIsStale = false;
 		testState.session.position.signedPositionSize = "2.5";
@@ -213,18 +245,55 @@ describe("PositionMarketCloseModal", () => {
 		expect(container.textContent).toContain("102,000 USDC");
 		expect(container.textContent).toContain("Max Slippage");
 		expect(container.textContent).not.toContain("Cancel");
-		expect(container.textContent).not.toContain("Don't show");
+		expect(container.textContent).toContain("Don't show this confirmation again");
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("2.5");
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("100");
 		expect(testState.numberInputs.get("Close percentage")?.className).toContain("w-full");
 		expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuetext")).toBe(
-			"100% requested; 100% after size precision",
+			"100% selected; 100% after size precision",
 		);
 
 		await act(async () => {
 			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
 		});
-		expect(testState.submit).toHaveBeenCalledWith({ sessionId: "session-1" });
+		expect(testState.submit).toHaveBeenCalledWith({
+			sessionId: "session-1",
+			dismissFutureConfirmation: false,
+		});
+	});
+
+	it("sends the opt-out only for a full-position confirmation", async () => {
+		render();
+		const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
+		expect(checkbox?.disabled).toBe(false);
+
+		act(() => checkbox?.click());
+		await act(async () => {
+			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
+		});
+
+		expect(testState.submit).toHaveBeenCalledWith({
+			sessionId: "session-1",
+			dismissFutureConfirmation: true,
+		});
+	});
+
+	it("shows an existing opt-out accurately when a direct close falls back to the dialog", async () => {
+		testState.preferenceStatus = "dismissed";
+		render();
+
+		const checkbox = container.querySelector<HTMLInputElement>(
+			'input[aria-label="Don\'t show this confirmation again"]',
+		);
+		expect(checkbox).toMatchObject({ checked: true, disabled: true });
+
+		await act(async () => {
+			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
+		});
+		expect(testState.submit).toHaveBeenCalledWith({
+			sessionId: "session-1",
+			dismissFutureConfirmation: false,
+		});
 	});
 
 	it("writes size, percent, slider, and max events to one sizing intent", () => {
@@ -258,9 +327,10 @@ describe("PositionMarketCloseModal", () => {
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("1");
 		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("50");
 		expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuetext")).toBe(
-			"50% requested; 33.3% after size precision",
+			"50% selected; 33.3% after size precision",
 		);
 		expect(container.textContent).toContain("1 BTC (33.3%)");
+		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.disabled).toBe(true);
 
 		testState.livePosition = { szi: "4" };
 		render();

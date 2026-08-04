@@ -33,7 +33,15 @@ describe("TradeSizeSlider", () => {
 		container.remove();
 	});
 
-	function render(value: number, onPercentChange: (value: number) => void, ariaLabel?: string, ariaValueText?: string) {
+	function render(
+		value: number,
+		onPercentChange: (value: number) => void,
+		ariaLabel = "Size (%)",
+		ariaValueText?: string,
+		ariaDescribedBy?: string,
+		ariaInvalid?: boolean,
+		thumbAlignment?: "center" | "edge" | "edge-client-only",
+	) {
 		act(() => {
 			root.render(
 				<TradeSizeSlider
@@ -41,6 +49,9 @@ describe("TradeSizeSlider", () => {
 					onPercentChange={onPercentChange}
 					ariaLabel={ariaLabel}
 					ariaValueText={ariaValueText}
+					ariaDescribedBy={ariaDescribedBy}
+					ariaInvalid={ariaInvalid}
+					thumbAlignment={thumbAlignment}
 				/>,
 			);
 		});
@@ -82,6 +93,7 @@ describe("TradeSizeSlider", () => {
 		render(50, vi.fn(), "Close percentage", "50% requested; 46.6% after size precision");
 
 		expect(sliderMock.props?.label).toBe("Close percentage");
+		expect(sliderMock.props?.labelHidden).toBe(true);
 		expect(sliderMock.props?.format).toEqual({
 			style: "unit",
 			unit: "percent",
@@ -90,5 +102,13 @@ describe("TradeSizeSlider", () => {
 		expect(sliderMock.props?.["aria-label"]).toBeUndefined();
 		const getAriaValueText = sliderMock.props?.getAriaValueText as (() => string) | undefined;
 		expect(getAriaValueText?.()).toBe("50% requested; 46.6% after size precision");
+	});
+
+	it("forwards thumb accessibility state and alignment", () => {
+		render(50, vi.fn(), "Close percentage", undefined, "close-error", true, "edge");
+
+		expect(sliderMock.props?.["aria-describedby"]).toBe("close-error");
+		expect(sliderMock.props?.["aria-invalid"]).toBe(true);
+		expect(sliderMock.props?.thumbAlignment).toBe("edge");
 	});
 });

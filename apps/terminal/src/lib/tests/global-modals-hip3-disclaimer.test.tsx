@@ -25,6 +25,9 @@ const testState = vi.hoisted(() => ({
 	legalGateHook: vi.fn(),
 	openCommandMenu: vi.fn(),
 	closeSendModal: vi.fn(),
+	marketClosePresentation: "confirmation" as "confirmation" | "direct",
+	marketClosePhase: "idle" as "idle" | "validating" | "submitting" | "reconciling",
+	marketCloseError: null as string | null,
 }));
 
 vi.mock("@/hooks/trade/use-hip3-disclaimer", () => ({
@@ -74,7 +77,15 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 	useTransferModalActions: () => ({ close: vi.fn() }),
 	useTransferModalDirection: () => "toPerp",
 	usePositionMarketCloseSession: () =>
-		testState.activeModal === "positionMarketClose" ? { position: { coin: "xyz:CXMT" } } : null,
+		testState.activeModal === "positionMarketClose"
+			? {
+					sessionId: "close-session",
+					presentation: testState.marketClosePresentation,
+					phase: testState.marketClosePhase,
+					error: testState.marketCloseError,
+					position: { coin: "xyz:CXMT" },
+				}
+			: null,
 }));
 
 describe("GlobalModals HIP-3 disclaimer priority", () => {
@@ -105,6 +116,9 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		};
 		testState.legalGateHook.mockReset();
 		testState.openCommandMenu.mockReset();
+		testState.marketClosePresentation = "confirmation";
+		testState.marketClosePhase = "idle";
+		testState.marketCloseError = null;
 	});
 
 	afterEach(() => {
@@ -211,6 +225,21 @@ describe("GlobalModals HIP-3 disclaimer priority", () => {
 		act(() => root.render(createElement(GlobalModals)));
 		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).toBeNull();
 		expect(testState.discardPositionMarketCloseModal).toHaveBeenCalledOnce();
+	});
+
+	it("keeps a direct close hidden unless it needs error or reconciliation attention", async () => {
+		testState.activeModal = "positionMarketClose";
+		testState.marketClosePresentation = "direct";
+		testState.marketClosePhase = "submitting";
+		const { GlobalModals } = await import("@/components/trade/components/global-modals");
+
+		act(() => root.render(createElement(GlobalModals, { enablePositionMarketClose: true })));
+		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).toBeNull();
+
+		testState.marketClosePhase = "idle";
+		testState.marketCloseError = "Order rejected";
+		act(() => root.render(createElement(GlobalModals, { key: "direct-error", enablePositionMarketClose: true })));
+		expect(container.querySelector('[data-testid="PositionMarketCloseModal"]')).not.toBeNull();
 	});
 
 	it("binds the HIP-3 gate to the market-close target instead of the selected terminal market", async () => {
