@@ -59,8 +59,8 @@ describe("positions table visual contract", () => {
 		expect(POSITION_ROW_SOURCE).toContain("{p.dex}");
 	});
 
-	it("uses native horizontal overflow without a persistent scrollbar", () => {
-		expect(POSITIONS_TAB_SOURCE).toContain("[&_[data-slot=scroll-area-scrollbar]]:hidden");
+	it("uses native horizontal overflow without hiding the vertical scroll affordance", () => {
+		expect(POSITIONS_TAB_SOURCE).not.toContain("[&_[data-slot=scroll-area-scrollbar]]:hidden");
 		expect(POSITIONS_TAB_SOURCE).toContain("[&_[data-slot=scroll-area-viewport]]:overscroll-x-none");
 		expect(POSITIONS_TAB_SOURCE).not.toContain('<ScrollBar orientation="horizontal"');
 	});

@@ -12,8 +12,12 @@ export const DESKTOP_GRID_COLS = {
 
 export const DESKTOP_GRID_ROW_HEIGHT_PX = 30;
 export const DESKTOP_GRID_GAP_PX = 3;
-export const DESKTOP_GRID_STORAGE_KEY = "trade-desktop-grid-layout-v3";
-const LEGACY_DESKTOP_GRID_STORAGE_KEYS = ["trade-desktop-grid-layout-v1", "trade-desktop-grid-layout-v2"] as const;
+export const DESKTOP_GRID_STORAGE_KEY = "trade-desktop-grid-layout-v4";
+const LEGACY_DESKTOP_GRID_STORAGE_KEYS = [
+	"trade-desktop-grid-layout-v1",
+	"trade-desktop-grid-layout-v2",
+	"trade-desktop-grid-layout-v3",
+] as const;
 const GRID_GEOMETRY_EPSILON = 1e-9;
 
 export type DesktopGridBreakpoint = keyof typeof DESKTOP_GRID_BREAKPOINTS;
@@ -119,11 +123,11 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 			x: 0,
 			y: 20.6,
 			w: 10,
-			h: 10,
+			h: 30.4,
 			minH: 10,
 			minW: 4,
 			isDraggable: false,
-			resizeHandles: ["n", "e", "ne"],
+			resizeHandles: ["s"],
 		},
 		{
 			i: "accountInfo",

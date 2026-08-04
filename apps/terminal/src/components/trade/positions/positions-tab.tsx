@@ -191,7 +191,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket }: P
 						{placeholder ?? filteredPlaceholder}
 					</div>
 				) : (
-					<ScrollArea className="min-h-0 w-full flex-1 [&_[data-slot=scroll-area-scrollbar]]:hidden [&_[data-slot=scroll-area-viewport]]:overscroll-x-none">
+					<ScrollArea className="min-h-0 w-full flex-1 [&_[data-slot=scroll-area-viewport]]:overscroll-x-none">
 						<Table
 							containerClassName="overflow-visible"
 							className="table-auto w-full"
