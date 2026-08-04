@@ -11,11 +11,12 @@ document in the same PR.
 
 ### Boundary
 
-There are three separate states:
+These runtime states are separate:
 
 | State | Meaning | Source |
 |---|---|---|
-| Wallet connection | A Privy/wagmi wallet session is connected | Privy + wagmi |
+| Privy authentication | A user identity session exists | Privy |
+| Active signing wallet | The exact owner wallet is available and selected for signing | Privy + wagmi |
 | Legal access | Hyperliquid terms are accepted and the owner may perform actions | Hyperliquid `legalCheck` / `acceptTerms2` |
 | Hyperliquid agent approval | Hyperliquid has approved an agent address for the owner | Hyperliquid `approveAgent` / `extraAgents` |
 | Local agent key | Browser-local private key used for trading signatures | `sessionStorage` or `localStorage` key `hyperliquid_agent_{env}_{owner}` |
@@ -53,8 +54,36 @@ Do not collapse these states into one boolean.
 - Mobile wallet approval timeouts pause while the document is hidden. Late
   approvals must revalidate the owner and registration epoch before storage.
 
+### Privy Authentication And Connection UI
+
+- A Privy-authenticated session is not proof that the expected signing wallet
+  is active. Email and reconnect flows must select the exact wallet associated
+  with the current user and fail closed when that wallet is unavailable.
+- `WalletModal` owns the primary interactive Connect surface. Surfaces outside
+  `MOBILE_QR_SURFACE_MEDIA_QUERY` launch Privy directly; matching surfaces use
+  the application drawer first and must close it before launching Privy.
+  Existing reconnect and funding controls may call the shared reconnect hook
+  directly.
+- Privy owns the managed external-wallet directory. Do not add a second
+  Reown/AppKit chooser or reimplement the catalog in application components.
+- `PRIVY_WALLET_LIST` is the single source for recommended-wallet ordering.
+  Keep named wallets ahead of detected/fallback entries and use
+  `wallet_connect` for Privy's long-tail catalog.
+- Login methods remain `wallet` and `email`; Passkey login is intentionally
+  disabled. Embedded Ethereum wallets are created only for users without a
+  wallet, and Privy's embedded wallet UI remains hidden.
+- Dark/light Privy configuration changes appearance only. Preserve
+  `PwaInstallProvider > PrivyProvider > SmartWalletsProvider >`
+  `PersistQueryClientProvider > @privy-io/wagmi WagmiProvider`, keep
+  Ethereum-only wallet selection, and customize radius through Privy's
+  supported public CSS variables rather than generated DOM classes.
+
 ### Important Files
 
+- `apps/terminal/src/config/privy.ts`
+- `apps/terminal/src/providers/root.tsx`
+- `apps/terminal/src/components/trade/components/wallet-modal.tsx`
+- `apps/terminal/src/lib/wallet/privy-wagmi.ts`
 - `packages/hl-react/src/signing/agent-storage.ts`
 - `packages/hl-react/src/signing/agent-registration-session.ts`
 - `packages/hl-react/src/legal.ts`
@@ -72,6 +101,9 @@ Do not collapse these states into one boolean.
 
 ### Regression Coverage
 
+- `apps/terminal/src/lib/tests/privy-config.test.ts`
+- `apps/terminal/src/lib/tests/wallet-modal.test.tsx`
+- `apps/terminal/src/lib/tests/privy-wagmi.test.ts`
 - `apps/terminal/src/lib/tests/wallet-session.test.tsx`
 - `apps/terminal/src/lib/tests/mobile-agent-lifecycle.test.ts`
 - `apps/terminal/src/lib/tests/l1-agent-signing.test.ts`
@@ -259,6 +291,58 @@ transport. Adding account subscriptions must not disturb market subscriptions.
 - `.claude/rules/design-tokens.md`
 - `.claude/rules/ui-library.md`
 
+## 8. Mobile Connection And PWA Installation
+
+### Boundary
+
+Terminal layout, wallet-connection presentation, and PWA installation are
+three independent decisions. A device can require the mobile connection
+surface without using the mobile terminal layout, and a mobile device may not
+have an install capability.
+
+### Rules
+
+- `MOBILE_MEDIA_QUERY` controls the terminal layout at `1000px` and below.
+  `MOBILE_QR_SURFACE_MEDIA_QUERY` additionally covers coarse pointers and
+  standalone display mode; do not use it to switch the terminal layout.
+- The Link Desktop scanner is optional and fail closed. Render it only when
+  `MOBILE_PAIRING_FEATURES.importFromQr` is enabled, and accept only the
+  terminal's validated desktop-approved Agent payload.
+- The mobile Email and WalletConnect entries launch Privy with explicit login
+  methods; wallet selection remains Ethereum-only. An authenticated user takes
+  the explicit reconnect path instead of starting a new login flow.
+- The PWA entry is capability-driven. Show it only for a captured browser
+  install prompt or supported iOS instructions, and hide it when installed or
+  unsupported.
+- A captured `beforeinstallprompt` event is single-use. Clear it before
+  prompting and after installation. Do not intercept the native install flow
+  on wide desktop surfaces.
+- Keep the PWA manifest and browser theme color aligned with the terminal dark
+  canvas (`#0F1A1F`).
+- Installation support does not imply offline navigation support. Do not
+  advertise the terminal as offline-capable unless the service worker gains a
+  tested application-shell/navigation strategy.
+
+### Important Files
+
+- `apps/terminal/src/hooks/use-mobile.ts`
+- `apps/terminal/src/config/mobile-pairing.ts`
+- `apps/terminal/src/config/privy.ts`
+- `apps/terminal/src/components/trade/components/wallet-modal.tsx`
+- `apps/terminal/src/components/trade/components/mobile-agent-qr-scanner.tsx`
+- `apps/terminal/src/providers/pwa-install.tsx`
+- `apps/terminal/src/config/seo.ts`
+- `apps/terminal/public/manifest.json`
+- `apps/terminal/public/sw.js`
+
+### Regression Coverage
+
+- `apps/terminal/src/lib/tests/desktop-grid-layout.test.ts`
+- `apps/terminal/src/lib/tests/wallet-modal.test.tsx`
+- `apps/terminal/src/lib/tests/pwa-install.test.tsx`
+- `apps/terminal/src/lib/tests/pwa-manifest.test.ts`
+- `apps/terminal/src/lib/tests/privy-config.test.ts`
+
 ## Required Review Checklist
 
 Before merging any change that touches the areas above:
@@ -284,3 +368,13 @@ Before merging any change that touches the areas above:
 - Clearing mobile orderbook/chart to an empty skeleton during ordinary symbol
   switches.
 - Hiding mobile UI state behind full route reloads.
+- Treating Privy authentication as proof that the expected signing wallet is
+  active.
+- Rendering the application wallet drawer underneath a Privy modal.
+- Adding a second managed wallet catalog or mixing Agent QR import with Privy's
+  external-wallet directory.
+- Re-enabling Passkey login without explicit enrollment, recovery, and support
+  behavior.
+- Using the mobile connection-surface media query as the terminal layout
+  breakpoint.
+- Suppressing the browser-owned PWA install flow on wide desktop surfaces.

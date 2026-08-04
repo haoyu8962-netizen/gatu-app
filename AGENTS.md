@@ -24,6 +24,21 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Mobile wallet approval timeouts pause while the page is hidden. A late approval may be committed only after revalidating the owner, registration epoch, stored key, and server-approved Agent address.
 - Keep `docs/trading-onboarding.md` synchronized with changes to this flow.
 
+## Wallet connection UI contract
+
+- Privy is the sole managed authentication and external-wallet directory. Do not add a parallel Reown/AppKit wallet chooser; the application owns only the surrounding terminal drawer and desktop-link flow.
+- Keep Privy login limited to `wallet` and `email`. Passkey login is intentionally disabled, and embedded Ethereum wallets are created only for users who log in without a wallet. Re-enabling Passkeys requires an explicit enrollment, recovery, and support design.
+- Keep recommended-wallet ordering in `PRIVY_WALLET_LIST`. Use `wallet_connect` as the long-tail catalog entry; do not substitute `wallet_connect_qr` or label an unrelated catalog identifier as SafePal.
+- `WalletModal` owns the primary interactive Connect surface. Surfaces outside `MOBILE_QR_SURFACE_MEDIA_QUERY` launch Privy directly; matching surfaces use the application drawer first. Close the drawer before launching Privy. Existing reconnect and funding controls may call the shared reconnect hook directly.
+- Privy authentication is not proof that the required signing wallet is active. Reconnect and email-wallet flows must activate the exact expected wallet and continue to enforce the wallet signing contract above.
+- Privy dark/light configuration may change only appearance and accent color. Keep wallet ordering and authentication behavior identical across themes, customize radius only through Privy's public CSS variables, preserve the provider hierarchy, and do not remount the authentication provider merely to change theme.
+
+## Mobile connection and PWA contract
+
+- Keep the terminal layout breakpoint (`MOBILE_MEDIA_QUERY`, at `1000px` and below) separate from the broader mobile connection-surface query (`MOBILE_QR_SURFACE_MEDIA_QUERY`, which also includes coarse pointers and standalone display mode).
+- Offer Link Desktop only when its fail-closed feature flag is enabled. Keep email login and the Ethereum-only Privy wallet directory as the ordinary mobile connection paths; authenticated sessions use the explicit reconnect path.
+- Show PWA installation only when a real browser install prompt or supported iOS instructions are available. Installed and unsupported states must hide the entry, a captured install prompt is single-use, and wide desktop `beforeinstallprompt` behavior must remain browser-owned.
+
 ## Trading terminal visual contract
 
 - The dark terminal and chart canvas use `#0F1A1F` (`rgb(15, 26, 31)`) as the main background.
@@ -80,6 +95,12 @@ pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/tradingview-chart.test.tsx
 pnpm --dir apps/terminal exec vitest run \
   src/lib/tests/modal-surface-contract.test.ts
+pnpm --dir apps/terminal exec vitest run \
+  src/lib/tests/privy-config.test.ts \
+  src/lib/tests/wallet-modal.test.tsx \
+  src/lib/tests/wallet-session.test.tsx \
+  src/lib/tests/pwa-install.test.tsx \
+  src/lib/tests/pwa-manifest.test.ts
 ```
 
 When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.
