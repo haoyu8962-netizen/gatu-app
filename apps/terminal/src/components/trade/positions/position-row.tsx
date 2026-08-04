@@ -81,7 +81,6 @@ export function PositionRow({
 		Number.isFinite(liqPx) &&
 		Math.abs(liqPx - markPx) / markPx <= LIQ_WARNING_PROXIMITY;
 
-	const entryPx = toBig(p.entryPx)?.toNumber() ?? Number.NaN;
 	const unrealizedPnl = toBig(p.unrealizedPnl)?.toNumber() ?? Number.NaN;
 	const roe = toBig(p.returnOnEquity)?.toNumber() ?? Number.NaN;
 	const cumFunding = toBig(p.cumFunding.sinceOpen)?.toNumber() ?? Number.NaN;
@@ -173,16 +172,14 @@ export function PositionRow({
 	}
 
 	function handleLimitClose() {
-		if (!canClose || typeof assetId !== "number") return;
+		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
 		onLimitClose({
 			coin: p.coin,
+			dex: p.dex,
 			assetId,
-			isLong,
-			size: absSize,
-			entryPx,
-			markPx,
-			unrealizedPnl,
-			roe,
+			signedPositionSize: p.szi,
+			entryPx: p.entryPx,
+			markPx: markPxRaw,
 			szDecimals,
 			marginMode: p.leverage.type,
 		});

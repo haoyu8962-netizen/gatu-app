@@ -57,6 +57,7 @@ describe("PositionRow market close entry", () => {
 
 	it("opens the shared market-close flow with exact exchange strings", () => {
 		const onMarketClose = vi.fn();
+		const onLimitClose = vi.fn();
 
 		act(() => {
 			root.render(
@@ -74,7 +75,7 @@ describe("PositionRow market close entry", () => {
 							isRowClosing: false,
 							isEven: false,
 							onMarketClose,
-							onLimitClose: vi.fn(),
+							onLimitClose,
 							onReverse: vi.fn(),
 							onOpenTpSl: vi.fn(),
 							onAdjustMargin: vi.fn(),
@@ -99,6 +100,24 @@ describe("PositionRow market close entry", () => {
 			szDecimals: 1,
 			signedPositionSize: "-205.9000",
 			markPx: "7.575900",
+			marginMode: "isolated",
+		});
+
+		const limitButton = [...container.querySelectorAll("button")].find(
+			(button) => button.textContent?.trim() === "Limit",
+		);
+		if (!(limitButton instanceof HTMLButtonElement)) throw new Error("Desktop limit close entry was not rendered");
+
+		act(() => limitButton.click());
+
+		expect(onLimitClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			signedPositionSize: "-205.9000",
+			entryPx: "7.79995",
+			markPx: "7.575900",
+			szDecimals: 1,
 			marginMode: "isolated",
 		});
 	});

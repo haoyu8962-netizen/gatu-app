@@ -134,7 +134,16 @@ describe("MobilePositionCard isolated margin entry", () => {
 		}
 
 		act(() => getButton("Limit Close").click());
-		expect(onLimitClose).toHaveBeenCalledTimes(1);
+		expect(onLimitClose).toHaveBeenCalledWith({
+			coin: "xyz:CXMT",
+			dex: "xyz",
+			assetId: 120_031,
+			signedPositionSize: "205.9",
+			entryPx: "7.79995",
+			markPx: "7.5759",
+			szDecimals: 1,
+			marginMode: "isolated",
+		});
 
 		act(() => getButton("Market Close").click());
 		expect(onMarketClose).toHaveBeenCalledWith({

@@ -4,6 +4,7 @@ import {
 	buildPositionTpSlUpdatePlan,
 	type EntryOrderIntent,
 	hasPositionTpSlTriggerMutation,
+	type LimitCloseIntent,
 	type MarketCloseIntent,
 	type PositionTpSlIntent,
 } from "@/domain/trade/order-intent";
@@ -96,6 +97,18 @@ function marketClose(overrides: Partial<MarketCloseIntent> = {}): MarketCloseInt
 		szDecimals: 3,
 		referencePx: "100",
 		slippageBps: "50",
+		...overrides,
+	};
+}
+
+function limitClose(overrides: Partial<LimitCloseIntent> = {}): LimitCloseIntent {
+	return {
+		kind: "limitClose",
+		assetId: 0,
+		size: "1.239",
+		szDecimals: 2,
+		isLong: true,
+		price: "100",
 		...overrides,
 	};
 }
@@ -417,15 +430,7 @@ describe("market close order planning", () => {
 		expect(plan.errors).toContain(error);
 	});
 
-	it("keeps limit-close and reverse intent behavior unchanged", () => {
-		const limit = buildOrderPlan({
-			kind: "limitClose",
-			assetId: 0,
-			size: 1.239,
-			szDecimals: 2,
-			isLong: true,
-			price: 100,
-		});
+	it("keeps reverse intent behavior unchanged", () => {
 		const reverse = buildOrderPlan({
 			kind: "reverse",
 			assetId: 0,
@@ -436,7 +441,6 @@ describe("market close order planning", () => {
 			slippageBps: 50,
 		});
 
-		expect(limit.orders[0]).toMatchObject({ b: false, p: "100", s: "1.23", r: true, t: { limit: { tif: "Gtc" } } });
 		expect(reverse.orders[0]).toMatchObject({
 			b: true,
 			p: "100.5",
@@ -444,5 +448,70 @@ describe("market close order planning", () => {
 			r: false,
 			t: { limit: { tif: "FrontendMarket" } },
 		});
+	});
+});
+
+describe("limit close order planning", () => {
+	it("builds an opposite-side reduce-only GTC order", () => {
+		const longClose = buildOrderPlan(limitClose());
+		const shortClose = buildOrderPlan(limitClose({ isLong: false }));
+
+		expect(longClose).toEqual({
+			orders: [
+				{
+					a: 0,
+					b: false,
+					p: "100",
+					s: "1.23",
+					r: true,
+					t: { limit: { tif: "Gtc" } },
+				},
+			],
+			grouping: "na",
+			errors: [],
+			warnings: [],
+		});
+		expect(shortClose.orders[0]?.b).toBe(true);
+	});
+
+	it("preserves string precision before applying protocol formatting", () => {
+		const plan = buildOrderPlan(
+			limitClose({
+				assetId: 10001,
+				size: "12345678901234567890.123",
+				szDecimals: 3,
+				price: "0.1234567890123456789",
+			}),
+		);
+
+		expect(plan.errors).toEqual([]);
+		expect(plan.orders[0]).toMatchObject({
+			a: 10001,
+			p: "0.12346",
+			s: "12345678901234567890.123",
+		});
+	});
+
+	it.each([
+		[limitClose({ assetId: -1 }), "Asset id must be a non-negative integer"],
+		[limitClose({ assetId: Number.MAX_SAFE_INTEGER + 1 }), "Asset id must be a non-negative integer"],
+		[limitClose({ szDecimals: -1 }), "Size decimals must be an integer between 0 and 6"],
+		[limitClose({ szDecimals: 1.5 }), "Size decimals must be an integer between 0 and 6"],
+		[limitClose({ szDecimals: 7 }), "Size decimals must be an integer between 0 and 6"],
+		[limitClose({ assetId: 10001, szDecimals: 9 }), "Size decimals must be an integer between 0 and 8"],
+		[limitClose({ price: "invalid" }), "Limit price must be greater than zero"],
+		[limitClose({ price: "0" }), "Limit price must be greater than zero"],
+		[limitClose({ price: "-1" }), "Limit price must be greater than zero"],
+		[limitClose({ size: "invalid" }), "Close size must be greater than zero"],
+		[limitClose({ size: "0" }), "Close size must be greater than zero"],
+		[limitClose({ size: "-1" }), "Close size must be greater than zero"],
+		[limitClose({ price: "0.1", szDecimals: 6 }), "Limit price is below market precision"],
+		[limitClose({ size: "0.0009", szDecimals: 3 }), "Close size is below market precision"],
+	] as const)("fails closed for an invalid limit-close intent", (intent, error) => {
+		const plan = buildOrderPlan(intent);
+
+		expect(plan.orders).toEqual([]);
+		expect(plan.grouping).toBe("na");
+		expect(plan.errors).toContain(error);
 	});
 });

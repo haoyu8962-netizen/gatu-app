@@ -182,16 +182,14 @@ export function MobilePositionCard({
 	}
 
 	function handleLimitClose() {
-		if (!canClose || typeof assetId !== "number") return;
+		if (!canClose || typeof assetId !== "number" || markPxRaw == null) return;
 		onLimitClose({
 			coin: p.coin,
+			dex: p.dex,
 			assetId,
-			isLong,
-			size: absSize,
-			entryPx,
-			markPx,
-			unrealizedPnl,
-			roe,
+			signedPositionSize: p.szi,
+			entryPx: p.entryPx,
+			markPx: markPxRaw,
 			szDecimals,
 			marginMode: p.leverage.type,
 		});

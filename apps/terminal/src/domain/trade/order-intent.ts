@@ -1,5 +1,13 @@
+import { isSpotAssetId } from "@gatu/hl-react";
 import Big from "big.js";
-import { type ExchangeOrder, type LimitTif, MARKET_ORDER_SLIPPAGE_MAX_PERCENT, type OrderType } from "@/config/trade";
+import {
+	type ExchangeOrder,
+	HL_PERP_PRICE_MAX_DECIMALS,
+	HL_PRICE_MAX_DECIMALS,
+	type LimitTif,
+	MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
+	type OrderType,
+} from "@/config/trade";
 import { getExecutedPrice, getTriggerMarketExecutionPrice } from "@/domain/trade/order/price";
 import { buildFrontendMarketOrder, buildOrders, formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
 import { resolvePositionMarketCloseSize } from "@/domain/trade/position-market-close";
@@ -78,10 +86,10 @@ export type MarketCloseIntent = {
 export type LimitCloseIntent = {
 	kind: "limitClose";
 	assetId: number;
-	size: number;
+	size: string;
 	szDecimals: number;
 	isLong: boolean;
-	price: number;
+	price: string;
 };
 
 export type ReverseIntent = {
@@ -300,6 +308,37 @@ function buildMarketClosePlan(intent: MarketCloseIntent): OrderPlan {
 }
 
 function buildLimitClosePlan({ assetId, size, szDecimals, isLong, price }: LimitCloseIntent): OrderPlan {
+	const errors: string[] = [];
+
+	if (!Number.isSafeInteger(assetId) || assetId < 0) {
+		errors.push("Asset id must be a non-negative integer");
+	}
+
+	const maxSizeDecimals = isSpotAssetId(assetId) ? HL_PRICE_MAX_DECIMALS : HL_PERP_PRICE_MAX_DECIMALS;
+	if (!Number.isSafeInteger(szDecimals) || szDecimals < 0 || szDecimals > maxSizeDecimals) {
+		errors.push(`Size decimals must be an integer between 0 and ${maxSizeDecimals}`);
+	}
+
+	const priceValue = toBig(price);
+	if (!priceValue || priceValue.lte(0)) errors.push("Limit price must be greater than zero");
+
+	const sizeValue = toBig(size);
+	if (!sizeValue || sizeValue.lte(0)) errors.push("Close size must be greater than zero");
+
+	if (errors.length > 0) {
+		return { orders: [], grouping: "na", errors, warnings: [] };
+	}
+
+	const formattedPrice = formatPriceForOrder(priceValue, { assetId, szDecimals });
+	const formattedSize = formatSizeForOrder(sizeValue, szDecimals);
+
+	if (formattedPrice === "0") errors.push("Limit price is below market precision");
+	if (formattedSize === "0") errors.push("Close size is below market precision");
+
+	if (errors.length > 0) {
+		return { orders: [], grouping: "na", errors, warnings: [] };
+	}
+
 	const side = getCloseSide(isLong);
 
 	return {
@@ -307,8 +346,8 @@ function buildLimitClosePlan({ assetId, size, szDecimals, isLong, price }: Limit
 			{
 				a: assetId,
 				b: side === "buy",
-				p: formatPriceForOrder(price, { assetId, szDecimals }),
-				s: formatSizeForOrder(size, szDecimals),
+				p: formattedPrice,
+				s: formattedSize,
 				r: true,
 				t: { limit: { tif: "Gtc" } },
 			},

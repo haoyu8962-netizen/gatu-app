@@ -6,6 +6,11 @@ import type { Side } from "@/lib/trade/types";
 const SIGNED_DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
 const UNSIGNED_DECIMAL_INPUT_PATTERN = /^(?:\d+(?:\.\d*)?|\.\d+)$/;
 
+export type PositionCloseSizingIntent =
+	| { kind: "max" }
+	| { kind: "percent"; value: string }
+	| { kind: "size"; value: string };
+
 export interface PositionMarketCloseSizeInput {
 	signedPositionSize: string;
 	closeSize: string;

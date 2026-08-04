@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { PositionMarketCloseRef } from "@/components/trade/positions/position-dialog-types";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import type { PositionCloseSizingIntent } from "@/domain/trade/position-market-close";
 import { type HyperliquidEnv, useHyperliquid } from "@/lib/hyperliquid";
 
 export type { PositionMarketCloseRef } from "@/components/trade/positions/position-dialog-types";
@@ -10,10 +11,7 @@ export type TransferDirection = "toSpot" | "toPerp";
 export type SwapMode = "spot" | "stablecoin";
 export type SendAccountType = "perp" | "spot";
 
-export type PositionMarketCloseSizingIntent =
-	| { kind: "max" }
-	| { kind: "percent"; value: string }
-	| { kind: "size"; value: string };
+export type PositionMarketCloseSizingIntent = PositionCloseSizingIntent;
 
 export type PositionMarketClosePhase = "idle" | "validating" | "submitting" | "reconciling";
 export type PositionMarketClosePresentation = "confirmation" | "direct";

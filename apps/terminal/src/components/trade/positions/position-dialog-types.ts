@@ -46,13 +46,11 @@ export interface ClosePositionData {
 
 export interface LimitClosePositionData {
 	coin: string;
+	dex: string;
 	assetId: number;
-	isLong: boolean;
-	size: number;
-	entryPx: number;
-	markPx: number;
-	unrealizedPnl: number;
-	roe: number;
+	signedPositionSize: string;
+	entryPx: string;
+	markPx: string;
 	szDecimals: number;
 	marginMode: MarginMode;
 }
