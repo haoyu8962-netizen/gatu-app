@@ -56,6 +56,30 @@ describe("AdaptiveModal dismissal", () => {
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 	});
 
+	it("uses a localized close label for modal presentations", () => {
+		act(() => {
+			root.render(
+				<AdaptiveModal closeLabel="Close dialog" onOpenChange={vi.fn()} open presentation="modal">
+					<ModalTitle>Localized modal</ModalTitle>
+				</AdaptiveModal>,
+			);
+		});
+
+		expect(document.querySelector('button[aria-label="Close dialog"]')).not.toBeNull();
+	});
+
+	it("keeps the default close label for existing modal callers", () => {
+		act(() => {
+			root.render(
+				<AdaptiveModal onOpenChange={vi.fn()} open presentation="modal">
+					<ModalTitle>Default modal</ModalTitle>
+				</AdaptiveModal>,
+			);
+		});
+
+		expect(document.querySelector('button[aria-label="Close"]')).not.toBeNull();
+	});
+
 	it("cancels Escape dismissal for blocking modal callers", () => {
 		const onOpenChange = vi.fn();
 		act(() => {

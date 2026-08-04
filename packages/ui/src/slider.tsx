@@ -20,11 +20,15 @@ interface SliderProps
 	"aria-describedby"?: string;
 	"aria-invalid"?: boolean;
 	className?: string;
+	controlClassName?: string;
 	getAriaValueText?: React.ComponentPropsWithoutRef<typeof BaseSlider.Thumb>["getAriaValueText"];
+	indicatorClassName?: string;
 	label: string;
 	labelHidden?: boolean;
 	showValue?: boolean;
+	thumbClassName?: string;
 	thumbSize?: SliderThumbSize;
+	trackClassName?: string;
 }
 
 const thumbSizeClasses: Record<SliderThumbSize, string> = {
@@ -57,11 +61,15 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 			"aria-describedby": ariaDescribedBy,
 			"aria-invalid": ariaInvalid,
 			className,
+			controlClassName,
 			getAriaValueText,
+			indicatorClassName,
 			label,
 			labelHidden,
 			showValue,
+			thumbClassName,
 			thumbSize = "md",
+			trackClassName,
 			...props
 		},
 		ref,
@@ -84,16 +92,24 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 							</BaseSlider.Label>
 							{showValue && <BaseSlider.Value className="text-sm font-normal text-fg-muted tabular-nums" />}
 						</div>
-						<BaseSlider.Control className={cn("relative flex w-full items-center", controlHeightClasses[thumbSize])}>
+						<BaseSlider.Control
+							className={cn("relative flex w-full items-center", controlHeightClasses[thumbSize], controlClassName)}
+						>
 							<BaseSlider.Track
 								className={cn(
 									"relative w-full overflow-hidden rounded-32",
 									"bg-fill-weak ring-1 ring-inset ring-stroke-weak",
 									"inset-shadow-sunken",
 									trackHeightClasses[thumbSize],
+									trackClassName,
 								)}
 							>
-								<BaseSlider.Indicator className="absolute inset-y-0 h-auto rounded-32 bg-fill-selected min-w-1 inset-shadow-sunken" />
+								<BaseSlider.Indicator
+									className={cn(
+										"absolute inset-y-0 h-auto rounded-32 bg-fill-selected min-w-1 inset-shadow-sunken",
+										indicatorClassName,
+									)}
+								/>
 							</BaseSlider.Track>
 							{Array.from({ length: thumbCount }, (_, i) => (
 								<BaseSlider.Thumb
@@ -108,6 +124,7 @@ const Slider = React.forwardRef<HTMLDivElement, SliderProps>(
 										"before:absolute before:content-['']",
 										thumbSizeClasses[thumbSize],
 										thumbHitAreaClasses[thumbSize],
+										thumbClassName,
 									)}
 								/>
 							))}

@@ -123,4 +123,25 @@ describe("AdaptiveModal drawer dismissal", () => {
 		expect(drawerHarness.disablePointerDismissal).toBe(false);
 		expect(document.querySelector('[data-slot="drawer-handle"]')).toBeNull();
 	});
+
+	it("forwards localized close text and custom handle styling to drawers", () => {
+		act(() => {
+			root.render(
+				<AdaptiveModal
+					closeLabel="Close drawer"
+					handleClassName="custom-handle"
+					onOpenChange={vi.fn()}
+					open
+					presentation="drawer"
+				>
+					<div>Customized drawer</div>
+				</AdaptiveModal>,
+			);
+		});
+
+		const handle = document.querySelector('[data-slot="drawer-handle"]');
+		expect(handle?.classList.contains("custom-handle")).toBe(true);
+		expect(handle?.classList.contains("bg-fill/20")).toBe(true);
+		expect(document.querySelector('button[aria-label="Close drawer"]')).not.toBeNull();
+	});
 });

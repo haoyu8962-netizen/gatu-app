@@ -49,13 +49,26 @@ const ModalClose = Dialog.Close;
 interface ModalPopupProps
 	extends React.ComponentPropsWithoutRef<typeof Dialog.Popup>,
 		VariantProps<typeof modalPopupVariants> {
+	closeLabel?: string;
 	showClose?: boolean;
 	layer?: "default" | "blocking";
 	overlayClassName?: string;
 }
 
 const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
-	({ className, size, showClose = true, layer = "default", overlayClassName, children, ...props }, ref) => (
+	(
+		{
+			className,
+			size,
+			closeLabel = "Close",
+			showClose = true,
+			layer = "default",
+			overlayClassName,
+			children,
+			...props
+		},
+		ref,
+	) => (
 		<Dialog.Portal>
 			<Dialog.Backdrop
 				className={cn(
@@ -91,7 +104,7 @@ const ModalPopup = React.forwardRef<HTMLDivElement, ModalPopupProps>(
 									"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 									"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 								)}
-								aria-label="Close"
+								aria-label={closeLabel}
 							>
 								<XIcon size={16} weight="bold" />
 							</Dialog.Close>
@@ -160,10 +173,12 @@ interface AdaptiveModalProps {
 	size?: VariantProps<typeof modalPopupVariants>["size"];
 	showClose?: boolean;
 	showHandle?: boolean;
+	handleClassName?: string;
 	dismissible?: boolean;
 	presentation?: "auto" | "modal" | "drawer";
 	layer?: "default" | "blocking";
 	overlayClassName?: string;
+	closeLabel?: string;
 	children: React.ReactNode;
 	className?: string;
 }
@@ -174,10 +189,12 @@ function AdaptiveModal({
 	size,
 	showClose = true,
 	showHandle = true,
+	handleClassName,
 	dismissible = true,
 	presentation = "auto",
 	layer = "default",
 	overlayClassName,
+	closeLabel = "Close",
 	children,
 	className,
 }: AdaptiveModalProps) {
@@ -206,7 +223,10 @@ function AdaptiveModal({
 					{dismissible && showHandle && (
 						<div
 							data-slot="drawer-handle"
-							className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20"
+							className={cn(
+								"absolute top-2 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-fill/20",
+								handleClassName,
+							)}
 							aria-hidden="true"
 						/>
 					)}
@@ -220,7 +240,7 @@ function AdaptiveModal({
 								"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 								"after:content-[''] after:absolute after:top-1/2 after:left-1/2 after:-translate-1/2 after:size-11",
 							)}
-							aria-label="Close"
+							aria-label={closeLabel}
 						>
 							<XIcon size={16} weight="bold" />
 						</DrawerClose>
@@ -236,6 +256,7 @@ function AdaptiveModal({
 			<ModalPopup
 				size={size}
 				showClose={showClose}
+				closeLabel={closeLabel}
 				layer={layer}
 				overlayClassName={overlayClassName}
 				className={className}
