@@ -75,6 +75,10 @@ describe("MobilePositionsView tabs", () => {
 	beforeEach(() => {
 		storeState.activeTab = "positions";
 		storeState.snapshotsReady = true;
+		Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+			configurable: true,
+			value: vi.fn(),
+		});
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -108,6 +112,7 @@ describe("MobilePositionsView tabs", () => {
 
 		render(<div data-testid="injected-balances" />);
 
+		expect(container.firstElementChild?.className).toContain("font-market-close");
 		const tabs = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]'));
 		expect(tabs).toHaveLength(7);
 		expect(tabs.map((tab) => tab.textContent)).toEqual([
@@ -165,5 +170,14 @@ describe("MobilePositionsView tabs", () => {
 		const tabs = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]'));
 		expect(tabs).toHaveLength(7);
 		for (const tab of tabs) expect(tab.className).toContain("min-h-11");
+	});
+
+	it("keeps the active tab visible when a persisted history tab is restored", () => {
+		storeState.activeTab = "orders-history";
+		render();
+
+		const activeTab = container.querySelector<HTMLElement>('[data-mobile-account-tab="orders-history"]');
+		expect(activeTab?.getAttribute("aria-selected")).toBe("true");
+		expect(activeTab?.scrollIntoView).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
 	});
 });

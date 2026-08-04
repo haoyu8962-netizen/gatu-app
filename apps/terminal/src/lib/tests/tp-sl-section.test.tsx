@@ -102,4 +102,81 @@ describe("TpSlSection position ROE shortcuts", () => {
 		act(() => buttons[0]?.click());
 		expect(onTpPriceChange).toHaveBeenCalledWith("9119789245425255.4125");
 	});
+
+	it("renders linked PnL inputs with an accessible unit toggle", () => {
+		const onUnitToggle = vi.fn();
+		act(() => {
+			root.render(
+				createElement(TpSlSection, {
+					linkedReturnInputs: {
+						onUnitToggle,
+						sl: {
+							ariaLabel: "Stop loss amount",
+							onChange: vi.fn(),
+							placeholder: "Loss",
+							value: "5",
+						},
+						tp: {
+							ariaLabel: "Take profit amount",
+							onChange: vi.fn(),
+							placeholder: "Profit",
+							value: "10",
+						},
+						unitLabel: "%",
+					},
+					mobileTouchSafe: true,
+					onSlPriceChange: vi.fn(),
+					onTpPriceChange: vi.fn(),
+					referencePrice: 100,
+					side: "buy",
+					size: 1,
+					slPrice: "95",
+					tpPrice: "105",
+					tpError: "Invalid take profit",
+				}),
+			);
+		});
+
+		const tpPriceInput = container.querySelector<HTMLInputElement>('input[aria-label="Take Profit"]');
+		const tpReturnInput = container.querySelector<HTMLInputElement>('input[aria-label="Take profit amount"]');
+		expect(tpReturnInput?.value).toBe("10");
+		expect(tpPriceInput?.inputMode).toBe("decimal");
+		expect(tpPriceInput?.getAttribute("aria-invalid")).toBe("true");
+		expect(tpReturnInput?.getAttribute("aria-invalid")).toBe("true");
+		expect(tpPriceInput?.getAttribute("aria-describedby")).toBeTruthy();
+		expect(container.querySelector(`label[for="${tpPriceInput?.id}"]`)?.textContent).toBe("Take Profit");
+		expect(container.querySelector('[role="alert"]')?.textContent).toBe("Invalid take profit");
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="Stop loss amount"]')?.value).toBe("5");
+		const toggles = container.querySelectorAll<HTMLButtonElement>('button[aria-label="Toggle profit and loss unit"]');
+		expect(toggles).toHaveLength(2);
+		for (const toggle of toggles) {
+			expect(toggle.className).toContain("max-[1000px]:min-h-11");
+			expect(toggle.textContent).toBe("%");
+			expect(toggle.getAttribute("aria-pressed")).toBe("true");
+		}
+		act(() => toggles[0]?.click());
+		expect(onUnitToggle).toHaveBeenCalledOnce();
+	});
+
+	it("formats TP/SL PnL with the verified non-default quote token", () => {
+		act(() => {
+			root.render(
+				createElement(TpSlSection, {
+					onSlPriceChange: vi.fn(),
+					onTpPriceChange: vi.fn(),
+					preserveFinancialPrecision: true,
+					quoteSymbol: "USDT0",
+					referencePrice: "100",
+					side: "buy",
+					size: "2",
+					slPrice: "95",
+					tpPrice: "110",
+				}),
+			);
+		});
+
+		expect(container.textContent).toContain("+20.00 USDT0");
+		expect(container.textContent).toContain("-10.00 USDT0");
+		expect(container.textContent).not.toContain("$");
+	});
 });

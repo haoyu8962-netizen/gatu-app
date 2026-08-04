@@ -109,6 +109,47 @@ export function calculateEstimatedPnlExact(params: TpSlCalcParams, targetPrice: 
 	return (params.side === "buy" ? pnl : pnl.times(-1)).toString();
 }
 
+export function calculateTargetPriceFromPnl(
+	referencePrice: Numeric,
+	side: Side,
+	size: Numeric,
+	pnlMagnitude: Numeric,
+	type: "tp" | "sl",
+	decimals: number,
+): string | null {
+	const reference = toBig(referencePrice);
+	const positionSize = toBig(size);
+	const magnitude = toBig(pnlMagnitude);
+	if (!reference || !positionSize || !magnitude || reference.lte(0) || positionSize.lte(0) || magnitude.lte(0)) {
+		return null;
+	}
+
+	const favorableDirection = side === "buy" ? 1 : -1;
+	const direction = type === "tp" ? favorableDirection : -favorableDirection;
+	const target = reference.plus(magnitude.div(positionSize).times(direction));
+	return target.gt(0) ? target.toFixed(decimals) : null;
+}
+
+export function calculateRoeMagnitudeFromPriceExact(
+	referencePrice: Numeric,
+	targetPrice: Numeric,
+	side: Side,
+	type: "tp" | "sl",
+	leverage: Numeric,
+): string | null {
+	const reference = toBig(referencePrice);
+	const target = toBig(targetPrice);
+	const leverageValue = toBig(leverage);
+	if (!reference || !target || !leverageValue || reference.lte(0) || target.lte(0) || leverageValue.lte(0)) {
+		return null;
+	}
+
+	const favorableMove = target.minus(reference).times(side === "buy" ? 1 : -1);
+	const typedMove = type === "tp" ? favorableMove : favorableMove.times(-1);
+	if (typedMove.lte(0)) return null;
+	return typedMove.div(reference).times(100).times(leverageValue).toString();
+}
+
 export function calculateRiskRewardRatioExact(tpPnl: Numeric, slPnl: Numeric): string | null {
 	const takeProfit = toBig(tpPnl);
 	const stopLoss = toBig(slPnl);
@@ -128,6 +169,21 @@ export function validateSlPrice(referencePrice: Numeric, slPrice: Numeric, side:
 	const sl = toSafeBig(slPrice);
 	if (ref.lte(0) || sl.lte(0)) return false;
 	return side === "buy" ? sl.lt(ref) : sl.gt(ref);
+}
+
+export function validatePositionSlPrice(
+	markPrice: Numeric,
+	liquidationPrice: Numeric,
+	slPrice: Numeric,
+	side: Side,
+): boolean {
+	const mark = toBig(markPrice);
+	const liquidation = toBig(liquidationPrice);
+	const stop = toBig(slPrice);
+	if (!mark || !stop || mark.lte(0) || stop.lte(0)) return false;
+	if (side === "buy" ? stop.gte(mark) : stop.lte(mark)) return false;
+	if (!liquidation || liquidation.lte(0)) return true;
+	return side === "buy" ? stop.gt(liquidation) : stop.lt(liquidation);
 }
 
 export function getTpSlValidationError(

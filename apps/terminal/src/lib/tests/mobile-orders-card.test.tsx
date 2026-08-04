@@ -11,12 +11,15 @@ const mocks = vi.hoisted(() => ({
 	assetId: 120_001 as number | undefined,
 	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
 	cancelOrders: vi.fn(),
+	clientKey: "0x1111111111111111111111111111111111111111",
+	env: "Mainnet" as "Mainnet" | "Testnet",
 	modifyOrders: vi.fn(),
 	navigateToMarket: vi.fn(),
 	resetCancelError: vi.fn(),
 	resetModifyError: vi.fn(),
 	setActiveTab: vi.fn(),
 	setSide: vi.fn(),
+	orders: [] as OpenOrder[],
 }));
 
 const order = {
@@ -37,6 +40,34 @@ const order = {
 	triggerCondition: "Price below 149.00",
 	triggerPx: "149.00",
 } as unknown as OpenOrder;
+
+vi.mock("@gatu/ui", async () => {
+	const actual = await vi.importActual<typeof import("@gatu/ui")>("@gatu/ui");
+	return {
+		...actual,
+		Select: ({
+			onValueChange,
+			options,
+			value,
+		}: {
+			onValueChange: (value: string) => void;
+			options: Array<{ label: string; value: string }>;
+			value: string;
+		}) => (
+			<select
+				aria-label={options[0]?.label}
+				value={value}
+				onChange={(event) => onValueChange(event.currentTarget.value)}
+			>
+				{options.map((option) => (
+					<option key={option.value} value={option.value}>
+						{option.label}
+					</option>
+				))}
+			</select>
+		),
+	};
+});
 
 vi.mock("boneyard-js/react", () => ({
 	Skeleton: ({ children }: { children: React.ReactNode }) => children,
@@ -74,7 +105,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 		}
 		return { mutate: mocks.cancelOrders, error: null, reset: mocks.resetCancelError };
 	},
-	useHyperliquid: () => ({ clientKey: "0x1111111111111111111111111111111111111111", env: "Mainnet" }),
+	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
 	useMarkets: () => ({
 		error: null,
 		getAssetId: () => mocks.assetId,
@@ -87,7 +118,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 	useMarketsInfo: () => ({ getMarketInfo: () => ({ markPx: "160" }) }),
 	useSubscription: () => ({
-		data: { orders: [order] },
+		data: { orders: mocks.orders },
 		error: null,
 		isStale: false,
 		status: "active",
@@ -127,6 +158,9 @@ describe("MobileOrdersTab disclosure card", () => {
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
 		mocks.assetId = 120_001;
+		mocks.clientKey = "0x1111111111111111111111111111111111111111";
+		mocks.env = "Mainnet";
+		mocks.orders = [order];
 	});
 
 	afterEach(() => {
@@ -174,6 +208,39 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(market?.className).toContain("after:min-w-11");
 	});
 
+	it("filters the visible cards by SDK trigger type and side without narrowing cancel all", () => {
+		mocks.orders = [
+			order,
+			{
+				...order,
+				isTrigger: false,
+				oid: 43,
+				orderType: "Limit",
+				reduceOnly: false,
+				side: "A",
+				tif: "Gtc",
+				triggerCondition: "N/A",
+				triggerPx: "0",
+			} as OpenOrder,
+		];
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+
+		const typeFilter = container.querySelector<HTMLSelectElement>('select[aria-label="All Types"]');
+		act(() => {
+			if (!typeFilter) return;
+			typeFilter.value = "limit";
+			typeFilter.dispatchEvent(new Event("change", { bubbles: true }));
+		});
+
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		const cancelAll = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel All",
+		);
+		act(() => cancelAll?.click());
+		expect(document.body.textContent).toContain("cancel all 2 open orders");
+	});
+
 	it("preserves market navigation and the exact cancel payload", () => {
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 
@@ -194,6 +261,23 @@ describe("MobileOrdersTab disclosure card", () => {
 			{ cancels: [{ a: 120_001, o: 42 }] },
 			expect.objectContaining({ onSettled: expect.any(Function) }),
 		);
+	});
+
+	it("does not start cancel all while a row cancellation is unresolved", () => {
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+
+		const rowCancel = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel",
+		);
+		act(() => rowCancel?.click());
+		const cancelAll = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel All",
+		);
+
+		expect(cancelAll?.disabled).toBe(true);
+		act(() => cancelAll?.click());
+		expect(mocks.cancelOrders).toHaveBeenCalledOnce();
+		expect(document.body.textContent).not.toContain("Cancel All Orders");
 	});
 
 	it("requires confirmation before canceling all and blocks duplicate submission", () => {
@@ -231,6 +315,24 @@ describe("MobileOrdersTab disclosure card", () => {
 		act(() => callbacks?.onSuccess());
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
 		act(() => callbacks?.onSettled());
+	});
+
+	it("rejects cancel all when the confirmed order set changes", () => {
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel All",
+		);
+		act(() => requestButton?.click());
+
+		mocks.orders = [order, { ...order, coin: "BTC", oid: 43 } as OpenOrder];
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button !== requestButton && button.textContent?.trim() === "Cancel All",
+		);
+		act(() => confirmButton?.click());
+
+		expect(mocks.cancelOrders).not.toHaveBeenCalled();
+		expect(document.body.textContent).toContain("Open orders changed. Reopen the confirmation and try again.");
 	});
 
 	it("fails closed when an order market cannot be mapped", () => {

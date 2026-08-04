@@ -1,4 +1,4 @@
-import { Button } from "@gatu/ui";
+import { Button, Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ListIcon, ListNumbersIcon, XIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
@@ -6,6 +6,12 @@ import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
+import {
+	type CancelAllConfirmationBlockReason,
+	type CancelAllConfirmationSnapshot,
+	createCancelAllConfirmationSnapshot,
+	validateCancelAllConfirmationSnapshot,
+} from "@/domain/trade/cancel-all-orders-confirmation";
 import {
 	getOpenOrderModifyCapabilities,
 	type OpenOrderModifyBlockReason,
@@ -18,7 +24,12 @@ import {
 	type OpenOrderModifyFormTarget,
 } from "@/domain/trade/open-order-modification-form";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
-import { getToolbarOrderMetrics } from "@/domain/trade/trading-toolbar-metrics";
+import {
+	getToolbarOrderMetrics,
+	matchesToolbarOrderFilters,
+	type ToolbarOrderDirectionFilter,
+	type ToolbarOrderTypeFilter,
+} from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -56,6 +67,25 @@ const MODIFY_SUBSCRIPTION_TIMEOUT_MS = 15_000;
 interface CancelCallbacks {
 	onSuccess?: () => void;
 	onSettled?: () => void;
+}
+
+interface CancelAllDialogSnapshot {
+	confirmation: CancelAllConfirmationSnapshot;
+	orders: readonly OpenOrder[];
+}
+
+interface MobileOrderFiltersState {
+	ownerKey: string | null;
+	type: ToolbarOrderTypeFilter;
+	direction: ToolbarOrderDirectionFilter;
+}
+
+function isToolbarOrderTypeFilter(value: string | null): value is ToolbarOrderTypeFilter {
+	return value === "all" || value === "limit" || value === "trigger";
+}
+
+function isToolbarOrderDirectionFilter(value: string | null): value is ToolbarOrderDirectionFilter {
+	return value === "all" || value === "buy" || value === "sell";
 }
 
 interface ModifyExecutionContext {
@@ -154,7 +184,16 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
 	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
 	const [cancelAllOpen, setCancelAllOpen] = useState(false);
+	const [cancelAllSnapshot, setCancelAllSnapshot] = useState<CancelAllDialogSnapshot | null>(null);
 	const [cancelValidationError, setCancelValidationError] = useState<string | null>(null);
+	const ownerKey = address?.toLowerCase() ?? null;
+	const [filters, setFilters] = useState<MobileOrderFiltersState>({
+		ownerKey,
+		type: "all",
+		direction: "all",
+	});
+	const typeFilter = filters.ownerKey === ownerKey ? filters.type : "all";
+	const directionFilter = filters.ownerKey === ownerKey ? filters.direction : "all";
 	const [modifyTarget, setModifyTarget] = useState<OpenOrderModifyFormTarget | null>(null);
 	const [modifySize, setModifySize] = useState("");
 	const [modifyTriggerPrice, setModifyTriggerPrice] = useState<string | undefined>(undefined);
@@ -172,7 +211,8 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 
 	const openOrders = openOrdersEvent?.orders ?? [];
 	const isPageScroll = scrollMode === "page";
-	const orderKeys = openOrders.map((order) => `${order.coin}:${order.oid}`);
+	const displayedOrders = openOrders.filter((order) => matchesToolbarOrderFilters(order, typeFilter, directionFilter));
+	const orderKeys = displayedOrders.map((order) => `${order.coin}:${order.oid}`);
 	const {
 		expandedKeys: expandedOrderKeys,
 		setExpanded: setOrderExpanded,
@@ -191,6 +231,24 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 			kind: market.kind,
 			markPx: getMarketInfo(coin)?.markPx,
 		};
+	}
+
+	function handleTypeFilterChange(value: string | null) {
+		if (!isToolbarOrderTypeFilter(value)) return;
+		setFilters((current) => ({
+			ownerKey,
+			type: value,
+			direction: current.ownerKey === ownerKey ? current.direction : "all",
+		}));
+	}
+
+	function handleDirectionFilterChange(value: string | null) {
+		if (!isToolbarOrderDirectionFilter(value)) return;
+		setFilters((current) => ({
+			ownerKey,
+			type: current.ownerKey === ownerKey ? current.type : "all",
+			direction: value,
+		}));
 	}
 
 	const liveModifyContextRef = useRef<ModifyLiveContext>({
@@ -518,6 +576,10 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 
 		const fresh = ordersToCancel.filter((order) => !cancellingOids.has(order.oid));
 		if (fresh.length === 0) return false;
+		if (nextScope === "all" && fresh.length !== ordersToCancel.length) {
+			setCancelValidationError(t`Open orders changed. Reopen the confirmation and try again.`);
+			return false;
+		}
 
 		const cancels = fresh.reduce<{ a: number; o: number }[]>((acc, order) => {
 			const assetId = markets.getAssetId(order.coin);
@@ -569,10 +631,31 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 		handleCancel(ordersToCancel, "row");
 	}
 
+	function getCancelAllBlockMessage(reason: CancelAllConfirmationBlockReason): string {
+		switch (reason) {
+			case "orders-changed":
+				return t`Open orders changed. Reopen the confirmation and try again.`;
+			case "session-changed":
+				return t`The trading account or network changed. Reopen the confirmation and try again.`;
+			case "snapshot-not-ready":
+				return t`Open orders are refreshing. Wait for live data and try again.`;
+		}
+	}
+
+	function getCancelAllConfirmationInput() {
+		return {
+			owner: clientKey,
+			snapshotOwner: address,
+			env,
+			isSnapshotReady: status === "active" && !isStale,
+			orders: openOrders,
+		} as const;
+	}
+
 	function handleRequestCancelAll() {
 		if (
 			openOrders.length === 0 ||
-			pendingScopes.has("all") ||
+			pendingScopes.size > 0 ||
 			cancelAllSubmittingRef.current ||
 			modifyPhaseRef.current !== "idle"
 		) {
@@ -580,14 +663,32 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 		}
 		resetCancelError();
 		setCancelValidationError(null);
+		const result = createCancelAllConfirmationSnapshot(getCancelAllConfirmationInput());
+		if (result.status === "blocked") {
+			setCancelValidationError(getCancelAllBlockMessage(result.reason));
+			return;
+		}
+		setCancelAllSnapshot({ confirmation: result.snapshot, orders: [...openOrders] });
 		setCancelAllOpen(true);
 	}
 
 	function handleConfirmCancelAll() {
-		if (cancelAllSubmittingRef.current || pendingScopes.has("all") || modifyPhaseRef.current !== "idle") return;
+		if (cancelAllSubmittingRef.current || pendingScopes.size > 0 || modifyPhaseRef.current !== "idle") return;
+		if (!cancelAllSnapshot) return;
+		const reason = validateCancelAllConfirmationSnapshot(
+			cancelAllSnapshot.confirmation,
+			getCancelAllConfirmationInput(),
+		);
+		if (reason) {
+			setCancelValidationError(getCancelAllBlockMessage(reason));
+			return;
+		}
 		cancelAllSubmittingRef.current = true;
-		const started = handleCancel(openOrders, "all", {
-			onSuccess: () => setCancelAllOpen(false),
+		const started = handleCancel([...cancelAllSnapshot.orders], "all", {
+			onSuccess: () => {
+				setCancelAllOpen(false);
+				setCancelAllSnapshot(null);
+			},
 			onSettled: () => {
 				cancelAllSubmittingRef.current = false;
 			},
@@ -596,11 +697,12 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 	}
 
 	function handleCancelAllOpenChange(open: boolean) {
-		if (cancelAllSubmittingRef.current || pendingScopes.has("all") || modifyPhaseRef.current !== "idle") return;
+		if (cancelAllSubmittingRef.current || pendingScopes.size > 0 || modifyPhaseRef.current !== "idle") return;
 		setCancelAllOpen(open);
+		if (!open) setCancelAllSnapshot(null);
 	}
 
-	const headerCount = isConnected ? openOrders.length : FALLBACK_VALUE_PLACEHOLDER;
+	const headerCount = isConnected ? displayedOrders.length : FALLBACK_VALUE_PLACEHOLDER;
 	const draftModifyPlan = modifyTarget ? buildPlanFromLive(modifyTarget, modifySize, modifyTriggerPrice) : null;
 	const draftModifyError =
 		draftModifyPlan?.status === "blocked" && draftModifyPlan.reason !== "no-change"
@@ -648,6 +750,44 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 	return (
 		<Skeleton name="orders-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
+				<div className="flex items-center gap-2 px-3 pt-2">
+					<Select
+						size="xxs"
+						label={t`Order type`}
+						value={typeFilter}
+						onValueChange={handleTypeFilterChange}
+						options={[
+							{ value: "all", label: t`All Types` },
+							{ value: "limit", label: t`Limit` },
+							{ value: "trigger", label: t`Trigger` },
+						]}
+						triggerClassName="min-h-11 min-w-0 flex-1 !rounded-[7px] border-market-close-stroke-card bg-modal"
+						className="min-w-0 flex-1 [&>label]:sr-only"
+					/>
+					<Select
+						size="xxs"
+						label={t`Direction`}
+						value={directionFilter}
+						onValueChange={handleDirectionFilterChange}
+						options={[
+							{ value: "all", label: t`All Directions` },
+							{ value: "buy", label: t`Buy` },
+							{ value: "sell", label: t`Sell` },
+						]}
+						triggerClassName="min-h-11 min-w-0 flex-1 !rounded-[7px] border-market-close-stroke-card bg-modal"
+						className="min-w-0 flex-1 [&>label]:sr-only"
+					/>
+					<Button
+						variant="ghost"
+						intent="error"
+						size="sm"
+						className="min-h-11 shrink-0"
+						onClick={handleRequestCancelAll}
+						disabled={pendingScopes.size > 0 || openOrders.length === 0 || isModifyBusy}
+					>
+						{pendingScopes.has("all") ? t`Canceling...` : t`Cancel All`}
+					</Button>
+				</div>
 				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-fg-muted">
 					<ListNumbersIcon className="size-3" />
 					{t`Open Orders`}
@@ -660,16 +800,6 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 							onCollapseAll={() => collapseAllOrders(orderKeys)}
 						/>
 					</div>
-					<Button
-						variant="ghost"
-						intent="error"
-						size="sm"
-						className="touch-target"
-						onClick={handleRequestCancelAll}
-						disabled={pendingScopes.has("all") || openOrders.length === 0 || isModifyBusy}
-					>
-						{pendingScopes.has("all") ? t`Canceling...` : t`Cancel All`}
-					</Button>
 				</div>
 				{actionError && (
 					<div role="alert" className="px-3 pb-1 text-xs text-error">
@@ -677,7 +807,10 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 					</div>
 				)}
 				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
-					{openOrders.map((order) => {
+					{displayedOrders.length === 0 ? (
+						<div className="py-8 text-center text-sm text-market-close-muted">{t`No orders match the filters.`}</div>
+					) : null}
+					{displayedOrders.map((order) => {
 						const orderKey = `${order.coin}:${order.oid}`;
 						return (
 							<MobileOrderCard
@@ -700,7 +833,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 				</div>
 				<CancelAllOrdersModal
 					open={cancelAllOpen}
-					orderCount={openOrders.length}
+					orderCount={cancelAllSnapshot?.orders.length ?? 0}
 					isSubmitting={pendingScopes.has("all")}
 					errorMessage={cancelAllOpen ? actionError : null}
 					onOpenChange={handleCancelAllOpenChange}

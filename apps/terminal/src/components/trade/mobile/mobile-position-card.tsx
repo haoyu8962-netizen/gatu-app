@@ -432,7 +432,7 @@ export function MobilePositionCard({
 								<path
 									d="M3.5 10 8 5.5l4.5 4.5"
 									stroke="currentColor"
-									strokeWidth="1.5"
+									strokeWidth="2"
 									strokeLinecap="round"
 									strokeLinejoin="round"
 								/>

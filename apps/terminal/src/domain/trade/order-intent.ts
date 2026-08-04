@@ -52,13 +52,25 @@ export type PositionTpSlIntent = {
 	isLong: boolean;
 	tpPriceNum: string | number | null;
 	slPriceNum: string | number | null;
+	sizeNum?: string | number | null;
+	executionMode?: PositionTpSlExecutionMode;
+	tpLimitPriceNum?: string | number | null;
+	slLimitPriceNum?: string | number | null;
 };
+
+export type PositionTpSlExecutionMode = "market" | "limit";
 
 export type PositionTpSlUpdateIntent = PositionTpSlIntent & {
 	existingTpPrice?: string | number;
 	existingSlPrice?: string | number;
 	existingTpOrderId?: number;
 	existingSlOrderId?: number;
+	existingTpSize?: string | number;
+	existingSlSize?: string | number;
+	existingTpIsMarket?: boolean;
+	existingSlIsMarket?: boolean;
+	existingTpLimitPrice?: string | number;
+	existingSlLimitPrice?: string | number;
 };
 
 export type PositionTpSlUpdatePlan = {
@@ -66,6 +78,7 @@ export type PositionTpSlUpdatePlan = {
 	modifies: Array<{ oid: number; order: ExchangeOrder }>;
 	cancels: Array<{ a: number; o: number }>;
 	hasChanges: boolean;
+	errors: string[];
 };
 
 export function hasPositionTpSlTriggerMutation(plan: PositionTpSlUpdatePlan, tpsl: "tp" | "sl"): boolean {
@@ -159,37 +172,30 @@ function buildEntryPlan(intent: EntryOrderIntent): OrderPlan {
 }
 
 function buildPositionTpSlPlan(intent: PositionTpSlIntent): OrderPlan {
-	const orders: ExchangeOrder[] = [];
-	const isBuy = !intent.isLong;
-	const tpPrice = toBig(intent.tpPriceNum);
-	const slPrice = toBig(intent.slPriceNum);
-
-	if (tpPrice?.gt(0)) {
-		orders.push(buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, tpPrice, "tp"));
-	}
-
-	if (slPrice?.gt(0)) {
-		orders.push(buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, slPrice, "sl"));
-	}
+	const { orders, errors } = buildDesiredPositionTpSlOrders(intent);
 
 	return {
-		orders,
+		orders: errors.length === 0 ? orders : [],
 		grouping: "positionTpsl",
-		errors: orders.length === 0 ? ["No TP/SL provided"] : [],
+		errors: errors.length > 0 ? errors : orders.length === 0 ? ["No TP/SL provided"] : [],
 		warnings: [],
 	};
 }
 
 export function buildPositionTpSlUpdatePlan(intent: PositionTpSlUpdateIntent): PositionTpSlUpdatePlan {
-	const isBuy = !intent.isLong;
-	const tpPrice = toBig(intent.tpPriceNum);
-	const slPrice = toBig(intent.slPriceNum);
-	const tpOrder = tpPrice?.gt(0)
-		? buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, tpPrice, "tp")
-		: null;
-	const slOrder = slPrice?.gt(0)
-		? buildPositionTpSlOrder(intent.assetId, intent.szDecimals, isBuy, slPrice, "sl")
-		: null;
+	const desired = buildDesiredPositionTpSlOrders(intent);
+	if (desired.errors.length > 0) {
+		return {
+			orders: [],
+			modifies: [],
+			cancels: [],
+			hasChanges: false,
+			errors: desired.errors,
+		};
+	}
+
+	const tpOrder = desired.orders.find(isTakeProfitTriggerOrder) ?? null;
+	const slOrder = desired.orders.find(isStopLossTriggerOrder) ?? null;
 
 	const orders: ExchangeOrder[] = [];
 	const modifies: Array<{ oid: number; order: ExchangeOrder }> = [];
@@ -200,6 +206,9 @@ export function buildPositionTpSlUpdatePlan(intent: PositionTpSlUpdateIntent): P
 		desiredOrder: tpOrder,
 		existingOrderId: intent.existingTpOrderId,
 		existingPrice: intent.existingTpPrice,
+		existingSize: intent.existingTpSize,
+		existingIsMarket: intent.existingTpIsMarket,
+		existingLimitPrice: intent.existingTpLimitPrice,
 		orders,
 		modifies,
 		cancels,
@@ -209,6 +218,9 @@ export function buildPositionTpSlUpdatePlan(intent: PositionTpSlUpdateIntent): P
 		desiredOrder: slOrder,
 		existingOrderId: intent.existingSlOrderId,
 		existingPrice: intent.existingSlPrice,
+		existingSize: intent.existingSlSize,
+		existingIsMarket: intent.existingSlIsMarket,
+		existingLimitPrice: intent.existingSlLimitPrice,
 		orders,
 		modifies,
 		cancels,
@@ -219,6 +231,7 @@ export function buildPositionTpSlUpdatePlan(intent: PositionTpSlUpdateIntent): P
 		modifies,
 		cancels,
 		hasChanges: orders.length > 0 || modifies.length > 0 || cancels.length > 0,
+		errors: [],
 	};
 }
 
@@ -227,6 +240,9 @@ interface ReconcilePositionTpSlParams {
 	desiredOrder: ExchangeOrder | null;
 	existingOrderId?: number;
 	existingPrice?: string | number;
+	existingSize?: string | number;
+	existingIsMarket?: boolean;
+	existingLimitPrice?: string | number;
 	orders: ExchangeOrder[];
 	modifies: Array<{ oid: number; order: ExchangeOrder }>;
 	cancels: Array<{ a: number; o: number }>;
@@ -243,16 +259,30 @@ function reconcilePositionTpSlOrder(params: ReconcilePositionTpSlParams): void {
 		return;
 	}
 
-	if (!hasSameTriggerPrice(params.desiredOrder, params.existingPrice)) {
+	if (!hasSamePositionTpSlOrder(params.desiredOrder, params)) {
 		params.modifies.push({ oid: params.existingOrderId, order: params.desiredOrder });
 	}
 }
 
-function hasSameTriggerPrice(order: ExchangeOrder, existingPrice: string | number | undefined): boolean {
-	if (existingPrice === undefined || !("trigger" in order.t)) return false;
-	const existing = toBig(existingPrice);
-	const desired = toBig(order.t.trigger.triggerPx);
-	return existing !== null && desired !== null && existing.eq(desired);
+function hasSamePositionTpSlOrder(order: ExchangeOrder, existing: ReconcilePositionTpSlParams): boolean {
+	if (!("trigger" in order.t) || existing.existingPrice === undefined) return false;
+	if (!numericValuesEqual(order.t.trigger.triggerPx, existing.existingPrice)) return false;
+
+	// Older callers only knew dynamic whole-position market TP/SL. Preserve that default while
+	// requiring the expanded snapshot for partial-size and trigger-limit reconciliation.
+	const existingSize = existing.existingSize ?? "0";
+	const existingIsMarket = existing.existingIsMarket ?? true;
+	if (!numericValuesEqual(order.s, existingSize) || order.t.trigger.isMarket !== existingIsMarket) return false;
+	if (existing.existingLimitPrice !== undefined && !numericValuesEqual(order.p, existing.existingLimitPrice)) {
+		return false;
+	}
+	return true;
+}
+
+function numericValuesEqual(left: Numeric, right: Numeric): boolean {
+	const leftValue = toBig(left);
+	const rightValue = toBig(right);
+	return leftValue !== null && rightValue !== null && leftValue.eq(rightValue);
 }
 
 function buildMarketClosePlan(intent: MarketCloseIntent): OrderPlan {
@@ -348,30 +378,148 @@ function buildLimitClosePlan({ assetId, size, szDecimals, isLong, price }: Limit
 	};
 }
 
-function buildPositionTpSlOrder(
-	assetId: number,
-	szDecimals: number,
-	isBuy: boolean,
-	triggerPrice: Numeric,
-	tpsl: "tp" | "sl",
-): ExchangeOrder {
+interface PositionTpSlOrderSettings {
+	size: string;
+	executionMode: PositionTpSlExecutionMode;
+}
+
+interface BuildPositionTpSlOrderParams extends PositionTpSlOrderSettings {
+	assetId: number;
+	szDecimals: number;
+	isBuy: boolean;
+	triggerPrice: Numeric;
+	limitPrice: Numeric;
+	tpsl: "tp" | "sl";
+}
+
+function buildDesiredPositionTpSlOrders(intent: PositionTpSlIntent): { orders: ExchangeOrder[]; errors: string[] } {
+	const settings = resolvePositionTpSlOrderSettings(intent);
+	if (settings.errors.length > 0 || !settings.value) return { orders: [], errors: settings.errors };
+
+	const orders: ExchangeOrder[] = [];
+	const errors: string[] = [];
+	const isBuy = !intent.isLong;
+	const legs = [
+		{ triggerPrice: intent.tpPriceNum, limitPrice: intent.tpLimitPriceNum, tpsl: "tp" as const },
+		{ triggerPrice: intent.slPriceNum, limitPrice: intent.slLimitPriceNum, tpsl: "sl" as const },
+	];
+
+	for (const leg of legs) {
+		const triggerPrice = toBig(leg.triggerPrice);
+		if (!triggerPrice?.gt(0)) continue;
+		try {
+			orders.push(
+				buildPositionTpSlOrder({
+					assetId: intent.assetId,
+					szDecimals: intent.szDecimals,
+					isBuy,
+					triggerPrice,
+					limitPrice: leg.limitPrice,
+					tpsl: leg.tpsl,
+					...settings.value,
+				}),
+			);
+		} catch (error) {
+			errors.push(error instanceof Error ? error.message : "Unable to build position TP/SL order");
+		}
+	}
+
+	return { orders: errors.length === 0 ? orders : [], errors };
+}
+
+function resolvePositionTpSlOrderSettings(intent: PositionTpSlIntent): {
+	value: PositionTpSlOrderSettings | null;
+	errors: string[];
+} {
+	const errors: string[] = [];
+	const executionMode = intent.executionMode ?? "market";
+	if (executionMode !== "market" && executionMode !== "limit") {
+		errors.push("Execution mode must be market or limit");
+	}
+
+	let size = "0";
+	if (intent.sizeNum !== undefined && intent.sizeNum !== null) {
+		const sizeValue = toBig(intent.sizeNum);
+		if (!sizeValue || sizeValue.lte(0)) {
+			errors.push("Partial size must be greater than zero");
+		} else {
+			size = formatSizeForOrder(sizeValue, intent.szDecimals);
+			if (!toBig(size)?.gt(0)) errors.push("Partial size is below market precision");
+		}
+	}
+
+	return {
+		value: errors.length === 0 ? { size, executionMode } : null,
+		errors,
+	};
+}
+
+function buildPositionTpSlOrder({
+	assetId,
+	szDecimals,
+	isBuy,
+	triggerPrice,
+	limitPrice,
+	tpsl,
+	size,
+	executionMode,
+}: BuildPositionTpSlOrderParams): ExchangeOrder {
 	const triggerPriceValue = toBig(triggerPrice);
 	if (!triggerPriceValue || triggerPriceValue.lte(0)) throw new Error("Trigger price must be greater than zero");
-	const triggerPx = formatPriceForOrder(triggerPriceValue, { assetId, szDecimals });
-	const slippage = Big(TRIGGER_MARKET_SLIPPAGE_BPS).div(10_000);
-	const orderPrice = triggerPriceValue.times(isBuy ? Big(1).plus(slippage) : Big(1).minus(slippage));
-	const orderPx = formatPriceForOrder(orderPrice, {
-		assetId,
-		szDecimals,
-	});
+	const priceFormat = { assetId, szDecimals };
+	const triggerPx = formatPriceForOrder(triggerPriceValue, priceFormat);
+	if (!toBig(triggerPx)?.gt(0)) throw new Error("Trigger price is below market precision");
+
+	let orderPx: string;
+	if (executionMode === "limit") {
+		const limitPriceValue = toBig(limitPrice);
+		const legLabel = tpsl === "tp" ? "Take profit" : "Stop loss";
+		if (!limitPriceValue || limitPriceValue.lte(0)) {
+			throw new Error(`${legLabel} limit price must be greater than zero`);
+		}
+		orderPx = formatPriceForOrder(limitPriceValue, priceFormat);
+		const normalizedLimitPrice = toBig(orderPx);
+		const normalizedTriggerPrice = toBig(triggerPx);
+		if (!normalizedLimitPrice?.gt(0)) throw new Error(`${legLabel} limit price is below market precision`);
+		if (!normalizedTriggerPrice) throw new Error("Trigger price is below market precision");
+		if (isBuy && normalizedLimitPrice.lt(normalizedTriggerPrice)) {
+			throw new Error(`${legLabel} buy limit price must be greater than or equal to the trigger price`);
+		}
+		if (!isBuy && normalizedLimitPrice.gt(normalizedTriggerPrice)) {
+			throw new Error(`${legLabel} sell limit price must be less than or equal to the trigger price`);
+		}
+	} else {
+		const slippage = Big(TRIGGER_MARKET_SLIPPAGE_BPS).div(10_000);
+		const orderPrice = triggerPriceValue.times(isBuy ? Big(1).plus(slippage) : Big(1).minus(slippage));
+		orderPx = formatPriceForOrder(orderPrice, priceFormat);
+	}
+	const normalizedOrderPrice = toBig(orderPx);
+	const normalizedTriggerPrice = toBig(triggerPx);
+	if (!normalizedOrderPrice?.gt(0)) throw new Error("Order price is below market precision");
+	if (!normalizedTriggerPrice?.gt(0)) throw new Error("Trigger price is below market precision");
+	if (isBuy && normalizedOrderPrice.lt(normalizedTriggerPrice)) {
+		throw new Error("Buy order price must be greater than or equal to the trigger price");
+	}
+	if (!isBuy && normalizedOrderPrice.gt(normalizedTriggerPrice)) {
+		throw new Error("Sell order price must be less than or equal to the trigger price");
+	}
+
 	return {
 		a: assetId,
 		b: isBuy,
 		p: orderPx,
-		s: "0",
+		s: size,
 		r: true,
-		t: { trigger: { isMarket: true, triggerPx, tpsl } },
+		t: { trigger: { isMarket: executionMode === "market", triggerPx, tpsl } },
 	};
+}
+
+function isTakeProfitTriggerOrder(order: ExchangeOrder): boolean {
+	return "trigger" in order.t && order.t.trigger.tpsl === "tp";
+}
+
+function isStopLossTriggerOrder(order: ExchangeOrder): boolean {
+	return "trigger" in order.t && order.t.trigger.tpsl === "sl";
 }
 
 function assertNever(value: never): never {

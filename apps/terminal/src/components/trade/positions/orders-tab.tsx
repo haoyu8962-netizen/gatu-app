@@ -15,7 +15,14 @@ import { PencilIcon } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
+import { DEFAULT_QUOTE_TOKEN, FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
+import { getMarketQuoteToken } from "@/domain/trade/balances";
+import {
+	type CancelAllConfirmationBlockReason,
+	type CancelAllConfirmationSnapshot,
+	createCancelAllConfirmationSnapshot,
+	validateCancelAllConfirmationSnapshot,
+} from "@/domain/trade/cancel-all-orders-confirmation";
 import {
 	buildOpenOrderModifyPlan,
 	createOpenOrderModifyTarget,
@@ -37,7 +44,7 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPercent, formatPrice, formatToken, formatUSD } from "@/lib/format";
+import { formatDateTime, formatPercent, formatPrice, formatQuoteAmount, formatToken, formatUSD } from "@/lib/format";
 import {
 	type ExchangeParams,
 	type SubscriptionStatus,
@@ -81,6 +88,11 @@ const MODIFY_SUBSCRIPTION_TIMEOUT_MS = 15_000;
 interface CancelCallbacks {
 	onSuccess?: () => void;
 	onSettled?: () => void;
+}
+
+interface CancelAllDialogSnapshot {
+	confirmation: CancelAllConfirmationSnapshot;
+	orders: readonly OpenOrder[];
 }
 
 type ModifyPhase = "idle" | "submitting" | "awaiting";
@@ -130,6 +142,7 @@ export function OrdersTab() {
 	const [cancellingOids, setCancellingOids] = useState<Set<number>>(() => new Set());
 	const [pendingScopes, setPendingScopes] = useState<Set<CancelScope>>(() => new Set());
 	const [cancelAllOpen, setCancelAllOpen] = useState(false);
+	const [cancelAllSnapshot, setCancelAllSnapshot] = useState<CancelAllDialogSnapshot | null>(null);
 	const [orderTypeFilter, setOrderTypeFilter] = useState<ToolbarOrderTypeFilter>("all");
 	const [orderDirectionFilter, setOrderDirectionFilter] = useState<ToolbarOrderDirectionFilter>("all");
 	const [cancelValidationError, setCancelValidationError] = useState<string | null>(null);
@@ -331,6 +344,10 @@ export function OrdersTab() {
 
 		const fresh = ordersToCancel.filter((order) => !cancellingOids.has(order.oid));
 		if (fresh.length === 0) return false;
+		if (nextScope === "all" && fresh.length !== ordersToCancel.length) {
+			setCancelValidationError(t`Open orders changed. Reopen the confirmation and try again.`);
+			return false;
+		}
 
 		const cancels = fresh.reduce<{ a: number; o: number }[]>((acc, order) => {
 			const assetId = markets.getAssetId(order.coin);
@@ -396,18 +413,57 @@ export function OrdersTab() {
 		handleCancel(ordersToCancel, "selected");
 	}
 
+	function getCancelAllBlockMessage(reason: CancelAllConfirmationBlockReason): string {
+		switch (reason) {
+			case "orders-changed":
+				return t`Open orders changed. Reopen the confirmation and try again.`;
+			case "session-changed":
+				return t`The trading account or network changed. Reopen the confirmation and try again.`;
+			case "snapshot-not-ready":
+				return t`Open orders are refreshing. Wait for live data and try again.`;
+		}
+	}
+
+	function getCancelAllConfirmationInput() {
+		return {
+			owner: clientKey,
+			snapshotOwner: address,
+			env,
+			isSnapshotReady: status === "active" && !isStale,
+			orders: openOrders,
+		} as const;
+	}
+
 	function handleRequestCancelAll() {
-		if (openOrders.length === 0 || pendingScopes.has("all") || cancelAllSubmittingRef.current) return;
+		if (openOrders.length === 0 || pendingScopes.size > 0 || cancelAllSubmittingRef.current) return;
 		resetCancelError();
 		setCancelValidationError(null);
+		const result = createCancelAllConfirmationSnapshot(getCancelAllConfirmationInput());
+		if (result.status === "blocked") {
+			setCancelValidationError(getCancelAllBlockMessage(result.reason));
+			return;
+		}
+		setCancelAllSnapshot({ confirmation: result.snapshot, orders: [...openOrders] });
 		setCancelAllOpen(true);
 	}
 
 	function handleConfirmCancelAll() {
-		if (cancelAllSubmittingRef.current || pendingScopes.has("all")) return;
+		if (cancelAllSubmittingRef.current || pendingScopes.size > 0) return;
+		if (!cancelAllSnapshot) return;
+		const reason = validateCancelAllConfirmationSnapshot(
+			cancelAllSnapshot.confirmation,
+			getCancelAllConfirmationInput(),
+		);
+		if (reason) {
+			setCancelValidationError(getCancelAllBlockMessage(reason));
+			return;
+		}
 		cancelAllSubmittingRef.current = true;
-		const started = handleCancel(openOrders, "all", {
-			onSuccess: () => setCancelAllOpen(false),
+		const started = handleCancel([...cancelAllSnapshot.orders], "all", {
+			onSuccess: () => {
+				setCancelAllOpen(false);
+				setCancelAllSnapshot(null);
+			},
 			onSettled: () => {
 				cancelAllSubmittingRef.current = false;
 			},
@@ -416,8 +472,9 @@ export function OrdersTab() {
 	}
 
 	function handleCancelAllOpenChange(open: boolean) {
-		if (cancelAllSubmittingRef.current || pendingScopes.has("all")) return;
+		if (cancelAllSubmittingRef.current || pendingScopes.size > 0) return;
 		setCancelAllOpen(open);
+		if (!open) setCancelAllSnapshot(null);
 	}
 
 	function clearEditSession() {
@@ -606,7 +663,7 @@ export function OrdersTab() {
 
 	const isModifyLocked = modifyPhase !== "idle";
 	const disableCancelSelected = pendingScopes.has("selected") || selectedCount === 0 || isModifyLocked;
-	const disableCancelAll = pendingScopes.has("all") || openOrders.length === 0 || isModifyLocked;
+	const disableCancelAll = pendingScopes.size > 0 || openOrders.length === 0 || isModifyLocked;
 	const actionError = cancelValidationError ?? modifyValidationError ?? cancelError?.message ?? modifyError?.message;
 	const modifyActionErrorId =
 		modifyValidationError && actionError === modifyValidationError ? modifyErrorId : undefined;
@@ -633,6 +690,7 @@ export function OrdersTab() {
 			<div className={cn(positionsPanelTableCaptionRowClass, "min-h-9 flex-wrap")}>
 				<Select
 					size="xxs"
+					label={t`Order type`}
 					value={orderTypeFilter}
 					onValueChange={(value) => setOrderTypeFilter((value as ToolbarOrderTypeFilter | null) ?? "all")}
 					options={[
@@ -641,10 +699,11 @@ export function OrdersTab() {
 						{ value: "trigger", label: t`Trigger` },
 					]}
 					triggerClassName="min-w-[6.5rem] !rounded-[7px] border-market-close-stroke-card bg-surface"
-					className="mr-auto"
+					className="mr-auto [&>label]:sr-only"
 				/>
 				<Select
 					size="xxs"
+					label={t`Direction`}
 					value={orderDirectionFilter}
 					onValueChange={(value) => setOrderDirectionFilter((value as ToolbarOrderDirectionFilter | null) ?? "all")}
 					options={[
@@ -653,6 +712,7 @@ export function OrdersTab() {
 						{ value: "sell", label: t`Sell` },
 					]}
 					triggerClassName="min-w-[7rem] !rounded-[7px] border-market-close-stroke-card bg-surface"
+					className="[&>label]:sr-only"
 				/>
 				{isConnected ? (
 					<span className="tabular-nums text-3xs text-fg-muted">
@@ -803,12 +863,15 @@ export function OrdersTab() {
 								<TableBody className={positionsPanelTableBodyClass}>
 									{displayedOrders.map((order, i) => {
 										const marketInfo = getMarketInfo(order.coin);
+										const market = markets.getMarket(order.coin);
+										const quoteSymbol = getMarketQuoteToken(market);
 										return (
 											<OrderRow
 												key={order.oid}
 												order={order}
 												szDecimals={markets.getSzDecimals(order.coin)}
 												markPx={marketInfo?.markPx ?? ""}
+												quoteSymbol={quoteSymbol}
 												isSelected={validSelectedIds.has(order.oid)}
 												isCancelling={cancellingOids.has(order.oid)}
 												editField={editTarget?.order.oid === order.oid ? editTarget.field : null}
@@ -841,7 +904,7 @@ export function OrdersTab() {
 			</div>
 			<CancelAllOrdersModal
 				open={cancelAllOpen}
-				orderCount={openOrders.length}
+				orderCount={cancelAllSnapshot?.orders.length ?? 0}
 				isSubmitting={pendingScopes.has("all")}
 				errorMessage={cancelAllOpen ? actionError : null}
 				onOpenChange={handleCancelAllOpenChange}
@@ -855,6 +918,7 @@ interface OrderRowProps {
 	order: OpenOrder;
 	szDecimals: number;
 	markPx: string;
+	quoteSymbol: string;
 	isSelected: boolean;
 	isCancelling: boolean;
 	editField: OpenOrderModifyField | null;
@@ -877,6 +941,7 @@ function OrderRow({
 	order,
 	szDecimals,
 	markPx,
+	quoteSymbol,
 	isSelected,
 	isCancelling,
 	editField,
@@ -927,6 +992,10 @@ function OrderRow({
 	const takeProfitPx = order.children.find(isTakeProfitOrder)?.triggerPx;
 	const stopLossPx = order.children.find(isStopOrder)?.triggerPx;
 	const tpSlLabel = `${formatPrice(takeProfitPx, { szDecimals })} / ${formatPrice(stopLossPx, { szDecimals })}`;
+	const remainingValueLabel =
+		quoteSymbol === DEFAULT_QUOTE_TOKEN
+			? formatUSD(metrics.remainingValue, { compact: true })
+			: formatQuoteAmount(metrics.remainingValue, quoteSymbol, { compact: true, decimals: 2 });
 
 	return (
 		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
@@ -1014,7 +1083,7 @@ function OrderRow({
 				size="dense"
 				className={cn(positionsPanelTableCellClass, "px-2 text-right text-xs tabular-nums whitespace-nowrap text-fg")}
 			>
-				{isClosePosition ? FALLBACK_VALUE_PLACEHOLDER : formatUSD(metrics.remainingValue, { compact: true })}
+				{isClosePosition ? FALLBACK_VALUE_PLACEHOLDER : remainingValueLabel}
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 text-right tabular-nums text-fg")}>
 				<span className="text-xs font-semibold tabular-nums leading-tight">

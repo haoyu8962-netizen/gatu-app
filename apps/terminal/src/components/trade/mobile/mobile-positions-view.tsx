@@ -2,7 +2,7 @@ import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
-import { type ReactNode, Suspense, useEffect, useMemo, useState, useTransition } from "react";
+import { type ReactNode, Suspense, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -52,6 +52,7 @@ export function MobilePositionsView({
 	const activeTab = resolveMobilePositionsTab(storedActiveTab, hasTransfersTab);
 	const tabs = [...MOBILE_POSITIONS_TABS, ...(hasTransfersTab ? [PORTFOLIO_TRANSFERS_TAB] : [])];
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
+	const tabScrollRef = useRef<HTMLDivElement>(null);
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useWalletSession();
 	const {
@@ -91,6 +92,11 @@ export function MobilePositionsView({
 		if (storedActiveTab === activeTab) return;
 		setPositionsActiveTab(activeTab);
 	}, [activeTab, setPositionsActiveTab, storedActiveTab]);
+
+	useEffect(() => {
+		const selectedTab = tabScrollRef.current?.querySelector<HTMLElement>(`[data-mobile-account-tab="${activeTab}"]`);
+		selectedTab?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+	}, [activeTab]);
 
 	const positionsCount = getReadyItemCount({
 		isConnected,
@@ -147,7 +153,13 @@ export function MobilePositionsView({
 	);
 
 	return (
-		<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
+		<div
+			className={cn(
+				"font-market-close",
+				isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col",
+				className,
+			)}
+		>
 			<Tabs
 				value={activeTab}
 				onValueChange={handleTabChange}
@@ -160,6 +172,7 @@ export function MobilePositionsView({
 			>
 				<div className="relative min-w-0 shrink-0">
 					<div
+						ref={tabScrollRef}
 						data-testid="mobile-account-tabs-scroll"
 						className="min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 					>
@@ -175,6 +188,7 @@ export function MobilePositionsView({
 									<TabsTrigger
 										key={tab.value}
 										value={tab.value}
+										data-mobile-account-tab={tab.value}
 										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none transition-colors duration-[120ms] focus-visible:outline-market-close-control data-active:font-bold"
 									>
 										<span>{_(tab.label)}</span>

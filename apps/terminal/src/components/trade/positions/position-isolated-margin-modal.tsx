@@ -29,11 +29,12 @@ import {
 	validateIsolatedMarginTarget,
 } from "@/domain/trade/isolated-margin";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatLiquidationPrice, formatNumber, formatUSD } from "@/lib/format";
-import { useExchange, useMarkets, useUserPositions } from "@/lib/hyperliquid";
+import { useExchange, useHyperliquid, useMarkets, useUserPositions } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { TradingActionButton } from "../components/trading-action-button";
-import type { IsolatedMarginPositionRef } from "./position-dialog-types";
+import type { IsolatedMarginPositionTarget } from "./position-dialog-types";
 import { PositionRiskDialogShell } from "./position-risk-dialog-ui";
 
 type AdjustmentMode = "amount" | "target";
@@ -41,7 +42,7 @@ type AdjustmentMode = "amount" | "target";
 interface Props {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	position: IsolatedMarginPositionRef | null;
+	position: IsolatedMarginPositionTarget | null;
 }
 
 export function PositionIsolatedMarginModal({ open, onOpenChange, position }: Props) {
@@ -50,7 +51,7 @@ export function PositionIsolatedMarginModal({ open, onOpenChange, position }: Pr
 
 	return (
 		<PositionIsolatedMarginModalBody
-			key={`${position.assetId}:${open ? "open" : "closed"}`}
+			key={`${position.owner}:${position.env}:${position.dex}:${position.assetId}:${open ? "open" : "closed"}`}
 			open={open}
 			isMobile={isMobile}
 			position={position}
@@ -62,7 +63,7 @@ export function PositionIsolatedMarginModal({ open, onOpenChange, position }: Pr
 interface BodyProps {
 	open: boolean;
 	isMobile: boolean;
-	position: IsolatedMarginPositionRef;
+	position: IsolatedMarginPositionTarget;
 	onOpenChange: (open: boolean) => void;
 }
 
@@ -73,17 +74,37 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 	const [targetLeverageInput, setTargetLeverageInput] = useState("");
 	const [submitError, setSubmitError] = useState<string | null>(null);
 
+	const { clientKey, env } = useHyperliquid();
+	const { address } = useWalletSession();
+	const sessionIdentity = useRef({
+		owner: position.owner.toLowerCase(),
+		env: position.env,
+	}).current;
 	const markets = useMarkets();
 	const userPositions = useUserPositions();
 	const { getPosition, isLoading: positionLoading, hasError: positionError, isStale: positionStale } = userPositions;
-	const executionStateRef = useRef({ markets, position, userPositions });
-	executionStateRef.current = { markets, position, userPositions };
+	const walletOwner = address?.toLowerCase() ?? null;
+	const identityMatches =
+		clientKey !== "disconnected" &&
+		clientKey.toLowerCase() === sessionIdentity.owner &&
+		walletOwner === sessionIdentity.owner &&
+		env === sessionIdentity.env;
+	const executionStateRef = useRef({ clientKey, env, markets, position, userPositions, walletOwner });
+	executionStateRef.current = { clientKey, env, markets, position, userPositions, walletOwner };
 
 	function assertExecutionContext(
 		params: UpdateIsolatedMarginParameters | TopUpIsolatedOnlyMarginParameters,
 		action: AdjustmentMode,
 	) {
 		const current = executionStateRef.current;
+		if (
+			current.clientKey === "disconnected" ||
+			current.clientKey.toLowerCase() !== sessionIdentity.owner ||
+			current.walletOwner !== sessionIdentity.owner ||
+			current.env !== sessionIdentity.env
+		) {
+			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		}
 		const currentMarket = current.markets.getMarket(current.position.coin);
 		const currentMarketDex = currentMarket ? getPositionDex(currentMarket) : undefined;
 
@@ -187,6 +208,7 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 	const liveIsLong = livePositionSize ? livePositionSize.gt(0) : position.isLong;
 	const liveSideMatches = livePositionSize !== null && !livePositionSize.eq(0) && liveIsLong === position.isLong;
 	const hasLivePosition =
+		identityMatches &&
 		hasLiveMarket &&
 		livePosition !== null &&
 		livePositionSize !== null &&
@@ -259,6 +281,9 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 	}
 
 	function renderPositionStatus() {
+		if (!identityMatches) {
+			return t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
+		}
 		if (!hasLiveMarket) {
 			return t`The selected market changed. Reopen the margin dialog before adjusting margin.`;
 		}

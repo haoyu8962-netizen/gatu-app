@@ -1,3 +1,4 @@
+import { Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { DownloadSimpleIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
@@ -11,7 +12,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows, downloadCsv } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
-import { toNumber } from "@/lib/trade/numbers";
+import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -22,9 +23,37 @@ interface Props {
 	scrollMode?: MobileDataScrollMode;
 }
 
-export function MobileFundingTab({ className, scrollMode = "contained" }: Props) {
-	const { t } = useLingui();
+type FundingDirectionFilter = "all" | "long" | "short";
+
+function getFundingDirection(szi: string): Exclude<FundingDirectionFilter, "all"> | null {
+	const size = toBig(szi);
+	if (!size || size.eq(0)) return null;
+	return size.gt(0) ? "long" : "short";
+}
+
+function isFundingDirectionFilter(value: string | null): value is FundingDirectionFilter {
+	return value === "all" || value === "long" || value === "short";
+}
+
+export function MobileFundingTab(props: Props) {
 	const { address, isConnected } = useWalletSession();
+	const ownerKey = isConnected && address ? address.toLowerCase() : "disconnected";
+
+	return <MobileFundingTabContent key={ownerKey} address={address} isConnected={isConnected} {...props} />;
+}
+
+interface MobileFundingTabContentProps extends Props {
+	address: ReturnType<typeof useWalletSession>["address"];
+	isConnected: boolean;
+}
+
+function MobileFundingTabContent({
+	address,
+	isConnected,
+	className,
+	scrollMode = "contained",
+}: MobileFundingTabContentProps) {
+	const { t } = useLingui();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const {
@@ -34,9 +63,13 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 	} = useSubscription("userFundings", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
 	const markets = useMarkets();
 	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
+	const [directionFilter, setDirectionFilter] = useState<FundingDirectionFilter>("all");
 
-	const updates = fundingEvent?.fundings?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
-	const totalFunding = getToolbarFundingTotal(updates);
+	const updates = fundingEvent?.fundings?.slice().sort((a, b) => b.time - a.time) ?? [];
+	const filteredUpdates = updates
+		.filter((update) => directionFilter === "all" || getFundingDirection(update.szi) === directionFilter)
+		.slice(0, MAX_HISTORY_ROWS);
+	const totalFunding = getToolbarFundingTotal(filteredUpdates);
 	const headerTotal =
 		isConnected && status === "active"
 			? formatUSD(totalFunding, { signDisplay: "exceptZero" })
@@ -52,7 +85,7 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 	function handleSetAllExpanded(expanded: boolean) {
 		setExpandedByKey(
 			Object.fromEntries(
-				updates.map((update) => [
+				filteredUpdates.map((update) => [
 					`${update.coin}-${update.time}-${update.szi}-${update.fundingRate}-${update.usdc}`,
 					expanded,
 				]),
@@ -63,7 +96,7 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 	function handleExportCsv() {
 		downloadCsv(
 			"funding_history.csv",
-			buildCsvRows(updates, [
+			buildCsvRows(filteredUpdates, [
 				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time) },
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
@@ -114,11 +147,26 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 	return (
 		<Skeleton name="funding-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-				<div className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-market-close-stroke-card px-3.5">
-					<span className="min-w-0 flex-1 truncate text-[11px] text-market-close-muted">
+				<div className="flex min-h-11 shrink-0 items-center gap-2 overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					<Select
+						size="xxs"
+						label={t`Direction`}
+						value={directionFilter}
+						onValueChange={(value) => {
+							if (isFundingDirectionFilter(value)) setDirectionFilter(value);
+						}}
+						options={[
+							{ value: "all", label: t`All Directions` },
+							{ value: "long", label: t`Long` },
+							{ value: "short", label: t`Short` },
+						]}
+						className="w-28 shrink-0 [&>label]:sr-only"
+						triggerClassName="min-h-11 rounded-[7px] border-market-close-stroke-card bg-modal"
+					/>
+					<span className="min-w-0 shrink-0 truncate text-[11px] text-market-close-muted">
 						{t`Cumulative funding`} <span className={cn("font-semibold tabular-nums", headerClass)}>{headerTotal}</span>
 					</span>
-					<div className="flex shrink-0 items-center gap-3">
+					<div className="ml-auto flex shrink-0 items-center gap-2">
 						<button
 							type="button"
 							onClick={() => handleSetAllExpanded(true)}
@@ -141,15 +189,18 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 						!isPageScroll && "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
 					)}
 				>
-					{updates.map((update, index) => {
+					{filteredUpdates.length === 0 ? (
+						<div className="flex min-h-28 items-center justify-center text-center text-sm text-market-close-muted">
+							{t`No funding payments match this direction.`}
+						</div>
+					) : null}
+					{filteredUpdates.map((update, index) => {
 						const marketName = update.coin;
 						const cardKey = `${update.coin}-${update.time}-${update.szi}-${update.fundingRate}-${update.usdc}`;
 						const detailsId = `mobile-funding-history-${cardKey}`;
 						const isExpanded = expandedByKey[cardKey] ?? index === 0;
 						const market = markets.getMarket(update.coin);
-						const szi = toNumber(update.szi);
-						const rate = toNumber(update.fundingRate);
-						const usdc = toNumber(update.usdc);
+						const fundingDirection = getFundingDirection(update.szi);
 						const positionDisplay = formatToken(getToolbarAbsoluteSize(update.szi), {
 							decimals: market?.szDecimals,
 							symbol: market?.shortName,
@@ -206,14 +257,18 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 												<div
 													className={cn(
 														"truncate whitespace-nowrap text-xs font-semibold leading-[17px]",
-														szi === null || szi === 0
+														fundingDirection === null
 															? "text-market-close-muted"
-															: szi > 0
+															: fundingDirection === "long"
 																? "text-market-close-success"
 																: "text-market-close-danger",
 													)}
 												>
-													{szi === null || szi === 0 ? FALLBACK_VALUE_PLACEHOLDER : szi > 0 ? t`Long` : t`Short`}
+													{fundingDirection === null
+														? FALLBACK_VALUE_PLACEHOLDER
+														: fundingDirection === "long"
+															? t`Long`
+															: t`Short`}
 												</div>
 											</div>
 											<div className="min-w-0">
@@ -221,16 +276,19 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 												<div
 													className={cn(
 														"truncate whitespace-nowrap text-xs font-semibold leading-[17px] tabular-nums",
-														getMarketCloseValueColorClass(usdc),
+														getMarketCloseValueColorClass(update.usdc),
 													)}
 												>
-													{formatToken(usdc, { symbol: "USDC" })}
+													{formatToken(update.usdc, { symbol: "USDC" })}
 												</div>
 											</div>
 											<div className="min-w-0">
 												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Rate`}</div>
 												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-													{formatPercent(rate, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
+													{formatPercent(update.fundingRate, {
+														minimumFractionDigits: 4,
+														maximumFractionDigits: 4,
+													})}
 												</div>
 											</div>
 										</div>
@@ -246,7 +304,7 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 													<path
 														d="M3.5 10 8 5.5l4.5 4.5"
 														stroke="currentColor"
-														strokeWidth="1.5"
+														strokeWidth="2"
 														strokeLinecap="round"
 														strokeLinejoin="round"
 													/>
@@ -261,8 +319,9 @@ export function MobileFundingTab({ className, scrollMode = "contained" }: Props)
 					<div className="flex shrink-0 items-center gap-4" data-testid="mobile-funding-history-footer">
 						<button
 							type="button"
+							disabled={filteredUpdates.length === 0}
 							onClick={handleExportCsv}
-							className="inline-flex min-h-11 items-center gap-1.5 text-xs text-market-close-muted transition-colors duration-[120ms] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+							className="inline-flex min-h-11 items-center gap-1.5 text-xs text-market-close-muted transition-colors duration-[120ms] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle"
 						>
 							<DownloadSimpleIcon className="size-3.5" aria-hidden="true" />
 							{t`Export CSV`}

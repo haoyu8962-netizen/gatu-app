@@ -5,6 +5,8 @@ import {
 	DEFAULT_DESKTOP_GRID_LAYOUTS,
 	DESKTOP_GRID_BREAKPOINTS,
 	DESKTOP_GRID_COLS,
+	DESKTOP_GRID_GAP_PX,
+	DESKTOP_GRID_ROW_HEIGHT_PX,
 	DESKTOP_GRID_STORAGE_KEY,
 	readDesktopGridLayouts,
 	resetDesktopGridLayouts,
@@ -22,7 +24,7 @@ describe("desktop grid layout", () => {
 		expect(MOBILE_QR_SURFACE_MEDIA_QUERY).toBe("(max-width: 1000px), (pointer: coarse), (display-mode: standalone)");
 		expect(DESKTOP_GRID_BREAKPOINTS).toEqual({ lg: 1420, md: 1000 });
 		expect(DESKTOP_GRID_COLS).toEqual({ lg: 16, md: 14 });
-		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v6");
+		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v7");
 	});
 
 	it("removes saved geometry when the desktop layout is reset", () => {
@@ -32,6 +34,7 @@ describe("desktop grid layout", () => {
 		window.localStorage.setItem("trade-desktop-grid-layout-v3", "legacy");
 		window.localStorage.setItem("trade-desktop-grid-layout-v4", "legacy");
 		window.localStorage.setItem("trade-desktop-grid-layout-v5", "legacy");
+		window.localStorage.setItem("trade-desktop-grid-layout-v6", "legacy");
 
 		resetDesktopGridLayouts();
 
@@ -41,14 +44,15 @@ describe("desktop grid layout", () => {
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v3")).toBeNull();
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v4")).toBeNull();
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v5")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v6")).toBeNull();
 		expect(readDesktopGridLayouts()).toBe(DEFAULT_DESKTOP_GRID_LAYOUTS);
 	});
 
-	it("discards the incompatible v5 geometry when the new layout is read", () => {
-		window.localStorage.setItem("trade-desktop-grid-layout-v5", JSON.stringify(DEFAULT_DESKTOP_GRID_LAYOUTS));
+	it("discards the incompatible v6 geometry when the new layout is read", () => {
+		window.localStorage.setItem("trade-desktop-grid-layout-v6", JSON.stringify(DEFAULT_DESKTOP_GRID_LAYOUTS));
 
 		expect(readDesktopGridLayouts()).toBe(DEFAULT_DESKTOP_GRID_LAYOUTS);
-		expect(window.localStorage.getItem("trade-desktop-grid-layout-v5")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v6")).toBeNull();
 	});
 
 	it("keeps the market toolbar compact without changing the workspace height", () => {
@@ -73,10 +77,10 @@ describe("desktop grid layout", () => {
 		expect(wideMarketData).toMatchObject({ x: 10, y: 0, w: 3, h: 20.4 });
 		expect(wideTrading).toMatchObject({ x: 13, y: 0, w: 3, h: 20.4 });
 		expect(compactTrading).toMatchObject({ x: 10, y: 0, w: 4, h: 20.6 });
-		expect(compactMarketData).toMatchObject({ x: 10, y: 20.6, w: 4, h: 20.4 });
+		expect(compactMarketData).toMatchObject({ x: 10, y: 20.6, w: 4, h: 18.4 });
 	});
 
-	it("fills the compact desktop lower row with useful account content instead of an empty table surface", () => {
+	it("gives the compact positions table the lower-left viewport while retaining the right-side panel stack", () => {
 		const compactAccountTable = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "accountTable");
 		const compactAccountInfo = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "accountInfo");
 		const compactMarketData = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "marketData");
@@ -85,24 +89,31 @@ describe("desktop grid layout", () => {
 			x: 0,
 			y: 20.6,
 			w: 10,
-			h: 10,
+			h: 26.4,
 			minW: 10,
 			maxW: 10,
 			resizeHandles: ["s"],
 		});
 		expect(compactAccountInfo).toMatchObject({
-			x: 0,
-			y: 30.6,
-			w: 10,
-			h: 10.4,
+			x: 10,
+			y: 39,
+			w: 4,
+			h: 8,
 			minW: 4,
-			maxW: 10,
-			resizeHandles: ["e", "s", "se"],
+			resizeHandles: ["n", "w", "nw"],
 		});
-		expect((compactAccountTable?.y ?? 0) + (compactAccountTable?.h ?? 0)).toBeCloseTo(compactAccountInfo?.y ?? 0);
-		expect((compactAccountInfo?.y ?? 0) + (compactAccountInfo?.h ?? 0)).toBeCloseTo(
-			(compactMarketData?.y ?? 0) + (compactMarketData?.h ?? 0),
+		expect((compactMarketData?.y ?? 0) + (compactMarketData?.h ?? 0)).toBeCloseTo(compactAccountInfo?.y ?? 0);
+		expect((compactAccountTable?.y ?? 0) + (compactAccountTable?.h ?? 0)).toBeCloseTo(
+			(compactAccountInfo?.y ?? 0) + (compactAccountInfo?.h ?? 0),
 		);
+
+		const gridSpan = Math.max(...(DEFAULT_DESKTOP_GRID_LAYOUTS.md ?? []).map((item) => item.y + item.h));
+		const spanHeight = (rows: number) => rows * DESKTOP_GRID_ROW_HEIGHT_PX + (rows - 1) * DESKTOP_GRID_GAP_PX;
+
+		expect(gridSpan).toBeCloseTo(47);
+		expect(spanHeight(compactAccountTable?.h ?? 0)).toBeCloseTo(868.2);
+		expect(spanHeight(compactMarketData?.h ?? 0)).toBeCloseTo(604.2);
+		expect(spanHeight(compactAccountInfo?.h ?? 0)).toBeCloseTo(261);
 	});
 
 	it("restores valid geometry while retaining current constraints", () => {
@@ -125,17 +136,16 @@ describe("desktop grid layout", () => {
 		expect(restoredAccountTable).toMatchObject({ x: 0, w: 10, minW: 10, maxW: 10 });
 	});
 
-	it("restores a valid compact table expansion with the account panel pushed below it", () => {
+	it("restores a valid compact table resize independently of the right-side panel stack", () => {
 		const md = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.map((item) => {
 			if (item.i === "accountTable") return { ...item, h: 14 };
-			if (item.i === "accountInfo") return { ...item, y: 34.6 };
 			return item;
 		});
 		writeDesktopGridLayouts({ ...DEFAULT_DESKTOP_GRID_LAYOUTS, md });
 
 		const restored = readDesktopGridLayouts().md;
 		expect(restored?.find((item) => item.i === "accountTable")).toMatchObject({ y: 20.6, h: 14 });
-		expect(restored?.find((item) => item.i === "accountInfo")).toMatchObject({ y: 34.6, h: 10.4 });
+		expect(restored?.find((item) => item.i === "accountInfo")).toMatchObject({ x: 10, y: 39, h: 8 });
 	});
 
 	it("rejects stored geometry that exceeds the active column bounds", () => {

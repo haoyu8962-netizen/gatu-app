@@ -13,6 +13,11 @@ export interface IsolatedMarginPositionRef {
 	liquidationPx: string | null;
 }
 
+export interface IsolatedMarginPositionTarget extends IsolatedMarginPositionRef {
+	owner: string;
+	env: "Mainnet" | "Testnet";
+}
+
 export interface TpSlPositionRef {
 	coin: string;
 	dex: string;
@@ -20,6 +25,11 @@ export interface TpSlPositionRef {
 	isLong: boolean;
 	szDecimals: number;
 	marginMode: MarginMode;
+}
+
+export interface TpSlPositionTarget extends TpSlPositionRef {
+	owner: string;
+	env: "Mainnet" | "Testnet";
 }
 
 export interface PositionMarketCloseRef {

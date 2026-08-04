@@ -1,33 +1,69 @@
-import { Button, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
+import { Button, Checkbox, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { InfoRow } from "@/components/ui/info-row";
-import { HL_ALL_DEXS } from "@/config/app";
-import { buildPositionTpSlUpdatePlan, hasPositionTpSlTriggerMutation } from "@/domain/trade/order-intent";
+import { NumberInput } from "@/components/ui/number-input";
+import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
+import { getMarketQuoteToken } from "@/domain/trade/balances";
+import {
+	buildPositionTpSlUpdatePlan,
+	hasPositionTpSlTriggerMutation,
+	type PositionTpSlExecutionMode,
+} from "@/domain/trade/order-intent";
 import { doesOrderBatchMatchRiskContext } from "@/domain/trade/order-risk-context";
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
-import { type Position, useExchange, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import {
+	formatPercent,
+	formatPrice,
+	formatQuoteAmount,
+	formatToken,
+	formatUSD,
+	szDecimalsToPriceDecimals,
+} from "@/lib/format";
+import {
+	type ExchangeParams,
+	type Position,
+	useExchange,
+	useHyperliquid,
+	useMarkets,
+	useMarketsInfo,
+	useSubscription,
+	useUserPositions,
+} from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
-import { areTpSlOrderInfosEqual, buildTpSlOrdersByCoin, type TpSlOrderInfo } from "@/lib/trade/open-orders";
-import { validateSlPrice, validateTpPrice } from "@/lib/trade/tpsl";
+import {
+	areTpSlOrderInfosEqual,
+	buildTpSlOrdersByCoin,
+	type OpenOrder,
+	type TpSlOrderInfo,
+} from "@/lib/trade/open-orders";
+import {
+	calculateEstimatedPnlExact,
+	calculateRoeMagnitudeFromPriceExact,
+	calculateSlPriceFromRoe,
+	calculateTargetPriceFromPnl,
+	calculateTpPriceFromRoe,
+	validatePositionSlPrice,
+	validateSlPrice,
+	validateTpPrice,
+} from "@/lib/trade/tpsl";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetDisplay } from "../components/asset-display";
 import { TradingActionButton } from "../components/trading-action-button";
 import { TpSlSection } from "../tradebox/tp-sl-section";
-import type { TpSlPositionRef } from "./position-dialog-types";
+import type { TpSlPositionTarget } from "./position-dialog-types";
 import { PositionRiskDialogShell } from "./position-risk-dialog-ui";
 
 interface Props {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	position: TpSlPositionRef | null;
+	position: TpSlPositionTarget | null;
 }
 
 export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
@@ -35,7 +71,7 @@ export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
 	if (!position) return null;
 	return (
 		<PositionTpSlModalBody
-			key={`${position.dex}:${position.assetId}:${open ? "open" : "closed"}`}
+			key={`${position.owner}:${position.env}:${position.dex}:${position.assetId}:${open ? "open" : "closed"}`}
 			open={open}
 			position={position}
 			isMobile={isMobile}
@@ -46,27 +82,201 @@ export function PositionTpSlModal({ open, onOpenChange, position }: Props) {
 
 interface BodyProps {
 	open: boolean;
-	position: TpSlPositionRef;
+	position: TpSlPositionTarget;
 	isMobile: boolean;
 	onOpenChange: (open: boolean) => void;
 }
 
+interface PositionTpSlSessionIdentity {
+	owner: string;
+	env: "Mainnet" | "Testnet";
+}
+
+interface PositionTpSlLiveExecutionContext {
+	clientKey: string;
+	env: "Mainnet" | "Testnet";
+	walletOwner: string | null;
+	markPx: string | null;
+	markStatus: "idle" | "subscribing" | "active" | "error";
+	markIsStale: boolean;
+	hasMarkSnapshot: boolean;
+	markets: ReturnType<typeof useMarkets>;
+	userPositions: ReturnType<typeof useUserPositions>;
+	openOrdersStatus: "idle" | "subscribing" | "active" | "error";
+	openOrdersIsStale: boolean;
+	hasOpenOrdersSnapshot: boolean;
+	openOrders: readonly OpenOrder[];
+}
+
+type PositionTpSlExchangeOrder = ExchangeParams<"order">["orders"][number];
+
+interface CompletedPositionTpSlOrder {
+	oid: number;
+	order: PositionTpSlExchangeOrder;
+}
+
+function applyCompletedTpSlOrders(
+	snapshot: TpSlOrderInfo | undefined,
+	completedOrders: readonly CompletedPositionTpSlOrder[],
+): TpSlOrderInfo | undefined | null {
+	let next = snapshot ? { ...snapshot } : undefined;
+	for (const { oid, order } of completedOrders) {
+		if (!("trigger" in order.t)) return null;
+		const leg = order.t.trigger.tpsl;
+		const common = {
+			ambiguous: false,
+			incompatible: false,
+		};
+		if (leg === "tp") {
+			next = {
+				...next,
+				...common,
+				tpPrice: String(order.t.trigger.triggerPx),
+				tpOrderId: oid,
+				tpSize: String(order.s),
+				tpIsMarket: order.t.trigger.isMarket,
+				tpLimitPrice: String(order.p),
+				tpSide: order.b ? "B" : "A",
+			};
+		} else {
+			next = {
+				...next,
+				...common,
+				slPrice: String(order.t.trigger.triggerPx),
+				slOrderId: oid,
+				slSize: String(order.s),
+				slIsMarket: order.t.trigger.isMarket,
+				slLimitPrice: String(order.p),
+				slSide: order.b ? "B" : "A",
+			};
+		}
+	}
+	return next;
+}
+
+function applyCompletedTpSlCancels(
+	snapshot: TpSlOrderInfo | undefined,
+	cancels: readonly ExchangeParams<"cancel">["cancels"][number][],
+): TpSlOrderInfo | undefined | null {
+	let next = snapshot ? { ...snapshot } : undefined;
+	for (const cancel of cancels) {
+		if (next?.tpOrderId === cancel.o) {
+			const {
+				tpPrice: _tpPrice,
+				tpOrderId: _tpOrderId,
+				tpSize: _tpSize,
+				tpIsMarket: _tpIsMarket,
+				tpLimitPrice: _tpLimitPrice,
+				tpSide: _tpSide,
+				...rest
+			} = next;
+			next = Object.keys(rest).length > 0 ? rest : undefined;
+		} else if (next?.slOrderId === cancel.o) {
+			const {
+				slPrice: _slPrice,
+				slOrderId: _slOrderId,
+				slSize: _slSize,
+				slIsMarket: _slIsMarket,
+				slLimitPrice: _slLimitPrice,
+				slSide: _slSide,
+				...rest
+			} = next;
+			next = Object.keys(rest).length > 0 ? rest : undefined;
+		} else {
+			return null;
+		}
+	}
+	return next;
+}
+
+function getRestingOrderId(status: unknown): number | null {
+	if (!status || typeof status !== "object" || !("resting" in status)) return null;
+	const resting = status.resting;
+	if (!resting || typeof resting !== "object" || !("oid" in resting) || typeof resting.oid !== "number") return null;
+	return resting.oid;
+}
+
 function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyProps) {
 	const { address, isConnected } = useWalletSession();
-	const { getPosition, isLoading: positionLoading, hasError: positionError } = useUserPositions();
+	const { clientKey, env } = useHyperliquid();
+	const sessionIdentity = useRef<PositionTpSlSessionIdentity>({
+		owner: position.owner.toLowerCase(),
+		env: position.env,
+	}).current;
+	const userPositions = useUserPositions();
+	const markets = useMarkets();
+	const { getPosition, isLoading: positionLoading, hasError: positionError, isStale: positionStale } = userPositions;
+	const activeOwner = clientKey === "disconnected" ? null : clientKey.toLowerCase();
+	const walletOwner = address?.toLowerCase() ?? null;
+	const identityMatches =
+		activeOwner === sessionIdentity.owner && walletOwner === sessionIdentity.owner && env === sessionIdentity.env;
 	const { getMarketInfo } = useMarketsInfo();
+	const currentMarket = markets.getMarket(position.coin);
+	const quoteSymbol = getMarketQuoteToken(currentMarket);
+	const currentMarketDex = currentMarket?.kind === "builderPerp" ? currentMarket.dex : "";
+	const marketBindingReady =
+		!markets.isLoading &&
+		markets.error === null &&
+		currentMarket !== undefined &&
+		currentMarket.kind !== "spot" &&
+		currentMarket.assetId === position.assetId &&
+		currentMarket.szDecimals === position.szDecimals &&
+		currentMarketDex === position.dex;
 	const currentPosition = getPosition(position.coin, position.dex);
 	const marketMarkPx = getMarketInfo(position.coin)?.markPx;
-	const { data: liveAssetCtx } = useSubscription("activeAssetCtx", { coin: position.coin }, { enabled: open });
-	const liveMarkPx = liveAssetCtx?.ctx?.markPx ?? marketMarkPx ?? null;
-	const { data: openOrdersEvent, status: openOrdersStatus } = useSubscription(
+	const {
+		data: liveAssetCtx,
+		status: markStatus,
+		isStale: markIsStale,
+	} = useSubscription("activeAssetCtx", { coin: position.coin }, { enabled: open });
+	const activeMarkPx = liveAssetCtx?.ctx?.markPx ?? null;
+	const displayMarkPx = activeMarkPx ?? marketMarkPx ?? null;
+	const hasMarkSnapshot = liveAssetCtx !== undefined;
+	const markSnapshotReady =
+		markStatus === "active" && !markIsStale && hasMarkSnapshot && Boolean(toBig(activeMarkPx)?.gt(0));
+	const {
+		data: openOrdersEvent,
+		status: openOrdersStatus,
+		isStale: openOrdersIsStale,
+	} = useSubscription(
 		"openOrders",
-		{ user: address ?? "0x0", dex: HL_ALL_DEXS },
-		{ enabled: open && isConnected && !!address },
+		{ user: sessionIdentity.owner, dex: HL_ALL_DEXS },
+		{ enabled: open && isConnected && identityMatches },
 	);
-	const currentTpSlInfo = buildTpSlOrdersByCoin(openOrdersEvent?.orders ?? []).get(position.coin);
+	const openOrders = openOrdersEvent?.orders ?? [];
+	const currentTpSlInfo = buildTpSlOrdersByCoin(openOrders).get(position.coin);
 	const currentPositionSize = toBig(currentPosition?.szi);
 	const hasOpenOrdersSnapshot = openOrdersEvent !== undefined;
+	const executionStateRef = useRef<PositionTpSlLiveExecutionContext>({
+		clientKey,
+		env,
+		walletOwner,
+		markPx: activeMarkPx,
+		markStatus,
+		markIsStale,
+		hasMarkSnapshot,
+		markets,
+		userPositions,
+		openOrdersStatus,
+		openOrdersIsStale,
+		hasOpenOrdersSnapshot,
+		openOrders,
+	});
+	executionStateRef.current = {
+		clientKey,
+		env,
+		walletOwner,
+		markPx: activeMarkPx,
+		markStatus,
+		markIsStale,
+		hasMarkSnapshot,
+		markets,
+		userPositions,
+		openOrdersStatus,
+		openOrdersIsStale,
+		hasOpenOrdersSnapshot,
+		openOrders,
+	};
 
 	if (!isConnected || !address) {
 		return (
@@ -75,6 +285,17 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 				isMobile={isMobile}
 				position={position}
 				message={t`Connect wallet to view positions`}
+				onClose={onOpenChange}
+			/>
+		);
+	}
+	if (!identityMatches) {
+		return (
+			<PositionTpSlStatus
+				open={open}
+				isMobile={isMobile}
+				position={position}
+				message={t`Trading data changed while this dialog was open. Close and reopen it before submitting.`}
 				onClose={onOpenChange}
 			/>
 		);
@@ -124,12 +345,26 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 			/>
 		);
 	}
-	const liveDataReady = !positionLoading && !positionError && openOrdersStatus === "active";
+	const liveDataReady =
+		identityMatches &&
+		!positionLoading &&
+		!positionError &&
+		!positionStale &&
+		marketBindingReady &&
+		openOrdersStatus === "active" &&
+		!openOrdersIsStale &&
+		hasOpenOrdersSnapshot;
 	let liveDataMessage: string | null = null;
 	if (positionError) {
 		liveDataMessage = t`Failed to load positions.`;
+	} else if (positionStale) {
+		liveDataMessage = t`Live position data is stale. Wait for the account connection to recover.`;
+	} else if (!markets.isLoading && !marketBindingReady) {
+		liveDataMessage = t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
 	} else if (openOrdersStatus === "error") {
 		liveDataMessage = t`Failed to load open orders.`;
+	} else if (openOrdersIsStale) {
+		liveDataMessage = t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
 	} else if (!liveDataReady) {
 		liveDataMessage = t`Loading...`;
 	}
@@ -140,8 +375,12 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 			isMobile={isMobile}
 			positionRef={position}
 			position={currentPosition}
-			markPx={liveMarkPx}
+			markPx={displayMarkPx}
+			markSnapshotReady={markSnapshotReady}
 			currentTpSlInfo={currentTpSlInfo}
+			quoteSymbol={quoteSymbol}
+			sessionIdentity={sessionIdentity}
+			executionStateRef={executionStateRef}
 			liveDataReady={liveDataReady}
 			liveDataMessage={liveDataMessage}
 			onOpenChange={onOpenChange}
@@ -152,10 +391,14 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 interface FormProps {
 	open: boolean;
 	isMobile: boolean;
-	positionRef: TpSlPositionRef;
+	positionRef: TpSlPositionTarget;
 	position: Position;
 	markPx: string | null;
+	markSnapshotReady: boolean;
 	currentTpSlInfo: TpSlOrderInfo | undefined;
+	quoteSymbol: string;
+	sessionIdentity: PositionTpSlSessionIdentity;
+	executionStateRef: { current: PositionTpSlLiveExecutionContext };
 	liveDataReady: boolean;
 	liveDataMessage: string | null;
 	onOpenChange: (open: boolean) => void;
@@ -167,26 +410,16 @@ function PositionTpSlForm({
 	positionRef,
 	position,
 	markPx,
+	markSnapshotReady,
 	currentTpSlInfo,
+	quoteSymbol,
+	sessionIdentity,
+	executionStateRef,
 	liveDataReady,
 	liveDataMessage,
 	onOpenChange,
 }: FormProps) {
 	const decimals = szDecimalsToPriceDecimals(positionRef.szDecimals);
-	const [initialTpPrice] = useState(currentTpSlInfo?.tpPrice);
-	const [initialSlPrice] = useState(currentTpSlInfo?.slPrice);
-	const [initialTpOrderId] = useState(currentTpSlInfo?.tpOrderId);
-	const [initialSlOrderId] = useState(currentTpSlInfo?.slOrderId);
-	const [tpPriceInput, setTpPriceInput] = useState(() => toBig(initialTpPrice)?.toFixed(decimals) ?? "");
-	const [slPriceInput, setSlPriceInput] = useState(() => toBig(initialSlPrice)?.toFixed(decimals) ?? "");
-	const [submitError, setSubmitError] = useState<string | null>(null);
-	const [requiresRefresh, setRequiresRefresh] = useState(false);
-
-	const { submitOrder, isPending: isPlacing, error: placeError } = useTrackedOrder();
-	const { mutateAsync: modifyOrders, isPending: isModifying, error: modifyError } = useExchange("batchModify");
-	const { mutateAsync: cancelOrders, isPending: isCancelling, error: cancelError } = useExchange("cancel");
-	const isSubmitting = isPlacing || isModifying || isCancelling;
-
 	const signedSize = toBig(position.szi);
 	const isLong = signedSize?.gt(0) ?? false;
 	const size = signedSize?.abs().toString() ?? "0";
@@ -195,55 +428,434 @@ function PositionTpSlForm({
 	const roe = position.returnOnEquity;
 	const leverage = position.leverage.value;
 	const side = isLong ? "buy" : "sell";
+	const [initialTpSlInfo] = useState<TpSlOrderInfo | undefined>(() =>
+		currentTpSlInfo ? { ...currentTpSlInfo } : undefined,
+	);
+	const initialConfiguredSize = initialTpSlInfo?.tpSize ?? initialTpSlInfo?.slSize;
+	const initialUsesPartialSize = toBig(initialConfiguredSize)?.gt(0) ?? false;
+	const initialExecutionMode: PositionTpSlExecutionMode =
+		initialTpSlInfo?.tpIsMarket === false || initialTpSlInfo?.slIsMarket === false ? "limit" : "market";
+	const [tpPriceInput, setTpPriceInput] = useState(() => toBig(initialTpSlInfo?.tpPrice)?.toFixed(decimals) ?? "");
+	const [slPriceInput, setSlPriceInput] = useState(() => toBig(initialTpSlInfo?.slPrice)?.toFixed(decimals) ?? "");
+	const [configureAmount, setConfigureAmount] = useState(initialUsesPartialSize);
+	const [sizeInput, setSizeInput] = useState(
+		() => toBig(initialUsesPartialSize ? initialConfiguredSize : size)?.toFixed(positionRef.szDecimals, 0) ?? "",
+	);
+	const [executionMode, setExecutionMode] = useState<PositionTpSlExecutionMode>(initialExecutionMode);
+	const [tpLimitPriceInput, setTpLimitPriceInput] = useState(() =>
+		initialTpSlInfo?.tpIsMarket === false ? (toBig(initialTpSlInfo.tpLimitPrice)?.toFixed(decimals) ?? "") : "",
+	);
+	const [slLimitPriceInput, setSlLimitPriceInput] = useState(() =>
+		initialTpSlInfo?.slIsMarket === false ? (toBig(initialTpSlInfo.slLimitPrice)?.toFixed(decimals) ?? "") : "",
+	);
+	const [returnUnit, setReturnUnit] = useState<"pnl" | "roe">("roe");
+	const [tpReturnDraft, setTpReturnDraft] = useState<string | null>(null);
+	const [slReturnDraft, setSlReturnDraft] = useState<string | null>(null);
+	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [requiresRefresh, setRequiresRefresh] = useState(false);
+	const completedMutationRef = useRef(false);
+	const allowedTpSlSnapshotsRef = useRef<Array<TpSlOrderInfo | undefined>>([initialTpSlInfo]);
+	const expectedTpSlSnapshotRef = useRef<TpSlOrderInfo | undefined>(initialTpSlInfo);
+	const workflowSubmittingRef = useRef(false);
+	const [isWorkflowSubmitting, setIsWorkflowSubmitting] = useState(false);
 
-	const initialTpSlInfo: TpSlOrderInfo = {
-		tpPrice: initialTpPrice,
-		slPrice: initialSlPrice,
-		tpOrderId: initialTpOrderId,
-		slOrderId: initialSlOrderId,
-	};
-	const positionChanged = isLong !== positionRef.isLong;
+	function appendAllowedTpSlSnapshot(snapshot: TpSlOrderInfo | undefined): void {
+		expectedTpSlSnapshotRef.current = snapshot;
+		if (allowedTpSlSnapshotsRef.current.some((allowed) => areTpSlOrderInfosEqual(allowed, snapshot))) return;
+		allowedTpSlSnapshotsRef.current = [...allowedTpSlSnapshotsRef.current, snapshot];
+	}
+
+	function recordCompletedOrders(
+		orders: readonly PositionTpSlExchangeOrder[],
+		statuses: readonly unknown[] | undefined,
+	): boolean {
+		if (!statuses || statuses.length !== orders.length) return false;
+		const completedOrders: CompletedPositionTpSlOrder[] = [];
+		for (let index = 0; index < orders.length; index += 1) {
+			const order = orders[index];
+			const oid = getRestingOrderId(statuses[index]);
+			if (!order || oid === null) return false;
+			completedOrders.push({ oid, order });
+		}
+		const next = applyCompletedTpSlOrders(expectedTpSlSnapshotRef.current, completedOrders);
+		if (next === null) return false;
+		appendAllowedTpSlSnapshot(next);
+		return true;
+	}
+
+	function recordCompletedCancels(cancels: readonly ExchangeParams<"cancel">["cancels"][number][]): boolean {
+		const next = applyCompletedTpSlCancels(expectedTpSlSnapshotRef.current, cancels);
+		if (next === null) return false;
+		appendAllowedTpSlSnapshot(next);
+		return true;
+	}
+
+	function assertLiveExecutionContext() {
+		const current = executionStateRef.current;
+		if (
+			current.clientKey === "disconnected" ||
+			current.clientKey.toLowerCase() !== sessionIdentity.owner ||
+			current.walletOwner !== sessionIdentity.owner ||
+			current.env !== sessionIdentity.env ||
+			current.userPositions.isLoading ||
+			current.userPositions.hasError ||
+			current.userPositions.isStale ||
+			current.markets.isLoading ||
+			current.markets.error !== null ||
+			current.openOrdersStatus !== "active" ||
+			current.openOrdersIsStale ||
+			!current.hasOpenOrdersSnapshot
+		) {
+			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		}
+
+		const currentPosition = current.userPositions.getPosition(positionRef.coin, positionRef.dex);
+		const currentSize = toBig(currentPosition?.szi);
+		if (
+			!currentPosition ||
+			!currentSize ||
+			currentSize.eq(0) ||
+			currentSize.gt(0) !== positionRef.isLong ||
+			currentPosition.leverage.type !== positionRef.marginMode
+		) {
+			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		}
+		const currentMarket = current.markets.getMarket(positionRef.coin);
+		const currentDex = currentMarket?.kind === "builderPerp" ? currentMarket.dex : "";
+		if (
+			!currentMarket ||
+			currentMarket.kind === "spot" ||
+			currentMarket.assetId !== positionRef.assetId ||
+			currentMarket.szDecimals !== positionRef.szDecimals ||
+			currentDex !== positionRef.dex
+		) {
+			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		}
+		const liveTpSlInfo = buildTpSlOrdersByCoin(current.openOrders).get(positionRef.coin);
+		// The stream may lag behind a multi-request workflow, but it must match the initial
+		// snapshot or one of the exact successful prefixes recorded from exchange responses.
+		if (!allowedTpSlSnapshotsRef.current.some((allowed) => areTpSlOrderInfosEqual(allowed, liveTpSlInfo))) {
+			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		}
+		return { position: currentPosition, size: currentSize.abs() };
+	}
+
+	function assertOrdersMatchPosition(orders: readonly ExchangeParams<"order">["orders"][number][]): void {
+		const live = assertLiveExecutionContext();
+		const execution = executionStateRef.current;
+		if (execution.markStatus !== "active" || execution.markIsStale || !execution.hasMarkSnapshot) {
+			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		}
+		const liveMarkPrice = toBig(execution.markPx);
+		const hasInvalidOrder = orders.some((order) => {
+			const orderSize = toBig(order.s);
+			const triggerPrice = "trigger" in order.t ? order.t.trigger.triggerPx : null;
+			const normalizedTriggerPrice = toBig(triggerPrice);
+			const normalizedOrderPrice = toBig(order.p);
+			const liveSide = positionRef.isLong ? "buy" : "sell";
+			const triggerIsInvalid =
+				!(liveMarkPrice?.gt(0) ?? false) ||
+				!("trigger" in order.t) ||
+				(order.t.trigger.tpsl === "tp"
+					? !validateTpPrice(liveMarkPrice, triggerPrice, liveSide)
+					: !validatePositionSlPrice(liveMarkPrice, live.position.liquidationPx, triggerPrice, liveSide));
+			const orderPriceIsInvalid =
+				!normalizedTriggerPrice?.gt(0) ||
+				!normalizedOrderPrice?.gt(0) ||
+				(order.b ? normalizedOrderPrice.lt(normalizedTriggerPrice) : normalizedOrderPrice.gt(normalizedTriggerPrice));
+			return (
+				order.a !== positionRef.assetId ||
+				order.b === positionRef.isLong ||
+				!order.r ||
+				!("trigger" in order.t) ||
+				!orderSize ||
+				orderSize.lt(0) ||
+				(orderSize.gt(0) && orderSize.gt(live.size)) ||
+				triggerIsInvalid ||
+				orderPriceIsInvalid
+			);
+		});
+		if (hasInvalidOrder) {
+			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		}
+	}
+
+	function assertOrderExecution(params: ExchangeParams<"order">): void {
+		assertOrdersMatchPosition(params.orders);
+		if (params.grouping !== "positionTpsl") {
+			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		}
+	}
+
+	function assertModifyExecution(params: ExchangeParams<"batchModify">): void {
+		assertOrdersMatchPosition(params.modifies.map((modify) => modify.order));
+	}
+
+	function assertCancelExecution(params: ExchangeParams<"cancel">): void {
+		assertLiveExecutionContext();
+		if (params.cancels.some((cancel) => cancel.a !== positionRef.assetId)) {
+			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+		}
+	}
+
+	const {
+		submitOrder,
+		isPending: isPlacing,
+		error: placeError,
+	} = useTrackedOrder({
+		executionGuard: assertOrderExecution,
+	});
+	const {
+		mutateAsync: modifyOrders,
+		isPending: isModifying,
+		error: modifyError,
+	} = useExchange("batchModify", {
+		executionGuard: assertModifyExecution,
+	});
+	const {
+		mutateAsync: cancelOrders,
+		isPending: isCancelling,
+		error: cancelError,
+	} = useExchange("cancel", {
+		executionGuard: assertCancelExecution,
+	});
+	const isSubmitting = isWorkflowSubmitting || isPlacing || isModifying || isCancelling;
+
+	const positionChanged = isLong !== positionRef.isLong || position.leverage.type !== positionRef.marginMode;
 	const ordersChanged = !areTpSlOrderInfosEqual(initialTpSlInfo, currentTpSlInfo);
+	const expectedCloseSide = isLong ? "A" : "B";
+	const positionSideConflict = Boolean(
+		(initialTpSlInfo?.tpSide && initialTpSlInfo.tpSide !== expectedCloseSide) ||
+			(initialTpSlInfo?.slSide && initialTpSlInfo.slSide !== expectedCloseSide),
+	);
+	const configurationConflict = Boolean(
+		initialTpSlInfo?.ambiguous || initialTpSlInfo?.incompatible || positionSideConflict,
+	);
 
-	const tpPriceValue = toBig(tpPriceInput);
-	const slPriceValue = toBig(slPriceInput);
-	const hasTp = tpPriceValue?.gt(0) ?? false;
-	const hasSl = slPriceValue?.gt(0) ?? false;
+	const partialSizeValue = toBig(sizeInput);
+	const liveSizeValue = toBig(size);
+	const partialSizeValid =
+		!configureAmount ||
+		(Boolean(partialSizeValue?.gt(0)) && Boolean(liveSizeValue && partialSizeValue?.lte(liveSizeValue)));
+	const effectiveOrderSize = configureAmount && partialSizeValue?.gt(0) ? partialSizeValue.toString() : size;
+	const isLimitExecution = executionMode === "limit";
+
+	function calculatePriceFromLinkedReturn(type: "tp" | "sl", value: string): string | null {
+		return returnUnit === "roe"
+			? type === "tp"
+				? calculateTpPriceFromRoe(entryPx, side, value, leverage, decimals)
+				: calculateSlPriceFromRoe(entryPx, side, value, leverage, decimals)
+			: calculateTargetPriceFromPnl(entryPx, side, effectiveOrderSize, value, type, decimals);
+	}
+
+	function resolvePriceInput(type: "tp" | "sl", draft: string | null, fallback: string): string {
+		if (draft === null) return fallback;
+		if (draft === "") return "";
+		return calculatePriceFromLinkedReturn(type, draft) ?? "";
+	}
+
+	const effectiveTpPriceInput = resolvePriceInput("tp", tpReturnDraft, tpPriceInput);
+	const effectiveSlPriceInput = resolvePriceInput("sl", slReturnDraft, slPriceInput);
+	const tpPriceValue = toBig(effectiveTpPriceInput);
+	const slPriceValue = toBig(effectiveSlPriceInput);
+	const tpPriceInputPresent = effectiveTpPriceInput.trim() !== "";
+	const slPriceInputPresent = effectiveSlPriceInput.trim() !== "";
+	const tpPriceInputValid = !tpPriceInputPresent || (tpPriceValue?.gt(0) ?? false);
+	const slPriceInputValid = !slPriceInputPresent || (slPriceValue?.gt(0) ?? false);
+	const hasTp = tpPriceInputPresent && tpPriceInputValid;
+	const hasSl = slPriceInputPresent && slPriceInputValid;
+
+	function isLimitPriceValid(triggerPrice: string, limitPrice: string): boolean {
+		const trigger = toBig(triggerPrice);
+		const limit = toBig(limitPrice);
+		if (!trigger?.gt(0) || !limit?.gt(0)) return false;
+		return isLong ? limit.lte(trigger) : limit.gte(trigger);
+	}
+
+	const tpLimitValid = !isLimitExecution || !hasTp || isLimitPriceValid(effectiveTpPriceInput, tpLimitPriceInput);
+	const slLimitValid = !isLimitExecution || !hasSl || isLimitPriceValid(effectiveSlPriceInput, slLimitPriceInput);
+
+	function isLinkedReturnDraftInvalid(type: "tp" | "sl", draft: string | null): boolean {
+		return draft !== null && draft !== "" && calculatePriceFromLinkedReturn(type, draft) === null;
+	}
+
+	const tpReturnDraftInvalid = isLinkedReturnDraftInvalid("tp", tpReturnDraft);
+	const slReturnDraftInvalid = isLinkedReturnDraftInvalid("sl", slReturnDraft);
 	const updatePlan = buildPositionTpSlUpdatePlan({
 		kind: "positionTpsl",
 		assetId: positionRef.assetId,
 		szDecimals: positionRef.szDecimals,
 		isLong,
-		tpPriceNum: hasTp ? tpPriceInput : null,
-		slPriceNum: hasSl ? slPriceInput : null,
+		tpPriceNum: hasTp ? effectiveTpPriceInput : null,
+		slPriceNum: hasSl ? effectiveSlPriceInput : null,
+		sizeNum: configureAmount ? sizeInput : null,
+		executionMode,
+		tpLimitPriceNum: isLimitExecution && hasTp ? tpLimitPriceInput : null,
+		slLimitPriceNum: isLimitExecution && hasSl ? slLimitPriceInput : null,
 		existingTpPrice: currentTpSlInfo?.tpPrice,
 		existingSlPrice: currentTpSlInfo?.slPrice,
 		existingTpOrderId: currentTpSlInfo?.tpOrderId,
 		existingSlOrderId: currentTpSlInfo?.slOrderId,
+		existingTpSize: currentTpSlInfo?.tpSize,
+		existingSlSize: currentTpSlInfo?.slSize,
+		existingTpIsMarket: currentTpSlInfo?.tpIsMarket,
+		existingSlIsMarket: currentTpSlInfo?.slIsMarket,
+		existingTpLimitPrice: currentTpSlInfo?.tpLimitPrice,
+		existingSlLimitPrice: currentTpSlInfo?.slLimitPrice,
 	});
 	const tpNeedsMark = hasPositionTpSlTriggerMutation(updatePlan, "tp");
 	const slNeedsMark = hasPositionTpSlTriggerMutation(updatePlan, "sl");
-	const markReady = toBig(markPx)?.gt(0) ?? false;
-	const tpValid = !tpNeedsMark || (markReady && validateTpPrice(markPx, tpPriceInput, side));
-	const slValid = !slNeedsMark || (markReady && validateSlPrice(markPx, slPriceInput, side));
+	const changedOrders = [...updatePlan.modifies.map((modify) => modify.order), ...updatePlan.orders];
+	const normalizedTpTrigger = changedOrders.find((order) => "trigger" in order.t && order.t.trigger.tpsl === "tp")?.t;
+	const normalizedSlTrigger = changedOrders.find((order) => "trigger" in order.t && order.t.trigger.tpsl === "sl")?.t;
+	const tpValidationPrice =
+		normalizedTpTrigger && "trigger" in normalizedTpTrigger
+			? normalizedTpTrigger.trigger.triggerPx
+			: effectiveTpPriceInput;
+	const slValidationPrice =
+		normalizedSlTrigger && "trigger" in normalizedSlTrigger
+			? normalizedSlTrigger.trigger.triggerPx
+			: effectiveSlPriceInput;
+	const tpDisplayPrice = tpReturnDraft === null ? effectiveTpPriceInput : String(tpValidationPrice);
+	const slDisplayPrice = slReturnDraft === null ? effectiveSlPriceInput : String(slValidationPrice);
+	const markReady = markSnapshotReady && (toBig(markPx)?.gt(0) ?? false);
+	const tpValid = !tpNeedsMark || (markReady && validateTpPrice(markPx, tpValidationPrice, side));
+	const slMarkValid = !slNeedsMark || (markReady && validateSlPrice(markPx, slValidationPrice, side));
+	const slValid =
+		!slNeedsMark || (markReady && validatePositionSlPrice(markPx, position.liquidationPx, slValidationPrice, side));
 	const dataChanged = positionChanged || ordersChanged;
 	const canSubmit =
-		updatePlan.hasChanges && tpValid && slValid && !dataChanged && !requiresRefresh && liveDataReady && !isSubmitting;
+		updatePlan.hasChanges &&
+		updatePlan.errors.length === 0 &&
+		tpValid &&
+		slValid &&
+		partialSizeValid &&
+		tpPriceInputValid &&
+		slPriceInputValid &&
+		tpLimitValid &&
+		slLimitValid &&
+		!tpReturnDraftInvalid &&
+		!slReturnDraftInvalid &&
+		!configurationConflict &&
+		!dataChanged &&
+		!requiresRefresh &&
+		liveDataReady &&
+		!isSubmitting;
 
 	let tpError: string | null = null;
-	if (tpNeedsMark && markReady && !tpValid) {
+	if (tpReturnDraftInvalid || !tpPriceInputValid) {
+		tpError = t`Enter a valid TP/SL order configuration.`;
+	} else if (tpNeedsMark && markReady && !tpValid) {
 		tpError = isLong ? t`Take profit trigger must be above mark` : t`Take profit trigger must be below mark`;
 	}
 	let slError: string | null = null;
-	if (slNeedsMark && markReady && !slValid) {
-		slError = isLong ? t`Stop trigger must be below mark` : t`Stop trigger must be above mark`;
+	if (slReturnDraftInvalid || !slPriceInputValid) {
+		slError = t`Enter a valid TP/SL order configuration.`;
+	} else if (slNeedsMark && markReady && !slValid) {
+		if (!slMarkValid || !toBig(position.liquidationPx)?.gt(0)) {
+			slError = isLong ? t`Stop trigger must be below mark` : t`Stop trigger must be above mark`;
+		} else {
+			slError = isLong
+				? t`Stop trigger must be above liquidation price`
+				: t`Stop trigger must be below liquidation price`;
+		}
+	}
+	let sizeError: string | null = null;
+	if (configureAmount && !partialSizeValid) {
+		sizeError = t`Amount must be greater than zero and no more than the current position.`;
+	}
+	let tpLimitError: string | null = null;
+	if (isLimitExecution && hasTp && !tpLimitValid) {
+		tpLimitError = isLong
+			? t`Take profit limit must be at or below its trigger.`
+			: t`Take profit limit must be at or above its trigger.`;
+	}
+	let slLimitError: string | null = null;
+	if (isLimitExecution && hasSl && !slLimitValid) {
+		slLimitError = isLong
+			? t`Stop loss limit must be at or below its trigger.`
+			: t`Stop loss limit must be at or above its trigger.`;
+	}
+	const planError =
+		updatePlan.errors.length > 0 && !sizeError && !tpLimitError && !slLimitError
+			? t`Enter a valid TP/SL order configuration.`
+			: null;
+
+	function formatLinkedReturn(value: string | null, fractionDigits: number): string {
+		const parsed = toBig(value)?.abs();
+		return parsed?.gt(0) ? parsed.round(fractionDigits).toString() : "";
+	}
+
+	function getLinkedReturnValue(type: "tp" | "sl"): string {
+		const draft = type === "tp" ? tpReturnDraft : slReturnDraft;
+		if (draft !== null) return draft;
+		const targetPrice = type === "tp" ? effectiveTpPriceInput : effectiveSlPriceInput;
+		if (returnUnit === "roe") {
+			return formatLinkedReturn(calculateRoeMagnitudeFromPriceExact(entryPx, targetPrice, side, type, leverage), 1);
+		}
+		return formatLinkedReturn(
+			calculateEstimatedPnlExact({ referencePrice: entryPx, side, size: effectiveOrderSize }, targetPrice),
+			2,
+		);
+	}
+
+	function handlePriceChange(type: "tp" | "sl", value: string) {
+		if (type === "tp") {
+			setTpReturnDraft(null);
+			setTpPriceInput(value);
+		} else {
+			setSlReturnDraft(null);
+			setSlPriceInput(value);
+		}
+		setSubmitError(null);
+	}
+
+	function handleLinkedReturnChange(type: "tp" | "sl", value: string) {
+		if (!/^\d*\.?\d*$/.test(value)) return;
+		if (type === "tp") setTpReturnDraft(value);
+		else setSlReturnDraft(value);
+		setSubmitError(null);
+	}
+
+	function handleLinkedReturnBlur(type: "tp" | "sl") {
+		const draft = type === "tp" ? tpReturnDraft : slReturnDraft;
+		if (isLinkedReturnDraftInvalid(type, draft)) return;
+		const price = type === "tp" ? effectiveTpPriceInput : effectiveSlPriceInput;
+		if (type === "tp") {
+			setTpPriceInput(price);
+			setTpReturnDraft(null);
+		} else {
+			setSlPriceInput(price);
+			setSlReturnDraft(null);
+		}
+	}
+
+	function handleReturnUnitToggle() {
+		if (!tpReturnDraftInvalid) setTpPriceInput(effectiveTpPriceInput);
+		if (!slReturnDraftInvalid) setSlPriceInput(effectiveSlPriceInput);
+		setReturnUnit((current) => (current === "roe" ? "pnl" : "roe"));
+		setTpReturnDraft(null);
+		setSlReturnDraft(null);
+	}
+
+	function handleExecutionModeChange(checked: boolean | "indeterminate") {
+		const nextMode: PositionTpSlExecutionMode = checked === true ? "limit" : "market";
+		setExecutionMode(nextMode);
+		if (nextMode === "limit") {
+			if (!toBig(tpLimitPriceInput)?.gt(0) && hasTp) setTpLimitPriceInput(effectiveTpPriceInput);
+			if (!toBig(slLimitPriceInput)?.gt(0) && hasSl) setSlLimitPriceInput(effectiveSlPriceInput);
+		}
+		setSubmitError(null);
 	}
 
 	async function handleSubmit() {
-		if (!canSubmit) return;
+		if (!canSubmit || workflowSubmittingRef.current) return;
+		workflowSubmittingRef.current = true;
+		setIsWorkflowSubmitting(true);
 
 		setSubmitError(null);
 		let mutationStarted = false;
+		let shouldClose = false;
 		try {
 			const riskContext = { marketKind: "perp", marginMode: position.leverage.type } as const;
 			const changedOrders = [...updatePlan.modifies.map((modify) => modify.order), ...updatePlan.orders];
@@ -253,13 +865,27 @@ function PositionTpSlForm({
 			if (updatePlan.modifies.length > 0) {
 				mutationStarted = true;
 				const result = await modifyOrders({ a: true, modifies: updatePlan.modifies });
-				throwIfAnyResponseError(result.response?.data?.statuses);
+				const statuses = result.response?.data?.statuses;
+				throwIfAnyResponseError(statuses);
+				completedMutationRef.current = true;
+				if (
+					(updatePlan.orders.length > 0 || updatePlan.cancels.length > 0) &&
+					!recordCompletedOrders(
+						updatePlan.modifies.map((modify) => modify.order),
+						statuses,
+					)
+				) {
+					setSubmitError(t`Order submitted. Confirming exchange status; do not retry.`);
+					setRequiresRefresh(true);
+					return;
+				}
 			}
 			if (updatePlan.orders.length > 0) {
 				mutationStarted = true;
 				const submission = await submitOrder({ orders: updatePlan.orders, grouping: "positionTpsl" }, { riskContext });
 				if (submission.state === "blocked") {
 					setSubmitError(t`Another order for this market is still being confirmed.`);
+					if (completedMutationRef.current) setRequiresRefresh(true);
 					return;
 				}
 				if (submission.state === "reconciling") {
@@ -267,30 +893,47 @@ function PositionTpSlForm({
 					setRequiresRefresh(true);
 					return;
 				}
-				throwIfAnyResponseError(submission.result.response?.data?.statuses);
+				const statuses = submission.result.response?.data?.statuses;
+				throwIfAnyResponseError(statuses);
+				completedMutationRef.current = true;
+				if (updatePlan.cancels.length > 0 && !recordCompletedOrders(updatePlan.orders, statuses)) {
+					setSubmitError(t`Order submitted. Confirming exchange status; do not retry.`);
+					setRequiresRefresh(true);
+					return;
+				}
 			}
 			if (updatePlan.cancels.length > 0) {
 				mutationStarted = true;
 				const result = await cancelOrders({ cancels: updatePlan.cancels });
 				throwIfAnyResponseError(result.response?.data?.statuses);
+				completedMutationRef.current = true;
+				recordCompletedCancels(updatePlan.cancels);
 			}
-			toast.success(t`TP/SL orders updated`);
-			onOpenChange(false);
+			shouldClose = true;
 		} catch (err) {
 			const message = err instanceof Error ? err.message : t`Failed to update TP/SL orders`;
 			setSubmitError(message);
 			toast.error(message);
 			if (mutationStarted) setRequiresRefresh(true);
+		} finally {
+			workflowSubmittingRef.current = false;
+			setIsWorkflowSubmitting(false);
+		}
+		if (shouldClose) {
+			toast.success(t`TP/SL orders updated`);
+			onOpenChange(false);
 		}
 	}
 
 	function handleOpenChange(nextOpen: boolean) {
-		if (!nextOpen && isSubmitting) return;
+		if (!nextOpen && (isSubmitting || workflowSubmittingRef.current)) return;
 		onOpenChange(nextOpen);
 	}
 
 	let guardMessage: string | null = null;
-	if (requiresRefresh || dataChanged) {
+	if (configurationConflict) {
+		guardMessage = t`Existing TP/SL orders use an unsupported mixed or duplicate configuration. Cancel them individually before creating a new pair.`;
+	} else if (requiresRefresh || dataChanged) {
 		guardMessage = t`Trading data changed while this dialog was open. Close and reopen it before submitting.`;
 	} else if (liveDataMessage) {
 		guardMessage = liveDataMessage;
@@ -298,6 +941,11 @@ function PositionTpSlForm({
 		guardMessage = t`Loading...`;
 	}
 	const visibleError = submitError ?? placeError?.message ?? modifyError?.message ?? cancelError?.message;
+	const returnUnitLabel = returnUnit === "roe" ? "%" : quoteSymbol;
+	const unrealizedPnlDisplay =
+		quoteSymbol === DEFAULT_QUOTE_TOKEN
+			? formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })
+			: formatQuoteAmount(unrealizedPnl, quoteSymbol, { decimals: 2, signDisplay: "exceptZero" });
 
 	return (
 		<PositionRiskDialogShell
@@ -339,7 +987,7 @@ function PositionTpSlForm({
 						label={t`Unrealized P&L`}
 						value={
 							<>
-								{formatUSD(unrealizedPnl, { signDisplay: "exceptZero" })}
+								{unrealizedPnlDisplay}
 								<span className="font-normal text-fg-muted ml-1">({formatPercent(roe, 1)})</span>
 							</>
 						}
@@ -348,16 +996,17 @@ function PositionTpSlForm({
 				</div>
 			</ModalContent>
 
-			<div className="px-4 pb-4 max-[1000px]:pt-4">
+			<div className="min-h-0 overflow-y-auto px-4 pb-4 max-[1000px]:pt-4">
 				<TpSlSection
+					disabled={isSubmitting}
 					side={side}
 					referencePrice={entryPx}
-					size={size}
+					size={effectiveOrderSize}
 					szDecimals={positionRef.szDecimals}
-					tpPrice={tpPriceInput}
-					slPrice={slPriceInput}
-					onTpPriceChange={setTpPriceInput}
-					onSlPriceChange={setSlPriceInput}
+					tpPrice={tpDisplayPrice}
+					slPrice={slDisplayPrice}
+					onTpPriceChange={(value) => handlePriceChange("tp", value)}
+					onSlPriceChange={(value) => handlePriceChange("sl", value)}
 					tpError={tpError}
 					slError={slError}
 					quickPercentMode="roe"
@@ -365,7 +1014,148 @@ function PositionTpSlForm({
 					triggerValidationPrice={markPx}
 					mobileTouchSafe
 					preserveFinancialPrecision
+					quoteSymbol={quoteSymbol}
+					linkedReturnInputs={{
+						unitLabel: returnUnitLabel,
+						onUnitToggle: handleReturnUnitToggle,
+						tp: {
+							ariaLabel: t`Take profit return`,
+							placeholder: t`Profit`,
+							value: getLinkedReturnValue("tp"),
+							onChange: (value) => handleLinkedReturnChange("tp", value),
+							onBlur: () => handleLinkedReturnBlur("tp"),
+						},
+						sl: {
+							ariaLabel: t`Stop loss return`,
+							placeholder: t`Loss`,
+							value: getLinkedReturnValue("sl"),
+							onChange: (value) => handleLinkedReturnChange("sl", value),
+							onBlur: () => handleLinkedReturnBlur("sl"),
+						},
+					}}
 				/>
+
+				<div className="mt-4 space-y-3 border-t border-market-close-stroke-card pt-4">
+					<fieldset
+						aria-label={t`TP/SL size scope`}
+						className="hidden grid-cols-2 overflow-hidden rounded-[10px] border border-market-close-stroke-card min-[1001px]:grid"
+					>
+						<button
+							type="button"
+							aria-pressed={!configureAmount}
+							onClick={() => setConfigureAmount(false)}
+							disabled={isSubmitting}
+							className={cn(
+								"min-h-9 px-3 text-xs font-semibold transition-colors duration-150",
+								!configureAmount
+									? "bg-market-close-control text-market-close-on-control"
+									: "bg-modal text-market-close-muted hover:bg-market-close-hover",
+							)}
+						>
+							{t`Whole position`}
+						</button>
+						<button
+							type="button"
+							aria-pressed={configureAmount}
+							onClick={() => setConfigureAmount(true)}
+							disabled={isSubmitting}
+							className={cn(
+								"min-h-9 border-l border-market-close-stroke-card px-3 text-xs font-semibold transition-colors duration-150",
+								configureAmount
+									? "bg-market-close-control text-market-close-on-control"
+									: "bg-modal text-market-close-muted hover:bg-market-close-hover",
+							)}
+						>
+							{t`Partial amount`}
+						</button>
+					</fieldset>
+
+					<Checkbox
+						checked={configureAmount}
+						onCheckedChange={(checked) => setConfigureAmount(checked === true)}
+						disabled={isSubmitting}
+						label={t`Configure amount`}
+						className="items-center gap-2 min-[1001px]:hidden"
+						controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-control data-checked:border-market-close-control data-checked:bg-market-close-control"
+						indicatorClassName="text-market-close-on-control [&>svg]:size-3"
+						labelClassName="text-[13px] font-normal text-market-close-muted"
+					/>
+
+					{configureAmount ? (
+						<div>
+							<NumberInput
+								aria-label={t`Configured TP/SL amount`}
+								value={sizeInput}
+								onChange={(event) => {
+									setSizeInput(event.target.value);
+									setSubmitError(null);
+								}}
+								maxAllowedDecimals={positionRef.szDecimals}
+								min={0}
+								maxLabel={t`Max`}
+								onMaxClick={() => setSizeInput(toBig(size)?.toFixed(positionRef.szDecimals, 0) ?? "")}
+								suffix={positionRef.coin}
+								mobileSafe
+								className="h-11 rounded-[10px] border-market-close-stroke-input bg-modal text-right font-semibold tabular-nums"
+								disabled={isSubmitting}
+							/>
+							{sizeError ? <p className="mt-1 text-xs text-error">{sizeError}</p> : null}
+						</div>
+					) : null}
+
+					<Checkbox
+						checked={isLimitExecution}
+						onCheckedChange={handleExecutionModeChange}
+						disabled={isSubmitting}
+						label={t`Limit execution`}
+						className="items-center gap-2"
+						controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-control data-checked:border-market-close-control data-checked:bg-market-close-control"
+						indicatorClassName="text-market-close-on-control [&>svg]:size-3"
+						labelClassName="text-[13px] font-normal text-market-close-muted"
+					/>
+
+					{isLimitExecution ? (
+						<div className="grid grid-cols-2 gap-2">
+							<div>
+								<NumberInput
+									aria-label={t`Take profit limit price`}
+									placeholder={t`Take profit limit`}
+									value={tpLimitPriceInput}
+									onChange={(event) => {
+										setTpLimitPriceInput(event.target.value);
+										setSubmitError(null);
+									}}
+									min={0}
+									mobileSafe
+									className="h-11 rounded-[10px] border-market-close-stroke-input bg-modal font-semibold tabular-nums"
+									disabled={isSubmitting || !hasTp}
+								/>
+								{tpLimitError ? <p className="mt-1 text-xs text-error">{tpLimitError}</p> : null}
+							</div>
+							<div>
+								<NumberInput
+									aria-label={t`Stop loss limit price`}
+									placeholder={t`Stop loss limit`}
+									value={slLimitPriceInput}
+									onChange={(event) => {
+										setSlLimitPriceInput(event.target.value);
+										setSubmitError(null);
+									}}
+									min={0}
+									mobileSafe
+									className="h-11 rounded-[10px] border-market-close-stroke-input bg-modal font-semibold tabular-nums"
+									disabled={isSubmitting || !hasSl}
+								/>
+								{slLimitError ? <p className="mt-1 text-xs text-error">{slLimitError}</p> : null}
+							</div>
+						</div>
+					) : null}
+
+					{planError ? <p className="text-xs text-error">{planError}</p> : null}
+					<p className="text-[11px] leading-relaxed text-market-close-subtle">
+						{t`By default, TP/SL applies to the whole position and submits a market order when mark price reaches the trigger. Configure an amount to keep a fixed size, or select limit execution to submit at your limit price.`}
+					</p>
+				</div>
 
 				{guardMessage && (
 					<div className="mt-3 px-2 py-1.5 rounded-8 bg-warning-soft border border-stroke-warning-weak text-xs text-warning">
@@ -413,7 +1203,7 @@ function PositionTpSlForm({
 interface StatusProps {
 	open: boolean;
 	isMobile: boolean;
-	position: TpSlPositionRef;
+	position: TpSlPositionTarget;
 	message: string;
 	loading?: boolean;
 	onClose: (open: boolean) => void;

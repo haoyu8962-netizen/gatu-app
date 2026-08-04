@@ -11,21 +11,42 @@ export interface TpSlOrderInfo {
 	slPrice?: string;
 	tpOrderId?: number;
 	slOrderId?: number;
+	tpSize?: string;
+	slSize?: string;
+	tpIsMarket?: boolean;
+	slIsMarket?: boolean;
+	tpLimitPrice?: string;
+	slLimitPrice?: string;
+	tpSide?: OrderSide;
+	slSide?: OrderSide;
+	ambiguous?: boolean;
+	incompatible?: boolean;
 }
 
-function optionalPricesEqual(left: string | undefined, right: string | undefined): boolean {
+function optionalDecimalsEqual(left: string | undefined, right: string | undefined): boolean {
 	if (left === undefined || right === undefined) return left === right;
-	const leftPrice = toBig(left);
-	const rightPrice = toBig(right);
-	return leftPrice !== null && rightPrice !== null && leftPrice.eq(rightPrice);
+	const leftValue = toBig(left);
+	const rightValue = toBig(right);
+	if (!leftValue || !rightValue) return left === right;
+	return leftValue.eq(rightValue);
 }
 
 export function areTpSlOrderInfosEqual(left: TpSlOrderInfo | undefined, right: TpSlOrderInfo | undefined): boolean {
 	return (
 		left?.tpOrderId === right?.tpOrderId &&
 		left?.slOrderId === right?.slOrderId &&
-		optionalPricesEqual(left?.tpPrice, right?.tpPrice) &&
-		optionalPricesEqual(left?.slPrice, right?.slPrice)
+		optionalDecimalsEqual(left?.tpPrice, right?.tpPrice) &&
+		optionalDecimalsEqual(left?.slPrice, right?.slPrice) &&
+		optionalDecimalsEqual(left?.tpSize, right?.tpSize) &&
+		optionalDecimalsEqual(left?.slSize, right?.slSize) &&
+		left?.tpIsMarket === right?.tpIsMarket &&
+		left?.slIsMarket === right?.slIsMarket &&
+		optionalDecimalsEqual(left?.tpLimitPrice, right?.tpLimitPrice) &&
+		optionalDecimalsEqual(left?.slLimitPrice, right?.slLimitPrice) &&
+		left?.tpSide === right?.tpSide &&
+		left?.slSide === right?.slSide &&
+		(left?.ambiguous ?? false) === (right?.ambiguous ?? false) &&
+		(left?.incompatible ?? false) === (right?.incompatible ?? false)
 	);
 }
 
@@ -70,23 +91,88 @@ export function getOrderValue(order: OpenOrder): number | null {
 
 export function buildTpSlOrdersByCoin(orders: readonly OpenOrder[]): Map<string, TpSlOrderInfo> {
 	const map = new Map<string, TpSlOrderInfo>();
+	const sidesByCoin = new Map<string, Partial<Record<"tp" | "sl", OrderSide>>>();
 	for (const order of orders) {
-		if (!order.isTrigger || !isClosePositionOrder(order)) continue;
+		if (!order.isTrigger || !order.isPositionTpsl) continue;
 
-		const triggerPx = toBig(order.triggerPx);
-		if (!triggerPx?.gt(0)) continue;
-
-		const existing = map.get(order.coin) ?? {};
-		if (isTakeProfitOrder(order) && !existing.tpPrice) {
-			existing.tpPrice = triggerPx.toString();
-			existing.tpOrderId = order.oid;
-		} else if (isStopOrder(order) && !existing.slPrice) {
-			existing.slPrice = triggerPx.toString();
-			existing.slOrderId = order.oid;
+		const existing = map.get(order.coin) ?? { ambiguous: false, incompatible: false };
+		const sides = sidesByCoin.get(order.coin) ?? {};
+		if (isTakeProfitOrder(order)) {
+			assignTpSlLeg(existing, sides, "tp", order);
+		} else if (isStopOrder(order)) {
+			assignTpSlLeg(existing, sides, "sl", order);
+		} else {
+			existing.incompatible = true;
 		}
+		if (hasIncompatibleTpSlConfiguration(existing, sides)) existing.incompatible = true;
 		map.set(order.coin, existing);
+		sidesByCoin.set(order.coin, sides);
 	}
 	return map;
+}
+
+function assignTpSlLeg(
+	info: TpSlOrderInfo,
+	sides: Partial<Record<"tp" | "sl", OrderSide>>,
+	leg: "tp" | "sl",
+	order: OpenOrder,
+): void {
+	const priceKey = leg === "tp" ? "tpPrice" : "slPrice";
+	const orderIdKey = leg === "tp" ? "tpOrderId" : "slOrderId";
+	const sizeKey = leg === "tp" ? "tpSize" : "slSize";
+	const isMarketKey = leg === "tp" ? "tpIsMarket" : "slIsMarket";
+	const limitPriceKey = leg === "tp" ? "tpLimitPrice" : "slLimitPrice";
+	const sideKey = leg === "tp" ? "tpSide" : "slSide";
+	const isMarket = isMarketTriggerOrder(order);
+	const triggerPx = normalizeDecimal(order.triggerPx);
+	const size = normalizeDecimal(order.sz);
+	const limitPx = normalizeDecimal(order.limitPx);
+
+	if (info[orderIdKey] !== undefined) {
+		info.ambiguous = true;
+		if (
+			!optionalDecimalsEqual(info[priceKey], triggerPx) ||
+			!optionalDecimalsEqual(info[sizeKey], size) ||
+			info[isMarketKey] !== isMarket ||
+			!optionalDecimalsEqual(info[limitPriceKey], limitPx) ||
+			sides[leg] !== order.side
+		) {
+			info.incompatible = true;
+		}
+		return;
+	}
+
+	info[priceKey] = triggerPx;
+	info[orderIdKey] = order.oid;
+	info[sizeKey] = size;
+	info[isMarketKey] = isMarket;
+	info[limitPriceKey] = limitPx;
+	info[sideKey] = order.side;
+	sides[leg] = order.side;
+	if (!isValidPositionTpSlLeg(order)) info.incompatible = true;
+}
+
+function normalizeDecimal(value: string): string {
+	return toBig(value)?.toString() ?? value;
+}
+
+function isValidPositionTpSlLeg(order: OpenOrder): boolean {
+	const triggerPrice = toBig(order.triggerPx);
+	const size = toBig(order.sz);
+	const limitPrice = toBig(order.limitPx);
+	if (!triggerPrice?.gt(0) || !size || size.lt(0) || !limitPrice?.gt(0) || !order.reduceOnly) return false;
+	if (isMarketTriggerOrder(order)) return true;
+	return order.side === "B" ? limitPrice.gte(triggerPrice) : limitPrice.lte(triggerPrice);
+}
+
+function hasIncompatibleTpSlConfiguration(
+	info: TpSlOrderInfo,
+	sides: Partial<Record<"tp" | "sl", OrderSide>>,
+): boolean {
+	if (info.tpOrderId === undefined || info.slOrderId === undefined) return false;
+	return (
+		!optionalDecimalsEqual(info.tpSize, info.slSize) || info.tpIsMarket !== info.slIsMarket || sides.tp !== sides.sl
+	);
 }
 
 export interface OrderTypeConfig {

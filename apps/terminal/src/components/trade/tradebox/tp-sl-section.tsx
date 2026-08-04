@@ -1,10 +1,11 @@
 import { t } from "@lingui/core/macro";
 import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { NumberInput } from "@/components/ui/number-input";
+import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SL_QUICK_PERCENT_OPTIONS, TP_QUICK_PERCENT_OPTIONS } from "@/config/trade";
 import { getRiskRewardRatio } from "@/domain/market";
 import { cn } from "@/lib/cn";
-import { formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
+import { formatQuoteAmount, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { isPositive, toBig, toNumber } from "@/lib/trade/numbers";
 import {
 	calculateEstimatedPnl,
@@ -38,6 +39,25 @@ interface Props {
 	triggerValidationPrice?: string | number | null;
 	mobileTouchSafe?: boolean;
 	preserveFinancialPrecision?: boolean;
+	quoteSymbol?: string;
+	linkedReturnInputs?: {
+		unitLabel: string;
+		onUnitToggle: () => void;
+		tp: {
+			ariaLabel: string;
+			placeholder: string;
+			value: string;
+			onBlur?: () => void;
+			onChange: (value: string) => void;
+		};
+		sl: {
+			ariaLabel: string;
+			placeholder: string;
+			value: string;
+			onBlur?: () => void;
+			onChange: (value: string) => void;
+		};
+	};
 }
 
 export function TpSlSection({
@@ -58,7 +78,15 @@ export function TpSlSection({
 	triggerValidationPrice,
 	mobileTouchSafe = false,
 	preserveFinancialPrecision = false,
+	quoteSymbol = DEFAULT_QUOTE_TOKEN,
+	linkedReturnInputs,
 }: Props) {
+	function formatPnlValue(value: string | number): string {
+		return quoteSymbol === DEFAULT_QUOTE_TOKEN
+			? formatUSD(value, { signDisplay: "exceptZero" })
+			: formatQuoteAmount(value, quoteSymbol, { decimals: 2, signDisplay: "exceptZero" });
+	}
+
 	const tpPriceNum = toNumber(tpPrice);
 	const slPriceNum = toNumber(slPrice);
 	const exactReferenceReady = toBig(referencePrice)?.gt(0) ?? false;
@@ -187,6 +215,16 @@ export function TpSlSection({
 				isPercentDisabled={isTpPercentDisabled}
 				referencePrice={referencePrice}
 				mobileTouchSafe={mobileTouchSafe}
+				formatPnlValue={formatPnlValue}
+				linkedReturnInput={
+					linkedReturnInputs
+						? {
+								...linkedReturnInputs.tp,
+								unitLabel: linkedReturnInputs.unitLabel,
+								onUnitToggle: linkedReturnInputs.onUnitToggle,
+							}
+						: undefined
+				}
 			/>
 
 			<PriceInputWithPercent
@@ -203,6 +241,16 @@ export function TpSlSection({
 				isPercentDisabled={isSlPercentDisabled}
 				referencePrice={referencePrice}
 				mobileTouchSafe={mobileTouchSafe}
+				formatPnlValue={formatPnlValue}
+				linkedReturnInput={
+					linkedReturnInputs
+						? {
+								...linkedReturnInputs.sl,
+								unitLabel: linkedReturnInputs.unitLabel,
+								onUnitToggle: linkedReturnInputs.onUnitToggle,
+							}
+						: undefined
+				}
 			/>
 
 			{riskRewardDisplay && (
@@ -233,11 +281,9 @@ export function TpSlSection({
 						/>
 					</div>
 					<div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-						<span className="whitespace-nowrap tabular-nums text-error">
-							{formatUSD(riskRewardDisplay.slPnl, { signDisplay: "exceptZero" })}
-						</span>
+						<span className="whitespace-nowrap tabular-nums text-error">{formatPnlValue(riskRewardDisplay.slPnl)}</span>
 						<span className="whitespace-nowrap tabular-nums text-success">
-							{formatUSD(riskRewardDisplay.tpPnl, { signDisplay: "exceptZero" })}
+							{formatPnlValue(riskRewardDisplay.tpPnl)}
 						</span>
 					</div>
 				</div>

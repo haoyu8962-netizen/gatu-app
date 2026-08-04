@@ -7,10 +7,102 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+	address: "0x1111111111111111111111111111111111111111",
 	downloadCsv: vi.fn(),
+	fills: [] as Array<Record<string, unknown>>,
+	fundings: [] as Array<Record<string, unknown>>,
 	navigateToMarket: vi.fn(),
+	orders: [] as Array<Record<string, unknown>>,
 	setActiveTab: vi.fn(),
 }));
+
+const OWNER_A = "0x1111111111111111111111111111111111111111";
+const OWNER_B = "0x2222222222222222222222222222222222222222";
+
+function createFills() {
+	return [
+		{
+			coin: "BTC",
+			closedPnl: "12.5",
+			crossed: false,
+			dir: "Open Long",
+			fee: "0.12",
+			feeToken: "USDC",
+			hash: "0xaaa",
+			liquidation: null,
+			oid: 101,
+			px: "100000",
+			side: "B",
+			startPosition: "0",
+			sz: "0.01",
+			tid: 1,
+			time: 1_754_350_400_000,
+			twapId: null,
+		},
+		{
+			coin: "ETH",
+			closedPnl: "0",
+			crossed: true,
+			dir: "Close Long",
+			fee: "0.08",
+			feeToken: "USDC",
+			hash: "0xbbb",
+			liquidation: null,
+			oid: 102,
+			px: "3500",
+			side: "A",
+			startPosition: "0.1",
+			sz: "0.1",
+			tid: 2,
+			time: 1_754_350_500_000,
+			twapId: 42,
+		},
+	];
+}
+
+function createOrders() {
+	return [
+		{
+			status: "filled",
+			statusTimestamp: 1_754_350_600_000,
+			order: {
+				coin: "BTC",
+				isTrigger: false,
+				limitPx: "100000",
+				oid: 11,
+				orderType: "Limit",
+				origSz: "0.02",
+				reduceOnly: false,
+				side: "B",
+				timestamp: 1_754_350_400_000,
+				triggerPx: "0",
+			},
+		},
+		{
+			status: "canceled",
+			statusTimestamp: 1_754_350_700_000,
+			order: {
+				coin: "ETH",
+				isTrigger: true,
+				limitPx: "0",
+				oid: 12,
+				orderType: "Stop Market",
+				origSz: "0.2",
+				reduceOnly: true,
+				side: "A",
+				timestamp: 1_754_350_500_000,
+				triggerPx: "3400",
+			},
+		},
+	];
+}
+
+function createFundings() {
+	return [
+		{ coin: "BTC", fundingRate: "0.0001", szi: "0.01", time: 1_754_350_400_000, usdc: "1.25" },
+		{ coin: "ETH", fundingRate: "-0.0002", szi: "-0.2", time: 1_754_350_500_000, usdc: "-0.75" },
+	];
+}
 
 vi.mock("boneyard-js/react", () => ({
 	Skeleton: ({ children }: { children: ReactNode }) => children,
@@ -21,34 +113,7 @@ vi.mock("@/hooks/trade/use-user-fills", () => ({
 		error: null,
 		isConnected: true,
 		status: "ready",
-		fills: [
-			{
-				coin: "BTC",
-				closedPnl: "12.5",
-				dir: "Open Long",
-				fee: "0.12",
-				feeToken: "USDC",
-				hash: "0xaaa",
-				liquidation: null,
-				px: "100000",
-				sz: "0.01",
-				tid: 1,
-				time: 1_754_350_400_000,
-			},
-			{
-				coin: "ETH",
-				closedPnl: "0",
-				dir: "Close Long",
-				fee: "0.08",
-				feeToken: "USDC",
-				hash: "0xbbb",
-				liquidation: null,
-				px: "3500",
-				sz: "0.1",
-				tid: 2,
-				time: 1_754_350_500_000,
-			},
-		],
+		fills: mocks.fills,
 	}),
 }));
 
@@ -57,34 +122,7 @@ vi.mock("@/hooks/trade/use-historical-orders", () => ({
 		error: null,
 		isConnected: true,
 		status: "ready",
-		orders: [
-			{
-				status: "filled",
-				statusTimestamp: 1_754_350_600_000,
-				order: {
-					coin: "BTC",
-					oid: 11,
-					orderType: "Limit",
-					origSz: "0.02",
-					reduceOnly: false,
-					side: "B",
-					timestamp: 1_754_350_400_000,
-				},
-			},
-			{
-				status: "canceled",
-				statusTimestamp: 1_754_350_700_000,
-				order: {
-					coin: "ETH",
-					oid: 12,
-					orderType: "Stop Market",
-					origSz: "0.2",
-					reduceOnly: true,
-					side: "A",
-					timestamp: 1_754_350_500_000,
-				},
-			},
-		],
+		orders: mocks.orders,
 	}),
 }));
 
@@ -108,7 +146,7 @@ vi.mock("@/lib/csv", async (importOriginal) => ({
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
-		address: "0x1111111111111111111111111111111111111111",
+		address: mocks.address,
 		isConnected: true,
 	}),
 }));
@@ -121,10 +159,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 	useSubscription: () => ({
 		data: {
-			fundings: [
-				{ coin: "BTC", fundingRate: "0.0001", szi: "0.01", time: 1_754_350_400_000, usdc: "1.25" },
-				{ coin: "ETH", fundingRate: "-0.0002", szi: "-0.2", time: 1_754_350_500_000, usdc: "-0.75" },
-			],
+			fundings: mocks.fundings,
 		},
 		status: "active",
 		error: null,
@@ -153,6 +188,10 @@ describe("mobile history disclosure cards", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.address = OWNER_A;
+		mocks.fills = createFills();
+		mocks.fundings = createFundings();
+		mocks.orders = createOrders();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -182,6 +221,28 @@ describe("mobile history disclosure cards", () => {
 		act(() => button?.click());
 	}
 
+	async function selectOption(fieldLabel: string, optionLabel: string) {
+		const label = Array.from(container.querySelectorAll("label")).find(
+			(candidate) => candidate.textContent === fieldLabel,
+		);
+		const trigger = label?.parentElement?.querySelector<HTMLButtonElement>('[role="combobox"]');
+		expect(trigger).toBeDefined();
+		await act(async () => {
+			trigger?.click();
+			await Promise.resolve();
+		});
+		const option = Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]')).find((candidate) =>
+			candidate.textContent?.includes(optionLabel),
+		);
+		expect(option).toBeDefined();
+		await act(async () => {
+			option?.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+			await Promise.resolve();
+			option?.click();
+			await Promise.resolve();
+		});
+	}
+
 	function expectDisclosureControls() {
 		let disclosureButtons = getDisclosureButtons();
 		expect(disclosureButtons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
@@ -204,6 +265,9 @@ describe("mobile history disclosure cards", () => {
 		);
 		expect(collapseButtons).toHaveLength(2);
 		expect(collapseButtons.every((button) => button.className.includes("size-11"))).toBe(true);
+		expect(collapseButtons.every((button) => button.querySelector("path")?.getAttribute("stroke-width") === "2")).toBe(
+			true,
+		);
 
 		for (const label of ["Expand all", "Collapse all"]) {
 			const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
@@ -217,6 +281,14 @@ describe("mobile history disclosure cards", () => {
 		render(<MobileHistoryTab scrollMode="page" />);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(Array.from(container.querySelectorAll("label"), (label) => label.textContent)).toEqual([
+			"Type",
+			"Direction",
+			"Role",
+		]);
+		expect(container.textContent).toContain("All types");
+		expect(container.textContent).toContain("All Directions");
+		expect(container.textContent).toContain("All roles");
 		expect(container.textContent).toContain("Realized PNL");
 		expect(container.textContent).toContain("Fee");
 		const explorer = container.querySelector<HTMLAnchorElement>('a[href="https://explorer.test/0xaaa"]');
@@ -240,6 +312,8 @@ describe("mobile history disclosure cards", () => {
 		render(<MobileFundingTab scrollMode="page" />);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(Array.from(container.querySelectorAll("label"), (label) => label.textContent)).toEqual(["Direction"]);
+		expect(container.textContent).toContain("All Directions");
 		expect(container.textContent).toContain("Position");
 		expect(container.textContent).toContain("Payment");
 		expect(container.textContent).toContain("Rate");
@@ -262,9 +336,11 @@ describe("mobile history disclosure cards", () => {
 		expect(container.textContent).toContain("Filled");
 		expect(container.textContent).toContain("Updated");
 		expect(container.textContent).toContain("All types");
+		expect(container.textContent).toContain("All Directions");
 		expect(container.textContent).toContain("All statuses");
 		expect(Array.from(container.querySelectorAll("label"), (label) => label.textContent)).toEqual([
 			"Order type",
+			"Direction",
 			"Order status",
 		]);
 		expectDisclosureControls();
@@ -275,5 +351,103 @@ describe("mobile history disclosure cards", () => {
 			"order_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Type", "Status"])]),
 		);
+	});
+
+	it("filters trade history by SDK-backed type, side, and maker/taker role without carrying state to another owner", async () => {
+		render(<MobileHistoryTab scrollMode="page" />);
+
+		await selectOption("Type", "TWAP");
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
+		await selectOption("Type", "All types");
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+
+		await selectOption("Direction", "Sell");
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
+		await selectOption("Direction", "All Directions");
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+
+		await selectOption("Role", "Taker");
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
+		clickButton("Export CSV");
+		const exportRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		expect(exportRows).toHaveLength(2);
+		expect(exportRows?.flat()).toContain("ETH");
+		expect(exportRows?.flat()).not.toContain("BTC");
+
+		clickButton("Collapse all");
+		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("false");
+		mocks.address = OWNER_B;
+		render(<MobileHistoryTab scrollMode="page" />);
+
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(Array.from(container.querySelectorAll('[role="combobox"]'), (trigger) => trigger.textContent)).toEqual([
+			"All types",
+			"All Directions",
+			"All roles",
+		]);
+		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
+	});
+
+	it("filters funding by the Big.js sign of szi without carrying state to another owner", async () => {
+		render(<MobileFundingTab scrollMode="page" />);
+
+		await selectOption("Direction", "Short");
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
+		clickButton("Export CSV");
+		const exportRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		expect(exportRows).toHaveLength(2);
+		expect(exportRows?.flat()).toContain("ETH");
+		expect(exportRows?.flat()).not.toContain("BTC");
+
+		clickButton("Collapse all");
+		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("false");
+		mocks.address = OWNER_B;
+		render(<MobileFundingTab scrollMode="page" />);
+
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(container.querySelector('[role="combobox"]')?.textContent).toBe("All Directions");
+		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
+	});
+
+	it("filters order history by SDK order type, side, and normalized status without carrying state to another owner", async () => {
+		render(<MobileOrdersHistoryTab scrollMode="page" />);
+
+		await selectOption("Order type", "Stop Market");
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to ETH market, Close Long order"]')).not.toBeNull();
+		await selectOption("Order type", "All types");
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+
+		await selectOption("Direction", "Sell");
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to ETH market, Close Long order"]')).not.toBeNull();
+		await selectOption("Direction", "All Directions");
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+
+		await selectOption("Order status", "Canceled");
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.querySelector('[aria-label="Switch to ETH market, Close Long order"]')).not.toBeNull();
+		clickButton("Export CSV");
+		const exportRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		expect(exportRows).toHaveLength(2);
+		expect(exportRows?.flat()).toContain("ETH");
+		expect(exportRows?.flat()).not.toContain("BTC");
+
+		clickButton("Collapse all");
+		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("false");
+		mocks.address = OWNER_B;
+		render(<MobileOrdersHistoryTab scrollMode="page" />);
+
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(Array.from(container.querySelectorAll('[role="combobox"]'), (trigger) => trigger.textContent)).toEqual([
+			"All types",
+			"All Directions",
+			"All statuses",
+		]);
+		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
 	});
 });

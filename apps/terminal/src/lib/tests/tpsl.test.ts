@@ -3,10 +3,13 @@ import {
 	calculateEstimatedPnl,
 	calculateEstimatedPnlExact,
 	calculateRiskRewardRatioExact,
+	calculateRoeMagnitudeFromPriceExact,
 	calculateSlPrice,
 	calculateSlPriceFromRoe,
+	calculateTargetPriceFromPnl,
 	calculateTpPrice,
 	calculateTpPriceFromRoe,
+	validatePositionSlPrice,
 } from "@/lib/trade/tpsl";
 
 describe("position TP/SL ROE pricing", () => {
@@ -45,5 +48,34 @@ describe("position TP/SL ROE pricing", () => {
 
 		expect(pnl).toBe("0.123456789012345678");
 		expect(calculateRiskRewardRatioExact(pnl, "-0.041152263004115226")).toBe("3");
+	});
+
+	it("keeps a position stop strictly between mark and liquidation when liquidation is known", () => {
+		expect(validatePositionSlPrice("100", "80", "90", "buy")).toBe(true);
+		expect(validatePositionSlPrice("100", "80", "80", "buy")).toBe(false);
+		expect(validatePositionSlPrice("100", "80", "79.999999999999999", "buy")).toBe(false);
+
+		expect(validatePositionSlPrice("100", "120", "110", "sell")).toBe(true);
+		expect(validatePositionSlPrice("100", "120", "120", "sell")).toBe(false);
+		expect(validatePositionSlPrice("100", "120", "120.000000000000001", "sell")).toBe(false);
+	});
+
+	it("still enforces the mark-side rule when liquidation is unavailable", () => {
+		expect(validatePositionSlPrice("100", null, "90", "buy")).toBe(true);
+		expect(validatePositionSlPrice("100", null, "110", "buy")).toBe(false);
+		expect(validatePositionSlPrice("100", undefined, "110", "sell")).toBe(true);
+		expect(validatePositionSlPrice("100", undefined, "90", "sell")).toBe(false);
+	});
+
+	it("converts editable PnL and ROE magnitudes without floating-point arithmetic", () => {
+		expect(calculateTargetPriceFromPnl("100", "buy", "2", "10", "tp", 3)).toBe("105.000");
+		expect(calculateTargetPriceFromPnl("100", "buy", "2", "10", "sl", 3)).toBe("95.000");
+		expect(calculateTargetPriceFromPnl("100", "sell", "2", "10", "tp", 3)).toBe("95.000");
+		expect(calculateTargetPriceFromPnl("100", "sell", "2", "10", "sl", 3)).toBe("105.000");
+
+		expect(calculateRoeMagnitudeFromPriceExact("100", "105", "buy", "tp", "5")).toBe("25");
+		expect(calculateRoeMagnitudeFromPriceExact("100", "95", "buy", "sl", "5")).toBe("25");
+		expect(calculateRoeMagnitudeFromPriceExact("100", "95", "sell", "tp", "5")).toBe("25");
+		expect(calculateRoeMagnitudeFromPriceExact("100", "105", "sell", "sl", "5")).toBe("25");
 	});
 });

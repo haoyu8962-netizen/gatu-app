@@ -32,11 +32,13 @@ import { Placeholder } from "./placeholder";
 import { PositionCloseAllController } from "./position-close-all-modal";
 import type {
 	IsolatedMarginPositionRef,
+	IsolatedMarginPositionTarget,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
 	PositionPnlShareData,
 	PositionReverseRef,
 	TpSlPositionRef,
+	TpSlPositionTarget,
 } from "./position-dialog-types";
 import { PositionIsolatedMarginModal } from "./position-isolated-margin-modal";
 import { PositionLimitCloseModal } from "./position-limit-close-modal";
@@ -78,7 +80,7 @@ interface OwnedPositionPnlShare {
 export function PositionsTab({ directionFilter, marketFilter, currentMarket, accountSummary }: Props) {
 	const closeAllUnavailableId = useId();
 	const { address, isConnected } = useWalletSession();
-	const { env } = useHyperliquid();
+	const { clientKey, env } = useHyperliquid();
 	const navigateToMarket = useMarketNavigation();
 	const { setSide } = useOrderEntryActions();
 	const positionMarketClose = usePositionMarketCloseAction();
@@ -88,12 +90,12 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 		setSide(side);
 	}
 	const [tpSlModalOpen, setTpSlModalOpen] = useState(false);
-	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionRef | null>(null);
+	const [selectedTpSlPosition, setSelectedTpSlPosition] = useState<TpSlPositionTarget | null>(null);
 	const [limitCloseModalOpen, setLimitCloseModalOpen] = useState(false);
 	const [selectedLimitClosePosition, setSelectedLimitClosePosition] = useState<LimitClosePositionData | null>(null);
 	const [isolatedMarginModalOpen, setIsolatedMarginModalOpen] = useState(false);
 	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
-		useState<IsolatedMarginPositionRef | null>(null);
+		useState<IsolatedMarginPositionTarget | null>(null);
 	const [selectedReverseTarget, setSelectedReverseTarget] = useState<PositionReverseTarget | null>(null);
 	const [closeAllSnapshot, setCloseAllSnapshot] = useState<PositionCloseAllSnapshot | null>(null);
 	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
@@ -180,12 +182,14 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 	}
 
 	function handleOpenTpSlModal(data: TpSlPositionRef) {
-		setSelectedTpSlPosition(data);
+		if (!address || clientKey === "disconnected" || address.toLowerCase() !== clientKey.toLowerCase()) return;
+		setSelectedTpSlPosition({ ...data, owner: clientKey.toLowerCase(), env });
 		setTpSlModalOpen(true);
 	}
 
 	function handleOpenIsolatedMarginModal(data: IsolatedMarginPositionRef) {
-		setSelectedIsolatedMarginPosition(data);
+		if (!address || clientKey === "disconnected" || address.toLowerCase() !== clientKey.toLowerCase()) return;
+		setSelectedIsolatedMarginPosition({ ...data, owner: clientKey.toLowerCase(), env });
 		setIsolatedMarginModalOpen(true);
 	}
 

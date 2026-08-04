@@ -41,6 +41,7 @@ describe("MobileDisclosureHeader", () => {
 		expect(trigger?.getAttribute("aria-label")).toBe("Expand market details");
 		expect(trigger?.getAttribute("aria-expanded")).toBe("false");
 		expect(trigger?.parentElement?.className).toContain("min-h-11");
+		expect(container.querySelector("path")?.getAttribute("stroke-width")).toBe("2");
 
 		act(() => trigger?.click());
 

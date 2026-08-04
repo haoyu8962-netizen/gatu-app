@@ -1,4 +1,6 @@
+import { Select } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
+import type { UserFillsResponse } from "@nktkas/hyperliquid";
 import { ArrowSquareOutIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
@@ -6,6 +8,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows, downloadCsv } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
@@ -22,7 +25,37 @@ interface Props {
 	scrollMode?: MobileDataScrollMode;
 }
 
-export function MobileHistoryTab({ className, scrollMode = "contained" }: Props) {
+type TradeHistoryTypeFilter = "all" | "trade" | "twap" | "liquidation";
+type TradeHistoryDirectionFilter = "all" | "buy" | "sell";
+type TradeHistoryRoleFilter = "all" | "maker" | "taker";
+type UserFill = UserFillsResponse[number];
+
+function getTradeHistoryType(fill: UserFill): Exclude<TradeHistoryTypeFilter, "all"> {
+	if (fill.liquidation) return "liquidation";
+	if (typeof fill.twapId === "number") return "twap";
+	return "trade";
+}
+
+function isTradeHistoryTypeFilter(value: string | null): value is TradeHistoryTypeFilter {
+	return value === "all" || value === "trade" || value === "twap" || value === "liquidation";
+}
+
+function isTradeHistoryDirectionFilter(value: string | null): value is TradeHistoryDirectionFilter {
+	return value === "all" || value === "buy" || value === "sell";
+}
+
+function isTradeHistoryRoleFilter(value: string | null): value is TradeHistoryRoleFilter {
+	return value === "all" || value === "maker" || value === "taker";
+}
+
+export function MobileHistoryTab(props: Props) {
+	const { address, isConnected } = useWalletSession();
+	const ownerKey = isConnected && address ? address.toLowerCase() : "disconnected";
+
+	return <MobileHistoryTabContent key={ownerKey} {...props} />;
+}
+
+function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props) {
 	const { t } = useLingui();
 	const { error, fills, isConnected, status } = useUserFills();
 	const navigateToMarket = useMarketNavigation();
@@ -30,9 +63,33 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 	const markets = useMarkets();
 	const isTestnet = useIsTestnet();
 	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
+	const [typeFilter, setTypeFilter] = useState<TradeHistoryTypeFilter>("all");
+	const [directionFilter, setDirectionFilter] = useState<TradeHistoryDirectionFilter>("all");
+	const [roleFilter, setRoleFilter] = useState<TradeHistoryRoleFilter>("all");
+
+	const filteredFills = fills.filter(
+		(fill) =>
+			(typeFilter === "all" || getTradeHistoryType(fill) === typeFilter) &&
+			(directionFilter === "all" || (directionFilter === "buy") === (fill.side === "B")) &&
+			(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
+	);
+	const typeOptions = [
+		{ value: "all", label: t`All types` },
+		...(["trade", "twap", "liquidation"] as const).map((value) => ({ value, label: getTypeFilterLabel(value) })),
+	];
+	const directionOptions = [
+		{ value: "all", label: t`All Directions` },
+		{ value: "buy", label: t`Buy` },
+		{ value: "sell", label: t`Sell` },
+	];
+	const roleOptions = [
+		{ value: "all", label: t`All roles` },
+		{ value: "maker", label: t`Maker` },
+		{ value: "taker", label: t`Taker` },
+	];
 
 	const headerCount = isConnected ? (
-		<Plural value={fills.length} one="# trade" other="# trades" />
+		<Plural value={filteredFills.length} one="# trade" other="# trades" />
 	) : (
 		FALLBACK_VALUE_PLACEHOLDER
 	);
@@ -44,7 +101,13 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 	}
 
 	function handleSetAllExpanded(expanded: boolean) {
-		setExpandedByKey(Object.fromEntries(fills.map((fill) => [`${fill.hash}-${fill.tid}`, expanded])));
+		setExpandedByKey(Object.fromEntries(filteredFills.map((fill) => [`${fill.hash}-${fill.tid}`, expanded])));
+	}
+
+	function getTypeFilterLabel(filter: Exclude<TradeHistoryTypeFilter, "all">) {
+		if (filter === "twap") return t`TWAP`;
+		if (filter === "liquidation") return t`Liquidated`;
+		return t`Trade`;
 	}
 
 	function getDirectionLabel(direction: string) {
@@ -58,7 +121,7 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 	function handleExportCsv() {
 		downloadCsv(
 			"trade_history.csv",
-			buildCsvRows(fills, [
+			buildCsvRows(filteredFills, [
 				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
 				{ header: t`Asset`, getValue: (fill) => fill.coin },
 				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
@@ -105,11 +168,44 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 	return (
 		<Skeleton name="history-tab" loading={status === "loading" || status === "idle"}>
 			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-				<div className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-market-close-stroke-card px-3.5">
-					<span className="min-w-0 flex-1 truncate text-[11px] text-market-close-muted tabular-nums">
+				<div className="flex min-h-11 shrink-0 items-center gap-2 overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					<span className="sr-only" aria-live="polite">
 						{headerCount}
 					</span>
-					<div className="flex shrink-0 items-center gap-3">
+					<Select
+						size="xxs"
+						label={t`Type`}
+						value={typeFilter}
+						onValueChange={(value) => {
+							if (isTradeHistoryTypeFilter(value)) setTypeFilter(value);
+						}}
+						options={typeOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName="min-h-11 rounded-[7px] border-market-close-stroke-card bg-modal"
+					/>
+					<Select
+						size="xxs"
+						label={t`Direction`}
+						value={directionFilter}
+						onValueChange={(value) => {
+							if (isTradeHistoryDirectionFilter(value)) setDirectionFilter(value);
+						}}
+						options={directionOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName="min-h-11 rounded-[7px] border-market-close-stroke-card bg-modal"
+					/>
+					<Select
+						size="xxs"
+						label={t`Role`}
+						value={roleFilter}
+						onValueChange={(value) => {
+							if (isTradeHistoryRoleFilter(value)) setRoleFilter(value);
+						}}
+						options={roleOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName="min-h-11 rounded-[7px] border-market-close-stroke-card bg-modal"
+					/>
+					<div className="ml-auto flex shrink-0 items-center gap-2">
 						<button
 							type="button"
 							onClick={() => handleSetAllExpanded(true)}
@@ -132,7 +228,12 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 						!isPageScroll && "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
 					)}
 				>
-					{fills.map((fill, index) => {
+					{filteredFills.length === 0 ? (
+						<div className="flex min-h-28 items-center justify-center text-center text-sm text-market-close-muted">
+							{t`No fills match these filters.`}
+						</div>
+					) : null}
+					{filteredFills.map((fill, index) => {
 						const marketName = fill.coin;
 						const cardKey = `${fill.hash}-${fill.tid}`;
 						const detailsId = `mobile-trade-history-${fill.hash}-${fill.tid}`;
@@ -140,7 +241,7 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 						const closedPnl = toNumber(fill.closedPnl);
 						const showPnl = closedPnl !== null && closedPnl !== 0;
 						const isLiquidation = !!fill.liquidation;
-						const isBuy = fill.dir.startsWith("Open Long") || fill.dir.startsWith("Close Short");
+						const isBuy = fill.side === "B";
 						const directionLabel = getDirectionLabel(fill.dir);
 						const explorerUrl = getExplorerTxUrl(fill.hash, isTestnet);
 						const sizeDisplay = formatNumber(fill.sz, markets.getSzDecimals(fill.coin));
@@ -261,7 +362,7 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 													<path
 														d="M3.5 10 8 5.5l4.5 4.5"
 														stroke="currentColor"
-														strokeWidth="1.5"
+														strokeWidth="2"
 														strokeLinecap="round"
 														strokeLinejoin="round"
 													/>
@@ -276,8 +377,9 @@ export function MobileHistoryTab({ className, scrollMode = "contained" }: Props)
 					<div className="flex shrink-0 items-center gap-4" data-testid="mobile-trade-history-footer">
 						<button
 							type="button"
+							disabled={filteredFills.length === 0}
 							onClick={handleExportCsv}
-							className="inline-flex min-h-11 items-center gap-1.5 text-xs text-market-close-muted transition-colors duration-[120ms] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+							className="inline-flex min-h-11 items-center gap-1.5 text-xs text-market-close-muted transition-colors duration-[120ms] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle"
 						>
 							<DownloadSimpleIcon className="size-3.5" aria-hidden="true" />
 							{t`Export CSV`}

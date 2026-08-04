@@ -295,6 +295,107 @@ describe("position TP/SL order planning", () => {
 		});
 	});
 
+	it("rejects a market-trigger protection price that rounds below the minimum tick", () => {
+		const plan = buildOrderPlan(positionTpSl({ szDecimals: 3, tpPriceNum: "0.0005", slPriceNum: null }));
+
+		expect(plan.orders).toEqual([]);
+		expect(plan.errors).toContain("Order price is below market precision");
+	});
+
+	it("uses one precision-floored partial size for both market-trigger legs", () => {
+		const plan = buildOrderPlan(positionTpSl({ sizeNum: "1.239" }));
+
+		expect(plan.errors).toEqual([]);
+		expect(plan.orders).toEqual([
+			{
+				a: 0,
+				b: false,
+				p: "99",
+				s: "1.23",
+				r: true,
+				t: { trigger: { isMarket: true, triggerPx: "110", tpsl: "tp" } },
+			},
+			{
+				a: 0,
+				b: false,
+				p: "81",
+				s: "1.23",
+				r: true,
+				t: { trigger: { isMarket: true, triggerPx: "90", tpsl: "sl" } },
+			},
+		]);
+	});
+
+	it("builds partial trigger-limit legs from explicit execution prices", () => {
+		const plan = buildOrderPlan(
+			positionTpSl({
+				sizeNum: "1.239",
+				executionMode: "limit",
+				tpLimitPriceNum: "109",
+				slLimitPriceNum: "89",
+			}),
+		);
+
+		expect(plan.errors).toEqual([]);
+		expect(plan.orders).toEqual([
+			{
+				a: 0,
+				b: false,
+				p: "109",
+				s: "1.23",
+				r: true,
+				t: { trigger: { isMarket: false, triggerPx: "110", tpsl: "tp" } },
+			},
+			{
+				a: 0,
+				b: false,
+				p: "89",
+				s: "1.23",
+				r: true,
+				t: { trigger: { isMarket: false, triggerPx: "90", tpsl: "sl" } },
+			},
+		]);
+	});
+
+	it.each([
+		[positionTpSl({ sizeNum: "0" }), "Partial size must be greater than zero"],
+		[positionTpSl({ sizeNum: "-1" }), "Partial size must be greater than zero"],
+		[positionTpSl({ sizeNum: "0.001" }), "Partial size is below market precision"],
+		[
+			positionTpSl({ executionMode: "limit", tpLimitPriceNum: null, slLimitPriceNum: "89" }),
+			"Take profit limit price must be greater than zero",
+		],
+		[
+			positionTpSl({
+				szDecimals: 0,
+				tpPriceNum: "0.000123",
+				slPriceNum: null,
+				executionMode: "limit",
+				tpLimitPriceNum: "0.0000001",
+			}),
+			"Take profit limit price is below market precision",
+		],
+		[
+			positionTpSl({ executionMode: "limit", tpLimitPriceNum: "111", slLimitPriceNum: "89" }),
+			"Take profit sell limit price must be less than or equal to the trigger price",
+		],
+		[
+			positionTpSl({
+				isLong: false,
+				tpPriceNum: "90",
+				slPriceNum: null,
+				executionMode: "limit",
+				tpLimitPriceNum: "89",
+			}),
+			"Take profit buy limit price must be greater than or equal to the trigger price",
+		],
+	] as const)("rejects invalid partial-size and trigger-limit settings", (intent, error) => {
+		const plan = buildOrderPlan(intent);
+
+		expect(plan.orders).toEqual([]);
+		expect(plan.errors).toContain(error);
+	});
+
 	it("modifies an existing leg and creates a missing leg", () => {
 		const plan = buildPositionTpSlUpdatePlan({
 			...positionTpSl({ tpPriceNum: 115 }),
@@ -344,6 +445,87 @@ describe("position TP/SL order planning", () => {
 		expect(plan.modifies).toHaveLength(0);
 		expect(plan.cancels).toHaveLength(0);
 		expect(plan.hasChanges).toBe(false);
+		expect(plan.errors).toEqual([]);
+	});
+
+	it("reconciles trigger size, execution mode, and execution price", () => {
+		const unchanged = buildPositionTpSlUpdatePlan({
+			...positionTpSl({
+				tpPriceNum: 110,
+				slPriceNum: null,
+				sizeNum: "1.239",
+				executionMode: "limit",
+				tpLimitPriceNum: "109",
+			}),
+			existingTpPrice: "110.0",
+			existingTpOrderId: 7,
+			existingTpSize: "1.230",
+			existingTpIsMarket: false,
+			existingTpLimitPrice: "109.0",
+		});
+		expect(unchanged.hasChanges).toBe(false);
+		expect(unchanged.errors).toEqual([]);
+
+		const changedSize = buildPositionTpSlUpdatePlan({
+			...positionTpSl({ tpPriceNum: 110, slPriceNum: null, sizeNum: "1.239" }),
+			existingTpPrice: 110,
+			existingTpOrderId: 7,
+			existingTpSize: "1",
+			existingTpIsMarket: true,
+			existingTpLimitPrice: "99",
+		});
+		expect(changedSize.modifies).toHaveLength(1);
+		expect(changedSize.modifies[0]?.order.s).toBe("1.23");
+
+		const changedMode = buildPositionTpSlUpdatePlan({
+			...positionTpSl({
+				tpPriceNum: 110,
+				slPriceNum: null,
+				executionMode: "limit",
+				tpLimitPriceNum: "109",
+			}),
+			existingTpPrice: 110,
+			existingTpOrderId: 7,
+			existingTpSize: "0",
+			existingTpIsMarket: true,
+			existingTpLimitPrice: "99",
+		});
+		expect(changedMode.modifies).toHaveLength(1);
+		expect(changedMode.modifies[0]?.order.t).toEqual({
+			trigger: { isMarket: false, triggerPx: "110", tpsl: "tp" },
+		});
+
+		const changedLimitPrice = buildPositionTpSlUpdatePlan({
+			...positionTpSl({
+				tpPriceNum: 110,
+				slPriceNum: null,
+				executionMode: "limit",
+				tpLimitPriceNum: "109",
+			}),
+			existingTpPrice: 110,
+			existingTpOrderId: 7,
+			existingTpSize: "0",
+			existingTpIsMarket: false,
+			existingTpLimitPrice: "108",
+		});
+		expect(changedLimitPrice.modifies).toHaveLength(1);
+		expect(changedLimitPrice.modifies[0]?.order.p).toBe("109");
+	});
+
+	it("returns no update mutations when partial-size or limit settings are invalid", () => {
+		const plan = buildPositionTpSlUpdatePlan({
+			...positionTpSl({ sizeNum: "0.001" }),
+			existingTpPrice: 110,
+			existingTpOrderId: 7,
+		});
+
+		expect(plan).toEqual({
+			orders: [],
+			modifies: [],
+			cancels: [],
+			hasChanges: false,
+			errors: ["Partial size is below market precision"],
+		});
 	});
 
 	it("requires a mark-price check for created and modified trigger legs", () => {

@@ -6,9 +6,11 @@ import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { isCanceledOrderStatus } from "@/domain/trade/order-tracking";
+import { matchesToolbarOrderFilters, type ToolbarOrderDirectionFilter } from "@/domain/trade/trading-toolbar-metrics";
 import { useHistoricalOrders } from "@/hooks/trade/use-historical-orders";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows, downloadCsv } from "@/lib/csv";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
@@ -19,6 +21,8 @@ import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 type HistoricalOrderStatus = HistoricalOrdersResponse[number]["status"];
+type HistoricalOrderType = HistoricalOrdersResponse[number]["order"]["orderType"];
+type OrderHistoryTypeFilter = "all" | HistoricalOrderType;
 type OrderHistoryStatusFilter = "all" | "open" | "filled" | "triggered" | "canceled" | "rejected" | "other";
 
 function getOrderHistoryStatusFilter(status: HistoricalOrderStatus): Exclude<OrderHistoryStatusFilter, "all"> {
@@ -40,6 +44,14 @@ function isOrderHistoryStatusFilter(value: string | null): value is OrderHistory
 	);
 }
 
+function isOrderHistoryDirectionFilter(value: string | null): value is ToolbarOrderDirectionFilter {
+	return value === "all" || value === "buy" || value === "sell";
+}
+
+function isHistoricalOrderType(value: string | null, orders: HistoricalOrdersResponse): value is HistoricalOrderType {
+	return value !== null && orders.some((entry) => entry.order.orderType === value);
+}
+
 function hasTriggerPrice(order: HistoricalOrdersResponse[number]["order"]): boolean {
 	return order.isTrigger || order.orderType.startsWith("Stop ") || order.orderType.startsWith("Take Profit ");
 }
@@ -49,7 +61,14 @@ interface Props {
 	scrollMode?: MobileDataScrollMode;
 }
 
-export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: Props) {
+export function MobileOrdersHistoryTab(props: Props) {
+	const { address, isConnected } = useWalletSession();
+	const ownerKey = isConnected && address ? address.toLowerCase() : "disconnected";
+
+	return <MobileOrdersHistoryTabContent key={ownerKey} {...props} />;
+}
+
+function MobileOrdersHistoryTabContent({ className, scrollMode = "contained" }: Props) {
 	const { t } = useLingui();
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { error, isConnected, orders, status } = useHistoricalOrders();
@@ -57,22 +76,27 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
 	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
-	const [typeFilter, setTypeFilter] = useState("all");
+	const [typeFilter, setTypeFilter] = useState<OrderHistoryTypeFilter>("all");
+	const [directionFilter, setDirectionFilter] = useState<ToolbarOrderDirectionFilter>("all");
 	const [statusFilter, setStatusFilter] = useState<OrderHistoryStatusFilter>("all");
 
 	const filteredOrders = orders.filter(
 		(entry) =>
 			(typeFilter === "all" || entry.order.orderType === typeFilter) &&
+			matchesToolbarOrderFilters(entry.order, "all", directionFilter) &&
 			(statusFilter === "all" || getOrderHistoryStatusFilter(entry.status) === statusFilter),
 	);
+	const availableTypeFilters = new Set<HistoricalOrderType>(orders.map((entry) => entry.order.orderType));
+	if (typeFilter !== "all") availableTypeFilters.add(typeFilter);
 	const typeOptions = [
 		{ value: "all", label: t`All types` },
-		...Array.from(new Set(orders.map((entry) => entry.order.orderType))).map((value) => ({
+		...Array.from(availableTypeFilters).map((value) => ({
 			value,
 			label: getOrderTypeLabel(value),
 		})),
 	];
 	const availableStatusFilters = new Set(orders.map((entry) => getOrderHistoryStatusFilter(entry.status)));
+	if (statusFilter !== "all") availableStatusFilters.add(statusFilter);
 	const statusOptions = [
 		{ value: "all", label: t`All statuses` },
 		...(["open", "filled", "triggered", "canceled", "rejected", "other"] as const)
@@ -178,8 +202,26 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 						size="xxs"
 						label={t`Order type`}
 						value={typeFilter}
-						onValueChange={(value) => setTypeFilter(value ?? "all")}
+						onValueChange={(value) => {
+							if (value === "all") setTypeFilter("all");
+							else if (isHistoricalOrderType(value, orders)) setTypeFilter(value);
+						}}
 						options={typeOptions}
+						className="w-24 shrink-0 [&>label]:sr-only"
+						triggerClassName="min-h-11 rounded-[7px] border-market-close-stroke-card bg-modal"
+					/>
+					<Select
+						size="xxs"
+						label={t`Direction`}
+						value={directionFilter}
+						onValueChange={(value) => {
+							if (isOrderHistoryDirectionFilter(value)) setDirectionFilter(value);
+						}}
+						options={[
+							{ value: "all", label: t`All Directions` },
+							{ value: "buy", label: t`Buy` },
+							{ value: "sell", label: t`Sell` },
+						]}
 						className="w-24 shrink-0 [&>label]:sr-only"
 						triggerClassName="min-h-11 rounded-[7px] border-market-close-stroke-card bg-modal"
 					/>
@@ -336,7 +378,7 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 													<path
 														d="M3.5 10 8 5.5l4.5 4.5"
 														stroke="currentColor"
-														strokeWidth="1.5"
+														strokeWidth="2"
 														strokeLinecap="round"
 														strokeLinejoin="round"
 													/>

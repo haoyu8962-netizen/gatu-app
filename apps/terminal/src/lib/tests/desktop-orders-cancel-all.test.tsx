@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 	markPx: "160",
 	modifyOrders: vi.fn(),
 	orders: [] as OpenOrder[],
+	quoteSymbol: "USDC" as string,
 	resetCancelError: vi.fn(),
 	resetModifyError: vi.fn(),
 	setSide: vi.fn(),
@@ -90,7 +91,13 @@ vi.mock("@/lib/hyperliquid", () => ({
 		getMarket: () =>
 			mocks.assetId === undefined
 				? undefined
-				: { assetId: mocks.assetId, kind: "builderPerp", name: "xyz:ORCL", szDecimals: 3 },
+				: {
+						assetId: mocks.assetId,
+						kind: "builderPerp",
+						name: "xyz:ORCL",
+						quoteToken: { displayName: mocks.quoteSymbol, name: mocks.quoteSymbol },
+						szDecimals: 3,
+					},
 		getSzDecimals: () => 3,
 		isLoading: false,
 	}),
@@ -150,6 +157,7 @@ describe("desktop cancel all orders confirmation", () => {
 		mocks.env = "Mainnet";
 		mocks.markPx = "160";
 		mocks.orders = [order];
+		mocks.quoteSymbol = "USDC";
 		mocks.cancelOrders.mockReset();
 		mocks.getOrderSideLabel.mockClear();
 		mocks.modifyOrders.mockReset();
@@ -215,6 +223,14 @@ describe("desktop cancel all orders confirmation", () => {
 
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).toBeNull();
+	});
+
+	it("formats HIP-3 order notional in its verified non-USDC quote token", () => {
+		mocks.quoteSymbol = "USDT0";
+		act(() => root.render(<OrdersTab />));
+
+		const cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
+		expect(cells[6]).toBe("298.00 USDT0");
 	});
 
 	it("hides destructive bulk actions when the open-orders snapshot is empty", () => {
@@ -485,6 +501,50 @@ describe("desktop cancel all orders confirmation", () => {
 			{ cancels: [{ a: 120_001, o: 42 }] },
 			expect.objectContaining({ onSettled: expect.any(Function) }),
 		);
+	});
+
+	it("does not start cancel all while a row cancellation is unresolved", () => {
+		act(() => root.render(<OrdersTab />));
+
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.click());
+		const cancelAll = container.querySelector<HTMLButtonElement>('button[aria-label="Cancel all orders"]');
+
+		expect(cancelAll?.disabled).toBe(true);
+		act(() => cancelAll?.click());
+		expect(mocks.cancelOrders).toHaveBeenCalledOnce();
+		expect(document.body.textContent).not.toContain("Cancel All Orders");
+	});
+
+	it("rejects the confirmation when the trading session changes after the dialog opens", () => {
+		act(() => root.render(<OrdersTab />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel all orders"]')?.click());
+
+		mocks.clientKey = "0x2222222222222222222222222222222222222222";
+		act(() => root.render(<OrdersTab />));
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel All",
+		);
+		act(() => confirmButton?.click());
+
+		expect(mocks.cancelOrders).not.toHaveBeenCalled();
+		expect(document.body.textContent).toContain(
+			"The trading account or network changed. Reopen the confirmation and try again.",
+		);
+	});
+
+	it("does not include orders that appeared after the user opened the confirmation", () => {
+		act(() => root.render(<OrdersTab />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel all orders"]')?.click());
+
+		mocks.orders = [order, { ...order, coin: "BTC", oid: 43 } as OpenOrder];
+		act(() => root.render(<OrdersTab />));
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel All",
+		);
+		act(() => confirmButton?.click());
+
+		expect(mocks.cancelOrders).not.toHaveBeenCalled();
+		expect(document.body.textContent).toContain("Open orders changed. Reopen the confirmation and try again.");
 	});
 
 	it("fails closed when any order market cannot be mapped", () => {

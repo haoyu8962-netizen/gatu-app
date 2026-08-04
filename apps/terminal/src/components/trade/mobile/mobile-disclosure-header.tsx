@@ -35,7 +35,7 @@ export function MobileDisclosureHeader({ expanded, label, onToggle, children, cl
 				<path
 					d="M5.5 3.5 10 8l-4.5 4.5"
 					stroke="currentColor"
-					strokeWidth="1.5"
+					strokeWidth="2"
 					strokeLinecap="round"
 					strokeLinejoin="round"
 				/>

@@ -3,12 +3,15 @@
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { IsolatedMarginPositionRef } from "@/components/trade/positions/position-dialog-types";
+import type { IsolatedMarginPositionTarget } from "@/components/trade/positions/position-dialog-types";
 import { PositionIsolatedMarginModal } from "@/components/trade/positions/position-isolated-margin-modal";
 import type { Position } from "@/lib/hyperliquid";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
+	clientKey: "0x1111111111111111111111111111111111111111",
+	walletAddress: "0x1111111111111111111111111111111111111111",
+	env: "Mainnet" as "Mainnet" | "Testnet",
 	market: {
 		kind: "builderPerp",
 		name: "xyz:CXMT",
@@ -52,6 +55,10 @@ const testState = vi.hoisted(() => ({
 		string,
 		((params: { asset: number; isBuy?: boolean; ntli?: number; leverage?: string }) => void) | undefined
 	>,
+}));
+
+vi.mock("@/hooks/wallet/use-wallet-session", () => ({
+	useWalletSession: () => ({ address: testState.walletAddress, isConnected: true }),
 }));
 
 vi.mock("@gatu/ui", async () => {
@@ -197,6 +204,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 			},
 		};
 	},
+	useHyperliquid: () => ({
+		clientKey: testState.clientKey,
+		env: testState.env,
+	}),
 	useMarkets: () => ({
 		error: testState.marketError,
 		getMarket: (coin: string) => (testState.market?.name === coin ? testState.market : undefined),
@@ -213,7 +224,9 @@ vi.mock("@/lib/hyperliquid", () => ({
 	}),
 }));
 
-const basePositionRef: IsolatedMarginPositionRef = {
+const basePositionRef: IsolatedMarginPositionTarget = {
+	owner: "0x1111111111111111111111111111111111111111",
+	env: "Mainnet",
 	coin: "xyz:CXMT",
 	dex: "xyz",
 	assetId: 120_031,
@@ -273,6 +286,9 @@ describe("PositionIsolatedMarginModal", () => {
 		testState.positionLoading = false;
 		testState.positionError = false;
 		testState.positionStale = false;
+		testState.clientKey = "0x1111111111111111111111111111111111111111";
+		testState.walletAddress = "0x1111111111111111111111111111111111111111";
+		testState.env = "Mainnet";
 		testState.isMobile = false;
 		testState.pendingMethods.clear();
 		testState.marketLoading = false;
@@ -311,7 +327,7 @@ describe("PositionIsolatedMarginModal", () => {
 		vi.clearAllMocks();
 	});
 
-	function renderModal(position: IsolatedMarginPositionRef = basePositionRef, onOpenChange = vi.fn()) {
+	function renderModal(position: IsolatedMarginPositionTarget = basePositionRef, onOpenChange = vi.fn()) {
 		act(() => {
 			root.render(
 				createElement(PositionIsolatedMarginModal, {
@@ -568,6 +584,39 @@ describe("PositionIsolatedMarginModal", () => {
 		expect(container.textContent).toContain("The selected market changed.");
 		expect(testState.updateMargin).not.toHaveBeenCalled();
 	});
+
+	it.each(["owner", "wallet", "environment"] as const)(
+		"fails closed when the active %s changes while open",
+		(identityPart) => {
+			renderModal();
+			const executionGuard = testState.executionGuards.updateIsolatedMargin;
+
+			act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+			if (identityPart === "owner") {
+				testState.clientKey = "0x2222222222222222222222222222222222222222";
+			} else if (identityPart === "wallet") {
+				testState.walletAddress = "0x2222222222222222222222222222222222222222";
+			} else {
+				testState.env = "Testnet";
+			}
+			act(() => {
+				root.render(
+					createElement(PositionIsolatedMarginModal, {
+						open: true,
+						onOpenChange: vi.fn(),
+						position: basePositionRef,
+					}),
+				);
+			});
+
+			expect(getButton(container, "Add Margin").disabled).toBe(true);
+			expect(container.textContent).toContain("Trading data changed while this dialog was open.");
+			expect(() => executionGuard?.({ asset: 120_031, isBuy: true, ntli: 1_000_000 })).toThrow(
+				"Trading data changed while this dialog was open.",
+			);
+			expect(testState.updateMargin).not.toHaveBeenCalled();
+		},
+	);
 
 	it("rejects an execution request for a different asset", () => {
 		renderModal();
