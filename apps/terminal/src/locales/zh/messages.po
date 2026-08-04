@@ -2963,13 +2963,13 @@ msgstr "在浏览器中打开代币"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can still be reduced, closed, or switched to cross margin."
-msgstr ""
+#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can still be reduced, closed, or switched to cross margin."
+#~ msgstr ""
 
 #: src/hooks/trade/use-tracked-order.ts
 #: src/hooks/trade/use-tracked-twap-order.ts
-msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
-msgstr ""
+#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
+#~ msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "OR"
@@ -3626,8 +3626,8 @@ msgid "Remove Margin"
 msgstr "移除保证金"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Removing isolated margin is temporarily unavailable. Adding margin and closing the position remain available."
-msgstr ""
+#~ msgid "Removing isolated margin is temporarily unavailable. Adding margin and closing the position remain available."
+#~ msgstr ""
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Removing margin increases liquidation risk. Hyperliquid will reject amounts that breach margin requirements."
@@ -4544,8 +4544,9 @@ msgid "Target Leverage"
 msgstr "目标杠杆"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#~ msgid "Target leverage must be below the current effective leverage to add margin."
-#~ msgstr "目标杠杆必须低于当前实际杠杆才能增加保证金。"
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Target leverage must be below the current effective leverage to add margin."
+msgstr "目标杠杆必须低于当前实际杠杆才能增加保证金。"
 
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx

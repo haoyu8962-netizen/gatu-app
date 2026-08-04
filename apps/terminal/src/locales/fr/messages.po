@@ -2963,13 +2963,13 @@ msgstr "Ouvrir le jeton dans l’explorateur"
 #~ msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can still be reduced, closed, or switched to cross margin."
-msgstr ""
+#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Existing isolated positions can still be reduced, closed, or switched to cross margin."
+#~ msgstr ""
 
 #: src/hooks/trade/use-tracked-order.ts
 #: src/hooks/trade/use-tracked-twap-order.ts
-msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
-msgstr ""
+#~ msgid "Opening or increasing isolated positions is temporarily unavailable. Reduce-only orders remain available."
+#~ msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "OR"
@@ -3626,8 +3626,8 @@ msgid "Remove Margin"
 msgstr "Retirer de la marge"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-msgid "Removing isolated margin is temporarily unavailable. Adding margin and closing the position remain available."
-msgstr ""
+#~ msgid "Removing isolated margin is temporarily unavailable. Adding margin and closing the position remain available."
+#~ msgstr ""
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Removing margin increases liquidation risk. Hyperliquid will reject amounts that breach margin requirements."
@@ -4544,8 +4544,9 @@ msgid "Target Leverage"
 msgstr "Levier cible"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
-#~ msgid "Target leverage must be below the current effective leverage to add margin."
-#~ msgstr "Le levier cible doit être inférieur au levier effectif actuel pour ajouter de la marge."
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Target leverage must be below the current effective leverage to add margin."
+msgstr "Le levier cible doit être inférieur au levier effectif actuel pour ajouter de la marge."
 
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx

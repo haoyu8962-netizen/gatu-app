@@ -8,9 +8,15 @@ const MICRO_USD_SCALE = new Big(1_000_000);
 const MAX_SAFE_INTEGER = new Big(Number.MAX_SAFE_INTEGER);
 const USD_AMOUNT_PATTERN = /^\d+(?:\.\d{0,6})?$/;
 const LEVERAGE_PATTERN = /^\d+(?:\.\d+)?$/;
+type TargetLeverageInput = TopUpIsolatedOnlyMarginParameters["leverage"];
 
 export type IsolatedMarginDirection = "add" | "remove";
 export type PerpMarginConstraint = "strictIsolated" | "noCross";
+export type IsolatedMarginTargetValidation =
+	| "valid"
+	| "invalid-target"
+	| "current-leverage-unavailable"
+	| "not-below-current";
 
 interface PerpMarginMetadata {
 	marginMode?: PerpMarginConstraint;
@@ -22,6 +28,18 @@ interface AmountAdjustmentInput {
 	isLong: boolean;
 	direction: IsolatedMarginDirection;
 	amount: string;
+}
+
+function parsePositiveLeverage(value: TargetLeverageInput): Big | null {
+	const leverageValue = String(value).trim();
+	if (!LEVERAGE_PATTERN.test(leverageValue)) return null;
+
+	try {
+		const leverage = new Big(leverageValue);
+		return leverage.gt(0) ? leverage : null;
+	} catch {
+		return null;
+	}
 }
 
 export function buildIsolatedMarginAmountParameters(
@@ -49,18 +67,31 @@ export function buildIsolatedMarginTargetParameters(
 	assetId: number,
 	targetLeverage: string,
 ): TopUpIsolatedOnlyMarginParameters | null {
-	const target = targetLeverage.trim();
-	if (!LEVERAGE_PATTERN.test(target)) return null;
+	const leverage = parsePositiveLeverage(targetLeverage);
+	if (!leverage) return null;
+
+	return {
+		asset: assetId,
+		leverage: leverage.toFixed(),
+	};
+}
+
+export function validateIsolatedMarginTarget(
+	targetLeverage: TargetLeverageInput,
+	positionValue: string,
+	marginUsed: string,
+): IsolatedMarginTargetValidation {
+	const target = parsePositiveLeverage(targetLeverage);
+	if (!target) return "invalid-target";
 
 	try {
-		const leverage = new Big(target);
-		if (!leverage.gt(0)) return null;
-		return {
-			asset: assetId,
-			leverage: leverage.toFixed(),
-		};
+		const notional = new Big(positionValue).abs();
+		const margin = new Big(marginUsed);
+		if (!notional.gt(0) || !margin.gt(0)) return "current-leverage-unavailable";
+
+		return target.times(margin).lt(notional) ? "valid" : "not-below-current";
 	} catch {
-		return null;
+		return "current-leverage-unavailable";
 	}
 }
 

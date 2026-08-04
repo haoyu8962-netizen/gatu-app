@@ -5,6 +5,7 @@ import {
 	calculateEffectiveLeverage,
 	canRemoveIsolatedMargin,
 	getPerpMarginConstraint,
+	validateIsolatedMarginTarget,
 } from "@/domain/trade/isolated-margin";
 
 describe("isolated margin actions", () => {
@@ -65,6 +66,23 @@ describe("isolated margin actions", () => {
 		const effectiveLeverage = calculateEffectiveLeverage("1559.84", "137.19");
 
 		expect(effectiveLeverage).toBeCloseTo(11.3699, 4);
+	});
+
+	it("requires a target leverage strictly below the current effective leverage", () => {
+		expect(validateIsolatedMarginTarget("4.9999999999999999999999", "10", "2")).toBe("valid");
+		expect(validateIsolatedMarginTarget("5", "10", "2")).toBe("not-below-current");
+		expect(validateIsolatedMarginTarget("5.0000000000000000000001", "10", "2")).toBe("not-below-current");
+		expect(validateIsolatedMarginTarget(0.5, "-10", "10")).toBe("valid");
+	});
+
+	it("fails closed when a target or current leverage input is unavailable", () => {
+		expect(validateIsolatedMarginTarget("0", "10", "2")).toBe("invalid-target");
+		expect(validateIsolatedMarginTarget("-1", "10", "2")).toBe("invalid-target");
+		expect(validateIsolatedMarginTarget("invalid", "10", "2")).toBe("invalid-target");
+		expect(validateIsolatedMarginTarget("1", "0", "2")).toBe("current-leverage-unavailable");
+		expect(validateIsolatedMarginTarget("1", "10", "0")).toBe("current-leverage-unavailable");
+		expect(validateIsolatedMarginTarget("1", "invalid", "2")).toBe("current-leverage-unavailable");
+		expect(validateIsolatedMarginTarget("1", "10", "invalid")).toBe("current-leverage-unavailable");
 	});
 
 	it("fails closed for legacy isolated-only markets and permits noCross removal", () => {

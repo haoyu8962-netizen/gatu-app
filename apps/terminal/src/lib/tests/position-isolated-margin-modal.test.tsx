@@ -332,6 +332,39 @@ describe("PositionIsolatedMarginModal", () => {
 		expect(testState.updateMargin).not.toHaveBeenCalled();
 	});
 
+	it.each(["5", "999"])("rejects a target leverage of %s that would not add margin", (targetLeverage) => {
+		testState.position = {
+			...getLiveTestPosition(),
+			positionValue: "10",
+			marginUsed: "2",
+		};
+		renderModal();
+
+		act(() => getButton(container, "Target Leverage").click());
+		act(() => setInputValue(getInput(container, "Target leverage"), targetLeverage));
+
+		expect(getButton(container, "Add to Target").disabled).toBe(true);
+		expect(container.textContent).toContain(
+			"Target leverage must be below the current effective leverage to add margin.",
+		);
+		expect(testState.topUpMargin).not.toHaveBeenCalled();
+	});
+
+	it("fails closed when the effective leverage cannot be derived from the live position", () => {
+		testState.position = {
+			...getLiveTestPosition(),
+			marginUsed: "invalid",
+		};
+		renderModal();
+
+		act(() => getButton(container, "Target Leverage").click());
+		act(() => setInputValue(getInput(container, "Target leverage"), "5"));
+
+		expect(getButton(container, "Add to Target").disabled).toBe(true);
+		expect(container.textContent).toContain("Live position data is unavailable.");
+		expect(testState.topUpMargin).not.toHaveBeenCalled();
+	});
+
 	it("submits an exact margin removal for a noCross market", async () => {
 		const onOpenChange = renderModal();
 
@@ -512,6 +545,40 @@ describe("PositionIsolatedMarginModal", () => {
 		});
 
 		await vi.waitFor(() => expect(container.textContent).toContain("This position changed sides."));
+		expect(testState.topUpMargin).not.toHaveBeenCalled();
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+	});
+
+	it("revalidates the effective leverage when the queued target callback executes", async () => {
+		const queueStarted = createDeferred();
+		const releaseQueue = createDeferred();
+		testState.beforeQueuedExecution = async () => {
+			queueStarted.resolve();
+			await releaseQueue.promise;
+		};
+		const onOpenChange = renderModal();
+
+		act(() => getButton(container, "Target Leverage").click());
+		act(() => setInputValue(getInput(container, "Target leverage"), "5"));
+		act(() => getButton(container, "Add to Target").click());
+		await queueStarted.promise;
+
+		testState.position = {
+			...getLiveTestPosition(),
+			positionValue: "10",
+			marginUsed: "2",
+		};
+		renderModal({ ...basePositionRef }, onOpenChange);
+		await act(async () => {
+			releaseQueue.resolve();
+			await releaseQueue.promise;
+		});
+
+		await vi.waitFor(() =>
+			expect(container.textContent).toContain(
+				"Target leverage must be below the current effective leverage to add margin.",
+			),
+		);
 		expect(testState.topUpMargin).not.toHaveBeenCalled();
 		expect(onOpenChange).not.toHaveBeenCalledWith(false);
 	});
