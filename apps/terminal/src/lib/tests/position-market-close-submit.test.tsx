@@ -370,6 +370,44 @@ describe("usePositionMarketCloseSubmit", () => {
 		);
 	});
 
+	it("ignores a rapid second click while fresh validation is still in flight", async () => {
+		const gate = createExecutionGate();
+		mocks.clearinghouseState.mockImplementationOnce(async () => {
+			await gate.wait();
+			return {
+				assetPositions: [
+					{
+						position: {
+							coin: COIN,
+							szi: mocks.restPositionSize,
+							leverage: { type: mocks.restMarginMode, value: 10 },
+						},
+					},
+				],
+			};
+		});
+		const sessionId = openSession();
+		let firstSubmission!: Promise<void>;
+
+		await act(async () => {
+			firstSubmission = currentHook().submit({ sessionId });
+			await gate.entered;
+		});
+		await act(async () => {
+			await currentHook().submit({ sessionId });
+		});
+
+		expect(mocks.clearinghouseState).toHaveBeenCalledOnce();
+		expect(mocks.metaAndAssetCtxs).toHaveBeenCalledOnce();
+		expect(mocks.mutateOrder).not.toHaveBeenCalled();
+
+		await act(async () => {
+			gate.release();
+			await firstSubmission;
+		});
+		expect(mocks.executeOrder).toHaveBeenCalledOnce();
+	});
+
 	it("uses the fresh mid price as the market protection reference", async () => {
 		mocks.restMidPx = "110";
 		const sessionId = openSession();

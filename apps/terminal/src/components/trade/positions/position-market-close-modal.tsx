@@ -33,14 +33,11 @@ import {
 	type PositionCloseSummaryItem,
 } from "./position-close-dialog-ui";
 
-const HOLD_TO_CONFIRM_DURATION_MS = 800;
-
 interface Props {
-	holdToConfirm?: boolean;
 	showPnl?: boolean;
 }
 
-export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true }: Props) {
+export function PositionMarketCloseModal({ showPnl = true }: Props) {
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const [dismissFutureConfirmation, setDismissFutureConfirmation] = useState(false);
@@ -237,12 +234,13 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 					onIntentChange={setSizingIntent}
 				>
 					<Checkbox
+						data-testid="position-market-close-confirmation-preference"
 						size="md"
 						checked={confirmationPreferenceAlreadyDismissed || dismissFutureConfirmation}
 						onCheckedChange={setDismissFutureConfirmation}
 						disabled={confirmationPreferenceAlreadyDismissed || !canEdit}
 						className={cn(
-							"w-fit items-center gap-2 min-[1001px]:mt-0.5",
+							"w-fit shrink-0 items-center gap-2 min-[1001px]:mt-0.5",
 							confirmationPreferenceAlreadyDismissed && canEdit && "opacity-100",
 						)}
 						controlClassName="size-5 !rounded-[5px] border-market-close-stroke-control bg-modal transition-all duration-[120ms] focus-visible:border-market-close-control focus-visible:outline-none data-checked:border-market-close-control data-checked:bg-market-close-control"
@@ -300,8 +298,6 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 					disabled={!canSubmit}
 					intent="error"
 					size="lg"
-					holdDurationMs={holdToConfirm ? HOLD_TO_CONFIRM_DURATION_MS : undefined}
-					holdProgressClassName="bg-black/[0.22]"
 					aria-describedby={helperId}
 					containerClassName="w-full items-stretch"
 					className="relative min-h-0 w-full overflow-hidden !rounded-[12px] !bg-market-close-danger py-[15px] text-[15px] leading-[21px] font-bold !text-market-close-danger-text tabular-nums !shadow-none !transition-[background-color] duration-150 hover:!bg-market-close-danger hover:!opacity-100 active:!bg-market-close-danger active:!opacity-100 active:not-data-disabled:!scale-100 data-disabled:!cursor-not-allowed data-disabled:!bg-market-close-danger-disabled data-disabled:!text-white min-[1001px]:py-[14px]"
@@ -316,9 +312,7 @@ export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true 
 					)}
 				</TradingActionButton>
 				<p id={helperId} className="text-center text-xs leading-[17px] text-market-close-subtle">
-					{holdToConfirm
-						? t`Hold to confirm · Filled trades cannot be reversed`
-						: t`Click to submit · Filled trades cannot be reversed`}
+					{t`Click to submit · Filled trades cannot be reversed`}
 				</p>
 			</PositionCloseDialogFooter>
 		</PositionCloseDialogShell>

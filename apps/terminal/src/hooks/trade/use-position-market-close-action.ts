@@ -2,7 +2,6 @@ import type { PositionMarketCloseRef } from "@/components/trade/positions/positi
 import { getPositionDex } from "@/domain/market";
 import { useLegalGate } from "@/hooks/trade/use-legal-gate";
 import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { type UnifiedMarket, useAgentStatus, useHyperliquid, useMarkets } from "@/lib/hyperliquid";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import { usePositionMarketCloseActions, usePositionMarketCloseSession } from "@/stores/use-global-modal-store";
@@ -18,7 +17,6 @@ export function usePositionMarketCloseAction() {
 	const actions = usePositionMarketCloseActions();
 	const session = usePositionMarketCloseSession();
 	const { submit } = usePositionMarketCloseSubmit();
-	const isMobile = useIsMobile();
 	const { clientKey, env } = useHyperliquid();
 	const markets = useMarkets();
 	const legalGate = useLegalGate();
@@ -30,7 +28,6 @@ export function usePositionMarketCloseAction() {
 		const market = markets.getMarket(position.coin);
 		const preference = readPositionMarketCloseConfirmationPreference({ owner, env });
 		const direct =
-			!isMobile &&
 			EVM_ADDRESS_PATTERN.test(owner) &&
 			preference === "dismissed" &&
 			legalGate.state === "accepted" &&

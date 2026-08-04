@@ -154,18 +154,19 @@ describe("usePositionMarketCloseAction", () => {
 		expect(mocks.submit).toHaveBeenCalledWith({ sessionId: firstSessionId });
 	});
 
-	it("keeps the confirmation on mobile when the desktop preference is dismissed", () => {
+	it("honors the dismissed confirmation preference on mobile when every gate is ready", () => {
 		expect(dismissPositionMarketCloseConfirmation({ owner: USER, env: "Mainnet" })).toBe("dismissed");
 		mocks.isMobile = true;
 		act(() => root.render(<Probe />));
 
 		act(() => currentHook().open(POSITION));
 
-		expect(getPositionMarketCloseModal()).toMatchObject({
-			presentation: "confirmation",
+		const session = getPositionMarketCloseModal();
+		expect(session).toMatchObject({
+			presentation: "direct",
 			sizingIntent: { kind: "max" },
 		});
-		expect(mocks.submit).not.toHaveBeenCalled();
+		expect(mocks.submit).toHaveBeenCalledWith({ sessionId: session?.sessionId });
 	});
 
 	it.each([

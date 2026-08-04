@@ -96,6 +96,7 @@ vi.mock("@gatu/ui", () => ({
 			null,
 			createElement("input", {
 				type: "checkbox",
+				"data-testid": props["data-testid"],
 				checked,
 				disabled,
 				"aria-label": String(label),
@@ -352,7 +353,11 @@ describe("PositionMarketCloseModal", () => {
 			showHandle: true,
 			handleClassName: "top-2.5 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input",
 		});
-		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).not.toBeNull();
+		const preference = container.querySelector<HTMLInputElement>(
+			'[data-testid="position-market-close-confirmation-preference"]',
+		);
+		expect(preference).toMatchObject({ checked: false, disabled: false });
+		expect(preference?.getAttribute("aria-label")).toBe("Don't show this confirmation again");
 		expect(getSummaryValue("Available to close")?.textContent).toBe("2.5000");
 		expect(container.querySelector('[data-testid="position-market-close-summary"] div')?.className).toContain(
 			"justify-between",
@@ -419,7 +424,7 @@ describe("PositionMarketCloseModal", () => {
 
 	it("keeps the opt-out selectable for a partial close and submits the preference", async () => {
 		testState.session.sizingIntent = { kind: "percent", value: "50" };
-		render({ holdToConfirm: false });
+		render();
 
 		const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
 		expect(checkbox).toMatchObject({ checked: false, disabled: false });
@@ -435,16 +440,11 @@ describe("PositionMarketCloseModal", () => {
 		});
 	});
 
-	it("defaults to an 800ms hold and supports the configured single-click path", async () => {
+	it("uses a single click while preserving the trading-readiness confirmation", async () => {
 		render();
-		expect(testState.actionButtonProps).toMatchObject({
-			holdDurationMs: 800,
-			holdProgressClassName: "bg-black/[0.22]",
-		});
-		expect(container.textContent).toContain("Hold to confirm · Filled trades cannot be reversed");
-
-		render({ holdToConfirm: false });
 		expect(testState.actionButtonProps?.holdDurationMs).toBeUndefined();
+		expect(testState.actionButtonProps?.holdProgressClassName).toBeUndefined();
+		expect(testState.actionButtonProps?.requireReadyConfirmation).toBe(true);
 		expect(container.textContent).toContain("Click to submit · Filled trades cannot be reversed");
 
 		await act(async () => {
