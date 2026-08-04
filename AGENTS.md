@@ -104,3 +104,7 @@ pnpm --dir apps/terminal exec vitest run \
 ```
 
 When a visual contract changes, also inspect the affected desktop, compact, and mobile layouts where applicable.
+
+<!-- BEGIN CODEX AUTO-COMMIT -->
+For every task that may modify repository files, use the `$auto-commit` skill from the beginning of the task. After completing and validating the requested work, create a Git commit before the final response. Do not commit only when the user explicitly says not to commit or when the skill's safety exceptions apply. Never push unless the user explicitly requests it.
+<!-- END CODEX AUTO-COMMIT -->
