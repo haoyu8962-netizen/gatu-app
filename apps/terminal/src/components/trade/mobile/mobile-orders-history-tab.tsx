@@ -2,14 +2,13 @@ import { useLingui } from "@lingui/react/macro";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { isCanceledOrderStatus } from "@/domain/trade/order-tracking";
+import { useHistoricalOrders } from "@/hooks/trade/use-historical-orders";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken } from "@/lib/format";
-import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useMarkets } from "@/lib/hyperliquid";
 import { AssetBadge } from "../components/asset-badge";
 import { HistoricalOrderPrice } from "../components/historical-order-price";
 import { MetricCell } from "./metric-cell";
@@ -24,21 +23,10 @@ interface Props {
 export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: Props) {
 	const { t } = useLingui();
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
-	const { address, isConnected } = useWalletSession();
+	const { error, isConnected, orders, status } = useHistoricalOrders();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
-	const {
-		data: historicalOrdersEvent,
-		status,
-		error,
-	} = useSubscription("userHistoricalOrders", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
-
-	const orders =
-		historicalOrdersEvent?.orderHistory
-			?.slice()
-			.sort((a, b) => b.statusTimestamp - a.statusTimestamp)
-			.slice(0, MAX_HISTORY_ROWS) ?? [];
 
 	const headerCount = isConnected ? `${orders.length}` : FALLBACK_VALUE_PLACEHOLDER;
 	const isPageScroll = scrollMode === "page";
@@ -65,7 +53,7 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 		);
 	}
 
-	if (status === "active" && orders.length === 0) {
+	if (status === "ready" && orders.length === 0) {
 		return (
 			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
 				{t`No order history found.`}
@@ -74,7 +62,7 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 	}
 
 	return (
-		<Skeleton name="orders-history-tab" loading={status === "subscribing" || status === "idle"}>
+		<Skeleton name="orders-history-tab" loading={status === "loading" || status === "idle"}>
 			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
 				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase tracking-wider text-fg-muted">
 					<ClockCounterClockwiseIcon className="size-3" />

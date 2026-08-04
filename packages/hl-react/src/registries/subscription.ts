@@ -1,6 +1,7 @@
-import type { TradesWsEvent } from "@nktkas/hyperliquid";
+import type { HistoricalOrdersResponse, TradesWsEvent } from "@nktkas/hyperliquid";
 import type { RingBufferOptions } from "../internal/circular-buffer/ring-buffer";
 import type { SubMethod } from "../types/clients";
+import { shouldReplaceHistoricalOrder } from "./historical-orders";
 
 type RawTrade = TradesWsEvent[number];
 
@@ -48,16 +49,16 @@ const ACCUMULATING_SUBS: Partial<Record<SubMethod, AccumulateConfig>> = {
 	}),
 	userHistoricalOrders: defineAccumulator<
 		{ orderHistory: unknown[]; isSnapshot?: boolean },
-		{ order: { oid: number }; statusTimestamp: number }
+		HistoricalOrdersResponse[number]
 	>({
-		getItems: (event) => event.orderHistory as { order: { oid: number }; statusTimestamp: number }[],
+		getItems: (event) => event.orderHistory as HistoricalOrdersResponse,
 		withItems: (event, items) => ({ ...event, orderHistory: items }),
 		isSnapshot: (event) => event.isSnapshot === true,
 		buffer: {
 			maxSize: 500,
 			getKey: (o) => String(o.order.oid),
 			compare: (a, b) => b.statusTimestamp - a.statusTimestamp,
-			shouldReplace: (existing, incoming) => incoming.statusTimestamp >= existing.statusTimestamp,
+			shouldReplace: shouldReplaceHistoricalOrder,
 		},
 	}),
 	userNonFundingLedgerUpdates: defineAccumulator<

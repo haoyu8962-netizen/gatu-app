@@ -1,13 +1,12 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useHistoricalOrders } from "@/hooks/trade/use-historical-orders";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatToken } from "@/lib/format";
-import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useMarkets } from "@/lib/hyperliquid";
 import { AssetBadge } from "../components/asset-badge";
 import { HistoricalOrderPrice } from "../components/historical-order-price";
 import { Placeholder } from "./placeholder";
@@ -27,26 +26,15 @@ import {
 export function OrdersHistoryTab() {
 	const { t } = useLingui();
 	const { getHistoricalOrderStatusLabel, getOrderTypeLabel } = useOrderDisplayLabels();
-	const { address, isConnected } = useWalletSession();
+	const { error, isConnected, orders, status } = useHistoricalOrders();
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
-	const {
-		data: historicalOrdersEvent,
-		status,
-		error,
-	} = useSubscription("userHistoricalOrders", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
-
-	const orders =
-		historicalOrdersEvent?.orderHistory
-			?.slice()
-			.sort((a, b) => b.statusTimestamp - a.statusTimestamp)
-			.slice(0, MAX_HISTORY_ROWS) ?? [];
 
 	const headerCount = isConnected ? `${orders.length} ${t`orders`}` : null;
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view order history.`}</Placeholder>;
-		if (status === "subscribing" || status === "idle") return <Placeholder>{t`Loading order history...`}</Placeholder>;
+		if (status === "loading" || status === "idle") return <Placeholder>{t`Loading order history...`}</Placeholder>;
 		if (status === "error") {
 			return (
 				<Placeholder variant="error">

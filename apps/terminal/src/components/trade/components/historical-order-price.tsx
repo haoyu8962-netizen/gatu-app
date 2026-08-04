@@ -13,8 +13,22 @@ export function HistoricalOrderPrice({ align = "end", order }: Props) {
 	const { t } = useLingui();
 	const display = getHistoricalOrderPriceDisplay(order);
 
-	if (display.kind === "price") {
+	if (display.kind === "limit") {
 		return <span>{formatUSD(display.price, { compact: false })}</span>;
+	}
+
+	if (display.kind === "market") {
+		return (
+			<span className={cn("flex flex-col gap-0.5 leading-tight", align === "end" ? "items-end" : "items-start")}>
+				<span className="whitespace-nowrap text-fg">
+					<span className="mr-1 text-3xs font-normal text-fg-muted">{t`Execution`}</span>
+					{t({ message: "Market", context: "Order type" })}
+				</span>
+				<span className="whitespace-nowrap text-3xs font-normal text-fg-muted">
+					{t`Protection price`} {formatUSD(display.protectionPrice, { compact: false })}
+				</span>
+			</span>
+		);
 	}
 
 	const execution =
@@ -31,7 +45,7 @@ export function HistoricalOrderPrice({ align = "end", order }: Props) {
 				</span>
 				{display.execution.kind === "market" ? (
 					<span className="whitespace-nowrap text-3xs font-normal text-fg-muted">
-						{t`Limit Price`} {formatUSD(display.execution.protectionPrice, { compact: false })}
+						{t`Protection price`} {formatUSD(display.execution.protectionPrice, { compact: false })}
 					</span>
 				) : null}
 			</span>

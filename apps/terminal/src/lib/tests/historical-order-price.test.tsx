@@ -50,7 +50,25 @@ describe("HistoricalOrderPrice", () => {
 		expect(markup).not.toContain(">-\u003c");
 		expect(markup).toContain("Execution");
 		expect(markup).toContain("Market");
-		expect(markup).toContain("Limit Price");
+		expect(markup).toContain("Protection price");
+		expect(markup).not.toContain("Limit Price");
+		expect(markup).toContain("6.66");
+	});
+
+	it("labels a regular market order protection price instead of presenting it as a fill", () => {
+		const markup = renderPrice(
+			createTriggerOrder({
+				isPositionTpsl: false,
+				isTrigger: false,
+				orderType: "Market",
+				triggerPx: "0.0",
+			}),
+		);
+
+		expect(markup).toContain("Execution");
+		expect(markup).toContain("Market");
+		expect(markup).toContain("Protection price");
+		expect(markup).not.toContain("Limit Price");
 		expect(markup).toContain("6.66");
 	});
 
