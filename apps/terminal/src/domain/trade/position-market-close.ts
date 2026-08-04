@@ -18,6 +18,14 @@ export interface PositionMarketClosePercentInput {
 	szDecimals: number;
 }
 
+export interface PositionMarketClosePnlEstimateInput {
+	signedPositionSize: string;
+	normalizedCloseSize: string;
+	unrealizedPnl?: string;
+	entryPx?: string;
+	markPx?: string;
+}
+
 export interface PositionMarketCloseResolution {
 	normalizedSize: string;
 	maxSize: string;
@@ -31,6 +39,33 @@ export function formatPositionMarketClosePercent(percent: string): string {
 	const value = toBig(percent);
 	if (!value) return "0";
 	return value.round(1, Big.roundDown).toFixed(1).replace(/\.0$/, "");
+}
+
+export function estimatePositionMarketClosePnl(input: PositionMarketClosePnlEstimateInput): string | null {
+	const positionSize = SIGNED_DECIMAL_PATTERN.test(input.signedPositionSize) ? toBig(input.signedPositionSize) : null;
+	const closeSize = UNSIGNED_DECIMAL_INPUT_PATTERN.test(input.normalizedCloseSize)
+		? toBig(input.normalizedCloseSize)
+		: null;
+	if (!positionSize || positionSize.eq(0) || !closeSize || closeSize.lte(0) || closeSize.gt(positionSize.abs())) {
+		return null;
+	}
+
+	const fullPositionPnl =
+		input.unrealizedPnl !== undefined && SIGNED_DECIMAL_PATTERN.test(input.unrealizedPnl)
+			? toBig(input.unrealizedPnl)
+			: null;
+	if (fullPositionPnl) {
+		return fullPositionPnl.times(closeSize).div(positionSize.abs()).toString();
+	}
+
+	const entryPx =
+		input.entryPx !== undefined && UNSIGNED_DECIMAL_INPUT_PATTERN.test(input.entryPx) ? toBig(input.entryPx) : null;
+	const markPx =
+		input.markPx !== undefined && UNSIGNED_DECIMAL_INPUT_PATTERN.test(input.markPx) ? toBig(input.markPx) : null;
+	if (!entryPx || entryPx.lte(0) || !markPx || markPx.lte(0)) return null;
+
+	const direction = positionSize.gt(0) ? Big(1) : Big(-1);
+	return markPx.minus(entryPx).times(closeSize).times(direction).toString();
 }
 
 interface PositionMarketCloseContext {

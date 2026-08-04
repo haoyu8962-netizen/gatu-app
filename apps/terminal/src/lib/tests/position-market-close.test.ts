@@ -1,6 +1,7 @@
 import Big from "big.js";
 import { describe, expect, it, vi } from "vitest";
 import {
+	estimatePositionMarketClosePnl,
 	formatPositionMarketClosePercent,
 	resolvePositionMarketClosePercent,
 	resolvePositionMarketCloseSize,
@@ -190,5 +191,135 @@ describe("position market close sizing", () => {
 
 		expect(resolution.normalizedSize).toBe("0");
 		expect(resolution.errors).toContain("Close size is below market precision");
+	});
+});
+
+describe("position market close PnL estimate", () => {
+	it("uses the exchange-reported full-position PnL for a full long close", () => {
+		expect(
+			estimatePositionMarketClosePnl({
+				signedPositionSize: "3",
+				normalizedCloseSize: "3",
+				unrealizedPnl: "-42.42",
+				entryPx: "100",
+				markPx: "200",
+			}),
+		).toBe("-42.42");
+	});
+
+	it("preserves the exchange-reported PnL sign for a full short close", () => {
+		expect(
+			estimatePositionMarketClosePnl({
+				signedPositionSize: "-4",
+				normalizedCloseSize: "4",
+				unrealizedPnl: "80",
+			}),
+		).toBe("80");
+	});
+
+	it("scales full-position PnL by the normalized partial-close size", () => {
+		expect(
+			estimatePositionMarketClosePnl({
+				signedPositionSize: "3",
+				normalizedCloseSize: "0.75",
+				unrealizedPnl: "-36",
+			}),
+		).toBe("-9");
+
+		expect(
+			estimatePositionMarketClosePnl({
+				signedPositionSize: "-0.015",
+				normalizedCloseSize: "0.007",
+				unrealizedPnl: "46.18",
+			}),
+		).toBe(Big("46.18").times("0.007").div("0.015").toString());
+	});
+
+	it("falls back to entry and mark prices when full-position PnL is missing", () => {
+		expect(
+			estimatePositionMarketClosePnl({
+				signedPositionSize: "2",
+				normalizedCloseSize: "1",
+				entryPx: "100",
+				markPx: "105",
+			}),
+		).toBe("5");
+	});
+
+	it("falls back with the correct short direction when full-position PnL is invalid", () => {
+		expect(
+			estimatePositionMarketClosePnl({
+				signedPositionSize: "-2",
+				normalizedCloseSize: "0.5",
+				unrealizedPnl: "not-a-number",
+				entryPx: "100",
+				markPx: "90",
+			}),
+		).toBe("5");
+	});
+
+	it("prefers valid exchange PnL even when fallback prices are present", () => {
+		expect(
+			estimatePositionMarketClosePnl({
+				signedPositionSize: "2",
+				normalizedCloseSize: "1",
+				unrealizedPnl: "-10",
+				entryPx: "100",
+				markPx: "120",
+			}),
+		).toBe("-5");
+	});
+
+	it.each([
+		{
+			name: "invalid position syntax",
+			input: { signedPositionSize: "1e3", normalizedCloseSize: "1", unrealizedPnl: "10" },
+		},
+		{
+			name: "zero position",
+			input: { signedPositionSize: "0", normalizedCloseSize: "1", unrealizedPnl: "10" },
+		},
+		{
+			name: "invalid close-size syntax",
+			input: { signedPositionSize: "2", normalizedCloseSize: " 1", unrealizedPnl: "10" },
+		},
+		{
+			name: "zero close size",
+			input: { signedPositionSize: "2", normalizedCloseSize: "0", unrealizedPnl: "10" },
+		},
+		{
+			name: "negative close size",
+			input: { signedPositionSize: "2", normalizedCloseSize: "-1", unrealizedPnl: "10" },
+		},
+		{
+			name: "close size above the position",
+			input: { signedPositionSize: "2", normalizedCloseSize: "2.0001", unrealizedPnl: "10" },
+		},
+		{
+			name: "missing fallback prices",
+			input: { signedPositionSize: "2", normalizedCloseSize: "1" },
+		},
+		{
+			name: "invalid fallback entry price",
+			input: {
+				signedPositionSize: "2",
+				normalizedCloseSize: "1",
+				unrealizedPnl: "invalid",
+				entryPx: "0",
+				markPx: "100",
+			},
+		},
+		{
+			name: "invalid fallback mark price",
+			input: {
+				signedPositionSize: "2",
+				normalizedCloseSize: "1",
+				unrealizedPnl: "invalid",
+				entryPx: "100",
+				markPx: "1e2",
+			},
+		},
+	])("returns null for $name", ({ input }) => {
+		expect(estimatePositionMarketClosePnl(input)).toBeNull();
 	});
 });
