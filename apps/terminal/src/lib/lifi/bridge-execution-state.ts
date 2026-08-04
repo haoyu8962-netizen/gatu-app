@@ -28,6 +28,7 @@ export interface BridgeState {
 	sourceAddress: string | null;
 	sourceChainId: number | null;
 	canAbandon: boolean;
+	isBackgrounded: boolean;
 	recoveryWarning: string | null;
 }
 
@@ -46,6 +47,7 @@ export const INITIAL_BRIDGE_STATE: BridgeState = {
 	sourceAddress: null,
 	sourceChainId: null,
 	canAbandon: true,
+	isBackgrounded: false,
 	recoveryWarning: null,
 };
 
@@ -79,6 +81,7 @@ export function useHasExistingBridgeExecution(walletAddress: string | undefined)
 			sourceAddress: persisted.identity.sourceAddress,
 			sourceChainId: persisted.identity.sourceChainId,
 			canAbandon: false,
+			isBackgrounded: false,
 			recoveryWarning: null,
 		});
 	}, [status, walletAddress]);

@@ -1,4 +1,5 @@
 import { t } from "@lingui/core/macro";
+import { SCALE_LEVELS_MAX, SCALE_LEVELS_MIN } from "@/config/trade";
 
 const ERROR_MESSAGE_TRUNCATE_LIMIT = 100;
 const SMART_WALLET_NONCE_CONFLICT_PATTERN = /\bAA25\b(?: invalid account nonce)?/i;
@@ -78,6 +79,23 @@ export function formatExchangeActionError(error: unknown, fallback: string): str
 	if (error instanceof Error) return formatTransferError(error);
 	if (typeof error === "string") return formatTransferError(new Error(error));
 	return fallback;
+}
+
+export function formatOrderPlanError(message: string): string {
+	switch (message) {
+		case `Scale levels must be ${SCALE_LEVELS_MIN}-${SCALE_LEVELS_MAX}`:
+			return t`Scale levels must be ${SCALE_LEVELS_MIN}-${SCALE_LEVELS_MAX}`;
+		case "Enter a valid scale price range":
+			return t`Enter price range`;
+		case "Scale size is too small for the selected number of orders":
+			return t`Scale size is too small for the selected number of orders`;
+		case "Scale prices must resolve to distinct ticks":
+			return t`Scale prices must resolve to distinct ticks`;
+		case "Scale level below min notional":
+			return t`Scale level below min notional`;
+		default:
+			return message;
+	}
 }
 
 export function isAmbiguousExchangeActionError(error: unknown): boolean {

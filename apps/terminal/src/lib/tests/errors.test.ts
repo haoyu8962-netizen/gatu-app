@@ -1,7 +1,12 @@
 import { HttpRequestError } from "@nktkas/hyperliquid";
 import { describe, expect, it, vi } from "vitest";
 import { formatErrorForDisplay } from "@/lib/errors";
-import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
+import {
+	formatExchangeActionError,
+	formatOrderPlanError,
+	formatTransferError,
+	isAmbiguousExchangeActionError,
+} from "@/lib/errors/format";
 
 vi.mock("@lingui/core/macro", () => ({
 	t: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
@@ -112,5 +117,13 @@ describe("errors", () => {
 
 		expect(isAmbiguousExchangeActionError(error)).toBe(false);
 		expect(formatExchangeActionError(error, "Transfer failed")).not.toContain("status could not be confirmed");
+	});
+
+	it("routes scale build errors through localized presentation messages", () => {
+		expect(formatOrderPlanError("Scale prices must resolve to distinct ticks")).toBe(
+			"Scale prices must resolve to distinct ticks",
+		);
+		expect(formatOrderPlanError("Enter a valid scale price range")).toBe("Enter price range");
+		expect(formatOrderPlanError("Unknown plan error")).toBe("Unknown plan error");
 	});
 });

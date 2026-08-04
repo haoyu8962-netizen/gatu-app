@@ -146,7 +146,6 @@ function findMatchingCandidate(
 	if (submission.historyBaseline.ready) {
 		for (const candidate of historyCandidates) {
 			if (!knownIds.has(candidate.twapId) && matchesTwapIntent(submission.intent, candidate.state)) {
-				// History is authoritative once the exchange reports a final state for the same TWAP ID.
 				eligibleCandidates.set(candidate.twapId, candidate);
 			}
 		}

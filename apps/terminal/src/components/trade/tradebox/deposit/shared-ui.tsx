@@ -35,6 +35,7 @@ export function NetworkSelect({ label, value, onChange, disabled, displayName }:
 }
 
 interface StatusScreenProps {
+	open: boolean;
 	title: React.ReactNode;
 	icon: "success" | "error" | "loading";
 	heading: React.ReactNode;
@@ -47,6 +48,7 @@ interface StatusScreenProps {
 }
 
 export function StatusScreen({
+	open,
 	title,
 	icon,
 	heading,
@@ -60,7 +62,7 @@ export function StatusScreen({
 	const explorerUrl = txHash ? getExplorerTxUrl(txHash, txChain) : null;
 
 	return (
-		<Modal open onOpenChange={closable ? onClose : undefined}>
+		<Modal open={open} onOpenChange={closable ? onClose : undefined}>
 			<ModalPopup size="sm" showClose={closable}>
 				<ModalHeader>
 					<ModalTitle>{title}</ModalTitle>

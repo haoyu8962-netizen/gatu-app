@@ -58,6 +58,7 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 					order.status === "unconfirmed" && "bg-warning-soft border border-stroke-warning-strong/30",
 					order.status === "partial" && "bg-warning-soft border border-stroke-warning-strong/30",
 					order.status === "success" && "bg-success-soft border border-stroke-success-strong/30",
+					order.status === "canceled" && "bg-warning-soft border border-stroke-warning-strong/30",
 					order.status === "failed" && "bg-error-soft border border-stroke-error-strong/30",
 				)}
 			>
@@ -66,6 +67,7 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 				{order.status === "unconfirmed" && <WarningCircleIcon className="size-4 text-warning" />}
 				{order.status === "partial" && <WarningCircleIcon className="size-4 text-warning" />}
 				{order.status === "success" && <CheckIcon className="size-4 text-success" />}
+				{order.status === "canceled" && <WarningCircleIcon className="size-4 text-warning" />}
 				{order.status === "failed" && <XIcon className="size-4 text-error" />}
 			</div>
 
@@ -122,7 +124,9 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 					<div
 						className={cn(
 							"text-xs",
-							order.status === "partial" || order.status === "unconfirmed" ? "text-warning" : "text-error",
+							order.status === "partial" || order.status === "unconfirmed" || order.status === "canceled"
+								? "text-warning"
+								: "text-error",
 						)}
 					>
 						{order.error}
@@ -130,7 +134,10 @@ function OrderItem({ order, onRemove }: { order: OrderQueueItem; onRemove: () =>
 				)}
 			</div>
 
-			{(order.status === "unconfirmed" || order.status === "partial" || order.status === "failed") && (
+			{(order.status === "unconfirmed" ||
+				order.status === "partial" ||
+				order.status === "canceled" ||
+				order.status === "failed") && (
 				<Button
 					variant="ghost"
 					intent="neutral"
@@ -169,6 +176,7 @@ export function OrderToast() {
 	const unconfirmedCount = orders.filter((o) => o.status === "unconfirmed").length;
 	const partialCount = orders.filter((o) => o.status === "partial").length;
 	const successCount = orders.filter((o) => o.status === "success").length;
+	const canceledCount = orders.filter((o) => o.status === "canceled").length;
 	const failedCount = orders.filter((o) => o.status === "failed").length;
 
 	return createPortal(
@@ -191,17 +199,25 @@ export function OrderToast() {
 					confirmingCount === 0 &&
 					unconfirmedCount === 0 &&
 					"ring-1 ring-stroke-warning-strong/30",
+				canceledCount > 0 &&
+					pendingCount === 0 &&
+					confirmingCount === 0 &&
+					unconfirmedCount === 0 &&
+					partialCount === 0 &&
+					"ring-1 ring-stroke-warning-strong/30",
 				failedCount > 0 &&
 					pendingCount === 0 &&
 					confirmingCount === 0 &&
 					unconfirmedCount === 0 &&
 					partialCount === 0 &&
+					canceledCount === 0 &&
 					"ring-1 ring-stroke-error-strong/30",
 				successCount > 0 &&
 					pendingCount === 0 &&
 					confirmingCount === 0 &&
 					unconfirmedCount === 0 &&
 					partialCount === 0 &&
+					canceledCount === 0 &&
 					failedCount === 0 &&
 					"ring-1 ring-stroke-success-strong/30",
 			)}
@@ -230,6 +246,11 @@ export function OrderToast() {
 					{partialCount > 0 && (
 						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-warning-soft text-warning border border-stroke-warning-strong/30">
 							{partialCount} {t`partial`}
+						</span>
+					)}
+					{canceledCount > 0 && (
+						<span className="px-1.5 py-0.5 rounded text-xs font-medium bg-warning-soft text-warning border border-stroke-warning-strong/30">
+							{canceledCount} {t`Canceled`}
 						</span>
 					)}
 					{failedCount > 0 && (

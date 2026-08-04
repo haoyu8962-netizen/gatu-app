@@ -44,6 +44,7 @@ import {
 	continueBridgeInBackground,
 	executeBridgeQuote,
 	resetBridgeExecution,
+	restoreBridgeInForeground,
 	retryBridgeExecution,
 } from "@/lib/lifi/use-bridge";
 
@@ -337,7 +338,21 @@ describe("LI.FI bridge execution", () => {
 
 		expect(useBridgeExecutionState.getState()).toMatchObject({
 			status: "error",
-			error: "Bridge execution paused before completion.",
+			error: "Request status could not be confirmed. Check balances and transfer history before retrying.",
+		});
+	});
+
+	it("keeps retry rejection visible instead of silently returning to asset selection", async () => {
+		sdk.executeRoute.mockRejectedValueOnce(new Error("RPC unavailable before submission"));
+		sdk.resumeRoute.mockRejectedValueOnce(new Error("User rejected the request"));
+
+		await expect(executeBridgeQuote(createQuote())).resolves.toBe("error");
+		await expect(retryBridgeExecution()).resolves.toBe("rejected");
+
+		expect(useBridgeExecutionState.getState()).toMatchObject({
+			status: "error",
+			error: "Transaction was rejected",
+			canAbandon: true,
 		});
 	});
 
@@ -367,10 +382,50 @@ describe("LI.FI bridge execution", () => {
 		expect(sdk.updateRouteExecution).toHaveBeenCalledWith(expect.objectContaining({ id: "route-1" }), {
 			executeInBackground: true,
 		});
+		expect(restoreBridgeInForeground()).toBe(true);
+		expect(sdk.updateRouteExecution).toHaveBeenLastCalledWith(expect.objectContaining({ id: "route-1" }), {
+			executeInBackground: false,
+		});
 
 		const doneRoute = createRoute([createCrossChainProcess("DONE")], "DONE");
 		resolveExecution?.(doneRoute);
 		await expect(outcomePromise).resolves.toBe("success");
+	});
+
+	it("resumes a route that halted while the bridge UI was in the background", async () => {
+		let resolveExecution: ((route: RouteExtended) => void) | undefined;
+		const executionPromise = new Promise<RouteExtended>((resolve) => {
+			resolveExecution = resolve;
+		});
+		sdk.executeRoute.mockReturnValue(executionPromise);
+		sdk.resumeRoute.mockResolvedValue(createRoute([createCrossChainProcess("DONE")], "DONE"));
+
+		const outcomePromise = executeBridgeQuote(createQuote());
+		expect(continueBridgeInBackground()).toBe(true);
+		resolveExecution?.(createRoute());
+		await expect(outcomePromise).resolves.toBe("error");
+		expect(useBridgeExecutionState.getState()).toMatchObject({ status: "error", isBackgrounded: true });
+
+		expect(restoreBridgeInForeground()).toBe(true);
+		await vi.waitFor(() => expect(sdk.resumeRoute).toHaveBeenCalledOnce());
+		await vi.waitFor(() => expect(useBridgeExecutionState.getState().status).toBe("success"));
+	});
+
+	it("keeps genuine background execution errors on the manual retry path", async () => {
+		let rejectExecution: ((error: Error) => void) | undefined;
+		const executionPromise = new Promise<RouteExtended>((_resolve, reject) => {
+			rejectExecution = reject;
+		});
+		sdk.executeRoute.mockReturnValue(executionPromise);
+
+		const outcomePromise = executeBridgeQuote(createQuote());
+		expect(continueBridgeInBackground()).toBe(true);
+		rejectExecution?.(new Error("RPC unavailable before submission"));
+		await expect(outcomePromise).resolves.toBe("error");
+
+		expect(useBridgeExecutionState.getState()).toMatchObject({ status: "error", isBackgrounded: false });
+		expect(restoreBridgeInForeground()).toBe(false);
+		expect(sdk.resumeRoute).not.toHaveBeenCalled();
 	});
 
 	it("keeps tracking but warns and prevents safe-close claims when committed recovery cannot be written", async () => {

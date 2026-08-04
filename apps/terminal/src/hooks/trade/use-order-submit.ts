@@ -3,6 +3,7 @@ import { type LimitTif, type OrderType, TWAP_MINUTES_MAX, TWAP_MINUTES_MIN } fro
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder, throwIfResponseError } from "@/domain/trade/orders";
+import { formatOrderPlanError } from "@/lib/errors/format";
 import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { isPositive } from "@/lib/trade/numbers";
@@ -186,7 +187,7 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 				});
 
 				if (plan.errors.length > 0) {
-					updateOrder(orderId, { status: "failed", error: plan.errors.join("; ") });
+					updateOrder(orderId, { status: "failed", error: plan.errors.map(formatOrderPlanError).join("; ") });
 					return;
 				}
 
@@ -230,7 +231,10 @@ export function useOrderSubmit(): UseOrderSubmitResult {
 					resetForm();
 					return;
 				}
-				updateOrder(orderId, { status: "failed", error: error.message });
+				updateOrder(orderId, {
+					status: "failed",
+					error: resolution.errors.join("; ") || t`The exchange did not accept the order.`,
+				});
 				return;
 			}
 			const errorMessage = error instanceof Error ? error.message : t`Order failed`;

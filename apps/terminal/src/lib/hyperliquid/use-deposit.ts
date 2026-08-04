@@ -22,12 +22,22 @@ import {
 	DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
 } from "@/config/time";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import {
+	finishDepositExecution,
+	isCurrentDepositExecution,
+	resetDepositExecution,
+	setBlockedDepositExecution,
+	startDepositExecution,
+	updateDepositExecutionState,
+	useDepositExecutionState,
+} from "@/lib/hyperliquid/deposit-execution-state";
 import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
 export type DepositStatus = "idle" | "pending" | "confirming" | "success" | "error";
 type BalanceStatus = "idle" | "loading" | "success" | "error";
 type DepositMode = "wallet" | "smart";
+type DepositExecutionScope = "manual" | "automatic";
 type DepositNetwork = keyof typeof DEPOSIT_NETWORKS;
 type DepositNetworkConfig = (typeof DEPOSIT_NETWORKS)[DepositNetwork];
 type WalletProviderStatus = "idle" | "loading" | "ready" | "error";
@@ -55,6 +65,7 @@ export interface UseDepositResult {
 	status: DepositStatus;
 	error: Error | null;
 	hash: Hash | undefined;
+	executionAmount: string | null;
 	walletResponseDelayed: boolean;
 	deposit: (amount: string) => Promise<void>;
 	refreshBalance: () => Promise<bigint | undefined>;
@@ -66,14 +77,8 @@ interface UseDepositOptions {
 	balanceEnabled?: boolean;
 	balancePollIntervalMs?: number;
 	mode?: DepositMode;
+	executionScope?: DepositExecutionScope;
 	walletAddress?: `0x${string}`;
-}
-
-interface DepositState {
-	status: DepositStatus;
-	error: Error | null;
-	hash: Hash | undefined;
-	walletResponseDelayed: boolean;
 }
 
 interface UsdcBalanceState {
@@ -168,10 +173,6 @@ function validateAmount(amount: string, maxDepositRaw: bigint | undefined): Vali
 	} catch {
 		return { valid: false, error: t`Invalid amount` };
 	}
-}
-
-function createIdleState(): DepositState {
-	return { status: "idle", error: null, hash: undefined, walletResponseDelayed: false };
 }
 
 function createArbitrumSwitchState(key = ""): ArbitrumSwitchState {
@@ -998,6 +999,7 @@ export function useDeposit({
 	balanceEnabled = true,
 	balancePollIntervalMs,
 	mode = "wallet",
+	executionScope = "manual",
 	walletAddress: walletAddressOverride,
 }: UseDepositOptions = {}): UseDepositResult {
 	const network = getDepositNetwork(useIsTestnet());
@@ -1019,20 +1021,24 @@ export function useDeposit({
 		refetch,
 	} = useDepositUsdcBalance(depositConfig, walletAddress, balanceEnabled && !!walletAddress, balancePollIntervalMs);
 	const publicClient = usePublicClient({ chainId: depositConfig.chainId });
-
-	const [state, setState] = useState<DepositState>(createIdleState);
-	const operationIdRef = useRef(0);
-	const inFlightRef = useRef(false);
+	const executionKey = `${network}:${executionScope}:${mode}:${walletAddress?.toLowerCase() ?? "unavailable"}`;
+	const executionLockKey = `${network}:${mode}:${walletAddress?.toLowerCase() ?? "unavailable"}`;
+	const state = useDepositExecutionState(executionKey);
 
 	const validate = useCallback((amount: string) => validateAmount(amount, maxDepositRaw), [maxDepositRaw]);
 
 	const deposit = useCallback(
 		async (amount: string) => {
-			if (inFlightRef.current) return;
-			const operationId = operationIdRef.current + 1;
-			operationIdRef.current = operationId;
-			inFlightRef.current = true;
-			setState({ status: "pending", error: null, hash: undefined, walletResponseDelayed: false });
+			const operationId = startDepositExecution(executionKey, executionLockKey, amount);
+			if (operationId === null) {
+				setBlockedDepositExecution(
+					executionKey,
+					new Error(
+						t`Smart wallet deposit state is syncing. Do not submit another deposit while the balance is being checked.`,
+					),
+				);
+				return;
+			}
 
 			try {
 				const amountRaw = parseUnits(amount, USDC_DECIMALS);
@@ -1040,8 +1046,7 @@ export function useDeposit({
 				let provider: Eip1193Provider | undefined;
 				let smartDepositUser: `0x${string}` | undefined;
 				const markWalletResponseDelayed = () => {
-					if (operationIdRef.current !== operationId) return;
-					setState((previous) =>
+					updateDepositExecutionState(executionKey, operationId, (previous) =>
 						previous.status === "pending" ? { ...previous, walletResponseDelayed: true } : previous,
 					);
 				};
@@ -1107,12 +1112,21 @@ export function useDeposit({
 					);
 				}
 
-				if (operationIdRef.current !== operationId) return;
-				setState({ status: "confirming", error: null, hash, walletResponseDelayed: false });
+				if (
+					!updateDepositExecutionState(executionKey, operationId, {
+						status: "confirming",
+						error: null,
+						hash,
+						amount,
+						walletResponseDelayed: false,
+					})
+				) {
+					return;
+				}
 				if (!publicClient) throw new Error(t`No response from exchange`);
 				await waitForBroadcastedTransaction(publicClient, hash, { provider });
 
-				if (operationIdRef.current !== operationId) return;
+				if (!isCurrentDepositExecution(executionKey, operationId)) return;
 				const receipt = await waitForConfirmedReceipt(publicClient, hash, { provider });
 				if (mode === "smart") {
 					if (!smartDepositUser) throw new Error(t`Wallet not connected`);
@@ -1124,31 +1138,47 @@ export function useDeposit({
 					});
 				}
 
-				if (operationIdRef.current !== operationId) return;
-				setState({ status: "success", error: null, hash, walletResponseDelayed: false });
+				if (
+					!updateDepositExecutionState(executionKey, operationId, {
+						status: "success",
+						error: null,
+						hash,
+						amount,
+						walletResponseDelayed: false,
+					})
+				) {
+					return;
+				}
 				refetch();
 			} catch (error) {
-				if (operationIdRef.current !== operationId) return;
-				setState((previous) => ({
+				updateDepositExecutionState(executionKey, operationId, (previous) => ({
 					status: "error",
 					error: toError(error),
 					hash: previous.hash,
+					amount: previous.amount,
 					walletResponseDelayed: false,
 				}));
 			} finally {
-				if (operationIdRef.current === operationId) {
-					inFlightRef.current = false;
-				}
+				finishDepositExecution(executionKey, executionLockKey, operationId);
 			}
 		},
-		[depositChain, depositConfig, depositWallet, getClientForChain, mode, publicClient, refetch, walletAddress],
+		[
+			depositChain,
+			depositConfig,
+			depositWallet,
+			executionKey,
+			executionLockKey,
+			getClientForChain,
+			mode,
+			publicClient,
+			refetch,
+			walletAddress,
+		],
 	);
 
 	const reset = useCallback(() => {
-		operationIdRef.current += 1;
-		inFlightRef.current = false;
-		setState(createIdleState());
-	}, []);
+		resetDepositExecution(executionKey);
+	}, [executionKey]);
 
 	return {
 		...chain,
@@ -1163,6 +1193,7 @@ export function useDeposit({
 		status: state.status,
 		error: state.error,
 		hash: state.hash,
+		executionAmount: state.amount,
 		walletResponseDelayed: state.walletResponseDelayed,
 		deposit,
 		refreshBalance: refetch,

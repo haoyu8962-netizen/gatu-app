@@ -7,6 +7,7 @@ import { BridgeTab } from "@/components/trade/tradebox/bridge/bridge-tab";
 
 const testState = vi.hoisted(() => ({
 	continueBridgeInBackground: vi.fn(),
+	restoreBridgeInForeground: vi.fn(),
 	initLiFi: vi.fn(),
 }));
 
@@ -18,6 +19,7 @@ vi.mock("@/config/lifi-bridge", () => ({
 }));
 vi.mock("@/lib/lifi/use-bridge", () => ({
 	continueBridgeInBackground: testState.continueBridgeInBackground,
+	restoreBridgeInForeground: testState.restoreBridgeInForeground,
 	useBridgeExecutor: () => ({
 		status: "idle",
 		execute: vi.fn(),
@@ -49,6 +51,7 @@ describe("BridgeTab lifecycle", () => {
 		root = createRoot(container);
 		testState.continueBridgeInBackground.mockReset();
 		testState.initLiFi.mockReset();
+		testState.restoreBridgeInForeground.mockReset();
 	});
 
 	afterEach(() => {
@@ -59,6 +62,7 @@ describe("BridgeTab lifecycle", () => {
 	it("moves any active route to background execution when the bridge view unmounts", () => {
 		act(() => root.render(createElement(BridgeTab)));
 		expect(testState.initLiFi).toHaveBeenCalledOnce();
+		expect(testState.restoreBridgeInForeground).toHaveBeenCalledOnce();
 
 		act(() => root.unmount());
 

@@ -5,11 +5,23 @@ export const ORDER_RECONCILIATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 export const ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS = 2 * 60 * 1000;
 export const ORDER_RECONCILIATION_POLL_LIMIT = 3;
 
-const ACCEPTED_ORDER_STATUSES: ReadonlySet<OrderProcessingStatus> = new Set(["open", "filled", "triggered"]);
-
 export type TrackedOrderParams = ExchangeParams<"order">;
 type OrderStatusResponse = Awaited<ReturnType<InfoClient["orderStatus"]>>;
 export type OrderProcessingStatus = Extract<OrderStatusResponse, { status: "order" }>["order"]["status"];
+
+const ACCEPTED_ORDER_STATUSES: ReadonlySet<OrderProcessingStatus> = new Set(["open", "filled", "triggered"]);
+const CANCELED_ORDER_STATUSES: ReadonlySet<OrderProcessingStatus> = new Set([
+	"canceled",
+	"marginCanceled",
+	"vaultWithdrawalCanceled",
+	"openInterestCapCanceled",
+	"selfTradeCanceled",
+	"reduceOnlyCanceled",
+	"siblingFilledCanceled",
+	"delistedCanceled",
+	"liquidatedCanceled",
+	"scheduledCancel",
+]);
 
 export interface TrackedOrderChild {
 	assetId: number;
@@ -98,6 +110,10 @@ export function getOrderIntentKey(params: TrackedOrderParams): string {
 
 export function isAcceptedOrderStatus(status: OrderProcessingStatus): boolean {
 	return ACCEPTED_ORDER_STATUSES.has(status);
+}
+
+export function isCanceledOrderStatus(status: OrderProcessingStatus): boolean {
+	return CANCELED_ORDER_STATUSES.has(status);
 }
 
 export function isAmbiguousOrderRequestError(error: unknown): boolean {

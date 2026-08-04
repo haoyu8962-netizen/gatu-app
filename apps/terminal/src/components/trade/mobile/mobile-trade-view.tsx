@@ -380,6 +380,11 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 					setTriggerPrice("");
 					return;
 				}
+				updateOrder(orderId, {
+					status: "failed",
+					error: resolution.errors.join("; ") || t`The exchange did not accept the order.`,
+				});
+				return;
 			}
 			updateOrder(orderId, {
 				status: "failed",

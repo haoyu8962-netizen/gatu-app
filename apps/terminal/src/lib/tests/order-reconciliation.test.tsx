@@ -4,7 +4,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrderReconciliation } from "@/components/trade/order-reconciliation";
-import { ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS } from "@/domain/trade/order-tracking";
+import { ORDER_RECONCILIATION_CONFIRMATION_WINDOW_MS, type OrderProcessingStatus } from "@/domain/trade/order-tracking";
 import {
 	getPositionMarketCloseActions,
 	getPositionMarketCloseModal,
@@ -27,9 +27,7 @@ const mocks = vi.hoisted(() => ({
 	infoOrderStatus: vi.fn(),
 	successToast: vi.fn(),
 	warningToast: vi.fn(),
-	orderUpdatesData: undefined as
-		| Array<{ order: { cloid?: `0x${string}` }; status: "open" | "filled" | "rejected" }>
-		| undefined,
+	orderUpdatesData: undefined as Array<{ order: { cloid?: `0x${string}` }; status: OrderProcessingStatus }> | undefined,
 }));
 
 vi.mock("sonner", () => ({
@@ -148,6 +146,33 @@ describe("OrderReconciliation", () => {
 			sessionId,
 			phase: "idle",
 			error: "The exchange did not accept the order.",
+		});
+	});
+
+	it("warns when an accepted market close is later canceled instead of reporting a placement rejection", () => {
+		const cloid = "0x00000000000000000000000000000043" as const;
+		const sessionId = openReconcilingMarketCloseSession();
+		getPendingOrderActions().add({
+			env: "Mainnet",
+			user: USER,
+			intentKey: "market-close-canceled",
+			exclusiveAssetLock: true,
+			confirmationMode: "filled",
+			origin: { type: "positionMarketClose", sessionId },
+			children: [{ assetId: 43, cloid }],
+		});
+		mocks.orderUpdatesData = [{ order: { cloid }, status: "marginCanceled" }];
+
+		act(() => root.render(createElement(OrderReconciliation)));
+
+		expect(hasPendingOrderForAssets("Mainnet", USER, [43])).toBe(false);
+		expect(mocks.warningToast).toHaveBeenCalledWith(
+			"Canceled. Some orders were accepted. Review open orders before retrying.",
+		);
+		expect(getPositionMarketCloseModal()).toMatchObject({
+			sessionId,
+			phase: "idle",
+			error: "Canceled. Some orders were accepted. Review open orders before retrying.",
 		});
 	});
 

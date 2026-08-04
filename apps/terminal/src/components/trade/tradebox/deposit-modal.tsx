@@ -83,6 +83,7 @@ export function DepositModal() {
 		status: depositStatus,
 		error: depositError,
 		hash: depositHash,
+		executionAmount: depositExecutionAmount,
 		walletResponseDelayed,
 		isArbitrum,
 		isSwitching,
@@ -96,6 +97,7 @@ export function DepositModal() {
 		networkName: depositNetworkName,
 		smartDepositEnabled,
 	} = useDeposit({
+		balanceEnabled: open,
 		balancePollIntervalMs: isEmbeddedDeposit ? DEPOSIT_BALANCE_REFRESH_MS : undefined,
 		mode: depositMode,
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
@@ -154,6 +156,7 @@ export function DepositModal() {
 	});
 	const visibleTab = showBridgeTab || activeTab !== "bridge" ? activeTab : "deposit";
 	const isDepositPending = depositStatus === "pending" || depositStatus === "confirming";
+	const displayedDepositAmount = depositExecutionAmount ?? depositAmount;
 	const walletDepositProviderUnavailable =
 		canUseFundsActions && depositMode === "wallet" && visibleTab === "deposit" && walletProviderStatus === "error";
 	const requiresWithdrawDestination = isEmbeddedDeposit;
@@ -181,6 +184,10 @@ export function DepositModal() {
 		setDepositAmount("");
 		setWithdrawAmount("");
 		setWithdrawDestination("");
+		close();
+	}
+
+	function handlePendingClose() {
 		close();
 	}
 
@@ -217,12 +224,13 @@ export function DepositModal() {
 	if (depositStatus === "success") {
 		return (
 			<StatusScreen
+				open={open}
 				title={<Trans>Deposit</Trans>}
 				icon="success"
 				heading={<Trans>Deposit submitted</Trans>}
 				description={
 					<>
-						<span className="tabular-nums font-medium text-success">{depositAmount} USDC</span>{" "}
+						<span className="tabular-nums font-medium text-success">{displayedDepositAmount} USDC</span>{" "}
 						<Trans>confirmed on Arbitrum. Hyperliquid credit usually arrives within a minute.</Trans>
 					</>
 				}
@@ -242,6 +250,7 @@ export function DepositModal() {
 
 		return (
 			<StatusScreen
+				open={open}
 				title={<Trans>Deposit</Trans>}
 				icon="error"
 				heading={<Trans>Deposit failed</Trans>}
@@ -271,17 +280,19 @@ export function DepositModal() {
 	if (depositStatus === "pending" || depositStatus === "confirming") {
 		return (
 			<StatusScreen
+				open={open}
 				title={<Trans>Deposit</Trans>}
 				icon="loading"
 				heading={depositPendingHeading}
 				description={
 					<span className="flex flex-col gap-1">
-						<span className="tabular-nums">{depositAmount} USDC → Hyperliquid</span>
+						<span className="tabular-nums">{displayedDepositAmount} USDC → Hyperliquid</span>
 						{walletResponseDelayed ? (
-							<span>
+							<span className="flex flex-col gap-1">
 								<Trans>
 									Keep this window open and confirm or reject the request in your wallet. Do not submit another deposit.
 								</Trans>
+								<Trans>Closing this dialog will not cancel it.</Trans>
 							</span>
 						) : null}
 					</span>
@@ -289,13 +300,20 @@ export function DepositModal() {
 				txHash={depositStatus === "confirming" ? depositHash : undefined}
 				txChain={depositTxChain}
 				closable={false}
-			/>
+			>
+				{walletResponseDelayed ? (
+					<Button variant="outline" intent="neutral" onClick={handlePendingClose} className="w-full">
+						<Trans>Close</Trans>
+					</Button>
+				) : null}
+			</StatusScreen>
 		);
 	}
 
 	if (walletDepositProviderUnavailable) {
 		return (
 			<StatusScreen
+				open={open}
 				title={<Trans>Deposit</Trans>}
 				icon="error"
 				heading={<Trans>Wallet connection unavailable</Trans>}
@@ -323,7 +341,7 @@ export function DepositModal() {
 	) {
 		return (
 			<WrongNetworkScreen
-				open
+				open={open}
 				onClose={handleClose}
 				onSwitch={switchToArbitrum}
 				isSwitching={isSwitching}
@@ -337,6 +355,7 @@ export function DepositModal() {
 
 		return (
 			<StatusScreen
+				open={open}
 				title={<Trans>Withdraw</Trans>}
 				icon="success"
 				heading={<Trans>Withdrawal submitted</Trans>}
@@ -366,6 +385,7 @@ export function DepositModal() {
 	if (withdrawError) {
 		return (
 			<StatusScreen
+				open={open}
 				title={<Trans>Withdraw</Trans>}
 				icon="error"
 				heading={<Trans>Withdrawal failed</Trans>}

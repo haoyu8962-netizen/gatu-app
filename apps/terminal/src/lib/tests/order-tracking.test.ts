@@ -6,6 +6,7 @@ import {
 	getReconciliationDelayMs,
 	isAcceptedOrderStatus,
 	isAmbiguousOrderRequestError,
+	isCanceledOrderStatus,
 	resolveOrderBatchResponse,
 	type TrackedOrderParams,
 	trackOrderRequest,
@@ -64,6 +65,16 @@ describe("order tracking", () => {
 		expect(isAcceptedOrderStatus("triggered")).toBe(true);
 		expect(isAcceptedOrderStatus("rejected")).toBe(false);
 		expect(isAcceptedOrderStatus("perpMarginRejected")).toBe(false);
+	});
+
+	it("distinguishes accepted-then-canceled states from placement rejections", () => {
+		expect(isCanceledOrderStatus("canceled")).toBe(true);
+		expect(isCanceledOrderStatus("marginCanceled")).toBe(true);
+		expect(isCanceledOrderStatus("siblingFilledCanceled")).toBe(true);
+		expect(isCanceledOrderStatus("scheduledCancel")).toBe(true);
+		expect(isCanceledOrderStatus("rejected")).toBe(false);
+		expect(isCanceledOrderStatus("perpMarginRejected")).toBe(false);
+		expect(isCanceledOrderStatus("filled")).toBe(false);
 	});
 
 	it("backs off reconciliation checks with a 30 second cap", () => {

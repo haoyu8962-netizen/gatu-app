@@ -43,7 +43,11 @@ export function ExecutingScreen({ address, statusText, txHash, onDone, recoveryW
 							<Trans>Taking longer than expected</Trans>
 						</p>
 						<p className={`text-xs text-fg-muted ${BRIDGE_MESSAGE_MAX_WIDTH}`}>
-							<Trans>Your bridge is still processing. Funds are safe.</Trans>
+							{txHash ? (
+								<Trans>Your bridge is still processing. Funds are safe.</Trans>
+							) : (
+								<Trans>Confirm transaction in your wallet</Trans>
+							)}
 						</p>
 					</div>
 					{txHash ? (
@@ -57,11 +61,7 @@ export function ExecutingScreen({ address, statusText, txHash, onDone, recoveryW
 						</p>
 					) : null}
 				</div>
-				{recoveryWarning ? null : (
-					<Button variant="outline" intent="neutral" size="lg" className="w-full mt-auto" onClick={onDone}>
-						<Trans>Close</Trans>
-					</Button>
-				)}
+				{recoveryWarning ? null : <ExecutionActions onClose={onDone} />}
 			</div>
 		);
 	}
@@ -126,10 +126,16 @@ export function ExecutingScreen({ address, statusText, txHash, onDone, recoveryW
 					{recoveryWarning}
 				</p>
 			) : (
-				<Button variant="outline" intent="neutral" size="lg" className="w-full mt-auto" onClick={onDone}>
-					<Trans>Close</Trans>
-				</Button>
+				<ExecutionActions onClose={onDone} />
 			)}
 		</div>
+	);
+}
+
+function ExecutionActions({ onClose }: { onClose: () => void }) {
+	return (
+		<Button variant="outline" intent="neutral" size="lg" className="w-full mt-auto" onClick={onClose}>
+			<Trans>Close</Trans>
+		</Button>
 	);
 }

@@ -59,6 +59,23 @@ function OrderToastHarness() {
 		createElement(
 			"button",
 			{
+				"data-testid": "add-canceled-order",
+				onClick: () =>
+					addOrder({
+						error: "Canceled. Some orders were accepted. Review open orders before retrying.",
+						market: "HYPE",
+						orderType: "limit",
+						side: "buy",
+						size: "1",
+						status: "canceled",
+					}),
+				type: "button",
+			},
+			"Add canceled order",
+		),
+		createElement(
+			"button",
+			{
 				"data-testid": "clear-orders",
 				onClick: () => {
 					for (const order of orders) removeOrder(order.id);
@@ -138,6 +155,19 @@ describe("OrderToast placement", () => {
 		act(() => dismissButton.click());
 
 		expect(document.body.querySelector('output[aria-live="polite"]')).toBeNull();
+	});
+
+	it("renders an accepted-then-canceled order as a dismissible canceled state", () => {
+		const addButton = container.querySelector<HTMLButtonElement>('[data-testid="add-canceled-order"]');
+		if (!addButton) throw new Error("Add canceled order button not found");
+		act(() => addButton.click());
+
+		const status = document.body.querySelector<HTMLOutputElement>('output[aria-live="polite"]');
+		expect(status?.textContent).toContain("Canceled");
+		expect(status?.textContent).not.toContain("unconfirmed");
+
+		const dismissButton = status?.querySelector<HTMLButtonElement>('button[aria-label="Dismiss"]');
+		expect(dismissButton).not.toBeNull();
 	});
 });
 

@@ -51,6 +51,7 @@ export function EmbeddedDepositAutoBridge() {
 	} = useDeposit({
 		balanceEnabled: isEmbeddedDeposit && !!depositEmbeddedWalletAddress,
 		balancePollIntervalMs: DEPOSIT_BALANCE_REFRESH_MS,
+		executionScope: "automatic",
 		mode: "smart",
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
 	});

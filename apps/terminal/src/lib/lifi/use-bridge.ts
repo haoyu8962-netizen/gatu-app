@@ -1,5 +1,6 @@
 import type { RouteExtended } from "@lifi/sdk";
 import { convertQuoteToRoute, executeRoute, resumeRoute, updateRouteExecution } from "@lifi/sdk";
+import { t } from "@lingui/core/macro";
 import { LIFI_BRIDGE_FEATURES } from "@/config/lifi-bridge";
 import { isSafeHttpUrl } from "@/lib/safe-url";
 import {
@@ -26,6 +27,8 @@ export type { ProcessDetail } from "./bridge-execution-state";
 
 export type BridgeOutcome = "success" | "error" | "rejected" | "disabled";
 export type BridgeRetryMode = "retry" | "track";
+
+let bridgeExecutionEpoch = 0;
 
 function getProcessStatusText(route: RouteExtended): string {
 	for (const step of route.steps) {
@@ -102,7 +105,8 @@ function hasSameAddress(left: string | null | undefined, right: string | null | 
 	return !!left && !!right && left.toLowerCase() === right.toLowerCase();
 }
 
-function updateBridgeRoute(route: RouteExtended, expectedIdentity: BridgeRouteIdentity) {
+function updateBridgeRoute(route: RouteExtended, expectedIdentity: BridgeRouteIdentity, executionEpoch: number) {
+	if (executionEpoch !== bridgeExecutionEpoch) return;
 	const identity = getBridgeRouteIdentity(route);
 	if (!hasSameBridgeRouteIdentity(identity, expectedIdentity)) {
 		throw new Error("LI.FI returned a bridge route that does not match the approved route.");
@@ -126,6 +130,7 @@ function updateBridgeRoute(route: RouteExtended, expectedIdentity: BridgeRouteId
 			latestRoute: route,
 			routeIdentity: expectedIdentity,
 			canAbandon,
+			isBackgrounded: false,
 			sourceAddress: expectedIdentity.sourceAddress,
 			sourceChainId: expectedIdentity.sourceChainId,
 			recoveryWarning: null,
@@ -172,28 +177,34 @@ async function runBridgeRoute(
 	route: RouteExtended,
 	runner: typeof executeRoute | typeof resumeRoute,
 	identity: BridgeRouteIdentity,
+	executionEpoch: number,
+	resetOnUserRejection: boolean,
 ): Promise<BridgeOutcome> {
 	try {
 		const result = await runWithLiFiExecutionWallet(identity.sourceAddress, identity.sourceChainId, () =>
-			runner(route, { updateRouteHook: (updatedRoute) => updateBridgeRoute(updatedRoute, identity) }),
+			runner(route, {
+				updateRouteHook: (updatedRoute) => updateBridgeRoute(updatedRoute, identity, executionEpoch),
+			}),
 		);
-		updateBridgeRoute(result, identity);
+		if (executionEpoch !== bridgeExecutionEpoch) return "error";
+		updateBridgeRoute(result, identity, executionEpoch);
 		if (isRouteDone(result)) return "success";
 
 		useBridgeExecutionState.setState({
 			status: "error",
-			error: "Bridge execution paused before completion.",
+			error: t`Request status could not be confirmed. Check balances and transfer history before retrying.`,
 			endTime: Date.now(),
 		});
 		return "error";
 	} catch (error) {
+		if (executionEpoch !== bridgeExecutionEpoch) return "error";
 		const stateBeforeRecovery = useBridgeExecutionState.getState();
 		const committedRoute = [stateBeforeRecovery.latestRoute, route].find(
 			(candidate): candidate is RouteExtended => !!candidate && hasCommittedBridgeFunds(candidate),
 		);
 		if (committedRoute) {
 			try {
-				updateBridgeRoute(committedRoute, identity);
+				updateBridgeRoute(committedRoute, identity, executionEpoch);
 			} catch {}
 		}
 		if (useBridgeExecutionState.getState().status === "success") return "success";
@@ -202,8 +213,18 @@ async function runBridgeRoute(
 		const latestRoute = current.latestRoute;
 		const canAbandon = latestRoute ? !hasPossiblyCommittedFunds(latestRoute) : current.canAbandon;
 		if (isUserRejection(error) && canAbandon) {
-			clearPersistedBridgeExecution();
-			useBridgeExecutionState.setState(INITIAL_BRIDGE_STATE);
+			if (resetOnUserRejection) {
+				clearPersistedBridgeExecution();
+				useBridgeExecutionState.setState(INITIAL_BRIDGE_STATE);
+			} else {
+				useBridgeExecutionState.setState({
+					status: "error",
+					error: t`Transaction was rejected`,
+					endTime: Date.now(),
+					canAbandon: true,
+					isBackgrounded: false,
+				});
+			}
 			return "rejected";
 		}
 
@@ -212,6 +233,7 @@ async function runBridgeRoute(
 			error: error instanceof Error ? error.message : "Bridge failed",
 			endTime: Date.now(),
 			canAbandon,
+			isBackgrounded: false,
 		});
 		return "error";
 	}
@@ -272,10 +294,12 @@ export async function executeBridgeQuote(quote: BridgeQuote): Promise<BridgeOutc
 		sourceAddress: identity.sourceAddress,
 		sourceChainId: identity.sourceChainId,
 		canAbandon: true,
+		isBackgrounded: false,
 		recoveryWarning: null,
 	});
 
-	return runBridgeRoute(route, executeRoute, identity);
+	const executionEpoch = ++bridgeExecutionEpoch;
+	return runBridgeRoute(route, executeRoute, identity, executionEpoch, true);
 }
 
 function getBridgeRetryMode(state: BridgeState): BridgeRetryMode | null {
@@ -326,14 +350,17 @@ export async function retryBridgeExecution(): Promise<BridgeOutcome> {
 		error: null,
 		endTime: null,
 		latestRoute: route,
+		isBackgrounded: false,
 	});
 
-	return runBridgeRoute(route, resumeRoute, current.routeIdentity);
+	const executionEpoch = ++bridgeExecutionEpoch;
+	return runBridgeRoute(route, resumeRoute, current.routeIdentity, executionEpoch, false);
 }
 
 export function resetBridgeExecution(): boolean {
 	const current = useBridgeExecutionState.getState();
 	if (current.status === "executing" || (current.status === "error" && !current.canAbandon)) return false;
+	bridgeExecutionEpoch += 1;
 	clearPersistedBridgeExecution();
 	useBridgeExecutionState.setState(INITIAL_BRIDGE_STATE);
 	return true;
@@ -345,6 +372,25 @@ export function continueBridgeInBackground(): boolean {
 	if (!hasSameAddress(getActiveLiFiWalletAddress(), current.sourceAddress)) return false;
 	if (!hasSameBridgeRouteIdentity(getBridgeRouteIdentity(current.latestRoute), current.routeIdentity)) return false;
 	updateRouteExecution(current.latestRoute, { executeInBackground: true });
+	useBridgeExecutionState.setState({ isBackgrounded: true });
+	return true;
+}
+
+export function restoreBridgeInForeground(): boolean {
+	const current = useBridgeExecutionState.getState();
+	if (!current.isBackgrounded || !current.latestRoute || !current.routeIdentity) return false;
+	if (!hasSameAddress(getActiveLiFiWalletAddress(), current.sourceAddress)) return false;
+	if (!hasSameBridgeRouteIdentity(getBridgeRouteIdentity(current.latestRoute), current.routeIdentity)) return false;
+
+	if (current.status === "executing") {
+		updateRouteExecution(current.latestRoute, { executeInBackground: false });
+		useBridgeExecutionState.setState({ isBackgrounded: false });
+		return true;
+	}
+	if (current.status !== "error") return false;
+
+	useBridgeExecutionState.setState({ isBackgrounded: false });
+	void retryBridgeExecution();
 	return true;
 }
 
