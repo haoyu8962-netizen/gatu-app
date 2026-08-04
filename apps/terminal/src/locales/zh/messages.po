@@ -321,6 +321,7 @@ msgstr "正在为此钱包准备另一项移动授权。"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-order-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Another order for this market is still being confirmed."
 msgstr "该市场的另一笔订单仍在确认中。"
 
@@ -711,6 +712,7 @@ msgstr "点击了解更多关于此资产的信息。"
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Close"
 msgstr "关闭"
 
@@ -1592,6 +1594,7 @@ msgstr "切换语言失败"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Failed to close position"
 msgstr "平仓失败"
 
@@ -1665,6 +1668,7 @@ msgstr "加载订单历史失败。"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Failed to load positions."
 msgstr "加载仓位失败。"
 
@@ -2439,6 +2443,7 @@ msgid "Market Cap"
 msgstr "市场总值"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "市价平仓"
 
@@ -2474,6 +2479,7 @@ msgstr "主钱包"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Max"
 msgstr "最大"
 
@@ -2688,6 +2694,7 @@ msgstr "否"
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "No active positions."
 msgstr "无活跃仓位。"
 
@@ -3036,6 +3043,7 @@ msgstr "委托已提交"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "订单已提交，正在确认交易所状态；请勿重试。"
 
@@ -4354,6 +4362,7 @@ msgstr "止损触发价须低于标记价"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Submitting..."
 msgstr "提交中..."
 
@@ -5027,6 +5036,7 @@ msgid "Trading"
 msgstr "交易中"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
 msgstr "此弹窗打开期间交易数据已发生变化。请关闭并重新打开后再提交。"
 
@@ -5981,3 +5991,47 @@ msgstr "该市场仅支持逐仓保证金模式。"
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
 msgstr "该仓位的方向已发生变化。请重新打开保证金调整窗口后再操作。"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Available to close"
+msgstr "可平数量"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Click to submit · Filled trades cannot be reversed"
+msgstr "点击提交 · 成交后不可撤销"
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+msgid "Close order submitted"
+msgstr "已提交平仓委托"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Entry price"
+msgstr "持仓均价"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Estimated PnL"
+msgstr "预估盈亏"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Hold to confirm · Filled trades cannot be reversed"
+msgstr "长按确认 · 成交后不可撤销"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Mark price"
+msgstr "标记价格"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Market Close {formattedCloseSize} {sizeSymbol}"
+msgstr "市价平仓 {formattedCloseSize} {sizeSymbol}"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Position summary"
+msgstr "持仓摘要"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Price: Market"
+msgstr "价格：市价"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
+msgstr "以当前市场价格减仓，成交后不可撤销。"

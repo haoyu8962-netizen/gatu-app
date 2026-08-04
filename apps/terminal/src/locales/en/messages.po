@@ -321,6 +321,7 @@ msgstr "Another mobile approval is being prepared for this wallet."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-order-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Another order for this market is still being confirmed."
 msgstr "Another order for this market is still being confirmed."
 
@@ -711,6 +712,7 @@ msgstr "Click to learn more about this asset."
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Close"
 msgstr "Close"
 
@@ -1592,6 +1594,7 @@ msgstr "Failed to change language"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Failed to close position"
 msgstr "Failed to close position"
 
@@ -1665,6 +1668,7 @@ msgstr "Failed to load order history."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Failed to load positions."
 msgstr "Failed to load positions."
 
@@ -2439,6 +2443,7 @@ msgid "Market Cap"
 msgstr "Market Cap"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Market Close"
 
@@ -2474,6 +2479,7 @@ msgstr "Master wallet"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Max"
 msgstr "Max"
 
@@ -2688,6 +2694,7 @@ msgstr "No"
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "No active positions."
 msgstr "No active positions."
 
@@ -3036,6 +3043,7 @@ msgstr "Order submitted"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "Order submitted. Confirming exchange status; do not retry."
 
@@ -4354,6 +4362,7 @@ msgstr "Stop trigger must be below mark"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Submitting..."
 msgstr "Submitting..."
 
@@ -5027,6 +5036,7 @@ msgid "Trading"
 msgstr "Trading"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
 msgstr "Trading data changed while this dialog was open. Close and reopen it before submitting."
 
@@ -5981,3 +5991,47 @@ msgstr "This market only supports isolated margin mode."
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
 msgstr "This position changed sides. Reopen the margin dialog before adjusting margin."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Available to close"
+msgstr "Available to close"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Click to submit · Filled trades cannot be reversed"
+msgstr "Click to submit · Filled trades cannot be reversed"
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+msgid "Close order submitted"
+msgstr "Close order submitted"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Entry price"
+msgstr "Entry price"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Estimated PnL"
+msgstr "Estimated PnL"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Hold to confirm · Filled trades cannot be reversed"
+msgstr "Hold to confirm · Filled trades cannot be reversed"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Mark price"
+msgstr "Mark price"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Market Close {formattedCloseSize} {sizeSymbol}"
+msgstr "Market Close {formattedCloseSize} {sizeSymbol}"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Position summary"
+msgstr "Position summary"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Price: Market"
+msgstr "Price: Market"
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
+msgstr "Reduce this position at the current market price. Filled trades cannot be reversed."

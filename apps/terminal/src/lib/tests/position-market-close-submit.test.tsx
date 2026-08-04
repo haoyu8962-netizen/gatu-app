@@ -365,7 +365,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(typeof submitted.orders[0]?.s).toBe("string");
 		expect(getPositionMarketCloseModal()).toBeNull();
 		expect(mocks.toastSuccess).toHaveBeenCalledWith(
-			"Order filled",
+			"Close order submitted",
 			expect.objectContaining({ description: "2.500 CXMT" }),
 		);
 	});

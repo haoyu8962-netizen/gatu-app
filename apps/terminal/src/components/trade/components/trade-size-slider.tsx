@@ -12,6 +12,10 @@ interface Props {
 	ariaInvalid?: boolean;
 	thumbAlignment?: SliderProps["thumbAlignment"];
 	className?: string;
+	controlClassName?: string;
+	trackClassName?: string;
+	indicatorClassName?: string;
+	thumbClassName?: string;
 }
 
 export function TradeSizeSlider({
@@ -25,6 +29,10 @@ export function TradeSizeSlider({
 	ariaInvalid,
 	thumbAlignment,
 	className,
+	controlClassName,
+	trackClassName,
+	indicatorClassName,
+	thumbClassName,
 }: Props) {
 	return (
 		<Slider
@@ -37,7 +45,15 @@ export function TradeSizeSlider({
 			getAriaValueText={ariaValueText ? () => ariaValueText : undefined}
 			thumbSize={thumbSize}
 			thumbAlignment={thumbAlignment}
+			controlClassName={controlClassName}
+			trackClassName={trackClassName}
+			indicatorClassName={indicatorClassName}
+			thumbClassName={thumbClassName}
 			value={value}
+			onPointerDown={(event) => {
+				if (disabled || !event.currentTarget.setPointerCapture) return;
+				event.currentTarget.setPointerCapture(event.pointerId);
+			}}
 			onValueChange={(nextValue, eventDetails) => {
 				if (typeof nextValue !== "number" || eventDetails.reason === "none") return;
 				onPercentChange(normalizePercent(nextValue));

@@ -237,7 +237,7 @@ export function usePositionMarketCloseSubmit() {
 					if (!filledSize) {
 						throw new Error(t`Order submitted. Confirming exchange status; do not retry.`);
 					}
-					toast.success(t`Order filled`, {
+					toast.success(t`Close order submitted`, {
 						description: formatToken(filledSize, {
 							decimals: refreshedSession.position.szDecimals,
 							symbol: currentMarket?.shortName ?? refreshedSession.position.coin.split(":").pop(),

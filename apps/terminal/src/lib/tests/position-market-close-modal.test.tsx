@@ -1,18 +1,26 @@
 /** @vitest-environment jsdom */
 
-import { act, createElement, type ReactNode } from "react";
+import { createHash } from "node:crypto";
+import { i18n, type Messages } from "@lingui/core";
+import { I18nProvider } from "@lingui/react";
+import { act, type ComponentProps, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
+	actionButtonProps: null as Record<string, unknown> | null,
 	adaptiveProps: null as Record<string, unknown> | null,
 	close: vi.fn(),
 	error: null as string | null,
 	isMobile: false,
 	isPending: false,
 	isReconciling: false,
-	livePosition: { szi: "2.5" } as { szi: string } | null,
-	marketsInfo: { markPx: "101000" } as { markPx: string } | undefined,
+	livePosition: {
+		szi: "2.5",
+		entryPx: "100000",
+		unrealizedPnl: "-50",
+	} as { szi: string; entryPx?: string; unrealizedPnl?: string } | null,
+	marketsInfo: { markPx: "101000", shortName: "BTC" } as { markPx: string; shortName?: string } | undefined,
 	numberInputs: new Map<string, Record<string, unknown>>(),
 	positionHasError: false,
 	positionIsLoading: false,
@@ -44,21 +52,35 @@ const testState = vi.hoisted(() => ({
 	submit: vi.fn(async () => {}),
 }));
 
+const zhTranslations: Record<string, string> = {
+	"Market Close": "市价平仓",
+	Close: "关闭",
+	"Position summary": "持仓摘要",
+	"Close size": "平仓数量",
+	"Close percentage": "平仓比例",
+	"Close percentage slider": "平仓比例滑杆",
+	"Don't show this confirmation again": "以后不再提示",
+};
+
+function getMessageId(message: string): string {
+	return createHash("sha256").update(`${message}\x1f`).digest("base64").slice(0, 6);
+}
+
+const zhMessages: Messages = Object.fromEntries(
+	Object.entries(zhTranslations).map(([message, translation]) => [getMessageId(message), translation]),
+);
+
+function activateLocale(locale: "en" | "zh") {
+	i18n.loadAndActivate({ locale, messages: locale === "zh" ? zhMessages : {} });
+}
+
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) => {
 		testState.adaptiveProps = props;
 		return createElement("div", { "data-testid": "adaptive-modal" }, children);
 	},
-	ModalContent: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
-		createElement("div", props, children),
-	ModalDescription: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
-		createElement("p", props, children),
-	ModalFooter: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
-		createElement("footer", props, children),
-	ModalHeader: ({ children, divider: _divider, ...props }: { children: ReactNode; divider?: boolean }) =>
-		createElement("header", props, children),
-	ModalTitle: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
-		createElement("h2", props, children),
+	Button: ({ children, variant: _variant, intent: _intent, size: _size, ...props }: Record<string, unknown>) =>
+		createElement("button", { type: "button", ...props }, children as ReactNode),
 	Checkbox: ({
 		checked,
 		disabled,
@@ -85,6 +107,16 @@ vi.mock("@gatu/ui", () => ({
 			label,
 			description,
 		),
+	ModalContent: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
+		createElement("div", props, children),
+	ModalDescription: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
+		createElement("p", props, children),
+	ModalFooter: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
+		createElement("footer", props, children),
+	ModalHeader: ({ children, divider: _divider, ...props }: { children: ReactNode; divider?: boolean }) =>
+		createElement("header", props, children),
+	ModalTitle: ({ children, ...props }: { children: ReactNode } & Record<string, unknown>) =>
+		createElement("h2", props, children),
 }));
 
 vi.mock("@/components/ui/number-input", () => ({
@@ -96,17 +128,14 @@ vi.mock("@/components/ui/number-input", () => ({
 			null,
 			createElement("input", {
 				"aria-label": ariaLabel,
-				value: props.value,
-				disabled: props.disabled,
-				readOnly: true,
+				"aria-describedby": props["aria-describedby"],
+				"aria-invalid": props["aria-invalid"],
+				value: String(props.value ?? ""),
+				disabled: Boolean(props.disabled),
+				onChange: props.onChange,
+				onBlur: props.onBlur,
 			}),
-			props.onMaxClick
-				? createElement(
-						"button",
-						{ type: "button", onClick: props.onMaxClick as () => void },
-						props.maxLabel as ReactNode,
-					)
-				: null,
+			createElement("span", { "data-testid": `${ariaLabel}-suffix` }, props.suffix as ReactNode),
 		);
 	},
 }));
@@ -117,24 +146,31 @@ vi.mock("@/components/trade/components/trade-size-slider", () => ({
 		return createElement("div", {
 			role: "slider",
 			"aria-label": props.ariaLabel,
+			"aria-describedby": props.ariaDescribedBy,
+			"aria-invalid": props.ariaInvalid,
+			"aria-valuenow": props.value,
 			"aria-valuetext": props.ariaValueText,
+			"aria-disabled": props.disabled,
 		});
 	},
 }));
 
 vi.mock("@/components/trade/components/trading-action-button", () => ({
-	TradingActionButton: ({
-		children,
-		onClick,
-		containerClassName: _containerClassName,
-		requireReadyConfirmation: _requireReadyConfirmation,
-		...props
-	}: {
-		children: ReactNode;
-		onClick: () => void;
-		containerClassName?: string;
-		requireReadyConfirmation?: boolean;
-	}) => createElement("button", { ...props, type: "button", "data-testid": "submit", onClick }, children),
+	TradingActionButton: (props: { children: ReactNode; onClick: () => void } & Record<string, unknown>) => {
+		testState.actionButtonProps = props;
+		return createElement(
+			"button",
+			{
+				type: "button",
+				"data-testid": "submit",
+				"aria-describedby": props["aria-describedby"],
+				className: props.className,
+				disabled: Boolean(props.disabled),
+				onClick: props.onClick,
+			},
+			props.children,
+		);
+	},
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
@@ -182,26 +218,54 @@ vi.mock("@/stores/use-global-modal-store", () => ({
 
 import { PositionMarketCloseModal } from "@/components/trade/positions/position-market-close-modal";
 
+Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
 describe("PositionMarketCloseModal", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
-	function render() {
-		act(() => root.render(<PositionMarketCloseModal />));
+	function render(props: ComponentProps<typeof PositionMarketCloseModal> = {}) {
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<PositionMarketCloseModal {...props} />
+				</I18nProvider>,
+			),
+		);
+	}
+
+	function getSummaryValue(label: string): HTMLElement | null {
+		const summary = container.querySelector<HTMLElement>('[data-testid="position-market-close-summary"]');
+		const labelElement = [...(summary?.querySelectorAll<HTMLElement>("span") ?? [])].find(
+			(element) => element.textContent === label,
+		);
+		return labelElement?.parentElement?.querySelectorAll<HTMLElement>("span").item(1) ?? null;
+	}
+
+	function expectEditingLocked() {
+		expect(testState.numberInputs.get("Close size")?.disabled).toBe(true);
+		expect(testState.numberInputs.get("Close percentage")?.disabled).toBe(true);
+		expect(testState.sliderProps?.disabled).toBe(true);
+		expect(
+			[...container.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].every((button) => button.disabled),
+		).toBe(true);
+		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
 	}
 
 	beforeEach(() => {
+		activateLocale("en");
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
+		testState.actionButtonProps = null;
 		testState.adaptiveProps = null;
 		testState.close.mockReset();
 		testState.error = null;
 		testState.isMobile = false;
 		testState.isPending = false;
 		testState.isReconciling = false;
-		testState.livePosition = { szi: "2.5" };
-		testState.marketsInfo = { markPx: "101000" };
+		testState.livePosition = { szi: "2.5", entryPx: "100000", unrealizedPnl: "-50" };
+		testState.marketsInfo = { markPx: "101000", shortName: "BTC" };
 		testState.numberInputs.clear();
 		testState.positionHasError = false;
 		testState.positionIsLoading = false;
@@ -209,6 +273,7 @@ describe("PositionMarketCloseModal", () => {
 		testState.preferenceStatus = "required";
 		testState.session.position.signedPositionSize = "2.5";
 		testState.session.position.szDecimals = 4;
+		testState.session.position.markPx = "100000";
 		testState.resetError.mockReset();
 		testState.session.sizingIntent = { kind: "max" };
 		testState.session.phase = "idle";
@@ -223,7 +288,8 @@ describe("PositionMarketCloseModal", () => {
 		container.remove();
 	});
 
-	it("defaults to max and derives both inputs without duplicate state", async () => {
+	it("uses the 440px desktop modal and scales the four-line summary PnL", () => {
+		testState.session.sizingIntent = { kind: "percent", value: "50" };
 		render();
 
 		expect(testState.adaptiveProps).toMatchObject({
@@ -231,68 +297,102 @@ describe("PositionMarketCloseModal", () => {
 			dismissible: true,
 			showClose: true,
 			showHandle: false,
+			closeLabel: "Close",
 		});
-		expect(container.textContent).toContain("Market Close");
-		expect(container.textContent).toContain("2.5000 BTC");
-		expect(container.textContent).toContain("Price");
-		expect(container.textContent).toContain("Market");
-		expect(container.textContent).not.toContain("Long position");
-		expect(container.textContent).not.toContain("Reduce Only");
-		expect(container.textContent).not.toContain("Remaining");
-		expect(container.textContent).not.toContain("Max Slippage");
-		const sizingSection = container.querySelector<HTMLElement>('[data-testid="position-market-close-sizing"]');
-		const summarySection = container.querySelector<HTMLElement>('[data-testid="position-market-close-summary"]');
-		const footer = container.querySelector<HTMLElement>("footer");
-		expect(sizingSection?.className).not.toMatch(/\bborder\b|\bbg-/);
-		expect(summarySection?.className).not.toMatch(/\bborder\b|\bbg-/);
-		expect(footer?.className).not.toMatch(/\bborder\b|\bbg-|\bsticky\b/);
-		expect(container.textContent).not.toContain("Cancel");
-		expect(container.textContent).toContain("Don't show this confirmation again");
-		expect(container.textContent).not.toContain(
-			"Future Market clicks will immediately close the full position for this account and network.",
+		expect(testState.adaptiveProps?.className).toContain("min-[1001px]:max-w-[27.5rem]");
+		expect(getSummaryValue("Available to close")?.textContent).toBe("2.5000 BTC");
+		expect(getSummaryValue("Entry price")?.textContent).toBe("$100,000");
+		expect(getSummaryValue("Mark price")?.textContent).toBe("$101,000");
+		expect(getSummaryValue("Estimated PnL")?.textContent).toBe("-$25.00");
+		expect(getSummaryValue("Estimated PnL")?.className).toContain("text-error");
+		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.className).toMatch(
+			/rounded-12.*border.*bg-fill-weak/,
 		);
-		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("2.5");
-		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("100");
-		expect(testState.numberInputs.get("Close percentage")?.className).toContain("w-full");
-		expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuetext")).toBe(
-			"100% selected; 100% after size precision",
+		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.textContent).toContain(
+			"Market Close 1.2500 BTC",
 		);
+		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).not.toBeNull();
+	});
 
-		await act(async () => {
-			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
+	it("uses a mobile drawer handle and omits the desktop opt-out", () => {
+		testState.isMobile = true;
+		render();
+
+		expect(testState.adaptiveProps).toMatchObject({
+			presentation: "drawer",
+			dismissible: true,
+			showClose: false,
+			showHandle: true,
+			handleClassName: "top-2.5 h-1 w-9 bg-stroke-weak",
 		});
-		expect(testState.submit).toHaveBeenCalledWith({
-			sessionId: "session-1",
-			dismissFutureConfirmation: false,
+		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).toBeNull();
+		expect(container.querySelector('[data-testid="position-market-close-summary"] div')?.className).toContain(
+			"grid-cols-4",
+		);
+	});
+
+	it("normalizes size on blur with the market's current szDecimals", () => {
+		testState.session.position.signedPositionSize = "1.23456";
+		testState.session.position.szDecimals = 5;
+		testState.livePosition = { szi: "1.23456", entryPx: "100000", unrealizedPnl: "10" };
+		testState.session.sizingIntent = { kind: "size", value: "0.333339" };
+		render();
+
+		let sizeInput = testState.numberInputs.get("Close size");
+		expect(sizeInput?.maxAllowedDecimals).toBe(5);
+		act(() => (sizeInput?.onBlur as () => void)());
+		expect(testState.setSizingIntent).toHaveBeenLastCalledWith("session-1", {
+			kind: "size",
+			value: "0.33333",
+		});
+
+		testState.setSizingIntent.mockClear();
+		testState.session.position.signedPositionSize = "1.23";
+		testState.session.position.szDecimals = 2;
+		testState.livePosition = { szi: "1.23", entryPx: "100000", unrealizedPnl: "10" };
+		testState.session.sizingIntent = { kind: "size", value: "0.339" };
+		render();
+
+		sizeInput = testState.numberInputs.get("Close size");
+		expect(sizeInput?.maxAllowedDecimals).toBe(2);
+		act(() => (sizeInput?.onBlur as () => void)());
+		expect(testState.setSizingIntent).toHaveBeenLastCalledWith("session-1", {
+			kind: "size",
+			value: "0.33",
 		});
 	});
 
-	it("sends the opt-out for a full-position confirmation", async () => {
+	it("routes quantity, percentage, quick-chip, and slider edits through one sizing intent", () => {
 		render();
-		const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
-		expect(checkbox?.disabled).toBe(false);
+		const sizeInput = testState.numberInputs.get("Close size");
+		const percentInput = testState.numberInputs.get("Close percentage");
+		const maxChip = [...container.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
+			(button) => button.textContent === "Max",
+		);
 
-		act(() => checkbox?.click());
-		await act(async () => {
-			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
-		});
-
-		expect(testState.submit).toHaveBeenCalledWith({
-			sessionId: "session-1",
-			dismissFutureConfirmation: true,
-		});
-	});
-
-	it("keeps the opt-out checked while editing a partial close", async () => {
-		testState.session.sizingIntent = { kind: "percent", value: "50" };
-		render();
-		const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
-		expect(checkbox).toMatchObject({ checked: false, disabled: false });
-
-		act(() => checkbox?.click());
 		act(() => {
+			(sizeInput?.onChange as (event: { target: { value: string } }) => void)({ target: { value: "1.25" } });
+			(percentInput?.onChange as (event: { target: { value: string } }) => void)({ target: { value: "50" } });
+			maxChip?.click();
 			(testState.sliderProps?.onPercentChange as (value: number) => void)(75);
 		});
+
+		expect(testState.setSizingIntent.mock.calls).toEqual([
+			["session-1", { kind: "size", value: "1.25" }],
+			["session-1", { kind: "percent", value: "50" }],
+			["session-1", { kind: "max" }],
+			["session-1", { kind: "percent", value: "75" }],
+		]);
+		expect(testState.resetError).toHaveBeenCalledTimes(4);
+	});
+
+	it("keeps the opt-out selectable for a partial close and submits the preference", async () => {
+		testState.session.sizingIntent = { kind: "percent", value: "50" };
+		render({ holdToConfirm: false });
+
+		const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
+		expect(checkbox).toMatchObject({ checked: false, disabled: false });
+		act(() => checkbox?.click());
 		expect(checkbox?.checked).toBe(true);
 
 		await act(async () => {
@@ -304,14 +404,17 @@ describe("PositionMarketCloseModal", () => {
 		});
 	});
 
-	it("shows an existing opt-out accurately when a direct close falls back to the dialog", async () => {
-		testState.preferenceStatus = "dismissed";
+	it("defaults to an 800ms hold and supports the configured single-click path", async () => {
 		render();
+		expect(testState.actionButtonProps).toMatchObject({
+			holdDurationMs: 800,
+			holdProgressClassName: "bg-black/20",
+		});
+		expect(container.textContent).toContain("Hold to confirm · Filled trades cannot be reversed");
 
-		const checkbox = container.querySelector<HTMLInputElement>(
-			'input[aria-label="Don\'t show this confirmation again"]',
-		);
-		expect(checkbox).toMatchObject({ checked: true, disabled: true });
+		render({ holdToConfirm: false });
+		expect(testState.actionButtonProps?.holdDurationMs).toBeUndefined();
+		expect(container.textContent).toContain("Click to submit · Filled trades cannot be reversed");
 
 		await act(async () => {
 			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
@@ -322,122 +425,67 @@ describe("PositionMarketCloseModal", () => {
 		});
 	});
 
-	it("writes size, percent, slider, and max events to one sizing intent", () => {
-		render();
-		const sizeInput = testState.numberInputs.get("Close size");
-		const percentInput = testState.numberInputs.get("Close percentage");
-
-		act(() => {
-			(sizeInput?.onChange as (event: { target: { value: string } }) => void)({ target: { value: "1.25" } });
-			(percentInput?.onChange as (event: { target: { value: string } }) => void)({ target: { value: "50" } });
-			(testState.sliderProps?.onPercentChange as (value: number) => void)(75);
-			(sizeInput?.onMaxClick as () => void)();
-		});
-
-		expect(testState.setSizingIntent.mock.calls).toEqual([
-			["session-1", { kind: "size", value: "1.25" }],
-			["session-1", { kind: "percent", value: "50" }],
-			["session-1", { kind: "percent", value: "75" }],
-			["session-1", { kind: "max" }],
-		]);
-		expect(testState.resetError).toHaveBeenCalledTimes(4);
-	});
-
-	it("keeps the requested percent on the controls while showing the lot-adjusted close", () => {
-		testState.session.position.signedPositionSize = "3";
-		testState.session.position.szDecimals = 0;
-		testState.livePosition = { szi: "3" };
-		testState.session.sizingIntent = { kind: "percent", value: "50" };
+	it("keeps zero disabled without presenting it as an error", () => {
+		testState.session.sizingIntent = { kind: "percent", value: "0" };
 		render();
 
-		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("1");
-		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("50");
-		expect(container.querySelector('[role="slider"]')?.getAttribute("aria-valuetext")).toBe(
-			"50% selected; 33.3% after size precision",
-		);
-		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.textContent).toContain("1 BTC");
-		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.disabled).toBe(false);
-
-		testState.livePosition = { szi: "4" };
-		render();
-		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("2");
-		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("50");
-	});
-
-	it("preserves manual size while live position changes and fails closed on stale data", () => {
-		testState.session.sizingIntent = { kind: "size", value: "1.25" };
-		testState.livePosition = { szi: "3" };
-		render();
-		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("1.25");
-
-		testState.livePosition = { szi: "2" };
-		render();
-		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close size"]')?.value).toBe("1.25");
-
-		testState.positionIsStale = true;
-		render();
-		expect(container.textContent).toContain("Live position data is stale");
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
-		expect(testState.numberInputs.get("Close size")?.disabled).toBe(true);
+		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expect(container.textContent).not.toContain("must be greater than zero");
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="Close percentage"]')?.value).toBe("0");
 	});
 
-	it("fails closed for every unavailable or incompatible live position state", () => {
+	it("fails closed for loading, failed, stale, closed, and direction-changed live positions", () => {
 		testState.positionIsLoading = true;
 		render();
-		expect(container.textContent).toContain("Loading the latest position");
 		expect(container.querySelector('[role="status"]')?.textContent).toContain("Loading the latest position");
-		expect(container.querySelector('[role="alert"]')).toBeNull();
+		expectEditingLocked();
 
 		testState.positionIsLoading = false;
 		testState.positionHasError = true;
 		render();
-		expect(container.textContent).toContain("Live position data is unavailable");
 		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Live position data is unavailable");
+		expectEditingLocked();
 
 		testState.positionHasError = false;
+		testState.positionIsStale = true;
+		render();
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain("Live position data is stale");
+		expectEditingLocked();
+
+		testState.positionIsStale = false;
 		testState.livePosition = null;
 		render();
-		expect(container.textContent).toContain("This position is no longer open");
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain("This position is no longer open");
+		expectEditingLocked();
 
-		testState.livePosition = { szi: "-2.5" };
+		testState.livePosition = { szi: "-2.5", entryPx: "100000", unrealizedPnl: "-50" };
 		render();
-		expect(container.textContent).toContain("This position changed sides");
-		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain("This position changed sides");
+		expectEditingLocked();
 	});
 
-	it("labels the execution price as market without presenting a reference price", () => {
-		render();
-
-		expect(container.querySelector('[data-testid="position-market-close-summary"]')?.textContent).toContain(
-			"PriceMarket",
-		);
-		expect(container.textContent).not.toContain("102,000 USDC");
-		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(false);
-	});
-
-	it("uses a drawer on mobile and permits explicit dismissal while reconciling", () => {
-		testState.isMobile = true;
+	it("locks editing while reconciling and locks both dismissal and editing while submitting", () => {
 		testState.isReconciling = true;
 		testState.session.phase = "reconciling";
 		testState.error = "Order submitted. Confirming exchange status; do not retry.";
 		render();
 
 		expect(testState.adaptiveProps).toMatchObject({
-			presentation: "drawer",
 			dismissible: true,
 			showClose: true,
 			showHandle: false,
 		});
 		expect(container.textContent).toContain("Closing this dialog will not cancel it.");
-		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).toBeNull();
-		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
+		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.disabled).toBe(true);
+		expectEditingLocked();
 
 		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
 		expect(testState.close).toHaveBeenCalledWith("session-1");
-	});
 
-	it("locks dismissal and editing while submitting", () => {
+		testState.isReconciling = false;
 		testState.isPending = true;
+		testState.error = null;
 		testState.session.phase = "submitting";
 		render();
 
@@ -446,10 +494,35 @@ describe("PositionMarketCloseModal", () => {
 			showClose: false,
 			showHandle: false,
 		});
-		expect(testState.numberInputs.get("Close size")?.disabled).toBe(true);
-		expect(testState.numberInputs.get("Close percentage")?.disabled).toBe(true);
-		expect(testState.sliderProps?.disabled).toBe(true);
-		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
+		expectEditingLocked();
 		expect(container.textContent).toContain("Submitting...");
+	});
+
+	it("reactively switches visible and ARIA copy without remounting or losing opt-out state", () => {
+		render();
+		const title = container.querySelector<HTMLElement>("h2 span");
+		const summary = container.querySelector<HTMLElement>('[data-testid="position-market-close-summary"]');
+		const slider = container.querySelector<HTMLElement>('[role="slider"]');
+		const checkbox = container.querySelector<HTMLInputElement>(
+			'input[aria-label="Don\'t show this confirmation again"]',
+		);
+		expect(title?.textContent).toBe("Market Close");
+		expect(slider?.getAttribute("aria-label")).toBe("Close percentage slider");
+
+		act(() => checkbox?.click());
+		expect(checkbox?.checked).toBe(true);
+		act(() => activateLocale("zh"));
+
+		expect(container.querySelector("h2 span")).toBe(title);
+		expect(title?.textContent).toBe("市价平仓");
+		expect(container.querySelector('[data-testid="position-market-close-summary"]')).toBe(summary);
+		expect(summary?.getAttribute("aria-label")).toBe("持仓摘要");
+		expect(container.querySelector('[role="slider"]')).toBe(slider);
+		expect(slider?.getAttribute("aria-label")).toBe("平仓比例滑杆");
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="平仓数量"]')).not.toBeNull();
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="平仓比例"]')).not.toBeNull();
+		expect(container.querySelector<HTMLInputElement>('input[aria-label="以后不再提示"]')).toBe(checkbox);
+		expect(checkbox?.checked).toBe(true);
+		expect(testState.adaptiveProps?.closeLabel).toBe("关闭");
 	});
 });

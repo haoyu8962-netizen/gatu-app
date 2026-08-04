@@ -321,6 +321,7 @@ msgstr ""
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/hooks/trade/use-order-submit.ts
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Another order for this market is still being confirmed."
 msgstr "Un autre ordre sur ce marché est toujours en cours de confirmation."
 
@@ -711,6 +712,7 @@ msgstr "Cliquez pour en savoir plus sur cet actif."
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Close"
 msgstr "Fermer"
 
@@ -1592,6 +1594,7 @@ msgstr "Impossible de changer de langue"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Failed to close position"
 msgstr "Échec de la fermeture de la position"
 
@@ -1665,6 +1668,7 @@ msgstr "Échec du chargement de l'historique des ordres."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Failed to load positions."
 msgstr "Échec du chargement des positions."
 
@@ -2439,6 +2443,7 @@ msgid "Market Cap"
 msgstr "Capitalisation"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Market Close"
 msgstr "Clôture au marché"
 
@@ -2474,6 +2479,7 @@ msgstr ""
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Max"
 msgstr "Max"
 
@@ -2688,6 +2694,7 @@ msgstr "Non"
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "No active positions."
 msgstr "Aucune position active."
 
@@ -3036,6 +3043,7 @@ msgstr "Ordre soumis"
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Order submitted. Confirming exchange status; do not retry."
 msgstr "Ordre envoyé. Confirmation de son statut par la plateforme ; ne réessayez pas."
 
@@ -4354,6 +4362,7 @@ msgstr "Le déclencheur du stop doit être en dessous du prix mark"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Submitting..."
 msgstr "Envoi en cours..."
 
@@ -5027,6 +5036,7 @@ msgid "Trading"
 msgstr "Trading"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Trading data changed while this dialog was open. Close and reopen it before submitting."
 msgstr "Les données de trading ont changé pendant l’ouverture de cette fenêtre. Fermez-la puis rouvrez-la avant de confirmer."
 
@@ -5817,3 +5827,179 @@ msgstr "Ce marché prend uniquement en charge le mode de marge isolée."
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "This position changed sides. Reopen the margin dialog before adjusting margin."
 msgstr "La position a changé de sens. Rouvrez la fenêtre de marge avant de l’ajuster."
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "A confirmation is shown before each market close."
+msgstr ""
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+msgid "Accept the HIP-3 deployer disclaimer before trading this market."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Available to close"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Click to submit · Filled trades cannot be reversed"
+msgstr ""
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+msgid "Close order submitted"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close percentage"
+msgstr ""
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close percentage must be a decimal number"
+msgstr ""
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close percentage must be between 0 and 100"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close percentage slider"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Close size"
+msgstr ""
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size exceeds current position"
+msgstr ""
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size is below market precision"
+msgstr ""
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size must be a decimal number"
+msgstr ""
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Close size must be greater than zero"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Closing this dialog will not cancel it."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Confirming..."
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Connect an account with browser storage available to manage this preference."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Don't show this confirmation again"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Entry price"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Estimated PnL"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Hold to confirm · Filled trades cannot be reversed"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Live position data is stale. Wait for the account connection to recover."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Live position data is unavailable. Wait for the account connection to recover."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Loading the latest position..."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Mark price"
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Market clicks currently close the full position immediately for this account and network."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Market Close {formattedCloseSize} {sizeSymbol}"
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Market close confirmation"
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Market close confirmation could not be restored in this browser."
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Market close confirmation restored."
+msgstr ""
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Position size is below market precision"
+msgstr ""
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Position size must be a non-zero number"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Position summary"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Price: Market"
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Reduce this position at the current market price. Filled trades cannot be reversed."
+msgstr ""
+
+#: src/components/trade/components/global-settings-modal.tsx
+msgid "Restore"
+msgstr ""
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+msgid "Safe order coordination across tabs is unavailable in this browser."
+msgstr ""
+
+#: src/lib/trade/position-market-close-errors.ts
+msgid "Size precision must be a non-negative integer"
+msgstr ""
+
+#: src/hooks/trade/use-position-market-close-submit.ts
+msgid "The order can continue, but this confirmation preference could not be saved."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "The order is still being confirmed."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "This position changed sides. Close and reopen this dialog before submitting."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "This position is no longer open."
+msgstr ""
+
+#: src/components/trade/positions/position-market-close-modal.tsx
+msgid "Validating..."
+msgstr ""

@@ -1,5 +1,6 @@
 import {
 	AdaptiveModal,
+	Button,
 	Checkbox,
 	ModalContent,
 	ModalDescription,
@@ -7,12 +8,12 @@ import {
 	ModalHeader,
 	ModalTitle,
 } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
 import {
+	estimatePositionMarketClosePnl,
 	formatPositionMarketClosePercent,
 	resolvePositionMarketClosePercent,
 	resolvePositionMarketCloseSize,
@@ -20,11 +21,12 @@ import {
 import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import { formatToken } from "@/lib/format";
+import { formatPrice, formatToken, formatUSD } from "@/lib/format";
 import { useMarketsInfo, useUserPositions } from "@/lib/hyperliquid";
-import { toBig } from "@/lib/trade/numbers";
+import { toBig, toFixed } from "@/lib/trade/numbers";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
 import { getPositionMarketCloseErrorMessage } from "@/lib/trade/position-market-close-errors";
+import { getValueColorClass } from "@/lib/ui/value-color";
 import {
 	type PositionMarketCloseSizingIntent,
 	usePositionMarketCloseActions,
@@ -34,8 +36,16 @@ import { TradeSizeSlider } from "../components/trade-size-slider";
 import { TradingActionButton } from "../components/trading-action-button";
 
 const SLIDER_MARKS = [0, 25, 50, 75, 100] as const;
+const QUICK_PERCENTAGES = [25, 50, 75, 100] as const;
+const HOLD_TO_CONFIRM_DURATION_MS = 800;
 
-export function PositionMarketCloseModal() {
+interface Props {
+	holdToConfirm?: boolean;
+	showPnl?: boolean;
+}
+
+export function PositionMarketCloseModal({ holdToConfirm = true, showPnl = true }: Props) {
+	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const [dismissFutureConfirmation, setDismissFutureConfirmation] = useState(false);
 	const session = usePositionMarketCloseSession();
@@ -73,6 +83,18 @@ export function PositionMarketCloseModal() {
 		hasValidLivePosition,
 		liveDirectionMatches,
 	});
+	const positionStatusMessage =
+		positionStatus === "loading"
+			? t`Loading the latest position...`
+			: positionStatus === "unavailable"
+				? t`Live position data is unavailable. Wait for the account connection to recover.`
+				: positionStatus === "stale"
+					? t`Live position data is stale. Wait for the account connection to recover.`
+					: positionStatus === "closed"
+						? t`This position is no longer open.`
+						: positionStatus === "direction-changed"
+							? t`This position changed sides. Close and reopen this dialog before submitting.`
+							: null;
 	const sizing =
 		sizingIntent.kind === "size"
 			? resolvePositionMarketCloseSize({
@@ -85,22 +107,67 @@ export function PositionMarketCloseModal() {
 					percent: sizingIntent.kind === "max" ? "100" : sizingIntent.value,
 					szDecimals: position.szDecimals,
 				});
-	const sizeInput = sizingIntent.kind === "size" ? sizingIntent.value : sizing.normalizedSize;
 	const effectivePercent = formatPositionMarketClosePercent(sizing.effectivePercent);
 	const requestedPercent =
 		sizingIntent.kind === "max" ? "100" : sizingIntent.kind === "percent" ? sizingIntent.value : effectivePercent;
-	const percentInput = requestedPercent;
+	const sizeInput =
+		sizingIntent.kind === "size" ? sizingIntent.value : toFixed(sizing.normalizedSize, position.szDecimals);
+	const percentInput = sizingIntent.kind === "percent" ? sizingIntent.value : formatPercentInput(requestedPercent);
 	const sliderValue = getSliderValue(requestedPercent);
 	const canDismiss = phase === "idle" || phase === "reconciling";
-	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatus === null;
+	const canEdit = phase === "idle" && !isPending && !isReconciling && positionStatusMessage === null;
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
-	const visibleError = positionStatus ?? error ?? sizingError;
+	const visibleSizingError = isEmptyOrZeroSizingIntent(sizingIntent) ? null : sizingError;
+	const visibleError = positionStatusMessage ?? error ?? visibleSizingError;
 	const canSubmit = canEdit && sizing.errors.length === 0;
 	const confirmationPreferenceAlreadyDismissed =
 		readPositionMarketCloseConfirmationPreference({ owner: session.owner, env: session.env }) === "dismissed";
 	const errorId = `position-market-close-error-${sessionId}`;
+	const helperId = `position-market-close-helper-${sessionId}`;
 	const marketInfo = getMarketInfo(position.coin);
 	const sizeSymbol = marketInfo?.shortName ?? position.coin.split(":").pop() ?? position.coin;
+	const markPx = marketInfo?.markPx ?? position.markPx;
+	const estimatedPnl = estimatePositionMarketClosePnl({
+		signedPositionSize,
+		normalizedCloseSize: sizing.normalizedSize,
+		unrealizedPnl: livePosition?.unrealizedPnl,
+		entryPx: livePosition?.entryPx,
+		markPx,
+	});
+	const formattedCloseSize = formatToken(sizing.normalizedSize, { decimals: position.szDecimals });
+	const summaryItems = [
+		{
+			key: "available",
+			label: t`Available to close`,
+			value: formatToken(positionStatusMessage === null ? sizing.maxSize : null, {
+				decimals: position.szDecimals,
+				symbol: sizeSymbol,
+			}),
+			valueClassName: "font-semibold text-fg",
+		},
+		{
+			key: "entry",
+			label: t`Entry price`,
+			value: formatPrice(livePosition?.entryPx, { szDecimals: position.szDecimals }),
+			valueClassName: "font-medium text-fg",
+		},
+		{
+			key: "mark",
+			label: t`Mark price`,
+			value: formatPrice(markPx, { szDecimals: position.szDecimals }),
+			valueClassName: "font-medium text-fg",
+		},
+		...(showPnl
+			? [
+					{
+						key: "pnl",
+						label: t`Estimated PnL`,
+						value: formatUSD(estimatedPnl, { compact: false, signDisplay: "exceptZero" }),
+						valueClassName: cn("font-semibold", estimatedPnl && getValueColorClass(estimatedPnl)),
+					},
+				]
+			: []),
+	];
 
 	function setSizingIntent(nextIntent: PositionMarketCloseSizingIntent) {
 		if (!canEdit) return;
@@ -112,6 +179,20 @@ export function PositionMarketCloseModal() {
 		if (!open) actions.close(sessionId);
 	}
 
+	function handleSizeBlur() {
+		if (sizingIntent.kind !== "size" || sizing.errors.length > 0) return;
+		setSizingIntent({ kind: "size", value: toFixed(sizing.normalizedSize, position.szDecimals) });
+	}
+
+	function handlePercentBlur() {
+		if (sizingIntent.kind !== "percent" || sizing.errors.length > 0) return;
+		if (sliderValue >= 100) {
+			setSizingIntent({ kind: "max" });
+			return;
+		}
+		setSizingIntent({ kind: "percent", value: formatPercentInput(sizingIntent.value) });
+	}
+
 	function handleSliderChange(value: number) {
 		setSizingIntent(value >= 100 ? { kind: "max" } : { kind: "percent", value: String(value) });
 	}
@@ -121,7 +202,14 @@ export function PositionMarketCloseModal() {
 		return submit({ sessionId, dismissFutureConfirmation });
 	}
 
-	const progressLabel = getProgressLabel(phase);
+	const progressLabel =
+		phase === "validating"
+			? t`Validating...`
+			: phase === "submitting"
+				? t`Submitting...`
+				: phase === "reconciling"
+					? t`Confirming...`
+					: null;
 
 	return (
 		<AdaptiveModal
@@ -130,105 +218,172 @@ export function PositionMarketCloseModal() {
 			presentation={isMobile ? "drawer" : "modal"}
 			size="lg"
 			dismissible={canDismiss}
-			showClose={canDismiss}
-			showHandle={false}
+			showClose={!isMobile && canDismiss}
+			showHandle={isMobile && canDismiss}
+			closeLabel={t`Close`}
+			handleClassName="top-2.5 h-1 w-9 bg-stroke-weak"
 			overlayClassName="backdrop-blur-[2px] duration-100"
-			className="max-h-[calc(100dvh-1rem)] rounded-t-16 border-0 !shadow-none min-[1001px]:max-w-[32.5rem] min-[1001px]:rounded-16"
+			className="max-h-[calc(100dvh-1rem)] rounded-t-20 border-0 shadow-overlay min-[1001px]:max-w-[27.5rem] min-[1001px]:rounded-16"
 		>
-			<ModalHeader
-				divider={false}
-				className="px-4 pt-5 pb-3 text-left min-[1001px]:items-center min-[1001px]:px-6 min-[1001px]:pt-6 min-[1001px]:text-center"
-			>
-				<ModalTitle className="text-lg">{t`Market Close`}</ModalTitle>
-				<ModalDescription className="max-w-md pr-9 leading-relaxed min-[1001px]:pr-0">
-					{t`Choose how much of this position to close with a reduce-only market order.`}
+			<ModalHeader divider={false} className="gap-1 px-5 pt-7 pb-0 text-left min-[1001px]:px-6 min-[1001px]:pt-6">
+				<div className="flex min-w-0 items-center justify-between gap-3">
+					<ModalTitle className="flex min-w-0 items-baseline gap-1.5 text-[17px] leading-6 font-bold min-[1001px]:text-[18px]">
+						<span>{t`Market Close`}</span>
+						<span className="truncate text-[13px] font-medium text-fg-muted min-[1001px]:hidden">{sizeSymbol}</span>
+					</ModalTitle>
+					<span className="shrink-0 text-[13px] text-fg-muted tabular-nums min-[1001px]:hidden">
+						{t`Price: Market`}
+					</span>
+				</div>
+				<ModalDescription className="sr-only max-w-sm text-[13px] leading-5 min-[1001px]:not-sr-only">
+					{t`Reduce this position at the current market price. Filled trades cannot be reversed.`}
 				</ModalDescription>
 			</ModalHeader>
 
-			<ModalContent className="space-y-4 px-4 pt-1 pb-2 min-[1001px]:px-6">
+			<ModalContent className="space-y-5 px-5 pt-5 pb-0 min-[1001px]:px-6">
 				<section
 					data-testid="position-market-close-summary"
-					aria-label={t`Execution`}
-					className="space-y-1 px-0.5 text-xs"
+					aria-label={t`Position summary`}
+					className="rounded-12 border border-stroke-weak bg-fill-weak px-3 py-3.5 min-[1001px]:px-4"
 				>
-					<InfoRow
-						className="p-0"
-						label={t`Size`}
-						value={formatToken(sizing.normalizedSize, { decimals: position.szDecimals, symbol: sizeSymbol })}
-						valueClassName="font-medium text-error"
-					/>
-					<InfoRow className="p-0" label={t`Price`} value={t`Market`} valueClassName="font-medium" />
+					<div
+						className={cn(
+							"grid gap-2 min-[1001px]:block min-[1001px]:space-y-2.5",
+							showPnl ? "grid-cols-4" : "grid-cols-3",
+						)}
+					>
+						{summaryItems.map((item) => (
+							<div
+								key={item.key}
+								className={cn(
+									"flex min-w-0 flex-col gap-1 text-center min-[1001px]:flex-row min-[1001px]:items-center min-[1001px]:justify-between min-[1001px]:gap-4 min-[1001px]:text-left",
+									item.key === "pnl" &&
+										"min-[1001px]:border-t min-[1001px]:border-dashed min-[1001px]:border-stroke-weak min-[1001px]:pt-2.5",
+								)}
+							>
+								<span className="truncate text-[11px] leading-4 text-fg-muted min-[1001px]:text-[13px]">
+									{item.label}
+								</span>
+								<span
+									className={cn(
+										"truncate text-sm leading-5 tabular-nums min-[1001px]:text-[13px]",
+										item.valueClassName,
+									)}
+								>
+									{item.value}
+								</span>
+							</div>
+						))}
+					</div>
 				</section>
 
-				<section data-testid="position-market-close-sizing" aria-label={t`Size`} className="space-y-3">
-					<NumberInput
-						aria-label={t`Close size`}
-						aria-describedby={visibleError ? errorId : undefined}
-						aria-invalid={sizingIntent.kind === "size" && sizing.errors.length > 0}
-						label={t`Size`}
-						value={sizeInput}
-						onChange={(event) => setSizingIntent({ kind: "size", value: event.target.value })}
-						maxAllowedDecimals={position.szDecimals}
-						maxLabel={<span className="flex size-11 items-center justify-center">{t`Max`}</span>}
-						onMaxClick={() => setSizingIntent({ kind: "max" })}
-						disabled={!canEdit}
-						inputSize="lg"
-						mobileSafe
-						className="h-11 pr-14 tabular-nums"
-					/>
+				<section data-testid="position-market-close-sizing" aria-label={t`Close size`} className="space-y-2.5">
+					<div className="hidden items-center justify-between gap-3 min-[1001px]:flex">
+						<span className="text-[13px] font-semibold text-fg">{t`Close size`}</span>
+						<span className="text-xs text-fg-muted">{t`Price: Market`}</span>
+					</div>
 
-					<div className="grid grid-cols-[minmax(0,1fr)_4.75rem] items-center gap-3">
-						<div className="relative">
-							<TradeSizeSlider
-								value={sliderValue}
-								onPercentChange={handleSliderChange}
-								disabled={!canEdit}
-								thumbSize="md"
-								thumbAlignment="edge"
-								ariaLabel={t`Close percentage`}
-								ariaDescribedBy={visibleError ? errorId : undefined}
-								ariaInvalid={sizing.errors.length > 0}
-								ariaValueText={t`${sliderValue}% selected; ${effectivePercent}% after size precision`}
-							/>
-							<div
-								className="pointer-events-none absolute inset-x-2 top-[7px] z-20 flex justify-between"
-								aria-hidden="true"
-							>
-								{SLIDER_MARKS.map((mark) => (
-									<span
-										key={mark}
-										className={`size-1.5 rounded-full ${Math.abs(sliderValue - mark) < 0.05 ? "opacity-0" : "bg-fg-muted/70"}`}
-									/>
-								))}
-							</div>
-						</div>
+					<div className="grid grid-cols-[minmax(0,1fr)_5.25rem] gap-2.5 min-[1001px]:grid-cols-[minmax(0,1fr)_5.75rem]">
+						<NumberInput
+							aria-label={t`Close size`}
+							aria-describedby={visibleError ? errorId : undefined}
+							aria-invalid={sizingIntent.kind === "size" && visibleSizingError !== null}
+							value={sizeInput}
+							onChange={(event) => setSizingIntent({ kind: "size", value: event.target.value })}
+							onBlur={handleSizeBlur}
+							maxAllowedDecimals={position.szDecimals}
+							suffix={sizeSymbol}
+							disabled={!canEdit}
+							inputSize="xl"
+							mobileSafe
+							dir="ltr"
+							className="h-12 rounded-10 pr-16 text-base font-semibold tabular-nums min-[1001px]:h-11"
+						/>
 
 						<NumberInput
 							aria-label={t`Close percentage`}
 							aria-describedby={visibleError ? errorId : undefined}
-							aria-invalid={sizingIntent.kind === "percent" && sizing.errors.length > 0}
+							aria-invalid={sizingIntent.kind === "percent" && visibleSizingError !== null}
 							value={percentInput}
 							onChange={(event) => setSizingIntent({ kind: "percent", value: event.target.value })}
+							onBlur={handlePercentBlur}
 							maxAllowedDecimals={1}
 							suffix="%"
 							disabled={!canEdit}
-							inputSize="lg"
+							inputSize="xl"
 							mobileSafe
-							className="h-11 w-full pr-7 text-right tabular-nums"
+							dir="ltr"
+							className="h-12 rounded-10 pr-7 text-right text-base font-semibold tabular-nums min-[1001px]:h-11"
 						/>
 					</div>
-				</section>
 
-				{!isMobile && (
-					<Checkbox
-						size="md"
-						checked={confirmationPreferenceAlreadyDismissed || dismissFutureConfirmation}
-						onCheckedChange={setDismissFutureConfirmation}
-						disabled={confirmationPreferenceAlreadyDismissed || !canEdit}
-						className={cn("w-fit py-1", confirmationPreferenceAlreadyDismissed && canEdit && "opacity-100")}
-						label={t`Don't show this confirmation again`}
-					/>
-				)}
+					<div className="grid grid-cols-4 gap-2">
+						{QUICK_PERCENTAGES.map((percent) => {
+							const selected = isSelectedPercentage(requestedPercent, percent);
+							return (
+								<Button
+									key={percent}
+									type="button"
+									variant={selected ? "filled" : "outline"}
+									intent="neutral"
+									size="xs"
+									aria-pressed={selected}
+									disabled={!canEdit}
+									onClick={() =>
+										setSizingIntent(percent === 100 ? { kind: "max" } : { kind: "percent", value: String(percent) })
+									}
+									className="h-9 rounded-8 px-0 text-[13px] font-semibold shadow-none tabular-nums transition-all duration-100 min-[1001px]:h-8"
+								>
+									{percent === 100 ? t`Max` : `${percent}%`}
+								</Button>
+							);
+						})}
+					</div>
+
+					<div className="relative flex min-h-11 items-center" data-testid="position-market-close-slider">
+						<TradeSizeSlider
+							value={sliderValue}
+							onPercentChange={handleSliderChange}
+							disabled={!canEdit}
+							thumbSize="lg"
+							thumbAlignment="edge"
+							ariaLabel={t`Close percentage slider`}
+							ariaDescribedBy={visibleError ? errorId : undefined}
+							ariaInvalid={visibleSizingError !== null}
+							ariaValueText={t`${requestedPercent}% requested; ${effectivePercent}% after size precision`}
+							className="relative z-10"
+							controlClassName="h-9 min-[1001px]:h-8"
+							trackClassName="h-1 rounded-full bg-stroke-weak ring-0 shadow-none"
+							indicatorClassName="min-w-0 rounded-full bg-fill shadow-none"
+							thumbClassName="z-20 size-6 border-[3px] border-stroke-strong bg-modal shadow-md before:-inset-2.5 min-[1001px]:size-5 min-[1001px]:before:-inset-1.5"
+						/>
+						<div
+							className="pointer-events-none absolute inset-x-3 top-1/2 z-10 flex -translate-y-1/2 justify-between min-[1001px]:inset-x-2.5"
+							aria-hidden="true"
+						>
+							{SLIDER_MARKS.map((mark) => (
+								<span
+									key={mark}
+									className={cn(
+										"size-2 rounded-full",
+										mark <= sliderValue ? "border-2 border-fill bg-fill" : "border-2 border-stroke-weak bg-modal",
+									)}
+								/>
+							))}
+						</div>
+					</div>
+
+					{!isMobile && (
+						<Checkbox
+							size="md"
+							checked={confirmationPreferenceAlreadyDismissed || dismissFutureConfirmation}
+							onCheckedChange={setDismissFutureConfirmation}
+							disabled={confirmationPreferenceAlreadyDismissed || !canEdit}
+							className={cn("w-fit", confirmationPreferenceAlreadyDismissed && canEdit && "opacity-100")}
+							label={t`Don't show this confirmation again`}
+						/>
+					)}
+				</section>
 
 				{phase === "reconciling" && (
 					<output
@@ -271,15 +426,18 @@ export function PositionMarketCloseModal() {
 				</p>
 			</ModalContent>
 
-			<ModalFooter className="px-4 pt-2 pb-4 min-[1001px]:px-6 min-[1001px]:pb-5">
+			<ModalFooter className="flex-col items-stretch gap-2 px-5 pt-5 pb-5 min-[1001px]:px-6 min-[1001px]:pb-6">
 				<TradingActionButton
 					onClick={handleSubmit}
 					requireReadyConfirmation
 					disabled={!canSubmit}
 					intent="error"
 					size="lg"
+					holdDurationMs={holdToConfirm ? HOLD_TO_CONFIRM_DURATION_MS : undefined}
+					holdProgressClassName="bg-black/20"
+					aria-describedby={helperId}
 					containerClassName="w-full items-stretch"
-					className="min-h-11 w-full"
+					className="relative min-h-12 w-full overflow-hidden rounded-12 text-[15px] data-disabled:!bg-fill-disabled data-disabled:!text-fg-muted"
 				>
 					{progressLabel ? (
 						<>
@@ -287,9 +445,14 @@ export function PositionMarketCloseModal() {
 							{progressLabel}
 						</>
 					) : (
-						t`Market Close`
+						t`Market Close ${formattedCloseSize} ${sizeSymbol}`
 					)}
 				</TradingActionButton>
+				<p id={helperId} className="text-center text-xs leading-4 text-fg-muted/70">
+					{holdToConfirm
+						? t`Hold to confirm · Filled trades cannot be reversed`
+						: t`Click to submit · Filled trades cannot be reversed`}
+				</p>
 			</ModalFooter>
 		</AdaptiveModal>
 	);
@@ -303,12 +466,24 @@ function getSliderValue(value: string): number {
 	return parsed.toNumber();
 }
 
-function getProgressLabel(phase: "idle" | "validating" | "submitting" | "reconciling"): string | null {
-	if (phase === "validating") return t`Validating...`;
-	if (phase === "submitting") return t`Submitting...`;
-	if (phase === "reconciling") return t`Confirming...`;
-	return null;
+function formatPercentInput(value: string): string {
+	const parsed = toBig(value);
+	if (!parsed) return "0.0";
+	return parsed.round(1, 0).toFixed(1);
 }
+
+function isSelectedPercentage(value: string, percentage: number): boolean {
+	const parsed = toBig(value);
+	return parsed?.eq(percentage) ?? false;
+}
+
+function isEmptyOrZeroSizingIntent(intent: PositionMarketCloseSizingIntent): boolean {
+	if (intent.kind === "max") return false;
+	const value = toBig(intent.value);
+	return intent.value.trim() === "" || value?.eq(0) === true;
+}
+
+type PositionStatus = "loading" | "unavailable" | "stale" | "closed" | "direction-changed" | null;
 
 interface PositionStatusInput {
 	isLoading: boolean;
@@ -324,11 +499,11 @@ function getPositionStatus({
 	isStale,
 	hasValidLivePosition,
 	liveDirectionMatches,
-}: PositionStatusInput): string | null {
-	if (isLoading) return t`Loading the latest position...`;
-	if (hasError) return t`Live position data is unavailable. Wait for the account connection to recover.`;
-	if (isStale) return t`Live position data is stale. Wait for the account connection to recover.`;
-	if (!hasValidLivePosition) return t`This position is no longer open.`;
-	if (!liveDirectionMatches) return t`This position changed sides. Close and reopen this dialog before submitting.`;
+}: PositionStatusInput): PositionStatus {
+	if (isLoading) return "loading";
+	if (hasError) return "unavailable";
+	if (isStale) return "stale";
+	if (!hasValidLivePosition) return "closed";
+	if (!liveDirectionMatches) return "direction-changed";
 	return null;
 }
