@@ -26,6 +26,7 @@ const mocks = vi.hoisted(() => ({
 	agentReady: true,
 	agentLoading: false,
 	hip3Accepted: true,
+	isMobile: false,
 	marketLoading: false,
 	marketError: null as Error | null,
 	market: {
@@ -44,6 +45,10 @@ vi.mock("@/hooks/trade/use-position-market-close-submit", () => ({
 
 vi.mock("@/hooks/trade/use-legal-gate", () => ({
 	useLegalGate: () => ({ state: mocks.legalState }),
+}));
+
+vi.mock("@/hooks/use-mobile", () => ({
+	useIsMobile: () => mocks.isMobile,
 }));
 
 vi.mock("@/stores/use-hip3-disclaimer-store", () => ({
@@ -94,6 +99,7 @@ describe("usePositionMarketCloseAction", () => {
 		mocks.agentReady = true;
 		mocks.agentLoading = false;
 		mocks.hip3Accepted = true;
+		mocks.isMobile = false;
 		mocks.marketLoading = false;
 		mocks.marketError = null;
 		mocks.market = {
@@ -146,6 +152,20 @@ describe("usePositionMarketCloseAction", () => {
 		});
 		expect(mocks.submit).toHaveBeenCalledOnce();
 		expect(mocks.submit).toHaveBeenCalledWith({ sessionId: firstSessionId });
+	});
+
+	it("keeps the confirmation on mobile when the desktop preference is dismissed", () => {
+		expect(dismissPositionMarketCloseConfirmation({ owner: USER, env: "Mainnet" })).toBe("dismissed");
+		mocks.isMobile = true;
+		act(() => root.render(<Probe />));
+
+		act(() => currentHook().open(POSITION));
+
+		expect(getPositionMarketCloseModal()).toMatchObject({
+			presentation: "confirmation",
+			sizingIntent: { kind: "max" },
+		});
+		expect(mocks.submit).not.toHaveBeenCalled();
 	});
 
 	it.each([

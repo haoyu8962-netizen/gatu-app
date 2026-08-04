@@ -187,7 +187,7 @@ export function usePositionMarketCloseSubmit() {
 							plan.errors[0] ? getPositionMarketCloseErrorMessage(plan.errors[0]) : t`Failed to close position`,
 						);
 					}
-					if (input.dismissFutureConfirmation && toBig(closeResolution.remainingSize)?.eq(0)) {
+					if (input.dismissFutureConfirmation) {
 						const preferenceStatus = dismissPositionMarketCloseConfirmation({
 							owner: refreshedSession.owner,
 							env: refreshedSession.env,

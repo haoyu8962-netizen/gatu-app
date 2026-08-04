@@ -382,7 +382,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(submitted.orders[0]?.p).toBe("109.45");
 	});
 
-	it("saves the scoped preference only after a fresh full-close plan validates", async () => {
+	it("saves the scoped preference only after a fresh close plan validates", async () => {
 		const sessionId = openSession();
 
 		await act(async () => {
@@ -393,7 +393,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		expect(mocks.executeOrder).toHaveBeenCalledOnce();
 	});
 
-	it("does not save the preference for a partial close", async () => {
+	it("saves the preference for a validated partial close", async () => {
 		const sessionId = openSession();
 		act(() => getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "percent", value: "50" }));
 
@@ -401,7 +401,7 @@ describe("usePositionMarketCloseSubmit", () => {
 			await currentHook().submit({ sessionId, dismissFutureConfirmation: true });
 		});
 
-		expect(readPositionMarketCloseConfirmationPreference({ owner: USER, env: "Mainnet" })).toBe("required");
+		expect(readPositionMarketCloseConfirmationPreference({ owner: USER, env: "Mainnet" })).toBe("dismissed");
 		expect(mocks.executeOrder).toHaveBeenCalledOnce();
 	});
 

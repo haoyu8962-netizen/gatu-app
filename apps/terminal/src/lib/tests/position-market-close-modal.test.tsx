@@ -262,7 +262,7 @@ describe("PositionMarketCloseModal", () => {
 		});
 	});
 
-	it("sends the opt-out only for a full-position confirmation", async () => {
+	it("sends the opt-out for a full-position confirmation", async () => {
 		render();
 		const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
 		expect(checkbox?.disabled).toBe(false);
@@ -272,6 +272,30 @@ describe("PositionMarketCloseModal", () => {
 			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
 		});
 
+		expect(testState.submit).toHaveBeenCalledWith({
+			sessionId: "session-1",
+			dismissFutureConfirmation: true,
+		});
+	});
+
+	it("keeps the opt-out checked while editing a partial close", async () => {
+		testState.session.sizingIntent = { kind: "percent", value: "50" };
+		render();
+		const checkbox = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
+		expect(checkbox).toMatchObject({ checked: false, disabled: false });
+		expect(container.textContent).toContain(
+			"Future Market clicks will immediately close the full position for this account and network.",
+		);
+
+		act(() => checkbox?.click());
+		act(() => {
+			(testState.sliderProps?.onPercentChange as (value: number) => void)(75);
+		});
+		expect(checkbox?.checked).toBe(true);
+
+		await act(async () => {
+			container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.click();
+		});
 		expect(testState.submit).toHaveBeenCalledWith({
 			sessionId: "session-1",
 			dismissFutureConfirmation: true,
@@ -330,7 +354,7 @@ describe("PositionMarketCloseModal", () => {
 			"50% selected; 33.3% after size precision",
 		);
 		expect(container.textContent).toContain("1 BTC (33.3%)");
-		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.disabled).toBe(true);
+		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')?.disabled).toBe(false);
 
 		testState.livePosition = { szi: "4" };
 		render();
@@ -399,6 +423,7 @@ describe("PositionMarketCloseModal", () => {
 			showHandle: true,
 		});
 		expect(container.textContent).toContain("Closing this dialog will not cancel it.");
+		expect(container.querySelector<HTMLInputElement>('input[type="checkbox"]')).toBeNull();
 		expect(container.querySelector<HTMLButtonElement>('[data-testid="submit"]')?.disabled).toBe(true);
 
 		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));

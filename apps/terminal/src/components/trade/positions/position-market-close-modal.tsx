@@ -95,7 +95,6 @@ export function PositionMarketCloseModal() {
 	const sizingError = sizing.errors[0] ? getPositionMarketCloseErrorMessage(sizing.errors[0]) : null;
 	const visibleError = positionStatus ?? error ?? sizingError;
 	const canSubmit = canEdit && sizing.errors.length === 0;
-	const isFullClose = sizing.errors.length === 0 && toBig(sizing.remainingSize)?.eq(0) === true;
 	const confirmationPreferenceAlreadyDismissed =
 		readPositionMarketCloseConfirmationPreference({ owner: session.owner, env: session.env }) === "dismissed";
 	const errorId = `position-market-close-error-${sessionId}`;
@@ -112,7 +111,6 @@ export function PositionMarketCloseModal() {
 
 	function setSizingIntent(nextIntent: PositionMarketCloseSizingIntent) {
 		if (!canEdit) return;
-		setDismissFutureConfirmation(false);
 		resetError();
 		actions.setSizingIntent(sessionId, nextIntent);
 	}
@@ -127,7 +125,7 @@ export function PositionMarketCloseModal() {
 
 	function handleSubmit() {
 		if (!canSubmit) return;
-		return submit({ sessionId, dismissFutureConfirmation: dismissFutureConfirmation && isFullClose });
+		return submit({ sessionId, dismissFutureConfirmation });
 	}
 
 	const progressLabel = getProgressLabel(phase);
@@ -254,18 +252,16 @@ export function PositionMarketCloseModal() {
 					/>
 				</div>
 
-				<Checkbox
-					size="md"
-					checked={confirmationPreferenceAlreadyDismissed || dismissFutureConfirmation}
-					onCheckedChange={setDismissFutureConfirmation}
-					disabled={confirmationPreferenceAlreadyDismissed || !canEdit || !isFullClose}
-					label={t`Don't show this confirmation again`}
-					description={
-						confirmationPreferenceAlreadyDismissed || isFullClose
-							? t`Future Market clicks will immediately close the full position for this account and network.`
-							: t`This preference is available only when closing the full position.`
-					}
-				/>
+				{!isMobile && (
+					<Checkbox
+						size="md"
+						checked={confirmationPreferenceAlreadyDismissed || dismissFutureConfirmation}
+						onCheckedChange={setDismissFutureConfirmation}
+						disabled={confirmationPreferenceAlreadyDismissed || !canEdit}
+						label={t`Don't show this confirmation again`}
+						description={t`Future Market clicks will immediately close the full position for this account and network.`}
+					/>
+				)}
 
 				{phase === "reconciling" && (
 					<output
