@@ -22,7 +22,7 @@ describe("desktop grid layout", () => {
 		expect(MOBILE_QR_SURFACE_MEDIA_QUERY).toBe("(max-width: 1000px), (pointer: coarse), (display-mode: standalone)");
 		expect(DESKTOP_GRID_BREAKPOINTS).toEqual({ lg: 1420, md: 1000 });
 		expect(DESKTOP_GRID_COLS).toEqual({ lg: 16, md: 14 });
-		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v4");
+		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v5");
 	});
 
 	it("removes saved geometry when the desktop layout is reset", () => {
@@ -30,6 +30,7 @@ describe("desktop grid layout", () => {
 		window.localStorage.setItem("trade-desktop-grid-layout-v1", "legacy");
 		window.localStorage.setItem("trade-desktop-grid-layout-v2", "legacy");
 		window.localStorage.setItem("trade-desktop-grid-layout-v3", "legacy");
+		window.localStorage.setItem("trade-desktop-grid-layout-v4", "legacy");
 
 		resetDesktopGridLayouts();
 
@@ -37,14 +38,15 @@ describe("desktop grid layout", () => {
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v1")).toBeNull();
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v2")).toBeNull();
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v3")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v4")).toBeNull();
 		expect(readDesktopGridLayouts()).toBe(DEFAULT_DESKTOP_GRID_LAYOUTS);
 	});
 
-	it("discards the incompatible v3 geometry when the new layout is read", () => {
-		window.localStorage.setItem("trade-desktop-grid-layout-v3", JSON.stringify(DEFAULT_DESKTOP_GRID_LAYOUTS));
+	it("discards the incompatible v4 geometry when the new layout is read", () => {
+		window.localStorage.setItem("trade-desktop-grid-layout-v4", JSON.stringify(DEFAULT_DESKTOP_GRID_LAYOUTS));
 
 		expect(readDesktopGridLayouts()).toBe(DEFAULT_DESKTOP_GRID_LAYOUTS);
-		expect(window.localStorage.getItem("trade-desktop-grid-layout-v3")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v4")).toBeNull();
 	});
 
 	it("keeps the market toolbar compact without changing the workspace height", () => {
