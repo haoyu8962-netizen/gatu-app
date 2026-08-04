@@ -9,6 +9,8 @@ const intent: TwapIntent = {
 	minutes: 30,
 	reduceOnly: false,
 	randomize: true,
+	stopPx: null,
+	trigger: null,
 };
 
 const state: TwapStateLike = {
@@ -18,6 +20,8 @@ const state: TwapStateLike = {
 	minutes: 30,
 	reduceOnly: false,
 	randomize: true,
+	stopPx: null,
+	trigger: null,
 };
 
 describe("TWAP domain state", () => {
@@ -42,6 +46,22 @@ describe("TWAP domain state", () => {
 		expect(matchesTwapIntent(intent, { ...state, minutes: 60 })).toBe(false);
 		expect(matchesTwapIntent(intent, { ...state, reduceOnly: true })).toBe(false);
 		expect(matchesTwapIntent(intent, { ...state, randomize: false })).toBe(false);
+		expect(matchesTwapIntent(intent, { ...state, stopPx: "100" })).toBe(false);
+		expect(matchesTwapIntent(intent, { ...state, trigger: { px: "90", above: false } })).toBe(false);
 		expect(matchesTwapIntent(intent, { ...state, sz: "invalid" })).toBe(false);
+	});
+
+	it("matches trigger and stop prices numerically without losing the trigger direction", () => {
+		const conditionalIntent = { ...intent, stopPx: "80.0", trigger: { px: "100.00", above: true } };
+		const conditionalState = { ...state, stopPx: "80", trigger: { px: "100", above: true } };
+
+		expect(matchesTwapIntent(conditionalIntent, conditionalState)).toBe(true);
+		expect(matchesTwapIntent(conditionalIntent, { ...conditionalState, stopPx: "81" })).toBe(false);
+		expect(
+			matchesTwapIntent(conditionalIntent, {
+				...conditionalState,
+				trigger: { ...conditionalState.trigger, above: false },
+			}),
+		).toBe(false);
 	});
 });

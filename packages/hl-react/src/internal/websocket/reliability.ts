@@ -44,7 +44,6 @@ export const WS_RELIABILITY_LIMITS = {
 			allDexsAssetCtxs: 20_000,
 			spotAssetCtxs: 20_000,
 			assetCtxs: 20_000,
-			webData2: 60_000,
 			webData3: 60_000,
 			allDexsClearinghouseState: 60_000,
 			spotState: 60_000,
@@ -57,7 +56,6 @@ export const WS_RELIABILITY_LIMITS = {
 
 const USER_STREAM_METHODS = new Set([
 	"orderUpdates",
-	"webData2",
 	"webData3",
 	"allDexsClearinghouseState",
 	"spotState",

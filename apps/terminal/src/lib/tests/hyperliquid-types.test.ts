@@ -56,6 +56,11 @@ describe("InfoClient mapped types", () => {
 		expectTypeOf<"config_">().not.toMatchTypeOf<Methods>();
 	});
 
+	it("includes the Info methods added in SDK 0.33.3", () => {
+		expectTypeOf<"outcomeTemplates">().toMatchTypeOf<InfoMethod>();
+		expectTypeOf<"usdcRouting">().toMatchTypeOf<InfoMethod>();
+	});
+
 	it("covers all InfoClient methods", () => {
 		type SDKMethods = Exclude<keyof InfoClient, "config_">;
 		expectTypeOf<InfoMethod>().toMatchTypeOf<SDKMethods>();
@@ -85,6 +90,10 @@ describe("ExchangeClient mapped types", () => {
 	it("resolves response type correctly", () => {
 		expectTypeOf<ExchangeResponse<"order">>().toEqualTypeOf<OrderSuccessResponse>();
 		expectTypeOf<ExchangeResponse<"cancel">>().toEqualTypeOf<CancelSuccessResponse>();
+	});
+
+	it("includes the Exchange method added in SDK 0.33.3", () => {
+		expectTypeOf<"activateOutcomeDeployer">().toMatchTypeOf<ExchangeMethod>();
 	});
 
 	it("covers all ExchangeClient methods", () => {
@@ -118,6 +127,10 @@ describe("SubscriptionClient mapped types", () => {
 
 	it("resolves event type for no-params method", () => {
 		expectTypeOf<SubEvent<"spotAssetCtxs">>().not.toBeNever();
+	});
+
+	it("excludes the webData2 subscription removed in SDK 0.33.2", () => {
+		expectTypeOf<"webData2">().not.toMatchTypeOf<SubMethod>();
 	});
 
 	it("never resolves to never for any method", () => {

@@ -51,12 +51,6 @@ describe("exchange mutation policy", () => {
 			}),
 		).not.toThrow();
 		expect(() =>
-			assertExchangeMutationAllowed("userSetAbstraction", {
-				user: USER,
-				abstraction: "dexAbstraction",
-			}),
-		).not.toThrow();
-		expect(() =>
 			assertExchangeMutationAllowed("userPortfolioMargin", {
 				user: USER,
 				enabled: false,

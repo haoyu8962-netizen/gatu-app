@@ -53,7 +53,7 @@ describe("createPrivyAgentSigner", () => {
 		);
 	});
 
-	it("is selected by SDK 0.33.1 as a JSON-RPC wallet with the expected approval chain", async () => {
+	it("is selected by SDK 0.33.3 as a JSON-RPC wallet with the expected approval chain", async () => {
 		const rawSignature = `0x${"11".repeat(64)}1b` as const;
 		const signTypedData = vi.fn().mockResolvedValue({ signature: rawSignature });
 		const signer = createPrivyAgentSigner({

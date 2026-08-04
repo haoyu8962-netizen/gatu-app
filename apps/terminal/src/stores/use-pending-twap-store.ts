@@ -27,6 +27,8 @@ const pendingTwapSubmissionSchema = z.object({
 		minutes: z.number().int().positive(),
 		reduceOnly: z.boolean(),
 		randomize: z.boolean(),
+		stopPx: z.string().nullable().optional(),
+		trigger: z.object({ px: z.string(), above: z.boolean() }).nullable().optional(),
 	}),
 	activeBaseline: baselineSchema,
 	historyBaseline: baselineSchema,

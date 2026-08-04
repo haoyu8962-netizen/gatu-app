@@ -16,7 +16,7 @@ import {
 interface TwapCandidate {
 	twapId: number;
 	state: TwapStateLike & { timestamp: number };
-	status: "activated" | "terminated" | "finished" | "error";
+	status: "activated" | "waitingForTrigger" | "terminated" | "finished" | "stopped" | "error";
 	error?: string;
 }
 
@@ -163,7 +163,9 @@ async function coordinateTwapReconciliation(
 		intent: submission.intent,
 		pendingSubmissionId: submission.id,
 		active:
-			candidate.status === "activated" ? { twapId: candidate.twapId, startedAt: candidate.state.timestamp } : undefined,
+			candidate.status === "activated" || candidate.status === "waitingForTrigger"
+				? { twapId: candidate.twapId, startedAt: candidate.state.timestamp }
+				: undefined,
 	});
 	if (!coordinated) {
 		window.setTimeout(() => getPendingTwapActions().clearActive(submission.id), TWAP_RECONCILIATION_RETRY_MS);

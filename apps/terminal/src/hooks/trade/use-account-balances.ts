@@ -21,6 +21,7 @@ export type AccountAbstraction =
 	| "unifiedAccount"
 	| "portfolioMargin"
 	| "disabled"
+	| "dexAbstraction"
 	| null;
 
 export interface AccountBalances {

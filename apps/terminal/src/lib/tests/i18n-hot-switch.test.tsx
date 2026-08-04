@@ -34,6 +34,10 @@ const zhTranslations: Record<string, string> = {
 	"Stop Market": "止损市价",
 	"Price above {price}": "价格高于 {price}",
 	Canceled: "已取消",
+	Rejected: "已拒绝",
+	"TWAP Slice": "TWAP 分片",
+	"Vault Close": "金库平仓",
+	"Spot Dust Conversion": "现货零头转换",
 	Long: "多",
 	Trigger: "触发",
 };
@@ -175,9 +179,13 @@ function OrderLabelsProbe() {
 	return (
 		<div data-testid="order-labels">
 			<span data-label="type">{getOrderTypeLabel("Stop Market")}</span>
+			<span data-label="twap-slice">{getOrderTypeLabel("Twap Slice")}</span>
+			<span data-label="vault-close">{getOrderTypeLabel("Vault Close")}</span>
+			<span data-label="spot-dust-conversion">{getOrderTypeLabel("Spot Dust Conversion")}</span>
 			<span data-label="advanced">{getAdvancedOrderTypeLabel("stopMarket")}</span>
 			<span data-label="condition">{getTriggerConditionLabel("Price above 70")}</span>
-			<span data-label="status">{getHistoricalOrderStatusLabel("marginCanceled")}</span>
+			<span data-label="status">{getHistoricalOrderStatusLabel("internalCancel")}</span>
+			<span data-label="rejected-status">{getHistoricalOrderStatusLabel("tooManyOpenOrdersRejected")}</span>
 			<span data-label="side">{getOrderSideLabel("B", "perp")}</span>
 			<span data-label="queue-type">{getQueueOrderTypeLabel("trigger")}</span>
 		</div>
@@ -247,9 +255,13 @@ describe("language hot switching", () => {
 		expect(localizedMobileNav?.textContent).toContain("账户");
 		const orderLabels = container.querySelector('[data-testid="order-labels"]');
 		expect(orderLabels?.querySelector('[data-label="type"]')?.textContent).toBe("止损市价");
+		expect(orderLabels?.querySelector('[data-label="twap-slice"]')?.textContent).toBe("TWAP 分片");
+		expect(orderLabels?.querySelector('[data-label="vault-close"]')?.textContent).toBe("金库平仓");
+		expect(orderLabels?.querySelector('[data-label="spot-dust-conversion"]')?.textContent).toBe("现货零头转换");
 		expect(orderLabels?.querySelector('[data-label="advanced"]')?.textContent).toBe("止损市价");
 		expect(orderLabels?.querySelector('[data-label="condition"]')?.textContent).toBe("价格高于 70");
 		expect(orderLabels?.querySelector('[data-label="status"]')?.textContent).toBe("已取消");
+		expect(orderLabels?.querySelector('[data-label="rejected-status"]')?.textContent).toBe("已拒绝");
 		expect(orderLabels?.querySelector('[data-label="side"]')?.textContent).toBe("多");
 		expect(orderLabels?.querySelector('[data-label="queue-type"]')?.textContent).toBe("触发");
 	});

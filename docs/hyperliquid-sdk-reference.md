@@ -13,7 +13,7 @@ Use this workflow whenever a trading, account, or subscription change depends on
    - <https://nktkas.gitbook.io/hyperliquid>
    - <https://nktkas.gitbook.io/hyperliquid/api-reference/info-methods>
    - <https://nktkas.gitbook.io/hyperliquid/api-reference/exchange-methods>
-3. The declarations and implementation installed in this repository are the version-locked compile-time and runtime contract. The terminal and `@gatu/hl-react` currently pin `@nktkas/hyperliquid` `0.33.1`. Online documentation may describe a newer patch release.
+3. The declarations and implementation installed in this repository are the version-locked compile-time and runtime contract. The terminal and `@gatu/hl-react` currently pin `@nktkas/hyperliquid` `0.33.3`. Online documentation may describe a newer patch release.
 
 When these sources differ, preserve the installed contract until the SDK is upgraded deliberately and its migration is tested. Never silently code against an online signature that is absent from the pinned package.
 
@@ -45,7 +45,11 @@ For each API-dependent change:
 ## Audited contracts
 
 - `orderStatus` accepts an oid or 16-byte cloid and returns either `unknownOid` or an order with an `OrderProcessingStatus`.
-- `open`, `filled`, and `triggered` indicate accepted orders. `canceled` and the `*Canceled` family indicate orders accepted and later canceled; they must not be reported as placement rejections. `rejected` and the `*Rejected` family indicate rejection at placement.
+- `open`, `filled`, and `triggered` indicate accepted orders. `canceled`, `outcomeSettledCanceled`, `internalCancel`, and the other `*Canceled` statuses indicate orders accepted and later canceled; they must not be reported as placement rejections. `rejected`, `tooManyOpenOrdersRejected`, and the other `*Rejected` statuses indicate rejection at placement.
+- `SubscriptionClient.webData2` was removed in `0.33.2`; use `webData3` for the real-time account stream. `InfoClient.webData2` remains a supported REST info method.
+- A TWAP with history status `waitingForTrigger` is live and must retain its asset reservation. `stopped` is terminal and releases it. `TwapState.stopPx` and `TwapState.trigger` are required nullable response fields.
+- `userSetAbstraction` accepts only `disabled`, `unifiedAccount`, or `portfolioMargin`. Legacy `dexAbstraction` may still be normalized when reading old account state, but must not be sent as a `userSetAbstraction` action.
+- `activateOutcomeDeployer` is an L1 action and therefore uses the trading/Agent client, not the principal user-signed client.
 - HTTP 429 is a deterministic rate-limit response and must not enter ambiguous-delivery reconciliation. Transport failures without a response, HTTP 408, and HTTP 5xx remain ambiguous.
 - The SDK does not document whether `batchModify` preserves `positionTpsl` grouping for `s: "0"`. Keep this as a testnet verification requirement; do not replace or endorse that path based on inference alone.
 

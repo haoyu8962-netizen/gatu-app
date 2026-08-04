@@ -72,8 +72,11 @@ describe("order tracking", () => {
 		expect(isCanceledOrderStatus("marginCanceled")).toBe(true);
 		expect(isCanceledOrderStatus("siblingFilledCanceled")).toBe(true);
 		expect(isCanceledOrderStatus("scheduledCancel")).toBe(true);
+		expect(isCanceledOrderStatus("outcomeSettledCanceled")).toBe(true);
+		expect(isCanceledOrderStatus("internalCancel")).toBe(true);
 		expect(isCanceledOrderStatus("rejected")).toBe(false);
 		expect(isCanceledOrderStatus("perpMarginRejected")).toBe(false);
+		expect(isCanceledOrderStatus("tooManyOpenOrdersRejected")).toBe(false);
 		expect(isCanceledOrderStatus("filled")).toBe(false);
 	});
 

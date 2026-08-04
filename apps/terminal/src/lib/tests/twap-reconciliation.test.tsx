@@ -5,7 +5,7 @@ import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TwapReconciliation } from "@/components/trade/twap-reconciliation";
-import { TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS } from "@/domain/trade/twap";
+import { TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS, type TwapIntent } from "@/domain/trade/twap";
 import {
 	getOrderAssetReservationState,
 	reserveOrderAssets,
@@ -27,7 +27,9 @@ const mocks = vi.hoisted(() => ({
 					twapId: number;
 					time: number;
 					state: ReturnType<typeof createTwapState>;
-					status: { status: "finished" | "activated" | "terminated" } | { status: "error"; description: string };
+					status:
+						| { status: "finished" | "activated" | "waitingForTrigger" | "terminated" | "stopped" }
+						| { status: "error"; description: string };
 				}>;
 		  }
 		| undefined,
@@ -59,14 +61,18 @@ function createTwapState(overrides: Partial<Record<string, unknown>> = {}) {
 		randomize: true,
 		reduceOnly: false,
 		side: "B" as const,
+		stopPx: null,
 		sz: "1.25",
 		timestamp: Date.now(),
+		trigger: null,
 		user: USER,
 		...overrides,
 	};
 }
 
-function addSubmission(options: { activeKnownIds?: number[]; historyKnownIds?: number[] } = {}) {
+function addSubmission(
+	options: { activeKnownIds?: number[]; historyKnownIds?: number[]; intent?: Partial<TwapIntent> } = {},
+) {
 	return getPendingTwapActions().add({
 		env: "Mainnet",
 		user: USER,
@@ -78,6 +84,9 @@ function addSubmission(options: { activeKnownIds?: number[]; historyKnownIds?: n
 			minutes: 30,
 			reduceOnly: false,
 			randomize: true,
+			stopPx: null,
+			trigger: null,
+			...options.intent,
 		},
 		activeBaseline: { ready: true, knownIds: options.activeKnownIds ?? [] },
 		historyBaseline: { ready: true, knownIds: options.historyKnownIds ?? [] },
@@ -279,6 +288,40 @@ describe("TwapReconciliation", () => {
 		});
 	});
 
+	it("keeps a waiting-for-trigger TWAP reserved beyond the short confirmation window", async () => {
+		const trigger = { px: "2500", above: true };
+		const submission = addSubmission({ intent: { trigger } });
+		await reservePendingSubmission(submission);
+		mocks.historyData = {
+			user: USER,
+			isSnapshot: true,
+			history: [
+				{
+					twapId: 59,
+					time: Math.floor(Date.now() / 1000),
+					state: createTwapState({ trigger }),
+					status: { status: "waitingForTrigger" },
+				},
+			],
+		};
+
+		await act(async () => {
+			root.render(createElement(TwapReconciliation));
+			await Promise.resolve();
+		});
+		vi.setSystemTime(submission.createdAt + TWAP_RECONCILIATION_CONFIRMATION_WINDOW_MS + 1);
+
+		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
+			expect(
+				getOrderAssetReservationState(lease, {
+					intentKey: "position-close",
+					exclusiveAssetLock: true,
+					isRiskReducing: true,
+				}),
+			).toBe("conflict");
+		});
+	});
+
 	it("keeps the pending submission when active TWAP promotion storage fails", async () => {
 		const submission = addSubmission();
 		await reservePendingSubmission(submission, submission.createdAt + 60 * 60_000);
@@ -310,7 +353,7 @@ describe("TwapReconciliation", () => {
 		storageSpy.mockRestore();
 	});
 
-	it("releases a pending asset reservation when TWAP history reports a terminal state", async () => {
+	it("releases a pending asset reservation when TWAP history reports stopped", async () => {
 		const submission = addSubmission();
 		await reservePendingSubmission(submission, submission.createdAt + 60 * 60_000);
 		mocks.historyData = {
@@ -321,7 +364,7 @@ describe("TwapReconciliation", () => {
 					twapId: 57,
 					time: Math.floor(Date.now() / 1000),
 					state: createTwapState(),
-					status: { status: "finished" },
+					status: { status: "stopped" },
 				},
 			],
 		};
@@ -334,7 +377,7 @@ describe("TwapReconciliation", () => {
 		await runWithOrderAssetLocks({ env: "Mainnet", owner: USER, assetIds: [7] }, async (lease) => {
 			expect(
 				getOrderAssetReservationState(lease, {
-					intentKey: "entry-after-finish",
+					intentKey: "entry-after-stop",
 					exclusiveAssetLock: false,
 					isRiskReducing: false,
 				}),

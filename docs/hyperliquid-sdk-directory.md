@@ -13,8 +13,14 @@ Scan the "Want to..." tables below to find the right method for your task.
 - **(S)** = Subscription → real-time WebSocket stream, use `SubscriptionClient`
 - **(X)** = Explorer method/stream → use `ExplorerClient` with an explorer-compatible transport
 
-### Step 3: Get Full Parameter Schema (Full Docs)
-Once you know which method to use, look up the complete OpenAPI schema in:
+### Step 3: Get the Current Parameter Schema
+
+The checked-in `hyperliquid-sdk-1.md` and `hyperliquid-sdk-2.md` files are archived `0.33.1`
+snapshots. They are useful for broad navigation, but they do not include every `0.33.2`/`0.33.3`
+schema change. For current parameters and response unions, use the
+[SDK GitBook](https://nktkas.gitbook.io/hyperliquid) and the installed `0.33.3` declarations first.
+
+Archived snapshot locations:
 
 | Content | File | Lines |
 |---------|------|-------|
@@ -69,7 +75,7 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | Get spot token balances | `spotClearinghouseState({user})` | I |
 | Stream spot balances | `spotState({user})` | S |
 | Get everything (positions, orders, fills) | `webData2({user})` | I |
-| Stream everything | `webData2({user})` | S |
+| Stream comprehensive account state | `webData3({user})` | S |
 | Get per-asset leverage + max trade sizes | `activeAssetData({user, coin})` | S |
 | Get portfolio PnL breakdown | `portfolio({user})` | I |
 | Get account abstraction mode | `userAbstraction({user})` | I |
@@ -82,7 +88,7 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 | Want to... | Method | Type |
 |------------|--------|------|
 | Place limit/market/trigger orders | `order({orders, grouping, builder?})` | E |
-| Place TWAP order | `twapOrder({a, b, s, r, m, t})` | E |
+| Place TWAP order | `twapOrder({twap: {a, b, s, r, m, t}, details?})` | E |
 | Get TWAP history | `twapHistory({user})` | I |
 | Stream TWAP history | `userTwapHistory({user})` | S |
 | Stream TWAP slice fills | `userTwapSliceFills({user})` | S |
@@ -109,6 +115,13 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 **Market orders:** Use `t.limit.tif = "FrontendMarket"` (or `"Ioc"`) with an aggressive `p`.
 **Scale/ladder orders:** Not native; send multiple limit orders in one `order({orders: [...]})` call.
 **OrderType labels:** `frontendOpenOrders` / `openOrders` / `historicalOrders` return `orderType` values for display.
+In `0.33.3`, the display union also includes `Twap Slice`, `Vault Close`, and `Spot Dust Conversion`.
+**Order status additions:** `outcomeSettledCanceled` and `internalCancel` are terminal canceled states;
+`tooManyOpenOrdersRejected` is a terminal placement rejection.
+**Conditional TWAP:** `twapOrder` optionally accepts `details: {t, s}`. `t` is either `null` or
+`{p, a}` (trigger price and above/below direction); `s` is either `null` or the stop price. When
+`details` is present, both keys are required. TWAP history treats `waitingForTrigger` as live and
+`stopped` as terminal; `TwapState` exposes nullable `trigger` and `stopPx` fields.
 **Grouping:** `"na"` (standalone), `"normalTpsl"` (fixed TP/SL size), `"positionTpsl"` (TP/SL scales with position)
 
 ---
@@ -222,19 +235,20 @@ Once you know which method to use, look up the complete OpenAPI schema in:
 
 ## Advanced
 
-### Additional SDK 0.33.1 APIs
+### Additional SDK 0.33.3 APIs
 
-These methods are present in the pinned `@nktkas/hyperliquid@0.33.1` clients but do not fit the
+These methods are present in the pinned `@nktkas/hyperliquid@0.33.3` clients but do not fit the
 short intent tables above:
 
 | Area | Methods | Type |
 |------|---------|------|
 | Borrow/lend state | `allBorrowLendReserveStates`, `borrowLendReserveState`, `borrowLendUserState`, `userBorrowLendInterest` | I |
-| Expanded market metadata | `allPerpMetas`, `approvedBuilders`, `outcomeMeta`, `perpAnnotation`, `perpCategories`, `perpConciseAnnotations`, `perpDexLimits`, `settledOutcome`, `spotDeployState`, `spotMeta`, `spotMetaAndAssetCtxs` | I |
+| Expanded market metadata | `allPerpMetas`, `approvedBuilders`, `outcomeMeta`, `outcomeTemplates`, `perpAnnotation`, `perpCategories`, `perpConciseAnnotations`, `perpDexLimits`, `settledOutcome`, `spotDeployState`, `spotMeta`, `spotMetaAndAssetCtxs` | I |
+| Transfer routing | `usdcRouting` | I |
 | Network and account checks | `gossipPriorityAuctionStatus`, `gossipRootIps`, `legalCheck`, `subAccounts2`, `userRole`, `userTwapSliceFillsByTime`, `validatorL1Votes` | I |
 | Agent and account actions | `agentEnableDexAbstraction`, `agentSendAsset`, `agentSetAbstraction`, `authorizeAqav2Role`, `userOutcome` | E |
 | Borrow/lend and staking actions | `borrowLend`, `cDeposit`, `cSignerAction`, `cValidatorAction`, `cWithdraw`, `linkStakingUser`, `stakingLinkDisableTradingUser`, `validatorL1Stream` | E |
-| EVM, HIP-3, and deployment actions | `evmUserModify`, `finalizeEvmContract`, `gossipPriorityBid`, `hip3LiquidatorTransfer`, `sendToEvmWithData`, `spotUser`, `topUpIsolatedOnlyMargin` | E |
+| EVM, HIP-3/HIP-4, and deployment actions | `activateOutcomeDeployer`, `evmUserModify`, `finalizeEvmContract`, `gossipPriorityBid`, `hip3LiquidatorTransfer`, `sendToEvmWithData`, `spotUser`, `topUpIsolatedOnlyMargin` | E |
 | Exchange control actions | `noop`, `reserveRequestWeight`, `vaultDistribute` | E |
 | Expanded market streams | `activeAssetCtx`, `activeSpotAssetCtx`, `allDexsAssetCtxs`, `fastAssetCtxs`, `outcomeMetaUpdates`, `spotAssetCtxs` | S |
 | Expanded account streams | `allDexsClearinghouseState`, `notification`, `userHistoricalOrders`, `webData3` | S |
@@ -250,7 +264,7 @@ short intent tables above:
 |------------|--------|------|
 | Check if DEX abstraction enabled | `userDexAbstraction({user})` | I |
 | Enable/disable DEX abstraction | `userDexAbstraction({...})` | E |
-| Set account abstraction mode (`dexAbstraction` / `unifiedAccount` / `portfolioMargin` / `disabled`) | `userSetAbstraction({user, abstraction})` | E |
+| Set account abstraction mode (`unifiedAccount` / `portfolioMargin` / `disabled`) | `userSetAbstraction({user, abstraction})` | E |
 | Configure portfolio margin | `userPortfolioMargin({...})` | E |
 
 ### Explorer/Blockchain
@@ -385,7 +399,9 @@ TWAP (Time-Weighted Average Price) orders require multiple subscriptions to disp
     time: number,                    // When status changed (seconds)
     twapId?: number,                 // TWAP identifier
     state: TwapState,                // Snapshot at status change time
-    status: { status: "activated" | "finished" | "terminated" | "error" }
+    status: {
+      status: "activated" | "waitingForTrigger" | "finished" | "terminated" | "stopped" | "error"
+    }
   }>
 }
 ```
@@ -410,6 +426,11 @@ TWAP (Time-Weighted Average Price) orders require multiple subscriptions to disp
   minutes: number,        // Duration in minutes
   reduceOnly: boolean,
   randomize: boolean,
+  stopPx: string | null,  // Terminates the TWAP at this price when set
+  trigger: {              // Activation condition; null for immediate activation
+    px: string,
+    above: boolean
+  } | null,
   timestamp: number,      // Creation time (ms since epoch)
   user: Address
 }
@@ -521,7 +542,9 @@ const orders = useMemo(() => {
 orders.map((order) => {
   const liveState = statesByTwapId.get(order.twapId);
   const state = liveState ?? order.state;
-  const status = order.status.status; // "activated" | "finished" | "terminated"
+  const status = order.status.status;
+  // live: "activated" | "waitingForTrigger"
+  // terminal: "finished" | "terminated" | "stopped" | "error"
 });
 ```
 

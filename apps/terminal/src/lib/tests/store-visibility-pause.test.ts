@@ -61,10 +61,10 @@ describe("visibility-pause for market streams", () => {
 		store.getState().releaseSubscription(key);
 	});
 
-	it("passes user-stream writes through for method-based user streams (webData2)", async () => {
+	it("passes user-stream writes through for method-based user streams (webData3)", async () => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const key = marketKey("webData2", { coin: "ETH" });
+		const key = marketKey("webData3", { coin: "ETH" });
 		const { subscribe } = createFakeSubscription();
 
 		store.getState().acquireSubscription(key, subscribe);

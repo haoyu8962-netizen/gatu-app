@@ -21,6 +21,13 @@ export interface TwapIntent {
 	minutes: number;
 	reduceOnly: boolean;
 	randomize: boolean;
+	stopPx?: string | null;
+	trigger?: TwapTrigger | null;
+}
+
+export interface TwapTrigger {
+	px: string;
+	above: boolean;
 }
 
 export interface TwapStateLike {
@@ -30,6 +37,8 @@ export interface TwapStateLike {
 	minutes: number;
 	reduceOnly: boolean;
 	randomize: boolean;
+	stopPx?: string | null;
+	trigger?: TwapTrigger | null;
 }
 
 export function getTwapViewState(input: TwapViewStateInput): TwapViewState {
@@ -46,8 +55,20 @@ export function matchesTwapIntent(intent: TwapIntent, state: TwapStateLike): boo
 		intent.minutes === state.minutes &&
 		intent.reduceOnly === state.reduceOnly &&
 		intent.randomize === state.randomize &&
+		areEqualNullableDecimals(intent.stopPx, state.stopPx) &&
+		matchesTrigger(intent.trigger, state.trigger) &&
 		areEqualDecimals(intent.size, state.sz)
 	);
+}
+
+function areEqualNullableDecimals(left: string | null | undefined, right: string | null | undefined): boolean {
+	if (left == null || right == null) return left == null && right == null;
+	return areEqualDecimals(left, right);
+}
+
+function matchesTrigger(left: TwapTrigger | null | undefined, right: TwapTrigger | null | undefined): boolean {
+	if (left == null || right == null) return left == null && right == null;
+	return left.above === right.above && areEqualDecimals(left.px, right.px);
 }
 
 function areEqualDecimals(left: string, right: string): boolean {

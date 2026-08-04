@@ -1,5 +1,5 @@
 import { getStalenessThresholdForKey, isUserStreamKey } from "@gatu/hl-react/internal/websocket/reliability";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 function key(method: string, params: Record<string, unknown> = {}) {
 	return JSON.stringify(["hl", "subscription", method, params]);
@@ -8,7 +8,6 @@ function key(method: string, params: Record<string, unknown> = {}) {
 describe("isUserStreamKey", () => {
 	it("returns true for method-based user streams", () => {
 		expect(isUserStreamKey(key("orderUpdates"))).toBe(true);
-		expect(isUserStreamKey(key("webData2"))).toBe(true);
 		expect(isUserStreamKey(key("webData3"))).toBe(true);
 		expect(isUserStreamKey(key("allDexsClearinghouseState"))).toBe(true);
 		expect(isUserStreamKey(key("spotState"))).toBe(true);
@@ -28,6 +27,13 @@ describe("isUserStreamKey", () => {
 		expect(isUserStreamKey(key("openOrders", { user: "0xdef" }))).toBe(true);
 		expect(isUserStreamKey(key("userFills", { user: "0x123" }))).toBe(true);
 		expect(isUserStreamKey(key("spotState", { user: "0x456" }))).toBe(true);
+	});
+
+	it("does not classify the removed webData2 subscription as a user stream", () => {
+		const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+		expect(isUserStreamKey(key("webData2"))).toBe(false);
+		expect(warning).toHaveBeenCalledOnce();
+		warning.mockRestore();
 	});
 
 	it("returns false for market streams", () => {

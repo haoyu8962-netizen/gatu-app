@@ -1,5 +1,10 @@
 # setReferrer
 
+> **Archived schema snapshot:** This file continues the checked-in
+> `@nktkas/hyperliquid@0.33.1` snapshot and is not the current compile-time contract. The
+> repository pins `0.33.3`; use <https://nktkas.gitbook.io/hyperliquid> and the installed package
+> declarations for current method and schema details.
+
 ## POST /exchange
 
 > Set a referral code.
@@ -414,13 +419,14 @@
 
 > Subscription to spot state events for a specific user.
 
-> **SDK 0.33.1 response note:** `spotState.spotState` uses the current
+> **SDK 0.33.3 response note:** `spotState.spotState` uses the current
 > `SpotClearinghouseStateResponse` union. Standard token balances may include optional
-> `spotHold`, `ltv`, `borrowed`, and `supplied`; outcome balances use a `+<id>` coin and do
-> not include `token`. The response can also include `portfolioMarginEnabled`,
-> `portfolioMarginRatio`, `tokenToPortfolioBorrowRatio`, and
+> `spotHold`, `ltv`, `borrowed`, and `supplied`; active outcome balances use a `+<id>` coin,
+> settled outcome balances use `o<number>`, and neither includes `token`. The response can also
+> include `portfolioMarginEnabled`, `portfolioMarginRatio`, `tokenToPortfolioBorrowRatio`,
+> `tokenToPortfolioSupplyRatio`, and
 > `tokenToAvailableAfterMaintenance`. Treat the generated OpenAPI block below as the base shape,
-> not an exhaustive 0.33.1 schema.
+> not an exhaustive 0.33.3 schema.
 
 ```json
 {"openapi":"3.1.1","info":{"title":"Hyperliquid Subscription - spotState","version":"1.0.0"},"tags":[{"name":"spotState"}],"servers":[{"url":"wss://api.hyperliquid.xyz/ws","description":"Mainnet WebSocket"},{"url":"wss://api.hyperliquid-testnet.xyz/ws","description":"Testnet WebSocket"}],"paths":{"/":{"post":{"tags":["spotState"],"summary":"Subscribe to spotState","description":"Subscription to spot state events for a specific user.","requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"type":{"description":"Type of subscription.","enum":["spotState"]},"user":{"type":"string","pattern":"^0[xX][0-9a-fA-F]+$","minLength":42,"maxLength":42,"description":"User address."},"ignorePortfolioMargin":{"type":"boolean","description":"Whether to ignore portfolio margin calculations."}},"required":["type","user"],"description":"Subscription to spot state events for a specific user."}}},"required":true},"responses":{"200":{"description":"Event of user spot state.","content":{"application/json":{"schema":{"type":"object","properties":{"user":{"type":"string","pattern":"^0[xX][0-9a-fA-F]+$","minLength":42,"maxLength":42,"description":"User address."},"spotState":{"type":"object","properties":{"balances":{"type":"array","items":{"type":"object","properties":{"coin":{"type":"string","description":"Asset symbol."},"token":{"type":"number","minimum":0,"description":"Unique identifier for the token."},"total":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Total balance."},"hold":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Amount on hold."},"entryNtl":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Entry notional value."}},"required":["coin","token","total","hold","entryNtl"]},"description":"Array of available token balances."},"evmEscrows":{"type":"array","items":{"type":"object","properties":{"coin":{"type":"string","description":"Asset symbol."},"token":{"type":"number","minimum":0,"description":"Unique identifier for the token."},"total":{"type":"string","pattern":"^[0-9]+(\\.[0-9]+)?$","description":"Total balance."}},"required":["coin","token","total"]},"description":"Array of escrowed balances."}},"required":["balances"],"description":"Account summary for spot trading."}},"required":["user","spotState"],"description":"Event of user spot state."}}}}}}}}}

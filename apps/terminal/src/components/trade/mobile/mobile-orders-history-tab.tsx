@@ -3,6 +3,7 @@ import { ClockCounterClockwiseIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { isCanceledOrderStatus } from "@/domain/trade/order-tracking";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -108,7 +109,7 @@ export function MobileOrdersHistoryTab({ className, scrollMode = "contained" }: 
 											"text-xs px-1.5 py-0.5 rounded-8 capitalize",
 											entry.status === "filled"
 												? "bg-success-soft text-success"
-												: entry.status === "canceled"
+												: isCanceledOrderStatus(entry.status)
 													? "bg-error-soft text-error"
 													: "bg-surface text-fg-muted",
 										)}

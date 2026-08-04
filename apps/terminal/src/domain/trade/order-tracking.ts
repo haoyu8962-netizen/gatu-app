@@ -21,6 +21,8 @@ const CANCELED_ORDER_STATUSES: ReadonlySet<OrderProcessingStatus> = new Set([
 	"delistedCanceled",
 	"liquidatedCanceled",
 	"scheduledCancel",
+	"outcomeSettledCanceled",
+	"internalCancel",
 ]);
 
 export interface TrackedOrderChild {

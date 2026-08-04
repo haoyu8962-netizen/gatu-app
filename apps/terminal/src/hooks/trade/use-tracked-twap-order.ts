@@ -218,5 +218,13 @@ function createTwapIntent(params: ExchangeParams<"twapOrder">, coin: string): Tw
 		minutes,
 		reduceOnly: params.twap.r,
 		randomize: params.twap.t,
+		stopPx: params.details?.s == null ? null : String(params.details.s),
+		trigger:
+			params.details?.t == null
+				? null
+				: {
+						px: String(params.details.t.p),
+						above: params.details.t.a,
+					},
 	};
 }

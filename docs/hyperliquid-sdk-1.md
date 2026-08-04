@@ -1,5 +1,10 @@
 # Introduction
 
+> **Archived schema snapshot:** This file reflects `@nktkas/hyperliquid@0.33.1` and is not the
+> current compile-time contract. The repository pins `0.33.3`; use
+> <https://nktkas.gitbook.io/hyperliquid> and the installed package declarations for current
+> method and schema details. See `hyperliquid-sdk-reference.md` for the verification workflow.
+
 A TypeScript SDK for the [Hyperliquid API](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api).
 
 {% tabs %}

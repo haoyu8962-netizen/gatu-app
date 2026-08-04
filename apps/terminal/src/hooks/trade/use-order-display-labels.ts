@@ -19,6 +19,8 @@ const CANCELED_ORDER_STATUSES: ReadonlySet<HistoricalOrderStatus> = new Set([
 	"delistedCanceled",
 	"liquidatedCanceled",
 	"scheduledCancel",
+	"outcomeSettledCanceled",
+	"internalCancel",
 ]);
 
 const REJECTED_ORDER_STATUSES: ReadonlySet<HistoricalOrderStatus> = new Set([
@@ -38,6 +40,7 @@ const REJECTED_ORDER_STATUSES: ReadonlySet<HistoricalOrderStatus> = new Set([
 	"insufficientSpotBalanceRejected",
 	"oracleRejected",
 	"perpMaxPositionRejected",
+	"tooManyOpenOrdersRejected",
 ]);
 
 const TRIGGER_CONDITION_PATTERN = /^Price (above|below) (.+)$/;
@@ -59,6 +62,12 @@ export function useOrderDisplayLabels() {
 				return t`Take Profit Market`;
 			case "Take Profit Limit":
 				return t`Take Profit Limit`;
+			case "Twap Slice":
+				return t`TWAP Slice`;
+			case "Vault Close":
+				return t`Vault Close`;
+			case "Spot Dust Conversion":
+				return t`Spot Dust Conversion`;
 		}
 	}
 

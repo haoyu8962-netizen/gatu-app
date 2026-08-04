@@ -24,7 +24,7 @@ describe("exchange registry", () => {
 	});
 
 	// Exact methods marked "Signing: User-Signed EIP-712" by
-	// @nktkas/hyperliquid 0.33.1. Update this contract with every SDK upgrade.
+	// @nktkas/hyperliquid 0.33.3. Update this contract with every SDK upgrade.
 	const EXPECTED_USER_SIGNED: ExchangeMethod[] = [
 		"approveAgent",
 		"approveBuilderFee",
@@ -58,6 +58,10 @@ describe("exchange registry", () => {
 			const config = getExchangeMethodConfig(method);
 			expect(config.client, `${method} should use trading client`).toBe("trading");
 		}
+	});
+
+	it("routes activateOutcomeDeployer as an L1 action through the trading client", () => {
+		expect(getExchangeMethodConfig("activateOutcomeDeployer").client).toBe("trading");
 	});
 
 	it("only injects builder config for order", () => {

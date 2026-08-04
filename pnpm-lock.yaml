@@ -58,8 +58,8 @@ importers:
         specifier: 5.7.0
         version: 5.7.0(@lingui/babel-plugin-lingui-macro@5.7.0(babel-plugin-macros@3.1.0)(typescript@5.7.2))(babel-plugin-macros@3.1.0)(react@19.2.0)
       '@nktkas/hyperliquid':
-        specifier: 0.33.1
-        version: 0.33.1(typescript@5.7.2)
+        specifier: 0.33.3
+        version: 0.33.3(typescript@5.7.2)
       '@phosphor-icons/react':
         specifier: 2.1.10
         version: 2.1.10(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -248,8 +248,8 @@ importers:
   packages/hl-react:
     dependencies:
       '@nktkas/hyperliquid':
-        specifier: 0.33.1
-        version: 0.33.1(typescript@5.9.3)
+        specifier: 0.33.3
+        version: 0.33.3(typescript@5.9.3)
       '@tanstack/react-query':
         specifier: '>=5.90.16 <6'
         version: 5.90.16(react@19.2.0)
@@ -1760,8 +1760,8 @@ packages:
   '@napi-rs/wasm-runtime@1.1.1':
     resolution: {integrity: sha512-p64ah1M1ld8xjWv3qbvFwHiFVWrq1yFvV4f7w+mzaqiR4IlSgkqhcRdHwsGgomwzBH51sRY4NEowLxnaBjcW/A==}
 
-  '@nktkas/hyperliquid@0.33.1':
-    resolution: {integrity: sha512-gyc+Mtm6zBOmEYhrBn79ZVU77zP4Q+c0nNO/Bc/hrTdtFh58msoMMawoiGVi95pJHzd2FIBaJSC4s9V2LeIUdg==}
+  '@nktkas/hyperliquid@0.33.3':
+    resolution: {integrity: sha512-fvnEw/2ejN14ZZVXA+nFQ9YgfFNjCI1yLliYyUboC6hr3Gwd/RwC4Ox90K4e8tkKWqkVpOcLRQ30p0nTeK4NBQ==}
     engines: {node: '>=22.12.0'}
 
   '@nktkas/rews@4.1.0':
@@ -9588,7 +9588,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.1
     optional: true
 
-  '@nktkas/hyperliquid@0.33.1(typescript@5.7.2)':
+  '@nktkas/hyperliquid@0.33.3(typescript@5.7.2)':
     dependencies:
       '@nktkas/rews': 4.1.0
       '@noble/hashes': 1.8.0
@@ -9597,7 +9597,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@nktkas/hyperliquid@0.33.1(typescript@5.9.3)':
+  '@nktkas/hyperliquid@0.33.3(typescript@5.9.3)':
     dependencies:
       '@nktkas/rews': 4.1.0
       '@noble/hashes': 1.8.0

@@ -26,6 +26,8 @@ export function getTwapOrderAssetReservationIntent(intent: TwapIntent): OrderAss
 			intent.minutes,
 			intent.reduceOnly ? "reduce" : "increase",
 			intent.randomize ? "random" : "linear",
+			intent.stopPx ?? "no-stop",
+			intent.trigger ? `${intent.trigger.px}:${intent.trigger.above ? "above" : "below"}` : "no-trigger",
 		].join(":"),
 		exclusiveAssetLock: false,
 		isRiskReducing: intent.reduceOnly,
