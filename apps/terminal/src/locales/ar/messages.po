@@ -511,7 +511,6 @@ msgstr "الرصيد المتاح للتداول"
 #~ msgid "Balance:"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "الأرصدة"
@@ -2031,8 +2030,8 @@ msgstr "من"
 #~ msgstr ""
 
 #: src/config/trade.ts
-msgid "Funding"
-msgstr "التمويل"
+#~ msgid "Funding"
+#~ msgstr "التمويل"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -3229,7 +3228,6 @@ msgstr "فتح التنقل"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
-#: src/config/trade.ts
 msgid "Open Orders"
 msgstr "الأوامر المفتوحة"
 
@@ -3321,7 +3319,6 @@ msgid "Order filled"
 msgstr "تم تنفيذ الأمر"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "سجل الأوامر"
@@ -3703,7 +3700,6 @@ msgstr "قيمة المركز"
 #~ msgid "positions"
 #~ msgstr "مراكز"
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Positions"
 msgstr "المراكز"
@@ -5459,7 +5455,6 @@ msgstr "تداول"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/config/trade.ts
-#: src/config/trade.ts
 msgid "Trade History"
 msgstr "سجل التداول"
 
@@ -5631,7 +5626,6 @@ msgstr "حاول مرة أخرى"
 msgid "Try the PWA."
 msgstr "جرّب تطبيق PWA."
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts

@@ -511,7 +511,6 @@ msgstr "Solde disponible pour trader"
 #~ msgid "Balance:"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "Soldes"
@@ -2031,8 +2030,8 @@ msgstr "De"
 #~ msgstr ""
 
 #: src/config/trade.ts
-msgid "Funding"
-msgstr "Financement"
+#~ msgid "Funding"
+#~ msgstr "Financement"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -3229,7 +3228,6 @@ msgstr "Ouvrir la navigation"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
-#: src/config/trade.ts
 msgid "Open Orders"
 msgstr "Ordres ouverts"
 
@@ -3321,7 +3319,6 @@ msgid "Order filled"
 msgstr "Ordre exécuté"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "Historique des ordres"
@@ -3703,7 +3700,6 @@ msgstr "Valeur de la position"
 #~ msgid "positions"
 #~ msgstr "positions"
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Positions"
 msgstr "Positions"
@@ -5459,7 +5455,6 @@ msgstr "Trader"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/config/trade.ts
-#: src/config/trade.ts
 msgid "Trade History"
 msgstr "Historique des transactions"
 
@@ -5631,7 +5626,6 @@ msgstr "Réessayer"
 msgid "Try the PWA."
 msgstr "Essayez la PWA."
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts

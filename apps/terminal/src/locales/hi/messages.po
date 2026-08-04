@@ -511,7 +511,6 @@ msgstr "ट्रेड के लिए उपलब्ध बैलेंस"
 #~ msgid "Balance:"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "बैलेंस"
@@ -2031,8 +2030,8 @@ msgstr "से"
 #~ msgstr ""
 
 #: src/config/trade.ts
-msgid "Funding"
-msgstr "फंडिंग"
+#~ msgid "Funding"
+#~ msgstr "फंडिंग"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -3229,7 +3228,6 @@ msgstr "नेविगेशन खोलें"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
-#: src/config/trade.ts
 msgid "Open Orders"
 msgstr "खुले ऑर्डर"
 
@@ -3321,7 +3319,6 @@ msgid "Order filled"
 msgstr "ऑर्डर भर गया"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "ऑर्डर हिस्ट्री"
@@ -3703,7 +3700,6 @@ msgstr "पोज़िशन मूल्य"
 #~ msgid "positions"
 #~ msgstr "पोज़िशन"
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Positions"
 msgstr "पोज़िशन"
@@ -5459,7 +5455,6 @@ msgstr "ट्रेड"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/config/trade.ts
-#: src/config/trade.ts
 msgid "Trade History"
 msgstr "ट्रेड इतिहास"
 
@@ -5631,7 +5626,6 @@ msgstr "फिर से प्रयास करें"
 msgid "Try the PWA."
 msgstr "PWA आज़माएँ।"
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts

@@ -515,7 +515,6 @@ msgstr "可用于交易的余额"
 #~ msgid "Balance:"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "余额"
@@ -2044,8 +2043,8 @@ msgstr "从"
 #~ msgstr ""
 
 #: src/config/trade.ts
-msgid "Funding"
-msgstr "资金费率"
+#~ msgid "Funding"
+#~ msgstr "资金费率"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/positions-tab.tsx
@@ -3250,7 +3249,6 @@ msgstr "打开导航"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
-#: src/config/trade.ts
 msgid "Open Orders"
 msgstr "当前委托"
 
@@ -3342,7 +3340,6 @@ msgid "Order filled"
 msgstr "委托已成交"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Order History"
 msgstr "委托历史"
@@ -3724,7 +3721,6 @@ msgstr "仓位价值"
 #~ msgid "positions"
 #~ msgstr "仓位"
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 msgid "Positions"
 msgstr "持仓"
@@ -5488,7 +5484,6 @@ msgstr "交易"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/config/trade.ts
-#: src/config/trade.ts
 msgid "Trade History"
 msgstr "成交历史"
 
@@ -5660,7 +5655,6 @@ msgstr "重试"
 msgid "Try the PWA."
 msgstr "试用 PWA。"
 
-#: src/config/trade.ts
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts

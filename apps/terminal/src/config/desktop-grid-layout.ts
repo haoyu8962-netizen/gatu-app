@@ -127,7 +127,7 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 			minH: 10,
 			minW: 4,
 			isDraggable: false,
-			resizeHandles: ["s"],
+			resizeHandles: ["n", "e", "s", "ne", "se"],
 		},
 		{
 			i: "accountInfo",

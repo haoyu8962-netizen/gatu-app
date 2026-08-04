@@ -84,7 +84,7 @@ describe("desktop grid layout", () => {
 			y: 20.6,
 			w: 10,
 			h: 30.4,
-			resizeHandles: ["s"],
+			resizeHandles: ["n", "e", "s", "ne", "se"],
 		});
 		expect((compactAccountTable?.y ?? 0) + (compactAccountTable?.h ?? 0)).toBeCloseTo(compactRightColumnBottom);
 	});
