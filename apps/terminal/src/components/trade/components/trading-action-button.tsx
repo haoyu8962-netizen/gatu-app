@@ -1,7 +1,8 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { type ComponentProps, type ReactNode, useCallback } from "react";
+import { type ComponentProps, type MouseEvent, type ReactNode, useCallback } from "react";
+import { usePressAndHold } from "@/hooks/ui/use-press-and-hold";
 import { cn } from "@/lib/cn";
 import { formatTransferError } from "@/lib/errors/format";
 import { useTradingGuard } from "@/lib/hyperliquid";
@@ -12,6 +13,8 @@ interface Props extends Omit<ButtonProps, "onClick"> {
 	onClick: () => void | Promise<void>;
 	children: ReactNode;
 	containerClassName?: string;
+	holdDurationMs?: number;
+	holdProgressClassName?: string;
 	requireReadyConfirmation?: boolean;
 }
 
@@ -19,24 +22,67 @@ export function TradingActionButton({
 	onClick,
 	children,
 	containerClassName,
+	holdDurationMs,
+	holdProgressClassName,
 	requireReadyConfirmation = false,
 	disabled,
 	className,
 	variant = "filled",
 	intent = "neutral",
+	onBlur,
+	onKeyDown,
+	onKeyUp,
+	onLostPointerCapture,
+	onPointerCancel,
+	onPointerDown,
+	onPointerLeave,
+	onPointerUp,
 	...buttonProps
 }: Props) {
 	const { isReady, isEnabling, needsTrading, enableTrading, guardAction, error } = useTradingGuard();
+	const holdEnabled = typeof holdDurationMs === "number" && Number.isFinite(holdDurationMs) && holdDurationMs > 0;
+	const buttonDisabled = disabled || isEnabling || (!isReady && !needsTrading);
 
-	const handleClick = useCallback(() => {
+	const runProtectedAction = useCallback(() => {
 		if (requireReadyConfirmation && !isReady) {
 			enableTrading();
 			return;
 		}
 		guardAction(onClick);
 	}, [enableTrading, guardAction, isReady, onClick, requireReadyConfirmation]);
+	const {
+		handlers: holdHandlers,
+		isHolding,
+		progressPercent,
+	} = usePressAndHold({
+		disabled: !holdEnabled || !isReady || buttonDisabled,
+		durationMs: holdDurationMs ?? 0,
+		onComplete: runProtectedAction,
+	});
+	const holdArmed = holdEnabled && isReady && !buttonDisabled;
+
+	const handleClick = useCallback(
+		(event: MouseEvent<HTMLButtonElement>) => {
+			if (holdArmed) {
+				event.preventDefault();
+				return;
+			}
+			runProtectedAction();
+		},
+		[holdArmed, runProtectedAction],
+	);
 
 	const showEnableTrading = needsTrading && !isEnabling;
+	const buttonContent = isEnabling ? (
+		<>
+			<SpinnerGapIcon className="size-3 animate-spin" />
+			{t`Enabling`}
+		</>
+	) : showEnableTrading ? (
+		t`Enable`
+	) : (
+		children
+	);
 
 	return (
 		<div className={cn("flex flex-col gap-1 items-end", containerClassName)}>
@@ -45,18 +91,86 @@ export function TradingActionButton({
 				variant={variant}
 				intent={intent}
 				onClick={handleClick}
-				disabled={disabled || isEnabling || (!isReady && !needsTrading)}
-				className={className}
+				onBlur={
+					holdArmed
+						? (event) => {
+								holdHandlers.onBlur();
+								onBlur?.(event);
+							}
+						: onBlur
+				}
+				onKeyDown={
+					holdArmed
+						? (event) => {
+								holdHandlers.onKeyDown(event);
+								onKeyDown?.(event);
+							}
+						: onKeyDown
+				}
+				onKeyUp={
+					holdArmed
+						? (event) => {
+								holdHandlers.onKeyUp(event);
+								onKeyUp?.(event);
+							}
+						: onKeyUp
+				}
+				onLostPointerCapture={
+					holdArmed
+						? (event) => {
+								holdHandlers.onLostPointerCapture(event);
+								onLostPointerCapture?.(event);
+							}
+						: onLostPointerCapture
+				}
+				onPointerCancel={
+					holdArmed
+						? (event) => {
+								holdHandlers.onPointerCancel(event);
+								onPointerCancel?.(event);
+							}
+						: onPointerCancel
+				}
+				onPointerDown={
+					holdArmed
+						? (event) => {
+								holdHandlers.onPointerDown(event);
+								onPointerDown?.(event);
+							}
+						: onPointerDown
+				}
+				onPointerLeave={
+					holdArmed
+						? (event) => {
+								holdHandlers.onPointerLeave(event);
+								onPointerLeave?.(event);
+							}
+						: onPointerLeave
+				}
+				onPointerUp={
+					holdArmed
+						? (event) => {
+								holdHandlers.onPointerUp(event);
+								onPointerUp?.(event);
+							}
+						: onPointerUp
+				}
+				disabled={buttonDisabled}
+				className={cn(className, holdEnabled && "relative overflow-hidden touch-none")}
+				data-holding={isHolding || undefined}
 			>
-				{isEnabling ? (
-					<>
-						<SpinnerGapIcon className="size-3 animate-spin" />
-						{t`Enabling`}
-					</>
-				) : showEnableTrading ? (
-					t`Enable`
+				{holdEnabled && (
+					<span
+						aria-hidden="true"
+						data-slot="hold-progress"
+						className={cn("pointer-events-none absolute inset-y-0 start-0 bg-fill-inverse/20", holdProgressClassName)}
+						style={{ width: `${progressPercent}%` }}
+					/>
+				)}
+				{holdEnabled ? (
+					<span className="relative z-[1] inline-flex items-center justify-center gap-2">{buttonContent}</span>
 				) : (
-					children
+					buttonContent
 				)}
 			</Button>
 			{error && (

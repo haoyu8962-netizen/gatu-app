@@ -33,13 +33,11 @@ interface PressAndHoldResult {
 	progressPercent: number;
 }
 
-const PROGRESS_INTERVAL_MS = 100;
-
 export function usePressAndHold({ disabled = false, durationMs, onComplete }: PressAndHoldOptions): PressAndHoldResult {
 	const [isHolding, setIsHolding] = useState(false);
 	const [progressPercent, setProgressPercent] = useState(0);
 	const completeTimerRef = useRef<number | null>(null);
-	const progressTimerRef = useRef<number | null>(null);
+	const progressFrameRef = useRef<number | null>(null);
 	const startedAtRef = useRef(0);
 	const onCompleteRef = useRef(onComplete);
 	onCompleteRef.current = onComplete;
@@ -49,9 +47,9 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 			window.clearTimeout(completeTimerRef.current);
 			completeTimerRef.current = null;
 		}
-		if (progressTimerRef.current !== null) {
-			window.clearInterval(progressTimerRef.current);
-			progressTimerRef.current = null;
+		if (progressFrameRef.current !== null) {
+			window.cancelAnimationFrame(progressFrameRef.current);
+			progressFrameRef.current = null;
 		}
 	}, []);
 
@@ -62,28 +60,37 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 	}, [clearTimers]);
 
 	const start = useCallback(() => {
-		if (disabled || durationMs <= 0 || completeTimerRef.current !== null) return;
+		if (disabled || !Number.isFinite(durationMs) || durationMs <= 0 || completeTimerRef.current !== null) return;
 
 		startedAtRef.current = performance.now();
 		setIsHolding(true);
 		setProgressPercent(0);
-		progressTimerRef.current = window.setInterval(() => {
-			const elapsedMs = performance.now() - startedAtRef.current;
+
+		function updateProgress(timestamp: number) {
+			progressFrameRef.current = null;
+			if (completeTimerRef.current === null) return;
+
+			const elapsedMs = timestamp - startedAtRef.current;
 			setProgressPercent(Math.min(100, (elapsedMs / durationMs) * 100));
-		}, PROGRESS_INTERVAL_MS);
+			progressFrameRef.current = window.requestAnimationFrame(updateProgress);
+		}
+
 		completeTimerRef.current = window.setTimeout(() => {
-			if (progressTimerRef.current !== null) {
-				window.clearInterval(progressTimerRef.current);
-				progressTimerRef.current = null;
+			if (progressFrameRef.current !== null) {
+				window.cancelAnimationFrame(progressFrameRef.current);
+				progressFrameRef.current = null;
 			}
 			completeTimerRef.current = null;
 			setIsHolding(false);
 			setProgressPercent(100);
 			onCompleteRef.current();
 		}, durationMs);
+		progressFrameRef.current = window.requestAnimationFrame(updateProgress);
 	}, [disabled, durationMs]);
 
 	useEffect(() => {
+		if (disabled) return;
+
 		function handleWindowBlur() {
 			cancel();
 		}
@@ -106,14 +113,14 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 			clearTimers();
 		};
-	}, [cancel, clearTimers]);
+	}, [cancel, clearTimers, disabled]);
 
 	useEffect(() => {
 		if (disabled) cancel();
 	}, [cancel, disabled]);
 
 	function handlePointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
-		if (disabled) return;
+		if (disabled || (typeof event.button === "number" && event.button !== 0) || event.isPrimary === false) return;
 		event.preventDefault();
 		start();
 	}
@@ -123,9 +130,9 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 			cancel();
 			return;
 		}
-		if ((event.key === " " || event.key === "Enter") && !event.repeat) {
+		if (event.key === " " || event.key === "Enter") {
 			event.preventDefault();
-			start();
+			if (!event.repeat) start();
 		}
 	}
 
