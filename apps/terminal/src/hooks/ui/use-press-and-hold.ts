@@ -23,6 +23,7 @@ interface PressAndHoldHandlers {
 	onPointerCancel: PointerEventHandler<HTMLButtonElement>;
 	onPointerDown: PointerEventHandler<HTMLButtonElement>;
 	onPointerLeave: PointerEventHandler<HTMLButtonElement>;
+	onPointerMove: PointerEventHandler<HTMLButtonElement>;
 	onPointerUp: PointerEventHandler<HTMLButtonElement>;
 }
 
@@ -39,6 +40,11 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 	const completeTimerRef = useRef<number | null>(null);
 	const progressFrameRef = useRef<number | null>(null);
 	const startedAtRef = useRef(0);
+	const activePointerRef = useRef<{
+		element: HTMLButtonElement;
+		pointerId: number;
+		rect: DOMRect;
+	} | null>(null);
 	const onCompleteRef = useRef(onComplete);
 	onCompleteRef.current = onComplete;
 
@@ -53,11 +59,25 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 		}
 	}, []);
 
+	const releaseActivePointer = useCallback(() => {
+		const activePointer = activePointerRef.current;
+		activePointerRef.current = null;
+		if (!activePointer) return;
+		try {
+			if (activePointer.element.hasPointerCapture?.(activePointer.pointerId)) {
+				activePointer.element.releasePointerCapture(activePointer.pointerId);
+			}
+		} catch {
+			// The browser may have released implicit capture before React receives the terminal event.
+		}
+	}, []);
+
 	const cancel = useCallback(() => {
 		clearTimers();
+		releaseActivePointer();
 		setIsHolding(false);
 		setProgressPercent(0);
-	}, [clearTimers]);
+	}, [clearTimers, releaseActivePointer]);
 
 	const start = useCallback(() => {
 		if (disabled || !Number.isFinite(durationMs) || durationMs <= 0 || completeTimerRef.current !== null) return;
@@ -81,12 +101,13 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 				progressFrameRef.current = null;
 			}
 			completeTimerRef.current = null;
+			releaseActivePointer();
 			setIsHolding(false);
 			setProgressPercent(100);
 			onCompleteRef.current();
 		}, durationMs);
 		progressFrameRef.current = window.requestAnimationFrame(updateProgress);
-	}, [disabled, durationMs]);
+	}, [disabled, durationMs, releaseActivePointer]);
 
 	useEffect(() => {
 		if (disabled) return;
@@ -122,7 +143,27 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 	function handlePointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
 		if (disabled || (typeof event.button === "number" && event.button !== 0) || event.isPrimary === false) return;
 		event.preventDefault();
+		const pointerId = Number.isInteger(event.pointerId) ? event.pointerId : 1;
+		activePointerRef.current = {
+			element: event.currentTarget,
+			pointerId,
+			rect: event.currentTarget.getBoundingClientRect(),
+		};
+		try {
+			event.currentTarget.setPointerCapture?.(pointerId);
+		} catch {
+			// Some browsers reject capture after a pointer has already been canceled; movement checks still fail closed.
+		}
 		start();
+	}
+
+	function handlePointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
+		const activePointer = activePointerRef.current;
+		if (!activePointer) return;
+		if (Number.isInteger(event.pointerId) && event.pointerId !== activePointer.pointerId) return;
+		const { clientX, clientY } = event;
+		const { left, right, top, bottom } = activePointer.rect;
+		if (clientX < left || clientX > right || clientY < top || clientY > bottom) cancel();
 	}
 
 	function handleKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>) {
@@ -150,6 +191,7 @@ export function usePressAndHold({ disabled = false, durationMs, onComplete }: Pr
 			onPointerCancel: cancel,
 			onPointerDown: handlePointerDown,
 			onPointerLeave: cancel,
+			onPointerMove: handlePointerMove,
 			onPointerUp: cancel,
 		},
 		isHolding,

@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { PencilIcon } from "@phosphor-icons/react";
+import { PencilIcon, ShareIcon } from "@phosphor-icons/react";
 import { type ReactNode, useId, useState } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
@@ -24,13 +24,17 @@ import type {
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
+	PositionPnlShareData,
 	PositionReverseRef,
 	TpSlPositionRef,
 } from "../positions/position-dialog-types";
+import { createPositionPnlShareData } from "../positions/position-pnl-share-data";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 
 interface Props {
 	position: Position;
+	env: "Mainnet" | "Testnet";
+	isDataStale: boolean;
 	markets: Markets;
 	markPx: string | undefined;
 	tpSlInfo: TpSlOrderInfo | undefined;
@@ -38,6 +42,7 @@ interface Props {
 	expanded?: boolean;
 	onExpandedChange?: (expanded: boolean) => void;
 	onMarketClose: (data: PositionMarketCloseRef) => void;
+	onShare: (data: PositionPnlShareData) => void;
 	onReverse: (data: PositionReverseRef) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
 	onOpenTpSl: (data: TpSlPositionRef) => void;
@@ -81,6 +86,8 @@ function PositionMetric({
 
 export function MobilePositionCard({
 	position: p,
+	env,
+	isDataStale,
 	markets,
 	markPx: markPxRaw,
 	tpSlInfo,
@@ -88,6 +95,7 @@ export function MobilePositionCard({
 	expanded,
 	onExpandedChange,
 	onMarketClose,
+	onShare,
 	onReverse,
 	onLimitClose,
 	onOpenTpSl,
@@ -129,6 +137,13 @@ export function MobilePositionCard({
 	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
 	const canReverse =
 		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
+	const canShare =
+		!isDataStale &&
+		(sizeValue?.abs().gt(0) ?? false) &&
+		(toBig(p.entryPx)?.gt(0) ?? false) &&
+		(markPxValue?.gt(0) ?? false) &&
+		toBig(p.unrealizedPnl) !== null &&
+		toBig(p.returnOnEquity) !== null;
 	const pnlClass = getMarketCloseValueColorClass(p.unrealizedPnl);
 	const hasTpSl = !!(tpSlInfo?.tpPrice || tpSlInfo?.slPrice);
 	const sizeDisplay = formatToken(absSize, { decimals: szDecimals, symbol: sizeSymbol });
@@ -157,6 +172,18 @@ export function MobilePositionCard({
 		const data = buildReverseRef();
 		if (!data) return;
 		onReverse(data);
+	}
+
+	function handleShare() {
+		const data = createPositionPnlShareData({
+			position: p,
+			markPx: markPxRaw,
+			env,
+			symbol: displayName,
+			quoteSymbol,
+			szDecimals,
+		});
+		if (data) onShare(data);
 	}
 
 	function handleMarketClose() {
@@ -283,14 +310,28 @@ export function MobilePositionCard({
 						{sizeDisplay}
 					</div>
 				</div>
-				<div className="min-w-0">
-					<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`PNL`} (ROE %)</div>
-					<div
-						className={cn("truncate text-xs font-bold leading-[17px] tabular-nums", pnlClass)}
-						title={`${pnlDisplay} (${roeDisplay})`}
-					>
-						{pnlDisplay} ({roeDisplay})
+				<div className="flex min-w-0 items-center gap-1">
+					<div className="min-w-0 flex-1">
+						<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`PNL`} (ROE %)</div>
+						<div
+							className={cn("truncate text-xs font-bold leading-[17px] tabular-nums", pnlClass)}
+							title={`${pnlDisplay} (${roeDisplay})`}
+						>
+							{pnlDisplay} ({roeDisplay})
+						</div>
 					</div>
+					<button
+						type="button"
+						onClick={(event) => {
+							event.stopPropagation();
+							handleShare();
+						}}
+						disabled={!canShare}
+						aria-label={t`Share PNL for ${displayName}`}
+						className="pointer-events-auto relative z-10 inline-flex size-[22px] shrink-0 items-center justify-center rounded-[6px] text-market-close-subtle transition-all duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-40"
+					>
+						<ShareIcon aria-hidden="true" className="size-3.5" />
+					</button>
 				</div>
 			</MobileDisclosureHeader>
 

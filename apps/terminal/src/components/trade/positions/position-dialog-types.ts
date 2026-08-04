@@ -51,3 +51,19 @@ export interface LimitClosePositionData {
 	szDecimals: number;
 	marginMode: MarginMode;
 }
+
+export interface PositionPnlShareData {
+	coin: string;
+	dex: string;
+	env: "Mainnet" | "Testnet";
+	symbol: string;
+	quoteSymbol: string;
+	signedPositionSize: string;
+	entryPx: string;
+	markPx: string;
+	unrealizedPnl: string;
+	returnOnEquity: string;
+	leverage: string;
+	szDecimals: number;
+	capturedAtMs: number;
+}

@@ -85,9 +85,9 @@ describe("PositionReverseConfirmationModal", () => {
 		expect(descriptionId).toBeTruthy();
 		expect(document.getElementById(descriptionId)?.getAttribute("role")).toBe("note");
 
-		const back = getButton(container, "Back");
 		const confirm = getButton(container, "Sell / Short");
-		act(() => back.click());
+		expect(container.querySelectorAll("footer button")).toHaveLength(1);
+		act(() => (testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false));
 		expect(onOpenChange).toHaveBeenCalledWith(false);
 		act(() => confirm.click());
 		expect(onConfirm).toHaveBeenCalledOnce();
@@ -169,11 +169,11 @@ describe("PositionReverseConfirmationModal", () => {
 		);
 
 		expect(testState.adaptiveProps?.dismissible).toBe(true);
-		expect(getButton(container, "Back").disabled).toBe(false);
+		expect(testState.adaptiveProps?.showClose).toBe(true);
 		const confirm = getButton(container, "Sell / Short");
 		expect(confirm.disabled).toBe(true);
 		act(() => {
-			getButton(container, "Back").click();
+			(testState.adaptiveProps?.onOpenChange as (open: boolean) => void)(false);
 			confirm.click();
 		});
 		expect(onOpenChange).toHaveBeenCalledWith(false);

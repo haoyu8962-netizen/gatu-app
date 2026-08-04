@@ -1,5 +1,6 @@
 import { TableCell, TableRow, Tooltip } from "@gatu/ui";
-import { t } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
+import { ShareIcon } from "@phosphor-icons/react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { LIQ_WARNING_PROXIMITY } from "@/config/trade";
 import { getPerpMarginConstraint } from "@/domain/trade/isolated-margin";
@@ -26,9 +27,11 @@ import type {
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
+	PositionPnlShareData,
 	PositionReverseRef,
 	TpSlPositionRef,
 } from "./position-dialog-types";
+import { createPositionPnlShareData } from "./position-pnl-share-data";
 import { positionTableCellClass } from "./position-table-styles";
 import { positionsPanelRowHoverClass, positionsPanelRowStripeClass } from "./positions-panel-table-styles";
 
@@ -36,6 +39,8 @@ export type PositionPnlMode = "roe" | "priceChange";
 
 interface Props {
 	position: Position;
+	env: "Mainnet" | "Testnet";
+	isDataStale: boolean;
 	markets: Markets;
 	markPx: string | undefined;
 	tpSlInfo: TpSlOrderInfo | undefined;
@@ -44,6 +49,7 @@ interface Props {
 	pnlMode: PositionPnlMode;
 	onMarketClose: (data: PositionMarketCloseRef) => void;
 	onLimitClose: (data: LimitClosePositionData) => void;
+	onShare: (data: PositionPnlShareData) => void;
 	onReverse: (data: PositionReverseRef) => void;
 	onOpenTpSl: (data: TpSlPositionRef) => void;
 	onAdjustMargin: (data: IsolatedMarginPositionRef) => void;
@@ -52,6 +58,8 @@ interface Props {
 
 export function PositionRow({
 	position: p,
+	env,
+	isDataStale,
 	markets,
 	markPx: markPxRaw,
 	tpSlInfo,
@@ -60,11 +68,13 @@ export function PositionRow({
 	pnlMode,
 	onMarketClose,
 	onLimitClose,
+	onShare,
 	onReverse,
 	onOpenTpSl,
 	onAdjustMargin,
 	onSelectMarket,
 }: Props) {
+	const { t } = useLingui();
 	const sizeValue = toBig(p.szi);
 	const isLong = sizeValue?.gt(0) ?? false;
 	const absSize = sizeValue?.abs().toString();
@@ -89,6 +99,13 @@ export function PositionRow({
 	const canClose = (sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && (markPxValue?.gt(0) ?? false);
 	const canReverse =
 		(sizeValue?.abs().gt(0) ?? false) && typeof assetId === "number" && market !== undefined && market.kind !== "spot";
+	const canShare =
+		!isDataStale &&
+		(sizeValue?.abs().gt(0) ?? false) &&
+		(toBig(p.entryPx)?.gt(0) ?? false) &&
+		(markPxValue?.gt(0) ?? false) &&
+		toBig(p.unrealizedPnl) !== null &&
+		toBig(p.returnOnEquity) !== null;
 
 	const pnlClass = getValueColorClass(p.unrealizedPnl);
 	const fundingClass = fundingPayment === null ? "text-fg-muted" : getValueColorClass(fundingPayment);
@@ -189,6 +206,18 @@ export function PositionRow({
 		if (data) onReverse(data);
 	}
 
+	function handleShare() {
+		const data = createPositionPnlShareData({
+			position: p,
+			markPx: markPxRaw,
+			env,
+			symbol: displayName,
+			quoteSymbol,
+			szDecimals,
+		});
+		if (data) onShare(data);
+	}
+
 	function handleOpenTpSl() {
 		if (typeof assetId !== "number") return;
 		onOpenTpSl({
@@ -281,10 +310,23 @@ export function PositionRow({
 				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionTableCellClass, pnlClass)}>
-				<span className="flex flex-col items-end gap-px tabular-nums" title={`${pnlDisplay} (${pnlPercentDisplay})`}>
-					<span className="text-[13px] font-bold">{pnlDisplay}</span>
-					<span className="text-[11px] leading-[14px] font-semibold opacity-75">{pnlPercentDisplay}</span>
-				</span>
+				<div className="flex min-w-0 items-center justify-end gap-1">
+					<span className="flex flex-col items-end gap-px tabular-nums" title={`${pnlDisplay} (${pnlPercentDisplay})`}>
+						<span className="text-[13px] font-bold">{pnlDisplay}</span>
+						<span className="text-[11px] leading-[14px] font-semibold opacity-75">{pnlPercentDisplay}</span>
+					</span>
+					<Tooltip content={t`Share PNL`} side="top">
+						<button
+							type="button"
+							onClick={handleShare}
+							disabled={!canShare}
+							aria-label={t`Share PNL for ${displayName}`}
+							className="relative inline-flex size-[22px] shrink-0 items-center justify-center rounded-[6px] text-market-close-subtle transition-all duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-40"
+						>
+							<ShareIcon aria-hidden="true" className="size-3.5" />
+						</button>
+					</Tooltip>
+				</div>
 			</TableCell>
 			<TableCell
 				size="dense"

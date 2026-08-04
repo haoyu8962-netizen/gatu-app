@@ -33,6 +33,15 @@ msgstr "{0} is listed as a native Hyperliquid perpetual market."
 #~ msgid "{0} more wallets"
 #~ msgstr "{0} more wallets"
 
+#. placeholder {0}: outcome.acceptedCount
+#. placeholder {0}: result.acceptedCount
+#. placeholder {1}: outcome.totalCount
+#. placeholder {1}: result.totalCount
+#: src/components/trade/positions/position-close-all-modal.tsx
+#: src/hooks/trade/use-position-close-all-submit.ts
+msgid "{0} of {1} close orders were accepted. Review positions before retrying."
+msgstr "{0} of {1} close orders were accepted. Review positions before retrying."
+
 #. placeholder {0}: order.acceptedCount
 #. placeholder {1}: order.totalCount
 #: src/components/trade/tradebox/order-toast.tsx
@@ -54,6 +63,22 @@ msgstr "{orderCount, plural, one {This will cancel the open order, including pro
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 msgid "{p}%"
 msgstr "{p}%"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "{positionCount, plural, one {# position} other {# positions}}"
+msgstr "{positionCount, plural, one {# position} other {# positions}}"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "{positionCount, plural, one {Hold to close # position} other {Hold to close # positions}}"
+msgstr "{positionCount, plural, one {Hold to close # position} other {Hold to close # positions}}"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
+msgstr "{positionCount, plural, one {This submits a market close for the open position. Each order is confirmed separately and fills cannot be reversed.} other {This submits market closes for all # open positions. Each order is confirmed separately and fills cannot be reversed.}}"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "{positionCount} positions were closed at market."
+msgstr "{positionCount} positions were closed at market."
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "{requestedPercent}% requested; {effectivePercent}% after size precision"
@@ -161,6 +186,10 @@ msgstr "A position may be liquidated when the mark price reaches its liquidation
 msgid "A reliable pre-trade liquidation price is not available for a reverse order. Review the resulting position after execution."
 msgstr "A reliable pre-trade liquidation price is not available for a reverse order. Review the resulting position after execution."
 
+#: src/hooks/trade/use-position-close-all-submit.ts
+msgid "A TWAP is active for one of these markets."
+msgstr "A TWAP is active for one of these markets."
+
 #: src/components/pages/builder-page.tsx
 #~ msgid "About Builder Codes"
 #~ msgstr "About Builder Codes"
@@ -168,6 +197,10 @@ msgstr "A reliable pre-trade liquidation price is not available for a reverse or
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Accept"
 msgstr "Accept"
+
+#: src/hooks/trade/use-position-close-all-submit.ts
+msgid "Accept the HIP-3 deployer disclaimer before trading these markets."
+msgstr "Accept the HIP-3 deployer disclaimer before trading these markets."
 
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
@@ -344,6 +377,10 @@ msgstr "Advanced order types"
 msgid "All"
 msgstr "All"
 
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "All close orders filled"
+msgstr "All close orders filled"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions may be forfeited."
 msgstr "All cross positions share the same cross margin as collateral. In the event of liquidation, your cross margin balance and any remaining open positions may be forfeited."
@@ -400,6 +437,13 @@ msgstr "Another mobile approval is already in progress for this wallet."
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Another mobile approval is being prepared for this wallet."
 msgstr "Another mobile approval is being prepared for this wallet."
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/hooks/trade/use-position-close-all-submit.ts
+msgid "Another order for one of these markets is still being confirmed."
+msgstr "Another order for one of these markets is still being confirmed."
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
@@ -555,7 +599,7 @@ msgstr "Avg Price"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 #: src/components/trade/components/wallet-modal.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
-#: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/tradebox/bridge/amount-entry-screen.tsx
 #: src/components/trade/tradebox/bridge/bridge-error-screen.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
@@ -839,6 +883,7 @@ msgstr "Click to submit · Filled trades cannot be reversed"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
+#: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
@@ -851,6 +896,38 @@ msgstr "Close"
 #~ msgctxt "Position market close summary"
 #~ msgid "Close"
 #~ msgstr "Close"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close All"
+msgstr "Close All"
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is currently unavailable."
+msgstr "Close all is currently unavailable."
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is unavailable because duplicate market data was detected."
+msgstr "Close all is unavailable because duplicate market data was detected."
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is unavailable because position data is incomplete."
+msgstr "Close all is unavailable because position data is incomplete."
+
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Close all is unavailable until every position market and mark price has loaded."
+msgstr "Close all is unavailable until every position market and mark price has loaded."
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Close All Positions"
+msgstr "Close All Positions"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Close all positions summary"
+msgstr "Close all positions summary"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Close close-all confirmation"
+msgstr "Close close-all confirmation"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -869,6 +946,15 @@ msgstr "Close order modification"
 #: src/hooks/trade/use-position-market-close-submit.ts
 msgid "Close order submitted"
 msgstr "Close order submitted"
+
+#: src/hooks/trade/use-position-close-all-submit.ts
+msgid "Close orders rejected"
+msgstr "Close orders rejected"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+#: src/hooks/trade/use-position-close-all-submit.ts
+msgid "Close orders submitted. Confirming exchange status; do not retry."
+msgstr "Close orders submitted. Confirming exchange status; do not retry."
 
 #: src/components/trade/positions/position-close-dialog-ui.tsx
 msgid "Close percentage"
@@ -1061,6 +1147,10 @@ msgstr "confirmed on Arbitrum. Hyperliquid credit usually arrives within a minut
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "confirming"
 msgstr "confirming"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Confirming exchange status..."
+msgstr "Confirming exchange status..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "Confirming order status. Do not retry."
@@ -1266,6 +1356,7 @@ msgstr "Contract"
 
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
+#: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Copied"
 msgstr "Copied"
@@ -1277,6 +1368,11 @@ msgstr "Copied to clipboard"
 #: src/components/trade/header/user-menu.tsx
 msgid "Copied!"
 msgstr "Copied!"
+
+#. placeholder {0}: position.symbol
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Copy a link that opens the {0} market"
+msgstr "Copy a link that opens the {0} market"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
 msgid "Copy address"
@@ -1294,9 +1390,9 @@ msgstr "Copy Address"
 msgid "Copy embedded wallet address"
 msgstr "Copy embedded wallet address"
 
-#: src/components/trade/components/wallet-modal.tsx
-#~ msgid "Copy link"
-#~ msgstr "Copy link"
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Copy link"
+msgstr "Copy link"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Copy phone link"
@@ -1399,6 +1495,7 @@ msgstr "Creating your wallet. Please wait..."
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -1872,6 +1969,7 @@ msgid "Entry price"
 msgstr "Entry price"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Entry Price"
@@ -1919,6 +2017,7 @@ msgstr "Estimated fee"
 msgid "Estimated Liquidation Price"
 msgstr "Estimated Liquidation Price"
 
+#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Estimated PnL"
@@ -2032,6 +2131,10 @@ msgstr "Exporting deposits and withdrawals..."
 msgid "failed"
 msgstr "failed"
 
+#: src/hooks/trade/use-position-close-all-submit.ts
+msgid "Failed to build a close order"
+msgstr "Failed to build a close order"
+
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "Failed to cancel TWAP order."
 msgstr "Failed to cancel TWAP order."
@@ -2125,6 +2228,7 @@ msgstr "Failed to load order history."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/hooks/trade/use-position-close-all-submit.ts
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-reverse-submit.ts
@@ -2173,6 +2277,15 @@ msgstr "Failed to place limit close order"
 #: src/hooks/trade/use-position-reverse-submit.ts
 msgid "Failed to reverse position"
 msgstr "Failed to reverse position"
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Failed to save share image"
+msgstr "Failed to save share image"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+#: src/hooks/trade/use-position-close-all-submit.ts
+msgid "Failed to submit close orders"
+msgstr "Failed to submit close orders"
 
 #: src/components/trade/order-entry/order-entry-panel.tsx
 #~ msgid "Failed to switch margin mode"
@@ -2260,6 +2373,10 @@ msgstr "Filter by {label}"
 #: src/components/trade/positions/position-filter-toolbar.tsx
 msgid "Filter positions by direction: {directionLabel}"
 msgstr "Filter positions by direction: {directionLabel}"
+
+#: src/components/trade/positions/position-filter-toolbar.tsx
+msgid "Filter positions by margin mode: {marginLabel}"
+msgstr "Filter positions by margin mode: {marginLabel}"
 
 #: src/components/trade/positions/position-market-filter.tsx
 #~ msgid "Filter positions by market"
@@ -2391,6 +2508,10 @@ msgstr "HIP-3 Deployer Disclaimer"
 msgid "Hold for 4 seconds to reveal phone access QR"
 msgstr "Hold for 4 seconds to reveal phone access QR"
 
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Hold for 800 ms to confirm · Each market may return a different result"
+msgstr "Hold for 800 ms to confirm · Each market may return a different result"
+
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Hold to confirm · Filled trades cannot be reversed"
 #~ msgstr "Hold to confirm · Filled trades cannot be reversed"
@@ -2418,6 +2539,11 @@ msgstr "Hyperliquid approval could not be checked. Check your connection and ret
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Hyperliquid calculates and adds the margin required to reach the target leverage."
 msgstr "Hyperliquid calculates and adds the margin required to reach the target leverage."
+
+#: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Hyperliquid does not support pausing active TWAP orders."
+msgstr "Hyperliquid does not support pausing active TWAP orders."
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 msgid "Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts holding less than $1,000."
@@ -2535,6 +2661,7 @@ msgstr "IOC (Immediate Or Cancel)"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-row.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
@@ -2764,6 +2891,10 @@ msgstr "Loading position..."
 msgid "Loading positions..."
 msgstr "Loading positions..."
 
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Loading QR code"
+msgstr "Loading QR code"
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 msgid "Loading the latest position..."
@@ -2815,6 +2946,7 @@ msgstr "Log in with Email"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
+#: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
@@ -2888,6 +3020,7 @@ msgstr "Manage TP/SL"
 #~ msgstr "Manual"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Margin"
 msgstr "Margin"
@@ -2944,6 +3077,7 @@ msgid "Mark price"
 msgstr "Mark price"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Mark Price"
@@ -3820,6 +3954,10 @@ msgstr "Page reloads when changed"
 msgid "partial"
 msgstr "partial"
 
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Partial result — reopen to retry"
+msgstr "Partial result — reopen to retry"
+
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Paste code"
 #~ msgstr "Paste code"
@@ -3836,6 +3974,16 @@ msgstr "partial"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Paste WalletConnect URI"
 #~ msgstr "Paste WalletConnect URI"
+
+#: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Pause"
+msgstr "Pause"
+
+#: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-tab.tsx
+msgid "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
+msgstr "Pause unavailable: Hyperliquid does not support pausing active TWAP orders."
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4001,6 +4149,11 @@ msgstr "PNL (Price Change %)"
 msgid "PNL (ROE %)"
 msgstr "PNL (ROE %)"
 
+#. placeholder {0}: position.symbol
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "PNL share card for {0}"
+msgstr "PNL share card for {0}"
+
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Point your camera at the WalletConnect QR code on your desktop wallet."
 #~ msgstr "Point your camera at the WalletConnect QR code on your desktop wallet."
@@ -4052,9 +4205,9 @@ msgstr "Portfolio Value"
 msgid "Position"
 msgstr "Position"
 
-#: src/components/trade/positions/position-actions-dropdown.tsx
-#~ msgid "Position actions"
-#~ msgstr "Position actions"
+#: src/components/trade/positions/positions-tab.tsx
+msgid "Position actions"
+msgstr "Position actions"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
 #~ msgid "Position close actions"
@@ -4115,9 +4268,14 @@ msgstr "Position Value"
 #~ msgid "positions"
 #~ msgstr "positions"
 
+#: src/components/trade/positions/position-close-all-modal.tsx
 #: src/config/trade.ts
 msgid "Positions"
 msgstr "Positions"
+
+#: src/hooks/trade/use-position-close-all-submit.ts
+msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
+msgstr "Positions changed while this confirmation was open. Close and reopen it before submitting."
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Pre-IPO"
@@ -4233,6 +4391,11 @@ msgstr "Processing..."
 msgid "Protection price"
 msgstr "Protection price"
 
+#. placeholder {0}: position.symbol
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "QR code linking to {0} market"
+msgstr "QR code linking to {0} market"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "QR reveal progress"
 msgstr "QR reveal progress"
@@ -4240,6 +4403,10 @@ msgstr "QR reveal progress"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "QR scanning is not available in this browser."
 #~ msgstr "QR scanning is not available in this browser."
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "QR unavailable"
+msgstr "QR unavailable"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "QR visible"
@@ -4500,6 +4667,10 @@ msgstr "Retry verification"
 #~ msgid "Retry wallet creation"
 #~ msgstr "Retry wallet creation"
 
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Return on equity (ROE)"
+msgstr "Return on equity (ROE)"
+
 #: src/components/trade/mobile/mobile-position-card.tsx
 msgid "Reverse"
 msgstr "Reverse"
@@ -4592,6 +4763,8 @@ msgstr "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
 msgid "Runtime"
 msgstr "Runtime"
 
+#: src/hooks/trade/use-position-close-all-submit.ts
+#: src/hooks/trade/use-position-close-all-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-reverse-submit.ts
@@ -4610,10 +4783,18 @@ msgstr "Runtime"
 msgid "Safe order coordination across tabs is unavailable in this browser."
 msgstr "Safe order coordination across tabs is unavailable in this browser."
 
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Save image"
+msgstr "Save image"
+
 #: src/routes/mobile-agent-sync.tsx
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Saved phone link was invalid. Paste the link again."
 #~ msgstr "Saved phone link was invalid. Paste the link again."
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Saving..."
+msgstr "Saving..."
 
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -4893,10 +5074,25 @@ msgstr "Set TP/SL"
 msgid "Settings"
 msgstr "Settings"
 
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Share image saved"
+msgstr "Share image saved"
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+#: src/components/trade/positions/position-row.tsx
+msgid "Share PNL"
+msgstr "Share PNL"
+
+#: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/positions/position-row.tsx
+msgid "Share PNL for {displayName}"
+msgstr "Share PNL for {displayName}"
+
 #: src/components/trade/chart/use-tradingview-overlay-lines.ts
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
+#: src/components/trade/positions/position-pnl-share-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-row.tsx
@@ -5259,6 +5455,10 @@ msgstr "Stop trigger must be below mark"
 msgid "Sub-account Transfer"
 msgstr "Sub-account Transfer"
 
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Submitting close orders..."
+msgstr "Submitting close orders..."
+
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -5513,8 +5713,14 @@ msgid "Terms of Use, Privacy Policy, and Cookie Policy"
 msgstr "Terms of Use, Privacy Policy, and Cookie Policy"
 
 #: src/components/trade/components/global-settings-modal.tsx
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+#: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Testnet"
 msgstr "Testnet"
+
+#: src/components/trade/positions/position-pnl-share-modal.tsx
+msgid "Testnet preview; market link disabled"
+msgstr "Testnet preview; market link disabled"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval could not be rechecked. The QR remains hidden until read-only verification succeeds."
@@ -5698,6 +5904,10 @@ msgstr "This approval recovery is no longer available."
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "This bridge can only be resumed by the wallet that started it."
 msgstr "This bridge can only be resumed by the wallet that started it."
+
+#: src/hooks/trade/use-position-close-all-submit.ts
+msgid "This close-all preview expired. Close and reopen it to review current values."
+msgstr "This close-all preview expired. Close and reopen it to review current values."
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This description was supplied by the third-party market deployer. Treat it as unverified information."
@@ -6020,6 +6230,10 @@ msgstr "Total assets"
 #: src/components/portfolio/portfolio-overview.tsx
 msgid "Total Equity"
 msgstr "Total Equity"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Total notional"
+msgstr "Total notional"
 
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "Total Size"
@@ -6511,6 +6725,10 @@ msgstr "USDC will be sent to this Arbitrum address."
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 #~ msgid "Using"
 #~ msgstr "Using"
+
+#: src/components/trade/positions/position-close-all-modal.tsx
+msgid "Validating positions..."
+msgstr "Validating positions..."
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx

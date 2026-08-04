@@ -1,4 +1,5 @@
 import type { InfoClient } from "@nktkas/hyperliquid";
+import Big from "big.js";
 import type { ExchangeParams } from "@/lib/hyperliquid";
 
 export const ORDER_RECONCILIATION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -169,6 +170,51 @@ export function resolveOrderBatchResponse(response: unknown, expectedCount: numb
 	return { status, totalCount: expectedCount, acceptedCount, rejectedCount, errors };
 }
 
+/**
+ * Resolves a filled-confirmation batch only when every child has a terminal
+ * exchange response. A filled child is accepted only when `totalSz` exactly
+ * matches the submitted size.
+ */
+export function resolveFilledOrderBatchResponse(
+	response: unknown,
+	expectedSizes: readonly string[],
+): OrderBatchResolution | null {
+	if (expectedSizes.length === 0) return null;
+	const genericResolution = resolveOrderBatchResponse(response, expectedSizes.length);
+	if (genericResolution?.status === "rejected" && genericResolution.acceptedCount === 0) {
+		return genericResolution;
+	}
+
+	const statuses = getOrderStatuses(response);
+	if (!statuses || statuses.length !== expectedSizes.length) return null;
+
+	const errors: string[] = [];
+	let acceptedCount = 0;
+	for (let index = 0; index < statuses.length; index += 1) {
+		const status = statuses[index];
+		const exchangeError = getOrderStatusError(status);
+		if (exchangeError) {
+			errors.push(`Order ${index + 1}: ${exchangeError}`);
+			continue;
+		}
+
+		const filledSize = getOrderStatusFilledSize(status);
+		if (filledSize === null) return null;
+		const expectedSize = parsePositiveDecimal(expectedSizes[index]);
+		const actualSize = parsePositiveDecimal(filledSize);
+		if (!expectedSize || !actualSize || !actualSize.eq(expectedSize)) {
+			errors.push(`Order ${index + 1}: filled ${filledSize} of ${expectedSizes[index] ?? "unknown"}.`);
+			continue;
+		}
+		acceptedCount += 1;
+	}
+
+	const rejectedCount = expectedSizes.length - acceptedCount;
+	const status: OrderBatchResolution["status"] =
+		rejectedCount === 0 ? "accepted" : acceptedCount === 0 ? "rejected" : "partial";
+	return { status, totalCount: expectedSizes.length, acceptedCount, rejectedCount, errors };
+}
+
 export function isOrderBatchResolutionError(error: unknown): error is OrderBatchResolutionError {
 	return error instanceof OrderBatchResolutionError;
 }
@@ -196,6 +242,22 @@ function getOrderStatuses(response: unknown): unknown[] | null {
 function getOrderStatusError(status: unknown): string | null {
 	if (!isRecord(status) || typeof status.error !== "string") return null;
 	return status.error;
+}
+
+function getOrderStatusFilledSize(status: unknown): string | null {
+	if (!isRecord(status) || !isRecord(status.filled)) return null;
+	const totalSize = status.filled.totalSz;
+	return typeof totalSize === "string" || typeof totalSize === "number" ? String(totalSize) : null;
+}
+
+function parsePositiveDecimal(value: string | undefined): Big | null {
+	if (value === undefined) return null;
+	try {
+		const parsed = Big(value);
+		return parsed.gt(0) ? parsed : null;
+	} catch {
+		return null;
+	}
 }
 
 function getOrderBatchResolutionMessage(resolution: RejectedOrderBatchResolution): string {

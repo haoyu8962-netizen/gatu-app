@@ -2,6 +2,7 @@ import Big from "big.js";
 import { toBig } from "@/lib/trade/numbers";
 
 export type PositionDirectionFilter = "all" | "long" | "short";
+export type PositionMarginFilter = "all" | "cross" | "isolated";
 
 export interface PositionMarketIdentity {
 	coin: string;
@@ -15,6 +16,7 @@ export type PositionMarketFilter =
 
 interface FilterablePosition extends PositionMarketIdentity {
 	szi: string;
+	leverage?: { type?: string };
 }
 
 interface ReadyItemCountInput {
@@ -48,14 +50,20 @@ function matchesDirection(position: FilterablePosition, direction: PositionDirec
 	return direction === "long" ? size.gt(0) : size.lt(0);
 }
 
+function matchesMargin(position: FilterablePosition, margin: PositionMarginFilter): boolean {
+	return margin === "all" || position.leverage?.type === margin;
+}
+
 export function filterPositions<T extends FilterablePosition>(
 	positions: readonly T[],
 	direction: PositionDirectionFilter,
 	marketFilter: PositionMarketFilter,
 	currentMarket: PositionMarketIdentity | null,
+	marginFilter: PositionMarginFilter = "all",
 ): T[] {
 	return positions.filter((position) => {
 		if (!matchesDirection(position, direction)) return false;
+		if (!matchesMargin(position, marginFilter)) return false;
 		if (marketFilter.type === "all") return true;
 		if (marketFilter.type === "current") return matchesMarket(position, currentMarket);
 		return matchesMarket(position, marketFilter.market);

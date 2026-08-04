@@ -7,7 +7,7 @@ export type OrderRiskContext =
 	  }
 	| {
 			marketKind: "perp";
-			marginMode: MarginMode;
+			marginMode: MarginMode | "mixed";
 	  };
 
 interface AssetOrder {

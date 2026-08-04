@@ -19,6 +19,8 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/mobile/mobile-twap-tab.tsx",
 	"components/trade/positions/orders-history-tab.tsx",
 	"components/trade/positions/orders-tab.tsx",
+	"components/trade/positions/position-pnl-share-modal.tsx",
+	"components/trade/positions/position-row.tsx",
 	"components/trade/positions/twap-tab.tsx",
 	"components/trade/tradebox/advanced-order-dropdown.tsx",
 	"components/trade/tradebox/order-toast.tsx",

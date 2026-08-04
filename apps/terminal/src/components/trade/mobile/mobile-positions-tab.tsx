@@ -8,6 +8,7 @@ import {
 	ALL_POSITION_MARKETS,
 	filterPositions,
 	type PositionDirectionFilter,
+	type PositionMarginFilter,
 	type PositionMarketFilter,
 	type PositionMarketIdentity,
 } from "@/domain/trade/position-toolbar";
@@ -31,6 +32,7 @@ import type {
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
+	PositionPnlShareData,
 	PositionReverseRef,
 	TpSlPositionRef,
 } from "../positions/position-dialog-types";
@@ -38,6 +40,7 @@ import { PositionFilterToolbar } from "../positions/position-filter-toolbar";
 import { PositionIsolatedMarginModal } from "../positions/position-isolated-margin-modal";
 import { PositionLimitCloseModal } from "../positions/position-limit-close-modal";
 import type { PositionMarketOption } from "../positions/position-market-filter";
+import { PositionPnlShareModal } from "../positions/position-pnl-share-modal";
 import { PositionReverseConfirmationController } from "../positions/position-reverse-confirmation-controller";
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
@@ -52,7 +55,13 @@ interface Props {
 interface PositionFiltersState {
 	ownerKey: string | null;
 	direction: PositionDirectionFilter;
+	margin: PositionMarginFilter;
 	market: PositionMarketFilter;
+}
+
+interface OwnedPositionPnlShare {
+	ownerKey: string;
+	position: PositionPnlShareData;
 }
 
 interface MobilePositionBulkDetailsActionsProps {
@@ -122,13 +131,20 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
 		useState<IsolatedMarginPositionRef | null>(null);
 	const [selectedReverseTarget, setSelectedReverseTarget] = useState<PositionReverseTarget | null>(null);
+	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
 		ownerKey,
 		direction: "all",
+		margin: "all",
 		market: ALL_POSITION_MARKETS,
 	});
 
-	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
+	const {
+		positions,
+		isLoading: positionsLoading,
+		hasError: positionsError,
+		isStale: positionsStale,
+	} = useUserPositions();
 	const markets = useMarkets();
 	const { getMarketInfo } = useMarketsInfo();
 	const { data: selectedMarket } = useSelectedMarketInfo();
@@ -143,6 +159,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 	const tpSlOrdersByCoin = useMemo(() => buildTpSlOrdersByCoin(openOrders), [openOrders]);
 	const isPageScroll = scrollMode === "page";
 	const positionDirectionFilter = positionFilters.ownerKey === ownerKey ? positionFilters.direction : "all";
+	const positionMarginFilter = positionFilters.ownerKey === ownerKey ? positionFilters.margin : "all";
 	const positionMarketFilter = positionFilters.ownerKey === ownerKey ? positionFilters.market : ALL_POSITION_MARKETS;
 	const currentPositionMarket: PositionMarketIdentity | null = selectedMarket
 		? {
@@ -164,6 +181,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		positionDirectionFilter,
 		positionMarketFilter,
 		currentPositionMarket,
+		positionMarginFilter,
 	);
 	const filteredPositionKeys = filteredPositions.map(
 		(position) => `${ownerKey ?? "disconnected"}:${position.dex}:${position.coin}`,
@@ -179,6 +197,16 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		setPositionFilters((current) => ({
 			ownerKey,
 			direction,
+			margin: current.ownerKey === ownerKey ? current.margin : "all",
+			market: current.ownerKey === ownerKey ? current.market : ALL_POSITION_MARKETS,
+		}));
+	}
+
+	function handlePositionMarginChange(margin: PositionMarginFilter) {
+		setPositionFilters((current) => ({
+			ownerKey,
+			direction: current.ownerKey === ownerKey ? current.direction : "all",
+			margin,
 			market: current.ownerKey === ownerKey ? current.market : ALL_POSITION_MARKETS,
 		}));
 	}
@@ -187,6 +215,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		setPositionFilters((current) => ({
 			ownerKey,
 			direction: current.ownerKey === ownerKey ? current.direction : "all",
+			margin: current.ownerKey === ownerKey ? current.margin : "all",
 			market,
 		}));
 	}
@@ -208,6 +237,17 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		positionMarketClose.open(position);
 	}
 
+	const pnlShareModal = (
+		<PositionPnlShareModal
+			position={
+				address && selectedPnlShare?.ownerKey === `${env}:${address.toLowerCase()}` ? selectedPnlShare.position : null
+			}
+			onOpenChange={(open) => {
+				if (!open) setSelectedPnlShare(null);
+			}}
+		/>
+	);
+
 	function handleReverse(data: PositionReverseRef) {
 		if (!address) return;
 		setSelectedReverseTarget({ ...data, owner: address.toLowerCase(), env });
@@ -228,118 +268,140 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		setIsolatedMarginModalOpen(true);
 	}
 
+	function handleOpenPnlShare(data: PositionPnlShareData) {
+		if (!address) return;
+		setSelectedPnlShare({ ownerKey: `${env}:${address.toLowerCase()}`, position: data });
+	}
+
 	if (!isConnected) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
-				{t`Connect your wallet to view positions.`}
-			</div>
+			<>
+				<div className="flex-1 flex items-center justify-center p-6 text-sm text-fg-muted">
+					{t`Connect your wallet to view positions.`}
+				</div>
+				{pnlShareModal}
+			</>
 		);
 	}
 
 	if (positionsError) {
 		return (
-			<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
-				{t`Failed to load positions.`}
-			</div>
+			<>
+				<div className="flex-1 flex items-center justify-center p-6 text-sm text-error">
+					{t`Failed to load positions.`}
+				</div>
+				{pnlShareModal}
+			</>
 		);
 	}
 
 	if (!positionsLoading && positions.length === 0) {
 		return (
-			<div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-				<div className="size-12 rounded-full flex items-center justify-center bg-surface">
-					<ChartLineIcon className="size-6 text-fg-muted" />
+			<>
+				<div className="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
+					<div className="size-12 rounded-full flex items-center justify-center bg-surface">
+						<ChartLineIcon className="size-6 text-fg-muted" />
+					</div>
+					<p className="text-sm text-fg-muted text-pretty">{t`No active positions.`}</p>
+					<Button
+						variant="outline"
+						intent="neutral"
+						size="sm"
+						iconLeft={<TrendUpIcon className="size-4" />}
+						onClick={() => setActiveTab("trade")}
+					>
+						{t`Go to Trade`}
+					</Button>
 				</div>
-				<p className="text-sm text-fg-muted text-pretty">{t`No active positions.`}</p>
-				<Button
-					variant="outline"
-					intent="neutral"
-					size="sm"
-					iconLeft={<TrendUpIcon className="size-4" />}
-					onClick={() => setActiveTab("trade")}
-				>
-					{t`Go to Trade`}
-				</Button>
-			</div>
+				{pnlShareModal}
+			</>
 		);
 	}
 
 	return (
-		<Skeleton name="positions-tab" loading={positionsLoading}>
-			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col")}>
-				<div
-					data-testid="mobile-position-filter-row"
-					className="flex shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5 py-2.5"
-				>
-					<PositionFilterToolbar
-						direction={positionDirectionFilter}
-						market={positionMarketFilter}
-						marketOptions={positionMarketOptions}
-						onDirectionChange={handlePositionDirectionChange}
-						onMarketChange={handlePositionMarketChange}
-						mobile
-					/>
-					<MobilePositionBulkDetailsActions
-						filteredPositionKeys={filteredPositionKeys}
-						expandedPositionKeys={expandedPositionKeys}
-						onExpandAll={handleExpandAllDetails}
-						onCollapseAll={handleCollapseAllDetails}
-					/>
-				</div>
-				<div className={cn("space-y-2.5 px-3.5 py-3", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
-					{filteredPositions.length === 0 ? (
-						<div className="flex min-h-28 items-center justify-center px-4 text-center text-xs text-fg-muted">
-							{t`No positions match the selected filters.`}
-						</div>
-					) : null}
-					{filteredPositions.map((p) => {
-						const assetId = markets.getAssetId(p.coin);
-						const marketCloseSession = positionMarketClose.session;
-						const isMarketClosePending =
-							marketCloseSession !== null &&
-							marketCloseSession.position.assetId === assetId &&
-							marketCloseSession.phase !== "idle";
-						const isRowClosing = isMarketClosePending;
-						const positionKey = `${ownerKey ?? "disconnected"}:${p.dex}:${p.coin}`;
-						return (
-							<MobilePositionCard
-								key={positionKey}
-								position={p}
-								markets={markets}
-								markPx={getMarketInfo(p.coin)?.markPx}
-								tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
-								isRowClosing={isRowClosing}
-								expanded={expandedPositionKeys.has(positionKey)}
-								onExpandedChange={(expanded) => handlePositionExpandedChange(positionKey, expanded)}
-								onMarketClose={handleOpenMarketClose}
-								onReverse={handleReverse}
-								onLimitClose={handleOpenLimitCloseModal}
-								onOpenTpSl={handleOpenTpSlModal}
-								onAdjustMargin={handleOpenIsolatedMarginModal}
-								onSelectMarket={handleSelectMarket}
-							/>
-						);
-					})}
-				</div>
+		<>
+			<Skeleton name="positions-tab" loading={positionsLoading}>
+				<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col")}>
+					<div
+						data-testid="mobile-position-filter-row"
+						className="flex shrink-0 items-center justify-between border-b border-market-close-stroke-card px-3.5 py-2.5"
+					>
+						<PositionFilterToolbar
+							direction={positionDirectionFilter}
+							margin={positionMarginFilter}
+							market={positionMarketFilter}
+							marketOptions={positionMarketOptions}
+							onDirectionChange={handlePositionDirectionChange}
+							onMarginChange={handlePositionMarginChange}
+							onMarketChange={handlePositionMarketChange}
+							mobile
+						/>
+						<MobilePositionBulkDetailsActions
+							filteredPositionKeys={filteredPositionKeys}
+							expandedPositionKeys={expandedPositionKeys}
+							onExpandAll={handleExpandAllDetails}
+							onCollapseAll={handleCollapseAllDetails}
+						/>
+					</div>
+					<div className={cn("space-y-2.5 px-3.5 py-3", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
+						{filteredPositions.length === 0 ? (
+							<div className="flex min-h-28 items-center justify-center px-4 text-center text-xs text-fg-muted">
+								{t`No positions match the selected filters.`}
+							</div>
+						) : null}
+						{filteredPositions.map((p) => {
+							const assetId = markets.getAssetId(p.coin);
+							const marketCloseSession = positionMarketClose.session;
+							const isMarketClosePending =
+								marketCloseSession !== null &&
+								marketCloseSession.position.assetId === assetId &&
+								marketCloseSession.phase !== "idle";
+							const isRowClosing = isMarketClosePending;
+							const positionKey = `${ownerKey ?? "disconnected"}:${p.dex}:${p.coin}`;
+							return (
+								<MobilePositionCard
+									key={positionKey}
+									position={p}
+									env={env}
+									isDataStale={positionsStale}
+									markets={markets}
+									markPx={getMarketInfo(p.coin)?.markPx}
+									tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
+									isRowClosing={isRowClosing}
+									expanded={expandedPositionKeys.has(positionKey)}
+									onExpandedChange={(expanded) => handlePositionExpandedChange(positionKey, expanded)}
+									onMarketClose={handleOpenMarketClose}
+									onShare={handleOpenPnlShare}
+									onReverse={handleReverse}
+									onLimitClose={handleOpenLimitCloseModal}
+									onOpenTpSl={handleOpenTpSlModal}
+									onAdjustMargin={handleOpenIsolatedMarginModal}
+									onSelectMarket={handleSelectMarket}
+								/>
+							);
+						})}
+					</div>
 
-				<PositionTpSlModal open={tpSlModalOpen} onOpenChange={setTpSlModalOpen} position={selectedTpSlPosition} />
-				<PositionLimitCloseModal
-					open={limitCloseModalOpen}
-					onOpenChange={setLimitCloseModalOpen}
-					position={selectedLimitClosePosition}
-				/>
-				<PositionIsolatedMarginModal
-					open={isolatedMarginModalOpen}
-					onOpenChange={setIsolatedMarginModalOpen}
-					position={selectedIsolatedMarginPosition}
-				/>
-				<PositionReverseConfirmationController
-					target={selectedReverseTarget}
-					onOpenChange={(open) => {
-						if (!open) setSelectedReverseTarget(null);
-					}}
-				/>
-			</div>
-		</Skeleton>
+					<PositionTpSlModal open={tpSlModalOpen} onOpenChange={setTpSlModalOpen} position={selectedTpSlPosition} />
+					<PositionLimitCloseModal
+						open={limitCloseModalOpen}
+						onOpenChange={setLimitCloseModalOpen}
+						position={selectedLimitClosePosition}
+					/>
+					<PositionIsolatedMarginModal
+						open={isolatedMarginModalOpen}
+						onOpenChange={setIsolatedMarginModalOpen}
+						position={selectedIsolatedMarginPosition}
+					/>
+					<PositionReverseConfirmationController
+						target={selectedReverseTarget}
+						onOpenChange={(open) => {
+							if (!open) setSelectedReverseTarget(null);
+						}}
+					/>
+				</div>
+			</Skeleton>
+			{pnlShareModal}
+		</>
 	);
 }

@@ -10,10 +10,10 @@ import {
 } from "@/domain/trade/position-toolbar";
 
 const positions = [
-	{ id: "main-long", coin: "HYPE", dex: "", szi: "1.25" },
-	{ id: "builder-short", coin: "xyz:MU", dex: "xyz", szi: "-0.015" },
-	{ id: "same-coin-other-dex", coin: "xyz:MU", dex: "other", szi: "2" },
-	{ id: "invalid-size", coin: "BTC", dex: "", szi: "invalid" },
+	{ id: "main-long", coin: "HYPE", dex: "", szi: "1.25", leverage: { type: "cross" } },
+	{ id: "builder-short", coin: "xyz:MU", dex: "xyz", szi: "-0.015", leverage: { type: "isolated" } },
+	{ id: "same-coin-other-dex", coin: "xyz:MU", dex: "other", szi: "2", leverage: { type: "cross" } },
+	{ id: "invalid-size", coin: "BTC", dex: "", szi: "invalid", leverage: { type: "isolated" } },
 ] as const;
 
 describe("position toolbar filtering", () => {
@@ -46,6 +46,17 @@ describe("position toolbar filtering", () => {
 				(position) => position.id,
 			),
 		).toEqual(["same-coin-other-dex"]);
+	});
+
+	it("filters by the SDK margin mode without inferring it from leverage", () => {
+		expect(filterPositions(positions, "all", ALL_POSITION_MARKETS, null, "cross").map(({ id }) => id)).toEqual([
+			"main-long",
+			"same-coin-other-dex",
+		]);
+		expect(filterPositions(positions, "all", ALL_POSITION_MARKETS, null, "isolated").map(({ id }) => id)).toEqual([
+			"builder-short",
+			"invalid-size",
+		]);
 	});
 });
 

@@ -57,6 +57,7 @@ describe("PositionRow market close entry", () => {
 
 	it("opens the shared market-close flow with exact exchange strings", async () => {
 		const onMarketClose = vi.fn();
+		const onShare = vi.fn();
 		const onLimitClose = vi.fn();
 		const onReverse = vi.fn();
 		const onOpenTpSl = vi.fn();
@@ -72,6 +73,8 @@ describe("PositionRow market close entry", () => {
 						null,
 						createElement(PositionRow, {
 							position,
+							env: "Mainnet",
+							isDataStale: false,
 							markets,
 							markPx: "7.575900",
 							tpSlInfo: undefined,
@@ -79,6 +82,7 @@ describe("PositionRow market close entry", () => {
 							isEven: false,
 							pnlMode: "roe",
 							onMarketClose,
+							onShare,
 							onLimitClose,
 							onReverse,
 							onOpenTpSl,
@@ -106,6 +110,21 @@ describe("PositionRow market close entry", () => {
 			markPx: "7.575900",
 			marginMode: "isolated",
 		});
+
+		const shareButton = container.querySelector<HTMLButtonElement>('button[aria-label="Share PNL for CXMT-USDC"]');
+		if (!shareButton) throw new Error("Desktop PNL share entry was not rendered");
+		act(() => shareButton.click());
+		expect(onShare).toHaveBeenCalledWith(
+			expect.objectContaining({
+				coin: "xyz:CXMT",
+				dex: "xyz",
+				env: "Mainnet",
+				symbol: "CXMT-USDC",
+				quoteSymbol: "USDC",
+				entryPx: "7.79995",
+				markPx: "7.575900",
+			}),
+		);
 
 		const moreActions = container.querySelector<HTMLButtonElement>('button[aria-label="More position actions"]');
 		if (!moreActions) throw new Error("Desktop position overflow menu was not rendered");
@@ -172,6 +191,8 @@ describe("PositionRow market close entry", () => {
 						null,
 						createElement(PositionRow, {
 							position,
+							env: "Mainnet",
+							isDataStale: false,
 							markets,
 							markPx: "7.575900",
 							tpSlInfo: undefined,
@@ -179,6 +200,7 @@ describe("PositionRow market close entry", () => {
 							isEven: false,
 							pnlMode,
 							onMarketClose: vi.fn(),
+							onShare: vi.fn(),
 							onLimitClose: vi.fn(),
 							onReverse: vi.fn(),
 							onOpenTpSl: vi.fn(),
@@ -196,5 +218,42 @@ describe("PositionRow market close entry", () => {
 		act(() => render("priceChange"));
 		expect(container.textContent).toMatch(/2\.9%/);
 		expect(container.textContent).not.toMatch(/33\.7%/);
+	});
+
+	it("disables PNL sharing while the position stream is stale", () => {
+		act(() => {
+			root.render(
+				createElement(
+					"table",
+					null,
+					createElement(
+						"tbody",
+						null,
+						createElement(PositionRow, {
+							position,
+							env: "Mainnet",
+							isDataStale: true,
+							markets,
+							markPx: "7.575900",
+							tpSlInfo: undefined,
+							isRowClosing: false,
+							isEven: false,
+							pnlMode: "roe",
+							onMarketClose: vi.fn(),
+							onShare: vi.fn(),
+							onLimitClose: vi.fn(),
+							onReverse: vi.fn(),
+							onOpenTpSl: vi.fn(),
+							onAdjustMargin: vi.fn(),
+							onSelectMarket: vi.fn(),
+						}),
+					),
+				),
+			);
+		});
+
+		expect(container.querySelector<HTMLButtonElement>('button[aria-label="Share PNL for CXMT-USDC"]')?.disabled).toBe(
+			true,
+		);
 	});
 });

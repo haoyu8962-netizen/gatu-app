@@ -228,16 +228,27 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 									</span>
 								</div>
 
-								<button
-									type="button"
-									aria-label={t`Terminate TWAP order`}
-									aria-busy={isCancelling}
-									disabled={cancellingTwapId !== null}
-									onClick={() => void cancelTwap(state.coin, twapId)}
-									className="min-h-11 w-full rounded-[8px] border border-market-close-danger-disabled bg-modal px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] focus-visible:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-danger-disabled"
-								>
-									{isCancelling ? t`Terminating...` : t`Terminate`}
-								</button>
+								<div className="grid grid-cols-2 gap-2">
+									<button
+										type="button"
+										disabled
+										aria-label={t`Pause unavailable: Hyperliquid does not support pausing active TWAP orders.`}
+										title={t`Hyperliquid does not support pausing active TWAP orders.`}
+										className="min-h-11 rounded-[8px] border border-market-close-stroke-card bg-modal px-3 text-xs font-semibold text-market-close-subtle disabled:cursor-not-allowed"
+									>
+										{t`Pause`}
+									</button>
+									<button
+										type="button"
+										aria-label={t`Terminate TWAP order`}
+										aria-busy={isCancelling}
+										disabled={cancellingTwapId !== null}
+										onClick={() => void cancelTwap(state.coin, twapId)}
+										className="min-h-11 rounded-[8px] border border-market-close-danger-disabled bg-modal px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] focus-visible:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-danger-disabled"
+									>
+										{isCancelling ? t`Terminating...` : t`Terminate`}
+									</button>
+								</div>
 							</article>
 						);
 					})}

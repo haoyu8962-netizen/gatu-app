@@ -190,6 +190,42 @@ describe("TradingActionButton", () => {
 		expect(getProgress(container).style.width).toBe("0%");
 	});
 
+	it("cancels a captured touch hold when the pointer moves outside the button", () => {
+		vi.useFakeTimers();
+		testState.isReady = true;
+		testState.needsTrading = false;
+		const onClick = vi.fn();
+		act(() => {
+			root.render(
+				<TradingActionButton onClick={onClick} holdDurationMs={800}>
+					Market Close
+				</TradingActionButton>,
+			);
+		});
+
+		const button = getButton(container);
+		vi.spyOn(button, "getBoundingClientRect").mockReturnValue({
+			bottom: 144,
+			height: 44,
+			left: 20,
+			right: 220,
+			top: 100,
+			width: 200,
+			x: 20,
+			y: 100,
+			toJSON: () => ({}),
+		});
+		dispatchPointerAt(button, "pointerdown", 80, 120);
+		act(() => vi.advanceTimersByTime(300));
+		dispatchPointerAt(button, "pointermove", 230, 120);
+		act(() => vi.advanceTimersByTime(800));
+
+		expect(onClick).not.toHaveBeenCalled();
+		expect(testState.guardAction).not.toHaveBeenCalled();
+		expect(button.hasAttribute("data-holding")).toBe(false);
+		expect(getProgress(container).style.width).toBe("0%");
+	});
+
 	it.each(["Enter", " "])("supports a %j keyboard hold without duplicate click activation", (key) => {
 		vi.useFakeTimers();
 		testState.isReady = true;
@@ -273,6 +309,23 @@ function getProgress(container: HTMLElement): HTMLSpanElement {
 function dispatchPointer(button: HTMLButtonElement, type: "pointerdown" | "pointerup"): void {
 	act(() => {
 		button.dispatchEvent(new MouseEvent(type, { bubbles: true, button: 0, cancelable: true }));
+	});
+}
+
+function dispatchPointerAt(
+	button: HTMLButtonElement,
+	type: "pointerdown" | "pointermove",
+	clientX: number,
+	clientY: number,
+): void {
+	act(() => {
+		const event = new MouseEvent(type, { bubbles: true, button: 0, cancelable: true, clientX, clientY });
+		Object.defineProperties(event, {
+			isPrimary: { value: true },
+			pointerId: { value: 7 },
+			pointerType: { value: "touch" },
+		});
+		button.dispatchEvent(event);
 	});
 }
 

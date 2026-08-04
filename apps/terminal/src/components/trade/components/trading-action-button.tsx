@@ -36,6 +36,7 @@ export function TradingActionButton({
 	onPointerCancel,
 	onPointerDown,
 	onPointerLeave,
+	onPointerMove,
 	onPointerUp,
 	...buttonProps
 }: Props) {
@@ -146,6 +147,14 @@ export function TradingActionButton({
 								onPointerLeave?.(event);
 							}
 						: onPointerLeave
+				}
+				onPointerMove={
+					holdArmed
+						? (event) => {
+								holdHandlers.onPointerMove(event);
+								onPointerMove?.(event);
+							}
+						: onPointerMove
 				}
 				onPointerUp={
 					holdArmed

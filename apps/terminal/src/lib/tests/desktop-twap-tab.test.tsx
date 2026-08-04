@@ -130,10 +130,14 @@ describe("desktop TWAP toolbar", () => {
 		expect(progress?.firstElementChild?.getAttribute("style")).toContain("scaleX(0.3998695368558382");
 	});
 
-	it("keeps only the supported terminate action and submits the exact SDK identity", () => {
+	it("explains the unsupported pause action and submits terminate with the exact SDK identity", () => {
 		render();
 
-		expect(container.textContent).not.toContain("Pause");
+		const pause = container.querySelector<HTMLButtonElement>(
+			'button[aria-label="Pause unavailable: Hyperliquid does not support pausing active TWAP orders."]',
+		);
+		expect(pause?.textContent).toBe("Pause");
+		expect(pause?.disabled).toBe(true);
 		const terminate = container.querySelector<HTMLButtonElement>('button[aria-label="Terminate TWAP order"]');
 		expect(terminate?.textContent).toBe("Terminate");
 

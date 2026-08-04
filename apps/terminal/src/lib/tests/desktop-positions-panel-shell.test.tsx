@@ -148,9 +148,9 @@ describe("desktop positions panel shell", () => {
 		const marketFilter = container.querySelector<HTMLButtonElement>(
 			'button[aria-label^="Filter positions by market:"]',
 		);
-		expect(directionFilter?.textContent).toContain("Direction: All");
+		expect(directionFilter).toBeNull();
 		expect(marketFilter?.textContent).toContain("Asset: All");
-		for (const filter of [directionFilter, marketFilter]) {
+		for (const filter of [marketFilter]) {
 			expect(filter?.className).toContain("h-[27px]");
 			expect(filter?.className).toContain("rounded-[7px]");
 			expect(filter?.className).toContain("border-market-close-stroke-card");
@@ -161,9 +161,11 @@ describe("desktop positions panel shell", () => {
 		renderNode(
 			<PositionFilterToolbar
 				direction="all"
+				margin="all"
 				market={{ type: "all" }}
 				marketOptions={[]}
 				onDirectionChange={vi.fn()}
+				onMarginChange={vi.fn()}
 				onMarketChange={vi.fn()}
 				mobile
 			/>,
@@ -172,13 +174,13 @@ describe("desktop positions panel shell", () => {
 		const directionFilter = container.querySelector<HTMLButtonElement>(
 			'button[aria-label^="Filter positions by direction:"]',
 		);
-		const marketFilter = container.querySelector<HTMLButtonElement>(
-			'button[aria-label^="Filter positions by market:"]',
+		const marginFilter = container.querySelector<HTMLButtonElement>(
+			'button[aria-label^="Filter positions by margin mode:"]',
 		);
 		expect(directionFilter?.textContent).toContain("Direction");
 		expect(directionFilter?.textContent).not.toContain("Direction: All");
-		expect(marketFilter?.textContent).toContain("Market");
-		for (const filter of [directionFilter, marketFilter]) {
+		expect(marginFilter?.textContent).toContain("Margin");
+		for (const filter of [directionFilter, marginFilter]) {
 			expect(filter?.className).toContain("py-1");
 			expect(filter?.className).toContain("after:h-11");
 			expect(filter?.className).not.toContain("h-[27px]");

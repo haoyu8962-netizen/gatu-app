@@ -177,8 +177,7 @@ describe("desktop cancel all orders confirmation", () => {
 
 		const headers = [...container.querySelectorAll("thead th")].map((cell) => cell.textContent?.trim() ?? "");
 		expect(headers).toEqual([
-			"Select all orders",
-			"Time",
+			"Select all ordersTime",
 			"Type",
 			"Market",
 			"Direction",
@@ -193,18 +192,18 @@ describe("desktop cancel all orders confirmation", () => {
 		]);
 
 		const cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
-		expect(cells).toHaveLength(13);
-		expect(cells[2]).toContain("Stop");
-		expect(cells[3]).toContain("xyz:ORCL");
-		expect(cells[4]).toBe("Close Short");
-		expect(cells[5]).toBe("2.000");
-		expect(cells[6]).toBe("5.000");
-		expect(cells[7]).toBe("$298.00");
-		expect(cells[8]).toBe("Market");
-		expect(cells[9]).toBe("Yes");
-		expect(cells[10]).toContain("Price below 149.00");
-		expect(cells[10]).toContain("Distance to mark 6.9%");
-		expect(cells[11]).toBe("- / -");
+		expect(cells).toHaveLength(12);
+		expect(cells[1]).toContain("Stop");
+		expect(cells[2]).toContain("xyz:ORCL");
+		expect(cells[3]).toBe("Close Short");
+		expect(cells[4]).toBe("2.000");
+		expect(cells[5]).toBe("5.000");
+		expect(cells[6]).toBe("$298.00");
+		expect(cells[7]).toBe("Market");
+		expect(cells[8]).toBe("Yes");
+		expect(cells[9]).toContain("Price below 149.00");
+		expect(cells[9]).toContain("Distance to mark 6.9%");
+		expect(cells[10]).toBe("- / -");
 		expect(mocks.getOrderSideLabel).toHaveBeenCalledWith("B", true);
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).not.toBeNull();
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).not.toBeNull();
@@ -216,6 +215,15 @@ describe("desktop cancel all orders confirmation", () => {
 
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).toBeNull();
+	});
+
+	it("hides destructive bulk actions when the open-orders snapshot is empty", () => {
+		mocks.orders = [];
+		act(() => root.render(<OrdersTab />));
+
+		expect(container.textContent).toContain("No open orders.");
+		expect(container.querySelector('button[aria-label="Cancel selected orders"]')).toBeNull();
+		expect(container.querySelector('button[aria-label="Cancel all orders"]')).toBeNull();
 	});
 
 	it("preserves raw input, focuses the editor, and cancels with Escape or an outside pointer", () => {

@@ -22,7 +22,7 @@ describe("desktop grid layout", () => {
 		expect(MOBILE_QR_SURFACE_MEDIA_QUERY).toBe("(max-width: 1000px), (pointer: coarse), (display-mode: standalone)");
 		expect(DESKTOP_GRID_BREAKPOINTS).toEqual({ lg: 1420, md: 1000 });
 		expect(DESKTOP_GRID_COLS).toEqual({ lg: 16, md: 14 });
-		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v5");
+		expect(DESKTOP_GRID_STORAGE_KEY).toBe("trade-desktop-grid-layout-v6");
 	});
 
 	it("removes saved geometry when the desktop layout is reset", () => {
@@ -31,6 +31,7 @@ describe("desktop grid layout", () => {
 		window.localStorage.setItem("trade-desktop-grid-layout-v2", "legacy");
 		window.localStorage.setItem("trade-desktop-grid-layout-v3", "legacy");
 		window.localStorage.setItem("trade-desktop-grid-layout-v4", "legacy");
+		window.localStorage.setItem("trade-desktop-grid-layout-v5", "legacy");
 
 		resetDesktopGridLayouts();
 
@@ -39,14 +40,15 @@ describe("desktop grid layout", () => {
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v2")).toBeNull();
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v3")).toBeNull();
 		expect(window.localStorage.getItem("trade-desktop-grid-layout-v4")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v5")).toBeNull();
 		expect(readDesktopGridLayouts()).toBe(DEFAULT_DESKTOP_GRID_LAYOUTS);
 	});
 
-	it("discards the incompatible v4 geometry when the new layout is read", () => {
-		window.localStorage.setItem("trade-desktop-grid-layout-v4", JSON.stringify(DEFAULT_DESKTOP_GRID_LAYOUTS));
+	it("discards the incompatible v5 geometry when the new layout is read", () => {
+		window.localStorage.setItem("trade-desktop-grid-layout-v5", JSON.stringify(DEFAULT_DESKTOP_GRID_LAYOUTS));
 
 		expect(readDesktopGridLayouts()).toBe(DEFAULT_DESKTOP_GRID_LAYOUTS);
-		expect(window.localStorage.getItem("trade-desktop-grid-layout-v4")).toBeNull();
+		expect(window.localStorage.getItem("trade-desktop-grid-layout-v5")).toBeNull();
 	});
 
 	it("keeps the market toolbar compact without changing the workspace height", () => {
@@ -74,23 +76,33 @@ describe("desktop grid layout", () => {
 		expect(compactMarketData).toMatchObject({ x: 10, y: 20.6, w: 4, h: 20.4 });
 	});
 
-	it("uses the available compact-desktop height for the account table", () => {
+	it("fills the compact desktop lower row with useful account content instead of an empty table surface", () => {
 		const compactAccountTable = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "accountTable");
-		const compactRightColumnBottom = Math.max(
-			...(DEFAULT_DESKTOP_GRID_LAYOUTS.md ?? []).filter((item) => item.x === 10).map((item) => item.y + item.h),
-		);
+		const compactAccountInfo = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "accountInfo");
+		const compactMarketData = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.find((item) => item.i === "marketData");
 
-		expect(compactRightColumnBottom).toBeCloseTo(51);
 		expect(compactAccountTable).toMatchObject({
 			x: 0,
 			y: 20.6,
 			w: 10,
-			h: 30.4,
+			h: 10,
 			minW: 10,
 			maxW: 10,
 			resizeHandles: ["s"],
 		});
-		expect((compactAccountTable?.y ?? 0) + (compactAccountTable?.h ?? 0)).toBeCloseTo(compactRightColumnBottom);
+		expect(compactAccountInfo).toMatchObject({
+			x: 0,
+			y: 30.6,
+			w: 10,
+			h: 10.4,
+			minW: 4,
+			maxW: 10,
+			resizeHandles: ["e", "s", "se"],
+		});
+		expect((compactAccountTable?.y ?? 0) + (compactAccountTable?.h ?? 0)).toBeCloseTo(compactAccountInfo?.y ?? 0);
+		expect((compactAccountInfo?.y ?? 0) + (compactAccountInfo?.h ?? 0)).toBeCloseTo(
+			(compactMarketData?.y ?? 0) + (compactMarketData?.h ?? 0),
+		);
 	});
 
 	it("restores valid geometry while retaining current constraints", () => {
@@ -111,6 +123,19 @@ describe("desktop grid layout", () => {
 
 		const restoredAccountTable = readDesktopGridLayouts().md?.find((item) => item.i === "accountTable");
 		expect(restoredAccountTable).toMatchObject({ x: 0, w: 10, minW: 10, maxW: 10 });
+	});
+
+	it("restores a valid compact table expansion with the account panel pushed below it", () => {
+		const md = DEFAULT_DESKTOP_GRID_LAYOUTS.md?.map((item) => {
+			if (item.i === "accountTable") return { ...item, h: 14 };
+			if (item.i === "accountInfo") return { ...item, y: 34.6 };
+			return item;
+		});
+		writeDesktopGridLayouts({ ...DEFAULT_DESKTOP_GRID_LAYOUTS, md });
+
+		const restored = readDesktopGridLayouts().md;
+		expect(restored?.find((item) => item.i === "accountTable")).toMatchObject({ y: 20.6, h: 14 });
+		expect(restored?.find((item) => item.i === "accountInfo")).toMatchObject({ y: 34.6, h: 10.4 });
 	});
 
 	it("rejects stored geometry that exceeds the active column bounds", () => {

@@ -1,3 +1,4 @@
+import { Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -228,7 +229,19 @@ export function TwapTab() {
 													/>
 												)}
 											</td>
-											<td className="flex justify-end p-0">
+											<td className="flex justify-end gap-2 p-0">
+												<Tooltip content={t`Hyperliquid does not support pausing active TWAP orders.`}>
+													<span className="inline-flex">
+														<button
+															type="button"
+															disabled
+															aria-label={t`Pause unavailable: Hyperliquid does not support pausing active TWAP orders.`}
+															className="whitespace-nowrap rounded-[7px] border border-market-close-stroke-card px-3 py-1 text-xs font-semibold text-market-close-subtle disabled:cursor-not-allowed"
+														>
+															{t`Pause`}
+														</button>
+													</span>
+												</Tooltip>
 												<button
 													type="button"
 													className="whitespace-nowrap rounded-[7px] border border-market-close-danger-disabled px-3 py-1 text-xs font-semibold text-market-close-danger transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"

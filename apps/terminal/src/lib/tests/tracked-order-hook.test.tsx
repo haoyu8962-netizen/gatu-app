@@ -321,6 +321,61 @@ describe("useTrackedOrder", () => {
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [21])).toBe(false);
 	});
 
+	it("rejects an incomplete filled size without leaving the asset locked", async () => {
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "order", data: { statuses: [{ filled: { totalSz: "0.4", avgPx: "10", oid: 13 } }] } },
+		});
+		if (!hookValue) throw new Error("Expected tracked order hook");
+
+		await act(async () => {
+			await expect(
+				hookValue?.submitOrder(createParams(26, 1, true), EXCLUSIVE_FILLED_SUBMIT_OPTIONS),
+			).rejects.toMatchObject({
+				name: "OrderBatchResolutionError",
+				resolution: { status: "rejected", acceptedCount: 0, rejectedCount: 1, totalCount: 1 },
+			});
+		});
+
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [26])).toBe(false);
+	});
+
+	it("keeps a mixed error and non-terminal child pending in filled confirmation mode", async () => {
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: {
+				type: "order",
+				data: { statuses: [{ resting: { oid: 14 } }, { error: "Rejected" }] },
+			},
+		});
+		let result: Awaited<ReturnType<NonNullable<typeof hookValue>["submitOrder"]>> | undefined;
+		await act(async () => {
+			result = await hookValue?.submitOrder(createParams(27, 2, true), EXCLUSIVE_FILLED_SUBMIT_OPTIONS);
+		});
+
+		expect(result?.state).toBe("reconciling");
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [27])).toBe(true);
+	});
+
+	it("retains a fully filled response when the caller cannot confirm final account state", async () => {
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "order", data: { statuses: [{ filled: { totalSz: "1", avgPx: "10", oid: 15 } }] } },
+		});
+		const finalConfirmation = vi.fn().mockResolvedValue(false);
+		let result: Awaited<ReturnType<NonNullable<typeof hookValue>["submitOrder"]>> | undefined;
+		await act(async () => {
+			result = await hookValue?.submitOrder(createParams(28, 1, true), {
+				...EXCLUSIVE_FILLED_SUBMIT_OPTIONS,
+				finalConfirmation,
+			});
+		});
+
+		expect(finalConfirmation).toHaveBeenCalledOnce();
+		expect(result?.state).toBe("reconciling");
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [28])).toBe(true);
+	});
+
 	it("reconciles a batch when the response omits any child status", async () => {
 		mutateAsync.mockResolvedValueOnce({
 			status: "ok",

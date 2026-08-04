@@ -128,7 +128,12 @@ describe("MobileTwapTab card", () => {
 		expect(container.textContent).toContain("40%");
 		expect(container.textContent).toContain("Suborder Frequency");
 		expect(container.textContent).toContain("30 seconds");
-		expect(container.textContent).not.toContain("Pause");
+		const pause = container.querySelector<HTMLButtonElement>(
+			'button[aria-label="Pause unavailable: Hyperliquid does not support pausing active TWAP orders."]',
+		);
+		expect(pause?.textContent).toBe("Pause");
+		expect(pause?.disabled).toBe(true);
+		expect(pause?.className).toContain("min-h-11");
 
 		const progress = container.querySelector<HTMLElement>('[data-testid="mobile-twap-progress"]');
 		expect(progress?.style.transform).toBe("scaleX(0.4)");

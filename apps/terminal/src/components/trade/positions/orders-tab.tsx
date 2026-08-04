@@ -664,24 +664,28 @@ export function OrdersTab() {
 						{selectedCount} {t`selected`}
 					</span>
 				) : null}
-				<Button
-					variant="link"
-					size="xs"
-					aria-label={t`Cancel selected orders`}
-					onClick={handleCancelSelected}
-					disabled={disableCancelSelected}
-				>
-					{pendingScopes.has("selected") ? t`Canceling...` : t`Cancel selected`}
-				</Button>
-				<Button
-					variant="link"
-					size="xs"
-					aria-label={t`Cancel all orders`}
-					onClick={handleRequestCancelAll}
-					disabled={disableCancelAll}
-				>
-					{pendingScopes.has("all") ? t`Canceling...` : t`Cancel all`}
-				</Button>
+				{selectedCount > 0 ? (
+					<Button
+						variant="link"
+						size="xs"
+						aria-label={t`Cancel selected orders`}
+						onClick={handleCancelSelected}
+						disabled={disableCancelSelected}
+					>
+						{pendingScopes.has("selected") ? t`Canceling...` : t`Cancel selected`}
+					</Button>
+				) : null}
+				{openOrders.length > 0 ? (
+					<Button
+						variant="link"
+						size="xs"
+						aria-label={t`Cancel all orders`}
+						onClick={handleRequestCancelAll}
+						disabled={disableCancelAll}
+					>
+						{pendingScopes.has("all") ? t`Canceling...` : t`Cancel all`}
+					</Button>
+				) : null}
 			</div>
 			{actionError ? (
 				<div
@@ -698,28 +702,24 @@ export function OrdersTab() {
 						<Placeholder>{t`No orders match the selected filters.`}</Placeholder>
 					) : (
 						<ScrollArea className="h-full w-full">
-							<Table className="table-fixed min-w-[84rem] w-full">
+							<Table className="table-fixed min-w-[80rem] w-full">
 								<TableHeader className={positionsPanelTableHeaderClass}>
 									<TableRow className={positionsPanelTableHeaderRowClass}>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-10 px-2 text-center")}
+											className={cn(positionsPanelTableHeadClass, "w-32 px-2 text-left")}
 										>
-											<Checkbox
-												checked={allSelected}
-												indeterminate={someSelected && !allSelected}
-												onCheckedChange={handleToggleAll}
-												aria-label={t`Select all orders`}
-												disabled={displayedOrders.length === 0}
-											/>
-										</TableHead>
-										<TableHead
-											scope="col"
-											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-28 px-2 text-left")}
-										>
-											{t`Time`}
+											<span className="inline-flex items-center gap-2">
+												<Checkbox
+													checked={allSelected}
+													indeterminate={someSelected && !allSelected}
+													onCheckedChange={handleToggleAll}
+													aria-label={t`Select all orders`}
+													disabled={displayedOrders.length === 0}
+												/>
+												<span>{t`Time`}</span>
+											</span>
 										</TableHead>
 										<TableHead
 											scope="col"
@@ -930,19 +930,19 @@ function OrderRow({
 
 	return (
 		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 text-center")}>
-				<Checkbox
-					checked={isSelected}
-					onCheckedChange={(value) => onToggle(order.oid, value)}
-					aria-label={`${t`Select order`} ${order.coin}`}
-					disabled={isCancelling}
-				/>
-			</TableCell>
 			<TableCell
 				size="dense"
 				className={cn(positionsPanelTableCellClass, "px-2 whitespace-nowrap tabular-nums text-fg-muted")}
 			>
-				{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
+				<span className="inline-flex items-center gap-2">
+					<Checkbox
+						checked={isSelected}
+						onCheckedChange={(value) => onToggle(order.oid, value)}
+						aria-label={`${t`Select order`} ${order.coin}`}
+						disabled={isCancelling}
+					/>
+					<span>{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}</span>
+				</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 text-fg")}>
 				<Tooltip content={getFullOrderTypeLabel(order)}>

@@ -230,8 +230,21 @@
     --market-close-control-active-text: #ffffff;
     --market-close-danger: #d6453d;
     --market-close-danger-text: #ffffff;
-    --market-close-danger-disabled: #e9b5b2;
+    --market-close-danger-disabled: #efc3bf;
     --market-close-success: #1f8a5a;
+
+    /* Position PNL share card — intentionally fixed inverse canvas across themes. */
+    --position-share-card: #1a2330;
+    --position-share-fg: #ffffff;
+    --position-share-muted: #8fa0b0;
+    --position-share-profit: #2fc482;
+    --position-share-loss: #f0665e;
+    --position-share-long: #1f8a5a;
+    --position-share-short: #d6453d;
+    --position-share-divider: #ffffff1f;
+    --position-share-outline: #ffffff66;
+    --position-share-hover: #ffffff1f;
+    --position-share-button-hover: #f1f4f8;
   }
 
   /* ==================== DARK MODE ==================== */
@@ -424,6 +437,19 @@
   --color-market-close-danger-text: var(--market-close-danger-text);
   --color-market-close-danger-disabled: var(--market-close-danger-disabled);
   --color-market-close-success: var(--market-close-success);
+
+  /* Position PNL share card */
+  --color-position-share-card: var(--position-share-card);
+  --color-position-share-fg: var(--position-share-fg);
+  --color-position-share-muted: var(--position-share-muted);
+  --color-position-share-profit: var(--position-share-profit);
+  --color-position-share-loss: var(--position-share-loss);
+  --color-position-share-long: var(--position-share-long);
+  --color-position-share-short: var(--position-share-short);
+  --color-position-share-divider: var(--position-share-divider);
+  --color-position-share-outline: var(--position-share-outline);
+  --color-position-share-hover: var(--position-share-hover);
+  --color-position-share-button-hover: var(--position-share-button-hover);
 
   /* Strokes (kept as `stroke-` — border ≠ stroke, so no stutter) */
   --color-stroke-weak: var(--stroke-weak);

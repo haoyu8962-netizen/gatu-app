@@ -6,6 +6,7 @@ import {
 	isAmbiguousOrderRequestError,
 	isApiOrderResponseError,
 	OrderBatchResolutionError,
+	resolveFilledOrderBatchResponse,
 	resolveOrderBatchResponse,
 	type TrackedOrderParams,
 	trackOrderRequest,
@@ -36,6 +37,7 @@ interface SubmitOptions {
 	riskContext: OrderRiskContext;
 	exclusiveAssetLock?: boolean;
 	confirmationMode?: "accepted" | "filled";
+	finalConfirmation?: (result: ExchangeResponse<"order">) => boolean | Promise<boolean>;
 	origin?: PendingOrderOrigin;
 }
 
@@ -139,10 +141,23 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 				const result = await mutation.mutateAsync(tracked.params);
 				const statuses = result.response?.data?.statuses ?? [];
 				if (statuses.length === tracked.children.length) {
-					const hasError = statuses.some(isExplicitOrderErrorStatus);
-					const isConfirmed =
-						options.confirmationMode !== "filled" || hasError || statuses.every(isExplicitFilledOrderStatus);
-					if (isConfirmed) {
+					if (options.confirmationMode === "filled") {
+						const resolution = resolveFilledOrderBatchResponse(
+							result,
+							tracked.params.orders.map((order) => String(order.s)),
+						);
+						if (resolution?.status === "partial" || resolution?.status === "rejected") {
+							getPendingOrderActions().remove(submission.id);
+							throw new OrderBatchResolutionError(resolution);
+						}
+						if (resolution?.status === "accepted") {
+							const isFinallyConfirmed = await runFinalConfirmation(options.finalConfirmation, result);
+							if (isFinallyConfirmed) {
+								getPendingOrderActions().remove(submission.id);
+								return { state: "confirmed", result };
+							}
+						}
+					} else {
 						getPendingOrderActions().remove(submission.id);
 						return { state: "confirmed", result };
 					}
@@ -151,8 +166,15 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 				retainReservation = true;
 				return startReconciliation(submission.id, options.queueId);
 			} catch (error) {
+				if (error instanceof OrderBatchResolutionError) throw error;
 				if (isApiOrderResponseError(error)) {
-					const resolution = resolveOrderBatchResponse(error.response, tracked.children.length);
+					const resolution =
+						options.confirmationMode === "filled"
+							? resolveFilledOrderBatchResponse(
+									error.response,
+									tracked.params.orders.map((order) => String(order.s)),
+								)
+							: resolveOrderBatchResponse(error.response, tracked.children.length);
 					if (resolution?.status === "partial" || resolution?.status === "rejected") {
 						getPendingOrderActions().remove(submission.id);
 						throw new OrderBatchResolutionError(resolution);
@@ -189,18 +211,16 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 	};
 }
 
-function isExplicitOrderErrorStatus(status: unknown): boolean {
-	return typeof status === "object" && status !== null && "error" in status && typeof status.error === "string";
-}
-
-function isExplicitFilledOrderStatus(status: unknown): boolean {
-	return (
-		typeof status === "object" &&
-		status !== null &&
-		"filled" in status &&
-		typeof status.filled === "object" &&
-		status.filled !== null
-	);
+async function runFinalConfirmation(
+	confirmation: SubmitOptions["finalConfirmation"],
+	result: ExchangeResponse<"order">,
+): Promise<boolean> {
+	if (!confirmation) return true;
+	try {
+		return await confirmation(result);
+	} catch {
+		return false;
+	}
 }
 
 function startReconciliation(submissionId: string, queueId: string | undefined): TrackedOrderResult {

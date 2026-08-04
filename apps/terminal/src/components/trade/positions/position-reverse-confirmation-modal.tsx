@@ -53,12 +53,12 @@ export function PositionReverseConfirmationModal({
 			presentation={isMobile ? "drawer" : "modal"}
 			size="sm"
 			dismissible={!isSubmitting}
-			showClose={!isMobile && !isSubmitting}
+			showClose={!isSubmitting}
 			showHandle={isMobile}
 			closeLabel={t`Close reverse confirmation`}
 			handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-market-close-stroke-input"
 			overlayClassName="!bg-scrim/60 !backdrop-blur-none !transition-none data-starting-style:!opacity-100 data-ending-style:!opacity-100"
-			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[18px] !border-0 !bg-modal !shadow-none !transition-none data-starting-style:!translate-y-0 data-starting-style:!scale-100 data-starting-style:!opacity-100 data-ending-style:!translate-y-0 data-ending-style:!scale-100 data-ending-style:!opacity-100 min-[1001px]:max-w-[23.75rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6 min-[1001px]:[&>button]:!rounded-[8px] min-[1001px]:[&>button]:text-market-close-muted min-[1001px]:[&>button:hover]:bg-market-close-hover min-[1001px]:[&>button:hover]:text-market-close-fg min-[1001px]:[&>button:active]:bg-market-close-hover"
+			className="font-market-close max-h-[calc(100dvh-1rem)] !rounded-t-[18px] !border-0 !bg-modal !shadow-none !transition-none data-starting-style:!translate-y-0 data-starting-style:!scale-100 data-starting-style:!opacity-100 data-ending-style:!translate-y-0 data-ending-style:!scale-100 data-ending-style:!opacity-100 [&>button]:!top-5 [&>button]:!right-4 [&>button]:!rounded-[8px] [&>button]:text-market-close-muted [&>button:hover]:bg-market-close-hover [&>button:hover]:text-market-close-fg [&>button:active]:bg-market-close-hover min-[1001px]:max-w-[23.75rem] min-[1001px]:!rounded-[16px] min-[1001px]:!shadow-overlay min-[1001px]:[&>button]:!top-6 min-[1001px]:[&>button]:!right-6"
 		>
 			<ModalHeader divider={false} className="gap-1 px-4 pt-7 pb-0 text-left min-[1001px]:px-6 min-[1001px]:pt-6">
 				<ModalTitle className="text-base leading-[22px] font-bold text-market-close-fg min-[1001px]:text-[17px] min-[1001px]:leading-6">
@@ -122,25 +122,15 @@ export function PositionReverseConfirmationModal({
 			</ModalContent>
 
 			<ModalFooter className="flex-col items-stretch gap-2 px-4 pt-4 pb-4 min-[1001px]:px-6 min-[1001px]:pb-6">
-				<div className="grid grid-cols-2 gap-2">
-					<button
-						type="button"
-						className="min-h-11 rounded-[10px] border border-market-close-stroke-input bg-modal px-3 text-[13px] font-semibold text-market-close-fg transition-colors duration-[120ms] min-[1001px]:min-h-10 min-[1001px]:hover:border-market-close-control focus-visible:border-market-close-control focus-visible:outline-none disabled:cursor-not-allowed disabled:text-market-close-subtle"
-						disabled={isSubmitting}
-						onClick={() => handleOpenChange(false)}
-					>
-						{t`Back`}
-					</button>
-					<button
-						type="button"
-						className="min-h-11 rounded-[10px] bg-market-close-danger px-3 text-[13px] font-bold text-market-close-danger-text transition-colors duration-[120ms] min-[1001px]:min-h-10 min-[1001px]:hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:bg-market-close-danger-disabled disabled:text-market-close-muted"
-						aria-busy={isSubmitting}
-						disabled={isConfirmDisabled}
-						onClick={handleConfirm}
-					>
-						{isSubmitting ? t`Reversing...` : targetDirection === "long" ? t`Buy / Long` : t`Sell / Short`}
-					</button>
-				</div>
+				<button
+					type="button"
+					className="min-h-11 w-full rounded-[10px] bg-market-close-danger px-3 text-[13px] font-bold text-market-close-danger-text transition-colors duration-[150ms] min-[1001px]:min-h-10 min-[1001px]:hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:bg-market-close-danger-disabled disabled:text-market-close-muted"
+					aria-busy={isSubmitting}
+					disabled={isConfirmDisabled}
+					onClick={handleConfirm}
+				>
+					{isSubmitting ? t`Reversing...` : targetDirection === "long" ? t`Buy / Long` : t`Sell / Short`}
+				</button>
 				<p className="text-center text-[11px] leading-4 text-market-close-subtle">
 					{t`This action cannot be undone after execution.`}
 				</p>

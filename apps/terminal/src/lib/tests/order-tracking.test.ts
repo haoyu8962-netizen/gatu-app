@@ -7,6 +7,7 @@ import {
 	isAcceptedOrderStatus,
 	isAmbiguousOrderRequestError,
 	isCanceledOrderStatus,
+	resolveFilledOrderBatchResponse,
 	resolveOrderBatchResponse,
 	type TrackedOrderParams,
 	trackOrderRequest,
@@ -159,5 +160,66 @@ describe("order tracking", () => {
 		);
 
 		expect(resolution).toBeNull();
+	});
+
+	it("requires every filled child to report the complete submitted size", () => {
+		const resolution = resolveFilledOrderBatchResponse(
+			{
+				status: "ok",
+				response: {
+					type: "order",
+					data: {
+						statuses: [
+							{ filled: { totalSz: "1.250", avgPx: "10", oid: 1 } },
+							{ filled: { totalSz: "0.4", avgPx: "11", oid: 2 } },
+						],
+					},
+				},
+			},
+			["1.25", "1"],
+		);
+
+		expect(resolution).toEqual({
+			status: "partial",
+			totalCount: 2,
+			acceptedCount: 1,
+			rejectedCount: 1,
+			errors: ["Order 2: filled 0.4 of 1."],
+		});
+	});
+
+	it("keeps mixed terminal and non-terminal filled-mode statuses in reconciliation", () => {
+		expect(
+			resolveFilledOrderBatchResponse(
+				{
+					status: "ok",
+					response: {
+						type: "order",
+						data: { statuses: [{ resting: { oid: 1 } }, { error: "Rejected" }] },
+					},
+				},
+				["1", "1"],
+			),
+		).toBeNull();
+	});
+
+	it("accepts a filled batch only when every exact size is terminal", () => {
+		expect(
+			resolveFilledOrderBatchResponse(
+				{
+					status: "ok",
+					response: {
+						type: "order",
+						data: {
+							statuses: [
+								{ filled: { totalSz: "2", avgPx: "10", oid: 1 } },
+								{ filled: { totalSz: "3.000", avgPx: "11", oid: 2 } },
+							],
+						},
+					},
+				},
+				["2.0", "3"],
+			),
+		).toEqual({ status: "accepted", totalCount: 2, acceptedCount: 2, rejectedCount: 0, errors: [] });
 	});
 });

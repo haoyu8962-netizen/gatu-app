@@ -1,8 +1,14 @@
 import { Table, TableBody, TableHead, TableHeader, TableRow, Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { HL_ALL_DEXS } from "@/config/app";
+import {
+	getPositionCloseAllQuoteSymbol,
+	type PositionCloseAllSnapshot,
+	type PositionCloseAllSnapshotIssue,
+	resolvePositionCloseAllSnapshot,
+} from "@/domain/trade/position-close-all";
 import {
 	filterPositions,
 	getTotalPositionUnrealizedPnl,
@@ -23,15 +29,18 @@ import type { Side } from "@/lib/trade/types";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
+import { PositionCloseAllController } from "./position-close-all-modal";
 import type {
 	IsolatedMarginPositionRef,
 	LimitClosePositionData,
 	PositionMarketCloseRef,
+	PositionPnlShareData,
 	PositionReverseRef,
 	TpSlPositionRef,
 } from "./position-dialog-types";
 import { PositionIsolatedMarginModal } from "./position-isolated-margin-modal";
 import { PositionLimitCloseModal } from "./position-limit-close-modal";
+import { PositionPnlShareModal } from "./position-pnl-share-modal";
 import { PositionReverseConfirmationController } from "./position-reverse-confirmation-controller";
 import { type PositionPnlMode, PositionRow } from "./position-row";
 import {
@@ -61,7 +70,13 @@ interface Props {
 	} | null;
 }
 
+interface OwnedPositionPnlShare {
+	ownerKey: string;
+	position: PositionPnlShareData;
+}
+
 export function PositionsTab({ directionFilter, marketFilter, currentMarket, accountSummary }: Props) {
+	const closeAllUnavailableId = useId();
 	const { address, isConnected } = useWalletSession();
 	const { env } = useHyperliquid();
 	const navigateToMarket = useMarketNavigation();
@@ -80,9 +95,16 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 	const [selectedIsolatedMarginPosition, setSelectedIsolatedMarginPosition] =
 		useState<IsolatedMarginPositionRef | null>(null);
 	const [selectedReverseTarget, setSelectedReverseTarget] = useState<PositionReverseTarget | null>(null);
+	const [closeAllSnapshot, setCloseAllSnapshot] = useState<PositionCloseAllSnapshot | null>(null);
+	const [selectedPnlShare, setSelectedPnlShare] = useState<OwnedPositionPnlShare | null>(null);
 	const [pnlMode, setPnlMode] = useState<PositionPnlMode>("roe");
 
-	const { positions, isLoading: positionsLoading, hasError: positionsError } = useUserPositions();
+	const {
+		positions,
+		isLoading: positionsLoading,
+		hasError: positionsError,
+		isStale: positionsStale,
+	} = useUserPositions();
 
 	const markets = useMarkets();
 	const { getMarketInfo } = useMarketsInfo();
@@ -99,11 +121,52 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 	const totalUnrealizedPnl = getTotalPositionUnrealizedPnl(positions);
 	const summaryUnrealizedPnl = accountSummary?.unrealizedPnl ?? totalUnrealizedPnl;
 	const accountRisk = getToolbarAccountRiskPresentation(accountSummary?.maintenanceMarginRatio ?? null);
+	const closeAllResolution = resolvePositionCloseAllSnapshot({
+		owner: address,
+		env,
+		candidates: positions.map((position) => {
+			const market = markets.getMarket(position.coin);
+			return {
+				coin: position.coin,
+				dex: position.dex,
+				assetId: market?.assetId,
+				szDecimals: market?.szDecimals,
+				signedPositionSize: position.szi,
+				markPx: getMarketInfo(position.coin)?.markPx,
+				positionValue: position.positionValue,
+				unrealizedPnl: position.unrealizedPnl,
+				marginMode: position.leverage.type,
+				quoteSymbol: getPositionCloseAllQuoteSymbol(market),
+			};
+		}),
+	});
+	const closeAllDataReady =
+		isConnected && !positionsLoading && !positionsError && !positionsStale && !markets.isLoading && !markets.error;
+	const closeAllPreview = closeAllDataReady ? closeAllResolution.snapshot : null;
+	const closeAllIssues: readonly PositionCloseAllSnapshotIssue[] = closeAllResolution.issues;
+	const visibleCloseAllSnapshot =
+		address && closeAllSnapshot?.owner === address.toLowerCase() && closeAllSnapshot.env === env
+			? closeAllSnapshot
+			: null;
+	const closeAllUnavailableReason = closeAllPreview
+		? null
+		: !closeAllDataReady || closeAllIssues.includes("invalid-market")
+			? t`Close all is unavailable until every position market and mark price has loaded.`
+			: closeAllIssues.includes("invalid-position")
+				? t`Close all is unavailable because position data is incomplete.`
+				: closeAllIssues.includes("duplicate-market")
+					? t`Close all is unavailable because duplicate market data was detected.`
+					: t`Close all is currently unavailable.`;
 
 	const pnlHeader = pnlMode === "roe" ? t`PNL (ROE %)` : t`PNL (Price Change %)`;
 
 	function handleOpenMarketClose(position: PositionMarketCloseRef) {
 		positionMarketClose.open(position);
+	}
+
+	function handleOpenCloseAll() {
+		if (!closeAllPreview) return;
+		setCloseAllSnapshot(closeAllPreview);
 	}
 
 	function handleReverse(data: PositionReverseRef) {
@@ -124,6 +187,11 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 	function handleOpenIsolatedMarginModal(data: IsolatedMarginPositionRef) {
 		setSelectedIsolatedMarginPosition(data);
 		setIsolatedMarginModalOpen(true);
+	}
+
+	function handleOpenPnlShare(data: PositionPnlShareData) {
+		if (!address) return;
+		setSelectedPnlShare({ ownerKey: `${env}:${address.toLowerCase()}`, position: data });
 	}
 
 	function renderPlaceholder() {
@@ -212,6 +280,26 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 										signDisplay: "never",
 									})}
 								</span>
+							</dd>
+						</div>
+						<div className="ml-auto">
+							<dt className="sr-only">{t`Position actions`}</dt>
+							<dd className="m-0">
+								<button
+									type="button"
+									onClick={handleOpenCloseAll}
+									disabled={!closeAllPreview}
+									aria-describedby={closeAllUnavailableReason ? closeAllUnavailableId : undefined}
+									title={closeAllUnavailableReason ?? undefined}
+									className="min-h-[27px] whitespace-nowrap rounded-[7px] border border-market-close-danger-disabled bg-modal px-2.5 text-xs leading-4 font-semibold text-market-close-danger transition-all duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-subtle"
+								>
+									{t`Close All`}
+								</button>
+								{closeAllUnavailableReason ? (
+									<span id={closeAllUnavailableId} className="sr-only">
+										{closeAllUnavailableReason}
+									</span>
+								) : null}
 							</dd>
 						</div>
 					</dl>
@@ -317,6 +405,8 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 										<PositionRow
 											key={`${p.dex}:${p.coin}`}
 											position={p}
+											env={env}
+											isDataStale={positionsStale}
 											markets={markets}
 											markPx={getMarketInfo(p.coin)?.markPx}
 											tpSlInfo={tpSlOrdersByCoin.get(p.coin)}
@@ -325,6 +415,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 											pnlMode={pnlMode}
 											onMarketClose={handleOpenMarketClose}
 											onLimitClose={handleOpenLimitCloseModal}
+											onShare={handleOpenPnlShare}
 											onReverse={handleReverse}
 											onOpenTpSl={handleOpenTpSlModal}
 											onAdjustMargin={handleOpenIsolatedMarginModal}
@@ -353,6 +444,20 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 				target={selectedReverseTarget}
 				onOpenChange={(open) => {
 					if (!open) setSelectedReverseTarget(null);
+				}}
+			/>
+			<PositionCloseAllController
+				snapshot={visibleCloseAllSnapshot}
+				onOpenChange={(open) => {
+					if (!open) setCloseAllSnapshot(null);
+				}}
+			/>
+			<PositionPnlShareModal
+				position={
+					address && selectedPnlShare?.ownerKey === `${env}:${address.toLowerCase()}` ? selectedPnlShare.position : null
+				}
+				onOpenChange={(open) => {
+					if (!open) setSelectedPnlShare(null);
 				}}
 			/>
 		</div>

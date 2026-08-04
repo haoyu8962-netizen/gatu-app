@@ -38,9 +38,11 @@ describe("mobile position filter row", () => {
 			root.render(
 				<PositionFilterToolbar
 					direction="all"
+					margin="all"
 					market={ALL_POSITION_MARKETS}
 					marketOptions={[]}
 					onDirectionChange={vi.fn()}
+					onMarginChange={vi.fn()}
 					onMarketChange={vi.fn()}
 					mobile
 				/>,
@@ -51,11 +53,12 @@ describe("mobile position filter row", () => {
 		const direction = container.querySelector<HTMLButtonElement>(
 			'button[aria-label^="Filter positions by direction:"]',
 		);
-		const market = container.querySelector<HTMLButtonElement>('button[aria-label^="Filter positions by market:"]');
+		const margin = container.querySelector<HTMLButtonElement>('button[aria-label^="Filter positions by margin mode:"]');
 
 		expect(toolbar?.className).toContain("gap-1.5");
 		expect(direction?.textContent).toContain("Direction");
-		for (const chip of [direction, market]) {
+		expect(margin?.textContent).toContain("Margin");
+		for (const chip of [direction, margin]) {
 			expect(chip?.className).toContain("rounded-[7px]");
 			expect(chip?.className).toContain("px-[9px]");
 			expect(chip?.className).toContain("py-1");
