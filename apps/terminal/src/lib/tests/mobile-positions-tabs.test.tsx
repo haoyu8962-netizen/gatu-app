@@ -155,6 +155,7 @@ describe("MobilePositionsView tabs", () => {
 		expect(scroller?.className).toContain("overflow-x-auto");
 		expect(scroller?.className).toContain("[scrollbar-width:none]");
 		expect(scroller?.className).toContain("[&::-webkit-scrollbar]:hidden");
+		expect(scroller?.querySelector('[role="tablist"]')?.className).toContain("h-[47px]");
 
 		const fade = container.querySelector<HTMLElement>('[data-testid="mobile-account-tabs-fade"]');
 		expect(fade?.className).toContain("w-7");

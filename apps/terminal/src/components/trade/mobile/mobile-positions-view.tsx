@@ -177,7 +177,7 @@ export function MobilePositionsView({
 						className="min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 					>
 						<TabsList
-							className="min-w-max gap-0 border-b border-market-close-stroke-card px-3.5 pr-7"
+							className="h-[47px] min-w-max gap-0 border-b border-market-close-stroke-card px-3.5 pr-7"
 							indicatorClassName="bg-market-close-fg duration-[120ms] ease-linear"
 						>
 							{tabs.map((tab) => {
