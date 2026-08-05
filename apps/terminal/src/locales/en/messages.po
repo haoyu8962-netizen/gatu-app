@@ -1094,7 +1094,6 @@ msgstr "Collapse {marketName} history details"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Collapse all"
 msgstr "Collapse all"
@@ -2166,7 +2165,6 @@ msgstr "Expand {marketName} history details"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Expand all"
 msgstr "Expand all"
@@ -6071,6 +6069,8 @@ msgid "The trading account or network changed. Reopen the confirmation and try a
 msgstr "The trading account or network changed. Reopen the confirmation and try again."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr "The trading account or network changed. Reopen the editor and try again."
@@ -6550,7 +6550,6 @@ msgstr "Trading"
 msgid "Trading Account"
 msgstr "Trading Account"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

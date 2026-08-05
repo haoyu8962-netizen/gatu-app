@@ -65,7 +65,7 @@ export function OrderInlineEdit({
 		<div
 			ref={rootRef}
 			className={cn(
-				"absolute top-1/2 z-10 inline-flex min-w-0 -translate-y-1/2 items-center gap-1.5 rounded-[10px] bg-modal p-1 shadow-overlay",
+				"absolute top-1/2 z-10 inline-flex min-w-0 -translate-y-1/2 items-center gap-1.5 rounded-[10px] bg-modal p-1 shadow-market-close-inline-edit",
 				align === "right" ? "-right-1" : "-left-1",
 			)}
 			aria-busy={disabled || undefined}

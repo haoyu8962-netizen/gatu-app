@@ -8,6 +8,7 @@ import type { OpenOrder } from "@/lib/trade/open-orders";
 import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
+	address: "0x1111111111111111111111111111111111111111",
 	assetId: 120_001 as number | undefined,
 	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
 	cancelOrders: vi.fn(),
@@ -52,15 +53,16 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({
 
 vi.mock("@/hooks/trade/use-order-display-labels", () => ({
 	useOrderDisplayLabels: () => ({
-		getFullOrderTypeLabel: (order: OpenOrder) => order.orderType,
+		getFullOrderTypeLabel: (order: OpenOrder) => `${order.orderType}${order.reduceOnly ? " · Reduce Only" : ""}`,
 		getOrderSideLabel: () => "Close Short",
+		getOrderTypeLabel: (orderType: OpenOrder["orderType"]) => orderType,
 		getTriggerConditionLabel: (condition: string) => condition,
 	}),
 }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
-		address: "0x1111111111111111111111111111111111111111",
+		address: mocks.address,
 		isConnected: true,
 	}),
 }));
@@ -148,6 +150,7 @@ describe("mobile order modification", () => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
+		mocks.address = "0x1111111111111111111111111111111111111111";
 		mocks.assetId = 120_001;
 		mocks.batchModifyGuard = undefined;
 		mocks.clientKey = "0x1111111111111111111111111111111111111111";
@@ -191,6 +194,7 @@ describe("mobile order modification", () => {
 		expect(document.body.textContent).toContain("Modify Order");
 		expect(document.body.textContent).toContain("ORCL");
 		expect(document.body.textContent).toContain("Close Short");
+		expect(document.body.textContent).toContain("Stop Market · Reduce Only");
 		expect(size?.value).toBe("2.000");
 		expect(trigger?.value).toBe("170");
 
@@ -198,7 +202,7 @@ describe("mobile order modification", () => {
 			if (size) changeInput(size, "1.");
 		});
 		expect(size?.value).toBe("1.");
-		expect(findButton("Modify Order")?.className).toContain("min-h-11");
+		expect(document.body.querySelector<HTMLButtonElement>('button[type="submit"]')?.className).toContain("min-h-11");
 	});
 
 	it("marks invalid fields with ARIA and disables submission", () => {
@@ -289,13 +293,43 @@ describe("mobile order modification", () => {
 		expect(findButton("Cancel", container)?.disabled).toBe(false);
 	});
 
-	it("shows a safely disabled modification entry for unsupported system orders", () => {
+	it("fails closed when the active account changes while awaiting live confirmation", async () => {
+		const { size } = openEditor();
+		await act(async () => {
+			if (!size) return;
+			changeInput(size, "1.500");
+			pressKey(size, "Enter");
+			await Promise.resolve();
+		});
+
+		mocks.address = "0x2222222222222222222222222222222222222222";
+		mocks.clientKey = "0x2222222222222222222222222222222222222222";
+		mocks.orders = [];
+		await act(async () => {
+			root.render(<MobileOrdersTab scrollMode="page" />);
+			await Promise.resolve();
+		});
+
+		const sessionChanged = "The trading account or network changed. Reopen the editor and try again.";
+		expect(mocks.toastError).toHaveBeenCalledWith(sessionChanged);
+		expect(mocks.toastInfo).not.toHaveBeenCalledWith("The modified order is no longer open.");
+		expect(mocks.toastSuccess).not.toHaveBeenCalled();
+		expect(document.body.querySelector('input[aria-label="Size"]')).toBeNull();
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain(sessionChanged);
+	});
+
+	it("explains unsupported modifications on touch without submitting an order", () => {
 		mocks.orders = [{ ...triggerOrder, isTrigger: false, orderType: "Twap Slice", tif: "Gtc" } as OpenOrder];
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Expand ORCL order details"]')?.click());
 		const modify = findButton("Modify Order", container);
-		expect(modify?.disabled).toBe(true);
+		expect(modify?.disabled).toBe(false);
+		expect(modify?.getAttribute("aria-disabled")).toBe("true");
 		expect(modify?.title).toBe("This order type cannot be modified safely. Cancel and replace it instead.");
+		act(() => modify?.click());
+		expect(mocks.toastInfo).toHaveBeenCalledWith(
+			"This order type cannot be modified safely. Cancel and replace it instead.",
+		);
 		expect(mocks.modifyOrders).not.toHaveBeenCalled();
 	});
 });

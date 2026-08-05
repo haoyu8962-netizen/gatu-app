@@ -1094,7 +1094,6 @@ msgstr "收起 {marketName} 历史详情"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Collapse all"
 msgstr "全部收起"
@@ -2166,7 +2165,6 @@ msgstr "展开 {marketName} 历史详情"
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Expand all"
 msgstr "全部展开"
@@ -3444,7 +3442,7 @@ msgstr "暂时无法显示移动端二维码。如果不再需要此密钥，请
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Modify Order"
-msgstr "修改委托"
+msgstr "修改订单"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 msgid "Modifying..."
@@ -6071,6 +6069,8 @@ msgid "The trading account or network changed. Reopen the confirmation and try a
 msgstr "交易账户或网络已发生变化。请重新打开确认弹窗后再试。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr "交易账户或网络已变化。请重新打开编辑器后重试。"
@@ -6550,7 +6550,6 @@ msgstr "交易中"
 msgid "Trading Account"
 msgstr "交易账户"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

@@ -26,7 +26,7 @@ describe("orders toolbar visual contract", () => {
 		expect(DESKTOP_SOURCE).toContain("group-hover/order-row:opacity-100");
 		expect(DESKTOP_SOURCE).toContain("border-market-close-stroke-input bg-modal");
 		expect(DESKTOP_SOURCE).toContain("text-market-close-warning");
-		expect(DESKTOP_SOURCE).toContain('href="/portfolio"');
+		expect(DESKTOP_SOURCE).toContain('to="/portfolio"');
 		expect(DESKTOP_SOURCE).toContain("h-[38px] min-w-[1280px]");
 		expect(DESKTOP_SOURCE).toContain("hover:bg-market-close-hover");
 	});
@@ -38,6 +38,7 @@ describe("orders toolbar visual contract", () => {
 		expect(INLINE_EDIT_SOURCE).toContain("w-[90px]");
 		expect(INLINE_EDIT_SOURCE).toContain("w-[102px]");
 		expect(INLINE_EDIT_SOURCE).toContain("absolute top-1/2 z-10");
+		expect(INLINE_EDIT_SOURCE).toContain("shadow-market-close-inline-edit");
 		expect(INLINE_EDIT_SOURCE).toContain('align === "right" ? "-right-1" : "-left-1"');
 		expect(INLINE_EDIT_SOURCE).toContain("bg-market-close-control");
 		expect(INLINE_EDIT_SOURCE).toContain('event.key === "Enter"');
@@ -51,9 +52,12 @@ describe("orders toolbar visual contract", () => {
 		expect(MOBILE_SOURCE).toContain("space-y-2.5 px-3.5");
 		expect(MOBILE_SOURCE).toContain("rounded-[14px]");
 		expect(MOBILE_SOURCE).toContain("py-[11px]");
-		expect(MOBILE_SOURCE).toContain("min-h-11 items-center");
+		expect(MOBILE_SOURCE).toContain("h-[18px] items-center");
 		expect(MOBILE_SOURCE).toContain("after:h-11");
+		expect(MOBILE_SOURCE).toContain("after:top-[calc(50%_-_1px)]");
+		expect(MOBILE_SOURCE).toContain("after:size-11");
 		expect(MOBILE_SOURCE).toContain("text-market-close-warning");
 		expect(MOBILE_SOURCE).toContain("Submitted limit and trigger orders will appear here.");
+		expect(MOBILE_SOURCE).not.toContain("MobileOrderBulkDetailsActions");
 	});
 });

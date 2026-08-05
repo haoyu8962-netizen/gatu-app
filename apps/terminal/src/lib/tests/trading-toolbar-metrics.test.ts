@@ -7,7 +7,9 @@ import {
 	getToolbarNonZeroPnl,
 	getToolbarOrderMetrics,
 	getToolbarPositionChangeRatio,
+	getToolbarTriggerConditionOperator,
 	getToolbarTwapMetrics,
+	isToolbarOrderNearMark,
 	matchesToolbarOrderFilters,
 } from "@/domain/trade/trading-toolbar-metrics";
 
@@ -106,7 +108,7 @@ describe("trading toolbar order metrics", () => {
 		expect(matchesToolbarOrderFilters(limitSell, "trigger", "sell")).toBe(false);
 	});
 
-	it("uses limit price and remaining size for ordinary orders", () => {
+	it("uses limit price and remaining size for ordinary orders above the mark", () => {
 		expect(
 			getToolbarOrderMetrics({
 				isTrigger: false,
@@ -122,7 +124,7 @@ describe("trading toolbar order metrics", () => {
 		});
 	});
 
-	it("uses trigger price instead of the execution protection price for trigger orders", () => {
+	it("uses trigger price and preserves a negative distance below the mark", () => {
 		expect(
 			getToolbarOrderMetrics({
 				isTrigger: true,
@@ -134,8 +136,23 @@ describe("trading toolbar order metrics", () => {
 		).toEqual({
 			referencePx: "90",
 			remainingValue: "216",
-			markDistanceRatio: "0.1",
+			markDistanceRatio: "-0.1",
 		});
+	});
+
+	it("applies the near-mark threshold to the absolute signed distance", () => {
+		expect(isToolbarOrderNearMark("0.099999999999999999")).toBe(true);
+		expect(isToolbarOrderNearMark("-0.099999999999999999")).toBe(true);
+		expect(isToolbarOrderNearMark("0.1")).toBe(false);
+		expect(isToolbarOrderNearMark("-0.1")).toBe(false);
+		expect(isToolbarOrderNearMark(null)).toBe(false);
+		expect(isToolbarOrderNearMark("invalid")).toBe(false);
+	});
+
+	it("maps SDK trigger conditions to the compact current-orders operators", () => {
+		expect(getToolbarTriggerConditionOperator("Price above 149.00")).toBe("≥");
+		expect(getToolbarTriggerConditionOperator("Price below 149.00")).toBe("≤");
+		expect(getToolbarTriggerConditionOperator("N/A")).toBeNull();
 	});
 
 	it("preserves a valid distance when size is invalid and a valid value when mark price is invalid", () => {

@@ -109,8 +109,20 @@ export function getToolbarOrderMetrics(input: ToolbarOrderMetricsInput): Toolbar
 	return {
 		referencePx: referencePx?.toString() ?? null,
 		remainingValue: referencePx && size ? referencePx.times(size).toString() : null,
-		markDistanceRatio: referencePx && markPx ? referencePx.minus(markPx).abs().div(markPx).toString() : null,
+		markDistanceRatio: referencePx && markPx ? referencePx.minus(markPx).div(markPx).toString() : null,
 	};
+}
+
+export function isToolbarOrderNearMark(markDistanceRatio: string | null): boolean {
+	const distanceRatio = toBig(markDistanceRatio);
+	return distanceRatio?.abs().lt("0.1") ?? false;
+}
+
+export function getToolbarTriggerConditionOperator(condition: string): "≤" | "≥" | null {
+	const direction = /^Price (above|below) /i.exec(condition)?.[1]?.toLowerCase();
+	if (direction === "above") return "≥";
+	if (direction === "below") return "≤";
+	return null;
 }
 
 export function getToolbarTwapMetrics(input: ToolbarTwapMetricsInput): ToolbarTwapMetrics {

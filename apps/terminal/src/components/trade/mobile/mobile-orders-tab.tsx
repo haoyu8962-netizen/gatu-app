@@ -1,6 +1,6 @@
 import { Button, Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ListIcon, ListNumbersIcon } from "@phosphor-icons/react";
+import { ListIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -26,6 +26,8 @@ import {
 import { throwIfAnyResponseError } from "@/domain/trade/orders";
 import {
 	getToolbarOrderMetrics,
+	getToolbarTriggerConditionOperator,
+	isToolbarOrderNearMark,
 	matchesToolbarOrderFilters,
 	type ToolbarOrderDirectionFilter,
 	type ToolbarOrderTypeFilter,
@@ -34,7 +36,7 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatDateTime, formatPercent, formatPrice, formatToken } from "@/lib/format";
+import { formatDateTime, formatNumber, formatPercent, formatPrice, formatToken } from "@/lib/format";
 import {
 	type ExchangeParams,
 	type SubscriptionStatus,
@@ -95,6 +97,11 @@ interface ModifyExecutionContext {
 	normalizedSize: string;
 	normalizedTriggerPrice: string | null;
 	params: ExchangeParams<"batchModify">;
+	session: {
+		clientKey: string;
+		snapshotOwner: string;
+		env: "Mainnet" | "Testnet";
+	};
 }
 
 interface ModifyLiveContext {
@@ -107,41 +114,34 @@ interface ModifyLiveContext {
 	getMarketBinding: (coin: string) => OpenOrderModifyMarketBinding | null;
 }
 
-interface MobileOrderBulkDetailsActionsProps {
-	orderKeys: readonly string[];
-	expandedOrderKeys: ReadonlySet<string>;
-	onExpandAll: () => void;
-	onCollapseAll: () => void;
+function normalizeSessionOwner(owner: string | null | undefined): string | null {
+	if (!owner || owner === "disconnected") return null;
+	return owner.toLowerCase();
 }
 
-const mobileOrderBulkActionClass =
-	"relative inline-flex size-[27px] min-h-0 shrink-0 items-center justify-center rounded-[7px] border border-market-close-stroke-card bg-modal text-market-close-muted transition-all duration-[120ms] after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:border-market-close-stroke-input hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control";
+function getModifyExecutionSession(live: ModifyLiveContext): ModifyExecutionContext["session"] | null {
+	const clientKey = normalizeSessionOwner(live.clientKey);
+	const snapshotOwner = normalizeSessionOwner(live.snapshotOwner);
+	if (!clientKey || !snapshotOwner || clientKey !== snapshotOwner) return null;
+	return { clientKey, snapshotOwner, env: live.env };
+}
 
-export function MobileOrderBulkDetailsActions({
-	orderKeys,
-	expandedOrderKeys,
-	onExpandAll,
-	onCollapseAll,
-}: MobileOrderBulkDetailsActionsProps) {
-	const { t } = useLingui();
-	const canExpand = orderKeys.some((key) => !expandedOrderKeys.has(key));
-	const canCollapse = orderKeys.some((key) => expandedOrderKeys.has(key));
-	if (!canExpand && !canCollapse) return null;
+function isModifyExecutionSessionCurrent(execution: ModifyExecutionContext, live: ModifyLiveContext): boolean {
+	return isModifyExecutionSessionBindingCurrent(execution, live.clientKey, live.snapshotOwner, live.env);
+}
 
-	const expands = canExpand;
-	const label = expands ? t`Expand all` : t`Collapse all`;
-
+function isModifyExecutionSessionBindingCurrent(
+	execution: ModifyExecutionContext,
+	clientKey: string | null | undefined,
+	snapshotOwner: string | null | undefined,
+	env: "Mainnet" | "Testnet",
+): boolean {
+	const normalizedClientKey = normalizeSessionOwner(clientKey);
+	const normalizedSnapshotOwner = normalizeSessionOwner(snapshotOwner);
 	return (
-		<button
-			type="button"
-			data-testid={expands ? "expand-all-order-details" : "collapse-all-order-details"}
-			aria-label={label}
-			title={label}
-			onClick={expands ? onExpandAll : onCollapseAll}
-			className={mobileOrderBulkActionClass}
-		>
-			<ListNumbersIcon className="size-3.5" aria-hidden="true" />
-		</button>
+		normalizedClientKey === execution.session.clientKey &&
+		normalizedSnapshotOwner === execution.session.snapshotOwner &&
+		env === execution.session.env
 	);
 }
 
@@ -207,12 +207,18 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 	const isPageScroll = scrollMode === "page";
 	const displayedOrders = openOrders.filter((order) => matchesToolbarOrderFilters(order, typeFilter, directionFilter));
 	const orderKeys = displayedOrders.map((order) => `${order.coin}:${order.oid}`);
-	const {
-		expandedKeys: expandedOrderKeys,
-		setExpanded: setOrderExpanded,
-		expandAll: expandAllOrders,
-		collapseAll: collapseAllOrders,
-	} = useMobileDisclosureSet(`${env}:${address?.toLowerCase() ?? "disconnected"}`, orderKeys);
+	const openOrdersSnapshotBindingRef = useRef({
+		event: openOrdersEvent,
+		ownerKey,
+		env,
+	});
+	if (openOrdersSnapshotBindingRef.current.event !== openOrdersEvent) {
+		openOrdersSnapshotBindingRef.current = { event: openOrdersEvent, ownerKey, env };
+	}
+	const { expandedKeys: expandedOrderKeys, setExpanded: setOrderExpanded } = useMobileDisclosureSet(
+		`${env}:${address?.toLowerCase() ?? "disconnected"}`,
+		orderKeys,
+	);
 
 	function getMarketBinding(coin: string): OpenOrderModifyMarketBinding | null {
 		if (markets.isLoading || markets.error) return null;
@@ -343,6 +349,9 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 		if (!execution || modifyPhaseRef.current !== "submitting") {
 			throw new Error(t`Trading data changed before the order modification could be submitted.`);
 		}
+		if (!isModifyExecutionSessionCurrent(execution, liveModifyContextRef.current)) {
+			throw new Error(getModifyBlockMessage("session-changed"));
+		}
 		const currentPlan = buildPlanFromLive(execution.target, execution.size, execution.triggerPrice);
 		if (currentPlan.status === "blocked") throw new Error(getModifyBlockMessage(currentPlan.reason));
 		if (
@@ -369,7 +378,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 		};
 	}, []);
 
-	function clearModifyModal() {
+	function clearModifyModal(errorMessage: string | null = null) {
 		modifyTargetRef.current = null;
 		modifySizeRef.current = "";
 		modifyTriggerPriceRef.current = undefined;
@@ -377,7 +386,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 		setModifyTarget(null);
 		setModifySize("");
 		setModifyTriggerPrice(undefined);
-		setModifyValidationError(null);
+		setModifyValidationError(errorMessage);
 		setModifyPhase("idle");
 	}
 
@@ -413,6 +422,10 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 		resetModifyError();
 	}
 
+	function handleModifyUnavailable(message: string) {
+		toast.info(message);
+	}
+
 	function handleModifyOpenChange(open: boolean) {
 		if (open || modifyPhaseRef.current !== "idle") return;
 		clearModifyModal();
@@ -446,6 +459,11 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 			setModifyValidationError(getModifyBlockMessage(plan.reason));
 			return;
 		}
+		const session = getModifyExecutionSession(liveModifyContextRef.current);
+		if (!session || session.clientKey !== target.size.owner || session.env !== target.size.env) {
+			setModifyValidationError(getModifyBlockMessage("session-changed"));
+			return;
+		}
 
 		const execution: ModifyExecutionContext = {
 			target,
@@ -454,6 +472,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 			normalizedSize: plan.normalizedSize,
 			normalizedTriggerPrice: plan.normalizedTriggerPrice,
 			params: plan.params,
+			session,
 		};
 		modifyExecutionRef.current = execution;
 		setModifyValidationError(null);
@@ -468,21 +487,22 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 			if (
 				modifyExecutionRef.current !== execution ||
 				getModifyPhase() !== "submitting" ||
-				live.clientKey === "disconnected" ||
-				live.clientKey.toLowerCase() !== execution.target.size.owner ||
-				live.snapshotOwner.toLowerCase() !== execution.target.size.owner ||
-				live.env !== execution.target.size.env
+				!isModifyExecutionSessionCurrent(execution, live)
 			) {
-				throw new Error(t`Trading data changed before the order modification could be submitted.`);
+				throw new Error(getModifyBlockMessage("session-changed"));
 			}
 			setModifyPhase("awaiting");
 			toast.info(t`Order modification submitted. Waiting for the open-orders update.`);
 		} catch (cause) {
 			if (!mountedRef.current) return;
 			const message = cause instanceof Error ? cause.message : t`Failed to modify order.`;
-			modifyExecutionRef.current = null;
-			setModifyPhase("idle");
-			setModifyValidationError(message);
+			if (!isModifyExecutionSessionCurrent(execution, liveModifyContextRef.current)) {
+				clearModifyModal(message);
+			} else {
+				modifyExecutionRef.current = null;
+				setModifyPhase("idle");
+				setModifyValidationError(message);
+			}
 			toast.error(message);
 		}
 	}
@@ -511,9 +531,9 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 
 	useEffect(() => {
 		const execution = modifyPhase === "awaiting" ? modifyExecutionRef.current : unconfirmedExecutionRef.current;
-		if (!execution || status !== "active" || isStale) return;
+		if (!execution) return;
 
-		function finishReconciliation() {
+		function finishReconciliation(errorMessage: string | null = null) {
 			modifyTargetRef.current = null;
 			modifySizeRef.current = "";
 			modifyTriggerPriceRef.current = undefined;
@@ -523,10 +543,18 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 			setModifyTarget(null);
 			setModifySize("");
 			setModifyTriggerPrice(undefined);
-			setModifyValidationError(null);
+			setModifyValidationError(errorMessage);
 			setModifyPhaseState("idle");
 			setUnconfirmedModifyOid(null);
 		}
+
+		if (!isModifyExecutionSessionBindingCurrent(execution, clientKey, address, env)) {
+			const message = t`The trading account or network changed. Reopen the editor and try again.`;
+			toast.error(message);
+			finishReconciliation(message);
+			return;
+		}
+		if (status !== "active" || isStale) return;
 
 		const matches = openOrders.filter((order) => order.oid === execution.target.size.order.oid);
 		if (matches.length === 0) {
@@ -562,7 +590,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 			);
 			finishReconciliation();
 		}
-	}, [modifyPhase, openOrders, status, isStale, t]);
+	}, [address, clientKey, env, modifyPhase, openOrders, status, isStale, t]);
 
 	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope, callbacks?: CancelCallbacks): boolean {
 		if (ordersToCancel.length === 0 || modifyPhaseRef.current !== "idle") return false;
@@ -622,6 +650,11 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 	}
 
 	function handleCancelRow(ordersToCancel: OpenOrder[]) {
+		const reason = getCancelRowBlockReason(ordersToCancel);
+		if (reason) {
+			setCancelValidationError(getCancelAllBlockMessage(reason));
+			return;
+		}
 		handleCancel(ordersToCancel, "row");
 	}
 
@@ -644,6 +677,24 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 			isSnapshotReady: status === "active" && !isStale,
 			orders: openOrders,
 		} as const;
+	}
+
+	function getCancelRowBlockReason(ordersToCancel: readonly OpenOrder[]): CancelAllConfirmationBlockReason | null {
+		const snapshot = createCancelAllConfirmationSnapshot(getCancelAllConfirmationInput());
+		if (snapshot.status === "blocked") return snapshot.reason;
+
+		const binding = openOrdersSnapshotBindingRef.current;
+		if (binding.ownerKey !== ownerKey || binding.env !== env) return "session-changed";
+		if (ordersToCancel.length === 0) return "orders-changed";
+
+		const requestedKeys = new Set(ordersToCancel.map((order) => `${order.coin}\u0000${order.oid}`));
+		if (requestedKeys.size !== ordersToCancel.length) return "orders-changed";
+		for (const order of ordersToCancel) {
+			if (openOrders.filter((candidate) => candidate.coin === order.coin && candidate.oid === order.oid).length !== 1) {
+				return "orders-changed";
+			}
+		}
+		return null;
 	}
 
 	function handleRequestCancelAll() {
@@ -746,7 +797,8 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 							{ value: "limit", label: t`Limit` },
 							{ value: "trigger", label: t`Trigger` },
 						]}
-						triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:text-market-close-muted focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
+						triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
+						popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
 						className="w-auto shrink-0 [&>label]:sr-only"
 					/>
 					<Select
@@ -759,7 +811,8 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 							{ value: "buy", label: t`Buy` },
 							{ value: "sell", label: t`Sell` },
 						]}
-						triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:text-market-close-muted focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
+						triggerClassName="relative !h-[27px] min-h-0 !w-auto max-w-[104px] !rounded-[7px] border-market-close-stroke-card bg-modal px-[9px] text-xs text-market-close-muted duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] [&>*]:truncate [&>*]:text-market-close-muted focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
+						popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
 						className="w-auto shrink-0 [&>label]:sr-only"
 					/>
 					{openOrders.length > 0 ? (
@@ -767,7 +820,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 							variant="link"
 							intent="error"
 							size="sm"
-							className="relative h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:scale-100"
+							className="relative ml-auto h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:not-data-disabled:scale-100"
 							onClick={handleRequestCancelAll}
 							disabled={pendingScopes.size > 0 || isModifyBusy}
 						>
@@ -776,14 +829,6 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 								: t({ message: "Cancel all", context: "Current orders toolbar" })}
 						</Button>
 					) : null}
-					<div className="ml-auto flex shrink-0 items-center">
-						<MobileOrderBulkDetailsActions
-							orderKeys={orderKeys}
-							expandedOrderKeys={expandedOrderKeys}
-							onExpandAll={() => expandAllOrders(orderKeys)}
-							onCollapseAll={() => collapseAllOrders(orderKeys)}
-						/>
-					</div>
 				</div>
 				{actionError && (
 					<div role="alert" className="px-3 pb-1 text-xs text-error">
@@ -809,23 +854,26 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 					{displayedOrders.map((order) => {
 						const orderKey = `${order.coin}:${order.oid}`;
 						const modifyCapability = getOpenOrderModifyCapabilities(order).size;
+						const market = markets.getMarket(order.coin);
 						return (
 							<MobileOrderCard
 								key={orderKey}
 								order={order}
-								szDecimals={markets.getSzDecimals(order.coin)}
-								marketLabel={markets.getMarket(order.coin)?.shortName ?? order.coin}
+								szDecimals={market?.szDecimals ?? markets.getSzDecimals(order.coin)}
+								marketType={market?.kind === "spot" ? "spot" : "perp"}
+								marketLabel={market?.shortName ?? order.coin}
 								markPx={getMarketInfo(order.coin)?.markPx ?? ""}
 								expanded={expandedOrderKeys.has(orderKey)}
 								isCancelling={cancellingOids.has(order.oid)}
 								actionsDisabled={isModifyBusy || pendingScopes.size > 0}
 								canModify={modifyCapability.supported}
-								modifyDisabled={isModifyInteractionLocked || cancellingOids.has(order.oid)}
+								modifyDisabled={isModifyInteractionLocked || pendingScopes.size > 0 || cancellingOids.has(order.oid)}
 								modifyUnavailableReason={
 									modifyCapability.reason ? getModifyBlockMessage(modifyCapability.reason) : undefined
 								}
 								onCancel={handleCancelRow}
 								onModify={handleRequestModify}
+								onModifyUnavailable={handleModifyUnavailable}
 								onSelectMarket={handleSelectMarket}
 								onExpandedChange={(expanded) => setOrderExpanded(orderKey, expanded)}
 							/>
@@ -870,6 +918,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 interface MobileOrderCardProps {
 	order: OpenOrder;
 	szDecimals: number;
+	marketType: "perp" | "spot";
 	marketLabel: string;
 	markPx: string;
 	expanded: boolean;
@@ -880,6 +929,7 @@ interface MobileOrderCardProps {
 	modifyUnavailableReason?: string;
 	onCancel: (orders: OpenOrder[]) => void;
 	onModify: (order: OpenOrder) => void;
+	onModifyUnavailable: (message: string) => void;
 	onSelectMarket: (marketName: string, side: Side) => void;
 	onExpandedChange: (expanded: boolean) => void;
 }
@@ -892,7 +942,7 @@ interface OrderMetricProps {
 
 function OrderMetric({ label, value, valueClassName }: OrderMetricProps) {
 	return (
-		<div className="min-w-0">
+		<div className="flex min-w-0 flex-col gap-0.5">
 			<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{label}</div>
 			<div
 				className={cn(
@@ -909,6 +959,7 @@ function OrderMetric({ label, value, valueClassName }: OrderMetricProps) {
 function MobileOrderCard({
 	order,
 	szDecimals,
+	marketType,
 	marketLabel,
 	markPx,
 	expanded,
@@ -919,24 +970,28 @@ function MobileOrderCard({
 	modifyUnavailableReason,
 	onCancel,
 	onModify,
+	onModifyUnavailable,
 	onSelectMarket,
 	onExpandedChange,
 }: MobileOrderCardProps) {
 	const { t } = useLingui();
 	const detailsId = useId();
-	const { getFullOrderTypeLabel, getOrderSideLabel, getTriggerConditionLabel } = useOrderDisplayLabels();
+	const { getOrderSideLabel, getOrderTypeLabel, getTriggerConditionLabel } = useOrderDisplayLabels();
 	const sideLabel = getOrderSideLabel(order.side, order.reduceOnly);
 	const isBuy = order.side === "B";
 	const side: Side = isBuy ? "buy" : "sell";
-	const fullTypeLabel = getFullOrderTypeLabel(order);
+	const typeLabel = getOrderTypeLabel(order.orderType);
 	const sizeLabel = isClosePositionOrder(order) ? t`Close Position` : formatToken(order.sz, { decimals: szDecimals });
 	const originalSizeLabel = isClosePositionOrder(order)
 		? t`Close Position`
 		: formatToken(order.origSz, { decimals: szDecimals });
-	const priceLabel = isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals });
-	const triggerConditionLabel = order.triggerCondition
-		? getTriggerConditionLabel(order.triggerCondition)
-		: FALLBACK_VALUE_PLACEHOLDER;
+	const priceLabel = isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals, marketType });
+	const triggerOperator = getToolbarTriggerConditionOperator(order.triggerCondition);
+	const triggerConditionLabel = triggerOperator
+		? `${triggerOperator} ${formatNumber(order.triggerPx)}`
+		: order.triggerCondition
+			? getTriggerConditionLabel(order.triggerCondition)
+			: FALLBACK_VALUE_PLACEHOLDER;
 	const metrics = getToolbarOrderMetrics({
 		isTrigger: order.isTrigger,
 		limitPx: order.limitPx,
@@ -945,9 +1000,9 @@ function MobileOrderCard({
 		markPx,
 	});
 	const markDistanceLabel = metrics.markDistanceRatio
-		? formatPercent(metrics.markDistanceRatio, { decimals: 1, signDisplay: "never" })
+		? formatPercent(metrics.markDistanceRatio, { decimals: 1, signDisplay: "exceptZero" })
 		: null;
-	const isNearMark = toBig(metrics.markDistanceRatio)?.lt("0.1") ?? false;
+	const isNearMark = isToolbarOrderNearMark(metrics.markDistanceRatio);
 
 	return (
 		<article className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal">
@@ -958,7 +1013,7 @@ function MobileOrderCard({
 				onToggle={() => onExpandedChange(!expanded)}
 				className="grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_16px] gap-2.5 px-3.5 py-[11px]"
 			>
-				<div className="min-w-0">
+				<div className="flex min-w-0 flex-col gap-0.5">
 					<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</div>
 					<button
 						type="button"
@@ -969,7 +1024,7 @@ function MobileOrderCard({
 						{marketLabel}
 					</button>
 				</div>
-				<OrderMetric label={t`Type`} value={fullTypeLabel} />
+				<OrderMetric label={t`Type`} value={typeLabel} />
 				<OrderMetric label={t`Size`} value={sizeLabel} />
 			</MobileDisclosureHeader>
 
@@ -1000,9 +1055,16 @@ function MobileOrderCard({
 						<div className="flex items-center gap-4">
 							<button
 								type="button"
-								className="inline-flex min-h-11 items-center rounded-xs text-[13px] font-semibold text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle"
-								onClick={() => onModify(order)}
-								disabled={!canModify || modifyDisabled}
+								className="relative inline-flex h-[18px] items-center rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-fg after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control aria-disabled:text-market-close-subtle disabled:cursor-not-allowed disabled:text-market-close-subtle"
+								onClick={() => {
+									if (!canModify) {
+										if (modifyUnavailableReason) onModifyUnavailable(modifyUnavailableReason);
+										return;
+									}
+									onModify(order);
+								}}
+								disabled={modifyDisabled}
+								aria-disabled={!canModify || modifyDisabled}
 								title={modifyUnavailableReason}
 								aria-label={modifyUnavailableReason ? `${t`Modify Order`}: ${modifyUnavailableReason}` : undefined}
 							>
@@ -1010,7 +1072,7 @@ function MobileOrderCard({
 							</button>
 							<button
 								type="button"
-								className="inline-flex min-h-11 items-center gap-1.5 rounded-xs text-[13px] font-semibold text-market-close-danger focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-danger-disabled"
+								className="relative inline-flex h-[18px] items-center gap-1.5 rounded-xs text-[13px] leading-[18px] font-semibold whitespace-nowrap text-market-close-danger after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-danger-disabled"
 								onClick={() => onCancel([order])}
 								disabled={isCancelling || actionsDisabled}
 							>
@@ -1023,7 +1085,7 @@ function MobileOrderCard({
 							aria-label={t`Collapse ${marketLabel} order details`}
 							aria-controls={detailsId}
 							onClick={() => onExpandedChange(false)}
-							className="-mr-3.5 inline-flex size-11 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+							className="relative -mr-3.5 inline-flex h-[18px] w-11 items-center justify-center rounded-xs text-market-close-subtle after:absolute after:top-[calc(50%_-_1px)] after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
 						>
 							<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
 								<path

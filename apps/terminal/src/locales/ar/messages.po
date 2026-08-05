@@ -810,7 +810,7 @@ msgstr "إلغاء"
 #: src/components/trade/positions/orders-tab.tsx
 msgctxt "Current orders toolbar"
 msgid "Cancel all"
-msgstr ""
+msgstr "إلغاء الكل"
 
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "Cancel All"
@@ -1081,7 +1081,6 @@ msgstr ""
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Collapse all"
 msgstr ""
@@ -2153,7 +2152,6 @@ msgstr ""
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-positions-tab.tsx
 msgid "Expand all"
 msgstr ""
@@ -3423,7 +3421,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Modify Order"
-msgstr ""
+msgstr "تعديل الطلب"
 
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 msgid "Modifying..."
@@ -6050,6 +6048,8 @@ msgid "The trading account or network changed. Reopen the confirmation and try a
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "The trading account or network changed. Reopen the editor and try again."
 msgstr ""
@@ -6525,7 +6525,6 @@ msgstr "التداول"
 msgid "Trading Account"
 msgstr "حساب التداول"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
