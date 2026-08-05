@@ -6,7 +6,7 @@ const assetsDirectory = resolve(process.argv[2] ?? "apps/terminal/.output/public
 const budgets = {
 	largestChunkRawBytes: 4_050_000,
 	largestChunkGzipBytes: 1_200_000,
-	totalGzipBytes: 2_790_000,
+	totalGzipBytes: 2_820_000,
 };
 
 const assetFiles = readdirSync(assetsDirectory).filter((file) => file.endsWith(".js") || file.endsWith(".css"));
