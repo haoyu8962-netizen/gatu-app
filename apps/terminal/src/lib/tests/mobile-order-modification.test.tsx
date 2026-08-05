@@ -289,10 +289,13 @@ describe("mobile order modification", () => {
 		expect(findButton("Cancel", container)?.disabled).toBe(false);
 	});
 
-	it("hides the modification entry for unsupported system orders", () => {
+	it("shows a safely disabled modification entry for unsupported system orders", () => {
 		mocks.orders = [{ ...triggerOrder, isTrigger: false, orderType: "Twap Slice", tif: "Gtc" } as OpenOrder];
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Expand ORCL order details"]')?.click());
-		expect(findButton("Modify Order", container)).toBeUndefined();
+		const modify = findButton("Modify Order", container);
+		expect(modify?.disabled).toBe(true);
+		expect(modify?.title).toBe("This order type cannot be modified safely. Cancel and replace it instead.");
+		expect(mocks.modifyOrders).not.toHaveBeenCalled();
 	});
 });

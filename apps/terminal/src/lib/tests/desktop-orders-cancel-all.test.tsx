@@ -180,8 +180,9 @@ describe("desktop cancel all orders confirmation", () => {
 
 	it("renders the twelve production order fields and derives remaining metrics from sz", () => {
 		act(() => root.render(<OrdersTab />));
-		expect(container.textContent).toContain("All Types");
-		expect(container.textContent).toContain("All Directions");
+		expect(container.textContent).toContain("1 order");
+		expect(container.textContent).toContain("Type");
+		expect(container.textContent).toContain("Direction");
 
 		const headers = [...container.querySelectorAll("thead th")].map((cell) => cell.textContent?.trim() ?? "");
 		expect(headers).toEqual([
@@ -202,7 +203,7 @@ describe("desktop cancel all orders confirmation", () => {
 		const cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
 		expect(cells).toHaveLength(12);
 		expect(cells[1]).toContain("Stop");
-		expect(cells[2]).toContain("xyz:ORCL");
+		expect(cells[2]).toBe("ORCL");
 		expect(cells[3]).toBe("Close Short");
 		expect(cells[4]).toBe("2.000");
 		expect(cells[5]).toBe("5.000");
@@ -212,6 +213,7 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(cells[9]).toContain("Price below 149.00");
 		expect(cells[9]).toContain("Distance to mark 6.9%");
 		expect(cells[10]).toBe("- / -");
+		expect(container.querySelector<HTMLAnchorElement>('a[href="/portfolio"]')?.textContent).toBe("View all");
 		expect(mocks.getOrderSideLabel).toHaveBeenCalledWith("B", true);
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).not.toBeNull();
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).not.toBeNull();
@@ -238,6 +240,7 @@ describe("desktop cancel all orders confirmation", () => {
 		act(() => root.render(<OrdersTab />));
 
 		expect(container.textContent).toContain("No open orders.");
+		expect(container.textContent).toContain("Submitted limit and trigger orders will appear here.");
 		expect(container.querySelector('button[aria-label="Cancel selected orders"]')).toBeNull();
 		expect(container.querySelector('button[aria-label="Cancel all orders"]')).toBeNull();
 	});

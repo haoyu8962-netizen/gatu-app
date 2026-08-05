@@ -10,8 +10,8 @@ import {
 	TableRow,
 	Tooltip,
 } from "@gatu/ui";
-import { useLingui } from "@lingui/react/macro";
-import { PencilIcon } from "@phosphor-icons/react";
+import { Plural, useLingui } from "@lingui/react/macro";
+import { ListIcon, PencilIcon } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -56,7 +56,6 @@ import {
 } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import {
-	getOrderTypeConfig,
 	isClosePositionOrder,
 	isMarketTriggerOrder,
 	isStopOrder,
@@ -65,7 +64,6 @@ import {
 } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
-import { AssetBadge } from "../components/asset-badge";
 import { CancelAllOrdersModal } from "./cancel-all-orders-modal";
 import { OrderInlineEdit } from "./order-inline-edit";
 import { Placeholder } from "./placeholder";
@@ -82,8 +80,10 @@ import {
 } from "./positions-panel-table-styles";
 
 const ordersTableHeadClass =
-	"h-[33px] px-1.5 py-0 text-[11px] font-semibold normal-case tracking-normal text-market-close-subtle";
-const ordersTableCellClass = "h-[60px] px-1.5 py-0 text-[13px] text-market-close-fg";
+	"flex h-[33px] min-w-0 items-center px-0 py-0 text-[11px] font-semibold normal-case tracking-normal text-market-close-subtle";
+const ordersTableCellClass = "flex h-[60px] min-w-0 items-center px-0 py-0 text-[13px] text-market-close-fg";
+const ordersTableGridClass =
+	"grid grid-cols-[126px_84px_70px_60px_100px_84px_104px_66px_52px_minmax(0,1fr)_76px_88px] gap-x-3 px-5";
 
 type CancelScope = "row" | "selected" | "all";
 const MODIFY_SUBSCRIPTION_TIMEOUT_MS = 15_000;
@@ -682,7 +682,7 @@ export function OrdersTab() {
 				</Placeholder>
 			);
 		}
-		if (openOrders.length === 0) return <Placeholder>{t`No open orders.`}</Placeholder>;
+		if (openOrders.length === 0) return <OrdersEmptyState />;
 		return null;
 	}
 
@@ -693,7 +693,7 @@ export function OrdersTab() {
 			<div className="flex h-12 shrink-0 items-center gap-2 border-b border-market-close-stroke-card px-5 py-2.5 font-market-close">
 				{isConnected ? (
 					<span className="mr-auto shrink-0 text-xs text-market-close-muted tabular-nums">
-						{openOrders.length} {t`orders`}
+						<Plural value={openOrders.length} one="# order" other="# orders" />
 					</span>
 				) : (
 					<span className="mr-auto" />
@@ -704,12 +704,12 @@ export function OrdersTab() {
 					value={orderTypeFilter}
 					onValueChange={(value) => setOrderTypeFilter((value as ToolbarOrderTypeFilter | null) ?? "all")}
 					options={[
-						{ value: "all", label: t`All Types` },
+						{ value: "all", label: t`Type` },
 						{ value: "limit", label: t`Limit` },
 						{ value: "trigger", label: t`Trigger` },
 					]}
-					triggerClassName="h-[27px] min-w-[6.5rem] !rounded-[7px] border-market-close-stroke-card bg-modal text-xs text-market-close-muted"
-					className="[&>label]:sr-only"
+					triggerClassName="h-[27px] min-w-14 max-w-32 !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted duration-[120ms] [&>*]:text-market-close-muted hover:border-market-close-control hover:[&>*]:text-market-close-fg focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
+					className="w-auto [&>label]:sr-only"
 				/>
 				<Select
 					size="xxs"
@@ -717,12 +717,12 @@ export function OrdersTab() {
 					value={orderDirectionFilter}
 					onValueChange={(value) => setOrderDirectionFilter((value as ToolbarOrderDirectionFilter | null) ?? "all")}
 					options={[
-						{ value: "all", label: t`All Directions` },
+						{ value: "all", label: t`Direction` },
 						{ value: "buy", label: t`Buy` },
 						{ value: "sell", label: t`Sell` },
 					]}
-					triggerClassName="h-[27px] min-w-[7rem] !rounded-[7px] border-market-close-stroke-card bg-modal text-xs text-market-close-muted"
-					className="[&>label]:sr-only"
+					triggerClassName="h-[27px] min-w-14 max-w-32 !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted duration-[120ms] [&>*]:text-market-close-muted hover:border-market-close-control hover:[&>*]:text-market-close-fg focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
+					className="w-auto [&>label]:sr-only"
 				/>
 				{isConnected && selectedCount > 0 ? (
 					<span className="shrink-0 text-[11px] text-market-close-subtle tabular-nums">
@@ -736,7 +736,7 @@ export function OrdersTab() {
 						aria-label={t`Cancel selected orders`}
 						onClick={handleCancelSelected}
 						disabled={disableCancelSelected}
-						className="h-[27px] min-h-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none hover:no-underline active:scale-100"
+						className="h-[27px] min-h-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none transition-colors duration-[120ms] hover:text-market-close-danger/80 hover:no-underline active:scale-100"
 					>
 						{pendingScopes.has("selected") ? t`Canceling...` : t`Cancel selected`}
 					</Button>
@@ -748,9 +748,11 @@ export function OrdersTab() {
 						aria-label={t`Cancel all orders`}
 						onClick={handleRequestCancelAll}
 						disabled={disableCancelAll}
-						className="h-[27px] min-h-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none hover:no-underline active:scale-100"
+						className="ml-1.5 h-[27px] min-h-0 px-0 text-xs font-semibold text-market-close-danger no-underline shadow-none transition-colors duration-[120ms] hover:text-market-close-danger/80 hover:no-underline active:scale-100"
 					>
-						{pendingScopes.has("all") ? t`Canceling...` : t`Cancel all`}
+						{pendingScopes.has("all")
+							? t`Canceling...`
+							: t({ message: "Cancel all", context: "Current orders toolbar" })}
 					</Button>
 				) : null}
 			</div>
@@ -769,15 +771,26 @@ export function OrdersTab() {
 						<Placeholder>{t`No orders match the selected filters.`}</Placeholder>
 					) : (
 						<ScrollArea className="h-full w-full">
-							<Table className="table-fixed min-w-[1280px] w-full font-market-close">
-								<TableHeader className={positionsPanelTableHeaderClass}>
-									<TableRow className={positionsPanelTableHeaderRowClass}>
+							<Table className="block min-w-[1280px] w-full font-market-close" containerClassName="!overflow-visible">
+								<TableHeader className={cn(positionsPanelTableHeaderClass, "block bg-modal [&_tr]:border-t-0")}>
+									<TableRow
+										className={cn(
+											positionsPanelTableHeaderRowClass,
+											ordersTableGridClass,
+											"group/orders-head h-[33px] items-center border-b border-market-close-stroke-card",
+										)}
+									>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[126px] text-left")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "relative w-[126px] text-left")}
 										>
-											<span className="inline-flex items-center gap-2">
+											<span
+												className={cn(
+													"absolute -left-4 top-1/2 z-[1] -translate-y-1/2 transition-opacity duration-[120ms] focus-within:opacity-100 group-hover/orders-head:opacity-100",
+													allSelected || someSelected ? "opacity-100" : "opacity-0",
+												)}
+											>
 												<Checkbox
 													checked={allSelected}
 													indeterminate={someSelected && !allSelected}
@@ -785,8 +798,8 @@ export function OrdersTab() {
 													aria-label={t`Select all orders`}
 													disabled={displayedOrders.length === 0}
 												/>
-												<span>{t`Time`}</span>
 											</span>
+											<span>{t`Time`}</span>
 										</TableHead>
 										<TableHead
 											scope="col"
@@ -812,28 +825,44 @@ export function OrdersTab() {
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[100px] text-right")}
+											className={cn(
+												positionsPanelTableHeadClass,
+												ordersTableHeadClass,
+												"w-[100px] justify-end text-right",
+											)}
 										>
 											{t`Size`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[84px] text-right")}
+											className={cn(
+												positionsPanelTableHeadClass,
+												ordersTableHeadClass,
+												"w-[84px] justify-end text-right",
+											)}
 										>
 											{t`Original Size`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[104px] text-right")}
+											className={cn(
+												positionsPanelTableHeadClass,
+												ordersTableHeadClass,
+												"w-[104px] justify-end text-right",
+											)}
 										>
 											{t`Order Value`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[66px] text-right")}
+											className={cn(
+												positionsPanelTableHeadClass,
+												ordersTableHeadClass,
+												"w-[66px] justify-end text-right",
+											)}
 										>
 											{t`Price`}
 										</TableHead>
@@ -856,18 +885,22 @@ export function OrdersTab() {
 											size="dense"
 											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[76px] text-left")}
 										>
-											{t`TP/SL`}
+											{t({ message: "TP/SL", context: "Current orders column" })}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[88px] text-right")}
+											className={cn(
+												positionsPanelTableHeadClass,
+												ordersTableHeadClass,
+												"w-[88px] justify-end text-right",
+											)}
 										>
 											{t`Actions`}
 										</TableHead>
 									</TableRow>
 								</TableHeader>
-								<TableBody className={positionsPanelTableBodyClass}>
+								<TableBody className={cn(positionsPanelTableBodyClass, "block")}>
 									{displayedOrders.map((order, i) => {
 										const marketInfo = getMarketInfo(order.coin);
 										const market = markets.getMarket(order.coin);
@@ -876,6 +909,7 @@ export function OrdersTab() {
 											<OrderRow
 												key={order.oid}
 												order={order}
+												displayName={market?.shortName ?? order.coin.split(":").pop() ?? order.coin}
 												szDecimals={markets.getSzDecimals(order.coin)}
 												markPx={marketInfo?.markPx ?? ""}
 												quoteSymbol={quoteSymbol}
@@ -905,6 +939,14 @@ export function OrdersTab() {
 									})}
 								</TableBody>
 							</Table>
+							<div className="flex h-[38px] min-w-[1280px] items-center px-5 font-market-close">
+								<a
+									href="/portfolio"
+									className="border-b border-dashed border-market-close-stroke-control text-xs font-semibold text-market-close-fg transition-all duration-[120ms] hover:border-solid focus-visible:rounded-[2px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+								>
+									{t`View all`}
+								</a>
+							</div>
 							<ScrollBar orientation="horizontal" />
 						</ScrollArea>
 					))}
@@ -921,8 +963,25 @@ export function OrdersTab() {
 	);
 }
 
+function OrdersEmptyState() {
+	const { t } = useLingui();
+
+	return (
+		<div className="flex flex-col items-center gap-2.5 py-14 font-market-close">
+			<div className="grid size-11 place-items-center rounded-full bg-market-close-hover text-market-close-subtle">
+				<ListIcon className="size-4" aria-hidden="true" />
+			</div>
+			<span className="text-[13px] font-semibold text-market-close-muted">{t`No open orders.`}</span>
+			<span className="text-xs text-market-close-subtle">
+				{t`Submitted limit and trigger orders will appear here.`}
+			</span>
+		</div>
+	);
+}
+
 interface OrderRowProps {
 	order: OpenOrder;
+	displayName: string;
 	szDecimals: number;
 	markPx: string;
 	quoteSymbol: string;
@@ -946,6 +1005,7 @@ interface OrderRowProps {
 
 function OrderRow({
 	order,
+	displayName,
 	szDecimals,
 	markPx,
 	quoteSymbol,
@@ -967,16 +1027,8 @@ function OrderRow({
 	onConfirmEdit,
 }: OrderRowProps) {
 	const { t } = useLingui();
-	const {
-		getExecutionKindLabel,
-		getFullOrderTypeLabel,
-		getOrderSideLabel,
-		getTriggerConditionLabel,
-		getTriggerKindLabel,
-	} = useOrderDisplayLabels();
-	const typeConfig = getOrderTypeConfig(order);
-	const triggerLabel = getTriggerKindLabel(typeConfig.triggerKind);
-	const executionLabel = getExecutionKindLabel(typeConfig.executionKind);
+	const { getFullOrderTypeLabel, getOrderSideLabel, getTriggerConditionLabel } = useOrderDisplayLabels();
+	const orderTypeLabel = getFullOrderTypeLabel(order);
 	const isBuy = order.side === "B";
 	const isClosePosition = isClosePositionOrder(order);
 	const sideLabel = getOrderSideLabel(order.side, order.reduceOnly);
@@ -1006,68 +1058,85 @@ function OrderRow({
 
 	return (
 		<TableRow
-			className={cn(positionsPanelRowHoverClass, "hover:bg-market-close-hover", isEven && positionsPanelRowStripeClass)}
+			className={cn(
+				positionsPanelRowHoverClass,
+				ordersTableGridClass,
+				"group/order-row h-[60px] items-center border-b border-market-close-stroke-card/60 transition-colors duration-[120ms] hover:bg-market-close-hover",
+				isEven && positionsPanelRowStripeClass,
+			)}
 		>
 			<TableCell
 				size="dense"
 				className={cn(
 					positionsPanelTableCellClass,
 					ordersTableCellClass,
-					"whitespace-nowrap text-xs text-market-close-muted tabular-nums",
+					"relative whitespace-nowrap text-xs text-market-close-muted tabular-nums",
 				)}
 			>
-				<span className="inline-flex items-center gap-2">
+				<span
+					className={cn(
+						"absolute -left-4 top-1/2 z-[1] -translate-y-1/2 transition-opacity duration-[120ms] focus-within:opacity-100 group-hover/order-row:opacity-100",
+						isSelected ? "opacity-100" : "opacity-0",
+					)}
+				>
 					<Checkbox
 						checked={isSelected}
 						onCheckedChange={(value) => onToggle(order.oid, value)}
 						aria-label={`${t`Select order`} ${order.coin}`}
 						disabled={isCancelling}
 					/>
-					<span>{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}</span>
 				</span>
+				<span>{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}</span>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass)}>
-				<Tooltip content={getFullOrderTypeLabel(order)}>
-					<span className="inline-flex items-baseline gap-1 text-[13px] whitespace-nowrap">
-						{triggerLabel ? <span className={cn("font-medium", typeConfig.triggerClass)}>{triggerLabel}</span> : null}
-						<span className="text-market-close-fg">{executionLabel}</span>
+				<Tooltip content={orderTypeLabel}>
+					<span className="block max-w-full truncate whitespace-nowrap text-[13px] text-market-close-fg">
+						{orderTypeLabel}
 					</span>
 				</Tooltip>
 			</TableCell>
 			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass, "font-bold")}>
-				<AssetBadge
-					coin={order.coin}
-					side={isBuy ? "buy" : "sell"}
+				<button
+					type="button"
+					className="max-w-full truncate rounded-[4px] text-left text-[13px] font-bold text-market-close-fg transition-colors duration-[120ms] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
 					onClick={() => onSelectMarket(order.coin, isBuy ? "buy" : "sell")}
 					aria-label={t`Switch to ${order.coin} market, ${sideLabel} order`}
-				/>
+				>
+					{displayName}
+				</button>
 			</TableCell>
 			<TableCell
 				size="dense"
 				className={cn(
 					positionsPanelTableCellClass,
 					ordersTableCellClass,
-					"whitespace-nowrap font-semibold",
+					"truncate whitespace-nowrap font-semibold",
 					isBuy ? "text-market-close-success" : "text-market-close-danger",
 				)}
 			>
 				{sideLabel}
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass, "text-right")}>
-				<div className="flex min-w-0 items-center justify-end gap-1">
+			<TableCell
+				size="dense"
+				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "justify-end text-right")}
+			>
+				<div className="relative flex min-w-0 items-center justify-end gap-1">
 					{editField === "size" ? (
-						<OrderInlineEdit
-							value={editValue}
-							inputLabel={t`Edit ${order.coin} order size`}
-							confirmLabel={t`Confirm order size change`}
-							confirmText={t`Confirm`}
-							describedBy={editInvalid ? editErrorId : undefined}
-							disabled={editDisabled}
-							invalid={editInvalid}
-							onChange={onEditValueChange}
-							onCancel={onCancelEdit}
-							onConfirm={onConfirmEdit}
-						/>
+						<>
+							<span className="h-[33px] w-full" aria-hidden="true" />
+							<OrderInlineEdit
+								value={editValue}
+								inputLabel={t`Edit ${order.coin} order size`}
+								confirmLabel={t`Confirm order size change`}
+								confirmText={t`Confirm`}
+								describedBy={editInvalid ? editErrorId : undefined}
+								disabled={editDisabled}
+								invalid={editInvalid}
+								onChange={onEditValueChange}
+								onCancel={onCancelEdit}
+								onConfirm={onConfirmEdit}
+							/>
+						</>
 					) : (
 						<>
 							<span className="min-w-0 truncate font-semibold leading-tight tabular-nums">
@@ -1088,20 +1157,27 @@ function OrderRow({
 					)}
 				</div>
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass, "text-right")}>
+			<TableCell
+				size="dense"
+				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "justify-end text-right")}
+			>
 				<span className="whitespace-nowrap tabular-nums">
 					{isClosePosition ? t`Close Position` : formatToken(order.origSz, { decimals: szDecimals })}
 				</span>
 			</TableCell>
 			<TableCell
 				size="dense"
-				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "whitespace-nowrap text-right tabular-nums")}
+				className={cn(
+					positionsPanelTableCellClass,
+					ordersTableCellClass,
+					"justify-end whitespace-nowrap text-right tabular-nums",
+				)}
 			>
 				{isClosePosition ? FALLBACK_VALUE_PLACEHOLDER : remainingValueLabel}
 			</TableCell>
 			<TableCell
 				size="dense"
-				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "text-right tabular-nums")}
+				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "justify-end text-right tabular-nums")}
 			>
 				<span className="font-semibold leading-tight tabular-nums">
 					{isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals })}
@@ -1115,19 +1191,22 @@ function OrderRow({
 				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "text-market-close-muted")}
 			>
 				{editField === "triggerPrice" ? (
-					<OrderInlineEdit
-						value={editValue}
-						inputLabel={t`Edit ${order.coin} trigger price`}
-						confirmLabel={t`Confirm trigger price change`}
-						confirmText={t`Confirm`}
-						describedBy={editInvalid ? editErrorId : undefined}
-						align="left"
-						disabled={editDisabled}
-						invalid={editInvalid}
-						onChange={onEditValueChange}
-						onCancel={onCancelEdit}
-						onConfirm={onConfirmEdit}
-					/>
+					<div className="relative flex min-w-0">
+						<span className="h-[33px] w-full" aria-hidden="true" />
+						<OrderInlineEdit
+							value={editValue}
+							inputLabel={t`Edit ${order.coin} trigger price`}
+							confirmLabel={t`Confirm trigger price change`}
+							confirmText={t`Confirm`}
+							describedBy={editInvalid ? editErrorId : undefined}
+							align="left"
+							disabled={editDisabled}
+							invalid={editInvalid}
+							onChange={onEditValueChange}
+							onCancel={onCancelEdit}
+							onConfirm={onConfirmEdit}
+						/>
+					</div>
 				) : (
 					<div className="flex min-w-0 flex-col gap-px">
 						<div className="flex min-w-0 items-center gap-1">
@@ -1148,7 +1227,7 @@ function OrderRow({
 							<span
 								className={cn(
 									"whitespace-nowrap text-[11px] tabular-nums",
-									isNearMark ? "text-warning" : "text-market-close-subtle",
+									isNearMark ? "text-market-close-warning" : "text-market-close-subtle",
 								)}
 							>
 								{t`Distance to mark ${markDistanceLabel}`}
@@ -1167,15 +1246,17 @@ function OrderRow({
 			>
 				{tpSlLabel}
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass, "text-right")}>
+			<TableCell
+				size="dense"
+				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "justify-end text-right")}
+			>
 				<Button
 					variant="outline"
-					intent="error"
 					size="xs"
 					aria-label={t`Cancel order`}
 					onClick={() => onCancel([order])}
 					disabled={isCancelling || cancelDisabled}
-					className="h-[27px] min-h-0 rounded-[7px] border-market-close-danger-disabled bg-modal px-3 text-xs font-semibold text-market-close-danger shadow-none transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-market-close-hover active:scale-100"
+					className="h-[27px] min-h-0 rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-modal hover:text-market-close-danger focus-visible:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-control active:scale-100 disabled:cursor-not-allowed"
 				>
 					{isCancelling ? t`Canceling...` : t`Cancel`}
 				</Button>

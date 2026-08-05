@@ -14,8 +14,10 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. placeholder {0}: filteredOrders.length
+#. placeholder {0}: openOrders.length
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "{0, plural, one {# order} other {# orders}}"
 msgstr "{0, plural, other {# 笔委托}}"
 
@@ -391,8 +393,6 @@ msgstr "所有全仓仓位共用同一笔全仓保证金作为抵押。一旦发
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "All Directions"
 msgstr "全部方向"
 
@@ -417,8 +417,8 @@ msgstr "全部类型"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "All Types"
-msgstr "全部类型"
+#~ msgid "All Types"
+#~ msgstr "全部类型"
 
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
@@ -807,10 +807,15 @@ msgid "Cancel"
 msgstr "取消"
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Cancel all"
-msgstr "全部取消"
+#~ msgid "Cancel all"
+#~ msgstr "全部取消"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgctxt "Current orders toolbar"
+msgid "Cancel all"
+msgstr "取消所有"
+
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "Cancel All"
 msgstr "全部取消"
@@ -1804,9 +1809,11 @@ msgstr "目标地址"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
@@ -1855,6 +1862,9 @@ msgstr "显示"
 #~ msgstr "显示移动端侧边栏。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "Distance to mark"
+msgstr "距标记价"
+
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Distance to mark {markDistanceLabel}"
 msgstr "距标记价 {markDistanceLabel}"
@@ -3432,6 +3442,7 @@ msgstr "暂时无法显示移动端二维码。如果不再需要此密钥，请
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Modify Order"
 msgstr "修改委托"
 
@@ -3650,7 +3661,7 @@ msgstr "未找到市场。"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "No open orders."
-msgstr "无未成交订单。"
+msgstr "暂无当前委托"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -3821,7 +3832,6 @@ msgstr "开多"
 msgid "Open navigation"
 msgstr "打开导航"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "当前委托"
@@ -4005,8 +4015,8 @@ msgid "Order will rest until filled or canceled."
 msgstr "委托将一直挂单，直至成交或取消。"
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "orders"
-msgstr "委托"
+#~ msgid "orders"
+#~ msgstr "委托"
 
 #: src/config/trade.ts
 msgid "Orders"
@@ -4025,7 +4035,7 @@ msgstr "关联止盈止损的委托不能在此修改。"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Original Size"
-msgstr "原始数量"
+msgstr "原始大小"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -5626,6 +5636,11 @@ msgstr "止损触发价须低于标记价"
 msgid "Sub-account Transfer"
 msgstr "子账户转账"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Submitted limit and trigger orders will appear here."
+msgstr "已提交的限价单与触发单将显示在这里"
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Submitting close orders..."
 msgstr "正在提交平仓委托..."
@@ -6473,12 +6488,16 @@ msgstr "止盈价"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
 msgid "TP/SL"
 msgstr "止盈止损"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgctxt "Current orders column"
+msgid "TP/SL"
+msgstr "止盈 / 止损"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "TP/SL orders updated"
@@ -6774,8 +6793,10 @@ msgstr "双边开放利益：该合约上的多头和空头头寸之和。"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Type"
 msgstr "类型"
@@ -7005,6 +7026,10 @@ msgstr "正在验证授权…"
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "验证中..."
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "View all"
+msgstr "查看全部"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "View asset information"

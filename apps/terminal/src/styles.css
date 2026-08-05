@@ -217,7 +217,7 @@
     --scope-builders: #B45309;
     --sel: rgba(37, 99, 235, 0.15);
 
-    /* Market-close confirmation — design handoff semantic colors. */
+    /* Trading toolbar and close confirmation — design handoff semantic colors. */
     --market-close-text-strong: #1a2330;
     --market-close-text-muted: #6b7686;
     --market-close-text-subtle: #98a2b0;
@@ -232,6 +232,7 @@
     --market-close-danger-text: #ffffff;
     --market-close-danger-disabled: #efc3bf;
     --market-close-success: #1f8a5a;
+    --market-close-warning: #d98e1f;
 
     /* Position PNL share card — intentionally fixed inverse canvas across themes. */
     --position-share-card: #1a2330;
@@ -365,6 +366,7 @@
     --market-close-danger-text: var(--text-inverse-strong);
     --market-close-danger-disabled: var(--fill-disabled);
     --market-close-success: var(--fill-success-strong);
+    --market-close-warning: var(--text-warning);
   }
 }
 
@@ -422,7 +424,7 @@
   --color-white: var(--fill-white);
   --color-yellow: var(--fill-yellow);
 
-  /* Market-close confirmation */
+  /* Trading toolbar and close confirmation */
   --color-market-close-fg: var(--market-close-text-strong);
   --color-market-close-muted: var(--market-close-text-muted);
   --color-market-close-subtle: var(--market-close-text-subtle);
@@ -437,6 +439,7 @@
   --color-market-close-danger-text: var(--market-close-danger-text);
   --color-market-close-danger-disabled: var(--market-close-danger-disabled);
   --color-market-close-success: var(--market-close-success);
+  --color-market-close-warning: var(--market-close-warning);
 
   /* Position PNL share card */
   --color-position-share-card: var(--position-share-card);

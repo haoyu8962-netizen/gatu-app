@@ -14,8 +14,10 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. placeholder {0}: filteredOrders.length
+#. placeholder {0}: openOrders.length
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "{0, plural, one {# order} other {# orders}}"
 msgstr ""
 
@@ -387,8 +389,6 @@ msgstr "Toutes les positions en marge croisée partagent la même marge croisée
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "All Directions"
 msgstr ""
 
@@ -413,8 +413,8 @@ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "All Types"
-msgstr ""
+#~ msgid "All Types"
+#~ msgstr ""
 
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
@@ -803,10 +803,15 @@ msgid "Cancel"
 msgstr "Annuler"
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Cancel all"
-msgstr "Tout annuler"
+#~ msgid "Cancel all"
+#~ msgstr "Tout annuler"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgctxt "Current orders toolbar"
+msgid "Cancel all"
+msgstr ""
+
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "Cancel All"
 msgstr "Tout annuler"
@@ -1791,9 +1796,11 @@ msgstr "Adresse de destination"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
@@ -1842,6 +1849,9 @@ msgstr "Affichage"
 #~ msgstr "Affiche la barre latérale mobile."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "Distance to mark"
+msgstr ""
+
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Distance to mark {markDistanceLabel}"
 msgstr ""
@@ -3411,6 +3421,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Modify Order"
 msgstr ""
 
@@ -3800,7 +3811,6 @@ msgstr ""
 msgid "Open navigation"
 msgstr "Ouvrir la navigation"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "Ordres ouverts"
@@ -3984,8 +3994,8 @@ msgid "Order will rest until filled or canceled."
 msgstr "L'ordre restera dans le carnet jusqu'à exécution ou annulation."
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "orders"
-msgstr "ordres"
+#~ msgid "orders"
+#~ msgstr "ordres"
 
 #: src/config/trade.ts
 msgid "Orders"
@@ -5605,6 +5615,11 @@ msgstr "Le déclencheur du stop doit être en dessous du prix mark"
 msgid "Sub-account Transfer"
 msgstr "Transfert de sous-compte"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Submitted limit and trigger orders will appear here."
+msgstr ""
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Submitting close orders..."
 msgstr ""
@@ -6448,12 +6463,16 @@ msgstr "Prix TP"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
 msgid "TP/SL"
 msgstr "TP/SL"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgctxt "Current orders column"
+msgid "TP/SL"
+msgstr ""
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "TP/SL orders updated"
@@ -6749,8 +6768,10 @@ msgstr "Intérêt ouvert bilatéral : somme des positions longues et courtes sur
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Type"
 msgstr "Type"
@@ -6980,6 +7001,10 @@ msgstr ""
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "Vérification..."
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "View all"
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "View asset information"

@@ -14,8 +14,10 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. placeholder {0}: filteredOrders.length
+#. placeholder {0}: openOrders.length
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "{0, plural, one {# order} other {# orders}}"
 msgstr "{0, plural, one {# order} other {# orders}}"
 
@@ -391,8 +393,6 @@ msgstr "All cross positions share the same cross margin as collateral. In the ev
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "All Directions"
 msgstr "All Directions"
 
@@ -417,8 +417,8 @@ msgstr "All types"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "All Types"
-msgstr "All Types"
+#~ msgid "All Types"
+#~ msgstr "All Types"
 
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
@@ -807,10 +807,15 @@ msgid "Cancel"
 msgstr "Cancel"
 
 #: src/components/trade/positions/orders-tab.tsx
+#~ msgid "Cancel all"
+#~ msgstr "Cancel all"
+
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgctxt "Current orders toolbar"
 msgid "Cancel all"
 msgstr "Cancel all"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "Cancel All"
 msgstr "Cancel All"
@@ -1804,9 +1809,11 @@ msgstr "Destination address"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
@@ -1855,6 +1862,9 @@ msgstr "Display"
 #~ msgstr "Displays the mobile sidebar."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "Distance to mark"
+msgstr "Distance to mark"
+
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Distance to mark {markDistanceLabel}"
 msgstr "Distance to mark {markDistanceLabel}"
@@ -3432,6 +3442,7 @@ msgstr "Mobile QR reveal is temporarily unavailable. Revoke this key if you no l
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Modify Order"
 msgstr "Modify Order"
 
@@ -3821,7 +3832,6 @@ msgstr "Open Long"
 msgid "Open navigation"
 msgstr "Open navigation"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "Open Orders"
@@ -4005,8 +4015,8 @@ msgid "Order will rest until filled or canceled."
 msgstr "Order will rest until filled or canceled."
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "orders"
-msgstr "orders"
+#~ msgid "orders"
+#~ msgstr "orders"
 
 #: src/config/trade.ts
 msgid "Orders"
@@ -5626,6 +5636,11 @@ msgstr "Stop trigger must be below mark"
 msgid "Sub-account Transfer"
 msgstr "Sub-account Transfer"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Submitted limit and trigger orders will appear here."
+msgstr "Submitted limit and trigger orders will appear here."
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Submitting close orders..."
 msgstr "Submitting close orders..."
@@ -6473,10 +6488,14 @@ msgstr "TP Price"
 #~ msgstr "TP trigger price"
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
+msgid "TP/SL"
+msgstr "TP/SL"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgctxt "Current orders column"
 msgid "TP/SL"
 msgstr "TP/SL"
 
@@ -6774,8 +6793,10 @@ msgstr "Two-sided open interest: the sum of long and short positions on this con
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Type"
 msgstr "Type"
@@ -7005,6 +7026,10 @@ msgstr "Verifying approval..."
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "Verifying..."
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "View all"
+msgstr "View all"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "View asset information"

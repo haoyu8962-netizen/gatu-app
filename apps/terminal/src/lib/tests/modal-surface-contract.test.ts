@@ -35,6 +35,7 @@ describe("modal surface contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-control-active")).toBe("#1a2330");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-danger")).toBe("#d6453d");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-danger-disabled")).toBe("#efc3bf");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--market-close-warning")).toBe("#d98e1f");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-control-active")).toBe("var(--fill-selected)");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-control-active-text")).toBe(
 			"var(--text-inverse-strong)",
@@ -42,6 +43,7 @@ describe("modal surface contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-danger-text")).toBe(
 			"var(--text-inverse-strong)",
 		);
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-warning")).toBe("var(--text-warning)");
 	});
 });
 

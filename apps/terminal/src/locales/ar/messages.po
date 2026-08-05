@@ -14,8 +14,10 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. placeholder {0}: filteredOrders.length
+#. placeholder {0}: openOrders.length
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 msgid "{0, plural, one {# order} other {# orders}}"
 msgstr ""
 
@@ -387,8 +389,6 @@ msgstr "تتشارك جميع مراكز هامش المحفظة (cross) في ن
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
-#: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/orders-tab.tsx
 msgid "All Directions"
 msgstr ""
 
@@ -413,8 +413,8 @@ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-msgid "All Types"
-msgstr ""
+#~ msgid "All Types"
+#~ msgstr ""
 
 #: src/config/tooltips.ts
 msgid "ALO (Add Liquidity Only)"
@@ -803,10 +803,15 @@ msgid "Cancel"
 msgstr "إلغاء"
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "Cancel all"
-msgstr "إلغاء الكل"
+#~ msgid "Cancel all"
+#~ msgstr "إلغاء الكل"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgctxt "Current orders toolbar"
+msgid "Cancel all"
+msgstr ""
+
 #: src/components/trade/positions/cancel-all-orders-modal.tsx
 msgid "Cancel All"
 msgstr "إلغاء الكل"
@@ -1791,9 +1796,11 @@ msgstr "عنوان الوجهة"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
@@ -1842,6 +1849,9 @@ msgstr "العرض"
 #~ msgstr "يعرض الشريط الجانبي للجوال."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+msgid "Distance to mark"
+msgstr ""
+
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Distance to mark {markDistanceLabel}"
 msgstr ""
@@ -3411,6 +3421,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "Modify Order"
 msgstr ""
 
@@ -3800,7 +3811,6 @@ msgstr ""
 msgid "Open navigation"
 msgstr "فتح التنقل"
 
-#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/config/trade.ts
 msgid "Open Orders"
 msgstr "الأوامر المفتوحة"
@@ -3984,8 +3994,8 @@ msgid "Order will rest until filled or canceled."
 msgstr "سيبقى الأمر قائماً حتى يُنفَّذ أو يُلغى."
 
 #: src/components/trade/positions/orders-tab.tsx
-msgid "orders"
-msgstr "أوامر"
+#~ msgid "orders"
+#~ msgstr "أوامر"
 
 #: src/config/trade.ts
 msgid "Orders"
@@ -5605,6 +5615,11 @@ msgstr "يجب أن يكون مُحفِّز الإيقاف أدنى من سعر 
 msgid "Sub-account Transfer"
 msgstr "تحويل حساب فرعي"
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "Submitted limit and trigger orders will appear here."
+msgstr ""
+
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Submitting close orders..."
 msgstr ""
@@ -6448,12 +6463,16 @@ msgstr "سعر TP"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/positions-tab.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
 msgid "TP/SL"
 msgstr "TP/SL"
+
+#: src/components/trade/positions/orders-tab.tsx
+msgctxt "Current orders column"
+msgid "TP/SL"
+msgstr ""
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "TP/SL orders updated"
@@ -6749,8 +6768,10 @@ msgstr "الفائدة المفتوحة ثنائية الجانب: مجموع ا
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Type"
 msgstr "النوع"
@@ -6980,6 +7001,10 @@ msgstr ""
 #: src/lib/trade/use-button-content.ts
 msgid "Verifying..."
 msgstr "جارٍ التحقق..."
+
+#: src/components/trade/positions/orders-tab.tsx
+msgid "View all"
+msgstr ""
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "View asset information"

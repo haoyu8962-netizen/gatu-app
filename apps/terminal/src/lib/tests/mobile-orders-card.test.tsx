@@ -172,24 +172,25 @@ describe("MobileOrdersTab disclosure card", () => {
 	it("uses remaining size, expands the first card, and supports bulk disclosure controls", () => {
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 
-		expect(container.textContent).toContain("2.000 ORCL");
+		expect(container.textContent).toContain("2.000");
+		expect(container.textContent).not.toContain("2.000 ORCL");
 		expect(container.textContent).toContain("Original Size");
-		expect(container.textContent).toContain("5.000 ORCL");
+		expect(container.textContent).toContain("5.000");
+		expect(container.textContent).not.toContain("5.000 ORCL");
 		expect(container.textContent).toContain("Reduce Only");
 		expect(container.textContent).toContain("Yes");
 		expect(container.textContent).toContain("Close Short");
 		expect(container.textContent).not.toContain("Long");
 
-		const expandAll = container.querySelector<HTMLButtonElement>('[data-testid="expand-all-order-details"]');
 		const collapseAll = container.querySelector<HTMLButtonElement>('[data-testid="collapse-all-order-details"]');
-		expect(expandAll?.disabled).toBe(true);
-		expect(collapseAll?.disabled).toBe(false);
-		expect(expandAll?.className).toContain("after:h-11");
-		expect(collapseAll?.className).toContain("after:h-11");
+		expect(container.querySelector('[data-testid="expand-all-order-details"]')).toBeNull();
+		expect(collapseAll?.className).toContain("after:size-11");
+		expect(collapseAll?.getAttribute("aria-label")).toBe("Collapse all");
 
 		act(() => collapseAll?.click());
 		expect(container.textContent).not.toContain("Original Size");
-		expect(expandAll?.disabled).toBe(false);
+		const expandAll = container.querySelector<HTMLButtonElement>('[data-testid="expand-all-order-details"]');
+		expect(expandAll?.getAttribute("aria-label")).toBe("Expand all");
 		act(() => expandAll?.click());
 		expect(container.textContent).toContain("Original Size");
 	});
@@ -197,11 +198,13 @@ describe("MobileOrdersTab disclosure card", () => {
 	it("shows the SDK-derived mark distance and warns below ten percent", () => {
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 
-		const distance = [...container.querySelectorAll<HTMLElement>("div")].find(
-			(element) => element.textContent?.trim() === "Distance to mark 6.9%",
+		const distanceLabel = [...container.querySelectorAll<HTMLElement>("div")].find(
+			(element) => element.textContent?.trim() === "Distance to mark",
 		);
-		expect(distance?.className).toContain("text-warning");
-		expect(distance?.className).toContain("tabular-nums");
+		const distanceValue = distanceLabel?.nextElementSibling as HTMLElement | null;
+		expect(distanceValue?.textContent).toBe("6.9%");
+		expect(distanceValue?.className).toContain("text-market-close-warning");
+		expect(distanceValue?.className).toContain("tabular-nums");
 
 		const market = container.querySelector<HTMLButtonElement>('button[aria-label="Switch to ORCL market"]');
 		expect(market?.className).toContain("after:h-11");
@@ -226,7 +229,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 
-		const typeFilter = container.querySelector<HTMLSelectElement>('select[aria-label="All Types"]');
+		const typeFilter = container.querySelector<HTMLSelectElement>('select[aria-label="Type"]');
 		act(() => {
 			if (!typeFilter) return;
 			typeFilter.value = "limit";
@@ -235,10 +238,21 @@ describe("MobileOrdersTab disclosure card", () => {
 
 		expect(container.querySelectorAll("article")).toHaveLength(1);
 		const cancelAll = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent?.trim() === "Cancel All",
+			(button) => button.textContent?.trim() === "Cancel all",
 		);
 		act(() => cancelAll?.click());
 		expect(document.body.textContent).toContain("cancel all 2 open orders");
+	});
+
+	it("keeps the filter toolbar and renders the design empty state when there are no orders", () => {
+		mocks.orders = [];
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+
+		expect(container.querySelector('[data-testid="mobile-orders-filter-toolbar"]')).not.toBeNull();
+		expect(container.textContent).toContain("No open orders.");
+		expect(container.textContent).toContain("Submitted limit and trigger orders will appear here.");
+		expect(container.querySelector(".size-10")).not.toBeNull();
+		expect(container.querySelector("article")).toBeNull();
 	});
 
 	it("preserves market navigation and the exact cancel payload", () => {
@@ -271,7 +285,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		);
 		act(() => rowCancel?.click());
 		const cancelAll = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent?.trim() === "Cancel All",
+			(button) => button.textContent?.trim() === "Cancel all",
 		);
 
 		expect(cancelAll?.disabled).toBe(true);
@@ -284,7 +298,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent?.trim() === "Cancel All",
+			(button) => button.textContent?.trim() === "Cancel all",
 		);
 		act(() => requestButton?.click());
 
@@ -320,7 +334,7 @@ describe("MobileOrdersTab disclosure card", () => {
 	it("rejects cancel all when the confirmed order set changes", () => {
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent?.trim() === "Cancel All",
+			(button) => button.textContent?.trim() === "Cancel all",
 		);
 		act(() => requestButton?.click());
 
@@ -340,7 +354,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent?.trim() === "Cancel All",
+			(button) => button.textContent?.trim() === "Cancel all",
 		);
 		act(() => requestButton?.click());
 		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
