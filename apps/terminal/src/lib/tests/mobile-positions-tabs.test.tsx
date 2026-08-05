@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MOBILE_POSITIONS_TABS } from "@/config/trade";
 
 const storeState = vi.hoisted(() => ({ activeTab: "positions", isConnected: true, snapshotsReady: true }));
+const setPositionsActiveTab = vi.hoisted(() => vi.fn<(tab: string) => void>());
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({ address: storeState.isConnected ? "0x1234" : null, isConnected: storeState.isConnected }),
@@ -34,7 +35,7 @@ vi.mock("@/hooks/trade/use-account-balances", () => ({
 }));
 
 vi.mock("@/stores/use-global-settings-store", () => ({
-	useGlobalSettingsActions: () => ({ setPositionsActiveTab: vi.fn() }),
+	useGlobalSettingsActions: () => ({ setPositionsActiveTab }),
 	usePositionsActiveTab: () => storeState.activeTab,
 }));
 
@@ -71,14 +72,24 @@ import { MobilePositionsView } from "@/components/trade/mobile/mobile-positions-
 describe("MobilePositionsView tabs", () => {
 	let container: HTMLDivElement;
 	let root: Root;
+	let scrollIntoView: ReturnType<typeof vi.fn>;
+	let scrollByDescriptor: PropertyDescriptor | undefined;
+	let scrollIntoViewDescriptor: PropertyDescriptor | undefined;
 
 	beforeEach(() => {
 		storeState.activeTab = "positions";
 		storeState.isConnected = true;
 		storeState.snapshotsReady = true;
+		setPositionsActiveTab.mockReset();
+		setPositionsActiveTab.mockImplementation((tab) => {
+			storeState.activeTab = tab;
+		});
+		scrollByDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollBy");
+		scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
+		scrollIntoView = vi.fn();
 		Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
 			configurable: true,
-			value: vi.fn(),
+			value: scrollIntoView,
 		});
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -88,6 +99,15 @@ describe("MobilePositionsView tabs", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		if (scrollByDescriptor) Object.defineProperty(HTMLElement.prototype, "scrollBy", scrollByDescriptor);
+		else Reflect.deleteProperty(HTMLElement.prototype, "scrollBy");
+		if (scrollIntoViewDescriptor) {
+			Object.defineProperty(HTMLElement.prototype, "scrollIntoView", scrollIntoViewDescriptor);
+		} else {
+			Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+		}
+		vi.restoreAllMocks();
+		vi.useRealTimers();
 	});
 
 	function render(balancesContent?: ReactNode) {
@@ -190,12 +210,76 @@ describe("MobilePositionsView tabs", () => {
 		expect(container.textContent).toContain("Connect your wallet to view open orders.");
 	});
 
-	it("keeps the active tab visible when a persisted history tab is restored", () => {
+	it("keeps a restored history tab visible without touching the page scroll axis", () => {
 		storeState.activeTab = "orders-history";
+		const scrollBy = vi.fn();
+		Object.defineProperty(HTMLElement.prototype, "scrollBy", {
+			configurable: true,
+			value: scrollBy,
+		});
+		const getBoundingClientRect = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect");
+		getBoundingClientRect.mockImplementation(function (this: HTMLElement) {
+			if (this.dataset.testid === "mobile-account-tabs-scroll") {
+				return { bottom: 47, height: 47, left: 0, right: 320, top: 0, width: 320, x: 0, y: 0, toJSON() {} };
+			}
+			if (this.dataset.mobileAccountTab === "orders-history") {
+				return {
+					bottom: 44,
+					height: 44,
+					left: 360,
+					right: 460,
+					top: 0,
+					width: 100,
+					x: 360,
+					y: 0,
+					toJSON() {},
+				};
+			}
+			return { bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0, x: 0, y: 0, toJSON() {} };
+		});
 		render();
 
 		const activeTab = container.querySelector<HTMLElement>('[data-mobile-account-tab="orders-history"]');
 		expect(activeTab?.getAttribute("aria-selected")).toBe("true");
-		expect(activeTab?.scrollIntoView).toHaveBeenCalledWith({ block: "nearest", inline: "nearest" });
+		expect(scrollBy).toHaveBeenCalledWith({ behavior: "auto", left: 168, top: 0 });
+		expect(scrollIntoView).not.toHaveBeenCalled();
+	});
+
+	it("switches panels immediately and persists only the final rapid tab selection", () => {
+		vi.useFakeTimers();
+		render();
+
+		const historyTab = container.querySelector<HTMLButtonElement>('[data-mobile-account-tab="history"]');
+		const fundingTab = container.querySelector<HTMLButtonElement>('[data-mobile-account-tab="funding"]');
+		act(() => historyTab?.click());
+		expect(historyTab?.getAttribute("aria-selected")).toBe("true");
+		expect(container.querySelector('[data-tab-content="history"]')).not.toBeNull();
+		expect(container.querySelector('[data-tab-content="positions"]')).toBeNull();
+		expect(setPositionsActiveTab).not.toHaveBeenCalled();
+
+		act(() => fundingTab?.click());
+		expect(fundingTab?.getAttribute("aria-selected")).toBe("true");
+		expect(container.querySelector('[data-tab-content="funding"]')).not.toBeNull();
+		expect(container.querySelector('[data-tab-content="history"]')).toBeNull();
+
+		act(() => vi.runAllTimers());
+		expect(setPositionsActiveTab).toHaveBeenCalledOnce();
+		expect(setPositionsActiveTab).toHaveBeenCalledWith("funding");
+		expect(fundingTab?.getAttribute("aria-selected")).toBe("true");
+	});
+
+	it("flushes an unpersisted tab preference when the page is hidden", () => {
+		vi.useFakeTimers();
+		render();
+
+		const historyTab = container.querySelector<HTMLButtonElement>('[data-mobile-account-tab="history"]');
+		act(() => historyTab?.click());
+		expect(setPositionsActiveTab).not.toHaveBeenCalled();
+
+		act(() => window.dispatchEvent(new Event("pagehide")));
+		expect(setPositionsActiveTab).toHaveBeenCalledOnce();
+		expect(setPositionsActiveTab).toHaveBeenCalledWith("history");
+		act(() => vi.runAllTimers());
+		expect(setPositionsActiveTab).toHaveBeenCalledOnce();
 	});
 });

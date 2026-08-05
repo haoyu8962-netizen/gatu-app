@@ -224,6 +224,7 @@ vi.mock("@/components/trade/mobile/use-mobile-terminal-tab", () => ({
 import { MobileFundingTab } from "@/components/trade/mobile/mobile-funding-tab";
 import { MobileHistoryTab } from "@/components/trade/mobile/mobile-history-tab";
 import { MobileOrdersHistoryTab } from "@/components/trade/mobile/mobile-orders-history-tab";
+import { MOBILE_PROGRESSIVE_LIST_BATCH_SIZE } from "@/components/trade/mobile/mobile-progressive-list";
 
 describe("mobile history disclosure cards", () => {
 	let container: HTMLDivElement;
@@ -243,6 +244,7 @@ describe("mobile history disclosure cards", () => {
 		act(() => root.unmount());
 		container.remove();
 		vi.clearAllMocks();
+		vi.unstubAllGlobals();
 	});
 
 	function render(component: ReactElement) {
@@ -411,6 +413,41 @@ describe("mobile history disclosure cards", () => {
 			"trade_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Transaction"])]),
 		);
+	});
+
+	it("mounts trade history progressively while counts and CSV keep the complete snapshot", () => {
+		let intersectionCallback: IntersectionObserverCallback | null = null;
+		class MockIntersectionObserver {
+			readonly disconnect = vi.fn();
+			readonly observe = vi.fn();
+
+			constructor(callback: IntersectionObserverCallback) {
+				intersectionCallback = callback;
+			}
+		}
+		vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+		const fill = createFills()[0];
+		mocks.fills = Array.from({ length: 60 }, (_, index) => ({
+			...fill,
+			hash: `0x${index.toString(16)}`,
+			oid: 1_000 + index,
+			tid: index,
+			time: Number(fill.time) + index,
+		}));
+
+		render(<MobileHistoryTab scrollMode="page" />);
+		expect(container.querySelectorAll("article")).toHaveLength(MOBILE_PROGRESSIVE_LIST_BATCH_SIZE);
+		expect(container.textContent).toContain("60 trades");
+
+		clickButton("Export CSV");
+		expect(mocks.downloadCsv).toHaveBeenCalledWith("trade_history.csv", expect.any(Array));
+		const exportedRows = mocks.downloadCsv.mock.calls.at(-1)?.[1] as string[][] | undefined;
+		expect(exportedRows).toHaveLength(61);
+
+		act(() => {
+			intersectionCallback?.([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
+		});
+		expect(container.querySelectorAll("article")).toHaveLength(48);
 	});
 
 	it("keeps full trade export available when the recent mobile snapshot is empty", () => {

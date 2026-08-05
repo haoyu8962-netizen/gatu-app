@@ -2,7 +2,7 @@ import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
 import { WalletIcon } from "@phosphor-icons/react";
-import { type ReactNode, Suspense, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { type ReactNode, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { HL_ALL_DEXS } from "@/config/app";
@@ -28,6 +28,8 @@ export type MobileDataScrollMode = "contained" | "page";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 const MOBILE_POSITIONS_TAB_VALUES = new Set<string>(MOBILE_POSITIONS_TABS.map((tab) => tab.value));
+const MOBILE_TAB_PREFERENCE_DELAY_MS = 120;
+const MOBILE_TAB_EDGE_FADE_WIDTH_PX = 28;
 
 interface Props {
 	className?: string;
@@ -49,11 +51,15 @@ export function MobilePositionsView({
 	const { _ } = useLingui();
 	const storedActiveTab = usePositionsActiveTab();
 	const hasTransfersTab = transfersContent != null;
-	const activeTab = resolveMobilePositionsTab(storedActiveTab, hasTransfersTab);
+	const [pendingActiveTab, setPendingActiveTab] = useState<TabValue | null>(null);
+	const resolvedStoredActiveTab = resolveMobilePositionsTab(storedActiveTab, hasTransfersTab);
+	const activeTab =
+		pendingActiveTab === null ? resolvedStoredActiveTab : resolveMobilePositionsTab(pendingActiveTab, hasTransfersTab);
 	const tabs = [...MOBILE_POSITIONS_TABS, ...(hasTransfersTab ? [PORTFOLIO_TRANSFERS_TAB] : [])];
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const tabScrollRef = useRef<HTMLDivElement>(null);
-	const [isPending, startTransition] = useTransition();
+	const tabPreferenceTimerRef = useRef<number | null>(null);
+	const pendingTabPreferenceRef = useRef<TabValue | null>(null);
 	const { address, isConnected } = useWalletSession();
 	const {
 		perpSummary,
@@ -89,14 +95,51 @@ export function MobilePositionsView({
 	const isLoadingTwap = twapStatesStatus === "subscribing" || twapStatesStatus === "idle";
 
 	useEffect(() => {
-		if (storedActiveTab === activeTab) return;
-		setPositionsActiveTab(activeTab);
-	}, [activeTab, setPositionsActiveTab, storedActiveTab]);
+		if (storedActiveTab === activeTab) {
+			pendingTabPreferenceRef.current = null;
+			if (pendingActiveTab !== null) setPendingActiveTab(null);
+			return;
+		}
+
+		pendingTabPreferenceRef.current = activeTab;
+		const timerId = window.setTimeout(() => {
+			if (pendingTabPreferenceRef.current !== activeTab) return;
+			pendingTabPreferenceRef.current = null;
+			tabPreferenceTimerRef.current = null;
+			setPositionsActiveTab(activeTab);
+			setPendingActiveTab((current) =>
+				current !== null && resolveMobilePositionsTab(current, hasTransfersTab) === activeTab ? null : current,
+			);
+		}, MOBILE_TAB_PREFERENCE_DELAY_MS);
+		tabPreferenceTimerRef.current = timerId;
+
+		return () => {
+			window.clearTimeout(timerId);
+			if (tabPreferenceTimerRef.current === timerId) tabPreferenceTimerRef.current = null;
+		};
+	}, [activeTab, hasTransfersTab, pendingActiveTab, setPositionsActiveTab, storedActiveTab]);
 
 	useEffect(() => {
-		const selectedTab = tabScrollRef.current?.querySelector<HTMLElement>(`[data-mobile-account-tab="${activeTab}"]`);
-		selectedTab?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
-	}, [activeTab]);
+		function flushPendingTabPreference() {
+			const pendingTab = pendingTabPreferenceRef.current;
+			if (pendingTab === null) return;
+			if (tabPreferenceTimerRef.current !== null) window.clearTimeout(tabPreferenceTimerRef.current);
+			tabPreferenceTimerRef.current = null;
+			pendingTabPreferenceRef.current = null;
+			setPositionsActiveTab(pendingTab);
+		}
+		function handleVisibilityChange() {
+			if (document.visibilityState === "hidden") flushPendingTabPreference();
+		}
+
+		window.addEventListener("pagehide", flushPendingTabPreference);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		return () => {
+			window.removeEventListener("pagehide", flushPendingTabPreference);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			flushPendingTabPreference();
+		};
+	}, [setPositionsActiveTab]);
 
 	const positionsCount = getReadyItemCount({
 		isConnected,
@@ -126,8 +169,47 @@ export function MobilePositionsView({
 		return count;
 	}, [balancesError, hasAllDexsSnapshot, hasSpotStateSnapshot, isConnected, perpSummary?.accountValue, spotBalances]);
 
+	useEffect(() => {
+		const scroller = tabScrollRef.current;
+		if (!scroller) return;
+		const scrollContainer: HTMLDivElement = scroller;
+
+		function keepSelectedTabVisible() {
+			const selectedTab = scrollContainer.querySelector<HTMLElement>(`[data-mobile-account-tab="${activeTab}"]`);
+			if (!selectedTab) return;
+
+			const scrollerRect = scrollContainer.getBoundingClientRect();
+			const selectedTabRect = selectedTab.getBoundingClientRect();
+			const visibleRight = scrollerRect.right - MOBILE_TAB_EDGE_FADE_WIDTH_PX;
+			const horizontalDelta =
+				selectedTabRect.left < scrollerRect.left
+					? selectedTabRect.left - scrollerRect.left
+					: selectedTabRect.right > visibleRight
+						? selectedTabRect.right - visibleRight
+						: 0;
+			if (horizontalDelta === 0) return;
+
+			if (typeof scrollContainer.scrollBy === "function") {
+				scrollContainer.scrollBy({ left: horizontalDelta, top: 0, behavior: "auto" });
+			} else {
+				scrollContainer.scrollLeft += horizontalDelta;
+			}
+		}
+
+		keepSelectedTabVisible();
+		if (typeof ResizeObserver === "undefined") return;
+
+		const resizeObserver = new ResizeObserver(keepSelectedTabVisible);
+		for (const tab of scrollContainer.querySelectorAll<HTMLElement>("[data-mobile-account-tab]")) {
+			resizeObserver.observe(tab);
+		}
+		return () => resizeObserver.disconnect();
+	}, [activeTab]);
+
 	function handleTabChange(value: string) {
-		startTransition(() => setPositionsActiveTab(resolveMobilePositionsTab(value, hasTransfersTab)));
+		const nextTab = resolveMobilePositionsTab(value, hasTransfersTab);
+		pendingTabPreferenceRef.current = nextTab === storedActiveTab ? null : nextTab;
+		setPendingActiveTab(nextTab === resolvedStoredActiveTab ? null : nextTab);
 	}
 
 	function getTabCount(tabValue: TabValue): number | null {
@@ -147,10 +229,7 @@ export function MobilePositionsView({
 		return false;
 	}
 
-	const tabContentClass = cn(
-		isPageScroll ? "min-h-0 flex flex-col mt-0" : "flex-1 min-h-0 flex flex-col mt-0",
-		isPending && "opacity-70",
-	);
+	const tabContentClass = cn(isPageScroll ? "min-h-0 flex flex-col mt-0" : "flex-1 min-h-0 flex flex-col mt-0");
 
 	return (
 		<div
