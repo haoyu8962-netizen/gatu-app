@@ -73,7 +73,6 @@ import {
 	positionsPanelRowHoverClass,
 	positionsPanelRowStripeClass,
 	positionsPanelTableBodyClass,
-	positionsPanelTableCaptionRowClass,
 	positionsPanelTableCellClass,
 	positionsPanelTableHeadClass,
 	positionsPanelTableHeaderClass,
@@ -81,6 +80,10 @@ import {
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
 } from "./positions-panel-table-styles";
+
+const ordersTableHeadClass =
+	"h-[33px] px-1.5 py-0 text-[11px] font-semibold normal-case tracking-normal text-market-close-subtle";
+const ordersTableCellClass = "h-[60px] px-1.5 py-0 text-[13px] text-market-close-fg";
 
 type CancelScope = "row" | "selected" | "all";
 const MODIFY_SUBSCRIPTION_TIMEOUT_MS = 15_000;
@@ -687,7 +690,14 @@ export function OrdersTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className={cn(positionsPanelTableCaptionRowClass, "min-h-9 flex-wrap")}>
+			<div className="flex h-12 shrink-0 items-center gap-2 border-b border-market-close-stroke-card px-5 py-2.5 font-market-close">
+				{isConnected ? (
+					<span className="mr-auto shrink-0 text-xs text-market-close-muted tabular-nums">
+						{openOrders.length} {t`orders`}
+					</span>
+				) : (
+					<span className="mr-auto" />
+				)}
 				<Select
 					size="xxs"
 					label={t`Order type`}
@@ -698,8 +708,8 @@ export function OrdersTab() {
 						{ value: "limit", label: t`Limit` },
 						{ value: "trigger", label: t`Trigger` },
 					]}
-					triggerClassName="min-w-[6.5rem] !rounded-[7px] border-market-close-stroke-card bg-surface"
-					className="mr-auto [&>label]:sr-only"
+					triggerClassName="h-[27px] min-w-[6.5rem] !rounded-[7px] border-market-close-stroke-card bg-modal text-xs text-market-close-muted"
+					className="[&>label]:sr-only"
 				/>
 				<Select
 					size="xxs"
@@ -711,16 +721,11 @@ export function OrdersTab() {
 						{ value: "buy", label: t`Buy` },
 						{ value: "sell", label: t`Sell` },
 					]}
-					triggerClassName="min-w-[7rem] !rounded-[7px] border-market-close-stroke-card bg-surface"
+					triggerClassName="h-[27px] min-w-[7rem] !rounded-[7px] border-market-close-stroke-card bg-modal text-xs text-market-close-muted"
 					className="[&>label]:sr-only"
 				/>
-				{isConnected ? (
-					<span className="tabular-nums text-3xs text-fg-muted">
-						{openOrders.length} {t`orders`}
-					</span>
-				) : null}
 				{isConnected && selectedCount > 0 ? (
-					<span className="tabular-nums text-3xs text-fg-muted">
+					<span className="shrink-0 text-[11px] text-market-close-subtle tabular-nums">
 						{selectedCount} {t`selected`}
 					</span>
 				) : null}
@@ -731,6 +736,7 @@ export function OrdersTab() {
 						aria-label={t`Cancel selected orders`}
 						onClick={handleCancelSelected}
 						disabled={disableCancelSelected}
+						className="h-[27px] min-h-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none hover:no-underline active:scale-100"
 					>
 						{pendingScopes.has("selected") ? t`Canceling...` : t`Cancel selected`}
 					</Button>
@@ -742,6 +748,7 @@ export function OrdersTab() {
 						aria-label={t`Cancel all orders`}
 						onClick={handleRequestCancelAll}
 						disabled={disableCancelAll}
+						className="h-[27px] min-h-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none hover:no-underline active:scale-100"
 					>
 						{pendingScopes.has("all") ? t`Canceling...` : t`Cancel all`}
 					</Button>
@@ -762,13 +769,13 @@ export function OrdersTab() {
 						<Placeholder>{t`No orders match the selected filters.`}</Placeholder>
 					) : (
 						<ScrollArea className="h-full w-full">
-							<Table className="table-fixed min-w-[80rem] w-full">
+							<Table className="table-fixed min-w-[1280px] w-full font-market-close">
 								<TableHeader className={positionsPanelTableHeaderClass}>
 									<TableRow className={positionsPanelTableHeaderRowClass}>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-32 px-2 text-left")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[126px] text-left")}
 										>
 											<span className="inline-flex items-center gap-2">
 												<Checkbox
@@ -784,77 +791,77 @@ export function OrdersTab() {
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-left")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[84px] text-left")}
 										>
 											{t`Type`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-left")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[70px] text-left")}
 										>
 											{t`Market`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-20 px-2 text-left")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[60px] text-left")}
 										>
 											{t`Direction`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-36 px-2 text-right")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[100px] text-right")}
 										>
 											{t`Size`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-right")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[84px] text-right")}
 										>
 											{t`Original Size`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-28 px-2 text-right")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[104px] text-right")}
 										>
 											{t`Order Value`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-24 px-2 text-right")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[66px] text-right")}
 										>
 											{t`Price`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-20 px-2 text-left")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[52px] text-left")}
 										>
 											{t`Reduce Only`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-48 px-2 text-left")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-auto text-left")}
 										>
 											{t`Trigger Condition`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-32 px-2 text-left")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[76px] text-left")}
 										>
 											{t`TP/SL`}
 										</TableHead>
 										<TableHead
 											scope="col"
 											size="dense"
-											className={cn(positionsPanelTableHeadClass, "w-20 px-2 text-right")}
+											className={cn(positionsPanelTableHeadClass, ordersTableHeadClass, "w-[88px] text-right")}
 										>
 											{t`Actions`}
 										</TableHead>
@@ -998,10 +1005,16 @@ function OrderRow({
 			: formatQuoteAmount(metrics.remainingValue, quoteSymbol, { compact: true, decimals: 2 });
 
 	return (
-		<TableRow className={cn(positionsPanelRowHoverClass, isEven && positionsPanelRowStripeClass)}>
+		<TableRow
+			className={cn(positionsPanelRowHoverClass, "hover:bg-market-close-hover", isEven && positionsPanelRowStripeClass)}
+		>
 			<TableCell
 				size="dense"
-				className={cn(positionsPanelTableCellClass, "px-2 whitespace-nowrap tabular-nums text-fg-muted")}
+				className={cn(
+					positionsPanelTableCellClass,
+					ordersTableCellClass,
+					"whitespace-nowrap text-xs text-market-close-muted tabular-nums",
+				)}
 			>
 				<span className="inline-flex items-center gap-2">
 					<Checkbox
@@ -1013,15 +1026,15 @@ function OrderRow({
 					<span>{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}</span>
 				</span>
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 text-fg")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass)}>
 				<Tooltip content={getFullOrderTypeLabel(order)}>
-					<span className="inline-flex items-baseline gap-1 text-xs whitespace-nowrap">
+					<span className="inline-flex items-baseline gap-1 text-[13px] whitespace-nowrap">
 						{triggerLabel ? <span className={cn("font-medium", typeConfig.triggerClass)}>{triggerLabel}</span> : null}
-						<span className="text-fg">{executionLabel}</span>
+						<span className="text-market-close-fg">{executionLabel}</span>
 					</span>
 				</Tooltip>
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 font-medium text-fg")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass, "font-bold")}>
 				<AssetBadge
 					coin={order.coin}
 					side={isBuy ? "buy" : "sell"}
@@ -1033,13 +1046,14 @@ function OrderRow({
 				size="dense"
 				className={cn(
 					positionsPanelTableCellClass,
-					"px-2 whitespace-nowrap text-xs font-semibold",
-					isBuy ? "text-success" : "text-error",
+					ordersTableCellClass,
+					"whitespace-nowrap font-semibold",
+					isBuy ? "text-market-close-success" : "text-market-close-danger",
 				)}
 			>
 				{sideLabel}
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 text-right text-fg")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass, "text-right")}>
 				<div className="flex min-w-0 items-center justify-end gap-1">
 					{editField === "size" ? (
 						<OrderInlineEdit
@@ -1056,13 +1070,13 @@ function OrderRow({
 						/>
 					) : (
 						<>
-							<span className="min-w-0 truncate text-xs font-semibold tabular-nums leading-tight">
+							<span className="min-w-0 truncate font-semibold leading-tight tabular-nums">
 								{isClosePosition ? t`Close Position` : formatToken(order.sz, { decimals: szDecimals })}
 							</span>
 							{modifyCapabilities.size.supported ? (
 								<button
 									type="button"
-									className="inline-flex size-4 shrink-0 items-center justify-center rounded-4 text-fg-muted transition-colors duration-150 hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stroke-focus disabled:cursor-not-allowed disabled:opacity-50"
+									className="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] text-market-close-subtle transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"
 									aria-label={t`Edit ${order.coin} order size`}
 									disabled={editDisabled}
 									onClick={() => onStartEdit(order, "size")}
@@ -1074,26 +1088,32 @@ function OrderRow({
 					)}
 				</div>
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 text-right text-fg")}>
-				<span className="text-xs tabular-nums whitespace-nowrap">
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass, "text-right")}>
+				<span className="whitespace-nowrap tabular-nums">
 					{isClosePosition ? t`Close Position` : formatToken(order.origSz, { decimals: szDecimals })}
 				</span>
 			</TableCell>
 			<TableCell
 				size="dense"
-				className={cn(positionsPanelTableCellClass, "px-2 text-right text-xs tabular-nums whitespace-nowrap text-fg")}
+				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "whitespace-nowrap text-right tabular-nums")}
 			>
 				{isClosePosition ? FALLBACK_VALUE_PLACEHOLDER : remainingValueLabel}
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 text-right tabular-nums text-fg")}>
-				<span className="text-xs font-semibold tabular-nums leading-tight">
+			<TableCell
+				size="dense"
+				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "text-right tabular-nums")}
+			>
+				<span className="font-semibold leading-tight tabular-nums">
 					{isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals })}
 				</span>
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 whitespace-nowrap text-xs text-fg")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass, "whitespace-nowrap")}>
 				{order.reduceOnly ? t`Yes` : t`No`}
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 text-fg-muted")}>
+			<TableCell
+				size="dense"
+				className={cn(positionsPanelTableCellClass, ordersTableCellClass, "text-market-close-muted")}
+			>
 				{editField === "triggerPrice" ? (
 					<OrderInlineEdit
 						value={editValue}
@@ -1111,11 +1131,11 @@ function OrderRow({
 				) : (
 					<div className="flex min-w-0 flex-col gap-px">
 						<div className="flex min-w-0 items-center gap-1">
-							<span className="truncate text-xs tabular-nums text-fg">{triggerConditionLabel}</span>
+							<span className="truncate tabular-nums text-market-close-fg">{triggerConditionLabel}</span>
 							{modifyCapabilities.triggerPrice.supported ? (
 								<button
 									type="button"
-									className="inline-flex size-4 shrink-0 items-center justify-center rounded-4 text-fg-muted transition-colors duration-150 hover:bg-fill-hover hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stroke-focus disabled:cursor-not-allowed disabled:opacity-50"
+									className="inline-flex size-4 shrink-0 items-center justify-center rounded-[4px] text-market-close-subtle transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"
 									aria-label={t`Edit ${order.coin} trigger price`}
 									disabled={editDisabled}
 									onClick={() => onStartEdit(order, "triggerPrice")}
@@ -1126,7 +1146,10 @@ function OrderRow({
 						</div>
 						{markDistanceLabel ? (
 							<span
-								className={cn("whitespace-nowrap text-2xs tabular-nums", isNearMark ? "text-warning" : "text-fg-muted")}
+								className={cn(
+									"whitespace-nowrap text-[11px] tabular-nums",
+									isNearMark ? "text-warning" : "text-market-close-subtle",
+								)}
 							>
 								{t`Distance to mark ${markDistanceLabel}`}
 							</span>
@@ -1136,17 +1159,23 @@ function OrderRow({
 			</TableCell>
 			<TableCell
 				size="dense"
-				className={cn(positionsPanelTableCellClass, "px-2 whitespace-nowrap text-xs tabular-nums text-fg-muted")}
+				className={cn(
+					positionsPanelTableCellClass,
+					ordersTableCellClass,
+					"whitespace-nowrap text-market-close-subtle tabular-nums",
+				)}
 			>
 				{tpSlLabel}
 			</TableCell>
-			<TableCell size="dense" className={cn(positionsPanelTableCellClass, "px-2 text-right")}>
+			<TableCell size="dense" className={cn(positionsPanelTableCellClass, ordersTableCellClass, "text-right")}>
 				<Button
-					variant="link"
+					variant="outline"
+					intent="error"
 					size="xs"
 					aria-label={t`Cancel order`}
 					onClick={() => onCancel([order])}
 					disabled={isCancelling || cancelDisabled}
+					className="h-[27px] min-h-0 rounded-[7px] border-market-close-danger-disabled bg-modal px-3 text-xs font-semibold text-market-close-danger shadow-none transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-market-close-hover active:scale-100"
 				>
 					{isCancelling ? t`Canceling...` : t`Cancel`}
 				</Button>

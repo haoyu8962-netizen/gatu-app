@@ -1,6 +1,6 @@
 import { Button, Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { ListIcon, ListNumbersIcon, XIcon } from "@phosphor-icons/react";
+import { ListIcon, ListNumbersIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -750,7 +750,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 	return (
 		<Skeleton name="orders-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn(isPageScroll ? "min-h-0 flex flex-col" : "flex-1 min-h-0 flex flex-col", className)}>
-				<div className="flex items-center gap-2 px-3 pt-2">
+				<div className="flex h-12 shrink-0 items-center gap-1.5 border-b border-market-close-stroke-card px-3.5 py-2.5">
 					<Select
 						size="xxs"
 						label={t`Order type`}
@@ -761,7 +761,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 							{ value: "limit", label: t`Limit` },
 							{ value: "trigger", label: t`Trigger` },
 						]}
-						triggerClassName="min-h-11 min-w-0 flex-1 !rounded-[7px] border-market-close-stroke-card bg-modal"
+						triggerClassName="relative h-[27px] min-h-0 min-w-0 flex-1 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-['']"
 						className="min-w-0 flex-1 [&>label]:sr-only"
 					/>
 					<Select
@@ -774,24 +774,24 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 							{ value: "buy", label: t`Buy` },
 							{ value: "sell", label: t`Sell` },
 						]}
-						triggerClassName="min-h-11 min-w-0 flex-1 !rounded-[7px] border-market-close-stroke-card bg-modal"
+						triggerClassName="relative h-[27px] min-h-0 min-w-0 flex-1 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-['']"
 						className="min-w-0 flex-1 [&>label]:sr-only"
 					/>
 					<Button
-						variant="ghost"
+						variant="link"
 						intent="error"
 						size="sm"
-						className="min-h-11 shrink-0"
+						className="relative h-[27px] min-h-0 shrink-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] hover:no-underline active:scale-100"
 						onClick={handleRequestCancelAll}
 						disabled={pendingScopes.size > 0 || openOrders.length === 0 || isModifyBusy}
 					>
 						{pendingScopes.has("all") ? t`Canceling...` : t`Cancel All`}
 					</Button>
 				</div>
-				<div className="px-3 py-2 flex items-center gap-2 text-xs uppercase text-fg-muted">
-					<ListNumbersIcon className="size-3" />
-					{t`Open Orders`}
-					<span className="font-semibold text-brand tabular-nums">{headerCount}</span>
+				<div className="flex h-10 shrink-0 items-center gap-2 px-3.5 text-xs text-market-close-muted">
+					<ListNumbersIcon className="size-3" aria-hidden="true" />
+					<span>{t`Open Orders`}</span>
+					<span className="font-semibold text-market-close-fg tabular-nums">{headerCount}</span>
 					<div className="ml-auto">
 						<MobileOrderBulkDetailsActions
 							orderKeys={orderKeys}
@@ -806,7 +806,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 						{actionError}
 					</div>
 				)}
-				<div className={cn("px-3 pb-3 space-y-2", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
+				<div className={cn("space-y-2.5 px-3.5 pb-3.5", !isPageScroll && "flex-1 min-h-0 overflow-y-auto")}>
 					{displayedOrders.length === 0 ? (
 						<div className="py-8 text-center text-sm text-market-close-muted">{t`No orders match the filters.`}</div>
 					) : null}
@@ -1019,7 +1019,7 @@ function MobileOrderCard({
 								onClick={() => onCancel([order])}
 								disabled={isCancelling || actionsDisabled}
 							>
-								{isCancelling ? <Spinner className="size-3" /> : <XIcon className="size-3.5" />}
+								{isCancelling ? <Spinner className="size-3" /> : null}
 								{t`Cancel`}
 							</button>
 						</div>

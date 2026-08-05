@@ -64,7 +64,7 @@ export function OrderInlineEdit({
 	return (
 		<div
 			ref={rootRef}
-			className="inline-flex min-w-0 items-center gap-1 rounded-8 border border-stroke-weak bg-modal p-1 shadow-overlay"
+			className="inline-flex min-w-0 items-center gap-1.5 rounded-[10px] bg-modal p-1 shadow-overlay"
 			aria-busy={disabled || undefined}
 		>
 			<input
@@ -78,18 +78,18 @@ export function OrderInlineEdit({
 				aria-invalid={invalid || undefined}
 				aria-describedby={describedBy}
 				className={cn(
-					"h-7 min-w-0 rounded-6 border-[1.5px] border-stroke bg-background px-2 text-xs tabular-nums text-fg outline-none transition-colors duration-150",
-					"focus:border-fg focus:ring-1 focus:ring-fg/15",
+					"h-7 min-w-0 rounded-[8px] border-[1.5px] border-market-close-control bg-modal px-2 text-[13px] font-semibold tabular-nums text-market-close-fg outline-none transition-colors duration-[120ms]",
+					"focus:border-market-close-control focus:ring-1 focus:ring-market-close-control/15",
 					"disabled:cursor-not-allowed disabled:opacity-70",
-					invalid && "border-error focus:border-error focus:ring-error/15",
-					align === "right" ? "w-16 text-right" : "w-24 text-left",
+					invalid && "border-market-close-danger focus:border-market-close-danger focus:ring-market-close-danger/15",
+					align === "right" ? "w-[72px] text-right" : "w-[84px] text-left",
 				)}
 				onChange={(event) => onChange(event.target.value)}
 				onKeyDown={handleKeyDown}
 			/>
 			<button
 				type="button"
-				className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-6 bg-fill px-2 text-2xs font-semibold text-fg-inverse transition-opacity duration-150 hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-stroke-focus disabled:cursor-not-allowed disabled:opacity-60"
+				className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-[7px] bg-market-close-control px-2.5 text-xs font-semibold text-market-close-on-control transition-opacity duration-[120ms] hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-60"
 				aria-label={confirmLabel}
 				disabled={disabled}
 				onClick={onConfirm}
