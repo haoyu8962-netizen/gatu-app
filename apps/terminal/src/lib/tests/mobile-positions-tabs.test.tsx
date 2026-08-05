@@ -7,10 +7,10 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MOBILE_POSITIONS_TABS } from "@/config/trade";
 
-const storeState = vi.hoisted(() => ({ activeTab: "positions", snapshotsReady: true }));
+const storeState = vi.hoisted(() => ({ activeTab: "positions", isConnected: true, snapshotsReady: true }));
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: "0x1234", isConnected: true }),
+	useWalletSession: () => ({ address: storeState.isConnected ? "0x1234" : null, isConnected: storeState.isConnected }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -74,6 +74,7 @@ describe("MobilePositionsView tabs", () => {
 
 	beforeEach(() => {
 		storeState.activeTab = "positions";
+		storeState.isConnected = true;
 		storeState.snapshotsReady = true;
 		Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
 			configurable: true,
@@ -118,7 +119,7 @@ describe("MobilePositionsView tabs", () => {
 		expect(tabs.map((tab) => tab.textContent)).toEqual([
 			"Balances(0)",
 			"Positions(0)",
-			"Open Orders(0)",
+			"Orders(0)",
 			"TWAP(0)",
 			"Trade History",
 			"Funding History",
@@ -138,14 +139,14 @@ describe("MobilePositionsView tabs", () => {
 		const loadingLabels = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]')).map(
 			(tab) => tab.textContent,
 		);
-		expect(loadingLabels.slice(0, 4)).toEqual(["Balances", "Positions", "Open Orders", "TWAP"]);
+		expect(loadingLabels.slice(0, 4)).toEqual(["Balances", "Positions", "Orders", "TWAP"]);
 
 		storeState.snapshotsReady = true;
 		render();
 		const readyLabels = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]')).map(
 			(tab) => tab.textContent,
 		);
-		expect(readyLabels.slice(0, 4)).toEqual(["Balances(0)", "Positions(0)", "Open Orders(0)", "TWAP(0)"]);
+		expect(readyLabels.slice(0, 4)).toEqual(["Balances(0)", "Positions(0)", "Orders(0)", "TWAP(0)"]);
 	});
 
 	it("keeps the horizontal scroller hidden and renders a non-interactive 28px edge fade", () => {
@@ -170,7 +171,23 @@ describe("MobilePositionsView tabs", () => {
 
 		const tabs = Array.from(container.querySelectorAll<HTMLElement>('[role="tab"]'));
 		expect(tabs).toHaveLength(7);
-		for (const tab of tabs) expect(tab.className).toContain("min-h-11");
+		for (const tab of tabs) {
+			expect(tab.className).toContain("min-h-11");
+			expect(tab.className).toContain("text-market-close-subtle");
+			expect(tab.className).toContain("data-active:text-market-close-fg");
+		}
+	});
+
+	it("uses the active tab's wallet prompt while disconnected", () => {
+		storeState.isConnected = false;
+		storeState.activeTab = "balances";
+		render();
+		expect(container.textContent).toContain("Connect your wallet to view balances.");
+		expect(container.textContent).not.toContain("Connect your wallet to view positions.");
+
+		storeState.activeTab = "orders";
+		render();
+		expect(container.textContent).toContain("Connect your wallet to view open orders.");
 	});
 
 	it("keeps the active tab visible when a persisted history tab is restored", () => {

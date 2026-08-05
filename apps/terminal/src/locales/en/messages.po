@@ -1278,7 +1278,6 @@ msgstr "Connect wallet to view account"
 msgid "Connect wallet to view portfolio"
 msgstr "Connect wallet to view portfolio"
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Connect wallet to view positions"
 msgstr "Connect wallet to view positions"
@@ -1316,40 +1315,48 @@ msgid "Connect your wallet to transfer funds."
 msgstr "Connect your wallet to transfer funds."
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "Connect your wallet to view balances."
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Connect your wallet to view deposits and withdrawals."
 msgstr "Connect your wallet to view deposits and withdrawals."
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Connect your wallet to view funding payments."
 msgstr "Connect your wallet to view funding payments."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Connect your wallet to view open orders."
 msgstr "Connect your wallet to view open orders."
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Connect your wallet to view order history."
 msgstr "Connect your wallet to view order history."
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
 msgstr "Connect your wallet to view positions."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Connect your wallet to view trade history."
 msgstr "Connect your wallet to view trade history."
 
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Connect your wallet to view TWAP orders."
@@ -4002,8 +4009,8 @@ msgid "orders"
 msgstr "orders"
 
 #: src/config/trade.ts
-#~ msgid "Orders"
-#~ msgstr "Orders"
+msgid "Orders"
+msgstr "Orders"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

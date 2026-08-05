@@ -1265,7 +1265,6 @@ msgstr "اربط المحفظة لعرض الحساب"
 msgid "Connect wallet to view portfolio"
 msgstr "اربط محفظتك لعرض المحفظة الاستثمارية"
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Connect wallet to view positions"
 msgstr "اربط المحفظة لعرض المراكز"
@@ -1303,40 +1302,48 @@ msgid "Connect your wallet to transfer funds."
 msgstr "وصّل محفظتك لتحويل الأموال."
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "اربط محفظتك لعرض الأرصدة."
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Connect your wallet to view deposits and withdrawals."
 msgstr "صِل محفظتك لعرض الإيداعات والسحوبات."
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Connect your wallet to view funding payments."
 msgstr "اربط محفظتك لعرض مدفوعات التمويل."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Connect your wallet to view open orders."
 msgstr "اربط محفظتك لعرض الأوامر المفتوحة."
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Connect your wallet to view order history."
 msgstr "اربط محفظتك لعرض سجل الأوامر."
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
 msgstr "قم بتوصيل محفظتك لعرض المراكز."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Connect your wallet to view trade history."
 msgstr "اربط محفظتك لعرض سجل التداول."
 
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Connect your wallet to view TWAP orders."
@@ -3981,8 +3988,8 @@ msgid "orders"
 msgstr "أوامر"
 
 #: src/config/trade.ts
-#~ msgid "Orders"
-#~ msgstr "الأوامر"
+msgid "Orders"
+msgstr "الأوامر"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

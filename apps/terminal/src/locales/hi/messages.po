@@ -1265,7 +1265,6 @@ msgstr "खाता देखने के लिए वॉलेट कने�
 msgid "Connect wallet to view portfolio"
 msgstr "पोर्टफोलियो देखने के लिए वॉलेट कनेक्ट करें"
 
-#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Connect wallet to view positions"
 msgstr "पोज़िशन देखने के लिए वॉलेट कनेक्ट करें"
@@ -1303,40 +1302,48 @@ msgid "Connect your wallet to transfer funds."
 msgstr "धन ट्रांसफ़र करने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Connect your wallet to view balances."
 msgstr "शेष देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 msgid "Connect your wallet to view deposits and withdrawals."
 msgstr "जमा और निकासी देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/funding-tab.tsx
 msgid "Connect your wallet to view funding payments."
 msgstr "फंडिंग भुगतान देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Connect your wallet to view open orders."
 msgstr "खुले ऑर्डर देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 msgid "Connect your wallet to view order history."
 msgstr "ऑर्डर इतिहास देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/mobile/mobile-positions-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Connect your wallet to view positions."
 msgstr "पोजीशन देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "Connect your wallet to view trade history."
 msgstr "ट्रेड इतिहास देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
+#: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Connect your wallet to view TWAP orders."
@@ -3981,8 +3988,8 @@ msgid "orders"
 msgstr "ऑर्डर"
 
 #: src/config/trade.ts
-#~ msgid "Orders"
-#~ msgstr "ऑर्डर"
+msgid "Orders"
+msgstr "ऑर्डर"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

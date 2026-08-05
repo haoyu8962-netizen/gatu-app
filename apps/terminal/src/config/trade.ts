@@ -57,7 +57,15 @@ export const POSITIONS_TABS = [
 	{ value: "orders-history", label: msg`Order History` },
 ] as const;
 
-export const MOBILE_POSITIONS_TABS = POSITIONS_TABS;
+export const MOBILE_POSITIONS_TABS = [
+	POSITIONS_TABS[0],
+	POSITIONS_TABS[1],
+	{ value: "orders", label: msg`Orders` },
+	POSITIONS_TABS[3],
+	POSITIONS_TABS[4],
+	POSITIONS_TABS[5],
+	POSITIONS_TABS[6],
+] as const;
 
 export type MobilePositionsTabValue = (typeof MOBILE_POSITIONS_TABS)[number]["value"];
 

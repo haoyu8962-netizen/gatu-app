@@ -189,7 +189,7 @@ export function MobilePositionsView({
 										key={tab.value}
 										value={tab.value}
 										data-mobile-account-tab={tab.value}
-										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none transition-colors duration-[120ms] focus-visible:outline-market-close-control data-active:font-bold"
+										className="min-h-11 shrink-0 px-2.5 text-[13px] font-medium leading-none text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:font-bold data-active:text-market-close-fg"
 									>
 										<span>{_(tab.label)}</span>
 										{loading ? (
@@ -209,7 +209,7 @@ export function MobilePositionsView({
 					/>
 				</div>
 				{!isConnected ? (
-					<EmptyState description={emptyDescription} />
+					<EmptyState activeTab={activeTab} description={emptyDescription} />
 				) : (
 					<>
 						<TabsContent value="balances" className={tabContentClass}>
@@ -251,8 +251,9 @@ function resolveMobilePositionsTab(value: string, hasTransfersTab: boolean): Tab
 	return MOBILE_POSITIONS_TAB_VALUES.has(value) ? (value as TabValue) : "positions";
 }
 
-function EmptyState({ description }: { description?: ReactNode }) {
+function EmptyState({ activeTab, description }: { activeTab: TabValue; description?: ReactNode }) {
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
+	const defaultDescription = getDisconnectedDescription(activeTab);
 
 	return (
 		<>
@@ -260,9 +261,7 @@ function EmptyState({ description }: { description?: ReactNode }) {
 				<div className="size-10 rounded-full flex items-center justify-center bg-surface">
 					<WalletIcon className="size-5 text-fg-muted" />
 				</div>
-				<p className="text-xs text-fg-muted max-w-xs text-pretty">
-					{description ?? <Trans>Connect wallet to view positions</Trans>}
-				</p>
+				<p className="text-xs text-fg-muted max-w-xs text-pretty">{description ?? defaultDescription}</p>
 				<Button variant="outline" intent="brand" size="sm" onClick={() => setWalletModalOpen(true)}>
 					<Trans>Connect Wallet</Trans>
 				</Button>
@@ -274,4 +273,15 @@ function EmptyState({ description }: { description?: ReactNode }) {
 			)}
 		</>
 	);
+}
+
+function getDisconnectedDescription(activeTab: TabValue): ReactNode {
+	if (activeTab === "balances") return <Trans>Connect your wallet to view balances.</Trans>;
+	if (activeTab === "orders") return <Trans>Connect your wallet to view open orders.</Trans>;
+	if (activeTab === "twap") return <Trans>Connect your wallet to view TWAP orders.</Trans>;
+	if (activeTab === "history") return <Trans>Connect your wallet to view trade history.</Trans>;
+	if (activeTab === "funding") return <Trans>Connect your wallet to view funding payments.</Trans>;
+	if (activeTab === "orders-history") return <Trans>Connect your wallet to view order history.</Trans>;
+	if (activeTab === "transfers") return <Trans>Connect your wallet to view deposits and withdrawals.</Trans>;
+	return <Trans>Connect your wallet to view positions.</Trans>;
 }
