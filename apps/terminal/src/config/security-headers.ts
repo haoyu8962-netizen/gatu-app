@@ -2,6 +2,8 @@ const hyperliquidConnectSources = [
 	"https://api.hyperliquid.xyz",
 	"https://api.hyperliquid-testnet.xyz",
 	"https://app.hyperliquid.xyz",
+	"https://rpc.hyperliquid.xyz",
+	"https://rpc.hyperliquid-testnet.xyz",
 	"wss://api.hyperliquid.xyz",
 	"wss://api.hyperliquid-testnet.xyz",
 ] as const;

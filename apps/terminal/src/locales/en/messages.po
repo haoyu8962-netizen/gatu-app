@@ -520,6 +520,14 @@ msgstr "Approve mobile trading key"
 msgid "Approving a new mobile key replaces the previous mobile key."
 msgstr "Approving a new mobile key replaces the previous mobile key."
 
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Arbitrum (CCTP)"
+msgstr "Arbitrum (CCTP)"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Arbitrum (Legacy)"
+msgstr "Arbitrum (Legacy)"
+
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Arbitrum network switch was rejected."
@@ -857,6 +865,11 @@ msgstr "Canceling..."
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "Cannot switch to Isolated mode with an open position. Close your position first."
 
+#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "CCTP forwarding to Arbitrum usually completes in {0}."
+msgstr "CCTP forwarding to Arbitrum usually completes in {0}."
+
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Change leverage"
 msgstr "Change leverage"
@@ -908,6 +921,7 @@ msgstr "Click to submit · Filled trades cannot be reversed"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Close"
@@ -2674,7 +2688,7 @@ msgstr "Insufficient <0/> balance"
 #: src/lib/errors/definitions/deposit.ts
 #: src/lib/errors/definitions/deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/trade/withdraw-validation.ts
+#: src/lib/trade/withdrawal.ts
 msgid "Insufficient balance"
 msgstr "Insufficient balance"
 
@@ -2687,7 +2701,7 @@ msgid "Insufficient funds for gas"
 msgstr "Insufficient funds for gas"
 
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/trade/withdraw-validation.ts
+#: src/lib/trade/withdrawal.ts
 msgid "Invalid amount"
 msgstr "Invalid amount"
 
@@ -3354,8 +3368,12 @@ msgid "Minimum withdrawal is ${0}"
 msgstr "Minimum withdrawal is ${0}"
 
 #: src/lib/trade/withdraw-validation.ts
-msgid "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
-msgstr "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
+#~ msgid "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
+#~ msgstr "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
+
+#: src/lib/trade/withdrawal.ts
+msgid "Minimum withdrawal is ${minimum}"
+msgstr "Minimum withdrawal is ${minimum}"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Minute(s)"
@@ -3465,8 +3483,8 @@ msgstr "Network"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Network fee"
-msgstr "Network fee"
+#~ msgid "Network fee"
+#~ msgstr "Network fee"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "New"
@@ -3732,6 +3750,16 @@ msgstr "OI"
 #: src/components/trade/components/wallet-modal.tsx
 msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
 msgstr "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#~ msgid "One-time account activation"
+#~ msgstr "One-time account activation"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "One-time account activation fee"
+msgstr "One-time account activation fee"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Only scan a QR displayed by this terminal on your desktop."
@@ -4746,6 +4774,7 @@ msgstr "Resume tracking"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Retry"
 msgstr "Retry"
@@ -6323,7 +6352,6 @@ msgid "Time In Force"
 msgstr "Time In Force"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "To"
 msgstr "To"
 
@@ -6768,6 +6796,10 @@ msgstr "Unable to load Arbitrum USDC balance"
 msgid "Unable to load the current account mode. Reconnect your wallet and try again."
 msgstr "Unable to load the current account mode. Reconnect your wallet and try again."
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Unable to load the current CCTP withdrawal fee."
+msgstr "Unable to load the current CCTP withdrawal fee."
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to prepare USDC permit"
@@ -6785,6 +6817,14 @@ msgstr "Unable to switch wallet to Arbitrum. Switch networks in your wallet and 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Unable to verify access"
 msgstr "Unable to verify access"
+
+#: src/lib/trade/withdrawal.ts
+msgid "Unable to verify available balance"
+msgstr "Unable to verify available balance"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Unable to verify withdrawal eligibility."
+msgstr "Unable to verify withdrawal eligibility."
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
@@ -7143,8 +7183,25 @@ msgid "Withdrawal failed"
 msgstr "Withdrawal failed"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdrawal fee"
+msgstr "Withdrawal fee"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdrawal route"
+msgstr "Withdrawal route"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawal status unknown"
+msgstr "Withdrawal status unknown"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal submitted"
 msgstr "Withdrawal submitted"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawals are unavailable for this address."
+msgstr "Withdrawals are unavailable for this address."
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #~ msgid "Wrong network"

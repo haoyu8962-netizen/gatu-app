@@ -516,6 +516,14 @@ msgstr ""
 msgid "Approving a new mobile key replaces the previous mobile key."
 msgstr ""
 
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Arbitrum (CCTP)"
+msgstr "Arbitrum (CCTP)"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Arbitrum (Legacy)"
+msgstr "Arbitrum (लेगेसी)"
+
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Arbitrum network switch was rejected."
@@ -853,6 +861,11 @@ msgstr "रद्द हो रहा है..."
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "खुली पोज़िशन के साथ आइसोलेटेड मोड पर स्विच नहीं कर सकते। पहले अपनी पोज़िशन बंद करें।"
 
+#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "CCTP forwarding to Arbitrum usually completes in {0}."
+msgstr "CCTP द्वारा Arbitrum पर फ़ॉरवर्डिंग आमतौर पर {0} में पूरी हो जाती है।"
+
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Change leverage"
 msgstr "लेवरेज बदलें"
@@ -900,6 +913,7 @@ msgstr ""
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Close"
@@ -2657,7 +2671,7 @@ msgstr "अपर्याप्त <0/> बैलेंस"
 #: src/lib/errors/definitions/deposit.ts
 #: src/lib/errors/definitions/deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/trade/withdraw-validation.ts
+#: src/lib/trade/withdrawal.ts
 msgid "Insufficient balance"
 msgstr "अपर्याप्त बैलेंस"
 
@@ -2670,7 +2684,7 @@ msgid "Insufficient funds for gas"
 msgstr "गैस के लिए अपर्याप्त फंड"
 
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/trade/withdraw-validation.ts
+#: src/lib/trade/withdrawal.ts
 msgid "Invalid amount"
 msgstr "अमान्य राशि"
 
@@ -3333,8 +3347,12 @@ msgid "Minimum withdrawal is ${0}"
 msgstr "न्यूनतम निकासी ${0} है"
 
 #: src/lib/trade/withdraw-validation.ts
-msgid "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
-msgstr "न्यूनतम निकासी ${MIN_WITHDRAW_USD} है"
+#~ msgid "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
+#~ msgstr "न्यूनतम निकासी ${MIN_WITHDRAW_USD} है"
+
+#: src/lib/trade/withdrawal.ts
+msgid "Minimum withdrawal is ${minimum}"
+msgstr "न्यूनतम निकासी ${minimum} है"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Minute(s)"
@@ -3444,8 +3462,8 @@ msgstr "नेटवर्क"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Network fee"
-msgstr "नेटवर्क शुल्क"
+#~ msgid "Network fee"
+#~ msgstr "नेटवर्क शुल्क"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "New"
@@ -3711,6 +3729,16 @@ msgstr "OI"
 #: src/components/trade/components/wallet-modal.tsx
 msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
 msgstr "iPhone या iPad पर शेयर मेनू खोलें, होम स्क्रीन पर जोड़ें चुनें, फिर होम स्क्रीन से gatu लॉन्च करें।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#~ msgid "One-time account activation"
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "One-time account activation fee"
+msgstr "एकमुश्त खाता सक्रियण शुल्क"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Only scan a QR displayed by this terminal on your desktop."
@@ -4725,6 +4753,7 @@ msgstr ""
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Retry"
 msgstr "फिर से प्रयास करें"
@@ -6298,7 +6327,6 @@ msgid "Time In Force"
 msgstr "Time In Force"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "To"
 msgstr "को"
 
@@ -6743,6 +6771,10 @@ msgstr "Arbitrum USDC बैलेंस लोड नहीं किया ज
 msgid "Unable to load the current account mode. Reconnect your wallet and try again."
 msgstr "वर्तमान खाता मोड लोड नहीं हो सका। अपना वॉलेट दोबारा कनेक्ट करें और फिर कोशिश करें।"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Unable to load the current CCTP withdrawal fee."
+msgstr "वर्तमान CCTP निकासी शुल्क लोड नहीं हो सका।"
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to prepare USDC permit"
@@ -6760,6 +6792,14 @@ msgstr "वॉलेट को Arbitrum पर स्विच नहीं क�
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Unable to verify access"
 msgstr "पहुँच सत्यापित नहीं हो सकी"
+
+#: src/lib/trade/withdrawal.ts
+msgid "Unable to verify available balance"
+msgstr "उपलब्ध शेष राशि सत्यापित नहीं की जा सकी"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Unable to verify withdrawal eligibility."
+msgstr "निकासी पात्रता सत्यापित नहीं की जा सकी।"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
@@ -7118,8 +7158,25 @@ msgid "Withdrawal failed"
 msgstr "निकासी विफल रही"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdrawal fee"
+msgstr "निकासी शुल्क"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdrawal route"
+msgstr "निकासी मार्ग"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawal status unknown"
+msgstr "निकासी की स्थिति अज्ञात है"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal submitted"
 msgstr "निकासी सबमिट की गई"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawals are unavailable for this address."
+msgstr "इस पते के लिए निकासी उपलब्ध नहीं है।"
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #~ msgid "Wrong network"

@@ -1,6 +1,6 @@
-import { Button, TextInput } from "@gatu/ui";
+import { Button, Select, TextInput } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
 	ArrowLineDownIcon,
 	ArrowLineUpIcon,
@@ -12,12 +12,11 @@ import {
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
 import { USDC_TRANSFER_DECIMALS } from "@/config/app";
-import { WITHDRAWAL_FEE_USD } from "@/config/contracts";
 import { NETWORKS } from "@/config/networks";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
-import { floorToString, limitDecimalInput, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
-import { NetworkSelect } from "./shared-ui";
+import { floorToString, limitDecimalInput, toNumberOrZero } from "@/lib/trade/numbers";
+import { getWithdrawalNetReceived, isWithdrawalRoute, type WithdrawalRoute } from "@/lib/trade/withdrawal";
 
 const ARBITRUM_NETWORK = NETWORKS[0];
 
@@ -29,6 +28,16 @@ interface Props {
 	destinationRequired: boolean;
 	destinationError: string | null;
 	available: string;
+	maxAmount: string;
+	route: WithdrawalRoute;
+	onRouteChange: (route: WithdrawalRoute) => void;
+	routeFee: string | null;
+	activationFee: string;
+	showActivationFee: boolean;
+	prerequisitesPending: boolean;
+	prerequisiteError: string | null;
+	canRetryPrerequisites: boolean;
+	onRetryPrerequisites: () => void;
 	validation: { valid: boolean; error: string | null };
 	canSubmit: boolean;
 	isPending: boolean;
@@ -46,6 +55,16 @@ export function WithdrawForm({
 	destinationRequired,
 	destinationError,
 	available,
+	maxAmount,
+	route,
+	onRouteChange,
+	routeFee,
+	activationFee,
+	showActivationFee,
+	prerequisitesPending,
+	prerequisiteError,
+	canRetryPrerequisites,
+	onRetryPrerequisites,
 	validation,
 	canSubmit,
 	isPending,
@@ -54,13 +73,26 @@ export function WithdrawForm({
 	showSpotFundsNotice = false,
 	onTransferClick,
 }: Props) {
+	const { t: translate } = useLingui();
 	const availableNum = toNumberOrZero(available);
-	const amountNum = toNumber(amount);
-	const netReceived = amountNum !== null && amountNum > 0 ? Math.max(amountNum - WITHDRAWAL_FEE_USD, 0) : null;
+	const maxAmountNum = toNumberOrZero(maxAmount);
+	const netReceived = getWithdrawalNetReceived(amount, routeFee);
+	const routeOptions = [
+		{ value: "arbitrum-cctp", label: translate`Arbitrum (CCTP)` },
+		{ value: "arbitrum-legacy", label: translate`Arbitrum (Legacy)` },
+	];
 
 	return (
 		<div className="flex flex-1 flex-col gap-2">
-			<NetworkSelect label={<Trans>To</Trans>} value="arbitrum" onChange={() => {}} disabled />
+			<Select
+				label={translate`Withdrawal route`}
+				value={route}
+				onValueChange={(value) => {
+					if (isWithdrawalRoute(value)) onRouteChange(value);
+				}}
+				options={routeOptions}
+				disabled={isPending}
+			/>
 
 			<div>
 				<NumberInput
@@ -73,7 +105,7 @@ export function WithdrawForm({
 							</span>
 						</>
 					}
-					onLabelValueClick={() => !isPending && onAmountChange(floorToString(availableNum, USDC_TRANSFER_DECIMALS))}
+					onLabelValueClick={() => !isPending && onAmountChange(floorToString(maxAmountNum, USDC_TRANSFER_DECIMALS))}
 					placeholder="0.00"
 					value={amount}
 					onChange={(e) => onAmountChange(limitDecimalInput(e.target.value, USDC_TRANSFER_DECIMALS))}
@@ -133,6 +165,24 @@ export function WithdrawForm({
 				</div>
 			)}
 
+			{prerequisiteError ? (
+				<div role="alert" className="rounded-8 border border-stroke-error-weak bg-error-soft p-2.5 text-xs text-error">
+					<p>{prerequisiteError}</p>
+					{canRetryPrerequisites ? (
+						<Button
+							variant="link"
+							intent="brand"
+							size="xxs"
+							className="mt-1 h-auto p-0"
+							onClick={onRetryPrerequisites}
+							disabled={isPending}
+						>
+							<Trans>Retry</Trans>
+						</Button>
+					) : null}
+				</div>
+			) : null}
+
 			<div className="rounded-8 border border-stroke-weak/40 bg-surface p-3 space-y-2 text-xs">
 				<InfoRow
 					className="p-0"
@@ -140,11 +190,19 @@ export function WithdrawForm({
 					label={
 						<>
 							<WalletIcon className="size-3" />
-							<Trans>Network fee</Trans>
+							<Trans>Withdrawal fee</Trans>
 						</>
 					}
-					value={`$${WITHDRAWAL_FEE_USD}`}
+					value={routeFee === null ? "--" : `$${formatNumber(toNumberOrZero(routeFee), 2)}`}
 				/>
+				{showActivationFee ? (
+					<InfoRow
+						className="p-0"
+						labelClassName="flex items-center gap-1.5 text-fg"
+						label={<Trans>One-time account activation fee</Trans>}
+						value={`$${formatNumber(toNumberOrZero(activationFee), 2)}`}
+					/>
+				) : null}
 				<InfoRow
 					className="p-0"
 					labelClassName="flex items-center gap-1.5 text-fg"
@@ -154,7 +212,7 @@ export function WithdrawForm({
 							<Trans>Net received</Trans>
 						</>
 					}
-					value={netReceived === null ? "--" : `$${formatNumber(netReceived, 2)}`}
+					value={netReceived === null ? "--" : `$${formatNumber(toNumberOrZero(netReceived), 2)}`}
 				/>
 				<InfoRow
 					className="p-0"
@@ -174,10 +232,10 @@ export function WithdrawForm({
 				variant="filled"
 				intent="neutral"
 				onClick={onSubmit}
-				disabled={!canSubmit || isPending}
+				disabled={!canSubmit || isPending || prerequisitesPending}
 				className="mt-auto w-full"
 			>
-				{isPending ? (
+				{isPending || prerequisitesPending ? (
 					<>
 						<SpinnerGapIcon className="size-4 animate-spin" />
 						<Trans>Processing...</Trans>

@@ -3,24 +3,32 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ArrowLineDownIcon, ArrowLineUpIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Suspense, useEffect, useState } from "react";
-import { isAddress } from "viem";
+import { isAddress, zeroAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
-import { WITHDRAWAL_FEE_USD } from "@/config/contracts";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { NETWORKS } from "@/config/networks";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useCctpWithdrawalFee } from "@/hooks/trade/use-cctp-withdrawal-fee";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { formatExchangeActionError, formatTransferError } from "@/lib/errors/format";
+import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
-import { useExchange } from "@/lib/hyperliquid";
+import { useExchange, useInfo } from "@/lib/hyperliquid";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
-import { toSafeBig } from "@/lib/trade/numbers";
-import { validateWithdraw } from "@/lib/trade/withdraw-validation";
+import {
+	buildCctpWithdrawalParameters,
+	getMaximumWithdrawal,
+	getWithdrawalNetReceived,
+	getWithdrawalRouteFee,
+	getWithdrawalSourceDex,
+	isPositiveDecimal,
+	validateWithdrawal,
+	type WithdrawalRoute,
+} from "@/lib/trade/withdrawal";
 import { getPrivyEmailAddress, shouldUsePrivyEmbeddedWallet } from "@/lib/wallet/privy-wagmi";
 import {
 	useDepositModalActions,
@@ -41,6 +49,13 @@ const ARBITRUM_NETWORK = NETWORKS[0];
 
 const DEPOSIT_TAB_MIN_HEIGHT = "min-h-72";
 
+interface WithdrawalAttempt {
+	activationFee: string;
+	amount: string;
+	route: WithdrawalRoute;
+	routeFee: string;
+}
+
 function normalizeError(error: unknown): Error {
 	if (error instanceof Error) return error;
 	return new Error(typeof error === "string" ? error : t`Unknown error`);
@@ -55,6 +70,9 @@ export function DepositModal() {
 	const [depositAmount, setDepositAmount] = useState("");
 	const [withdrawAmount, setWithdrawAmount] = useState("");
 	const [withdrawDestination, setWithdrawDestination] = useState("");
+	const [withdrawalRoute, setWithdrawalRoute] = useState<WithdrawalRoute>("arbitrum-cctp");
+	const [withdrawalAttempt, setWithdrawalAttempt] = useState<WithdrawalAttempt | null>(null);
+	const [isWithdrawalPreflighting, setIsWithdrawalPreflighting] = useState(false);
 	const isTestnet = useIsTestnet();
 	const depositTxChain = isTestnet ? arbitrumSepolia : arbitrum;
 
@@ -121,17 +139,8 @@ export function DepositModal() {
 		spotAvailableAfterMaintenance,
 	});
 	const withdrawable = String(accountSummary.withdrawable);
-	const withdrawableNum = accountSummary.withdrawable;
 	const showSpotFundsNotice =
 		!accountSummary.usesSpotStateForPerps && accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
-
-	const {
-		mutate: withdraw,
-		isPending: isWithdrawPending,
-		isSuccess: isWithdrawSuccess,
-		error: withdrawError,
-		reset: resetWithdraw,
-	} = useExchange("withdraw3");
 
 	const baseDepositValidation = validateDeposit(depositAmount);
 	const embeddedWalletValidationError =
@@ -145,7 +154,6 @@ export function DepositModal() {
 		: isEmbeddedDeposit && !smartDepositEnabled
 			? { valid: false, error: t`Smart wallet deposits are not enabled for this network.` }
 			: baseDepositValidation;
-	const withdrawValidation = validateWithdraw(withdrawAmount, withdrawableNum);
 	const canUseFundsActions = hasWalletAccess && !!walletAddress;
 	const canUseDeposit = canUseFundsActions || isEmbeddedDeposit;
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
@@ -155,6 +163,35 @@ export function DepositModal() {
 		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
 	});
 	const visibleTab = showBridgeTab || activeTab !== "bridge" ? activeTab : "deposit";
+	const withdrawalQueriesEnabled = open && visibleTab === "withdraw" && canUseFundsActions;
+	const preTransferAddress = walletAddress ?? zeroAddress;
+	const preTransferCheckQuery = useInfo(
+		"preTransferCheck",
+		{ user: preTransferAddress, source: preTransferAddress },
+		{ enabled: withdrawalQueriesEnabled, staleTime: 30_000, refetchOnWindowFocus: true },
+	);
+	const cctpFeeQuery = useCctpWithdrawalFee({
+		enabled: withdrawalQueriesEnabled && withdrawalRoute === "arbitrum-cctp",
+		isTestnet,
+	});
+	const cctpWithdrawal = useExchange("sendToEvmWithData");
+	const legacyWithdrawal = useExchange("withdraw3");
+	const isWithdrawPending = isWithdrawalPreflighting || cctpWithdrawal.isPending || legacyWithdrawal.isPending;
+	const isWithdrawSuccess = cctpWithdrawal.isSuccess || legacyWithdrawal.isSuccess;
+	const withdrawError = cctpWithdrawal.error ?? legacyWithdrawal.error;
+	const cctpFee = cctpFeeQuery.data ?? null;
+	const withdrawalRouteFee = getWithdrawalRouteFee(withdrawalRoute, cctpFee);
+	const withdrawalActivationFee = preTransferCheckQuery.data?.fee ?? "0";
+	const withdrawalMaxAmount = preTransferCheckQuery.isSuccess
+		? getMaximumWithdrawal(withdrawable, withdrawalActivationFee)
+		: "0";
+	const withdrawValidation = validateWithdrawal({
+		amount: withdrawAmount,
+		available: withdrawable,
+		route: withdrawalRoute,
+		routeFee: withdrawalRouteFee,
+		activationFee: withdrawalActivationFee,
+	});
 	const isDepositPending = depositStatus === "pending" || depositStatus === "confirming";
 	const displayedDepositAmount = depositExecutionAmount ?? depositAmount;
 	const walletDepositProviderUnavailable =
@@ -167,7 +204,26 @@ export function DepositModal() {
 		requiresWithdrawDestination && normalizedWithdrawDestination && !isAddress(normalizedWithdrawDestination)
 			? t`Invalid destination address`
 			: null;
-	const canSubmitWithdraw = withdrawValidation.valid && isWithdrawDestinationValid;
+	const withdrawalPrerequisitesPending =
+		isWithdrawalPreflighting ||
+		preTransferCheckQuery.isPending ||
+		(withdrawalRoute === "arbitrum-cctp" && cctpFeeQuery.isPending);
+	let withdrawalPrerequisiteError: string | null = null;
+	if (preTransferCheckQuery.data?.isSanctioned) {
+		withdrawalPrerequisiteError = t`Withdrawals are unavailable for this address.`;
+	} else if (preTransferCheckQuery.isError) {
+		withdrawalPrerequisiteError = t`Unable to verify withdrawal eligibility.`;
+	} else if (withdrawalRoute === "arbitrum-cctp" && cctpFeeQuery.isError) {
+		withdrawalPrerequisiteError = t`Unable to load the current CCTP withdrawal fee.`;
+	}
+	const withdrawalPrerequisitesReady =
+		preTransferCheckQuery.isSuccess &&
+		!preTransferCheckQuery.data.isSanctioned &&
+		(withdrawalRoute === "arbitrum-legacy" || cctpFeeQuery.isSuccess);
+	const canRetryWithdrawalPrerequisites =
+		!preTransferCheckQuery.data?.isSanctioned &&
+		(preTransferCheckQuery.isError || (withdrawalRoute === "arbitrum-cctp" && cctpFeeQuery.isError));
+	const canSubmitWithdraw = withdrawValidation.valid && isWithdrawDestinationValid && withdrawalPrerequisitesReady;
 
 	useEffect(() => {
 		if (!open || visibleTab !== "deposit" || !needsEmbeddedWallet) return;
@@ -180,10 +236,14 @@ export function DepositModal() {
 
 	function handleClose() {
 		resetDeposit();
-		resetWithdraw();
+		cctpWithdrawal.reset();
+		legacyWithdrawal.reset();
 		setDepositAmount("");
 		setWithdrawAmount("");
 		setWithdrawDestination("");
+		setWithdrawalRoute("arbitrum-cctp");
+		setWithdrawalAttempt(null);
+		setIsWithdrawalPreflighting(false);
 		close();
 	}
 
@@ -206,12 +266,73 @@ export function DepositModal() {
 		}
 	}
 
-	function handleWithdrawSubmit() {
-		if (!canSubmitWithdraw || !walletAddress) return;
+	async function handleWithdrawSubmit() {
+		if (!canSubmitWithdraw || !walletAddress || withdrawalRouteFee === null) return;
 		const destination = requiresWithdrawDestination ? normalizedWithdrawDestination : walletAddress;
-		if (destination) {
-			withdraw({ destination, amount: withdrawAmount });
+		if (!isAddress(destination)) return;
+
+		setIsWithdrawalPreflighting(true);
+		try {
+			const preTransferResult = await preTransferCheckQuery.refetch();
+			if (!preTransferResult.data || preTransferResult.isError || preTransferResult.data.isSanctioned) return;
+
+			let freshRouteFee = getWithdrawalRouteFee(withdrawalRoute, cctpFee);
+			if (withdrawalRoute === "arbitrum-cctp") {
+				const cctpFeeResult = await cctpFeeQuery.refetch();
+				if (!cctpFeeResult.data || cctpFeeResult.isError) return;
+				freshRouteFee = cctpFeeResult.data;
+			}
+			if (freshRouteFee === null) return;
+
+			const freshValidation = validateWithdrawal({
+				amount: withdrawAmount,
+				available: withdrawable,
+				route: withdrawalRoute,
+				routeFee: freshRouteFee,
+				activationFee: preTransferResult.data.fee,
+			});
+			if (!freshValidation.valid) return;
+
+			setWithdrawalAttempt({
+				activationFee: preTransferResult.data.fee,
+				amount: withdrawAmount,
+				route: withdrawalRoute,
+				routeFee: freshRouteFee,
+			});
+			if (withdrawalRoute === "arbitrum-cctp") {
+				await cctpWithdrawal.mutateAsync(
+					buildCctpWithdrawalParameters({
+						amount: withdrawAmount,
+						destination,
+						sourceDex: getWithdrawalSourceDex(accountSummary.usesSpotStateForPerps),
+					}),
+				);
+				return;
+			}
+			await legacyWithdrawal.mutateAsync({ destination, amount: withdrawAmount });
+		} catch {
+			// Query and mutation state render the actionable error without duplicating the request.
+		} finally {
+			setIsWithdrawalPreflighting(false);
 		}
+	}
+
+	function handleWithdrawalRouteChange(route: WithdrawalRoute) {
+		cctpWithdrawal.reset();
+		legacyWithdrawal.reset();
+		setWithdrawalAttempt(null);
+		setWithdrawalRoute(route);
+	}
+
+	function handleWithdrawalPrerequisiteRetry() {
+		void preTransferCheckQuery.refetch();
+		if (withdrawalRoute === "arbitrum-cctp") void cctpFeeQuery.refetch();
+	}
+
+	function handleWithdrawalErrorRetry() {
+		cctpWithdrawal.reset();
+		legacyWithdrawal.reset();
+		setWithdrawalAttempt(null);
 	}
 
 	function handlePerpsSpotTransferClick() {
@@ -350,8 +471,9 @@ export function DepositModal() {
 		);
 	}
 
-	if (isWithdrawSuccess) {
-		const withdrawNetReceived = Math.max(toSafeBig(withdrawAmount).minus(WITHDRAWAL_FEE_USD).toNumber(), 0);
+	if (isWithdrawSuccess && withdrawalAttempt) {
+		const withdrawNetReceived = getWithdrawalNetReceived(withdrawalAttempt.amount, withdrawalAttempt.routeFee);
+		const isCctpWithdrawal = withdrawalAttempt.route === "arbitrum-cctp";
 
 		return (
 			<StatusScreen
@@ -363,13 +485,28 @@ export function DepositModal() {
 					<div className="space-y-1">
 						<div>
 							<Trans>Net received</Trans>:{" "}
-							<span className="tabular-nums font-medium text-success">${formatNumber(withdrawNetReceived, 2)}</span>
+							<span className="tabular-nums font-medium text-success">
+								${formatNumber(Number(withdrawNetReceived ?? 0), 2)}
+							</span>
 						</div>
 						<div className="text-fg-muted">
-							<Trans>Network fee</Trans>: <span className="tabular-nums">${formatNumber(WITHDRAWAL_FEE_USD, 2)}</span>
+							<Trans>Withdrawal fee</Trans>:{" "}
+							<span className="tabular-nums">${formatNumber(Number(withdrawalAttempt.routeFee), 2)}</span>
 						</div>
+						{isPositiveDecimal(withdrawalAttempt.activationFee) ? (
+							<div className="text-fg-muted">
+								<Trans>One-time account activation fee</Trans>:{" "}
+								<span className="tabular-nums">${formatNumber(Number(withdrawalAttempt.activationFee), 2)}</span>
+							</div>
+						) : null}
 						<div className="text-fg-muted">
-							<Trans>will arrive in {ARBITRUM_NETWORK.estimatedWithdrawTime}</Trans>
+							{isCctpWithdrawal ? (
+								<Trans>
+									CCTP forwarding to Arbitrum usually completes in {ARBITRUM_NETWORK.estimatedWithdrawTime}.
+								</Trans>
+							) : (
+								<Trans>will arrive in {ARBITRUM_NETWORK.estimatedWithdrawTime}</Trans>
+							)}
 						</div>
 					</div>
 				}
@@ -383,23 +520,30 @@ export function DepositModal() {
 	}
 
 	if (withdrawError) {
+		const isAmbiguousWithdrawal = isAmbiguousExchangeActionError(withdrawError);
 		return (
 			<StatusScreen
 				open={open}
 				title={<Trans>Withdraw</Trans>}
 				icon="error"
-				heading={<Trans>Withdrawal failed</Trans>}
+				heading={isAmbiguousWithdrawal ? <Trans>Withdrawal status unknown</Trans> : <Trans>Withdrawal failed</Trans>}
 				description={formatExchangeActionError(withdrawError, t`Withdrawal failed`)}
 				onClose={handleClose}
 			>
-				<div className="flex w-full gap-2">
-					<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
-						<Trans>Cancel</Trans>
+				{isAmbiguousWithdrawal ? (
+					<Button onClick={handleClose} className="w-full">
+						<Trans>Close</Trans>
 					</Button>
-					<Button onClick={resetWithdraw} className="flex-1">
-						<Trans>Retry</Trans>
-					</Button>
-				</div>
+				) : (
+					<div className="flex w-full gap-2">
+						<Button variant="outline" intent="neutral" onClick={handleClose} className="flex-1">
+							<Trans>Cancel</Trans>
+						</Button>
+						<Button onClick={handleWithdrawalErrorRetry} className="flex-1">
+							<Trans>Retry</Trans>
+						</Button>
+					</div>
+				)}
 			</StatusScreen>
 		);
 	}
@@ -468,6 +612,16 @@ export function DepositModal() {
 								destinationRequired={requiresWithdrawDestination}
 								destinationError={withdrawDestinationError}
 								available={withdrawable}
+								maxAmount={withdrawalMaxAmount}
+								route={withdrawalRoute}
+								onRouteChange={handleWithdrawalRouteChange}
+								routeFee={withdrawalRouteFee}
+								activationFee={withdrawalActivationFee}
+								showActivationFee={isPositiveDecimal(withdrawalActivationFee)}
+								prerequisitesPending={withdrawalPrerequisitesPending}
+								prerequisiteError={withdrawalPrerequisiteError}
+								canRetryPrerequisites={canRetryWithdrawalPrerequisites}
+								onRetryPrerequisites={handleWithdrawalPrerequisiteRetry}
 								validation={withdrawValidation}
 								canSubmit={canSubmitWithdraw}
 								isPending={isWithdrawPending}

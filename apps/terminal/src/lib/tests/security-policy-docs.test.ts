@@ -32,4 +32,9 @@ describe("security policy documentation", () => {
 		expect(securityHeaders["content-security-policy"]).toContain("frame-ancestors 'none'");
 		expect(chartingLibrarySecurityHeaders["content-security-policy"]).toContain("frame-ancestors 'self'");
 	});
+
+	it("allows the HyperEVM RPC endpoints used for CCTP fee discovery", () => {
+		expect(cspDirectives["connect-src"]).toContain("https://rpc.hyperliquid.xyz");
+		expect(cspDirectives["connect-src"]).toContain("https://rpc.hyperliquid-testnet.xyz");
+	});
 });

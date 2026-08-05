@@ -516,6 +516,14 @@ msgstr ""
 msgid "Approving a new mobile key replaces the previous mobile key."
 msgstr ""
 
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Arbitrum (CCTP)"
+msgstr "Arbitrum (CCTP)"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Arbitrum (Legacy)"
+msgstr "Arbitrum (قديم)"
+
 #: src/lib/errors/format.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Arbitrum network switch was rejected."
@@ -853,6 +861,11 @@ msgstr "جارٍ الإلغاء..."
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "لا يمكن التبديل إلى وضع الهامش المعزول مع وجود مركز مفتوح. أغلق مركزك أولاً."
 
+#. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "CCTP forwarding to Arbitrum usually completes in {0}."
+msgstr "عادةً ما يكتمل تحويل CCTP إلى Arbitrum خلال {0}."
+
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Change leverage"
 msgstr "تغيير الرافعة المالية"
@@ -900,6 +913,7 @@ msgstr ""
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Close"
@@ -2657,7 +2671,7 @@ msgstr "رصيد <0/> غير كافٍ"
 #: src/lib/errors/definitions/deposit.ts
 #: src/lib/errors/definitions/deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/trade/withdraw-validation.ts
+#: src/lib/trade/withdrawal.ts
 msgid "Insufficient balance"
 msgstr "رصيد غير كافٍ"
 
@@ -2670,7 +2684,7 @@ msgid "Insufficient funds for gas"
 msgstr "أموال غير كافية لرسوم الغاز"
 
 #: src/lib/hyperliquid/use-deposit.ts
-#: src/lib/trade/withdraw-validation.ts
+#: src/lib/trade/withdrawal.ts
 msgid "Invalid amount"
 msgstr "مبلغ غير صالح"
 
@@ -3333,8 +3347,12 @@ msgid "Minimum withdrawal is ${0}"
 msgstr "أدنى سحب هو ${0}"
 
 #: src/lib/trade/withdraw-validation.ts
-msgid "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
-msgstr "أدنى سحب هو ${MIN_WITHDRAW_USD}"
+#~ msgid "Minimum withdrawal is ${MIN_WITHDRAW_USD}"
+#~ msgstr "أدنى سحب هو ${MIN_WITHDRAW_USD}"
+
+#: src/lib/trade/withdrawal.ts
+msgid "Minimum withdrawal is ${minimum}"
+msgstr "الحد الأدنى للسحب هو ${minimum}"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Minute(s)"
@@ -3444,8 +3462,8 @@ msgstr "الشبكة"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
-msgid "Network fee"
-msgstr "رسوم الشبكة"
+#~ msgid "Network fee"
+#~ msgstr "رسوم الشبكة"
 
 #: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "New"
@@ -3711,6 +3729,16 @@ msgstr "العقود المفتوحة"
 #: src/components/trade/components/wallet-modal.tsx
 msgid "On iPhone or iPad, open the Share menu, choose Add to Home Screen, then launch gatu from your Home Screen."
 msgstr "على iPhone أو iPad، افتح قائمة المشاركة واختر إضافة إلى الشاشة الرئيسية، ثم شغّل gatu من الشاشة الرئيسية."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+#~ msgid "One-time account activation"
+#~ msgstr ""
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "One-time account activation fee"
+msgstr "رسوم تفعيل الحساب لمرة واحدة"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Only scan a QR displayed by this terminal on your desktop."
@@ -4725,6 +4753,7 @@ msgstr ""
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 msgid "Retry"
 msgstr "إعادة المحاولة"
@@ -6298,7 +6327,6 @@ msgid "Time In Force"
 msgstr "مدة سريان الأمر"
 
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "To"
 msgstr "إلى"
 
@@ -6743,6 +6771,10 @@ msgstr "تعذّر تحميل رصيد USDC على Arbitrum"
 msgid "Unable to load the current account mode. Reconnect your wallet and try again."
 msgstr "تعذر تحميل وضع الحساب الحالي. أعد توصيل محفظتك وحاول مرة أخرى."
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Unable to load the current CCTP withdrawal fee."
+msgstr "تعذر تحميل رسوم السحب الحالية عبر CCTP."
+
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 msgid "Unable to prepare USDC permit"
@@ -6760,6 +6792,14 @@ msgstr "تعذّر تبديل المحفظة إلى Arbitrum. بدّل الشب�
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Unable to verify access"
 msgstr "تعذر التحقق من الوصول"
+
+#: src/lib/trade/withdrawal.ts
+msgid "Unable to verify available balance"
+msgstr "تعذر التحقق من الرصيد المتاح"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Unable to verify withdrawal eligibility."
+msgstr "تعذر التحقق من أهلية السحب."
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
@@ -7118,8 +7158,25 @@ msgid "Withdrawal failed"
 msgstr "فشل السحب"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdrawal fee"
+msgstr "رسوم السحب"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdrawal route"
+msgstr "مسار السحب"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawal status unknown"
+msgstr "حالة السحب غير معروفة"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Withdrawal submitted"
 msgstr "تم إرسال السحب"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Withdrawals are unavailable for this address."
+msgstr "عمليات السحب غير متاحة لهذا العنوان."
 
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #~ msgid "Wrong network"

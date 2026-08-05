@@ -146,7 +146,8 @@ In `0.33.3`, the display union also includes `Twap Slice`, `Vault Close`, and `S
 | Transfer between DEXs/sub-accounts | `sendAsset({destination, sourceDex, destinationDex, token, amount})` | E |
 | Move USDC between perp↔spot | `usdClassTransfer({amount, toPerp, ...})` | E |
 | Withdraw to Arbitrum L1 | `withdraw3({destination, amount, ...})` | E |
-| Validate transfer before sending | `preTransferCheck({user, destination, amount})` | I |
+| Withdraw USDC through CCTP | `sendToEvmWithData({token, amount, sourceDex, destinationRecipient, addressEncoding, destinationChainId, gasLimit, data})` | E |
+| Validate transfer before sending | `preTransferCheck({user, source})` | I |
 
 ---
 

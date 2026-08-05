@@ -76,7 +76,9 @@ useOrderValidation hook
 
 ### Constants
 - `src/config/constants.ts` - ORDER_MIN_NOTIONAL_USD, SCALE_LEVELS_*, TWAP_MINUTES_*
-- `src/config/contracts.ts` - MIN_DEPOSIT_USDC, MIN_WITHDRAW_USD
+- `src/config/contracts.ts` - MIN_DEPOSIT_USDC
+- `src/config/cctp.ts` - CCTP route parameters and explicit Legacy withdrawal defaults
+- `src/lib/trade/withdrawal.ts` - Dynamic withdrawal fee, minimum, balance, and net-received validation
 
 ### Localization
 - `src/locales/en/messages.po` - All error message strings
