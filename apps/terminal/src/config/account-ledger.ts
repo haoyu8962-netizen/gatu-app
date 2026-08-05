@@ -9,11 +9,16 @@ export const PORTFOLIO_TRANSFERS_TAB = {
 
 export const ACCOUNT_LEDGER_ACTION_MESSAGES: Record<AccountLedgerAction, MessageDescriptor> = {
 	activateDex: msg`Activate DEX`,
+	accountActivationFee: msg`Account Activation Fee`,
 	borrow: msg`Borrow`,
 	deployGasAuction: msg`Deploy Gas Auction`,
 	deposit: msg`Deposit`,
+	gasAuctionFee: msg`Priority Gas Auction Fee`,
 	genesisDistribution: msg`Genesis Distribution`,
+	hip3LiquidatorDeposit: msg`HIP-3 Liquidator Deposit`,
+	hip3LiquidatorWithdrawal: msg`HIP-3 Liquidator Withdrawal`,
 	liquidation: msg`Liquidated`,
+	other: msg`Other Ledger Update`,
 	repay: msg`Repay`,
 	rewardsClaim: msg`Rewards Claim`,
 	send: msg`Send`,
@@ -27,6 +32,7 @@ export const ACCOUNT_LEDGER_ACTION_MESSAGES: Record<AccountLedgerAction, Message
 	vaultDeposit: msg`Vault Deposit`,
 	vaultDistribution: msg`Vault Distribution`,
 	vaultWithdrawal: msg`Vault Withdrawal`,
+	welcomeBonus: msg`Welcome Bonus`,
 	withdrawal: msg`Withdrawal`,
 };
 

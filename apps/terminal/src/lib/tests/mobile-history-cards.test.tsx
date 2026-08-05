@@ -126,6 +126,48 @@ vi.mock("@/hooks/trade/use-historical-orders", () => ({
 	}),
 }));
 
+vi.mock("@/hooks/trade/use-user-funding", () => ({
+	useUserFunding: () => ({
+		error: null,
+		fundings: [...mocks.fundings].sort((left, right) => Number(right.time) - Number(left.time)),
+		isConnected: true,
+		status: "ready",
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-history-csv-export", () => ({
+	useFundingHistoryCsvExport: ({
+		buildRows,
+		filename,
+	}: {
+		buildRows: (items: unknown[]) => string[][];
+		filename: string;
+	}) => ({
+		exportCsv: async () => mocks.downloadCsv(filename, buildRows(mocks.fundings)),
+		isExporting: false,
+	}),
+	useHistoricalOrdersCsvExport: ({
+		buildRows,
+		filename,
+	}: {
+		buildRows: (items: unknown[]) => string[][];
+		filename: string;
+	}) => ({
+		exportCsv: async () => mocks.downloadCsv(filename, buildRows(mocks.orders)),
+		isExporting: false,
+	}),
+	useUserFillsCsvExport: ({
+		buildRows,
+		filename,
+	}: {
+		buildRows: (items: unknown[]) => string[][];
+		filename: string;
+	}) => ({
+		exportCsv: async () => mocks.downloadCsv(filename, buildRows(mocks.fills)),
+		isExporting: false,
+	}),
+}));
+
 vi.mock("@/hooks/trade/use-market-navigation", () => ({
 	useMarketNavigation: () => mocks.navigateToMarket,
 }));
@@ -371,6 +413,19 @@ describe("mobile history disclosure cards", () => {
 		);
 	});
 
+	it("keeps full trade export available when the recent mobile snapshot is empty", () => {
+		mocks.fills = [];
+		render(<MobileHistoryTab scrollMode="page" />);
+
+		const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(candidate) => candidate.textContent === "Export CSV",
+		);
+		expect(container.textContent).toContain("No fills found.");
+		expect(button?.disabled).toBe(false);
+		act(() => button?.click());
+		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
+	});
+
 	it("keeps funding position, payment, rate, and direction semantics", () => {
 		render(<MobileFundingTab scrollMode="page" />);
 		expectM4VisualContract("mobile-funding-history-filter-row", "mobile-funding-history-footer", 1);
@@ -382,13 +437,26 @@ describe("mobile history disclosure cards", () => {
 		expect(container.textContent).toContain("Payment");
 		expect(container.textContent).toContain("Rate");
 		expect(container.textContent).toContain("Short");
-		expect(container.textContent).toContain("Cumulative funding");
+		expect(container.textContent).toContain("Funding shown");
 		expectDisclosureControls();
 		clickButton("Export CSV");
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"funding_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Position", "Rate", "Payment"])]),
 		);
+	});
+
+	it("keeps full funding export available when the recent mobile window is empty", () => {
+		mocks.fundings = [];
+		render(<MobileFundingTab scrollMode="page" />);
+
+		const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(candidate) => candidate.textContent === "Export CSV",
+		);
+		expect(container.textContent).toContain("No funding payments found.");
+		expect(button?.disabled).toBe(false);
+		act(() => button?.click());
+		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
 	});
 
 	it("keeps historical order labels and expands cards independently", () => {
@@ -416,6 +484,19 @@ describe("mobile history disclosure cards", () => {
 			"order_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Type", "Status"])]),
 		);
+	});
+
+	it("keeps full order export available when the recent mobile snapshot is empty", () => {
+		mocks.orders = [];
+		render(<MobileOrdersHistoryTab scrollMode="page" />);
+
+		const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(candidate) => candidate.textContent === "Export CSV",
+		);
+		expect(container.textContent).toContain("No order history found.");
+		expect(button?.disabled).toBe(false);
+		act(() => button?.click());
+		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
 	});
 
 	it("filters trade history by SDK-backed type, side, and maker/taker role without carrying state to another owner", async () => {

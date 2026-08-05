@@ -139,25 +139,29 @@ export function useTrackedOrder(options: UseTrackedOrderOptions = {}) {
 
 			try {
 				const result = await mutation.mutateAsync(tracked.params);
-				const statuses = result.response?.data?.statuses ?? [];
-				if (statuses.length === tracked.children.length) {
-					if (options.confirmationMode === "filled") {
-						const resolution = resolveFilledOrderBatchResponse(
-							result,
-							tracked.params.orders.map((order) => String(order.s)),
-						);
-						if (resolution?.status === "partial" || resolution?.status === "rejected") {
+				if (options.confirmationMode === "filled") {
+					const resolution = resolveFilledOrderBatchResponse(
+						result,
+						tracked.params.orders.map((order) => String(order.s)),
+					);
+					if (resolution?.status === "partial" || resolution?.status === "rejected") {
+						getPendingOrderActions().remove(submission.id);
+						throw new OrderBatchResolutionError(resolution);
+					}
+					if (resolution?.status === "accepted") {
+						const isFinallyConfirmed = await runFinalConfirmation(options.finalConfirmation, result);
+						if (isFinallyConfirmed) {
 							getPendingOrderActions().remove(submission.id);
-							throw new OrderBatchResolutionError(resolution);
+							return { state: "confirmed", result };
 						}
-						if (resolution?.status === "accepted") {
-							const isFinallyConfirmed = await runFinalConfirmation(options.finalConfirmation, result);
-							if (isFinallyConfirmed) {
-								getPendingOrderActions().remove(submission.id);
-								return { state: "confirmed", result };
-							}
-						}
-					} else {
+					}
+				} else {
+					const resolution = resolveOrderBatchResponse(result, tracked.children.length);
+					if (resolution?.status === "partial" || resolution?.status === "rejected") {
+						getPendingOrderActions().remove(submission.id);
+						throw new OrderBatchResolutionError(resolution);
+					}
+					if (resolution?.status === "accepted") {
 						getPendingOrderActions().remove(submission.id);
 						return { state: "confirmed", result };
 					}

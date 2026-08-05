@@ -14,13 +14,21 @@ export {
 	useUserPositions,
 } from "./account/use-user-positions";
 export {
+	type AssetIdKind,
 	calculateAssetId,
+	calculateOutcomeAssetId,
 	getAssetIdKind,
+	getOutcomeAssetIdFromCoin,
 	isBuilderPerpAssetId,
+	isOutcomeAssetId,
 	isPerpAssetId,
 	isSpotAssetId,
+	OUTCOME_ASSET_ID_OFFSET,
+	type OutcomeSide,
 	type ParsedAssetId,
+	type ParsedOutcomeAsset,
 	parseAssetId,
+	parseOutcomeCoin,
 } from "./asset-id";
 export { getMarketCapabilities, type MarketCapabilities } from "./capabilities";
 export {

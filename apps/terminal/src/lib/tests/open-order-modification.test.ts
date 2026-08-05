@@ -98,7 +98,7 @@ function buildPlan(target: OpenOrderModifyTarget, order: OpenOrder, value: strin
 }
 
 describe("open order modify capabilities", () => {
-	it("allows remaining-size edits for ordinary limits and limits trigger edits to trigger orders", () => {
+	it("allows safe limit size edits and blocks trigger replacements that require the unsafe SDK flag", () => {
 		expect(getOpenOrderModifyCapabilities(makeLimitOrder())).toEqual({
 			size: { supported: true, reason: null },
 			triggerPrice: { supported: false, reason: "trigger-price-not-applicable" },
@@ -106,8 +106,8 @@ describe("open order modify capabilities", () => {
 
 		for (const orderType of ["Stop Market", "Stop Limit", "Take Profit Market", "Take Profit Limit"] as const) {
 			expect(getOpenOrderModifyCapabilities(makeTriggerOrder(orderType))).toEqual({
-				size: { supported: true, reason: null },
-				triggerPrice: { supported: true, reason: null },
+				size: { supported: false, reason: "unsupported-order-type" },
+				triggerPrice: { supported: false, reason: "unsupported-order-type" },
 			});
 		}
 	});
@@ -143,8 +143,15 @@ describe("open order modify capabilities", () => {
 			"unsupported-tif",
 		);
 		expect(getOpenOrderModifyCapabilities(makeTriggerOrder("Stop Market", { reduceOnly: false })).size.reason).toBe(
-			"invalid-order-shape",
+			"unsupported-order-type",
 		);
+	});
+
+	it("blocks outcome modification until exact market precision metadata is available", () => {
+		expect(getOpenOrderModifyCapabilities(makeLimitOrder({ coin: "#10" }))).toEqual({
+			size: { supported: false, reason: "invalid-market-binding" },
+			triggerPrice: { supported: false, reason: "invalid-market-binding" },
+		});
 	});
 });
 
@@ -199,7 +206,7 @@ describe("open order modify target capture", () => {
 });
 
 describe("ordinary limit order modification plans", () => {
-	it.each(["Gtc", "Ioc", "Alo"] as const)("rebuilds a complete %s order while only reducing remaining sz", (tif) => {
+	it.each(["Gtc", "Alo"] as const)("rebuilds a complete %s order while only reducing remaining sz", (tif) => {
 		const order = makeLimitOrder({ tif, reduceOnly: true, side: "A" });
 		const target = captureTarget(order, "size");
 		const plan = buildPlan(target, order, "1.25");
@@ -208,7 +215,6 @@ describe("ordinary limit order modification plans", () => {
 			status: "ready",
 			normalizedValue: "1.25",
 			params: {
-				a: true,
 				modifies: [
 					{
 						oid: 42,
@@ -216,6 +222,14 @@ describe("ordinary limit order modification plans", () => {
 					},
 				],
 			},
+		});
+	});
+
+	it("rejects Ioc modification because the fail-closed SDK path only permits Alo or non-executable Gtc", () => {
+		const order = makeLimitOrder({ tif: "Ioc" });
+		expect(getOpenOrderModifyCapabilities(order).size).toEqual({
+			supported: false,
+			reason: "unsupported-tif",
 		});
 	});
 
@@ -230,84 +244,17 @@ describe("ordinary limit order modification plans", () => {
 });
 
 describe("trigger order modification plans", () => {
-	it("recomputes a stop-market protection price from the new trigger using Big.js", () => {
-		const order = makeTriggerOrder("Stop Market");
-		const target = captureTarget(order, "triggerPrice");
-		const plan = buildPlan(target, order, "120");
-		expect(plan).toEqual({
-			status: "ready",
-			normalizedValue: "120",
-			params: {
-				a: true,
-				modifies: [
-					{
-						oid: 42,
-						order: {
-							a: 0,
-							b: true,
-							p: "132",
-							s: "2",
-							r: true,
-							t: { trigger: { isMarket: true, triggerPx: "120", tpsl: "sl" } },
-						},
-					},
-				],
-			},
-		});
-	});
-
-	it("preserves the execution limit for stop-limit edits", () => {
-		const order = makeTriggerOrder("Stop Limit", { limitPx: "114.5" });
-		const target = captureTarget(order, "triggerPrice");
-		const plan = buildPlan(target, order, "120");
-		expect(plan.status).toBe("ready");
-		if (plan.status !== "ready") return;
-		expect(plan.params.modifies[0]?.order).toEqual({
-			a: 0,
-			b: true,
-			p: "114.5",
-			s: "2",
-			r: true,
-			t: { trigger: { isMarket: false, triggerPx: "120", tpsl: "sl" } },
-		});
-	});
-
-	it("maps take-profit semantics and sell-side market protection without floats", () => {
-		const order = makeTriggerOrder("Take Profit Market", { side: "A", triggerPx: "110", limitPx: "99" });
-		const target = captureTarget(order, "triggerPrice");
-		const plan = buildPlan(target, order, "120");
-		expect(plan.status).toBe("ready");
-		if (plan.status !== "ready") return;
-		expect(plan.params.modifies[0]?.order).toMatchObject({
-			b: false,
-			p: "108",
-			t: { trigger: { isMarket: true, triggerPx: "120", tpsl: "tp" } },
-		});
-	});
-
-	it("preserves the current trigger and protection price for a size-only edit", () => {
-		const order = makeTriggerOrder("Stop Market", { limitPx: "117.5" });
-		const target = captureTarget(order, "size");
-		const plan = buildPlan(target, order, "1.5");
-		expect(plan.status).toBe("ready");
-		if (plan.status !== "ready") return;
-		expect(plan.params.modifies[0]?.order).toMatchObject({
-			p: "117.5",
-			s: "1.5",
-			t: { trigger: { isMarket: true, triggerPx: "110", tpsl: "sl" } },
-		});
-	});
-
-	it("rejects imprecise, directionally invalid, unavailable-mark, and unchanged triggers", () => {
-		const order = makeTriggerOrder("Stop Market");
-		const target = captureTarget(order, "triggerPrice");
-		expect(buildPlan(target, order, "123.456")).toEqual({ status: "blocked", reason: "invalid-price" });
-		expect(buildPlan(target, order, "90")).toEqual({ status: "blocked", reason: "invalid-trigger-direction" });
-		expect(buildPlan(target, order, "110.000")).toEqual({ status: "blocked", reason: "no-change" });
-		expect(buildPlan(target, order, "120", { market: { ...market, markPx: "" } })).toEqual({
-			status: "blocked",
-			reason: "mark-price-unavailable",
-		});
+	it("fails closed and directs callers to cancel and replace", () => {
+		for (const orderType of ["Stop Market", "Stop Limit", "Take Profit Market", "Take Profit Limit"] as const) {
+			const result = createOpenOrderModifyTarget({
+				owner: OWNER,
+				env: "Mainnet",
+				field: "size",
+				market,
+				order: makeTriggerOrder(orderType),
+			});
+			expect(result).toEqual({ status: "blocked", reason: "unsupported-order-type" });
+		}
 	});
 });
 

@@ -215,6 +215,10 @@ msgstr "पहुँच प्रतिबंधित"
 msgid "Account"
 msgstr "खाता"
 
+#: src/config/account-ledger.ts
+msgid "Account Activation Fee"
+msgstr ""
+
 #: src/components/portfolio/portfolio-page.tsx
 msgid "Account activity"
 msgstr "खाता गतिविधि"
@@ -437,6 +441,10 @@ msgstr "उपलब्ध ब्रिज मार्गों के लि�
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
+msgstr ""
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Another action for this market is already in progress."
 msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
@@ -949,6 +957,10 @@ msgstr ""
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Close all positions summary"
+msgstr ""
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Close and reopen this dialog after the position data refreshes."
 msgstr ""
 
 #: src/components/trade/positions/position-close-all-modal.tsx
@@ -1564,18 +1576,37 @@ msgstr "क्रॉस मार्जिन अनुपात"
 msgid "Crypto"
 msgstr "क्रिप्टो"
 
-#: src/hooks/trade/use-account-ledger-csv.ts
-msgid "CSV export reached the history limit. Some older records were not included."
-msgstr "CSV निर्यात इतिहास सीमा तक पहुँच गया। कुछ पुराने रिकॉर्ड शामिल नहीं हुए।"
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV contains Hyperliquid's latest 10,000 fills. Older fills are unavailable through this API."
+msgstr ""
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV contains Hyperliquid's latest 2,000 orders. Older orders are unavailable through this API."
+msgstr ""
 
 #: src/hooks/trade/use-account-ledger-csv.ts
+#~ msgid "CSV export reached the history limit. Some older records were not included."
+#~ msgstr "CSV निर्यात इतिहास सीमा तक पहुँच गया। कुछ पुराने रिकॉर्ड शामिल नहीं हुए।"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV export reached the history limit. Some records were not included."
+msgstr ""
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-history-csv-export.ts
 msgid "CSV exported."
 msgstr "CSV निर्यात हो गया।"
 
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV exported. Hyperliquid provides at most the latest 2,000 orders."
+msgstr ""
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Cumulative funding"
-msgstr ""
+#~ msgid "Cumulative funding"
+#~ msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
@@ -2178,6 +2209,7 @@ msgid "Explorer"
 msgstr "एक्सप्लोरर"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -2191,6 +2223,18 @@ msgstr "CSV निर्यात करें"
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Exporting deposits and withdrawals..."
 msgstr "जमा और निकासी निर्यात हो रही है..."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting funding history..."
+msgstr ""
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting order history..."
+msgstr ""
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting trade history..."
+msgstr ""
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "failed"
@@ -2235,6 +2279,18 @@ msgstr "ट्रेडिंग सक्षम करने में वि�
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Failed to export deposits and withdrawals."
 msgstr "जमा और निकासी निर्यात नहीं हो सके।"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export funding history."
+msgstr ""
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export order history."
+msgstr ""
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export trade history."
+msgstr ""
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Failed to link desktop wallet"
@@ -2365,6 +2421,7 @@ msgstr "खाता मोड अपडेट करने में विफ�
 msgid "Failed to update isolated margin"
 msgstr "आइसोलेटेड मार्जिन अपडेट नहीं हो सका"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
 msgstr "TP/SL ऑर्डर अपडेट करने में विफल"
@@ -2511,6 +2568,11 @@ msgstr "फंडिंग इतिहास"
 #~ msgid "Funding Payments"
 #~ msgstr "फंडिंग भुगतान"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Funding shown"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
 msgstr "धन Spot खाते में है"
@@ -2564,6 +2626,23 @@ msgstr "HIP-3"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "HIP-3 Deployer Disclaimer"
 msgstr "HIP-3 डिप्लॉयर अस्वीकरण"
+
+#: src/config/account-ledger.ts
+msgid "HIP-3 Liquidator Deposit"
+msgstr ""
+
+#: src/config/account-ledger.ts
+msgid "HIP-3 Liquidator Withdrawal"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "History data could not be validated. Refresh and try again."
+msgstr ""
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold for 4 seconds to reveal phone access QR"
@@ -3958,6 +4037,9 @@ msgstr "ऑर्डर सबमिट किया गया"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
@@ -4023,6 +4105,10 @@ msgstr ""
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Other"
 msgstr "अन्य"
+
+#: src/config/account-ledger.ts
+msgid "Other Ledger Update"
+msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Other Options"
@@ -4475,6 +4561,10 @@ msgstr ""
 msgid "Primary navigation"
 msgstr "प्राथमिक नेविगेशन"
 
+#: src/config/account-ledger.ts
+msgid "Priority Gas Auction Fee"
+msgstr ""
+
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -4576,6 +4666,13 @@ msgstr ""
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
 #~ msgstr ""
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
+msgstr ""
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"
@@ -4888,6 +4985,13 @@ msgstr "चलने का समय ({TWAP_MINUTES_MIN}m - {0}h)"
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Runtime"
 msgstr "रनटाइम"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Safe action coordination across tabs is unavailable in this browser."
+msgstr ""
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 #: src/hooks/trade/use-position-close-all-submit.ts
@@ -5921,6 +6025,11 @@ msgstr ""
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
+msgstr ""
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "The exchange did not accept every order."
 msgstr "एक्सचेंज ने सभी ऑर्डर स्वीकार नहीं किए।"
@@ -5948,6 +6057,10 @@ msgstr "एक्सचेंज ने TWAP की अंतिम स्थि
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
+msgstr ""
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -6535,6 +6648,8 @@ msgstr ""
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
@@ -7137,6 +7252,10 @@ msgstr "वेबसाइट"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #~ msgid "WebSocket error"
 #~ msgstr "WebSocket त्रुटि"
+
+#: src/config/account-ledger.ts
+msgid "Welcome Bonus"
+msgstr ""
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "What is a wallet?"

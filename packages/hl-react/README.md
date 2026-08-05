@@ -103,7 +103,7 @@ Pass `persist: true` to route the query through a `["persisted", ...]` key prefi
 const { data } = useInfo("spotMeta", undefined, { persist: true, staleTime: 30 * 60_000 });
 ```
 
-Key helpers: `infoKey(method, params)` (default) and `infoPersistedKey(method, params)` (prefixed). Constant: `PERSISTED_QUERY_PREFIX`.
+Key helpers: `infoKey(method, params, env)` (default) and `infoPersistedKey(method, params, env)` (prefixed). The required environment scopes both in-memory and persisted data to Mainnet or Testnet. Constant: `PERSISTED_QUERY_PREFIX`.
 
 ### `useSubscription` — WebSocket streams
 

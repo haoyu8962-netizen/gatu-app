@@ -3,14 +3,16 @@ import { useLingui } from "@lingui/react/macro";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
-import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
+import { useFundingHistoryCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
+import { useUserFunding } from "@/hooks/trade/use-user-funding";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { buildCsvRows, downloadCsv } from "@/lib/csv";
+import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useMarkets } from "@/lib/hyperliquid";
+import { isIncompleteHistorySnapshotError, isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
@@ -45,39 +47,30 @@ export function MobileFundingTab(props: Props) {
 	const { address, isConnected } = useWalletSession();
 	const ownerKey = isConnected && address ? address.toLowerCase() : "disconnected";
 
-	return <MobileFundingTabContent key={ownerKey} address={address} isConnected={isConnected} {...props} />;
+	return <MobileFundingTabContent key={ownerKey} isConnected={isConnected} {...props} />;
 }
 
 interface MobileFundingTabContentProps extends Props {
-	address: ReturnType<typeof useWalletSession>["address"];
 	isConnected: boolean;
 }
 
-function MobileFundingTabContent({
-	address,
-	isConnected,
-	className,
-	scrollMode = "contained",
-}: MobileFundingTabContentProps) {
+function MobileFundingTabContent({ isConnected, className, scrollMode = "contained" }: MobileFundingTabContentProps) {
 	const { t } = useLingui();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
-	const {
-		data: fundingEvent,
-		status,
-		error,
-	} = useSubscription("userFundings", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
+	const { error, fundings: updates, status } = useUserFunding();
 	const markets = useMarkets();
+	const historyLimitReached = isIncompleteHistorySnapshotError(error);
+	const malformedHistory = isMalformedHistoryPageError(error);
 	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
 	const [directionFilter, setDirectionFilter] = useState<FundingDirectionFilter>("all");
 
-	const updates = fundingEvent?.fundings?.slice().sort((a, b) => b.time - a.time) ?? [];
-	const filteredUpdates = updates
-		.filter((update) => directionFilter === "all" || getFundingDirection(update.szi) === directionFilter)
-		.slice(0, MAX_HISTORY_ROWS);
+	const filteredUpdates = updates.filter(
+		(update) => directionFilter === "all" || getFundingDirection(update.szi) === directionFilter,
+	);
 	const totalFunding = getToolbarFundingTotal(filteredUpdates);
 	const headerTotal =
-		isConnected && status === "active"
+		isConnected && status === "ready"
 			? formatUSD(totalFunding, { signDisplay: "exceptZero" })
 			: FALLBACK_VALUE_PLACEHOLDER;
 	const headerClass = getMarketCloseValueColorClass(totalFunding);
@@ -99,31 +92,40 @@ function MobileFundingTabContent({
 		);
 	}
 
-	function handleExportCsv() {
-		downloadCsv(
-			"funding_history.csv",
-			buildCsvRows(filteredUpdates, [
-				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time) },
-				{ header: t`Asset`, getValue: (update) => update.coin },
-				{
-					header: t`Position`,
-					getValue: (update) => {
-						const market = markets.getMarket(update.coin);
-						return formatToken(getToolbarAbsoluteSize(update.szi), {
-							decimals: market?.szDecimals,
-							symbol: market?.shortName,
-						});
+	const { exportCsv, isExporting } = useFundingHistoryCsvExport({
+		filename: "funding_history.csv",
+		buildRows: (fundings) =>
+			buildCsvRows(
+				fundings.filter((update) => directionFilter === "all" || getFundingDirection(update.szi) === directionFilter),
+				[
+					{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time) },
+					{ header: t`Asset`, getValue: (update) => update.coin },
+					{
+						header: t`Position`,
+						getValue: (update) => {
+							const market = markets.getMarket(update.coin);
+							return formatToken(getToolbarAbsoluteSize(update.szi), {
+								decimals: market?.szDecimals,
+								symbol: market?.shortName,
+							});
+						},
 					},
-				},
-				{
-					header: t`Rate`,
-					getValue: (update) =>
-						formatPercent(update.fundingRate, { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
-				},
-				{ header: t`Payment`, getValue: (update) => formatToken(update.usdc, { symbol: "USDC" }) },
-			]),
-		);
-	}
+					{
+						header: t`Rate`,
+						getValue: (update) =>
+							formatPercent(update.fundingRate, { minimumFractionDigits: 4, maximumFractionDigits: 4 }),
+					},
+					{ header: t`Payment`, getValue: (update) => formatToken(update.usdc, { symbol: "USDC" }) },
+				],
+			),
+	});
+	const exportFooter = (
+		<div className="flex h-[38px] shrink-0 items-center gap-4 px-3.5" data-testid="mobile-funding-history-footer">
+			<button type="button" disabled={isExporting} onClick={() => void exportCsv()} className={footerActionClassName}>
+				{t`Export CSV`}
+			</button>
+		</div>
+	);
 
 	if (!isConnected) {
 		return (
@@ -135,23 +137,39 @@ function MobileFundingTabContent({
 
 	if (status === "error") {
 		return (
-			<div className="flex flex-1 flex-col items-center justify-center p-6 text-sm text-market-close-danger">
-				<span>{t`Failed to load funding history.`}</span>
-				{error instanceof Error && <span className="mt-1 text-xs text-market-close-muted">{error.message}</span>}
+			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
+				<div className="flex flex-1 flex-col items-center justify-center p-6 text-sm text-market-close-danger">
+					<span>{t`Failed to load funding history.`}</span>
+					{historyLimitReached ? (
+						<span className="mt-1 text-center text-xs text-market-close-muted">
+							{t`Recent history exceeds the safe display limit. Export CSV to retrieve a larger range.`}
+						</span>
+					) : malformedHistory ? (
+						<span className="mt-1 text-center text-xs text-market-close-muted">
+							{t`History data could not be validated. Refresh and try again.`}
+						</span>
+					) : (
+						error instanceof Error && <span className="mt-1 text-xs text-market-close-muted">{error.message}</span>
+					)}
+				</div>
+				{exportFooter}
 			</div>
 		);
 	}
 
-	if (status === "active" && updates.length === 0) {
+	if (status === "ready" && updates.length === 0) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
-				{t`No funding payments found.`}
+			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
+				<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
+					{t`No funding payments found.`}
+				</div>
+				{exportFooter}
 			</div>
 		);
 	}
 
 	return (
-		<Skeleton name="funding-tab" loading={status === "subscribing" || status === "idle"}>
+		<Skeleton name="funding-tab" loading={status === "loading" || status === "idle"}>
 			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
 				<div
 					data-testid="mobile-funding-history-filter-row"
@@ -175,7 +193,7 @@ function MobileFundingTabContent({
 						/>
 					</div>
 					<span className="sr-only" aria-live="polite">
-						{t`Cumulative funding`} <span className={cn("font-semibold tabular-nums", headerClass)}>{headerTotal}</span>
+						{t`Funding shown`} <span className={cn("font-semibold tabular-nums", headerClass)}>{headerTotal}</span>
 					</span>
 					<div className="ml-auto flex shrink-0 items-center gap-3 pl-3">
 						<button
@@ -326,16 +344,7 @@ function MobileFundingTabContent({
 							);
 						})}
 					</div>
-					<div className="flex h-[38px] shrink-0 items-center gap-4 px-3.5" data-testid="mobile-funding-history-footer">
-						<button
-							type="button"
-							disabled={filteredUpdates.length === 0}
-							onClick={handleExportCsv}
-							className={footerActionClassName}
-						>
-							{t`Export CSV`}
-						</button>
-					</div>
+					{exportFooter}
 				</div>
 			</div>
 		</Skeleton>

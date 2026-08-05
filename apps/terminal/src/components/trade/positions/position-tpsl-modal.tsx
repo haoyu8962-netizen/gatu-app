@@ -13,7 +13,13 @@ import {
 	type PositionTpSlExecutionMode,
 } from "@/domain/trade/order-intent";
 import { doesOrderBatchMatchRiskContext } from "@/domain/trade/order-risk-context";
-import { throwIfAnyResponseError } from "@/domain/trade/orders";
+import {
+	createClientOrderId,
+	isAmbiguousExchangeRequestError,
+	isApiOrderResponseError,
+	isOrderBatchResolutionError,
+	resolveOrderBatchResponse,
+} from "@/domain/trade/order-tracking";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -43,6 +49,11 @@ import {
 	type OpenOrder,
 	type TpSlOrderInfo,
 } from "@/lib/trade/open-orders";
+import {
+	getOrderAssetReservationState,
+	reserveOrderAssets,
+	runWithAvailableOrderAssetLocks,
+} from "@/lib/trade/order-asset-lock";
 import {
 	calculateEstimatedPnlExact,
 	calculateRoeMagnitudeFromPriceExact,
@@ -108,50 +119,26 @@ interface PositionTpSlLiveExecutionContext {
 	openOrders: readonly OpenOrder[];
 }
 
-type PositionTpSlExchangeOrder = ExchangeParams<"order">["orders"][number];
+type PositionTpSlCancelResolution =
+	| { status: "accepted"; errors: string[] }
+	| { status: "partial"; errors: string[] }
+	| { status: "rejected"; errors: string[] };
 
-interface CompletedPositionTpSlOrder {
-	oid: number;
-	order: PositionTpSlExchangeOrder;
+class PositionTpSlMutationResponseError extends Error {
+	readonly uncertain: boolean;
+
+	constructor(message: string, uncertain: boolean) {
+		super(message);
+		this.name = "PositionTpSlMutationResponseError";
+		this.uncertain = uncertain;
+	}
 }
 
-function applyCompletedTpSlOrders(
-	snapshot: TpSlOrderInfo | undefined,
-	completedOrders: readonly CompletedPositionTpSlOrder[],
-): TpSlOrderInfo | undefined | null {
-	let next = snapshot ? { ...snapshot } : undefined;
-	for (const { oid, order } of completedOrders) {
-		if (!("trigger" in order.t)) return null;
-		const leg = order.t.trigger.tpsl;
-		const common = {
-			ambiguous: false,
-			incompatible: false,
-		};
-		if (leg === "tp") {
-			next = {
-				...next,
-				...common,
-				tpPrice: String(order.t.trigger.triggerPx),
-				tpOrderId: oid,
-				tpSize: String(order.s),
-				tpIsMarket: order.t.trigger.isMarket,
-				tpLimitPrice: String(order.p),
-				tpSide: order.b ? "B" : "A",
-			};
-		} else {
-			next = {
-				...next,
-				...common,
-				slPrice: String(order.t.trigger.triggerPx),
-				slOrderId: oid,
-				slSize: String(order.s),
-				slIsMarket: order.t.trigger.isMarket,
-				slLimitPrice: String(order.p),
-				slSide: order.b ? "B" : "A",
-			};
-		}
+class PositionTpSlFreshStateError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "PositionTpSlFreshStateError";
 	}
-	return next;
 }
 
 function applyCompletedTpSlCancels(
@@ -189,16 +176,54 @@ function applyCompletedTpSlCancels(
 	return next;
 }
 
-function getRestingOrderId(status: unknown): number | null {
-	if (!status || typeof status !== "object" || !("resting" in status)) return null;
-	const resting = status.resting;
-	if (!resting || typeof resting !== "object" || !("oid" in resting) || typeof resting.oid !== "number") return null;
-	return resting.oid;
+function isUnknownRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+function getCancelStatusError(status: unknown): string | null {
+	return isUnknownRecord(status) && typeof status.error === "string" ? status.error : null;
+}
+
+function resolvePositionTpSlCancelResponse(
+	response: unknown,
+	expectedCount: number,
+): PositionTpSlCancelResolution | null {
+	if (!Number.isSafeInteger(expectedCount) || expectedCount <= 0 || !isUnknownRecord(response)) return null;
+	if (response.status === "err" && typeof response.response === "string") {
+		return { status: "rejected", errors: [response.response] };
+	}
+	if (response.status !== "ok" || !isUnknownRecord(response.response) || response.response.type !== "cancel") {
+		return null;
+	}
+	const data = response.response.data;
+	if (!isUnknownRecord(data) || !Array.isArray(data.statuses)) return null;
+	const statuses = data.statuses;
+	if (statuses.length === 1 && expectedCount > 1) {
+		const error = getCancelStatusError(statuses[0]);
+		return error ? { status: "rejected", errors: [error] } : null;
+	}
+	if (statuses.length !== expectedCount) return null;
+
+	const errors: string[] = [];
+	let successCount = 0;
+	for (let index = 0; index < statuses.length; index += 1) {
+		const status = statuses[index];
+		if (status === "success") {
+			successCount += 1;
+			continue;
+		}
+		const error = getCancelStatusError(status);
+		if (!error) return null;
+		errors.push(error);
+	}
+	if (successCount === expectedCount) return { status: "accepted", errors };
+	if (successCount === 0) return { status: "rejected", errors };
+	return { status: "partial", errors };
 }
 
 function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyProps) {
 	const { address, isConnected } = useWalletSession();
-	const { clientKey, env } = useHyperliquid();
+	const { clientKey, env, info } = useHyperliquid();
 	const sessionIdentity = useRef<PositionTpSlSessionIdentity>({
 		owner: position.owner.toLowerCase(),
 		env: position.env,
@@ -381,6 +406,7 @@ function PositionTpSlModalBody({ open, position, isMobile, onOpenChange }: BodyP
 			quoteSymbol={quoteSymbol}
 			sessionIdentity={sessionIdentity}
 			executionStateRef={executionStateRef}
+			infoClient={info}
 			liveDataReady={liveDataReady}
 			liveDataMessage={liveDataMessage}
 			onOpenChange={onOpenChange}
@@ -399,6 +425,7 @@ interface FormProps {
 	quoteSymbol: string;
 	sessionIdentity: PositionTpSlSessionIdentity;
 	executionStateRef: { current: PositionTpSlLiveExecutionContext };
+	infoClient: ReturnType<typeof useHyperliquid>["info"];
 	liveDataReady: boolean;
 	liveDataMessage: string | null;
 	onOpenChange: (open: boolean) => void;
@@ -415,12 +442,14 @@ function PositionTpSlForm({
 	quoteSymbol,
 	sessionIdentity,
 	executionStateRef,
+	infoClient,
 	liveDataReady,
 	liveDataMessage,
 	onOpenChange,
 }: FormProps) {
 	const decimals = szDecimalsToPriceDecimals(positionRef.szDecimals);
-	const signedSize = toBig(position.szi);
+	const liveSignedSize = toBig(position.szi);
+	const [signedSize] = useState(() => toBig(position.szi));
 	const isLong = signedSize?.gt(0) ?? false;
 	const size = signedSize?.abs().toString() ?? "0";
 	const entryPx = position.entryPx;
@@ -453,7 +482,6 @@ function PositionTpSlForm({
 	const [slReturnDraft, setSlReturnDraft] = useState<string | null>(null);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const [requiresRefresh, setRequiresRefresh] = useState(false);
-	const completedMutationRef = useRef(false);
 	const allowedTpSlSnapshotsRef = useRef<Array<TpSlOrderInfo | undefined>>([initialTpSlInfo]);
 	const expectedTpSlSnapshotRef = useRef<TpSlOrderInfo | undefined>(initialTpSlInfo);
 	const workflowSubmittingRef = useRef(false);
@@ -463,24 +491,6 @@ function PositionTpSlForm({
 		expectedTpSlSnapshotRef.current = snapshot;
 		if (allowedTpSlSnapshotsRef.current.some((allowed) => areTpSlOrderInfosEqual(allowed, snapshot))) return;
 		allowedTpSlSnapshotsRef.current = [...allowedTpSlSnapshotsRef.current, snapshot];
-	}
-
-	function recordCompletedOrders(
-		orders: readonly PositionTpSlExchangeOrder[],
-		statuses: readonly unknown[] | undefined,
-	): boolean {
-		if (!statuses || statuses.length !== orders.length) return false;
-		const completedOrders: CompletedPositionTpSlOrder[] = [];
-		for (let index = 0; index < orders.length; index += 1) {
-			const order = orders[index];
-			const oid = getRestingOrderId(statuses[index]);
-			if (!order || oid === null) return false;
-			completedOrders.push({ oid, order });
-		}
-		const next = applyCompletedTpSlOrders(expectedTpSlSnapshotRef.current, completedOrders);
-		if (next === null) return false;
-		appendAllowedTpSlSnapshot(next);
-		return true;
 	}
 
 	function recordCompletedCancels(cancels: readonly ExchangeParams<"cancel">["cancels"][number][]): boolean {
@@ -506,15 +516,19 @@ function PositionTpSlForm({
 			current.openOrdersIsStale ||
 			!current.hasOpenOrdersSnapshot
 		) {
-			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
+			throw new PositionTpSlFreshStateError(
+				t`Trading data changed while this dialog was open. Close and reopen it before submitting.`,
+			);
 		}
 
 		const currentPosition = current.userPositions.getPosition(positionRef.coin, positionRef.dex);
 		const currentSize = toBig(currentPosition?.szi);
 		if (
 			!currentPosition ||
+			!signedSize ||
 			!currentSize ||
 			currentSize.eq(0) ||
+			!currentSize.eq(signedSize) ||
 			currentSize.gt(0) !== positionRef.isLong ||
 			currentPosition.leverage.type !== positionRef.marginMode
 		) {
@@ -538,6 +552,63 @@ function PositionTpSlForm({
 			throw new Error(t`Trading data changed while this dialog was open. Close and reopen it before submitting.`);
 		}
 		return { position: currentPosition, size: currentSize.abs() };
+	}
+
+	async function assertFreshWorkflowContext(
+		orders: readonly ExchangeParams<"order">["orders"][number][],
+	): Promise<void> {
+		assertLiveExecutionContext();
+		const user = sessionIdentity.owner as `0x${string}`;
+		const [freshOrders, freshClearinghouseState] = await Promise.all([
+			infoClient.frontendOpenOrders({ user, dex: positionRef.dex }),
+			infoClient.clearinghouseState({ user, dex: positionRef.dex }),
+		]);
+		assertLiveExecutionContext();
+
+		const freshPosition = freshClearinghouseState.assetPositions.find(
+			(entry) => entry.position.coin === positionRef.coin,
+		)?.position;
+		const freshSize = toBig(freshPosition?.szi);
+		if (
+			!freshPosition ||
+			!signedSize ||
+			!freshSize ||
+			freshSize.eq(0) ||
+			!freshSize.eq(signedSize) ||
+			freshSize.gt(0) !== positionRef.isLong ||
+			freshPosition.leverage.type !== positionRef.marginMode ||
+			orders.some((order) => {
+				const orderSize = toBig(order.s);
+				return !orderSize || orderSize.lt(0) || (orderSize.gt(0) && orderSize.gt(freshSize.abs()));
+			})
+		) {
+			throw new PositionTpSlFreshStateError(
+				t`Trading data changed while this dialog was open. Close and reopen it before submitting.`,
+			);
+		}
+
+		const freshTpSlInfo = buildTpSlOrdersByCoin(freshOrders).get(positionRef.coin);
+		if (!areTpSlOrderInfosEqual(expectedTpSlSnapshotRef.current, freshTpSlInfo)) {
+			throw new PositionTpSlFreshStateError(
+				t`Trading data changed while this dialog was open. Close and reopen it before submitting.`,
+			);
+		}
+	}
+
+	function assertCompleteOrderResponse(response: unknown, expectedCount: number): void {
+		const resolution = resolveOrderBatchResponse(response, expectedCount);
+		if (resolution?.status === "accepted") return;
+		const uncertain = resolution === null || resolution?.status === "partial";
+		const message = resolution?.errors.join("; ") || t`Order submitted. Confirming exchange status; do not retry.`;
+		throw new PositionTpSlMutationResponseError(message, uncertain);
+	}
+
+	function assertCompleteCancelResponse(response: unknown, expectedCount: number): void {
+		const resolution = resolvePositionTpSlCancelResponse(response, expectedCount);
+		if (resolution?.status === "accepted") return;
+		const uncertain = resolution === null || resolution.status === "partial";
+		const message = resolution?.errors.join("; ") || t`Order submitted. Confirming exchange status; do not retry.`;
+		throw new PositionTpSlMutationResponseError(message, uncertain);
 	}
 
 	function assertOrdersMatchPosition(orders: readonly ExchangeParams<"order">["orders"][number][]): void {
@@ -587,10 +658,6 @@ function PositionTpSlForm({
 		}
 	}
 
-	function assertModifyExecution(params: ExchangeParams<"batchModify">): void {
-		assertOrdersMatchPosition(params.modifies.map((modify) => modify.order));
-	}
-
 	function assertCancelExecution(params: ExchangeParams<"cancel">): void {
 		assertLiveExecutionContext();
 		if (params.cancels.some((cancel) => cancel.a !== positionRef.assetId)) {
@@ -606,22 +673,20 @@ function PositionTpSlForm({
 		executionGuard: assertOrderExecution,
 	});
 	const {
-		mutateAsync: modifyOrders,
-		isPending: isModifying,
-		error: modifyError,
-	} = useExchange("batchModify", {
-		executionGuard: assertModifyExecution,
-	});
-	const {
 		mutateAsync: cancelOrders,
 		isPending: isCancelling,
 		error: cancelError,
 	} = useExchange("cancel", {
 		executionGuard: assertCancelExecution,
 	});
-	const isSubmitting = isWorkflowSubmitting || isPlacing || isModifying || isCancelling;
+	const isSubmitting = isWorkflowSubmitting || isPlacing || isCancelling;
 
-	const positionChanged = isLong !== positionRef.isLong || position.leverage.type !== positionRef.marginMode;
+	const positionChanged =
+		!liveSignedSize ||
+		!signedSize ||
+		!liveSignedSize.eq(signedSize) ||
+		isLong !== positionRef.isLong ||
+		position.leverage.type !== positionRef.marginMode;
 	const ordersChanged = !areTpSlOrderInfosEqual(initialTpSlInfo, currentTpSlInfo);
 	const expectedCloseSide = isLong ? "A" : "B";
 	const positionSideConflict = Boolean(
@@ -854,67 +919,142 @@ function PositionTpSlForm({
 		setIsWorkflowSubmitting(true);
 
 		setSubmitError(null);
-		let mutationStarted = false;
 		let shouldClose = false;
 		try {
-			const riskContext = { marketKind: "perp", marginMode: position.leverage.type } as const;
-			const changedOrders = [...updatePlan.modifies.map((modify) => modify.order), ...updatePlan.orders];
-			if (!doesOrderBatchMatchRiskContext(changedOrders, riskContext)) {
-				throw new Error(t`Order market context does not match the submitted asset.`);
+			const lockIdentity = {
+				env: sessionIdentity.env,
+				owner: sessionIdentity.owner,
+				assetIds: [positionRef.assetId],
+			} as const;
+			const reservationIntent = {
+				intentKey: `position-tpsl:${positionRef.assetId}`,
+				exclusiveAssetLock: true,
+				isRiskReducing: true,
+			};
+			const workflowReservationId = `position-tpsl:${createClientOrderId()}`;
+			const lockResult = await runWithAvailableOrderAssetLocks(lockIdentity, async (lease) => {
+				const reservationState = getOrderAssetReservationState(lease, reservationIntent);
+				if (reservationState === "unavailable") return { state: "coordination-unavailable" } as const;
+				if (reservationState === "conflict") return { state: "blocked" } as const;
+
+				let mutationStarted = false;
+				let completedMutation = false;
+				let activeStep: "place" | "cancel" | null = null;
+				let activeExpectedCount = 0;
+				try {
+					const riskContext = { marketKind: "perp", marginMode: position.leverage.type } as const;
+					const replacementCancels = updatePlan.modifies.map((modify) => ({
+						a: modify.order.a,
+						o: modify.oid,
+					}));
+					const workflowCancels = [...replacementCancels, ...updatePlan.cancels];
+					const workflowOrders = [...updatePlan.modifies.map((modify) => modify.order), ...updatePlan.orders];
+					if (!doesOrderBatchMatchRiskContext(workflowOrders, riskContext)) {
+						throw new Error(t`Order market context does not match the submitted asset.`);
+					}
+					await assertFreshWorkflowContext(workflowOrders);
+
+					// Trigger replacement is deliberately cancel-then-place. Hyperliquid's
+					// batchModify replacement flag can place even when its cancel fails.
+					if (workflowCancels.length > 0) {
+						mutationStarted = true;
+						activeStep = "cancel";
+						activeExpectedCount = workflowCancels.length;
+						const result = await cancelOrders({ cancels: workflowCancels });
+						assertCompleteCancelResponse(result, activeExpectedCount);
+						completedMutation = true;
+						if (!recordCompletedCancels(workflowCancels)) {
+							throw new PositionTpSlMutationResponseError(
+								t`Order submitted. Confirming exchange status; do not retry.`,
+								true,
+							);
+						}
+					}
+					if (workflowOrders.length > 0) {
+						mutationStarted = true;
+						activeStep = "place";
+						activeExpectedCount = workflowOrders.length;
+						const submission = await submitOrder(
+							{ orders: workflowOrders, grouping: "positionTpsl" },
+							{
+								assetLockLease: lease,
+								exclusiveAssetLock: true,
+								riskContext,
+							},
+						);
+						if (submission.state === "blocked") {
+							if (completedMutation) {
+								throw new PositionTpSlMutationResponseError(
+									t`Order submitted. Confirming exchange status; do not retry.`,
+									true,
+								);
+							}
+							return { state: "blocked" } as const;
+						}
+						if (submission.state === "reconciling") return { state: "uncertain" } as const;
+						assertCompleteOrderResponse(submission.result, activeExpectedCount);
+						completedMutation = true;
+					}
+					return { state: "confirmed" } as const;
+				} catch (error) {
+					const apiResolution =
+						activeExpectedCount > 0 && isApiOrderResponseError(error)
+							? activeStep === "cancel"
+								? resolvePositionTpSlCancelResponse(error.response, activeExpectedCount)
+								: resolveOrderBatchResponse(error.response, activeExpectedCount)
+							: null;
+					const responseUncertain =
+						error instanceof PositionTpSlMutationResponseError
+							? error.uncertain
+							: isOrderBatchResolutionError(error)
+								? error.resolution.status === "partial"
+								: isApiOrderResponseError(error) &&
+									(apiResolution === null || apiResolution.status === "partial" || apiResolution.status === "accepted");
+					const uncertain =
+						mutationStarted && (completedMutation || isAmbiguousExchangeRequestError(error) || responseUncertain);
+					const requiresRefresh = uncertain || error instanceof PositionTpSlFreshStateError;
+					if (uncertain) {
+						reserveOrderAssets(lease, {
+							...reservationIntent,
+							submissionId: workflowReservationId,
+							createdAt: Date.now(),
+						});
+					}
+					return { state: "failed", error, requiresRefresh, uncertain } as const;
+				}
+			});
+
+			if (!lockResult.supported) {
+				throw new Error(t`Safe action coordination across tabs is unavailable in this browser.`);
 			}
-			if (updatePlan.modifies.length > 0) {
-				mutationStarted = true;
-				const result = await modifyOrders({ a: true, modifies: updatePlan.modifies });
-				const statuses = result.response?.data?.statuses;
-				throwIfAnyResponseError(statuses);
-				completedMutationRef.current = true;
-				if (
-					(updatePlan.orders.length > 0 || updatePlan.cancels.length > 0) &&
-					!recordCompletedOrders(
-						updatePlan.modifies.map((modify) => modify.order),
-						statuses,
-					)
-				) {
-					setSubmitError(t`Order submitted. Confirming exchange status; do not retry.`);
-					setRequiresRefresh(true);
-					return;
-				}
+			if (!lockResult.acquired || lockResult.value.state === "blocked") {
+				setSubmitError(t`Another order for this market is still being confirmed.`);
+				return;
 			}
-			if (updatePlan.orders.length > 0) {
-				mutationStarted = true;
-				const submission = await submitOrder({ orders: updatePlan.orders, grouping: "positionTpsl" }, { riskContext });
-				if (submission.state === "blocked") {
-					setSubmitError(t`Another order for this market is still being confirmed.`);
-					if (completedMutationRef.current) setRequiresRefresh(true);
-					return;
-				}
-				if (submission.state === "reconciling") {
-					setSubmitError(t`Order submitted. Confirming exchange status; do not retry.`);
-					setRequiresRefresh(true);
-					return;
-				}
-				const statuses = submission.result.response?.data?.statuses;
-				throwIfAnyResponseError(statuses);
-				completedMutationRef.current = true;
-				if (updatePlan.cancels.length > 0 && !recordCompletedOrders(updatePlan.orders, statuses)) {
-					setSubmitError(t`Order submitted. Confirming exchange status; do not retry.`);
-					setRequiresRefresh(true);
-					return;
-				}
+			if (lockResult.value.state === "coordination-unavailable") {
+				throw new Error(t`Safe action coordination across tabs is unavailable in this browser.`);
 			}
-			if (updatePlan.cancels.length > 0) {
-				mutationStarted = true;
-				const result = await cancelOrders({ cancels: updatePlan.cancels });
-				throwIfAnyResponseError(result.response?.data?.statuses);
-				completedMutationRef.current = true;
-				recordCompletedCancels(updatePlan.cancels);
+			if (lockResult.value.state === "uncertain") {
+				setSubmitError(t`Order submitted. Confirming exchange status; do not retry.`);
+				setRequiresRefresh(true);
+				return;
+			}
+			if (lockResult.value.state === "failed") {
+				const message = lockResult.value.uncertain
+					? t`Order submitted. Confirming exchange status; do not retry.`
+					: lockResult.value.error instanceof Error
+						? lockResult.value.error.message
+						: t`Failed to update TP/SL orders`;
+				setSubmitError(message);
+				if (lockResult.value.requiresRefresh) setRequiresRefresh(true);
+				toast.error(message);
+				return;
 			}
 			shouldClose = true;
 		} catch (err) {
 			const message = err instanceof Error ? err.message : t`Failed to update TP/SL orders`;
 			setSubmitError(message);
 			toast.error(message);
-			if (mutationStarted) setRequiresRefresh(true);
 		} finally {
 			workflowSubmittingRef.current = false;
 			setIsWorkflowSubmitting(false);
@@ -940,7 +1080,7 @@ function PositionTpSlForm({
 	} else if ((tpNeedsMark || slNeedsMark) && !markReady) {
 		guardMessage = t`Loading...`;
 	}
-	const visibleError = submitError ?? placeError?.message ?? modifyError?.message ?? cancelError?.message;
+	const visibleError = submitError ?? placeError?.message ?? cancelError?.message;
 	const returnUnitLabel = returnUnit === "roe" ? "%" : quoteSymbol;
 	const unrealizedPnlDisplay =
 		quoteSymbol === DEFAULT_QUOTE_TOKEN

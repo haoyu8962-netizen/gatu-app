@@ -161,7 +161,7 @@ describe("useUserFills", () => {
 		expect(result.fills).toEqual([]);
 	});
 
-	it("shows realtime fills while the REST snapshot is still pending", () => {
+	it("keeps realtime fills visible but does not mark history complete while REST is pending", () => {
 		const fill = createFill();
 		mocks.subscription.data = {
 			fills: [fill],
@@ -172,8 +172,57 @@ describe("useUserFills", () => {
 
 		const result = renderHook();
 
-		expect(result.status).toBe("ready");
+		expect(result.status).toBe("loading");
 		expect(result.fills).toEqual([fill]);
+	});
+
+	it("does not let a non-empty realtime update hide a failed REST snapshot", () => {
+		const queryError = new Error("REST unavailable");
+		mocks.query.error = queryError;
+		mocks.query.isError = true;
+		mocks.subscription.data = {
+			fills: [createFill()],
+			user: mocks.address as `0x${string}`,
+		};
+		mocks.subscription.status = "active";
+
+		const result = renderHook();
+
+		expect(result.status).toBe("error");
+		expect(result.error).toBe(queryError);
+	});
+
+	it("fails closed when the REST snapshot contains an invalid fill identity", () => {
+		mocks.query.data = [{ ...createFill(), tid: undefined as never }];
+
+		const result = renderHook();
+
+		expect(result.status).toBe("error");
+		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
+		expect(result.fills).toEqual([]);
+	});
+
+	it("fails closed instead of throwing when the REST snapshot is not an array", () => {
+		mocks.query.data = { fills: [] } as never;
+
+		const result = renderHook();
+
+		expect(result.status).toBe("error");
+		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
+	});
+
+	it("fails closed when a realtime fill has an invalid timestamp", () => {
+		mocks.query.data = [];
+		mocks.subscription.data = {
+			fills: [{ ...createFill(), time: Number.NaN }],
+			user: mocks.address as `0x${string}`,
+		};
+		mocks.subscription.status = "active";
+
+		const result = renderHook();
+
+		expect(result.status).toBe("error");
+		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
 	});
 
 	it("reports an error when REST fails and the active realtime stream has no history", () => {

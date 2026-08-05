@@ -3,7 +3,7 @@ import { ACCOUNT_LEDGER_ACTION_MESSAGES, ACCOUNT_LEDGER_LOCATION_MESSAGES } from
 import type { AccountLedgerAction, AccountLedgerLocation } from "@/lib/trade/account-ledger";
 
 interface AccountLedgerLabels {
-	getActionLabel: (action: AccountLedgerAction) => string;
+	getActionLabel: (action: AccountLedgerAction, rawType?: string | null) => string;
 	getLocationLabel: (location: AccountLedgerLocation) => string;
 }
 
@@ -11,7 +11,10 @@ export function useAccountLedgerLabels(): AccountLedgerLabels {
 	const { _ } = useLingui();
 
 	return {
-		getActionLabel: (action) => _(ACCOUNT_LEDGER_ACTION_MESSAGES[action]),
+		getActionLabel: (action, rawType) => {
+			const label = _(ACCOUNT_LEDGER_ACTION_MESSAGES[action]);
+			return action === "other" && rawType ? `${label} (${rawType})` : label;
+		},
 		getLocationLabel: (location) => {
 			if (location.kind === "arbitrum") return "Arbitrum";
 			if (location.kind === "perpDex") {

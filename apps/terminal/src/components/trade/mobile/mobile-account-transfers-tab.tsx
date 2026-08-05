@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import { formatDateTimeShort } from "@/lib/format";
 import { formatAccountLedgerAmount, formatAccountLedgerFee } from "@/lib/trade/account-ledger-format";
 import { getAccountLedgerExplorerUrl } from "@/lib/trade/account-ledger-links";
+import { isIncompleteHistorySnapshotError } from "@/lib/trade/history-pagination";
 import { toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -22,11 +23,26 @@ interface Props {
 
 export function MobileAccountTransfersTab({ className, scrollMode = "contained" }: Props) {
 	const { t } = useLingui();
-	const { isConnected, retry, rows, status } = useAccountLedger();
+	const { error, isConnected, retry, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
 	const { exportCsv, isExporting } = useAccountLedgerCsv();
 	const isTestnet = useIsTestnet();
 	const isPageScroll = scrollMode === "page";
+	const historyLimitReached = isIncompleteHistorySnapshotError(error);
+	const emptyStateExportFooter = (
+		<div className="flex h-[38px] shrink-0 items-center justify-end px-3">
+			<Button
+				variant="ghost"
+				intent="neutral"
+				size="xxs"
+				disabled={isExporting}
+				onClick={() => void exportCsv()}
+				aria-label={t`Export CSV`}
+			>
+				<DownloadSimpleIcon className={cn("size-3.5", isExporting && "animate-pulse")} aria-hidden="true" />
+			</Button>
+		</div>
+	);
 
 	if (!isConnected) {
 		return (
@@ -38,19 +54,31 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 
 	if (status === "error") {
 		return (
-			<div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-error">
-				<span>{t`Failed to load deposits and withdrawals.`}</span>
-				<Button variant="outline" intent="neutral" size="xs" onClick={retry}>
-					{t`Retry`}
-				</Button>
+			<div className={cn("flex flex-1 min-h-0 flex-col", className)}>
+				<div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center text-sm text-error">
+					<span>{t`Failed to load deposits and withdrawals.`}</span>
+					{historyLimitReached ? (
+						<span className="text-xs text-fg-muted">
+							{t`Recent history exceeds the safe display limit. Export CSV to retrieve a larger range.`}
+						</span>
+					) : (
+						<Button variant="outline" intent="neutral" size="xs" onClick={retry}>
+							{t`Retry`}
+						</Button>
+					)}
+				</div>
+				{emptyStateExportFooter}
 			</div>
 		);
 	}
 
 	if (status === "ready" && rows.length === 0) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-fg-muted">
-				{t`No deposits or withdrawals found.`}
+			<div className={cn("flex flex-1 min-h-0 flex-col", className)}>
+				<div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-fg-muted">
+					{t`No deposits or withdrawals found.`}
+				</div>
+				{emptyStateExportFooter}
 			</div>
 		);
 	}
@@ -65,7 +93,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 						variant="ghost"
 						intent="neutral"
 						size="xxs"
-						disabled={rows.length === 0 || isExporting}
+						disabled={isExporting}
 						onClick={() => void exportCsv()}
 						aria-label={t`Export CSV`}
 					>
@@ -81,7 +109,7 @@ export function MobileAccountTransfersTab({ className, scrollMode = "contained" 
 							<div key={row.id} className="overflow-hidden rounded-xs border border-stroke-weak bg-surface">
 								<div className="flex items-center justify-between border-b border-stroke-weak px-3 py-1.5">
 									<div className="min-w-0">
-										<p className="truncate text-xs font-medium text-fg">{getActionLabel(row.action)}</p>
+										<p className="truncate text-xs font-medium text-fg">{getActionLabel(row.action, row.rawType)}</p>
 										<p className="text-3xs text-success">{t`Completed`}</p>
 									</div>
 									<span

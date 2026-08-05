@@ -1,3 +1,5 @@
+import type { HyperliquidEnv } from "../signing/types";
+
 function stableValue(value: unknown): unknown {
 	if (Array.isArray(value)) {
 		return value.map(stableValue);
@@ -36,7 +38,8 @@ export function createKey(scope: string, method: string, params?: unknown) {
 }
 
 export const infoKeys = {
-	method: <TParams>(method: string, params?: TParams) => createKey("info", method, params),
+	method: <TParams>(method: string, params: TParams, env: HyperliquidEnv) =>
+		[...createKey("info", method, params), env] as const,
 };
 
 export const subscriptionKeys = {

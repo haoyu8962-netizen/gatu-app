@@ -12,6 +12,7 @@ import {
 	createCancelAllConfirmationSnapshot,
 	validateCancelAllConfirmationSnapshot,
 } from "@/domain/trade/cancel-all-orders-confirmation";
+import { buildOpenOrderCancelActions, isConfirmedOpenOrderCancelResponse } from "@/domain/trade/open-order-cancel";
 import {
 	getOpenOrderModifyCapabilities,
 	type OpenOrderModifyBlockReason,
@@ -76,6 +77,12 @@ interface CancelAllDialogSnapshot {
 	orders: readonly OpenOrder[];
 }
 
+interface CancelExecutionContext {
+	confirmation: CancelAllConfirmationSnapshot;
+	orders: readonly Pick<OpenOrder, "coin" | "oid">[];
+	params: ExchangeParams<"cancel">;
+}
+
 interface MobileOrderFiltersState {
 	ownerKey: string | null;
 	type: ToolbarOrderTypeFilter;
@@ -117,6 +124,16 @@ interface ModifyLiveContext {
 function normalizeSessionOwner(owner: string | null | undefined): string | null {
 	if (!owner || owner === "disconnected") return null;
 	return owner.toLowerCase();
+}
+
+function cancelParamsEqual(left: ExchangeParams<"cancel">, right: ExchangeParams<"cancel">): boolean {
+	return (
+		left.cancels.length === right.cancels.length &&
+		left.cancels.every((cancel, index) => {
+			const other = right.cancels[index];
+			return other?.a === cancel.a && other.o === cancel.o;
+		})
+	);
 }
 
 function getModifyExecutionSession(live: ModifyLiveContext): ModifyExecutionContext["session"] | null {
@@ -171,7 +188,6 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 		{ enabled: isConnected && !!address },
 	);
 
-	const { mutate: cancelOrders, error: cancelError, reset: resetCancelError } = useExchange("cancel");
 	const { clientKey, env } = useHyperliquid();
 	const { getMarketInfo } = useMarketsInfo();
 
@@ -195,6 +211,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 	const [modifyValidationError, setModifyValidationError] = useState<string | null>(null);
 	const [unconfirmedModifyOid, setUnconfirmedModifyOid] = useState<number | null>(null);
 	const cancelAllSubmittingRef = useRef(false);
+	const cancelExecutionRef = useRef<CancelExecutionContext | null>(null);
 	const modifyTargetRef = useRef<OpenOrderModifyFormTarget | null>(null);
 	const modifySizeRef = useRef("");
 	const modifyTriggerPriceRef = useRef<string | undefined>(undefined);
@@ -269,6 +286,40 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 		orders: openOrders,
 		getMarketBinding,
 	};
+
+	function assertCancelExecution(params: ExchangeParams<"cancel">) {
+		const execution = cancelExecutionRef.current;
+		if (!execution || !cancelParamsEqual(params, execution.params)) {
+			throw new Error(getCancelAllBlockMessage("orders-changed"));
+		}
+
+		const live = liveModifyContextRef.current;
+		const currentOrders: Pick<OpenOrder, "coin" | "oid">[] = [];
+		for (const target of execution.orders) {
+			const matches = live.orders.filter((order) => order.coin === target.coin && order.oid === target.oid);
+			if (matches.length !== 1) throw new Error(getCancelAllBlockMessage("orders-changed"));
+			const currentOrder = matches[0];
+			if (!currentOrder) throw new Error(getCancelAllBlockMessage("orders-changed"));
+			currentOrders.push(currentOrder);
+		}
+
+		const reason = validateCancelAllConfirmationSnapshot(execution.confirmation, {
+			owner: live.clientKey,
+			snapshotOwner: live.snapshotOwner,
+			env: live.env,
+			isSnapshotReady: live.snapshotStatus === "active" && !live.isSnapshotStale,
+			orders: currentOrders,
+		});
+		if (reason) throw new Error(getCancelAllBlockMessage(reason));
+	}
+
+	const {
+		mutate: cancelOrders,
+		error: cancelError,
+		reset: resetCancelError,
+	} = useExchange("cancel", {
+		executionGuard: assertCancelExecution,
+	});
 
 	function setModifyPhase(nextPhase: ModifyPhase) {
 		modifyPhaseRef.current = nextPhase;
@@ -372,6 +423,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 		mountedRef.current = true;
 		return () => {
 			mountedRef.current = false;
+			cancelExecutionRef.current = null;
 			modifyExecutionRef.current = null;
 			unconfirmedExecutionRef.current = null;
 			modifyPhaseRef.current = "idle";
@@ -593,7 +645,9 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 	}, [address, clientKey, env, modifyPhase, openOrders, status, isStale, t]);
 
 	function handleCancel(ordersToCancel: OpenOrder[], nextScope: CancelScope, callbacks?: CancelCallbacks): boolean {
-		if (ordersToCancel.length === 0 || modifyPhaseRef.current !== "idle") return false;
+		if (ordersToCancel.length === 0 || modifyPhaseRef.current !== "idle" || cancelExecutionRef.current !== null) {
+			return false;
+		}
 		setCancelValidationError(null);
 
 		const fresh = ordersToCancel.filter((order) => !cancellingOids.has(order.oid));
@@ -603,17 +657,30 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 			return false;
 		}
 
-		const cancels = fresh.reduce<{ a: number; o: number }[]>((acc, order) => {
-			const assetId = markets.getAssetId(order.coin);
-			if (typeof assetId !== "number") return acc;
-			acc.push({ a: assetId, o: order.oid });
-			return acc;
-		}, []);
-
-		if (cancels.length !== fresh.length) {
+		const cancels = buildOpenOrderCancelActions(fresh, markets.getAssetId);
+		if (!cancels) {
 			setCancelValidationError(t`Some order markets are unavailable. Refresh and try again.`);
 			return false;
 		}
+
+		const live = liveModifyContextRef.current;
+		const confirmation = createCancelAllConfirmationSnapshot({
+			owner: live.clientKey,
+			snapshotOwner: live.snapshotOwner,
+			env: live.env,
+			isSnapshotReady: live.snapshotStatus === "active" && !live.isSnapshotStale,
+			orders: fresh,
+		});
+		if (confirmation.status === "blocked") {
+			setCancelValidationError(getCancelAllBlockMessage(confirmation.reason));
+			return false;
+		}
+		const execution: CancelExecutionContext = {
+			confirmation: confirmation.snapshot,
+			orders: fresh.map(({ coin, oid }) => ({ coin, oid })),
+			params: { cancels },
+		};
+		cancelExecutionRef.current = execution;
 
 		const oids = fresh.map((order) => order.oid);
 		setCancellingOids((prev) => {
@@ -627,25 +694,31 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 			return next;
 		});
 		resetCancelError();
-		cancelOrders(
-			{ cancels },
-			{
-				onSuccess: () => callbacks?.onSuccess?.(),
-				onSettled: () => {
-					setCancellingOids((prev) => {
-						const next = new Set(prev);
-						for (const oid of oids) next.delete(oid);
-						return next;
-					});
-					setPendingScopes((prev) => {
-						const next = new Set(prev);
-						next.delete(nextScope);
-						return next;
-					});
-					callbacks?.onSettled?.();
-				},
+		cancelOrders(execution.params, {
+			onSuccess: (response) => {
+				if (!isConfirmedOpenOrderCancelResponse(response, execution.params.cancels.length)) {
+					setCancelValidationError(
+						t`The cancellation response could not be confirmed. Refresh open orders before retrying.`,
+					);
+					return;
+				}
+				callbacks?.onSuccess?.();
 			},
-		);
+			onSettled: () => {
+				if (cancelExecutionRef.current === execution) cancelExecutionRef.current = null;
+				setCancellingOids((prev) => {
+					const next = new Set(prev);
+					for (const oid of oids) next.delete(oid);
+					return next;
+				});
+				setPendingScopes((prev) => {
+					const next = new Set(prev);
+					next.delete(nextScope);
+					return next;
+				});
+				callbacks?.onSettled?.();
+			},
+		});
 		return true;
 	}
 
@@ -987,11 +1060,13 @@ function MobileOrderCard({
 		: formatToken(order.origSz, { decimals: szDecimals });
 	const priceLabel = isMarketTriggerOrder(order) ? t`Market` : formatPrice(order.limitPx, { szDecimals, marketType });
 	const triggerOperator = getToolbarTriggerConditionOperator(order.triggerCondition);
-	const triggerConditionLabel = triggerOperator
-		? `${triggerOperator} ${formatNumber(order.triggerPx)}`
-		: order.triggerCondition
-			? getTriggerConditionLabel(order.triggerCondition)
-			: FALLBACK_VALUE_PLACEHOLDER;
+	const triggerConditionLabel = order.isTrigger
+		? triggerOperator
+			? `${triggerOperator} ${formatNumber(order.triggerPx)}`
+			: order.triggerCondition
+				? getTriggerConditionLabel(order.triggerCondition)
+				: FALLBACK_VALUE_PLACEHOLDER
+		: FALLBACK_VALUE_PLACEHOLDER;
 	const metrics = getToolbarOrderMetrics({
 		isTrigger: order.isTrigger,
 		limitPx: order.limitPx,
@@ -999,9 +1074,10 @@ function MobileOrderCard({
 		sz: order.sz,
 		markPx,
 	});
-	const markDistanceLabel = metrics.markDistanceRatio
-		? formatPercent(metrics.markDistanceRatio, { decimals: 1, signDisplay: "exceptZero" })
-		: null;
+	const markDistanceLabel =
+		order.isTrigger && metrics.markDistanceRatio
+			? formatPercent(metrics.markDistanceRatio, { decimals: 1, signDisplay: "exceptZero" })
+			: null;
 	const isNearMark = isToolbarOrderNearMark(metrics.markDistanceRatio);
 
 	return (

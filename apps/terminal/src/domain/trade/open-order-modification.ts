@@ -128,7 +128,7 @@ export type OpenOrderModifyPlan = ReadyOpenOrderModifyPlan | { status: "blocked"
 
 const EVM_ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const LIMIT_TIFS = new Set<OpenOrder["tif"]>(["Gtc", "Ioc", "Alo"]);
+const LIMIT_TIFS = new Set<OpenOrder["tif"]>(["Gtc", "Alo"]);
 const TRIGGER_ORDER_TYPES = new Set<OpenOrder["orderType"]>([
 	"Stop Market",
 	"Stop Limit",
@@ -166,12 +166,17 @@ function isStopOrder(order: OpenOrder): boolean {
 }
 
 function getOrderShapeBlockReason(order: OpenOrder): OpenOrderModifyBlockReason | null {
+	if (order.coin.startsWith("#")) return "invalid-market-binding";
 	if (!Array.isArray(order.children) || order.children.length > 0) return "grouped-order";
 	if (order.isPositionTpsl || (order.isTrigger && toBig(order.sz)?.eq(0))) return "position-tpsl";
 	if (order.cloid !== null) return order.cloid === undefined ? "invalid-order-shape" : "client-order-id";
 	if (order.orderType === "Market") return "unsupported-market-order";
 	if (SYSTEM_ORDER_TYPES.has(order.orderType)) return "unsupported-system-order";
 	if (order.orderType !== "Limit" && !isSupportedTriggerOrder(order)) return "unsupported-order-type";
+	// Hyperliquid requires batchModify.a=true for trigger replacements, which can
+	// place the replacement even when canceling the original order failed. Keep
+	// trigger edits fail-closed until they use an explicit cancel-then-place flow.
+	if (isSupportedTriggerOrder(order)) return "unsupported-order-type";
 	if (
 		!Number.isSafeInteger(order.oid) ||
 		order.oid < 0 ||
@@ -439,7 +444,7 @@ function buildExchangeOrder(
 	return {
 		status: "ready",
 		normalizedValue,
-		params: { a: true, modifies: [{ oid: latest.oid, order }] },
+		params: { modifies: [{ oid: latest.oid, order }] },
 	};
 }
 

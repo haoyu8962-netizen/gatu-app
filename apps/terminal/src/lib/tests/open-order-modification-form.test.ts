@@ -96,7 +96,6 @@ describe("open order modification form", () => {
 			normalizedSize: "1.25",
 			normalizedTriggerPrice: null,
 			params: {
-				a: true,
 				modifies: [
 					{
 						oid: 42,
@@ -108,65 +107,34 @@ describe("open order modification form", () => {
 	});
 
 	it.each(["Stop Market", "Stop Limit", "Take Profit Market", "Take Profit Limit"] as const)(
-		"combines size and trigger changes into one complete %s payload",
+		"does not expose unsafe direct editing for %s orders",
 		(orderType) => {
-			const isStop = orderType.startsWith("Stop");
 			const order = makeTriggerOrder(orderType);
-			const target = capture(order);
-			const nextTrigger = "120";
-			const plan = build(target, order, "1.5", nextTrigger);
-			expect(plan.status).toBe("ready");
-			if (plan.status !== "ready") return;
-			expect(plan.normalizedSize).toBe("1.5");
-			expect(plan.normalizedTriggerPrice).toBe(nextTrigger);
-			expect(plan.params).toEqual({
-				a: true,
-				modifies: [
-					{
-						oid: 42,
-						order: {
-							a: 0,
-							b: isStop,
-							p: orderType.endsWith("Market") ? (isStop ? "132" : "108") : "115",
-							s: "1.5",
-							r: true,
-							t: {
-								trigger: {
-									isMarket: orderType.endsWith("Market"),
-									triggerPx: "120",
-									tpsl: isStop ? "sl" : "tp",
-								},
-							},
-						},
-					},
-				],
+			expect(createOpenOrderModifyFormTarget({ owner: OWNER, env: "Mainnet", market, order })).toEqual({
+				status: "blocked",
+				reason: "unsupported-order-type",
 			});
 		},
 	);
 
 	it("preserves raw unchanged fields while validating the changed field exactly", () => {
-		const order = makeTriggerOrder();
+		const order = makeLimitOrder();
 		const target = capture(order);
-		expect(build(target, order, "1.", "110.000")).toMatchObject({
+		expect(build(target, order, "1.")).toMatchObject({
 			status: "ready",
 			normalizedSize: "1",
-			normalizedTriggerPrice: "110",
+			normalizedTriggerPrice: null,
 		});
-		expect(build(target, order, "2", "110")).toEqual({ status: "blocked", reason: "no-change", field: null });
+		expect(build(target, order, "2")).toEqual({ status: "blocked", reason: "no-change", field: null });
 	});
 
-	it("attributes invalid size and trigger values to the correct form field", () => {
-		const order = makeTriggerOrder();
+	it("attributes an invalid size to the size form field", () => {
+		const order = makeLimitOrder();
 		const target = capture(order);
-		expect(build(target, order, "3", "110")).toEqual({
+		expect(build(target, order, "3")).toEqual({
 			status: "blocked",
 			reason: "size-exceeds-remaining",
 			field: "size",
-		});
-		expect(build(target, order, "2", "90")).toEqual({
-			status: "blocked",
-			reason: "invalid-trigger-direction",
-			field: "triggerPrice",
 		});
 	});
 

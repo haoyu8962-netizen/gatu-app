@@ -7,13 +7,15 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { isCanceledOrderStatus } from "@/domain/trade/order-tracking";
 import { matchesToolbarOrderFilters, type ToolbarOrderDirectionFilter } from "@/domain/trade/trading-toolbar-metrics";
 import { useHistoricalOrders } from "@/hooks/trade/use-historical-orders";
+import { useHistoricalOrdersCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { buildCsvRows, downloadCsv } from "@/lib/csv";
+import { buildCsvRows } from "@/lib/csv";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { HistoricalOrderPrice } from "../components/historical-order-price";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
@@ -78,6 +80,7 @@ function MobileOrdersHistoryTabContent({ className, scrollMode = "contained" }: 
 	const { t } = useLingui();
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { error, isConnected, orders, status } = useHistoricalOrders();
+	const malformedHistory = isMalformedHistoryPageError(error);
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
@@ -137,40 +140,54 @@ function MobileOrdersHistoryTabContent({ className, scrollMode = "contained" }: 
 		return t`Other`;
 	}
 
-	function handleExportCsv() {
-		downloadCsv(
-			"order_history.csv",
-			buildCsvRows(filteredOrders, [
-				{
-					header: t`Time`,
-					getValue: (entry) => formatDateTime(entry.order.timestamp, { dateStyle: "short", timeStyle: "short" }),
-				},
-				{ header: t`Asset`, getValue: (entry) => entry.order.coin },
-				{
-					header: t`Direction`,
-					getValue: (entry) => getOrderSideLabel(entry.order.side, entry.order.reduceOnly),
-				},
-				{ header: t`Type`, getValue: (entry) => getOrderTypeLabel(entry.order.orderType) },
-				{ header: t`Price`, getValue: (entry) => formatUSD(entry.order.limitPx, { compact: false }) },
-				{
-					header: t`Trigger Price`,
-					getValue: (entry) =>
-						hasTriggerPrice(entry.order)
-							? formatUSD(entry.order.triggerPx, { compact: false })
-							: FALLBACK_VALUE_PLACEHOLDER,
-				},
-				{
-					header: t`Size`,
-					getValue: (entry) => formatToken(entry.order.origSz, markets.getMarket(entry.order.coin)?.szDecimals),
-				},
-				{ header: t`Status`, getValue: (entry) => getHistoricalOrderStatusLabel(entry.status) },
-				{
-					header: t`Updated`,
-					getValue: (entry) => formatDateTime(entry.statusTimestamp, { dateStyle: "short", timeStyle: "short" }),
-				},
-			]),
-		);
-	}
+	const { exportCsv, isExporting } = useHistoricalOrdersCsvExport({
+		filename: "order_history.csv",
+		buildRows: (exportOrders) =>
+			buildCsvRows(
+				exportOrders.filter(
+					(entry) =>
+						(typeFilter === "all" || entry.order.orderType === typeFilter) &&
+						matchesToolbarOrderFilters(entry.order, "all", directionFilter) &&
+						(statusFilter === "all" || getOrderHistoryStatusFilter(entry.status) === statusFilter),
+				),
+				[
+					{
+						header: t`Time`,
+						getValue: (entry) => formatDateTime(entry.order.timestamp, { dateStyle: "short", timeStyle: "short" }),
+					},
+					{ header: t`Asset`, getValue: (entry) => entry.order.coin },
+					{
+						header: t`Direction`,
+						getValue: (entry) => getOrderSideLabel(entry.order.side, entry.order.reduceOnly),
+					},
+					{ header: t`Type`, getValue: (entry) => getOrderTypeLabel(entry.order.orderType) },
+					{ header: t`Price`, getValue: (entry) => formatUSD(entry.order.limitPx, { compact: false }) },
+					{
+						header: t`Trigger Price`,
+						getValue: (entry) =>
+							hasTriggerPrice(entry.order)
+								? formatUSD(entry.order.triggerPx, { compact: false })
+								: FALLBACK_VALUE_PLACEHOLDER,
+					},
+					{
+						header: t`Size`,
+						getValue: (entry) => formatToken(entry.order.origSz, markets.getMarket(entry.order.coin)?.szDecimals),
+					},
+					{ header: t`Status`, getValue: (entry) => getHistoricalOrderStatusLabel(entry.status) },
+					{
+						header: t`Updated`,
+						getValue: (entry) => formatDateTime(entry.statusTimestamp, { dateStyle: "short", timeStyle: "short" }),
+					},
+				],
+			),
+	});
+	const exportFooter = (
+		<div className="flex h-[38px] shrink-0 items-center gap-4 px-3.5" data-testid="mobile-order-history-footer">
+			<button type="button" disabled={isExporting} onClick={() => void exportCsv()} className={footerActionClassName}>
+				{t`Export CSV`}
+			</button>
+		</div>
+	);
 
 	if (!isConnected) {
 		return (
@@ -182,17 +199,29 @@ function MobileOrdersHistoryTabContent({ className, scrollMode = "contained" }: 
 
 	if (status === "error") {
 		return (
-			<div className="flex flex-1 flex-col items-center justify-center p-6 text-sm text-market-close-danger">
-				<span>{t`Failed to load order history.`}</span>
-				{error instanceof Error && <span className="mt-1 text-xs text-market-close-muted">{error.message}</span>}
+			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
+				<div className="flex flex-1 flex-col items-center justify-center p-6 text-sm text-market-close-danger">
+					<span>{t`Failed to load order history.`}</span>
+					{malformedHistory ? (
+						<span className="mt-1 text-center text-xs text-market-close-muted">
+							{t`History data could not be validated. Refresh and try again.`}
+						</span>
+					) : (
+						error instanceof Error && <span className="mt-1 text-xs text-market-close-muted">{error.message}</span>
+					)}
+				</div>
+				{exportFooter}
 			</div>
 		);
 	}
 
 	if (status === "ready" && orders.length === 0) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
-				{t`No order history found.`}
+			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
+				<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
+					{t`No order history found.`}
+				</div>
+				{exportFooter}
 			</div>
 		);
 	}
@@ -400,16 +429,7 @@ function MobileOrdersHistoryTabContent({ className, scrollMode = "contained" }: 
 							);
 						})}
 					</div>
-					<div className="flex h-[38px] shrink-0 items-center gap-4 px-3.5" data-testid="mobile-order-history-footer">
-						<button
-							type="button"
-							disabled={filteredOrders.length === 0}
-							onClick={handleExportCsv}
-							className={footerActionClassName}
-						>
-							{t`Export CSV`}
-						</button>
-					</div>
+					{exportFooter}
 				</div>
 			</div>
 		</Skeleton>

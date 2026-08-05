@@ -1,4 +1,4 @@
-import { HyperliquidExchangePolicyProvider, HyperliquidProvider, PERSISTED_QUERY_PREFIX } from "@gatu/hl-react";
+import { HyperliquidExchangePolicyProvider, HyperliquidProvider } from "@gatu/hl-react";
 import { i18n } from "@lingui/core";
 import { t } from "@lingui/core/macro";
 import { I18nProvider } from "@lingui/react";
@@ -21,6 +21,7 @@ import { config } from "@/config/wagmi";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { MarketsProvider } from "@/lib/hyperliquid/markets";
 import { getNetwork } from "@/lib/network";
+import { shouldPersistQuery } from "@/lib/query-persistence";
 import { getQueryRetryDelayMs, shouldRetryQuery } from "@/lib/query-retry";
 import { selectPrivyWagmiWallet } from "@/lib/wallet/privy-wagmi";
 import { BaseUiDirectionProvider } from "@/providers/base-ui-direction";
@@ -111,7 +112,7 @@ function ClientProviders({ children, queryClient }: { children: React.ReactNode;
 							maxAge: RQ_CACHE_MAX_AGE_MS,
 							buster: RQ_CACHE_BUSTER,
 							dehydrateOptions: {
-								shouldDehydrateQuery: (query) => query.queryKey[0] === PERSISTED_QUERY_PREFIX,
+								shouldDehydrateQuery: shouldPersistQuery,
 							},
 						}}
 					>

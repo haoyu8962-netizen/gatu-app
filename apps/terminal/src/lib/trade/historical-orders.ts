@@ -30,6 +30,32 @@ export type HistoricalOrderPriceDisplay =
 				  };
 	  };
 
+export function isValidHistoricalOrderHistoryItem(item: unknown): item is HistoricalOrdersResponse[number] {
+	if (!isRecord(item) || !isRecord(item.order)) return false;
+	const { order } = item;
+	return (
+		typeof item.status === "string" &&
+		typeof item.statusTimestamp === "number" &&
+		Number.isSafeInteger(item.statusTimestamp) &&
+		item.statusTimestamp >= 0 &&
+		typeof order.oid === "number" &&
+		Number.isSafeInteger(order.oid) &&
+		order.oid >= 0 &&
+		typeof order.timestamp === "number" &&
+		Number.isSafeInteger(order.timestamp) &&
+		order.timestamp >= 0 &&
+		typeof order.coin === "string" &&
+		order.coin.length > 0 &&
+		typeof order.isTrigger === "boolean" &&
+		typeof order.limitPx === "string" &&
+		typeof order.orderType === "string" &&
+		typeof order.origSz === "string" &&
+		typeof order.reduceOnly === "boolean" &&
+		typeof order.side === "string" &&
+		typeof order.triggerPx === "string"
+	);
+}
+
 function isTriggerOrderType(orderType: HistoricalOrderPriceFields["orderType"]): boolean {
 	return orderType.startsWith("Stop ") || orderType.startsWith("Take Profit ");
 }
@@ -87,4 +113,8 @@ export function mergeHistoricalOrderSources(
 	}
 
 	return [...ordersById.values()].sort((a, b) => b.statusTimestamp - a.statusTimestamp);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
 }

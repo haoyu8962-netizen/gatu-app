@@ -393,6 +393,85 @@ describe("trade balances", () => {
 		expect(rows[1]?.usdValue).toBe("300");
 	});
 
+	it("converts non-USDC spot quote mids through their USDC market without floating-point loss", () => {
+		const spotMarkets = [
+			{
+				kind: "spot",
+				name: "@301",
+				tokensInfo: [{ name: "AXL" }, { name: "USDH" }],
+			},
+			{
+				kind: "spot",
+				name: "@150",
+				tokensInfo: [{ name: "USDH" }, { name: "USDC" }],
+			},
+		] as never;
+
+		const prices = addSpotMarketPriceAliases({ "@301": "0.057843", "@150": "0.99555" }, spotMarkets);
+
+		expect(prices?.USDH).toBe("0.99555");
+		expect(prices?.AXL).toBe("0.05758559865");
+	});
+
+	it("prefers a direct USDC spot price over an indirect quote route", () => {
+		const spotMarkets = [
+			{
+				kind: "spot",
+				name: "@301",
+				tokensInfo: [{ name: "AXL" }, { name: "USDH" }],
+			},
+			{
+				kind: "spot",
+				name: "@302",
+				tokensInfo: [{ name: "AXL" }, { name: "USDC" }],
+			},
+			{
+				kind: "spot",
+				name: "@150",
+				tokensInfo: [{ name: "USDH" }, { name: "USDC" }],
+			},
+		] as never;
+
+		const prices = addSpotMarketPriceAliases({ "@301": "0.057843", "@302": "0.058", "@150": "0.99555" }, spotMarkets);
+
+		expect(prices?.AXL).toBe("0.058");
+	});
+
+	it("does not label a quote-denominated mid as USD when no quote conversion exists", () => {
+		const spotMarkets = [
+			{
+				kind: "spot",
+				name: "@301",
+				tokensInfo: [{ name: "AXL" }, { name: "UNKNOWN" }],
+			},
+		] as never;
+
+		const prices = addSpotMarketPriceAliases({ "@301": "0.057843" }, spotMarkets);
+
+		expect(prices?.AXL).toBeUndefined();
+	});
+
+	it("does not use a same-named perp mid as an unresolved spot token USD price", () => {
+		const spotMarkets = [
+			{
+				kind: "spot",
+				name: "@301",
+				tokensInfo: [{ name: "AXL" }, { name: "UNKNOWN" }],
+			},
+		] as never;
+
+		const prices = addSpotMarketPriceAliases({ AXL: "2.5", "@301": "0.057843" }, spotMarkets);
+		const rows = getSpotBalanceRows(
+			[{ coin: "AXL", token: 301, total: "10", hold: "0", entryNtl: "0.5" }],
+			undefined,
+			undefined,
+			prices,
+		);
+
+		expect(prices?.AXL).toBeUndefined();
+		expect(rows[0]?.usdValue).toBe("0.5");
+	});
+
 	it("keeps outcome-market balances in account value and display rows", () => {
 		const rows = getSpotBalanceRows([outcomeBalance]);
 

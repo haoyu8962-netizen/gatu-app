@@ -36,6 +36,13 @@ describe("order risk context", () => {
 		expect(doesOrderBatchMatchRiskContext([{ a: 99_999 }], PERP_CONTEXT)).toBe(false);
 	});
 
+	it("treats outcome assets as spot-like and rejects malformed reserved IDs", () => {
+		expect(doesOrderBatchMatchRiskContext([{ a: 100_000_010 }], SPOT_CONTEXT)).toBe(true);
+		expect(doesOrderBatchMatchRiskContext([{ a: 100_000_010 }], PERP_CONTEXT)).toBe(false);
+		expect(doesOrderBatchMatchRiskContext([{ a: 100_000_002 }], SPOT_CONTEXT)).toBe(false);
+		expect(doesOrderBatchMatchRiskContext([{ a: 100_000_002 }], PERP_CONTEXT)).toBe(false);
+	});
+
 	it("fails closed for invalid or mixed market asset batches", () => {
 		expect(doesOrderBatchMatchRiskContext([{ a: -1 }], PERP_CONTEXT)).toBe(false);
 		expect(doesOrderBatchMatchRiskContext([{ a: "not-an-asset" }], PERP_CONTEXT)).toBe(false);

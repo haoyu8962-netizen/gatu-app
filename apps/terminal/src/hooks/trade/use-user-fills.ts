@@ -2,7 +2,8 @@ import type { UserFillsResponse } from "@nktkas/hyperliquid";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useInfo, useSubscription } from "@/lib/hyperliquid";
-import { mergeUserFillSources } from "@/lib/trade/user-fills";
+import { MalformedHistoryPageError } from "@/lib/trade/history-pagination";
+import { isValidUserFillHistoryItem, mergeUserFillSources } from "@/lib/trade/user-fills";
 
 const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 const USER_FILLS_STALE_TIME_MS = 30_000;
@@ -32,22 +33,34 @@ export function useUserFills(): UserFillsResult {
 
 	const restFills = fillsQuery.data;
 	const realtimeFills = fillsSubscription.data?.fills;
-	const hasRestSnapshot = restFills !== undefined;
-	const hasRealtimeFills = (realtimeFills?.length ?? 0) > 0;
-	const realtimeSettled = fillsSubscription.status === "active" || fillsSubscription.status === "error";
-	const fills = mergeUserFillSources(restFills, realtimeFills).slice(0, MAX_HISTORY_ROWS);
+	const hasMalformedRest =
+		restFills !== undefined &&
+		(!Array.isArray(restFills) || restFills.some((fill) => !isValidUserFillHistoryItem(fill)));
+	const hasMalformedRealtime =
+		realtimeFills !== undefined &&
+		(!Array.isArray(realtimeFills) || realtimeFills.some((fill) => !isValidUserFillHistoryItem(fill)));
+	const hasRestSnapshot = restFills !== undefined && !hasMalformedRest;
+	const fills = mergeUserFillSources(
+		hasMalformedRest || !Array.isArray(restFills) ? undefined : restFills,
+		hasMalformedRealtime || !Array.isArray(realtimeFills) ? undefined : realtimeFills,
+	).slice(0, MAX_HISTORY_ROWS);
 
 	let status: UserFillsStatus = "loading";
 	if (!enabled) {
 		status = "idle";
-	} else if (hasRestSnapshot || hasRealtimeFills) {
+	} else if (hasMalformedRest || hasMalformedRealtime) {
+		status = "error";
+	} else if (hasRestSnapshot) {
 		status = "ready";
-	} else if (fillsQuery.isError && realtimeSettled) {
+	} else if (fillsQuery.isError) {
 		status = "error";
 	}
 
 	return {
-		error: status === "error" ? (fillsQuery.error ?? fillsSubscription.error) : undefined,
+		error:
+			status === "error"
+				? (fillsQuery.error ?? (hasMalformedRest || hasMalformedRealtime ? new MalformedHistoryPageError() : undefined))
+				: undefined,
 		fills,
 		isConnected,
 		status,

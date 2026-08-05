@@ -9,10 +9,11 @@ const LEDGER_FORMAT_OPTIONS = {
 } as const;
 
 export function formatAccountLedgerAmount(row: AccountLedgerRow): string {
+	if (row.amount === null) return FALLBACK_VALUE_PLACEHOLDER;
 	return formatToken(row.amount, {
 		...LEDGER_FORMAT_OPTIONS,
 		signDisplay: "exceptZero",
-		symbol: row.token,
+		symbol: row.token || undefined,
 	});
 }
 

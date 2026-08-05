@@ -4,12 +4,14 @@ import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
+import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { cn } from "@/lib/cn";
-import { buildCsvRows, downloadCsv } from "@/lib/csv";
+import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
+import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { AssetBadge } from "../components/asset-badge";
@@ -35,6 +37,7 @@ export function HistoryTab() {
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
 	const isTestnet = useIsTestnet();
+	const malformedHistory = isMalformedHistoryPageError(error);
 
 	function getDirectionLabel(direction: string) {
 		if (direction === "Open Long") return t`Open Long`;
@@ -44,10 +47,10 @@ export function HistoryTab() {
 		return direction;
 	}
 
-	function handleExportCsv() {
-		downloadCsv(
-			"trade_history.csv",
-			buildCsvRows(fills, [
+	const { exportCsv, isExporting } = useUserFillsCsvExport({
+		filename: "trade_history.csv",
+		buildRows: (exportFills) =>
+			buildCsvRows(exportFills, [
 				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
 				{ header: t`Asset`, getValue: (fill) => fill.coin },
 				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
@@ -63,8 +66,7 @@ export function HistoryTab() {
 				},
 				{ header: t`Transaction`, getValue: (fill) => fill.hash },
 			]),
-		);
-	}
+	});
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view trade history.`}</Placeholder>;
@@ -73,7 +75,13 @@ export function HistoryTab() {
 			return (
 				<Placeholder variant="error">
 					<span>{t`Failed to load trade history.`}</span>
-					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
+					{malformedHistory ? (
+						<span className="mt-1 text-xs text-fg-muted">
+							{t`History data could not be validated. Refresh and try again.`}
+						</span>
+					) : (
+						error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>
+					)}
 				</Placeholder>
 			);
 		}
@@ -237,15 +245,15 @@ export function HistoryTab() {
 					</ScrollArea>
 				)}
 			</div>
-			{isConnected && status === "ready" ? (
+			{isConnected ? (
 				<div className="flex h-[38px] shrink-0 items-center gap-4 px-5" data-testid="trade-history-footer">
 					<Button
 						variant="ghost"
 						intent="neutral"
 						size="xxs"
 						className={historyFooterButtonClass}
-						disabled={fills.length === 0}
-						onClick={handleExportCsv}
+						disabled={isExporting}
+						onClick={() => void exportCsv()}
 					>
 						{t`Export CSV`}
 					</Button>

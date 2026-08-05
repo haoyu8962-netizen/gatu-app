@@ -174,7 +174,7 @@ describe("useHistoricalOrders", () => {
 		expect(result.orders).toEqual([]);
 	});
 
-	it("reports an error only when neither source can provide a snapshot", () => {
+	it("reports an error when the REST snapshot fails", () => {
 		const queryError = new Error("REST unavailable");
 		mocks.query.error = queryError;
 		mocks.query.isError = true;
@@ -184,8 +184,49 @@ describe("useHistoricalOrders", () => {
 		const result = renderHook();
 
 		expect(result.status).toBe("error");
-		expect(result.error).toBe(mocks.subscription.error);
+		expect(result.error).toBe(queryError);
 		expect(result.orders).toEqual([]);
+	});
+
+	it("does not let realtime order updates hide a failed REST snapshot", () => {
+		const queryError = new Error("REST unavailable");
+		mocks.query.error = queryError;
+		mocks.query.isError = true;
+		mocks.subscription.data = {
+			user: mocks.address as `0x${string}`,
+			orderHistory: [createOrderEntry()],
+		};
+		mocks.subscription.status = "active";
+
+		const result = renderHook();
+
+		expect(result.status).toBe("error");
+		expect(result.error).toBe(queryError);
+	});
+
+	it("fails closed for malformed REST and realtime order identities", () => {
+		mocks.query.data = [createOrderEntry({ order: { ...createOrderEntry().order, oid: Number.NaN } })];
+
+		let result = renderHook();
+		expect(result.status).toBe("error");
+		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
+
+		mocks.query.data = [];
+		mocks.subscription.data = {
+			user: mocks.address as `0x${string}`,
+			orderHistory: [createOrderEntry({ statusTimestamp: Number.NaN })],
+		};
+		result = renderHook();
+		expect(result.status).toBe("error");
+	});
+
+	it("fails closed instead of throwing when order history is not an array", () => {
+		mocks.query.data = { orders: [] } as never;
+
+		const result = renderHook();
+
+		expect(result.status).toBe("error");
+		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
 	});
 
 	it("keeps both data sources disabled while the wallet is disconnected", () => {

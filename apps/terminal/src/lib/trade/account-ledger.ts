@@ -1,15 +1,28 @@
 import type { UserNonFundingLedgerUpdatesResponse } from "@nktkas/hyperliquid";
 import Big from "big.js";
+import { fetchTimeRangeHistory } from "@/lib/trade/history-pagination";
 
-export type AccountLedgerUpdate = UserNonFundingLedgerUpdatesResponse[number];
+type SdkAccountLedgerDelta = UserNonFundingLedgerUpdatesResponse[number]["delta"];
+
+/** The SDK validates requests, but the Info transport returns production response data unchecked. */
+export interface AccountLedgerUpdate {
+	delta: unknown;
+	hash: string;
+	time: number;
+}
 
 export type AccountLedgerAction =
 	| "activateDex"
+	| "accountActivationFee"
 	| "borrow"
 	| "deployGasAuction"
 	| "deposit"
+	| "gasAuctionFee"
 	| "genesisDistribution"
+	| "hip3LiquidatorDeposit"
+	| "hip3LiquidatorWithdrawal"
 	| "liquidation"
+	| "other"
 	| "repay"
 	| "rewardsClaim"
 	| "send"
@@ -23,6 +36,7 @@ export type AccountLedgerAction =
 	| "vaultDeposit"
 	| "vaultDistribution"
 	| "vaultWithdrawal"
+	| "welcomeBonus"
 	| "withdrawal";
 
 export interface AccountLedgerLocation {
@@ -37,12 +51,13 @@ export interface AccountLedgerFee {
 
 export interface AccountLedgerRow {
 	action: AccountLedgerAction;
-	amount: string;
+	amount: string | null;
 	destination: AccountLedgerLocation;
 	explorer: "arbitrum" | "hyperliquid";
 	fee: AccountLedgerFee | null;
 	hash: string;
 	id: string;
+	rawType: string | null;
 	source: AccountLedgerLocation;
 	time: number;
 	token: string;
@@ -84,9 +99,24 @@ export function getAccountLedgerUpdateKey(update: AccountLedgerUpdate): string {
 	return `${update.hash}:${update.time}:${JSON.stringify(update.delta)}`;
 }
 
+export function isValidAccountLedgerUpdate(item: unknown): item is AccountLedgerUpdate {
+	if (
+		!isRecord(item) ||
+		typeof item.time !== "number" ||
+		!Number.isSafeInteger(item.time) ||
+		item.time < 0 ||
+		typeof item.hash !== "string" ||
+		item.hash.length === 0 ||
+		!isRecord(item.delta)
+	) {
+		return false;
+	}
+	return typeof item.delta.type === "string" && item.delta.type.length > 0;
+}
+
 export function mergeAccountLedgerUpdates(
-	...sources: ReadonlyArray<UserNonFundingLedgerUpdatesResponse | undefined>
-): UserNonFundingLedgerUpdatesResponse {
+	...sources: ReadonlyArray<readonly AccountLedgerUpdate[] | undefined>
+): AccountLedgerUpdate[] {
 	const updatesById = new Map<string, AccountLedgerUpdate>();
 
 	for (const source of sources) {
@@ -100,47 +130,26 @@ export function mergeAccountLedgerUpdates(
 
 export interface AccountLedgerHistoryResult {
 	truncated: boolean;
-	updates: UserNonFundingLedgerUpdatesResponse;
+	updates: AccountLedgerUpdate[];
 }
 
 export async function fetchAccountLedgerHistory(
-	fetchPage: (startTime: number) => Promise<UserNonFundingLedgerUpdatesResponse>,
-	maxPages = 200,
+	fetchPage: (startTime: number, endTime: number, signal: AbortSignal) => Promise<readonly AccountLedgerUpdate[]>,
+	options: { endTime: number; maxPages?: number; signal: AbortSignal },
 ): Promise<AccountLedgerHistoryResult> {
-	const updates: AccountLedgerUpdate[] = [];
-	let startTime = 0;
-	let overlapKey: string | null = null;
-
-	for (let pageNumber = 0; pageNumber < maxPages; pageNumber++) {
-		const page = await fetchPage(startTime);
-		let pageUpdates = page;
-
-		if (overlapKey) {
-			const overlapIndex = page.findIndex((update) => getAccountLedgerUpdateKey(update) === overlapKey);
-			if (overlapIndex >= 0) pageUpdates = page.slice(overlapIndex + 1);
-		}
-
-		if (pageUpdates.length === 0) {
-			return { truncated: false, updates: mergeAccountLedgerUpdates(updates) };
-		}
-
-		updates.push(...pageUpdates);
-		const nextCursor = pageUpdates.at(-1);
-		if (!nextCursor) return { truncated: false, updates: mergeAccountLedgerUpdates(updates) };
-
-		const nextOverlapKey = getAccountLedgerUpdateKey(nextCursor);
-		if (nextOverlapKey === overlapKey || nextCursor.time < startTime) {
-			return { truncated: false, updates: mergeAccountLedgerUpdates(updates) };
-		}
-
-		overlapKey = nextOverlapKey;
-		startTime = nextCursor.time;
-	}
-
-	return { truncated: true, updates: mergeAccountLedgerUpdates(updates) };
+	const result = await fetchTimeRangeHistory({
+		endTime: options.endTime,
+		fetchPage,
+		getKey: getAccountLedgerUpdateKey,
+		getTime: (update: AccountLedgerUpdate) => update.time,
+		...(options.maxPages === undefined ? {} : { maxPages: options.maxPages }),
+		signal: options.signal,
+		validateItem: isValidAccountLedgerUpdate,
+	});
+	return { truncated: result.truncated, updates: mergeAccountLedgerUpdates(result.items) };
 }
 
-export function buildAccountLedgerRows(updates: UserNonFundingLedgerUpdatesResponse, user: string): AccountLedgerRow[] {
+export function buildAccountLedgerRows(updates: readonly AccountLedgerUpdate[], user: string): AccountLedgerRow[] {
 	return updates.flatMap((update) => {
 		const row = buildAccountLedgerRow(update, user);
 		return row ? [row] : [];
@@ -148,12 +157,24 @@ export function buildAccountLedgerRows(updates: UserNonFundingLedgerUpdatesRespo
 }
 
 export function buildAccountLedgerRow(update: AccountLedgerUpdate, user: string): AccountLedgerRow | null {
-	const { delta } = update;
-	const base = {
-		hash: update.hash,
-		id: getAccountLedgerUpdateKey(update),
-		time: update.time,
-	};
+	try {
+		const row = buildAccountLedgerRowUnchecked(update, user);
+		if (row === null || isValidAccountLedgerRow(row)) return row;
+	} catch {
+		// Production may add fields or variants before the pinned SDK updates its union.
+	}
+
+	if (!isRecord(update.delta) || typeof update.delta.type !== "string") return null;
+	return buildUnknownAccountLedgerRow(update.delta, getAccountLedgerRowBase(update));
+}
+
+function buildAccountLedgerRowUnchecked(update: AccountLedgerUpdate, user: string): AccountLedgerRow | null {
+	if (!isRecord(update.delta) || typeof update.delta.type !== "string") return null;
+	const rawDelta = update.delta;
+	const base = getAccountLedgerRowBase(update);
+	const runtimeRow = buildRuntimeAccountLedgerRow(rawDelta, base);
+	if (runtimeRow) return runtimeRow;
+	const delta = rawDelta as SdkAccountLedgerDelta;
 
 	switch (delta.type) {
 		case "accountClassTransfer":
@@ -385,4 +406,131 @@ export function buildAccountLedgerRow(update: AccountLedgerUpdate, user: string)
 				token: "USDC",
 			};
 	}
+
+	return buildUnknownAccountLedgerRow(rawDelta, base);
+}
+
+type AccountLedgerRowBase = Pick<AccountLedgerRow, "hash" | "id" | "rawType" | "time">;
+
+function getAccountLedgerRowBase(update: AccountLedgerUpdate): AccountLedgerRowBase {
+	return {
+		hash: update.hash,
+		id: getAccountLedgerUpdateKey(update),
+		rawType: null,
+		time: update.time,
+	};
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+function getStringNumber(delta: Record<string, unknown>, ...keys: string[]): string | null {
+	for (const key of keys) {
+		const value = delta[key];
+		if (typeof value === "string") {
+			try {
+				return Big(value).toString();
+			} catch {
+				continue;
+			}
+		}
+		if (typeof value === "number" && Number.isFinite(value)) return Big(value).toString();
+	}
+	return null;
+}
+
+function isValidNumericString(value: string): boolean {
+	try {
+		Big(value);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function isValidAccountLedgerRow(row: AccountLedgerRow): boolean {
+	if (!Number.isSafeInteger(row.time) || typeof row.hash !== "string" || typeof row.token !== "string") return false;
+	if (row.amount !== null && (typeof row.amount !== "string" || !isValidNumericString(row.amount))) return false;
+	if (row.fee && (!isValidNumericString(row.fee.amount) || typeof row.fee.token !== "string")) return false;
+	return (
+		isRecord(row.source) &&
+		typeof row.source.kind === "string" &&
+		isRecord(row.destination) &&
+		typeof row.destination.kind === "string"
+	);
+}
+
+function getString(delta: Record<string, unknown>, key: string): string | null {
+	const value = delta[key];
+	return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function getRuntimeLocation(delta: Record<string, unknown>): AccountLedgerLocation {
+	const dex = getString(delta, "dex");
+	return dex ? { dex, kind: "perpDex" } : SPOT_LOCATION;
+}
+
+function buildRuntimeAccountLedgerRow(
+	delta: Record<string, unknown>,
+	base: AccountLedgerRowBase,
+): AccountLedgerRow | null {
+	const amount = getStringNumber(delta, "amount", "usdc");
+	const token = getString(delta, "token") ?? ("usdc" in delta ? "USDC" : null);
+	const location = getRuntimeLocation(delta);
+	if (!amount || !token) return null;
+
+	if (delta.type === "accountActivationGas") {
+		return createRuntimeRow(base, "accountActivationFee", negate(amount), token, location);
+	}
+	if (delta.type === "gossipPriorityGasAuction") {
+		return createRuntimeRow(base, "gasAuctionFee", negate(amount), token, location);
+	}
+	if (delta.type === "welcomeBonus") {
+		return createRuntimeRow(base, "welcomeBonus", amount, token, location);
+	}
+	if (delta.type === "hip3LiquidatorDeposit") {
+		return createRuntimeRow(base, "hip3LiquidatorDeposit", negate(amount), token, location);
+	}
+	if (delta.type === "hip3LiquidatorWithdraw" || delta.type === "hip3LiquidatorWithdrawal") {
+		return createRuntimeRow(base, "hip3LiquidatorWithdrawal", amount, token, location);
+	}
+	return null;
+}
+
+function createRuntimeRow(
+	base: AccountLedgerRowBase,
+	action: AccountLedgerAction,
+	amount: string,
+	token: string,
+	location: AccountLedgerLocation,
+): AccountLedgerRow {
+	return {
+		...base,
+		action,
+		amount,
+		destination: location,
+		explorer: "hyperliquid",
+		fee: null,
+		source: location,
+		token,
+	};
+}
+
+function buildUnknownAccountLedgerRow(delta: Record<string, unknown>, base: AccountLedgerRowBase): AccountLedgerRow {
+	const amount = getStringNumber(delta, "amount", "usdc", "accountValue", "netWithdrawnUsd", "requestedUsd");
+	const token = getString(delta, "token") ?? ("usdc" in delta ? "USDC" : "");
+	const location = getRuntimeLocation(delta);
+
+	return {
+		...base,
+		action: "other",
+		amount,
+		destination: location,
+		explorer: "hyperliquid",
+		fee: null,
+		rawType: typeof delta.type === "string" ? delta.type : "unknown",
+		source: location,
+		token,
+	};
 }

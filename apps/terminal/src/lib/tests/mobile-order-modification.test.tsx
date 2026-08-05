@@ -29,16 +29,25 @@ const triggerOrder = {
 	cloid: null,
 	coin: "xyz:ORCL",
 	isPositionTpsl: false,
-	isTrigger: true,
-	limitPx: "187",
+	isTrigger: false,
+	limitPx: "170",
 	oid: 42,
-	orderType: "Stop Market",
+	orderType: "Limit",
 	origSz: "5.000",
 	reduceOnly: true,
 	side: "B",
 	sz: "2.000",
-	tif: null,
+	tif: "Gtc",
 	timestamp: 1_786_000_000_000,
+	triggerCondition: "N/A",
+	triggerPx: "0",
+} as OpenOrder;
+
+const unsafeTriggerOrder = {
+	...triggerOrder,
+	isTrigger: true,
+	orderType: "Stop Market",
+	tif: null,
 	triggerCondition: "Price above 170",
 	triggerPx: "170",
 } as OpenOrder;
@@ -194,9 +203,9 @@ describe("mobile order modification", () => {
 		expect(document.body.textContent).toContain("Modify Order");
 		expect(document.body.textContent).toContain("ORCL");
 		expect(document.body.textContent).toContain("Close Short");
-		expect(document.body.textContent).toContain("Stop Market · Reduce Only");
+		expect(document.body.textContent).toContain("Limit · Reduce Only");
 		expect(size?.value).toBe("2.000");
-		expect(trigger?.value).toBe("170");
+		expect(trigger).toBeNull();
 
 		act(() => {
 			if (size) changeInput(size, "1.");
@@ -220,11 +229,10 @@ describe("mobile order modification", () => {
 	});
 
 	it("submits one complete guarded payload and reports success only after live writeback", async () => {
-		const { size, trigger } = openEditor();
+		const { size } = openEditor();
 		await act(async () => {
-			if (!size || !trigger) return;
+			if (!size) return;
 			changeInput(size, "1.500");
-			changeInput(trigger, "180");
 			pressKey(size, "Enter");
 			pressKey(size, "Enter");
 			await Promise.resolve();
@@ -232,17 +240,16 @@ describe("mobile order modification", () => {
 
 		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
 		expect(mocks.modifyOrders).toHaveBeenCalledWith({
-			a: true,
 			modifies: [
 				{
 					oid: 42,
 					order: {
 						a: 120_001,
 						b: true,
-						p: "198",
+						p: "170",
 						s: "1.5",
 						r: true,
-						t: { trigger: { isMarket: true, triggerPx: "180", tpsl: "sl" } },
+						t: { limit: { tif: "Gtc" } },
 					},
 				},
 			],
@@ -251,7 +258,7 @@ describe("mobile order modification", () => {
 		expect(mocks.toastSuccess).not.toHaveBeenCalled();
 		expect(size?.disabled).toBe(true);
 
-		mocks.orders = [{ ...triggerOrder, limitPx: "198", sz: "1.500", triggerPx: "180" } as OpenOrder];
+		mocks.orders = [{ ...triggerOrder, sz: "1.500" } as OpenOrder];
 		await act(async () => {
 			root.render(<MobileOrdersTab scrollMode="page" />);
 			await Promise.resolve();
@@ -319,7 +326,7 @@ describe("mobile order modification", () => {
 	});
 
 	it("explains unsupported modifications on touch without submitting an order", () => {
-		mocks.orders = [{ ...triggerOrder, isTrigger: false, orderType: "Twap Slice", tif: "Gtc" } as OpenOrder];
+		mocks.orders = [unsafeTriggerOrder];
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Expand ORCL order details"]')?.click());
 		const modify = findButton("Modify Order", container);

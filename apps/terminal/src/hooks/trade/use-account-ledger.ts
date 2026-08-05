@@ -1,11 +1,27 @@
-import type { UserNonFundingLedgerUpdatesResponse, UserNonFundingLedgerUpdatesWsEvent } from "@nktkas/hyperliquid";
+import type { InfoClient, UserNonFundingLedgerUpdatesWsEvent } from "@nktkas/hyperliquid";
+import { useQuery } from "@tanstack/react-query";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { useInfo, useSubscription } from "@/lib/hyperliquid";
-import { type AccountLedgerRow, buildAccountLedgerRows, mergeAccountLedgerUpdates } from "@/lib/trade/account-ledger";
+import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
+import {
+	type AccountLedgerRow,
+	type AccountLedgerUpdate,
+	buildAccountLedgerRows,
+	getAccountLedgerUpdateKey,
+	isValidAccountLedgerUpdate,
+	mergeAccountLedgerUpdates,
+} from "@/lib/trade/account-ledger";
+import {
+	fetchHistoryPageWithRetry,
+	fetchTimeRangeHistory,
+	isIncompleteHistorySnapshotError,
+	MalformedHistoryPageError,
+	requireCompleteHistorySnapshot,
+} from "@/lib/trade/history-pagination";
 
 const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 const ACCOUNT_LEDGER_STALE_TIME_MS = 30_000;
+const ACCOUNT_LEDGER_LIST_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type AccountLedgerStatus = "error" | "idle" | "loading" | "ready";
 
@@ -17,40 +33,77 @@ interface AccountLedgerResult {
 	status: AccountLedgerStatus;
 }
 
+export async function fetchRecentAccountLedgerUpdates(
+	info: InfoClient,
+	user: `0x${string}`,
+	signal: AbortSignal,
+): Promise<AccountLedgerUpdate[]> {
+	const endTime = Date.now();
+	const startTime = endTime - ACCOUNT_LEDGER_LIST_LOOKBACK_MS;
+	const result = await fetchTimeRangeHistory<AccountLedgerUpdate>({
+		endTime,
+		fetchPage: (pageStartTime, pageEndTime, pageSignal) =>
+			fetchHistoryPageWithRetry(
+				(requestSignal) =>
+					info.userNonFundingLedgerUpdates({ endTime: pageEndTime, startTime: pageStartTime, user }, requestSignal),
+				{ signal: pageSignal },
+			),
+		getKey: getAccountLedgerUpdateKey,
+		getTime: (update) => update.time,
+		retainLatestItems: MAX_HISTORY_ROWS,
+		signal,
+		startTime,
+		validateItem: isValidAccountLedgerUpdate,
+	});
+	return requireCompleteHistorySnapshot(result);
+}
+
 export function useAccountLedger(): AccountLedgerResult {
 	const { address, isConnected } = useWalletSession();
+	const { env, info } = useHyperliquid();
 	const enabled = isConnected && !!address;
 	const user = address ?? EMPTY_ADDRESS;
-	const params = { user, startTime: 0 } as const;
-	const ledgerQuery = useInfo("userNonFundingLedgerUpdates", params, {
+	const ledgerQuery = useQuery({
 		enabled,
+		queryFn: ({ signal }) => fetchRecentAccountLedgerUpdates(info, user, signal),
+		queryKey: ["hl", "recent-history", "userNonFundingLedgerUpdates", env, user.toLowerCase()],
 		refetchOnReconnect: true,
 		refetchOnWindowFocus: false,
-		retry: 1,
+		retry: false,
 		staleTime: ACCOUNT_LEDGER_STALE_TIME_MS,
 	});
 	const ledgerSubscription = useSubscription("userNonFundingLedgerUpdates", { user }, { enabled });
 
-	const restUpdates = ledgerQuery.data as UserNonFundingLedgerUpdatesResponse | undefined;
+	const restUpdates = ledgerQuery.data;
 	const realtimeEvent = ledgerSubscription.data as UserNonFundingLedgerUpdatesWsEvent | undefined;
 	const realtimeUpdates = realtimeEvent?.nonFundingLedgerUpdates;
+	const hasMalformedRealtime =
+		realtimeUpdates !== undefined &&
+		(!Array.isArray(realtimeUpdates) || realtimeUpdates.some((update) => !isValidAccountLedgerUpdate(update)));
 	const hasRestSnapshot = restUpdates !== undefined;
-	const hasRealtimeUpdates = (realtimeUpdates?.length ?? 0) > 0;
-	const realtimeSettled = ledgerSubscription.status === "active" || ledgerSubscription.status === "error";
-	const updates = mergeAccountLedgerUpdates(restUpdates, realtimeUpdates);
+	const hasIncompleteRestSnapshot = isIncompleteHistorySnapshotError(ledgerQuery.error);
+	const updates = mergeAccountLedgerUpdates(
+		restUpdates,
+		hasMalformedRealtime || !Array.isArray(realtimeUpdates) ? undefined : realtimeUpdates,
+	);
 	const rows = buildAccountLedgerRows(updates, user).slice(0, MAX_HISTORY_ROWS);
 
 	let status: AccountLedgerStatus = "loading";
 	if (!enabled) {
 		status = "idle";
-	} else if (hasRestSnapshot || hasRealtimeUpdates) {
+	} else if (hasIncompleteRestSnapshot || hasMalformedRealtime) {
+		status = "error";
+	} else if (hasRestSnapshot) {
 		status = "ready";
-	} else if (ledgerQuery.isError && realtimeSettled) {
+	} else if (ledgerQuery.isError) {
 		status = "error";
 	}
 
 	return {
-		error: status === "error" ? (ledgerQuery.error ?? ledgerSubscription.error) : undefined,
+		error:
+			status === "error"
+				? (ledgerQuery.error ?? (hasMalformedRealtime ? new MalformedHistoryPageError() : undefined))
+				: undefined,
 		isConnected,
 		retry: () => void ledgerQuery.refetch(),
 		rows,

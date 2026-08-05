@@ -8,7 +8,39 @@ import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
 	downloadCsv: vi.fn(),
+	orders: [] as Array<Record<string, unknown>>,
 }));
+
+function createOrders() {
+	return [
+		{
+			status: "filled",
+			statusTimestamp: 2,
+			order: {
+				coin: "BTC",
+				oid: 1,
+				orderType: "Limit",
+				origSz: "1",
+				reduceOnly: false,
+				side: "B",
+				timestamp: 1,
+			},
+		},
+		{
+			status: "canceled",
+			statusTimestamp: 4,
+			order: {
+				coin: "ETH",
+				oid: 2,
+				orderType: "Stop Market",
+				origSz: "2",
+				reduceOnly: true,
+				side: "A",
+				timestamp: 3,
+			},
+		},
+	];
+}
 
 vi.mock("@/components/trade/components/asset-badge", () => ({
 	AssetBadge: (props: { coin: string; "aria-label": string }) => (
@@ -32,34 +64,20 @@ vi.mock("@/hooks/trade/use-historical-orders", () => ({
 		error: null,
 		isConnected: true,
 		status: "ready",
-		orders: [
-			{
-				status: "filled",
-				statusTimestamp: 2,
-				order: {
-					coin: "BTC",
-					oid: 1,
-					orderType: "Limit",
-					origSz: "1",
-					reduceOnly: false,
-					side: "B",
-					timestamp: 1,
-				},
-			},
-			{
-				status: "canceled",
-				statusTimestamp: 4,
-				order: {
-					coin: "ETH",
-					oid: 2,
-					orderType: "Stop Market",
-					origSz: "2",
-					reduceOnly: true,
-					side: "A",
-					timestamp: 3,
-				},
-			},
-		],
+		orders: mocks.orders,
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-history-csv-export", () => ({
+	useHistoricalOrdersCsvExport: ({
+		buildRows,
+		filename,
+	}: {
+		buildRows: (items: unknown[]) => string[][];
+		filename: string;
+	}) => ({
+		exportCsv: async () => mocks.downloadCsv(filename, buildRows([])),
+		isExporting: false,
 	}),
 }));
 
@@ -83,6 +101,7 @@ describe("desktop order history direction semantics", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.orders = createOrders();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -148,6 +167,19 @@ describe("desktop order history direction semantics", () => {
 			"order_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Type", "Status"])]),
 		);
+	});
+
+	it("keeps full order export available when the recent snapshot is empty", () => {
+		mocks.orders = [];
+		act(() => root.render(<OrdersHistoryTab />));
+
+		const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(candidate) => candidate.textContent === "Export CSV",
+		);
+		expect(container.textContent).toContain("No order history found.");
+		expect(button?.disabled).toBe(false);
+		act(() => button?.click());
+		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
 	});
 
 	it("filters the currently loaded rows by order type", async () => {

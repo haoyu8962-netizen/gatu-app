@@ -162,6 +162,33 @@ describe("order tracking", () => {
 		expect(resolution).toBeNull();
 	});
 
+	it.each([[{}], ["success"], [{ resting: { oid: -1 } }], [{ filled: { oid: 1, totalSz: "1" } }]])(
+		"does not treat malformed or cancel-only statuses as accepted orders",
+		(statuses) => {
+			expect(
+				resolveOrderBatchResponse({ status: "ok", response: { type: "order", data: { statuses } } }, 1),
+			).toBeNull();
+		},
+	);
+
+	it("rejects a non-order response even when its status entries look order-shaped", () => {
+		expect(
+			resolveOrderBatchResponse(
+				{ status: "ok", response: { type: "cancel", data: { statuses: [{ resting: { oid: 1 } }] } } },
+				1,
+			),
+		).toBeNull();
+	});
+
+	it("rejects a non-ok response even when its payload looks order-shaped", () => {
+		expect(
+			resolveOrderBatchResponse(
+				{ status: "err", response: { type: "order", data: { statuses: [{ resting: { oid: 1 } }] } } },
+				1,
+			),
+		).toBeNull();
+	});
+
 	it("requires every filled child to report the complete submitted size", () => {
 		const resolution = resolveFilledOrderBatchResponse(
 			{

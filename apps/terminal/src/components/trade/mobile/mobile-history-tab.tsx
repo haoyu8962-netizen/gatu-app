@@ -6,13 +6,15 @@ import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
+import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { buildCsvRows, downloadCsv } from "@/lib/csv";
+import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
+import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toNumber } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -69,6 +71,7 @@ function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props)
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
 	const isTestnet = useIsTestnet();
+	const malformedHistory = isMalformedHistoryPageError(error);
 	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
 	const [typeFilter, setTypeFilter] = useState<TradeHistoryTypeFilter>("all");
 	const [directionFilter, setDirectionFilter] = useState<TradeHistoryDirectionFilter>("all");
@@ -125,27 +128,44 @@ function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props)
 		return direction;
 	}
 
-	function handleExportCsv() {
-		downloadCsv(
-			"trade_history.csv",
-			buildCsvRows(filteredFills, [
-				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
-				{ header: t`Asset`, getValue: (fill) => fill.coin },
-				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
-				{ header: t`Price`, getValue: (fill) => formatUSD(fill.px) },
-				{ header: t`Size`, getValue: (fill) => formatNumber(fill.sz, markets.getSzDecimals(fill.coin)) },
-				{ header: t`Fee`, getValue: (fill) => formatToken(fill.fee, { symbol: fill.feeToken }) },
-				{
-					header: t`PNL`,
-					getValue: (fill) => {
-						const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
-						return closedPnl ? formatUSD(closedPnl, { signDisplay: "exceptZero" }) : FALLBACK_VALUE_PLACEHOLDER;
+	const { exportCsv, isExporting } = useUserFillsCsvExport({
+		filename: "trade_history.csv",
+		buildRows: (exportFills) =>
+			buildCsvRows(
+				exportFills.filter(
+					(fill) =>
+						(typeFilter === "all" || getTradeHistoryType(fill) === typeFilter) &&
+						(directionFilter === "all" || (directionFilter === "buy") === (fill.side === "B")) &&
+						(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
+				),
+				[
+					{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
+					{ header: t`Asset`, getValue: (fill) => fill.coin },
+					{
+						header: t`Direction`,
+						getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)),
 					},
-				},
-				{ header: t`Transaction`, getValue: (fill) => fill.hash },
-			]),
-		);
-	}
+					{ header: t`Price`, getValue: (fill) => formatUSD(fill.px) },
+					{ header: t`Size`, getValue: (fill) => formatNumber(fill.sz, markets.getSzDecimals(fill.coin)) },
+					{ header: t`Fee`, getValue: (fill) => formatToken(fill.fee, { symbol: fill.feeToken }) },
+					{
+						header: t`PNL`,
+						getValue: (fill) => {
+							const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
+							return closedPnl ? formatUSD(closedPnl, { signDisplay: "exceptZero" }) : FALLBACK_VALUE_PLACEHOLDER;
+						},
+					},
+					{ header: t`Transaction`, getValue: (fill) => fill.hash },
+				],
+			),
+	});
+	const exportFooter = (
+		<div className="flex h-[38px] shrink-0 items-center gap-4 px-3.5" data-testid="mobile-trade-history-footer">
+			<button type="button" disabled={isExporting} onClick={() => void exportCsv()} className={footerActionClassName}>
+				{t`Export CSV`}
+			</button>
+		</div>
+	);
 
 	if (!isConnected) {
 		return (
@@ -157,17 +177,29 @@ function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props)
 
 	if (status === "error") {
 		return (
-			<div className="flex flex-1 flex-col items-center justify-center p-6 text-sm text-market-close-danger">
-				<span>{t`Failed to load trade history.`}</span>
-				{error instanceof Error && <span className="mt-1 text-xs text-market-close-muted">{error.message}</span>}
+			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
+				<div className="flex flex-1 flex-col items-center justify-center p-6 text-sm text-market-close-danger">
+					<span>{t`Failed to load trade history.`}</span>
+					{malformedHistory ? (
+						<span className="mt-1 text-center text-xs text-market-close-muted">
+							{t`History data could not be validated. Refresh and try again.`}
+						</span>
+					) : (
+						error instanceof Error && <span className="mt-1 text-xs text-market-close-muted">{error.message}</span>
+					)}
+				</div>
+				{exportFooter}
 			</div>
 		);
 	}
 
 	if (status === "ready" && fills.length === 0) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
-				{t`No fills found.`}
+			<div className={cn("font-market-close min-h-0 flex flex-1 flex-col", className)}>
+				<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
+					{t`No fills found.`}
+				</div>
+				{exportFooter}
 			</div>
 		);
 	}
@@ -385,16 +417,7 @@ function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props)
 							);
 						})}
 					</div>
-					<div className="flex h-[38px] shrink-0 items-center gap-4 px-3.5" data-testid="mobile-trade-history-footer">
-						<button
-							type="button"
-							disabled={filteredFills.length === 0}
-							onClick={handleExportCsv}
-							className={footerActionClassName}
-						>
-							{t`Export CSV`}
-						</button>
-					</div>
+					{exportFooter}
 				</div>
 			</div>
 		</Skeleton>

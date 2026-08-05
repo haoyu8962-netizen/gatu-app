@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { FrontendOpenOrdersResponse } from "@nktkas/hyperliquid";
+import { ApiRequestError, type FrontendOpenOrdersResponse, HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +8,7 @@ import type { TpSlPositionTarget } from "@/components/trade/positions/position-d
 import { PositionTpSlModal } from "@/components/trade/positions/position-tpsl-modal";
 import type { Position } from "@/lib/hyperliquid";
 import type { OpenOrder } from "@/lib/trade/open-orders";
+import { getOrderAssetLockName } from "@/lib/trade/order-asset-lock";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
@@ -48,8 +49,10 @@ const testState = vi.hoisted(() => ({
 	getPosition: vi.fn(),
 	subscriptions: [] as Array<{ method: string; params: unknown }>,
 	placeOrder: vi.fn(),
-	modifyOrders: vi.fn(),
 	cancelOrders: vi.fn(),
+	frontendOpenOrders: vi.fn(),
+	clearinghouseState: vi.fn(),
+	trackedOrderOptions: [] as unknown[],
 	isMobile: false,
 	pendingMethods: new Set<string>(),
 	executionGuards: {} as Record<string, ((params: unknown) => void) | undefined>,
@@ -138,8 +141,9 @@ vi.mock("@/hooks/trade/use-tracked-order", () => ({
 		return {
 			error: null,
 			isPending: testState.pendingMethods.has("order"),
-			submitOrder: async (params: unknown) => {
+			submitOrder: async (params: unknown, submitOptions: unknown) => {
 				options?.executionGuard?.(params);
+				testState.trackedOrderOptions.push(submitOptions);
 				return { state: "confirmed" as const, result: await testState.placeOrder(params) };
 			},
 		};
@@ -249,12 +253,7 @@ vi.mock("@/components/trade/tradebox/tp-sl-section", () => ({
 vi.mock("@/lib/hyperliquid", () => ({
 	useExchange: (method: string, options?: { executionGuard?: (params: unknown) => void }) => {
 		testState.executionGuards[method] = options?.executionGuard;
-		const mutation =
-			method === "order"
-				? testState.placeOrder
-				: method === "batchModify"
-					? testState.modifyOrders
-					: testState.cancelOrders;
+		const mutation = method === "order" ? testState.placeOrder : testState.cancelOrders;
 		return {
 			error: null,
 			isPending: testState.pendingMethods.has(method),
@@ -268,6 +267,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 	useHyperliquid: () => ({
 		clientKey: testState.connected ? testState.clientKey : "disconnected",
 		env: testState.env,
+		info: {
+			frontendOpenOrders: testState.frontendOpenOrders,
+			clearinghouseState: testState.clearinghouseState,
+		},
 	}),
 	useMarketsInfo: () => ({
 		getMarketInfo: () => (testState.marketMarkPx ? { markPx: testState.marketMarkPx } : undefined),
@@ -364,11 +367,53 @@ function setInputValue(input: HTMLInputElement, value: string) {
 	input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+function installExclusiveLockManager(): void {
+	const queues = new Map<string, Promise<void>>();
+	const busy = new Set<string>();
+	const manager = {
+		async request<T>(
+			name: string,
+			options: LockOptions,
+			callback: (lock: Lock | null) => T | PromiseLike<T>,
+		): Promise<T> {
+			if (options.ifAvailable) {
+				if (busy.has(name)) return callback(null);
+				busy.add(name);
+				try {
+					return await callback({ name, mode: "exclusive" } as Lock);
+				} finally {
+					busy.delete(name);
+				}
+			}
+			const previous = queues.get(name) ?? Promise.resolve();
+			let release = () => {};
+			const current = new Promise<void>((resolve) => {
+				release = resolve;
+			});
+			queues.set(
+				name,
+				previous.then(() => current),
+			);
+			await previous;
+			busy.add(name);
+			try {
+				return await callback({ name, mode: "exclusive" } as Lock);
+			} finally {
+				busy.delete(name);
+				release();
+			}
+		},
+	} as unknown as LockManager;
+	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
+}
+
 describe("PositionTpSlModal live data", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		window.localStorage.clear();
+		installExclusiveLockManager();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -410,15 +455,29 @@ describe("PositionTpSlModal live data", () => {
 		testState.pendingMethods.clear();
 		testState.subscriptions = [];
 		testState.getPosition.mockReset();
-		testState.placeOrder.mockReset().mockResolvedValue({});
-		testState.modifyOrders.mockReset().mockResolvedValue({});
-		testState.cancelOrders.mockReset().mockResolvedValue({});
+		testState.placeOrder.mockReset().mockImplementation(async (params: { orders?: unknown[] }) => ({
+			status: "ok",
+			response: {
+				type: "order",
+				data: { statuses: (params.orders ?? []).map((_, index) => ({ resting: { oid: 100 + index } })) },
+			},
+		}));
+		testState.cancelOrders.mockReset().mockImplementation(async (params: { cancels?: unknown[] }) => ({
+			status: "ok",
+			response: { type: "cancel", data: { statuses: (params.cancels ?? []).map(() => "success") } },
+		}));
+		testState.frontendOpenOrders.mockReset().mockImplementation(async () => testState.orders);
+		testState.clearinghouseState.mockReset().mockImplementation(async () => ({
+			assetPositions: testState.position ? [{ type: "oneWay", position: testState.position }] : [],
+		}));
+		testState.trackedOrderOptions = [];
 		testState.executionGuards = {};
 	});
 
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 		vi.clearAllMocks();
 	});
 
@@ -451,7 +510,7 @@ describe("PositionTpSlModal live data", () => {
 
 	it("blocks adaptive dismissal while a TP/SL mutation is pending", () => {
 		testState.isMobile = true;
-		testState.pendingMethods.add("batchModify");
+		testState.pendingMethods.add("cancel");
 		const onOpenChange = renderModal();
 
 		const dialog = container.querySelector<HTMLElement>('[data-testid="position-risk-dialog"]');
@@ -631,7 +690,7 @@ describe("PositionTpSlModal live data", () => {
 		);
 	});
 
-	it("modifies an existing leg to a fixed partial-size trigger-limit order", async () => {
+	it("replaces an existing leg with cancel-then-place using the fixed partial-size trigger-limit order", async () => {
 		testState.orders = [openOrder()];
 		renderModal();
 
@@ -645,23 +704,234 @@ describe("PositionTpSlModal live data", () => {
 		expect(confirm.disabled).toBe(false);
 		await act(async () => confirm.click());
 
-		expect(testState.modifyOrders).toHaveBeenCalledWith({
-			a: true,
-			modifies: [
+		expect(testState.frontendOpenOrders, container.textContent ?? undefined).toHaveBeenCalledWith({
+			user: positionRef.owner,
+			dex: positionRef.dex,
+		});
+		expect(testState.clearinghouseState).toHaveBeenCalledWith({ user: positionRef.owner, dex: positionRef.dex });
+		expect(testState.cancelOrders).toHaveBeenCalledWith({
+			cancels: [{ a: positionRef.assetId, o: 7 }],
+		});
+		expect(testState.placeOrder).toHaveBeenCalledWith({
+			grouping: "positionTpsl",
+			orders: [
 				{
-					oid: 7,
-					order: {
-						a: positionRef.assetId,
-						b: true,
-						p: "27600",
-						r: true,
-						s: "0.1",
-						t: { trigger: { isMarket: false, tpsl: "tp", triggerPx: "27500" } },
-					},
+					a: positionRef.assetId,
+					b: true,
+					p: "27600",
+					r: true,
+					s: "0.1",
+					t: { trigger: { isMarket: false, tpsl: "tp", triggerPx: "27500" } },
 				},
 			],
 		});
+		expect(testState.cancelOrders.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.placeOrder.mock.invocationCallOrder[0],
+		);
+	});
+
+	it("fails closed when the lock-time REST snapshot reports a stale TP/SL oid", async () => {
+		testState.orders = [openOrder()];
+		testState.frontendOpenOrders.mockResolvedValueOnce([openOrder({ oid: 8 })]);
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
 		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Trading data changed while this dialog was open.");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+	});
+
+	it("fails closed when the lock-time REST position size differs from the confirmed dialog size", async () => {
+		testState.orders = [openOrder()];
+		testState.clearinghouseState.mockResolvedValueOnce({
+			assetPositions: [
+				{
+					type: "oneWay",
+					position: { ...testState.position, szi: "-0.2" },
+				},
+			],
+		});
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Trading data changed while this dialog was open.");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+	});
+
+	it("fails closed when the live position size changes while the dialog remains open", () => {
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		if (testState.position) testState.position = { ...testState.position, szi: "-0.2" };
+
+		act(() => {
+			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange: vi.fn(), position: positionRef }));
+		});
+
+		expect(container.textContent).toContain("Trading data changed while this dialog was open.");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+		expect(testState.frontendOpenOrders).not.toHaveBeenCalled();
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+	});
+
+	it("rejects a competing tab before reading or mutating the same asset", async () => {
+		testState.orders = [openOrder()];
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		const lockName = getOrderAssetLockName({ env: positionRef.env, owner: positionRef.owner }, positionRef.assetId);
+
+		await window.navigator.locks.request(lockName, { mode: "exclusive" }, async () => {
+			await act(async () => getButton(container, "Confirm").click());
+		});
+
+		expect(testState.frontendOpenOrders).not.toHaveBeenCalled();
+		expect(testState.cancelOrders).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Another order for this market is still being confirmed.");
+	});
+
+	it("does not place a replacement and blocks retries when the cancel response is lost", async () => {
+		testState.orders = [openOrder()];
+		testState.cancelOrders.mockRejectedValueOnce(new HttpRequestError({ detail: "Request timed out" }));
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Confirming exchange status; do not retry.");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+		await act(async () => getButton(container, "Confirm").click());
+		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+
+		act(() => {
+			root.render(
+				createElement(PositionTpSlModal, {
+					open: false,
+					onOpenChange: vi.fn(),
+					position: positionRef,
+				}),
+			);
+		});
+		act(() => {
+			root.render(
+				createElement(PositionTpSlModal, {
+					open: true,
+					onOpenChange: vi.fn(),
+					position: positionRef,
+				}),
+			);
+		});
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Another order for this market is still being confirmed.");
+	});
+
+	it("does not place replacements after a partial cancel response", async () => {
+		testState.orders = [
+			openOrder(),
+			openOrder({
+				oid: 8,
+				orderType: "Stop Market",
+				triggerCondition: "Price above 31000",
+				triggerPx: "31000",
+			}),
+		];
+		testState.cancelOrders.mockRejectedValueOnce(
+			new ApiRequestError({
+				status: "ok",
+				response: { type: "cancel", data: { statuses: ["success", { error: "second leg rejected" }] } },
+			}),
+		);
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		act(() => setInputValue(getInput(container, "Stop Loss"), "32000"));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Confirming exchange status; do not retry.");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+	});
+
+	it("treats a single cancel error as a definitive whole-batch rejection and permits a safe retry", async () => {
+		testState.orders = [
+			openOrder(),
+			openOrder({
+				oid: 8,
+				orderType: "Stop Market",
+				triggerCondition: "Price above 31000",
+				triggerPx: "31000",
+			}),
+		];
+		testState.cancelOrders.mockRejectedValueOnce(
+			new ApiRequestError(
+				{
+					status: "ok",
+					response: { type: "cancel", data: { statuses: [{ error: "batch rejected" }] } },
+				},
+				"cancel 0: batch rejected",
+			),
+		);
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+		act(() => setInputValue(getInput(container, "Stop Loss"), "32000"));
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
+		expect(testState.placeOrder).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("batch rejected");
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+
+		await act(async () => getButton(container, "Confirm").click());
+		await vi.waitFor(() => expect(testState.placeOrder).toHaveBeenCalledTimes(1));
+		expect(testState.cancelOrders).toHaveBeenCalledTimes(2);
+	});
+
+	it.each([{}, { status: "ok", response: { type: "cancel", data: { statuses: ["unexpected"] } } }])(
+		"does not place a replacement after a malformed cancel response",
+		async (cancelResponse) => {
+			testState.orders = [openOrder()];
+			testState.cancelOrders.mockResolvedValueOnce(cancelResponse);
+			renderModal();
+
+			act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+			await act(async () => getButton(container, "Confirm").click());
+
+			expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
+			expect(testState.placeOrder).not.toHaveBeenCalled();
+			expect(container.textContent).toContain("Confirming exchange status; do not retry.");
+			expect(getButton(container, "Confirm").disabled).toBe(true);
+		},
+	);
+
+	it("passes the active workflow lease into tracked placement", async () => {
+		renderModal();
+		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
+
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
+		expect(testState.trackedOrderOptions).toHaveLength(1);
+		expect(testState.trackedOrderOptions[0]).toEqual(
+			expect.objectContaining({
+				assetLockLease: expect.objectContaining({ assetIds: [positionRef.assetId] }),
+				exclusiveAssetLock: true,
+			}),
+		);
 	});
 
 	it("blocks a configured TP/SL amount larger than the live position", () => {
@@ -837,10 +1107,9 @@ describe("PositionTpSlModal live data", () => {
 		await act(async () => confirm.click());
 		expect(testState.cancelOrders).toHaveBeenCalledWith({ cancels: [{ a: positionRef.assetId, o: 7 }] });
 		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expect(testState.modifyOrders).not.toHaveBeenCalled();
 	});
 
-	it("continues a create-then-cancel workflow only after receiving the new resting order id", async () => {
+	it("continues a cancel-then-create workflow only after strict cancel success", async () => {
 		testState.orders = [
 			openOrder({
 				oid: 8,
@@ -849,9 +1118,6 @@ describe("PositionTpSlModal live data", () => {
 				triggerPx: "31000",
 			}),
 		];
-		testState.placeOrder.mockResolvedValueOnce({
-			response: { data: { statuses: [{ resting: { oid: 99 } }] } },
-		});
 		const onOpenChange = renderModal();
 		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
 		act(() => setInputValue(getInput(container, "Stop Loss"), ""));
@@ -860,12 +1126,15 @@ describe("PositionTpSlModal live data", () => {
 		expect(confirm.disabled, container.textContent ?? undefined).toBe(false);
 		await act(async () => confirm.click());
 
-		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
 		expect(testState.cancelOrders).toHaveBeenCalledWith({ cancels: [{ a: positionRef.assetId, o: 8 }] });
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
+		expect(testState.cancelOrders.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.placeOrder.mock.invocationCallOrder[0],
+		);
+		await vi.waitFor(() => expect(onOpenChange, container.textContent ?? undefined).toHaveBeenCalledWith(false));
 	});
 
-	it("does not cancel an existing leg when a newly created trigger has no confirmed resting id", async () => {
+	it("blocks retries when replacement placement fails after a confirmed cancel", async () => {
 		testState.orders = [
 			openOrder({
 				oid: 8,
@@ -874,9 +1143,7 @@ describe("PositionTpSlModal live data", () => {
 				triggerPx: "31000",
 			}),
 		];
-		testState.placeOrder.mockResolvedValueOnce({
-			response: { data: { statuses: ["waitingForTrigger"] } },
-		});
+		testState.placeOrder.mockRejectedValueOnce(new Error("place failed"));
 		const onOpenChange = renderModal();
 		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
 		act(() => setInputValue(getInput(container, "Stop Loss"), ""));
@@ -885,47 +1152,51 @@ describe("PositionTpSlModal live data", () => {
 		expect(confirm.disabled, container.textContent ?? undefined).toBe(false);
 		await act(async () => confirm.click());
 
+		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
 		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
-		expect(testState.cancelOrders).not.toHaveBeenCalled();
 		expect(onOpenChange).not.toHaveBeenCalledWith(false);
 		expect(container.textContent).toContain("Confirming exchange status; do not retry.");
 		expect(getButton(container, "Confirm").disabled).toBe(true);
+		await act(async () => getButton(container, "Confirm").click());
+		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
+		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
 	});
 
-	it("modifies an existing position TP with the trigger-replacement flag", async () => {
+	it("replaces an existing position TP without the unsafe batch-modify flag", async () => {
 		testState.orders = [openOrder()];
 		renderModal();
 
 		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
 		await act(async () => getButton(container, "Confirm").click());
 
-		expect(testState.modifyOrders).toHaveBeenCalledWith({
-			a: true,
-			modifies: [
+		expect(testState.cancelOrders).toHaveBeenCalledWith({
+			cancels: [{ a: positionRef.assetId, o: 7 }],
+		});
+		expect(testState.placeOrder).toHaveBeenCalledWith({
+			grouping: "positionTpsl",
+			orders: [
 				{
-					oid: 7,
-					order: {
-						a: positionRef.assetId,
-						b: true,
-						p: "30250",
-						r: true,
-						s: "0",
-						t: { trigger: { isMarket: true, tpsl: "tp", triggerPx: "27500" } },
-					},
+					a: positionRef.assetId,
+					b: true,
+					p: "30250",
+					r: true,
+					s: "0",
+					t: { trigger: { isMarket: true, tpsl: "tp", triggerPx: "27500" } },
 				},
 			],
 		});
-		expect(testState.placeOrder).not.toHaveBeenCalled();
-		expect(testState.cancelOrders).not.toHaveBeenCalled();
+		expect(testState.cancelOrders.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.placeOrder.mock.invocationCallOrder[0],
+		);
 	});
 
 	it("locks the whole workflow synchronously against duplicate confirmation and dismissal", async () => {
 		testState.orders = [openOrder()];
-		let resolveModify: ((value: unknown) => void) | undefined;
-		testState.modifyOrders.mockImplementationOnce(
+		let resolveCancel: ((value: unknown) => void) | undefined;
+		testState.cancelOrders.mockImplementationOnce(
 			() =>
 				new Promise((resolve) => {
-					resolveModify = resolve;
+					resolveCancel = resolve;
 				}),
 		);
 		const onOpenChange = renderModal();
@@ -938,17 +1209,18 @@ describe("PositionTpSlModal live data", () => {
 			container.querySelector<HTMLButtonElement>('[aria-label="Request adaptive dismiss"]')?.click();
 		});
 
-		await vi.waitFor(() => expect(testState.modifyOrders).toHaveBeenCalledTimes(1));
+		await vi.waitFor(() => expect(testState.cancelOrders).toHaveBeenCalledTimes(1));
 		expect(onOpenChange).not.toHaveBeenCalled();
 		expect(getInput(container, "Take Profit").disabled).toBe(true);
 		await act(async () => {
-			resolveModify?.({ response: { data: { statuses: [{ resting: { oid: 7 } }] } } });
+			resolveCancel?.({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } });
 			await Promise.resolve();
 		});
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
+		await vi.waitFor(() => expect(onOpenChange, container.textContent ?? undefined).toHaveBeenCalledWith(false));
 	});
 
-	it("keeps the dialog open and blocks retries after an uncertain partial update", async () => {
+	it("keeps the dialog open and blocks retries when placement fails after successful cancellation", async () => {
 		testState.orders = [
 			openOrder(),
 			openOrder({
@@ -958,28 +1230,25 @@ describe("PositionTpSlModal live data", () => {
 				triggerPx: "31000",
 			}),
 		];
-		testState.modifyOrders.mockResolvedValueOnce({
-			response: { data: { statuses: [{ resting: { oid: 7 } }] } },
-		});
-		testState.cancelOrders.mockRejectedValueOnce(new Error("cancel failed"));
+		testState.placeOrder.mockRejectedValueOnce(new Error("place failed"));
 		const onOpenChange = renderModal();
 
 		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
 		act(() => setInputValue(getInput(container, "Stop Loss"), ""));
 		await act(async () => getButton(container, "Confirm").click());
 
-		expect(testState.modifyOrders).toHaveBeenCalledTimes(1);
 		expect(testState.cancelOrders).toHaveBeenCalledTimes(1);
-		expect(testState.modifyOrders.mock.invocationCallOrder[0]).toBeLessThan(
-			testState.cancelOrders.mock.invocationCallOrder[0],
+		expect(testState.placeOrder).toHaveBeenCalledTimes(1);
+		expect(testState.cancelOrders.mock.invocationCallOrder[0]).toBeLessThan(
+			testState.placeOrder.mock.invocationCallOrder[0],
 		);
 		expect(onOpenChange).not.toHaveBeenCalledWith(false);
-		expect(container.textContent).toContain("cancel failed");
+		expect(container.textContent).toContain("Confirming exchange status; do not retry.");
 		expect(container.textContent).toContain("Close and reopen it before submitting.");
 		expect(getButton(container, "Confirm").disabled).toBe(true);
 	});
 
-	it("allows later steps to observe the subscription update caused by an earlier successful step", async () => {
+	it("allows placement to observe the subscription update caused by successful cancellation", async () => {
 		testState.orders = [
 			openOrder(),
 			openOrder({
@@ -989,11 +1258,11 @@ describe("PositionTpSlModal live data", () => {
 				triggerPx: "31000",
 			}),
 		];
-		let resolveModify: ((value: unknown) => void) | undefined;
-		testState.modifyOrders.mockImplementationOnce(
+		let resolveCancel: ((value: unknown) => void) | undefined;
+		testState.cancelOrders.mockImplementationOnce(
 			() =>
 				new Promise((resolve) => {
-					resolveModify = resolve;
+					resolveCancel = resolve;
 				}),
 		);
 		const onOpenChange = renderModal();
@@ -1001,27 +1270,22 @@ describe("PositionTpSlModal live data", () => {
 		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
 		act(() => setInputValue(getInput(container, "Stop Loss"), ""));
 		act(() => getButton(container, "Confirm").click());
-		await vi.waitFor(() => expect(testState.modifyOrders).toHaveBeenCalledTimes(1));
+		await vi.waitFor(() => expect(testState.cancelOrders).toHaveBeenCalledTimes(1));
 
-		testState.orders = [
-			openOrder({ limitPx: "30250", triggerPx: "27500" }),
-			openOrder({
-				oid: 8,
-				orderType: "Stop Market",
-				triggerCondition: "Price above 31000",
-				triggerPx: "31000",
-			}),
-		];
+		testState.orders = [];
 		act(() => {
 			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange, position: { ...positionRef } }));
 		});
 		await act(async () => {
-			resolveModify?.({ response: { data: { statuses: [{ resting: { oid: 7 } }] } } });
+			resolveCancel?.({
+				status: "ok",
+				response: { type: "cancel", data: { statuses: ["success", "success"] } },
+			});
 			await Promise.resolve();
 		});
 
-		await vi.waitFor(() => expect(testState.cancelOrders).toHaveBeenCalledWith({ cancels: [{ a: 120000, o: 8 }] }));
-		expect(onOpenChange).toHaveBeenCalledWith(false);
+		await vi.waitFor(() => expect(testState.placeOrder).toHaveBeenCalledTimes(1));
+		await vi.waitFor(() => expect(onOpenChange, container.textContent ?? undefined).toHaveBeenCalledWith(false));
 	});
 
 	it("rejects an external TP/SL change between successful workflow steps", async () => {
@@ -1034,18 +1298,18 @@ describe("PositionTpSlModal live data", () => {
 				triggerPx: "31000",
 			}),
 		];
-		let resolveModify: ((value: unknown) => void) | undefined;
-		testState.modifyOrders.mockImplementationOnce(
+		let resolveCancel: ((value: unknown) => void) | undefined;
+		testState.cancelOrders.mockImplementationOnce(
 			() =>
 				new Promise((resolve) => {
-					resolveModify = resolve;
+					resolveCancel = resolve;
 				}),
 		);
 		const onOpenChange = renderModal();
 		act(() => setInputValue(getInput(container, "Take Profit"), "27500"));
 		act(() => setInputValue(getInput(container, "Stop Loss"), ""));
 		act(() => getButton(container, "Confirm").click());
-		await vi.waitFor(() => expect(testState.modifyOrders).toHaveBeenCalledTimes(1));
+		await vi.waitFor(() => expect(testState.cancelOrders).toHaveBeenCalledTimes(1));
 
 		testState.orders = [
 			openOrder({ limitPx: "30250", triggerPx: "27500" }),
@@ -1060,12 +1324,15 @@ describe("PositionTpSlModal live data", () => {
 			root.render(createElement(PositionTpSlModal, { open: true, onOpenChange, position: positionRef }));
 		});
 		await act(async () => {
-			resolveModify?.({ response: { data: { statuses: [{ resting: { oid: 7 } }] } } });
+			resolveCancel?.({
+				status: "ok",
+				response: { type: "cancel", data: { statuses: ["success", "success"] } },
+			});
 			await Promise.resolve();
 		});
 
 		await vi.waitFor(() => expect(container.textContent).toContain("Close and reopen it before submitting."));
-		expect(testState.cancelOrders).not.toHaveBeenCalled();
+		expect(testState.placeOrder).not.toHaveBeenCalled();
 		expect(onOpenChange).not.toHaveBeenCalledWith(false);
 	});
 

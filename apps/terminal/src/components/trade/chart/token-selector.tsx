@@ -6,7 +6,7 @@ import { Suspense, useCallback, useEffect, useId, useRef, useState } from "react
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
-import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
+import { type UnifiedMarketInfo, useHyperliquid } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import {
 	MOBILE_TOKEN_SELECTOR_TRIGGER_CLASSNAME,
@@ -31,6 +31,7 @@ export function TokenSelector({
 	showMetadataBadge = true,
 }: Props) {
 	const isMobile = useIsMobile();
+	const { env } = useHyperliquid();
 	const queryClient = useQueryClient();
 	const headingId = useId();
 	const [open, setOpen] = useState(false);
@@ -45,15 +46,15 @@ export function TokenSelector({
 				const now = Date.now();
 				if (now - lastMarketMetadataRefreshRef.current >= MARKET_METADATA_REFRESH_INTERVAL_MS) {
 					lastMarketMetadataRefreshRef.current = now;
-					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("spotMeta", undefined) });
-					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("perpDexs", undefined) });
-					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("allPerpMetas", undefined) });
-					void queryClient.invalidateQueries({ queryKey: infoKey("perpConciseAnnotations", undefined) });
+					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("spotMeta", undefined, env) });
+					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("perpDexs", undefined, env) });
+					void queryClient.invalidateQueries({ queryKey: infoPersistedKey("allPerpMetas", undefined, env) });
+					void queryClient.invalidateQueries({ queryKey: infoKey("perpConciseAnnotations", undefined, env) });
 				}
 			}
 			setOpen(nextOpen);
 		},
-		[queryClient],
+		[env, queryClient],
 	);
 
 	useEffect(() => {

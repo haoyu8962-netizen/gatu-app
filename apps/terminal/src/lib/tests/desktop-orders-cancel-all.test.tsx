@@ -35,19 +35,34 @@ const order = {
 	cloid: null,
 	coin: "xyz:ORCL",
 	isPositionTpsl: false,
-	isTrigger: true,
-	limitPx: "150.25",
+	isTrigger: false,
+	limitPx: "149.00",
 	oid: 42,
-	orderType: "Stop Market",
+	orderType: "Limit",
 	origSz: "5.000",
 	reduceOnly: true,
 	side: "B",
 	sz: "2.000",
-	tif: null,
+	tif: "Gtc",
 	timestamp: 1_786_000_000_000,
+	triggerCondition: "N/A",
+	triggerPx: "0",
+} as unknown as OpenOrder;
+
+const triggerOrder = {
+	...order,
+	isTrigger: true,
+	orderType: "Stop Market",
+	tif: null,
 	triggerCondition: "Price below 149.00",
 	triggerPx: "149.00",
-} as unknown as OpenOrder;
+} as OpenOrder;
+
+const outcomeOrder = {
+	...order,
+	coin: "#10",
+	oid: 43,
+} as OpenOrder;
 
 vi.mock("@/components/trade/components/asset-badge", () => ({
 	AssetBadge: ({ coin }: { coin: string }) => <span>{coin}</span>,
@@ -69,9 +84,9 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({
 vi.mock("@/hooks/trade/use-order-display-labels", () => ({
 	useOrderDisplayLabels: () => ({
 		getExecutionKindLabel: () => "Market",
-		getFullOrderTypeLabel: () => "Stop Market",
+		getFullOrderTypeLabel: (current: OpenOrder) => current.orderType,
 		getOrderSideLabel: mocks.getOrderSideLabel,
-		getOrderTypeLabel: () => "Stop Market",
+		getOrderTypeLabel: (orderType: OpenOrder["orderType"]) => orderType,
 		getTriggerConditionLabel: () => "Price below 149.00",
 		getTriggerKindLabel: () => "Stop",
 	}),
@@ -247,21 +262,20 @@ describe("desktop cancel all orders confirmation", () => {
 
 		const cells = [...container.querySelectorAll("tbody tr td")].map((cell) => cell.textContent?.trim() ?? "");
 		expect(cells).toHaveLength(12);
-		expect(cells[1]).toContain("Stop");
+		expect(cells[1]).toContain("Limit");
 		expect(cells[2]).toBe("ORCL");
 		expect(cells[3]).toBe("Close Short");
 		expect(cells[4]).toBe("2.000");
 		expect(cells[5]).toBe("5.000");
 		expect(cells[6]).toBe("$298.00");
-		expect(cells[7]).toBe("Market");
+		expect(cells[7]).toContain("149");
 		expect(cells[8]).toBe("Yes");
-		expect(cells[9]).toContain("≤ 149.00");
-		expect(cells[9]).toContain("Distance to mark -6.9%");
+		expect(cells[9]).toBe("-");
 		expect(cells[10]).toBe("- / -");
 		expect(container.querySelector<HTMLAnchorElement>('a[href="/portfolio"]')?.textContent).toBe("View all");
 		expect(mocks.getOrderSideLabel).toHaveBeenCalledWith("B", true);
 		expect(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]')).not.toBeNull();
-		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).not.toBeNull();
+		expect(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]')).toBeNull();
 	});
 
 	it("shows edit controls only for fields supported by the order capability", () => {
@@ -310,12 +324,12 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
 		expect(document.activeElement).toBe(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]'));
 
-		const triggerEdit = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL trigger price"]');
-		act(() => triggerEdit?.click());
-		expect(container.querySelector('input[aria-label="Edit xyz:ORCL trigger price"]')).not.toBeNull();
+		const sizeEditAgain = container.querySelector<HTMLButtonElement>('button[aria-label="Edit xyz:ORCL order size"]');
+		act(() => sizeEditAgain?.click());
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).not.toBeNull();
 		act(() => document.body.dispatchEvent(new Event("pointerdown", { bubbles: true })));
-		expect(container.querySelector('input[aria-label="Edit xyz:ORCL trigger price"]')).toBeNull();
-		expect(document.activeElement).toBe(container.querySelector('button[aria-label="Edit xyz:ORCL trigger price"]'));
+		expect(container.querySelector('input[aria-label="Edit xyz:ORCL order size"]')).toBeNull();
+		expect(document.activeElement).toBe(container.querySelector('button[aria-label="Edit xyz:ORCL order size"]'));
 		expect(mocks.modifyOrders).not.toHaveBeenCalled();
 	});
 
@@ -351,10 +365,10 @@ describe("desktop cancel all orders confirmation", () => {
 
 		expect(mocks.modifyOrders).toHaveBeenCalledOnce();
 		const params = mocks.modifyOrders.mock.calls[0]?.[0] as {
-			a: boolean;
+			a?: boolean;
 			modifies: { oid: number; order: { a: number; s: string } }[];
 		};
-		expect(params.a).toBe(true);
+		expect(params.a).toBeUndefined();
 		expect(params.modifies).toEqual([
 			expect.objectContaining({ oid: 42, order: expect.objectContaining({ a: 120_001, s: "1" }) }),
 		]);
@@ -592,9 +606,9 @@ describe("desktop cancel all orders confirmation", () => {
 		expect(confirmButton?.getAttribute("aria-busy")).toBe("true");
 
 		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as
-			| { onSuccess: () => void; onSettled: () => void }
+			| { onSuccess: (response: unknown) => void; onSettled: () => void }
 			| undefined;
-		act(() => callbacks?.onSuccess());
+		act(() => callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } }));
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
 		act(() => callbacks?.onSettled());
 	});
@@ -612,17 +626,77 @@ describe("desktop cancel all orders confirmation", () => {
 		);
 	});
 
+	it("cancels an outcome order with its protocol action asset and keeps modification unavailable", () => {
+		mocks.orders = [outcomeOrder];
+		act(() => root.render(<OrdersTab />));
+
+		expect(container.querySelector('button[aria-label="Edit #10 order size"]')).toBeNull();
+		expect(container.querySelector('button[aria-label="Edit #10 trigger price"]')).toBeNull();
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.click());
+
+		expect(mocks.cancelOrders).toHaveBeenCalledWith(
+			{ cancels: [{ a: 100_000_010, o: 43 }] },
+			expect.objectContaining({ onSettled: expect.any(Function) }),
+		);
+	});
+
+	it("cancels a mixed standard and outcome selection with exact asset IDs", () => {
+		mocks.orders = [order, outcomeOrder];
+		act(() => root.render(<OrdersTab />));
+
+		act(() => {
+			container.querySelector<HTMLButtonElement>('tbody [aria-label="Select order xyz:ORCL"]')?.click();
+			container.querySelector<HTMLButtonElement>('tbody [aria-label="Select order #10"]')?.click();
+		});
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel selected orders"]')?.click());
+
+		expect(mocks.cancelOrders).toHaveBeenCalledWith(
+			{
+				cancels: [
+					{ a: 120_001, o: 42 },
+					{ a: 100_000_010, o: 43 },
+				],
+			},
+			expect.objectContaining({ onSettled: expect.any(Function) }),
+		);
+	});
+
+	it("cancels all standard and outcome orders in one confirmed batch", () => {
+		mocks.orders = [order, outcomeOrder];
+		act(() => root.render(<OrdersTab />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel all orders"]')?.click());
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel All",
+		);
+		act(() => confirmButton?.click());
+
+		expect(mocks.cancelOrders).toHaveBeenCalledWith(
+			{
+				cancels: [
+					{ a: 120_001, o: 42 },
+					{ a: 100_000_010, o: 43 },
+				],
+			},
+			expect.objectContaining({ onSuccess: expect.any(Function), onSettled: expect.any(Function) }),
+		);
+	});
+
+	it("fails closed for a malformed outcome coin instead of using a market fallback", () => {
+		mocks.orders = [{ ...outcomeOrder, coin: "#12" } as OpenOrder];
+		act(() => root.render(<OrdersTab />));
+		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel order"]')?.click());
+
+		expect(mocks.cancelOrders).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Some order markets are unavailable");
+	});
+
 	it("clears selection when filters change and never cancels a hidden order", async () => {
 		mocks.orders = [
-			order,
+			triggerOrder,
 			{
 				...order,
-				isTrigger: false,
 				limitPx: "155.00",
 				oid: 43,
-				orderType: "Limit",
-				triggerCondition: "N/A",
-				triggerPx: "0",
 			} as OpenOrder,
 		];
 		act(() => root.render(<OrdersTab />));
@@ -674,7 +748,7 @@ describe("desktop cancel all orders confirmation", () => {
 		act(() => container.querySelector<HTMLButtonElement>('tbody [aria-label="Select order xyz:ORCL"]')?.click());
 		act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Cancel selected orders"]')?.click());
 		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as
-			| { onSuccess: () => void; onSettled: () => void }
+			| { onSuccess: (response: unknown) => void; onSettled: () => void }
 			| undefined;
 
 		mocks.address = "0x2222222222222222222222222222222222222222";
@@ -685,7 +759,7 @@ describe("desktop cancel all orders confirmation", () => {
 		act(() => accountBOrder?.click());
 		expect(accountBOrder?.getAttribute("aria-checked")).toBe("true");
 
-		act(() => callbacks?.onSuccess());
+		act(() => callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } }));
 		expect(accountBOrder?.getAttribute("aria-checked")).toBe("true");
 		act(() => callbacks?.onSettled());
 	});

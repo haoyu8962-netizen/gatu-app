@@ -219,6 +219,10 @@ msgstr "访问受限"
 msgid "Account"
 msgstr "账户"
 
+#: src/config/account-ledger.ts
+msgid "Account Activation Fee"
+msgstr "账户激活费"
+
 #: src/components/portfolio/portfolio-page.tsx
 msgid "Account activity"
 msgstr "账户活动"
@@ -442,6 +446,10 @@ msgstr "金额过低，当前桥接路由均不可用。"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "数量必须大于零且不得超过当前仓位。"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Another action for this market is already in progress."
+msgstr "该市场的另一项操作正在进行中。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Another mobile approval is already in progress for this wallet."
@@ -963,6 +971,10 @@ msgstr "一键全平"
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Close all positions summary"
 msgstr "一键全平摘要"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Close and reopen this dialog after the position data refreshes."
+msgstr "持仓数据刷新后，请关闭并重新打开此弹窗。"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Close close-all confirmation"
@@ -1577,18 +1589,37 @@ msgstr "全仓保证金率"
 msgid "Crypto"
 msgstr "加密货币"
 
-#: src/hooks/trade/use-account-ledger-csv.ts
-msgid "CSV export reached the history limit. Some older records were not included."
-msgstr "CSV 导出已达历史记录上限，部分较早记录未包含。"
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV contains Hyperliquid's latest 10,000 fills. Older fills are unavailable through this API."
+msgstr "CSV 包含 Hyperliquid 最近 10,000 条成交记录。此 API 无法提供更早的成交记录。"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV contains Hyperliquid's latest 2,000 orders. Older orders are unavailable through this API."
+msgstr "CSV 包含 Hyperliquid 最近 2,000 条委托记录。此 API 无法提供更早的委托记录。"
 
 #: src/hooks/trade/use-account-ledger-csv.ts
+#~ msgid "CSV export reached the history limit. Some older records were not included."
+#~ msgstr "CSV 导出已达历史记录上限，部分较早记录未包含。"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV export reached the history limit. Some records were not included."
+msgstr "CSV 导出已达历史记录上限，部分记录未包含。"
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-history-csv-export.ts
 msgid "CSV exported."
 msgstr "CSV 已导出。"
 
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV exported. Hyperliquid provides at most the latest 2,000 orders."
+msgstr "CSV 已导出。Hyperliquid 最多提供最近 2,000 条委托记录。"
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Cumulative funding"
-msgstr "累计资金费"
+#~ msgid "Cumulative funding"
+#~ msgstr "累计资金费"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
@@ -2191,6 +2222,7 @@ msgid "Explorer"
 msgstr "区块浏览器"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -2204,6 +2236,18 @@ msgstr "导出 CSV"
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Exporting deposits and withdrawals..."
 msgstr "正在导出存款和提款记录..."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting funding history..."
+msgstr "正在导出资金费历史……"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting order history..."
+msgstr "正在导出委托历史……"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting trade history..."
+msgstr "正在导出成交历史……"
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "failed"
@@ -2248,6 +2292,18 @@ msgstr "启用交易失败"
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Failed to export deposits and withdrawals."
 msgstr "存款和提款记录导出失败。"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export funding history."
+msgstr "导出资金费历史失败。"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export order history."
+msgstr "导出委托历史失败。"
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export trade history."
+msgstr "导出成交历史失败。"
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Failed to link desktop wallet"
@@ -2378,6 +2434,7 @@ msgstr "账户模式更新失败"
 msgid "Failed to update isolated margin"
 msgstr "调整逐仓保证金失败"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
 msgstr "更新 TP/SL 委托失败"
@@ -2524,6 +2581,11 @@ msgstr "资金费率历史"
 #~ msgid "Funding Payments"
 #~ msgstr "资金费用"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Funding shown"
+msgstr "当前显示资金费"
+
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
 msgstr "资金在现货账户"
@@ -2581,6 +2643,23 @@ msgstr "HIP-3"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "HIP-3 Deployer Disclaimer"
 msgstr "HIP-3 部署者免责声明"
+
+#: src/config/account-ledger.ts
+msgid "HIP-3 Liquidator Deposit"
+msgstr "HIP-3 清算人存入"
+
+#: src/config/account-ledger.ts
+msgid "HIP-3 Liquidator Withdrawal"
+msgstr "HIP-3 清算人提取"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "History data could not be validated. Refresh and try again."
+msgstr "无法验证历史数据。请刷新后重试。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold for 4 seconds to reveal phone access QR"
@@ -3979,6 +4058,9 @@ msgstr "委托已提交"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
@@ -4044,6 +4126,10 @@ msgstr "原始大小"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Other"
 msgstr "其他"
+
+#: src/config/account-ledger.ts
+msgid "Other Ledger Update"
+msgstr "其他流水更新"
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Other Options"
@@ -4496,6 +4582,10 @@ msgstr "价格：市价"
 msgid "Primary navigation"
 msgstr "主导航"
 
+#: src/config/account-ledger.ts
+msgid "Priority Gas Auction Fee"
+msgstr "优先 Gas 拍卖费"
+
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -4597,6 +4687,13 @@ msgstr "已实现盈亏"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
 #~ msgstr ""
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
+msgstr "近期历史记录超过安全显示上限。请导出 CSV 以获取更大范围。"
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"
@@ -4909,6 +5006,13 @@ msgstr "运行时长（{TWAP_MINUTES_MIN}m - {0}h）"
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Runtime"
 msgstr "运行时长"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Safe action coordination across tabs is unavailable in this browser."
+msgstr "此浏览器不支持跨标签页安全协调操作。"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 #: src/hooks/trade/use-position-close-all-submit.ts
@@ -5942,6 +6046,11 @@ msgstr "授权结果尚未确认。请先重试只读验证，再进行其他操
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
+msgstr "无法确认撤单响应。请刷新当前委托后再试。"
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "The exchange did not accept every order."
 msgstr "交易所未接受全部订单。"
@@ -5970,6 +6079,10 @@ msgstr "交易所未返回最终 TWAP 状态。重试前请检查当前 TWAP 委
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "生成的密钥仅保留在此标签页中。请勿授权其他密钥或重新加载页面。"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "The margin update may have been applied. Refresh position data before trying again."
+msgstr "保证金更新可能已生效。请刷新持仓数据后再试。"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6572,6 +6685,8 @@ msgstr "委托修改提交前交易数据已变化。"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
@@ -7162,6 +7277,10 @@ msgstr "网站"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #~ msgid "WebSocket error"
 #~ msgstr "WebSocket 错误"
+
+#: src/config/account-ledger.ts
+msgid "Welcome Bonus"
+msgstr "欢迎奖励"
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "What is a wallet?"

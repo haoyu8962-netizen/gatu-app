@@ -219,6 +219,10 @@ msgstr "Access restricted"
 msgid "Account"
 msgstr "Account"
 
+#: src/config/account-ledger.ts
+msgid "Account Activation Fee"
+msgstr "Account Activation Fee"
+
 #: src/components/portfolio/portfolio-page.tsx
 msgid "Account activity"
 msgstr "Account activity"
@@ -442,6 +446,10 @@ msgstr "Amount is too low for the available bridge routes."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Amount must be greater than zero and no more than the current position."
 msgstr "Amount must be greater than zero and no more than the current position."
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Another action for this market is already in progress."
+msgstr "Another action for this market is already in progress."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Another mobile approval is already in progress for this wallet."
@@ -963,6 +971,10 @@ msgstr "Close All Positions"
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Close all positions summary"
 msgstr "Close all positions summary"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "Close and reopen this dialog after the position data refreshes."
+msgstr "Close and reopen this dialog after the position data refreshes."
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 msgid "Close close-all confirmation"
@@ -1577,18 +1589,37 @@ msgstr "Cross Margin Ratio"
 msgid "Crypto"
 msgstr "Crypto"
 
-#: src/hooks/trade/use-account-ledger-csv.ts
-msgid "CSV export reached the history limit. Some older records were not included."
-msgstr "CSV export reached the history limit. Some older records were not included."
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV contains Hyperliquid's latest 10,000 fills. Older fills are unavailable through this API."
+msgstr "CSV contains Hyperliquid's latest 10,000 fills. Older fills are unavailable through this API."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV contains Hyperliquid's latest 2,000 orders. Older orders are unavailable through this API."
+msgstr "CSV contains Hyperliquid's latest 2,000 orders. Older orders are unavailable through this API."
 
 #: src/hooks/trade/use-account-ledger-csv.ts
+#~ msgid "CSV export reached the history limit. Some older records were not included."
+#~ msgstr "CSV export reached the history limit. Some older records were not included."
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV export reached the history limit. Some records were not included."
+msgstr "CSV export reached the history limit. Some records were not included."
+
+#: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-history-csv-export.ts
 msgid "CSV exported."
 msgstr "CSV exported."
 
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "CSV exported. Hyperliquid provides at most the latest 2,000 orders."
+msgstr "CSV exported. Hyperliquid provides at most the latest 2,000 orders."
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
-msgid "Cumulative funding"
-msgstr "Cumulative funding"
+#~ msgid "Cumulative funding"
+#~ msgstr "Cumulative funding"
 
 #: src/components/trade/positions/positions-tab.tsx
 msgid "Cumulative funding paid or received since this position was opened."
@@ -2191,6 +2222,7 @@ msgid "Explorer"
 msgstr "Explorer"
 
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -2204,6 +2236,18 @@ msgstr "Export CSV"
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Exporting deposits and withdrawals..."
 msgstr "Exporting deposits and withdrawals..."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting funding history..."
+msgstr "Exporting funding history..."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting order history..."
+msgstr "Exporting order history..."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Exporting trade history..."
+msgstr "Exporting trade history..."
 
 #: src/components/trade/tradebox/order-toast.tsx
 msgid "failed"
@@ -2248,6 +2292,18 @@ msgstr "Failed to enable trading"
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Failed to export deposits and withdrawals."
 msgstr "Failed to export deposits and withdrawals."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export funding history."
+msgstr "Failed to export funding history."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export order history."
+msgstr "Failed to export order history."
+
+#: src/hooks/trade/use-history-csv-export.ts
+msgid "Failed to export trade history."
+msgstr "Failed to export trade history."
 
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Failed to link desktop wallet"
@@ -2378,6 +2434,7 @@ msgstr "Failed to update account mode"
 msgid "Failed to update isolated margin"
 msgstr "Failed to update isolated margin"
 
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 msgid "Failed to update TP/SL orders"
 msgstr "Failed to update TP/SL orders"
@@ -2524,6 +2581,11 @@ msgstr "Funding History"
 #~ msgid "Funding Payments"
 #~ msgstr "Funding Payments"
 
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Funding shown"
+msgstr "Funding shown"
+
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
 msgstr "Funds are in Spot account"
@@ -2581,6 +2643,23 @@ msgstr "HIP-3"
 #: src/components/trade/components/hip3-deployer-disclaimer.tsx
 msgid "HIP-3 Deployer Disclaimer"
 msgstr "HIP-3 Deployer Disclaimer"
+
+#: src/config/account-ledger.ts
+msgid "HIP-3 Liquidator Deposit"
+msgstr "HIP-3 Liquidator Deposit"
+
+#: src/config/account-ledger.ts
+msgid "HIP-3 Liquidator Withdrawal"
+msgstr "HIP-3 Liquidator Withdrawal"
+
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+msgid "History data could not be validated. Refresh and try again."
+msgstr "History data could not be validated. Refresh and try again."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Hold for 4 seconds to reveal phone access QR"
@@ -3979,6 +4058,9 @@ msgstr "Order submitted"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
@@ -4044,6 +4126,10 @@ msgstr "Original Size"
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Other"
 msgstr "Other"
+
+#: src/config/account-ledger.ts
+msgid "Other Ledger Update"
+msgstr "Other Ledger Update"
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "Other Options"
@@ -4496,6 +4582,10 @@ msgstr "Price: Market"
 msgid "Primary navigation"
 msgstr "Primary navigation"
 
+#: src/config/account-ledger.ts
+msgid "Priority Gas Auction Fee"
+msgstr "Priority Gas Auction Fee"
+
 #: src/components/trade/footer/footer-bar.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
@@ -4597,6 +4687,13 @@ msgstr "Realized PNL"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Recent"
 #~ msgstr "Recent"
+
+#: src/components/trade/mobile/mobile-account-transfers-tab.tsx
+#: src/components/trade/mobile/mobile-funding-tab.tsx
+#: src/components/trade/positions/account-transfers-tab.tsx
+#: src/components/trade/positions/funding-tab.tsx
+msgid "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
+msgstr "Recent history exceeds the safe display limit. Export CSV to retrieve a larger range."
 
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Recent Trades"
@@ -4909,6 +5006,13 @@ msgstr "Running Time ({TWAP_MINUTES_MIN}m - {0}h)"
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Runtime"
 msgstr "Runtime"
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+msgid "Safe action coordination across tabs is unavailable in this browser."
+msgstr "Safe action coordination across tabs is unavailable in this browser."
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 #: src/hooks/trade/use-position-close-all-submit.ts
@@ -5942,6 +6046,11 @@ msgstr "The approval result is not confirmed. Retry the read-only verification b
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
 #~ msgstr "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
 
+#: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/orders-tab.tsx
+msgid "The cancellation response could not be confirmed. Refresh open orders before retrying."
+msgstr "The cancellation response could not be confirmed. Refresh open orders before retrying."
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "The exchange did not accept every order."
 msgstr "The exchange did not accept every order."
@@ -5970,6 +6079,10 @@ msgstr "The exchange did not return a final TWAP status. Review active TWAP orde
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "The generated key remains only in this tab. Do not approve another key or reload the page."
+
+#: src/components/trade/positions/position-isolated-margin-modal.tsx
+msgid "The margin update may have been applied. Refresh position data before trying again."
+msgstr "The margin update may have been applied. Refresh position data before trying again."
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6572,6 +6685,8 @@ msgstr "Trading data changed before the order modification could be submitted."
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/hooks/trade/use-position-limit-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
 #: src/hooks/trade/use-position-market-close-submit.ts
@@ -7162,6 +7277,10 @@ msgstr "Website"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #~ msgid "WebSocket error"
 #~ msgstr "WebSocket error"
+
+#: src/config/account-ledger.ts
+msgid "Welcome Bonus"
+msgstr "Welcome Bonus"
 
 #: src/components/trade/components/wallet-dialog.tsx
 #~ msgid "What is a wallet?"

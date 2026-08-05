@@ -60,7 +60,7 @@ export function createMarkets(params: CreateMarketsParams): Markets {
 			...token,
 			displayName,
 			iconUrl: getIconUrlFromMarketName(getUnderlyingAsset(token) ?? token.name, "spot"),
-			transferDecimals: token.weiDecimals + (token.evmContract?.evm_extra_wei_decimals ?? 0),
+			transferDecimals: token.weiDecimals,
 			isWrapped: displayName !== token.name,
 		};
 	});

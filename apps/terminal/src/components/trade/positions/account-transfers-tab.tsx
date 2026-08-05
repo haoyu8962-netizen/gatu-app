@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import { formatDateTimeShort } from "@/lib/format";
 import { formatAccountLedgerAmount, formatAccountLedgerFee } from "@/lib/trade/account-ledger-format";
 import { getAccountLedgerExplorerUrl } from "@/lib/trade/account-ledger-links";
+import { isIncompleteHistorySnapshotError } from "@/lib/trade/history-pagination";
 import { toNumber } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
@@ -28,10 +29,11 @@ import {
 
 export function AccountTransfersTab() {
 	const { t } = useLingui();
-	const { isConnected, retry, rows, status } = useAccountLedger();
+	const { error, isConnected, retry, rows, status } = useAccountLedger();
 	const { getActionLabel, getLocationLabel } = useAccountLedgerLabels();
 	const { exportCsv, isExporting } = useAccountLedgerCsv();
 	const isTestnet = useIsTestnet();
+	const historyLimitReached = isIncompleteHistorySnapshotError(error);
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view deposits and withdrawals.`}</Placeholder>;
@@ -42,9 +44,15 @@ export function AccountTransfersTab() {
 			return (
 				<Placeholder variant="error">
 					<span>{t`Failed to load deposits and withdrawals.`}</span>
-					<Button variant="outline" intent="neutral" size="xxs" className="mt-2" onClick={retry}>
-						{t`Retry`}
-					</Button>
+					{historyLimitReached ? (
+						<span className="mt-1 text-xs text-fg-muted">
+							{t`Recent history exceeds the safe display limit. Export CSV to retrieve a larger range.`}
+						</span>
+					) : (
+						<Button variant="outline" intent="neutral" size="xxs" className="mt-2" onClick={retry}>
+							{t`Retry`}
+						</Button>
+					)}
 				</Placeholder>
 			);
 		}
@@ -62,7 +70,7 @@ export function AccountTransfersTab() {
 					variant="ghost"
 					intent="neutral"
 					size="xxs"
-					disabled={rows.length === 0 || isExporting}
+					disabled={!isConnected || isExporting}
 					onClick={() => void exportCsv()}
 					iconLeft={<DownloadSimpleIcon className={cn("size-3", isExporting && "animate-pulse")} aria-hidden="true" />}
 				>
@@ -141,7 +149,7 @@ export function AccountTransfersTab() {
 												className={cn(positionsPanelTableCellClass, "text-success")}
 											>{t`Completed`}</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg")}>
-												{getActionLabel(row.action)}
+												{getActionLabel(row.action, row.rawType)}
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "text-fg-muted")}>
 												{getLocationLabel(row.source)}

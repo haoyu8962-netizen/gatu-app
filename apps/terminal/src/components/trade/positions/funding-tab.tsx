@@ -1,14 +1,15 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
+import { useFundingHistoryCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { useUserFunding } from "@/hooks/trade/use-user-funding";
 import { cn } from "@/lib/cn";
-import { buildCsvRows, downloadCsv } from "@/lib/csv";
+import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useMarkets } from "@/lib/hyperliquid";
+import { isIncompleteHistorySnapshotError, isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
@@ -35,25 +36,20 @@ interface Props {
 }
 
 export function FundingTab({ toolbarTarget }: Props = {}) {
-	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
-	const {
-		data: fundingEvent,
-		status,
-		error,
-	} = useSubscription("userFundings", { user: address ?? "0x0" }, { enabled: isConnected && !!address });
+	const { error, fundings: updates, isConnected, status } = useUserFunding();
 	const markets = useMarkets();
-
-	const updates = fundingEvent?.fundings?.slice(0, MAX_HISTORY_ROWS).sort((a, b) => b.time - a.time) ?? [];
 	const totalFunding = getToolbarFundingTotal(updates);
+	const historyLimitReached = isIncompleteHistorySnapshotError(error);
+	const malformedHistory = isMalformedHistoryPageError(error);
 
 	const headerTotal = formatUSD(totalFunding, { signDisplay: "exceptZero" });
 	const headerClass = totalFunding === null ? "text-market-close-subtle" : getMarketCloseValueColorClass(totalFunding);
 
-	function handleExportCsv() {
-		downloadCsv(
-			"funding_history.csv",
-			buildCsvRows(updates, [
+	const { exportCsv, isExporting } = useFundingHistoryCsvExport({
+		filename: "funding_history.csv",
+		buildRows: (fundings) =>
+			buildCsvRows(fundings, [
 				{ header: t`Time`, getValue: (update) => formatDateTimeShort(update.time) },
 				{ header: t`Asset`, getValue: (update) => update.coin },
 				{
@@ -73,18 +69,26 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 				},
 				{ header: t`Payment`, getValue: (update) => formatToken(update.usdc, { symbol: "USDC" }) },
 			]),
-		);
-	}
+	});
 
 	function renderPlaceholder() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view funding payments.`}</Placeholder>;
-		if (status === "subscribing" || status === "idle")
-			return <Placeholder>{t`Loading funding history...`}</Placeholder>;
+		if (status === "loading" || status === "idle") return <Placeholder>{t`Loading funding history...`}</Placeholder>;
 		if (status === "error") {
 			return (
 				<Placeholder variant="error">
 					<span>{t`Failed to load funding history.`}</span>
-					{error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>}
+					{historyLimitReached ? (
+						<span className="mt-1 text-xs text-fg-muted">
+							{t`Recent history exceeds the safe display limit. Export CSV to retrieve a larger range.`}
+						</span>
+					) : malformedHistory ? (
+						<span className="mt-1 text-xs text-fg-muted">
+							{t`History data could not be validated. Refresh and try again.`}
+						</span>
+					) : (
+						error instanceof Error && <span className="mt-1 text-xs text-fg-muted">{error.message}</span>
+					)}
 				</Placeholder>
 			);
 		}
@@ -98,19 +102,19 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 		<div className={positionsPanelTabRootClass}>
 			<DesktopTabToolbarPortal target={toolbarTarget}>
 				<div data-testid="funding-history-toolbar" className="flex shrink-0 items-center gap-3 font-market-close">
-					{isConnected && status === "active" ? (
+					{isConnected && status === "ready" ? (
 						<span className="whitespace-nowrap text-xs text-market-close-muted">
-							{t`Cumulative funding`} <span className={cn("font-bold tabular-nums", headerClass)}>{headerTotal}</span>
+							{t`Funding shown`} <span className={cn("font-bold tabular-nums", headerClass)}>{headerTotal}</span>
 						</span>
 					) : null}
-					{isConnected && status === "active" ? (
+					{isConnected ? (
 						<Button
 							variant="ghost"
 							intent="neutral"
 							size="xxs"
 							className={fundingToolbarButtonClass}
-							disabled={updates.length === 0}
-							onClick={handleExportCsv}
+							disabled={isExporting}
+							onClick={() => void exportCsv()}
 						>
 							{t`Export CSV`}
 						</Button>

@@ -66,19 +66,46 @@ export function addSpotMarketPriceAliases(
 	if (!tokenUsdPrices) return tokenUsdPrices;
 
 	const result = { ...tokenUsdPrices };
-	const aliasPriority = new Map<string, number>();
+	const resolvedTokenPrices = new Map<string, { price: Big; hops: number }>([
+		[DEFAULT_QUOTE_TOKEN, { price: Big(1), hops: 0 }],
+	]);
+	const pairs: Array<{ base: string; quote: string; mid: Big }> = [];
+
+	// `allMids` shares one object namespace between perp coin names and spot
+	// market identifiers such as `@107`. A raw coin-name entry can therefore be
+	// the mid of a same-named perp, not a USD price for the spot token. Remove
+	// every spot-token alias first and only add it back after resolving a spot
+	// route to USDC.
+	for (const market of spotMarkets) {
+		for (const token of market.tokensInfo) {
+			if (token.name !== DEFAULT_QUOTE_TOKEN) delete result[token.name];
+		}
+	}
 
 	for (const market of spotMarkets) {
 		const baseToken = market.tokensInfo[0];
 		const quoteToken = market.tokensInfo[1];
-		const price = tokenUsdPrices[market.name];
-		if (!baseToken || !quoteToken || !price) continue;
+		const mid = toBig(tokenUsdPrices[market.name]);
+		if (!baseToken || !quoteToken || !mid?.gt(0)) continue;
+		pairs.push({ base: baseToken.name, quote: quoteToken.name, mid });
+	}
 
-		const priority = quoteToken.name === DEFAULT_QUOTE_TOKEN ? 2 : 1;
-		if (priority < (aliasPriority.get(baseToken.name) ?? 0)) continue;
+	for (let pass = 0; pass < pairs.length; pass++) {
+		let changed = false;
+		for (const pair of pairs) {
+			const quotePrice = resolvedTokenPrices.get(pair.quote);
+			if (!quotePrice) continue;
 
-		result[baseToken.name] = price;
-		aliasPriority.set(baseToken.name, priority);
+			const hops = quotePrice.hops + 1;
+			const current = resolvedTokenPrices.get(pair.base);
+			if (current && current.hops <= hops) continue;
+
+			const price = pair.mid.times(quotePrice.price);
+			resolvedTokenPrices.set(pair.base, { price, hops });
+			result[pair.base] = price.toString();
+			changed = true;
+		}
+		if (!changed) break;
 	}
 
 	return result;

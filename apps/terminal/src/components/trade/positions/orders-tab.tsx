@@ -24,6 +24,7 @@ import {
 	createCancelAllConfirmationSnapshot,
 	validateCancelAllConfirmationSnapshot,
 } from "@/domain/trade/cancel-all-orders-confirmation";
+import { buildOpenOrderCancelActions, isConfirmedOpenOrderCancelResponse } from "@/domain/trade/open-order-cancel";
 import {
 	buildOpenOrderModifyPlan,
 	createOpenOrderModifyTarget,
@@ -519,14 +520,8 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 			return false;
 		}
 
-		const cancels = fresh.reduce<{ a: number; o: number }[]>((acc, order) => {
-			const assetId = markets.getAssetId(order.coin);
-			if (typeof assetId !== "number") return acc;
-			acc.push({ a: assetId, o: order.oid });
-			return acc;
-		}, []);
-
-		if (cancels.length !== fresh.length) {
+		const cancels = buildOpenOrderCancelActions(fresh, markets.getAssetId);
+		if (!cancels) {
 			setCancelValidationError(t`Some order markets are unavailable. Refresh and try again.`);
 			return false;
 		}
@@ -564,7 +559,13 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 		});
 		resetCancelError();
 		cancelOrders(execution.params, {
-			onSuccess: () => {
+			onSuccess: (response) => {
+				if (!isConfirmedOpenOrderCancelResponse(response, execution.params.cancels.length)) {
+					setCancelValidationError(
+						t`The cancellation response could not be confirmed. Refresh open orders before retrying.`,
+					);
+					return;
+				}
 				setSelectedOrderIds((prev) => {
 					const next = new Set(prev);
 					for (const order of fresh) {
@@ -1421,7 +1422,7 @@ function OrderRow({
 								</button>
 							) : null}
 						</div>
-						{markDistanceLabel ? (
+						{order.isTrigger && markDistanceLabel ? (
 							<span
 								className={cn(
 									"whitespace-nowrap text-[11px] tabular-nums",

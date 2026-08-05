@@ -28,11 +28,17 @@ import {
 	type IsolatedMarginDirection,
 	validateIsolatedMarginTarget,
 } from "@/domain/trade/isolated-margin";
+import { createClientOrderId, isAmbiguousExchangeRequestError } from "@/domain/trade/order-tracking";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatLiquidationPrice, formatNumber, formatUSD } from "@/lib/format";
 import { useExchange, useHyperliquid, useMarkets, useUserPositions } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
+import {
+	getOrderAssetReservationState,
+	reserveOrderAssets,
+	runWithAvailableOrderAssetLocks,
+} from "@/lib/trade/order-asset-lock";
 import { TradingActionButton } from "../components/trading-action-button";
 import type { IsolatedMarginPositionTarget } from "./position-dialog-types";
 import { PositionRiskDialogShell } from "./position-risk-dialog-ui";
@@ -67,12 +73,22 @@ interface BodyProps {
 	onOpenChange: (open: boolean) => void;
 }
 
+function isConfirmedDefaultExchangeResponse(response: unknown): boolean {
+	if (typeof response !== "object" || response === null) return false;
+	const result = response as { response?: unknown; status?: unknown };
+	if (result.status !== "ok" || typeof result.response !== "object" || result.response === null) return false;
+	return (result.response as { type?: unknown }).type === "default";
+}
+
 function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChange }: BodyProps) {
 	const [mode, setMode] = useState<AdjustmentMode>("amount");
 	const [direction, setDirection] = useState<IsolatedMarginDirection>("add");
 	const [amountInput, setAmountInput] = useState("");
 	const [targetLeverageInput, setTargetLeverageInput] = useState("");
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [requiresRefresh, setRequiresRefresh] = useState(false);
+	const [isCoordinating, setIsCoordinating] = useState(false);
+	const coordinatingRef = useRef(false);
 
 	const { clientKey, env } = useHyperliquid();
 	const { address } = useWalletSession();
@@ -232,11 +248,11 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 			: !hasLivePosition
 				? "current-leverage-unavailable"
 				: validateIsolatedMarginTarget(targetParams.leverage, livePosition.positionValue, livePosition.marginUsed);
-	const isSubmitting = amountMutation.isPending || targetMutation.isPending;
+	const isSubmitting = isCoordinating || amountMutation.isPending || targetMutation.isPending;
 	const inputValid = mode === "amount" ? amountParams !== null : targetValidation === "valid";
 	const actionAllowed =
 		(mode !== "target" || supportsTargetLeverage) && (mode !== "amount" || direction !== "remove" || allowsRemoval);
-	const canSubmit = hasLivePosition && inputValid && actionAllowed && !isSubmitting;
+	const canSubmit = hasLivePosition && inputValid && actionAllowed && !requiresRefresh && !isSubmitting;
 
 	function handleModeChange(value: string) {
 		setMode(value as AdjustmentMode);
@@ -251,17 +267,71 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 	}
 
 	async function handleSubmit() {
-		if (!canSubmit) return;
+		if (!canSubmit || coordinatingRef.current) return;
 		if (mode === "amount" && direction === "remove" && !allowsRemoval) return;
+		coordinatingRef.current = true;
+		setIsCoordinating(true);
 		setSubmitError(null);
 
 		try {
-			if (mode === "amount") {
-				if (!amountParams) return;
-				await amountMutation.mutateAsync(amountParams);
-			} else {
-				if (!targetParams) return;
-				await targetMutation.mutateAsync(targetParams);
+			const params = mode === "amount" ? amountParams : targetParams;
+			if (!params) return;
+			const reservationId = `isolated-margin:${createClientOrderId()}`;
+			const lockResult = await runWithAvailableOrderAssetLocks(
+				{ env: sessionIdentity.env, owner: sessionIdentity.owner, assetIds: [position.assetId] },
+				async (lease) => {
+					assertExecutionContext(params, mode);
+					const reservationIntent = {
+						intentKey: `isolated-margin:${position.assetId}`,
+						exclusiveAssetLock: true,
+						isRiskReducing: false,
+					};
+					const reservationState = getOrderAssetReservationState(lease, reservationIntent);
+					if (reservationState === "unavailable") return { state: "coordination-unavailable" } as const;
+					if (reservationState === "conflict") return { state: "blocked" } as const;
+
+					try {
+						let response: unknown;
+						if (mode === "amount") {
+							response = await amountMutation.mutateAsync(params as UpdateIsolatedMarginParameters);
+						} else {
+							response = await targetMutation.mutateAsync(params as TopUpIsolatedOnlyMarginParameters);
+						}
+						if (!isConfirmedDefaultExchangeResponse(response)) {
+							reserveOrderAssets(lease, {
+								...reservationIntent,
+								submissionId: reservationId,
+								createdAt: Date.now(),
+							});
+							return { state: "ambiguous" } as const;
+						}
+						return { state: "confirmed" } as const;
+					} catch (error) {
+						if (!isAmbiguousExchangeRequestError(error)) throw error;
+						reserveOrderAssets(lease, {
+							...reservationIntent,
+							submissionId: reservationId,
+							createdAt: Date.now(),
+						});
+						return { state: "ambiguous" } as const;
+					}
+				},
+			);
+			if (!lockResult.supported) {
+				throw new Error(t`Safe action coordination across tabs is unavailable in this browser.`);
+			}
+			if (!lockResult.acquired || lockResult.value.state === "blocked") {
+				throw new Error(t`Another action for this market is already in progress.`);
+			}
+			if (lockResult.value.state === "coordination-unavailable") {
+				throw new Error(t`Safe action coordination across tabs is unavailable in this browser.`);
+			}
+			if (lockResult.value.state === "ambiguous") {
+				const message = t`The margin update may have been applied. Refresh position data before trying again.`;
+				setRequiresRefresh(true);
+				setSubmitError(message);
+				toast.error(message);
+				return;
 			}
 
 			toast.success(t`Isolated margin updated`, {
@@ -272,6 +342,9 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 			const message = error instanceof Error ? error.message : t`Failed to update isolated margin`;
 			setSubmitError(message);
 			toast.error(message);
+		} finally {
+			coordinatingRef.current = false;
+			setIsCoordinating(false);
 		}
 	}
 
@@ -450,7 +523,11 @@ function PositionIsolatedMarginModalBody({ open, isMobile, position, onOpenChang
 					</div>
 				)}
 
-				{positionStatus ? (
+				{requiresRefresh ? (
+					<div className="rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error">
+						{t`Close and reopen this dialog after the position data refreshes.`}
+					</div>
+				) : positionStatus ? (
 					<div className="rounded-xs border border-stroke-error-strong/20 bg-error-soft p-2.5 text-xs text-error">
 						{positionStatus}
 					</div>

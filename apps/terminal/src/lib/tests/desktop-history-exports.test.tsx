@@ -9,6 +9,25 @@ import { createI18nRoot } from "./harness/react";
 
 const mocks = vi.hoisted(() => ({
 	downloadCsv: vi.fn(),
+	fills: [
+		{
+			coin: "BTC",
+			closedPnl: "12.5",
+			dir: "Close Long",
+			fee: "0.12",
+			feeToken: "USDC",
+			hash: "0xaaa",
+			liquidation: null,
+			px: "100000",
+			side: "A",
+			sz: "0.01",
+			tid: 1,
+			time: 1_754_350_400_000,
+		},
+	] as Array<Record<string, unknown>>,
+	fundings: [
+		{ coin: "BTC", fundingRate: "0.0001", nSamples: null, szi: "0.01", time: 1_754_350_400_000, usdc: "1.25" },
+	] as Array<Record<string, unknown>>,
 }));
 
 vi.mock("@/components/trade/components/asset-badge", () => ({
@@ -27,24 +46,66 @@ vi.mock("@/hooks/trade/use-market-navigation", () => ({
 vi.mock("@/hooks/trade/use-user-fills", () => ({
 	useUserFills: () => ({
 		error: null,
-		fills: [
-			{
-				coin: "BTC",
-				closedPnl: "12.5",
-				dir: "Close Long",
-				fee: "0.12",
-				feeToken: "USDC",
-				hash: "0xaaa",
-				liquidation: null,
-				px: "100000",
-				side: "A",
-				sz: "0.01",
-				tid: 1,
-				time: 1_754_350_400_000,
-			},
-		],
+		fills: mocks.fills,
 		isConnected: true,
 		status: "ready",
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-user-funding", () => ({
+	useUserFunding: () => ({
+		error: null,
+		fundings: mocks.fundings,
+		isConnected: true,
+		status: "ready",
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-history-csv-export", () => ({
+	useFundingHistoryCsvExport: ({
+		buildRows,
+		filename,
+	}: {
+		buildRows: (items: unknown[]) => string[][];
+		filename: string;
+	}) => ({
+		exportCsv: async () =>
+			mocks.downloadCsv(
+				filename,
+				buildRows([
+					{ coin: "BTC", fundingRate: "0.0001", nSamples: null, szi: "0.01", time: 1_754_350_400_000, usdc: "1.25" },
+				]),
+			),
+		isExporting: false,
+	}),
+	useUserFillsCsvExport: ({
+		buildRows,
+		filename,
+	}: {
+		buildRows: (items: unknown[]) => string[][];
+		filename: string;
+	}) => ({
+		exportCsv: async () =>
+			mocks.downloadCsv(
+				filename,
+				buildRows([
+					{
+						coin: "BTC",
+						closedPnl: "12.5",
+						dir: "Close Long",
+						fee: "0.12",
+						feeToken: "USDC",
+						hash: "0xaaa",
+						liquidation: null,
+						px: "100000",
+						side: "A",
+						sz: "0.01",
+						tid: 1,
+						time: 1_754_350_400_000,
+					},
+				]),
+			),
+		isExporting: false,
 	}),
 }));
 
@@ -85,6 +146,25 @@ describe("desktop history exports", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.fills = [
+			{
+				coin: "BTC",
+				closedPnl: "12.5",
+				dir: "Close Long",
+				fee: "0.12",
+				feeToken: "USDC",
+				hash: "0xaaa",
+				liquidation: null,
+				px: "100000",
+				side: "A",
+				sz: "0.01",
+				tid: 1,
+				time: 1_754_350_400_000,
+			},
+		];
+		mocks.fundings = [
+			{ coin: "BTC", fundingRate: "0.0001", nSamples: null, szi: "0.01", time: 1_754_350_400_000, usdc: "1.25" },
+		];
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -143,10 +223,23 @@ describe("desktop history exports", () => {
 		);
 	});
 
-	it("labels cumulative funding and exports the loaded funding rows", () => {
+	it("keeps full trade export available when the recent display window is empty", () => {
+		mocks.fills = [];
+		act(() => root.render(<HistoryTab />));
+
+		const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(candidate) => candidate.textContent === "Export CSV",
+		);
+		expect(container.textContent).toContain("No fills found.");
+		expect(button?.disabled).toBe(false);
+		act(() => button?.click());
+		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
+	});
+
+	it("labels the visible funding range and exports the complete requested history", () => {
 		act(() => root.render(<FundingTab />));
 
-		expect(container.textContent).toContain("Cumulative funding");
+		expect(container.textContent).toContain("Funding shown");
 		const toolbar = container.querySelector('[data-testid="funding-history-toolbar"]');
 		expect(toolbar).not.toBeNull();
 		expect(container.querySelector('[data-testid="funding-history-footer"]')).toBeNull();
@@ -164,5 +257,18 @@ describe("desktop history exports", () => {
 			"funding_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Position", "Rate", "Payment"])]),
 		);
+	});
+
+	it("keeps full funding export available when the recent display window is empty", () => {
+		mocks.fundings = [];
+		act(() => root.render(<FundingTab />));
+
+		const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(candidate) => candidate.textContent === "Export CSV",
+		);
+		expect(container.textContent).toContain("No funding payments found.");
+		expect(button?.disabled).toBe(false);
+		act(() => button?.click());
+		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
 	});
 });

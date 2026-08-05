@@ -264,6 +264,20 @@ describe("useTrackedOrder", () => {
 		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [8])).toBe(false);
 	});
 
+	it("reconciles a same-length response whose child status is malformed", async () => {
+		mutateAsync.mockResolvedValueOnce({
+			status: "ok",
+			response: { type: "order", data: { statuses: [{}] } },
+		});
+		let result: Awaited<ReturnType<NonNullable<typeof hookValue>["submitOrder"]>> | undefined;
+		await act(async () => {
+			result = await hookValue?.submitOrder(createParams(29), CROSS_PERP_SUBMIT_OPTIONS);
+		});
+
+		expect(result?.state).toBe("reconciling");
+		expect(hasPendingOrderForAssets("Mainnet", "0x1111111111111111111111111111111111111111", [29])).toBe(true);
+	});
+
 	it("persists the cloid before awaiting the exchange response", async () => {
 		let resolveRequest: ((value: unknown) => void) | undefined;
 		const request = new Promise<unknown>((resolve) => {

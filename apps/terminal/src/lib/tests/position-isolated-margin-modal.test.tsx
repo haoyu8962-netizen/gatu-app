@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 
+import { HttpRequestError } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IsolatedMarginPositionTarget } from "@/components/trade/positions/position-dialog-types";
 import { PositionIsolatedMarginModal } from "@/components/trade/positions/position-isolated-margin-modal";
 import type { Position } from "@/lib/hyperliquid";
+import { getOrderAssetLockName } from "@/lib/trade/order-asset-lock";
 import { createI18nRoot } from "./harness/react";
 
 const testState = vi.hoisted(() => ({
@@ -275,11 +277,53 @@ function createDeferred() {
 	return { promise, resolve };
 }
 
+function installExclusiveLockManager(): void {
+	const queues = new Map<string, Promise<void>>();
+	const busy = new Set<string>();
+	const manager = {
+		async request<T>(
+			name: string,
+			options: LockOptions,
+			callback: (lock: Lock | null) => T | PromiseLike<T>,
+		): Promise<T> {
+			if (options.ifAvailable) {
+				if (busy.has(name)) return callback(null);
+				busy.add(name);
+				try {
+					return await callback({ name, mode: "exclusive" } as Lock);
+				} finally {
+					busy.delete(name);
+				}
+			}
+			const previous = queues.get(name) ?? Promise.resolve();
+			let release = () => {};
+			const current = new Promise<void>((resolve) => {
+				release = resolve;
+			});
+			queues.set(
+				name,
+				previous.then(() => current),
+			);
+			await previous;
+			busy.add(name);
+			try {
+				return await callback({ name, mode: "exclusive" } as Lock);
+			} finally {
+				busy.delete(name);
+				release();
+			}
+		},
+	} as unknown as LockManager;
+	Object.defineProperty(window.navigator, "locks", { configurable: true, value: manager });
+}
+
 describe("PositionIsolatedMarginModal", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
 	beforeEach(() => {
+		window.localStorage.clear();
+		installExclusiveLockManager();
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -324,6 +368,7 @@ describe("PositionIsolatedMarginModal", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		Object.defineProperty(window.navigator, "locks", { configurable: true, value: undefined });
 		vi.clearAllMocks();
 	});
 
@@ -396,6 +441,90 @@ describe("PositionIsolatedMarginModal", () => {
 		});
 		expect(testState.topUpMargin).not.toHaveBeenCalled();
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("fails closed after a response-loss ambiguity and blocks an immediate retry", async () => {
+		testState.updateMargin.mockRejectedValueOnce(new HttpRequestError({ detail: "Request timed out" }));
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		await act(async () => getButton(container, "Add Margin").click());
+
+		expect(testState.updateMargin).toHaveBeenCalledTimes(1);
+		expect(container.textContent).toContain("The margin update may have been applied.");
+		expect(container.textContent).toContain("Close and reopen this dialog");
+		expect(getButton(container, "Add Margin").disabled).toBe(true);
+		await act(async () => getButton(container, "Add Margin").click());
+		expect(testState.updateMargin).toHaveBeenCalledTimes(1);
+
+		act(() => {
+			root.render(
+				createElement(PositionIsolatedMarginModal, {
+					open: false,
+					onOpenChange: vi.fn(),
+					position: basePositionRef,
+				}),
+			);
+		});
+		act(() => {
+			root.render(
+				createElement(PositionIsolatedMarginModal, {
+					open: true,
+					onOpenChange: vi.fn(),
+					position: basePositionRef,
+				}),
+			);
+		});
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		await act(async () => getButton(container, "Add Margin").click());
+
+		expect(testState.updateMargin).toHaveBeenCalledTimes(1);
+		expect(container.textContent).toContain("Another action for this market is already in progress.");
+	});
+
+	it("fails closed when the exchange returns a malformed success response", async () => {
+		testState.updateMargin.mockResolvedValueOnce({ status: "ok", response: { type: "unexpected" } });
+		renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		await act(async () => getButton(container, "Add Margin").click());
+
+		expect(testState.updateMargin).toHaveBeenCalledTimes(1);
+		expect(container.textContent).toContain("The margin update may have been applied.");
+		expect(getButton(container, "Add Margin").disabled).toBe(true);
+	});
+
+	it("allows a retry after a definitive HTTP rejection that could not have been applied", async () => {
+		testState.updateMargin
+			.mockRejectedValueOnce(new HttpRequestError({ response: new Response("bad request", { status: 400 }) }))
+			.mockResolvedValueOnce({ status: "ok", response: { type: "default" } });
+		const onOpenChange = renderModal();
+
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		await act(async () => getButton(container, "Add Margin").click());
+		expect(testState.updateMargin).toHaveBeenCalledTimes(1);
+		expect(container.textContent).not.toContain("may have been applied");
+		expect(getButton(container, "Add Margin").disabled).toBe(false);
+
+		await act(async () => getButton(container, "Add Margin").click());
+		expect(testState.updateMargin).toHaveBeenCalledTimes(2);
+		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("rejects a competing tab while the same account asset lock is held", async () => {
+		renderModal();
+		act(() => setInputValue(getInput(container, "Margin amount"), "1"));
+		const lockName = getOrderAssetLockName(
+			{ env: basePositionRef.env, owner: basePositionRef.owner },
+			basePositionRef.assetId,
+		);
+
+		await window.navigator.locks.request(lockName, { mode: "exclusive" }, async () => {
+			await act(async () => getButton(container, "Add Margin").click());
+		});
+
+		expect(testState.updateMargin).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Another action for this market is already in progress.");
 	});
 
 	it("blocks an action when the current live position side differs from the opened position", async () => {

@@ -52,7 +52,7 @@ describe("account ledger", () => {
 	});
 
 	it("derives send direction from the queried account", () => {
-		const sendDelta: Extract<AccountLedgerUpdate["delta"], { type: "send" }> = {
+		const sendDelta: Extract<UserNonFundingLedgerUpdatesResponse[number]["delta"], { type: "send" }> = {
 			type: "send",
 			amount: "5",
 			destination: OTHER,
@@ -180,6 +180,36 @@ describe("account ledger", () => {
 		expect(row).toBeNull();
 	});
 
+	it("maps production ledger delta types missing from SDK 0.33.3", () => {
+		const activation = buildAccountLedgerRow(
+			createUpdate({ type: "accountActivationGas", amount: "0.025", token: "HYPE" }),
+			USER,
+		);
+		const hip3Withdrawal = buildAccountLedgerRow(
+			createUpdate({ type: "hip3LiquidatorWithdraw", amount: "12.5", dex: "xyz", token: "USDC" }),
+			USER,
+		);
+
+		expect(activation).toMatchObject({ action: "accountActivationFee", amount: "-0.025", token: "HYPE" });
+		expect(hip3Withdrawal).toMatchObject({
+			action: "hip3LiquidatorWithdrawal",
+			amount: "12.5",
+			destination: { dex: "xyz", kind: "perpDex" },
+		});
+	});
+
+	it("keeps unknown production deltas visible with their raw type", () => {
+		const row = buildAccountLedgerRow(createUpdate({ type: "futureLedgerDelta", requestedUsd: "4.2" }), USER);
+
+		expect(row).toMatchObject({ action: "other", amount: "4.2", rawType: "futureLedgerDelta" });
+	});
+
+	it("degrades malformed known deltas instead of throwing during toolbar render", () => {
+		const row = buildAccountLedgerRow(createUpdate({ type: "deposit" }), USER);
+
+		expect(row).toMatchObject({ action: "other", amount: null, rawType: "deposit" });
+	});
+
 	it("deduplicates identical REST and WS entries while preserving same-hash deltas", () => {
 		const withdrawal = createUpdate({
 			type: "vaultWithdraw",
@@ -192,8 +222,8 @@ describe("account ledger", () => {
 			vault: OTHER,
 		});
 		const commission = createUpdate({ type: "vaultLeaderCommission", user: USER, usdc: "1" });
-		const rest: UserNonFundingLedgerUpdatesResponse = [withdrawal];
-		const realtime: UserNonFundingLedgerUpdatesResponse = [withdrawal, commission];
+		const rest: AccountLedgerUpdate[] = [withdrawal];
+		const realtime: AccountLedgerUpdate[] = [withdrawal, commission];
 
 		const merged = mergeAccountLedgerUpdates(rest, realtime);
 
@@ -206,13 +236,17 @@ describe("account ledger", () => {
 		const overlap = createUpdate({ type: "deposit", usdc: "2" }, { hash: `0x${"b".repeat(64)}`, time: 2_000 });
 		const last = createUpdate({ type: "withdraw", usdc: "1", fee: "1", nonce: 3 }, { time: 3_000 });
 		const requestedStartTimes: number[] = [];
+		const controller = new AbortController();
 
-		const result = await fetchAccountLedgerHistory(async (startTime) => {
-			requestedStartTimes.push(startTime);
-			if (startTime === 0) return [first, overlap];
-			if (startTime === 2_000) return [overlap, last];
-			return [];
-		});
+		const result = await fetchAccountLedgerHistory(
+			async (startTime) => {
+				requestedStartTimes.push(startTime);
+				if (startTime === 0) return [first, overlap];
+				if (startTime === 2_000) return [overlap, last];
+				return [];
+			},
+			{ endTime: 3_000, signal: controller.signal },
+		);
 
 		expect(requestedStartTimes).toEqual([0, 2_000, 3_000]);
 		expect(result.truncated).toBe(false);
@@ -220,12 +254,24 @@ describe("account ledger", () => {
 	});
 
 	it("reports a bounded export when the page limit is reached", async () => {
+		const controller = new AbortController();
 		const result = await fetchAccountLedgerHistory(
 			async () => [createUpdate({ type: "deposit", usdc: "1" }, { time: 1_000 })],
-			1,
+			{ endTime: 1_000, maxPages: 1, signal: controller.signal },
 		);
 
 		expect(result.truncated).toBe(true);
 		expect(result.updates).toHaveLength(1);
+	});
+
+	it("rejects malformed updates instead of exporting incomplete history", async () => {
+		const controller = new AbortController();
+
+		await expect(
+			fetchAccountLedgerHistory(async () => [createUpdate({ type: "deposit", usdc: "1" }, { hash: "" })], {
+				endTime: 1_000,
+				signal: controller.signal,
+			}),
+		).rejects.toMatchObject({ name: "MalformedHistoryPageError" });
 	});
 });

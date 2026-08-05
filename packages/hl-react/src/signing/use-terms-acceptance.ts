@@ -39,7 +39,7 @@ export function useTermsAcceptance() {
 			if (!confirmedStatus.acceptedTerms) {
 				throw new Error("Terms acceptance could not be confirmed");
 			}
-			queryClient.setQueryData(infoKey("legalCheck", { user: startAddress }), confirmedResponse);
+			queryClient.setQueryData(infoKey("legalCheck", { user: startAddress }, startEnv), confirmedResponse);
 			return confirmedStatus;
 		},
 	});

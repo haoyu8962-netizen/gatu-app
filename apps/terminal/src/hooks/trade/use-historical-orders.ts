@@ -2,7 +2,8 @@ import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useInfo, useSubscription } from "@/lib/hyperliquid";
-import { mergeHistoricalOrderSources } from "@/lib/trade/historical-orders";
+import { isValidHistoricalOrderHistoryItem, mergeHistoricalOrderSources } from "@/lib/trade/historical-orders";
+import { MalformedHistoryPageError } from "@/lib/trade/history-pagination";
 
 const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 const HISTORICAL_ORDERS_STALE_TIME_MS = 30_000;
@@ -35,21 +36,35 @@ export function useHistoricalOrders(): HistoricalOrdersResult {
 
 	const restOrders = historicalOrdersQuery.data;
 	const realtimeOrders = historicalOrdersSubscription.data?.orderHistory;
-	const hasRestSnapshot = restOrders !== undefined;
-	const hasRealtimeSnapshot = realtimeOrders !== undefined;
-	const orders = mergeHistoricalOrderSources(restOrders, realtimeOrders).slice(0, MAX_HISTORY_ROWS);
+	const hasMalformedRest =
+		restOrders !== undefined &&
+		(!Array.isArray(restOrders) || restOrders.some((entry) => !isValidHistoricalOrderHistoryItem(entry)));
+	const hasMalformedRealtime =
+		realtimeOrders !== undefined &&
+		(!Array.isArray(realtimeOrders) || realtimeOrders.some((entry) => !isValidHistoricalOrderHistoryItem(entry)));
+	const hasRestSnapshot = restOrders !== undefined && !hasMalformedRest;
+	const orders = mergeHistoricalOrderSources(
+		hasMalformedRest || !Array.isArray(restOrders) ? undefined : restOrders,
+		hasMalformedRealtime || !Array.isArray(realtimeOrders) ? undefined : realtimeOrders,
+	).slice(0, MAX_HISTORY_ROWS);
 
 	let status: HistoricalOrdersStatus = "loading";
 	if (!enabled) {
 		status = "idle";
-	} else if (hasRestSnapshot || hasRealtimeSnapshot) {
+	} else if (hasMalformedRest || hasMalformedRealtime) {
+		status = "error";
+	} else if (hasRestSnapshot) {
 		status = "ready";
-	} else if (historicalOrdersQuery.isError && historicalOrdersSubscription.status === "error") {
+	} else if (historicalOrdersQuery.isError) {
 		status = "error";
 	}
 
 	return {
-		error: status === "error" ? (historicalOrdersSubscription.error ?? historicalOrdersQuery.error) : undefined,
+		error:
+			status === "error"
+				? (historicalOrdersQuery.error ??
+					(hasMalformedRest || hasMalformedRealtime ? new MalformedHistoryPageError() : undefined))
+				: undefined,
 		isConnected,
 		orders,
 		status,

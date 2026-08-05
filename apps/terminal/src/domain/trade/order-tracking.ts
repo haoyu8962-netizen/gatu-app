@@ -119,12 +119,15 @@ export function isCanceledOrderStatus(status: OrderProcessingStatus): boolean {
 	return CANCELED_ORDER_STATUSES.has(status);
 }
 
-export function isAmbiguousOrderRequestError(error: unknown): boolean {
+export function isAmbiguousExchangeRequestError(error: unknown): boolean {
 	if (!isHttpRequestErrorLike(error)) return false;
 	const status = getHttpStatus(error.response);
 	if (status === undefined) return true;
 	return status < 400 || status === 408 || status >= 500;
 }
+
+/** @deprecated Prefer the transport-agnostic exchange request name. */
+export const isAmbiguousOrderRequestError = isAmbiguousExchangeRequestError;
 
 export function isApiOrderResponseError(error: unknown): error is { response: unknown } {
 	return isRecord(error) && error.name === "ApiRequestError" && "response" in error;
@@ -157,12 +160,19 @@ export function resolveOrderBatchResponse(response: unknown, expectedCount: numb
 	}
 	if (statuses.length !== expectedCount) return null;
 
-	const errors = statuses.flatMap((status, index) => {
+	const errors: string[] = [];
+	let acceptedCount = 0;
+	for (let index = 0; index < statuses.length; index += 1) {
+		const status = statuses[index];
 		const error = getOrderStatusError(status);
-		return error ? [`Order ${index + 1}: ${error}`] : [];
-	});
+		if (error) {
+			errors.push(`Order ${index + 1}: ${error}`);
+			continue;
+		}
+		if (!isAcceptedOrderResponseStatus(status)) return null;
+		acceptedCount += 1;
+	}
 	const rejectedCount = errors.length;
-	const acceptedCount = expectedCount - rejectedCount;
 	let status: OrderBatchResolution["status"] = "accepted";
 	if (rejectedCount === expectedCount) status = "rejected";
 	else if (rejectedCount > 0) status = "partial";
@@ -235,13 +245,52 @@ function stableSerialize(value: unknown): string {
 }
 
 function getOrderStatuses(response: unknown): unknown[] | null {
-	if (!isRecord(response) || !isRecord(response.response) || !isRecord(response.response.data)) return null;
+	if (
+		!isRecord(response) ||
+		response.status !== "ok" ||
+		!isRecord(response.response) ||
+		response.response.type !== "order" ||
+		!isRecord(response.response.data)
+	) {
+		return null;
+	}
 	return Array.isArray(response.response.data.statuses) ? response.response.data.statuses : null;
 }
 
 function getOrderStatusError(status: unknown): string | null {
 	if (!isRecord(status) || typeof status.error !== "string") return null;
 	return status.error;
+}
+
+function isAcceptedOrderResponseStatus(status: unknown): boolean {
+	if (status === "waitingForFill" || status === "waitingForTrigger") return true;
+	if (!isRecord(status)) return false;
+	if (isRecord(status.resting)) return isValidOrderId(status.resting.oid) && isValidOptionalCloid(status.resting.cloid);
+	if (!isRecord(status.filled)) return false;
+	return (
+		isValidOrderId(status.filled.oid) &&
+		isValidOptionalCloid(status.filled.cloid) &&
+		parsePositiveDecimalValue(status.filled.totalSz) !== null &&
+		parsePositiveDecimalValue(status.filled.avgPx) !== null
+	);
+}
+
+function isValidOrderId(value: unknown): boolean {
+	return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+function isValidOptionalCloid(value: unknown): boolean {
+	return value === undefined || (typeof value === "string" && /^0x[a-fA-F0-9]{32}$/.test(value));
+}
+
+function parsePositiveDecimalValue(value: unknown): Big | null {
+	if (typeof value !== "string" && typeof value !== "number") return null;
+	try {
+		const parsed = Big(value);
+		return parsed.gt(0) ? parsed : null;
+	} catch {
+		return null;
+	}
 }
 
 function getOrderStatusFilledSize(status: unknown): string | null {
@@ -251,13 +300,7 @@ function getOrderStatusFilledSize(status: unknown): string | null {
 }
 
 function parsePositiveDecimal(value: string | undefined): Big | null {
-	if (value === undefined) return null;
-	try {
-		const parsed = Big(value);
-		return parsed.gt(0) ? parsed : null;
-	} catch {
-		return null;
-	}
+	return value === undefined ? null : parsePositiveDecimalValue(value);
 }
 
 function getOrderBatchResolutionMessage(resolution: RejectedOrderBatchResolution): string {

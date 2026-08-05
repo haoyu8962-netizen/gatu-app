@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
 	address: "0x1111111111111111111111111111111111111111",
 	assetId: 120_001 as number | undefined,
 	batchModifyGuard: undefined as ((params: unknown) => void) | undefined,
+	cancelGuard: undefined as ((params: unknown) => void) | undefined,
 	cancelOrders: vi.fn(),
 	clientKey: "0x1111111111111111111111111111111111111111",
 	env: "Mainnet" as "Mainnet" | "Testnet",
@@ -46,6 +47,12 @@ const order = {
 	triggerCondition: "Price below 149.00",
 	triggerPx: "149.00",
 } as unknown as OpenOrder;
+
+const outcomeOrder = {
+	...order,
+	coin: "#10",
+	oid: 43,
+} as OpenOrder;
 
 vi.mock("@gatu/ui", async () => {
 	const actual = await vi.importActual<typeof import("@gatu/ui")>("@gatu/ui");
@@ -110,6 +117,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 			mocks.batchModifyGuard = options?.executionGuard;
 			return { mutateAsync: mocks.modifyOrders, error: null, reset: mocks.resetModifyError };
 		}
+		mocks.cancelGuard = options?.executionGuard;
 		return { mutate: mocks.cancelOrders, error: null, reset: mocks.resetCancelError };
 	},
 	useHyperliquid: () => ({ clientKey: mocks.clientKey, env: mocks.env }),
@@ -171,6 +179,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		root = createI18nRoot(container);
 		mocks.address = "0x1111111111111111111111111111111111111111";
 		mocks.assetId = 120_001;
+		mocks.cancelGuard = undefined;
 		mocks.clientKey = "0x1111111111111111111111111111111111111111";
 		mocks.env = "Mainnet";
 		mocks.isStale = false;
@@ -328,6 +337,45 @@ describe("MobileOrdersTab disclosure card", () => {
 		);
 	});
 
+	it("revalidates the mobile cancellation session at the SDK boundary", () => {
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		act(() => {
+			[...container.querySelectorAll<HTMLButtonElement>("button")]
+				.find((button) => button.textContent?.trim() === "Cancel")
+				?.click();
+		});
+		const params = mocks.cancelOrders.mock.calls[0]?.[0];
+		expect(mocks.cancelGuard).toBeTypeOf("function");
+
+		mocks.clientKey = "0x2222222222222222222222222222222222222222";
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		expect(() => mocks.cancelGuard?.(params)).toThrow(
+			"The trading account or network changed. Reopen the confirmation and try again.",
+		);
+	});
+
+	it("cancels an outcome without market metadata and keeps modification safely unavailable", () => {
+		mocks.assetId = undefined;
+		mocks.orders = [outcomeOrder];
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+
+		const modify = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Modify Order",
+		);
+		expect(modify?.getAttribute("aria-disabled")).toBe("true");
+		expect(modify?.title).toBe("Market metadata changed. Refresh and try again.");
+		act(() => {
+			[...container.querySelectorAll<HTMLButtonElement>("button")]
+				.find((button) => button.textContent?.trim() === "Cancel")
+				?.click();
+		});
+
+		expect(mocks.cancelOrders).toHaveBeenCalledWith(
+			{ cancels: [{ a: 100_000_010, o: 43 }] },
+			expect.objectContaining({ onSettled: expect.any(Function) }),
+		);
+	});
+
 	it.each([
 		{ status: "subscribing" as const, isStale: false },
 		{ status: "active" as const, isStale: true },
@@ -431,11 +479,54 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(confirmButton?.getAttribute("aria-busy")).toBe("true");
 
 		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as
-			| { onSuccess: () => void; onSettled: () => void }
+			| { onSuccess: (response: unknown) => void; onSettled: () => void }
 			| undefined;
-		act(() => callbacks?.onSuccess());
+		act(() => callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: ["success"] } } }));
 		expect(document.body.textContent).not.toContain("Cancel All Orders");
 		act(() => callbacks?.onSettled());
+	});
+
+	it("does not close the confirmation for a malformed cancellation response", () => {
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel all",
+		);
+		act(() => requestButton?.click());
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button !== requestButton && button.textContent?.trim() === "Cancel All",
+		);
+		act(() => confirmButton?.click());
+		const callbacks = mocks.cancelOrders.mock.calls[0]?.[1] as
+			| { onSuccess: (response: unknown) => void; onSettled: () => void }
+			| undefined;
+
+		act(() => callbacks?.onSuccess({ status: "ok", response: { type: "cancel", data: { statuses: [{}] } } }));
+		expect(document.body.textContent).toContain("Cancel All Orders");
+		expect(document.body.textContent).toContain("The cancellation response could not be confirmed.");
+		act(() => callbacks?.onSettled());
+	});
+
+	it("cancels all standard and outcome orders with their exact action asset IDs", () => {
+		mocks.orders = [order, outcomeOrder];
+		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Cancel all",
+		);
+		act(() => requestButton?.click());
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button !== requestButton && button.textContent?.trim() === "Cancel All",
+		);
+		act(() => confirmButton?.click());
+
+		expect(mocks.cancelOrders).toHaveBeenCalledWith(
+			{
+				cancels: [
+					{ a: 120_001, o: 42 },
+					{ a: 100_000_010, o: 43 },
+				],
+			},
+			expect.objectContaining({ onSuccess: expect.any(Function), onSettled: expect.any(Function) }),
+		);
 	});
 
 	it("rejects cancel all when the confirmed order set changes", () => {

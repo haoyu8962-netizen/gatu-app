@@ -128,7 +128,6 @@ export function buildOpenOrderModifyFormPlan(params: BuildOpenOrderModifyFormPla
 			return blocked("order-changed", null);
 		}
 		nextParams = {
-			a: true,
 			modifies: [
 				{
 					oid: triggerModify.oid,

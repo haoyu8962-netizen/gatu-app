@@ -31,6 +31,25 @@ function createTestMarkets(spotMeta: SpotMetaResponse, allPerpMetas?: MetaRespon
 }
 
 describe("market catalog identity", () => {
+	it("uses HyperCore wei decimals rather than linked HyperEVM decimals for transfers", () => {
+		const linkedToken = {
+			...spotToken("PURR", 1),
+			weiDecimals: 5,
+			evmContract: {
+				address: "0x0000000000000000000000000000000000000001" as const,
+				evm_extra_wei_decimals: 13,
+			},
+		};
+		const spotMeta = {
+			tokens: [spotToken("USDC", 0), linkedToken],
+			universe: [{ name: "PURR/USDC", tokens: [1, 0], index: 0, isCanonical: true }],
+		} as SpotMetaResponse;
+
+		const markets = createTestMarkets(spotMeta);
+
+		expect(markets.getToken("PURR")?.transferDecimals).toBe(5);
+	});
+
 	it("resolves sparse token indices and builder collateral by token index", () => {
 		const spotMeta = {
 			tokens: [spotToken("USDC", 0), spotToken("SPARSE", 845)],

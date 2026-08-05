@@ -19,7 +19,8 @@ export function doesOrderBatchMatchRiskContext(orders: readonly AssetOrder[], co
 	return orders.every((order) => {
 		const assetId = Number(order.a);
 		if (!Number.isSafeInteger(assetId) || assetId < 0) return false;
-		const isSpot = getAssetIdKind(assetId) === "spot";
-		return context.marketKind === "spot" ? isSpot : !isSpot;
+		const kind = getAssetIdKind(assetId);
+		if (context.marketKind === "spot") return kind === "spot" || kind === "outcome";
+		return kind === "perp" || kind === "builderPerp";
 	});
 }
