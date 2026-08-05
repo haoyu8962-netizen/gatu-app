@@ -56,7 +56,7 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Size-change feedback is a one-shot `1.8s ease` color fade: increases start at `#0A9981`, decreases start at `#ED7088`, then return to the normal text color. It must restart for every qualifying value update and must not loop.
 - Reset size-change comparison state when the market or grouping identity changes so stale values cannot flash after switching context.
 - In the mobile split layout, cumulative `Total` is static data; do not animate or color it from the individual level `size`.
-- Order-book rows use a `23px` row height and a `2px` gap. If either value changes, update every visible-row and panel-height formula that depends on them in the same change.
+- Full-width order-book rows use a `23px` row height and a `2px` gap. The compact split mobile book uses a `24px` row height and a `4px` gap. If any value changes, update every real, skeleton, placeholder, visible-row, and panel-height formula that depends on it in the same change.
 - Desktop resizing uses react-grid-layout grid units. Preserve panel min/max constraints and container-aware compact order-book behavior so manual resizing cannot reintroduce overlap.
 
 ## Recent trades contract

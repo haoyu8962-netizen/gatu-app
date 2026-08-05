@@ -39,15 +39,17 @@ function OrderbookRowComponent({
 	const totalText = formatNumber(totalValue, { decimals: displayDecimals, compact: true });
 
 	return (
-		<div className="relative h-[23px] shrink-0 hover:bg-fill-hover cursor-pointer group">
+		<div
+			className={cn("relative shrink-0 hover:bg-fill-hover cursor-pointer group", compact ? "h-[24px]" : "h-[23px]")}
+		>
 			<div
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
 				style={{ width: `${depthPct}%`, left: 0 }}
 			/>
 			<div
 				className={cn(
-					"grid gap-1 text-2xs tabular-nums py-0.5 relative z-10",
-					compact ? "grid-cols-2 px-1.5" : "orderbook-grid px-2",
+					"grid gap-1 tabular-nums py-0.5 relative z-10",
+					compact ? "grid-cols-2 pl-2 pr-3 text-xs" : "orderbook-grid px-2 text-2xs",
 				)}
 			>
 				<button
@@ -55,7 +57,8 @@ function OrderbookRowComponent({
 					onClick={() => setSelectedPrice(level.price)}
 					title={priceText}
 					className={cn(
-						"min-w-0 truncate text-left justify-start font-medium",
+						"min-w-0 truncate text-left justify-start",
+						!compact && "font-medium",
 						isAsk ? "orderbook-price-ask" : "orderbook-price-bid",
 					)}
 				>

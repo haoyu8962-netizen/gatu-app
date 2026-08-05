@@ -494,7 +494,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 			>
 				<div
 					className={cn(
-						embedded ? "flex-1 min-h-min flex flex-col justify-between px-2 py-1.5 space-y-1.5" : "px-3 py-4 space-y-4",
+						embedded ? "flex-1 min-h-min flex flex-col justify-between px-2.5 py-1.5 space-y-2" : "px-3 py-4 space-y-4",
 					)}
 				>
 					<TradeHeader
@@ -554,7 +554,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 								value={sizeInput}
 								onChange={handleSizeInputChange}
 								maxAllowedDecimals={getSizeInputMaxDecimals(sizeMode, szDecimals)}
-								className="flex-1 tabular-nums font-semibold"
+								className={cn("flex-1 tabular-nums font-semibold", embedded && "h-8")}
 								disabled={isFormDisabled}
 							/>
 							{isFormDisabled ? (
@@ -621,7 +621,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 							midPrice={markPx}
 							szDecimals={market?.szDecimals}
 							marketType={market?.kind === "spot" ? "spot" : "perp"}
-							className="tabular-nums font-semibold"
+							className={cn("tabular-nums font-semibold", embedded && "h-8")}
 							disabled={isFormDisabled}
 						/>
 					)}
@@ -640,7 +640,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 								midPrice={markPx}
 								szDecimals={market?.szDecimals}
 								marketType={market?.kind === "spot" ? "spot" : "perp"}
-								className="tabular-nums font-semibold"
+								className={cn("tabular-nums font-semibold", embedded && "h-8")}
 								disabled={isFormDisabled}
 							/>
 							<div className="flex">

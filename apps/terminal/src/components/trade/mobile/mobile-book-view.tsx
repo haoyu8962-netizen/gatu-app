@@ -22,14 +22,15 @@ import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookRow } from "../orderbook/orderbook-row";
 import { TradesPanel } from "../orderbook/trades-panel";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
+import {
+	getMobileOrderbookRowsForLadderHeight,
+	MOBILE_ORDERBOOK_ROW_METRICS,
+	type MobileOrderbookRowMetrics,
+} from "./mobile-orderbook-layout";
 
 const DEFAULT_LEVEL_COUNT = 12;
 const COMPACT_LEVEL_COUNT = 5;
 const MIN_LEVEL_COUNT = 3;
-const MAX_LEVEL_COUNT = 24;
-const ORDERBOOK_ROW_HEIGHT_PX = 23;
-const ORDERBOOK_ROW_GAP_PX = 2;
-const ORDERBOOK_LADDER_VERTICAL_PADDING_PX = 8;
 const PLACEHOLDER_ROW_KEYS = Array.from({ length: 64 }, (_, index) => `placeholder-${index}`);
 const ORDERBOOK_SUBSCRIPTION_KEEP_ALIVE_MS = 10_000;
 const ORDERBOOK_SNAPSHOT_CACHE_TTL_MS = 10_000;
@@ -202,9 +203,9 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 	const bids = useMemo(() => processLevels(book?.levels[0]), [book?.levels]);
 	const asks = useMemo(() => processLevels(book?.levels[1]), [book?.levels]);
 	const levelCount = compact ? COMPACT_LEVEL_COUNT : DEFAULT_LEVEL_COUNT;
-	const rowGapPx = ORDERBOOK_ROW_GAP_PX;
-	const [askLevelCount, askLadderRef] = useOrderbookLadderRows(levelCount, view === "book", rowGapPx);
-	const [bidLevelCount, bidLadderRef] = useOrderbookLadderRows(levelCount, view === "book", rowGapPx);
+	const rowMetrics = compact ? MOBILE_ORDERBOOK_ROW_METRICS.compact : MOBILE_ORDERBOOK_ROW_METRICS.default;
+	const [askLevelCount, askLadderRef] = useOrderbookLadderRows(levelCount, view === "book", rowMetrics);
+	const [bidLevelCount, bidLadderRef] = useOrderbookLadderRows(levelCount, view === "book", rowMetrics);
 	const visibleAsks = useMemo(() => asks.slice(0, askLevelCount), [asks, askLevelCount]);
 	const visibleBids = useMemo(() => bids.slice(0, bidLevelCount), [bids, bidLevelCount]);
 
@@ -417,7 +418,7 @@ function CompactOrderbook({
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-			<div className="shrink-0 grid uppercase tracking-wider text-fg-muted border-b border-stroke-weak/40 grid-cols-2 gap-1 px-1.5 py-1.5 text-2xs">
+			<div className="shrink-0 grid h-[35px] items-center uppercase tracking-wider text-fg-muted border-b border-stroke-weak/40 grid-cols-2 gap-1 pl-2 pr-3 text-xs">
 				<div>{t`Price`}</div>
 				<div className="text-right">{t`Size`}</div>
 			</div>
@@ -426,12 +427,12 @@ function CompactOrderbook({
 				aria-busy={isTransitioning}
 				className={cn("flex-1 min-h-0 flex flex-col overflow-hidden", isTransitioning && "pointer-events-none")}
 			>
-				<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-[2px] py-1 overflow-hidden">
+				<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-[4px] overflow-hidden">
 					{hasAsks ? (
 						<>
 							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
 								(key) => (
-									<OrderbookPlaceholderRow key={`ask-${key}`} />
+									<OrderbookPlaceholderRow key={`ask-${key}`} compact />
 								),
 							)}
 							{asks
@@ -452,12 +453,12 @@ function CompactOrderbook({
 								))}
 						</>
 					) : (
-						<OrderbookSkeletonRows rows={askLevelCount} align="end" />
+						<OrderbookSkeletonRows rows={askLevelCount} align="end" compact />
 					)}
 				</div>
 
-				<div className="shrink-0 flex items-center justify-center border-y border-stroke-weak/40 bg-surface py-1.5 px-2 gap-1.5">
-					<span className="font-bold tabular-nums text-warning text-sm">
+				<div className="shrink-0 flex h-[28px] items-center justify-center border-y border-stroke-weak/40 bg-surface px-2 gap-1.5">
+					<span className="tabular-nums text-warning text-base">
 						{typeof mid === "number" && Number.isFinite(mid)
 							? formatNumber(mid, priceDecimals)
 							: FALLBACK_VALUE_PLACEHOLDER}
@@ -465,7 +466,7 @@ function CompactOrderbook({
 					<MidTrendIcon direction={midDirection} className="size-4" />
 				</div>
 
-				<div ref={bidLadderRef} className="flex-1 min-h-0 flex flex-col gap-[2px] py-1 overflow-hidden">
+				<div ref={bidLadderRef} className="flex-1 min-h-0 flex flex-col gap-[4px] overflow-hidden">
 					{hasBids ? (
 						<>
 							{bids.slice(0, bidLevelCount).map((level, index) => (
@@ -483,23 +484,23 @@ function CompactOrderbook({
 							))}
 							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, bidLevelCount - Math.min(bids.length, bidLevelCount))).map(
 								(key) => (
-									<OrderbookPlaceholderRow key={`bid-${key}`} />
+									<OrderbookPlaceholderRow key={`bid-${key}`} compact />
 								),
 							)}
 						</>
 					) : (
-						<OrderbookSkeletonRows rows={bidLevelCount} />
+						<OrderbookSkeletonRows rows={bidLevelCount} compact />
 					)}
 				</div>
 			</div>
 
-			<div className="shrink-0 border-t border-stroke-weak/40 flex items-center justify-between text-fg-muted px-2 py-1.5 text-2xs">
+			<div className="shrink-0 border-t border-stroke-weak/40 flex items-center justify-between text-fg-muted px-2 text-xs">
 				<Dropdown
 					size="sm"
 					hideCaret
 					align="start"
 					trigger={selectedOptionLabel}
-					triggerClassName="font-mono text-2xs px-1.5"
+					triggerClassName="font-mono text-xs px-1.5"
 					items={priceGroupingOptions.map(
 						(option): DropdownItem => ({
 							label: option.label,
@@ -638,22 +639,22 @@ function OrderbookStatus({ bookStatus }: { bookStatus: string }) {
 	);
 }
 
-function OrderbookSkeletonRows({ rows, align }: { rows: number; align?: "end" }) {
+function OrderbookSkeletonRows({ rows, align, compact }: { rows: number; align?: "end"; compact?: boolean }) {
 	return (
 		<>
 			{PLACEHOLDER_ROW_KEYS.slice(0, rows).map((key, index) => (
-				<OrderbookSkeletonRow key={key} index={index} align={align} />
+				<OrderbookSkeletonRow key={key} index={index} align={align} compact={compact} />
 			))}
 		</>
 	);
 }
 
-function OrderbookSkeletonRow({ index, align }: { index: number; align?: "end" }) {
+function OrderbookSkeletonRow({ index, align, compact }: { index: number; align?: "end"; compact?: boolean }) {
 	const firstWidth = 42 + ((index * 17) % 22);
 	const secondWidth = 32 + ((index * 13) % 26);
 
 	return (
-		<div className="h-[23px] shrink-0 px-2 py-1">
+		<div className={cn("shrink-0 px-2 py-1", compact ? "h-[24px]" : "h-[23px]")}>
 			<div className="grid h-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1">
 				<div
 					className={cn(
@@ -730,7 +731,7 @@ function SplitOrderbookRow({ level, side, maxTotal, priceDecimals, showInQuote, 
 	);
 }
 
-function useOrderbookLadderRows(defaultRows: number, enabled: boolean, rowGapPx: number) {
+function useOrderbookLadderRows(defaultRows: number, enabled: boolean, metrics: MobileOrderbookRowMetrics) {
 	const ladderRef = useRef<HTMLDivElement>(null);
 	const [rows, setRows] = useState(defaultRows);
 	const minRows = Math.min(defaultRows, MIN_LEVEL_COUNT);
@@ -745,7 +746,7 @@ function useOrderbookLadderRows(defaultRows: number, enabled: boolean, rowGapPx:
 		if (!el) return;
 
 		function updateRows(height: number) {
-			const nextRows = getRowsForLadderHeight(height, rowGapPx, minRows);
+			const nextRows = getMobileOrderbookRowsForLadderHeight(height, metrics, minRows);
 			if (nextRows == null) return;
 			setRows(nextRows);
 		}
@@ -760,20 +761,13 @@ function useOrderbookLadderRows(defaultRows: number, enabled: boolean, rowGapPx:
 		});
 		observer.observe(el);
 		return () => observer.disconnect();
-	}, [defaultRows, enabled, minRows, rowGapPx]);
+	}, [defaultRows, enabled, minRows, metrics]);
 
 	return [rows, ladderRef] as const;
 }
 
-function getRowsForLadderHeight(height: number, rowGapPx: number, minRows: number): number | null {
-	if (!Number.isFinite(height) || height <= 0) return null;
-	const availableHeight = Math.max(0, height - ORDERBOOK_LADDER_VERTICAL_PADDING_PX);
-	const rows = Math.floor((availableHeight + rowGapPx) / (ORDERBOOK_ROW_HEIGHT_PX + rowGapPx));
-	return Math.min(MAX_LEVEL_COUNT, Math.max(minRows, rows));
-}
-
-function OrderbookPlaceholderRow() {
-	return <div className="h-[23px] shrink-0" aria-hidden="true" />;
+function OrderbookPlaceholderRow({ compact }: { compact?: boolean }) {
+	return <div className={cn("shrink-0", compact ? "h-[24px]" : "h-[23px]")} aria-hidden="true" />;
 }
 
 function MidTrendIcon({ direction, className }: { direction: "up" | "down" | "flat"; className?: string }) {
