@@ -1,7 +1,6 @@
 import { Button, Select, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
 import type { HistoricalOrdersResponse } from "@nktkas/hyperliquid";
-import { DownloadSimpleIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -17,13 +16,8 @@ import { AssetBadge } from "../components/asset-badge";
 import { HistoricalOrderPrice } from "../components/historical-order-price";
 import { Placeholder } from "./placeholder";
 import {
-	positionsPanelRowHoverClass,
-	positionsPanelRowStripeClass,
 	positionsPanelTableBodyClass,
-	positionsPanelTableCaptionRowClass,
 	positionsPanelTableCellClass,
-	positionsPanelTableHeadClass,
-	positionsPanelTableHeaderClass,
 	positionsPanelTableHeaderRowClass,
 	positionsPanelTableShellClass,
 	positionsPanelTabRootClass,
@@ -31,6 +25,14 @@ import {
 
 type HistoricalOrderStatus = HistoricalOrdersResponse[number]["status"];
 type OrderHistoryStatusFilter = "all" | "open" | "filled" | "triggered" | "canceled" | "rejected" | "other";
+
+const orderHistoryTableHeadClass =
+	"sticky top-0 z-[1] h-[33px] bg-surface px-2 py-0 text-[11px] leading-4 font-semibold normal-case tracking-normal text-market-close-subtle";
+const orderHistoryTableCellClass = "h-[58px] px-2 py-0 text-[13px] leading-[18px]";
+const orderHistoryAssetClass =
+	"h-auto min-h-0 rounded-[4px] border-0 bg-transparent p-0 shadow-none hover:bg-transparent active:not-data-disabled:scale-100";
+const orderHistoryFooterButtonClass =
+	"h-auto min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
 
 function getOrderHistoryStatusFilter(status: HistoricalOrderStatus): Exclude<OrderHistoryStatusFilter, "all"> {
 	if (isCanceledOrderStatus(status)) return "canceled";
@@ -53,6 +55,12 @@ function isOrderHistoryStatusFilter(value: string | null): value is OrderHistory
 
 function hasTriggerPrice(order: HistoricalOrdersResponse[number]["order"]): boolean {
 	return order.isTrigger || order.orderType.startsWith("Stop ") || order.orderType.startsWith("Take Profit ");
+}
+
+function getOrderHistoryStatusBadgeClass(status: HistoricalOrderStatus): string {
+	return status === "filled" || status === "triggered"
+		? "bg-success-soft text-market-close-success"
+		: "bg-market-close-hover text-market-close-subtle";
 }
 
 export function OrdersHistoryTab() {
@@ -151,7 +159,10 @@ export function OrdersHistoryTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className={cn(positionsPanelTableCaptionRowClass, "justify-between px-5 py-2")}>
+			<div
+				className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-market-close-stroke-card px-5 py-2.5 font-market-close"
+				data-testid="order-history-filters"
+			>
 				<div className="flex min-w-0 items-center gap-2">
 					<Select
 						size="xxs"
@@ -159,8 +170,8 @@ export function OrdersHistoryTab() {
 						value={typeFilter}
 						onValueChange={(value) => setTypeFilter(value ?? "all")}
 						options={typeOptions}
-						className="w-32 [&>label]:sr-only"
-						triggerClassName="rounded-[7px] border-market-close-stroke-card bg-modal"
+						className="min-w-[7rem] [&>label]:sr-only"
+						triggerClassName="h-[27px] !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted hover:border-market-close-control focus-visible:border-market-close-control"
 					/>
 					<Select
 						size="xxs"
@@ -170,55 +181,54 @@ export function OrdersHistoryTab() {
 							if (isOrderHistoryStatusFilter(value)) setStatusFilter(value);
 						}}
 						options={statusOptions}
-						className="w-32 [&>label]:sr-only"
-						triggerClassName="rounded-[7px] border-market-close-stroke-card bg-modal"
+						className="min-w-[7rem] [&>label]:sr-only"
+						triggerClassName="h-[27px] !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted hover:border-market-close-control focus-visible:border-market-close-control"
 					/>
 				</div>
-				{headerCount ? <span className="tabular-nums text-3xs text-fg-muted">{headerCount}</span> : null}
+				{headerCount ? (
+					<span className="shrink-0 text-xs text-market-close-subtle tabular-nums">{headerCount}</span>
+				) : null}
 			</div>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[52rem] w-full">
-							<TableHeader className={positionsPanelTableHeaderClass}>
+						<Table className="table-fixed min-w-[1280px] w-full font-market-close tabular-nums">
+							<colgroup>
+								<col className="w-[158px]" />
+								<col className="w-[126px]" />
+								<col />
+								<col className="w-[166px]" />
+								<col className="w-[146px]" />
+								<col className="w-[126px]" />
+								<col className="w-[178px]" />
+							</colgroup>
+							<TableHeader className="bg-surface [&_tr]:border-market-close-stroke-card [&_tr]:border-t-0">
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[14%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "pl-5 text-left")}>
 										{t`Time`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[18%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-left")}>
 										{t`Type`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-right")}>
 										{t`Price`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[14%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-right")}>
 										{t`Size`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(positionsPanelTableHeadClass, "w-[12%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "text-left")}>
 										{t`Status`}
 									</TableHead>
-									<TableHead
-										scope="col"
-										size="dense"
-										className={cn(positionsPanelTableHeadClass, "w-[16%] text-right")}
-									>
+									<TableHead scope="col" size="dense" className={cn(orderHistoryTableHeadClass, "pr-5 text-right")}>
 										{t`Updated`}
 									</TableHead>
 								</TableRow>
 							</TableHeader>
-							<TableBody className={positionsPanelTableBodyClass}>
-								{filteredOrders.map((entry, i) => {
+							<TableBody className={cn(positionsPanelTableBodyClass, "[&_tr]:border-market-close-stroke-card/60")}>
+								{filteredOrders.map((entry) => {
 									const { order } = entry;
 									const market = markets.getMarket(order.coin);
 									const isBuy = order.side === "B";
@@ -227,45 +237,78 @@ export function OrdersHistoryTab() {
 									return (
 										<TableRow
 											key={`${order.oid}-${entry.statusTimestamp}`}
-											className={cn(positionsPanelRowHoverClass, i % 2 === 1 && positionsPanelRowStripeClass)}
+											className="transition-colors duration-[120ms] hover:bg-market-close-card"
 										>
 											<TableCell
 												size="dense"
-												className={cn(positionsPanelTableCellClass, "whitespace-nowrap text-fg-muted")}
+												className={cn(
+													positionsPanelTableCellClass,
+													orderHistoryTableCellClass,
+													"whitespace-nowrap pl-5 text-xs text-market-close-muted",
+												)}
 											>
 												{formatDateTime(order.timestamp, { dateStyle: "short", timeStyle: "short" })}
 											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "font-medium text-fg")}>
+											<TableCell
+												size="dense"
+												className={cn(positionsPanelTableCellClass, orderHistoryTableCellClass, "font-bold")}
+											>
 												<AssetBadge
 													coin={order.coin}
 													side={isBuy ? "buy" : "sell"}
 													onClick={() => navigateToMarket(order.coin)}
 													aria-label={t`Switch to ${order.coin} market, ${sideLabel} order`}
+													className={orderHistoryAssetClass}
+													nameClassName="text-[13px] leading-[18px] font-bold text-market-close-fg"
+													fit
 												/>
-											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
-												{getOrderTypeLabel(order.orderType)}
-											</TableCell>
-											<TableCell
-												size="dense"
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
-											>
-												<HistoricalOrderPrice order={order} />
-											</TableCell>
-											<TableCell
-												size="dense"
-												className={cn(positionsPanelTableCellClass, "text-right tabular-nums text-fg")}
-											>
-												{formatToken(order.origSz, market?.szDecimals)}
-											</TableCell>
-											<TableCell size="dense" className={cn(positionsPanelTableCellClass, "capitalize text-fg")}>
-												{getHistoricalOrderStatusLabel(entry.status)}
 											</TableCell>
 											<TableCell
 												size="dense"
 												className={cn(
 													positionsPanelTableCellClass,
-													"whitespace-nowrap text-right tabular-nums text-fg-muted",
+													orderHistoryTableCellClass,
+													"whitespace-nowrap capitalize text-market-close-fg",
+												)}
+											>
+												{getOrderTypeLabel(order.orderType)}
+											</TableCell>
+											<TableCell
+												size="dense"
+												className={cn(
+													positionsPanelTableCellClass,
+													orderHistoryTableCellClass,
+													"text-right text-market-close-fg",
+												)}
+											>
+												<HistoricalOrderPrice order={order} />
+											</TableCell>
+											<TableCell
+												size="dense"
+												className={cn(
+													positionsPanelTableCellClass,
+													orderHistoryTableCellClass,
+													"text-right text-market-close-fg",
+												)}
+											>
+												{formatToken(order.origSz, market?.szDecimals)}
+											</TableCell>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, orderHistoryTableCellClass)}>
+												<span
+													className={cn(
+														"inline-flex w-fit whitespace-nowrap rounded-[4px] px-2 py-0.5 text-[11px] leading-[14px] font-semibold capitalize",
+														getOrderHistoryStatusBadgeClass(entry.status),
+													)}
+												>
+													{getHistoricalOrderStatusLabel(entry.status)}
+												</span>
+											</TableCell>
+											<TableCell
+												size="dense"
+												className={cn(
+													positionsPanelTableCellClass,
+													orderHistoryTableCellClass,
+													"whitespace-nowrap pr-5 text-right text-xs text-market-close-muted",
 												)}
 											>
 												{formatDateTime(entry.statusTimestamp, { dateStyle: "short", timeStyle: "short" })}
@@ -280,14 +323,14 @@ export function OrdersHistoryTab() {
 				)}
 			</div>
 			{isConnected && status === "ready" ? (
-				<div className="flex shrink-0 items-center gap-4 px-5 py-2.5" data-testid="order-history-footer">
+				<div className="flex h-[38px] shrink-0 items-center gap-4 px-5" data-testid="order-history-footer">
 					<Button
 						variant="ghost"
 						intent="neutral"
 						size="xxs"
+						className={orderHistoryFooterButtonClass}
 						disabled={filteredOrders.length === 0}
 						onClick={handleExportCsv}
-						iconLeft={<DownloadSimpleIcon className="size-3" aria-hidden="true" />}
 					>
 						{t`Export CSV`}
 					</Button>

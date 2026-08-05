@@ -97,6 +97,26 @@ describe("desktop order history direction semantics", () => {
 	it("does not infer a position side from the exchange buy/sell side", () => {
 		act(() => root.render(<OrdersHistoryTab />));
 
+		expect(container.querySelector('[data-testid="order-history-filters"]')?.className).toContain("h-12");
+		expect(container.querySelector("table")?.className).toContain("min-w-[1280px]");
+		expect(Array.from(container.querySelectorAll("col"), (column) => column.className)).toEqual([
+			"w-[158px]",
+			"w-[126px]",
+			"",
+			"w-[166px]",
+			"w-[146px]",
+			"w-[126px]",
+			"w-[178px]",
+		]);
+		expect(Array.from(container.querySelectorAll("th"), (cell) => cell.textContent)).toEqual([
+			"Time",
+			"Asset",
+			"Type",
+			"Price",
+			"Size",
+			"Status",
+			"Updated",
+		]);
 		expect(container.querySelector('[aria-label="Switch to BTC market, Buy order"]')).not.toBeNull();
 		expect(container.querySelector('[aria-label="Switch to ETH market, Close Long order"]')).not.toBeNull();
 		expect(container.textContent).not.toContain("Long order");
@@ -107,11 +127,20 @@ describe("desktop order history direction semantics", () => {
 			"Order type",
 			"Order status",
 		]);
+		const filledBadge = Array.from(container.querySelectorAll("span")).find((node) => node.textContent === "Filled");
+		const canceledBadge = Array.from(container.querySelectorAll("span")).find(
+			(node) => node.textContent === "Canceled",
+		);
+		expect(filledBadge?.className).toContain("bg-success-soft");
+		expect(canceledBadge?.className).toContain("bg-market-close-hover");
+		expect(container.querySelector("tbody td")?.className).toContain("h-[58px]");
+		expect(container.querySelector('[data-testid="order-history-footer"]')?.className).toContain("h-[38px]");
 
 		const exportButton = Array.from(container.querySelectorAll("button")).find(
 			(button) => button.textContent === "Export CSV",
 		);
 		expect(exportButton).toBeDefined();
+		expect(exportButton?.querySelector("svg")).toBeNull();
 		act(() => exportButton?.click());
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"order_history.csv",

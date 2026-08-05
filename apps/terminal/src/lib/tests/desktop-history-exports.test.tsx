@@ -107,7 +107,35 @@ describe("desktop history exports", () => {
 	it("exports the currently loaded fill rows with localized headers", () => {
 		act(() => root.render(<HistoryTab />));
 
-		expect(container.querySelector('[data-testid="trade-history-footer"]')).not.toBeNull();
+		const footer = container.querySelector('[data-testid="trade-history-footer"]');
+		expect(footer).not.toBeNull();
+		expect(Array.from(container.querySelectorAll("th"), (cell) => cell.textContent)).toEqual([
+			"Asset",
+			"Direction",
+			"Price",
+			"Size",
+			"Fee",
+			"PNL",
+			"Time",
+		]);
+		expect(container.querySelector("table")?.className).toContain("min-w-[1280px]");
+		expect(Array.from(container.querySelectorAll("col"), (column) => column.className)).toEqual([
+			"w-[138px]",
+			"w-[126px]",
+			"",
+			"w-[126px]",
+			"w-[146px]",
+			"w-[146px]",
+			"w-[178px]",
+		]);
+		const directionBadge = Array.from(container.querySelectorAll("span")).find(
+			(node) => node.textContent === "Close Long",
+		);
+		expect(directionBadge?.className).toContain("rounded-[4px]");
+		expect(directionBadge?.className).toContain("bg-market-close-hover");
+		expect(container.querySelector("tbody td")?.className).toContain("h-[43px]");
+		expect(footer?.className).toContain("h-[38px]");
+		expect(footer?.querySelector("svg")).toBeNull();
 		clickExport();
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"trade_history.csv",
@@ -119,7 +147,18 @@ describe("desktop history exports", () => {
 		act(() => root.render(<FundingTab />));
 
 		expect(container.textContent).toContain("Cumulative funding");
-		expect(container.querySelector('[data-testid="funding-history-footer"]')).not.toBeNull();
+		const footer = container.querySelector('[data-testid="funding-history-footer"]');
+		expect(footer).not.toBeNull();
+		expect(footer?.className).toContain("h-[38px]");
+		expect(container.querySelector("tbody td")?.className).toContain("h-10");
+		expect(container.querySelector("table")?.className).toContain("min-w-[1280px]");
+		expect(Array.from(container.querySelectorAll("col"), (column) => column.className)).toEqual([
+			"w-[138px]",
+			"",
+			"w-[146px]",
+			"w-[166px]",
+			"w-[178px]",
+		]);
 		clickExport();
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"funding_history.csv",
