@@ -154,7 +154,7 @@ describe("desktop positions panel shell", () => {
 		const withdrawButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 			(button) => button.textContent === "Withdraw",
 		);
-		expect(depositButton?.className).toContain("h-[27px]");
+		expect(depositButton?.className).toContain("h-[25px]");
 		expect(depositButton?.className).toContain("bg-market-close-control");
 		expect(withdrawButton?.className).toContain("border-market-close-stroke-input");
 		act(() => depositButton?.click());

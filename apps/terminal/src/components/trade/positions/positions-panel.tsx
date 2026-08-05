@@ -268,9 +268,9 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 							intent="neutral"
 							size="xxs"
 							onClick={() => openDepositModal("deposit")}
-							className="h-[27px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
+							className="h-[25px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
 						>
-							<Trans>Deposit</Trans>
+							<Trans context="Trading toolbar action">Deposit</Trans>
 						</Button>
 						<Button
 							variant="outline"
@@ -279,7 +279,7 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 							onClick={() => openDepositModal("withdraw")}
 							className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
 						>
-							<Trans>Withdraw</Trans>
+							<Trans context="Trading toolbar action">Withdraw</Trans>
 						</Button>
 						{activeTab === "positions" && positionsCount !== null ? (
 							<PositionFilterToolbar

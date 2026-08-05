@@ -1646,7 +1646,6 @@ msgstr "Deployer"
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1660,6 +1659,11 @@ msgstr "Deployer"
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
 #: src/lib/trade/use-button-content.ts
+msgid "Deposit"
+msgstr "Deposit"
+
+#: src/components/trade/positions/positions-panel.tsx
+msgctxt "Trading toolbar action"
 msgid "Deposit"
 msgstr "Deposit"
 
@@ -7152,7 +7156,6 @@ msgstr "will arrive in {0}"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -7160,6 +7163,11 @@ msgstr "will arrive in {0}"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/config/ui-text.ts
+msgid "Withdraw"
+msgstr "Withdraw"
+
+#: src/components/trade/positions/positions-panel.tsx
+msgctxt "Trading toolbar action"
 msgid "Withdraw"
 msgstr "Withdraw"
 

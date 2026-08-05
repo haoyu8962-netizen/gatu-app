@@ -1646,7 +1646,6 @@ msgstr "部署者"
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1662,6 +1661,11 @@ msgstr "部署者"
 #: src/lib/trade/use-button-content.ts
 msgid "Deposit"
 msgstr "存款"
+
+#: src/components/trade/positions/positions-panel.tsx
+msgctxt "Trading toolbar action"
+msgid "Deposit"
+msgstr "存入"
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Deposit address"
@@ -7152,7 +7156,6 @@ msgstr "将在{0}后到账"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -7162,6 +7165,11 @@ msgstr "将在{0}后到账"
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "提款"
+
+#: src/components/trade/positions/positions-panel.tsx
+msgctxt "Trading toolbar action"
+msgid "Withdraw"
+msgstr "提取"
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdraw to Arbitrum"

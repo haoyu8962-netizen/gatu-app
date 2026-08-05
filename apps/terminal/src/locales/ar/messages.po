@@ -1633,7 +1633,6 @@ msgstr "جهة النشر"
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1649,6 +1648,11 @@ msgstr "جهة النشر"
 #: src/lib/trade/use-button-content.ts
 msgid "Deposit"
 msgstr "إيداع"
+
+#: src/components/trade/positions/positions-panel.tsx
+msgctxt "Trading toolbar action"
+msgid "Deposit"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Deposit address"
@@ -7127,7 +7131,6 @@ msgstr "ستصل خلال {0}"
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -7137,6 +7140,11 @@ msgstr "ستصل خلال {0}"
 #: src/config/ui-text.ts
 msgid "Withdraw"
 msgstr "سحب"
+
+#: src/components/trade/positions/positions-panel.tsx
+msgctxt "Trading toolbar action"
+msgid "Withdraw"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdraw to Arbitrum"
