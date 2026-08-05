@@ -246,7 +246,7 @@ describe("mobile history disclosure cards", () => {
 	function expectDisclosureControls() {
 		let disclosureButtons = getDisclosureButtons();
 		expect(disclosureButtons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
-		expect(disclosureButtons.every((button) => button.parentElement?.className.includes("min-h-[54px]"))).toBe(true);
+		expect(disclosureButtons.every((button) => button.parentElement?.className.includes("h-[54px]"))).toBe(true);
 
 		act(() => disclosureButtons[1]?.click());
 		disclosureButtons = getDisclosureButtons();
@@ -273,12 +273,75 @@ describe("mobile history disclosure cards", () => {
 			const button = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 				(candidate) => candidate.textContent === label,
 			);
-			expect(button?.className).toContain("min-h-11");
+			expect(button?.className).toContain("h-[27px]");
+			expect(button?.className).toContain("min-h-0");
+			expect(button?.className).toContain("after:h-11");
 		}
+	}
+
+	function expectM4VisualContract(filterRowTestId: string, footerTestId: string, selectCount: number) {
+		const filterRow = container.querySelector<HTMLElement>(`[data-testid="${filterRowTestId}"]`);
+		expect(filterRow?.className).toContain("h-12");
+		expect(filterRow?.className).toContain("px-3.5");
+		expect(filterRow?.className).toContain("overflow-x-auto");
+
+		const filterTriggers = Array.from(filterRow?.querySelectorAll<HTMLElement>('[role="combobox"]') ?? []);
+		expect(filterTriggers).toHaveLength(selectCount);
+		for (const trigger of filterTriggers) {
+			expect(trigger.className).toContain("h-[27px]");
+			expect(trigger.className).toContain("min-h-0");
+			expect(trigger.className).toContain("!rounded-[7px]");
+			expect(trigger.className).toContain("after:h-11");
+		}
+
+		const filterGroup = Array.from(filterRow?.querySelectorAll<HTMLElement>("div") ?? []).find((element) =>
+			element.className.includes("gap-1.5"),
+		);
+		expect(filterGroup).toBeDefined();
+		const actionGroup = Array.from(filterRow?.querySelectorAll<HTMLElement>("div") ?? []).find(
+			(element) => element.textContent === "Expand allCollapse all",
+		);
+		expect(actionGroup?.className).toContain("gap-3");
+		expect(actionGroup?.className).toContain("pl-3");
+
+		const articles = Array.from(container.querySelectorAll<HTMLElement>("article"));
+		expect(articles).toHaveLength(2);
+		for (const article of articles) {
+			expect(article.className).toContain("rounded-[14px]");
+			expect(article.className).toContain("border-market-close-stroke-card");
+		}
+
+		for (const disclosure of getDisclosureButtons()) {
+			const header = disclosure.parentElement;
+			expect(header?.className).toContain("h-[54px]");
+			expect(header?.className).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_16px]");
+			expect(header?.className).toContain("gap-2.5");
+			expect(header?.className).toContain("px-3.5");
+		}
+
+		const expandedDetailsId = getDisclosureButtons()[0]?.getAttribute("aria-controls");
+		const details = expandedDetailsId ? document.getElementById(expandedDetailsId) : null;
+		expect(details && container.contains(details)).toBe(true);
+		const detailsGrid = details?.querySelector<HTMLElement>("div.grid");
+		expect(detailsGrid?.className).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)]");
+		expect(detailsGrid?.className).toContain("gap-x-2.5");
+		expect(detailsGrid?.className).toContain("gap-y-3");
+
+		const footer = container.querySelector<HTMLElement>(`[data-testid="${footerTestId}"]`);
+		expect(footer?.className).toContain("h-[38px]");
+		expect(footer?.className).toContain("px-3.5");
+		const exportButton = Array.from(footer?.querySelectorAll<HTMLButtonElement>("button") ?? []).find(
+			(button) => button.textContent === "Export CSV",
+		);
+		expect(exportButton?.className).toContain("h-[38px]");
+		expect(exportButton?.className).toContain("min-h-0");
+		expect(exportButton?.className).toContain("after:h-11");
+		expect(container.textContent).not.toContain("View all");
 	}
 
 	it("keeps trade history values, explorer links, and independent disclosure state", () => {
 		render(<MobileHistoryTab scrollMode="page" />);
+		expectM4VisualContract("mobile-trade-history-filter-row", "mobile-trade-history-footer", 3);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(Array.from(container.querySelectorAll("label"), (label) => label.textContent)).toEqual([
@@ -310,6 +373,7 @@ describe("mobile history disclosure cards", () => {
 
 	it("keeps funding position, payment, rate, and direction semantics", () => {
 		render(<MobileFundingTab scrollMode="page" />);
+		expectM4VisualContract("mobile-funding-history-filter-row", "mobile-funding-history-footer", 1);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(Array.from(container.querySelectorAll("label"), (label) => label.textContent)).toEqual(["Direction"]);
@@ -329,6 +393,7 @@ describe("mobile history disclosure cards", () => {
 
 	it("keeps historical order labels and expands cards independently", () => {
 		render(<MobileOrdersHistoryTab scrollMode="page" />);
+		expectM4VisualContract("mobile-order-history-filter-row", "mobile-order-history-footer", 3);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(container.textContent).toContain("Limit");

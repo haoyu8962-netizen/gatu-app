@@ -1,6 +1,5 @@
 import { Select } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { DownloadSimpleIcon } from "@phosphor-icons/react";
 import { Skeleton } from "boneyard-js/react";
 import { useState } from "react";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -24,6 +23,13 @@ interface Props {
 }
 
 type FundingDirectionFilter = "all" | "long" | "short";
+
+const filterTriggerClassName =
+	"relative h-[27px] min-h-0 !rounded-[7px] border-market-close-stroke-card bg-modal text-xs leading-4 text-market-close-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:border-market-close-control focus-visible:outline-none active:not-data-disabled:scale-100 data-popup-open:border-market-close-control data-popup-open:text-market-close-fg";
+const filterActionClassName =
+	"relative inline-flex h-[27px] min-h-0 items-center whitespace-nowrap text-xs after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control active:scale-100";
+const footerActionClassName =
+	"relative inline-flex h-[38px] min-h-0 items-center text-xs text-market-close-muted transition-colors duration-[120ms] after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle";
 
 function getFundingDirection(szi: string): Exclude<FundingDirectionFilter, "all"> | null {
 	const size = toBig(szi);
@@ -147,183 +153,186 @@ function MobileFundingTabContent({
 	return (
 		<Skeleton name="funding-tab" loading={status === "subscribing" || status === "idle"}>
 			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
-				<div className="flex min-h-11 shrink-0 items-center gap-2 overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<Select
-						size="xxs"
-						label={t`Direction`}
-						value={directionFilter}
-						onValueChange={(value) => {
-							if (isFundingDirectionFilter(value)) setDirectionFilter(value);
-						}}
-						options={[
-							{ value: "all", label: t`All Directions` },
-							{ value: "long", label: t`Long` },
-							{ value: "short", label: t`Short` },
-						]}
-						className="w-28 shrink-0 [&>label]:sr-only"
-						triggerClassName="min-h-11 rounded-[7px] border-market-close-stroke-card bg-modal"
-					/>
-					<span className="min-w-0 shrink-0 truncate text-[11px] text-market-close-muted">
+				<div
+					data-testid="mobile-funding-history-filter-row"
+					className="flex h-12 shrink-0 items-center overflow-x-auto border-b border-market-close-stroke-card px-3.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+				>
+					<div className="flex shrink-0 items-center gap-1.5">
+						<Select
+							size="xxs"
+							label={t`Direction`}
+							value={directionFilter}
+							onValueChange={(value) => {
+								if (isFundingDirectionFilter(value)) setDirectionFilter(value);
+							}}
+							options={[
+								{ value: "all", label: t`All Directions` },
+								{ value: "long", label: t`Long` },
+								{ value: "short", label: t`Short` },
+							]}
+							className="w-28 shrink-0 [&>label]:sr-only"
+							triggerClassName={filterTriggerClassName}
+						/>
+					</div>
+					<span className="sr-only" aria-live="polite">
 						{t`Cumulative funding`} <span className={cn("font-semibold tabular-nums", headerClass)}>{headerTotal}</span>
 					</span>
-					<div className="ml-auto flex shrink-0 items-center gap-2">
+					<div className="ml-auto flex shrink-0 items-center gap-3 pl-3">
 						<button
 							type="button"
 							onClick={() => handleSetAllExpanded(true)}
-							className="min-h-11 whitespace-nowrap text-xs font-semibold text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+							className={cn(filterActionClassName, "font-semibold text-market-close-fg")}
 						>
 							{t`Expand all`}
 						</button>
 						<button
 							type="button"
 							onClick={() => handleSetAllExpanded(false)}
-							className="min-h-11 whitespace-nowrap text-xs text-market-close-muted focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+							className={cn(filterActionClassName, "text-market-close-muted")}
 						>
 							{t`Collapse all`}
 						</button>
 					</div>
 				</div>
-				<div
-					className={cn(
-						"flex flex-col gap-2.5 px-3.5 py-3",
-						!isPageScroll && "min-h-0 flex-1 overflow-y-auto overscroll-y-contain",
-					)}
-				>
-					{filteredUpdates.length === 0 ? (
-						<div className="flex min-h-28 items-center justify-center text-center text-sm text-market-close-muted">
-							{t`No funding payments match this direction.`}
-						</div>
-					) : null}
-					{filteredUpdates.map((update, index) => {
-						const marketName = update.coin;
-						const cardKey = `${update.coin}-${update.time}-${update.szi}-${update.fundingRate}-${update.usdc}`;
-						const detailsId = `mobile-funding-history-${cardKey}`;
-						const isExpanded = expandedByKey[cardKey] ?? index === 0;
-						const market = markets.getMarket(update.coin);
-						const fundingDirection = getFundingDirection(update.szi);
-						const positionDisplay = formatToken(getToolbarAbsoluteSize(update.szi), {
-							decimals: market?.szDecimals,
-							symbol: market?.shortName,
-						});
+				<div className={cn("min-h-0", !isPageScroll && "flex-1 overflow-y-auto overscroll-y-contain")}>
+					<div className="flex flex-col gap-2.5 px-3.5 pt-3">
+						{filteredUpdates.length === 0 ? (
+							<div className="flex min-h-28 items-center justify-center text-center text-sm text-market-close-muted">
+								{t`No funding payments match this direction.`}
+							</div>
+						) : null}
+						{filteredUpdates.map((update, index) => {
+							const marketName = update.coin;
+							const cardKey = `${update.coin}-${update.time}-${update.szi}-${update.fundingRate}-${update.usdc}`;
+							const detailsId = `mobile-funding-history-${cardKey}`;
+							const isExpanded = expandedByKey[cardKey] ?? index === 0;
+							const market = markets.getMarket(update.coin);
+							const fundingDirection = getFundingDirection(update.szi);
+							const positionDisplay = formatToken(getToolbarAbsoluteSize(update.szi), {
+								decimals: market?.szDecimals,
+								symbol: market?.shortName,
+							});
 
-						function handleToggle() {
-							setExpandedByKey((current) => ({ ...current, [cardKey]: !isExpanded }));
-						}
+							function handleToggle() {
+								setExpandedByKey((current) => ({ ...current, [cardKey]: !isExpanded }));
+							}
 
-						return (
-							<article
-								key={cardKey}
-								className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal"
-							>
-								<MobileDisclosureHeader
-									expanded={isExpanded}
-									label={
-										isExpanded ? t`Collapse ${marketName} history details` : t`Expand ${marketName} history details`
-									}
-									controls={detailsId}
-									onToggle={handleToggle}
-									className="min-h-[54px] grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_16px] gap-2.5 px-3.5"
+							return (
+								<article
+									key={cardKey}
+									className="overflow-hidden rounded-[14px] border border-market-close-stroke-card bg-modal"
 								>
-									<button
-										type="button"
-										onClick={() => handleSelectMarket(marketName)}
-										aria-label={t`Switch to ${marketName} market`}
-										className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+									<MobileDisclosureHeader
+										expanded={isExpanded}
+										label={
+											isExpanded ? t`Collapse ${marketName} history details` : t`Expand ${marketName} history details`
+										}
+										controls={detailsId}
+										onToggle={handleToggle}
+										className="h-[54px] grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)_16px] gap-2.5 px-3.5"
 									>
-										<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
-										<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">{marketName}</span>
-									</button>
-									<div className="min-w-0">
-										<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Time`}</div>
-										<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-											{formatDateTimeShort(update.time)}
+										<button
+											type="button"
+											onClick={() => handleSelectMarket(marketName)}
+											aria-label={t`Switch to ${marketName} market`}
+											className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
+										>
+											<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
+											<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">
+												{marketName}
+											</span>
+										</button>
+										<div className="min-w-0">
+											<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Time`}</div>
+											<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
+												{formatDateTimeShort(update.time)}
+											</div>
 										</div>
-									</div>
-									<div className="min-w-0">
-										<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Position`}</div>
-										<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-											{positionDisplay}
+										<div className="min-w-0">
+											<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Position`}</div>
+											<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
+												{positionDisplay}
+											</div>
 										</div>
-									</div>
-								</MobileDisclosureHeader>
+									</MobileDisclosureHeader>
 
-								{isExpanded ? (
-									<div id={detailsId} className="flex flex-col gap-2.5 px-3.5 py-3">
-										<div className="grid min-w-0 grid-cols-3 gap-x-2.5 gap-y-3">
-											<div className="min-w-0">
-												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">
-													{t`Direction`}
-												</div>
-												<div
-													className={cn(
-														"truncate whitespace-nowrap text-xs font-semibold leading-[17px]",
-														fundingDirection === null
-															? "text-market-close-muted"
+									{isExpanded ? (
+										<div id={detailsId} className="flex flex-col gap-2.5 px-3.5 py-3">
+											<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-x-2.5 gap-y-3">
+												<div className="min-w-0">
+													<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">
+														{t`Direction`}
+													</div>
+													<div
+														className={cn(
+															"truncate whitespace-nowrap text-xs font-semibold leading-[17px]",
+															fundingDirection === null
+																? "text-market-close-muted"
+																: fundingDirection === "long"
+																	? "text-market-close-success"
+																	: "text-market-close-danger",
+														)}
+													>
+														{fundingDirection === null
+															? FALLBACK_VALUE_PLACEHOLDER
 															: fundingDirection === "long"
-																? "text-market-close-success"
-																: "text-market-close-danger",
-													)}
-												>
-													{fundingDirection === null
-														? FALLBACK_VALUE_PLACEHOLDER
-														: fundingDirection === "long"
-															? t`Long`
-															: t`Short`}
+																? t`Long`
+																: t`Short`}
+													</div>
+												</div>
+												<div className="min-w-0">
+													<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Payment`}</div>
+													<div
+														className={cn(
+															"truncate whitespace-nowrap text-xs font-semibold leading-[17px] tabular-nums",
+															getMarketCloseValueColorClass(update.usdc),
+														)}
+													>
+														{formatToken(update.usdc, { symbol: "USDC" })}
+													</div>
+												</div>
+												<div className="min-w-0">
+													<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Rate`}</div>
+													<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
+														{formatPercent(update.fundingRate, {
+															minimumFractionDigits: 4,
+															maximumFractionDigits: 4,
+														})}
+													</div>
 												</div>
 											</div>
-											<div className="min-w-0">
-												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Payment`}</div>
-												<div
-													className={cn(
-														"truncate whitespace-nowrap text-xs font-semibold leading-[17px] tabular-nums",
-														getMarketCloseValueColorClass(update.usdc),
-													)}
+											<div className="flex min-h-11 items-center justify-end border-t border-market-close-stroke-card">
+												<button
+													type="button"
+													aria-label={t`Collapse ${marketName} history details`}
+													aria-controls={detailsId}
+													onClick={handleToggle}
+													className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
 												>
-													{formatToken(update.usdc, { symbol: "USDC" })}
-												</div>
-											</div>
-											<div className="min-w-0">
-												<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Rate`}</div>
-												<div className="truncate whitespace-nowrap text-xs font-semibold leading-[17px] text-market-close-fg tabular-nums">
-													{formatPercent(update.fundingRate, {
-														minimumFractionDigits: 4,
-														maximumFractionDigits: 4,
-													})}
-												</div>
+													<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
+														<path
+															d="M3.5 10 8 5.5l4.5 4.5"
+															stroke="currentColor"
+															strokeWidth="2"
+															strokeLinecap="round"
+															strokeLinejoin="round"
+														/>
+													</svg>
+												</button>
 											</div>
 										</div>
-										<div className="flex min-h-11 items-center justify-end border-t border-market-close-stroke-card">
-											<button
-												type="button"
-												aria-label={t`Collapse ${marketName} history details`}
-												aria-controls={detailsId}
-												onClick={handleToggle}
-												className="-mr-3.5 inline-flex size-11 shrink-0 items-center justify-center rounded-xs text-market-close-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
-											>
-												<svg aria-hidden="true" viewBox="0 0 16 16" fill="none" className="size-4">
-													<path
-														d="M3.5 10 8 5.5l4.5 4.5"
-														stroke="currentColor"
-														strokeWidth="2"
-														strokeLinecap="round"
-														strokeLinejoin="round"
-													/>
-												</svg>
-											</button>
-										</div>
-									</div>
-								) : null}
-							</article>
-						);
-					})}
-					<div className="flex shrink-0 items-center gap-4" data-testid="mobile-funding-history-footer">
+									) : null}
+								</article>
+							);
+						})}
+					</div>
+					<div className="flex h-[38px] shrink-0 items-center gap-4 px-3.5" data-testid="mobile-funding-history-footer">
 						<button
 							type="button"
 							disabled={filteredUpdates.length === 0}
 							onClick={handleExportCsv}
-							className="inline-flex min-h-11 items-center gap-1.5 text-xs text-market-close-muted transition-colors duration-[120ms] active:text-market-close-fg focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:text-market-close-subtle"
+							className={footerActionClassName}
 						>
-							<DownloadSimpleIcon className="size-3.5" aria-hidden="true" />
 							{t`Export CSV`}
 						</button>
 					</div>
