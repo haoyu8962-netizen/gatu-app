@@ -1647,6 +1647,7 @@ msgstr "Deployer"
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2643,8 +2644,8 @@ msgstr "Important: this address can only receive native USDC on Arbitrum. Do not
 #~ msgstr "Importing..."
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "In Orders"
-msgstr "In Orders"
+#~ msgid "In Orders"
+#~ msgstr "In Orders"
 
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "In Use"
@@ -4253,7 +4254,6 @@ msgstr "Platform"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "PNL"
@@ -6401,7 +6401,6 @@ msgstr "Token metadata could not be loaded."
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -6614,6 +6613,7 @@ msgstr "Transaction was not broadcast. Please retry."
 msgid "Transaction was rejected"
 msgstr "Transaction was rejected"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -6914,7 +6914,6 @@ msgstr "Updated live"
 msgid "Updating..."
 msgstr "Updating..."
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "USD Value"
@@ -7154,6 +7153,8 @@ msgstr "will arrive in {0}"
 
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx

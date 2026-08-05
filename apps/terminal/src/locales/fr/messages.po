@@ -1634,6 +1634,7 @@ msgstr "Déployeur"
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2626,8 +2627,8 @@ msgstr "Important : cette adresse ne peut recevoir que des USDC natifs sur Arbit
 #~ msgstr "Importation..."
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "In Orders"
-msgstr "Dans les ordres"
+#~ msgid "In Orders"
+#~ msgstr "Dans les ordres"
 
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "In Use"
@@ -4232,7 +4233,6 @@ msgstr "Plateforme"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "PNL"
@@ -6376,7 +6376,6 @@ msgstr "Impossible de charger les métadonnées du jeton."
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -6589,6 +6588,7 @@ msgstr "La transaction n'a pas été diffusée. Réessayez."
 msgid "Transaction was rejected"
 msgstr "La transaction a été rejetée"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -6889,7 +6889,6 @@ msgstr "Mise à jour en direct"
 msgid "Updating..."
 msgstr "Mise à jour..."
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "Valeur en USD"
@@ -7129,6 +7128,8 @@ msgstr "arrivera dans {0}"
 
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx

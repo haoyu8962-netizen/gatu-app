@@ -1,5 +1,6 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
+import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
+import { Trans } from "@lingui/react/macro";
 import { Suspense, useMemo, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
@@ -27,6 +28,7 @@ import { useMarkets, useSelectedMarketInfo, useSubscription, useUserPositions } 
 import { createLazyComponent } from "@/lib/lazy";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumberOrZero } from "@/lib/trade/numbers";
+import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
 import { PositionFilterToolbar } from "./position-filter-toolbar";
 import type { PositionMarketOption } from "./position-market-filter";
@@ -61,6 +63,7 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 	const activeTab = resolvePositionsTab(storedActiveTab, includeTransfers);
 	const tabs = includeTransfers ? [...POSITIONS_TABS, PORTFOLIO_TRANSFERS_TAB] : POSITIONS_TABS;
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
+	const { open: openDepositModal } = useDepositModalActions();
 	const [isPending, startTransition] = useTransition();
 	const { address, isConnected } = useWalletSession();
 	const ownerKey = address?.toLowerCase() ?? null;
@@ -259,15 +262,35 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 							})}
 						</TabsList>
 					</div>
-					{activeTab === "positions" && positionsCount !== null ? (
-						<PositionFilterToolbar
-							direction={positionDirectionFilter}
-							market={positionMarketFilter}
-							marketOptions={positionMarketOptions}
-							onDirectionChange={handlePositionDirectionChange}
-							onMarketChange={handlePositionMarketChange}
-						/>
-					) : null}
+					<div className="flex shrink-0 items-center gap-2 pl-3">
+						<Button
+							variant="filled"
+							intent="neutral"
+							size="xxs"
+							onClick={() => openDepositModal("deposit")}
+							className="h-[27px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
+						>
+							<Trans>Deposit</Trans>
+						</Button>
+						<Button
+							variant="outline"
+							intent="neutral"
+							size="xxs"
+							onClick={() => openDepositModal("withdraw")}
+							className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
+						>
+							<Trans>Withdraw</Trans>
+						</Button>
+						{activeTab === "positions" && positionsCount !== null ? (
+							<PositionFilterToolbar
+								direction={positionDirectionFilter}
+								market={positionMarketFilter}
+								marketOptions={positionMarketOptions}
+								onDirectionChange={handlePositionDirectionChange}
+								onMarketChange={handlePositionMarketChange}
+							/>
+						) : null}
+					</div>
 				</div>
 				<TabsContent value="balances" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>

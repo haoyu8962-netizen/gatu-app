@@ -1647,6 +1647,7 @@ msgstr "部署者"
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2643,8 +2644,8 @@ msgstr "重要：此地址只能接收 Arbitrum 网络的原生 USDC。请勿发
 #~ msgstr "导入中…"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "In Orders"
-msgstr "挂单占用"
+#~ msgid "In Orders"
+#~ msgstr "挂单占用"
 
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "In Use"
@@ -4253,7 +4254,6 @@ msgstr "平台"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "PNL"
@@ -6401,7 +6401,6 @@ msgstr "无法加载代币元数据。"
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr "此标签页中有过多移动授权等待恢复。请先解决或撤销其中一项。"
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -6614,6 +6613,7 @@ msgstr "交易未广播。请重试。"
 msgid "Transaction was rejected"
 msgstr "交易被拒绝"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -6914,7 +6914,6 @@ msgstr "实时更新"
 msgid "Updating..."
 msgstr "正在更新..."
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "美元价值"
@@ -7154,6 +7153,8 @@ msgstr "将在{0}后到账"
 
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx

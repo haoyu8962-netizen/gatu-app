@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const testState = vi.hoisted(() => ({
 	activeTab: "positions",
+	openDepositModal: vi.fn(),
 	setPositionsActiveTab: vi.fn(),
 }));
 
@@ -61,6 +62,10 @@ vi.mock("@/lib/performance/render-profile", () => ({
 	useRenderCommitTrack: () => undefined,
 }));
 
+vi.mock("@/stores/use-global-modal-store", () => ({
+	useDepositModalActions: () => ({ open: testState.openDepositModal }),
+}));
+
 vi.mock("@/stores/use-global-settings-store", () => ({
 	useGlobalSettingsActions: () => ({ setPositionsActiveTab: testState.setPositionsActiveTab }),
 	usePositionsActiveTab: () => testState.activeTab,
@@ -75,6 +80,7 @@ describe("desktop positions panel shell", () => {
 
 	beforeEach(() => {
 		testState.activeTab = "positions";
+		testState.openDepositModal.mockReset();
 		testState.setPositionsActiveTab.mockReset();
 		i18n.load("en", {});
 		i18n.activate("en");
@@ -114,7 +120,7 @@ describe("desktop positions panel shell", () => {
 		expect(tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.textContent).toBe("Positions(1)");
 	});
 
-	it("matches the 1a tab rhythm, indicator, and right-aligned filter chips", () => {
+	it("matches the 1a tab rhythm and wires the real funds actions beside the position filter", () => {
 		render();
 
 		const header = container.querySelector<HTMLElement>('[data-testid="positions-toolbar-header"]');
@@ -141,7 +147,20 @@ describe("desktop positions panel shell", () => {
 
 		const filterToolbar = container.querySelector<HTMLElement>('[data-testid="position-filter-toolbar"]');
 		expect(filterToolbar?.className).toContain("gap-2");
-		expect(header?.lastElementChild).toBe(filterToolbar);
+		expect(header?.lastElementChild?.lastElementChild).toBe(filterToolbar);
+		const depositButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Deposit",
+		);
+		const withdrawButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Withdraw",
+		);
+		expect(depositButton?.className).toContain("h-[27px]");
+		expect(depositButton?.className).toContain("bg-market-close-control");
+		expect(withdrawButton?.className).toContain("border-market-close-stroke-input");
+		act(() => depositButton?.click());
+		act(() => withdrawButton?.click());
+		expect(testState.openDepositModal).toHaveBeenNthCalledWith(1, "deposit");
+		expect(testState.openDepositModal).toHaveBeenNthCalledWith(2, "withdraw");
 		const directionFilter = container.querySelector<HTMLButtonElement>(
 			'button[aria-label^="Filter positions by direction:"]',
 		);

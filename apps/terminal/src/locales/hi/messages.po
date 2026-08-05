@@ -1634,6 +1634,7 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -2626,8 +2627,8 @@ msgstr "महत्वपूर्ण: यह पता केवल Arbitrum �
 #~ msgstr "इम्पोर्ट हो रहा है..."
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
-msgid "In Orders"
-msgstr "ऑर्डर में"
+#~ msgid "In Orders"
+#~ msgstr "ऑर्डर में"
 
 #: src/components/trade/positions/balances-tab.tsx
 #~ msgid "In Use"
@@ -4232,7 +4233,6 @@ msgstr "प्लेटफ़ॉर्म"
 #: src/components/portfolio/portfolio-performance-chart.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
-#: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 msgid "PNL"
@@ -6376,7 +6376,6 @@ msgstr "टोकन मेटाडेटा लोड नहीं किय�
 msgid "Too many mobile approvals are awaiting recovery in this tab. Resolve or revoke one first."
 msgstr ""
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
@@ -6589,6 +6588,7 @@ msgstr "लेनदेन प्रसारित नहीं हुआ। �
 msgid "Transaction was rejected"
 msgstr "लेन-देन अस्वीकार कर दिया गया"
 
+#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -6889,7 +6889,6 @@ msgstr "लाइव अपडेट"
 msgid "Updating..."
 msgstr "अपडेट हो रहा है..."
 
-#: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 msgid "USD Value"
 msgstr "USD मूल्य"
@@ -7129,6 +7128,8 @@ msgstr "{0} में पहुँचेगा"
 
 #: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/balances-tab.tsx
+#: src/components/trade/positions/positions-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
