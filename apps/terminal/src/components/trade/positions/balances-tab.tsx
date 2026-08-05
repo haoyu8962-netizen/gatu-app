@@ -1,15 +1,11 @@
 import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowsDownUpIcon, ArrowsLeftRightIcon, PaperPlaneTiltIcon, SpinnerGapIcon } from "@phosphor-icons/react";
+import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
-import {
-	getTradingToolbarBalanceSummary,
-	getTradingToolbarSpotPnl,
-	isTradingToolbarBalancePositive,
-} from "@/domain/trade/balance-toolbar";
+import { getTradingToolbarBalanceSummary, isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
 import {
 	type BalanceRow,
 	filterBalanceRowsByUsdValue,
@@ -21,7 +17,7 @@ import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { formatPercent, formatToken, formatUSD } from "@/lib/format";
+import { formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
 import { useDepositModalActions, useSwapModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-global-settings-store";
@@ -32,6 +28,7 @@ import {
 	balancesTableGroupCellClass,
 	balancesTableHeadClass,
 	balancesTableHeaderClass,
+	balancesToolbarClass,
 } from "./balances-table-styles";
 import { Placeholder } from "./placeholder";
 import {
@@ -140,12 +137,16 @@ export function BalancesTab() {
 		const hasAvailableBalance = isTradingToolbarBalancePositive(row.available);
 		const canTransfer = internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasAvailableBalance;
 		const canSwap = row.type === "spot" && hasAvailableBalance;
+		const canWithdraw = row.asset === DEFAULT_QUOTE_TOKEN && hasAvailableBalance;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
-		const pnlData = getTradingToolbarSpotPnl(row, mids?.[row.asset]);
 		return (
 			<TableRow key={`${row.type}-${row.asset}`} className={positionsPanelRowHoverClass}>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "font-medium text-market-close-fg")}>
-					<AssetDisplay coin={row.asset} />
+					<AssetDisplay
+						coin={row.asset}
+						iconClassName="size-6"
+						nameClassName="text-[13px] font-bold text-market-close-fg"
+					/>
 				</TableCell>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
 					{formatToken(row.available, decimals)}
@@ -156,60 +157,50 @@ export function BalancesTab() {
 				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
 					{formatUSD(row.usdValue, { compact: true })}
 				</TableCell>
-				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right tabular-nums text-market-close-fg")}>
-					{pnlData ? (
-						<span
-							className={
-								pnlData.tone === "profit"
-									? "text-market-close-success"
-									: pnlData.tone === "loss"
-										? "text-market-close-danger"
-										: "text-market-close-fg"
-							}
-						>
-							{formatUSD(pnlData.pnl, { compact: true, signDisplay: "exceptZero" })} (
-							{formatPercent(pnlData.pnlRatio, { maximumFractionDigits: 1, minimumFractionDigits: 1 })})
-						</span>
-					) : (
-						<span className="text-market-close-subtle">—</span>
-					)}
-				</TableCell>
 				<TableCell size="dense" className={cn(balancesTableCellClass, "text-right")}>
-					<div className="flex flex-nowrap items-center justify-end gap-1 whitespace-nowrap">
+					<div className="flex flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap">
 						{canTransfer && (
 							<Button
-								variant="ghost"
+								variant="outline"
 								intent="neutral"
 								size="xxs"
 								onClick={() => handleTransferClick(row)}
 								className={balancesTableActionClass}
 							>
-								<ArrowsLeftRightIcon className="size-2.5" />
 								{transferLabel}
 							</Button>
 						)}
 						{canSwap && (
 							<Button
-								variant="ghost"
+								variant="outline"
 								intent="neutral"
 								size="xxs"
 								onClick={() => openSwapModal(row.asset)}
 								className={balancesTableActionClass}
 							>
-								<ArrowsDownUpIcon className="size-2.5" />
 								{t`Swap`}
 							</Button>
 						)}
 						{hasAvailableBalance && (
 							<Button
-								variant="ghost"
+								variant="outline"
 								intent="neutral"
 								size="xxs"
 								onClick={() => handleSendClick(row)}
 								className={balancesTableActionClass}
 							>
-								<PaperPlaneTiltIcon className="size-2.5" />
 								{t`Send`}
+							</Button>
+						)}
+						{canWithdraw && (
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="xxs"
+								onClick={() => openDepositModal("withdraw")}
+								className={balancesTableActionClass}
+							>
+								{t`Withdraw`}
 							</Button>
 						)}
 					</div>
@@ -249,7 +240,7 @@ export function BalancesTab() {
 		<div className={positionsPanelTabRootClass}>
 			<div
 				data-testid="balances-summary-bar"
-				className="flex h-[58px] shrink-0 items-center justify-between gap-6 border-b border-market-close-stroke-card bg-market-close-card px-5 font-market-close"
+				className={cn(balancesToolbarClass, "justify-between gap-6 font-market-close")}
 			>
 				<dl className="flex min-w-0 items-center gap-7">
 					<div className="flex min-w-[7rem] flex-col gap-[3px]">
@@ -282,25 +273,22 @@ export function BalancesTab() {
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[44rem] w-full">
+						<Table className="table-fixed min-w-[64rem] w-full">
 							<TableHeader className={balancesTableHeaderClass}>
 								<TableRow className={positionsPanelTableHeaderRowClass}>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[20%] text-left")}>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-left")}>
 										{t`Asset`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[14%] text-right")}>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
 										{t`Available`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[14%] text-right")}>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
 										{t`Total`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-right")}>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[22%] text-right")}>
 										{t`USD Value`}
 									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[16%] text-right")}>
-										{t`PNL`}
-									</TableHead>
-									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[20%] text-right")}>
+									<TableHead scope="col" size="dense" className={cn(balancesTableHeadClass, "w-[18%] text-right")}>
 										{t`Actions`}
 									</TableHead>
 								</TableRow>
@@ -309,7 +297,7 @@ export function BalancesTab() {
 								{filteredPerpBalances.length > 0 && (
 									<>
 										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
-											<TableCell colSpan={6} className={balancesTableGroupCellClass}>
+											<TableCell colSpan={5} className={balancesTableGroupCellClass}>
 												{t`Perpetuals`}
 											</TableCell>
 										</TableRow>
@@ -319,7 +307,7 @@ export function BalancesTab() {
 								{filteredSpotBalances.length > 0 && (
 									<>
 										<TableRow className="border-stroke-weak/40 hover:bg-transparent">
-											<TableCell colSpan={6} className={balancesTableGroupCellClass}>
+											<TableCell colSpan={5} className={balancesTableGroupCellClass}>
 												{t`Spot`}
 											</TableCell>
 										</TableRow>

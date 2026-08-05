@@ -20,26 +20,45 @@ const POSITIONS_PANEL_SOURCE = readFileSync(
 	resolve(TEST_DIR, "../..", "components/trade/positions/positions-panel.tsx"),
 	"utf8",
 );
+const MOBILE_BALANCES_TAB_SOURCE = readFileSync(
+	resolve(TEST_DIR, "../..", "components/trade/mobile/mobile-balances-tab.tsx"),
+	"utf8",
+);
 
 describe("balances table visual contract", () => {
-	it("uses a compact, flat hierarchy without structural status colors", () => {
-		expect(balancesToolbarClass).toContain("h-6");
-		expect(balancesTableHeaderClass).toContain("bg-transparent");
-		expect(balancesTableHeadClass).toContain("h-6");
-		expect(balancesTableHeadClass).toContain("font-normal");
+	it("matches the latest desktop summary, header, group, and row rhythm", () => {
+		expect(balancesToolbarClass).toContain("h-[58px]");
+		expect(balancesToolbarClass).toContain("bg-market-close-card");
+		expect(balancesTableHeaderClass).toContain("bg-modal");
+		expect(balancesTableHeadClass).toContain("h-[33px]");
+		expect(balancesTableHeadClass).toContain("text-[11px]");
+		expect(balancesTableHeadClass).toContain("font-semibold");
 		expect(balancesTableHeadClass).toContain("normal-case");
-		expect(balancesTableCellClass).toContain("h-7");
-		expect(balancesTableGroupCellClass).toContain("text-fg-muted");
+		expect(balancesTableCellClass).toContain("h-12");
+		expect(balancesTableCellClass).toContain("text-[13px]");
+		expect(balancesTableGroupCellClass).toContain("bg-market-close-card/40");
+		expect(balancesTableGroupCellClass).toContain("text-market-close-subtle");
 		expect(balancesTableGroupCellClass).not.toMatch(/text-(brand|warning)|bg-(brand|warning)/);
 	});
 
-	it("keeps action feedback accessible while reducing its default emphasis", () => {
-		expect(balancesTableActionClass).toContain("text-fg-muted");
-		expect(balancesTableActionClass).toContain("hover:text-brand");
-		expect(BALANCES_TAB_SOURCE.match(/variant="ghost"/g)).toHaveLength(3);
+	it("uses the five-column handoff hierarchy while preserving real funds actions", () => {
+		expect(balancesTableActionClass).toContain("rounded-[7px]");
+		expect(balancesTableActionClass).toContain("border-market-close-stroke-input");
+		expect(balancesTableActionClass).toContain("duration-[120ms]");
+		expect(BALANCES_TAB_SOURCE).not.toContain("{t`PNL`}");
+		expect(BALANCES_TAB_SOURCE).toContain("colSpan={5}");
 		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => handleTransferClick\(row\)\}/g)).toHaveLength(1);
 		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => openSwapModal\(row\.asset\)\}/g)).toHaveLength(1);
 		expect(BALANCES_TAB_SOURCE.match(/onClick=\{\(\) => handleSendClick\(row\)\}/g)).toHaveLength(1);
+		expect(BALANCES_TAB_SOURCE).toContain('openDepositModal("withdraw")');
+	});
+
+	it("uses the mobile flat balance row while keeping a supported 44px transfer target", () => {
+		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("min-h-[57px]");
+		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("size-[26px]");
+		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("min-h-11");
+		expect(MOBILE_BALANCES_TAB_SOURCE).not.toContain("grid grid-cols-2 divide-x");
+		expect(MOBILE_BALANCES_TAB_SOURCE).toContain("isQuoteBalanceSharedWithPerps");
 	});
 
 	it("keeps the positions toolbar dense and removes inherited tab-panel padding", () => {
