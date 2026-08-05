@@ -110,8 +110,8 @@ describe("desktop positions panel shell", () => {
 		});
 	}
 
-	function render() {
-		renderNode(<PositionsPanel />);
+	function render(includeTransfers = false) {
+		renderNode(<PositionsPanel includeTransfers={includeTransfers} />);
 	}
 
 	it("keeps the canonical seven tabs and their live counts", () => {
@@ -130,7 +130,7 @@ describe("desktop positions panel shell", () => {
 		expect(tabs.find((tab) => tab.getAttribute("aria-selected") === "true")?.textContent).toBe("Positions(1)");
 	});
 
-	it("matches the 1a tab rhythm and wires the real funds actions beside the position filter", () => {
+	it("matches the 1a tab rhythm and keeps the position filter without funds actions", () => {
 		render();
 
 		const header = container.querySelector<HTMLElement>('[data-testid="positions-toolbar-header"]');
@@ -164,13 +164,9 @@ describe("desktop positions panel shell", () => {
 		const withdrawButton = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
 			(button) => button.textContent === "Withdraw",
 		);
-		expect(depositButton?.className).toContain("h-[25px]");
-		expect(depositButton?.className).toContain("bg-market-close-control");
-		expect(withdrawButton?.className).toContain("border-market-close-stroke-input");
-		act(() => depositButton?.click());
-		act(() => withdrawButton?.click());
-		expect(testState.openDepositModal).toHaveBeenNthCalledWith(1, "deposit");
-		expect(testState.openDepositModal).toHaveBeenNthCalledWith(2, "withdraw");
+		expect(depositButton).toBeUndefined();
+		expect(withdrawButton).toBeUndefined();
+		expect(testState.openDepositModal).not.toHaveBeenCalled();
 		const directionFilter = container.querySelector<HTMLButtonElement>(
 			'button[aria-label^="Filter positions by direction:"]',
 		);
@@ -184,6 +180,39 @@ describe("desktop positions panel shell", () => {
 			expect(filter?.className).toContain("rounded-[7px]");
 			expect(filter?.className).toContain("border-market-close-stroke-card");
 		}
+	});
+
+	it.each(["balances", "positions", "twap", "history"])("does not show funds actions on the %s tab", (activeTab) => {
+		testState.activeTab = activeTab;
+		render();
+
+		const actions = container.querySelector<HTMLElement>('[data-testid="positions-header-actions"]');
+		expect(Array.from(actions?.querySelectorAll("button") ?? [], (button) => button.textContent)).not.toContain(
+			"Deposit",
+		);
+		expect(Array.from(actions?.querySelectorAll("button") ?? [], (button) => button.textContent)).not.toContain(
+			"Withdraw",
+		);
+		if (activeTab !== "positions") expect(actions?.className).not.toContain("pl-3");
+	});
+
+	it("keeps funds actions on the account transfers tab", () => {
+		testState.activeTab = "transfers";
+		render(true);
+
+		const actions = container.querySelector<HTMLElement>('[data-testid="positions-header-actions"]');
+		const depositButton = Array.from(actions?.querySelectorAll<HTMLButtonElement>("button") ?? []).find(
+			(button) => button.textContent === "Deposit",
+		);
+		const withdrawButton = Array.from(actions?.querySelectorAll<HTMLButtonElement>("button") ?? []).find(
+			(button) => button.textContent === "Withdraw",
+		);
+		expect(depositButton).toBeDefined();
+		expect(withdrawButton).toBeDefined();
+		act(() => depositButton?.click());
+		act(() => withdrawButton?.click());
+		expect(testState.openDepositModal).toHaveBeenNthCalledWith(1, "deposit");
+		expect(testState.openDepositModal).toHaveBeenNthCalledWith(2, "withdraw");
 	});
 
 	it.each([

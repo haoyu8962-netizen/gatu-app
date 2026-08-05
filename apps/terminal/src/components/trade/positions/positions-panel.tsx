@@ -209,7 +209,9 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 	});
 
 	const tabContentClass = cn(tabContentBaseClass, isPending && "opacity-70");
-	const usesContextualToolbar = CONTEXTUAL_TOOLBAR_TABS.has(activeTab);
+	const showsFundsActions = includeTransfers && activeTab === PORTFOLIO_TRANSFERS_TAB.value;
+	const showsPositionToolbar = activeTab === "positions" && positionsCount !== null;
+	const hasHeaderActions = showsFundsActions || showsPositionToolbar || CONTEXTUAL_TOOLBAR_TABS.has(activeTab);
 
 	useEffect(() => {
 		function revealActiveTab() {
@@ -287,9 +289,9 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 					<div
 						ref={setToolbarTarget}
 						data-testid="positions-header-actions"
-						className="flex shrink-0 items-center gap-2 pl-3"
+						className={cn("flex shrink-0 items-center gap-2", hasHeaderActions && "pl-3")}
 					>
-						{!usesContextualToolbar ? (
+						{showsFundsActions ? (
 							<>
 								<Button
 									variant="filled"
@@ -309,16 +311,16 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 								>
 									<Trans context="Trading toolbar action">Withdraw</Trans>
 								</Button>
-								{activeTab === "positions" && positionsCount !== null ? (
-									<PositionFilterToolbar
-										direction={positionDirectionFilter}
-										market={positionMarketFilter}
-										marketOptions={positionMarketOptions}
-										onDirectionChange={handlePositionDirectionChange}
-										onMarketChange={handlePositionMarketChange}
-									/>
-								) : null}
 							</>
+						) : null}
+						{showsPositionToolbar ? (
+							<PositionFilterToolbar
+								direction={positionDirectionFilter}
+								market={positionMarketFilter}
+								marketOptions={positionMarketOptions}
+								onDirectionChange={handlePositionDirectionChange}
+								onMarketChange={handlePositionMarketChange}
+							/>
 						) : null}
 					</div>
 				</div>
