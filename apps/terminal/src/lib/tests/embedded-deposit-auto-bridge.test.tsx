@@ -16,7 +16,10 @@ const testState = vi.hoisted(() => ({
 	maxDepositRaw: 9_000_000n as bigint | undefined,
 	refreshBalance: vi.fn(),
 	resetDeposit: vi.fn(),
+	toastDismiss: vi.fn(),
 	toastError: vi.fn(),
+	toastLoading: vi.fn(),
+	toastSuccess: vi.fn(),
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -28,9 +31,10 @@ vi.mock("@lingui/core/macro", () => ({
 
 vi.mock("sonner", () => ({
 	toast: {
+		dismiss: testState.toastDismiss,
 		error: testState.toastError,
-		loading: vi.fn(),
-		success: vi.fn(),
+		loading: testState.toastLoading,
+		success: testState.toastSuccess,
 	},
 }));
 
@@ -86,7 +90,10 @@ describe("EmbeddedDepositAutoBridge", () => {
 		testState.refreshBalance.mockReset();
 		testState.refreshBalance.mockResolvedValue(9_000_000n);
 		testState.resetDeposit.mockReset();
+		testState.toastDismiss.mockReset();
 		testState.toastError.mockReset();
+		testState.toastLoading.mockReset();
+		testState.toastSuccess.mockReset();
 		testState.depositError = null;
 		testState.depositHash = undefined;
 		testState.depositStatus = "idle";
@@ -209,5 +216,46 @@ describe("EmbeddedDepositAutoBridge", () => {
 		);
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("rpc.zerodev.app");
 		expect(testState.toastError.mock.calls.flat().join(" ")).not.toContain("callData");
+	});
+
+	it("dismisses an active loading toast when the deposit returns to idle", async () => {
+		testState.depositStatus = "pending";
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.toastLoading).toHaveBeenCalledWith("Preparing automatic USDC deposit...", {
+			id: "embedded-deposit-auto-bridge",
+		});
+
+		testState.depositStatus = "idle";
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.toastDismiss).toHaveBeenCalledWith("embedded-deposit-auto-bridge");
+	});
+
+	it("keeps a completed deposit toast available for normal auto-dismiss", async () => {
+		testState.depositStatus = "pending";
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		testState.depositStatus = "success";
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		testState.depositStatus = "idle";
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.toastSuccess).toHaveBeenCalledWith("USDC deposit submitted to Hyperliquid", {
+			id: "embedded-deposit-auto-bridge",
+		});
+		expect(testState.toastDismiss).not.toHaveBeenCalled();
 	});
 });

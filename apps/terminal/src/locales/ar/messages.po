@@ -1781,6 +1781,7 @@ msgstr "عنوان الوجهة"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6476,8 +6477,8 @@ msgid "Trade via {0} spot market"
 msgstr "التداول عبر سوق {0} الفوري"
 
 #: src/components/trade/positions/history-tab.tsx
-msgid "trades"
-msgstr "صفقات"
+#~ msgid "trades"
+#~ msgstr "صفقات"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
@@ -6737,7 +6738,6 @@ msgstr "الفائدة المفتوحة ثنائية الجانب: مجموع ا
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

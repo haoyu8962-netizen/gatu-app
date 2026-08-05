@@ -37,6 +37,7 @@ export function EmbeddedDepositAutoBridge() {
 	const activeAttemptAbortRef = useRef<AbortController | null>(null);
 	const activeAttemptIdentityRef = useRef<string | null>(null);
 	const reconciledErrorRef = useRef<Error | null>(null);
+	const loadingToastActiveRef = useRef(false);
 
 	const {
 		maxDepositRaw,
@@ -80,6 +81,7 @@ export function EmbeddedDepositAutoBridge() {
 		return () => {
 			if (retryTimeoutRef.current) window.clearTimeout(retryTimeoutRef.current);
 			activeAttemptAbortRef.current?.abort();
+			if (loadingToastActiveRef.current) toast.dismiss(AUTO_BRIDGE_TOAST_ID);
 		};
 	}, []);
 
@@ -229,24 +231,34 @@ export function EmbeddedDepositAutoBridge() {
 	]);
 
 	useEffect(() => {
-		if (!isEmbeddedDeposit) return;
+		if (!isEmbeddedDeposit || depositStatus === "idle") {
+			if (loadingToastActiveRef.current) {
+				toast.dismiss(AUTO_BRIDGE_TOAST_ID);
+				loadingToastActiveRef.current = false;
+			}
+			return;
+		}
 
 		if (depositStatus === "pending") {
+			loadingToastActiveRef.current = true;
 			toast.loading(t`Preparing automatic USDC deposit...`, { id: AUTO_BRIDGE_TOAST_ID });
 			return;
 		}
 
 		if (depositStatus === "confirming") {
+			loadingToastActiveRef.current = true;
 			toast.loading(t`Depositing USDC to Hyperliquid...`, { id: AUTO_BRIDGE_TOAST_ID });
 			return;
 		}
 
 		if (depositStatus === "success") {
+			loadingToastActiveRef.current = false;
 			toast.success(t`USDC deposit submitted to Hyperliquid`, { id: AUTO_BRIDGE_TOAST_ID });
 			return;
 		}
 
 		if (depositStatus === "error") {
+			loadingToastActiveRef.current = false;
 			toast.error(depositError ? formatTransferError(depositError) : t`Automatic USDC deposit failed`, {
 				id: AUTO_BRIDGE_TOAST_ID,
 			});

@@ -8,6 +8,11 @@ overrides:
   '@noble/hashes': 1.8.0
   '@tanstack/query-core': 5.90.16
 
+patchedDependencies:
+  sonner@2.0.7:
+    hash: 302cc0bb8375d398a5a1ec7edc210b82c0601fdfc3fb2a2917b44b23228281e5
+    path: patches/sonner@2.0.7.patch
+
 importers:
 
   .:
@@ -134,7 +139,7 @@ importers:
         version: 2.2.3(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       sonner:
         specifier: 2.0.7
-        version: 2.0.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 2.0.7(patch_hash=302cc0bb8375d398a5a1ec7edc210b82c0601fdfc3fb2a2917b44b23228281e5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       tailwind-merge:
         specifier: 3.4.0
         version: 3.4.0
@@ -18328,7 +18333,7 @@ snapshots:
     dependencies:
       atomic-sleep: 1.0.0
 
-  sonner@2.0.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+  sonner@2.0.7(patch_hash=302cc0bb8375d398a5a1ec7edc210b82c0601fdfc3fb2a2917b44b23228281e5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
     dependencies:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)

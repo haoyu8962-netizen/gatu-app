@@ -1794,6 +1794,7 @@ msgstr "Destination address"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6501,8 +6502,8 @@ msgid "Trade via {0} spot market"
 msgstr "Trade via {0} spot market"
 
 #: src/components/trade/positions/history-tab.tsx
-msgid "trades"
-msgstr "trades"
+#~ msgid "trades"
+#~ msgstr "trades"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
@@ -6762,7 +6763,6 @@ msgstr "Two-sided open interest: the sum of long and short positions on this con
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

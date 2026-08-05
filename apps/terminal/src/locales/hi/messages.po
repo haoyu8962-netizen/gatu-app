@@ -1781,6 +1781,7 @@ msgstr "गंतव्य पता"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6476,8 +6477,8 @@ msgid "Trade via {0} spot market"
 msgstr "{0} Spot मार्केट के माध्यम से ट्रेड करें"
 
 #: src/components/trade/positions/history-tab.tsx
-msgid "trades"
-msgstr "ट्रेड"
+#~ msgid "trades"
+#~ msgstr "ट्रेड"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
@@ -6737,7 +6738,6 @@ msgstr "दो-तरफ़ा ओपन इंटरेस्ट: इस कॉ
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

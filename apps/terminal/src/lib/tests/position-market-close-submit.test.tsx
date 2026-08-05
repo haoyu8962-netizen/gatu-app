@@ -683,6 +683,7 @@ describe("usePositionMarketCloseSubmit", () => {
 
 	it("re-resolves Max from the fresh REST position instead of the UI snapshot", async () => {
 		mocks.restPositionSize = "2.400";
+		mocks.executeOrder.mockResolvedValueOnce(createConfirmedResponse("2.4"));
 		const sessionId = openSession();
 
 		await act(async () => {

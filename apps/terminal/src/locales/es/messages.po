@@ -1781,6 +1781,7 @@ msgstr "Dirección de destino"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6476,8 +6477,8 @@ msgid "Trade via {0} spot market"
 msgstr "Operar vía mercado spot {0}"
 
 #: src/components/trade/positions/history-tab.tsx
-msgid "trades"
-msgstr "operaciones"
+#~ msgid "trades"
+#~ msgstr "operaciones"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
@@ -6737,7 +6738,6 @@ msgstr "Interés abierto bilateral: suma de las posiciones largas y cortas de es
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

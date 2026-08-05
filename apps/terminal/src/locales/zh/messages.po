@@ -1794,6 +1794,7 @@ msgstr "目标地址"
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6501,8 +6502,8 @@ msgid "Trade via {0} spot market"
 msgstr "通过{0}现货市场交易"
 
 #: src/components/trade/positions/history-tab.tsx
-msgid "trades"
-msgstr "成交"
+#~ msgid "trades"
+#~ msgstr "成交"
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-trade-layout.tsx
@@ -6762,7 +6763,6 @@ msgstr "双边开放利益：该合约上的多头和空头头寸之和。"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
-#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
