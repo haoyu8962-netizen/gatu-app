@@ -128,6 +128,8 @@ describe("desktop TWAP toolbar", () => {
 		expect(progress?.getAttribute("aria-valuenow")).toBe("0.3998695368558382");
 		expect(progress?.getAttribute("aria-valuetext")).toBe("40.0%");
 		expect(progress?.firstElementChild?.getAttribute("style")).toContain("scaleX(0.3998695368558382");
+		expect(container.querySelector("thead tr")?.className).toContain("h-[33px]");
+		expect(container.querySelector("tbody tr")?.className).toContain("h-14");
 	});
 
 	it("explains the unsupported pause action and submits terminate with the exact SDK identity", () => {

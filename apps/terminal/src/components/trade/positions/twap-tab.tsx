@@ -18,7 +18,7 @@ import { Placeholder } from "./placeholder";
 import { positionsPanelTableShellClass, positionsPanelTabRootClass } from "./positions-panel-table-styles";
 
 const twapGridClass =
-	"grid min-w-[80rem] grid-cols-[110px_90px_minmax(18rem,1fr)_130px_130px_110px_150px] gap-x-4 px-5";
+	"grid min-w-[1280px] grid-cols-[110px_90px_minmax(18rem,1fr)_130px_130px_110px_150px] gap-x-4 px-5";
 
 export function TwapTab() {
 	const { t } = useLingui();
@@ -106,12 +106,12 @@ export function TwapTab() {
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<table aria-label={t`Active TWAP orders`} className="block min-w-[80rem] border-collapse">
+						<table aria-label={t`Active TWAP orders`} className="block min-w-[1280px] border-collapse">
 							<thead className="block">
 								<tr
 									className={cn(
 										twapGridClass,
-										"border-b border-market-close-stroke-card py-2 text-[11px] font-semibold text-market-close-subtle",
+										"h-[33px] items-center border-b border-market-close-stroke-card text-[11px] font-semibold text-market-close-subtle",
 									)}
 								>
 									<th scope="col" className="p-0 text-left font-semibold">
@@ -159,7 +159,7 @@ export function TwapTab() {
 											key={twapId}
 											className={cn(
 												twapGridClass,
-												"items-center border-b border-market-close-stroke-card/60 py-3.5 transition-colors duration-[120ms] hover:bg-market-close-card",
+												"h-14 items-center border-b border-market-close-stroke-card/60 transition-colors duration-[120ms] hover:bg-market-close-hover",
 											)}
 										>
 											<td className="p-0">
@@ -236,7 +236,7 @@ export function TwapTab() {
 															type="button"
 															disabled
 															aria-label={t`Pause unavailable: Hyperliquid does not support pausing active TWAP orders.`}
-															className="whitespace-nowrap rounded-[7px] border border-market-close-stroke-card px-3 py-1 text-xs font-semibold text-market-close-subtle disabled:cursor-not-allowed"
+															className="h-[27px] min-h-0 whitespace-nowrap rounded-[7px] border border-market-close-stroke-card px-3 text-xs font-semibold text-market-close-subtle disabled:cursor-not-allowed"
 														>
 															{t`Pause`}
 														</button>
@@ -244,7 +244,7 @@ export function TwapTab() {
 												</Tooltip>
 												<button
 													type="button"
-													className="whitespace-nowrap rounded-[7px] border border-market-close-danger-disabled px-3 py-1 text-xs font-semibold text-market-close-danger transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"
+													className="h-[27px] min-h-0 whitespace-nowrap rounded-[7px] border border-market-close-danger-disabled px-3 text-xs font-semibold text-market-close-danger transition-colors duration-[120ms] hover:border-market-close-danger hover:bg-market-close-danger hover:text-market-close-danger-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:opacity-50"
 													aria-label={t`Terminate TWAP order`}
 													aria-busy={cancellingTwapId === twapId}
 													disabled={cancellingTwapId !== null}

@@ -92,7 +92,6 @@ msgstr "{positionCount} 个仓位已按市价平仓。"
 msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} 秒"
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} 秒"
@@ -5625,7 +5624,6 @@ msgstr "正在提交平仓委托..."
 msgid "Submitting..."
 msgstr "提交中..."
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Suborder Frequency"
 msgstr "子单频率"

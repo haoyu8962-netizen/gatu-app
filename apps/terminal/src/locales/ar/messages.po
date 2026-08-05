@@ -88,7 +88,6 @@ msgstr ""
 msgid "{totalSeconds} seconds"
 msgstr "{totalSeconds} ثانية"
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "{TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "{TWAP_SUBORDER_INTERVAL_SECONDS} ثانية"
@@ -5604,7 +5603,6 @@ msgstr ""
 msgid "Submitting..."
 msgstr "جارٍ الإرسال..."
 
-#: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Suborder Frequency"
 msgstr ""

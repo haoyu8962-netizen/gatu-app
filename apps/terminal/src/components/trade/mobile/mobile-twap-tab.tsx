@@ -3,7 +3,6 @@ import { Skeleton } from "boneyard-js/react";
 import { useMemo } from "react";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { HL_ALL_DEXS } from "@/config/app";
-import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import { getToolbarTwapMetrics } from "@/domain/trade/trading-toolbar-metrics";
 import { getTwapViewState } from "@/domain/trade/twap";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -221,13 +220,6 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 									</div>
 								</div>
 
-								<div className="flex items-center justify-between gap-3 text-[11px]">
-									<span className="text-market-close-subtle">{t`Suborder Frequency`}</span>
-									<span className="whitespace-nowrap font-semibold text-market-close-fg tabular-nums">
-										{t`${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}
-									</span>
-								</div>
-
 								<div className="grid grid-cols-2 gap-2">
 									<button
 										type="button"
@@ -244,7 +236,7 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 										aria-busy={isCancelling}
 										disabled={cancellingTwapId !== null}
 										onClick={() => void cancelTwap(state.coin, twapId)}
-										className="min-h-11 rounded-[8px] border border-market-close-danger-disabled bg-modal px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] focus-visible:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-danger-disabled"
+										className="min-h-11 rounded-[8px] border border-market-close-danger-disabled bg-modal px-3 text-xs font-semibold text-market-close-danger outline-none transition-colors duration-[120ms] active:bg-market-close-hover focus-visible:border-market-close-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control disabled:cursor-not-allowed disabled:border-market-close-stroke-card disabled:text-market-close-danger-disabled"
 									>
 										{isCancelling ? t`Terminating...` : t`Terminate`}
 									</button>

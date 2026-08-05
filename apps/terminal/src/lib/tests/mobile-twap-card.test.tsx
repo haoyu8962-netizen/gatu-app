@@ -126,8 +126,7 @@ describe("MobileTwapTab card", () => {
 		expect(container.textContent).toContain("6.132 / 15.330 GOOGL");
 		expect(container.textContent).toContain("Avg Price $374.88");
 		expect(container.textContent).toContain("40%");
-		expect(container.textContent).toContain("Suborder Frequency");
-		expect(container.textContent).toContain("30 seconds");
+		expect(container.textContent).not.toContain("Suborder Frequency");
 		const pause = container.querySelector<HTMLButtonElement>(
 			'button[aria-label="Pause unavailable: Hyperliquid does not support pausing active TWAP orders."]',
 		);
@@ -145,6 +144,7 @@ describe("MobileTwapTab card", () => {
 
 		const terminate = container.querySelector<HTMLButtonElement>('button[aria-label="Terminate TWAP order"]');
 		expect(terminate?.className).toContain("min-h-11");
+		expect(terminate?.className).toContain("rounded-[8px]");
 		act(() => terminate?.click());
 		expect(mocks.cancelTwap).toHaveBeenCalledWith("GOOGL", 42);
 	});
