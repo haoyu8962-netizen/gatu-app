@@ -76,6 +76,7 @@ import {
 import type { Side } from "@/lib/trade/types";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { CancelAllOrdersModal } from "./cancel-all-orders-modal";
+import { DesktopTabToolbarPortal } from "./desktop-tab-toolbar-portal";
 import { OrderInlineEdit } from "./order-inline-edit";
 import { Placeholder } from "./placeholder";
 import {
@@ -182,7 +183,11 @@ function getCurrentOrderTriggerConditionLabel(condition: string, triggerPx: stri
 	return `${operator} ${formatNumber(triggerPx)}`;
 }
 
-export function OrdersTab() {
+interface Props {
+	toolbarTarget?: HTMLElement | null;
+}
+
+export function OrdersTab({ toolbarTarget }: Props = {}) {
 	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
@@ -880,77 +885,80 @@ export function OrdersTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className="flex h-12 shrink-0 items-center gap-2 border-b border-market-close-stroke-card px-5 py-2.5 font-market-close">
-				{isConnected ? (
-					<span className="mr-auto shrink-0 text-xs text-market-close-muted tabular-nums">
-						<Plural value={openOrders.length} one="# order" other="# orders" />
-					</span>
-				) : (
-					<span className="mr-auto" />
-				)}
-				<Select
-					ref={orderTypeFilterRef}
-					size="xxs"
-					label={t`Order type`}
-					value={orderTypeFilter}
-					onValueChange={handleOrderTypeFilterChange}
-					disabled={isModifyLocked}
-					options={[
-						{ value: "all", label: t`Type` },
-						{ value: "limit", label: t`Limit` },
-						{ value: "trigger", label: t`Trigger` },
-					]}
-					triggerClassName="h-[27px] min-w-14 max-w-32 !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted duration-[120ms] [&>*]:text-market-close-muted hover:border-market-close-control hover:[&>*]:text-market-close-fg focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
-					popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
-					className="w-auto [&>label]:sr-only"
-				/>
-				<Select
-					size="xxs"
-					label={t`Direction`}
-					value={orderDirectionFilter}
-					onValueChange={handleOrderDirectionFilterChange}
-					disabled={isModifyLocked}
-					options={[
-						{ value: "all", label: t`Direction` },
-						{ value: "buy", label: t`Buy` },
-						{ value: "sell", label: t`Sell` },
-					]}
-					triggerClassName="h-[27px] min-w-14 max-w-32 !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted duration-[120ms] [&>*]:text-market-close-muted hover:border-market-close-control hover:[&>*]:text-market-close-fg focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
-					popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
-					className="w-auto [&>label]:sr-only"
-				/>
-				{isConnected && selectedCount > 0 ? (
-					<span className="shrink-0 text-[11px] text-market-close-subtle tabular-nums">
-						{selectedCount} {t`selected`}
-					</span>
-				) : null}
-				{selectedCount > 0 ? (
-					<Button
-						variant="link"
-						size="xs"
-						aria-label={t`Cancel selected orders`}
-						onClick={handleCancelSelected}
-						disabled={disableCancelSelected}
-						className="h-[27px] min-h-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none transition-colors duration-[120ms] hover:text-market-close-danger/80 hover:no-underline active:not-data-disabled:scale-100"
-					>
-						{pendingScopes.has("selected") ? t`Canceling...` : t`Cancel selected`}
-					</Button>
-				) : null}
-				{openOrders.length > 0 ? (
-					<Button
-						variant="link"
-						size="xs"
-						aria-label={t`Cancel all orders`}
-						onClick={handleRequestCancelAll}
-						disabled={disableCancelAll}
-						className="ml-1.5 h-[27px] min-h-0 px-0 text-xs font-semibold text-market-close-danger no-underline shadow-none transition-colors duration-[120ms] hover:text-market-close-danger/80 hover:no-underline active:not-data-disabled:scale-100"
-					>
-						{pendingScopes.has("all")
-							? t`Canceling...`
-							: t({ message: "Cancel all", context: "Current orders toolbar" })}
-					</Button>
-				) : null}
-			</div>
+			<DesktopTabToolbarPortal target={toolbarTarget}>
+				<div
+					data-testid="orders-toolbar-actions"
+					className="flex min-w-0 shrink-0 items-center gap-2 font-market-close"
+				>
+					{isConnected ? (
+						<span className="shrink-0 text-xs text-market-close-muted tabular-nums">
+							<Plural value={openOrders.length} one="# order" other="# orders" />
+						</span>
+					) : null}
+					<Select
+						ref={orderTypeFilterRef}
+						size="xxs"
+						label={t`Order type`}
+						value={orderTypeFilter}
+						onValueChange={handleOrderTypeFilterChange}
+						disabled={isModifyLocked}
+						options={[
+							{ value: "all", label: t`Type` },
+							{ value: "limit", label: t`Limit` },
+							{ value: "trigger", label: t`Trigger` },
+						]}
+						triggerClassName="h-[27px] min-w-14 max-w-32 !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted duration-[120ms] [&>*]:text-market-close-muted hover:border-market-close-control hover:[&>*]:text-market-close-fg focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
+						popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
+						className="w-auto [&>label]:sr-only"
+					/>
+					<Select
+						size="xxs"
+						label={t`Direction`}
+						value={orderDirectionFilter}
+						onValueChange={handleOrderDirectionFilterChange}
+						disabled={isModifyLocked}
+						options={[
+							{ value: "all", label: t`Direction` },
+							{ value: "buy", label: t`Buy` },
+							{ value: "sell", label: t`Sell` },
+						]}
+						triggerClassName="h-[27px] min-w-14 max-w-32 !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted duration-[120ms] [&>*]:text-market-close-muted hover:border-market-close-control hover:[&>*]:text-market-close-fg focus-visible:border-market-close-control focus-visible:!outline-none data-popup-open:border-market-close-control"
+						popupClassName="font-market-close transition-opacity data-starting-style:scale-100 data-ending-style:scale-100"
+						className="w-auto [&>label]:sr-only"
+					/>
+					{isConnected && selectedCount > 0 ? (
+						<span className="shrink-0 text-[11px] text-market-close-subtle tabular-nums">
+							{selectedCount} {t`selected`}
+						</span>
+					) : null}
+					{selectedCount > 0 ? (
+						<Button
+							variant="link"
+							size="xs"
+							aria-label={t`Cancel selected orders`}
+							onClick={handleCancelSelected}
+							disabled={disableCancelSelected}
+							className="h-[27px] min-h-0 px-1.5 text-xs font-semibold text-market-close-danger no-underline shadow-none transition-colors duration-[120ms] hover:text-market-close-danger/80 hover:no-underline active:not-data-disabled:scale-100"
+						>
+							{pendingScopes.has("selected") ? t`Canceling...` : t`Cancel selected`}
+						</Button>
+					) : null}
+					{openOrders.length > 0 ? (
+						<Button
+							variant="link"
+							size="xs"
+							aria-label={t`Cancel all orders`}
+							onClick={handleRequestCancelAll}
+							disabled={disableCancelAll}
+							className="ml-1.5 h-[27px] min-h-0 px-0 text-xs font-semibold text-market-close-danger no-underline shadow-none transition-colors duration-[120ms] hover:text-market-close-danger/80 hover:no-underline active:not-data-disabled:scale-100"
+						>
+							{pendingScopes.has("all")
+								? t`Canceling...`
+								: t({ message: "Cancel all", context: "Current orders toolbar" })}
+						</Button>
+					) : null}
+				</div>
+			</DesktopTabToolbarPortal>
 			{actionError ? (
 				<div
 					id={modifyActionErrorId}

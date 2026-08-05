@@ -97,7 +97,9 @@ describe("desktop order history direction semantics", () => {
 	it("does not infer a position side from the exchange buy/sell side", () => {
 		act(() => root.render(<OrdersHistoryTab />));
 
-		expect(container.querySelector('[data-testid="order-history-filters"]')?.className).toContain("h-12");
+		const toolbar = container.querySelector('[data-testid="order-history-filters"]');
+		expect(toolbar?.className).toContain("gap-2");
+		expect(toolbar?.className).not.toContain("h-12");
 		expect(container.querySelector("table")?.className).toContain("min-w-[1280px]");
 		expect(Array.from(container.querySelectorAll("col"), (column) => column.className)).toEqual([
 			"w-[158px]",
@@ -134,7 +136,7 @@ describe("desktop order history direction semantics", () => {
 		expect(filledBadge?.className).toContain("bg-success-soft");
 		expect(canceledBadge?.className).toContain("bg-market-close-hover");
 		expect(container.querySelector("tbody td")?.className).toContain("h-[58px]");
-		expect(container.querySelector('[data-testid="order-history-footer"]')?.className).toContain("h-[38px]");
+		expect(container.querySelector('[data-testid="order-history-footer"]')).toBeNull();
 
 		const exportButton = Array.from(container.querySelectorAll("button")).find(
 			(button) => button.textContent === "Export CSV",

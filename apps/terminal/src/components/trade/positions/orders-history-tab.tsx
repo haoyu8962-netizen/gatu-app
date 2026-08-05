@@ -14,6 +14,7 @@ import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { AssetBadge } from "../components/asset-badge";
 import { HistoricalOrderPrice } from "../components/historical-order-price";
+import { DesktopTabToolbarPortal } from "./desktop-tab-toolbar-portal";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelTableBodyClass,
@@ -31,8 +32,8 @@ const orderHistoryTableHeadClass =
 const orderHistoryTableCellClass = "h-[58px] px-2 py-0 text-[13px] leading-[18px]";
 const orderHistoryAssetClass =
 	"h-auto min-h-0 rounded-[4px] border-0 bg-transparent p-0 shadow-none hover:bg-transparent active:not-data-disabled:scale-100";
-const orderHistoryFooterButtonClass =
-	"h-auto min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
+const orderHistoryToolbarButtonClass =
+	"h-[27px] min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
 
 function getOrderHistoryStatusFilter(status: HistoricalOrderStatus): Exclude<OrderHistoryStatusFilter, "all"> {
 	if (isCanceledOrderStatus(status)) return "canceled";
@@ -63,7 +64,11 @@ function getOrderHistoryStatusBadgeClass(status: HistoricalOrderStatus): string 
 		: "bg-market-close-hover text-market-close-subtle";
 }
 
-export function OrdersHistoryTab() {
+interface Props {
+	toolbarTarget?: HTMLElement | null;
+}
+
+export function OrdersHistoryTab({ toolbarTarget }: Props = {}) {
 	const { t } = useLingui();
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { error, isConnected, orders, status } = useHistoricalOrders();
@@ -159,11 +164,8 @@ export function OrdersHistoryTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div
-				className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-market-close-stroke-card px-5 py-2.5 font-market-close"
-				data-testid="order-history-filters"
-			>
-				<div className="flex min-w-0 items-center gap-2">
+			<DesktopTabToolbarPortal target={toolbarTarget}>
+				<div className="flex min-w-0 shrink-0 items-center gap-2 font-market-close" data-testid="order-history-filters">
 					<Select
 						size="xxs"
 						label={t`Order type`}
@@ -184,11 +186,23 @@ export function OrdersHistoryTab() {
 						className="min-w-[7rem] [&>label]:sr-only"
 						triggerClassName="h-[27px] !rounded-[7px] border-market-close-stroke-card bg-modal px-2.5 text-xs text-market-close-muted hover:border-market-close-control focus-visible:border-market-close-control"
 					/>
+					{headerCount ? (
+						<span className="shrink-0 text-xs text-market-close-subtle tabular-nums">{headerCount}</span>
+					) : null}
+					{isConnected && status === "ready" ? (
+						<Button
+							variant="ghost"
+							intent="neutral"
+							size="xxs"
+							className={orderHistoryToolbarButtonClass}
+							disabled={filteredOrders.length === 0}
+							onClick={handleExportCsv}
+						>
+							{t`Export CSV`}
+						</Button>
+					) : null}
 				</div>
-				{headerCount ? (
-					<span className="shrink-0 text-xs text-market-close-subtle tabular-nums">{headerCount}</span>
-				) : null}
-			</div>
+			</DesktopTabToolbarPortal>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
@@ -322,20 +336,6 @@ export function OrdersHistoryTab() {
 					</ScrollArea>
 				)}
 			</div>
-			{isConnected && status === "ready" ? (
-				<div className="flex h-[38px] shrink-0 items-center gap-4 px-5" data-testid="order-history-footer">
-					<Button
-						variant="ghost"
-						intent="neutral"
-						size="xxs"
-						className={orderHistoryFooterButtonClass}
-						disabled={filteredOrders.length === 0}
-						onClick={handleExportCsv}
-					>
-						{t`Export CSV`}
-					</Button>
-				</div>
-			) : null}
 		</div>
 	);
 }

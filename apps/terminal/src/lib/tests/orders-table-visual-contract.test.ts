@@ -13,7 +13,9 @@ const MOBILE_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "components/trade/
 
 describe("orders toolbar visual contract", () => {
 	it("uses the latest desktop filter, header, and row geometry", () => {
-		expect(DESKTOP_SOURCE).toContain("flex h-12 shrink-0 items-center gap-2");
+		expect(DESKTOP_SOURCE).toContain("<DesktopTabToolbarPortal target={toolbarTarget}>");
+		expect(DESKTOP_SOURCE).toContain('data-testid="orders-toolbar-actions"');
+		expect(DESKTOP_SOURCE).not.toContain("flex h-12 shrink-0 items-center gap-2");
 		expect(DESKTOP_SOURCE).toContain("h-[33px]");
 		expect(DESKTOP_SOURCE).toContain("h-[60px]");
 		expect(DESKTOP_SOURCE).toContain(

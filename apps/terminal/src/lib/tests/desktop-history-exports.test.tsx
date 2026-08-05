@@ -147,9 +147,9 @@ describe("desktop history exports", () => {
 		act(() => root.render(<FundingTab />));
 
 		expect(container.textContent).toContain("Cumulative funding");
-		const footer = container.querySelector('[data-testid="funding-history-footer"]');
-		expect(footer).not.toBeNull();
-		expect(footer?.className).toContain("h-[38px]");
+		const toolbar = container.querySelector('[data-testid="funding-history-toolbar"]');
+		expect(toolbar).not.toBeNull();
+		expect(container.querySelector('[data-testid="funding-history-footer"]')).toBeNull();
 		expect(container.querySelector("tbody td")?.className).toContain("h-10");
 		expect(container.querySelector("table")?.className).toContain("min-w-[1280px]");
 		expect(Array.from(container.querySelectorAll("col"), (column) => column.className)).toEqual([

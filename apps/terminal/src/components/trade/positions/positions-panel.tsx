@@ -1,7 +1,7 @@
 import { Button, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react";
 import { Trans } from "@lingui/react/macro";
-import { Suspense, useMemo, useState, useTransition } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { PORTFOLIO_TRANSFERS_TAB } from "@/config/account-ledger";
 import { DEFAULT_QUOTE_TOKEN, HL_ALL_DEXS } from "@/config/app";
@@ -34,6 +34,7 @@ import { PositionFilterToolbar } from "./position-filter-toolbar";
 import type { PositionMarketOption } from "./position-market-filter";
 
 const tabContentBaseClass = "mt-0 flex min-h-0 flex-1 flex-col pt-0";
+const CONTEXTUAL_TOOLBAR_TABS = new Set(["orders", "funding", "orders-history"]);
 
 const BalancesTab = createLazyComponent(() => import("./balances-tab"), "BalancesTab");
 const AccountTransfersTab = createLazyComponent(() => import("./account-transfers-tab"), "AccountTransfersTab");
@@ -65,6 +66,8 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 	const { setPositionsActiveTab } = useGlobalSettingsActions();
 	const { open: openDepositModal } = useDepositModalActions();
 	const [isPending, startTransition] = useTransition();
+	const [toolbarTarget, setToolbarTarget] = useState<HTMLDivElement | null>(null);
+	const tabScrollRef = useRef<HTMLDivElement>(null);
 	const { address, isConnected } = useWalletSession();
 	const ownerKey = address?.toLowerCase() ?? null;
 	const [positionFilters, setPositionFilters] = useState<PositionFiltersState>({
@@ -206,6 +209,21 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 	});
 
 	const tabContentClass = cn(tabContentBaseClass, isPending && "opacity-70");
+	const usesContextualToolbar = CONTEXTUAL_TOOLBAR_TABS.has(activeTab);
+
+	useEffect(() => {
+		function revealActiveTab() {
+			const activeTabElement = tabScrollRef.current?.querySelector<HTMLElement>(`[data-positions-tab="${activeTab}"]`);
+			activeTabElement?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+		}
+
+		revealActiveTab();
+		if (!toolbarTarget || typeof ResizeObserver === "undefined") return;
+
+		const observer = new ResizeObserver(revealActiveTab);
+		observer.observe(toolbarTarget);
+		return () => observer.disconnect();
+	}, [activeTab, toolbarTarget]);
 
 	const balancesCount = useMemo(() => {
 		if (!isConnected || balancesError || !hasAllDexsSnapshot || !hasSpotStateSnapshot) return null;
@@ -241,7 +259,10 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 					data-testid="positions-toolbar-header"
 					className="font-market-close flex h-[45px] shrink-0 items-stretch overflow-hidden border-b border-market-close-stroke-card px-5"
 				>
-					<div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+					<div
+						ref={tabScrollRef}
+						className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					>
 						<TabsList
 							className="h-full min-w-max gap-0.5 border-b-0"
 							indicatorClassName="bg-market-close-fg duration-[120ms] ease-linear"
@@ -253,6 +274,7 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 									<TabsTrigger
 										key={tab.value}
 										value={tab.value}
+										data-positions-tab={tab.value}
 										className="inline-flex h-full items-center gap-1 px-3 py-0 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-subtle transition-colors duration-[120ms] hover:text-market-close-fg focus-visible:outline-market-close-control data-active:font-bold data-active:text-market-close-fg"
 									>
 										<span>{_(tab.label)}</span>
@@ -262,33 +284,41 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 							})}
 						</TabsList>
 					</div>
-					<div className="flex shrink-0 items-center gap-2 pl-3">
-						<Button
-							variant="filled"
-							intent="neutral"
-							size="xxs"
-							onClick={() => openDepositModal("deposit")}
-							className="h-[25px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
-						>
-							<Trans context="Trading toolbar action">Deposit</Trans>
-						</Button>
-						<Button
-							variant="outline"
-							intent="neutral"
-							size="xxs"
-							onClick={() => openDepositModal("withdraw")}
-							className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
-						>
-							<Trans context="Trading toolbar action">Withdraw</Trans>
-						</Button>
-						{activeTab === "positions" && positionsCount !== null ? (
-							<PositionFilterToolbar
-								direction={positionDirectionFilter}
-								market={positionMarketFilter}
-								marketOptions={positionMarketOptions}
-								onDirectionChange={handlePositionDirectionChange}
-								onMarketChange={handlePositionMarketChange}
-							/>
+					<div
+						ref={setToolbarTarget}
+						data-testid="positions-header-actions"
+						className="flex shrink-0 items-center gap-2 pl-3"
+					>
+						{!usesContextualToolbar ? (
+							<>
+								<Button
+									variant="filled"
+									intent="neutral"
+									size="xxs"
+									onClick={() => openDepositModal("deposit")}
+									className="h-[25px] rounded-[7px] bg-market-close-control px-3 text-xs font-semibold text-market-close-on-control shadow-none transition-colors duration-[120ms] hover:opacity-90 active:scale-100"
+								>
+									<Trans context="Trading toolbar action">Deposit</Trans>
+								</Button>
+								<Button
+									variant="outline"
+									intent="neutral"
+									size="xxs"
+									onClick={() => openDepositModal("withdraw")}
+									className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
+								>
+									<Trans context="Trading toolbar action">Withdraw</Trans>
+								</Button>
+								{activeTab === "positions" && positionsCount !== null ? (
+									<PositionFilterToolbar
+										direction={positionDirectionFilter}
+										market={positionMarketFilter}
+										marketOptions={positionMarketOptions}
+										onDirectionChange={handlePositionDirectionChange}
+										onMarketChange={handlePositionMarketChange}
+									/>
+								) : null}
+							</>
 						) : null}
 					</div>
 				</div>
@@ -317,7 +347,7 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 				</TabsContent>
 				<TabsContent value="orders" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
-						<OrdersTab />
+						<OrdersTab toolbarTarget={activeTab === "orders" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
 				<TabsContent value="twap" className={tabContentClass}>
@@ -327,7 +357,7 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 				</TabsContent>
 				<TabsContent value="orders-history" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
-						<OrdersHistoryTab />
+						<OrdersHistoryTab toolbarTarget={activeTab === "orders-history" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
 				<TabsContent value="history" className={tabContentClass}>
@@ -337,7 +367,7 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 				</TabsContent>
 				<TabsContent value="funding" className={tabContentClass}>
 					<Suspense fallback={<TabLoadingFallback />}>
-						<FundingTab />
+						<FundingTab toolbarTarget={activeTab === "funding" ? toolbarTarget : null} />
 					</Suspense>
 				</TabsContent>
 				{includeTransfers ? (

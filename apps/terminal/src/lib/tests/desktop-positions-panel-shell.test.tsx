@@ -3,6 +3,7 @@
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
 import { act, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -55,7 +56,16 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 vi.mock("@/lib/lazy", () => ({
-	createLazyComponent: (_loader: unknown, name: string) => () => <div data-lazy-component={name} />,
+	createLazyComponent:
+		(_loader: unknown, name: string) =>
+		({ toolbarTarget }: { toolbarTarget?: HTMLElement | null }) => (
+			<>
+				{toolbarTarget
+					? createPortal(<div data-mock-toolbar={name} data-testid={`${name}-header-actions`} />, toolbarTarget)
+					: null}
+				<div data-lazy-component={name} />
+			</>
+		),
 }));
 
 vi.mock("@/lib/performance/render-profile", () => ({
@@ -174,6 +184,25 @@ describe("desktop positions panel shell", () => {
 			expect(filter?.className).toContain("rounded-[7px]");
 			expect(filter?.className).toContain("border-market-close-stroke-card");
 		}
+	});
+
+	it.each([
+		["orders", "OrdersTab"],
+		["funding", "FundingTab"],
+		["orders-history", "OrdersHistoryTab"],
+	])("replaces the funds actions with the %s tab toolbar", (activeTab, componentName) => {
+		testState.activeTab = activeTab;
+		render();
+
+		const actions = container.querySelector<HTMLElement>('[data-testid="positions-header-actions"]');
+		expect(actions).not.toBeNull();
+		expect(actions?.querySelector(`[data-mock-toolbar="${componentName}"]`)).not.toBeNull();
+		expect(Array.from(actions?.querySelectorAll("button") ?? [], (button) => button.textContent)).not.toContain(
+			"Deposit",
+		);
+		expect(Array.from(actions?.querySelectorAll("button") ?? [], (button) => button.textContent)).not.toContain(
+			"Withdraw",
+		);
 	});
 
 	it("does not apply the desktop chip labels or dimensions to the mobile filter", () => {

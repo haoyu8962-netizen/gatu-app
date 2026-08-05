@@ -12,6 +12,7 @@ import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { AssetBadge } from "../components/asset-badge";
+import { DesktopTabToolbarPortal } from "./desktop-tab-toolbar-portal";
 import { Placeholder } from "./placeholder";
 import {
 	positionsPanelTableBodyClass,
@@ -26,10 +27,14 @@ const fundingTableHeadClass =
 const fundingTableCellClass = "h-10 px-2 py-0 text-[13px] leading-[18px]";
 const fundingAssetClass =
 	"h-auto min-h-0 rounded-[4px] border-0 bg-transparent p-0 shadow-none hover:bg-transparent active:not-data-disabled:scale-100";
-const fundingFooterButtonClass =
-	"h-auto min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
+const fundingToolbarButtonClass =
+	"h-[27px] min-h-0 rounded-none p-0 text-xs font-normal text-market-close-muted shadow-none transition-colors duration-[120ms] hover:bg-transparent hover:text-market-close-fg active:not-data-disabled:scale-100 data-disabled:text-market-close-subtle";
 
-export function FundingTab() {
+interface Props {
+	toolbarTarget?: HTMLElement | null;
+}
+
+export function FundingTab({ toolbarTarget }: Props = {}) {
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
 	const {
@@ -91,13 +96,27 @@ export function FundingTab() {
 
 	return (
 		<div className={positionsPanelTabRootClass}>
-			<div className="flex h-[38px] shrink-0 items-center justify-end border-b border-market-close-stroke-card px-5 font-market-close">
-				{isConnected && status === "active" ? (
-					<span className="whitespace-nowrap text-xs text-market-close-muted">
-						{t`Cumulative funding`} <span className={cn("font-bold tabular-nums", headerClass)}>{headerTotal}</span>
-					</span>
-				) : null}
-			</div>
+			<DesktopTabToolbarPortal target={toolbarTarget}>
+				<div data-testid="funding-history-toolbar" className="flex shrink-0 items-center gap-3 font-market-close">
+					{isConnected && status === "active" ? (
+						<span className="whitespace-nowrap text-xs text-market-close-muted">
+							{t`Cumulative funding`} <span className={cn("font-bold tabular-nums", headerClass)}>{headerTotal}</span>
+						</span>
+					) : null}
+					{isConnected && status === "active" ? (
+						<Button
+							variant="ghost"
+							intent="neutral"
+							size="xxs"
+							className={fundingToolbarButtonClass}
+							disabled={updates.length === 0}
+							onClick={handleExportCsv}
+						>
+							{t`Export CSV`}
+						</Button>
+					) : null}
+				</div>
+			</DesktopTabToolbarPortal>
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
@@ -200,20 +219,6 @@ export function FundingTab() {
 					</ScrollArea>
 				)}
 			</div>
-			{isConnected && status === "active" ? (
-				<div className="flex h-[38px] shrink-0 items-center gap-4 px-5" data-testid="funding-history-footer">
-					<Button
-						variant="ghost"
-						intent="neutral"
-						size="xxs"
-						className={fundingFooterButtonClass}
-						disabled={updates.length === 0}
-						onClick={handleExportCsv}
-					>
-						{t`Export CSV`}
-					</Button>
-				</div>
-			) : null}
 		</div>
 	);
 }
