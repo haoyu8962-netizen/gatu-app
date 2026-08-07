@@ -267,7 +267,7 @@ export function MobilePositionCard({
 				label={isExpanded ? t`Collapse ${displayName} position details` : t`Expand ${displayName} position details`}
 				controls={detailsId}
 				onToggle={handleToggleDetails}
-				className="grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_16px] gap-2.5 px-3.5 py-[11px]"
+				className="grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_16px] items-start gap-2.5 px-3.5 py-[11px] [&>svg]:self-center"
 			>
 				<div className="flex min-w-0 items-center gap-[7px]">
 					<span
@@ -278,7 +278,9 @@ export function MobilePositionCard({
 						)}
 					/>
 					<div className="min-w-0">
-						<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</div>
+						<div className="break-words text-[10px] leading-[14px] whitespace-normal text-market-close-subtle">
+							{t`Market`}
+						</div>
 						<button
 							type="button"
 							onClick={() => onSelectMarket(p.coin, isLong ? "buy" : "sell")}
@@ -287,9 +289,11 @@ export function MobilePositionCard({
 									? t`Switch to ${displayName} market, long position`
 									: t`Switch to ${displayName} market, short position`
 							}
-							className="pointer-events-auto relative z-10 flex max-w-full min-w-0 items-baseline gap-1 rounded-xs text-left after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
+							className="pointer-events-auto relative z-10 flex max-w-full min-w-0 flex-wrap items-baseline gap-x-1 rounded-xs text-left after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-market-close-control"
 						>
-							<span className="truncate text-[13px] font-bold leading-[18px] text-market-close-fg">{sizeSymbol}</span>
+							<span className="max-w-full shrink-0 break-words text-[13px] font-bold leading-[18px] text-market-close-fg">
+								{sizeSymbol}
+							</span>
 							<span
 								className={cn(
 									"shrink-0 text-[11px] font-semibold leading-4",
@@ -302,9 +306,9 @@ export function MobilePositionCard({
 					</div>
 				</div>
 				<div className="min-w-0">
-					<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Size`}</div>
+					<div className="break-words text-[10px] leading-[14px] whitespace-normal text-market-close-subtle">{t`Size`}</div>
 					<div
-						className="truncate text-xs font-semibold leading-[17px] tabular-nums text-market-close-fg"
+						className="break-words text-xs font-semibold leading-[17px] whitespace-normal tabular-nums text-market-close-fg"
 						title={sizeDisplay}
 					>
 						{sizeDisplay}
@@ -312,12 +316,15 @@ export function MobilePositionCard({
 				</div>
 				<div className="flex min-w-0 items-center gap-1">
 					<div className="min-w-0 flex-1">
-						<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`PNL`} (ROE %)</div>
+						<div className="break-words text-[10px] leading-[14px] whitespace-normal text-market-close-subtle">
+							{t`PNL`} (ROE %)
+						</div>
 						<div
-							className={cn("truncate text-xs font-bold leading-[17px] tabular-nums", pnlClass)}
+							className={cn("flex min-w-0 flex-wrap gap-x-1 text-xs font-bold leading-[17px] tabular-nums", pnlClass)}
 							title={`${pnlDisplay} (${roeDisplay})`}
 						>
-							{pnlDisplay} ({roeDisplay})
+							<span className="max-w-full shrink-0 break-words">{pnlDisplay}</span>{" "}
+							<span className="max-w-full shrink-0 break-words">({roeDisplay})</span>
 						</div>
 					</div>
 					<button

@@ -258,6 +258,92 @@ describe("MobilePositionCard isolated margin entry", () => {
 		expect(onExpandedChange).toHaveBeenCalledWith(true);
 	});
 
+	it("wraps long market and PNL values without hiding the position summary", () => {
+		const longMarketPosition: Position = {
+			...isolatedPosition,
+			coin: "xyz:BRENTOIL",
+			szi: "-2",
+			unrealizedPnl: "-159.41",
+			returnOnEquity: "-0.22",
+			leverage: { type: "cross", value: 20 },
+		};
+		const longNameMarkets = {
+			getMarket: () => ({
+				kind: "builderPerp",
+				name: "xyz:BRENTOIL",
+				shortName: "BRENTOIL",
+				pairName: "BRENTOIL-USDC",
+				iconUrl: "https://assets.example/BRENTOIL.svg",
+				assetId: 120_032,
+				szDecimals: 2,
+				marginMode: "noCross",
+			}),
+		} as unknown as Markets;
+
+		act(() => {
+			root.render(
+				createElement(MobilePositionCard, {
+					position: longMarketPosition,
+					env: "Mainnet",
+					isDataStale: false,
+					markets: longNameMarkets,
+					markPx: "83.528",
+					tpSlInfo: undefined,
+					isRowClosing: false,
+					expanded: false,
+					onExpandedChange: vi.fn(),
+					onMarketClose: vi.fn(),
+					onShare: vi.fn(),
+					onReverse: vi.fn(),
+					onLimitClose: vi.fn(),
+					onOpenTpSl: vi.fn(),
+					onAdjustMargin: vi.fn(),
+					onSelectMarket: vi.fn(),
+				}),
+			);
+		});
+
+		const marketButton = container.querySelector('button[aria-label="Switch to BRENTOIL-USDC market, short position"]');
+		if (!(marketButton instanceof HTMLButtonElement)) throw new Error("Long market identity button was not rendered");
+		expect(marketButton.className).toContain("flex-wrap");
+
+		const marketName = [...marketButton.children].find((element) => element.textContent === "BRENTOIL");
+		if (!(marketName instanceof HTMLElement)) throw new Error("Long market name was not rendered");
+		expect(marketName.className).toContain("shrink-0");
+		expect(marketName.className).toContain("break-words");
+		expect(marketName.className).not.toContain("truncate");
+		for (const label of ["Market", "Size", "PNL (ROE %)"]) {
+			const labelElement = [...container.querySelectorAll<HTMLElement>("div")].find(
+				(element) => element.children.length === 0 && element.textContent === label,
+			);
+			if (!(labelElement instanceof HTMLElement)) throw new Error(`${label} summary label was not rendered`);
+			expect(labelElement.className).toContain("whitespace-normal");
+			expect(labelElement.className).not.toContain("truncate");
+		}
+
+		const titledValues = [...container.querySelectorAll<HTMLElement>("[title]")];
+		const sizeValue = titledValues.find((element) => element.textContent?.trim() === "2.00 BRENTOIL");
+		if (!(sizeValue instanceof HTMLElement)) throw new Error("Long position size was not rendered");
+		expect(sizeValue.className).toContain("whitespace-normal");
+		expect(sizeValue.className).not.toContain("truncate");
+
+		const pnlValue = titledValues.find(
+			(element) => element.textContent?.includes("-$159.41") && element.textContent.includes("-22.0%"),
+		);
+		if (!(pnlValue instanceof HTMLElement)) throw new Error("Long position PNL was not rendered");
+		expect(pnlValue.textContent).toBe("-$159.41 (-22.0%)");
+		expect(pnlValue.className).toContain("flex-wrap");
+		expect(pnlValue.className).not.toContain("truncate");
+		expect([...pnlValue.children]).toHaveLength(2);
+		expect([...pnlValue.children].every((element) => element.className.includes("shrink-0"))).toBe(true);
+
+		const summary = marketButton.closest("div.grid");
+		if (!(summary instanceof HTMLDivElement)) throw new Error("Position summary was not rendered");
+		expect(summary.className).toContain("items-start");
+		expect(summary.className).toContain("[&>svg]:self-center");
+		expect(container.querySelector('button[aria-label="Share PNL for BRENTOIL-USDC"]')).not.toBeNull();
+	});
+
 	it("does not expose the entry for cross-margin positions", () => {
 		const onAdjustMargin = vi.fn();
 
