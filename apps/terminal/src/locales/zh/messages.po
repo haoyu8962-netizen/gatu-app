@@ -235,6 +235,11 @@ msgstr "账户与钱包"
 msgid "Account Equity"
 msgstr "账户权益"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Account Margin Ratio"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "账户模式"
@@ -579,7 +584,6 @@ msgstr "USDC 自动存款失败"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -648,7 +652,6 @@ msgstr "已恢复在线"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Balance"
 msgstr "余额"
@@ -1465,8 +1468,8 @@ msgid "Copy a link that opens the {0} market"
 msgstr "复制打开 {0} 市场的链接"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Copy address"
-msgstr "复制地址"
+#~ msgid "Copy address"
+#~ msgstr "复制地址"
 
 #: src/components/trade/header/user-menu.tsx
 msgid "Copy Address"
@@ -1597,11 +1600,11 @@ msgstr "正在创建你的钱包，请稍候..."
 msgid "Cross"
 msgstr "全仓"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Account Leverage"
 msgstr "全仓账户杠杆"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Cross Leverage"
 msgstr "全仓杠杆"
@@ -1901,8 +1904,8 @@ msgid "Disconnect"
 msgstr "断开连接"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Disconnect wallet"
-msgstr "断开钱包连接"
+#~ msgid "Disconnect wallet"
+#~ msgstr "断开钱包连接"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Disconnected"
@@ -2122,7 +2125,6 @@ msgstr "开仓价格"
 msgid "Environment"
 msgstr "环境"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "净值"
@@ -3286,6 +3288,10 @@ msgstr "保证金与杠杆"
 msgid "Margin amount"
 msgstr "保证金金额"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Margin and account risk at a glance"
+msgstr ""
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode"
 msgstr "保证金模式"
@@ -3294,7 +3300,6 @@ msgstr "保证金模式"
 #~ msgid "Margin Mode"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
 msgstr "保证金率"
@@ -3306,7 +3311,6 @@ msgstr "保证金率"
 msgid "Margin Req."
 msgstr "保证金要求"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Used"
 msgstr "已用保证金"
@@ -4232,6 +4236,10 @@ msgstr "其他流水更新"
 #~ msgid "Other Options"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Overview"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Owner account"
 msgstr "所有者账户"
@@ -4359,8 +4367,8 @@ msgid "Perps Account Equity"
 msgstr "合约账户权益"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Perps Equity"
-msgstr "永续权益"
+#~ msgid "Perps Equity"
+#~ msgstr "永续权益"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
@@ -4371,8 +4379,8 @@ msgid "Perps PNL"
 msgstr "合约盈亏"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Perps Withdrawable"
-msgstr "永续可提"
+#~ msgid "Perps Withdrawable"
+#~ msgstr "永续可提"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -4513,6 +4521,7 @@ msgstr "投资组合表现"
 msgid "Portfolio summary"
 msgstr "投资组合摘要"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Value"
 msgstr "投资组合价值"
@@ -5726,8 +5735,8 @@ msgid "Spot Account Equity"
 msgstr "现货账户权益"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Spot Available"
-msgstr "现货可用"
+#~ msgid "Spot Available"
+#~ msgstr "现货可用"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Spot Dust Conversion"

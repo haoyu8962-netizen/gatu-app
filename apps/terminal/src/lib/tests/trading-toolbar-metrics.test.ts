@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
 	getToolbarAbsoluteSize,
+	getToolbarAccountLeverage,
 	getToolbarAccountMarginRatio,
 	getToolbarAccountRiskPresentation,
 	getToolbarFundingTotal,
 	getToolbarNonZeroPnl,
 	getToolbarOrderMetrics,
 	getToolbarPositionChangeRatio,
+	getToolbarSignedValueTone,
 	getToolbarTriggerConditionOperator,
 	getToolbarTwapMetrics,
 	isToolbarOrderNearMark,
@@ -85,6 +87,22 @@ describe("trading toolbar account metrics", () => {
 				accountEquity: "0",
 			}),
 		).toBeNull();
+	});
+
+	it("derives absolute cross-account leverage without losing decimal precision", () => {
+		expect(getToolbarAccountLeverage({ totalNtlPos: "-10000000000000000.25", accountEquity: "4" })).toBe(
+			"2500000000000000.0625",
+		);
+		expect(getToolbarAccountLeverage({ totalNtlPos: "0", accountEquity: "100" })).toBe("0");
+		expect(getToolbarAccountLeverage({ totalNtlPos: "invalid", accountEquity: "100" })).toBeNull();
+		expect(getToolbarAccountLeverage({ totalNtlPos: "100", accountEquity: "0" })).toBeNull();
+	});
+
+	it("classifies signed account values without treating negative zero as a loss", () => {
+		expect(getToolbarSignedValueTone("1.25")).toBe("positive");
+		expect(getToolbarSignedValueTone("-1.25")).toBe("negative");
+		expect(getToolbarSignedValueTone("-0")).toBe("neutral");
+		expect(getToolbarSignedValueTone("invalid")).toBe("neutral");
 	});
 
 	it("clamps the progress bar and applies the documented account risk tiers", () => {

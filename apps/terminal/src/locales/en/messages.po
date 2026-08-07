@@ -235,6 +235,11 @@ msgstr "Account and wallet"
 msgid "Account Equity"
 msgstr "Account Equity"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Account Margin Ratio"
+msgstr "Account Margin Ratio"
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "Account mode"
@@ -579,7 +584,6 @@ msgstr "Automatic USDC deposit failed"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -648,7 +652,6 @@ msgstr "Back online"
 #~ msgid "Back to asset selection"
 #~ msgstr "Back to asset selection"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Balance"
 msgstr "Balance"
@@ -1465,8 +1468,8 @@ msgid "Copy a link that opens the {0} market"
 msgstr "Copy a link that opens the {0} market"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Copy address"
-msgstr "Copy address"
+#~ msgid "Copy address"
+#~ msgstr "Copy address"
 
 #: src/components/trade/header/user-menu.tsx
 msgid "Copy Address"
@@ -1597,11 +1600,11 @@ msgstr "Creating your wallet. Please wait..."
 msgid "Cross"
 msgstr "Cross"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Account Leverage"
 msgstr "Cross Account Leverage"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Cross Leverage"
 msgstr "Cross Leverage"
@@ -1901,8 +1904,8 @@ msgid "Disconnect"
 msgstr "Disconnect"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Disconnect wallet"
-msgstr "Disconnect wallet"
+#~ msgid "Disconnect wallet"
+#~ msgstr "Disconnect wallet"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Disconnected"
@@ -2122,7 +2125,6 @@ msgstr "Entry Price"
 msgid "Environment"
 msgstr "Environment"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "Equity"
@@ -3286,6 +3288,10 @@ msgstr "Margin & leverage"
 msgid "Margin amount"
 msgstr "Margin amount"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Margin and account risk at a glance"
+msgstr "Margin and account risk at a glance"
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode"
 msgstr "Margin mode"
@@ -3294,7 +3300,6 @@ msgstr "Margin mode"
 #~ msgid "Margin Mode"
 #~ msgstr "Margin Mode"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
 msgstr "Margin Ratio"
@@ -3306,7 +3311,6 @@ msgstr "Margin Ratio"
 msgid "Margin Req."
 msgstr "Margin Req."
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Used"
 msgstr "Margin Used"
@@ -4232,6 +4236,10 @@ msgstr "Other Ledger Update"
 #~ msgid "Other Options"
 #~ msgstr "Other Options"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Overview"
+msgstr "Overview"
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Owner account"
 msgstr "Owner account"
@@ -4359,8 +4367,8 @@ msgid "Perps Account Equity"
 msgstr "Perps Account Equity"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Perps Equity"
-msgstr "Perps Equity"
+#~ msgid "Perps Equity"
+#~ msgstr "Perps Equity"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
@@ -4371,8 +4379,8 @@ msgid "Perps PNL"
 msgstr "Perps PNL"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Perps Withdrawable"
-msgstr "Perps Withdrawable"
+#~ msgid "Perps Withdrawable"
+#~ msgstr "Perps Withdrawable"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -4513,6 +4521,7 @@ msgstr "Portfolio performance"
 msgid "Portfolio summary"
 msgstr "Portfolio summary"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Value"
 msgstr "Portfolio Value"
@@ -5726,8 +5735,8 @@ msgid "Spot Account Equity"
 msgstr "Spot Account Equity"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Spot Available"
-msgstr "Spot Available"
+#~ msgid "Spot Available"
+#~ msgstr "Spot Available"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Spot Dust Conversion"

@@ -231,6 +231,11 @@ msgstr "الحساب والمحفظة"
 msgid "Account Equity"
 msgstr "حقوق ملكية الحساب"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Account Margin Ratio"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "وضع الحساب"
@@ -575,7 +580,6 @@ msgstr "فشل الإيداع التلقائي لـ USDC"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -644,7 +648,6 @@ msgstr "عاد الاتصال"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Balance"
 msgstr "الرصيد"
@@ -1452,8 +1455,8 @@ msgid "Copy a link that opens the {0} market"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Copy address"
-msgstr "نسخ العنوان"
+#~ msgid "Copy address"
+#~ msgstr "نسخ العنوان"
 
 #: src/components/trade/header/user-menu.tsx
 msgid "Copy Address"
@@ -1584,11 +1587,11 @@ msgstr "جارٍ إنشاء محفظتك. يرجى الانتظار..."
 msgid "Cross"
 msgstr "متقاطع"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Account Leverage"
 msgstr "رافعة هامش المحفظة"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Cross Leverage"
 msgstr "الرافعة المتقاطعة"
@@ -1888,8 +1891,8 @@ msgid "Disconnect"
 msgstr "قطع الاتصال"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Disconnect wallet"
-msgstr "فصل المحفظة"
+#~ msgid "Disconnect wallet"
+#~ msgstr "فصل المحفظة"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Disconnected"
@@ -2109,7 +2112,6 @@ msgstr "سعر الدخول"
 msgid "Environment"
 msgstr "البيئة"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "حقوق الملكية"
@@ -3269,6 +3271,10 @@ msgstr "الهامش والرافعة المالية"
 msgid "Margin amount"
 msgstr "مبلغ الهامش"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Margin and account risk at a glance"
+msgstr ""
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode"
 msgstr "وضع الهامش"
@@ -3277,7 +3283,6 @@ msgstr "وضع الهامش"
 #~ msgid "Margin Mode"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
 msgstr "نسبة الهامش"
@@ -3289,7 +3294,6 @@ msgstr "نسبة الهامش"
 msgid "Margin Req."
 msgstr "الهامش المطلوب"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Used"
 msgstr "الهامش المستخدم"
@@ -4211,6 +4215,10 @@ msgstr ""
 #~ msgid "Other Options"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Overview"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Owner account"
 msgstr "حساب المالك"
@@ -4338,8 +4346,8 @@ msgid "Perps Account Equity"
 msgstr "قيمة حساب العقود الدائمة"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Perps Equity"
-msgstr "حقوق عقود Perps"
+#~ msgid "Perps Equity"
+#~ msgstr "حقوق عقود Perps"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
@@ -4350,8 +4358,8 @@ msgid "Perps PNL"
 msgstr "أرباح وخسائر العقود الدائمة"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Perps Withdrawable"
-msgstr "قابل للسحب من Perps"
+#~ msgid "Perps Withdrawable"
+#~ msgstr "قابل للسحب من Perps"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -4492,6 +4500,7 @@ msgstr "أداء المحفظة الاستثمارية"
 msgid "Portfolio summary"
 msgstr "ملخص المحفظة الاستثمارية"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Value"
 msgstr "قيمة المحفظة"
@@ -5705,8 +5714,8 @@ msgid "Spot Account Equity"
 msgstr "قيمة الحساب الفوري"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Spot Available"
-msgstr "المتاح في Spot"
+#~ msgid "Spot Available"
+#~ msgstr "المتاح في Spot"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Spot Dust Conversion"

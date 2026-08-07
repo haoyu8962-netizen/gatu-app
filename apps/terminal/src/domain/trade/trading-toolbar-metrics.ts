@@ -12,6 +12,11 @@ export interface ToolbarAccountMarginInput {
 	accountEquity: string;
 }
 
+export interface ToolbarAccountLeverageInput {
+	totalNtlPos: string;
+	accountEquity: string;
+}
+
 export interface ToolbarOrderMetricsInput {
 	isTrigger: boolean;
 	limitPx: string;
@@ -46,6 +51,7 @@ export interface ToolbarFundingUpdateInput {
 }
 
 export type ToolbarAccountRiskTone = "safe" | "warning" | "danger";
+export type ToolbarSignedValueTone = "negative" | "neutral" | "positive";
 export type ToolbarOrderTypeFilter = "all" | "limit" | "trigger";
 export type ToolbarOrderDirectionFilter = "all" | "buy" | "sell";
 
@@ -74,6 +80,20 @@ export function getToolbarAccountMarginRatio(input: ToolbarAccountMarginInput): 
 
 	if (!maintenanceMargin || !accountEquity) return null;
 	return maintenanceMargin.div(accountEquity).toString();
+}
+
+export function getToolbarAccountLeverage(input: ToolbarAccountLeverageInput): string | null {
+	const notional = toBig(input.totalNtlPos)?.abs();
+	const accountEquity = getPositive(input.accountEquity);
+
+	if (!notional || !accountEquity) return null;
+	return notional.div(accountEquity).toString();
+}
+
+export function getToolbarSignedValueTone(value: string): ToolbarSignedValueTone {
+	const parsed = toBig(value);
+	if (!parsed || parsed.eq(0)) return "neutral";
+	return parsed.gt(0) ? "positive" : "negative";
 }
 
 export function getToolbarAccountRiskPresentation(ratioValue: string | null): {

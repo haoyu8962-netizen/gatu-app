@@ -231,6 +231,11 @@ msgstr "खाता और वॉलेट"
 msgid "Account Equity"
 msgstr "खाता इक्विटी"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Account Margin Ratio"
+msgstr ""
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "खाता मोड"
@@ -575,7 +580,6 @@ msgstr "USDC का स्वचालित जमा विफल रहा"
 
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/balances-tab.tsx
@@ -644,7 +648,6 @@ msgstr "फिर ऑनलाइन"
 #~ msgid "Back to asset selection"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Balance"
 msgstr "शेष"
@@ -1452,8 +1455,8 @@ msgid "Copy a link that opens the {0} market"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Copy address"
-msgstr "पता कॉपी करें"
+#~ msgid "Copy address"
+#~ msgstr "पता कॉपी करें"
 
 #: src/components/trade/header/user-menu.tsx
 msgid "Copy Address"
@@ -1584,11 +1587,11 @@ msgstr "आपका वॉलेट बनाया जा रहा है। 
 msgid "Cross"
 msgstr "क्रॉस"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Cross Account Leverage"
 msgstr "क्रॉस खाता लेवरेज"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Cross Leverage"
 msgstr "क्रॉस लीवरेज"
@@ -1888,8 +1891,8 @@ msgid "Disconnect"
 msgstr "डिस्कनेक्ट करें"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Disconnect wallet"
-msgstr "वॉलेट डिस्कनेक्ट करें"
+#~ msgid "Disconnect wallet"
+#~ msgstr "वॉलेट डिस्कनेक्ट करें"
 
 #: src/components/trade/footer/footer-bar.tsx
 msgid "Disconnected"
@@ -2109,7 +2112,6 @@ msgstr "एंट्री कीमत"
 msgid "Environment"
 msgstr "एनवायरनमेंट"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Equity"
 msgstr "इक्विटी"
@@ -3269,6 +3271,10 @@ msgstr "Margin और Leverage"
 msgid "Margin amount"
 msgstr "मार्जिन राशि"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Margin and account risk at a glance"
+msgstr ""
+
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode"
 msgstr "Margin मोड"
@@ -3277,7 +3283,6 @@ msgstr "Margin मोड"
 #~ msgid "Margin Mode"
 #~ msgstr ""
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Ratio"
 msgstr "मार्जिन अनुपात"
@@ -3289,7 +3294,6 @@ msgstr "मार्जिन अनुपात"
 msgid "Margin Req."
 msgstr "मार्जिन आवश्यक"
 
-#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/config/ui-text.ts
 msgid "Margin Used"
 msgstr "उपयोग किया गया मार्जिन"
@@ -4211,6 +4215,10 @@ msgstr ""
 #~ msgid "Other Options"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-account-view.tsx
+msgid "Overview"
+msgstr ""
+
 #: src/routes/mobile-agent-sync.tsx
 msgid "Owner account"
 msgstr "मालिक खाता"
@@ -4338,8 +4346,8 @@ msgid "Perps Account Equity"
 msgstr "परपेचुअल खाते की इक्विटी"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Perps Equity"
-msgstr "Perps इक्विटी"
+#~ msgid "Perps Equity"
+#~ msgstr "Perps इक्विटी"
 
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Perps Overview"
@@ -4350,8 +4358,8 @@ msgid "Perps PNL"
 msgstr "परपेचुअल PNL"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Perps Withdrawable"
-msgstr "Perps निकासी योग्य"
+#~ msgid "Perps Withdrawable"
+#~ msgstr "Perps निकासी योग्य"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "Perps: Max 0.1% (10 basis points)"
@@ -4492,6 +4500,7 @@ msgstr "पोर्टफोलियो प्रदर्शन"
 msgid "Portfolio summary"
 msgstr "पोर्टफोलियो सारांश"
 
+#: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/tradebox/account-panel.tsx
 msgid "Portfolio Value"
 msgstr "पोर्टफोलियो मूल्य"
@@ -5705,8 +5714,8 @@ msgid "Spot Account Equity"
 msgstr "स्पॉट खाते की इक्विटी"
 
 #: src/components/trade/mobile/mobile-account-view.tsx
-msgid "Spot Available"
-msgstr "Spot उपलब्ध"
+#~ msgid "Spot Available"
+#~ msgstr "Spot उपलब्ध"
 
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Spot Dust Conversion"
