@@ -79,8 +79,15 @@ vi.mock("@gatu/ui", () => ({
 }));
 
 vi.mock("@/components/trade/components/trading-action-button", () => ({
-	TradingActionButton: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
-		createElement("button", { ...props, type: "button" }, children),
+	TradingActionButton: ({
+		children,
+		containerClassName: _containerClassName,
+		...props
+	}: {
+		children: ReactNode;
+		containerClassName?: string;
+		[key: string]: unknown;
+	}) => createElement("button", { ...props, type: "button" }, children),
 }));
 
 vi.mock("@/components/trade/tradebox/leverage-slider", () => ({
@@ -253,8 +260,12 @@ describe("MarginModeModal", () => {
 		});
 
 		expect(modalHarness.presentation).toBe("drawer");
+		expect(container.textContent).toContain("HYPE-USDC Margin mode");
 		expect(container.textContent).toContain("Position margin");
 		expect(container.textContent).toContain("Account type");
+		expect(container.querySelector('[data-testid="leverage-slider"]')).toBeNull();
+		expect(getButton(container, "Cross").className).toContain("rounded-12");
+		expect(getButton(container, "Cross").className).toContain("border-trading-panel-control");
 		act(() => getButton(container, "Account type").click());
 		expect(onSettingsTabChange).toHaveBeenCalledWith("account");
 
@@ -271,11 +282,53 @@ describe("MarginModeModal", () => {
 				onApply: accountApply,
 			},
 		});
+		expect(container.querySelector("h2")?.textContent).toBe("Account type");
 		act(() => getButton(container, "Unified account").click());
-		await act(async () => getButton(container, "Switch to Unified account").click());
+		await act(async () => getButton(container, "Confirm").click());
 
 		expect(accountApply).toHaveBeenCalledWith("unifiedAccount");
 		expect(onApply).not.toHaveBeenCalled();
+	});
+
+	it("keeps leverage out of the mobile margin view", async () => {
+		renderModal({
+			presentation: "drawer",
+			marketLabel: "HYPE-USDC",
+			pendingLeverage: 7,
+			mobileView: "margin",
+		});
+
+		expect(container.textContent).toContain("HYPE-USDC Margin mode");
+		expect(container.querySelector('[data-testid="leverage-slider"]')).toBeNull();
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+
+		act(() => getButton(container, "Isolated").click());
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(onApply).toHaveBeenCalledWith("isolated", 10);
+	});
+
+	it("renders leverage as an independent mobile drawer", async () => {
+		renderModal({
+			presentation: "drawer",
+			marketLabel: "HYPE-USDC",
+			pendingLeverage: 7,
+			mobileView: "leverage",
+			accountModeForm: {
+				currentMode: "disabled",
+				canChange: true,
+				onApply: vi.fn().mockResolvedValue(undefined),
+			},
+		});
+
+		expect(container.querySelector("h2")?.textContent).toBe("HYPE-USDC Leverage");
+		expect(container.textContent).not.toContain("Position margin");
+		expect(container.textContent).not.toContain("Account type");
+		expect(container.querySelector('[data-testid="leverage-slider"]')).not.toBeNull();
+
+		await act(async () => getButton(container, "Confirm").click());
+
+		expect(onApply).toHaveBeenCalledWith("cross", 7);
 	});
 
 	it("locks the complete settings drawer while either action is pending", () => {
@@ -294,7 +347,7 @@ describe("MarginModeModal", () => {
 		expect(modalHarness.dismissible).toBe(false);
 		expect(getButton(container, "Position margin").disabled).toBe(true);
 		expect(getButton(container, "Account type").disabled).toBe(true);
-		expect(getButton(container, "Cancel").disabled).toBe(true);
+		expect(getButton(container, "Switching...").disabled).toBe(true);
 		expect(container.querySelector('[role="tabpanel"]:not([hidden])')).not.toBeNull();
 	});
 });

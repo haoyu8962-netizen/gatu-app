@@ -247,6 +247,7 @@ msgstr "Mode de compte mis à jour"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Account type"
 msgstr "Type de compte"
 
@@ -1155,6 +1156,7 @@ msgstr ""
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -1653,6 +1655,7 @@ msgstr ""
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "Current"
@@ -2940,8 +2943,13 @@ msgstr "Classement"
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage"
 msgstr "Levier"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Leverage is fixed at {currentLeverage}× for this market."
+msgstr ""
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Light"
@@ -2984,7 +2992,6 @@ msgstr "Ordre de clôture limite placé"
 msgid "Limit execution"
 msgstr ""
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -3266,8 +3273,8 @@ msgstr "Marge"
 #~ msgstr "Marge · Iso"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin & account"
-msgstr ""
+#~ msgid "Margin & account"
+#~ msgstr ""
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin & leverage"
@@ -3281,6 +3288,7 @@ msgstr "Montant de la marge"
 msgid "Margin and account risk at a glance"
 msgstr ""
 
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode"
 msgstr "Mode de marge"
@@ -3495,6 +3503,7 @@ msgstr "Offre maximale"
 #~ msgid "Meme"
 #~ msgstr "Mème"
 
+#: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/ui/price-input.tsx
 msgid "Mid"
 msgstr "Mid"
@@ -4091,6 +4100,10 @@ msgstr "Carnet d'ordres"
 msgid "Order book in quote asset"
 msgstr "Carnet d'ordres en actif de cotation"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Order book view"
+msgstr ""
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "Order confirmed by the exchange."
 msgstr "L'ordre a été confirmé par la plateforme."
@@ -4631,11 +4644,13 @@ msgstr ""
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
@@ -4667,6 +4682,10 @@ msgstr "Prix inférieur à {price}"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Price grouping"
 msgstr "Regroupement des prix"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Price precision"
+msgstr ""
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -5476,6 +5495,18 @@ msgstr "Position Short"
 #~ msgid "Show a QR code for a desktop wallet to scan."
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Show asks only"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Show bids only"
+msgstr ""
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Show both sides"
+msgstr ""
+
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Executions"
 #~ msgstr ""
@@ -5550,6 +5581,7 @@ msgid "Signing..."
 msgstr "Signature..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -5559,6 +5591,7 @@ msgstr "Signature..."
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
@@ -5735,6 +5768,8 @@ msgstr "Conversion des soldes spot résiduels"
 #~ msgid "Spot: Max 1% (100 basis points)"
 #~ msgstr ""
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -6567,6 +6602,7 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
+#: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
 msgstr "TIF"
 
@@ -7242,6 +7278,10 @@ msgstr ""
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Use a different phone link"
 #~ msgstr "Utiliser un autre lien mobile"
+
+#: src/components/trade/mobile/mobile-trade-price-field.tsx
+msgid "Use mid price"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Use phone link"

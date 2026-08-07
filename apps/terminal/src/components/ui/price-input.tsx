@@ -7,6 +7,17 @@ import { NumberInput } from "./number-input";
 
 const PRICE_INPUT_DEFAULT_DECIMALS = 4;
 
+export function getFormattedMidPrice(
+	midPrice: Numeric | undefined,
+	szDecimals: number | undefined,
+	marketType: "perp" | "spot" | undefined,
+): string | undefined {
+	const parsedMid = toBig(midPrice);
+	if (!parsedMid?.gt(0)) return undefined;
+	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? PRICE_INPUT_DEFAULT_DECIMALS, marketType);
+	return toFixed(parsedMid, priceDecimals);
+}
+
 interface Props extends Omit<React.ComponentPropsWithoutRef<typeof NumberInput>, "maxLabel" | "onMaxClick"> {
 	midPrice?: Numeric;
 	szDecimals?: number;
@@ -16,11 +27,8 @@ interface Props extends Omit<React.ComponentPropsWithoutRef<typeof NumberInput>,
 
 export function PriceInput({ midPrice, szDecimals, marketType, onMidClick, labelValue, ...props }: Props) {
 	const { t } = useLingui();
-	const parsedMid = toBig(midPrice);
-	const hasPositiveMid = parsedMid?.gt(0) ?? false;
-	const hasMid = hasPositiveMid && onMidClick != null;
-	const priceDecimals = szDecimalsToPriceDecimals(szDecimals ?? PRICE_INPUT_DEFAULT_DECIMALS, marketType);
-	const formattedMid = hasPositiveMid ? toFixed(parsedMid, priceDecimals) : undefined;
+	const formattedMid = getFormattedMidPrice(midPrice, szDecimals, marketType);
+	const hasMid = formattedMid != null && onMidClick != null;
 	function handleMidClick() {
 		if (!onMidClick || !formattedMid) return;
 		onMidClick(formattedMid);

@@ -172,4 +172,44 @@ describe("AccountModeModal", () => {
 		);
 		expect(separateOption?.getAttribute("aria-pressed")).toBe("true");
 	});
+
+	it("uses the mobile design cards and keeps portfolio guidance below the action", () => {
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountModeModal
+						open
+						onOpenChange={() => {}}
+						currentMode="disabled"
+						canChange
+						portfolioMarginActivationEnabled
+						mobileLayout
+						onApply={vi.fn()}
+					/>
+				</I18nProvider>,
+			),
+		);
+
+		const separateOption = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
+			(button) => button.textContent?.includes("Separate"),
+		);
+		expect(separateOption?.className).toContain("rounded-12");
+		expect(separateOption?.className).toContain("border-trading-panel-control");
+		expect(separateOption?.textContent).toContain("Current");
+		expect(separateOption?.querySelector("svg")).not.toBeNull();
+		expect(document.body.textContent).not.toContain("Cancel");
+
+		const unifiedOption = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
+			(button) => button.textContent?.includes("Unified account"),
+		);
+		act(() => unifiedOption?.click());
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Confirm",
+		);
+		expect(confirmButton?.disabled).toBe(false);
+		expect(confirmButton?.className).toContain("bg-trading-panel-control");
+		expect(confirmButton?.parentElement?.nextElementSibling?.textContent).toContain(
+			"Hyperliquid labels portfolio margin as pre-alpha",
+		);
+	});
 });

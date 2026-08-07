@@ -23,6 +23,8 @@ interface Props {
 	marginMode?: MarginMode;
 	leverage?: number;
 	onMarginLeverageClick?: () => void;
+	onMarginModeClick?: () => void;
+	onLeverageClick?: () => void;
 	isLeveraged?: boolean;
 	accountMode?: SelectableAccountAbstraction | null;
 	isAccountModeLoading?: boolean;
@@ -43,6 +45,8 @@ export function TradeHeader({
 	marginMode,
 	leverage,
 	onMarginLeverageClick,
+	onMarginModeClick,
+	onLeverageClick,
 	isLeveraged,
 	accountMode,
 	isAccountModeLoading,
@@ -91,6 +95,8 @@ export function TradeHeader({
 						? t`Loading...`
 						: t`Unavailable`;
 	const compactAccountModeLabel = accountMode === null ? t`Account` : accountModeLabel;
+	const handleMarginModeClick = onMarginModeClick ?? onMarginLeverageClick;
+	const handleLeverageClick = onLeverageClick ?? onMarginLeverageClick;
 	const controlButtonClass = cn(
 		"trade-control-button group min-w-0 cursor-pointer rounded-8 bg-fill-weak py-1.5 text-xs font-semibold text-fg transition-colors",
 		"hover:bg-fill-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
@@ -98,20 +104,26 @@ export function TradeHeader({
 		compact && "px-2 py-1 text-2xs",
 	);
 	const mobileControlClass = cn(
-		"flex h-9 min-w-0 items-center justify-center gap-1 rounded-none border-b border-stroke-weak bg-surface px-2 text-xs font-semibold text-fg",
-		"transition-colors hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+		"relative flex h-[35px] min-w-0 items-center gap-1 whitespace-nowrap rounded-none bg-surface px-0 text-[13px] font-semibold text-trading-panel-fg",
+		"after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-['']",
+		"transition-opacity active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-control",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
 	);
 
 	if (layout === "mobile") {
 		return (
 			<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-3"}>
-				<div className={cn("grid min-w-0 overflow-hidden bg-surface", isLeveraged ? "grid-cols-3" : "grid-cols-1")}>
+				<div
+					className={cn(
+						"grid min-w-0 overflow-hidden bg-surface",
+						isLeveraged ? "grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)]" : "grid-cols-1",
+					)}
+				>
 					<Dropdown
 						trigger={
 							<span className="inline-flex min-w-0 items-center justify-center gap-1">
 								<span className="truncate">{orderTypeLabel}</span>
-								<CaretDownIcon className="size-3 shrink-0 text-fg-muted" />
+								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
 							</span>
 						}
 						items={mobileOrderTypeItems}
@@ -120,24 +132,34 @@ export function TradeHeader({
 						hideCaret
 						triggerVariant="minimal"
 						triggerAriaLabel={t`Order type`}
-						triggerClassName={cn(mobileControlClass, "w-full")}
+						triggerClassName={cn(mobileControlClass, "w-full justify-start")}
 						className="min-w-0"
 					/>
 					{isLeveraged && (
 						<>
-							<button type="button" onClick={onMarginLeverageClick} className={mobileControlClass}>
+							<button
+								type="button"
+								onClick={handleMarginModeClick}
+								className={cn(mobileControlClass, "justify-center")}
+								aria-haspopup="dialog"
+							>
 								<span className="truncate">{marginLabel}</span>
-								<CaretDownIcon className="size-3 shrink-0 text-fg-muted" />
+								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
 							</button>
-							<button type="button" onClick={onMarginLeverageClick} className={mobileControlClass}>
+							<button
+								type="button"
+								onClick={handleLeverageClick}
+								className={cn(mobileControlClass, "justify-end")}
+								aria-haspopup="dialog"
+							>
 								<span className="truncate tabular-nums">{leverage ?? 1}x</span>
-								<CaretDownIcon className="size-3 shrink-0 text-fg-muted" />
+								<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
 							</button>
 						</>
 					)}
 				</div>
 
-				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} />
+				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel />
 			</div>
 		);
 	}

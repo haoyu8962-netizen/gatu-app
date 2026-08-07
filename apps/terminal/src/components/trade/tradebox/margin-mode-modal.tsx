@@ -74,9 +74,11 @@ interface Props {
 	settingsTab?: MobileTradeSettingsTab;
 	onSettingsTabChange?: (tab: MobileTradeSettingsTab) => void;
 	accountModeForm?: Omit<AccountModeFormProps, "onClose">;
+	mobileView?: MobileTradeSettingsView;
 }
 
 export type MobileTradeSettingsTab = "margin" | "account";
+export type MobileTradeSettingsView = "margin" | "leverage";
 
 type FormProps = Omit<
 	Props,
@@ -88,9 +90,11 @@ type FormProps = Omit<
 	| "settingsTab"
 	| "onSettingsTabChange"
 	| "accountModeForm"
+	| "mobileView"
 > & {
 	onClose: () => void;
 	mobileLayout?: boolean;
+	mobileView?: MobileTradeSettingsView;
 };
 
 const MODE_OPTIONS: Array<{
@@ -117,15 +121,66 @@ const MODE_OPTIONS: Array<{
 
 interface ModeOptionProps {
 	option: (typeof MODE_OPTIONS)[number];
+	description: string;
 	isSelected: boolean;
 	isCurrent: boolean;
 	isDisabled: boolean;
 	isUpdating: boolean;
+	mobileLayout: boolean;
 	onSelect: () => void;
 }
 
-function ModeOption({ option, isSelected, isCurrent, isDisabled, isUpdating, onSelect }: ModeOptionProps) {
+function ModeOption({
+	option,
+	description,
+	isSelected,
+	isCurrent,
+	isDisabled,
+	isUpdating,
+	mobileLayout,
+	onSelect,
+}: ModeOptionProps) {
 	const Icon = option.icon;
+
+	if (mobileLayout) {
+		return (
+			<button
+				type="button"
+				onClick={onSelect}
+				disabled={isUpdating || isDisabled}
+				aria-pressed={isSelected}
+				className={cn(
+					"w-full rounded-12 border px-3.5 py-3 text-left transition-[color,background-color,border-color]",
+					"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+					isSelected
+						? "border-[1.5px] border-trading-panel-control bg-trading-panel-card"
+						: "border-trading-panel-stroke-card bg-modal enabled:hover:border-trading-panel-control enabled:hover:bg-trading-panel-hover",
+					isDisabled && "cursor-not-allowed opacity-40",
+				)}
+			>
+				<span className="flex min-w-0 items-center gap-2">
+					<span
+						className={cn(
+							"grid size-[17px] shrink-0 place-items-center rounded-[5px] border",
+							isSelected
+								? "border-trading-panel-control bg-trading-panel-control text-trading-panel-on-control"
+								: "border-trading-panel-stroke-input bg-modal",
+						)}
+						aria-hidden="true"
+					>
+						{isSelected ? <CheckIcon className="size-3" weight="bold" /> : null}
+					</span>
+					<span className="min-w-0 flex-1 text-[13px] font-semibold text-trading-panel-fg">{option.label()}</span>
+					{isCurrent ? (
+						<span className="shrink-0 text-2xs font-medium uppercase text-trading-panel-subtle">
+							<Trans>Current</Trans>
+						</span>
+					) : null}
+				</span>
+				<span className="mt-1.5 block text-xs leading-relaxed text-trading-panel-muted">{description}</span>
+			</button>
+		);
+	}
 
 	return (
 		<button
@@ -160,12 +215,27 @@ export function MarginModeModal({
 	settingsTab = "margin",
 	onSettingsTabChange,
 	accountModeForm,
+	mobileView = "margin",
 	...formProps
 }: Props) {
 	const formKey = `${open}:${marketIdentity ?? "market"}`;
 
-	if (presentation === "drawer" && accountModeForm) {
-		const actionPending = formProps.isUpdating || !!accountModeForm.isUpdating;
+	if (presentation === "drawer") {
+		const actionPending = formProps.isUpdating || !!accountModeForm?.isUpdating;
+		const title =
+			mobileView === "leverage" ? (
+				<>
+					{marketLabel ? `${marketLabel} ` : null}
+					<Trans>Leverage</Trans>
+				</>
+			) : settingsTab === "account" ? (
+				<Trans>Account type</Trans>
+			) : (
+				<>
+					{marketLabel ? `${marketLabel} ` : null}
+					<Trans>Margin mode</Trans>
+				</>
+			);
 
 		function handleTabChange(value: string) {
 			if (actionPending) return;
@@ -181,51 +251,79 @@ export function MarginModeModal({
 				dismissible={!actionPending}
 				showClose={!actionPending}
 				showHandle={!actionPending}
-				handleClassName="top-2 h-1 w-9 bg-fill/30"
-				className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px]"
+				handleClassName="top-2 h-1 w-9 bg-trading-panel-stroke-input"
+				overlayClassName="bg-trading-panel-scrim"
+				className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] border-trading-panel-stroke-card"
 			>
-				<ModalHeader divider={false} className="px-4 pt-7 pb-2">
-					<ModalTitle>
-						<Trans>Margin & account</Trans>
-					</ModalTitle>
-					{marketLabel ? <p className="text-xs text-fg-muted">{marketLabel}</p> : null}
+				<ModalHeader divider={false} className="px-4 pt-7 pb-2 pr-14">
+					<ModalTitle className="text-trading-panel-fg">{title}</ModalTitle>
 				</ModalHeader>
 
-				<Tabs value={settingsTab} onValueChange={handleTabChange} size="md" fullWidth disabled={actionPending}>
-					<div className="px-4">
-						<TabsList className="w-full">
-							<TabsTrigger value="margin" className="min-h-11">
-								<Trans>Position margin</Trans>
-							</TabsTrigger>
-							<TabsTrigger value="account" className="min-h-11">
-								<Trans>Account type</Trans>
-							</TabsTrigger>
-						</TabsList>
-					</div>
+				{mobileView === "leverage" ? (
+					<MarginModeForm
+						key={`${formKey}:leverage`}
+						{...formProps}
+						isUpdating={actionPending}
+						onClose={() => onOpenChange(false)}
+						mobileLayout
+						mobileView="leverage"
+					/>
+				) : accountModeForm ? (
+					<Tabs value={settingsTab} onValueChange={handleTabChange} size="md" fullWidth disabled={actionPending}>
+						<div className="px-4">
+							<TabsList
+								className="w-full border-trading-panel-stroke-card"
+								indicatorClassName="bg-trading-panel-control"
+							>
+								<TabsTrigger
+									value="margin"
+									className="min-h-10 text-[13px] text-trading-panel-subtle data-active:font-semibold data-active:text-trading-panel-fg"
+								>
+									<Trans>Position margin</Trans>
+								</TabsTrigger>
+								<TabsTrigger
+									value="account"
+									className="min-h-10 text-[13px] text-trading-panel-subtle data-active:font-semibold data-active:text-trading-panel-fg"
+								>
+									<Trans>Account type</Trans>
+								</TabsTrigger>
+							</TabsList>
+						</div>
 
-					<TabsContent value="margin" className="pt-0">
-						{settingsTab === "margin" ? (
-							<MarginModeForm
-								key={formKey}
-								{...formProps}
-								isUpdating={actionPending}
-								onClose={() => onOpenChange(false)}
-								mobileLayout
-							/>
-						) : null}
-					</TabsContent>
-					<TabsContent value="account" className="pt-0">
-						{settingsTab === "account" ? (
-							<AccountModeForm
-								key={`${open}:${accountModeForm.currentMode ?? "unavailable"}`}
-								{...accountModeForm}
-								isUpdating={actionPending}
-								onClose={() => onOpenChange(false)}
-								mobileLayout
-							/>
-						) : null}
-					</TabsContent>
-				</Tabs>
+						<TabsContent value="margin" className="pt-0">
+							{settingsTab === "margin" ? (
+								<MarginModeForm
+									key={formKey}
+									{...formProps}
+									isUpdating={actionPending}
+									onClose={() => onOpenChange(false)}
+									mobileLayout
+									mobileView="margin"
+								/>
+							) : null}
+						</TabsContent>
+						<TabsContent value="account" className="pt-0">
+							{settingsTab === "account" ? (
+								<AccountModeForm
+									key={`${open}:${accountModeForm.currentMode ?? "unavailable"}`}
+									{...accountModeForm}
+									isUpdating={actionPending}
+									onClose={() => onOpenChange(false)}
+									mobileLayout
+								/>
+							) : null}
+						</TabsContent>
+					</Tabs>
+				) : (
+					<MarginModeForm
+						key={formKey}
+						{...formProps}
+						isUpdating={actionPending}
+						onClose={() => onOpenChange(false)}
+						mobileLayout
+						mobileView="margin"
+					/>
+				)}
 			</AdaptiveModal>
 		);
 	}
@@ -260,23 +358,27 @@ function MarginModeForm({
 	showLeverage,
 	onApply,
 	mobileLayout = false,
+	mobileView = "margin",
 }: FormProps) {
 	const [selectedMode, setSelectedMode] = useState<MarginMode>(currentMode);
 	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(onClose, MARGIN_MODE_SUCCESS_DURATION_MS);
 
 	const displayLeverage = pendingLeverage ?? currentLeverage;
 
-	const modeDirty = selectedMode !== currentMode;
-	const leverageDirty = pendingLeverage !== null && pendingLeverage !== currentLeverage;
+	const showMarginControls = !mobileLayout || mobileView === "margin";
+	const showLeverageControls = showLeverage && maxLeverage > 1 && (!mobileLayout || mobileView === "leverage");
+	const modeDirty = showMarginControls && selectedMode !== currentMode;
+	const leverageDirty = showLeverageControls && pendingLeverage !== null && pendingLeverage !== currentLeverage;
 	const isDirty = modeDirty || leverageDirty;
 	const cannotSwitch = hasPosition && selectedMode === "isolated" && currentMode === "cross";
 	const positionStateUnavailable = !positionStateReady && selectedMode === "isolated" && currentMode === "cross";
 
 	async function handleConfirm(): Promise<void> {
 		if (!isDirty || cannotSwitch || positionStateUnavailable) return;
-		const lev = pendingLeverage ?? currentLeverage;
+		const mode = showMarginControls ? selectedMode : currentMode;
+		const lev = showLeverageControls ? (pendingLeverage ?? currentLeverage) : currentLeverage;
 		try {
-			await onApply(selectedMode, lev);
+			await onApply(mode, lev);
 			triggerAutoClose();
 		} catch {}
 	}
@@ -285,50 +387,77 @@ function MarginModeForm({
 		onClose();
 	}
 
-	const selectedModeDescription =
-		selectedMode === "isolated" && !allowsIsolatedMarginRemoval
+	function getModeDescription(mode: MarginMode): string {
+		return mode === "isolated" && !allowsIsolatedMarginRemoval
 			? t`Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open.`
-			: MODE_OPTIONS.find((o) => o.id === selectedMode)?.description();
+			: (MODE_OPTIONS.find((option) => option.id === mode)?.description() ?? "");
+	}
+
+	const selectedModeDescription = getModeDescription(selectedMode);
 
 	return (
 		<>
-			<ModalContent className={cn("space-y-5", mobileLayout && "overflow-y-auto px-4 pt-4")}>
-				<div className="space-y-2.5">
-					<p className="text-2xs font-semibold uppercase text-fg-muted">
-						<Trans>Margin mode</Trans>
-					</p>
-					<div className="grid grid-cols-2 gap-0.5 rounded-xs bg-sunken p-1">
-						{MODE_OPTIONS.map((option) => (
-							<ModeOption
-								key={option.id}
-								option={option}
-								isSelected={selectedMode === option.id}
-								isCurrent={currentMode === option.id}
-								isDisabled={!allowsCrossMargin && option.id === "cross"}
-								isUpdating={isUpdating}
-								onSelect={() => setSelectedMode(option.id)}
-							/>
-						))}
-					</div>
-					{selectedModeDescription && (
-						<p className="text-2xs leading-relaxed text-pretty text-fg-muted">{selectedModeDescription}</p>
-					)}
-				</div>
-
-				{showLeverage && maxLeverage > 1 && (
-					<div className="space-y-3 border-t border-stroke-weak/60 pt-4">
-						<div className="flex items-center justify-between">
+			<ModalContent className={cn("space-y-5", mobileLayout && "overflow-y-auto px-4 pt-3 pb-3")}>
+				{showMarginControls ? (
+					<div className="space-y-2.5">
+						{!mobileLayout ? (
 							<p className="text-2xs font-semibold uppercase text-fg-muted">
+								<Trans>Margin mode</Trans>
+							</p>
+						) : null}
+						<div className={cn(mobileLayout ? "space-y-2" : "grid grid-cols-2 gap-0.5 rounded-xs bg-sunken p-1")}>
+							{MODE_OPTIONS.map((option) => (
+								<ModeOption
+									key={option.id}
+									option={option}
+									description={getModeDescription(option.id)}
+									isSelected={selectedMode === option.id}
+									isCurrent={currentMode === option.id}
+									isDisabled={!allowsCrossMargin && option.id === "cross"}
+									isUpdating={isUpdating}
+									mobileLayout={mobileLayout}
+									onSelect={() => setSelectedMode(option.id)}
+								/>
+							))}
+						</div>
+						{!mobileLayout && selectedModeDescription && (
+							<p className="text-2xs leading-relaxed text-pretty text-fg-muted">{selectedModeDescription}</p>
+						)}
+					</div>
+				) : null}
+
+				{showLeverageControls && (
+					<div
+						className={cn(
+							"space-y-3",
+							mobileLayout
+								? "rounded-12 border border-trading-panel-stroke-card bg-trading-panel-card px-3.5 py-4"
+								: "border-t border-stroke-weak/60 pt-4",
+						)}
+					>
+						<div className="flex items-center justify-between">
+							<p
+								className={cn(
+									"text-2xs font-semibold uppercase",
+									mobileLayout ? "text-trading-panel-muted" : "text-fg-muted",
+								)}
+							>
 								<Trans>Leverage</Trans>
 							</p>
 							<div className="flex items-center gap-1.5 tabular-nums">
 								{leverageDirty && (
 									<>
-										<span className="text-xs text-fg-muted">{currentLeverage}×</span>
-										<span className="text-xs text-fg-muted">→</span>
+										<span className={cn("text-xs", mobileLayout ? "text-trading-panel-muted" : "text-fg-muted")}>
+											{currentLeverage}×
+										</span>
+										<span className={cn("text-xs", mobileLayout ? "text-trading-panel-muted" : "text-fg-muted")}>
+											→
+										</span>
 									</>
 								)}
-								<span className="text-sm font-semibold text-fg">{displayLeverage}×</span>
+								<span className={cn("text-sm font-semibold", mobileLayout ? "text-trading-panel-fg" : "text-fg")}>
+									{displayLeverage}×
+								</span>
 							</div>
 						</div>
 						<LeverageSlider
@@ -339,6 +468,12 @@ function MarginModeForm({
 						/>
 					</div>
 				)}
+
+				{mobileLayout && mobileView === "leverage" && !showLeverageControls ? (
+					<p className="rounded-12 border border-trading-panel-stroke-card bg-trading-panel-card px-3.5 py-4 text-xs leading-relaxed text-trading-panel-muted">
+						<Trans>Leverage is fixed at {currentLeverage}× for this market.</Trans>
+					</p>
+				) : null}
 
 				{cannotSwitch && (
 					<div className="flex items-start gap-2 rounded-xs border border-stroke-warning-strong/20 bg-warning-soft/10 p-2.5">
@@ -360,7 +495,7 @@ function MarginModeForm({
 					</div>
 				)}
 
-				{!allowsCrossMargin && (
+				{showMarginControls && !allowsCrossMargin && (
 					<p className="text-xs leading-relaxed text-fg-muted">
 						<Trans>This market only supports isolated margin mode.</Trans>
 					</p>
@@ -374,8 +509,8 @@ function MarginModeForm({
 				)}
 			</ModalContent>
 
-			<ModalFooter>
-				{!showSuccess && (
+			<ModalFooter className={cn(mobileLayout && "px-4 pt-0 pb-4")}>
+				{!mobileLayout && !showSuccess && (
 					<Button
 						variant="ghost"
 						intent="neutral"
@@ -393,7 +528,10 @@ function MarginModeForm({
 						intent="neutral"
 						size="sm"
 						disabled
-						className="gap-1.5 border-stroke-success-strong/30 bg-success-soft text-success disabled:opacity-100"
+						className={cn(
+							"gap-1.5 border-stroke-success-strong/30 bg-success-soft text-success disabled:opacity-100",
+							mobileLayout && "min-h-11 w-full flex-1",
+						)}
 						iconLeft={<CheckIcon className="size-3.5" weight="bold" />}
 					>
 						<Trans>Updated</Trans>
@@ -402,7 +540,12 @@ function MarginModeForm({
 					<TradingActionButton
 						onClick={handleConfirm}
 						disabled={!isDirty || isUpdating || cannotSwitch || positionStateUnavailable}
-						className={cn("gap-1.5", mobileLayout && "min-h-11 flex-1")}
+						containerClassName={cn(mobileLayout && "w-full flex-1")}
+						className={cn(
+							"gap-1.5",
+							mobileLayout &&
+								"min-h-11 w-full flex-1 bg-trading-panel-control text-trading-panel-on-control hover:opacity-90",
+						)}
 					>
 						{isUpdating && <SpinnerGapIcon className="size-3.5 animate-spin" />}
 						<Trans>Confirm</Trans>

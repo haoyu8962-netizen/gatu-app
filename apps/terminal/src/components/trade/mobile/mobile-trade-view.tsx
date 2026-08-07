@@ -1,22 +1,19 @@
-import { Button, buttonVariants, Tooltip } from "@gatu/ui";
+import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { CaretDownIcon, PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
-import { NumberInput } from "@/components/ui/number-input";
-import { PriceInput } from "@/components/ui/price-input";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ARBITRUM_CHAIN_ID } from "@/config/contracts";
 import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
-import { SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { get24hChange, getPositionDex } from "@/domain/market";
 import { getLiquidationInfo } from "@/domain/trade/order/metrics";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import { getOrderActionStage } from "@/domain/trade/order-action-stage";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
-import { formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
+import { formatPriceForOrder } from "@/domain/trade/orders";
 import {
 	type SelectableAccountAbstraction,
 	useAccountAbstractionControl,
@@ -70,13 +67,14 @@ import {
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
-import { TradeSizeSlider } from "../components/trade-size-slider";
 import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
 import { TpSlSection } from "../tradebox/tp-sl-section";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
 import { TradeHeader } from "../tradebox/trade-header";
 import { TradeOptionCheckboxes } from "../tradebox/trade-option-checkboxes";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
+import { MobileTradePriceField } from "./mobile-trade-price-field";
+import { MobileTradeSizeControl } from "./mobile-trade-size-control";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
 
@@ -136,6 +134,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [showMarginDialog, setShowMarginDialog] = useState(false);
 	const [settingsTab, setSettingsTab] = useState<MobileTradeSettingsTab>("margin");
+	const [marginDialogView, setMarginDialogView] = useState<"margin" | "leverage">("margin");
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
@@ -273,7 +272,13 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 	}
 
 	function handleMarginSettingsOpen() {
+		setMarginDialogView("margin");
 		setSettingsTab("margin");
+		setShowMarginDialog(true);
+	}
+
+	function handleLeverageSettingsOpen() {
+		setMarginDialogView("leverage");
 		setShowMarginDialog(true);
 	}
 
@@ -447,10 +452,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 
 	const isFormDisabled = !isConnected || isAvailabilityBlocked || availableBalance <= 0;
 	const sizeModeLabel = sizeMode === "base" ? baseToken || "—" : quoteToken || "—";
-	const sizePercentDisabled = isFormDisabled || maxSize <= 0;
-	const entryInputSize = embedded ? "lg" : "xl";
-	const inlineButtonSize = embedded ? "xs" : "sm";
-	const sliderThumbSize = embedded ? "md" : "lg";
+	const priceUnitLabel = quoteToken || "USDC";
 
 	function formatAvailableBalance(): string {
 		if (!isConnected || isAvailabilityLoading || hasAvailabilityError) return FALLBACK_VALUE_PLACEHOLDER;
@@ -483,6 +485,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 				showLeverage={capabilities.isLeveraged}
 				onApply={async (mode: MarginMode, lev: number) => applyMarginAndLeverage(mode, lev)}
 				presentation="drawer"
+				mobileView={marginDialogView}
 				marketIdentity={market?.name}
 				marketLabel={market?.pairName ?? market?.name}
 				settingsTab={settingsTab}
@@ -524,7 +527,9 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 			>
 				<div
 					className={cn(
-						embedded ? "flex-1 min-h-min flex flex-col justify-between px-2.5 py-1.5 space-y-2" : "px-3 py-4 space-y-4",
+						embedded
+							? "flex-1 min-h-min flex flex-col justify-between px-2.5 py-1.5 space-y-2 font-market-close"
+							: "px-3 py-4 space-y-4",
 					)}
 				>
 					<TradeHeader
@@ -537,6 +542,8 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 						marginMode={marginMode}
 						leverage={leverage}
 						onMarginLeverageClick={handleMarginSettingsOpen}
+						onMarginModeClick={handleMarginSettingsOpen}
+						onLeverageClick={handleLeverageSettingsOpen}
 						isLeveraged={capabilities.isLeveraged}
 						accountMode={accountModeControl.accountAbstraction}
 						isAccountModeLoading={accountModeControl.isLoading}
@@ -546,105 +553,42 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 						layout="mobile"
 					/>
 
-					<div className={cn("flex items-center justify-end", embedded ? "text-2xs" : "text-xs")}>
-						<span className="text-fg-muted uppercase text-2xs font-medium">{t`Available`} </span>
-						<span className={cn("tabular-nums font-semibold text-xs ml-1", getValueColorClass(availableBalance))}>
-							{formatAvailableBalance()}
-						</span>
-						<span className="ml-1 text-2xs tabular-nums text-fg-muted">{availableBalanceToken}</span>
-						{isAvailabilityStale ? (
-							<Tooltip content={t`Loading...`} side="top">
-								<SpinnerGapIcon className="ml-1 size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
-							</Tooltip>
-						) : null}
-						{hasAvailabilityError ? (
-							<Tooltip content={t`Failed to load balances.`} side="top">
-								<WarningCircleIcon
-									className="ml-1 size-3 shrink-0 text-error"
-									aria-label={t`Failed to load balances.`}
-								/>
-							</Tooltip>
-						) : null}
-					</div>
-
-					<div className={cn(embedded ? "space-y-1.5" : "space-y-3")}>
-						<div className="flex min-w-0 items-baseline justify-between gap-2">
-							<p className="text-2xs font-medium uppercase text-fg-muted">{t`Size`}</p>
-							{sizeValue > 0 && baseToken ? (
-								<span className="shrink-0 whitespace-nowrap text-2xs tabular-nums text-fg">
-									{formatSizeForOrder(sizeValue, szDecimals)} {baseToken}
-								</span>
-							) : null}
-						</div>
-						<div className={cn("flex items-stretch", embedded ? "gap-1.5" : "gap-2")}>
-							<NumberInput
-								inputMode="decimal"
-								inputSize={entryInputSize}
-								mobileSafe
-								placeholder="0.00"
-								value={sizeInput}
-								onChange={handleSizeInputChange}
-								maxAllowedDecimals={getSizeInputMaxDecimals(sizeMode, szDecimals)}
-								className={cn("flex-1 tabular-nums font-semibold", embedded && "h-8")}
-								disabled={isFormDisabled}
-							/>
-							{isFormDisabled ? (
-								<span
-									data-disabled
-									className={cn(
-										buttonVariants({ variant: "outline", intent: "neutral", size: inlineButtonSize }),
-										"shrink-0 self-stretch pointer-events-none",
-									)}
-								>
-									{sizeModeLabel}
-									<CaretDownIcon className="size-3.5" />
-								</span>
-							) : (
-								<Button
-									variant="outline"
-									intent="neutral"
-									size={inlineButtonSize}
-									onClick={handleSizeModeToggle}
-									iconRight={<CaretDownIcon className="size-3.5" />}
-									className="shrink-0 self-stretch"
-								>
-									{sizeModeLabel}
-								</Button>
+					<button
+						type="button"
+						onClick={() => applySizeFromPercent(100)}
+						disabled={isFormDisabled || maxSize <= 0}
+						className="relative flex min-h-7 w-full min-w-0 items-center justify-between gap-2 text-2xs text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] disabled:cursor-default"
+					>
+						<span className="shrink-0 whitespace-nowrap">{t`Available`}</span>
+						<span
+							className={cn(
+								"inline-flex min-w-0 items-center justify-end gap-1 truncate whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control text-right font-semibold tabular-nums text-trading-panel-fg",
+								(isFormDisabled || maxSize <= 0) && "border-transparent",
 							)}
-						</div>
-						<div className={cn(embedded ? "space-y-1.5" : "space-y-2")}>
-							<TradeSizeSlider
-								thumbSize={sliderThumbSize}
-								value={sliderValue}
-								onPercentChange={applySizeFromPercent}
-								disabled={isFormDisabled || maxSize <= 0}
-								ariaLabel={`${t`Size`} (%)`}
-							/>
-							<div className="flex items-center justify-between text-2xs text-fg-muted tabular-nums leading-none">
-								{SIZE_PERCENT_OPTIONS.map((pct) =>
-									sizePercentDisabled ? (
-										<span key={pct}>{pct}%</span>
-									) : (
-										<button
-											key={pct}
-											type="button"
-											onClick={() => applySizeFromPercent(pct)}
-											className="hover:text-fg transition-colors disabled:cursor-not-allowed"
-										>
-											{pct}%
-										</button>
-									),
-								)}
-							</div>
-						</div>
-					</div>
+						>
+							<span className="tabular-nums text-trading-panel-fg">{formatAvailableBalance()}</span>
+							<span className="tabular-nums text-trading-panel-muted">{availableBalanceToken}</span>
+							{isAvailabilityStale ? (
+								<Tooltip content={t`Loading...`} side="top">
+									<SpinnerGapIcon className="size-3 shrink-0 animate-spin text-warning" aria-label={t`Loading...`} />
+								</Tooltip>
+							) : null}
+							{hasAvailabilityError ? (
+								<Tooltip content={t`Failed to load balances.`} side="top">
+									<WarningCircleIcon
+										className="size-3 shrink-0 text-trading-panel-error"
+										aria-label={t`Failed to load balances.`}
+									/>
+								</Tooltip>
+							) : null}
+						</span>
+					</button>
 
 					{usesTriggerPrice && (
-						<PriceInput
+						<MobileTradePriceField
 							label={t`Trigger Price`}
+							unitLabel={priceUnitLabel}
 							inputMode="decimal"
-							inputSize={entryInputSize}
-							mobileSafe
 							placeholder="0.00"
 							value={triggerPrice}
 							onChange={(e: ChangeEvent<HTMLInputElement>) => setTriggerPrice(e.target.value)}
@@ -652,18 +596,16 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 							midPrice={markPx}
 							szDecimals={market?.szDecimals}
 							marketType={market?.kind === "spot" ? "spot" : "perp"}
-							className={cn("tabular-nums font-semibold", embedded && "h-8")}
 							disabled={isFormDisabled}
 						/>
 					)}
 
 					{usesLimitPrice && (
 						<div className={cn(embedded ? "space-y-1.5" : "space-y-2")}>
-							<PriceInput
-								label={t`Limit Price`}
+							<MobileTradePriceField
+								label={t`Price`}
+								unitLabel={priceUnitLabel}
 								inputMode="decimal"
-								inputSize={entryInputSize}
-								mobileSafe
 								placeholder="0.00"
 								value={limitPriceInput}
 								onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
@@ -671,18 +613,30 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 								midPrice={markPx}
 								szDecimals={market?.szDecimals}
 								marketType={market?.kind === "spot" ? "spot" : "perp"}
-								className={cn("tabular-nums font-semibold", embedded && "h-8")}
 								disabled={isFormDisabled}
 							/>
-							<div className="flex">
-								<TradeFormTif orderType={orderType} disabled={isFormDisabled} />
-							</div>
 						</div>
 					)}
 
-					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl)) && (
+					<MobileTradeSizeControl
+						canUsePercent={!isFormDisabled && maxSize > 0}
+						disabled={isFormDisabled}
+						maxAllowedDecimals={getSizeInputMaxDecimals(sizeMode, szDecimals)}
+						onPercentChange={applySizeFromPercent}
+						onSizeChange={handleSizeInputChange}
+						onSizeModeToggle={handleSizeModeToggle}
+						percentAriaLabel={`${t`Size`} (%)`}
+						sizeAriaLabel={t`Size`}
+						sizeInput={sizeInput}
+						sizeLabel={t`Size`}
+						sizeModeLabel={sizeModeLabel}
+						sliderValue={sliderValue}
+					/>
+
+					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl) || usesLimitPrice) && (
 						<TradeOptionCheckboxes
-							className={cn("flex items-center", embedded ? "gap-2 text-2xs" : "gap-4")}
+							className={cn("flex items-center", embedded ? "gap-2 text-2xs max-[379px]:gap-1" : "gap-4")}
+							tradingPanel
 							reduceOnly={
 								capabilities.hasReduceOnly
 									? { checked: reduceOnly, disabled: isFormDisabled, onCheckedChange: setReduceOnly }
@@ -693,7 +647,9 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 									? { checked: tpSlEnabled, disabled: isFormDisabled, onCheckedChange: setTpSlEnabled }
 									: undefined
 							}
-						/>
+						>
+							{usesLimitPrice ? <TradeFormTif orderType={orderType} disabled={isFormDisabled} tradingPanel /> : null}
+						</TradeOptionCheckboxes>
 					)}
 
 					{tpSlEnabled && canUseTpSl && (
@@ -711,7 +667,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 						/>
 					)}
 
-					<div className={cn("divide-y divide-stroke-weak/40", embedded ? "text-2xs" : "text-xs")}>
+					<div className={cn("border-t border-trading-panel-stroke-card pt-2", embedded ? "text-2xs" : "text-xs")}>
 						{capabilities.isLeveraged && (
 							<SummaryRow
 								label={t`Liq. Price`}
@@ -735,11 +691,11 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 							/>
 						)}
 						<div className={cn("flex min-w-0 items-center justify-between", embedded ? "gap-1 py-1" : "gap-2 py-2.5")}>
-							<span className="min-w-0 truncate text-fg-muted">{t`Slippage`}</span>
+							<span className="min-w-0 truncate text-trading-panel-muted">{t`Slippage`}</span>
 							{embedded && !isConnected ? (
 								<span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
-									<span className="tabular-nums text-error">{slippagePercent}%</span>
-									<PencilIcon className="size-2.5 text-fg-muted" />
+									<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+									<PencilIcon className="size-2.5 text-trading-panel-subtle" />
 								</span>
 							) : (
 								<button
@@ -747,22 +703,22 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 									onClick={openSettingsDialog}
 									className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
 								>
-									<span className="tabular-nums text-error">{slippagePercent}%</span>
-									<PencilIcon className="size-2.5 text-fg-muted" />
+									<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+									<PencilIcon className="size-2.5 text-trading-panel-subtle" />
 								</button>
 							)}
 						</div>
 						<SummaryRow
 							label={t`Est. Fee`}
 							value={orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
-							valueClass="text-fg-muted"
+							valueClass="text-trading-panel-muted"
 							compact={embedded}
 						/>
 						{DEFAULT_BUILDER_CONFIG?.f ? (
 							<SummaryRow
 								label={t`Builder Fee`}
 								value={`${bpsToPercentage(DEFAULT_BUILDER_CONFIG.f)}%`}
-								valueClass="text-fg-muted"
+								valueClass="text-trading-panel-muted"
 								compact={embedded}
 							/>
 						) : null}
@@ -771,7 +727,10 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 			</div>
 
 			<div
-				className={cn("shrink-0 border-t border-stroke-weak/40 bg-background", embedded ? "px-2 py-2" : "px-3 py-3")}
+				className={cn(
+					"shrink-0 border-t border-trading-panel-stroke-card bg-surface",
+					embedded ? "px-2.5 py-2" : "px-3 py-3",
+				)}
 			>
 				{validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval && (
 					<p className="text-xs text-error mb-2">{validation.errors.join(" \u2022 ")}</p>
@@ -783,18 +742,18 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 					</Button>
 				) : (
 					<Button
-						variant="outline"
+						variant="filled"
 						size={embedded ? "md" : "lg"}
 						onClick={buttonContent.action}
 						disabled={buttonContent.disabled}
 						intent={buttonContent.variant === "cyan" ? "brand" : buttonContent.variant === "buy" ? "neutral" : "error"}
 						className={cn(
-							"w-full",
+							"w-full rounded-[10px] shadow-none",
 							buttonContent.variant === "cyan"
-								? "bg-brand-soft border-stroke-brand-strong text-brand hover:bg-brand-soft/30"
+								? "bg-trading-panel-control text-trading-panel-on-control hover:not-data-disabled:bg-trading-panel-control/90 data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled dark:bg-brand-soft dark:text-brand dark:hover:not-data-disabled:bg-brand-soft/80"
 								: buttonContent.variant === "buy"
-									? "bg-success-soft border-stroke-success-strong text-success hover:bg-success-soft/30"
-									: "bg-error-soft border-stroke-error-strong text-error hover:bg-error-soft/30",
+									? "bg-trading-panel-success-fill text-trading-panel-on-success hover:not-data-disabled:bg-trading-panel-success-fill/90 data-disabled:bg-trading-panel-success-disabled-fill data-disabled:text-trading-panel-on-disabled"
+									: "bg-trading-panel-error-fill text-trading-panel-on-error hover:not-data-disabled:bg-trading-panel-error-fill/90 data-disabled:bg-trading-panel-error-disabled-fill data-disabled:text-trading-panel-on-disabled",
 						)}
 						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
 					>
@@ -826,16 +785,23 @@ function SummaryRow({
 }) {
 	return (
 		<div className={cn("flex min-w-0 items-center justify-between", compact ? "gap-1 py-1" : "gap-2 py-1.5")}>
-			<span className="min-w-0 truncate text-fg-muted">{label}</span>
-			<span className={cn("shrink-0 whitespace-nowrap text-right tabular-nums", valueClass ?? "text-fg")}>{value}</span>
+			<span className="min-w-0 truncate text-trading-panel-muted">{label}</span>
+			<span
+				className={cn(
+					"shrink-0 whitespace-nowrap text-right font-semibold tabular-nums",
+					valueClass ?? "text-trading-panel-fg",
+				)}
+			>
+				{value}
+			</span>
 		</div>
 	);
 }
 
 function getLiquidationValueClass(liqPrice: number | null, liqWarning: boolean) {
-	if (!liqPrice) return "text-fg-muted";
-	if (liqWarning) return "text-error";
-	return "text-fg";
+	if (!liqPrice) return "text-trading-panel-muted";
+	if (liqWarning) return "text-trading-panel-error";
+	return "text-trading-panel-fg";
 }
 
 interface MobileButtonContentInput {

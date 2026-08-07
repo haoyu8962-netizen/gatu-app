@@ -55,6 +55,7 @@ interface SelectProps extends VariantProps<typeof selectTriggerVariants> {
 	disabled?: boolean;
 	className?: string;
 	triggerClassName?: string;
+	triggerAriaLabel?: string;
 	popupClassName?: string;
 	name?: string;
 	value?: string | null;
@@ -87,6 +88,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 		{
 			className,
 			triggerClassName,
+			triggerAriaLabel,
 			popupClassName,
 			size: sizeProp,
 			error,
@@ -149,6 +151,7 @@ const Select = React.forwardRef<HTMLDivElement, SelectProps>(
 					name={name}
 				>
 					<BaseSelect.Trigger
+						aria-label={triggerAriaLabel}
 						className={cn(
 							selectTriggerVariants({ size, error }),
 							"data-disabled:border-stroke-disabled data-disabled:cursor-not-allowed data-disabled:text-fg-disabled",

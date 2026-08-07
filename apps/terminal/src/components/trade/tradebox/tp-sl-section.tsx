@@ -162,7 +162,7 @@ export function TpSlSection({
 
 	if (compact) {
 		return (
-			<div className="rounded-8 min-w-0 border border-stroke-weak/50 bg-surface p-2.5">
+			<div className="min-w-0 rounded-[12px] border border-trading-panel-stroke-card bg-trading-panel-card p-2.5">
 				<div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-2">
 					<div className="min-w-0">
 						<NumberInput
@@ -172,7 +172,7 @@ export function TpSlSection({
 							value={tpPrice}
 							onChange={(e) => onTpPriceChange(e.target.value)}
 							className={cn(
-								"w-full box-border bg-background text-xs tabular-nums",
+								"w-full box-border border-trading-panel-stroke-input bg-surface text-xs tabular-nums text-trading-panel-fg",
 								!!tpError && "border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 							disabled={disabled}
@@ -187,7 +187,7 @@ export function TpSlSection({
 							value={slPrice}
 							onChange={(e) => onSlPriceChange(e.target.value)}
 							className={cn(
-								"w-full box-border bg-background text-xs tabular-nums",
+								"w-full box-border border-trading-panel-stroke-input bg-surface text-xs tabular-nums text-trading-panel-fg",
 								!!slError && "border-stroke-error-strong focus:border-stroke-error-strong",
 							)}
 							disabled={disabled}

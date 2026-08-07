@@ -251,6 +251,7 @@ msgstr "Account mode updated"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Account type"
 msgstr "Account type"
 
@@ -1168,6 +1169,7 @@ msgstr "Configured TP/SL amount"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -1666,6 +1668,7 @@ msgstr "Cumulative funding paid or received since this position was opened."
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "Current"
@@ -2957,8 +2960,13 @@ msgstr "Leaderboard"
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Leverage"
 msgstr "Leverage"
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Leverage is fixed at {currentLeverage}× for this market."
+msgstr "Leverage is fixed at {currentLeverage}× for this market."
 
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Light"
@@ -3001,7 +3009,6 @@ msgstr "Limit close order placed"
 msgid "Limit execution"
 msgstr "Limit execution"
 
-#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -3283,8 +3290,8 @@ msgstr "Margin"
 #~ msgstr "Margin · Iso"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin & account"
-msgstr "Margin & account"
+#~ msgid "Margin & account"
+#~ msgstr "Margin & account"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin & leverage"
@@ -3298,6 +3305,7 @@ msgstr "Margin amount"
 msgid "Margin and account risk at a glance"
 msgstr "Margin and account risk at a glance"
 
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin mode"
 msgstr "Margin mode"
@@ -3516,6 +3524,7 @@ msgstr "Maximum supply"
 #~ msgid "Meme"
 #~ msgstr "Meme"
 
+#: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/ui/price-input.tsx
 msgid "Mid"
 msgstr "Mid"
@@ -4112,6 +4121,10 @@ msgstr "Order Book"
 msgid "Order book in quote asset"
 msgstr "Order book in quote asset"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Order book view"
+msgstr "Order book view"
+
 #: src/components/trade/order-reconciliation.tsx
 msgid "Order confirmed by the exchange."
 msgstr "Order confirmed by the exchange."
@@ -4652,11 +4665,13 @@ msgstr "Press and hold for 4 seconds"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
@@ -4688,6 +4703,10 @@ msgstr "Price below {price}"
 #: src/components/trade/orderbook/orderbook-panel.tsx
 msgid "Price grouping"
 msgstr "Price grouping"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Price precision"
+msgstr "Price precision"
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -5497,6 +5516,18 @@ msgstr "Short position"
 #~ msgid "Show a QR code for a desktop wallet to scan."
 #~ msgstr "Show a QR code for a desktop wallet to scan."
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Show asks only"
+msgstr "Show asks only"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Show bids only"
+msgstr "Show bids only"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+msgid "Show both sides"
+msgstr "Show both sides"
+
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Show Executions"
 #~ msgstr "Show Executions"
@@ -5571,6 +5602,7 @@ msgid "Signing..."
 msgstr "Signing..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -5580,6 +5612,7 @@ msgstr "Signing..."
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-position-card.tsx
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
@@ -5756,6 +5789,8 @@ msgstr "Spot Dust Conversion"
 #~ msgid "Spot: Max 1% (100 basis points)"
 #~ msgstr "Spot: Max 1% (100 basis points)"
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts
@@ -6592,6 +6627,7 @@ msgstr "This will replace any current mobile trading key with an inaccessible ke
 #~ msgstr "This will revoke {0} current mobile trading key. Existing phones will stop trading."
 
 #: src/components/trade/tradebox/trade-form-tif.tsx
+#: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
 msgstr "TIF"
 
@@ -7267,6 +7303,10 @@ msgstr "Use {priceText} as limit price"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Use a different phone link"
 #~ msgstr "Use a different phone link"
+
+#: src/components/trade/mobile/mobile-trade-price-field.tsx
+msgid "Use mid price"
+msgstr "Use mid price"
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Use phone link"

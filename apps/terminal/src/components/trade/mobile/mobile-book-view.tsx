@@ -112,6 +112,7 @@ function useWarmBoolean(enabled: boolean, keepAliveMs: number) {
 }
 
 type View = "book" | "trades";
+export type CompactOrderbookMode = "asks" | "both" | "bids";
 
 interface MobileBookViewProps {
 	className?: string;
@@ -126,6 +127,7 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 	const { t } = useLingui();
 	const [internalView, setView] = useState<View>("book");
 	const view = viewProp ?? internalView;
+	const [compactOrderbookMode, setCompactOrderbookMode] = useState<CompactOrderbookMode>("both");
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);
 	const { showOrderbookInQuote } = useGlobalSettings();
 	const { setShowOrderbookInQuote } = useGlobalSettingsActions();
@@ -313,8 +315,8 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 			{view === "book" ? (
 				compact ? (
 					<CompactOrderbook
-						asks={visibleAsks}
-						bids={visibleBids}
+						asks={asks}
+						bids={bids}
 						askLevelCount={askLevelCount}
 						bidLevelCount={bidLevelCount}
 						askLadderRef={askLadderRef}
@@ -322,7 +324,6 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 						bookStatus={bookStatus}
 						flashResetKey={flashResetKey}
 						isTransitioning={isTransitioningBook}
-						maxTotal={maxTotal}
 						priceDecimals={displayPriceDecimals}
 						showOrderbookInQuote={showOrderbookInQuote}
 						szDecimals={displaySzDecimals}
@@ -332,6 +333,10 @@ export function MobileBookView({ className, compact, inTabLayout, view: viewProp
 						selectedOptionLabel={selectedOption?.label ?? FALLBACK_VALUE_PLACEHOLDER}
 						priceGroupingOptions={priceGroupingOptions}
 						setSelectedOptionKey={setSelectedOptionKey}
+						mode={compactOrderbookMode}
+						onModeChange={setCompactOrderbookMode}
+						priceToken={quoteToken}
+						sizeToken={showOrderbookInQuote ? quoteToken : baseToken}
 					/>
 				) : (
 					<SplitOrderbook
@@ -376,7 +381,7 @@ interface OrderbookLayoutProps {
 	szDecimals: number;
 }
 
-interface CompactOrderbookProps extends OrderbookLayoutProps {
+interface CompactOrderbookProps extends Omit<OrderbookLayoutProps, "maxTotal"> {
 	flashResetKey: string;
 	mid: number | undefined;
 	midDirection: "up" | "down" | "flat";
@@ -384,9 +389,13 @@ interface CompactOrderbookProps extends OrderbookLayoutProps {
 	selectedOptionLabel: string;
 	priceGroupingOptions: L2BookPriceGroupOption[];
 	setSelectedOptionKey: (key: string) => void;
+	mode: CompactOrderbookMode;
+	onModeChange: (mode: CompactOrderbookMode) => void;
+	priceToken: string;
+	sizeToken: string;
 }
 
-function CompactOrderbook({
+export function CompactOrderbook({
 	asks,
 	bids,
 	askLevelCount,
@@ -396,7 +405,6 @@ function CompactOrderbook({
 	bookStatus,
 	flashResetKey,
 	isTransitioning,
-	maxTotal,
 	priceDecimals,
 	showOrderbookInQuote,
 	szDecimals,
@@ -406,28 +414,50 @@ function CompactOrderbook({
 	selectedOptionLabel,
 	priceGroupingOptions,
 	setSelectedOptionKey,
+	mode,
+	onModeChange,
+	priceToken,
+	sizeToken,
 }: CompactOrderbookProps) {
 	const { t } = useLingui();
 	const hasAsks = asks.length > 0;
 	const hasBids = bids.length > 0;
 	const showError = bookStatus === "error" && !hasAsks && !hasBids;
+	const showAsks = mode !== "bids";
+	const showBids = mode !== "asks";
+	const askMaxTotal = getVisibleMaxTotal(asks, askLevelCount);
+	const bidMaxTotal = getVisibleMaxTotal(bids, bidLevelCount);
 
 	if (showError) {
 		return <OrderbookStatus bookStatus={bookStatus} />;
 	}
 
 	return (
-		<div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-			<div className="shrink-0 grid h-[35px] items-center uppercase tracking-wider text-fg-muted border-b border-stroke-weak/40 grid-cols-2 gap-1 pl-2 pr-3 text-xs">
-				<div>{t`Price`}</div>
-				<div className="text-right">{t`Size`}</div>
+		<div className="flex-1 min-h-0 flex flex-col overflow-hidden font-market-close text-trading-panel-fg">
+			<div className="grid h-[35px] shrink-0 grid-cols-2 items-center gap-1 border-b border-trading-panel-stroke-card pl-2 pr-3 text-2xs tracking-normal text-trading-panel-subtle uppercase">
+				<div className="min-w-0 truncate" title={`${t`Price`} ${priceToken}`}>
+					{t`Price`}{" "}
+					<span data-slot="compact-orderbook-price-token" className="normal-case max-[339px]:hidden">
+						{priceToken}
+					</span>
+				</div>
+				<div className="min-w-0 truncate text-right" title={`${t`Size`} ${sizeToken}`}>
+					{t`Size`}{" "}
+					<span data-slot="compact-orderbook-size-token" className="normal-case max-[339px]:hidden">
+						{sizeToken}
+					</span>
+				</div>
 			</div>
 
 			<div
 				aria-busy={isTransitioning}
 				className={cn("flex-1 min-h-0 flex flex-col overflow-hidden", isTransitioning && "pointer-events-none")}
 			>
-				<div ref={askLadderRef} className="flex-1 min-h-0 flex flex-col justify-end gap-[4px] overflow-hidden">
+				<div
+					ref={askLadderRef}
+					data-slot="compact-orderbook-asks"
+					className={cn("flex-1 min-h-0 flex flex-col justify-end gap-[4px] overflow-hidden", !showAsks && "hidden")}
+				>
 					{hasAsks ? (
 						<>
 							{PLACEHOLDER_ROW_KEYS.slice(0, Math.max(0, askLevelCount - Math.min(asks.length, askLevelCount))).map(
@@ -444,7 +474,7 @@ function CompactOrderbook({
 										flashResetKey={flashResetKey}
 										level={level}
 										side="ask"
-										maxTotal={maxTotal}
+										maxTotal={askMaxTotal}
 										priceDecimals={priceDecimals}
 										showInQuote={showOrderbookInQuote}
 										szDecimals={szDecimals}
@@ -457,16 +487,34 @@ function CompactOrderbook({
 					)}
 				</div>
 
-				<div className="shrink-0 flex h-[28px] items-center justify-center border-y border-stroke-weak/40 bg-surface px-2 gap-1.5">
-					<span className="tabular-nums text-warning text-base">
-						{typeof mid === "number" && Number.isFinite(mid)
-							? formatNumber(mid, priceDecimals)
-							: FALLBACK_VALUE_PLACEHOLDER}
-					</span>
-					<MidTrendIcon direction={midDirection} className="size-4" />
-				</div>
+				{mode === "both" && (
+					<div
+						data-slot="compact-orderbook-mid"
+						data-direction={midDirection}
+						title={`${t`Spread`}: ${spreadText}`}
+						className="shrink-0 flex h-[28px] items-center justify-start border-y border-trading-panel-stroke-card bg-trading-panel-card px-2 gap-1.5"
+					>
+						<span
+							className={cn(
+								"tabular-nums text-base",
+								midDirection === "up" && "text-trading-panel-success",
+								midDirection === "down" && "text-trading-panel-error",
+								midDirection === "flat" && "text-trading-panel-fg",
+							)}
+						>
+							{typeof mid === "number" && Number.isFinite(mid)
+								? formatNumber(mid, priceDecimals)
+								: FALLBACK_VALUE_PLACEHOLDER}
+						</span>
+						<MidTrendIcon direction={midDirection} className="size-4" />
+					</div>
+				)}
 
-				<div ref={bidLadderRef} className="flex-1 min-h-0 flex flex-col gap-[4px] overflow-hidden">
+				<div
+					ref={bidLadderRef}
+					data-slot="compact-orderbook-bids"
+					className={cn("flex-1 min-h-0 flex flex-col gap-[4px] overflow-hidden", !showBids && "hidden")}
+				>
 					{hasBids ? (
 						<>
 							{bids.slice(0, bidLevelCount).map((level, index) => (
@@ -475,7 +523,7 @@ function CompactOrderbook({
 									flashResetKey={flashResetKey}
 									level={level}
 									side="bid"
-									maxTotal={maxTotal}
+									maxTotal={bidMaxTotal}
 									priceDecimals={priceDecimals}
 									showInQuote={showOrderbookInQuote}
 									szDecimals={szDecimals}
@@ -494,13 +542,15 @@ function CompactOrderbook({
 				</div>
 			</div>
 
-			<div className="shrink-0 border-t border-stroke-weak/40 flex items-center justify-between text-fg-muted px-2 text-xs">
+			<div className="shrink-0 h-[31px] border-t border-trading-panel-stroke-card flex items-center gap-1 text-trading-panel-muted pl-2 pr-1 text-xs max-[339px]:pl-1 max-[339px]:pr-0">
 				<Dropdown
 					size="sm"
 					hideCaret
+					triggerVariant="minimal"
+					triggerAriaLabel={t`Price precision`}
 					align="start"
 					trigger={selectedOptionLabel}
-					triggerClassName="font-mono text-xs px-1.5"
+					triggerClassName="relative min-h-6 font-mono text-xs text-trading-panel-muted"
 					items={priceGroupingOptions.map(
 						(option): DropdownItem => ({
 							label: option.label,
@@ -508,9 +558,70 @@ function CompactOrderbook({
 						}),
 					)}
 				/>
-				<span className="tabular-nums text-warning">{spreadText}</span>
+				<span data-slot="compact-orderbook-spread" className="sr-only">
+					{t`Spread`}: {spreadText}
+				</span>
+				<span className="min-w-0 flex-1" aria-hidden="true" />
+				<CompactOrderbookModeControls mode={mode} onModeChange={onModeChange} />
 			</div>
 		</div>
+	);
+}
+
+function getVisibleMaxTotal(levels: BookLevel[], levelCount: number): number {
+	return levels.slice(0, levelCount).reduce((max, level) => Math.max(max, level.total), 0);
+}
+
+function CompactOrderbookModeControls({
+	mode,
+	onModeChange,
+}: {
+	mode: CompactOrderbookMode;
+	onModeChange: (mode: CompactOrderbookMode) => void;
+}) {
+	const { t } = useLingui();
+	const options: Array<{ mode: CompactOrderbookMode; label: string; bars: Array<"ask" | "bid"> }> = [
+		{ mode: "asks", label: t`Show asks only`, bars: ["ask", "ask"] },
+		{ mode: "both", label: t`Show both sides`, bars: ["ask", "bid"] },
+		{ mode: "bids", label: t`Show bids only`, bars: ["bid", "bid"] },
+	];
+
+	return (
+		<fieldset className="m-0 flex shrink-0 items-center gap-0.5 border-0 p-0" aria-label={t`Order book view`}>
+			{options.map((option) => {
+				const selected = mode === option.mode;
+				return (
+					<button
+						key={option.mode}
+						type="button"
+						aria-label={option.label}
+						aria-pressed={selected}
+						title={option.label}
+						onClick={() => onModeChange(option.mode)}
+						className="grid size-6 shrink-0 place-items-center rounded-[4px] outline-none focus-visible:ring-1 focus-visible:ring-trading-panel-control"
+					>
+						<span
+							className={cn(
+								"grid size-3 grid-rows-2 overflow-hidden rounded-[3px] border transition-opacity duration-150",
+								selected
+									? "border-trading-panel-control opacity-100"
+									: "border-transparent opacity-40 hover:opacity-70",
+							)}
+							aria-hidden="true"
+						>
+							{option.bars.map((bar, index) => (
+								<span
+									key={`${option.mode}-${bar}-${index}`}
+									style={{
+										backgroundColor: `var(--orderbook-compact-depth-${bar})`,
+									}}
+								/>
+							))}
+						</span>
+					</button>
+				);
+			})}
+		</fieldset>
 	);
 }
 
@@ -543,7 +654,7 @@ function SplitOrderbook({
 			<div className="shrink-0 border-b border-stroke-weak/40 bg-background">
 				<div className="flex items-center justify-between gap-2 px-3 py-1.5 text-2xs text-fg-muted">
 					<span>{t`Spread`}</span>
-					<span className="tabular-nums text-warning">{spreadText}</span>
+					<span className="tabular-nums text-trading-panel-subtle">{spreadText}</span>
 				</div>
 				<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-px px-2 pb-1.5 text-2xs uppercase tracking-wider text-fg-muted">
 					<div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1">
@@ -784,7 +895,7 @@ function OrderbookPlaceholderRow({ compact }: { compact?: boolean }) {
 }
 
 function MidTrendIcon({ direction, className }: { direction: "up" | "down" | "flat"; className?: string }) {
-	if (direction === "up") return <TrendUpIcon className={cn("text-success", className)} />;
-	if (direction === "down") return <TrendDownIcon className={cn("text-error", className)} />;
+	if (direction === "up") return <TrendUpIcon className={cn("text-trading-panel-success", className)} />;
+	if (direction === "down") return <TrendDownIcon className={cn("text-trading-panel-error", className)} />;
 	return null;
 }

@@ -46,13 +46,18 @@ function OrderbookRowComponent({
 			title={priceText}
 			aria-label={t`Use ${priceText} as limit price`}
 			className={cn(
-				"group relative block w-full shrink-0 cursor-pointer text-left hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus",
+				"group relative block w-full shrink-0 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus",
+				compact ? "hover:bg-trading-panel-hover" : "hover:bg-fill-hover",
 				compact ? "h-[24px]" : "h-[23px]",
 			)}
 		>
 			<span
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
-				style={{ width: `${depthPct}%`, left: 0 }}
+				style={{
+					width: `${depthPct}%`,
+					left: 0,
+					backgroundColor: compact ? `var(--orderbook-compact-depth-${side})` : undefined,
+				}}
 			/>
 			<span
 				className={cn(
@@ -65,13 +70,15 @@ function OrderbookRowComponent({
 					className={cn(
 						"min-w-0 truncate text-left justify-start",
 						!compact && "font-medium",
-						isAsk ? "orderbook-price-ask" : "orderbook-price-bid",
+						isAsk
+							? cn("orderbook-price-ask", compact && "text-trading-panel-error")
+							: cn("orderbook-price-bid", compact && "text-trading-panel-success"),
 					)}
 				>
 					{priceText}
 				</span>
 				<OrderbookSizeCell
-					className="min-w-0 truncate text-right orderbook-value-text"
+					className={cn("min-w-0 truncate text-right", compact ? "text-trading-panel-muted" : "orderbook-value-text")}
 					displayValue={sizeText}
 					resetKey={flashResetKey}
 					value={level.size}

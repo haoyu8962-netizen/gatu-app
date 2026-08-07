@@ -207,8 +207,10 @@
     --market-down: var(--text-error);
     --orderbook-depth-bid: var(--text-success);
     --orderbook-depth-ask: var(--text-error);
-    --orderbook-flash-bid: var(--text-success);
-    --orderbook-flash-ask: var(--text-error);
+    --orderbook-compact-depth-bid: #1fa67d;
+    --orderbook-compact-depth-ask: #ed7088;
+    --orderbook-flash-bid: #0a9981;
+    --orderbook-flash-ask: #ed7088;
     --orderbook-text: var(--text-strong);
     --orderbook-spread-bg: var(--bg-alternate);
     --market-neutral: #8A919A;
@@ -234,6 +236,33 @@
     --market-close-success: #1f8a5a;
     --market-close-warning: #d98e1f;
     --market-close-inline-edit-shadow: 0 4px 16px rgba(20, 30, 45, 0.16);
+
+    /* Trading panel surfaces and controls — mobile redesign semantic colors. */
+    --trading-panel-text-strong: #1a2330;
+    --trading-panel-text-muted: #6b7686;
+    --trading-panel-text-subtle: #98a2b0;
+    --trading-panel-stroke-card: #e3e8ee;
+    --trading-panel-stroke-input: #d8dfe7;
+    --trading-panel-stroke-control: #c6cfd9;
+    --trading-panel-surface-card: #f7f9fb;
+    --trading-panel-surface-hover: #f1f4f8;
+    --trading-panel-control-active: #1a2330;
+    --trading-panel-control-active-text: #ffffff;
+    --trading-panel-success: #1f8a5a;
+    --trading-panel-error: #d6453d;
+    --trading-panel-success-fill: #1f8a5a;
+    --trading-panel-error-fill: #d6453d;
+    --trading-panel-neutral-disabled-fill: #c6cfd9;
+    --trading-panel-success-disabled-fill: #b9dccb;
+    --trading-panel-error-disabled-fill: #efc3bf;
+    --trading-panel-on-success: #ffffff;
+    --trading-panel-on-error: #ffffff;
+    --trading-panel-on-disabled: #ffffff;
+    --trading-panel-success-soft: #eaf5ef;
+    --trading-panel-error-soft: #fcefee;
+    --trading-panel-scrim: rgb(20 30 45 / 42%);
+    --trading-panel-slider-thumb: #ffffff;
+    --trading-panel-slider-shadow: 0 2px 6px rgba(20, 30, 45, 0.2);
 
     /* Position PNL share card — intentionally fixed inverse canvas across themes. */
     --position-share-card: #1a2330;
@@ -342,6 +371,8 @@
     --market-down: var(--text-error);
     --orderbook-depth-bid: #1fa67d;
     --orderbook-depth-ask: #ed7088;
+    --orderbook-compact-depth-bid: #1fa67d;
+    --orderbook-compact-depth-ask: #ed7088;
     --orderbook-flash-bid: #0a9981;
     --orderbook-flash-ask: #ed7088;
     --orderbook-text: #d2dad7;
@@ -369,6 +400,32 @@
     --market-close-success: var(--fill-success-strong);
     --market-close-warning: var(--text-warning);
     --market-close-inline-edit-shadow: 0 4px 16px rgba(0, 0, 0, 0.36);
+
+    --trading-panel-text-strong: var(--text-strong);
+    --trading-panel-text-muted: var(--text-weak);
+    --trading-panel-text-subtle: var(--icon-neutral);
+    --trading-panel-stroke-card: color-mix(in srgb, var(--stroke-weak) 40%, transparent);
+    --trading-panel-stroke-input: color-mix(in srgb, var(--stroke-strong) 40%, var(--stroke-weak));
+    --trading-panel-stroke-control: var(--stroke-strong);
+    --trading-panel-surface-card: var(--bg-raised);
+    --trading-panel-surface-hover: var(--fill-hover);
+    --trading-panel-control-active: var(--fill-selected);
+    --trading-panel-control-active-text: var(--text-inverse-strong);
+    --trading-panel-success: var(--text-success);
+    --trading-panel-error: var(--text-error);
+    --trading-panel-success-fill: var(--fill-success-weak);
+    --trading-panel-error-fill: var(--fill-error-weak);
+    --trading-panel-neutral-disabled-fill: var(--fill-disabled);
+    --trading-panel-success-disabled-fill: var(--fill-disabled);
+    --trading-panel-error-disabled-fill: var(--fill-disabled);
+    --trading-panel-on-success: var(--text-success);
+    --trading-panel-on-error: var(--text-error);
+    --trading-panel-on-disabled: var(--text-disabled);
+    --trading-panel-success-soft: var(--fill-success-weak);
+    --trading-panel-error-soft: var(--fill-error-weak);
+    --trading-panel-scrim: var(--fill-overlay);
+    --trading-panel-slider-thumb: var(--fill-white);
+    --trading-panel-slider-shadow: 0 2px 6px rgba(0, 0, 0, 0.36);
   }
 }
 
@@ -443,6 +500,33 @@
   --color-market-close-success: var(--market-close-success);
   --color-market-close-warning: var(--market-close-warning);
   --shadow-market-close-inline-edit: var(--market-close-inline-edit-shadow);
+
+  /* Trading panel surfaces and controls */
+  --color-trading-panel-fg: var(--trading-panel-text-strong);
+  --color-trading-panel-muted: var(--trading-panel-text-muted);
+  --color-trading-panel-subtle: var(--trading-panel-text-subtle);
+  --color-trading-panel-stroke-card: var(--trading-panel-stroke-card);
+  --color-trading-panel-stroke-input: var(--trading-panel-stroke-input);
+  --color-trading-panel-stroke-control: var(--trading-panel-stroke-control);
+  --color-trading-panel-card: var(--trading-panel-surface-card);
+  --color-trading-panel-hover: var(--trading-panel-surface-hover);
+  --color-trading-panel-control: var(--trading-panel-control-active);
+  --color-trading-panel-on-control: var(--trading-panel-control-active-text);
+  --color-trading-panel-success: var(--trading-panel-success);
+  --color-trading-panel-error: var(--trading-panel-error);
+  --color-trading-panel-success-fill: var(--trading-panel-success-fill);
+  --color-trading-panel-error-fill: var(--trading-panel-error-fill);
+  --color-trading-panel-neutral-disabled-fill: var(--trading-panel-neutral-disabled-fill);
+  --color-trading-panel-success-disabled-fill: var(--trading-panel-success-disabled-fill);
+  --color-trading-panel-error-disabled-fill: var(--trading-panel-error-disabled-fill);
+  --color-trading-panel-on-success: var(--trading-panel-on-success);
+  --color-trading-panel-on-error: var(--trading-panel-on-error);
+  --color-trading-panel-on-disabled: var(--trading-panel-on-disabled);
+  --color-trading-panel-success-soft: var(--trading-panel-success-soft);
+  --color-trading-panel-error-soft: var(--trading-panel-error-soft);
+  --color-trading-panel-scrim: var(--trading-panel-scrim);
+  --color-trading-panel-slider-thumb: var(--trading-panel-slider-thumb);
+  --shadow-trading-panel-slider: var(--trading-panel-slider-shadow);
 
   /* Position PNL share card */
   --color-position-share-card: var(--position-share-card);
