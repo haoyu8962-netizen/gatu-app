@@ -17,6 +17,15 @@ export interface MobileDisclosureSetState {
 	createController: (keys: readonly string[]) => MobileDisclosureSetController;
 }
 
+export interface MobilePositionsDisclosureStates {
+	readonly identity: string | null;
+	readonly positions: MobileDisclosureSetState;
+	readonly orders: MobileDisclosureSetState;
+	readonly tradeHistory: MobileDisclosureSetState;
+	readonly orderHistory: MobileDisclosureSetState;
+	readonly fundingHistory: MobileDisclosureSetState;
+}
+
 export function useMobileDisclosureSetState(identity: string | null): MobileDisclosureSetState {
 	const [state, setState] = useState<DisclosureSetState>(() => ({
 		identity,
@@ -62,6 +71,16 @@ export function useMobileDisclosureSetState(identity: string | null): MobileDisc
 			return { expandedKeys, setExpanded, expandAll, collapseAll };
 		},
 	};
+}
+
+export function useMobilePositionsDisclosureStates(identity: string | null): MobilePositionsDisclosureStates {
+	const positions = useMobileDisclosureSetState(identity);
+	const orders = useMobileDisclosureSetState(identity);
+	const tradeHistory = useMobileDisclosureSetState(identity);
+	const orderHistory = useMobileDisclosureSetState(identity);
+	const fundingHistory = useMobileDisclosureSetState(identity);
+
+	return { identity, positions, orders, tradeHistory, orderHistory, fundingHistory };
 }
 
 export function useMobileDisclosureSet(

@@ -10,6 +10,7 @@ import { MobileChartView } from "./mobile-chart-view";
 import { MobileMarketBar } from "./mobile-market-bar";
 import { MobilePositionsView } from "./mobile-positions-view";
 import { MobileTradeView } from "./mobile-trade-view";
+import type { MobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
 
 type TopView = "chart" | "book" | "trades";
 
@@ -17,17 +18,31 @@ interface Props {
 	active?: boolean;
 	showMarketBar?: boolean;
 	showOrderForm?: boolean;
+	disclosureStates: MobilePositionsDisclosureStates;
 }
 
-export function MobileTradeLayout({ active = true, showMarketBar = false, showOrderForm = true }: Props) {
+export function MobileTradeLayout({
+	active = true,
+	showMarketBar = false,
+	showOrderForm = true,
+	disclosureStates,
+}: Props) {
 	return showOrderForm ? (
-		<TradeOrderView active={active} showMarketBar={showMarketBar} />
+		<TradeOrderView active={active} showMarketBar={showMarketBar} disclosureStates={disclosureStates} />
 	) : (
-		<MarketsDataView active={active} showMarketBar={showMarketBar} />
+		<MarketsDataView active={active} showMarketBar={showMarketBar} disclosureStates={disclosureStates} />
 	);
 }
 
-function TradeOrderView({ active, showMarketBar }: { active: boolean; showMarketBar: boolean }) {
+function TradeOrderView({
+	active,
+	showMarketBar,
+	disclosureStates,
+}: {
+	active: boolean;
+	showMarketBar: boolean;
+	disclosureStates: MobilePositionsDisclosureStates;
+}) {
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const { routeMarketName } = useExchangeScope();
 	const [sizeMode, setSizeMode] = useState<SizeMode>("quote");
@@ -55,14 +70,26 @@ function TradeOrderView({ active, showMarketBar }: { active: boolean; showMarket
 
 			{active && (
 				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
-					<MobilePositionsView scrollMode="page" balancesContent={<MobileBalancesTab />} />
+					<MobilePositionsView
+						scrollMode="page"
+						balancesContent={<MobileBalancesTab />}
+						disclosureStates={disclosureStates}
+					/>
 				</div>
 			)}
 		</div>
 	);
 }
 
-function MarketsDataView({ active, showMarketBar }: { active: boolean; showMarketBar: boolean }) {
+function MarketsDataView({
+	active,
+	showMarketBar,
+	disclosureStates,
+}: {
+	active: boolean;
+	showMarketBar: boolean;
+	disclosureStates: MobilePositionsDisclosureStates;
+}) {
 	const [topView, setTopView] = useState<TopView>("chart");
 
 	const tabs: { value: TopView; label: string }[] = [
@@ -120,7 +147,11 @@ function MarketsDataView({ active, showMarketBar }: { active: boolean; showMarke
 
 			{active && (
 				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
-					<MobilePositionsView scrollMode="page" balancesContent={<MobileBalancesTab />} />
+					<MobilePositionsView
+						scrollMode="page"
+						balancesContent={<MobileBalancesTab />}
+						disclosureStates={disclosureStates}
+					/>
 				</div>
 			)}
 		</div>

@@ -5,7 +5,10 @@ import { I18nProvider } from "@lingui/react";
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { MobileDisclosureSetState } from "@/components/trade/mobile/use-mobile-disclosure-set";
+import {
+	type MobileDisclosureSetState,
+	useMobilePositionsDisclosureStates,
+} from "@/components/trade/mobile/use-mobile-disclosure-set";
 import { MOBILE_POSITIONS_TABS } from "@/config/trade";
 
 const storeState = vi.hoisted(() => ({
@@ -126,6 +129,17 @@ vi.mock("@/components/trade/mobile/mobile-twap-tab", () => ({
 }));
 
 import { MobilePositionsView } from "@/components/trade/mobile/mobile-positions-view";
+
+function SharedDisclosurePositionsView({ visible, identity }: { visible: boolean; identity: string | null }) {
+	const disclosureStates = useMobilePositionsDisclosureStates(identity);
+	return visible ? (
+		<MobilePositionsView
+			includeBottomNavSpacer={false}
+			balancesContent={<div data-testid="shared-balances" />}
+			disclosureStates={disclosureStates}
+		/>
+	) : null;
+}
 
 describe("MobilePositionsView tabs", () => {
 	let container: HTMLDivElement;
@@ -422,6 +436,45 @@ describe("MobilePositionsView tabs", () => {
 				.querySelector<HTMLButtonElement>('[data-testid="toggle-orders-history-first"]')
 				?.getAttribute("aria-expanded"),
 		).toBe("false");
+	});
+
+	it("restores every shared disclosure state after the entire account view remounts", () => {
+		vi.useFakeTimers();
+		storeState.positions = [{ coin: "AAVE", dex: "", szi: "1" }];
+
+		function renderSharedView(visible: boolean) {
+			const identity = storeState.isConnected ? `${storeState.env}:${storeState.address.toLowerCase()}` : null;
+			act(() => {
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<SharedDisclosurePositionsView visible={visible} identity={identity} />
+					</I18nProvider>,
+				);
+			});
+		}
+
+		const collapsibleTabs = ["positions", "orders", "history", "funding", "orders-history"] as const;
+		renderSharedView(true);
+		for (const tabValue of collapsibleTabs) {
+			act(() => container.querySelector<HTMLButtonElement>(`[data-mobile-account-tab="${tabValue}"]`)?.click());
+			act(() => container.querySelector<HTMLButtonElement>(`[data-testid="toggle-${tabValue}-first"]`)?.click());
+			expect(container.querySelector(`[data-testid="expanded-${tabValue}-keys"]`)?.textContent).not.toBe("");
+		}
+
+		renderSharedView(false);
+		expect(container.querySelector("[data-mobile-account-tab]")).toBeNull();
+		renderSharedView(true);
+		for (const tabValue of collapsibleTabs) {
+			act(() => container.querySelector<HTMLButtonElement>(`[data-mobile-account-tab="${tabValue}"]`)?.click());
+			expect(container.querySelector(`[data-testid="expanded-${tabValue}-keys"]`)?.textContent).not.toBe("");
+		}
+
+		storeState.env = "Testnet";
+		renderSharedView(true);
+		for (const tabValue of collapsibleTabs) {
+			act(() => container.querySelector<HTMLButtonElement>(`[data-mobile-account-tab="${tabValue}"]`)?.click());
+			expect(container.querySelector(`[data-testid="expanded-${tabValue}-keys"]`)?.textContent).toBe("");
+		}
 	});
 
 	it("flushes an unpersisted tab preference when the page is hidden", () => {

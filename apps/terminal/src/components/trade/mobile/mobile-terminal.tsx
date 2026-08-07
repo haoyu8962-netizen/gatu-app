@@ -1,11 +1,14 @@
 import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
+import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
+import { useHyperliquid } from "@/lib/hyperliquid";
 import { GeoRestrictionBanner } from "../geo/geo-restriction-banner";
 import { MobileAccountView } from "./mobile-account-view";
 import { MobileBottomNav } from "./mobile-bottom-nav";
 import { MobileHeader } from "./mobile-header";
 import { MobileTradeLayout } from "./mobile-trade-layout";
 import { OfflineBanner } from "./offline-banner";
+import { useMobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
@@ -14,6 +17,10 @@ interface Props {
 
 export function MobileTerminal({ className }: Props) {
 	const { activeTab, setActiveTab } = useMobileTerminalTab();
+	const { address, isConnected } = useWalletSession();
+	const { env } = useHyperliquid();
+	const disclosureIdentity = isConnected && address ? `${env}:${address.toLowerCase()}` : null;
+	const disclosureStates = useMobilePositionsDisclosureStates(disclosureIdentity);
 
 	return (
 		<div
@@ -42,6 +49,7 @@ export function MobileTerminal({ className }: Props) {
 							active={activeTab === "markets"}
 							showMarketBar={activeTab === "markets"}
 							showOrderForm={false}
+							disclosureStates={disclosureStates}
 						/>
 					</div>
 					<div
@@ -51,7 +59,11 @@ export function MobileTerminal({ className }: Props) {
 							activeTab === "trade" ? "visible z-10 pointer-events-auto" : "invisible z-0 pointer-events-none",
 						)}
 					>
-						<MobileTradeLayout active={activeTab === "trade"} showMarketBar={activeTab === "trade"} />
+						<MobileTradeLayout
+							active={activeTab === "trade"}
+							showMarketBar={activeTab === "trade"}
+							disclosureStates={disclosureStates}
+						/>
 					</div>
 					{activeTab === "account" && (
 						<div className={cn("absolute inset-0 min-h-0 w-full", "visible z-10 opacity-100 pointer-events-auto")}>

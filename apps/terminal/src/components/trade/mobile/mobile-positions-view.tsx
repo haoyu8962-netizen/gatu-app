@@ -22,7 +22,7 @@ import { MobileOrdersHistoryTab } from "./mobile-orders-history-tab";
 import { MobileOrdersTab } from "./mobile-orders-tab";
 import { MobilePositionsTab } from "./mobile-positions-tab";
 import { MobileTwapTab } from "./mobile-twap-tab";
-import { useMobileDisclosureSetState } from "./use-mobile-disclosure-set";
+import { type MobilePositionsDisclosureStates, useMobilePositionsDisclosureStates } from "./use-mobile-disclosure-set";
 
 type TabValue = MobilePositionsTabValue | "transfers";
 export type MobileDataScrollMode = "contained" | "page";
@@ -39,6 +39,7 @@ interface Props {
 	balancesContent?: ReactNode;
 	transfersContent?: ReactNode;
 	emptyDescription?: ReactNode;
+	disclosureStates?: MobilePositionsDisclosureStates;
 }
 
 export function MobilePositionsView({
@@ -48,6 +49,7 @@ export function MobilePositionsView({
 	balancesContent,
 	transfersContent,
 	emptyDescription,
+	disclosureStates,
 }: Props) {
 	const { _ } = useLingui();
 	const storedActiveTab = usePositionsActiveTab();
@@ -64,11 +66,9 @@ export function MobilePositionsView({
 	const { address, isConnected } = useWalletSession();
 	const { env } = useHyperliquid();
 	const disclosureIdentity = isConnected && address ? `${env}:${address.toLowerCase()}` : null;
-	const positionDisclosureState = useMobileDisclosureSetState(disclosureIdentity);
-	const orderDisclosureState = useMobileDisclosureSetState(disclosureIdentity);
-	const tradeHistoryDisclosureState = useMobileDisclosureSetState(disclosureIdentity);
-	const orderHistoryDisclosureState = useMobileDisclosureSetState(disclosureIdentity);
-	const fundingHistoryDisclosureState = useMobileDisclosureSetState(disclosureIdentity);
+	const localDisclosureStates = useMobilePositionsDisclosureStates(disclosureIdentity);
+	const activeDisclosureStates =
+		disclosureStates?.identity === disclosureIdentity ? disclosureStates : localDisclosureStates;
 	const {
 		perpSummary,
 		spotBalances,
@@ -303,22 +303,22 @@ export function MobilePositionsView({
 							{balancesContent}
 						</TabsContent>
 						<TabsContent value="positions" className={tabContentClass}>
-							<MobilePositionsTab scrollMode={scrollMode} disclosureState={positionDisclosureState} />
+							<MobilePositionsTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.positions} />
 						</TabsContent>
 						<TabsContent value="orders" className={tabContentClass}>
-							<MobileOrdersTab scrollMode={scrollMode} disclosureState={orderDisclosureState} />
+							<MobileOrdersTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orders} />
 						</TabsContent>
 						<TabsContent value="twap" className={tabContentClass}>
 							<MobileTwapTab scrollMode={scrollMode} />
 						</TabsContent>
 						<TabsContent value="history" className={tabContentClass}>
-							<MobileHistoryTab scrollMode={scrollMode} disclosureState={tradeHistoryDisclosureState} />
+							<MobileHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.tradeHistory} />
 						</TabsContent>
 						<TabsContent value="orders-history" className={tabContentClass}>
-							<MobileOrdersHistoryTab scrollMode={scrollMode} disclosureState={orderHistoryDisclosureState} />
+							<MobileOrdersHistoryTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.orderHistory} />
 						</TabsContent>
 						<TabsContent value="funding" className={tabContentClass}>
-							<MobileFundingTab scrollMode={scrollMode} disclosureState={fundingHistoryDisclosureState} />
+							<MobileFundingTab scrollMode={scrollMode} disclosureState={activeDisclosureStates.fundingHistory} />
 						</TabsContent>
 						{transfersContent != null ? (
 							<TabsContent value="transfers" className={tabContentClass}>

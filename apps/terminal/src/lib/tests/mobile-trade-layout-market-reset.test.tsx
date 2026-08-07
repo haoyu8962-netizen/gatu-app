@@ -3,6 +3,7 @@
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useMobilePositionsDisclosureStates } from "@/components/trade/mobile/use-mobile-disclosure-set";
 
 const marketState = vi.hoisted(() => ({
 	routeMarketName: "xyz:GOOGL" as string | undefined,
@@ -68,6 +69,11 @@ vi.mock("@/components/trade/mobile/mobile-positions-view", () => ({
 
 import { MobileTradeLayout } from "@/components/trade/mobile/mobile-trade-layout";
 
+function MobileTradeLayoutHarness({ active, showOrderForm }: { active: boolean; showOrderForm: boolean }) {
+	const disclosureStates = useMobilePositionsDisclosureStates("Mainnet:0x1234");
+	return <MobileTradeLayout active={active} showOrderForm={showOrderForm} disclosureStates={disclosureStates} />;
+}
+
 describe("MobileTradeLayout market identity", () => {
 	let container: HTMLDivElement;
 	let root: Root;
@@ -88,7 +94,7 @@ describe("MobileTradeLayout market identity", () => {
 
 	function render(active = true, showOrderForm = true) {
 		act(() => {
-			root.render(<MobileTradeLayout active={active} showOrderForm={showOrderForm} />);
+			root.render(<MobileTradeLayoutHarness active={active} showOrderForm={showOrderForm} />);
 		});
 	}
 
