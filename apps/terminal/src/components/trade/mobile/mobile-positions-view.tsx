@@ -11,7 +11,7 @@ import { getReadyItemCount } from "@/domain/trade/position-toolbar";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
-import { useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { useHyperliquid, useSubscription, useUserPositions } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { toBig } from "@/lib/trade/numbers";
 import { useGlobalSettingsActions, usePositionsActiveTab } from "@/stores/use-global-settings-store";
@@ -62,7 +62,13 @@ export function MobilePositionsView({
 	const tabPreferenceTimerRef = useRef<number | null>(null);
 	const pendingTabPreferenceRef = useRef<TabValue | null>(null);
 	const { address, isConnected } = useWalletSession();
-	const positionDisclosureState = useMobileDisclosureSetState(address?.toLowerCase() ?? null);
+	const { env } = useHyperliquid();
+	const disclosureIdentity = isConnected && address ? `${env}:${address.toLowerCase()}` : null;
+	const positionDisclosureState = useMobileDisclosureSetState(disclosureIdentity);
+	const orderDisclosureState = useMobileDisclosureSetState(disclosureIdentity);
+	const tradeHistoryDisclosureState = useMobileDisclosureSetState(disclosureIdentity);
+	const orderHistoryDisclosureState = useMobileDisclosureSetState(disclosureIdentity);
+	const fundingHistoryDisclosureState = useMobileDisclosureSetState(disclosureIdentity);
 	const {
 		perpSummary,
 		spotBalances,
@@ -300,19 +306,19 @@ export function MobilePositionsView({
 							<MobilePositionsTab scrollMode={scrollMode} disclosureState={positionDisclosureState} />
 						</TabsContent>
 						<TabsContent value="orders" className={tabContentClass}>
-							<MobileOrdersTab scrollMode={scrollMode} />
+							<MobileOrdersTab scrollMode={scrollMode} disclosureState={orderDisclosureState} />
 						</TabsContent>
 						<TabsContent value="twap" className={tabContentClass}>
 							<MobileTwapTab scrollMode={scrollMode} />
 						</TabsContent>
 						<TabsContent value="history" className={tabContentClass}>
-							<MobileHistoryTab scrollMode={scrollMode} />
+							<MobileHistoryTab scrollMode={scrollMode} disclosureState={tradeHistoryDisclosureState} />
 						</TabsContent>
 						<TabsContent value="orders-history" className={tabContentClass}>
-							<MobileOrdersHistoryTab scrollMode={scrollMode} />
+							<MobileOrdersHistoryTab scrollMode={scrollMode} disclosureState={orderHistoryDisclosureState} />
 						</TabsContent>
 						<TabsContent value="funding" className={tabContentClass}>
-							<MobileFundingTab scrollMode={scrollMode} />
+							<MobileFundingTab scrollMode={scrollMode} disclosureState={fundingHistoryDisclosureState} />
 						</TabsContent>
 						{transfersContent != null ? (
 							<TabsContent value="transfers" className={tabContentClass}>

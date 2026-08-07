@@ -55,11 +55,12 @@ import { CancelAllOrdersModal } from "../positions/cancel-all-orders-modal";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import { MobileOrderModificationModal } from "./mobile-order-modification-modal";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
-import { useMobileDisclosureSet } from "./use-mobile-disclosure-set";
+import { type MobileDisclosureSetState, useMobileDisclosureSet } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
 	className?: string;
+	disclosureState?: MobileDisclosureSetState;
 	scrollMode?: MobileDataScrollMode;
 }
 
@@ -162,7 +163,7 @@ function isModifyExecutionSessionBindingCurrent(
 	);
 }
 
-export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) {
+export function MobileOrdersTab({ className, disclosureState, scrollMode = "contained" }: Props) {
 	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
@@ -235,6 +236,7 @@ export function MobileOrdersTab({ className, scrollMode = "contained" }: Props) 
 	const { expandedKeys: expandedOrderKeys, setExpanded: setOrderExpanded } = useMobileDisclosureSet(
 		`${env}:${address?.toLowerCase() ?? "disconnected"}`,
 		orderKeys,
+		disclosureState,
 	);
 
 	function getMarketBinding(coin: string): OpenOrderModifyMarketBinding | null {

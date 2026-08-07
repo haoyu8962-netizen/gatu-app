@@ -1,18 +1,18 @@
 /** @vitest-environment jsdom */
 
-import { act } from "react";
+import { act, StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useMobileDisclosureSet } from "@/components/trade/mobile/use-mobile-disclosure-set";
 
-function DisclosureHarness({ identity, keys }: { identity: string; keys: readonly string[] }) {
+function DisclosureHarness({ identity, keys }: { identity: string | null; keys: readonly string[] }) {
 	const { expandedKeys, setExpanded, expandAll, collapseAll } = useMobileDisclosureSet(identity, keys);
 
 	return (
 		<div>
 			<output data-testid="expanded">{[...expandedKeys].join(",")}</output>
-			<button type="button" onClick={() => setExpanded("one", false)}>
-				Collapse first
+			<button type="button" onClick={() => setExpanded("one", !expandedKeys.has("one"))}>
+				Toggle first
 			</button>
 			<button type="button" onClick={() => expandAll()}>
 				Expand all
@@ -21,6 +21,14 @@ function DisclosureHarness({ identity, keys }: { identity: string; keys: readonl
 				Collapse all
 			</button>
 		</div>
+	);
+}
+
+function StrictDisclosureHarness(props: { identity: string | null; keys: readonly string[] }) {
+	return (
+		<StrictMode>
+			<DisclosureHarness {...props} />
+		</StrictMode>
 	);
 }
 
@@ -39,16 +47,16 @@ describe("useMobileDisclosureSet", () => {
 		container.remove();
 	});
 
-	it("defaults the first asynchronously available card to expanded and preserves explicit controls", () => {
-		act(() => root.render(<DisclosureHarness identity="owner-one" keys={[]} />));
+	it("keeps asynchronously available cards collapsed until the user expands them", () => {
+		act(() => root.render(<StrictDisclosureHarness identity="owner-one" keys={[]} />));
 		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
 
-		act(() => root.render(<DisclosureHarness identity="owner-one" keys={["one", "two"]} />));
-		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
+		act(() => root.render(<StrictDisclosureHarness identity="owner-one" keys={["one", "two"]} />));
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
 
 		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
-		act(() => buttons.find((button) => button.textContent?.trim() === "Collapse first")?.click());
-		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+		act(() => buttons.find((button) => button.textContent?.trim() === "Toggle first")?.click());
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
 
 		act(() => buttons.find((button) => button.textContent?.trim() === "Expand all")?.click());
 		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one,two");
@@ -57,31 +65,51 @@ describe("useMobileDisclosureSet", () => {
 		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
 	});
 
-	it("preserves explicit state when visible keys are filtered, reordered, or added", () => {
-		act(() => root.render(<DisclosureHarness identity="owner-one" keys={["one", "two"]} />));
+	it("preserves explicit state and merges bulk updates for filtered keys", () => {
+		act(() => root.render(<StrictDisclosureHarness identity="owner-one" keys={["one", "two"]} />));
 
-		const collapseFirst = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent?.trim() === "Collapse first",
-		);
-		act(() => collapseFirst?.click());
-		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
+		const toggleFirst = buttons.find((button) => button.textContent?.trim() === "Toggle first");
+		act(() => toggleFirst?.click());
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
 
-		act(() => root.render(<DisclosureHarness identity="owner-one" keys={["two"]} />));
-		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+		act(() => root.render(<StrictDisclosureHarness identity="owner-one" keys={[]} />));
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
 
-		act(() => root.render(<DisclosureHarness identity="owner-one" keys={["two", "one", "three"]} />));
-		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+		act(() => root.render(<StrictDisclosureHarness identity="owner-one" keys={["two"]} />));
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
+
+		const filteredButtons = [...container.querySelectorAll<HTMLButtonElement>("button")];
+		act(() => filteredButtons.find((button) => button.textContent?.trim() === "Expand all")?.click());
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one,two");
+		act(() => filteredButtons.find((button) => button.textContent?.trim() === "Collapse all")?.click());
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
+
+		act(() => root.render(<StrictDisclosureHarness identity="owner-one" keys={["two", "one", "three"]} />));
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
 	});
 
-	it("resets to the first visible key when the identity changes", () => {
-		act(() => root.render(<DisclosureHarness identity="owner-one" keys={["one", "two"]} />));
-		const collapseFirst = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent?.trim() === "Collapse first",
+	it("resets to a collapsed state when the identity changes", () => {
+		act(() => root.render(<StrictDisclosureHarness identity="owner-one" keys={["one", "two"]} />));
+		const toggleFirst = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Toggle first",
 		);
-		act(() => collapseFirst?.click());
+		act(() => toggleFirst?.click());
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
+
+		act(() => root.render(<StrictDisclosureHarness identity="owner-two" keys={["one", "two"]} />));
 		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
 
-		act(() => root.render(<DisclosureHarness identity="owner-two" keys={["one", "two"]} />));
+		act(() => root.render(<StrictDisclosureHarness identity="owner-one" keys={["one", "two"]} />));
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+
+		act(() => toggleFirst?.click());
 		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
+
+		act(() => root.render(<StrictDisclosureHarness identity={null} keys={["one", "two"]} />));
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+
+		act(() => root.render(<StrictDisclosureHarness identity="owner-one" keys={["one", "two"]} />));
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
 	});
 });

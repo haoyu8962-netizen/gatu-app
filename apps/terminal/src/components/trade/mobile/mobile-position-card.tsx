@@ -103,7 +103,7 @@ export function MobilePositionCard({
 	onSelectMarket,
 }: Props) {
 	const { t } = useLingui();
-	const [internalExpanded, setInternalExpanded] = useState(true);
+	const [internalExpanded, setInternalExpanded] = useState(false);
 	const detailsId = useId();
 	const isExpanded = expanded ?? internalExpanded;
 

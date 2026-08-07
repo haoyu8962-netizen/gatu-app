@@ -196,11 +196,29 @@ describe("MobileOrdersTab disclosure card", () => {
 		vi.clearAllMocks();
 	});
 
-	it("uses remaining size and keeps disclosure controls scoped to each card", () => {
+	function renderOrders({ expandFirst = true }: { expandFirst?: boolean } = {}) {
 		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		if (!expandFirst) return;
+
+		const expand = container.querySelector<HTMLButtonElement>(
+			'button[aria-label^="Expand "][aria-label$=" order details"]',
+		);
+		act(() => expand?.click());
+	}
+
+	it("uses remaining size and keeps disclosure controls scoped to each card", () => {
+		renderOrders({ expandFirst: false });
 
 		expect(container.textContent).toContain("2.000");
 		expect(container.textContent).not.toContain("2.000 ORCL");
+		expect(container.textContent).not.toContain("Original Size");
+		expect(container.textContent).not.toContain("Long");
+		expect(container.textContent).not.toContain("Stop Market · Reduce Only");
+		expect(container.querySelector('[data-testid="collapse-all-order-details"]')).toBeNull();
+		expect(container.querySelector('[data-testid="expand-all-order-details"]')).toBeNull();
+
+		const expand = container.querySelector<HTMLButtonElement>('button[aria-label="Expand ORCL order details"]');
+		act(() => expand?.click());
 		expect(container.textContent).toContain("Original Size");
 		expect(container.textContent).toContain("5.000");
 		expect(container.textContent).not.toContain("5.000 ORCL");
@@ -208,10 +226,6 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(container.textContent).toContain("Yes");
 		expect(container.textContent).toContain("Close Short");
 		expect(container.textContent).toContain("≤ 149.00");
-		expect(container.textContent).not.toContain("Long");
-		expect(container.textContent).not.toContain("Stop Market · Reduce Only");
-		expect(container.querySelector('[data-testid="collapse-all-order-details"]')).toBeNull();
-		expect(container.querySelector('[data-testid="expand-all-order-details"]')).toBeNull();
 		const compactCollapse = [
 			...container.querySelectorAll<HTMLButtonElement>('button[aria-label="Collapse ORCL order details"]'),
 		].find((button) => button.className.includes("after:size-11"));
@@ -220,16 +234,18 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(compactCollapse?.className).toContain("after:size-11");
 		expect(compactCollapse?.className).toContain("after:top-[calc(50%_-_1px)]");
 
+		mocks.orders = [{ ...order, limitPx: "151.25", sz: "1.500" } as OpenOrder];
+		renderOrders({ expandFirst: false });
+		expect(container.textContent).toContain("Original Size");
+		expect(container.textContent).toContain("1.500");
+
 		const collapse = container.querySelector<HTMLButtonElement>('button[aria-label="Collapse ORCL order details"]');
 		act(() => collapse?.click());
 		expect(container.textContent).not.toContain("Original Size");
-		const expand = container.querySelector<HTMLButtonElement>('button[aria-label="Expand ORCL order details"]');
-		act(() => expand?.click());
-		expect(container.textContent).toContain("Original Size");
 	});
 
 	it("shows the SDK-derived mark distance and warns below ten percent", () => {
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		const distanceLabel = [...container.querySelectorAll<HTMLElement>("div")].find(
 			(element) => element.textContent?.trim() === "Distance to mark",
@@ -260,7 +276,7 @@ describe("MobileOrdersTab disclosure card", () => {
 				triggerPx: "0",
 			} as OpenOrder,
 		];
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		const priceLabel = [...container.querySelectorAll<HTMLElement>("div")].find(
 			(element) => element.textContent?.trim() === "Price",
@@ -283,7 +299,7 @@ describe("MobileOrdersTab disclosure card", () => {
 				triggerPx: "0",
 			} as OpenOrder,
 		];
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 
 		const typeFilter = container.querySelector<HTMLSelectElement>('select[aria-label="Type"]');
@@ -303,7 +319,7 @@ describe("MobileOrdersTab disclosure card", () => {
 
 	it("keeps the filter toolbar and renders the design empty state when there are no orders", () => {
 		mocks.orders = [];
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		expect(container.querySelector('[data-testid="mobile-orders-filter-toolbar"]')).not.toBeNull();
 		expect(container.textContent).toContain("No open orders.");
@@ -313,7 +329,7 @@ describe("MobileOrdersTab disclosure card", () => {
 	});
 
 	it("preserves market navigation and the exact cancel payload", () => {
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		const market = container.querySelector<HTMLButtonElement>('button[aria-label="Switch to ORCL market"]');
 		act(() => market?.click());
@@ -338,7 +354,7 @@ describe("MobileOrdersTab disclosure card", () => {
 	});
 
 	it("revalidates the mobile cancellation session at the SDK boundary", () => {
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 		act(() => {
 			[...container.querySelectorAll<HTMLButtonElement>("button")]
 				.find((button) => button.textContent?.trim() === "Cancel")
@@ -348,7 +364,7 @@ describe("MobileOrdersTab disclosure card", () => {
 		expect(mocks.cancelGuard).toBeTypeOf("function");
 
 		mocks.clientKey = "0x2222222222222222222222222222222222222222";
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 		expect(() => mocks.cancelGuard?.(params)).toThrow(
 			"The trading account or network changed. Reopen the confirmation and try again.",
 		);
@@ -357,7 +373,7 @@ describe("MobileOrdersTab disclosure card", () => {
 	it("cancels an outcome without market metadata and keeps modification safely unavailable", () => {
 		mocks.assetId = undefined;
 		mocks.orders = [outcomeOrder];
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		const modify = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Modify Order",
@@ -382,7 +398,7 @@ describe("MobileOrdersTab disclosure card", () => {
 	])("fails closed when a row cancellation uses a non-live snapshot", ({ status, isStale }) => {
 		mocks.status = status;
 		mocks.isStale = isStale;
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		const cancel = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel",
@@ -397,7 +413,7 @@ describe("MobileOrdersTab disclosure card", () => {
 
 	it("fails closed when the cancellation owner does not match the trading client", () => {
 		mocks.clientKey = "0x2222222222222222222222222222222222222222";
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		const cancel = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel",
@@ -412,9 +428,9 @@ describe("MobileOrdersTab disclosure card", () => {
 
 	it("fails closed when the open-orders snapshot belongs to another environment", () => {
 		mocks.openOrdersEvent = { orders: mocks.orders };
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 		mocks.env = "Testnet";
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		const cancel = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel",
@@ -428,7 +444,7 @@ describe("MobileOrdersTab disclosure card", () => {
 	});
 
 	it("does not start cancel all while a row cancellation is unresolved", () => {
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		const rowCancel = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel",
@@ -450,7 +466,7 @@ describe("MobileOrdersTab disclosure card", () => {
 	});
 
 	it("requires confirmation before canceling all and blocks duplicate submission", () => {
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel all",
@@ -487,7 +503,7 @@ describe("MobileOrdersTab disclosure card", () => {
 	});
 
 	it("does not close the confirmation for a malformed cancellation response", () => {
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel all",
 		);
@@ -508,7 +524,7 @@ describe("MobileOrdersTab disclosure card", () => {
 
 	it("cancels all standard and outcome orders with their exact action asset IDs", () => {
 		mocks.orders = [order, outcomeOrder];
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel all",
 		);
@@ -530,14 +546,14 @@ describe("MobileOrdersTab disclosure card", () => {
 	});
 
 	it("rejects cancel all when the confirmed order set changes", () => {
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel all",
 		);
 		act(() => requestButton?.click());
 
 		mocks.orders = [order, { ...order, coin: "BTC", oid: 43 } as OpenOrder];
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button !== requestButton && button.textContent?.trim() === "Cancel All",
 		);
@@ -549,7 +565,7 @@ describe("MobileOrdersTab disclosure card", () => {
 
 	it("fails closed when an order market cannot be mapped", () => {
 		mocks.assetId = undefined;
-		act(() => root.render(<MobileOrdersTab scrollMode="page" />));
+		renderOrders();
 
 		const requestButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
 			(button) => button.textContent?.trim() === "Cancel all",

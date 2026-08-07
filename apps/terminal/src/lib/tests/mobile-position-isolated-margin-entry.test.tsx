@@ -44,6 +44,12 @@ describe("MobilePositionCard isolated margin entry", () => {
 	let container: HTMLDivElement;
 	let root: Root;
 
+	function expandPositionDetails(): void {
+		const button = container.querySelector('button[aria-label^="Expand "]');
+		if (!(button instanceof HTMLButtonElement)) throw new Error("Position details trigger was not rendered");
+		act(() => button.click());
+	}
+
 	beforeEach(() => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
@@ -79,6 +85,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 				}),
 			);
 		});
+		expandPositionDetails();
 
 		const button = container.querySelector('button[aria-label="Adjust isolated margin for CXMT-USDC"]');
 		if (!(button instanceof HTMLButtonElement)) throw new Error("Isolated margin entry was not rendered");
@@ -134,6 +141,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 				}),
 			);
 		});
+		expandPositionDetails();
 
 		function getButton(label: string): HTMLButtonElement {
 			const button = [...container.querySelectorAll("button")].find((element) => element.textContent?.trim() === label);
@@ -198,6 +206,7 @@ describe("MobilePositionCard isolated margin entry", () => {
 				}),
 			);
 		});
+		expandPositionDetails();
 
 		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
 		const marketClose = buttons.find((button) => button.textContent?.trim() === "Market Close");

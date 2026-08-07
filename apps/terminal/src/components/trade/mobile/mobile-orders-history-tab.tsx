@@ -14,12 +14,13 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets } from "@/lib/hyperliquid";
+import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
 import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { HistoricalOrderPrice } from "../components/historical-order-price";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { MobileProgressiveList } from "./mobile-progressive-list";
+import { type MobileDisclosureSetState, useMobileDisclosureSet } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 type HistoricalOrderStatus = HistoricalOrdersResponse[number]["status"];
@@ -67,17 +68,28 @@ function hasTriggerPrice(order: HistoricalOrdersResponse[number]["order"]): bool
 
 interface Props {
 	className?: string;
+	disclosureState?: MobileDisclosureSetState;
 	scrollMode?: MobileDataScrollMode;
 }
 
 export function MobileOrdersHistoryTab(props: Props) {
 	const { address, isConnected } = useWalletSession();
+	const { env } = useHyperliquid();
 	const ownerKey = isConnected && address ? address.toLowerCase() : "disconnected";
 
-	return <MobileOrdersHistoryTabContent key={ownerKey} {...props} />;
+	return <MobileOrdersHistoryTabContent key={ownerKey} disclosureIdentity={`${env}:${ownerKey}`} {...props} />;
 }
 
-function MobileOrdersHistoryTabContent({ className, scrollMode = "contained" }: Props) {
+interface MobileOrdersHistoryTabContentProps extends Props {
+	disclosureIdentity: string;
+}
+
+function MobileOrdersHistoryTabContent({
+	className,
+	disclosureIdentity,
+	disclosureState,
+	scrollMode = "contained",
+}: MobileOrdersHistoryTabContentProps) {
 	const { t } = useLingui();
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel } = useOrderDisplayLabels();
 	const { error, isConnected, orders, status } = useHistoricalOrders();
@@ -85,7 +97,6 @@ function MobileOrdersHistoryTabContent({ className, scrollMode = "contained" }: 
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
-	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
 	const [typeFilter, setTypeFilter] = useState<OrderHistoryTypeFilter>("all");
 	const [directionFilter, setDirectionFilter] = useState<ToolbarOrderDirectionFilter>("all");
 	const [statusFilter, setStatusFilter] = useState<OrderHistoryStatusFilter>("all");
@@ -95,6 +106,12 @@ function MobileOrdersHistoryTabContent({ className, scrollMode = "contained" }: 
 			(typeFilter === "all" || entry.order.orderType === typeFilter) &&
 			matchesToolbarOrderFilters(entry.order, "all", directionFilter) &&
 			(statusFilter === "all" || getOrderHistoryStatusFilter(entry.status) === statusFilter),
+	);
+	const filteredOrderKeys = filteredOrders.map((entry) => String(entry.order.oid));
+	const { expandedKeys, setExpanded, expandAll, collapseAll } = useMobileDisclosureSet(
+		disclosureIdentity,
+		filteredOrderKeys,
+		disclosureState,
 	);
 	const availableTypeFilters = new Set<HistoricalOrderType>(orders.map((entry) => entry.order.orderType));
 	if (typeFilter !== "all") availableTypeFilters.add(typeFilter);
@@ -127,9 +144,8 @@ function MobileOrdersHistoryTabContent({ className, scrollMode = "contained" }: 
 	}
 
 	function handleSetAllExpanded(expanded: boolean) {
-		setExpandedByKey(
-			Object.fromEntries(filteredOrders.map((entry) => [`${entry.order.oid}-${entry.statusTimestamp}`, expanded])),
-		);
+		if (expanded) expandAll(filteredOrderKeys);
+		else collapseAll(filteredOrderKeys);
 	}
 
 	function getStatusFilterLabel(filter: Exclude<OrderHistoryStatusFilter, "all">) {
@@ -303,19 +319,19 @@ function MobileOrdersHistoryTabContent({ className, scrollMode = "contained" }: 
 						) : null}
 						<MobileProgressiveList key={`${typeFilter}:${directionFilter}:${statusFilter}`} items={filteredOrders}>
 							{(visibleOrders) =>
-								visibleOrders.map((entry, index) => {
+								visibleOrders.map((entry) => {
 									const { order } = entry;
 									const marketName = order.coin;
-									const cardKey = `${order.oid}-${entry.statusTimestamp}`;
+									const cardKey = String(order.oid);
 									const detailsId = `mobile-order-history-${order.oid}-${entry.statusTimestamp}`;
-									const isExpanded = expandedByKey[cardKey] ?? index === 0;
+									const isExpanded = expandedKeys.has(cardKey);
 									const market = markets.getMarket(order.coin);
 									const isBuy = order.side === "B";
 									const orderTypeLabel = getOrderTypeLabel(order.orderType);
 									const sideLabel = getOrderSideLabel(order.side, order.reduceOnly);
 
 									function handleToggle() {
-										setExpandedByKey((current) => ({ ...current, [cardKey]: !isExpanded }));
+										setExpanded(cardKey, !isExpanded);
 									}
 
 									return (

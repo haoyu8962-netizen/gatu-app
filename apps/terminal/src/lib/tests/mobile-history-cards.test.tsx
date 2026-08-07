@@ -195,6 +195,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	getExplorerTxUrl: (hash: string) => `https://explorer.test/${hash}`,
+	useHyperliquid: () => ({ env: "Mainnet" }),
 	useMarkets: () => ({
 		getMarket: (coin: string) => ({ kind: "perp", shortName: coin, szDecimals: coin === "BTC" ? 4 : 3 }),
 		getSzDecimals: (coin: string) => (coin === "BTC" ? 4 : 3),
@@ -289,14 +290,17 @@ describe("mobile history disclosure cards", () => {
 
 	function expectDisclosureControls() {
 		let disclosureButtons = getDisclosureButtons();
-		expect(disclosureButtons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
+		expect(disclosureButtons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
 		expect(disclosureButtons.every((button) => button.parentElement?.className.includes("h-[54px]"))).toBe(true);
 
 		act(() => disclosureButtons[1]?.click());
 		disclosureButtons = getDisclosureButtons();
-		expect(disclosureButtons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "true"]);
+		expect(disclosureButtons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "true"]);
 
 		act(() => disclosureButtons[0]?.click());
+		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "true"]);
+
+		act(() => getDisclosureButtons()[0]?.click());
 		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "true"]);
 
 		clickButton("Collapse all");
@@ -363,6 +367,9 @@ describe("mobile history disclosure cards", () => {
 			expect(header?.className).toContain("px-3.5");
 		}
 
+		const firstDisclosure = getDisclosureButtons()[0];
+		const wasExpanded = firstDisclosure?.getAttribute("aria-expanded") === "true";
+		if (!wasExpanded) act(() => firstDisclosure?.click());
 		const expandedDetailsId = getDisclosureButtons()[0]?.getAttribute("aria-controls");
 		const details = expandedDetailsId ? document.getElementById(expandedDetailsId) : null;
 		expect(details && container.contains(details)).toBe(true);
@@ -370,6 +377,7 @@ describe("mobile history disclosure cards", () => {
 		expect(detailsGrid?.className).toContain("grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1fr)]");
 		expect(detailsGrid?.className).toContain("gap-x-2.5");
 		expect(detailsGrid?.className).toContain("gap-y-3");
+		if (!wasExpanded) act(() => getDisclosureButtons()[0]?.click());
 
 		const footer = container.querySelector<HTMLElement>(`[data-testid="${footerTestId}"]`);
 		expect(footer?.className).toContain("h-[38px]");
@@ -386,6 +394,8 @@ describe("mobile history disclosure cards", () => {
 	it("keeps trade history values, explorer links, and independent disclosure state", () => {
 		render(<MobileHistoryTab scrollMode="page" />);
 		expectM4VisualContract("mobile-trade-history-filter-row", "mobile-trade-history-footer", 3);
+		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("false");
+		expectDisclosureControls();
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(Array.from(container.querySelectorAll("label"), (label) => label.textContent)).toEqual([
@@ -406,8 +416,6 @@ describe("mobile history disclosure cards", () => {
 		act(() => marketButton?.click());
 		expect(mocks.navigateToMarket).toHaveBeenCalledWith("BTC", undefined, { displayedContent: "trade" });
 		expect(mocks.setActiveTab).toHaveBeenCalledWith("trade");
-		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("true");
-		expectDisclosureControls();
 		clickButton("Export CSV");
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"trade_history.csv",
@@ -448,6 +456,14 @@ describe("mobile history disclosure cards", () => {
 			intersectionCallback?.([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
 		});
 		expect(container.querySelectorAll("article")).toHaveLength(48);
+		clickButton("Expand all");
+		expect(getDisclosureButtons().every((button) => button.getAttribute("aria-expanded") === "true")).toBe(true);
+
+		act(() => {
+			intersectionCallback?.([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
+		});
+		expect(container.querySelectorAll("article")).toHaveLength(60);
+		expect(getDisclosureButtons().every((button) => button.getAttribute("aria-expanded") === "true")).toBe(true);
 	});
 
 	it("keeps full trade export available when the recent mobile snapshot is empty", () => {
@@ -466,6 +482,7 @@ describe("mobile history disclosure cards", () => {
 	it("keeps funding position, payment, rate, and direction semantics", () => {
 		render(<MobileFundingTab scrollMode="page" />);
 		expectM4VisualContract("mobile-funding-history-filter-row", "mobile-funding-history-footer", 1);
+		expectDisclosureControls();
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(Array.from(container.querySelectorAll("label"), (label) => label.textContent)).toEqual(["Direction"]);
@@ -475,7 +492,6 @@ describe("mobile history disclosure cards", () => {
 		expect(container.textContent).toContain("Rate");
 		expect(container.textContent).toContain("Short");
 		expect(container.textContent).toContain("Funding shown");
-		expectDisclosureControls();
 		clickButton("Export CSV");
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(
 			"funding_history.csv",
@@ -499,6 +515,7 @@ describe("mobile history disclosure cards", () => {
 	it("keeps historical order labels and expands cards independently", () => {
 		render(<MobileOrdersHistoryTab scrollMode="page" />);
 		expectM4VisualContract("mobile-order-history-filter-row", "mobile-order-history-footer", 3);
+		expectDisclosureControls();
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(container.textContent).toContain("Limit");
@@ -513,7 +530,6 @@ describe("mobile history disclosure cards", () => {
 			"Direction",
 			"Order status",
 		]);
-		expectDisclosureControls();
 		expect(container.textContent).toContain("Close Long");
 		expect(container.textContent).not.toContain("Short order");
 		clickButton("Export CSV");
@@ -538,6 +554,10 @@ describe("mobile history disclosure cards", () => {
 
 	it("filters trade history by SDK-backed type, side, and maker/taker role without carrying state to another owner", async () => {
 		render(<MobileHistoryTab scrollMode="page" />);
+		act(() => getDisclosureButtons()[0]?.click());
+		mocks.fills = mocks.fills.map((fill, index) => (index === 0 ? { ...fill, hash: "0xupdated" } : fill));
+		render(<MobileHistoryTab scrollMode="page" />);
+		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("true");
 
 		await selectOption("Type", "TWAP");
 		expect(container.querySelectorAll("article")).toHaveLength(1);
@@ -561,7 +581,9 @@ describe("mobile history disclosure cards", () => {
 		expect(exportRows?.flat()).not.toContain("BTC");
 
 		clickButton("Collapse all");
-		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("false");
+		await selectOption("Role", "All roles");
+		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
+		clickButton("Expand all");
 		mocks.address = OWNER_B;
 		render(<MobileHistoryTab scrollMode="page" />);
 
@@ -571,11 +593,17 @@ describe("mobile history disclosure cards", () => {
 			"All Directions",
 			"All roles",
 		]);
-		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
+		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
 	});
 
 	it("filters funding by the Big.js sign of szi without carrying state to another owner", async () => {
 		render(<MobileFundingTab scrollMode="page" />);
+		act(() => getDisclosureButtons()[1]?.click());
+		mocks.fundings = mocks.fundings.map((funding) =>
+			funding.coin === "BTC" ? { ...funding, fundingRate: "0.00011", szi: "0.02", usdc: "1.5" } : funding,
+		);
+		render(<MobileFundingTab scrollMode="page" />);
+		expect(getDisclosureButtons()[1]?.getAttribute("aria-expanded")).toBe("true");
 
 		await selectOption("Direction", "Short");
 		expect(container.querySelectorAll("article")).toHaveLength(1);
@@ -587,17 +615,25 @@ describe("mobile history disclosure cards", () => {
 		expect(exportRows?.flat()).not.toContain("BTC");
 
 		clickButton("Collapse all");
-		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("false");
+		await selectOption("Direction", "All Directions");
+		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "true"]);
+		clickButton("Expand all");
 		mocks.address = OWNER_B;
 		render(<MobileFundingTab scrollMode="page" />);
 
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 		expect(container.querySelector('[role="combobox"]')?.textContent).toBe("All Directions");
-		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
+		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
 	});
 
 	it("filters order history by SDK order type, side, and normalized status without carrying state to another owner", async () => {
 		render(<MobileOrdersHistoryTab scrollMode="page" />);
+		act(() => getDisclosureButtons()[0]?.click());
+		mocks.orders = mocks.orders.map((entry, index) =>
+			index === 0 ? { ...entry, statusTimestamp: Number(entry.statusTimestamp) + 1_000 } : entry,
+		);
+		render(<MobileOrdersHistoryTab scrollMode="page" />);
+		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("true");
 
 		await selectOption("Order type", "Stop Market");
 		expect(container.querySelectorAll("article")).toHaveLength(1);
@@ -621,7 +657,9 @@ describe("mobile history disclosure cards", () => {
 		expect(exportRows?.flat()).not.toContain("BTC");
 
 		clickButton("Collapse all");
-		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("false");
+		await selectOption("Order status", "All statuses");
+		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
+		clickButton("Expand all");
 		mocks.address = OWNER_B;
 		render(<MobileOrdersHistoryTab scrollMode="page" />);
 
@@ -631,6 +669,6 @@ describe("mobile history disclosure cards", () => {
 			"All Directions",
 			"All statuses",
 		]);
-		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "false"]);
+		expect(getDisclosureButtons().map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
 	});
 });

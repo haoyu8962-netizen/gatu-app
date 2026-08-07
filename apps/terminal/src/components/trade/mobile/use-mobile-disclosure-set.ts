@@ -2,7 +2,6 @@ import { useState } from "react";
 
 interface DisclosureSetState {
 	identity: string | null;
-	initialized: boolean;
 	expandedKeys: Set<string>;
 }
 
@@ -14,33 +13,30 @@ export interface MobileDisclosureSetController {
 }
 
 export interface MobileDisclosureSetState {
+	readonly identity: string | null;
 	createController: (keys: readonly string[]) => MobileDisclosureSetController;
-}
-
-function getDefaultExpandedKeys(keys: readonly string[]): Set<string> {
-	const firstKey = keys[0];
-	return firstKey ? new Set([firstKey]) : new Set();
 }
 
 export function useMobileDisclosureSetState(identity: string | null): MobileDisclosureSetState {
 	const [state, setState] = useState<DisclosureSetState>(() => ({
 		identity,
-		initialized: false,
 		expandedKeys: new Set(),
 	}));
+	let expandedKeys = state.expandedKeys;
+	if (state.identity !== identity) {
+		// Reset before children render so disclosure state cannot flash or revive across account or environment changes.
+		expandedKeys = new Set();
+		setState({ identity, expandedKeys });
+	}
 
 	return {
+		identity,
 		createController(keys) {
-			const expandedKeys =
-				state.identity === identity && state.initialized ? state.expandedKeys : getDefaultExpandedKeys(keys);
-
 			function updateExpandedKeys(update: (next: Set<string>) => void) {
 				setState((current) => {
-					const next = new Set(
-						current.identity === identity && current.initialized ? current.expandedKeys : getDefaultExpandedKeys(keys),
-					);
+					const next = new Set(current.identity === identity ? current.expandedKeys : []);
 					update(next);
-					return { identity, initialized: true, expandedKeys: next };
+					return { identity, expandedKeys: next };
 				});
 			}
 
@@ -71,6 +67,9 @@ export function useMobileDisclosureSetState(identity: string | null): MobileDisc
 export function useMobileDisclosureSet(
 	identity: string | null,
 	keys: readonly string[],
+	sharedState?: MobileDisclosureSetState,
 ): MobileDisclosureSetController {
-	return useMobileDisclosureSetState(identity).createController(keys);
+	const localState = useMobileDisclosureSetState(identity);
+	const activeState = sharedState?.identity === identity ? sharedState : localState;
+	return activeState.createController(keys);
 }

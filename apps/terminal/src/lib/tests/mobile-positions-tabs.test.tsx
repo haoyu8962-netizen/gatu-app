@@ -11,11 +11,44 @@ import { MOBILE_POSITIONS_TABS } from "@/config/trade";
 const storeState = vi.hoisted(() => ({
 	activeTab: "positions",
 	address: "0x1234",
+	env: "Mainnet" as "Mainnet" | "Testnet",
 	isConnected: true,
 	positions: [] as Array<{ coin: string; dex: string; szi: string }>,
 	snapshotsReady: true,
 }));
 const setPositionsActiveTab = vi.hoisted(() => vi.fn<(tab: string) => void>());
+
+function MockDisclosureTab({
+	disclosureState,
+	tabValue,
+}: {
+	disclosureState: MobileDisclosureSetState;
+	tabValue: string;
+}) {
+	const ownerKey = storeState.address.toLowerCase();
+	const keys =
+		tabValue === "positions"
+			? storeState.positions.map((position) => `${ownerKey}:${position.dex}:${position.coin}`)
+			: [`${ownerKey}:${tabValue}:first`];
+	const { expandedKeys, setExpanded } = disclosureState.createController(keys);
+	const firstKey = keys[0];
+
+	return (
+		<div data-tab-content={tabValue} data-disclosure-keys={keys.join(",")}>
+			<output data-testid={`expanded-${tabValue}-keys`}>{[...expandedKeys].join(",")}</output>
+			{firstKey ? (
+				<button
+					type="button"
+					data-testid={`toggle-${tabValue}-first`}
+					aria-expanded={expandedKeys.has(firstKey)}
+					onClick={() => setExpanded(firstKey, !expandedKeys.has(firstKey))}
+				>
+					Toggle {tabValue} first card
+				</button>
+			) : null}
+		</div>
+	);
+}
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
@@ -25,6 +58,7 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	useHyperliquid: () => ({ env: storeState.env }),
 	useSubscription: (type: string) => ({
 		data: type === "twapStates" ? { states: [] } : { orders: [] },
 		isStale: false,
@@ -58,44 +92,33 @@ vi.mock("@/components/trade/mobile/mobile-bottom-nav", () => ({
 }));
 
 vi.mock("@/components/trade/mobile/mobile-funding-tab", () => ({
-	MobileFundingTab: () => <div data-tab-content="funding" />,
+	MobileFundingTab: ({ disclosureState }: { disclosureState: MobileDisclosureSetState }) => (
+		<MockDisclosureTab disclosureState={disclosureState} tabValue="funding" />
+	),
 }));
 
 vi.mock("@/components/trade/mobile/mobile-history-tab", () => ({
-	MobileHistoryTab: () => <div data-tab-content="history" />,
+	MobileHistoryTab: ({ disclosureState }: { disclosureState: MobileDisclosureSetState }) => (
+		<MockDisclosureTab disclosureState={disclosureState} tabValue="history" />
+	),
 }));
 
 vi.mock("@/components/trade/mobile/mobile-orders-history-tab", () => ({
-	MobileOrdersHistoryTab: () => <div data-tab-content="orders-history" />,
+	MobileOrdersHistoryTab: ({ disclosureState }: { disclosureState: MobileDisclosureSetState }) => (
+		<MockDisclosureTab disclosureState={disclosureState} tabValue="orders-history" />
+	),
 }));
 
 vi.mock("@/components/trade/mobile/mobile-orders-tab", () => ({
-	MobileOrdersTab: () => <div data-tab-content="orders" />,
+	MobileOrdersTab: ({ disclosureState }: { disclosureState: MobileDisclosureSetState }) => (
+		<MockDisclosureTab disclosureState={disclosureState} tabValue="orders" />
+	),
 }));
 
 vi.mock("@/components/trade/mobile/mobile-positions-tab", () => ({
-	MobilePositionsTab: ({ disclosureState }: { disclosureState: MobileDisclosureSetState }) => {
-		const ownerKey = storeState.address.toLowerCase();
-		const positionKeys = storeState.positions.map((position) => `${ownerKey}:${position.dex}:${position.coin}`);
-		const { expandedKeys, setExpanded } = disclosureState.createController(positionKeys);
-		const firstPositionKey = positionKeys[0];
-
-		return (
-			<div data-tab-content="positions" data-position-keys={positionKeys.join(",")}>
-				<output data-testid="expanded-position-keys">{[...expandedKeys].join(",")}</output>
-				{firstPositionKey ? (
-					<button
-						type="button"
-						data-testid="toggle-first-position"
-						aria-expanded={expandedKeys.has(firstPositionKey)}
-						onClick={() => setExpanded(firstPositionKey, !expandedKeys.has(firstPositionKey))}
-					>
-						Toggle first position
-					</button>
-				) : null}
-			</div>
-		);
-	},
+	MobilePositionsTab: ({ disclosureState }: { disclosureState: MobileDisclosureSetState }) => (
+		<MockDisclosureTab disclosureState={disclosureState} tabValue="positions" />
+	),
 }));
 
 vi.mock("@/components/trade/mobile/mobile-twap-tab", () => ({
@@ -114,6 +137,7 @@ describe("MobilePositionsView tabs", () => {
 	beforeEach(() => {
 		storeState.activeTab = "positions";
 		storeState.address = "0x1234";
+		storeState.env = "Mainnet";
 		storeState.isConnected = true;
 		storeState.positions = [];
 		storeState.snapshotsReady = true;
@@ -305,22 +329,22 @@ describe("MobilePositionsView tabs", () => {
 		expect(fundingTab?.getAttribute("aria-selected")).toBe("true");
 	});
 
-	it("preserves explicit position disclosure state while the inactive panel is unmounted", () => {
+	it("starts positions collapsed and preserves explicit state while the inactive panel is unmounted", () => {
 		storeState.positions = [
 			{ coin: "AAVE", dex: "", szi: "1" },
 			{ coin: "ETH", dex: "", szi: "2" },
 		];
 		render();
 		expect(container.querySelector('[data-mobile-account-tab="positions"]')?.textContent).toBe("Positions(2)");
-		expect(container.querySelector('[data-tab-content="positions"]')?.getAttribute("data-position-keys")).toBe(
+		expect(container.querySelector('[data-tab-content="positions"]')?.getAttribute("data-disclosure-keys")).toBe(
 			"0x1234::AAVE,0x1234::ETH",
 		);
-		expect(container.querySelector('[data-testid="expanded-position-keys"]')?.textContent).toBe("0x1234::AAVE");
+		expect(container.querySelector('[data-testid="expanded-positions-keys"]')?.textContent).toBe("");
 
-		const firstPosition = container.querySelector<HTMLButtonElement>('[data-testid="toggle-first-position"]');
+		const firstPosition = container.querySelector<HTMLButtonElement>('[data-testid="toggle-positions-first"]');
 		act(() => firstPosition?.click());
-		expect(firstPosition?.getAttribute("aria-expanded")).toBe("false");
-		expect(container.querySelector('[data-testid="expanded-position-keys"]')?.textContent).toBe("");
+		expect(firstPosition?.getAttribute("aria-expanded")).toBe("true");
+		expect(container.querySelector('[data-testid="expanded-positions-keys"]')?.textContent).toBe("0x1234::AAVE");
 
 		const ordersTab = container.querySelector<HTMLButtonElement>('[data-mobile-account-tab="orders"]');
 		act(() => ordersTab?.click());
@@ -334,14 +358,70 @@ describe("MobilePositionsView tabs", () => {
 		const positionsTab = container.querySelector<HTMLButtonElement>('[data-mobile-account-tab="positions"]');
 		act(() => positionsTab?.click());
 		expect(container.querySelector('[data-tab-content="positions"]')).not.toBeNull();
-		expect(container.querySelector('[data-tab-content="positions"]')?.getAttribute("data-position-keys")).toBe(
+		expect(container.querySelector('[data-tab-content="positions"]')?.getAttribute("data-disclosure-keys")).toBe(
 			"0x1234::ETH,0x1234::AAVE,0x1234::SOL",
 		);
-		expect(container.querySelector('[data-testid="expanded-position-keys"]')?.textContent).toBe("");
+		expect(container.querySelector('[data-testid="expanded-positions-keys"]')?.textContent).toBe("0x1234::AAVE");
 
 		storeState.address = "0xABCD";
 		render();
-		expect(container.querySelector('[data-testid="expanded-position-keys"]')?.textContent).toBe("0xabcd::ETH");
+		expect(container.querySelector('[data-testid="expanded-positions-keys"]')?.textContent).toBe("");
+	});
+
+	it("keeps every collapsible tab state independent across unmounts and resets it for a new environment", () => {
+		vi.useFakeTimers();
+		storeState.positions = [{ coin: "AAVE", dex: "", szi: "1" }];
+		render();
+
+		const collapsibleTabs = ["positions", "orders", "history", "funding", "orders-history"] as const;
+		for (const tabValue of collapsibleTabs) {
+			const tab = container.querySelector<HTMLButtonElement>(`[data-mobile-account-tab="${tabValue}"]`);
+			act(() => tab?.click());
+			const content = container.querySelector(`[data-tab-content="${tabValue}"]`);
+			const firstKey = content?.getAttribute("data-disclosure-keys")?.split(",")[0];
+			const toggle = container.querySelector<HTMLButtonElement>(`[data-testid="toggle-${tabValue}-first"]`);
+			expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+			expect(container.querySelector(`[data-testid="expanded-${tabValue}-keys"]`)?.textContent).toBe("");
+			act(() => toggle?.click());
+			expect(toggle?.getAttribute("aria-expanded")).toBe("true");
+			expect(container.querySelector(`[data-testid="expanded-${tabValue}-keys"]`)?.textContent).toBe(firstKey);
+
+			const balancesTab = container.querySelector<HTMLButtonElement>('[data-mobile-account-tab="balances"]');
+			act(() => balancesTab?.click());
+			expect(container.querySelector(`[data-tab-content="${tabValue}"]`)).toBeNull();
+			act(() => tab?.click());
+			expect(
+				container
+					.querySelector<HTMLButtonElement>(`[data-testid="toggle-${tabValue}-first"]`)
+					?.getAttribute("aria-expanded"),
+			).toBe("true");
+			expect(container.querySelector(`[data-testid="expanded-${tabValue}-keys"]`)?.textContent).toBe(firstKey);
+		}
+
+		storeState.env = "Testnet";
+		render();
+		for (const tabValue of collapsibleTabs) {
+			act(() => container.querySelector<HTMLButtonElement>(`[data-mobile-account-tab="${tabValue}"]`)?.click());
+			expect(container.querySelector(`[data-testid="expanded-${tabValue}-keys"]`)?.textContent).toBe("");
+		}
+
+		storeState.env = "Mainnet";
+		render();
+		for (const tabValue of collapsibleTabs) {
+			act(() => container.querySelector<HTMLButtonElement>(`[data-mobile-account-tab="${tabValue}"]`)?.click());
+			expect(container.querySelector(`[data-testid="expanded-${tabValue}-keys"]`)?.textContent).toBe("");
+		}
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="toggle-orders-history-first"]')?.click());
+		storeState.isConnected = false;
+		render();
+		storeState.isConnected = true;
+		render();
+		expect(
+			container
+				.querySelector<HTMLButtonElement>('[data-testid="toggle-orders-history-first"]')
+				?.getAttribute("aria-expanded"),
+		).toBe("false");
 	});
 
 	it("flushes an unpersisted tab preference when the page is hidden", () => {

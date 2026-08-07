@@ -11,17 +11,20 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
-import { useMarkets } from "@/lib/hyperliquid";
+import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
 import { isIncompleteHistorySnapshotError, isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toBig } from "@/lib/trade/numbers";
+import { getUserFundingKey } from "@/lib/trade/user-funding";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { MobileProgressiveList } from "./mobile-progressive-list";
+import { type MobileDisclosureSetState, useMobileDisclosureSet } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
 	className?: string;
+	disclosureState?: MobileDisclosureSetState;
 	scrollMode?: MobileDataScrollMode;
 }
 
@@ -46,16 +49,31 @@ function isFundingDirectionFilter(value: string | null): value is FundingDirecti
 
 export function MobileFundingTab(props: Props) {
 	const { address, isConnected } = useWalletSession();
+	const { env } = useHyperliquid();
 	const ownerKey = isConnected && address ? address.toLowerCase() : "disconnected";
 
-	return <MobileFundingTabContent key={ownerKey} isConnected={isConnected} {...props} />;
+	return (
+		<MobileFundingTabContent
+			key={ownerKey}
+			disclosureIdentity={`${env}:${ownerKey}`}
+			isConnected={isConnected}
+			{...props}
+		/>
+	);
 }
 
 interface MobileFundingTabContentProps extends Props {
+	disclosureIdentity: string;
 	isConnected: boolean;
 }
 
-function MobileFundingTabContent({ isConnected, className, scrollMode = "contained" }: MobileFundingTabContentProps) {
+function MobileFundingTabContent({
+	className,
+	disclosureIdentity,
+	disclosureState,
+	isConnected,
+	scrollMode = "contained",
+}: MobileFundingTabContentProps) {
 	const { t } = useLingui();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -63,11 +81,16 @@ function MobileFundingTabContent({ isConnected, className, scrollMode = "contain
 	const markets = useMarkets();
 	const historyLimitReached = isIncompleteHistorySnapshotError(error);
 	const malformedHistory = isMalformedHistoryPageError(error);
-	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
 	const [directionFilter, setDirectionFilter] = useState<FundingDirectionFilter>("all");
 
 	const filteredUpdates = updates.filter(
 		(update) => directionFilter === "all" || getFundingDirection(update.szi) === directionFilter,
+	);
+	const filteredUpdateKeys = filteredUpdates.map(getUserFundingKey);
+	const { expandedKeys, setExpanded, expandAll, collapseAll } = useMobileDisclosureSet(
+		disclosureIdentity,
+		filteredUpdateKeys,
+		disclosureState,
 	);
 	const totalFunding = getToolbarFundingTotal(filteredUpdates);
 	const headerTotal =
@@ -83,14 +106,8 @@ function MobileFundingTabContent({ isConnected, className, scrollMode = "contain
 	}
 
 	function handleSetAllExpanded(expanded: boolean) {
-		setExpandedByKey(
-			Object.fromEntries(
-				filteredUpdates.map((update) => [
-					`${update.coin}-${update.time}-${update.szi}-${update.fundingRate}-${update.usdc}`,
-					expanded,
-				]),
-			),
-		);
+		if (expanded) expandAll(filteredUpdateKeys);
+		else collapseAll(filteredUpdateKeys);
 	}
 
 	const { exportCsv, isExporting } = useFundingHistoryCsvExport({
@@ -222,11 +239,11 @@ function MobileFundingTabContent({ isConnected, className, scrollMode = "contain
 						) : null}
 						<MobileProgressiveList key={directionFilter} items={filteredUpdates}>
 							{(visibleUpdates) =>
-								visibleUpdates.map((update, index) => {
+								visibleUpdates.map((update) => {
 									const marketName = update.coin;
-									const cardKey = `${update.coin}-${update.time}-${update.szi}-${update.fundingRate}-${update.usdc}`;
+									const cardKey = getUserFundingKey(update);
 									const detailsId = `mobile-funding-history-${cardKey}`;
-									const isExpanded = expandedByKey[cardKey] ?? index === 0;
+									const isExpanded = expandedKeys.has(cardKey);
 									const market = markets.getMarket(update.coin);
 									const fundingDirection = getFundingDirection(update.szi);
 									const positionDisplay = formatToken(getToolbarAbsoluteSize(update.szi), {
@@ -235,7 +252,7 @@ function MobileFundingTabContent({ isConnected, className, scrollMode = "contain
 									});
 
 									function handleToggle() {
-										setExpandedByKey((current) => ({ ...current, [cardKey]: !isExpanded }));
+										setExpanded(cardKey, !isExpanded);
 									}
 
 									return (

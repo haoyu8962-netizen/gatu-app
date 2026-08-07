@@ -16,15 +16,18 @@ import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toNumber } from "@/lib/trade/numbers";
+import { getUserFillKey } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
 import { MobileProgressiveList } from "./mobile-progressive-list";
+import { type MobileDisclosureSetState, useMobileDisclosureSet } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
 	className?: string;
+	disclosureState?: MobileDisclosureSetState;
 	scrollMode?: MobileDataScrollMode;
 }
 
@@ -62,10 +65,19 @@ export function MobileHistoryTab(props: Props) {
 	const { address, isConnected } = useWalletSession();
 	const ownerKey = isConnected && address ? address.toLowerCase() : "disconnected";
 
-	return <MobileHistoryTabContent key={ownerKey} {...props} />;
+	return <MobileHistoryTabContent key={ownerKey} ownerKey={ownerKey} {...props} />;
 }
 
-function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props) {
+interface MobileHistoryTabContentProps extends Props {
+	ownerKey: string;
+}
+
+function MobileHistoryTabContent({
+	className,
+	disclosureState,
+	ownerKey,
+	scrollMode = "contained",
+}: MobileHistoryTabContentProps) {
 	const { t } = useLingui();
 	const { error, fills, isConnected, status } = useUserFills();
 	const navigateToMarket = useMarketNavigation();
@@ -73,7 +85,6 @@ function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props)
 	const markets = useMarkets();
 	const isTestnet = useIsTestnet();
 	const malformedHistory = isMalformedHistoryPageError(error);
-	const [expandedByKey, setExpandedByKey] = useState<Record<string, boolean>>({});
 	const [typeFilter, setTypeFilter] = useState<TradeHistoryTypeFilter>("all");
 	const [directionFilter, setDirectionFilter] = useState<TradeHistoryDirectionFilter>("all");
 	const [roleFilter, setRoleFilter] = useState<TradeHistoryRoleFilter>("all");
@@ -83,6 +94,12 @@ function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props)
 			(typeFilter === "all" || getTradeHistoryType(fill) === typeFilter) &&
 			(directionFilter === "all" || (directionFilter === "buy") === (fill.side === "B")) &&
 			(roleFilter === "all" || (roleFilter === "taker") === fill.crossed),
+	);
+	const filteredFillKeys = filteredFills.map(getUserFillKey);
+	const { expandedKeys, setExpanded, expandAll, collapseAll } = useMobileDisclosureSet(
+		`${isTestnet ? "Testnet" : "Mainnet"}:${ownerKey}`,
+		filteredFillKeys,
+		disclosureState,
 	);
 	const typeOptions = [
 		{ value: "all", label: t`All types` },
@@ -112,7 +129,8 @@ function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props)
 	}
 
 	function handleSetAllExpanded(expanded: boolean) {
-		setExpandedByKey(Object.fromEntries(filteredFills.map((fill) => [`${fill.hash}-${fill.tid}`, expanded])));
+		if (expanded) expandAll(filteredFillKeys);
+		else collapseAll(filteredFillKeys);
 	}
 
 	function getTypeFilterLabel(filter: Exclude<TradeHistoryTypeFilter, "all">) {
@@ -276,11 +294,11 @@ function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props)
 						) : null}
 						<MobileProgressiveList key={`${typeFilter}:${directionFilter}:${roleFilter}`} items={filteredFills}>
 							{(visibleFills) =>
-								visibleFills.map((fill, index) => {
+								visibleFills.map((fill) => {
 									const marketName = fill.coin;
-									const cardKey = `${fill.hash}-${fill.tid}`;
+									const cardKey = getUserFillKey(fill);
 									const detailsId = `mobile-trade-history-${fill.hash}-${fill.tid}`;
-									const isExpanded = expandedByKey[cardKey] ?? index === 0;
+									const isExpanded = expandedKeys.has(cardKey);
 									const closedPnl = toNumber(fill.closedPnl);
 									const showPnl = closedPnl !== null && closedPnl !== 0;
 									const isLiquidation = !!fill.liquidation;
@@ -290,7 +308,7 @@ function MobileHistoryTabContent({ className, scrollMode = "contained" }: Props)
 									const sizeDisplay = formatNumber(fill.sz, markets.getSzDecimals(fill.coin));
 
 									function handleToggle() {
-										setExpandedByKey((current) => ({ ...current, [cardKey]: !isExpanded }));
+										setExpanded(cardKey, !isExpanded);
 									}
 
 									return (
