@@ -9,6 +9,7 @@ import { createI18nRoot } from "./harness/react";
 const mocks = vi.hoisted(() => ({
 	downloadCsv: vi.fn(),
 	orders: [] as Array<Record<string, unknown>>,
+	twaps: [] as Array<Record<string, unknown>>,
 }));
 
 function createOrders() {
@@ -42,6 +43,40 @@ function createOrders() {
 	];
 }
 
+function getOrderHistoryEntries() {
+	const orderEntries = mocks.orders.map((entry) => {
+		const order = entry.order as Record<string, unknown>;
+		return {
+			coin: order.coin,
+			createdAt: order.timestamp,
+			key: `order:${String(order.oid)}`,
+			kind: "order",
+			order: entry,
+			reduceOnly: order.reduceOnly,
+			side: order.side,
+			size: order.origSz,
+			type: order.orderType,
+			updatedAt: entry.statusTimestamp,
+		};
+	});
+	const twapEntries = mocks.twaps.map((twap) => {
+		const state = twap.state as Record<string, unknown>;
+		return {
+			coin: state.coin,
+			createdAt: state.timestamp,
+			key: `twap:${String(twap.twapId)}`,
+			kind: "twap",
+			reduceOnly: state.reduceOnly,
+			side: state.side,
+			size: state.sz,
+			twap,
+			type: "twap",
+			updatedAt: twap.time,
+		};
+	});
+	return [...orderEntries, ...twapEntries];
+}
+
 vi.mock("@/components/trade/components/asset-badge", () => ({
 	AssetBadge: (props: { coin: string; "aria-label": string }) => (
 		<button type="button" aria-label={props["aria-label"]}>
@@ -61,6 +96,7 @@ vi.mock("@/components/ui/scroll-area", () => ({
 
 vi.mock("@/hooks/trade/use-historical-orders", () => ({
 	useHistoricalOrders: () => ({
+		entries: getOrderHistoryEntries(),
 		error: null,
 		isConnected: true,
 		status: "ready",
@@ -76,7 +112,7 @@ vi.mock("@/hooks/trade/use-history-csv-export", () => ({
 		buildRows: (items: unknown[]) => string[][];
 		filename: string;
 	}) => ({
-		exportCsv: async () => mocks.downloadCsv(filename, buildRows([])),
+		exportCsv: async () => mocks.downloadCsv(filename, buildRows(getOrderHistoryEntries())),
 		isExporting: false,
 	}),
 }));
@@ -102,6 +138,7 @@ describe("desktop order history direction semantics", () => {
 
 	beforeEach(() => {
 		mocks.orders = createOrders();
+		mocks.twaps = [];
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);

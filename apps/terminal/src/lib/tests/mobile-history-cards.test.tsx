@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
 	navigateToMarket: vi.fn(),
 	orders: [] as Array<Record<string, unknown>>,
 	setActiveTab: vi.fn(),
+	twaps: [] as Array<Record<string, unknown>>,
 }));
 
 const OWNER_A = "0x1111111111111111111111111111111111111111";
@@ -46,7 +47,7 @@ function createFills() {
 			dir: "Close Long",
 			fee: "0.08",
 			feeToken: "USDC",
-			hash: "0xbbb",
+			hash: `0x${"0".repeat(64)}`,
 			liquidation: null,
 			oid: 102,
 			px: "3500",
@@ -97,6 +98,64 @@ function createOrders() {
 	];
 }
 
+function createTwapHistory() {
+	return [
+		{
+			state: {
+				coin: "SOL",
+				executedNtl: "350",
+				executedSz: "2",
+				minutes: 10,
+				randomize: false,
+				reduceOnly: false,
+				side: "B",
+				stopPx: null,
+				sz: "4",
+				timestamp: 1_754_350_800_000,
+				trigger: null,
+				user: OWNER_A,
+			},
+			status: { status: "activated" },
+			time: 1_754_350_900_000,
+			twapId: 42,
+		},
+	];
+}
+
+function getOrderHistoryEntries() {
+	const orderEntries = mocks.orders.map((entry) => {
+		const order = entry.order as Record<string, unknown>;
+		return {
+			coin: order.coin,
+			createdAt: order.timestamp,
+			key: `order:${String(order.oid)}`,
+			kind: "order",
+			order: entry,
+			reduceOnly: order.reduceOnly,
+			side: order.side,
+			size: order.origSz,
+			type: order.orderType,
+			updatedAt: entry.statusTimestamp,
+		};
+	});
+	const twapEntries = mocks.twaps.map((twap) => {
+		const state = twap.state as Record<string, unknown>;
+		return {
+			coin: state.coin,
+			createdAt: state.timestamp,
+			key: `twap:${String(twap.twapId)}`,
+			kind: "twap",
+			reduceOnly: state.reduceOnly,
+			side: state.side,
+			size: state.sz,
+			twap,
+			type: "twap",
+			updatedAt: twap.time,
+		};
+	});
+	return [...orderEntries, ...twapEntries];
+}
+
 function createFundings() {
 	return [
 		{ coin: "BTC", fundingRate: "0.0001", szi: "0.01", time: 1_754_350_400_000, usdc: "1.25" },
@@ -119,6 +178,7 @@ vi.mock("@/hooks/trade/use-user-fills", () => ({
 
 vi.mock("@/hooks/trade/use-historical-orders", () => ({
 	useHistoricalOrders: () => ({
+		entries: getOrderHistoryEntries(),
 		error: null,
 		isConnected: true,
 		status: "ready",
@@ -153,7 +213,7 @@ vi.mock("@/hooks/trade/use-history-csv-export", () => ({
 		buildRows: (items: unknown[]) => string[][];
 		filename: string;
 	}) => ({
-		exportCsv: async () => mocks.downloadCsv(filename, buildRows(mocks.orders)),
+		exportCsv: async () => mocks.downloadCsv(filename, buildRows(getOrderHistoryEntries())),
 		isExporting: false,
 	}),
 	useUserFillsCsvExport: ({
@@ -178,6 +238,7 @@ vi.mock("@/hooks/trade/use-order-display-labels", () => ({
 		getOrderSideLabel: (side: "A" | "B", reduceOnly: boolean) =>
 			reduceOnly ? (side === "B" ? "Close Short" : "Close Long") : side === "B" ? "Buy" : "Sell",
 		getOrderTypeLabel: (type: string) => type,
+		getTwapHistoryStatusLabel: (status: string) => (status === "activated" ? "Running" : "Filled"),
 	}),
 }));
 
@@ -236,6 +297,7 @@ describe("mobile history disclosure cards", () => {
 		mocks.fills = createFills();
 		mocks.fundings = createFundings();
 		mocks.orders = createOrders();
+		mocks.twaps = [];
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -411,6 +473,7 @@ describe("mobile history disclosure cards", () => {
 		const explorer = container.querySelector<HTMLAnchorElement>('a[href="https://explorer.test/0xaaa"]');
 		expect(explorer?.target).toBe("_blank");
 		expect(explorer?.className).toContain("min-h-11");
+		expect(container.querySelector(`a[href="https://explorer.test/0x${"0".repeat(64)}"]`)).toBeNull();
 		const marketButton = container.querySelector<HTMLButtonElement>('button[aria-label="Switch to BTC market"]');
 		expect(marketButton?.className).toContain("min-h-11");
 		act(() => marketButton?.click());
@@ -537,6 +600,19 @@ describe("mobile history disclosure cards", () => {
 			"order_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Type", "Status"])]),
 		);
+	});
+
+	it("renders TWAP parent lifecycle records in mobile order history", () => {
+		mocks.orders = [];
+		mocks.twaps = createTwapHistory();
+		render(<MobileOrdersHistoryTab scrollMode="page" />);
+
+		expect(container.querySelectorAll("article")).toHaveLength(1);
+		expect(container.textContent).toContain("SOL");
+		expect(container.textContent).toContain("TWAP");
+		act(() => getDisclosureButtons()[0]?.click());
+		expect(container.textContent).toContain("Running");
+		expect(container.textContent).not.toContain("No order history found.");
 	});
 
 	it("keeps full order export available when the recent mobile snapshot is empty", () => {

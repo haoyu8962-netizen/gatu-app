@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { UserFillsResponse, UserFillsWsEvent } from "@nktkas/hyperliquid";
+import type { UserFillsResponse, UserFillsWsEvent, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,8 +16,24 @@ const mocks = vi.hoisted(() => ({
 		error: null as unknown,
 		isError: false,
 	},
+	twapQuery: {
+		data: [] as UserTwapSliceFillsResponse | undefined,
+		error: null as unknown,
+		isError: false,
+	},
 	subscription: {
 		data: undefined as UserFillsWsEvent | undefined,
+		error: undefined as unknown,
+		status: "idle" as "idle" | "subscribing" | "active" | "error",
+	},
+	twapSubscription: {
+		data: undefined as
+			| {
+					isSnapshot?: true;
+					twapSliceFills: UserTwapSliceFillsResponse;
+					user: `0x${string}`;
+			  }
+			| undefined,
 		error: undefined as unknown,
 		status: "idle" as "idle" | "subscribing" | "active" | "error",
 	},
@@ -33,12 +49,14 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useInfo: (...args: unknown[]) => {
-		mocks.useInfo(...args);
+	useInfo: (method: string, ...args: unknown[]) => {
+		mocks.useInfo(method, ...args);
+		if (method === "userTwapSliceFills") return mocks.twapQuery;
 		return mocks.query;
 	},
-	useSubscription: (...args: unknown[]) => {
-		mocks.useSubscription(...args);
+	useSubscription: (method: string, ...args: unknown[]) => {
+		mocks.useSubscription(method, ...args);
+		if (method === "userTwapSliceFills") return mocks.twapSubscription;
 		return mocks.subscription;
 	},
 }));
@@ -87,9 +105,15 @@ describe("useUserFills", () => {
 		mocks.query.data = undefined;
 		mocks.query.error = null;
 		mocks.query.isError = false;
+		mocks.twapQuery.data = [];
+		mocks.twapQuery.error = null;
+		mocks.twapQuery.isError = false;
 		mocks.subscription.data = undefined;
 		mocks.subscription.error = undefined;
 		mocks.subscription.status = "idle";
+		mocks.twapSubscription.data = undefined;
+		mocks.twapSubscription.error = undefined;
+		mocks.twapSubscription.status = "idle";
 		mocks.useInfo.mockReset();
 		mocks.useSubscription.mockReset();
 	});
@@ -147,6 +171,33 @@ describe("useUserFills", () => {
 			{ aggregateByTime: true, user: mocks.address },
 			{ enabled: true },
 		);
+		expect(mocks.useInfo).toHaveBeenCalledWith(
+			"userTwapSliceFills",
+			{ user: mocks.address },
+			expect.objectContaining({ enabled: true }),
+		);
+		expect(mocks.useSubscription).toHaveBeenCalledWith(
+			"userTwapSliceFills",
+			{ user: mocks.address },
+			{ enabled: true },
+		);
+	});
+
+	it("merges and deduplicates documented TWAP slice fills", () => {
+		const restFill = createFill({ fee: "0.01", oid: 84, tid: 200, time: 2000 });
+		const realtimeFill = createFill({ fee: "0.02", oid: 84, tid: 200, time: 2000 });
+		mocks.query.data = [];
+		mocks.twapQuery.data = [{ fill: restFill, twapId: 7 }];
+		mocks.twapSubscription.data = {
+			isSnapshot: true,
+			twapSliceFills: [{ fill: realtimeFill, twapId: 7 }],
+			user: mocks.address as `0x${string}`,
+		};
+
+		const result = renderHook();
+
+		expect(result.status).toBe("ready");
+		expect(result.fills).toEqual([{ ...realtimeFill, twapId: 7 }]);
 	});
 
 	it("accepts an explicit empty REST response as an empty trade history", () => {
@@ -223,6 +274,17 @@ describe("useUserFills", () => {
 
 		expect(result.status).toBe("error");
 		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
+	});
+
+	it("fails closed when a TWAP slice fill has an invalid parent ID", () => {
+		mocks.query.data = [];
+		mocks.twapQuery.data = [{ fill: createFill(), twapId: Number.NaN }];
+
+		const result = renderHook();
+
+		expect(result.status).toBe("error");
+		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
+		expect(result.fills).toEqual([]);
 	});
 
 	it("reports an error when REST fails and the active realtime stream has no history", () => {

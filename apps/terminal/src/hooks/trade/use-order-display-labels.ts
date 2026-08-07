@@ -5,6 +5,7 @@ import type { AdvancedOrderType, OrderType } from "@/config/trade";
 import type { OrderOutcome } from "@/lib/trade/extract-order-status";
 import type { OpenOrder, OrderSide, OrderTypeConfig } from "@/lib/trade/open-orders";
 import { getOrderDirection } from "@/lib/trade/order-direction";
+import type { TwapHistoryStatus } from "@/lib/trade/order-history";
 import type { OrderQueueItem } from "@/stores/use-order-queue-store";
 
 type HistoricalOrderStatus = HistoricalOrdersResponse[number]["status"];
@@ -155,6 +156,22 @@ export function useOrderDisplayLabels() {
 		}
 	}
 
+	function getTwapHistoryStatusLabel(status: TwapHistoryStatus): string {
+		switch (status) {
+			case "activated":
+				return t`Running`;
+			case "waitingForTrigger":
+				return t`Open`;
+			case "finished":
+				return t`Filled`;
+			case "terminated":
+			case "stopped":
+				return t`Canceled`;
+			case "error":
+				return t`Failed`;
+		}
+	}
+
 	function getQueueOrderTypeLabel(orderType: OrderQueueItem["orderType"]): string | null {
 		switch (orderType) {
 			case "trigger":
@@ -198,5 +215,6 @@ export function useOrderDisplayLabels() {
 		getQueueSideLabel,
 		getTriggerConditionLabel,
 		getTriggerKindLabel,
+		getTwapHistoryStatusLabel,
 	};
 }

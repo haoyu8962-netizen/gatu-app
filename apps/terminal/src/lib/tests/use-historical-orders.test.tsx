@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { HistoricalOrdersResponse, UserHistoricalOrdersWsEvent } from "@nktkas/hyperliquid";
+import type { HistoricalOrdersResponse, TwapHistoryResponse, UserHistoricalOrdersWsEvent } from "@nktkas/hyperliquid";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,8 +16,24 @@ const mocks = vi.hoisted(() => ({
 		error: null as unknown,
 		isError: false,
 	},
+	twapQuery: {
+		data: [] as TwapHistoryResponse | undefined,
+		error: null as unknown,
+		isError: false,
+	},
 	subscription: {
 		data: undefined as UserHistoricalOrdersWsEvent | undefined,
+		error: undefined as unknown,
+		status: "idle" as "idle" | "subscribing" | "active" | "error",
+	},
+	twapSubscription: {
+		data: undefined as
+			| {
+					history: TwapHistoryResponse;
+					isSnapshot?: true;
+					user: `0x${string}`;
+			  }
+			| undefined,
 		error: undefined as unknown,
 		status: "idle" as "idle" | "subscribing" | "active" | "error",
 	},
@@ -33,12 +49,14 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useInfo: (...args: unknown[]) => {
-		mocks.useInfo(...args);
+	useInfo: (method: string, ...args: unknown[]) => {
+		mocks.useInfo(method, ...args);
+		if (method === "twapHistory") return mocks.twapQuery;
 		return mocks.query;
 	},
-	useSubscription: (...args: unknown[]) => {
-		mocks.useSubscription(...args);
+	useSubscription: (method: string, ...args: unknown[]) => {
+		mocks.useSubscription(method, ...args);
+		if (method === "userTwapHistory") return mocks.twapSubscription;
 		return mocks.subscription;
 	},
 }));
@@ -73,6 +91,29 @@ function createOrderEntry(overrides: Partial<HistoricalOrderEntry> = {}): Histor
 	};
 }
 
+function createTwapEntry(overrides: Partial<TwapHistoryResponse[number]> = {}): TwapHistoryResponse[number] {
+	return {
+		state: {
+			coin: "ETH",
+			executedNtl: "350",
+			executedSz: "0.1",
+			minutes: 10,
+			randomize: false,
+			reduceOnly: false,
+			side: "B",
+			stopPx: null,
+			sz: "0.2",
+			timestamp: 1500,
+			trigger: null,
+			user: "0x1111111111111111111111111111111111111111",
+		},
+		status: { status: "activated" },
+		time: 1600,
+		twapId: 7,
+		...overrides,
+	};
+}
+
 function Probe() {
 	hookValue = useHistoricalOrders();
 	return null;
@@ -92,9 +133,15 @@ describe("useHistoricalOrders", () => {
 		mocks.query.data = undefined;
 		mocks.query.error = null;
 		mocks.query.isError = false;
+		mocks.twapQuery.data = [];
+		mocks.twapQuery.error = null;
+		mocks.twapQuery.isError = false;
 		mocks.subscription.data = undefined;
 		mocks.subscription.error = undefined;
 		mocks.subscription.status = "idle";
+		mocks.twapSubscription.data = undefined;
+		mocks.twapSubscription.error = undefined;
+		mocks.twapSubscription.status = "idle";
 		mocks.useInfo.mockReset();
 		mocks.useSubscription.mockReset();
 	});
@@ -142,6 +189,36 @@ describe("useHistoricalOrders", () => {
 			{ user: mocks.address },
 			{ enabled: true },
 		);
+		expect(mocks.useInfo).toHaveBeenCalledWith(
+			"twapHistory",
+			{ user: mocks.address },
+			expect.objectContaining({ enabled: true }),
+		);
+		expect(mocks.useSubscription).toHaveBeenCalledWith("userTwapHistory", { user: mocks.address }, { enabled: true });
+	});
+
+	it("merges TWAP parent history and keeps the newest lifecycle status", () => {
+		const restTwap = createTwapEntry();
+		const realtimeTwap = createTwapEntry({ status: { status: "finished" }, time: 2000 });
+		mocks.query.data = [];
+		mocks.twapQuery.data = [restTwap];
+		mocks.twapSubscription.data = {
+			history: [realtimeTwap],
+			isSnapshot: true,
+			user: mocks.address as `0x${string}`,
+		};
+
+		const result = renderHook();
+
+		expect(result.status).toBe("ready");
+		expect(result.entries).toEqual([
+			expect.objectContaining({
+				coin: "ETH",
+				kind: "twap",
+				twap: realtimeTwap,
+				type: "twap",
+			}),
+		]);
 	});
 
 	it("does not let an equal-timestamp open snapshot overwrite a filled order", () => {
@@ -229,6 +306,17 @@ describe("useHistoricalOrders", () => {
 		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
 	});
 
+	it("fails closed when TWAP history contains an unsupported status", () => {
+		mocks.query.data = [];
+		mocks.twapQuery.data = [createTwapEntry({ status: { status: "paused" } as never })];
+
+		const result = renderHook();
+
+		expect(result.status).toBe("error");
+		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
+		expect(result.entries).toEqual([]);
+	});
+
 	it("keeps both data sources disabled while the wallet is disconnected", () => {
 		mocks.address = undefined;
 		mocks.isConnected = false;
@@ -244,6 +332,16 @@ describe("useHistoricalOrders", () => {
 		);
 		expect(mocks.useSubscription).toHaveBeenCalledWith(
 			"userHistoricalOrders",
+			{ user: "0x0000000000000000000000000000000000000000" },
+			{ enabled: false },
+		);
+		expect(mocks.useInfo).toHaveBeenCalledWith(
+			"twapHistory",
+			{ user: "0x0000000000000000000000000000000000000000" },
+			expect.objectContaining({ enabled: false }),
+		);
+		expect(mocks.useSubscription).toHaveBeenCalledWith(
+			"userTwapHistory",
 			{ user: "0x0000000000000000000000000000000000000000" },
 			{ enabled: false },
 		);

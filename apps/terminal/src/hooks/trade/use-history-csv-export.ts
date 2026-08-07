@@ -1,5 +1,10 @@
 import { useLingui } from "@lingui/react/macro";
-import type { HistoricalOrdersResponse, UserFillsResponse, UserFundingResponse } from "@nktkas/hyperliquid";
+import type {
+	HistoricalOrdersResponse,
+	TwapHistoryResponse,
+	UserFillsResponse,
+	UserFundingResponse,
+} from "@nktkas/hyperliquid";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -11,7 +16,15 @@ import {
 	fetchTimeRangeHistory,
 	MalformedHistoryPageError,
 } from "@/lib/trade/history-pagination";
-import { getUserFillKey, isValidUserFillHistoryItem } from "@/lib/trade/user-fills";
+import { buildOrderHistoryEntries, isValidTwapHistoryItem, type OrderHistoryEntry } from "@/lib/trade/order-history";
+import {
+	getUserFillKey,
+	getUserTwapSliceFillKey,
+	isValidUserFillHistoryItem,
+	isValidUserTwapSliceFillHistoryItem,
+	mergeUserFillSources,
+	normalizeUserTwapSliceFills,
+} from "@/lib/trade/user-fills";
 import {
 	getUserFundingKey,
 	isValidUserFunding,
@@ -144,23 +157,45 @@ export function useUserFillsCsvExport(options: CsvExportOptions<UserFillsRespons
 			const result = await run<HistoryLoadResult<UserFillsResponse[number]>>(async (address, signal) => {
 				const client = getInfoClient();
 				const endTime = Date.now();
-				return fetchTimeRangeHistory({
-					endTime,
-					fetchPage: (startTime, pageEndTime, pageSignal) =>
-						fetchHistoryPageWithRetry(
-							(requestSignal) =>
-								client.userFillsByTime(
-									{ aggregateByTime: true, endTime: pageEndTime, startTime, user: address },
-									requestSignal,
-								),
-							{ signal: pageSignal },
-						),
-					getKey: getUserFillKey,
-					getTime: (fill) => fill.time,
-					maxItems: USER_FILLS_API_LIMIT,
-					signal,
-					validateItem: isValidUserFillHistoryItem,
-				});
+				const [fillsResult, twapFillsResult] = await Promise.all([
+					fetchTimeRangeHistory({
+						endTime,
+						fetchPage: (startTime, pageEndTime, pageSignal) =>
+							fetchHistoryPageWithRetry(
+								(requestSignal) =>
+									client.userFillsByTime(
+										{ aggregateByTime: true, endTime: pageEndTime, startTime, user: address },
+										requestSignal,
+									),
+								{ signal: pageSignal },
+							),
+						getKey: getUserFillKey,
+						getTime: (fill) => fill.time,
+						maxItems: USER_FILLS_API_LIMIT,
+						signal,
+						validateItem: isValidUserFillHistoryItem,
+					}),
+					fetchTimeRangeHistory({
+						endTime,
+						fetchPage: (startTime, pageEndTime, pageSignal) =>
+							fetchHistoryPageWithRetry(
+								(requestSignal) =>
+									client.userTwapSliceFillsByTime({ endTime: pageEndTime, startTime, user: address }, requestSignal),
+								{ signal: pageSignal },
+							),
+						getKey: getUserTwapSliceFillKey,
+						getTime: (entry) => entry.fill.time,
+						maxItems: USER_FILLS_API_LIMIT,
+						signal,
+						validateItem: isValidUserTwapSliceFillHistoryItem,
+					}),
+				]);
+				return {
+					items: mergeUserFillSources(fillsResult.items, normalizeUserTwapSliceFills(twapFillsResult.items)).sort(
+						(left, right) => left.time - right.time,
+					),
+					truncated: fillsResult.truncated || twapFillsResult.truncated,
+				};
 			});
 			if (!result) {
 				toast.dismiss(toastId);
@@ -168,12 +203,9 @@ export function useUserFillsCsvExport(options: CsvExportOptions<UserFillsRespons
 			}
 			downloadCsv(options.filename, options.buildRows(result.items));
 			if (result.truncated) {
-				toast.warning(
-					t`CSV contains Hyperliquid's latest 10,000 fills. Older fills are unavailable through this API.`,
-					{
-						id: toastId,
-					},
-				);
+				toast.warning(t`CSV export reached the history limit. Some records were not included.`, {
+					id: toastId,
+				});
 			} else {
 				toast.success(t`CSV exported.`, { id: toastId });
 			}
@@ -186,38 +218,45 @@ export function useUserFillsCsvExport(options: CsvExportOptions<UserFillsRespons
 	return { exportCsv, isExporting };
 }
 
-export function useHistoricalOrdersCsvExport(
-	options: CsvExportOptions<HistoricalOrdersResponse[number]>,
-): CsvExportResult {
+export function useHistoricalOrdersCsvExport(options: CsvExportOptions<OrderHistoryEntry>): CsvExportResult {
 	const { t } = useLingui();
 	const { isExporting, run } = useHistoryExportRunner();
 
 	async function exportCsv() {
 		const toastId = toast.loading(t`Exporting order history...`);
 		try {
-			const orders = await run<HistoricalOrdersResponse>(async (address, signal) => {
+			const result = await run<HistoryLoadResult<OrderHistoryEntry>>(async (address, signal) => {
 				const client = getInfoClient();
-				return fetchHistoryPageWithRetry((requestSignal) => client.historicalOrders({ user: address }, requestSignal), {
-					signal,
-				});
+				const [orders, twaps] = await Promise.all([
+					fetchHistoryPageWithRetry((requestSignal) => client.historicalOrders({ user: address }, requestSignal), {
+						signal,
+					}),
+					fetchHistoryPageWithRetry((requestSignal) => client.twapHistory({ user: address }, requestSignal), {
+						signal,
+					}),
+				]);
+				if (!Array.isArray(orders) || orders.some((entry) => !isValidHistoricalOrderHistoryItem(entry))) {
+					throw new MalformedHistoryPageError();
+				}
+				if (!Array.isArray(twaps) || twaps.some((entry) => !isValidTwapHistoryItem(entry))) {
+					throw new MalformedHistoryPageError();
+				}
+				return {
+					items: buildOrderHistoryEntries(orders as HistoricalOrdersResponse, twaps as TwapHistoryResponse),
+					truncated: orders.length >= HISTORICAL_ORDERS_API_LIMIT || twaps.length >= HISTORICAL_ORDERS_API_LIMIT,
+				};
 			});
-			if (!orders) {
+			if (!result) {
 				toast.dismiss(toastId);
 				return;
 			}
-			if (!Array.isArray(orders) || orders.some((entry) => !isValidHistoricalOrderHistoryItem(entry))) {
-				throw new MalformedHistoryPageError();
-			}
-			downloadCsv(options.filename, options.buildRows(orders));
-			if (orders.length >= HISTORICAL_ORDERS_API_LIMIT) {
-				toast.warning(
-					t`CSV contains Hyperliquid's latest 2,000 orders. Older orders are unavailable through this API.`,
-					{
-						id: toastId,
-					},
-				);
+			downloadCsv(options.filename, options.buildRows(result.items));
+			if (result.truncated) {
+				toast.warning(t`CSV export reached the history limit. Some records were not included.`, {
+					id: toastId,
+				});
 			} else {
-				toast.success(t`CSV exported. Hyperliquid provides at most the latest 2,000 orders.`, { id: toastId });
+				toast.success(t`CSV exported.`, { id: toastId });
 			}
 		} catch (error) {
 			if (isHistoryAbortError(error)) toast.dismiss(toastId);

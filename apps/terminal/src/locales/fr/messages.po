@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. placeholder {0}: filteredOrders.length
+#. placeholder {0}: filteredEntries.length
 #. placeholder {0}: openOrders.length
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
@@ -854,6 +854,7 @@ msgstr "Annuler les ordres sélectionnés"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Canceled"
 msgstr "Annulé"
 
@@ -1577,12 +1578,12 @@ msgid "Crypto"
 msgstr "Crypto"
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "CSV contains Hyperliquid's latest 10,000 fills. Older fills are unavailable through this API."
-msgstr ""
+#~ msgid "CSV contains Hyperliquid's latest 10,000 fills. Older fills are unavailable through this API."
+#~ msgstr ""
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "CSV contains Hyperliquid's latest 2,000 orders. Older orders are unavailable through this API."
-msgstr ""
+#~ msgid "CSV contains Hyperliquid's latest 2,000 orders. Older orders are unavailable through this API."
+#~ msgstr ""
 
 #: src/hooks/trade/use-account-ledger-csv.ts
 #~ msgid "CSV export reached the history limit. Some older records were not included."
@@ -1590,18 +1591,21 @@ msgstr ""
 
 #: src/hooks/trade/use-account-ledger-csv.ts
 #: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-history-csv-export.ts
+#: src/hooks/trade/use-history-csv-export.ts
 msgid "CSV export reached the history limit. Some records were not included."
-msgstr ""
+msgstr "L’exportation CSV a atteint la limite de l’historique. Certains enregistrements n’ont pas été inclus."
 
 #: src/hooks/trade/use-account-ledger-csv.ts
+#: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
 #: src/hooks/trade/use-history-csv-export.ts
 msgid "CSV exported."
 msgstr "CSV exporté."
 
 #: src/hooks/trade/use-history-csv-export.ts
-msgid "CSV exported. Hyperliquid provides at most the latest 2,000 orders."
-msgstr ""
+#~ msgid "CSV exported. Hyperliquid provides at most the latest 2,000 orders."
+#~ msgstr ""
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/positions/funding-tab.tsx
@@ -2240,6 +2244,10 @@ msgstr ""
 msgid "failed"
 msgstr "échoué"
 
+#: src/hooks/trade/use-order-display-labels.ts
+msgid "Failed"
+msgstr "Échoué"
+
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "Failed to build a close order"
 msgstr ""
@@ -2475,6 +2483,7 @@ msgstr "Statut d'exécution"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Filled"
@@ -3855,6 +3864,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Open"
 msgstr "Ouvert"
 
@@ -4974,6 +4984,7 @@ msgid "Role"
 msgstr ""
 
 #: src/hooks/trade/use-order-display-labels.ts
+#: src/hooks/trade/use-order-display-labels.ts
 msgid "Running"
 msgstr "En cours"
 
@@ -5793,6 +5804,7 @@ msgstr "Échange en cours..."
 msgid "Switch to {0} market"
 msgstr "Passer au marché {0}"
 
+#. placeholder {0}: entry.coin
 #. placeholder {0}: order.coin
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
@@ -6601,7 +6613,10 @@ msgstr "Suivre sur LI.FI Explorer"
 
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/config/nav.tsx
 msgid "Trade"
 msgstr "Trader"
@@ -6824,6 +6839,14 @@ msgid "Try the PWA."
 msgstr "Essayez la PWA."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/mobile/mobile-orders-history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/orders-history-tab.tsx
 #: src/config/trade.ts
 #: src/hooks/trade/use-order-display-labels.ts
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6878,11 +6901,14 @@ msgid "Two-sided open interest: the sum of long and short positions on this cont
 msgstr "Intérêt ouvert bilatéral : somme des positions longues et courtes sur ce contrat."
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx

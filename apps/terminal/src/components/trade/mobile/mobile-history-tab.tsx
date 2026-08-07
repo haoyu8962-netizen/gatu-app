@@ -16,7 +16,7 @@ import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toNumber } from "@/lib/trade/numbers";
-import { getUserFillKey } from "@/lib/trade/user-fills";
+import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { MobileDisclosureHeader } from "./mobile-disclosure-header";
@@ -164,6 +164,7 @@ function MobileHistoryTabContent({
 						header: t`Direction`,
 						getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)),
 					},
+					{ header: t`Type`, getValue: (fill) => (typeof fill.twapId === "number" ? t`TWAP` : t`Trade`) },
 					{ header: t`Price`, getValue: (fill) => formatUSD(fill.px) },
 					{ header: t`Size`, getValue: (fill) => formatNumber(fill.sz, markets.getSzDecimals(fill.coin)) },
 					{ header: t`Fee`, getValue: (fill) => formatToken(fill.fee, { symbol: fill.feeToken }) },
@@ -174,7 +175,10 @@ function MobileHistoryTabContent({
 							return closedPnl ? formatUSD(closedPnl, { signDisplay: "exceptZero" }) : FALLBACK_VALUE_PLACEHOLDER;
 						},
 					},
-					{ header: t`Transaction`, getValue: (fill) => fill.hash },
+					{
+						header: t`Transaction`,
+						getValue: (fill) => (hasUserFillExplorerTransaction(fill) ? fill.hash : FALLBACK_VALUE_PLACEHOLDER),
+					},
 				],
 			),
 	});
@@ -302,9 +306,12 @@ function MobileHistoryTabContent({
 									const closedPnl = toNumber(fill.closedPnl);
 									const showPnl = closedPnl !== null && closedPnl !== 0;
 									const isLiquidation = !!fill.liquidation;
+									const isTwap = typeof fill.twapId === "number";
 									const isBuy = fill.side === "B";
 									const directionLabel = getDirectionLabel(fill.dir);
-									const explorerUrl = getExplorerTxUrl(fill.hash, isTestnet);
+									const explorerUrl = hasUserFillExplorerTransaction(fill)
+										? getExplorerTxUrl(fill.hash, isTestnet)
+										: null;
 									const sizeDisplay = formatNumber(fill.sz, markets.getSzDecimals(fill.coin));
 
 									function handleToggle() {
@@ -334,9 +341,16 @@ function MobileHistoryTabContent({
 													className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
 												>
 													<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
-													<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">
-														{marketName}
-													</span>
+													<div className="flex min-w-0 items-center gap-1">
+														<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">
+															{marketName}
+														</span>
+														{isTwap ? (
+															<span className="shrink-0 rounded-[3px] bg-market-close-hover px-1 text-[9px] font-semibold leading-[14px] text-market-close-muted">
+																{t`TWAP`}
+															</span>
+														) : null}
+													</div>
 												</button>
 												<div className="min-w-0">
 													<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Time`}</div>

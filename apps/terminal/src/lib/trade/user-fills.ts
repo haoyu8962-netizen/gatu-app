@@ -1,4 +1,4 @@
-import type { UserFillsResponse } from "@nktkas/hyperliquid";
+import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 
 export function isValidUserFillHistoryItem(item: unknown): item is UserFillsResponse[number] {
 	if (!isRecord(item)) return false;
@@ -21,6 +21,28 @@ export function isValidUserFillHistoryItem(item: unknown): item is UserFillsResp
 
 export function getUserFillKey(fill: UserFillsResponse[number]): string {
 	return `${fill.tid}:${fill.oid}:${fill.time}`;
+}
+
+export function isValidUserTwapSliceFillHistoryItem(item: unknown): item is UserTwapSliceFillsResponse[number] {
+	if (!isRecord(item)) return false;
+	return (
+		typeof item.twapId === "number" &&
+		Number.isSafeInteger(item.twapId) &&
+		item.twapId >= 0 &&
+		isValidUserFillHistoryItem(item.fill)
+	);
+}
+
+export function getUserTwapSliceFillKey(entry: UserTwapSliceFillsResponse[number]): string {
+	return getUserFillKey(entry.fill);
+}
+
+export function normalizeUserTwapSliceFills(entries: UserTwapSliceFillsResponse): UserFillsResponse {
+	return entries.map((entry) => ({ ...entry.fill, twapId: entry.twapId }));
+}
+
+export function hasUserFillExplorerTransaction(fill: UserFillsResponse[number]): boolean {
+	return !/^0x0{64}$/i.test(fill.hash);
 }
 
 export function mergeUserFillSources(...sources: ReadonlyArray<UserFillsResponse | undefined>): UserFillsResponse {

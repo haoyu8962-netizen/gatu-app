@@ -12,6 +12,7 @@ import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
 import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
+import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 import { AssetBadge } from "../components/asset-badge";
@@ -54,6 +55,7 @@ export function HistoryTab() {
 				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
 				{ header: t`Asset`, getValue: (fill) => fill.coin },
 				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
+				{ header: t`Type`, getValue: (fill) => (typeof fill.twapId === "number" ? t`TWAP` : t`Trade`) },
 				{ header: t`Price`, getValue: (fill) => formatUSD(fill.px) },
 				{ header: t`Size`, getValue: (fill) => formatNumber(fill.sz, markets.getSzDecimals(fill.coin)) },
 				{ header: t`Fee`, getValue: (fill) => formatToken(fill.fee, { symbol: fill.feeToken }) },
@@ -64,7 +66,10 @@ export function HistoryTab() {
 						return closedPnl ? formatUSD(closedPnl, { signDisplay: "exceptZero" }) : FALLBACK_VALUE_PLACEHOLDER;
 					},
 				},
-				{ header: t`Transaction`, getValue: (fill) => fill.hash },
+				{
+					header: t`Transaction`,
+					getValue: (fill) => (hasUserFillExplorerTransaction(fill) ? fill.hash : FALLBACK_VALUE_PLACEHOLDER),
+				},
 			]),
 	});
 
@@ -96,10 +101,11 @@ export function HistoryTab() {
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[1280px] w-full font-market-close tabular-nums">
+						<Table className="table-fixed min-w-[1360px] w-full font-market-close tabular-nums">
 							<colgroup>
 								<col className="w-[138px]" />
 								<col className="w-[126px]" />
+								<col className="w-[96px]" />
 								<col />
 								<col className="w-[126px]" />
 								<col className="w-[146px]" />
@@ -113,6 +119,9 @@ export function HistoryTab() {
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-left")}>
 										{t`Direction`}
+									</TableHead>
+									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-left")}>
+										{t`Type`}
 									</TableHead>
 									<TableHead scope="col" size="dense" className={cn(historyTableHeadClass, "text-right")}>
 										{t`Price`}
@@ -135,10 +144,12 @@ export function HistoryTab() {
 								{fills.map((fill) => {
 									const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
 									const directionLabel = getDirectionLabel(fill.dir);
+									const isTwap = typeof fill.twapId === "number";
+									const hasExplorerTransaction = hasUserFillExplorerTransaction(fill);
 
 									return (
 										<TableRow
-											key={`${fill.hash}-${fill.tid}`}
+											key={getUserFillKey(fill)}
 											className="transition-colors duration-[120ms] hover:bg-market-close-card"
 										>
 											<TableCell
@@ -167,6 +178,11 @@ export function HistoryTab() {
 													)}
 												>
 													{fill.liquidation ? t`Liquidated` : directionLabel}
+												</span>
+											</TableCell>
+											<TableCell size="dense" className={cn(positionsPanelTableCellClass, historyTableCellClass)}>
+												<span className="text-xs font-semibold text-market-close-muted">
+													{isTwap ? t`TWAP` : t`Trade`}
 												</span>
 											</TableCell>
 											<TableCell
@@ -222,18 +238,22 @@ export function HistoryTab() {
 												)}
 											>
 												<div className="flex flex-col items-end">
-													<a
-														className="flex items-center gap-1 transition-colors duration-[120ms] hover:text-market-close-fg"
-														href={getExplorerTxUrl(fill.hash, isTestnet)}
-														target="_blank"
-														rel="noopener noreferrer"
-													>
+													{hasExplorerTransaction ? (
+														<a
+															className="flex items-center gap-1 transition-colors duration-[120ms] hover:text-market-close-fg"
+															href={getExplorerTxUrl(fill.hash, isTestnet)}
+															target="_blank"
+															rel="noopener noreferrer"
+														>
+															<span>{formatDateTimeShort(fill.time)}</span>
+															<ArrowSquareOutIcon
+																className="size-2.5 text-market-close-stroke-control"
+																aria-hidden="true"
+															/>
+														</a>
+													) : (
 														<span>{formatDateTimeShort(fill.time)}</span>
-														<ArrowSquareOutIcon
-															className="size-2.5 text-market-close-stroke-control"
-															aria-hidden="true"
-														/>
-													</a>
+													)}
 												</div>
 											</TableCell>
 										</TableRow>

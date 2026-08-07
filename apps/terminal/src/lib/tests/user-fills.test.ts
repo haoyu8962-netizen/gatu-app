@@ -1,6 +1,11 @@
-import type { UserFillsResponse } from "@nktkas/hyperliquid";
+import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
-import { mergeUserFillSources } from "@/lib/trade/user-fills";
+import {
+	hasUserFillExplorerTransaction,
+	isValidUserTwapSliceFillHistoryItem,
+	mergeUserFillSources,
+	normalizeUserTwapSliceFills,
+} from "@/lib/trade/user-fills";
 
 type UserFill = UserFillsResponse[number];
 
@@ -42,5 +47,17 @@ describe("mergeUserFillSources", () => {
 
 	it("handles unavailable sources without fabricating fills", () => {
 		expect(mergeUserFillSources(undefined, undefined)).toEqual([]);
+	});
+
+	it("normalizes TWAP slice fills without losing their parent ID", () => {
+		const entry: UserTwapSliceFillsResponse[number] = { fill: createFill(), twapId: 7 };
+
+		expect(isValidUserTwapSliceFillHistoryItem(entry)).toBe(true);
+		expect(normalizeUserTwapSliceFills([entry])).toEqual([{ ...entry.fill, twapId: 7 }]);
+	});
+
+	it("does not create explorer links for the documented zero TWAP transaction hash", () => {
+		expect(hasUserFillExplorerTransaction(createFill())).toBe(false);
+		expect(hasUserFillExplorerTransaction(createFill({ hash: `0x${"1".repeat(64)}` }))).toBe(true);
 	});
 });

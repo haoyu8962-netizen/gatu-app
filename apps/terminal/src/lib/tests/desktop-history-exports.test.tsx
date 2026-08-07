@@ -192,16 +192,18 @@ describe("desktop history exports", () => {
 		expect(Array.from(container.querySelectorAll("th"), (cell) => cell.textContent)).toEqual([
 			"Asset",
 			"Direction",
+			"Type",
 			"Price",
 			"Size",
 			"Fee",
 			"PNL",
 			"Time",
 		]);
-		expect(container.querySelector("table")?.className).toContain("min-w-[1280px]");
+		expect(container.querySelector("table")?.className).toContain("min-w-[1360px]");
 		expect(Array.from(container.querySelectorAll("col"), (column) => column.className)).toEqual([
 			"w-[138px]",
 			"w-[126px]",
+			"w-[96px]",
 			"",
 			"w-[126px]",
 			"w-[146px]",
@@ -221,6 +223,21 @@ describe("desktop history exports", () => {
 			"trade_history.csv",
 			expect.arrayContaining([expect.arrayContaining(["Time", "Asset", "Direction", "Transaction"])]),
 		);
+	});
+
+	it("labels TWAP fills without linking their documented zero transaction hash", () => {
+		mocks.fills = [
+			{
+				...mocks.fills[0],
+				hash: `0x${"0".repeat(64)}`,
+				oid: 5,
+				twapId: 42,
+			},
+		];
+		act(() => root.render(<HistoryTab />));
+
+		expect(container.textContent).toContain("TWAP");
+		expect(container.querySelector('tbody a[target="_blank"]')).toBeNull();
 	});
 
 	it("keeps full trade export available when the recent display window is empty", () => {
