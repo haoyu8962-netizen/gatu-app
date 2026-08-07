@@ -2,6 +2,7 @@ import { Button, buttonVariants, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { CaretDownIcon, PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { type ChangeEvent, Suspense, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
@@ -16,7 +17,10 @@ import { getOrderActionStage } from "@/domain/trade/order-action-stage";
 import { buildOrderPlan } from "@/domain/trade/order-intent";
 import { isOrderBatchResolutionError } from "@/domain/trade/order-tracking";
 import { formatPriceForOrder, formatSizeForOrder } from "@/domain/trade/orders";
-import { useAccountAbstractionControl } from "@/hooks/trade/use-account-abstraction-control";
+import {
+	type SelectableAccountAbstraction,
+	useAccountAbstractionControl,
+} from "@/hooks/trade/use-account-abstraction-control";
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
@@ -67,7 +71,7 @@ import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { TradeSizeSlider } from "../components/trade-size-slider";
-import { MarginModeModal } from "../tradebox/margin-mode-modal";
+import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
 import { TpSlSection } from "../tradebox/tp-sl-section";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
 import { TradeHeader } from "../tradebox/trade-header";
@@ -131,6 +135,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [showMarginDialog, setShowMarginDialog] = useState(false);
+	const [settingsTab, setSettingsTab] = useState<MobileTradeSettingsTab>("margin");
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
@@ -265,6 +270,17 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 
 	function handleSwitchChain() {
 		switchChain({ chainId: ARBITRUM_CHAIN_ID });
+	}
+
+	function handleMarginSettingsOpen() {
+		setSettingsTab("margin");
+		setShowMarginDialog(true);
+	}
+
+	async function handleAccountModeChange(nextAccountMode: SelectableAccountAbstraction) {
+		if (nextAccountMode === accountModeControl.accountAbstraction) return;
+		await accountModeControl.setAccountAbstraction(nextAccountMode);
+		toast.success(t`Account mode updated`);
 	}
 
 	async function handleApprove() {
@@ -466,6 +482,20 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 				updateError={switchModeError}
 				showLeverage={capabilities.isLeveraged}
 				onApply={async (mode: MarginMode, lev: number) => applyMarginAndLeverage(mode, lev)}
+				presentation="drawer"
+				marketIdentity={market?.name}
+				marketLabel={market?.pairName ?? market?.name}
+				settingsTab={settingsTab}
+				onSettingsTabChange={setSettingsTab}
+				accountModeForm={{
+					currentMode: accountModeControl.accountAbstraction,
+					isLoading: accountModeControl.isLoading,
+					isUpdating: accountModeControl.isUpdating,
+					canChange: capabilities.isLeveraged && accountModeControl.canSet,
+					portfolioMarginActivationEnabled: accountModeControl.portfolioMarginActivationEnabled,
+					onConnect: () => setWalletModalOpen(true),
+					onApply: handleAccountModeChange,
+				}}
 			/>
 			<div className={cn("shrink-0 border-b border-stroke-weak/60 bg-surface px-4 py-2", embedded && "hidden")}>
 				<div className="flex min-w-0 items-center justify-between gap-2">
@@ -506,9 +536,10 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 						onSideChange={setSide}
 						marginMode={marginMode}
 						leverage={leverage}
-						onMarginLeverageClick={() => setShowMarginDialog(true)}
+						onMarginLeverageClick={handleMarginSettingsOpen}
 						isLeveraged={capabilities.isLeveraged}
 						accountMode={accountModeControl.accountAbstraction}
+						isAccountModeLoading={accountModeControl.isLoading}
 						isAccountModeUpdating={accountModeControl.isUpdating}
 						hideAlgoOrders
 						compact={embedded}

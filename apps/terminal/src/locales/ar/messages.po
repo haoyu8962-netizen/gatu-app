@@ -240,11 +240,13 @@ msgstr ""
 msgid "Account mode"
 msgstr "وضع الحساب"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Account mode updated"
 msgstr "تم تحديث وضع الحساب"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Account type"
 msgstr "نوع الحساب"
 
@@ -3264,6 +3266,10 @@ msgstr "الهامش"
 #~ msgstr "الهامش · معزول"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin & account"
+msgstr ""
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin & leverage"
 msgstr "الهامش والرافعة المالية"
 
@@ -4534,6 +4540,10 @@ msgstr ""
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
 msgstr "بيانات المركز غير متاحة. انتظر حتى تتم استعادة اتصال الحساب قبل تغيير وضع الهامش."
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Position margin"
+msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Position reversed"
@@ -7223,6 +7233,11 @@ msgstr "تم إرسال إيداع USDC إلى Hyperliquid"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "USDC will be sent to this Arbitrum address."
 msgstr "سيتم إرسال USDC إلى عنوان Arbitrum هذا."
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
+msgid "Use {priceText} as limit price"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Use a different phone link"

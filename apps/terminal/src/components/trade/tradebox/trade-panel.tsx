@@ -434,6 +434,7 @@ export function TradePanel() {
 				updateError={switchModeError}
 				showLeverage={capabilities.isLeveraged}
 				onApply={handleMarginApply}
+				marketIdentity={market?.name}
 			/>
 			<AccountModeModal
 				open={activeModal === "accountMode"}

@@ -6,7 +6,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MarginModeModal } from "@/components/trade/tradebox/margin-mode-modal";
 import { createI18nRoot } from "./harness/react";
 
+const modalHarness = vi.hoisted(() => ({
+	dismissible: true,
+	presentation: "modal" as "modal" | "drawer",
+	tabChange: undefined as ((value: string) => void) | undefined,
+	tabsDisabled: false,
+	tabValue: "margin",
+}));
+
 vi.mock("@gatu/ui", () => ({
+	AdaptiveModal: ({
+		children,
+		dismissible,
+		open,
+		presentation,
+	}: {
+		children: ReactNode;
+		dismissible: boolean;
+		open: boolean;
+		presentation: "modal" | "drawer";
+	}) => {
+		modalHarness.dismissible = dismissible;
+		modalHarness.presentation = presentation;
+		return open ? createElement("section", { "data-presentation": presentation }, children) : null;
+	},
 	Button: ({ children, iconLeft: _iconLeft, iconRight: _iconRight, ...props }: Record<string, unknown>) =>
 		createElement("button", { ...props, type: "button" }, children as ReactNode),
 	Modal: ({ children, open }: { children: ReactNode; open: boolean }) => (open ? children : null),
@@ -17,6 +40,42 @@ vi.mock("@gatu/ui", () => ({
 	ModalPopup: ({ children, size: _size, ...props }: { children: ReactNode; [key: string]: unknown }) =>
 		createElement("section", props, children),
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
+	Tabs: ({
+		children,
+		disabled,
+		onValueChange,
+		value,
+	}: {
+		children: ReactNode;
+		disabled?: boolean;
+		onValueChange: (value: string) => void;
+		value: string;
+	}) => {
+		modalHarness.tabChange = onValueChange;
+		modalHarness.tabsDisabled = !!disabled;
+		modalHarness.tabValue = value;
+		return createElement("div", null, children);
+	},
+	TabsContent: ({ children, value, ...props }: { children: ReactNode; value: string; [key: string]: unknown }) =>
+		createElement(
+			"div",
+			{ ...props, role: "tabpanel", hidden: value !== modalHarness.tabValue, "data-value": value },
+			children,
+		),
+	TabsList: ({ children }: { children: ReactNode }) => createElement("div", { role: "tablist" }, children),
+	TabsTrigger: ({ children, value, ...props }: { children: ReactNode; value: string; [key: string]: unknown }) =>
+		createElement(
+			"button",
+			{
+				...props,
+				type: "button",
+				role: "tab",
+				disabled: modalHarness.tabsDisabled,
+				"aria-selected": value === modalHarness.tabValue,
+				onClick: () => modalHarness.tabChange?.(value),
+			},
+			children,
+		),
 }));
 
 vi.mock("@/components/trade/components/trading-action-button", () => ({
@@ -151,5 +210,91 @@ describe("MarginModeModal", () => {
 		});
 
 		expect(onApply).toHaveBeenCalledWith("isolated", 10);
+	});
+
+	it("resets the margin draft after closing and reopening", () => {
+		renderModal({ marketIdentity: "HYPE" });
+		act(() => getButton(container, "Isolated").click());
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+
+		renderModal({ open: false, marketIdentity: "HYPE" });
+		renderModal({ marketIdentity: "HYPE" });
+
+		expect(getButton(container, "Cross").getAttribute("aria-pressed")).toBe("true");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+	});
+
+	it("resets the margin draft when the selected market changes while open", () => {
+		renderModal({ marketIdentity: "HYPE" });
+		act(() => getButton(container, "Isolated").click());
+		expect(getButton(container, "Confirm").disabled).toBe(false);
+
+		renderModal({ marketIdentity: "BTC" });
+
+		expect(getButton(container, "Cross").getAttribute("aria-pressed")).toBe("true");
+		expect(getButton(container, "Confirm").disabled).toBe(true);
+	});
+
+	it("uses a mobile drawer with separate margin and account actions", async () => {
+		const onSettingsTabChange = vi.fn();
+		const accountApply = vi.fn().mockResolvedValue(undefined);
+		renderModal({
+			presentation: "drawer",
+			marketIdentity: "HYPE",
+			marketLabel: "HYPE-USDC",
+			settingsTab: "margin",
+			onSettingsTabChange,
+			accountModeForm: {
+				currentMode: "disabled",
+				canChange: true,
+				portfolioMarginActivationEnabled: true,
+				onApply: accountApply,
+			},
+		});
+
+		expect(modalHarness.presentation).toBe("drawer");
+		expect(container.textContent).toContain("Position margin");
+		expect(container.textContent).toContain("Account type");
+		act(() => getButton(container, "Account type").click());
+		expect(onSettingsTabChange).toHaveBeenCalledWith("account");
+
+		renderModal({
+			presentation: "drawer",
+			marketIdentity: "HYPE",
+			marketLabel: "HYPE-USDC",
+			settingsTab: "account",
+			onSettingsTabChange,
+			accountModeForm: {
+				currentMode: "disabled",
+				canChange: true,
+				portfolioMarginActivationEnabled: true,
+				onApply: accountApply,
+			},
+		});
+		act(() => getButton(container, "Unified account").click());
+		await act(async () => getButton(container, "Switch to Unified account").click());
+
+		expect(accountApply).toHaveBeenCalledWith("unifiedAccount");
+		expect(onApply).not.toHaveBeenCalled();
+	});
+
+	it("locks the complete settings drawer while either action is pending", () => {
+		renderModal({
+			presentation: "drawer",
+			settingsTab: "account",
+			isUpdating: true,
+			accountModeForm: {
+				currentMode: "disabled",
+				canChange: true,
+				isUpdating: false,
+				onApply: vi.fn().mockResolvedValue(undefined),
+			},
+		});
+
+		expect(modalHarness.dismissible).toBe(false);
+		expect(getButton(container, "Position margin").disabled).toBe(true);
+		expect(getButton(container, "Account type").disabled).toBe(true);
+		expect(getButton(container, "Cancel").disabled).toBe(true);
+		expect(container.querySelector('[role="tabpanel"]:not([hidden])')).not.toBeNull();
 	});
 });

@@ -240,11 +240,13 @@ msgstr ""
 msgid "Account mode"
 msgstr "Modo de cuenta"
 
+#: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Account mode updated"
 msgstr "Modo de cuenta actualizado"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Account type"
 msgstr "Tipo de cuenta"
 
@@ -3264,6 +3266,10 @@ msgstr "Margen"
 #~ msgstr "Margen · Aislado"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Margin & account"
+msgstr ""
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Margin & leverage"
 msgstr "Margen y apalancamiento"
 
@@ -4534,6 +4540,10 @@ msgstr ""
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Position data is unavailable. Wait for the account connection to recover before changing margin mode."
 msgstr "Los datos de la posición no están disponibles. Espera a que se restablezca la conexión de la cuenta antes de cambiar el modo de margen."
+
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Position margin"
+msgstr ""
 
 #: src/components/trade/positions/positions-tab.tsx
 #~ msgid "Position reversed"
@@ -7223,6 +7233,11 @@ msgstr "Depósito de USDC enviado a Hyperliquid"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "USDC will be sent to this Arbitrum address."
 msgstr "El USDC se enviará a esta dirección de Arbitrum."
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
+msgid "Use {priceText} as limit price"
+msgstr ""
 
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Use a different phone link"

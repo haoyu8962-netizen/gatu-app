@@ -146,4 +146,30 @@ describe("AccountModeModal", () => {
 		expect(portfolioOption?.disabled).toBe(false);
 		expect(unifiedOption?.disabled).toBe(false);
 	});
+
+	it("resets an unsubmitted account-mode draft after reopening", () => {
+		function render(open: boolean) {
+			act(() =>
+				root.render(
+					<I18nProvider i18n={i18n}>
+						<AccountModeModal open={open} onOpenChange={() => {}} currentMode="disabled" canChange onApply={vi.fn()} />
+					</I18nProvider>,
+				),
+			);
+		}
+
+		render(true);
+		const unifiedOption = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
+			(button) => button.textContent?.includes("Unified account"),
+		);
+		act(() => unifiedOption?.click());
+		expect(unifiedOption?.getAttribute("aria-pressed")).toBe("true");
+
+		render(false);
+		render(true);
+		const separateOption = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")].find(
+			(button) => button.textContent?.includes("Separate"),
+		);
+		expect(separateOption?.getAttribute("aria-pressed")).toBe("true");
+	});
 });

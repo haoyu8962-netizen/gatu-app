@@ -1,4 +1,17 @@
-import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
+import {
+	AdaptiveModal,
+	Button,
+	Modal,
+	ModalContent,
+	ModalFooter,
+	ModalHeader,
+	ModalPopup,
+	ModalTitle,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, SpinnerGapIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
@@ -8,6 +21,7 @@ import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { TradingActionButton } from "../components/trading-action-button";
+import { AccountModeForm, type AccountModeFormProps } from "./account-mode-modal";
 import { LeverageSlider } from "./leverage-slider";
 
 const MODE_ICONS = { cross: StackIcon, isolated: ShieldIcon } as const;
@@ -54,9 +68,30 @@ interface Props {
 	updateError: Error | null;
 	showLeverage: boolean;
 	onApply: (mode: MarginMode, leverage: number) => Promise<void>;
+	presentation?: "modal" | "drawer";
+	marketIdentity?: string;
+	marketLabel?: string;
+	settingsTab?: MobileTradeSettingsTab;
+	onSettingsTabChange?: (tab: MobileTradeSettingsTab) => void;
+	accountModeForm?: Omit<AccountModeFormProps, "onClose">;
 }
 
-type BodyProps = Omit<Props, "open">;
+export type MobileTradeSettingsTab = "margin" | "account";
+
+type FormProps = Omit<
+	Props,
+	| "open"
+	| "onOpenChange"
+	| "presentation"
+	| "marketIdentity"
+	| "marketLabel"
+	| "settingsTab"
+	| "onSettingsTabChange"
+	| "accountModeForm"
+> & {
+	onClose: () => void;
+	mobileLayout?: boolean;
+};
 
 const MODE_OPTIONS: Array<{
 	id: MarginMode;
@@ -97,8 +132,9 @@ function ModeOption({ option, isSelected, isCurrent, isDisabled, isUpdating, onS
 			type="button"
 			onClick={onSelect}
 			disabled={isUpdating || isDisabled}
+			aria-pressed={isSelected}
 			className={cn(
-				"flex w-full items-center gap-2 rounded-xs px-3 py-2.5 text-left transition-colors",
+				"flex min-h-11 w-full items-center gap-2 rounded-8 px-3 py-2.5 text-left transition-colors",
 				isSelected ? "bg-surface text-fg" : "text-fg-muted hover:text-fg",
 				isDisabled && "opacity-40 cursor-not-allowed",
 			)}
@@ -115,18 +151,101 @@ function ModeOption({ option, isSelected, isCurrent, isDisabled, isUpdating, onS
 	);
 }
 
-export function MarginModeModal({ open, onOpenChange, ...rest }: Props) {
+export function MarginModeModal({
+	open,
+	onOpenChange,
+	presentation = "modal",
+	marketIdentity,
+	marketLabel,
+	settingsTab = "margin",
+	onSettingsTabChange,
+	accountModeForm,
+	...formProps
+}: Props) {
+	const formKey = `${open}:${marketIdentity ?? "market"}`;
+
+	if (presentation === "drawer" && accountModeForm) {
+		const actionPending = formProps.isUpdating || !!accountModeForm.isUpdating;
+
+		function handleTabChange(value: string) {
+			if (actionPending) return;
+			if (value === "margin" || value === "account") onSettingsTabChange?.(value);
+		}
+
+		return (
+			<AdaptiveModal
+				open={open}
+				onOpenChange={onOpenChange}
+				presentation="drawer"
+				size="sm"
+				dismissible={!actionPending}
+				showClose={!actionPending}
+				showHandle={!actionPending}
+				handleClassName="top-2 h-1 w-9 bg-fill/30"
+				className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px]"
+			>
+				<ModalHeader divider={false} className="px-4 pt-7 pb-2">
+					<ModalTitle>
+						<Trans>Margin & account</Trans>
+					</ModalTitle>
+					{marketLabel ? <p className="text-xs text-fg-muted">{marketLabel}</p> : null}
+				</ModalHeader>
+
+				<Tabs value={settingsTab} onValueChange={handleTabChange} size="md" fullWidth disabled={actionPending}>
+					<div className="px-4">
+						<TabsList className="w-full">
+							<TabsTrigger value="margin" className="min-h-11">
+								<Trans>Position margin</Trans>
+							</TabsTrigger>
+							<TabsTrigger value="account" className="min-h-11">
+								<Trans>Account type</Trans>
+							</TabsTrigger>
+						</TabsList>
+					</div>
+
+					<TabsContent value="margin" className="pt-0">
+						{settingsTab === "margin" ? (
+							<MarginModeForm
+								key={formKey}
+								{...formProps}
+								isUpdating={actionPending}
+								onClose={() => onOpenChange(false)}
+								mobileLayout
+							/>
+						) : null}
+					</TabsContent>
+					<TabsContent value="account" className="pt-0">
+						{settingsTab === "account" ? (
+							<AccountModeForm
+								key={`${open}:${accountModeForm.currentMode ?? "unavailable"}`}
+								{...accountModeForm}
+								isUpdating={actionPending}
+								onClose={() => onOpenChange(false)}
+								mobileLayout
+							/>
+						) : null}
+					</TabsContent>
+				</Tabs>
+			</AdaptiveModal>
+		);
+	}
+
 	return (
 		<Modal open={open} onOpenChange={onOpenChange}>
 			<ModalPopup size="sm">
-				<MarginModeModalBody onOpenChange={onOpenChange} {...rest} />
+				<ModalHeader>
+					<ModalTitle>
+						<Trans>Margin & leverage</Trans>
+					</ModalTitle>
+				</ModalHeader>
+				<MarginModeForm key={formKey} {...formProps} onClose={() => onOpenChange(false)} />
 			</ModalPopup>
 		</Modal>
 	);
 }
 
-function MarginModeModalBody({
-	onOpenChange,
+function MarginModeForm({
+	onClose,
 	currentMode,
 	currentLeverage,
 	pendingLeverage,
@@ -140,12 +259,10 @@ function MarginModeModalBody({
 	updateError,
 	showLeverage,
 	onApply,
-}: BodyProps) {
+	mobileLayout = false,
+}: FormProps) {
 	const [selectedMode, setSelectedMode] = useState<MarginMode>(currentMode);
-	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(
-		() => onOpenChange(false),
-		MARGIN_MODE_SUCCESS_DURATION_MS,
-	);
+	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(onClose, MARGIN_MODE_SUCCESS_DURATION_MS);
 
 	const displayLeverage = pendingLeverage ?? currentLeverage;
 
@@ -165,7 +282,7 @@ function MarginModeModalBody({
 	}
 
 	function handleCancel() {
-		onOpenChange(false);
+		onClose();
 	}
 
 	const selectedModeDescription =
@@ -175,13 +292,7 @@ function MarginModeModalBody({
 
 	return (
 		<>
-			<ModalHeader>
-				<ModalTitle>
-					<Trans>Margin & leverage</Trans>
-				</ModalTitle>
-			</ModalHeader>
-
-			<ModalContent className="space-y-5">
+			<ModalContent className={cn("space-y-5", mobileLayout && "overflow-y-auto px-4 pt-4")}>
 				<div className="space-y-2.5">
 					<p className="text-2xs font-semibold uppercase text-fg-muted">
 						<Trans>Margin mode</Trans>
@@ -265,7 +376,14 @@ function MarginModeModalBody({
 
 			<ModalFooter>
 				{!showSuccess && (
-					<Button variant="ghost" intent="neutral" size="sm" onClick={handleCancel} disabled={isUpdating}>
+					<Button
+						variant="ghost"
+						intent="neutral"
+						size="sm"
+						onClick={handleCancel}
+						disabled={isUpdating}
+						className={cn(mobileLayout && "min-h-11 flex-1")}
+					>
 						<Trans>Cancel</Trans>
 					</Button>
 				)}
@@ -284,7 +402,7 @@ function MarginModeModalBody({
 					<TradingActionButton
 						onClick={handleConfirm}
 						disabled={!isDirty || isUpdating || cannotSwitch || positionStateUnavailable}
-						className="gap-1.5"
+						className={cn("gap-1.5", mobileLayout && "min-h-11 flex-1")}
 					>
 						{isUpdating && <SpinnerGapIcon className="size-3.5 animate-spin" />}
 						<Trans>Confirm</Trans>

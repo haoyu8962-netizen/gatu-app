@@ -1,20 +1,25 @@
 import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, ModalTitle } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon, SpinnerGapIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { SelectableAccountAbstraction } from "@/hooks/trade/use-account-abstraction-control";
 import { cn } from "@/lib/cn";
 
-interface Props {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
+export interface AccountModeFormProps {
 	currentMode: SelectableAccountAbstraction | null;
 	isLoading?: boolean;
 	isUpdating?: boolean;
 	canChange?: boolean;
 	portfolioMarginActivationEnabled?: boolean;
+	mobileLayout?: boolean;
 	onConnect?: () => void;
+	onClose: () => void;
 	onApply: (mode: SelectableAccountAbstraction) => Promise<void>;
+}
+
+interface Props extends Omit<AccountModeFormProps, "onClose"> {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
 }
 
 interface AccountModeOption {
@@ -24,17 +29,36 @@ interface AccountModeOption {
 	description: string;
 }
 
-export function AccountModeModal({
-	open,
-	onOpenChange,
+export function AccountModeModal({ open, onOpenChange, ...formProps }: Props) {
+	return (
+		<Modal open={open} onOpenChange={onOpenChange}>
+			<ModalPopup size="sm" className="max-h-[min(90dvh,42rem)]">
+				<ModalHeader>
+					<ModalTitle>
+						<Trans>Account type</Trans>
+					</ModalTitle>
+				</ModalHeader>
+				<AccountModeForm
+					key={`${open}:${formProps.currentMode ?? "unavailable"}`}
+					{...formProps}
+					onClose={() => onOpenChange(false)}
+				/>
+			</ModalPopup>
+		</Modal>
+	);
+}
+
+export function AccountModeForm({
 	currentMode,
 	isLoading,
 	isUpdating,
 	canChange,
 	portfolioMarginActivationEnabled = false,
+	mobileLayout = false,
 	onConnect,
+	onClose,
 	onApply,
-}: Props) {
+}: AccountModeFormProps) {
 	const { t } = useLingui();
 	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(currentMode);
 	const [submitError, setSubmitError] = useState<string | null>(null);
@@ -57,21 +81,13 @@ export function AccountModeModal({
 		},
 	];
 	const selectedModeLabel = accountModeOptions.find((option) => option.id === selectedMode)?.label;
-
-	useEffect(() => {
-		if (open) {
-			setSelectedMode(currentMode);
-			setSubmitError(null);
-		}
-	}, [currentMode, open]);
-
 	const isDirty = selectedMode !== null && selectedMode !== currentMode;
 	const isBusy = !!isLoading || !!isUpdating;
 	const isModeUnavailable = !!canChange && !isLoading && currentMode === null;
 
 	async function handleApply() {
 		if (!canChange) {
-			onOpenChange(false);
+			onClose();
 			onConnect?.();
 			return;
 		}
@@ -80,112 +96,116 @@ export function AccountModeModal({
 		setSubmitError(null);
 		try {
 			await onApply(selectedMode);
-			onOpenChange(false);
+			onClose();
 		} catch (error) {
 			setSubmitError(error instanceof Error && error.message ? error.message : t`Failed to update account mode`);
 		}
 	}
 
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm" className="max-h-[min(90dvh,42rem)]">
-				<ModalHeader>
-					<ModalTitle>
-						<Trans>Account type</Trans>
-					</ModalTitle>
-				</ModalHeader>
+		<>
+			<ModalContent className="space-y-3 overflow-y-auto">
+				<div className="space-y-2">
+					{accountModeOptions.map((option) => {
+						const isSelected = selectedMode === option.id;
+						const isCurrent = currentMode === option.id;
+						const isActivationDisabled =
+							option.id === "portfolioMargin" && !isCurrent && !portfolioMarginActivationEnabled;
+						const isOptionDisabled = isBusy || isModeUnavailable || isActivationDisabled;
 
-				<ModalContent className="space-y-3 overflow-y-auto">
-					<div className="space-y-2">
-						{accountModeOptions.map((option) => {
-							const isSelected = selectedMode === option.id;
-							const isCurrent = currentMode === option.id;
-							const isActivationDisabled =
-								option.id === "portfolioMargin" && !isCurrent && !portfolioMarginActivationEnabled;
-							const isOptionDisabled = isBusy || isModeUnavailable || isActivationDisabled;
-
-							return (
-								<button
-									key={option.id}
-									type="button"
-									onClick={() => setSelectedMode(option.id)}
-									disabled={isOptionDisabled}
-									aria-pressed={isSelected}
-									className={cn(
-										"w-full rounded-xs border px-3 py-3 text-left transition-colors",
-										"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-										isSelected
-											? "border-stroke-selected bg-brand-soft text-fg"
-											: "border-stroke-weak bg-fill-weak/40 text-fg hover:bg-fill-hover",
-										isOptionDisabled && "cursor-not-allowed opacity-70",
-									)}
-								>
-									<span className="flex min-w-0 items-center gap-2">
-										<span className="min-w-0 flex-1 text-sm font-semibold">
-											{option.label}
-											{option.badge && <span className="ml-1 text-2xs font-medium text-brand">({option.badge})</span>}
-										</span>
-										{isCurrent && <span className="text-2xs font-medium uppercase text-fg-muted">{t`Current`}</span>}
-										{isActivationDisabled && (
-											<span className="text-2xs font-medium uppercase text-warning">{t`Unavailable`}</span>
-										)}
-										{isSelected && <CheckIcon className="size-3.5 shrink-0 text-brand" />}
+						return (
+							<button
+								key={option.id}
+								type="button"
+								onClick={() => setSelectedMode(option.id)}
+								disabled={isOptionDisabled}
+								aria-pressed={isSelected}
+								className={cn(
+									"min-h-11 w-full rounded-8 border px-3 py-3 text-left transition-colors",
+									"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+									isSelected
+										? "border-stroke-selected bg-brand-soft text-fg"
+										: "border-stroke-weak bg-fill-weak/40 text-fg hover:bg-fill-hover",
+									isOptionDisabled && "cursor-not-allowed opacity-70",
+								)}
+							>
+								<span className="flex min-w-0 items-center gap-2">
+									<span className="min-w-0 flex-1 text-sm font-semibold">
+										{option.label}
+										{option.badge ? (
+											<span className="ml-1 text-2xs font-medium text-brand">({option.badge})</span>
+										) : null}
 									</span>
-									<span className="mt-2 block text-xs leading-relaxed text-fg-muted">{option.description}</span>
-								</button>
-							);
-						})}
-					</div>
+									{isCurrent ? (
+										<span className="text-2xs font-medium uppercase text-fg-muted">{t`Current`}</span>
+									) : null}
+									{isActivationDisabled ? (
+										<span className="text-2xs font-medium uppercase text-warning">{t`Unavailable`}</span>
+									) : null}
+									{isSelected ? <CheckIcon className="size-3.5 shrink-0 text-brand" /> : null}
+								</span>
+								<span className="mt-2 block text-xs leading-relaxed text-fg-muted">{option.description}</span>
+							</button>
+						);
+					})}
+				</div>
 
-					<p className="text-2xs leading-relaxed text-fg-muted">
+				<p className="text-2xs leading-relaxed text-fg-muted">
+					<Trans>
+						Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts
+						holding less than $1,000.
+					</Trans>
+				</p>
+				{!portfolioMarginActivationEnabled && currentMode !== "portfolioMargin" ? (
+					<p className="text-xs text-warning">
 						<Trans>
-							Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts
-							holding less than $1,000.
+							New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not
+							affected and can switch away.
 						</Trans>
 					</p>
-					{!portfolioMarginActivationEnabled && currentMode !== "portfolioMargin" && (
-						<p className="text-xs text-warning">
-							<Trans>
-								New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not
-								affected and can switch away.
-							</Trans>
-						</p>
-					)}
-					{isModeUnavailable && (
-						<p className="text-xs text-error">
-							<Trans>Unable to load the current account mode. Reconnect your wallet and try again.</Trans>
-						</p>
-					)}
+				) : null}
+				{isModeUnavailable ? (
+					<p className="text-xs text-error">
+						<Trans>Unable to load the current account mode. Reconnect your wallet and try again.</Trans>
+					</p>
+				) : null}
 
-					{submitError && <p className="text-xs text-error">{submitError}</p>}
-				</ModalContent>
+				{submitError ? <p className="text-xs text-error">{submitError}</p> : null}
+			</ModalContent>
 
-				<ModalFooter>
-					<Button type="button" variant="ghost" intent="neutral" onClick={() => onOpenChange(false)}>
-						<Trans>Cancel</Trans>
-					</Button>
-					<Button
-						type="button"
-						variant="filled"
-						intent="brand"
-						onClick={handleApply}
-						disabled={canChange ? isBusy || isModeUnavailable || !isDirty : false}
-						iconLeft={isUpdating ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
-					>
-						{!canChange ? (
-							<Trans>Connect</Trans>
-						) : isLoading ? (
-							<Trans>Loading...</Trans>
-						) : isUpdating ? (
-							<Trans>Switching...</Trans>
-						) : isDirty && selectedModeLabel ? (
-							<Trans>Switch to {selectedModeLabel}</Trans>
-						) : (
-							<Trans>Current</Trans>
-						)}
-					</Button>
-				</ModalFooter>
-			</ModalPopup>
-		</Modal>
+			<ModalFooter>
+				<Button
+					type="button"
+					variant="ghost"
+					intent="neutral"
+					onClick={onClose}
+					disabled={isBusy}
+					className={cn(mobileLayout && "min-h-11 flex-1")}
+				>
+					<Trans>Cancel</Trans>
+				</Button>
+				<Button
+					type="button"
+					variant="filled"
+					intent="brand"
+					onClick={handleApply}
+					disabled={canChange ? isBusy || isModeUnavailable || !isDirty : false}
+					iconLeft={isUpdating ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
+					className={cn(mobileLayout && "min-h-11 flex-1")}
+				>
+					{!canChange ? (
+						<Trans>Connect</Trans>
+					) : isLoading ? (
+						<Trans>Loading...</Trans>
+					) : isUpdating ? (
+						<Trans>Switching...</Trans>
+					) : isDirty && selectedModeLabel ? (
+						<Trans>Switch to {selectedModeLabel}</Trans>
+					) : (
+						<Trans>Current</Trans>
+					)}
+				</Button>
+			</ModalFooter>
+		</>
 	);
 }

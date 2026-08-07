@@ -684,37 +684,50 @@ interface SplitOrderbookRowProps {
 	szDecimals: number;
 }
 
-function SplitOrderbookRow({ level, side, maxTotal, priceDecimals, showInQuote, szDecimals }: SplitOrderbookRowProps) {
+export function SplitOrderbookRow({
+	level,
+	side,
+	maxTotal,
+	priceDecimals,
+	showInQuote,
+	szDecimals,
+}: SplitOrderbookRowProps) {
 	const { setSelectedPrice } = useOrderbookActions();
 	const isAsk = side === "ask";
 	const depthPct = maxTotal > 0 ? (level.total / maxTotal) * 100 : 0;
 	const totalValue = showInQuote ? level.total * level.price : level.total;
 	const totalDecimals = showInQuote ? 2 : szDecimals;
+	const priceText = formatNumber(level.price, priceDecimals);
+	const { t } = useLingui();
 	const price = (
-		<button
-			type="button"
-			onClick={() => setSelectedPrice(level.price)}
+		<span
 			className={cn(
 				"font-medium tabular-nums",
 				isAsk ? "text-left orderbook-price-ask" : "text-right orderbook-price-bid",
 			)}
 		>
-			{formatNumber(level.price, priceDecimals)}
-		</button>
+			{priceText}
+		</span>
 	);
 	const total = (
-		<div className={cn("truncate tabular-nums orderbook-value-text", isAsk ? "text-right" : "text-left")}>
+		<span className={cn("truncate tabular-nums orderbook-value-text", isAsk ? "text-right" : "text-left")}>
 			{formatNumber(totalValue, { decimals: totalDecimals, compact: true })}
-		</div>
+		</span>
 	);
 
 	return (
-		<div className="relative h-[23px] shrink-0 hover:bg-fill-hover cursor-pointer group overflow-hidden">
-			<div
+		<button
+			type="button"
+			onClick={() => setSelectedPrice(level.price)}
+			title={priceText}
+			aria-label={t`Use ${priceText} as limit price`}
+			className="group relative block h-[23px] w-full shrink-0 cursor-pointer overflow-hidden text-left hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus"
+		>
+			<span
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
 				style={{ width: `${depthPct}%`, [isAsk ? "left" : "right"]: 0, [isAsk ? "right" : "left"]: "auto" }}
 			/>
-			<div className="relative z-10 grid h-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1 px-2 py-0.5 text-2xs">
+			<span className="relative z-10 grid h-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1 px-2 py-0.5 text-2xs">
 				{isAsk ? (
 					<>
 						{price}
@@ -726,8 +739,8 @@ function SplitOrderbookRow({ level, side, maxTotal, priceDecimals, showInQuote, 
 						{price}
 					</>
 				)}
-			</div>
-		</div>
+			</span>
+		</button>
 	);
 }
 

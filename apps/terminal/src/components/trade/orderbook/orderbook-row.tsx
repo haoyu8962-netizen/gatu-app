@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { memo } from "react";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
@@ -39,22 +40,27 @@ function OrderbookRowComponent({
 	const totalText = formatNumber(totalValue, { decimals: displayDecimals, compact: true });
 
 	return (
-		<div
-			className={cn("relative shrink-0 hover:bg-fill-hover cursor-pointer group", compact ? "h-[24px]" : "h-[23px]")}
+		<button
+			type="button"
+			onClick={() => setSelectedPrice(level.price)}
+			title={priceText}
+			aria-label={t`Use ${priceText} as limit price`}
+			className={cn(
+				"group relative block w-full shrink-0 cursor-pointer text-left hover:bg-fill-hover focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus",
+				compact ? "h-[24px]" : "h-[23px]",
+			)}
 		>
-			<div
+			<span
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
 				style={{ width: `${depthPct}%`, left: 0 }}
 			/>
-			<div
+			<span
 				className={cn(
 					"grid gap-1 tabular-nums py-0.5 relative z-10",
 					compact ? "grid-cols-2 pl-2 pr-3 text-xs" : "orderbook-grid px-2 text-2xs",
 				)}
 			>
-				<button
-					type="button"
-					onClick={() => setSelectedPrice(level.price)}
+				<span
 					title={priceText}
 					className={cn(
 						"min-w-0 truncate text-left justify-start",
@@ -63,7 +69,7 @@ function OrderbookRowComponent({
 					)}
 				>
 					{priceText}
-				</button>
+				</span>
 				<OrderbookSizeCell
 					className="min-w-0 truncate text-right orderbook-value-text"
 					displayValue={sizeText}
@@ -71,12 +77,12 @@ function OrderbookRowComponent({
 					value={level.size}
 				/>
 				{!compact && (
-					<div className="min-w-0 truncate text-right orderbook-value-text" title={totalText}>
+					<span className="min-w-0 truncate text-right orderbook-value-text" title={totalText}>
 						{totalText}
-					</div>
+					</span>
 				)}
-			</div>
-		</div>
+			</span>
+		</button>
 	);
 }
 
