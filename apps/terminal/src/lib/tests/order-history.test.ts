@@ -5,8 +5,10 @@ import {
 	getOrderHistoryStatusCategory,
 	getOrderHistoryTriggerPrice,
 	getTwapAverageFillPrice,
+	getTwapHistoryDurationMs,
 	getTwapHistoryTimeMs,
 	isValidTwapHistoryItem,
+	mergeTwapHistoryEventSources,
 	mergeTwapHistorySources,
 } from "@/lib/trade/order-history";
 
@@ -83,6 +85,15 @@ describe("order history normalization", () => {
 		expect(mergeTwapHistorySources([active], [finished])).toEqual([finished]);
 		const [entry] = buildOrderHistoryEntries([], [finished]);
 		expect(entry && getOrderHistoryStatusCategory(entry)).toBe("filled");
+	});
+
+	it("preserves lifecycle events and reports planned or elapsed runtime", () => {
+		const active = createTwapEntry();
+		const finished = createTwapEntry({ status: { status: "finished" }, time: 1_700_000_004 });
+
+		expect(mergeTwapHistoryEventSources([active], [active, finished])).toEqual([finished, active]);
+		expect(getTwapHistoryDurationMs(active)).toBe(600_000);
+		expect(getTwapHistoryDurationMs(finished)).toBe(3_000);
 	});
 
 	it("computes TWAP average execution price with decimal arithmetic", () => {

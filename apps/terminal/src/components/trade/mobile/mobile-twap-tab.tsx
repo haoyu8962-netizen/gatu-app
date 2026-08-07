@@ -1,6 +1,7 @@
 import { useLingui } from "@lingui/react/macro";
 import { Skeleton } from "boneyard-js/react";
-import { useMemo } from "react";
+import { type ReactNode, useMemo, useState } from "react";
+import { type TwapSubview, TwapSubviewTabs } from "@/components/trade/twap/twap-subview-tabs";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { HL_ALL_DEXS } from "@/config/app";
 import { getToolbarTwapMetrics } from "@/domain/trade/trading-toolbar-metrics";
@@ -13,6 +14,8 @@ import { formatClockDuration, formatNumber, formatPercent, formatPrice } from "@
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
+import { MobileTwapFillHistoryList } from "./mobile-twap-fill-history-list";
+import { MobileTwapHistoryList } from "./mobile-twap-history-list";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
@@ -22,6 +25,7 @@ interface Props {
 
 export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 	const { t } = useLingui();
+	const [subview, setSubview] = useState<TwapSubview>("current");
 	const { address, isConnected } = useWalletSession();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -60,25 +64,49 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 		setActiveTab("trade");
 	}
 
-	if (!isConnected) {
+	function renderSubview(content: ReactNode) {
 		return (
+			<div className={cn("font-market-close flex min-h-0 flex-col", !isPageScroll && "flex-1", className)}>
+				<TwapSubviewTabs idPrefix="mobile-twap" mobile value={subview} onValueChange={setSubview} />
+				<div
+					role="tabpanel"
+					id={`mobile-twap-${subview}-panel`}
+					aria-labelledby={`mobile-twap-${subview}-tab`}
+					className="flex min-h-0 flex-1 flex-col"
+				>
+					{content}
+				</div>
+			</div>
+		);
+	}
+
+	if (subview === "history") {
+		return renderSubview(<MobileTwapHistoryList scrollMode={scrollMode} />);
+	}
+
+	if (subview === "fills") {
+		return renderSubview(<MobileTwapFillHistoryList scrollMode={scrollMode} />);
+	}
+
+	if (!isConnected) {
+		return renderSubview(
 			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
 				{t`Connect your wallet to view TWAP orders.`}
-			</div>
+			</div>,
 		);
 	}
 
 	if (viewState === "error") {
-		return (
+		return renderSubview(
 			<div className="flex flex-1 flex-col items-center justify-center gap-1 p-6 text-center text-sm text-market-close-danger">
 				<span>{t`Failed to load TWAP orders.`}</span>
 				{error instanceof Error && <span className="text-xs text-market-close-muted">{error.message}</span>}
-			</div>
+			</div>,
 		);
 	}
 
 	if (viewState === "ready" && activeOrders.length === 0) {
-		return (
+		return renderSubview(
 			<div className="flex flex-1 flex-col items-center justify-center gap-2 px-3.5 py-11 text-center">
 				<div
 					aria-hidden="true"
@@ -94,13 +122,13 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 				>
 					{t`Create TWAP`}
 				</button>
-			</div>
+			</div>,
 		);
 	}
 
-	return (
+	return renderSubview(
 		<Skeleton name="twap-tab" loading={viewState === "loading"}>
-			<div className={cn("font-market-close min-h-0 flex flex-col", isPageScroll ? "min-h-0" : "flex-1", className)}>
+			<div className={cn("min-h-0 flex flex-col", !isPageScroll && "flex-1")}>
 				{feedback ? (
 					<div
 						role={feedback.tone === "error" ? "alert" : "status"}
@@ -246,6 +274,6 @@ export function MobileTwapTab({ className, scrollMode = "contained" }: Props) {
 					})}
 				</div>
 			</div>
-		</Skeleton>
+		</Skeleton>,
 	);
 }

@@ -621,6 +621,11 @@ msgstr "可平数量"
 msgid "Average Fill Price"
 msgstr "平均成交价格"
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Average Price"
+msgstr "平均价格"
+
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "Avg Price"
 msgstr "均价"
@@ -982,7 +987,9 @@ msgid "Close close-all confirmation"
 msgstr "关闭一键全平确认"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Close Long"
 msgstr "平多"
@@ -1040,7 +1047,9 @@ msgid "Close reverse confirmation"
 msgstr "关闭反向仓位确认"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Close Short"
 msgstr "平空"
@@ -1070,6 +1079,11 @@ msgstr "平仓数量必须为十进制数"
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Close size must be greater than zero"
 msgstr "平仓数量必须大于零"
+
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Closed PNL"
+msgstr "已平仓盈亏"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -1373,6 +1387,16 @@ msgstr "连接钱包查看仓位。"
 msgid "Connect your wallet to view trade history."
 msgstr "连接钱包查看交易历史。"
 
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Connect your wallet to view TWAP fill history."
+msgstr "连接钱包查看 TWAP 填充历史。"
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Connect your wallet to view TWAP history."
+msgstr "连接钱包查看 TWAP 历史。"
+
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -1634,6 +1658,7 @@ msgstr "自该仓位开仓以来累计支付或收取的资金费。"
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "Current"
 msgstr "当前"
 
@@ -1852,6 +1877,7 @@ msgstr "目标地址"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Direction"
 msgstr "方向"
@@ -2156,6 +2182,11 @@ msgstr "超过最大数量"
 #~ msgid "Executed"
 #~ msgstr "已执行"
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Executed Size"
+msgstr "执行大小"
+
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
@@ -2386,9 +2417,15 @@ msgstr "加载交易历史失败。"
 msgid "Failed to load trades."
 msgstr "加载成交记录失败。"
 
-#: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Failed to load TWAP history."
-#~ msgstr "加载 TWAP 历史失败。"
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Failed to load TWAP fill history."
+msgstr "加载 TWAP 填充历史失败。"
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Failed to load TWAP history."
+msgstr "加载 TWAP 历史失败。"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -2454,9 +2491,11 @@ msgstr "收藏夹"
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "手续费"
@@ -2484,6 +2523,10 @@ msgstr "桥接费用高于桥接金额。"
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
 #~ msgstr ""
+
+#: src/components/trade/twap/twap-subview-tabs.tsx
+msgid "Fill History"
+msgstr "填充历史"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #~ msgid "Fill limit price with mark price {0}"
@@ -2645,6 +2688,11 @@ msgstr "H"
 msgid "Hide small"
 msgstr "隐藏小额"
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Highest / Lowest Price"
+msgstr "最高/最低价格"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
@@ -2660,6 +2708,10 @@ msgstr "HIP-3 清算人存入"
 #: src/config/account-ledger.ts
 msgid "HIP-3 Liquidator Withdrawal"
 msgstr "HIP-3 清算人提取"
+
+#: src/components/trade/twap/twap-subview-tabs.tsx
+msgid "History"
+msgstr "历史"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -3081,6 +3133,16 @@ msgstr "正在加载代币元数据..."
 msgid "Loading trade history..."
 msgstr "加载交易历史中..."
 
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Loading TWAP fill history..."
+msgstr "正在加载 TWAP 填充历史..."
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Loading TWAP history..."
+msgstr "正在加载 TWAP 历史..."
+
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Loading TWAP orders..."
 msgstr "加载 TWAP 订单中..."
@@ -3300,6 +3362,8 @@ msgstr "标记价格：用于计算保证金、计算未实现盈亏、清算和
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3625,7 +3689,11 @@ msgstr ""
 #~ msgstr "下一页"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 msgid "No"
 msgstr "否"
 
@@ -3806,6 +3874,16 @@ msgstr "在支持的链上未找到有价值的代币"
 msgid "No trading pair available for <0/>/<1/>"
 msgstr "<0/>/<1/> 暂无可用交易对"
 
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "No TWAP fills found."
+msgstr "未找到 TWAP 成交记录。"
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "No TWAP history found."
+msgstr "未找到 TWAP 历史记录。"
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "No TWAP orders found."
 #~ msgstr "未找到 TWAP 订单。"
@@ -3911,7 +3989,9 @@ msgid "Open Interest"
 msgstr "未平仓量"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Open Long"
 msgstr "开多"
 
@@ -3942,7 +4022,9 @@ msgstr "当前委托已发生变化。请重新打开确认弹窗后再试。"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Open Short"
 msgstr "开空"
 
@@ -4551,6 +4633,7 @@ msgstr "按住 4 秒"
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -4559,6 +4642,7 @@ msgstr "按住 4 秒"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/config/ui-text.ts
@@ -4670,6 +4754,11 @@ msgstr "报价已更新，请核对新金额后再确认。"
 msgid "Randomize timing"
 msgstr "随机化时间"
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Randomized"
+msgstr "随机化"
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4758,7 +4847,9 @@ msgstr "已在此标签页中恢复。将于 {expiresAtLabel} 过期。"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
@@ -5463,6 +5554,7 @@ msgstr "签名中..."
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5472,6 +5564,7 @@ msgstr "签名中..."
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -5677,6 +5770,7 @@ msgstr "正在启动相机…"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 msgid "Status"
 msgstr "状态"
 
@@ -5867,7 +5961,11 @@ msgid "Switch to {displayName} market, short position"
 msgstr "切换至{displayName}市场，空头仓位"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Switch to {marketLabel} market"
 msgstr "切换至 {marketLabel} 市场"
@@ -6485,6 +6583,8 @@ msgstr "TIF"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Time"
 msgstr "时间"
@@ -6576,9 +6676,15 @@ msgstr "总权益"
 msgid "Total notional"
 msgstr "总名义价值"
 
-#: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Total Size"
-#~ msgstr "总数量"
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Total Run Time"
+msgstr "总运行时间"
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Total Size"
+msgstr "总大小"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Total supply"
@@ -6653,6 +6759,11 @@ msgstr "交易"
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "成交历史"
+
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Trade Value"
+msgstr "成交价值"
 
 #. placeholder {0}: spotMarket.pairName
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -6831,7 +6942,9 @@ msgstr "触发订单必须减少当前仓位"
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
 msgstr "触发价"
@@ -6878,6 +6991,10 @@ msgstr "试用 PWA。"
 msgid "TWAP"
 msgstr "TWAP"
 
+#: src/components/trade/twap/twap-subview-tabs.tsx
+msgid "TWAP activity"
+msgstr "TWAP 活动"
+
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "TWAP cancellation confirmed."
 msgstr "TWAP 撤销已确认。"
@@ -6895,6 +7012,14 @@ msgstr "连接恢复期间，TWAP 数据可能已过期。"
 #: src/components/trade/positions/twap-tab.tsx
 msgid "TWAP execution progress"
 msgstr "TWAP 执行进度"
+
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "TWAP fill history"
+msgstr "TWAP 填充历史"
+
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "TWAP history"
+msgstr "TWAP 历史"
 
 #: src/hooks/trade/use-order-submit.ts
 #: src/lib/errors/definitions/twap.ts
@@ -7395,7 +7520,11 @@ msgstr "此地址暂不支持提款。"
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 msgid "Yes"
 msgstr "是"
 

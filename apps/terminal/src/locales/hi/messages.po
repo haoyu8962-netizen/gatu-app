@@ -617,6 +617,11 @@ msgstr ""
 msgid "Average Fill Price"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Average Price"
+msgstr "औसत मूल्य"
+
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "Avg Price"
 msgstr "औसत मूल्य"
@@ -969,7 +974,9 @@ msgid "Close close-all confirmation"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Close Long"
 msgstr ""
@@ -1027,7 +1034,9 @@ msgid "Close reverse confirmation"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Close Short"
 msgstr ""
@@ -1057,6 +1066,11 @@ msgstr ""
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Close size must be greater than zero"
 msgstr ""
+
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Closed PNL"
+msgstr "बंद PNL"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -1360,6 +1374,16 @@ msgstr "पोजीशन देखने के लिए अपना वॉ�
 msgid "Connect your wallet to view trade history."
 msgstr "ट्रेड इतिहास देखने के लिए अपना वॉलेट कनेक्ट करें।"
 
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Connect your wallet to view TWAP fill history."
+msgstr "TWAP निष्पादन इतिहास देखने के लिए अपना वॉलेट कनेक्ट करें।"
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Connect your wallet to view TWAP history."
+msgstr "TWAP इतिहास देखने के लिए अपना वॉलेट कनेक्ट करें।"
+
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -1621,6 +1645,7 @@ msgstr ""
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "Current"
 msgstr "वर्तमान"
 
@@ -1839,6 +1864,7 @@ msgstr "गंतव्य पता"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Direction"
 msgstr "दिशा"
@@ -2143,6 +2169,11 @@ msgstr "अधिकतम साइज से अधिक"
 #~ msgid "Executed"
 #~ msgstr "निष्पादित"
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Executed Size"
+msgstr "निष्पादित आकार"
+
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
@@ -2373,9 +2404,15 @@ msgstr "ट्रेड इतिहास लोड करने में व�
 msgid "Failed to load trades."
 msgstr "ट्रेड लोड करने में विफल।"
 
-#: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Failed to load TWAP history."
-#~ msgstr "TWAP इतिहास लोड करने में विफल।"
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Failed to load TWAP fill history."
+msgstr "TWAP निष्पादन इतिहास लोड नहीं हो सका।"
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Failed to load TWAP history."
+msgstr "TWAP इतिहास लोड नहीं हो सका।"
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -2441,9 +2478,11 @@ msgstr "पसंदीदा"
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "शुल्क"
@@ -2471,6 +2510,10 @@ msgstr "शुल्क ब्रिज राशि से अधिक है�
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
 #~ msgstr ""
+
+#: src/components/trade/twap/twap-subview-tabs.tsx
+msgid "Fill History"
+msgstr "निष्पादन इतिहास"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #~ msgid "Fill limit price with mark price {0}"
@@ -2628,6 +2671,11 @@ msgstr "H"
 msgid "Hide small"
 msgstr "छोटे छिपाएं"
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Highest / Lowest Price"
+msgstr "उच्चतम / निम्नतम मूल्य"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
@@ -2643,6 +2691,10 @@ msgstr ""
 #: src/config/account-ledger.ts
 msgid "HIP-3 Liquidator Withdrawal"
 msgstr ""
+
+#: src/components/trade/twap/twap-subview-tabs.tsx
+msgid "History"
+msgstr "इतिहास"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -3064,6 +3116,16 @@ msgstr "टोकन मेटाडेटा लोड हो रहा है.
 msgid "Loading trade history..."
 msgstr "ट्रेड इतिहास लोड हो रहा है..."
 
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Loading TWAP fill history..."
+msgstr "TWAP निष्पादन इतिहास लोड हो रहा है..."
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Loading TWAP history..."
+msgstr "TWAP इतिहास लोड हो रहा है..."
+
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Loading TWAP orders..."
 msgstr "TWAP ऑर्डर लोड हो रहे हैं..."
@@ -3283,6 +3345,8 @@ msgstr "मार्क प्राइस: मार्जिन गणना, 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3604,7 +3668,11 @@ msgstr ""
 #~ msgstr "अगला"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 msgid "No"
 msgstr "नहीं"
 
@@ -3785,6 +3853,16 @@ msgstr "समर्थित चेन पर मूल्य वाले क�
 msgid "No trading pair available for <0/>/<1/>"
 msgstr "<0/>/<1/> के लिए कोई ट्रेडिंग पेयर उपलब्ध नहीं"
 
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "No TWAP fills found."
+msgstr "कोई TWAP निष्पादन नहीं मिला।"
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "No TWAP history found."
+msgstr "कोई TWAP इतिहास नहीं मिला।"
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "No TWAP orders found."
 #~ msgstr "कोई TWAP ऑर्डर नहीं मिला।"
@@ -3890,7 +3968,9 @@ msgid "Open Interest"
 msgstr "ओपन इंटरेस्ट"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Open Long"
 msgstr ""
 
@@ -3921,7 +4001,9 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Open Short"
 msgstr ""
 
@@ -4530,6 +4612,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -4538,6 +4621,7 @@ msgstr ""
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/config/ui-text.ts
@@ -4649,6 +4733,11 @@ msgstr "कोट अपडेट हो गया है। पुष्टि 
 msgid "Randomize timing"
 msgstr "टाइमिंग को रैंडमाइज़ करें"
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Randomized"
+msgstr "यादृच्छिक"
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4737,7 +4826,9 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
@@ -5442,6 +5533,7 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5451,6 +5543,7 @@ msgstr "साइन हो रहा है..."
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -5656,6 +5749,7 @@ msgstr ""
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 msgid "Status"
 msgstr "स्थिति"
 
@@ -5846,7 +5940,11 @@ msgid "Switch to {displayName} market, short position"
 msgstr "{displayName} मार्केट पर स्विच करें, Short पोज़िशन"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Switch to {marketLabel} market"
 msgstr ""
@@ -6460,6 +6558,8 @@ msgstr "TIF"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Time"
 msgstr "समय"
@@ -6551,9 +6651,15 @@ msgstr "कुल इक्विटी"
 msgid "Total notional"
 msgstr ""
 
-#: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Total Size"
-#~ msgstr "कुल आकार"
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Total Run Time"
+msgstr "कुल रन टाइम"
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Total Size"
+msgstr "कुल आकार"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Total supply"
@@ -6628,6 +6734,11 @@ msgstr "ट्रेड"
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "ट्रेड इतिहास"
+
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Trade Value"
+msgstr "ट्रेड मूल्य"
 
 #. placeholder {0}: spotMarket.pairName
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -6806,7 +6917,9 @@ msgstr "ट्रिगर ऑर्डर को आपकी मौजूद�
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
 msgstr "ट्रिगर मूल्य"
@@ -6853,6 +6966,10 @@ msgstr "PWA आज़माएँ।"
 msgid "TWAP"
 msgstr "TWAP"
 
+#: src/components/trade/twap/twap-subview-tabs.tsx
+msgid "TWAP activity"
+msgstr "TWAP गतिविधि"
+
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "TWAP cancellation confirmed."
 msgstr "TWAP रद्दीकरण की पुष्टि हो गई।"
@@ -6870,6 +6987,14 @@ msgstr "कनेक्शन बहाल होने के दौरान T
 #: src/components/trade/positions/twap-tab.tsx
 msgid "TWAP execution progress"
 msgstr ""
+
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "TWAP fill history"
+msgstr "TWAP निष्पादन इतिहास"
+
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "TWAP history"
+msgstr "TWAP इतिहास"
 
 #: src/hooks/trade/use-order-submit.ts
 #: src/lib/errors/definitions/twap.ts
@@ -7370,7 +7495,11 @@ msgstr "इस पते के लिए निकासी उपलब्ध 
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 msgid "Yes"
 msgstr "हाँ"
 

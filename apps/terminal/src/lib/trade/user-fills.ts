@@ -1,4 +1,5 @@
 import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
+import Big from "big.js";
 
 export function isValidUserFillHistoryItem(item: unknown): item is UserFillsResponse[number] {
 	if (!isRecord(item)) return false;
@@ -39,6 +40,14 @@ export function getUserTwapSliceFillKey(entry: UserTwapSliceFillsResponse[number
 
 export function normalizeUserTwapSliceFills(entries: UserTwapSliceFillsResponse): UserFillsResponse {
 	return entries.map((entry) => ({ ...entry.fill, twapId: entry.twapId }));
+}
+
+export function getUserFillNotional(fill: UserFillsResponse[number]): string | null {
+	try {
+		return new Big(fill.px).times(fill.sz).toString();
+	} catch {
+		return null;
+	}
 }
 
 export function hasUserFillExplorerTransaction(fill: UserFillsResponse[number]): boolean {

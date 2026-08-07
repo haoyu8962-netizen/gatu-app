@@ -1,14 +1,10 @@
 import type { UserFillsResponse } from "@nktkas/hyperliquid";
 import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useTwapSliceFills } from "@/hooks/trade/use-twap-slice-fills";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useInfo, useSubscription } from "@/lib/hyperliquid";
 import { MalformedHistoryPageError } from "@/lib/trade/history-pagination";
-import {
-	isValidUserFillHistoryItem,
-	isValidUserTwapSliceFillHistoryItem,
-	mergeUserFillSources,
-	normalizeUserTwapSliceFills,
-} from "@/lib/trade/user-fills";
+import { isValidUserFillHistoryItem, mergeUserFillSources } from "@/lib/trade/user-fills";
 
 const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000";
 const USER_FILLS_STALE_TIME_MS = 30_000;
@@ -35,66 +31,39 @@ export function useUserFills(): UserFillsResult {
 		refetchOnReconnect: true,
 	});
 	const fillsSubscription = useSubscription("userFills", params, { enabled });
-	const twapFillsQuery = useInfo(
-		"userTwapSliceFills",
-		{ user },
-		{
-			enabled,
-			retry: 1,
-			staleTime: USER_FILLS_STALE_TIME_MS,
-			refetchOnWindowFocus: false,
-			refetchOnReconnect: true,
-		},
-	);
-	const twapFillsSubscription = useSubscription("userTwapSliceFills", { user }, { enabled });
+	const twapFills = useTwapSliceFills();
 
 	const restFills = fillsQuery.data;
 	const realtimeFills = fillsSubscription.data?.fills;
-	const restTwapFills = twapFillsQuery.data;
-	const realtimeTwapFills = twapFillsSubscription.data?.twapSliceFills;
 	const hasMalformedRest =
 		restFills !== undefined &&
 		(!Array.isArray(restFills) || restFills.some((fill) => !isValidUserFillHistoryItem(fill)));
 	const hasMalformedRealtime =
 		realtimeFills !== undefined &&
 		(!Array.isArray(realtimeFills) || realtimeFills.some((fill) => !isValidUserFillHistoryItem(fill)));
-	const hasMalformedRestTwap =
-		restTwapFills !== undefined &&
-		(!Array.isArray(restTwapFills) || restTwapFills.some((entry) => !isValidUserTwapSliceFillHistoryItem(entry)));
-	const hasMalformedRealtimeTwap =
-		realtimeTwapFills !== undefined &&
-		(!Array.isArray(realtimeTwapFills) ||
-			realtimeTwapFills.some((entry) => !isValidUserTwapSliceFillHistoryItem(entry)));
 	const hasRestSnapshot = restFills !== undefined && !hasMalformedRest;
-	const hasRestTwapSnapshot = restTwapFills !== undefined && !hasMalformedRestTwap;
 	const fills = mergeUserFillSources(
 		hasMalformedRest || !Array.isArray(restFills) ? undefined : restFills,
 		hasMalformedRealtime || !Array.isArray(realtimeFills) ? undefined : realtimeFills,
-		hasMalformedRestTwap || !Array.isArray(restTwapFills) ? undefined : normalizeUserTwapSliceFills(restTwapFills),
-		hasMalformedRealtimeTwap || !Array.isArray(realtimeTwapFills)
-			? undefined
-			: normalizeUserTwapSliceFills(realtimeTwapFills),
+		twapFills.fills,
 	).slice(0, MAX_HISTORY_ROWS);
-	const hasMalformedHistory =
-		hasMalformedRest || hasMalformedRealtime || hasMalformedRestTwap || hasMalformedRealtimeTwap;
+	const hasMalformedHistory = hasMalformedRest || hasMalformedRealtime;
 
 	let status: UserFillsStatus = "loading";
 	if (!enabled) {
 		status = "idle";
-	} else if (hasMalformedHistory) {
+	} else if (hasMalformedHistory || twapFills.status === "error") {
 		status = "error";
-	} else if (hasRestSnapshot && hasRestTwapSnapshot) {
+	} else if (hasRestSnapshot && twapFills.status === "ready") {
 		status = "ready";
-	} else if (fillsQuery.isError || twapFillsQuery.isError) {
+	} else if (fillsQuery.isError) {
 		status = "error";
 	}
 
 	return {
 		error:
 			status === "error"
-				? (fillsQuery.error ??
-					twapFillsQuery.error ??
-					(hasMalformedHistory ? new MalformedHistoryPageError() : undefined))
+				? (fillsQuery.error ?? twapFills.error ?? (hasMalformedHistory ? new MalformedHistoryPageError() : undefined))
 				: undefined,
 		fills,
 		isConnected,

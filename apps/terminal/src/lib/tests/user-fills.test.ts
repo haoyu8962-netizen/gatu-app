@@ -1,6 +1,7 @@
 import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
 import {
+	getUserFillNotional,
 	hasUserFillExplorerTransaction,
 	isValidUserTwapSliceFillHistoryItem,
 	mergeUserFillSources,
@@ -59,5 +60,10 @@ describe("mergeUserFillSources", () => {
 	it("does not create explorer links for the documented zero TWAP transaction hash", () => {
 		expect(hasUserFillExplorerTransaction(createFill())).toBe(false);
 		expect(hasUserFillExplorerTransaction(createFill({ hash: `0x${"1".repeat(64)}` }))).toBe(true);
+	});
+
+	it("computes slice fill notional with decimal arithmetic", () => {
+		expect(getUserFillNotional(createFill({ px: "0.1000000000000000001", sz: "3" }))).toBe("0.3000000000000000003");
+		expect(getUserFillNotional(createFill({ px: "invalid" }))).toBeNull();
 	});
 });

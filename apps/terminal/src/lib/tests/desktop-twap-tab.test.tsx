@@ -2,6 +2,7 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
+import type { TwapHistoryResponse, UserFillsResponse } from "@nktkas/hyperliquid";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,6 +13,46 @@ const testState = vi.hoisted(() => ({
 	hasActiveOrder: true,
 	navigateToMarket: vi.fn(),
 	setOrderType: vi.fn(),
+	twapHistory: [
+		{
+			state: {
+				coin: "xyz:GOOGL",
+				executedNtl: "2298.0144",
+				executedSz: "6.13",
+				minutes: 20,
+				randomize: true,
+				reduceOnly: false,
+				side: "B",
+				stopPx: "390",
+				sz: "15.33",
+				timestamp: Date.UTC(2026, 0, 1, 0, 0, 0),
+				trigger: { above: true, px: "360" },
+				user: "0x1111111111111111111111111111111111111111",
+			},
+			status: { status: "finished" },
+			time: Date.UTC(2026, 0, 1, 0, 10, 0) / 1000,
+			twapId: 45,
+		},
+	] as TwapHistoryResponse,
+	twapFills: [
+		{
+			closedPnl: "2.5",
+			coin: "xyz:GOOGL",
+			crossed: true,
+			dir: "Open Long",
+			fee: "0.01",
+			feeToken: "USDC",
+			hash: `0x${"0".repeat(64)}`,
+			oid: 84,
+			px: "375",
+			side: "B",
+			startPosition: "0",
+			sz: "5",
+			tid: 200,
+			time: Date.UTC(2026, 0, 1, 0, 5, 0),
+			twapId: 45,
+		},
+	] as UserFillsResponse,
 	twap: {
 		coin: "xyz:GOOGL",
 		side: "B",
@@ -45,13 +86,36 @@ vi.mock("@/hooks/trade/use-twap-cancel", () => ({
 	}),
 }));
 
+vi.mock("@/hooks/trade/use-twap-history", () => ({
+	useTwapHistory: () => ({
+		error: undefined,
+		history: testState.twapHistory,
+		isConnected: true,
+		latestHistory: testState.twapHistory,
+		status: "ready",
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-twap-slice-fills", () => ({
+	useTwapSliceFills: () => ({
+		error: undefined,
+		fills: testState.twapFills,
+		isConnected: true,
+		status: "ready",
+	}),
+}));
+
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({ address: "0x1234", isConnected: true }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
-		getMarket: () => ({ shortName: "GOOGL", kind: "builderPerp" }),
+		getMarket: () => ({
+			shortName: "GOOGL",
+			kind: "spot",
+			tokensInfo: [{ name: "GOOGL" }, { name: "USDH" }],
+		}),
 		getSzDecimals: () => 2,
 	}),
 	useSubscription: () => ({
@@ -171,5 +235,53 @@ describe("desktop TWAP toolbar", () => {
 		expect(createButton).toBeDefined();
 		act(() => createButton?.click());
 		expect(testState.setOrderType).toHaveBeenCalledWith("twap");
+	});
+
+	it("switches between current, parent history, and slice fill history without mixing their fields", () => {
+		render();
+
+		const tabs = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+		expect(tabs.map((tab) => tab.textContent)).toEqual(["Current", "History", "Fill History"]);
+		expect(tabs[0]?.getAttribute("aria-selected")).toBe("true");
+
+		act(() => tabs[1]?.click());
+		expect(Array.from(container.querySelectorAll("th"), (cell) => cell.textContent)).toEqual([
+			"Time",
+			"Market",
+			"Total Size",
+			"Executed Size",
+			"Average Price",
+			"Total Run Time",
+			"Trigger Price",
+			"Highest / Lowest Price",
+			"Reduce Only",
+			"Randomized",
+			"Status",
+		]);
+		expect(container.textContent).toContain("15.33 GOOGL");
+		expect(container.textContent).toContain("6.13 GOOGL");
+		expect(container.textContent).toContain("$374.88");
+		expect(container.textContent).toContain("00:10:00");
+		expect(container.textContent).toContain("Filled");
+
+		const fillHistoryTab = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find(
+			(tab) => tab.textContent === "Fill History",
+		);
+		act(() => fillHistoryTab?.click());
+		expect(Array.from(container.querySelectorAll("th"), (cell) => cell.textContent)).toEqual([
+			"Time",
+			"Market",
+			"Direction",
+			"Price",
+			"Size",
+			"Trade Value",
+			"Fee",
+			"Closed PNL",
+		]);
+		expect(container.textContent).toContain("Open Long");
+		expect(container.textContent).toContain("5.00 GOOGL");
+		expect(container.textContent).toContain("1,875.00 USDH");
+		expect(container.textContent).toContain("0.01000 USDC");
+		expect(container.textContent).toContain("+2.50 USDC");
 	});
 });

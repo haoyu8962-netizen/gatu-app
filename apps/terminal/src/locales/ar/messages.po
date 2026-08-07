@@ -617,6 +617,11 @@ msgstr ""
 msgid "Average Fill Price"
 msgstr ""
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Average Price"
+msgstr "متوسط السعر"
+
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 msgid "Avg Price"
 msgstr "متوسط السعر"
@@ -969,7 +974,9 @@ msgid "Close close-all confirmation"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Close Long"
 msgstr ""
@@ -1027,7 +1034,9 @@ msgid "Close reverse confirmation"
 msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Close Short"
 msgstr ""
@@ -1057,6 +1066,11 @@ msgstr ""
 #: src/lib/trade/position-market-close-errors.ts
 msgid "Close size must be greater than zero"
 msgstr ""
+
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Closed PNL"
+msgstr "الأرباح والخسائر المغلقة"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-market-close-modal.tsx
@@ -1360,6 +1374,16 @@ msgstr "قم بتوصيل محفظتك لعرض المراكز."
 msgid "Connect your wallet to view trade history."
 msgstr "اربط محفظتك لعرض سجل التداول."
 
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Connect your wallet to view TWAP fill history."
+msgstr "اربط محفظتك لعرض سجل تنفيذات TWAP."
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Connect your wallet to view TWAP history."
+msgstr "اربط محفظتك لعرض سجل TWAP."
+
 #: src/components/trade/mobile/mobile-positions-view.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -1621,6 +1645,7 @@ msgstr ""
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "Current"
 msgstr "الحالي"
 
@@ -1839,6 +1864,7 @@ msgstr "عنوان الوجهة"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Direction"
 msgstr "الاتجاه"
@@ -2143,6 +2169,11 @@ msgstr "يتجاوز الحد الأقصى"
 #~ msgid "Executed"
 #~ msgstr "منفذ"
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Executed Size"
+msgstr "الحجم المنفذ"
+
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
@@ -2373,9 +2404,15 @@ msgstr "فشل في تحميل سجل التداول."
 msgid "Failed to load trades."
 msgstr "فشل في تحميل الصفقات."
 
-#: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Failed to load TWAP history."
-#~ msgstr "فشل في تحميل سجل TWAP."
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Failed to load TWAP fill history."
+msgstr "تعذر تحميل سجل تنفيذات TWAP."
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Failed to load TWAP history."
+msgstr "تعذر تحميل سجل TWAP."
 
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
@@ -2441,9 +2478,11 @@ msgstr "المفضلة"
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Fee"
 msgstr "الرسوم"
@@ -2471,6 +2510,10 @@ msgstr "الرسوم أعلى من مبلغ التحويل عبر الجسر."
 #: src/components/trade/tradebox/bridge-tab.tsx
 #~ msgid "Fetching quote..."
 #~ msgstr ""
+
+#: src/components/trade/twap/twap-subview-tabs.tsx
+msgid "Fill History"
+msgstr "سجل التنفيذات"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #~ msgid "Fill limit price with mark price {0}"
@@ -2628,6 +2671,11 @@ msgstr "H"
 msgid "Hide small"
 msgstr "إخفاء الصغيرة"
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Highest / Lowest Price"
+msgstr "أعلى / أدنى سعر"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "HIP-3"
 msgstr "HIP-3"
@@ -2643,6 +2691,10 @@ msgstr ""
 #: src/config/account-ledger.ts
 msgid "HIP-3 Liquidator Withdrawal"
 msgstr ""
+
+#: src/components/trade/twap/twap-subview-tabs.tsx
+msgid "History"
+msgstr "السجل"
 
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -3064,6 +3116,16 @@ msgstr "جارٍ تحميل البيانات الوصفية للرمز..."
 msgid "Loading trade history..."
 msgstr "جارٍ تحميل سجل التداول..."
 
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Loading TWAP fill history..."
+msgstr "جارٍ تحميل سجل تنفيذات TWAP..."
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Loading TWAP history..."
+msgstr "جارٍ تحميل سجل TWAP..."
+
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Loading TWAP orders..."
 msgstr "جارٍ تحميل أوامر TWAP..."
@@ -3283,6 +3345,8 @@ msgstr "سعر العلامة: يُستخدم لحسابات الهامش، وا
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -3604,7 +3668,11 @@ msgstr ""
 #~ msgstr "التالي"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 msgid "No"
 msgstr "لا"
 
@@ -3785,6 +3853,16 @@ msgstr "لم يُعثر على عملات ذات قيمة عبر الشبكات 
 msgid "No trading pair available for <0/>/<1/>"
 msgstr "لا يوجد زوج تداول متاح لـ <0/>/<1/>"
 
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "No TWAP fills found."
+msgstr "لم يتم العثور على تنفيذات TWAP."
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "No TWAP history found."
+msgstr "لم يتم العثور على سجل TWAP."
+
 #: src/components/trade/positions/twap-tab.tsx
 #~ msgid "No TWAP orders found."
 #~ msgstr "لم يتم العثور على أوامر TWAP."
@@ -3890,7 +3968,9 @@ msgid "Open Interest"
 msgstr "العقود المفتوحة"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Open Long"
 msgstr ""
 
@@ -3921,7 +4001,9 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/positions/history-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 msgid "Open Short"
 msgstr ""
 
@@ -4530,6 +4612,7 @@ msgstr ""
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -4538,6 +4621,7 @@ msgstr ""
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/config/ui-text.ts
@@ -4649,6 +4733,11 @@ msgstr "تم تحديث عرض السعر. راجع المبلغ الجديد ق
 msgid "Randomize timing"
 msgstr "عشوائية التوقيت"
 
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Randomized"
+msgstr "عشوائي"
+
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-funding-tab.tsx
@@ -4737,7 +4826,9 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/components/trade/tradebox/trade-option-checkboxes.tsx
 #: src/config/ui-text.ts
@@ -5442,6 +5533,7 @@ msgstr "جاري التوقيع..."
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5451,6 +5543,7 @@ msgstr "جاري التوقيع..."
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/order-toast.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
@@ -5656,6 +5749,7 @@ msgstr ""
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 msgid "Status"
 msgstr "الحالة"
 
@@ -5846,7 +5940,11 @@ msgid "Switch to {displayName} market, short position"
 msgstr "التبديل إلى سوق {displayName}، مركز Short"
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/mobile/mobile-twap-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Switch to {marketLabel} market"
 msgstr ""
@@ -6460,6 +6558,8 @@ msgstr "TIF"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/hooks/trade/use-account-ledger-csv.ts
 msgid "Time"
 msgstr "الوقت"
@@ -6551,9 +6651,15 @@ msgstr "إجمالي القيمة"
 msgid "Total notional"
 msgstr ""
 
-#: src/components/trade/positions/twap-tab.tsx
-#~ msgid "Total Size"
-#~ msgstr "الحجم الإجمالي"
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Total Run Time"
+msgstr "إجمالي وقت التشغيل"
+
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "Total Size"
+msgstr "الحجم الإجمالي"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Total supply"
@@ -6628,6 +6734,11 @@ msgstr "تداول"
 #: src/config/trade.ts
 msgid "Trade History"
 msgstr "سجل التداول"
+
+#: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "Trade Value"
+msgstr "قيمة الصفقة"
 
 #. placeholder {0}: spotMarket.pairName
 #: src/components/trade/components/spot-swap-modal.tsx
@@ -6806,7 +6917,9 @@ msgstr "يجب أن يقلل الأمر المشروط مركزك الحالي"
 #: src/components/trade/mobile/mobile-order-modification-modal.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Trigger Price"
 msgstr "سعر التحفيز"
@@ -6853,6 +6966,10 @@ msgstr "جرّب تطبيق PWA."
 msgid "TWAP"
 msgstr "TWAP"
 
+#: src/components/trade/twap/twap-subview-tabs.tsx
+msgid "TWAP activity"
+msgstr "نشاط TWAP"
+
 #: src/hooks/trade/use-twap-cancel.ts
 msgid "TWAP cancellation confirmed."
 msgstr "تم تأكيد إلغاء TWAP."
@@ -6870,6 +6987,14 @@ msgstr "قد تكون بيانات TWAP قديمة أثناء استعادة ا�
 #: src/components/trade/positions/twap-tab.tsx
 msgid "TWAP execution progress"
 msgstr ""
+
+#: src/components/trade/positions/twap-fill-history-table.tsx
+msgid "TWAP fill history"
+msgstr "سجل تنفيذات TWAP"
+
+#: src/components/trade/positions/twap-history-table.tsx
+msgid "TWAP history"
+msgstr "سجل TWAP"
 
 #: src/hooks/trade/use-order-submit.ts
 #: src/lib/errors/definitions/twap.ts
@@ -7370,7 +7495,11 @@ msgstr "عمليات السحب غير متاحة لهذا العنوان."
 #~ msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-tab.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
+#: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/orders-tab.tsx
+#: src/components/trade/positions/twap-history-table.tsx
+#: src/components/trade/positions/twap-history-table.tsx
 msgid "Yes"
 msgstr "نعم"
 

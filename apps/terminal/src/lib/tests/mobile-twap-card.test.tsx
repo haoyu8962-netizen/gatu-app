@@ -2,6 +2,7 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
+import type { TwapHistoryResponse, UserFillsResponse } from "@nktkas/hyperliquid";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,6 +14,46 @@ const mocks = vi.hoisted(() => ({
 	setActiveTab: vi.fn(),
 	setOrderType: vi.fn(),
 	side: "B" as "A" | "B",
+	twapHistory: [
+		{
+			state: {
+				coin: "GOOGL",
+				executedNtl: "2298.76416",
+				executedSz: "6.132",
+				minutes: 30,
+				randomize: true,
+				reduceOnly: false,
+				side: "B",
+				stopPx: null,
+				sz: "15.33",
+				timestamp: Date.UTC(2026, 0, 1, 0, 0, 0),
+				trigger: null,
+				user: "0x1111111111111111111111111111111111111111",
+			},
+			status: { status: "finished" },
+			time: Date.UTC(2026, 0, 1, 0, 30, 0) / 1000,
+			twapId: 42,
+		},
+	] as TwapHistoryResponse,
+	twapFills: [
+		{
+			closedPnl: "1.25",
+			coin: "GOOGL",
+			crossed: true,
+			dir: "Open Long",
+			fee: "0.01",
+			feeToken: "USDC",
+			hash: `0x${"0".repeat(64)}`,
+			oid: 84,
+			px: "375",
+			side: "B",
+			startPosition: "0",
+			sz: "5",
+			tid: 200,
+			time: Date.UTC(2026, 0, 1, 0, 5, 0),
+			twapId: 42,
+		},
+	] as UserFillsResponse,
 }));
 
 vi.mock("boneyard-js/react", () => ({
@@ -35,6 +76,25 @@ vi.mock("@/hooks/trade/use-twap-cancel", () => ({
 	}),
 }));
 
+vi.mock("@/hooks/trade/use-twap-history", () => ({
+	useTwapHistory: () => ({
+		error: undefined,
+		history: mocks.twapHistory,
+		isConnected: true,
+		latestHistory: mocks.twapHistory,
+		status: "ready",
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-twap-slice-fills", () => ({
+	useTwapSliceFills: () => ({
+		error: undefined,
+		fills: mocks.twapFills,
+		isConnected: true,
+		status: "ready",
+	}),
+}));
+
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
 		address: "0x1111111111111111111111111111111111111111",
@@ -44,7 +104,11 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 
 vi.mock("@/lib/hyperliquid", () => ({
 	useMarkets: () => ({
-		getMarket: () => ({ kind: "builderPerp", shortName: "GOOGL" }),
+		getMarket: () => ({
+			kind: "spot",
+			shortName: "GOOGL",
+			tokensInfo: [{ name: "GOOGL" }, { name: "USDH" }],
+		}),
 		getSzDecimals: () => 3,
 	}),
 	useSubscription: () => ({
@@ -170,5 +234,28 @@ describe("MobileTwapTab card", () => {
 		act(() => createButton?.click());
 		expect(mocks.setOrderType).toHaveBeenCalledWith("twap");
 		expect(mocks.setActiveTab).toHaveBeenCalledWith("trade");
+	});
+
+	it("renders touch-sized history tabs and the parent and fill history cards", () => {
+		render();
+
+		const tabs = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+		expect(tabs.map((tab) => tab.textContent)).toEqual(["Current", "History", "Fill History"]);
+		expect(tabs.every((tab) => tab.className.includes("min-h-11"))).toBe(true);
+
+		act(() => tabs[1]?.click());
+		expect(container.textContent).toContain("Total Size");
+		expect(container.textContent).toContain("15.330 GOOGL");
+		expect(container.textContent).toContain("00:30:00");
+		expect(container.textContent).toContain("Filled");
+
+		const fillHistoryTab = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find(
+			(tab) => tab.textContent === "Fill History",
+		);
+		act(() => fillHistoryTab?.click());
+		expect(container.textContent).toContain("Trade Value");
+		expect(container.textContent).toContain("1,875.00 USDH");
+		expect(container.textContent).toContain("0.01000 USDC");
+		expect(container.textContent).toContain("+1.25 USDC");
 	});
 });

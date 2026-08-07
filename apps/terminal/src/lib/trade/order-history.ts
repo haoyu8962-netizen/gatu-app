@@ -91,6 +91,21 @@ export function mergeTwapHistorySources(
 	return [...historyById.values()].sort((left, right) => right.time - left.time);
 }
 
+export function mergeTwapHistoryEventSources(
+	...sources: ReadonlyArray<TwapHistoryResponse | undefined>
+): TwapHistoryResponse {
+	const historyByEvent = new Map<string, TwapHistoryEntry>();
+
+	for (const source of sources) {
+		for (const incoming of source ?? []) {
+			const key = `${getTwapHistoryKey(incoming)}:${incoming.time}:${incoming.status.status}`;
+			historyByEvent.set(key, incoming);
+		}
+	}
+
+	return [...historyByEvent.values()].sort((left, right) => right.time - left.time);
+}
+
 export function buildOrderHistoryEntries(
 	orders: HistoricalOrdersResponse,
 	twaps: TwapHistoryResponse,
@@ -136,6 +151,14 @@ export function getTwapAverageFillPrice(entry: TwapHistoryEntry): string | null 
 	} catch {
 		return null;
 	}
+}
+
+export function getTwapHistoryDurationMs(entry: TwapHistoryEntry): number {
+	if (entry.status.status === "activated" || entry.status.status === "waitingForTrigger") {
+		return entry.state.minutes * 60_000;
+	}
+
+	return Math.max(0, getTwapHistoryTimeMs(entry) - entry.state.timestamp);
 }
 
 export function getOrderHistoryStatusCategory(entry: OrderHistoryEntry): OrderHistoryStatusCategory {
