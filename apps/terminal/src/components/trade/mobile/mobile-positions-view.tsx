@@ -22,6 +22,7 @@ import { MobileOrdersHistoryTab } from "./mobile-orders-history-tab";
 import { MobileOrdersTab } from "./mobile-orders-tab";
 import { MobilePositionsTab } from "./mobile-positions-tab";
 import { MobileTwapTab } from "./mobile-twap-tab";
+import { useMobileDisclosureSetState } from "./use-mobile-disclosure-set";
 
 type TabValue = MobilePositionsTabValue | "transfers";
 export type MobileDataScrollMode = "contained" | "page";
@@ -61,6 +62,7 @@ export function MobilePositionsView({
 	const tabPreferenceTimerRef = useRef<number | null>(null);
 	const pendingTabPreferenceRef = useRef<TabValue | null>(null);
 	const { address, isConnected } = useWalletSession();
+	const positionDisclosureState = useMobileDisclosureSetState(address?.toLowerCase() ?? null);
 	const {
 		perpSummary,
 		spotBalances,
@@ -295,7 +297,7 @@ export function MobilePositionsView({
 							{balancesContent}
 						</TabsContent>
 						<TabsContent value="positions" className={tabContentClass}>
-							<MobilePositionsTab scrollMode={scrollMode} />
+							<MobilePositionsTab scrollMode={scrollMode} disclosureState={positionDisclosureState} />
 						</TabsContent>
 						<TabsContent value="orders" className={tabContentClass}>
 							<MobileOrdersTab scrollMode={scrollMode} />

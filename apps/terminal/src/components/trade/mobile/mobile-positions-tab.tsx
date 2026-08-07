@@ -47,11 +47,12 @@ import { PositionReverseConfirmationController } from "../positions/position-rev
 import { PositionTpSlModal } from "../positions/position-tpsl-modal";
 import { MobilePositionCard } from "./mobile-position-card";
 import type { MobileDataScrollMode } from "./mobile-positions-view";
-import { useMobileDisclosureSet } from "./use-mobile-disclosure-set";
+import type { MobileDisclosureSetState } from "./use-mobile-disclosure-set";
 import { useMobileTerminalTab } from "./use-mobile-terminal-tab";
 
 interface Props {
 	scrollMode?: MobileDataScrollMode;
+	disclosureState: MobileDisclosureSetState;
 }
 
 interface PositionFiltersState {
@@ -110,7 +111,7 @@ export function MobilePositionBulkDetailsActions({
 	);
 }
 
-export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
+export function MobilePositionsTab({ scrollMode = "contained", disclosureState }: Props) {
 	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const { clientKey, env } = useHyperliquid();
@@ -193,7 +194,7 @@ export function MobilePositionsTab({ scrollMode = "contained" }: Props) {
 		setExpanded: setPositionExpanded,
 		expandAll: expandAllPositions,
 		collapseAll: collapseAllPositions,
-	} = useMobileDisclosureSet(ownerKey, filteredPositionKeys);
+	} = disclosureState.createController(filteredPositionKeys);
 
 	function handlePositionDirectionChange(direction: PositionDirectionFilter) {
 		setPositionFilters((current) => ({

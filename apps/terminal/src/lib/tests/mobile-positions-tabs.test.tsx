@@ -5,13 +5,23 @@ import { I18nProvider } from "@lingui/react";
 import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { MobileDisclosureSetState } from "@/components/trade/mobile/use-mobile-disclosure-set";
 import { MOBILE_POSITIONS_TABS } from "@/config/trade";
 
-const storeState = vi.hoisted(() => ({ activeTab: "positions", isConnected: true, snapshotsReady: true }));
+const storeState = vi.hoisted(() => ({
+	activeTab: "positions",
+	address: "0x1234",
+	isConnected: true,
+	positions: [] as Array<{ coin: string; dex: string; szi: string }>,
+	snapshotsReady: true,
+}));
 const setPositionsActiveTab = vi.hoisted(() => vi.fn<(tab: string) => void>());
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
-	useWalletSession: () => ({ address: storeState.isConnected ? "0x1234" : null, isConnected: storeState.isConnected }),
+	useWalletSession: () => ({
+		address: storeState.isConnected ? storeState.address : null,
+		isConnected: storeState.isConnected,
+	}),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -20,7 +30,11 @@ vi.mock("@/lib/hyperliquid", () => ({
 		isStale: false,
 		status: storeState.snapshotsReady ? "active" : "subscribing",
 	}),
-	useUserPositions: () => ({ positions: [], isLoading: !storeState.snapshotsReady, hasError: false }),
+	useUserPositions: () => ({
+		positions: storeState.positions,
+		isLoading: !storeState.snapshotsReady,
+		hasError: false,
+	}),
 }));
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
@@ -60,7 +74,28 @@ vi.mock("@/components/trade/mobile/mobile-orders-tab", () => ({
 }));
 
 vi.mock("@/components/trade/mobile/mobile-positions-tab", () => ({
-	MobilePositionsTab: () => <div data-tab-content="positions" />,
+	MobilePositionsTab: ({ disclosureState }: { disclosureState: MobileDisclosureSetState }) => {
+		const ownerKey = storeState.address.toLowerCase();
+		const positionKeys = storeState.positions.map((position) => `${ownerKey}:${position.dex}:${position.coin}`);
+		const { expandedKeys, setExpanded } = disclosureState.createController(positionKeys);
+		const firstPositionKey = positionKeys[0];
+
+		return (
+			<div data-tab-content="positions" data-position-keys={positionKeys.join(",")}>
+				<output data-testid="expanded-position-keys">{[...expandedKeys].join(",")}</output>
+				{firstPositionKey ? (
+					<button
+						type="button"
+						data-testid="toggle-first-position"
+						aria-expanded={expandedKeys.has(firstPositionKey)}
+						onClick={() => setExpanded(firstPositionKey, !expandedKeys.has(firstPositionKey))}
+					>
+						Toggle first position
+					</button>
+				) : null}
+			</div>
+		);
+	},
 }));
 
 vi.mock("@/components/trade/mobile/mobile-twap-tab", () => ({
@@ -78,7 +113,9 @@ describe("MobilePositionsView tabs", () => {
 
 	beforeEach(() => {
 		storeState.activeTab = "positions";
+		storeState.address = "0x1234";
 		storeState.isConnected = true;
+		storeState.positions = [];
 		storeState.snapshotsReady = true;
 		setPositionsActiveTab.mockReset();
 		setPositionsActiveTab.mockImplementation((tab) => {
@@ -266,6 +303,45 @@ describe("MobilePositionsView tabs", () => {
 		expect(setPositionsActiveTab).toHaveBeenCalledOnce();
 		expect(setPositionsActiveTab).toHaveBeenCalledWith("funding");
 		expect(fundingTab?.getAttribute("aria-selected")).toBe("true");
+	});
+
+	it("preserves explicit position disclosure state while the inactive panel is unmounted", () => {
+		storeState.positions = [
+			{ coin: "AAVE", dex: "", szi: "1" },
+			{ coin: "ETH", dex: "", szi: "2" },
+		];
+		render();
+		expect(container.querySelector('[data-mobile-account-tab="positions"]')?.textContent).toBe("Positions(2)");
+		expect(container.querySelector('[data-tab-content="positions"]')?.getAttribute("data-position-keys")).toBe(
+			"0x1234::AAVE,0x1234::ETH",
+		);
+		expect(container.querySelector('[data-testid="expanded-position-keys"]')?.textContent).toBe("0x1234::AAVE");
+
+		const firstPosition = container.querySelector<HTMLButtonElement>('[data-testid="toggle-first-position"]');
+		act(() => firstPosition?.click());
+		expect(firstPosition?.getAttribute("aria-expanded")).toBe("false");
+		expect(container.querySelector('[data-testid="expanded-position-keys"]')?.textContent).toBe("");
+
+		const ordersTab = container.querySelector<HTMLButtonElement>('[data-mobile-account-tab="orders"]');
+		act(() => ordersTab?.click());
+		expect(container.querySelector('[data-tab-content="positions"]')).toBeNull();
+
+		storeState.positions = [
+			{ coin: "ETH", dex: "", szi: "2" },
+			{ coin: "AAVE", dex: "", szi: "1" },
+			{ coin: "SOL", dex: "", szi: "3" },
+		];
+		const positionsTab = container.querySelector<HTMLButtonElement>('[data-mobile-account-tab="positions"]');
+		act(() => positionsTab?.click());
+		expect(container.querySelector('[data-tab-content="positions"]')).not.toBeNull();
+		expect(container.querySelector('[data-tab-content="positions"]')?.getAttribute("data-position-keys")).toBe(
+			"0x1234::ETH,0x1234::AAVE,0x1234::SOL",
+		);
+		expect(container.querySelector('[data-testid="expanded-position-keys"]')?.textContent).toBe("");
+
+		storeState.address = "0xABCD";
+		render();
+		expect(container.querySelector('[data-testid="expanded-position-keys"]')?.textContent).toBe("0xabcd::ETH");
 	});
 
 	it("flushes an unpersisted tab preference when the page is hidden", () => {

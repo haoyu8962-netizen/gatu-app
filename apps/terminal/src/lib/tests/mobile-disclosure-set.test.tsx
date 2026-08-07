@@ -1,12 +1,11 @@
 /** @vitest-environment jsdom */
 
-import { act, useState } from "react";
+import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useMobileDisclosureSet } from "@/components/trade/mobile/use-mobile-disclosure-set";
 
-function DisclosureHarness({ keys }: { keys: readonly string[] }) {
-	const [identity, setIdentity] = useState("owner-one");
+function DisclosureHarness({ identity, keys }: { identity: string; keys: readonly string[] }) {
 	const { expandedKeys, setExpanded, expandAll, collapseAll } = useMobileDisclosureSet(identity, keys);
 
 	return (
@@ -20,9 +19,6 @@ function DisclosureHarness({ keys }: { keys: readonly string[] }) {
 			</button>
 			<button type="button" onClick={() => collapseAll()}>
 				Collapse all
-			</button>
-			<button type="button" onClick={() => setIdentity("owner-two")}>
-				Switch owner
 			</button>
 		</div>
 	);
@@ -44,10 +40,10 @@ describe("useMobileDisclosureSet", () => {
 	});
 
 	it("defaults the first asynchronously available card to expanded and preserves explicit controls", () => {
-		act(() => root.render(<DisclosureHarness keys={[]} />));
+		act(() => root.render(<DisclosureHarness identity="owner-one" keys={[]} />));
 		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
 
-		act(() => root.render(<DisclosureHarness keys={["one", "two"]} />));
+		act(() => root.render(<DisclosureHarness identity="owner-one" keys={["one", "two"]} />));
 		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
 
 		const buttons = [...container.querySelectorAll<HTMLButtonElement>("button")];
@@ -59,8 +55,33 @@ describe("useMobileDisclosureSet", () => {
 
 		act(() => buttons.find((button) => button.textContent?.trim() === "Collapse all")?.click());
 		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+	});
 
-		act(() => buttons.find((button) => button.textContent?.trim() === "Switch owner")?.click());
+	it("preserves explicit state when visible keys are filtered, reordered, or added", () => {
+		act(() => root.render(<DisclosureHarness identity="owner-one" keys={["one", "two"]} />));
+
+		const collapseFirst = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Collapse first",
+		);
+		act(() => collapseFirst?.click());
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+
+		act(() => root.render(<DisclosureHarness identity="owner-one" keys={["two"]} />));
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+
+		act(() => root.render(<DisclosureHarness identity="owner-one" keys={["two", "one", "three"]} />));
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+	});
+
+	it("resets to the first visible key when the identity changes", () => {
+		act(() => root.render(<DisclosureHarness identity="owner-one" keys={["one", "two"]} />));
+		const collapseFirst = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Collapse first",
+		);
+		act(() => collapseFirst?.click());
+		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("");
+
+		act(() => root.render(<DisclosureHarness identity="owner-two" keys={["one", "two"]} />));
 		expect(container.querySelector('[data-testid="expanded"]')?.textContent).toBe("one");
 	});
 });
