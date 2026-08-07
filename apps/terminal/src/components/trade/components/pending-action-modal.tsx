@@ -1,4 +1,4 @@
-import { Modal, ModalPopup } from "@gatu/ui";
+import { AdaptiveModal } from "@gatu/ui";
 import type { ReactNode } from "react";
 
 interface Props {
@@ -6,23 +6,23 @@ interface Props {
 	isPending: boolean;
 	onOpenChange: (open: boolean) => void;
 	open: boolean;
+	presentation?: "modal" | "drawer";
 }
 
-export function PendingActionModal({ children, isPending, onOpenChange, open }: Props) {
-	function handleOpenChange(nextOpen: boolean, eventDetails: { cancel: () => void }) {
-		if (isPending && !nextOpen) {
-			eventDetails.cancel();
-			return;
-		}
-
-		onOpenChange(nextOpen);
-	}
-
+export function PendingActionModal({ children, isPending, onOpenChange, open, presentation = "modal" }: Props) {
 	return (
-		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={isPending}>
-			<ModalPopup size="sm" showClose={!isPending}>
-				{children}
-			</ModalPopup>
-		</Modal>
+		<AdaptiveModal
+			open={open}
+			onOpenChange={onOpenChange}
+			presentation={presentation}
+			size="sm"
+			dismissible={!isPending}
+			showClose={!isPending}
+			showHandle={presentation === "drawer"}
+			handleClassName="top-2 h-1 w-9 bg-fill/30"
+			className={presentation === "drawer" ? "max-h-[calc(100dvh-1rem)] overflow-y-auto !rounded-t-[18px]" : undefined}
+		>
+			{children}
+		</AdaptiveModal>
 	);
 }

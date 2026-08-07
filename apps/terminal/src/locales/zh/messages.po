@@ -1447,7 +1447,7 @@ msgstr "合约"
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copied"
 msgstr "已复制"
 
@@ -1476,9 +1476,13 @@ msgstr "复制地址"
 #~ msgid "Copy code"
 #~ msgstr "复制代码"
 
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
+msgid "Copy deposit address"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Copy embedded wallet address"
-msgstr "复制内嵌钱包地址"
+#~ msgid "Copy embedded wallet address"
+#~ msgstr "复制内嵌钱包地址"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Copy link"
@@ -1725,6 +1729,7 @@ msgstr "部署者"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
@@ -1738,9 +1743,13 @@ msgctxt "Trading toolbar action"
 msgid "Deposit"
 msgstr "存入"
 
-#: src/components/trade/tradebox/deposit/deposit-address.tsx
-#~ msgid "Deposit address"
-#~ msgstr ""
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
+msgid "Deposit address"
+msgstr ""
+
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
+msgid "Deposit address QR code"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Deposit address unavailable"
@@ -1792,7 +1801,6 @@ msgstr "充值交易已广播，但 Arbitrum RPC 确认失败。请先在 Arbisc
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "充值交易已提交，但未在 Arbitrum 上确认。你的钱包 nonce 可能与链上状态不同步。请在钱包中清除待处理活动或重置 nonce 数据后重试。"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Deposit USDC from Arbitrum"
 msgstr "从 Arbitrum 存入 USDC"
@@ -1949,7 +1957,6 @@ msgstr "以后不再提示"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "完成"
@@ -2621,7 +2628,6 @@ msgid "FUNDING"
 msgstr "资金费率"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Funding chain"
 msgstr "充值链"
 
@@ -2793,7 +2799,6 @@ msgstr "导入手机访问权限"
 #~ msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
 #~ msgstr "从桌面端导入交易密钥。此手机无需连接钱包。"
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
 msgstr "重要：此地址只能接收 Arbitrum 网络的原生 USDC。请勿发送 USDC.e 或其他网络的资产。最低存款金额为 {minimumDeposit}。"
@@ -5350,6 +5355,10 @@ msgstr "发送"
 msgid "Send failed"
 msgstr "发送失败"
 
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Send funds from Hyperliquid to an Arbitrum address."
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Send native USDC to this address. It will be deposited to Hyperliquid automatically."
 #~ msgstr "向此地址发送 Arbitrum 原生 USDC，到账后会自动存入 Hyperliquid。"
@@ -6884,8 +6893,6 @@ msgstr "交易被拒绝"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/account-ledger.ts
 msgid "Transfer"
 msgstr "划转"
@@ -7475,6 +7482,10 @@ msgstr "提取"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdraw to Arbitrum"
 msgstr "提现至 Arbitrum"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdraw USDC"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx

@@ -1,13 +1,13 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { CheckIcon, CopyIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
-import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { AmountInput } from "./amount-input";
 import { AssetSelect } from "./asset-select";
+import { FundingAddressCard } from "./funding-address-card";
 import { NetworkSelect } from "./shared-ui";
 import { UnitDepositInfo } from "./unit-deposit-info";
 
@@ -24,7 +24,6 @@ interface Props {
 	onSubmit: () => void;
 	networkName: string;
 	smartDepositEnabled: boolean;
-	autoBridgeEnabled?: boolean;
 	fundingAddress?: `0x${string}`;
 	onDone?: () => void;
 }
@@ -42,14 +41,10 @@ export function DepositForm({
 	onSubmit,
 	networkName,
 	smartDepositEnabled,
-	autoBridgeEnabled = false,
 	fundingAddress,
 	onDone,
 }: Props) {
-	const { copied, copy } = useCopyToClipboard(1500);
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
-	const canSubmitBridgeDeposit =
-		fundingAddress && smartDepositEnabled && maxDepositRaw !== undefined && maxDepositRaw >= MIN_DEPOSIT_USDC;
 	const embeddedDepositStatus = (() => {
 		if (!smartDepositEnabled) {
 			return {
@@ -81,26 +76,8 @@ export function DepositForm({
 		}
 		return null;
 	})();
-	const fundingAddressPanel = fundingAddress ? (
-		<div className="flex min-h-10 items-center justify-center gap-2 rounded-xs bg-fill-weak px-3 py-2">
-			<span className="min-w-0 break-all text-center font-mono text-xs font-medium tabular-nums text-fg">
-				{fundingAddress}
-			</span>
-			<Button
-				type="button"
-				variant="ghost"
-				intent="neutral"
-				size="xs"
-				onClick={() => copy(fundingAddress)}
-				aria-label={copied ? t`Copied` : t`Copy embedded wallet address`}
-				className="shrink-0"
-			>
-				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
-			</Button>
-		</div>
-	) : null;
 
-	if (fundingAddress && autoBridgeEnabled) {
+	if (fundingAddress) {
 		return (
 			<div className="flex flex-1 flex-col gap-4">
 				<div className="flex flex-col items-center gap-3 pt-1">
@@ -112,7 +89,7 @@ export function DepositForm({
 					</h3>
 				</div>
 
-				<div className="space-y-2">
+				<div className="grid grid-cols-2 gap-2">
 					<AssetSelect />
 					<NetworkSelect
 						label={<Trans>Funding chain</Trans>}
@@ -121,9 +98,9 @@ export function DepositForm({
 						disabled
 						displayName={networkName}
 					/>
-
-					{fundingAddressPanel}
 				</div>
+
+				<FundingAddressCard address={fundingAddress} />
 
 				{embeddedDepositStatus ? (
 					<div
@@ -139,45 +116,7 @@ export function DepositForm({
 					</div>
 				) : null}
 
-				<Button variant="filled" intent="brand" onClick={onDone} className="w-full">
-					<Trans>Done</Trans>
-				</Button>
-
-				<div className="rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error">
-					<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
-					<Trans>
-						Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
-						networks. Minimum deposit is {minimumDeposit}.
-					</Trans>
-				</div>
-			</div>
-		);
-	}
-
-	if (fundingAddress && !canSubmitBridgeDeposit) {
-		return (
-			<div className="flex flex-1 flex-col gap-4">
-				<div className="flex flex-col items-center gap-3 pt-1">
-					<div className="flex size-12 items-center justify-center rounded-full border border-stroke-brand-strong/40 bg-brand-soft">
-						<img src={USDC_ICON_URL} alt="USDC" className="size-8 rounded-full" />
-					</div>
-					<h3 className="text-base font-semibold text-fg">
-						<Trans>Deposit USDC from Arbitrum</Trans>
-					</h3>
-				</div>
-
-				<div className="space-y-2">
-					<AssetSelect />
-					<NetworkSelect
-						label={<Trans>Funding chain</Trans>}
-						value="arbitrum"
-						onChange={() => {}}
-						disabled
-						displayName={networkName}
-					/>
-
-					{fundingAddressPanel}
-				</div>
+				<UnitDepositInfo networkName={networkName} />
 
 				<Button variant="filled" intent="brand" onClick={onDone} className="w-full">
 					<Trans>Done</Trans>
@@ -196,8 +135,6 @@ export function DepositForm({
 
 	return (
 		<div className="flex flex-1 flex-col gap-2">
-			{fundingAddressPanel}
-
 			<div className="grid grid-cols-2 gap-2">
 				<AssetSelect />
 				<NetworkSelect

@@ -12,11 +12,13 @@ import {
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
 import { USDC_TRANSFER_DECIMALS } from "@/config/app";
+import { USDC_ICON_URL } from "@/config/bridge";
 import { NETWORKS } from "@/config/networks";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { floorToString, limitDecimalInput, toNumberOrZero } from "@/lib/trade/numbers";
 import { getWithdrawalNetReceived, isWithdrawalRoute, type WithdrawalRoute } from "@/lib/trade/withdrawal";
+import { AssetSelect } from "./asset-select";
 
 const ARBITRUM_NETWORK = NETWORKS[0];
 
@@ -83,16 +85,33 @@ export function WithdrawForm({
 	];
 
 	return (
-		<div className="flex flex-1 flex-col gap-2">
-			<Select
-				label={translate`Withdrawal route`}
-				value={route}
-				onValueChange={(value) => {
-					if (isWithdrawalRoute(value)) onRouteChange(value);
-				}}
-				options={routeOptions}
-				disabled={isPending}
-			/>
+		<div className="flex flex-1 flex-col gap-4">
+			<div className="flex flex-col items-center gap-3 pt-1 text-center">
+				<div className="flex size-12 items-center justify-center rounded-full border border-stroke-brand-strong/40 bg-brand-soft">
+					<img src={USDC_ICON_URL} alt="USDC" className="size-8 rounded-full" />
+				</div>
+				<div className="space-y-1">
+					<h3 className="text-base font-semibold text-fg">
+						<Trans>Withdraw USDC</Trans>
+					</h3>
+					<p className="text-xs text-fg-muted">
+						<Trans>Send funds from Hyperliquid to an Arbitrum address.</Trans>
+					</p>
+				</div>
+			</div>
+
+			<div className="grid grid-cols-2 gap-2">
+				<AssetSelect />
+				<Select
+					label={translate`Withdrawal route`}
+					value={route}
+					onValueChange={(value) => {
+						if (isWithdrawalRoute(value)) onRouteChange(value);
+					}}
+					options={routeOptions}
+					disabled={isPending}
+				/>
+			</div>
 
 			<div>
 				<NumberInput
@@ -110,6 +129,7 @@ export function WithdrawForm({
 					value={amount}
 					onChange={(e) => onAmountChange(limitDecimalInput(e.target.value, USDC_TRANSFER_DECIMALS))}
 					disabled={isPending}
+					mobileSafe
 					className={cn(
 						"w-full tabular-nums",
 						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",
@@ -134,6 +154,7 @@ export function WithdrawForm({
 							"font-mono text-xs tabular-nums",
 							destinationError && "border-stroke-error-strong focus-visible:border-stroke-error-strong",
 						)}
+						inputClassName="max-[1000px]:text-base max-[1000px]:leading-5"
 					/>
 					<p className={cn("h-4 text-xs flex items-center gap-1", destinationError ? "text-error" : "invisible")}>
 						<WarningCircleIcon className="size-3" />
@@ -183,7 +204,7 @@ export function WithdrawForm({
 				</div>
 			) : null}
 
-			<div className="rounded-8 border border-stroke-weak/40 bg-surface p-3 space-y-2 text-xs">
+			<div className="space-y-2 rounded-8 border border-stroke-weak/40 bg-fill-weaker p-3 text-xs">
 				<InfoRow
 					className="p-0"
 					labelClassName="flex items-center gap-1.5 text-fg"

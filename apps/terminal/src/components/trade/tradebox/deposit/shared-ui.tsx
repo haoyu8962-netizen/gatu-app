@@ -1,4 +1,4 @@
-import { Button, Modal, ModalContent, ModalHeader, ModalPopup, ModalTitle, Select } from "@gatu/ui";
+import { AdaptiveModal, Button, ModalContent, ModalHeader, ModalTitle, Select } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import {
 	ArrowSquareOutIcon,
@@ -45,6 +45,7 @@ interface StatusScreenProps {
 	children?: React.ReactNode;
 	onClose?: () => void;
 	closable?: boolean;
+	presentation?: "modal" | "drawer";
 }
 
 export function StatusScreen({
@@ -58,60 +59,69 @@ export function StatusScreen({
 	children,
 	onClose,
 	closable = true,
+	presentation = "modal",
 }: StatusScreenProps) {
 	const explorerUrl = txHash ? getExplorerTxUrl(txHash, txChain) : null;
 
 	return (
-		<Modal open={open} onOpenChange={closable ? onClose : undefined}>
-			<ModalPopup size="sm" showClose={closable}>
-				<ModalHeader>
-					<ModalTitle>{title}</ModalTitle>
-				</ModalHeader>
-				<ModalContent>
-					<div className="flex flex-col items-center gap-4 py-6">
-						{icon === "loading" ? (
-							<div className="relative">
-								<div className="absolute inset-0 animate-ping rounded-full bg-brand-soft/20" />
-								<div className="relative flex size-14 items-center justify-center rounded-full bg-brand-soft/10 border border-stroke-brand-strong/30">
-									<SpinnerGapIcon className="size-7 animate-spin text-brand" />
-								</div>
+		<AdaptiveModal
+			open={open}
+			onOpenChange={onClose ?? (() => {})}
+			presentation={presentation}
+			size="sm"
+			dismissible={closable}
+			showClose={closable}
+			showHandle={presentation === "drawer" && closable}
+			handleClassName="top-2 h-1 w-9 bg-fill/30"
+			className={presentation === "drawer" ? "max-h-[calc(100dvh-1rem)] overflow-y-auto !rounded-t-[18px]" : undefined}
+		>
+			<ModalHeader>
+				<ModalTitle>{title}</ModalTitle>
+			</ModalHeader>
+			<ModalContent>
+				<div className="flex flex-col items-center gap-4 py-6">
+					{icon === "loading" ? (
+						<div className="relative">
+							<div className="absolute inset-0 animate-ping rounded-full bg-brand-soft/20" />
+							<div className="relative flex size-14 items-center justify-center rounded-full bg-brand-soft/10 border border-stroke-brand-strong/30">
+								<SpinnerGapIcon className="size-7 animate-spin text-brand" />
 							</div>
-						) : (
-							<div
-								className={cn(
-									"flex size-14 items-center justify-center rounded-full border",
-									icon === "success"
-										? "bg-success-soft border-stroke-success-strong/30"
-										: "bg-error-soft border-stroke-error-strong/30",
-								)}
-							>
-								{icon === "success" ? (
-									<CheckCircleIcon className="size-7 text-success" />
-								) : (
-									<WarningCircleIcon className="size-7 text-error" />
-								)}
-							</div>
-						)}
-						<div className="text-center space-y-1.5">
-							<p className="text-sm font-medium">{heading}</p>
-							{description && <p className="text-xs text-fg-muted">{description}</p>}
 						</div>
-						{explorerUrl && (
-							<a
-								href={explorerUrl}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1.5 text-xs text-brand hover:underline"
-							>
-								<Trans>View on explorer</Trans>
-								<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
-							</a>
-						)}
-						{children && <div className="w-full pt-2">{children}</div>}
+					) : (
+						<div
+							className={cn(
+								"flex size-14 items-center justify-center rounded-full border",
+								icon === "success"
+									? "bg-success-soft border-stroke-success-strong/30"
+									: "bg-error-soft border-stroke-error-strong/30",
+							)}
+						>
+							{icon === "success" ? (
+								<CheckCircleIcon className="size-7 text-success" />
+							) : (
+								<WarningCircleIcon className="size-7 text-error" />
+							)}
+						</div>
+					)}
+					<div className="text-center space-y-1.5">
+						<p className="text-sm font-medium">{heading}</p>
+						{description && <p className="text-xs text-fg-muted">{description}</p>}
 					</div>
-				</ModalContent>
-			</ModalPopup>
-		</Modal>
+					{explorerUrl && (
+						<a
+							href={explorerUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="inline-flex items-center gap-1.5 text-xs text-brand hover:underline"
+						>
+							<Trans>View on explorer</Trans>
+							<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
+						</a>
+					)}
+					{children && <div className="w-full pt-2">{children}</div>}
+				</div>
+			</ModalContent>
+		</AdaptiveModal>
 	);
 }
 

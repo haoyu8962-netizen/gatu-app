@@ -1434,7 +1434,7 @@ msgstr "العقد"
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copied"
 msgstr "تم النسخ"
 
@@ -1463,9 +1463,13 @@ msgstr "نسخ العنوان"
 #~ msgid "Copy code"
 #~ msgstr "نسخ الرمز"
 
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
+msgid "Copy deposit address"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Copy embedded wallet address"
-msgstr "نسخ عنوان المحفظة المضمنة"
+#~ msgid "Copy embedded wallet address"
+#~ msgstr "نسخ عنوان المحفظة المضمنة"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Copy link"
@@ -1712,6 +1716,7 @@ msgstr "جهة النشر"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
@@ -1725,9 +1730,13 @@ msgctxt "Trading toolbar action"
 msgid "Deposit"
 msgstr ""
 
-#: src/components/trade/tradebox/deposit/deposit-address.tsx
-#~ msgid "Deposit address"
-#~ msgstr ""
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
+msgid "Deposit address"
+msgstr ""
+
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
+msgid "Deposit address QR code"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Deposit address unavailable"
@@ -1779,7 +1788,6 @@ msgstr "تم بث معاملة الإيداع، لكن فشل تأكيد Arbitru
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "تم إرسال معاملة الإيداع لكنها لم تُؤكَّد على Arbitrum. قد يكون رقم nonce في محفظتك غير متزامن مع الشبكة. امسح النشاط المعلّق أو أعد ضبط بيانات nonce في المحفظة، ثم أعد المحاولة."
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Deposit USDC from Arbitrum"
 msgstr "إيداع USDC من Arbitrum"
@@ -1936,7 +1944,6 @@ msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "تم"
@@ -2608,7 +2615,6 @@ msgid "FUNDING"
 msgstr "FUNDING"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Funding chain"
 msgstr "شبكة الإيداع"
 
@@ -2776,7 +2782,6 @@ msgstr "استيراد وصول الهاتف"
 #~ msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
 #~ msgstr "استورد مفتاح التداول من جهاز الكمبيوتر. لا يلزم ربط محفظة على هذا الهاتف."
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
 msgstr "مهم: يمكن لهذا العنوان استقبال USDC الأصلي على Arbitrum فقط. لا ترسل USDC.e أو أصولاً من شبكات أخرى. الحد الأدنى للإيداع هو {minimumDeposit}."
@@ -5329,6 +5334,10 @@ msgstr "إرسال"
 msgid "Send failed"
 msgstr "فشل الإرسال"
 
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Send funds from Hyperliquid to an Arbitrum address."
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Send native USDC to this address. It will be deposited to Hyperliquid automatically."
 #~ msgstr "أرسل USDC الأصلي إلى هذا العنوان. سيتم إيداعه في Hyperliquid تلقائيًا."
@@ -6859,8 +6868,6 @@ msgstr "تم رفض المعاملة"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/account-ledger.ts
 msgid "Transfer"
 msgstr "تحويل"
@@ -7450,6 +7457,10 @@ msgstr ""
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdraw to Arbitrum"
 msgstr "السحب إلى Arbitrum"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdraw USDC"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx

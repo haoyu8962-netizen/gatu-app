@@ -1434,7 +1434,7 @@ msgstr "Contrato"
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/positions/position-pnl-share-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Copied"
 msgstr "Copiado"
 
@@ -1463,9 +1463,13 @@ msgstr "Copiar dirección"
 #~ msgid "Copy code"
 #~ msgstr "Copiar código"
 
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
+msgid "Copy deposit address"
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Copy embedded wallet address"
-msgstr "Copiar dirección de la billetera integrada"
+#~ msgid "Copy embedded wallet address"
+#~ msgstr "Copiar dirección de la billetera integrada"
 
 #: src/components/trade/positions/position-pnl-share-modal.tsx
 msgid "Copy link"
@@ -1712,6 +1716,7 @@ msgstr "Desplegador"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
+#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
@@ -1725,9 +1730,13 @@ msgctxt "Trading toolbar action"
 msgid "Deposit"
 msgstr ""
 
-#: src/components/trade/tradebox/deposit/deposit-address.tsx
-#~ msgid "Deposit address"
-#~ msgstr ""
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
+msgid "Deposit address"
+msgstr ""
+
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
+msgid "Deposit address QR code"
+msgstr ""
 
 #: src/components/trade/tradebox/deposit/deposit-address.tsx
 #~ msgid "Deposit address unavailable"
@@ -1779,7 +1788,6 @@ msgstr "La transacción de depósito se transmitió, pero falló la confirmació
 msgid "Deposit transaction was submitted but did not confirm on Arbitrum. Your wallet nonce may be out of sync with the network. Clear pending activity or reset nonce data in your wallet, then retry."
 msgstr "La transacción de depósito se envió, pero no se confirmó en Arbitrum. Es posible que el nonce de tu billetera no esté sincronizado con la red. Borra la actividad pendiente o restablece los datos de nonce en tu billetera y vuelve a intentarlo."
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Deposit USDC from Arbitrum"
 msgstr "Depositar USDC desde Arbitrum"
@@ -1936,7 +1944,6 @@ msgstr ""
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Done"
 msgstr "Hecho"
@@ -2608,7 +2615,6 @@ msgid "FUNDING"
 msgstr "FUNDING"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Funding chain"
 msgstr "Cadena de depósito"
 
@@ -2776,7 +2782,6 @@ msgstr "Importar acceso del teléfono"
 #~ msgid "Import the trading key from your desktop. No wallet connection is required on this phone."
 #~ msgstr "Importa la clave de trading desde tu ordenador. No es necesario conectar un monedero en este teléfono."
 
-#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other networks. Minimum deposit is {minimumDeposit}."
 msgstr "Importante: esta dirección solo puede recibir USDC nativo en Arbitrum. No envíes USDC.e ni activos de otras redes. El depósito mínimo es {minimumDeposit}."
@@ -5329,6 +5334,10 @@ msgstr "Enviar"
 msgid "Send failed"
 msgstr "Error al enviar"
 
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Send funds from Hyperliquid to an Arbitrum address."
+msgstr ""
+
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #~ msgid "Send native USDC to this address. It will be deposited to Hyperliquid automatically."
 #~ msgstr "Envía USDC nativo a esta dirección. Se depositará en Hyperliquid automáticamente."
@@ -6859,8 +6868,6 @@ msgstr "La transacción fue rechazada"
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
-#: src/components/trade/tradebox/deposit-modal.tsx
-#: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/account-ledger.ts
 msgid "Transfer"
 msgstr "Transferir"
@@ -7450,6 +7457,10 @@ msgstr ""
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Withdraw to Arbitrum"
 msgstr "Retirar a Arbitrum"
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Withdraw USDC"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx

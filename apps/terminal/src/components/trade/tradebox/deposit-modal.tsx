@@ -1,7 +1,6 @@
-import { Button, ModalContent, ModalHeader, ModalTitle, SegmentedControlItem, SegmentedControls } from "@gatu/ui";
+import { Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { ArrowLineDownIcon, ArrowLineUpIcon, ArrowsLeftRightIcon } from "@phosphor-icons/react";
 import { Suspense, useEffect, useState } from "react";
 import { isAddress, zeroAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
@@ -11,6 +10,7 @@ import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useCctpWithdrawalFee } from "@/hooks/trade/use-cctp-withdrawal-fee";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
@@ -47,7 +47,7 @@ const LazyBridgeTab = createLazyComponent(() => import("./bridge/bridge-tab"), "
 
 const ARBITRUM_NETWORK = NETWORKS[0];
 
-const DEPOSIT_TAB_MIN_HEIGHT = "min-h-72";
+const FUNDS_MODAL_MIN_HEIGHT = "min-h-72";
 
 interface WithdrawalAttempt {
 	activationFee: string;
@@ -64,8 +64,10 @@ function normalizeError(error: unknown): Error {
 export function DepositModal() {
 	const open = useDepositModalOpen();
 	const activeTab = useDepositModalTab();
-	const { close, setTab } = useDepositModalActions();
+	const { close } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
+	const isMobile = useIsMobile();
+	const presentation = isMobile ? "drawer" : "modal";
 
 	const [depositAmount, setDepositAmount] = useState("");
 	const [withdrawAmount, setWithdrawAmount] = useState("");
@@ -346,6 +348,7 @@ export function DepositModal() {
 		return (
 			<StatusScreen
 				open={open}
+				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon="success"
 				heading={<Trans>Deposit submitted</Trans>}
@@ -372,6 +375,7 @@ export function DepositModal() {
 		return (
 			<StatusScreen
 				open={open}
+				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon="error"
 				heading={<Trans>Deposit failed</Trans>}
@@ -402,6 +406,7 @@ export function DepositModal() {
 		return (
 			<StatusScreen
 				open={open}
+				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon="loading"
 				heading={depositPendingHeading}
@@ -435,6 +440,7 @@ export function DepositModal() {
 		return (
 			<StatusScreen
 				open={open}
+				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon="error"
 				heading={<Trans>Wallet connection unavailable</Trans>}
@@ -463,6 +469,7 @@ export function DepositModal() {
 		return (
 			<WrongNetworkScreen
 				open={open}
+				presentation={presentation}
 				onClose={handleClose}
 				onSwitch={switchToArbitrum}
 				isSwitching={isSwitching}
@@ -478,6 +485,7 @@ export function DepositModal() {
 		return (
 			<StatusScreen
 				open={open}
+				presentation={presentation}
 				title={<Trans>Withdraw</Trans>}
 				icon="success"
 				heading={<Trans>Withdrawal submitted</Trans>}
@@ -524,6 +532,7 @@ export function DepositModal() {
 		return (
 			<StatusScreen
 				open={open}
+				presentation={presentation}
 				title={<Trans>Withdraw</Trans>}
 				icon="error"
 				heading={isAmbiguousWithdrawal ? <Trans>Withdrawal status unknown</Trans> : <Trans>Withdrawal failed</Trans>}
@@ -549,34 +558,26 @@ export function DepositModal() {
 	}
 
 	return (
-		<PendingActionModal open={open} onOpenChange={handleModalOpenChange} isPending={isWithdrawPending}>
+		<PendingActionModal
+			open={open}
+			onOpenChange={handleModalOpenChange}
+			isPending={isWithdrawPending}
+			presentation={presentation}
+		>
 			<ModalHeader>
 				<ModalTitle>
-					<Trans>Transfer</Trans>
+					{visibleTab === "deposit" ? (
+						<Trans>Deposit</Trans>
+					) : visibleTab === "withdraw" ? (
+						<Trans>Withdraw</Trans>
+					) : (
+						<Trans>Bridge</Trans>
+					)}
 				</ModalTitle>
 			</ModalHeader>
 
 			<ModalContent className="space-y-4">
-				<SegmentedControls
-					value={visibleTab}
-					onValueChange={(v: string) => setTab(v as "deposit" | "withdraw" | "bridge")}
-					fullWidth
-					disabled={isWithdrawPending}
-				>
-					<SegmentedControlItem value="deposit" icon={<ArrowLineDownIcon className="size-3" />}>
-						<Trans>Deposit</Trans>
-					</SegmentedControlItem>
-					<SegmentedControlItem value="withdraw" icon={<ArrowLineUpIcon className="size-3" />}>
-						<Trans>Withdraw</Trans>
-					</SegmentedControlItem>
-					{showBridgeTab ? (
-						<SegmentedControlItem value="bridge" icon={<ArrowsLeftRightIcon className="size-3" />}>
-							<Trans>Bridge</Trans>
-						</SegmentedControlItem>
-					) : null}
-				</SegmentedControls>
-
-				<div className={`flex flex-col ${DEPOSIT_TAB_MIN_HEIGHT}`}>
+				<div className={`flex flex-col ${FUNDS_MODAL_MIN_HEIGHT}`}>
 					{visibleTab === "deposit" &&
 						(canUseDeposit ? (
 							<DepositForm
@@ -592,7 +593,6 @@ export function DepositModal() {
 								onSubmit={handleDepositSubmit}
 								networkName={depositNetworkName}
 								smartDepositEnabled={smartDepositEnabled}
-								autoBridgeEnabled={isEmbeddedDeposit}
 								fundingAddress={isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined}
 								onDone={handleClose}
 							/>

@@ -50,6 +50,7 @@ interface TextInputProps
 	prefix?: React.ReactNode;
 	iconLeft?: React.ReactNode;
 	iconRight?: React.ReactNode;
+	inputClassName?: string;
 	size?: "xxs" | "xs" | "sm" | "md" | "lg";
 }
 
@@ -67,6 +68,7 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 			prefix,
 			iconLeft,
 			iconRight,
+			inputClassName,
 			name,
 			...props
 		},
@@ -109,6 +111,7 @@ const TextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
 							inputTextSizeClasses[size],
 							"font-normal text-fg placeholder:text-fg-muted",
 							"data-disabled:text-fg-disabled data-disabled:placeholder:text-fg-disabled data-disabled:cursor-not-allowed",
+							inputClassName,
 						)}
 						{...props}
 					/>

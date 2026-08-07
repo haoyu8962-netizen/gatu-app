@@ -6,30 +6,33 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PendingActionModal } from "@/components/trade/components/pending-action-modal";
 
 const modalHarness = vi.hoisted(() => ({
-	disablePointerDismissal: false,
-	onOpenChange: undefined as ((open: boolean, eventDetails: { cancel: () => void }) => void) | undefined,
+	dismissible: true,
+	onOpenChange: undefined as ((open: boolean) => void) | undefined,
+	presentation: "modal" as "modal" | "drawer",
 	showClose: true,
 }));
 
 vi.mock("@gatu/ui", () => ({
-	Modal: ({
+	AdaptiveModal: ({
 		children,
-		disablePointerDismissal,
+		dismissible,
 		onOpenChange,
 		open,
+		presentation,
+		showClose,
 	}: {
 		children: ReactNode;
-		disablePointerDismissal: boolean;
-		onOpenChange: (open: boolean, eventDetails: { cancel: () => void }) => void;
+		dismissible: boolean;
+		onOpenChange: (open: boolean) => void;
 		open: boolean;
+		presentation: "modal" | "drawer";
+		showClose: boolean;
 	}) => {
-		modalHarness.disablePointerDismissal = disablePointerDismissal;
+		modalHarness.dismissible = dismissible;
 		modalHarness.onOpenChange = onOpenChange;
-		return open ? createElement("div", null, children) : null;
-	},
-	ModalPopup: ({ children, showClose }: { children: ReactNode; showClose: boolean }) => {
+		modalHarness.presentation = presentation;
 		modalHarness.showClose = showClose;
-		return createElement("section", null, children);
+		return open ? createElement("section", null, children) : null;
 	},
 }));
 
@@ -59,12 +62,9 @@ describe("PendingActionModal", () => {
 			);
 		});
 
-		expect(modalHarness.disablePointerDismissal).toBe(true);
+		expect(modalHarness.dismissible).toBe(false);
 		expect(modalHarness.showClose).toBe(false);
-		const cancel = vi.fn();
-		act(() => modalHarness.onOpenChange?.(false, { cancel }));
-		expect(cancel).toHaveBeenCalledOnce();
-		expect(onOpenChange).not.toHaveBeenCalled();
+		expect(modalHarness.presentation).toBe("modal");
 	});
 
 	it("forwards dismissal after the action settles", () => {
@@ -77,11 +77,24 @@ describe("PendingActionModal", () => {
 			);
 		});
 
-		expect(modalHarness.disablePointerDismissal).toBe(false);
+		expect(modalHarness.dismissible).toBe(true);
 		expect(modalHarness.showClose).toBe(true);
-		const cancel = vi.fn();
-		act(() => modalHarness.onOpenChange?.(false, { cancel }));
-		expect(cancel).not.toHaveBeenCalled();
+		act(() => modalHarness.onOpenChange?.(false));
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("uses the requested drawer presentation without changing action semantics", () => {
+		const onOpenChange = vi.fn();
+		act(() => {
+			root.render(
+				<PendingActionModal isPending={false} onOpenChange={onOpenChange} open presentation="drawer">
+					<span>Ready</span>
+				</PendingActionModal>,
+			);
+		});
+
+		expect(modalHarness.presentation).toBe("drawer");
+		expect(modalHarness.dismissible).toBe(true);
+		expect(container.textContent).toBe("Ready");
 	});
 });
