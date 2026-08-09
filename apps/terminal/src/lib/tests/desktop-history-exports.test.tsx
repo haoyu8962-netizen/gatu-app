@@ -199,16 +199,16 @@ describe("desktop history exports", () => {
 			"PNL",
 			"Time",
 		]);
-		expect(container.querySelector("table")?.className).toContain("min-w-[1360px]");
+		expect(container.querySelector("table")?.className).toContain("min-w-[53rem]");
 		expect(Array.from(container.querySelectorAll("col"), (column) => column.className)).toEqual([
-			"w-[138px]",
-			"w-[126px]",
-			"w-[96px]",
-			"",
-			"w-[126px]",
-			"w-[146px]",
-			"w-[146px]",
-			"w-[178px]",
+			"w-[132px]",
+			"w-[116px]",
+			"w-[72px]",
+			"w-[100px]",
+			"w-[100px]",
+			"w-[100px]",
+			"w-[100px]",
+			"w-[128px]",
 		]);
 		const directionBadge = Array.from(container.querySelectorAll("span")).find(
 			(node) => node.textContent === "Close Long",
@@ -261,13 +261,13 @@ describe("desktop history exports", () => {
 		expect(toolbar).not.toBeNull();
 		expect(container.querySelector('[data-testid="funding-history-footer"]')).toBeNull();
 		expect(container.querySelector("tbody td")?.className).toContain("h-10");
-		expect(container.querySelector("table")?.className).toContain("min-w-[1280px]");
+		expect(container.querySelector("table")?.className).toContain("min-w-[52rem]");
 		expect(Array.from(container.querySelectorAll("col"), (column) => column.className)).toEqual([
-			"w-[138px]",
-			"",
-			"w-[146px]",
-			"w-[166px]",
-			"w-[178px]",
+			"w-[136px]",
+			"w-[176px]",
+			"w-[144px]",
+			"w-[160px]",
+			"w-[216px]",
 		]);
 		clickExport();
 		expect(mocks.downloadCsv).toHaveBeenCalledWith(

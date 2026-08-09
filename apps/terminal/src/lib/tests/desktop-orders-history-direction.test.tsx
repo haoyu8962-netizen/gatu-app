@@ -156,15 +156,15 @@ describe("desktop order history direction semantics", () => {
 		const toolbar = container.querySelector('[data-testid="order-history-filters"]');
 		expect(toolbar?.className).toContain("gap-2");
 		expect(toolbar?.className).not.toContain("h-12");
-		expect(container.querySelector("table")?.className).toContain("min-w-[1280px]");
+		expect(container.querySelector("table")?.className).toContain("min-w-[62rem]");
 		expect(Array.from(container.querySelectorAll("col"), (column) => column.className)).toEqual([
-			"w-[158px]",
-			"w-[126px]",
+			"w-[144px]",
+			"w-[116px]",
 			"",
-			"w-[166px]",
-			"w-[146px]",
-			"w-[126px]",
-			"w-[178px]",
+			"w-[136px]",
+			"w-[120px]",
+			"w-[112px]",
+			"w-[160px]",
 		]);
 		expect(Array.from(container.querySelectorAll("th"), (cell) => cell.textContent)).toEqual([
 			"Time",

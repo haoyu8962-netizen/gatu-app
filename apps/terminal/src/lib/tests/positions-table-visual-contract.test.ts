@@ -50,18 +50,18 @@ describe("positions table visual contract", () => {
 		expect(POSITIONS_TAB_SOURCE).toContain("positionsPanelTableCaptionRowClass");
 	});
 
-	it("uses the handoff's fixed 1280px nine-column geometry", () => {
-		expect(POSITION_TABLE_MIN_WIDTH).toBe(1280);
+	it("uses the official-density fixed nine-column geometry", () => {
+		expect(POSITION_TABLE_MIN_WIDTH).toBe(1096);
 		expect(POSITION_TABLE_COLUMNS.map(({ id, width }) => [id, width])).toEqual([
-			["market", 177],
-			["size", 166],
-			["prices", 166],
-			["pnl", 154],
-			["liquidation", 144],
-			["tpsl", 119],
-			["margin", 119],
-			["funding", 90],
-			["actions", 145],
+			["market", 150],
+			["size", 134],
+			["prices", 126],
+			["pnl", 144],
+			["liquidation", 104],
+			["tpsl", 100],
+			["margin", 116],
+			["funding", 78],
+			["actions", 144],
 		]);
 		expect(POSITION_TABLE_COLUMNS.reduce((total, column) => total + column.width, 0)).toBe(POSITION_TABLE_MIN_WIDTH);
 		expect(POSITION_ROW_SOURCE).not.toContain("truncate");

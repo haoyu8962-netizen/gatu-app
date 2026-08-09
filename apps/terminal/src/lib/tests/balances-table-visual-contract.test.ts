@@ -42,6 +42,7 @@ describe("balances table visual contract", () => {
 	});
 
 	it("uses the five-column handoff hierarchy while preserving real funds actions", () => {
+		expect(BALANCES_TAB_SOURCE).toContain("min-w-[52rem]");
 		expect(balancesTableActionClass).toContain("rounded-[7px]");
 		expect(balancesTableActionClass).toContain("border-market-close-stroke-input");
 		expect(balancesTableActionClass).toContain("duration-[120ms]");

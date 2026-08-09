@@ -101,16 +101,16 @@ export function HistoryTab() {
 			<div className={positionsPanelTableShellClass}>
 				{placeholder ?? (
 					<ScrollArea className="h-full w-full">
-						<Table className="table-fixed min-w-[1360px] w-full font-market-close tabular-nums">
+						<Table className="table-fixed min-w-[53rem] w-full font-market-close tabular-nums">
 							<colgroup>
-								<col className="w-[138px]" />
-								<col className="w-[126px]" />
-								<col className="w-[96px]" />
-								<col />
-								<col className="w-[126px]" />
-								<col className="w-[146px]" />
-								<col className="w-[146px]" />
-								<col className="w-[178px]" />
+								<col className="w-[132px]" />
+								<col className="w-[116px]" />
+								<col className="w-[72px]" />
+								<col className="w-[100px]" />
+								<col className="w-[100px]" />
+								<col className="w-[100px]" />
+								<col className="w-[100px]" />
+								<col className="w-[128px]" />
 							</colgroup>
 							<TableHeader className="bg-surface [&_tr]:border-market-close-stroke-card [&_tr]:border-t-0">
 								<TableRow className={positionsPanelTableHeaderRowClass}>

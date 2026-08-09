@@ -1,17 +1,17 @@
-// The 1a handoff is a nine-column desktop table with a 1280px minimum canvas.
-export const POSITION_TABLE_MIN_WIDTH = 1280;
+// Keep the desktop overflow distance aligned with Hyperliquid's compact account table.
+export const POSITION_TABLE_MIN_WIDTH = 1096;
 
-// Includes the handoff's 20px outer padding and 14px inter-column rhythm.
+// Combined columns preserve Gatu's information hierarchy while matching the official table density.
 export const POSITION_TABLE_COLUMNS = [
-	{ id: "market", width: 177 },
-	{ id: "size", width: 166 },
-	{ id: "prices", width: 166 },
-	{ id: "pnl", width: 154 },
-	{ id: "liquidation", width: 144 },
-	{ id: "tpsl", width: 119 },
-	{ id: "margin", width: 119 },
-	{ id: "funding", width: 90 },
-	{ id: "actions", width: 145 },
+	{ id: "market", width: 150 },
+	{ id: "size", width: 134 },
+	{ id: "prices", width: 126 },
+	{ id: "pnl", width: 144 },
+	{ id: "liquidation", width: 104 },
+	{ id: "tpsl", width: 100 },
+	{ id: "margin", width: 116 },
+	{ id: "funding", width: 78 },
+	{ id: "actions", width: 144 },
 ] as const;
 
 export const positionTableHeaderClass = "bg-surface [&_tr]:border-stroke-weak [&_tr]:border-t-0";
