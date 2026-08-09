@@ -650,7 +650,11 @@
 
   html {
     height: 100%;
-    scrollbar-gutter: stable;
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar {
+    display: none;
   }
 
   body {
