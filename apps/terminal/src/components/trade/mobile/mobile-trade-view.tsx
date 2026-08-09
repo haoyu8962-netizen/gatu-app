@@ -22,6 +22,7 @@ import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
+import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -47,6 +48,7 @@ import {
 } from "@/lib/trade/order-types";
 import type { ButtonContent, Side, SizeMode } from "@/lib/trade/types";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
+import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import {
 	useDepositModalActions,
@@ -68,8 +70,8 @@ import { useOrderQueueActions } from "@/stores/use-order-queue-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
-import { TpSlSection } from "../tradebox/tp-sl-section";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
+import { TradeFormTpSl } from "../tradebox/trade-form-tp-sl";
 import { TradeHeader } from "../tradebox/trade-header";
 import { TradeOptionCheckboxes } from "../tradebox/trade-option-checkboxes";
 import { MobileBottomNavSpacer } from "./mobile-bottom-nav";
@@ -77,6 +79,8 @@ import { MobileTradePriceField } from "./mobile-trade-price-field";
 import { MobileTradeSizeControl } from "./mobile-trade-size-control";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
+
+const ERROR_LINGER_MS = 1500;
 
 interface Props {
 	className?: string;
@@ -249,6 +253,12 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 					slPriceNum: toNumber(slPrice),
 				}),
 	);
+
+	const validationErrorText =
+		validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval
+			? validation.errors.join(" \u2022 ")
+			: "";
+	const displayValidationError = useLingeringText(validationErrorText, ERROR_LINGER_MS);
 	const riskContext = isSpotMarket ? ({ marketKind: "spot" } as const) : ({ marketKind: "perp", marginMode } as const);
 
 	function applySizeFromPercent(pct: number) {
@@ -464,7 +474,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 	const priceColorClass = change24h !== null ? getValueColorClass(change24h) : "text-fg";
 
 	return (
-		<div className={cn("flex flex-col min-h-0 self-stretch", !embedded && "h-full bg-background", className)}>
+		<div className={cn("flex flex-col self-stretch", !embedded && "h-full min-h-0 bg-background", className)}>
 			<MarginModeModal
 				open={showMarginDialog}
 				onOpenChange={(open) => {
@@ -521,8 +531,8 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 			</div>
 			<div
 				className={cn(
-					"flex-1 min-h-0 flex flex-col overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-					embedded ? "overflow-y-auto overscroll-y-contain" : "overflow-y-auto overscroll-contain",
+					"flex-1 flex flex-col overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+					!embedded && "min-h-0 overflow-y-auto overscroll-contain",
 				)}
 			>
 				<div
@@ -626,6 +636,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 						onSizeChange={handleSizeInputChange}
 						onSizeModeToggle={handleSizeModeToggle}
 						percentAriaLabel={`${t`Size`} (%)`}
+						side={side}
 						sizeAriaLabel={t`Size`}
 						sizeInput={sizeInput}
 						sizeLabel={t`Size`}
@@ -635,7 +646,10 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 
 					{(capabilities.hasReduceOnly || (capabilities.hasTpSl && canUseTpSl) || usesLimitPrice) && (
 						<TradeOptionCheckboxes
-							className={cn("flex items-center", embedded ? "gap-2 text-2xs max-[379px]:gap-1" : "gap-4")}
+							className={cn(
+								"flex flex-wrap items-center gap-y-1",
+								embedded ? "gap-x-2 text-2xs max-[379px]:gap-x-1" : "gap-x-4",
+							)}
 							tradingPanel
 							reduceOnly={
 								capabilities.hasReduceOnly
@@ -648,26 +662,24 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 									: undefined
 							}
 						>
-							{usesLimitPrice ? <TradeFormTif orderType={orderType} disabled={isFormDisabled} tradingPanel /> : null}
+							{orderType === "limit" ? (
+								<TradeFormTif orderType={orderType} disabled={isFormDisabled} tradingPanel />
+							) : null}
 						</TradeOptionCheckboxes>
 					)}
 
 					{tpSlEnabled && canUseTpSl && (
-						<TpSlSection
-							compact
-							side={side}
+						<TradeFormTpSl
 							referencePrice={markPx}
 							size={sizeValue}
 							szDecimals={szDecimals}
-							tpPrice={tpPrice}
-							slPrice={slPrice}
-							onTpPriceChange={setTpPrice}
-							onSlPriceChange={setSlPrice}
+							leverage={leverage}
 							disabled={isFormDisabled}
+							mobileTouchSafe
 						/>
 					)}
 
-					<div className={cn("border-t border-trading-panel-stroke-card pt-2", embedded ? "text-2xs" : "text-xs")}>
+					<div className={cn("border-t border-trading-panel-stroke-row pt-2", embedded ? "text-2xs" : "text-xs")}>
 						{capabilities.isLeveraged && (
 							<SummaryRow
 								label={t`Liq. Price`}
@@ -675,6 +687,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 									liqPrice ? formatPrice(liqPrice, { szDecimals: market?.szDecimals }) : FALLBACK_VALUE_PLACEHOLDER
 								}
 								valueClass={liqValueClass}
+								labelClass="border-b border-dashed border-trading-panel-stroke-control"
 								compact={embedded}
 							/>
 						)}
@@ -732,9 +745,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 					embedded ? "px-2.5 py-2" : "px-3 py-3",
 				)}
 			>
-				{validation.errors.length > 0 && isConnected && availableBalance > 0 && !validation.needsApproval && (
-					<p className="text-xs text-error mb-2">{validation.errors.join(" \u2022 ")}</p>
-				)}
+				{displayValidationError && <p className="text-xs text-error mb-2">{displayValidationError}</p>}
 				{approvalError && <p className="text-xs text-error mb-2">{approvalError}</p>}
 				{tradeRestricted ? (
 					<Button variant="outline" size={embedded ? "md" : "lg"} intent="neutral" disabled className="w-full">
@@ -746,14 +757,11 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 						size={embedded ? "md" : "lg"}
 						onClick={buttonContent.action}
 						disabled={buttonContent.disabled}
-						intent={buttonContent.variant === "cyan" ? "brand" : buttonContent.variant === "buy" ? "neutral" : "error"}
+						intent={getTradingCtaIntent(buttonContent.variant)}
 						className={cn(
-							"w-full rounded-[10px] shadow-none",
-							buttonContent.variant === "cyan"
-								? "bg-trading-panel-control text-trading-panel-on-control hover:not-data-disabled:bg-trading-panel-control/90 data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled dark:bg-brand-soft dark:text-brand dark:hover:not-data-disabled:bg-brand-soft/80"
-								: buttonContent.variant === "buy"
-									? "bg-trading-panel-success-fill text-trading-panel-on-success hover:not-data-disabled:bg-trading-panel-success-fill/90 data-disabled:bg-trading-panel-success-disabled-fill data-disabled:text-trading-panel-on-disabled"
-									: "bg-trading-panel-error-fill text-trading-panel-on-error hover:not-data-disabled:bg-trading-panel-error-fill/90 data-disabled:bg-trading-panel-error-disabled-fill data-disabled:text-trading-panel-on-disabled",
+							"w-full rounded-[10px] text-sm font-bold whitespace-nowrap shadow-none",
+							embedded && "h-[38px]",
+							getTradingCtaClass(buttonContent.variant),
 						)}
 						iconLeft={isSubmitting || isRegistering ? <SpinnerGapIcon className="size-5 animate-spin" /> : undefined}
 					>
@@ -776,16 +784,18 @@ function SummaryRow({
 	label,
 	value,
 	valueClass,
+	labelClass,
 	compact,
 }: {
 	label: string;
 	value: string;
 	valueClass?: string;
+	labelClass?: string;
 	compact?: boolean;
 }) {
 	return (
 		<div className={cn("flex min-w-0 items-center justify-between", compact ? "gap-1 py-1" : "gap-2 py-1.5")}>
-			<span className="min-w-0 truncate text-trading-panel-muted">{label}</span>
+			<span className={cn("min-w-0 truncate text-trading-panel-muted", labelClass)}>{label}</span>
 			<span
 				className={cn(
 					"shrink-0 whitespace-nowrap text-right font-semibold tabular-nums",

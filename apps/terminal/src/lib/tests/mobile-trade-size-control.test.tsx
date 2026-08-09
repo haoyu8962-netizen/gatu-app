@@ -44,6 +44,7 @@ describe("MobileTradeSizeControl", () => {
 					onSizeChange={(event) => overrides.onSizeChange?.(event.target.value)}
 					onSizeModeToggle={overrides.onSizeModeToggle ?? vi.fn()}
 					percentAriaLabel="Order size percentage"
+					side="buy"
 					sizeAriaLabel="Order size"
 					sizeInput={overrides.sizeInput ?? "0.12345678"}
 					sizeLabel="Size"

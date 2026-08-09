@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ComponentProps } from "react";
 import { getFormattedMidPrice, PriceInput } from "@/components/ui/price-input";
 import { cn } from "@/lib/cn";
+import { tradingInputFrameClass } from "@/lib/ui/trading-input";
 
 interface Props extends Omit<ComponentProps<typeof PriceInput>, "className" | "label"> {
 	label: string;
@@ -26,9 +27,8 @@ export function MobileTradePriceField({
 	return (
 		<div
 			className={cn(
-				"flex min-h-11 min-w-0 items-center rounded-[10px] border border-trading-panel-stroke-input bg-surface px-2.5",
-				"focus-within:border-trading-panel-control focus-within:ring-2 focus-within:ring-trading-panel-control/10",
-				"[&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0",
+				tradingInputFrameClass,
+				"h-8 px-2.5",
 				"[&_button]:text-trading-panel-success [&_button:hover]:text-trading-panel-success/80",
 				disabled && "opacity-50",
 			)}
@@ -46,7 +46,7 @@ export function MobileTradePriceField({
 					midPrice={midPrice}
 					mobileSafe
 					onMidClick={undefined}
-					className="h-10 bg-transparent pl-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
+					className="h-7 bg-transparent pl-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
 					disabled={disabled}
 					szDecimals={szDecimals}
 				/>
@@ -57,7 +57,7 @@ export function MobileTradePriceField({
 					onClick={() => onMidClick(formattedMid)}
 					disabled={disabled}
 					aria-label={`${t`Use mid price`} ${formattedMid}`}
-					className="relative ml-2 min-h-11 min-w-8 shrink-0 whitespace-nowrap text-xs font-semibold text-trading-panel-success transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:text-trading-panel-success/80 disabled:cursor-not-allowed disabled:opacity-50"
+					className="relative ml-2 h-8 min-w-8 shrink-0 whitespace-nowrap text-xs font-semibold text-trading-panel-success transition-colors after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:text-trading-panel-success/80 disabled:cursor-not-allowed disabled:opacity-50"
 				>
 					{t`Mid`}
 				</button>

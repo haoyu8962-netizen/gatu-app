@@ -83,7 +83,7 @@ describe("compact mobile orderbook modes", () => {
 		expect(container.querySelector('[data-slot="compact-orderbook-mid"]')).toBeNull();
 		expect(asks?.querySelector<HTMLElement>(".depth-bar-ask")?.style.width).toBe("100%");
 		expect(asks?.querySelector<HTMLElement>(".depth-bar-ask")?.style.backgroundColor).toBe(
-			"var(--orderbook-compact-depth-ask)",
+			"var(--trading-panel-error)",
 		);
 
 		act(() => bidsButton?.click());
@@ -113,6 +113,6 @@ describe("compact mobile orderbook modes", () => {
 			"max-[339px]:hidden",
 		);
 		expect(container.querySelector('[aria-label="Price precision"]')?.className).toContain("min-h-6");
-		expect(container.querySelector('[aria-label="Show both sides"]')?.className).toContain("size-6");
+		expect(container.querySelector('[aria-label="Show both sides"]')?.className).toContain("size-[17px]");
 	});
 });

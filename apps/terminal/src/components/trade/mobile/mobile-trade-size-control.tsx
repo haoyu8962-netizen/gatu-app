@@ -4,6 +4,9 @@ import { useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { cn } from "@/lib/cn";
+import type { Side } from "@/lib/trade/types";
+import { tradingInputFrameClass } from "@/lib/ui/trading-input";
+import { SliderTickMarks } from "../components/slider-tick-marks";
 import { TradeSizeSlider } from "../components/trade-size-slider";
 
 interface Props {
@@ -14,6 +17,7 @@ interface Props {
 	onSizeChange: (event: ChangeEvent<HTMLInputElement>) => void;
 	onSizeModeToggle: () => void;
 	percentAriaLabel: string;
+	side: Side;
 	sizeAriaLabel: string;
 	sizeInput: string;
 	sizeLabel: string;
@@ -29,12 +33,15 @@ export function MobileTradeSizeControl({
 	onSizeChange,
 	onSizeModeToggle,
 	percentAriaLabel,
+	side,
 	sizeAriaLabel,
 	sizeInput,
 	sizeLabel,
 	sizeModeLabel,
 	sliderValue,
 }: Props) {
+	const accentBgClass = side === "buy" ? "bg-trading-panel-success" : "bg-trading-panel-error";
+	const accentBorderClass = side === "buy" ? "border-trading-panel-success" : "border-trading-panel-error";
 	const [percentDraft, setPercentDraft] = useState<string | null>(null);
 	const displayPercent = percentDraft ?? formatPercent(sliderValue);
 
@@ -55,14 +62,7 @@ export function MobileTradeSizeControl({
 
 	return (
 		<div className="space-y-2">
-			<div
-				className={cn(
-					"flex min-h-11 min-w-0 items-center rounded-[10px] border border-trading-panel-stroke-input bg-surface px-2.5",
-					"focus-within:border-trading-panel-control focus-within:ring-2 focus-within:ring-trading-panel-control/10",
-					"[&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0",
-					disabled && "opacity-50",
-				)}
-			>
+			<div className={cn(tradingInputFrameClass, "h-8 px-2.5", disabled && "opacity-50")}>
 				<span className="mr-2 shrink-0 whitespace-nowrap text-2xs text-trading-panel-subtle">{sizeLabel}</span>
 				<NumberInput
 					aria-label={sizeAriaLabel}
@@ -73,14 +73,14 @@ export function MobileTradeSizeControl({
 					value={sizeInput}
 					onChange={onSizeChange}
 					maxAllowedDecimals={maxAllowedDecimals}
-					className="h-10 min-w-0 flex-1 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
+					className="h-7 min-w-0 flex-1 bg-transparent px-0 text-right text-base font-semibold tabular-nums text-trading-panel-fg"
 					disabled={disabled}
 				/>
 				<button
 					type="button"
 					onClick={onSizeModeToggle}
 					disabled={disabled}
-					className="ml-2 inline-flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap text-xs font-semibold text-trading-panel-fg disabled:cursor-not-allowed"
+					className="relative ml-2 inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap text-xs font-semibold text-trading-panel-fg after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] disabled:cursor-not-allowed"
 				>
 					{sizeModeLabel}
 					<CaretDownIcon className="size-3 text-trading-panel-subtle" />
@@ -95,31 +95,27 @@ export function MobileTradeSizeControl({
 						disabled={!canUsePercent}
 						ariaLabel={percentAriaLabel}
 						thumbSize="md"
+						thumbAlignment="edge"
 						controlClassName="h-[33px]"
-						trackClassName="mx-[9px] h-1 bg-trading-panel-card ring-0 shadow-none"
-						indicatorClassName="bg-trading-panel-control shadow-none"
-						thumbClassName="size-[18px] border-[3px] border-trading-panel-control bg-trading-panel-slider-thumb shadow-trading-panel-slider"
+						trackClassName="mx-[9px] h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none"
+						indicatorClassName={cn("min-w-0 rounded-xs shadow-none inset-shadow-none", accentBgClass)}
+						thumbClassName={cn(
+							"size-[18px] border-[3px] bg-trading-panel-slider-thumb shadow-trading-panel-slider",
+							accentBorderClass,
+						)}
 					/>
-					<div className="pointer-events-none absolute inset-x-[9px] top-1/2 flex -translate-y-1/2 justify-between">
-						{SIZE_PERCENT_OPTIONS.map((percent) => (
-							<span
-								key={percent}
-								className={cn(
-									"size-2 rounded-full border-2 bg-surface",
-									sliderValue >= percent ? "border-trading-panel-control" : "border-trading-panel-stroke-card",
-								)}
-							/>
-						))}
-					</div>
+					<SliderTickMarks
+						insetClassName="inset-x-[9px]"
+						activeClassName={cn(accentBorderClass, accentBgClass)}
+						positions={SIZE_PERCENT_OPTIONS.map((percent) => ({
+							key: percent,
+							leftPercent: percent,
+							active: sliderValue >= percent,
+						}))}
+					/>
 				</div>
 
-				<div
-					className={cn(
-						"flex h-[31px] w-[63px] shrink-0 items-center rounded-[8px] border border-trading-panel-stroke-input bg-surface px-2",
-						"focus-within:border-trading-panel-control focus-within:ring-2 focus-within:ring-trading-panel-control/10",
-						"[&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0",
-					)}
-				>
+				<div className={cn(tradingInputFrameClass, "h-[31px] w-[63px] shrink-0 rounded-[8px] px-2")}>
 					<NumberInput
 						aria-label={percentAriaLabel}
 						inputMode="decimal"
@@ -132,7 +128,10 @@ export function MobileTradeSizeControl({
 						maxAllowedDecimals={1}
 						min={0}
 						max={100}
-						className="h-7 min-w-0 bg-transparent px-0 text-right font-semibold tabular-nums text-trading-panel-fg"
+						className={cn(
+							"h-7 min-w-0 bg-transparent px-0 text-right font-semibold tabular-nums",
+							displayPercent === "0" ? "text-trading-panel-subtle" : "text-trading-panel-fg",
+						)}
 						disabled={!canUsePercent}
 					/>
 					<span className="ml-1 shrink-0 text-2xs text-trading-panel-subtle">%</span>

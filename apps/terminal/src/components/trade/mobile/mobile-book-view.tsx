@@ -17,6 +17,7 @@ import {
 	type L2BookPriceGroupOption,
 	processLevels,
 } from "@/lib/trade/orderbook";
+import { tradingPanelDropdownPopupClass } from "@/lib/ui/trading-dropdown";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookRow } from "../orderbook/orderbook-row";
@@ -31,6 +32,7 @@ import {
 const DEFAULT_LEVEL_COUNT = 12;
 const COMPACT_LEVEL_COUNT = 5;
 const MIN_LEVEL_COUNT = 3;
+const LADDER_RESIZE_SETTLE_MS = 120;
 const PLACEHOLDER_ROW_KEYS = Array.from({ length: 64 }, (_, index) => `placeholder-${index}`);
 const ORDERBOOK_SUBSCRIPTION_KEEP_ALIVE_MS = 10_000;
 const ORDERBOOK_SNAPSHOT_CACHE_TTL_MS = 10_000;
@@ -434,7 +436,7 @@ export function CompactOrderbook({
 
 	return (
 		<div className="flex-1 min-h-0 flex flex-col overflow-hidden font-market-close text-trading-panel-fg">
-			<div className="grid h-[35px] shrink-0 grid-cols-2 items-center gap-1 border-b border-trading-panel-stroke-card pl-2 pr-3 text-2xs tracking-normal text-trading-panel-subtle uppercase">
+			<div className="grid h-[35px] shrink-0 grid-cols-2 items-center gap-1 border-b border-trading-panel-stroke-row pl-2 pr-3 text-xs tracking-normal text-trading-panel-subtle uppercase">
 				<div className="min-w-0 truncate" title={`${t`Price`} ${priceToken}`}>
 					{t`Price`}{" "}
 					<span data-slot="compact-orderbook-price-token" className="normal-case max-[339px]:hidden">
@@ -492,7 +494,7 @@ export function CompactOrderbook({
 						data-slot="compact-orderbook-mid"
 						data-direction={midDirection}
 						title={`${t`Spread`}: ${spreadText}`}
-						className="shrink-0 flex h-[28px] items-center justify-start border-y border-trading-panel-stroke-card bg-trading-panel-card px-2 gap-1.5"
+						className="shrink-0 flex h-[28px] items-center justify-start border-y border-trading-panel-stroke-row bg-trading-panel-card px-2 gap-1.5"
 					>
 						<span
 							className={cn(
@@ -542,7 +544,7 @@ export function CompactOrderbook({
 				</div>
 			</div>
 
-			<div className="shrink-0 h-[31px] border-t border-trading-panel-stroke-card flex items-center gap-1 text-trading-panel-muted pl-2 pr-1 text-xs max-[339px]:pl-1 max-[339px]:pr-0">
+			<div className="shrink-0 h-[31px] border-t border-trading-panel-stroke-row flex items-center gap-1 text-trading-panel-muted pl-2 pr-3 text-xs max-[339px]:pl-1 max-[339px]:pr-1">
 				<Dropdown
 					size="sm"
 					hideCaret
@@ -550,7 +552,8 @@ export function CompactOrderbook({
 					triggerAriaLabel={t`Price precision`}
 					align="start"
 					trigger={selectedOptionLabel}
-					triggerClassName="relative min-h-6 font-mono text-xs text-trading-panel-muted"
+					triggerClassName="relative min-h-6 text-xs tabular-nums text-trading-panel-muted"
+					popupClassName={tradingPanelDropdownPopupClass}
 					items={priceGroupingOptions.map(
 						(option): DropdownItem => ({
 							label: option.label,
@@ -587,7 +590,7 @@ function CompactOrderbookModeControls({
 	];
 
 	return (
-		<fieldset className="m-0 flex shrink-0 items-center gap-0.5 border-0 p-0" aria-label={t`Order book view`}>
+		<fieldset className="m-0 flex shrink-0 items-center border-0 p-0" aria-label={t`Order book view`}>
 			{options.map((option) => {
 				const selected = mode === option.mode;
 				return (
@@ -598,14 +601,14 @@ function CompactOrderbookModeControls({
 						aria-pressed={selected}
 						title={option.label}
 						onClick={() => onModeChange(option.mode)}
-						className="grid size-6 shrink-0 place-items-center rounded-[4px] outline-none focus-visible:ring-1 focus-visible:ring-trading-panel-control"
+						className="grid size-[17px] shrink-0 place-items-center rounded-[4px] outline-none focus-visible:ring-1 focus-visible:ring-trading-panel-control"
 					>
 						<span
 							className={cn(
-								"grid size-3 grid-rows-2 overflow-hidden rounded-[3px] border transition-opacity duration-150",
+								"grid size-3 grid-rows-2 overflow-hidden rounded-[3px] transition-opacity duration-150",
 								selected
-									? "border-trading-panel-control opacity-100"
-									: "border-transparent opacity-40 hover:opacity-70",
+									? "opacity-100 outline outline-1 outline-offset-1 outline-trading-panel-control"
+									: "opacity-40 hover:opacity-70",
 							)}
 							aria-hidden="true"
 						>
@@ -613,7 +616,7 @@ function CompactOrderbookModeControls({
 								<span
 									key={`${option.mode}-${bar}-${index}`}
 									style={{
-										backgroundColor: `var(--orderbook-compact-depth-${bar})`,
+										backgroundColor: bar === "ask" ? "var(--trading-panel-error)" : "var(--trading-panel-success)",
 									}}
 								/>
 							))}
@@ -869,22 +872,32 @@ function useOrderbookLadderRows(defaultRows: number, enabled: boolean, metrics: 
 		const el = ladderRef.current;
 		if (!el) return;
 
-		function updateRows(height: number) {
+		let settleTimer: ReturnType<typeof setTimeout> | null = null;
+
+		function updateRows(height: number, settle: boolean) {
 			const nextRows = getMobileOrderbookRowsForLadderHeight(height, metrics, minRows);
 			if (nextRows == null) return;
-			setRows(nextRows);
+			if (settleTimer) clearTimeout(settleTimer);
+			if (!settle) {
+				setRows(nextRows);
+				return;
+			}
+			settleTimer = setTimeout(() => setRows(nextRows), LADDER_RESIZE_SETTLE_MS);
 		}
 
-		updateRows(el.getBoundingClientRect().height);
+		updateRows(el.getBoundingClientRect().height, false);
 
 		if (typeof ResizeObserver === "undefined") return;
 
 		const observer = new ResizeObserver(([entry]) => {
 			if (!entry) return;
-			updateRows(entry.target.getBoundingClientRect().height);
+			updateRows(entry.target.getBoundingClientRect().height, true);
 		});
 		observer.observe(el);
-		return () => observer.disconnect();
+		return () => {
+			observer.disconnect();
+			if (settleTimer) clearTimeout(settleTimer);
+		};
 	}, [defaultRows, enabled, minRows, metrics]);
 
 	return [rows, ladderRef] as const;
