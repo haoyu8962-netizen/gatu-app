@@ -24,6 +24,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@gatu/website", "dev"],
       "port": 3010
+    },
+    {
+      "name": "design-handoff",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "3020", "--directory", "/Users/zhixing/Downloads/design_handoff_trading_toolbar 3"],
+      "port": 3020
     }
   ]
 }
