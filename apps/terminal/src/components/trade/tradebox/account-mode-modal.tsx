@@ -80,20 +80,19 @@ export function AccountModeForm({
 			description: t`Recommended only for automated traders. Every DEX has a separate balance, and cross margin applies separately within each DEX.`,
 		},
 	];
-	const selectedModeLabel = accountModeOptions.find((option) => option.id === selectedMode)?.label;
 	const isDirty = selectedMode !== null && selectedMode !== currentMode;
 	const isBusy = !!isLoading || !!isUpdating;
 	const isModeUnavailable = !!canChange && !isLoading && currentMode === null;
 	const portfolioGuidance = (
 		<>
-			<p className={cn("text-2xs leading-relaxed", mobileLayout ? "text-trading-panel-muted" : "text-fg-muted")}>
+			<p className="text-2xs leading-relaxed text-trading-panel-muted">
 				<Trans>
 					Hyperliquid labels portfolio margin as pre-alpha and recommends testing with new accounts or subaccounts
 					holding less than $1,000.
 				</Trans>
 			</p>
 			{!portfolioMarginActivationEnabled && currentMode !== "portfolioMargin" ? (
-				<p className={cn("text-xs", mobileLayout ? "text-trading-panel-error" : "text-warning")}>
+				<p className="text-xs text-trading-panel-error">
 					<Trans>
 						New portfolio margin activation is temporarily unavailable. Existing portfolio margin accounts are not
 						affected and can switch away.
@@ -139,67 +138,40 @@ export function AccountModeForm({
 								disabled={isOptionDisabled}
 								aria-pressed={isSelected}
 								className={cn(
-									"min-h-11 w-full border px-3 py-3 text-left transition-colors",
+									"min-h-11 w-full rounded-12 border px-3.5 py-3 text-left transition-colors",
 									"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-									mobileLayout ? "rounded-12 px-3.5" : "rounded-8",
-									isSelected && mobileLayout
+									isSelected
 										? "border-[1.5px] border-trading-panel-control bg-trading-panel-card text-trading-panel-fg"
-										: isSelected
-											? "border-stroke-selected bg-brand-soft text-fg"
-											: mobileLayout
-												? "border-trading-panel-stroke-card bg-modal text-trading-panel-fg enabled:hover:border-trading-panel-control enabled:hover:bg-trading-panel-hover"
-												: "border-stroke-weak bg-fill-weak/40 text-fg hover:bg-fill-hover",
+										: "border-trading-panel-stroke-card bg-modal text-trading-panel-fg enabled:hover:border-trading-panel-control enabled:hover:bg-trading-panel-hover",
 									isOptionDisabled && "cursor-not-allowed opacity-70",
 								)}
 							>
 								<span className="flex min-w-0 items-center gap-2">
-									{mobileLayout ? (
-										<span
-											className={cn(
-												"grid size-[17px] shrink-0 place-items-center rounded-[5px] border",
-												isSelected
-													? "border-trading-panel-control bg-trading-panel-control text-trading-panel-on-control"
-													: "border-trading-panel-stroke-input bg-modal",
-											)}
-											aria-hidden="true"
-										>
-											{isSelected ? <CheckIcon className="size-3" weight="bold" /> : null}
-										</span>
-									) : null}
-									<span className={cn("min-w-0 flex-1 font-semibold", mobileLayout ? "text-[13px]" : "text-sm")}>
+									<span
+										className={cn(
+											"grid size-[17px] shrink-0 place-items-center rounded-[5px] border",
+											isSelected
+												? "border-trading-panel-control bg-trading-panel-control text-trading-panel-on-control"
+												: "border-trading-panel-stroke-input bg-modal",
+										)}
+										aria-hidden="true"
+									>
+										{isSelected ? <CheckIcon className="size-3" weight="bold" /> : null}
+									</span>
+									<span className="min-w-0 flex-1 text-2sm font-semibold">
 										{option.label}
 										{option.badge ? (
-											<span
-												className={cn(
-													"ml-1 text-2xs font-medium",
-													mobileLayout ? "text-trading-panel-muted" : "text-brand",
-												)}
-											>
-												({option.badge})
-											</span>
+											<span className="ml-1 text-2xs font-medium text-trading-panel-muted">({option.badge})</span>
 										) : null}
 									</span>
 									{isCurrent ? (
-										<span
-											className={cn(
-												"text-2xs font-medium uppercase",
-												mobileLayout ? "text-trading-panel-subtle" : "text-fg-muted",
-											)}
-										>
-											{t`Current`}
-										</span>
+										<span className="text-2xs font-medium uppercase text-trading-panel-subtle">{t`Current`}</span>
 									) : null}
 									{isActivationDisabled ? (
 										<span className="text-2xs font-medium uppercase text-warning">{t`Unavailable`}</span>
 									) : null}
-									{isSelected && !mobileLayout ? <CheckIcon className="size-3.5 shrink-0 text-brand" /> : null}
 								</span>
-								<span
-									className={cn(
-										"mt-2 block text-xs leading-relaxed",
-										mobileLayout ? "text-trading-panel-muted" : "text-fg-muted",
-									)}
-								>
+								<span className="mt-2 block text-xs leading-relaxed text-trading-panel-muted">
 									{option.description}
 								</span>
 							</button>
@@ -207,7 +179,6 @@ export function AccountModeForm({
 					})}
 				</div>
 
-				{!mobileLayout ? portfolioGuidance : null}
 				{isModeUnavailable ? (
 					<p className="text-xs text-error">
 						<Trans>Unable to load the current account mode. Reconnect your wallet and try again.</Trans>
@@ -218,29 +189,14 @@ export function AccountModeForm({
 			</ModalContent>
 
 			<ModalFooter className={cn(mobileLayout && "px-4 pt-0 pb-3")}>
-				{!mobileLayout ? (
-					<Button
-						type="button"
-						variant="ghost"
-						intent="neutral"
-						onClick={onClose}
-						disabled={isBusy}
-						className={cn(mobileLayout && "min-h-11 flex-1")}
-					>
-						<Trans>Cancel</Trans>
-					</Button>
-				) : null}
 				<Button
 					type="button"
 					variant="filled"
-					intent="brand"
+					intent="neutral"
 					onClick={handleApply}
 					disabled={canChange ? isBusy || isModeUnavailable || !isDirty : false}
 					iconLeft={isUpdating ? <SpinnerGapIcon className="size-3 animate-spin" /> : undefined}
-					className={cn(
-						mobileLayout &&
-							"min-h-11 w-full flex-1 bg-trading-panel-control text-trading-panel-on-control hover:opacity-90",
-					)}
+					className="min-h-11 w-full flex-1 rounded-[10px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:opacity-90"
 				>
 					{!canChange ? (
 						<Trans>Connect</Trans>
@@ -248,20 +204,19 @@ export function AccountModeForm({
 						<Trans>Loading...</Trans>
 					) : isUpdating ? (
 						<Trans>Switching...</Trans>
-					) : mobileLayout ? (
-						<Trans>Confirm</Trans>
-					) : isDirty && selectedModeLabel ? (
-						<Trans>Switch to {selectedModeLabel}</Trans>
 					) : (
-						<Trans>Current</Trans>
+						<Trans>Confirm</Trans>
 					)}
 				</Button>
 			</ModalFooter>
-			{mobileLayout ? (
-				<div className="mx-4 mb-4 space-y-2 rounded-[10px] border border-trading-panel-error/30 bg-trading-panel-error-soft p-2.5 text-center">
-					{portfolioGuidance}
-				</div>
-			) : null}
+			<div
+				className={cn(
+					"space-y-2 rounded-[10px] border border-trading-panel-error/30 bg-trading-panel-error-soft p-2.5 text-center",
+					mobileLayout ? "mx-4 mb-4" : "mx-5 mb-5",
+				)}
+			>
+				{portfolioGuidance}
+			</div>
 		</>
 	);
 }

@@ -321,7 +321,7 @@ describe("MarginModeModal", () => {
 			},
 		});
 
-		expect(container.querySelector("h2")?.textContent).toBe("HYPE-USDC Leverage");
+		expect(container.querySelector("h2")?.textContent).toBe("Adjust leverage7x");
 		expect(container.textContent).not.toContain("Position margin");
 		expect(container.textContent).not.toContain("Account type");
 		expect(container.querySelector('[data-testid="leverage-slider"]')).not.toBeNull();

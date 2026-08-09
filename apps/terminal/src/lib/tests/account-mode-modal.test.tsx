@@ -16,7 +16,7 @@ const zhTranslations: Record<string, string> = {
 	Separate: "分离",
 	Current: "当前",
 	Unavailable: "不可用",
-	"Switch to {selectedModeLabel}": "切换至{selectedModeLabel}",
+	Confirm: "确认",
 	"Unable to load the current account mode. Reconnect your wallet and try again.":
 		"无法加载当前账户模式。请重新连接钱包后重试。",
 };
@@ -68,12 +68,12 @@ describe("AccountModeModal", () => {
 			"Unable to load the current account mode. Reconnect your wallet and try again.",
 		);
 		const applyButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent?.trim() === "Current",
+			(button) => button.textContent?.trim() === "Confirm",
 		);
 		expect(applyButton?.disabled).toBe(true);
 	});
 
-	it("updates interpolated action text without losing the selected mode", () => {
+	it("updates translated action text without losing the selected mode", () => {
 		act(() =>
 			root.render(
 				<I18nProvider i18n={i18n}>
@@ -89,14 +89,15 @@ describe("AccountModeModal", () => {
 		act(() => unifiedOption?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 
 		const actionButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
-			(button) => button.textContent?.trim() === "Switch to Unified account",
+			(button) => button.textContent?.trim() === "Confirm",
 		);
 		expect(actionButton).toBeDefined();
+		expect(actionButton?.disabled).toBe(false);
 		expect(unifiedOption?.getAttribute("aria-pressed")).toBe("true");
 
 		act(() => activateLocale("zh"));
 
-		expect(actionButton?.textContent?.trim()).toBe("切换至统一账户");
+		expect(actionButton?.textContent?.trim()).toBe("确认");
 		expect(unifiedOption?.getAttribute("aria-pressed")).toBe("true");
 	});
 
