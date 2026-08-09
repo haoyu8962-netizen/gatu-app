@@ -10,7 +10,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	cancelTwap: vi.fn(),
 	hasActiveOrder: true,
+	hasMoreTwapFills: false,
+	hasMoreTwapHistory: false,
+	isTwapFillsRealtimeDegraded: false,
+	isTwapHistoryRealtimeDegraded: false,
+	loadMoreTwapFills: vi.fn(),
+	loadMoreTwapHistory: vi.fn(),
 	navigateToMarket: vi.fn(),
+	retryTwapFillsRealtime: vi.fn(),
+	retryTwapHistoryRealtime: vi.fn(),
 	setActiveTab: vi.fn(),
 	setOrderType: vi.fn(),
 	side: "B" as "A" | "B",
@@ -79,9 +87,14 @@ vi.mock("@/hooks/trade/use-twap-cancel", () => ({
 vi.mock("@/hooks/trade/use-twap-history", () => ({
 	useTwapHistory: () => ({
 		error: undefined,
+		hasMore: mocks.hasMoreTwapHistory,
 		history: mocks.twapHistory,
 		isConnected: true,
+		isRealtimeDegraded: mocks.isTwapHistoryRealtimeDegraded,
 		latestHistory: mocks.twapHistory,
+		loadMore: mocks.loadMoreTwapHistory,
+		realtimeError: mocks.isTwapHistoryRealtimeDegraded ? new Error("History stream unavailable") : undefined,
+		retryRealtime: mocks.retryTwapHistoryRealtime,
 		status: "ready",
 	}),
 }));
@@ -90,7 +103,12 @@ vi.mock("@/hooks/trade/use-twap-slice-fills", () => ({
 	useTwapSliceFills: () => ({
 		error: undefined,
 		fills: mocks.twapFills,
+		hasMore: mocks.hasMoreTwapFills,
 		isConnected: true,
+		isRealtimeDegraded: mocks.isTwapFillsRealtimeDegraded,
+		loadMore: mocks.loadMoreTwapFills,
+		realtimeError: mocks.isTwapFillsRealtimeDegraded ? new Error("Fill stream unavailable") : undefined,
+		retryRealtime: mocks.retryTwapFillsRealtime,
 		status: "ready",
 	}),
 }));
@@ -160,6 +178,10 @@ describe("MobileTwapTab card", () => {
 	beforeEach(() => {
 		mocks.side = "B";
 		mocks.hasActiveOrder = true;
+		mocks.hasMoreTwapFills = false;
+		mocks.hasMoreTwapHistory = false;
+		mocks.isTwapFillsRealtimeDegraded = false;
+		mocks.isTwapHistoryRealtimeDegraded = false;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -257,5 +279,30 @@ describe("MobileTwapTab card", () => {
 		expect(container.textContent).toContain("1,875.00 USDH");
 		expect(container.textContent).toContain("0.01000 USDC");
 		expect(container.textContent).toContain("+1.25 USDC");
+	});
+
+	it("provides touch-sized recovery and pagination controls for degraded TWAP history", () => {
+		mocks.hasMoreTwapHistory = true;
+		mocks.isTwapHistoryRealtimeDegraded = true;
+		render();
+
+		const historyTab = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find(
+			(tab) => tab.textContent === "History",
+		);
+		act(() => historyTab?.click());
+
+		const retry = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Retry",
+		);
+		const loadMore = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Load more",
+		);
+		expect(container.querySelector("output")).not.toBeNull();
+		expect(retry?.className).toContain("max-[1000px]:min-h-11");
+		expect(loadMore?.className).toContain("max-[1000px]:min-h-11");
+		act(() => retry?.click());
+		act(() => loadMore?.click());
+		expect(mocks.retryTwapHistoryRealtime).toHaveBeenCalledTimes(1);
+		expect(mocks.loadMoreTwapHistory).toHaveBeenCalledTimes(1);
 	});
 });

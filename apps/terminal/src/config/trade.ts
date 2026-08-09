@@ -7,6 +7,8 @@ export const SL_QUICK_PERCENT_OPTIONS = [5, 10, 25, 50] as const;
 
 export const SMALL_BALANCE_THRESHOLD_USD = 1;
 export const MAX_HISTORY_ROWS = 200;
+export const TWAP_HISTORY_PAGE_SIZE = 200;
+export const MAX_TWAP_HISTORY_ROWS = 2000;
 export const LIQ_WARNING_PROXIMITY = 0.1;
 
 export const ORDER_MIN_NOTIONAL_USD = 10;

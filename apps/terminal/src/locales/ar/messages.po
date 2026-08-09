@@ -3083,6 +3083,10 @@ msgstr "بيانات المركز المباشرة غير متاحة. انتظر
 msgid "Live position data is unavailable. Wait for the account connection to recover."
 msgstr "بيانات المركز المباشرة غير متاحة. انتظر حتى يستعيد اتصال الحساب عمله."
 
+#: src/components/trade/twap-history-feedback.tsx
+msgid "Load more"
+msgstr "تحميل المزيد"
+
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "جارٍ التحميل"
@@ -4825,6 +4829,10 @@ msgstr "جاهز للتحقق"
 #~ msgid "Ready to import"
 #~ msgstr "جاهز للاستيراد"
 
+#: src/components/trade/twap-history-feedback.tsx
+msgid "Real-time TWAP updates are unavailable. Showing the latest loaded data."
+msgstr "تحديثات TWAP في الوقت الفعلي غير متاحة. يتم عرض أحدث البيانات المحمّلة."
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Realized PNL"
 msgstr "الأرباح والخسائر المحققة"
@@ -5039,6 +5047,7 @@ msgstr "استئناف التتبع"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/twap-history-feedback.tsx
 msgid "Retry"
 msgstr "إعادة المحاولة"
 

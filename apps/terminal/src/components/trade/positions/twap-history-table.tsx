@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { TwapHistoryLoadMore, TwapRealtimeWarning } from "@/components/trade/twap-history-feedback";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -16,7 +17,8 @@ const twapHistoryGridClass =
 
 export function TwapHistoryTable() {
 	const { t } = useLingui();
-	const { error, history, isConnected, status } = useTwapHistory();
+	const { error, hasMore, history, isConnected, isRealtimeDegraded, loadMore, realtimeError, retryRealtime, status } =
+		useTwapHistory();
 	const { getTwapHistoryStatusLabel } = useOrderDisplayLabels();
 	const navigateToMarket = useMarketNavigation();
 	const markets = useMarkets();
@@ -40,8 +42,9 @@ export function TwapHistoryTable() {
 
 	return (
 		<div className={positionsPanelTableShellClass}>
+			{isRealtimeDegraded ? <TwapRealtimeWarning error={realtimeError} onRetry={retryRealtime} /> : null}
 			{placeholder ?? (
-				<ScrollArea className="h-full w-full">
+				<ScrollArea className="min-h-0 flex-1 w-full">
 					<table aria-label={t`TWAP history`} className="block min-w-[1570px] border-collapse">
 						<thead className="block">
 							<tr
@@ -142,6 +145,7 @@ export function TwapHistoryTable() {
 							})}
 						</tbody>
 					</table>
+					{hasMore ? <TwapHistoryLoadMore className="min-w-[1570px]" onLoadMore={loadMore} /> : null}
 				</ScrollArea>
 			)}
 		</div>

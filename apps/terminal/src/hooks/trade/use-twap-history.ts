@@ -1,5 +1,6 @@
 import type { TwapHistoryResponse } from "@nktkas/hyperliquid";
-import { MAX_HISTORY_ROWS } from "@/config/trade";
+import { useState } from "react";
+import { MAX_HISTORY_ROWS, MAX_TWAP_HISTORY_ROWS, TWAP_HISTORY_PAGE_SIZE } from "@/config/trade";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useInfo, useSubscription } from "@/lib/hyperliquid";
 import { MalformedHistoryPageError } from "@/lib/trade/history-pagination";
@@ -16,9 +17,14 @@ export type TwapHistoryStatus = "idle" | "loading" | "ready" | "error";
 
 interface TwapHistoryResult {
 	error: unknown;
+	hasMore: boolean;
 	history: TwapHistoryResponse;
 	isConnected: boolean;
+	isRealtimeDegraded: boolean;
 	latestHistory: TwapHistoryResponse;
+	loadMore: () => void;
+	realtimeError: unknown;
+	retryRealtime: () => void;
 	status: TwapHistoryStatus;
 }
 
@@ -26,6 +32,8 @@ export function useTwapHistory(): TwapHistoryResult {
 	const { address, isConnected } = useWalletSession();
 	const enabled = isConnected && !!address;
 	const user = address ?? EMPTY_ADDRESS;
+	const [realtimeRefreshKey, setRealtimeRefreshKey] = useState<number>();
+	const [pagination, setPagination] = useState({ user, visibleRows: TWAP_HISTORY_PAGE_SIZE });
 	const historyQuery = useInfo(
 		"twapHistory",
 		{ user },
@@ -37,7 +45,11 @@ export function useTwapHistory(): TwapHistoryResult {
 			refetchOnReconnect: true,
 		},
 	);
-	const historySubscription = useSubscription("userTwapHistory", { user }, { enabled });
+	const historySubscription = useSubscription(
+		"userTwapHistory",
+		{ user },
+		realtimeRefreshKey === undefined ? { enabled } : { enabled, refreshKey: realtimeRefreshKey },
+	);
 
 	const restHistory = historyQuery.data;
 	const realtimeHistory = historySubscription.data?.history;
@@ -50,7 +62,12 @@ export function useTwapHistory(): TwapHistoryResult {
 	const hasRestSnapshot = restHistory !== undefined && !hasMalformedRest;
 	const validRestHistory = hasMalformedRest || !Array.isArray(restHistory) ? undefined : restHistory;
 	const validRealtimeHistory = hasMalformedRealtime || !Array.isArray(realtimeHistory) ? undefined : realtimeHistory;
-	const history = mergeTwapHistoryEventSources(validRestHistory, validRealtimeHistory).slice(0, MAX_HISTORY_ROWS);
+	const mergedHistory = mergeTwapHistoryEventSources(validRestHistory, validRealtimeHistory).slice(
+		0,
+		MAX_TWAP_HISTORY_ROWS,
+	);
+	const visibleRows = pagination.user === user ? pagination.visibleRows : TWAP_HISTORY_PAGE_SIZE;
+	const history = mergedHistory.slice(0, visibleRows);
 	const latestHistory = mergeTwapHistorySources(validRestHistory, validRealtimeHistory).slice(0, MAX_HISTORY_ROWS);
 	const hasMalformedHistory = hasMalformedRest || hasMalformedRealtime;
 
@@ -65,14 +82,36 @@ export function useTwapHistory(): TwapHistoryResult {
 		status = "error";
 	}
 
+	const isRealtimeDegraded = status === "ready" && historySubscription.status === "error";
+
+	function loadMore() {
+		setPagination((current) => ({
+			user,
+			visibleRows: Math.min(
+				(current.user === user ? current.visibleRows : TWAP_HISTORY_PAGE_SIZE) + TWAP_HISTORY_PAGE_SIZE,
+				MAX_TWAP_HISTORY_ROWS,
+			),
+		}));
+	}
+
+	function retryRealtime() {
+		setRealtimeRefreshKey((current) => (current ?? 0) + 1);
+		void historyQuery.refetch();
+	}
+
 	return {
 		error:
 			status === "error"
 				? (historyQuery.error ?? (hasMalformedHistory ? new MalformedHistoryPageError() : undefined))
 				: undefined,
+		hasMore: history.length < mergedHistory.length,
 		history,
 		isConnected,
+		isRealtimeDegraded,
 		latestHistory,
+		loadMore,
+		realtimeError: isRealtimeDegraded ? historySubscription.error : undefined,
+		retryRealtime,
 		status,
 	};
 }

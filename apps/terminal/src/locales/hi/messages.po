@@ -3083,6 +3083,10 @@ msgstr "लाइव पोज़िशन डेटा उपलब्ध न�
 msgid "Live position data is unavailable. Wait for the account connection to recover."
 msgstr "लाइव पोज़िशन डेटा उपलब्ध नहीं है। खाते का कनेक्शन बहाल होने की प्रतीक्षा करें।"
 
+#: src/components/trade/twap-history-feedback.tsx
+msgid "Load more"
+msgstr "और लोड करें"
+
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "लोड हो रहा है"
@@ -4825,6 +4829,10 @@ msgstr "सत्यापन के लिए तैयार"
 #~ msgid "Ready to import"
 #~ msgstr "आयात के लिए तैयार"
 
+#: src/components/trade/twap-history-feedback.tsx
+msgid "Real-time TWAP updates are unavailable. Showing the latest loaded data."
+msgstr "रीयल-टाइम TWAP अपडेट उपलब्ध नहीं हैं। हाल ही में लोड किया गया डेटा दिखाया जा रहा है।"
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Realized PNL"
 msgstr "वास्तविक PNL"
@@ -5039,6 +5047,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/twap-history-feedback.tsx
 msgid "Retry"
 msgstr "फिर से प्रयास करें"
 

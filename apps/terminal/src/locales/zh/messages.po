@@ -3100,6 +3100,10 @@ msgstr "无法获取实时仓位数据。请等待账户连接恢复后再调整
 msgid "Live position data is unavailable. Wait for the account connection to recover."
 msgstr "实时仓位数据不可用。请等待账户连接恢复。"
 
+#: src/components/trade/twap-history-feedback.tsx
+msgid "Load more"
+msgstr "加载更多"
+
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "加载中"
@@ -4846,6 +4850,10 @@ msgstr "可以验证"
 #~ msgid "Ready to import"
 #~ msgstr "可以导入"
 
+#: src/components/trade/twap-history-feedback.tsx
+msgid "Real-time TWAP updates are unavailable. Showing the latest loaded data."
+msgstr "TWAP 实时更新暂不可用。正在显示最近加载的数据。"
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Realized PNL"
 msgstr "已实现盈亏"
@@ -5060,6 +5068,7 @@ msgstr "继续跟踪"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/twap-history-feedback.tsx
 msgid "Retry"
 msgstr "重试"
 

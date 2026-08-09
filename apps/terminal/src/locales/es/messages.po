@@ -3083,6 +3083,10 @@ msgstr "Los datos de la posición en tiempo real no están disponibles. Espera a
 msgid "Live position data is unavailable. Wait for the account connection to recover."
 msgstr "Los datos de la posición en tiempo real no están disponibles. Espera a que se recupere la conexión de la cuenta."
 
+#: src/components/trade/twap-history-feedback.tsx
+msgid "Load more"
+msgstr "Cargar más"
+
 #: src/components/ui/spinner.tsx
 msgid "Loading"
 msgstr "Cargando"
@@ -4825,6 +4829,10 @@ msgstr "Listo para la verificación"
 #~ msgid "Ready to import"
 #~ msgstr "Listo para importar"
 
+#: src/components/trade/twap-history-feedback.tsx
+msgid "Real-time TWAP updates are unavailable. Showing the latest loaded data."
+msgstr "Las actualizaciones de TWAP en tiempo real no están disponibles. Se muestran los últimos datos cargados."
+
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Realized PNL"
 msgstr "PNL realizado"
@@ -5039,6 +5047,7 @@ msgstr "Reanudar seguimiento"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/twap-history-feedback.tsx
 msgid "Retry"
 msgstr "Reintentar"
 

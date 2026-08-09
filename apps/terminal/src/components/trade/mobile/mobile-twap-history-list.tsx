@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { TwapHistoryLoadMore, TwapRealtimeWarning } from "@/components/trade/twap-history-feedback";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
@@ -17,7 +18,8 @@ interface Props {
 
 export function MobileTwapHistoryList({ className, scrollMode = "contained" }: Props) {
 	const { t } = useLingui();
-	const { error, history, isConnected, status } = useTwapHistory();
+	const { error, hasMore, history, isConnected, isRealtimeDegraded, loadMore, realtimeError, retryRealtime, status } =
+		useTwapHistory();
 	const { getTwapHistoryStatusLabel } = useOrderDisplayLabels();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
@@ -52,7 +54,12 @@ export function MobileTwapHistoryList({ className, scrollMode = "contained" }: P
 
 	if (history.length === 0) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">{t`No TWAP history found.`}</div>
+			<div className="flex min-h-0 flex-1 flex-col">
+				{isRealtimeDegraded ? <TwapRealtimeWarning error={realtimeError} onRetry={retryRealtime} /> : null}
+				<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
+					{t`No TWAP history found.`}
+				</div>
+			</div>
 		);
 	}
 
@@ -64,6 +71,9 @@ export function MobileTwapHistoryList({ className, scrollMode = "contained" }: P
 				className,
 			)}
 		>
+			{isRealtimeDegraded ? (
+				<TwapRealtimeWarning className="-mx-3.5 -mt-3" error={realtimeError} onRetry={retryRealtime} />
+			) : null}
 			{history.map((entry) => {
 				const market = markets.getMarket(entry.state.coin);
 				const marketLabel = market?.shortName ?? entry.state.coin;
@@ -168,6 +178,7 @@ export function MobileTwapHistoryList({ className, scrollMode = "contained" }: P
 					</article>
 				);
 			})}
+			{hasMore ? <TwapHistoryLoadMore className="-mx-3.5 -mb-3" onLoadMore={loadMore} /> : null}
 		</div>
 	);
 }

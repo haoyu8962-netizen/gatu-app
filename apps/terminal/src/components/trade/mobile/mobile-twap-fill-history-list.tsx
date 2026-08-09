@@ -1,4 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
+import { TwapHistoryLoadMore, TwapRealtimeWarning } from "@/components/trade/twap-history-feedback";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useTwapSliceFills } from "@/hooks/trade/use-twap-slice-fills";
@@ -17,7 +18,8 @@ interface Props {
 
 export function MobileTwapFillHistoryList({ className, scrollMode = "contained" }: Props) {
 	const { t } = useLingui();
-	const { error, fills, isConnected, status } = useTwapSliceFills();
+	const { error, fills, hasMore, isConnected, isRealtimeDegraded, loadMore, realtimeError, retryRealtime, status } =
+		useTwapSliceFills();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();
 	const markets = useMarkets();
@@ -59,7 +61,12 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 
 	if (fills.length === 0) {
 		return (
-			<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">{t`No TWAP fills found.`}</div>
+			<div className="flex min-h-0 flex-1 flex-col">
+				{isRealtimeDegraded ? <TwapRealtimeWarning error={realtimeError} onRetry={retryRealtime} /> : null}
+				<div className="flex flex-1 items-center justify-center p-6 text-sm text-market-close-muted">
+					{t`No TWAP fills found.`}
+				</div>
+			</div>
 		);
 	}
 
@@ -71,6 +78,9 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 				className,
 			)}
 		>
+			{isRealtimeDegraded ? (
+				<TwapRealtimeWarning className="-mx-3.5 -mt-3" error={realtimeError} onRetry={retryRealtime} />
+			) : null}
 			{fills.map((fill) => {
 				const market = markets.getMarket(fill.coin);
 				const marketLabel = market?.shortName ?? fill.coin;
@@ -156,6 +166,7 @@ export function MobileTwapFillHistoryList({ className, scrollMode = "contained" 
 					</article>
 				);
 			})}
+			{hasMore ? <TwapHistoryLoadMore className="-mx-3.5 -mb-3" onLoadMore={loadMore} /> : null}
 		</div>
 	);
 }

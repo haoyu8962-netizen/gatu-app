@@ -11,7 +11,15 @@ const testState = vi.hoisted(() => ({
 	cancelTwap: vi.fn(),
 	cancellingTwapId: null as number | null,
 	hasActiveOrder: true,
+	hasMoreTwapFills: false,
+	hasMoreTwapHistory: false,
+	isTwapFillsRealtimeDegraded: false,
+	isTwapHistoryRealtimeDegraded: false,
+	loadMoreTwapFills: vi.fn(),
+	loadMoreTwapHistory: vi.fn(),
 	navigateToMarket: vi.fn(),
+	retryTwapFillsRealtime: vi.fn(),
+	retryTwapHistoryRealtime: vi.fn(),
 	setOrderType: vi.fn(),
 	twapHistory: [
 		{
@@ -89,9 +97,14 @@ vi.mock("@/hooks/trade/use-twap-cancel", () => ({
 vi.mock("@/hooks/trade/use-twap-history", () => ({
 	useTwapHistory: () => ({
 		error: undefined,
+		hasMore: testState.hasMoreTwapHistory,
 		history: testState.twapHistory,
 		isConnected: true,
+		isRealtimeDegraded: testState.isTwapHistoryRealtimeDegraded,
 		latestHistory: testState.twapHistory,
+		loadMore: testState.loadMoreTwapHistory,
+		realtimeError: testState.isTwapHistoryRealtimeDegraded ? new Error("History stream unavailable") : undefined,
+		retryRealtime: testState.retryTwapHistoryRealtime,
 		status: "ready",
 	}),
 }));
@@ -100,7 +113,12 @@ vi.mock("@/hooks/trade/use-twap-slice-fills", () => ({
 	useTwapSliceFills: () => ({
 		error: undefined,
 		fills: testState.twapFills,
+		hasMore: testState.hasMoreTwapFills,
 		isConnected: true,
+		isRealtimeDegraded: testState.isTwapFillsRealtimeDegraded,
+		loadMore: testState.loadMoreTwapFills,
+		realtimeError: testState.isTwapFillsRealtimeDegraded ? new Error("Fill stream unavailable") : undefined,
+		retryRealtime: testState.retryTwapFillsRealtime,
 		status: "ready",
 	}),
 }));
@@ -142,8 +160,16 @@ describe("desktop TWAP toolbar", () => {
 		testState.twap.side = "B";
 		testState.cancellingTwapId = null;
 		testState.hasActiveOrder = true;
+		testState.hasMoreTwapFills = false;
+		testState.hasMoreTwapHistory = false;
+		testState.isTwapFillsRealtimeDegraded = false;
+		testState.isTwapHistoryRealtimeDegraded = false;
 		testState.cancelTwap.mockReset();
+		testState.loadMoreTwapFills.mockReset();
+		testState.loadMoreTwapHistory.mockReset();
 		testState.navigateToMarket.mockReset();
+		testState.retryTwapFillsRealtime.mockReset();
+		testState.retryTwapHistoryRealtime.mockReset();
 		testState.setOrderType.mockReset();
 		i18n.load("en", {});
 		i18n.activate("en");
@@ -283,5 +309,29 @@ describe("desktop TWAP toolbar", () => {
 		expect(container.textContent).toContain("1,875.00 USDH");
 		expect(container.textContent).toContain("0.01000 USDC");
 		expect(container.textContent).toContain("+2.50 USDC");
+	});
+
+	it("keeps cached history visible while exposing realtime recovery and pagination controls", () => {
+		testState.hasMoreTwapHistory = true;
+		testState.isTwapHistoryRealtimeDegraded = true;
+		render();
+
+		const historyTab = Array.from(container.querySelectorAll<HTMLButtonElement>('[role="tab"]')).find(
+			(tab) => tab.textContent === "History",
+		);
+		act(() => historyTab?.click());
+
+		expect(container.textContent).toContain("15.33 GOOGL");
+		expect(container.querySelector("output")?.textContent).toContain("Real-time TWAP updates are unavailable.");
+		const retry = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Retry",
+		);
+		const loadMore = Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(
+			(button) => button.textContent === "Load more",
+		);
+		act(() => retry?.click());
+		act(() => loadMore?.click());
+		expect(testState.retryTwapHistoryRealtime).toHaveBeenCalledTimes(1);
+		expect(testState.loadMoreTwapHistory).toHaveBeenCalledTimes(1);
 	});
 });

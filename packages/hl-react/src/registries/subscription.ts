@@ -1,9 +1,26 @@
-import type { HistoricalOrdersResponse, TradesWsEvent } from "@nktkas/hyperliquid";
+import type {
+	HistoricalOrdersResponse,
+	TradesWsEvent,
+	TwapHistoryResponse,
+	UserTwapSliceFillsResponse,
+} from "@nktkas/hyperliquid";
 import type { RingBufferOptions } from "../internal/circular-buffer/ring-buffer";
 import type { SubMethod } from "../types/clients";
 import { shouldReplaceHistoricalOrder } from "./historical-orders";
 
 type RawTrade = TradesWsEvent[number];
+type TwapHistoryItem = TwapHistoryResponse[number];
+
+const MAX_TWAP_HISTORY_ITEMS = 2000;
+
+function getTwapHistoryParentKey(item: TwapHistoryItem): string {
+	if (item.twapId !== undefined) return String(item.twapId);
+	return `${item.state.user}:${item.state.timestamp}:${item.state.coin}:${item.state.side}:${item.state.sz}`;
+}
+
+function getTwapHistoryEventKey(item: TwapHistoryItem): string {
+	return `${getTwapHistoryParentKey(item)}:${item.time}:${item.status.status}`;
+}
 
 interface AccumulateConfig<TEvent = unknown, TItem = unknown> {
 	getItems: (event: TEvent) => TItem[];
@@ -74,29 +91,26 @@ const ACCUMULATING_SUBS: Partial<Record<SubMethod, AccumulateConfig>> = {
 			compare: (a, b) => b.time - a.time,
 		},
 	}),
-	userTwapHistory: defineAccumulator<
-		{ history: unknown[]; isSnapshot?: boolean },
-		{ twapId?: number | null; time: number; state: { coin: string } }
-	>({
-		getItems: (event) => event.history as { twapId?: number | null; time: number; state: { coin: string } }[],
+	userTwapHistory: defineAccumulator<{ history: unknown[]; isSnapshot?: boolean }, TwapHistoryItem>({
+		getItems: (event) => event.history as TwapHistoryResponse,
 		withItems: (event, items) => ({ ...event, history: items }),
 		isSnapshot: (event) => event.isSnapshot === true,
 		buffer: {
-			maxSize: 200,
-			getKey: (h) => (h.twapId != null ? String(h.twapId) : `${h.time}-${h.state.coin}`),
+			maxSize: MAX_TWAP_HISTORY_ITEMS,
+			getKey: getTwapHistoryEventKey,
 			compare: (a, b) => b.time - a.time,
 			shouldReplace: (existing, incoming) => incoming.time >= existing.time,
 		},
 	}),
 	userTwapSliceFills: defineAccumulator<
 		{ twapSliceFills: unknown[]; isSnapshot?: boolean },
-		{ fill: { tid: number; time: number } }
+		UserTwapSliceFillsResponse[number]
 	>({
-		getItems: (event) => event.twapSliceFills as { fill: { tid: number; time: number } }[],
+		getItems: (event) => event.twapSliceFills as UserTwapSliceFillsResponse,
 		withItems: (event, items) => ({ ...event, twapSliceFills: items }),
 		isSnapshot: (event) => event.isSnapshot === true,
 		buffer: {
-			maxSize: 200,
+			maxSize: MAX_TWAP_HISTORY_ITEMS,
 			getKey: (f) => String(f.fill.tid),
 			compare: (a, b) => b.fill.time - a.fill.time,
 		},
