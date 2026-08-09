@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, TrendDownIcon, TrendUpIcon } from "@phosphor-icons/react";
 import { NumberInput } from "@/components/ui/number-input";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SL_QUICK_PERCENT_OPTIONS, TP_QUICK_PERCENT_OPTIONS } from "@/config/trade";
@@ -34,6 +34,7 @@ interface Props {
 	slError?: string | null;
 	disabled?: boolean;
 	compact?: boolean;
+	framed?: boolean;
 	quickPercentMode?: "price" | "roe";
 	leverage?: number;
 	triggerValidationPrice?: string | number | null;
@@ -43,21 +44,20 @@ interface Props {
 	linkedReturnInputs?: {
 		unitLabel: string;
 		onUnitToggle: () => void;
-		tp: {
-			ariaLabel: string;
-			placeholder: string;
-			value: string;
-			onBlur?: () => void;
-			onChange: (value: string) => void;
-		};
-		sl: {
-			ariaLabel: string;
-			placeholder: string;
-			value: string;
-			onBlur?: () => void;
-			onChange: (value: string) => void;
-		};
+		tp: LinkedReturnInput;
+		sl: LinkedReturnInput;
 	};
+}
+
+interface LinkedReturnInput {
+	ariaLabel: string;
+	placeholder: string;
+	value: string;
+	unitLabel?: string;
+	onUnitToggle?: () => void;
+	disabled?: boolean;
+	onBlur?: () => void;
+	onChange: (value: string) => void;
 }
 
 export function TpSlSection({
@@ -73,6 +73,7 @@ export function TpSlSection({
 	slError,
 	disabled,
 	compact,
+	framed,
 	quickPercentMode = "price",
 	leverage,
 	triggerValidationPrice,
@@ -158,6 +159,39 @@ export function TpSlSection({
 	function handleSlPercentClick(percent: number) {
 		const price = getSlQuickPrice(percent);
 		if (price && !isSlPercentDisabled(percent)) onSlPriceChange(price);
+	}
+
+	if (framed) {
+		return (
+			<div className="min-w-0 space-y-3 rounded-[12px] border border-trading-panel-stroke-card bg-trading-panel-card p-3">
+				<FramedTpSlRow
+					priceAriaLabel={t`Take Profit`}
+					pricePlaceholder={t`TP Price`}
+					priceValue={tpPrice}
+					onPriceChange={onTpPriceChange}
+					returnInput={resolveLinkedReturnInput(linkedReturnInputs, "tp")}
+					error={tpError}
+					pnl={tpPnl}
+					pnlToneClass="text-trading-panel-success"
+					formatPnlValue={formatPnlValue}
+					disabled={disabled}
+					mobileSafe={mobileTouchSafe}
+				/>
+				<FramedTpSlRow
+					priceAriaLabel={t`Stop Loss`}
+					pricePlaceholder={t`SL Price`}
+					priceValue={slPrice}
+					onPriceChange={onSlPriceChange}
+					returnInput={resolveLinkedReturnInput(linkedReturnInputs, "sl")}
+					error={slError}
+					pnl={slPnl}
+					pnlToneClass="text-trading-panel-error"
+					formatPnlValue={formatPnlValue}
+					disabled={disabled}
+					mobileSafe={mobileTouchSafe}
+				/>
+			</div>
+		);
 	}
 
 	if (compact) {
@@ -287,6 +321,112 @@ export function TpSlSection({
 						</span>
 					</div>
 				</div>
+			)}
+		</div>
+	);
+}
+
+const framedFrameClass =
+	"flex h-8 min-w-0 items-center rounded-8 border border-trading-panel-stroke-input bg-surface px-2.5 focus-within:border-trading-panel-control [&_[data-slot=input]]:border-0 [&_[data-slot=input]]:rounded-none [&_[data-slot=input]]:ring-0";
+const framedInputClass =
+	"h-7 min-w-0 flex-1 bg-transparent px-0 text-xs font-semibold tabular-nums text-trading-panel-fg";
+
+function resolveLinkedReturnInput(
+	linkedReturnInputs: Props["linkedReturnInputs"],
+	kind: "tp" | "sl",
+): LinkedReturnInput | undefined {
+	if (!linkedReturnInputs) return undefined;
+	const input = linkedReturnInputs[kind];
+	return {
+		...input,
+		unitLabel: input.unitLabel ?? linkedReturnInputs.unitLabel,
+		onUnitToggle: input.onUnitToggle ?? linkedReturnInputs.onUnitToggle,
+	};
+}
+
+interface FramedTpSlRowProps {
+	priceAriaLabel: string;
+	pricePlaceholder: string;
+	priceValue: string;
+	onPriceChange: (value: string) => void;
+	returnInput?: LinkedReturnInput;
+	error?: string | null;
+	pnl: string | number | null;
+	pnlToneClass: string;
+	formatPnlValue: (value: string | number) => string;
+	disabled?: boolean;
+	mobileSafe?: boolean;
+}
+
+function FramedTpSlRow({
+	priceAriaLabel,
+	pricePlaceholder,
+	priceValue,
+	onPriceChange,
+	returnInput,
+	error,
+	pnl,
+	pnlToneClass,
+	formatPnlValue,
+	disabled,
+	mobileSafe,
+}: FramedTpSlRowProps) {
+	const returnDisabled = disabled || returnInput?.disabled;
+
+	return (
+		<div className="min-w-0 space-y-1.5">
+			<div className="flex min-w-0 flex-wrap gap-1.5">
+				<div
+					className={cn(
+						framedFrameClass,
+						"min-w-[7rem] flex-[1.2]",
+						!!error && "border-trading-panel-error focus-within:border-trading-panel-error",
+						disabled && "opacity-50",
+					)}
+				>
+					<NumberInput
+						aria-label={priceAriaLabel}
+						placeholder={pricePlaceholder}
+						mobileSafe={mobileSafe}
+						value={priceValue}
+						onChange={(e) => onPriceChange(e.target.value)}
+						className={framedInputClass}
+						disabled={disabled}
+					/>
+				</div>
+				{returnInput && (
+					<div className={cn(framedFrameClass, "min-w-[6rem] flex-1", returnDisabled && "opacity-50")}>
+						<NumberInput
+							aria-label={returnInput.ariaLabel}
+							placeholder={returnInput.placeholder}
+							mobileSafe={mobileSafe}
+							value={returnInput.value}
+							onChange={(e) => returnInput.onChange(e.target.value)}
+							onBlur={returnInput.onBlur}
+							className={framedInputClass}
+							disabled={returnDisabled}
+						/>
+						{returnInput.onUnitToggle && (
+							<button
+								type="button"
+								onClick={returnInput.onUnitToggle}
+								disabled={returnDisabled}
+								aria-label={t`Switch unit`}
+								className="ml-1 inline-flex shrink-0 cursor-pointer items-center gap-0.5 whitespace-nowrap text-xs font-semibold text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus disabled:cursor-not-allowed"
+							>
+								{returnInput.unitLabel}
+								<CaretDownIcon className="size-2.5 text-trading-panel-subtle" />
+							</button>
+						)}
+					</div>
+				)}
+			</div>
+			{error && <p className="text-2xs text-trading-panel-error">{error}</p>}
+			{!error && pnl !== null && (
+				<p className="text-2xs tabular-nums text-trading-panel-muted">
+					{t`Estimated PnL after trigger`}{" "}
+					<span className={cn("font-semibold", pnlToneClass)}>{formatPnlValue(pnl)}</span>
+				</p>
 			)}
 		</div>
 	);
