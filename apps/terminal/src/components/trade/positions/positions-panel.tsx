@@ -47,6 +47,7 @@ const TwapTab = createLazyComponent(() => import("./twap-tab"), "TwapTab");
 
 interface Props {
 	includeTransfers?: boolean;
+	autoHeight?: boolean;
 }
 
 interface PositionFiltersState {
@@ -57,7 +58,7 @@ interface PositionFiltersState {
 
 const POSITIONS_TAB_VALUES = new Set<string>(POSITIONS_TABS.map((tab) => tab.value));
 
-export function PositionsPanel({ includeTransfers = false }: Props) {
+export function PositionsPanel({ includeTransfers = false, autoHeight = false }: Props) {
 	const { _ } = useLingui();
 	useRenderCommitTrack("positions-table");
 	const storedActiveTab = usePositionsActiveTab();
@@ -249,7 +250,7 @@ export function PositionsPanel({ includeTransfers = false }: Props) {
 	}
 
 	return (
-		<div className="h-full flex flex-col overflow-hidden bg-surface">
+		<div className={cn("flex flex-col bg-surface", autoHeight ? "min-h-64" : "h-full overflow-hidden")}>
 			<Tabs
 				value={activeTab}
 				onValueChange={handleTabChange}

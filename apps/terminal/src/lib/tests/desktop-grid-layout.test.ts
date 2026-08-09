@@ -92,7 +92,7 @@ describe("desktop grid layout", () => {
 			h: 26.4,
 			minW: 10,
 			maxW: 10,
-			resizeHandles: ["s"],
+			resizeHandles: [],
 		});
 		expect(compactAccountInfo).toMatchObject({
 			x: 10,

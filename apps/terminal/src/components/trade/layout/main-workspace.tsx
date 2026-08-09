@@ -54,6 +54,7 @@ function useGridContentHeight(
 const panelFallback = <div className="h-full w-full animate-pulse bg-fill-weaker" />;
 const tradePanelFallback = <div className="h-[41rem] w-full animate-pulse bg-fill-weaker" />;
 const accountPanelFallback = <div className="h-80 w-full animate-pulse bg-fill-weaker" />;
+const positionsPanelFallback = <div className="h-96 w-full animate-pulse bg-fill-weaker" />;
 const chartPanelFallback = <div className="h-full w-full bg-background" />;
 
 export function MainWorkspace() {
@@ -61,6 +62,7 @@ export function MainWorkspace() {
 	const [layouts, setLayouts] = useState(readDesktopGridLayouts);
 	const tradeContentRef = useGridContentHeight(mounted, "tradingInterface", setLayouts);
 	const accountContentRef = useGridContentHeight(mounted, "accountInfo", setLayouts);
+	const positionsContentRef = useGridContentHeight(mounted, "accountTable", setLayouts);
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const { routeMarketName } = useExchangeScope();
 	const navigateToMarket = useMarketNavigation();
@@ -141,9 +143,11 @@ export function MainWorkspace() {
 					</div>
 
 					<div key="accountTable" className="desktop-grid-panel overflow-hidden bg-surface">
-						<Suspense fallback={panelFallback}>
-							<PositionsPanel />
-						</Suspense>
+						<div ref={positionsContentRef}>
+							<Suspense fallback={positionsPanelFallback}>
+								<PositionsPanel autoHeight />
+							</Suspense>
+						</div>
 					</div>
 
 					<div key="accountInfo" data-panel-id="accountInfo" className="desktop-grid-panel overflow-hidden bg-surface">
