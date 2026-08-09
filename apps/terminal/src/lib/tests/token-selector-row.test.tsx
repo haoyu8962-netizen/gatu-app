@@ -32,9 +32,21 @@ describe("TokenSelectorRow", () => {
 
 	function renderRow(
 		market: MarketRow,
-		options: { mobile?: boolean; showSpotMarketCap?: boolean; isSelected?: boolean } = {},
+		options: {
+			mobile?: boolean;
+			showSpotMarketCap?: boolean;
+			isSelected?: boolean;
+			onSelect?: (name: string) => void;
+			onToggleFavorite?: (name: string) => void;
+		} = {},
 	) {
-		const { mobile = true, showSpotMarketCap = false, isSelected = false } = options;
+		const {
+			mobile = true,
+			showSpotMarketCap = false,
+			isSelected = false,
+			onSelect = vi.fn(),
+			onToggleFavorite = vi.fn(),
+		} = options;
 		act(() => {
 			root.render(
 				<I18nProvider i18n={i18n}>
@@ -48,20 +60,21 @@ describe("TokenSelectorRow", () => {
 						isFavorite={false}
 						top={0}
 						height={48}
-						onSelect={vi.fn()}
-						onToggleFavorite={vi.fn()}
+						onSelect={onSelect}
+						onToggleFavorite={onToggleFavorite}
 					/>
 				</I18nProvider>,
 			);
 		});
 
-		const row = container.querySelector<HTMLElement>('[role="option"]');
-		if (!row) throw new Error("Missing token selector row");
-		return row;
+		const marketButton = container.querySelector<HTMLButtonElement>(`button[data-index="${market.name}"]`);
+		const row = marketButton?.parentElement;
+		if (!marketButton || !row) throw new Error("Missing token selector row");
+		return { marketButton, row };
 	}
 
 	it("stacks volume and open interest beside price and 24h change for perpetuals", () => {
-		const row = renderRow({
+		const { row } = renderRow({
 			name: "HYPE",
 			kind: "perp",
 			shortName: "HYPE",
@@ -75,19 +88,22 @@ describe("TokenSelectorRow", () => {
 			funding: "0.00001",
 		} as MarketRow);
 
-		expect(row.children).toHaveLength(3);
-		expect(row.children[0]?.textContent).toContain("HYPE-USDC");
-		expect(row.children[1]?.textContent).toContain("$125M");
-		expect(row.children[1]?.textContent).toContain("$129M");
-		expect(row.children[2]?.textContent).toContain("64.5");
-		expect(row.children[2]?.textContent).toContain("+7.50%");
+		expect(row.children).toHaveLength(4);
+		expect(row.children[1]?.textContent).toContain("HYPE-USDC");
+		expect(row.children[2]?.textContent).toContain("$125M");
+		expect(row.children[2]?.textContent).toContain("$129M");
+		expect(row.children[3]?.textContent).toContain("64.5");
+		expect(row.children[3]?.textContent).toContain("+7.50%");
 		const favoriteButton = row.querySelector<HTMLButtonElement>('button[aria-pressed="false"]');
-		expect(favoriteButton?.className).toContain("size-6");
+		expect(favoriteButton?.className).toContain("size-11");
+		expect(favoriteButton?.className).not.toContain("after:inset-x-0");
 		expect(favoriteButton?.className).not.toContain("right-[-26px]");
+		expect(row.className).toContain("grid-cols-[minmax(0,1fr)_74px_72px]");
+		expect(row.className).toContain("min-[390px]:grid-cols-[minmax(0,1fr)_102px_84px]");
 	});
 
 	it("uses market cap instead of open interest for spot markets", () => {
-		const row = renderRow(
+		const { row } = renderRow(
 			{
 				name: "@1",
 				kind: "spot",
@@ -105,14 +121,14 @@ describe("TokenSelectorRow", () => {
 			{ showSpotMarketCap: true },
 		);
 
-		expect(row.children).toHaveLength(3);
-		expect(row.children[1]?.textContent).toContain("$125M");
-		expect(row.children[1]?.textContent).toContain("$6.45B");
-		expect(row.children[1]?.textContent).not.toContain("--");
+		expect(row.children).toHaveLength(4);
+		expect(row.children[2]?.textContent).toContain("$125M");
+		expect(row.children[2]?.textContent).toContain("$6.45B");
+		expect(row.children[2]?.textContent).not.toContain("--");
 	});
 
 	it("shows the raw API token for colliding desktop spot names", () => {
-		const row = renderRow(
+		const { row } = renderRow(
 			{
 				name: "@188",
 				kind: "spot",
@@ -135,7 +151,7 @@ describe("TokenSelectorRow", () => {
 	});
 
 	it("preserves the protocol spot price precision", () => {
-		const row = renderRow(
+		const { row } = renderRow(
 			{
 				name: "@300",
 				kind: "spot",
@@ -156,7 +172,7 @@ describe("TokenSelectorRow", () => {
 	});
 
 	it("uses a visible background for the selected row", () => {
-		const row = renderRow(
+		const { row } = renderRow(
 			{
 				name: "HYPE",
 				kind: "perp",
@@ -169,5 +185,51 @@ describe("TokenSelectorRow", () => {
 		);
 
 		expect(row.classList.contains("bg-trading-panel-hover")).toBe(true);
+	});
+
+	it("does not infer a New listing badge from the local product catalog", () => {
+		const { row } = renderRow({
+			name: "APT",
+			kind: "perp",
+			shortName: "APT",
+			pairName: "APT-USDC",
+			szDecimals: 1,
+			markPx: "4.2",
+		} as MarketRow);
+
+		expect(row.textContent).not.toContain("NEW");
+	});
+
+	it.each([false, true])("keeps the market and favorite actions as sibling controls when mobile is %s", (mobile) => {
+		const onSelect = vi.fn();
+		const onToggleFavorite = vi.fn();
+		const { marketButton, row } = renderRow(
+			{
+				name: "HYPE",
+				kind: "perp",
+				shortName: "HYPE",
+				pairName: "HYPE-USDC",
+				szDecimals: 2,
+				markPx: "64.5",
+			} as MarketRow,
+			{ mobile, onSelect, onToggleFavorite },
+		);
+
+		const favoriteButton = row.querySelector<HTMLButtonElement>('button[aria-pressed="false"]');
+		expect(favoriteButton).not.toBeNull();
+		expect(row.tagName).toBe("LI");
+		expect(marketButton.getAttribute("tabindex")).toBeNull();
+		expect(favoriteButton?.className).toContain(mobile ? "size-11" : "size-6");
+		expect(marketButton.contains(favoriteButton)).toBe(false);
+		act(() => favoriteButton?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+		expect(onSelect).not.toHaveBeenCalled();
+
+		act(() => marketButton.click());
+		expect(onSelect).toHaveBeenCalledWith("HYPE");
+		expect(onToggleFavorite).not.toHaveBeenCalled();
+
+		act(() => favoriteButton?.click());
+		expect(onToggleFavorite).toHaveBeenCalledWith("HYPE");
+		expect(onSelect).toHaveBeenCalledTimes(1);
 	});
 });

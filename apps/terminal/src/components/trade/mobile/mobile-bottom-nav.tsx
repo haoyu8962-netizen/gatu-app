@@ -42,7 +42,6 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 							style={{ minHeight: `${MOBILE_BOTTOM_NAV_HEIGHT_PX}px` }}
 							className={cn(
 								"flex-1 flex flex-col items-center justify-center gap-[3px] rounded-none px-1",
-								"[-webkit-tap-highlight-color:transparent]",
 								isActive ? "text-trading-panel-fg" : "text-trading-panel-subtle",
 							)}
 							aria-current={isActive ? "page" : undefined}

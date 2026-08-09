@@ -2601,10 +2601,6 @@ msgstr "ट्रांसफर दिशा पलटें"
 msgid "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
 msgstr "उन उन्नत उपयोगकर्ताओं के लिए जो अधिक लचीलापन और पूंजी दक्षता चाहते हैं। Spot और perps trading पूरी तरह unified हैं, और HYPE व BTC जैसे योग्य collateral assets को settlement asset में बदले बिना सीधे perp collateral के रूप में इस्तेमाल किया जा सकता है।"
 
-#: src/components/trade/chart/token-selector-content.tsx
-msgid "Forex"
-msgstr "फ़ॉरेक्स"
-
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Format for numbers and dates"
 #~ msgstr ""
@@ -2660,6 +2656,10 @@ msgstr "प्रदर्शित फंडिंग"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
 msgstr "धन Spot खाते में है"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "FX"
+msgstr "फ़ॉरेक्स"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Gaming"
@@ -3355,6 +3355,7 @@ msgstr "मार्जिन आवश्यक"
 msgid "Margin Used"
 msgstr "उपयोग किया गया मार्जिन"
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Mark"
 msgstr "मार्क"
@@ -3717,8 +3718,8 @@ msgstr "नेटवर्क"
 
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
-msgid "NEW"
-msgstr "नया"
+#~ msgid "NEW"
+#~ msgstr "नया"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "New deposit"
@@ -4666,8 +4667,8 @@ msgid "Pre-IPO"
 msgstr "प्री-IPO"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#~ msgid "Pre-launch"
-#~ msgstr "प्री-लॉन्च"
+msgid "Pre-launch"
+msgstr "प्री-लॉन्च"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Prefer an app-like experience?"

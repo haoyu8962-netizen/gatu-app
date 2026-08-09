@@ -2,7 +2,14 @@ import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
-import { get24hChange, get24hPriceChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
+import {
+	type FundingPeriodRates,
+	get24hChange,
+	get24hPriceChange,
+	getFundingPeriodRates,
+	getMarketCapUsd,
+	getOiUsd,
+} from "@/domain/market";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { cn } from "@/lib/cn";
@@ -24,16 +31,16 @@ import {
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
-import { toBig } from "@/lib/trade/numbers";
+import { type Numeric, toBig } from "@/lib/trade/numbers";
 import { StatBlock } from "./chart/stat-block";
 
 const HOUR_MS = 3_600_000;
 
-function FundingTooltipContent({ fundingNum, remaining }: { fundingNum: number; remaining: number }) {
+function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates; remaining: number }) {
 	const rows = [
-		{ label: t`7 days`, rate: fundingNum * 24 * 7 },
-		{ label: t`30 days`, rate: fundingNum * 24 * 30 },
-		{ label: t`1 year`, rate: fundingNum * 24 * 365 },
+		{ label: t`7 days`, rate: rates.sevenDays },
+		{ label: t`30 days`, rate: rates.thirtyDays },
+		{ label: t`1 year`, rate: rates.oneYear },
 	];
 
 	return (
@@ -56,9 +63,10 @@ function FundingTooltipContent({ fundingNum, remaining }: { fundingNum: number; 
 	);
 }
 
-function FundingStatBlock({ fundingNum }: { fundingNum: number | null }) {
+function FundingStatBlock({ fundingRate }: { fundingRate: string | null }) {
 	const [remaining, setRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
-	const hasFunding = fundingNum !== null;
+	const periodRates = getFundingPeriodRates(fundingRate);
+	const hasFunding = periodRates !== null;
 
 	useEffect(() => {
 		if (!hasFunding) return;
@@ -78,12 +86,12 @@ function FundingStatBlock({ fundingNum }: { fundingNum: number | null }) {
 				}
 				labelClass="cursor-help border-b border-dashed border-trading-panel-stroke-control"
 				value={
-					fundingNum === null ? (
+					fundingRate === null ? (
 						"—"
 					) : (
 						<>
-							<span className={getMarketValueColorClass(fundingNum)}>
-								{formatPercent(fundingNum, {
+							<span className={getMarketValueColorClass(fundingRate)}>
+								{formatPercent(fundingRate, {
 									minimumFractionDigits: 4,
 									signDisplay: "exceptZero",
 								})}
@@ -96,10 +104,10 @@ function FundingStatBlock({ fundingNum }: { fundingNum: number | null }) {
 		</span>
 	);
 
-	if (fundingNum === null) return block;
+	if (!periodRates) return block;
 
 	return (
-		<Tooltip content={<FundingTooltipContent fundingNum={fundingNum} remaining={remaining} />} side="bottom">
+		<Tooltip content={<FundingTooltipContent rates={periodRates} remaining={remaining} />} side="bottom">
 			{block}
 		</Tooltip>
 	);
@@ -142,16 +150,17 @@ export function MarketOverview() {
 	const liveCtx = isSpot ? spotCtxEvent?.ctx : perpCtxEvent?.ctx;
 	const perpCtx = perpCtxEvent?.ctx;
 
-	const displayPrice = midPx ?? liveCtx?.markPx ?? selectedMarketInfo?.markPx;
+	const perpMarkPx = perpCtx?.markPx ?? selectedMarketInfo?.markPx;
+	const displayPrice = isSpot ? (midPx ?? liveCtx?.markPx ?? selectedMarketInfo?.markPx) : perpMarkPx;
 	const dayNtlVlm = liveCtx?.dayNtlVlm ?? selectedMarketInfo?.dayNtlVlm;
 	const oraclePx = perpCtx?.oraclePx ?? selectedMarketInfo?.oraclePx;
 	const openInterest = perpCtx?.openInterest ?? selectedMarketInfo?.openInterest;
-	const markPx = perpCtx?.markPx ?? selectedMarketInfo?.markPx;
+	const markPx = perpMarkPx;
 	const funding = perpCtx?.funding ?? selectedMarketInfo?.funding;
 
 	const prevDayForChange = liveCtx?.prevDayPx ?? selectedMarketInfo?.prevDayPx;
 
-	const fundingNum = toBig(funding)?.toNumber() ?? null;
+	const fundingRate = toBig(funding)?.toString() ?? null;
 	const change24h = get24hChange(prevDayForChange, displayPrice);
 	const priceChange24h = get24hPriceChange(prevDayForChange, displayPrice);
 	const oiUsd = getOiUsd(openInterest, markPx);
@@ -198,7 +207,7 @@ export function MarketOverview() {
 
 	return (
 		<div className="grid w-max min-w-0 auto-cols-max grid-flow-col items-center gap-6 font-market-close text-[13px]">
-			<StatBlock label={t`Price`} value={priceText} valueClass="text-trading-panel-fg" />
+			<StatBlock label={isSpot ? t`Price` : t`Mark`} value={priceText} valueClass="text-trading-panel-fg" />
 			{!isSpot && (
 				<>
 					<StatBlock
@@ -218,7 +227,7 @@ export function MarketOverview() {
 						value={formatUSD(dayNtlVlm, { compact: false })}
 					/>
 					<StatBlock label={t`OPEN INT`} value={formatUSD(oiUsd, { compact: false })} />
-					<FundingStatBlock fundingNum={fundingNum} />
+					<FundingStatBlock fundingRate={fundingRate} />
 				</>
 			)}
 			{isSpot && (
@@ -274,7 +283,8 @@ function createSpotTokenContractValue(address: string | null, copied: boolean, o
 	);
 }
 
-function getMarketValueColorClass(value: number): string {
-	if (!Number.isFinite(value) || value === 0) return "text-trading-panel-subtle";
-	return value < 0 ? "text-trading-panel-error" : "text-trading-panel-success";
+function getMarketValueColorClass(value: Numeric): string {
+	const numericValue = toBig(value);
+	if (!numericValue || numericValue.eq(0)) return "text-trading-panel-subtle";
+	return numericValue.lt(0) ? "text-trading-panel-error" : "text-trading-panel-success";
 }

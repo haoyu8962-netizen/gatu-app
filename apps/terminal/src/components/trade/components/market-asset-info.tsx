@@ -389,9 +389,14 @@ export function MarketAssetInfo({ market }: Props) {
 							className="flex flex-col gap-2 rounded-[12px] border border-trading-panel-stroke-card bg-trading-panel-card px-3.5 py-3"
 						>
 							{metadataRows.map((row) => (
-								<div key={row.id} className="flex items-center justify-between gap-4 text-xs">
+								<div key={row.id} className="flex items-start justify-between gap-4 text-xs">
 									<dt className="shrink-0 whitespace-nowrap text-trading-panel-muted">{row.label}</dt>
-									<dd className="min-w-0 truncate whitespace-nowrap text-right font-semibold text-trading-panel-fg tabular-nums">
+									<dd
+										title={
+											typeof row.value === "string" || typeof row.value === "number" ? String(row.value) : undefined
+										}
+										className="min-w-0 max-w-[65%] whitespace-normal text-right font-semibold text-trading-panel-fg tabular-nums [overflow-wrap:anywhere]"
+									>
 										{row.value}
 									</dd>
 								</div>
@@ -430,7 +435,7 @@ export function MarketAssetInfo({ market }: Props) {
 									href={link.href}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="inline-flex items-center gap-1 whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control text-xs font-semibold text-trading-panel-fg transition-colors duration-[120ms] hover:text-trading-panel-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-control motion-reduce:transition-none"
+									className="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control text-xs font-semibold text-trading-panel-fg transition-colors duration-[120ms] hover:text-trading-panel-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-control motion-reduce:transition-none min-[1001px]:min-h-0 min-[1001px]:min-w-0"
 								>
 									{link.label}
 									<ArrowSquareOutIcon className="size-3 shrink-0" aria-hidden />

@@ -69,12 +69,17 @@ Archived snapshot locations:
 - Use `meta().universe[].name` as the canonical identity for main perpetuals. Spot identities and
   `{dex}:{coin}` HIP-3 identities remain separate market kinds.
 - `perpConciseAnnotations` supplies broad HIP-3 categories such as stocks, indices, commodities,
-  FX, and pre-IPO. It does not supply the AI, Defi, Gaming, Layer 1, Layer 2, or Meme sectors used
-  by Hyperliquid's Crypto selector.
+  FX, and pre-IPO. The current mainnet response does not supply the AI, Defi, Gaming, Layer 1,
+  Layer 2, or Meme membership for native main perpetuals; the API category value is not a closed
+  enum and must not be treated as permanently incapable of supplying those categories.
 - The Crypto sector mapping in `apps/terminal/src/domain/market/crypto-taxonomy.ts` mirrors the
   official terminal taxonomy. `CRYPTO_MARKET_TAXONOMY_REVISION` records the latest verified
-  snapshot. The mapping uses exact, case-sensitive main-perp names, permits one market in multiple
-  sectors, and must not classify Spot or HIP-3 markets by matching display symbols.
+  snapshot captured from `https://app.hyperliquid.xyz/trade/HYPE`. A readable test fixture records
+  the source, capture method, and complete membership so changes require an explicit review. The
+  mapping uses exact, case-sensitive main-perp names, permits one market in multiple sectors, and
+  must not classify Spot or HIP-3 markets by matching display symbols.
+- The Pre-launch selector scope is backed by the official `preipo` annotation. It must fail closed
+  while annotations are unavailable instead of guessing from market names or DEX prefixes.
 
 ---
 

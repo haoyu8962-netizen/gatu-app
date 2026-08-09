@@ -33,7 +33,7 @@ function SocialLink({ href, label, icon, showTooltip, targetSize }: SocialLinkPr
 			aria-label={label}
 			className={cn(
 				"inline-flex items-center justify-center text-trading-panel-muted transition-colors duration-150 hover:text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none",
-				targetSize === "touch" && "size-6 shrink-0 rounded-[7px] hover:bg-trading-panel-hover active:bg-fill-press",
+				targetSize === "touch" && "size-11 shrink-0 rounded-[7px] hover:bg-trading-panel-hover active:bg-fill-press",
 				targetSize === "compact" && "size-4",
 			)}
 		>

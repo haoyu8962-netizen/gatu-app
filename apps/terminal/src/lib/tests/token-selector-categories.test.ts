@@ -37,6 +37,7 @@ const annotations = [
 	["xyz:EUR", { category: "FX" }],
 	["xyz:BTC", { category: "crypto" }],
 	["para:AAOI", { category: "stock" }],
+	["para:UNITREE", { category: "preipo" }],
 ] as PerpConciseAnnotationsResponse;
 
 describe("token selector categories", () => {
@@ -46,14 +47,16 @@ describe("token selector categories", () => {
 		expect(normalizePerpCategory(undefined)).toBeUndefined();
 	});
 
-	it("defaults Traditional Finance to Indices", () => {
-		expect(getDefaultMarketSubcategory("traditional")).toBe("indices");
+	it("defaults every scope to its complete market set", () => {
+		expect(getDefaultMarketSubcategory("traditional")).toBe("all");
+		expect(getDefaultMarketSubcategory("prelaunch")).toBe("all");
 		expect(getDefaultMarketSubcategory("all")).toBe("all");
 	});
 
 	it("identifies scopes that require official annotations", () => {
 		expect(marketScopeUsesAnnotations("crypto")).toBe(false);
 		expect(marketScopeUsesAnnotations("traditional")).toBe(true);
+		expect(marketScopeUsesAnnotations("prelaunch")).toBe(true);
 		expect(marketScopeUsesAnnotations("all")).toBe(false);
 		expect(marketScopeUsesAnnotations("hip3")).toBe(false);
 	});
@@ -61,9 +64,19 @@ describe("token selector categories", () => {
 	it("distinguishes pending, error, empty, and ready classification data", () => {
 		expect(getMarketClassificationState("crypto", undefined, { isPending: true, isError: false })).toBe("ready");
 		expect(getMarketClassificationState("traditional", undefined, { isPending: false, isError: true })).toBe("error");
+		expect(getMarketClassificationState("prelaunch", undefined, { isPending: true, isError: false })).toBe("pending");
 		expect(getMarketClassificationState("traditional", [], { isPending: false, isError: false })).toBe("empty");
 		expect(getMarketClassificationState("traditional", annotations, { isPending: false, isError: true })).toBe("ready");
 		expect(getMarketClassificationState("all", undefined, { isPending: true, isError: false })).toBe("ready");
+	});
+
+	it("uses the official preipo annotation for the Pre-launch scope", () => {
+		const prelaunch = annotatedMarket("para:UNITREE");
+		const stock = annotatedMarket("para:AAOI");
+
+		expect(isMarketInScope(prelaunch, "prelaunch", false)).toBe(true);
+		expect(isMarketInScope(stock, "prelaunch", false)).toBe(false);
+		expect(isMarketInScope(market("UNITREE", "perp"), "prelaunch", false)).toBe(false);
 	});
 
 	it("suppresses only annotation-dependent results until classification data is ready", () => {

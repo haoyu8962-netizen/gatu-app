@@ -565,11 +565,17 @@ describe("MarketAssetInfo", () => {
 
 		expect(container.textContent).toContain("Circulating supply");
 		expect(container.textContent).toContain("298,690,514.637 HYPE");
+		const circulatingSupply = container.querySelector<HTMLElement>('dd[title="298,690,514.637 HYPE"]');
+		expect(circulatingSupply?.className).toContain("whitespace-normal");
+		expect(circulatingSupply?.className).toContain("[overflow-wrap:anywhere]");
+		expect(circulatingSupply?.className).not.toContain("truncate");
 		expect(container.textContent).toContain("Maximum supply");
 		const explorerLink = container.querySelector<HTMLAnchorElement>(`a[href="/explorer/token/${HYPE_TOKEN_ID}"]`);
 		expect(explorerLink).not.toBeNull();
 		expect(explorerLink?.closest('[data-testid="market-asset-info-links"]')).not.toBeNull();
 		expect(explorerLink?.textContent).toContain("Explorer");
+		expect(explorerLink?.className).toContain("min-h-11");
+		expect(explorerLink?.className).toContain("min-[1001px]:min-h-0");
 		expect(container.querySelector('[data-testid="market-asset-info-card"]')?.textContent).toContain(
 			"Underlying asset",
 		);

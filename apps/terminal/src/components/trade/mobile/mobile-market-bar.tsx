@@ -204,7 +204,7 @@ export function MobileMarketBar({ className }: Props) {
 							type="button"
 							onClick={() => setExpanded((value) => !value)}
 							className={cn(
-								"relative flex h-[30px] w-9 shrink-0 items-center justify-center rounded-[8px] border bg-transparent after:absolute after:-inset-y-[7px] after:-inset-x-1 hover:bg-trading-panel-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+								"relative flex h-[30px] w-9 shrink-0 items-center justify-center rounded-[8px] border bg-transparent after:absolute after:top-1/2 after:left-1/2 after:size-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] hover:bg-trading-panel-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 								expanded
 									? "border-trading-panel-control text-trading-panel-fg"
 									: "border-trading-panel-stroke-input text-trading-panel-muted",
@@ -312,13 +312,13 @@ function createSpotTokenInfo(
 	}
 
 	return (
-		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full items-center gap-1">
+		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full flex-col items-start">
 			{address ? (
 				<span className="block min-w-0 max-w-20 truncate text-[12px] font-semibold tabular-nums" title={address}>
 					{shortenAddress(address, 4, 4)}
 				</span>
 			) : null}
-			<span className="flex min-w-0 max-w-full items-center">
+			<span data-slot="mobile-spot-token-actions" className="flex min-w-0 max-w-full flex-wrap items-center">
 				{address ? (
 					<>
 						<a
@@ -326,7 +326,7 @@ function createSpotTokenInfo(
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label={t`Open token in explorer`}
-							className="inline-flex size-6 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+							className="inline-flex size-11 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
 						>
 							<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
 						</a>
@@ -334,7 +334,7 @@ function createSpotTokenInfo(
 							type="button"
 							onClick={handleCopy}
 							aria-label={copied ? t`Copied` : t`Copy token address`}
-							className="inline-flex size-6 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+							className="inline-flex size-11 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
 						>
 							{copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
 						</button>
@@ -429,7 +429,7 @@ function DetailCell({ label, multiline = false, tooltipContent, value }: DetailC
 
 	return (
 		<div className="min-w-0">
-			<div className="truncate text-[10px] leading-4 text-trading-panel-subtle">
+			<div className="text-[10px] leading-4 text-trading-panel-subtle">
 				{tooltipContent ? (
 					<>
 						<button
@@ -440,9 +440,9 @@ function DetailCell({ label, multiline = false, tooltipContent, value }: DetailC
 							onBlur={closeTooltip}
 							onClick={handleTooltipClick}
 							aria-describedby={tooltipPosition ? tooltipId : undefined}
-							className="max-w-full cursor-help truncate border-0 border-b border-dashed border-trading-panel-stroke-control bg-transparent p-0 text-left text-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							className="relative inline-flex max-w-full cursor-help border-0 border-b border-dashed border-trading-panel-stroke-control bg-transparent p-0 text-left text-current after:absolute after:top-1/2 after:left-1/2 after:h-11 after:min-w-11 after:w-full after:-translate-x-1/2 after:-translate-y-1/2 after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
-							{label}
+							<span className="truncate">{label}</span>
 						</button>
 						{tooltipPosition && createMarketDetailTooltip(tooltipId, tooltipContent, tooltipPosition)}
 					</>

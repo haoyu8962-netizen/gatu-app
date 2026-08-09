@@ -80,6 +80,7 @@ export function TokenSelectorPopup({
 			containerRef={containerRef}
 			filteredMarkets={filteredMarkets}
 			highlightedIndex={highlightedIndex}
+			handleListKeyDown={handleKeyDown}
 			headingId={headingId}
 			mobile={mobile}
 			onClose={mobile ? () => onOpenChange(false) : undefined}
@@ -92,7 +93,6 @@ export function TokenSelectorPopup({
 				className="inset-0 z-[90] h-dvh max-h-none w-full overflow-hidden overscroll-none rounded-none border-0 bg-surface p-0 shadow-none transition-[opacity,transform] duration-200 ease-out data-starting-style:-translate-y-[5px] data-starting-style:opacity-0 data-ending-style:-translate-y-[5px] data-ending-style:opacity-0 motion-reduce:transition-none"
 				overlayClassName="z-10 bg-transparent overscroll-none transition-none"
 				aria-labelledby={headingId}
-				onKeyDown={handleKeyDown}
 			>
 				{content}
 			</DrawerContent>
@@ -110,7 +110,6 @@ export function TokenSelectorPopup({
 			alignOffset={-2}
 			collisionPadding={8}
 			aria-labelledby={headingId}
-			onKeyDown={handleKeyDown}
 			keepMounted
 		>
 			{content}

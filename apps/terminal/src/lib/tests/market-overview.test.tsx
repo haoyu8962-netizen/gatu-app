@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MarketOverview } from "@/components/trade/market-overview";
 
 const mocks = vi.hoisted(() => ({
+	midPx: undefined as string | undefined,
 	perpCtxEvent: undefined as
 		| {
 				ctx: {
@@ -34,11 +35,16 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@gatu/ui", () => ({
-	Tooltip: ({ children }: { children: ReactNode }) => children,
+	Tooltip: ({ children, content }: { children: ReactNode; content: ReactNode }) => (
+		<>
+			{children}
+			{content}
+		</>
+	),
 }));
 
 vi.mock("@/hooks/trade/use-orderbook-mid-price", () => ({
-	useOrderbookMidPrice: () => ({ midPx: undefined, status: "idle" }),
+	useOrderbookMidPrice: () => ({ midPx: mocks.midPx, status: "idle" }),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
@@ -59,6 +65,7 @@ describe("MarketOverview", () => {
 	let root: Root;
 
 	beforeEach(() => {
+		mocks.midPx = undefined;
 		mocks.perpCtxEvent = undefined;
 		mocks.selectedMarket = {
 			kind: "builderPerp",
@@ -80,6 +87,7 @@ describe("MarketOverview", () => {
 	afterEach(() => {
 		act(() => root.unmount());
 		container.remove();
+		vi.restoreAllMocks();
 	});
 
 	it("uses the selected market snapshot while realtime subscriptions warm up", () => {
@@ -91,7 +99,7 @@ describe("MarketOverview", () => {
 			),
 		);
 
-		expect(container.textContent).toContain("Price71.8");
+		expect(container.textContent).toContain("Mark71.8");
 		expect(container.textContent).toContain("24h Change+1.8 / +2.57%");
 		expect(container.textContent).toContain("ORACLE71.7");
 		expect(container.textContent).toContain("$22,228,099.94");
@@ -121,13 +129,29 @@ describe("MarketOverview", () => {
 			),
 		);
 
-		expect(container.textContent).toContain("Price80");
+		expect(container.textContent).toContain("Mark80");
 		expect(container.textContent).toContain("24h Change+16 / +25.00%");
 		expect(container.textContent).toContain("ORACLE79");
 		expect(container.textContent).toContain("$10,000,000.00");
 		expect(container.textContent).toContain("$160.00");
 		expect(container.textContent).toContain("+0.0010%");
-		expect(container.textContent).not.toContain("Price71.8");
+		expect(container.textContent).not.toContain("Mark71.8");
+	});
+
+	it("uses the perpetual mark for price and change when the orderbook mid differs", () => {
+		mocks.midPx = "75";
+
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MarketOverview />
+				</I18nProvider>,
+			),
+		);
+
+		expect(container.textContent).toContain("Mark71.8");
+		expect(container.textContent).toContain("24h Change+1.8 / +2.57%");
+		expect(container.textContent).not.toContain("Mark75");
 	});
 
 	it("keeps unavailable funding distinct from a real zero rate", () => {
@@ -145,7 +169,85 @@ describe("MarketOverview", () => {
 		expect(container.textContent).not.toContain("0.0000%");
 	});
 
+	it("preserves zero and tiny funding signs in the current rate", () => {
+		mocks.selectedMarket.funding = "0";
+
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MarketOverview />
+				</I18nProvider>,
+			),
+		);
+
+		expect(container.textContent).toContain("0.0000%");
+		expect(container.textContent).not.toContain("+0.0000%");
+		expect(
+			Array.from(container.querySelectorAll(".text-trading-panel-subtle")).some((node) =>
+				node.textContent?.includes("0.0000%"),
+			),
+		).toBe(true);
+
+		mocks.selectedMarket.funding = "0.000001";
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MarketOverview />
+				</I18nProvider>,
+			),
+		);
+		expect(container.textContent).toContain("+0.0001%");
+		expect(
+			Array.from(container.querySelectorAll(".text-trading-panel-success")).some((node) =>
+				node.textContent?.includes("+0.0001%"),
+			),
+		).toBe(true);
+
+		mocks.selectedMarket.funding = "-0.000001";
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MarketOverview />
+				</I18nProvider>,
+			),
+		);
+		expect(container.textContent).toContain("-0.0001%");
+		expect(
+			Array.from(container.querySelectorAll(".text-trading-panel-error")).some((node) =>
+				node.textContent?.includes("-0.0001%"),
+			),
+		).toBe(true);
+	});
+
+	it("cleans up the funding countdown when funding becomes unavailable", () => {
+		const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
+		const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
+
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MarketOverview />
+				</I18nProvider>,
+			),
+		);
+
+		const intervalId = setIntervalSpy.mock.results.at(-1)?.value;
+		expect(intervalId).toBeDefined();
+
+		delete mocks.selectedMarket.funding;
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MarketOverview />
+				</I18nProvider>,
+			),
+		);
+
+		expect(clearIntervalSpy).toHaveBeenCalledWith(intervalId);
+	});
+
 	it("labels spot notionals with the selected market quote token", () => {
+		mocks.midPx = "1.3";
 		mocks.selectedMarket = {
 			kind: "spot",
 			name: "@999",
@@ -169,6 +271,8 @@ describe("MarketOverview", () => {
 			),
 		);
 
+		expect(container.textContent).toContain("Price1.3");
+		expect(container.textContent).toContain("24h Change+0.3 / +30.00%");
 		expect(container.textContent).toContain("24H VOL12,345.67 USDH");
 		expect(container.textContent).toContain("Market Cap1,250 USDH");
 		expect(container.textContent).not.toContain("$12,345.67");

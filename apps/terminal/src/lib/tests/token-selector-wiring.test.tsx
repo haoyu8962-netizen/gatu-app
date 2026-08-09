@@ -19,6 +19,7 @@ const testState = vi.hoisted(() => ({
 	markets: [] as MarketRow[],
 	marketsLoading: false,
 	toggleFavoriteMarket: vi.fn(),
+	onValueChange: vi.fn(),
 	measure: vi.fn(),
 	scrollToIndex: vi.fn(),
 	exchangeScope: "all" as ExchangeScope,
@@ -103,24 +104,47 @@ const AAPL_MARKET = {
 	funding: "0.00001",
 } as MarketRow;
 
+const UNITREE_MARKET = {
+	name: "para:UNITREE",
+	kind: "builderPerp",
+	shortName: "UNITREE",
+	pairName: "UNITREE-USDC",
+	dex: "para",
+	szDecimals: 2,
+	maxLeverage: 3,
+	markPx: "10",
+	prevDayPx: "9",
+	dayNtlVlm: "250000",
+	openInterest: "5000",
+	funding: "0.00001",
+} as MarketRow;
+
 const ANNOTATIONS = [["xyz:AAPL", { category: "stocks" }]] as PerpConciseAnnotationsResponse;
+const PRELAUNCH_ANNOTATIONS = [
+	["xyz:AAPL", { category: "stocks" }],
+	["para:UNITREE", { category: "preipo" }],
+] as PerpConciseAnnotationsResponse;
 const NOOP = () => {};
 
 function SelectorHookProbe() {
 	const selector = useTokenSelector({
 		value: "",
-		onValueChange: NOOP,
+		onValueChange: testState.onValueChange,
 		open: testState.open,
 		onOpenChange: NOOP,
 	});
 
 	return (
 		<div>
+			<input data-testid="selector-keyboard" onKeyDown={selector.handleKeyDown} />
 			<button type="button" data-testid="crypto-scope" onClick={() => selector.handleScopeSelect("crypto")}>
 				Crypto
 			</button>
 			<button type="button" data-testid="traditional-scope" onClick={() => selector.handleScopeSelect("traditional")}>
 				Traditional
+			</button>
+			<button type="button" data-testid="prelaunch-scope" onClick={() => selector.handleScopeSelect("prelaunch")}>
+				Pre-launch
 			</button>
 			<button type="button" data-testid="spot-scope" onClick={() => selector.handleScopeSelect("spot")}>
 				Spot
@@ -166,6 +190,7 @@ describe("token selector wiring", () => {
 		testState.refetchAnnotations.mockReset();
 		testState.refetchAnnotations.mockResolvedValue({ data: undefined });
 		testState.toggleFavoriteMarket.mockReset();
+		testState.onValueChange.mockReset();
 		testState.measure.mockReset();
 		testState.scrollToIndex.mockReset();
 		testState.exchangeScope = "all";
@@ -179,7 +204,7 @@ describe("token selector wiring", () => {
 		vi.clearAllMocks();
 	});
 
-	function renderHookProbe(scope: "crypto" | "traditional" | null = "crypto") {
+	function renderHookProbe(scope: "crypto" | "traditional" | "prelaunch" | null = "crypto") {
 		act(() => {
 			root.render(<SelectorHookProbe />);
 		});
@@ -217,6 +242,32 @@ describe("token selector wiring", () => {
 			container.querySelector<HTMLButtonElement>('[data-testid="retry"]')?.click();
 		});
 		expect(testState.refetchAnnotations).toHaveBeenCalledTimes(1);
+	});
+
+	it("loads and filters Pre-launch from official preipo annotations", () => {
+		testState.markets = [BTC_MARKET, AAPL_MARKET, UNITREE_MARKET];
+		testState.annotations = PRELAUNCH_ANNOTATIONS;
+
+		const output = renderHookProbe("prelaunch");
+
+		expect(output.getAttribute("data-loading")).toBe("false");
+		expect(output.getAttribute("data-error")).toBe("false");
+		expect(output.getAttribute("data-markets")).toBe("para:UNITREE");
+	});
+
+	it.each([
+		{ pending: true, error: false, loading: "true", hasError: "false" },
+		{ pending: false, error: true, loading: "false", hasError: "true" },
+	])("fails closed while Pre-launch classifications are unavailable", ({ pending, error, loading, hasError }) => {
+		testState.markets = [UNITREE_MARKET];
+		testState.annotationsPending = pending;
+		testState.annotationsError = error;
+
+		const output = renderHookProbe("prelaunch");
+
+		expect(output.getAttribute("data-loading")).toBe(loading);
+		expect(output.getAttribute("data-error")).toBe(hasError);
+		expect(output.getAttribute("data-markets")).toBe("");
 	});
 
 	it("keeps a successful empty response distinct from loading and errors", () => {
@@ -268,6 +319,46 @@ describe("token selector wiring", () => {
 
 		act(() => container.querySelector<HTMLButtonElement>('[data-testid="traditional-scope"]')?.click());
 		expect(output.getAttribute("data-subcategory")).toBe("stocks");
+	});
+
+	it("keeps an All-route browsing scope and subcategory across close and reopen", () => {
+		const output = renderHookProbe("crypto");
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="meme-subcategory"]')?.click());
+		expect(output.getAttribute("data-scope")).toBe("crypto");
+		expect(output.getAttribute("data-subcategory")).toBe("meme");
+
+		testState.open = false;
+		act(() => root.render(<SelectorHookProbe />));
+		testState.open = true;
+		act(() => root.render(<SelectorHookProbe />));
+
+		expect(output.getAttribute("data-scope")).toBe("crypto");
+		expect(output.getAttribute("data-subcategory")).toBe("meme");
+	});
+
+	it("scrolls the virtual list to the first row when primary or child filters change", () => {
+		testState.annotations = ANNOTATIONS;
+		renderHookProbe("crypto");
+		testState.scrollToIndex.mockClear();
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="meme-subcategory"]')?.click());
+		expect(testState.scrollToIndex).toHaveBeenLastCalledWith(0, { align: "start" });
+
+		testState.scrollToIndex.mockClear();
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="traditional-scope"]')?.click());
+		expect(testState.scrollToIndex).toHaveBeenLastCalledWith(0, { align: "start" });
+	});
+
+	it("keeps Arrow navigation and Enter selection available from the search context", () => {
+		renderHookProbe(null);
+		const keyboardTarget = container.querySelector<HTMLInputElement>('[data-testid="selector-keyboard"]');
+
+		act(() => keyboardTarget?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true })));
+		expect(testState.scrollToIndex).toHaveBeenLastCalledWith(1, { align: "auto" });
+
+		act(() => keyboardTarget?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+		expect(testState.onValueChange).toHaveBeenCalledWith("xyz:AAPL", expect.objectContaining({ name: "xyz:AAPL" }));
 	});
 
 	it("resets an externally selected HIP-3 scope when its dex filter is cleared", () => {
@@ -420,6 +511,106 @@ describe("token selector wiring", () => {
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 
+	it("routes list navigation keys only from search and uses the official scope labels", () => {
+		const handleListKeyDown = vi.fn();
+		const table = {
+			getHeaderGroups: () => [{ headers: [] }],
+		} as unknown as ReturnType<typeof useTokenSelector>["table"];
+
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<TokenSelectorContent
+						selectedMarket={undefined}
+						scope="traditional"
+						subcategory="all"
+						subcategories={[
+							{ value: "all", label: "All" },
+							{ value: "fx", label: "FX" },
+						]}
+						search=""
+						setSearch={NOOP}
+						isLoading={false}
+						hasClassificationError
+						onRetryClassifications={NOOP}
+						isFavorite={() => false}
+						sorting={[]}
+						handleSort={NOOP}
+						handleSelect={NOOP}
+						handleSubcategorySelect={NOOP}
+						handleScopeSelect={NOOP}
+						toggleFavorite={NOOP}
+						table={table}
+						rows={[]}
+						virtualItems={[]}
+						virtualTotalSize={0}
+						containerRef={{ current: null }}
+						filteredMarkets={[]}
+						highlightedIndex={-1}
+						handleListKeyDown={handleListKeyDown}
+						headingId="selector-keyboard-contract"
+						mobile
+						onClose={NOOP}
+					/>
+				</I18nProvider>,
+			);
+		});
+
+		const searchInput = container.querySelector<HTMLInputElement>('input[type="search"]');
+		const fxButton = [...container.querySelectorAll<HTMLButtonElement>('button[aria-label^="Filter by"]')].find(
+			(button) => button.textContent === "FX",
+		);
+		const prelaunchButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === "Pre-launch",
+		);
+		const closeButton = container.querySelector<HTMLButtonElement>('button[aria-label="Close"]');
+		const retryButton = [...container.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent === "Retry",
+		);
+		const sortButton = container.querySelector<HTMLButtonElement>('button[aria-label^="Sort by"]');
+		const primaryScopeLabels = [...container.querySelectorAll<HTMLButtonElement>("button")]
+			.map((button) => button.textContent?.trim())
+			.filter((label) =>
+				[
+					"Favorites",
+					"All",
+					"Perp",
+					"Spot",
+					"Crypto",
+					"Traditional Finance",
+					"HIP-3",
+					"Popular",
+					"Pre-launch",
+				].includes(label ?? ""),
+			);
+
+		expect(fxButton).toBeDefined();
+		expect(prelaunchButton).toBeDefined();
+		expect(primaryScopeLabels.slice(0, 9)).toEqual([
+			"Favorites",
+			"All",
+			"Perp",
+			"Spot",
+			"Crypto",
+			"Traditional Finance",
+			"HIP-3",
+			"Popular",
+			"Pre-launch",
+		]);
+		expect(closeButton).not.toBeNull();
+		expect(retryButton).toBeDefined();
+		expect(sortButton).not.toBeNull();
+		act(() => searchInput?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+		expect(handleListKeyDown).toHaveBeenCalledTimes(1);
+
+		act(() => fxButton?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+		act(() => prelaunchButton?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+		act(() => closeButton?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+		act(() => retryButton?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+		act(() => sortButton?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+		expect(handleListKeyDown).toHaveBeenCalledTimes(1);
+	});
+
 	it.each([false, true])("renders and operates Crypto subcategories when mobile is %s", (mobile) => {
 		const handleSubcategorySelect = vi.fn();
 		const table = {
@@ -470,6 +661,9 @@ describe("token selector wiring", () => {
 		});
 
 		const buttons = [...container.querySelectorAll<HTMLButtonElement>('button[aria-label^="Filter by"]')];
+		const mobileTableHeader = [...container.querySelectorAll<HTMLElement>("div")].find(
+			(element) => element.firstElementChild?.textContent === "Market" && element.className.includes("grid-cols-"),
+		);
 		expect(buttons.map((button) => button.textContent)).toEqual([
 			"All",
 			"AI",
@@ -488,6 +682,10 @@ describe("token selector wiring", () => {
 			"false",
 			"false",
 		]);
+		if (mobile) {
+			expect(mobileTableHeader?.className).toContain("grid-cols-[minmax(0,1fr)_74px_72px]");
+			expect(mobileTableHeader?.className).toContain("min-[390px]:grid-cols-[minmax(0,1fr)_102px_84px]");
+		}
 
 		act(() => buttons.at(-1)?.click());
 		expect(handleSubcategorySelect).toHaveBeenCalledWith("meme");

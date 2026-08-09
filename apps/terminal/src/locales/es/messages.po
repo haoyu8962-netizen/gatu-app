@@ -2601,10 +2601,6 @@ msgstr "Invertir la dirección de la transferencia"
 msgid "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
 msgstr "Para usuarios avanzados que buscan mayor flexibilidad y eficiencia de capital. El trading spot y de perpetuos está totalmente unificado, y los activos de garantía elegibles como HYPE y BTC pueden usarse directamente como garantía de perpetuos sin convertirlos al activo de liquidación."
 
-#: src/components/trade/chart/token-selector-content.tsx
-msgid "Forex"
-msgstr "Forex"
-
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Format for numbers and dates"
 #~ msgstr ""
@@ -2660,6 +2656,10 @@ msgstr "Financiamiento mostrado"
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 msgid "Funds are in Spot account"
 msgstr "Los fondos están en la cuenta Spot"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "FX"
+msgstr "Forex"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Gaming"
@@ -3355,6 +3355,7 @@ msgstr "Margen req."
 msgid "Margin Used"
 msgstr "Margen usado"
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Mark"
 msgstr "Marca"
@@ -3717,8 +3718,8 @@ msgstr "Red"
 
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
-msgid "NEW"
-msgstr "NUEVO"
+#~ msgid "NEW"
+#~ msgstr "NUEVO"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "New deposit"
@@ -4666,8 +4667,8 @@ msgid "Pre-IPO"
 msgstr "Pre-IPO"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#~ msgid "Pre-launch"
-#~ msgstr "Prelanzamiento"
+msgid "Pre-launch"
+msgstr "Prelanzamiento"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Prefer an app-like experience?"

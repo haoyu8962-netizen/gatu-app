@@ -134,7 +134,7 @@ describe("MobileMarketBar", () => {
 		expect(container.textContent).not.toContain("$12,345.67");
 	});
 
-	it("keeps the address and compact actions in the mobile detail row", () => {
+	it("keeps the address and non-overlapping touch actions in the mobile detail row", () => {
 		mocks.socials = {
 			displayName: "Token",
 			x: "https://x.com/example",
@@ -145,12 +145,43 @@ describe("MobileMarketBar", () => {
 		renderExpandedBar();
 
 		const tokenInfo = container.querySelector<HTMLElement>('[data-slot="mobile-spot-token-info"]');
-		expect(tokenInfo?.className).toContain("items-center");
-		expect(tokenInfo?.className).not.toContain("flex-col");
+		expect(tokenInfo?.className).toContain("flex-col");
+		expect(tokenInfo?.className).toContain("items-start");
 		expect(tokenInfo?.querySelector(`span[title="${BASE_TOKEN_ID}"]`)?.textContent).toBe("0x1111...1111");
-		expect(tokenInfo?.querySelector('a[aria-label="Open token in explorer"]')?.className).toContain("size-6");
-		expect(tokenInfo?.querySelector('button[aria-label="Copy token address"]')?.className).toContain("size-6");
+		const actionGroup = tokenInfo?.querySelector<HTMLElement>('[data-slot="mobile-spot-token-actions"]');
+		const explorerLink = tokenInfo?.querySelector<HTMLAnchorElement>('a[aria-label="Open token in explorer"]');
+		const copyButton = tokenInfo?.querySelector<HTMLButtonElement>('button[aria-label="Copy token address"]');
+		expect(actionGroup?.className).toContain("flex-wrap");
+		expect(explorerLink?.className).toContain("size-11");
+		expect(explorerLink?.className).not.toContain("after:size-11");
+		expect(copyButton?.className).toContain("size-11");
+		expect(copyButton?.className).not.toContain("after:size-11");
 		expect(tokenInfo?.querySelector('[data-slot="mock-social-links"]')?.getAttribute("data-target-size")).toBe("touch");
+	});
+
+	it("keeps compact controls visually small with 44px mobile hit targets", () => {
+		Object.assign(mocks.selectedMarket, {
+			kind: "perp",
+			name: "HYPE",
+			pairName: "HYPE-USDC",
+			maxLeverage: 10,
+			funding: "0.0001",
+		});
+
+		renderExpandedBar();
+
+		const expandButton = container.querySelector<HTMLButtonElement>('button[aria-label="Collapse market details"]');
+		expect(expandButton?.className).toContain("h-[30px]");
+		expect(expandButton?.className).toContain("w-9");
+		expect(expandButton?.className).toContain("after:size-11");
+
+		const tooltipTrigger = [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
+			button.textContent?.includes("Mark/ORACLE"),
+		);
+		expect(tooltipTrigger?.className).toContain("after:h-11");
+		expect(tooltipTrigger?.className).toContain("after:min-w-11");
+		expect(tooltipTrigger?.className).toContain("after:w-full");
+		expect(tooltipTrigger?.className).not.toContain("after:size-11");
 	});
 
 	it("renders address actions without a social row dependency", () => {
@@ -170,6 +201,7 @@ describe("MobileMarketBar", () => {
 
 		const tokenInfo = container.querySelector<HTMLElement>('[data-slot="mobile-spot-token-info"]');
 		expect(tokenInfo?.querySelector("[title]")).toBeNull();
+		expect(tokenInfo?.querySelector('[data-slot="mobile-spot-token-actions"]')?.className).toContain("flex-wrap");
 		expect(tokenInfo?.querySelector('a[aria-label="Open token in explorer"]')).toBeNull();
 		expect(tokenInfo?.querySelector('button[aria-label="Copy token address"]')).toBeNull();
 		expect(tokenInfo?.querySelector('[data-slot="mock-social-links"]')).not.toBeNull();

@@ -27,7 +27,7 @@ const TRADITIONAL_FINANCE_SUBCATEGORIES: MarketSubcategory[] = [
 	{ value: "stocks", label: "Stocks" },
 	{ value: "indices", label: "Indices" },
 	{ value: "commodities", label: "Commodities" },
-	{ value: "fx", label: "Forex" },
+	{ value: "fx", label: "FX" },
 	{ value: "preipo", label: "Pre-IPO" },
 ];
 
@@ -188,27 +188,8 @@ export function useTokenSelector({
 	});
 
 	useEffect(() => {
-		if (!open) return;
-		const nextScope = mapExchangeToMarketScope(exchangeScope);
-		setLocalScope(nextScope);
-		if (previousExchangeKeyRef.current !== exchangeKey) {
-			const nextSubcategory = exchangeDex ?? getDefaultMarketSubcategory(nextScope);
-			setSubcategoryByScope((previous) =>
-				previous[nextScope] === nextSubcategory ? previous : { ...previous, [nextScope]: nextSubcategory },
-			);
-		}
-		previousExchangeKeyRef.current = exchangeKey;
-	}, [open, exchangeScope, exchangeDex, exchangeKey]);
-
-	useEffect(() => {
-		if (open) return;
 		if (previousExchangeKeyRef.current === exchangeKey) return;
 		previousExchangeKeyRef.current = exchangeKey;
-
-		if (exchangeScope === "all") {
-			setLocalScope("all");
-			return;
-		}
 
 		const nextScope = mapExchangeToMarketScope(exchangeScope);
 		const nextSubcategory = exchangeDex ?? getDefaultMarketSubcategory(nextScope);
@@ -216,7 +197,7 @@ export function useTokenSelector({
 		setSubcategoryByScope((previous) =>
 			previous[nextScope] === nextSubcategory ? previous : { ...previous, [nextScope]: nextSubcategory },
 		);
-	}, [open, exchangeScope, exchangeDex, exchangeKey]);
+	}, [exchangeScope, exchangeDex, exchangeKey]);
 
 	function handleScopeSelect(newScope: MarketScope) {
 		setLocalScope(newScope);
@@ -224,7 +205,7 @@ export function useTokenSelector({
 			previous[newScope] ? previous : { ...previous, [newScope]: getDefaultMarketSubcategory(newScope) },
 		);
 		if (open && hasInitializedRef.current) {
-			setHighlightedIndex(0);
+			resetListNavigation();
 		}
 	}
 
@@ -303,6 +284,11 @@ export function useTokenSelector({
 	});
 	const virtualItems = virtualizer.getVirtualItems();
 	const virtualTotalSize = virtualizer.getTotalSize();
+
+	function resetListNavigation() {
+		setHighlightedIndex(0);
+		virtualizer.scrollToIndex(0, { align: "start" });
+	}
 
 	useEffect(() => {
 		if (!open) return;
@@ -398,7 +384,7 @@ export function useTokenSelector({
 	function handleSubcategorySelect(next: string) {
 		setSubcategoryByScope((previous) => ({ ...previous, [scope]: next }));
 		if (open && hasInitializedRef.current) {
-			setHighlightedIndex(0);
+			resetListNavigation();
 		}
 	}
 

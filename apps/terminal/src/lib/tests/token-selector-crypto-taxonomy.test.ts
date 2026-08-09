@@ -7,10 +7,17 @@ import {
 	isCryptoMarketSector,
 	isMainPerpMarketInCryptoSector,
 } from "@/domain/market/crypto-taxonomy";
+import { OFFICIAL_TERMINAL_CRYPTO_TAXONOMY_SNAPSHOT } from "@/lib/tests/fixtures/crypto-market-taxonomy-snapshot";
 
 describe("token selector crypto taxonomy", () => {
 	it("records the official terminal snapshot revision", () => {
-		expect(CRYPTO_MARKET_TAXONOMY_REVISION).toBe("2026-08-10");
+		expect(CRYPTO_MARKET_TAXONOMY_REVISION).toBe(OFFICIAL_TERMINAL_CRYPTO_TAXONOMY_SNAPSHOT.revision);
+		expect(OFFICIAL_TERMINAL_CRYPTO_TAXONOMY_SNAPSHOT.source).toBe("https://app.hyperliquid.xyz/trade/HYPE");
+		expect(OFFICIAL_TERMINAL_CRYPTO_TAXONOMY_SNAPSHOT.captureMethod).toContain("Official terminal");
+	});
+
+	it("requires review when the captured official membership snapshot changes", () => {
+		expect(CRYPTO_MARKET_NAMES_BY_SECTOR).toEqual(OFFICIAL_TERMINAL_CRYPTO_TAXONOMY_SNAPSHOT.namesBySector);
 	});
 
 	it("keeps the official sector order separate from the All UI filter", () => {

@@ -2614,10 +2614,6 @@ msgstr "Flip transfer direction"
 msgid "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
 msgstr "For advanced users who want higher flexibility and capital efficiency. Spot and perps trading are fully unified, and eligible collateral assets such as HYPE and BTC can be used directly as perp collateral without converting to the settlement asset."
 
-#: src/components/trade/chart/token-selector-content.tsx
-msgid "Forex"
-msgstr "Forex"
-
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Format for numbers and dates"
 #~ msgstr "Format for numbers and dates"
@@ -2677,6 +2673,10 @@ msgstr "Funds are in Spot account"
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Future Market clicks will immediately close the full position for this account and network."
 #~ msgstr "Future Market clicks will immediately close the full position for this account and network."
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "FX"
+msgstr "FX"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Gaming"
@@ -3372,6 +3372,7 @@ msgstr "Margin Req."
 msgid "Margin Used"
 msgstr "Margin Used"
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Mark"
 msgstr "Mark"
@@ -3738,8 +3739,8 @@ msgstr "Network"
 
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
-msgid "NEW"
-msgstr "NEW"
+#~ msgid "NEW"
+#~ msgstr "NEW"
 
 #: src/components/trade/tradebox/bridge/success-screen.tsx
 msgid "New deposit"
@@ -4687,8 +4688,8 @@ msgid "Pre-IPO"
 msgstr "Pre-IPO"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#~ msgid "Pre-launch"
-#~ msgstr "Pre-launch"
+msgid "Pre-launch"
+msgstr "Pre-launch"
 
 #: src/components/trade/components/wallet-modal.tsx
 msgid "Prefer an app-like experience?"

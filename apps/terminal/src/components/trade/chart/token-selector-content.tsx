@@ -40,6 +40,7 @@ interface Props {
 	containerRef: React.RefObject<HTMLDivElement | null>;
 	filteredMarkets: ReturnType<typeof useTokenSelector>["filteredMarkets"];
 	highlightedIndex: number;
+	handleListKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
 	headingId: string;
 	mobile?: boolean;
 	onClose?: () => void;
@@ -69,6 +70,7 @@ export function TokenSelectorContent({
 	containerRef,
 	filteredMarkets,
 	highlightedIndex,
+	handleListKeyDown,
 	headingId,
 	mobile = false,
 	onClose,
@@ -85,6 +87,7 @@ export function TokenSelectorContent({
 		{ value: "traditional", label: t`Traditional Finance` },
 		{ value: "hip3", label: t`HIP-3` },
 		{ value: "popular", label: t`Popular` },
+		{ value: "prelaunch", label: t`Pre-launch` },
 	];
 	const showSubcategoryTabs = subcategories.length > 0;
 	const tableLayout: MarketTableLayout = scope === "spot" ? "spot" : "default";
@@ -119,7 +122,7 @@ export function TokenSelectorContent({
 			case "commodities":
 				return t`Commodities`;
 			case "fx":
-				return t`Forex`;
+				return t`FX`;
 			case "preipo":
 				return t`Pre-IPO`;
 			case "ai":
@@ -179,6 +182,7 @@ export function TokenSelectorContent({
 						placeholder={t`Search markets...`}
 						value={search}
 						onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+						onKeyDown={handleListKeyDown}
 						onClear={() => setSearch("")}
 						size={mobile ? "md" : "sm"}
 						className={cn(
@@ -271,7 +275,7 @@ export function TokenSelectorContent({
 			) : null}
 			<div className="shrink-0 border-b border-trading-panel-stroke-card bg-surface">
 				{mobile ? (
-					<div className="grid w-full grid-cols-[minmax(0,1fr)_102px_84px] items-end gap-x-2 px-4 py-2 text-[10px] text-trading-panel-subtle">
+					<div className="grid w-full grid-cols-[minmax(0,1fr)_74px_72px] items-end gap-x-2 px-4 py-2 text-[10px] text-trading-panel-subtle min-[390px]:grid-cols-[minmax(0,1fr)_102px_84px]">
 						<div className="min-w-0 pb-0.5 text-left font-medium">{t`Market`}</div>
 						<div className="flex min-w-0 flex-col items-end text-right">
 							{renderMobileSortHeader("volume")}
@@ -355,9 +359,9 @@ export function TokenSelectorContent({
 						<span className="text-[13px] font-semibold text-trading-panel-muted">{t`No markets found.`}</span>
 					</div>
 				) : (
-					<div
-						role="listbox"
+					<ul
 						aria-label={t`Markets`}
+						className="m-0 list-none p-0"
 						style={{
 							height: `${virtualTotalSize}px`,
 							width: "100%",
@@ -384,7 +388,7 @@ export function TokenSelectorContent({
 								/>
 							);
 						})}
-					</div>
+					</ul>
 				)}
 			</div>
 

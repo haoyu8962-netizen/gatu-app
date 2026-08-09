@@ -1,9 +1,11 @@
+export type { FundingPeriodRates } from "./calculations";
 export {
 	exceedsBalance,
 	get24hChange,
 	get24hPriceChange,
 	getAvgPrice,
 	getEightHourFundingRate,
+	getFundingPeriodRates,
 	getMarketCapUsd,
 	getOiUsd,
 	getPercent,
