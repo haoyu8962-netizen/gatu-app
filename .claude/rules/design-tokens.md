@@ -1,7 +1,7 @@
 ## Design Tokens
 
 - **No hardcoded colors** - Never use hex values like `text-[#2b2e48]` or `bg-[#f1f3f4]`. Always use token utilities from `packages/ui/src/globals.css` + `apps/terminal/src/styles.css`.
-- **No arbitrary font sizes** - Never use `text-[10px]` etc. Use the named scale: `text-3xs` (10px), `text-2xs` (11px), `text-xs` (12px), `text-sm` (14px), `text-base` (16px)+.
+- **No arbitrary font sizes** - Never use `text-[10px]` etc. Use the named scale: `text-3xs` (10px), `text-2xs` (11px), `text-xs` (12px), `text-2sm` (13px, trading-panel body per design handoff), `text-sm` (14px), `text-base` (16px)+.
 
 ### Naming rule for NEW tokens
 
@@ -72,6 +72,7 @@ Use these with `border-*`, `ring-*`, `outline-*`, `divide-*` prefixes. The strok
 - `border-stroke-selected` selected/active border (brand)
 - `border-stroke-focus` focus ring / border
 - `border-stroke-disabled` disabled border
+- Trading panel (app-level, `apps/terminal/src/styles.css`): `border-trading-panel-stroke-card` (#e3e8ee 卡边), `border-trading-panel-stroke-input` (#d8dfe7 输入边), `border-trading-panel-stroke-control` (#c6cfd9 复选/虚线), `border-trading-panel-stroke-row` (#eef1f5 行分隔; dark 均映射语义令牌)
 - Semantic (each at 80% alpha): `border-stroke-brand-strong`, `border-stroke-error-strong`, `border-stroke-warning-strong`, `border-stroke-success-strong`, `border-stroke-info-strong`
 - Semantic soft (20% alpha): `border-stroke-brand-weak`, `border-stroke-error-weak`, etc.
 - Inverse: `border-stroke-inverse-strong` / `border-stroke-inverse-weak` / `border-stroke-inverse-disabled`

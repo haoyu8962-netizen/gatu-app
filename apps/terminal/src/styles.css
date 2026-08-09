@@ -51,6 +51,8 @@
   --text-2xs--line-height: 16px;
   --text-xs: 12px;
   --text-xs--line-height: 16px;
+  --text-2sm: 13px;
+  --text-2sm--line-height: 18px;
   --text-sm: 14px;
   --text-sm--line-height: 20px;
   --text-base: 16px;
@@ -207,8 +209,6 @@
     --market-down: var(--text-error);
     --orderbook-depth-bid: var(--text-success);
     --orderbook-depth-ask: var(--text-error);
-    --orderbook-compact-depth-bid: #1fa67d;
-    --orderbook-compact-depth-ask: #ed7088;
     --orderbook-flash-bid: #0a9981;
     --orderbook-flash-ask: #ed7088;
     --orderbook-text: var(--text-strong);
@@ -244,12 +244,14 @@
     --trading-panel-stroke-card: #e3e8ee;
     --trading-panel-stroke-input: #d8dfe7;
     --trading-panel-stroke-control: #c6cfd9;
+    --trading-panel-stroke-row: #eef1f5;
     --trading-panel-surface-card: #f7f9fb;
     --trading-panel-surface-hover: #f1f4f8;
     --trading-panel-control-active: #1a2330;
     --trading-panel-control-active-text: #ffffff;
     --trading-panel-success: #1f8a5a;
     --trading-panel-error: #d6453d;
+    --trading-panel-warning: #d98e1f;
     --trading-panel-success-fill: #1f8a5a;
     --trading-panel-error-fill: #d6453d;
     --trading-panel-neutral-disabled-fill: #c6cfd9;
@@ -371,8 +373,6 @@
     --market-down: var(--text-error);
     --orderbook-depth-bid: #1fa67d;
     --orderbook-depth-ask: #ed7088;
-    --orderbook-compact-depth-bid: #1fa67d;
-    --orderbook-compact-depth-ask: #ed7088;
     --orderbook-flash-bid: #0a9981;
     --orderbook-flash-ask: #ed7088;
     --orderbook-text: #d2dad7;
@@ -407,12 +407,14 @@
     --trading-panel-stroke-card: color-mix(in srgb, var(--stroke-weak) 40%, transparent);
     --trading-panel-stroke-input: color-mix(in srgb, var(--stroke-strong) 40%, var(--stroke-weak));
     --trading-panel-stroke-control: var(--stroke-strong);
+    --trading-panel-stroke-row: color-mix(in srgb, var(--stroke-weak) 40%, transparent);
     --trading-panel-surface-card: var(--bg-raised);
     --trading-panel-surface-hover: var(--fill-hover);
     --trading-panel-control-active: var(--fill-selected);
     --trading-panel-control-active-text: var(--text-inverse-strong);
     --trading-panel-success: var(--text-success);
     --trading-panel-error: var(--text-error);
+    --trading-panel-warning: var(--text-warning);
     --trading-panel-success-fill: var(--fill-success-weak);
     --trading-panel-error-fill: var(--fill-error-weak);
     --trading-panel-neutral-disabled-fill: var(--fill-disabled);
@@ -508,12 +510,14 @@
   --color-trading-panel-stroke-card: var(--trading-panel-stroke-card);
   --color-trading-panel-stroke-input: var(--trading-panel-stroke-input);
   --color-trading-panel-stroke-control: var(--trading-panel-stroke-control);
+  --color-trading-panel-stroke-row: var(--trading-panel-stroke-row);
   --color-trading-panel-card: var(--trading-panel-surface-card);
   --color-trading-panel-hover: var(--trading-panel-surface-hover);
   --color-trading-panel-control: var(--trading-panel-control-active);
   --color-trading-panel-on-control: var(--trading-panel-control-active-text);
   --color-trading-panel-success: var(--trading-panel-success);
   --color-trading-panel-error: var(--trading-panel-error);
+  --color-trading-panel-warning: var(--trading-panel-warning);
   --color-trading-panel-success-fill: var(--trading-panel-success-fill);
   --color-trading-panel-error-fill: var(--trading-panel-error-fill);
   --color-trading-panel-neutral-disabled-fill: var(--trading-panel-neutral-disabled-fill);
@@ -792,7 +796,7 @@
   }
 
   .trade-control-button {
-    padding-inline: 0.5rem;
+    padding-inline: 0.625rem;
   }
 
   .trade-order-type-button {
@@ -801,6 +805,20 @@
 
   .trade-compact-label {
     display: none;
+  }
+
+  .trade-card-label-compact {
+    display: none;
+  }
+
+  @container trade-panel (max-width: 18.75rem) {
+    .trade-card-label-full {
+      display: none;
+    }
+
+    .trade-card-label-compact {
+      display: block;
+    }
   }
 
   @container trade-panel (max-width: 12.4375rem) {
