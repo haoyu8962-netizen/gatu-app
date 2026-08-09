@@ -74,6 +74,8 @@ describe("responsive panel layout contract", () => {
 		expect(MAIN_WORKSPACE_SOURCE).toContain("layouts={layouts}");
 		expect(MAIN_WORKSPACE_SOURCE).toContain('useGridContentHeight(mounted, "tradingInterface", setLayouts)');
 		expect(MAIN_WORKSPACE_SOURCE).toContain('useGridContentHeight(mounted, "accountInfo", setLayouts)');
+		expect(MAIN_WORKSPACE_SOURCE).not.toContain('useGridContentHeight(mounted, "accountTable", setLayouts)');
+		expect(MAIN_WORKSPACE_SOURCE).toContain("<PositionsPanel />");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("margin={gridSpacing}");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("containerPadding={gridSpacing}");
 		expect(MAIN_WORKSPACE_SOURCE).toContain('data-panel-id="accountInfo"');

@@ -456,6 +456,10 @@ describe("mobile history disclosure cards", () => {
 	it("keeps trade history values, explorer links, and independent disclosure state", () => {
 		render(<MobileHistoryTab scrollMode="page" />);
 		expectM4VisualContract("mobile-trade-history-filter-row", "mobile-trade-history-footer", 3);
+		const historyList = container.querySelector<HTMLElement>('[data-testid="mobile-trade-history-list"]');
+		expect(historyList?.className).toContain("max-h-[min(60dvh,32rem)]");
+		expect(historyList?.className).toContain("overflow-y-auto");
+		expect(historyList?.className).toContain("overscroll-y-contain");
 		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("false");
 		expectDisclosureControls();
 
