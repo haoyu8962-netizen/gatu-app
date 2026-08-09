@@ -392,6 +392,10 @@ msgstr "Advanced order types"
 #~ msgstr "Agent verification failed"
 
 #: src/components/trade/chart/token-selector-content.tsx
+msgid "AI"
+msgstr "AI"
+
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-market-filter.tsx
@@ -1718,6 +1722,10 @@ msgstr "Decline"
 #~ msgstr "Default account setting. Each collateral asset has a single balance. Perps can only use the settlement asset as collateral, and cross margin is shared between cross positions that use the same collateral asset."
 
 #: src/components/trade/chart/token-selector-content.tsx
+msgid "Defi"
+msgstr "Defi"
+
+#: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
@@ -2670,6 +2678,10 @@ msgstr "Funds are in Spot account"
 #~ msgid "Future Market clicks will immediately close the full position for this account and network."
 #~ msgstr "Future Market clicks will immediately close the full position for this account and network."
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Gaming"
+msgstr "Gaming"
+
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Gas ({0})"
@@ -2963,6 +2975,14 @@ msgstr "Last Price"
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Latency:"
 #~ msgstr "Latency:"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Layer 1"
+msgstr "Layer 1"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Layer 2"
+msgstr "Layer 2"
 
 #: src/config/nav.tsx
 msgid "Leaderboard"
@@ -3547,8 +3567,8 @@ msgid "Maximum supply"
 msgstr "Maximum supply"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#~ msgid "Meme"
-#~ msgstr "Meme"
+msgid "Meme"
+msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx

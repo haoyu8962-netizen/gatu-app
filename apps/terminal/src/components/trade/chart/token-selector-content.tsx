@@ -122,6 +122,18 @@ export function TokenSelectorContent({
 				return t`Forex`;
 			case "preipo":
 				return t`Pre-IPO`;
+			case "ai":
+				return t`AI`;
+			case "defi":
+				return t`Defi`;
+			case "gaming":
+				return t`Gaming`;
+			case "layer1":
+				return t`Layer 1`;
+			case "layer2":
+				return t`Layer 2`;
+			case "meme":
+				return t`Meme`;
 			default:
 				return fallback;
 		}

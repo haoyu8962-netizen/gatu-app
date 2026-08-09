@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { TOKEN_SELECTOR_OVERSCAN, TOKEN_SELECTOR_ROW_HEIGHT_PX } from "@/config/layout";
 import { marketSearchConfig } from "@/config/search";
 import type { ExchangeScope } from "@/domain/market";
+import { CRYPTO_MARKET_SECTORS } from "@/domain/market/crypto-taxonomy";
 import { useMarketsInfo } from "@/lib/hyperliquid";
 import { createSearcher, type SearchConfig } from "@/lib/search";
 import { useExchangeScope } from "@/providers/exchange-scope";
@@ -28,6 +29,20 @@ const TRADITIONAL_FINANCE_SUBCATEGORIES: MarketSubcategory[] = [
 	{ value: "commodities", label: "Commodities" },
 	{ value: "fx", label: "Forex" },
 	{ value: "preipo", label: "Pre-IPO" },
+];
+
+const CRYPTO_MARKET_SUBCATEGORY_LABELS = {
+	ai: "AI",
+	defi: "Defi",
+	gaming: "Gaming",
+	layer1: "Layer 1",
+	layer2: "Layer 2",
+	meme: "Meme",
+} as const;
+
+const CRYPTO_MARKET_SUBCATEGORIES: MarketSubcategory[] = [
+	{ value: "all", label: "All" },
+	...CRYPTO_MARKET_SECTORS.map((sector) => ({ value: sector, label: CRYPTO_MARKET_SUBCATEGORY_LABELS[sector] })),
 ];
 
 const TOKEN_SELECTOR_SEARCH_CONFIG: SearchConfig<MarketRow> = {
@@ -94,6 +109,7 @@ function computeSubcategories(
 	spotMarkets: MarketsInfo["spotMarkets"],
 ): MarketSubcategory[] {
 	if (scope === "traditional") return TRADITIONAL_FINANCE_SUBCATEGORIES;
+	if (scope === "crypto") return CRYPTO_MARKET_SUBCATEGORIES;
 	if (scope === "perp") return [];
 	if (scope === "spot") return getSpotQuoteSubcategories(spotMarkets);
 
@@ -112,9 +128,12 @@ export function useTokenSelector({
 	onOpenChange,
 }: UseTokenSelectorOptions): UseTokenSelectorReturn {
 	const { scope: exchangeScope, dex: exchangeDex } = useExchangeScope();
+	const initialScope = mapExchangeToMarketScope(exchangeScope);
 	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-	const [localScope, setLocalScope] = useState<MarketScope>(() => mapExchangeToMarketScope(exchangeScope));
-	const [localSubcategory, setLocalSubcategory] = useState<string>(() => exchangeDex ?? "all");
+	const [localScope, setLocalScope] = useState<MarketScope>(initialScope);
+	const [subcategoryByScope, setSubcategoryByScope] = useState<Partial<Record<MarketScope, string>>>(() => ({
+		[initialScope]: exchangeDex ?? getDefaultMarketSubcategory(initialScope),
+	}));
 	const [search, setSearch] = useState("");
 	const [deferredSearch, setDeferredSearch] = useState("");
 	const [isSearchPending, startTransition] = useTransition();
@@ -128,7 +147,6 @@ export function useTokenSelector({
 	const setOpen = onOpenChange ?? setUncontrolledOpen;
 
 	const scope = localScope;
-	const subcategory = localSubcategory;
 
 	function handleSearchChange(value: string) {
 		setSearch(value);
@@ -158,6 +176,11 @@ export function useTokenSelector({
 		() => computeSubcategories(scope, builderPerpMarkets, spotMarkets),
 		[scope, builderPerpMarkets, spotMarkets],
 	);
+	const requestedSubcategory = subcategoryByScope[scope] ?? getDefaultMarketSubcategory(scope);
+	const subcategory =
+		subcategories.length === 0 || subcategories.some(({ value }) => value === requestedSubcategory)
+			? requestedSubcategory
+			: getDefaultMarketSubcategory(scope);
 	const selectorMarkets = useMemo(() => createMarketRows(markets, perpAnnotations), [markets, perpAnnotations]);
 	const classificationState = getMarketClassificationState(scope, perpAnnotations, {
 		isPending: annotationsPending,
@@ -166,8 +189,14 @@ export function useTokenSelector({
 
 	useEffect(() => {
 		if (!open) return;
-		setLocalScope(mapExchangeToMarketScope(exchangeScope));
-		setLocalSubcategory(exchangeDex ?? "all");
+		const nextScope = mapExchangeToMarketScope(exchangeScope);
+		setLocalScope(nextScope);
+		if (previousExchangeKeyRef.current !== exchangeKey) {
+			const nextSubcategory = exchangeDex ?? getDefaultMarketSubcategory(nextScope);
+			setSubcategoryByScope((previous) =>
+				previous[nextScope] === nextSubcategory ? previous : { ...previous, [nextScope]: nextSubcategory },
+			);
+		}
 		previousExchangeKeyRef.current = exchangeKey;
 	}, [open, exchangeScope, exchangeDex, exchangeKey]);
 
@@ -178,17 +207,22 @@ export function useTokenSelector({
 
 		if (exchangeScope === "all") {
 			setLocalScope("all");
-			setLocalSubcategory("all");
 			return;
 		}
 
-		setLocalScope(mapExchangeToMarketScope(exchangeScope));
-		setLocalSubcategory(exchangeDex ?? "all");
+		const nextScope = mapExchangeToMarketScope(exchangeScope);
+		const nextSubcategory = exchangeDex ?? getDefaultMarketSubcategory(nextScope);
+		setLocalScope(nextScope);
+		setSubcategoryByScope((previous) =>
+			previous[nextScope] === nextSubcategory ? previous : { ...previous, [nextScope]: nextSubcategory },
+		);
 	}, [open, exchangeScope, exchangeDex, exchangeKey]);
 
 	function handleScopeSelect(newScope: MarketScope) {
 		setLocalScope(newScope);
-		setLocalSubcategory(getDefaultMarketSubcategory(newScope));
+		setSubcategoryByScope((previous) =>
+			previous[newScope] ? previous : { ...previous, [newScope]: getDefaultMarketSubcategory(newScope) },
+		);
 		if (open && hasInitializedRef.current) {
 			setHighlightedIndex(0);
 		}
@@ -362,7 +396,7 @@ export function useTokenSelector({
 	}
 
 	function handleSubcategorySelect(next: string) {
-		setLocalSubcategory(next);
+		setSubcategoryByScope((previous) => ({ ...previous, [scope]: next }));
 		if (open && hasInitializedRef.current) {
 			setHighlightedIndex(0);
 		}

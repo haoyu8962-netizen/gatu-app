@@ -388,6 +388,10 @@ msgstr "Types d'ordres avancés"
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
+msgid "AI"
+msgstr "AI"
+
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-market-filter.tsx
@@ -1705,6 +1709,10 @@ msgstr "Refuser"
 #~ msgstr "Paramètre de compte par défaut. Chaque actif de garantie dispose d'un solde unique. Les perpétuels ne peuvent utiliser que l'actif de règlement comme garantie, et la marge croisée est partagée entre les positions croisées utilisant le même actif de garantie."
 
 #: src/components/trade/chart/token-selector-content.tsx
+msgid "Defi"
+msgstr "Defi"
+
+#: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
@@ -2653,6 +2661,10 @@ msgstr "Financement affiché"
 msgid "Funds are in Spot account"
 msgstr "Les fonds sont sur le compte Spot"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Gaming"
+msgstr "Gaming"
+
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Gas ({0})"
@@ -2946,6 +2958,14 @@ msgstr "Dernier prix"
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Latency:"
 #~ msgstr "Latence :"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Layer 1"
+msgstr "Layer 1"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Layer 2"
+msgstr "Layer 2"
 
 #: src/config/nav.tsx
 msgid "Leaderboard"
@@ -3526,8 +3546,8 @@ msgid "Maximum supply"
 msgstr "Offre maximale"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#~ msgid "Meme"
-#~ msgstr "Mème"
+msgid "Meme"
+msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx

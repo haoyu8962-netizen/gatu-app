@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MarketRow } from "@/components/trade/chart/token-selector-categories";
 import { TokenSelectorContent } from "@/components/trade/chart/token-selector-content";
 import { useTokenSelector } from "@/components/trade/chart/use-token-selector";
+import type { ExchangeScope } from "@/domain/market/scope";
 
 const testState = vi.hoisted(() => ({
 	annotations: undefined as PerpConciseAnnotationsResponse | undefined,
@@ -20,6 +21,9 @@ const testState = vi.hoisted(() => ({
 	toggleFavoriteMarket: vi.fn(),
 	measure: vi.fn(),
 	scrollToIndex: vi.fn(),
+	exchangeScope: "all" as ExchangeScope,
+	exchangeDex: undefined as string | undefined,
+	open: true,
 }));
 
 vi.mock("@gatu/hl-react", () => ({
@@ -56,7 +60,7 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 vi.mock("@/providers/exchange-scope", () => ({
-	useExchangeScope: () => ({ scope: "all", dex: undefined }),
+	useExchangeScope: () => ({ scope: testState.exchangeScope, dex: testState.exchangeDex }),
 }));
 
 vi.mock("@/stores/use-market-store", () => ({
@@ -106,7 +110,7 @@ function SelectorHookProbe() {
 	const selector = useTokenSelector({
 		value: "",
 		onValueChange: NOOP,
-		open: true,
+		open: testState.open,
 		onOpenChange: NOOP,
 	});
 
@@ -115,6 +119,21 @@ function SelectorHookProbe() {
 			<button type="button" data-testid="crypto-scope" onClick={() => selector.handleScopeSelect("crypto")}>
 				Crypto
 			</button>
+			<button type="button" data-testid="traditional-scope" onClick={() => selector.handleScopeSelect("traditional")}>
+				Traditional
+			</button>
+			<button type="button" data-testid="spot-scope" onClick={() => selector.handleScopeSelect("spot")}>
+				Spot
+			</button>
+			<button type="button" data-testid="meme-subcategory" onClick={() => selector.handleSubcategorySelect("meme")}>
+				Meme
+			</button>
+			<button type="button" data-testid="stocks-subcategory" onClick={() => selector.handleSubcategorySelect("stocks")}>
+				Stocks
+			</button>
+			<button type="button" data-testid="usdt-subcategory" onClick={() => selector.handleSubcategorySelect("USDT")}>
+				USDT
+			</button>
 			<button type="button" data-testid="retry" onClick={selector.retryClassifications}>
 				Retry
 			</button>
@@ -122,6 +141,9 @@ function SelectorHookProbe() {
 				data-loading={String(selector.isLoading)}
 				data-error={String(selector.hasClassificationError)}
 				data-markets={selector.rows.map((row) => row.original.name).join(",")}
+				data-scope={selector.scope}
+				data-subcategory={selector.subcategory}
+				data-subcategories={selector.subcategories.map(({ value }) => value).join(",")}
 			/>
 		</div>
 	);
@@ -146,6 +168,9 @@ describe("token selector wiring", () => {
 		testState.toggleFavoriteMarket.mockReset();
 		testState.measure.mockReset();
 		testState.scrollToIndex.mockReset();
+		testState.exchangeScope = "all";
+		testState.exchangeDex = undefined;
+		testState.open = true;
 	});
 
 	afterEach(() => {
@@ -154,13 +179,13 @@ describe("token selector wiring", () => {
 		vi.clearAllMocks();
 	});
 
-	function renderHookProbe(selectCrypto = true) {
+	function renderHookProbe(scope: "crypto" | "traditional" | null = "crypto") {
 		act(() => {
 			root.render(<SelectorHookProbe />);
 		});
-		if (selectCrypto) {
+		if (scope) {
 			act(() => {
-				container.querySelector<HTMLButtonElement>('[data-testid="crypto-scope"]')?.click();
+				container.querySelector<HTMLButtonElement>(`[data-testid="${scope}-scope"]`)?.click();
 			});
 		}
 
@@ -172,7 +197,7 @@ describe("token selector wiring", () => {
 	it("maps a pending annotation query to loading and suppresses classified rows", () => {
 		testState.annotationsPending = true;
 
-		const output = renderHookProbe();
+		const output = renderHookProbe("traditional");
 
 		expect(output.getAttribute("data-loading")).toBe("true");
 		expect(output.getAttribute("data-error")).toBe("false");
@@ -182,7 +207,7 @@ describe("token selector wiring", () => {
 	it("maps an annotation error to the retryable error state", () => {
 		testState.annotationsError = true;
 
-		const output = renderHookProbe();
+		const output = renderHookProbe("traditional");
 
 		expect(output.getAttribute("data-loading")).toBe("false");
 		expect(output.getAttribute("data-error")).toBe("true");
@@ -197,7 +222,7 @@ describe("token selector wiring", () => {
 	it("keeps a successful empty response distinct from loading and errors", () => {
 		testState.annotations = [];
 
-		const output = renderHookProbe();
+		const output = renderHookProbe("traditional");
 
 		expect(output.getAttribute("data-loading")).toBe("false");
 		expect(output.getAttribute("data-error")).toBe("false");
@@ -208,17 +233,87 @@ describe("token selector wiring", () => {
 		testState.annotations = ANNOTATIONS;
 		testState.annotationsError = true;
 
-		const output = renderHookProbe();
+		const output = renderHookProbe("traditional");
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="stocks-subcategory"]')?.click());
+
+		expect(output.getAttribute("data-loading")).toBe("false");
+		expect(output.getAttribute("data-error")).toBe("false");
+		expect(output.getAttribute("data-markets")).toBe("xyz:AAPL");
+	});
+
+	it("does not block Crypto while annotations are pending", () => {
+		testState.annotationsPending = true;
+
+		const output = renderHookProbe("crypto");
 
 		expect(output.getAttribute("data-loading")).toBe("false");
 		expect(output.getAttribute("data-error")).toBe("false");
 		expect(output.getAttribute("data-markets")).toBe("BTC");
+		expect(output.getAttribute("data-subcategories")).toBe("all,ai,defi,gaming,layer1,layer2,meme");
 	});
 
-	it("does not block annotation-independent scopes while annotations are pending", () => {
+	it("remembers a separate subcategory for each primary scope", () => {
+		testState.annotations = ANNOTATIONS;
+		const output = renderHookProbe("crypto");
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="meme-subcategory"]')?.click());
+		expect(output.getAttribute("data-subcategory")).toBe("meme");
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="traditional-scope"]')?.click());
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="stocks-subcategory"]')?.click());
+		expect(output.getAttribute("data-subcategory")).toBe("stocks");
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="crypto-scope"]')?.click());
+		expect(output.getAttribute("data-subcategory")).toBe("meme");
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="traditional-scope"]')?.click());
+		expect(output.getAttribute("data-subcategory")).toBe("stocks");
+	});
+
+	it("resets an externally selected HIP-3 scope when its dex filter is cleared", () => {
+		testState.exchangeScope = "builders-perp";
+		testState.exchangeDex = "xyz";
+		const output = renderHookProbe(null);
+
+		expect(output.getAttribute("data-scope")).toBe("hip3");
+		expect(output.getAttribute("data-subcategory")).toBe("xyz");
+
+		testState.exchangeDex = undefined;
+		act(() => root.render(<SelectorHookProbe />));
+
+		expect(output.getAttribute("data-scope")).toBe("hip3");
+		expect(output.getAttribute("data-subcategory")).toBe("all");
+	});
+
+	it("preserves the current scope subcategory when the selector closes and reopens", () => {
+		testState.exchangeScope = "spot";
+		testState.markets = [
+			{
+				name: "@1",
+				kind: "spot",
+				shortName: "BTC/USDT",
+				pairName: "BTC/USDT",
+				tokensInfo: [{ name: "BTC" }, { name: "USDT", displayName: "USDT" }],
+			} as MarketRow,
+		];
+		const output = renderHookProbe(null);
+
+		act(() => container.querySelector<HTMLButtonElement>('[data-testid="usdt-subcategory"]')?.click());
+		expect(output.getAttribute("data-subcategory")).toBe("USDT");
+
+		testState.open = false;
+		act(() => root.render(<SelectorHookProbe />));
+		testState.open = true;
+		act(() => root.render(<SelectorHookProbe />));
+
+		expect(output.getAttribute("data-scope")).toBe("spot");
+		expect(output.getAttribute("data-subcategory")).toBe("USDT");
+	});
+
+	it("does not block the unclassified All scope while annotations are pending", () => {
 		testState.annotationsPending = true;
 
-		const output = renderHookProbe(false);
+		const output = renderHookProbe(null);
 
 		expect(output.getAttribute("data-loading")).toBe("false");
 		expect(output.getAttribute("data-error")).toBe("false");
@@ -236,7 +331,7 @@ describe("token selector wiring", () => {
 				<I18nProvider i18n={i18n}>
 					<TokenSelectorContent
 						selectedMarket={undefined}
-						scope="crypto"
+						scope="traditional"
 						subcategory="all"
 						subcategories={[]}
 						search=""
@@ -323,5 +418,78 @@ describe("token selector wiring", () => {
 		expect(closeButton?.className).toContain("size-11");
 		act(() => closeButton?.click());
 		expect(onClose).toHaveBeenCalledTimes(1);
+	});
+
+	it.each([false, true])("renders and operates Crypto subcategories when mobile is %s", (mobile) => {
+		const handleSubcategorySelect = vi.fn();
+		const table = {
+			getHeaderGroups: () => [{ headers: [] }],
+		} as unknown as ReturnType<typeof useTokenSelector>["table"];
+		const subcategories = [
+			{ value: "all", label: "All" },
+			{ value: "ai", label: "AI" },
+			{ value: "defi", label: "Defi" },
+			{ value: "gaming", label: "Gaming" },
+			{ value: "layer1", label: "Layer 1" },
+			{ value: "layer2", label: "Layer 2" },
+			{ value: "meme", label: "Meme" },
+		];
+
+		act(() => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<TokenSelectorContent
+						selectedMarket={undefined}
+						scope="crypto"
+						subcategory="ai"
+						subcategories={subcategories}
+						search=""
+						setSearch={NOOP}
+						isLoading={false}
+						hasClassificationError={false}
+						onRetryClassifications={NOOP}
+						isFavorite={() => false}
+						sorting={[]}
+						handleSort={NOOP}
+						handleSelect={NOOP}
+						handleSubcategorySelect={handleSubcategorySelect}
+						handleScopeSelect={NOOP}
+						toggleFavorite={NOOP}
+						table={table}
+						rows={[]}
+						virtualItems={[]}
+						virtualTotalSize={0}
+						containerRef={{ current: null }}
+						filteredMarkets={[]}
+						highlightedIndex={-1}
+						headingId={`${mobile ? "mobile" : "desktop"}-crypto-categories`}
+						mobile={mobile}
+					/>
+				</I18nProvider>,
+			);
+		});
+
+		const buttons = [...container.querySelectorAll<HTMLButtonElement>('button[aria-label^="Filter by"]')];
+		expect(buttons.map((button) => button.textContent)).toEqual([
+			"All",
+			"AI",
+			"Defi",
+			"Gaming",
+			"Layer 1",
+			"Layer 2",
+			"Meme",
+		]);
+		expect(buttons.map((button) => button.getAttribute("aria-pressed"))).toEqual([
+			"false",
+			"true",
+			"false",
+			"false",
+			"false",
+			"false",
+			"false",
+		]);
+
+		act(() => buttons.at(-1)?.click());
+		expect(handleSubcategorySelect).toHaveBeenCalledWith("meme");
 	});
 });

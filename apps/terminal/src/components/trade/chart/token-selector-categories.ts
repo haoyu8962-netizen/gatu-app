@@ -1,5 +1,6 @@
 import type { PerpConciseAnnotationsResponse } from "@nktkas/hyperliquid";
 import { isTokenInCategory } from "@/domain/market";
+import { isCryptoMarketSector, isMainPerpMarketInCryptoSector } from "@/domain/market/crypto-taxonomy";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 
 export type MarketScope = "favorites" | "all" | "perp" | "spot" | "crypto" | "traditional" | "hip3" | "popular";
@@ -28,7 +29,8 @@ const TRADITIONAL_MARKET_CATEGORIES: ReadonlySet<string> = new Set([
 const PREFERRED_SPOT_QUOTES = ["USDC", "USDH", "USDT"];
 
 export function normalizePerpCategory(category: string | undefined): string | undefined {
-	return category?.trim().toLowerCase();
+	const normalized = category?.trim().toLowerCase();
+	return normalized === "stock" ? "stocks" : normalized;
 }
 
 export function createMarketRows(
@@ -49,7 +51,7 @@ export function getDefaultMarketSubcategory(scope: MarketScope): string {
 }
 
 export function marketScopeUsesAnnotations(scope: MarketScope): boolean {
-	return scope === "crypto" || scope === "traditional";
+	return scope === "traditional";
 }
 
 export function getMarketClassificationState(
@@ -98,8 +100,7 @@ export function isMarketInScope(market: MarketRow, scope: MarketScope, isFavorit
 		case "spot":
 			return market.kind === "spot";
 		case "crypto":
-			// Builder crypto markets may omit an annotation; traditional assets are explicitly categorized.
-			return market.kind !== "builderPerp" || category === undefined || category === "crypto";
+			return market.kind === "perp";
 		case "traditional":
 			return market.kind === "builderPerp" && category !== undefined && TRADITIONAL_MARKET_CATEGORIES.has(category);
 		case "hip3":
@@ -114,6 +115,14 @@ export function isMarketInSubcategory(market: MarketRow, scope: MarketScope, sub
 
 	if (scope === "traditional") {
 		return normalizePerpCategory(market.annotation?.category) === subcategory;
+	}
+
+	if (scope === "crypto") {
+		return (
+			market.kind === "perp" &&
+			isCryptoMarketSector(subcategory) &&
+			isMainPerpMarketInCryptoSector(market.name, subcategory)
+		);
 	}
 
 	if (scope === "spot" && market.kind === "spot") {

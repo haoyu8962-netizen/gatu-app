@@ -64,6 +64,18 @@ Archived snapshot locations:
 
 **Candle intervals:** 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 8h, 12h, 1d, 3d, 1w, 1M
 
+### Market selector taxonomy
+
+- Use `meta().universe[].name` as the canonical identity for main perpetuals. Spot identities and
+  `{dex}:{coin}` HIP-3 identities remain separate market kinds.
+- `perpConciseAnnotations` supplies broad HIP-3 categories such as stocks, indices, commodities,
+  FX, and pre-IPO. It does not supply the AI, Defi, Gaming, Layer 1, Layer 2, or Meme sectors used
+  by Hyperliquid's Crypto selector.
+- The Crypto sector mapping in `apps/terminal/src/domain/market/crypto-taxonomy.ts` mirrors the
+  official terminal taxonomy. `CRYPTO_MARKET_TAXONOMY_REVISION` records the latest verified
+  snapshot. The mapping uses exact, case-sensitive main-perp names, permits one market in multiple
+  sectors, and must not classify Spot or HIP-3 markets by matching display symbols.
+
 ---
 
 ## Account State

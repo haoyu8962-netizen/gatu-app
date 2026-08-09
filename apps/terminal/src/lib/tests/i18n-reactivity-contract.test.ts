@@ -6,6 +6,7 @@ const REACTIVE_COMPONENTS = [
 	"components/trade/header/top-nav.tsx",
 	"components/trade/header/language-switcher.tsx",
 	"components/trade/header/user-menu.tsx",
+	"components/trade/chart/token-selector-content.tsx",
 	"components/trade/mobile/mobile-account-view.tsx",
 	"components/trade/mobile/mobile-book-view.tsx",
 	"components/trade/mobile/mobile-funding-tab.tsx",

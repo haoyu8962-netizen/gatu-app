@@ -388,6 +388,10 @@ msgstr "उन्नत ऑर्डर प्रकार"
 #~ msgstr ""
 
 #: src/components/trade/chart/token-selector-content.tsx
+msgid "AI"
+msgstr "AI"
+
+#: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/position-market-filter.tsx
@@ -1705,6 +1709,10 @@ msgstr "अस्वीकार करें"
 #~ msgstr "डिफ़ॉल्ट खाता सेटिंग। हर collateral asset का एक ही बैलेंस होता है। Perps केवल settlement asset को collateral के रूप में इस्तेमाल कर सकते हैं, और cross margin उसी collateral asset का उपयोग करने वाली cross positions के बीच साझा होता है।"
 
 #: src/components/trade/chart/token-selector-content.tsx
+msgid "Defi"
+msgstr "Defi"
+
+#: src/components/trade/chart/token-selector-content.tsx
 #~ msgid "DeFi"
 #~ msgstr "DeFi"
 
@@ -2653,6 +2661,10 @@ msgstr "प्रदर्शित फंडिंग"
 msgid "Funds are in Spot account"
 msgstr "धन Spot खाते में है"
 
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Gaming"
+msgstr "Gaming"
+
 #. placeholder {0}: gas.token.symbol
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Gas ({0})"
@@ -2946,6 +2958,14 @@ msgstr "अंतिम मूल्य"
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Latency:"
 #~ msgstr "लेटेंसी:"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Layer 1"
+msgstr "Layer 1"
+
+#: src/components/trade/chart/token-selector-content.tsx
+msgid "Layer 2"
+msgstr "Layer 2"
 
 #: src/config/nav.tsx
 msgid "Leaderboard"
@@ -3526,8 +3546,8 @@ msgid "Maximum supply"
 msgstr "अधिकतम आपूर्ति"
 
 #: src/components/trade/chart/token-selector-content.tsx
-#~ msgid "Meme"
-#~ msgstr "मीम"
+msgid "Meme"
+msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 #: src/components/trade/tradebox/trade-form-fields.tsx
