@@ -215,6 +215,7 @@ msgstr "Access restricted"
 
 #: src/components/trade/tradebox/account-panel.tsx
 #: src/components/trade/tradebox/trade-header.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/config/nav.tsx
 msgid "Account"
 msgstr "Account"
@@ -240,6 +241,7 @@ msgstr "Account Equity"
 msgid "Account Margin Ratio"
 msgstr "Account Margin Ratio"
 
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "Account mode"
@@ -357,6 +359,11 @@ msgstr "Adjust Isolated Margin"
 #: src/components/trade/mobile/mobile-position-card.tsx
 msgid "Adjust isolated margin for {displayName}"
 msgstr "Adjust isolated margin for {displayName}"
+
+#: src/components/trade/tradebox/leverage-modal.tsx
+#: src/components/trade/tradebox/margin-mode-modal.tsx
+msgid "Adjust leverage"
+msgstr "Adjust leverage"
 
 #: src/components/trade/positions/position-actions-dropdown.tsx
 msgid "Adjust Margin"
@@ -816,11 +823,11 @@ msgstr "Camera preview for desktop wallet QR"
 #: src/components/trade/positions/orders-tab.tsx
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-tpsl-modal.tsx
-#: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Cancel"
 msgstr "Cancel"
@@ -1173,6 +1180,7 @@ msgstr "Configured TP/SL amount"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Confirm"
 msgstr "Confirm"
@@ -1667,8 +1675,6 @@ msgstr "Cumulative funding paid or received since this position was opened."
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 #: src/components/trade/positions/position-market-filter.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/account-mode-modal.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/twap/twap-subview-tabs.tsx
 msgid "Current"
@@ -1738,7 +1744,6 @@ msgstr "Deployer"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/account-ledger.ts
 #: src/config/ui-text.ts
 #: src/config/ui-text.ts
@@ -2135,7 +2140,6 @@ msgid "Equity"
 msgstr "Equity"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
-#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/scale-order-summary.tsx
 #: src/config/ui-text.ts
 msgid "Est. Fee"
@@ -2173,6 +2177,10 @@ msgstr "Estimated Liquidation Price"
 msgid "Estimated PnL"
 msgstr "Estimated PnL"
 
+#: src/components/trade/tradebox/tp-sl-section.tsx
+msgid "Estimated PnL after trigger"
+msgstr "Estimated PnL after trigger"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 #: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -2187,6 +2195,7 @@ msgstr "Ethereum is a programmable blockchain for smart contracts and decentrali
 msgid "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 msgstr "Every {TWAP_SUBORDER_INTERVAL_SECONDS} seconds"
 
+#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/order-input.ts
 msgid "Exceeds max size"
 msgstr "Exceeds max size"
@@ -2204,7 +2213,6 @@ msgstr "Executed Size"
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/components/historical-order-price.tsx
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
 msgid "Execution"
 msgstr "Execution"
 
@@ -2522,6 +2530,7 @@ msgstr "Fee"
 #~ msgid "Fee rate must be between 0.001% and 1%"
 #~ msgstr "Fee rate must be between 0.001% and 1%"
 
+#: src/components/trade/tradebox/order-summary.tsx
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Fees"
 msgstr "Fees"
@@ -2694,12 +2703,16 @@ msgid "GTC (Good Til Cancel)"
 msgstr "GTC (Good Til Cancel)"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "H"
-msgstr "H"
+#~ msgid "H"
+#~ msgstr "H"
 
 #: src/components/trade/positions/balances-tab.tsx
 msgid "Hide small"
 msgstr "Hide small"
+
+#: src/components/trade/tradebox/leverage-editor.tsx
+msgid "High leverage significantly increases liquidation risk. Use with caution."
+msgstr "High leverage significantly increases liquidation risk. Use with caution."
 
 #: src/components/trade/mobile/mobile-twap-history-list.tsx
 #: src/components/trade/positions/twap-history-table.tsx
@@ -2751,6 +2764,7 @@ msgstr "Hold for 800 ms to confirm · Each market may return a different result"
 msgid "Hold to reveal QR"
 msgstr "Hold to reveal QR"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Hour(s)"
 msgstr "Hour(s)"
@@ -2958,9 +2972,9 @@ msgstr "Leaderboard"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/tradebox/leverage-editor.tsx
 #: src/components/trade/tradebox/leverage-slider.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
-#: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Leverage"
 msgstr "Leverage"
 
@@ -3011,7 +3025,6 @@ msgstr "Limit execution"
 
 #: src/components/trade/positions/position-limit-close-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 msgid "Limit Price"
 msgstr "Limit Price"
@@ -3223,6 +3236,7 @@ msgid "Looking for the desktop wallet QR..."
 msgstr "Looking for the desktop wallet QR..."
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/trade-form-tp-sl.tsx
 msgid "Loss"
 msgstr "Loss"
 
@@ -3235,8 +3249,8 @@ msgstr "Low balance"
 #~ msgstr "Low Balance"
 
 #: src/components/trade/tradebox/trade-form-twap.tsx
-msgid "M"
-msgstr "M"
+#~ msgid "M"
+#~ msgstr "M"
 
 #: src/components/trade/components/global-settings-modal.tsx
 msgid "Mainnet"
@@ -3252,6 +3266,7 @@ msgid "Maintenance Margin Ratio"
 msgstr "Maintenance Margin Ratio"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/tradebox/order-summary.tsx
 msgid "Maker"
 msgstr "Maker"
 
@@ -3282,6 +3297,7 @@ msgstr "Manage TP/SL"
 #: src/components/trade/mobile/mobile-position-card.tsx
 #: src/components/trade/positions/position-filter-toolbar.tsx
 #: src/components/trade/positions/positions-tab.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Margin"
 msgstr "Margin"
 
@@ -3294,8 +3310,8 @@ msgstr "Margin"
 #~ msgstr "Margin & account"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
-msgid "Margin & leverage"
-msgstr "Margin & leverage"
+#~ msgid "Margin & leverage"
+#~ msgstr "Margin & leverage"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "Margin amount"
@@ -3307,6 +3323,7 @@ msgstr "Margin and account risk at a glance"
 
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 msgid "Margin mode"
 msgstr "Margin mode"
 
@@ -3525,10 +3542,12 @@ msgstr "Maximum supply"
 #~ msgstr "Meme"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/ui/price-input.tsx
 msgid "Mid"
 msgstr "Mid"
 
+#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/lib/errors/definitions/spot-input.ts
 msgid "Min order ${ORDER_MIN_NOTIONAL_USD}"
 msgstr "Min order ${ORDER_MIN_NOTIONAL_USD}"
@@ -3571,6 +3590,7 @@ msgstr "Minimum withdrawal is ${0}"
 msgid "Minimum withdrawal is ${minimum}"
 msgstr "Minimum withdrawal is ${minimum}"
 
+#: src/components/trade/tradebox/trade-form-twap.tsx
 #: src/components/trade/tradebox/trade-form-twap.tsx
 msgid "Minute(s)"
 msgstr "Minute(s)"
@@ -4239,8 +4259,6 @@ msgstr "Original Size"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
@@ -4629,6 +4647,10 @@ msgstr "Positions"
 msgid "Positions changed while this confirmation was open. Close and reopen it before submitting."
 msgstr "Positions changed while this confirmation was open. Close and reopen it before submitting."
 
+#: src/lib/trade/tif.ts
+msgid "Post Only"
+msgstr "Post Only"
+
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Pre-IPO"
 msgstr "Pre-IPO"
@@ -4684,6 +4706,7 @@ msgstr "Press and hold for 4 seconds"
 #: src/components/trade/positions/twap-fill-history-table.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
 #: src/components/trade/tradebox/price-input-with-percent.tsx
+#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/config/ui-text.ts
 msgid "Price"
 msgstr "Price"
@@ -4748,6 +4771,7 @@ msgid "Processing..."
 msgstr "Processing..."
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/trade-form-tp-sl.tsx
 msgid "Profit"
 msgstr "Profit"
 
@@ -5655,14 +5679,17 @@ msgstr "Size precision must be a non-negative integer"
 #~ msgid "SL"
 #~ msgstr "SL"
 
+#: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be above entry"
 msgstr "SL must be above entry"
 
+#: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "SL must be below entry"
 msgstr "SL must be below entry"
 
+#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "SL Price"
 msgstr "SL Price"
@@ -5856,6 +5883,7 @@ msgstr "Stop Limit"
 
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
+#: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "Stop Loss"
 msgstr "Stop Loss"
 
@@ -5876,6 +5904,7 @@ msgid "Stop loss limit price"
 msgstr "Stop loss limit price"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/trade-form-tp-sl.tsx
 msgid "Stop loss return"
 msgstr "Stop loss return"
 
@@ -5942,7 +5971,6 @@ msgstr "Support"
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/components/spot-swap-modal.tsx
 #: src/components/trade/positions/balances-tab.tsx
-#: src/components/trade/tradebox/trade-form-fields.tsx
 msgid "Swap"
 msgstr "Swap"
 
@@ -6051,8 +6079,8 @@ msgstr "Switch to {marketName} market, {sideLabel} order"
 #~ msgstr "Switch to {marketName} market, short order"
 
 #: src/components/trade/tradebox/account-mode-modal.tsx
-msgid "Switch to {selectedModeLabel}"
-msgstr "Switch to {selectedModeLabel}"
+#~ msgid "Switch to {selectedModeLabel}"
+#~ msgstr "Switch to {selectedModeLabel}"
 
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -6078,6 +6106,10 @@ msgstr "Switch to light mode"
 msgid "Switch to Mainnet"
 msgstr "Switch to Mainnet"
 
+#: src/components/trade/tradebox/tp-sl-section.tsx
+msgid "Switch unit"
+msgstr "Switch unit"
+
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
@@ -6098,6 +6130,7 @@ msgstr "Switching..."
 #~ msgid "Take Market"
 #~ msgstr "Take Market"
 
+#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/hooks/trade/use-order-display-labels.ts
@@ -6135,6 +6168,7 @@ msgid "Take Profit Market"
 msgstr "Take Profit Market"
 
 #: src/components/trade/positions/position-tpsl-modal.tsx
+#: src/components/trade/tradebox/trade-form-tp-sl.tsx
 msgid "Take profit return"
 msgstr "Take profit return"
 
@@ -6149,6 +6183,7 @@ msgid "Take profit trigger must be below mark"
 msgstr "Take profit trigger must be below mark"
 
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/tradebox/order-summary.tsx
 msgid "Taker"
 msgstr "Taker"
 
@@ -6626,6 +6661,7 @@ msgstr "This will replace any current mobile trading key with an inaccessible ke
 #~ msgid "This will revoke {0} current mobile trading key. Existing phones will stop trading."
 #~ msgstr "This will revoke {0} current mobile trading key. Existing phones will stop trading."
 
+#: src/components/trade/tradebox/trade-form-fields.tsx
 #: src/components/trade/tradebox/trade-form-tif.tsx
 #: src/components/trade/tradebox/trade-form-tif.tsx
 msgid "TIF"
@@ -6766,14 +6802,17 @@ msgstr "Total time"
 #~ msgid "TP"
 #~ msgstr "TP"
 
+#: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "TP must be above entry"
 msgstr "TP must be above entry"
 
+#: src/components/trade/tradebox/trade-form-tp-sl.tsx
 #: src/lib/errors/definitions/tpsl.ts
 msgid "TP must be below entry"
 msgstr "TP must be below entry"
 
+#: src/components/trade/tradebox/tp-sl-section.tsx
 #: src/components/trade/tradebox/tp-sl-section.tsx
 msgid "TP Price"
 msgstr "TP Price"
@@ -6986,7 +7025,6 @@ msgstr "Transfers between Spot and Perps are unavailable in unified account mode
 #: src/components/trade/components/historical-order-price.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 #: src/components/trade/positions/orders-tab.tsx
-#: src/components/trade/tradebox/advanced-order-dropdown.tsx
 #: src/hooks/trade/use-order-display-labels.ts
 msgid "Trigger"
 msgstr "Trigger"
@@ -7250,6 +7288,7 @@ msgid "Unsupported resolution: {0}"
 msgstr "Unsupported resolution: {0}"
 
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Update failed"
 msgstr "Update failed"
@@ -7259,6 +7298,7 @@ msgstr "Update failed"
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/positions/orders-history-tab.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
+#: src/components/trade/tradebox/leverage-modal.tsx
 #: src/components/trade/tradebox/margin-mode-modal.tsx
 msgid "Updated"
 msgstr "Updated"
@@ -7303,6 +7343,10 @@ msgstr "Use {priceText} as limit price"
 #: src/routes/mobile-agent-sync.tsx
 #~ msgid "Use a different phone link"
 #~ msgstr "Use a different phone link"
+
+#: src/components/trade/tradebox/trade-form-fields.tsx
+msgid "Use max available balance"
+msgstr "Use max available balance"
 
 #: src/components/trade/mobile/mobile-trade-price-field.tsx
 msgid "Use mid price"
