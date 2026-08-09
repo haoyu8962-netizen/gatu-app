@@ -412,6 +412,8 @@
 @layer base {
 	* {
 		border-color: var(--stroke-weak);
+		scrollbar-width: thin;
+		scrollbar-color: var(--stroke-strong) transparent;
 	}
 
 	body {
