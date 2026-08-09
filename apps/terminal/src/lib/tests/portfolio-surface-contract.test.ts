@@ -21,7 +21,7 @@ describe("portfolio surface contract", () => {
 
 	it("exposes transfer history only through the portfolio account activity surface", () => {
 		expect(PORTFOLIO_PAGE).toContain("transfersContent={<MobileAccountTransfersTab");
-		expect(PORTFOLIO_PAGE).toContain("<PositionsPanel includeTransfers />");
+		expect(PORTFOLIO_PAGE).toContain("<PositionsPanel includeTransfers autoHeight={isConnected} />");
 	});
 
 	it("keeps Send available in the responsive portfolio toolbar", () => {

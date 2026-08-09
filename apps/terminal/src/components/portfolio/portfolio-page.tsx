@@ -141,9 +141,9 @@ export function PortfolioPage() {
 								emptyDescription={<Trans>Connect wallet to view portfolio</Trans>}
 							/>
 						) : (
-							<div className={isConnected ? "h-[420px]" : "h-24"}>
+							<div className={cn(!isConnected && "h-24")}>
 								<Suspense fallback={<AccountPanelSkeleton />}>
-									<PositionsPanel includeTransfers />
+									<PositionsPanel includeTransfers autoHeight={isConnected} />
 								</Suspense>
 							</div>
 						)}
@@ -169,5 +169,5 @@ export function PortfolioPage() {
 }
 
 function AccountPanelSkeleton() {
-	return <div className="h-full animate-pulse bg-surface" />;
+	return <div className="h-full min-h-64 animate-pulse bg-surface" />;
 }
