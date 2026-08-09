@@ -1,10 +1,11 @@
-import { Suspense, useEffect, useRef, useState } from "react";
-import { Responsive, useContainerWidth } from "react-grid-layout";
+import { type Dispatch, type SetStateAction, Suspense, useEffect, useRef, useState } from "react";
+import { Responsive, type ResponsiveLayouts, useContainerWidth } from "react-grid-layout";
 import {
 	DESKTOP_GRID_BREAKPOINTS,
 	DESKTOP_GRID_COLS,
 	DESKTOP_GRID_GAP_PX,
 	DESKTOP_GRID_ROW_HEIGHT_PX,
+	type DesktopGridBreakpoint,
 	readDesktopGridLayouts,
 	syncGridItemContentHeight,
 	writeDesktopGridLayouts,
@@ -27,27 +28,39 @@ const PositionsPanel = createLazyComponent(() => import("../positions/positions-
 const TradePanel = createLazyComponent(() => import("../tradebox/trade-panel"), "TradePanel");
 
 const gridSpacing = [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX] as const;
+
+function useGridContentHeight(
+	mounted: boolean,
+	itemId: string,
+	setLayouts: Dispatch<SetStateAction<ResponsiveLayouts<DesktopGridBreakpoint>>>,
+) {
+	const contentRef = useRef<HTMLDivElement | null>(null);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: ref target only exists after the grid mounts
+	useEffect(() => {
+		const node = contentRef.current;
+		if (!node) return;
+		const observer = new ResizeObserver(() => {
+			const contentHeight = node.offsetHeight;
+			if (contentHeight === 0) return;
+			setLayouts((prev) => syncGridItemContentHeight(prev, itemId, contentHeight));
+		});
+		observer.observe(node);
+		return () => observer.disconnect();
+	}, [mounted]);
+
+	return contentRef;
+}
 const panelFallback = <div className="h-full w-full animate-pulse bg-fill-weaker" />;
 const tradePanelFallback = <div className="h-[41rem] w-full animate-pulse bg-fill-weaker" />;
+const accountPanelFallback = <div className="h-80 w-full animate-pulse bg-fill-weaker" />;
 const chartPanelFallback = <div className="h-full w-full bg-background" />;
 
 export function MainWorkspace() {
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
 	const [layouts, setLayouts] = useState(readDesktopGridLayouts);
-	const tradeContentRef = useRef<HTMLDivElement | null>(null);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: ref target only exists after the grid mounts
-	useEffect(() => {
-		const node = tradeContentRef.current;
-		if (!node) return;
-		const observer = new ResizeObserver(() => {
-			const contentHeight = node.offsetHeight;
-			if (contentHeight === 0) return;
-			setLayouts((prev) => syncGridItemContentHeight(prev, "tradingInterface", contentHeight));
-		});
-		observer.observe(node);
-		return () => observer.disconnect();
-	}, [mounted]);
+	const tradeContentRef = useGridContentHeight(mounted, "tradingInterface", setLayouts);
+	const accountContentRef = useGridContentHeight(mounted, "accountInfo", setLayouts);
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const { routeMarketName } = useExchangeScope();
 	const navigateToMarket = useMarketNavigation();
@@ -133,14 +146,12 @@ export function MainWorkspace() {
 						</Suspense>
 					</div>
 
-					<div
-						key="accountInfo"
-						data-panel-id="accountInfo"
-						className="desktop-grid-panel overflow-y-auto overscroll-contain bg-surface"
-					>
-						<Suspense fallback={panelFallback}>
-							<AccountPanel />
-						</Suspense>
+					<div key="accountInfo" data-panel-id="accountInfo" className="desktop-grid-panel overflow-hidden bg-surface">
+						<div ref={accountContentRef}>
+							<Suspense fallback={accountPanelFallback}>
+								<AccountPanel />
+							</Suspense>
+						</div>
 					</div>
 				</Responsive>
 			) : (

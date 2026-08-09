@@ -126,7 +126,7 @@ export function AccountPanel() {
 		: [];
 
 	return (
-		<div className="h-full min-h-0 flex flex-col bg-surface border-t border-stroke-weak pb-6 overflow-hidden">
+		<div className="flex flex-col bg-surface border-t border-stroke-weak pb-6">
 			<div className="px-2 py-2 border-b border-trading-panel-stroke-card">
 				<span className="text-2sm font-bold text-trading-panel-fg">{t`Account`}</span>
 			</div>
@@ -134,7 +134,7 @@ export function AccountPanel() {
 			{!isConnected ? (
 				<div className="flex-1 text-xs text-fg-muted text-center py-4">{t`Connect wallet to view account`}</div>
 			) : (
-				<div className="min-h-0 flex-1 p-2 overflow-y-auto">
+				<div className="p-2">
 					{hasPerpData && (
 						<>
 							<p className="text-2sm font-bold text-trading-panel-fg mb-1">{t`Perps Overview`}</p>

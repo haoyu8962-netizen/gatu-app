@@ -100,7 +100,7 @@ describe("desktop grid layout", () => {
 			w: 4,
 			h: 8,
 			minW: 4,
-			resizeHandles: ["n", "w", "nw"],
+			resizeHandles: ["w"],
 		});
 		expect((compactMarketData?.y ?? 0) + (compactMarketData?.h ?? 0)).toBeCloseTo(compactAccountInfo?.y ?? 0);
 		expect((compactAccountTable?.y ?? 0) + (compactAccountTable?.h ?? 0)).toBeCloseTo(
