@@ -123,12 +123,12 @@ export function OrderbookPanel() {
 			</div>
 
 			<TabsContent value="book" className="flex-1 min-h-0 mt-0 pt-0 flex flex-col">
-				<div className="orderbook-grid grid gap-1 px-2 py-1.5 items-center text-2xs text-fg-muted uppercase tracking-wider border-b border-stroke-weak shrink-0">
+				<div className="orderbook-grid grid gap-1 px-2 py-1.5 items-center text-xs text-fg-muted border-b border-stroke-weak shrink-0">
 					<div className="min-w-0 flex items-center gap-1 overflow-hidden">
 						<span className="orderbook-price-heading shrink-0">{t`Price`}</span>
 						<Dropdown
 							trigger={
-								<span className="block min-w-0 truncate text-2xs tabular-nums uppercase tracking-wider">
+								<span className="block min-w-0 truncate text-xs tabular-nums">
 									{selectedOption?.label ?? priceGroupingOptions[0]?.label ?? "—"}
 								</span>
 							}

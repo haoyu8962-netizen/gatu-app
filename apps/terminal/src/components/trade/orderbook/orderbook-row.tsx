@@ -47,7 +47,7 @@ function OrderbookRowComponent({
 			aria-label={t`Use ${priceText} as limit price`}
 			className={cn(
 				"group relative block w-full shrink-0 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus",
-				compact ? "hover:bg-trading-panel-hover" : "hover:bg-fill-hover",
+				compact ? "hover:bg-trading-panel-card" : "hover:bg-fill-hover",
 				compact ? "h-[24px]" : "h-[23px]",
 			)}
 		>
@@ -55,21 +55,20 @@ function OrderbookRowComponent({
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
 				style={{
 					width: `${depthPct}%`,
-					left: 0,
-					backgroundColor: compact ? `var(--orderbook-compact-depth-${side})` : undefined,
+					...(compact ? { right: 0 } : { left: 0 }),
+					backgroundColor: compact ? `var(--trading-panel-${isAsk ? "error" : "success"})` : undefined,
 				}}
 			/>
 			<span
 				className={cn(
 					"grid gap-1 tabular-nums py-0.5 relative z-10",
-					compact ? "grid-cols-2 pl-2 pr-3 text-xs" : "orderbook-grid px-2 text-2xs",
+					compact ? "grid-cols-2 pl-2 pr-3 text-xs" : "orderbook-grid px-2 text-xs",
 				)}
 			>
 				<span
 					title={priceText}
 					className={cn(
 						"min-w-0 truncate text-left justify-start",
-						!compact && "font-medium",
 						isAsk
 							? cn("orderbook-price-ask", compact && "text-trading-panel-error")
 							: cn("orderbook-price-bid", compact && "text-trading-panel-success"),
