@@ -1,6 +1,5 @@
-import { Badge } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
-import { FireIcon, StarIcon } from "@phosphor-icons/react";
+import { ArrowsClockwiseIcon, StarIcon } from "@phosphor-icons/react";
 import {
 	get24hChange,
 	get24hPriceChange,
@@ -11,10 +10,9 @@ import {
 } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatNumber, formatPercent, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
-import { getValueColorClass } from "@/lib/ui/value-color";
 import { AssetDisplay } from "../components/asset-display";
 import { getMarketSelectorPairName } from "./token-selector-categories";
-import { getMarketTableColumnClass, type MarketRow, type MarketTableLayout } from "./token-selector-columns";
+import { getMarketTableGridClass, type MarketRow, type MarketTableLayout } from "./token-selector-columns";
 
 interface Props {
 	market: MarketRow;
@@ -43,6 +41,12 @@ function getMaxLeverage(market: MarketRow): number | null {
 function getDex(market: MarketRow): string | undefined {
 	if (market.kind === "builderPerp") return market.dex;
 	return undefined;
+}
+
+function getMarketValueColorClass(value: number): string {
+	if (value > 0) return "text-trading-panel-success";
+	if (value < 0) return "text-trading-panel-error";
+	return "text-trading-panel-fg";
 }
 
 export function TokenSelectorRow({
@@ -76,8 +80,8 @@ export function TokenSelectorRow({
 	const changePercent = get24hChange(market.prevDayPx, market.markPx);
 	const priceChange = get24hPriceChange(market.prevDayPx, market.markPx);
 	const changeClass = cn(
-		"font-medium tabular-nums text-xs",
-		changePercent === null ? "text-fg-muted" : getValueColorClass(changePercent),
+		"font-semibold tabular-nums",
+		changePercent === null ? "text-trading-panel-subtle" : getMarketValueColorClass(changePercent),
 	);
 	const changePercentText = formatPercent(changePercent !== null ? changePercent / 100 : null);
 	const changeText =
@@ -138,16 +142,15 @@ export function TokenSelectorRow({
 				e.stopPropagation();
 				onToggleFavorite(market.name);
 			}}
-			className="shrink-0 cursor-pointer rounded-4 p-0.5 hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+			className="relative flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-[4px] after:absolute after:inset-x-0 after:inset-y-[-10px] after:content-[''] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 			aria-label={isFav ? t`Remove ${displayPairName} from favorites` : t`Add ${displayPairName} to favorites`}
 			aria-pressed={isFav}
 		>
 			<StarIcon
 				weight={isFav ? "fill" : "regular"}
 				className={cn(
-					"transition-colors",
-					mobile ? "size-3" : "size-3.5",
-					isFav ? "text-yellow" : "text-fg-muted hover:text-yellow",
+					"size-3.5 transition-colors duration-[120ms]",
+					isFav ? "text-trading-panel-warning" : "text-trading-panel-stroke-control hover:text-trading-panel-warning",
 				)}
 			/>
 		</button>
@@ -171,51 +174,71 @@ export function TokenSelectorRow({
 				aria-selected={isSelected}
 				tabIndex={-1}
 				className={cn(
-					"absolute top-0 left-0 grid w-full cursor-pointer grid-cols-[minmax(0,1.75fr)_minmax(0,1fr)_minmax(0,1fr)] items-center gap-x-2 border-b border-stroke-weak px-2 py-1.5 transition-colors hover:bg-fill-hover",
-					isSelected && !isHighlighted && "bg-fill-weak",
-					isHighlighted && "bg-fill-hover",
+					"absolute top-0 left-0 grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_102px_84px] items-center gap-x-2 border-b border-trading-panel-stroke-row px-4 transition-colors duration-[120ms] hover:bg-trading-panel-card",
+					isSelected && !isHighlighted && "bg-trading-panel-hover",
+					isHighlighted && "bg-trading-panel-hover",
 				)}
 				style={{ height: `${height}px`, transform: `translateY(${top}px)` }}
 			>
-				<div className="flex min-w-0 items-center gap-1.5">
-					<AssetDisplay coin={market.name} iconUrl={market.iconUrl} hideName iconClassName="size-5 shrink-0" />
+				<div className="flex min-w-0 items-center gap-[9px]">
+					<AssetDisplay coin={market.name} iconUrl={market.iconUrl} hideName iconClassName="size-[26px] shrink-0" />
 					<div className="min-w-0 flex-1">
-						<div className="flex min-w-0 items-center gap-0.5">
-							<span title={displayPairName} className="min-w-0 truncate text-xs font-semibold tracking-tight">
+						<div className="flex min-w-0 items-center gap-1">
+							<span
+								title={displayPairName}
+								className="min-w-0 truncate whitespace-nowrap text-[13px] font-bold tracking-tight text-trading-panel-fg"
+							>
 								{displayPairName}
 							</span>
 							{isTokenInCategory(market.shortName, "new") ? (
-								<Badge tone="neutral" size="sm" className="shrink-0 px-1 py-0 text-xs">
+								<span className="shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-control px-1 py-px text-[10px] font-bold leading-none text-trading-panel-on-control">
 									{t`NEW`}
-								</Badge>
+								</span>
 							) : null}
 							{favoriteButton}
 						</div>
-						<div className="flex min-w-0 items-center gap-1.5 text-2xs leading-4 text-fg-muted">
-							{getMaxLeverage(market) ? <span>{getMaxLeverage(market)}x</span> : null}
-							{isSpot ? <span className="text-brand">{t`Spot`}</span> : null}
-							{spotApiToken && spotApiToken !== market.shortName ? (
-								<span className="truncate font-mono">{spotApiToken}</span>
+						<div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] leading-none">
+							{getMaxLeverage(market) ? (
+								<span className="whitespace-nowrap rounded-[4px] bg-trading-panel-stroke-row px-1.5 py-0.5 font-semibold text-trading-panel-muted tabular-nums">
+									{getMaxLeverage(market)}x
+								</span>
 							) : null}
-							{isHip3 ? <span className="truncate text-warning">{getDex(market)}</span> : null}
+							{isSpot ? (
+								<span className="whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-1.5 py-0.5 font-semibold text-trading-panel-success">
+									{t`Spot`}
+								</span>
+							) : null}
+							{spotApiToken && spotApiToken !== market.shortName ? (
+								<span className="truncate font-mono text-trading-panel-subtle">{spotApiToken}</span>
+							) : null}
+							{isHip3 ? <span className="truncate text-trading-panel-warning">{getDex(market)}</span> : null}
 						</div>
 					</div>
 				</div>
 
-				<div className="flex min-w-0 flex-col items-end text-right text-2xs leading-4 tabular-nums">
-					<span className="w-full truncate font-medium text-fg" title={volumeText}>
+				<div className="flex min-w-0 flex-col items-end gap-0.5 text-right leading-4 tabular-nums">
+					<span
+						className="w-full truncate whitespace-nowrap text-[13px] font-semibold text-trading-panel-fg"
+						title={volumeText}
+					>
 						{mobileVolumeText}
 					</span>
-					<span className="w-full truncate text-fg-muted" title={secondaryMobileMetric.title}>
+					<span
+						className="w-full truncate whitespace-nowrap text-[11px] text-trading-panel-subtle"
+						title={secondaryMobileMetric.title}
+					>
 						{secondaryMobileMetric.text}
 					</span>
 				</div>
 
-				<div className="flex min-w-0 flex-col items-end text-right leading-4 tabular-nums">
-					<span className="w-full truncate text-xs font-medium text-fg" title={priceText}>
+				<div className="flex min-w-0 flex-col items-end gap-0.5 text-right leading-4 tabular-nums">
+					<span
+						className="w-full truncate whitespace-nowrap text-[13px] font-bold text-trading-panel-fg"
+						title={priceText}
+					>
 						{priceText}
 					</span>
-					<span className={cn(changeClass, "w-full truncate text-2xs")} title={changeText}>
+					<span className={cn(changeClass, "w-full truncate whitespace-nowrap text-[11px]")} title={changeText}>
 						{changeText}
 					</span>
 				</div>
@@ -234,68 +257,66 @@ export function TokenSelectorRow({
 			aria-selected={isSelected}
 			tabIndex={-1}
 			className={cn(
-				"flex items-center px-2 cursor-pointer border-b border-stroke-weak",
-				"hover:bg-fill-hover transition-colors",
-				"absolute top-0 left-0 w-full py-1.5",
-				isSelected && !isHighlighted && "bg-fill-weak",
-				isHighlighted && "bg-fill-hover",
+				"absolute top-0 left-0 grid w-full cursor-pointer items-center gap-x-3 border-b border-trading-panel-stroke-row px-4 transition-colors duration-[120ms] hover:bg-trading-panel-card",
+				getMarketTableGridClass(tableLayout),
+				isSelected && !isHighlighted && "bg-trading-panel-hover",
+				isHighlighted && "bg-trading-panel-hover",
 			)}
 			style={{ height: `${height}px`, transform: `translateY(${top}px)` }}
 		>
-			<div
-				className={cn(
-					"min-w-0 flex items-center gap-2",
-					showSpotMarketCap ? "flex-1 lg:flex-none" : "flex-1 min-[848px]:flex-none",
-					getMarketTableColumnClass("pairName", tableLayout),
-				)}
-			>
+			<div className="flex min-w-0 items-center gap-2.5">
 				{favoriteButton}
+				<AssetDisplay coin={market.name} iconUrl={market.iconUrl} hideName iconClassName="size-[26px] shrink-0" />
 				<div className="min-w-0 flex-1">
 					<div className="flex min-w-0 items-center gap-1">
 						<span
 							title={displayPairName}
-							className="min-w-0 truncate text-2xs font-semibold leading-snug tracking-tight"
+							className="min-w-0 truncate whitespace-nowrap text-[13px] font-bold leading-snug tracking-tight text-trading-panel-fg"
 						>
 							{displayPairName}
 						</span>
 						{isSpot ? (
-							<Badge tone="brand" size="xxs" className="shrink-0 border-0">
+							<span className="shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-1 py-px text-[10px] font-semibold text-trading-panel-success">
 								{t`Spot`}
-							</Badge>
+							</span>
 						) : null}
 						{isTokenInCategory(market.shortName, "new") && (
-							<Badge tone="neutral" size="sm" className="shrink-0 px-1 py-0 text-xs">
+							<span className="shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-control px-1 py-px text-[10px] font-bold leading-none text-trading-panel-on-control">
 								{t`NEW`}
-							</Badge>
+							</span>
 						)}
 					</div>
-					<div className="flex items-center gap-1.5 text-2xs text-fg">
-						{getMaxLeverage(market) && <span>{getMaxLeverage(market)}x</span>}
-						{spotApiToken && spotApiToken !== market.shortName && (
-							<span className="font-mono text-fg-muted">{spotApiToken}</span>
+					<div className="flex items-center gap-1.5 text-[11px] text-trading-panel-subtle">
+						{getMaxLeverage(market) && (
+							<span className="whitespace-nowrap tabular-nums">{getMaxLeverage(market)}x</span>
 						)}
-						{isHip3 && <span className="text-warning">{getDex(market)}</span>}
+						{spotApiToken && spotApiToken !== market.shortName && (
+							<span className="truncate font-mono">{spotApiToken}</span>
+						)}
+						{isHip3 && <span className="truncate text-trading-panel-warning">{getDex(market)}</span>}
 					</div>
 				</div>
 			</div>
-			<div className={cn("text-right", getMarketTableColumnClass("price", tableLayout))}>
-				<span className="font-medium tabular-nums text-xs">{priceText}</span>
+			<div className="min-w-0 text-right">
+				<span className="whitespace-nowrap text-[13px] font-semibold text-trading-panel-fg tabular-nums">
+					{priceText}
+				</span>
 			</div>
-			<div className={cn("text-right", getMarketTableColumnClass("24h-change", tableLayout))}>
-				<span className={cn(changeClass, "whitespace-nowrap")} title={changeText}>
+			<div className="min-w-0 text-right">
+				<span className={cn(changeClass, "whitespace-nowrap text-xs")} title={changeText}>
 					{changeText}
 				</span>
 			</div>
 			{showDerivativesMetrics ? (
-				<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("funding"))}>
+				<div className="min-w-0 text-right">
 					<div className="flex items-center justify-end gap-1">
-						{!isSpot && eightHourFunding !== null && eightHourFunding !== 0 ? (
-							<FireIcon className={cn("size-2.5", getValueColorClass(eightHourFunding))} />
-						) : null}
+						<ArrowsClockwiseIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
 						<span
 							className={cn(
-								"text-xs tabular-nums font-medium",
-								isSpot || eightHourFunding === null ? "text-fg-muted" : getValueColorClass(eightHourFunding),
+								"whitespace-nowrap text-xs font-semibold tabular-nums",
+								isSpot || eightHourFunding === null
+									? "text-trading-panel-subtle"
+									: getMarketValueColorClass(eightHourFunding),
 							)}
 						>
 							{isSpot ? "--" : formatPercent(eightHourFunding, { minimumFractionDigits: 4, signDisplay: "exceptZero" })}
@@ -303,17 +324,17 @@ export function TokenSelectorRow({
 					</div>
 				</div>
 			) : null}
-			<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("volume", tableLayout))}>
-				<span className="text-xs font-medium tabular-nums">{volumeText}</span>
+			<div className="min-w-0 text-right">
+				<span className="whitespace-nowrap text-[13px] text-trading-panel-fg tabular-nums">{volumeText}</span>
 			</div>
 			{showSpotMarketCap ? (
-				<div className={cn("hidden text-right lg:block", getMarketTableColumnClass("market-cap", tableLayout))}>
-					<span className="whitespace-nowrap text-xs font-medium tabular-nums">{spotMarketCapText}</span>
+				<div className="min-w-0 text-right">
+					<span className="whitespace-nowrap text-[13px] text-trading-panel-fg tabular-nums">{spotMarketCapText}</span>
 				</div>
 			) : null}
 			{showDerivativesMetrics ? (
-				<div className={cn("text-right hidden sm:block", getMarketTableColumnClass("oi"))}>
-					<span className="whitespace-nowrap text-xs font-medium tabular-nums" title={oiText}>
+				<div className="min-w-0 text-right">
+					<span className="whitespace-nowrap text-[13px] text-trading-panel-fg tabular-nums" title={oiText}>
 						{isSpot ? "--" : oiText}
 					</span>
 				</div>

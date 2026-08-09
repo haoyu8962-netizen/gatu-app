@@ -274,6 +274,7 @@ describe("token selector wiring", () => {
 	});
 
 	it("uses an iOS-safe font size for the mobile market search field", () => {
+		const onClose = vi.fn();
 		const table = {
 			getHeaderGroups: () => [{ headers: [] }],
 		} as unknown as ReturnType<typeof useTokenSelector>["table"];
@@ -307,6 +308,7 @@ describe("token selector wiring", () => {
 						highlightedIndex={-1}
 						headingId="mobile-market-selector-heading"
 						mobile
+						onClose={onClose}
 					/>
 				</I18nProvider>,
 			);
@@ -316,5 +318,10 @@ describe("token selector wiring", () => {
 		expect(searchInput?.className).toContain("text-base");
 		expect(searchInput?.className).toContain("leading-5");
 		expect(searchInput?.className).not.toContain("text-sm");
+
+		const closeButton = container.querySelector<HTMLButtonElement>('button[aria-label="Close"]');
+		expect(closeButton?.className).toContain("size-11");
+		act(() => closeButton?.click());
+		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 });

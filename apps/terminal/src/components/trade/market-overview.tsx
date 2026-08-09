@@ -1,6 +1,6 @@
 import { Tooltip } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ArrowSquareOutIcon, CheckIcon, CopyIcon, FireIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { get24hChange, get24hPriceChange, getMarketCapUsd, getOiUsd } from "@/domain/market";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
@@ -25,19 +25,11 @@ import {
 	useSubscription,
 } from "@/lib/hyperliquid";
 import { toBig } from "@/lib/trade/numbers";
-import { getValueColorClass } from "@/lib/ui/value-color";
 import { StatBlock } from "./chart/stat-block";
 
 const HOUR_MS = 3_600_000;
 
-function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
-	const [remaining, setRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
-
-	useEffect(() => {
-		const id = setInterval(() => setRemaining(HOUR_MS - (Date.now() % HOUR_MS)), 1000);
-		return () => clearInterval(id);
-	}, []);
-
+function FundingTooltipContent({ fundingNum, remaining }: { fundingNum: number; remaining: number }) {
 	const rows = [
 		{ label: t`7 days`, rate: fundingNum * 24 * 7 },
 		{ label: t`30 days`, rate: fundingNum * 24 * 30 },
@@ -45,7 +37,7 @@ function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
 	];
 
 	return (
-		<div className="min-w-[9rem] space-y-2">
+		<div className="min-w-[9rem] space-y-2 font-market-close">
 			<div className="flex items-center justify-between gap-4">
 				<span className="text-2xs uppercase tracking-wide text-fg-muted">{t`Resets in`}</span>
 				<span className="font-mono text-xs tabular-nums text-fg">{formatClockDuration(remaining)}</span>
@@ -54,13 +46,62 @@ function FundingTooltipContent({ fundingNum }: { fundingNum: number }) {
 				{rows.map(({ label, rate }) => (
 					<div key={label} className="flex items-center justify-between gap-4">
 						<span className="text-2xs text-fg-muted">{label}</span>
-						<span className={cn("text-xs font-medium tabular-nums", getValueColorClass(rate))}>
+						<span className={cn("text-xs font-medium tabular-nums", getMarketValueColorClass(rate))}>
 							{formatPercent(rate, { signDisplay: "exceptZero" })}
 						</span>
 					</div>
 				))}
 			</div>
 		</div>
+	);
+}
+
+function FundingStatBlock({ fundingNum }: { fundingNum: number | null }) {
+	const [remaining, setRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
+	const hasFunding = fundingNum !== null;
+
+	useEffect(() => {
+		if (!hasFunding) return;
+		const updateRemaining = () => setRemaining(HOUR_MS - (Date.now() % HOUR_MS));
+		updateRemaining();
+		const id = setInterval(updateRemaining, 1000);
+		return () => clearInterval(id);
+	}, [hasFunding]);
+
+	const block = (
+		<span>
+			<StatBlock
+				label={
+					<>
+						{t`FUNDING`} / {t`Resets in`}
+					</>
+				}
+				labelClass="cursor-help border-b border-dashed border-trading-panel-stroke-control"
+				value={
+					fundingNum === null ? (
+						"—"
+					) : (
+						<>
+							<span className={getMarketValueColorClass(fundingNum)}>
+								{formatPercent(fundingNum, {
+									minimumFractionDigits: 4,
+									signDisplay: "exceptZero",
+								})}
+							</span>
+							<span className="ml-1 text-trading-panel-fg">{formatClockDuration(remaining)}</span>
+						</>
+					)
+				}
+			/>
+		</span>
+	);
+
+	if (fundingNum === null) return block;
+
+	return (
+		<Tooltip content={<FundingTooltipContent fundingNum={fundingNum} remaining={remaining} />} side="bottom">
+			{block}
+		</Tooltip>
 	);
 }
 
@@ -110,7 +151,7 @@ export function MarketOverview() {
 
 	const prevDayForChange = liveCtx?.prevDayPx ?? selectedMarketInfo?.prevDayPx;
 
-	const fundingNum = toBig(funding)?.toNumber() ?? 0;
+	const fundingNum = toBig(funding)?.toNumber() ?? null;
 	const change24h = get24hChange(prevDayForChange, displayPrice);
 	const priceChange24h = get24hPriceChange(prevDayForChange, displayPrice);
 	const oiUsd = getOiUsd(openInterest, markPx);
@@ -156,14 +197,8 @@ export function MarketOverview() {
 			: "—";
 
 	return (
-		<div className="grid h-11 w-max min-w-0 auto-cols-max grid-flow-col items-center gap-8 text-xs">
-			<StatBlock label={t`Price`} value={priceText} valueClass="text-fg" />
-			<StatBlock
-				label={t({ message: "24h Change", context: "Market overview" })}
-				value={changeText}
-				valueClass={change24h === null ? "text-fg-muted" : getValueColorClass(change24h)}
-			/>
-
+		<div className="grid w-max min-w-0 auto-cols-max grid-flow-col items-center gap-6 font-market-close text-[13px]">
+			<StatBlock label={t`Price`} value={priceText} valueClass="text-trading-panel-fg" />
 			{!isSpot && (
 				<>
 					<StatBlock
@@ -174,30 +209,25 @@ export function MarketOverview() {
 						})}
 					/>
 					<StatBlock
+						label={t({ message: "24h Change", context: "Market overview" })}
+						value={changeText}
+						valueClass={change24h === null ? "text-trading-panel-subtle" : getMarketValueColorClass(change24h)}
+					/>
+					<StatBlock
 						label={t({ message: "24H VOL", context: "Market overview" })}
 						value={formatUSD(dayNtlVlm, { compact: false })}
 					/>
 					<StatBlock label={t`OPEN INT`} value={formatUSD(oiUsd, { compact: false })} />
-					<Tooltip content={<FundingTooltipContent fundingNum={fundingNum} />} side="bottom">
-						<span>
-							<StatBlock
-								label={t`FUNDING`}
-								value={formatPercent(fundingNum, {
-									minimumFractionDigits: 4,
-									signDisplay: "exceptZero",
-								})}
-								valueClass={cn(
-									"underline decoration-dashed underline-offset-2 cursor-pointer",
-									getValueColorClass(fundingNum),
-								)}
-								icon={<FireIcon className={cn("size-2.5 shrink-0", getValueColorClass(fundingNum))} />}
-							/>
-						</span>
-					</Tooltip>
+					<FundingStatBlock fundingNum={fundingNum} />
 				</>
 			)}
 			{isSpot && (
 				<>
+					<StatBlock
+						label={t({ message: "24h Change", context: "Market overview" })}
+						value={changeText}
+						valueClass={change24h === null ? "text-trading-panel-subtle" : getMarketValueColorClass(change24h)}
+					/>
 					<StatBlock label={t({ message: "24H VOL", context: "Market overview" })} value={spotVolumeText} />
 					<StatBlock label={t`Market Cap`} value={spotMarketCapText} />
 					<StatBlock
@@ -226,20 +256,25 @@ function createSpotTokenContractValue(address: string | null, copied: boolean, o
 				href={getExplorerTokenUrl(address)}
 				target="_blank"
 				rel="noopener noreferrer"
-				className="inline-flex items-center gap-0.5 font-sans text-xs font-medium tabular-nums text-fg transition-colors hover:text-brand"
+				className="inline-flex items-center gap-1 text-[13px] font-semibold tabular-nums text-trading-panel-fg transition-colors duration-150 hover:text-trading-panel-muted"
 				aria-label={t`Open token in explorer`}
 			>
 				{shortenAddress(address, 4, 4)}
-				<ArrowSquareOutIcon className="size-2.5 shrink-0 text-brand" aria-hidden="true" />
+				<ArrowSquareOutIcon className="size-3 shrink-0 text-trading-panel-muted" aria-hidden="true" />
 			</a>
 			<button
 				type="button"
 				onClick={handleCopy}
 				aria-label={copied ? t`Copied` : t`Copy token address`}
-				className="inline-flex size-3.5 shrink-0 items-center justify-center text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+				className="inline-flex size-5 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 			>
-				{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+				{copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
 			</button>
 		</span>
 	);
+}
+
+function getMarketValueColorClass(value: number): string {
+	if (!Number.isFinite(value) || value === 0) return "text-trading-panel-subtle";
+	return value < 0 ? "text-trading-panel-error" : "text-trading-panel-success";
 }

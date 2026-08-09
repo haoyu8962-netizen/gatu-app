@@ -85,17 +85,33 @@ vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		className,
+		handleClassName,
 		open,
 		onOpenChange: _onOpenChange,
+		overlayClassName,
 		presentation,
 	}: {
 		children: ReactNode;
 		className?: string;
+		handleClassName?: string;
 		open: boolean;
 		onOpenChange: (open: boolean) => void;
+		overlayClassName?: string;
 		presentation: string;
 	}) =>
-		open ? createElement("div", { className, "data-presentation": presentation, role: "dialog" }, children) : null,
+		open
+			? createElement(
+					"div",
+					{
+						className,
+						"data-handle-class": handleClassName,
+						"data-overlay-class": overlayClassName,
+						"data-presentation": presentation,
+						role: "dialog",
+					},
+					children,
+				)
+			: null,
 	Button: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) =>
 		createElement("button", { onClick, type: "button" }, children),
 	ModalContent: ({ children, className }: { children: ReactNode; className?: string }) =>
@@ -118,9 +134,11 @@ vi.mock("@gatu/ui", () => ({
 const BUILDER_MARKET = {
 	kind: "builderPerp",
 	name: "xyz:BOT",
+	shortName: "BOT",
 	pairName: "BOT-USDC",
 	iconUrl: "/coins/BOT.svg",
 	dex: "xyz",
+	maxLeverage: 10,
 } as UnifiedMarketInfo;
 
 const HYPE_PERP_MARKET = {
@@ -129,6 +147,7 @@ const HYPE_PERP_MARKET = {
 	shortName: "HYPE",
 	pairName: "HYPE-USDC",
 	iconUrl: "/coins/HYPE.svg",
+	maxLeverage: 10,
 } as UnifiedMarketInfo;
 
 const AAVE_PERP_MARKET = {
@@ -137,6 +156,7 @@ const AAVE_PERP_MARKET = {
 	shortName: "AAVE",
 	pairName: "AAVE-USDC",
 	iconUrl: "/coins/AAVE.svg",
+	maxLeverage: 10,
 } as UnifiedMarketInfo;
 
 const SPOT_MARKET = {
@@ -384,6 +404,31 @@ describe("MarketAssetInfo", () => {
 		]);
 	});
 
+	it("matches the asset-detail visual contract without changing the market data source", async () => {
+		await renderAssetInfo(HYPE_PERP_MARKET);
+		openDialog();
+
+		const dialog = container.querySelector<HTMLElement>('[role="dialog"]');
+		const header = container.querySelector<HTMLElement>('[data-testid="market-asset-info-header"]');
+		const icon = container.querySelector<HTMLElement>('[data-testid="market-asset-info-icon"]');
+		const card = container.querySelector<HTMLElement>('[data-testid="market-asset-info-card"]');
+
+		expect(dialog?.className).toContain("min-[1001px]:max-w-[30rem]");
+		expect(dialog?.className).toContain("font-market-close");
+		expect(dialog?.className).toContain("min-[1001px]:border");
+		expect(dialog?.className).toContain("border-trading-panel-stroke-card");
+		expect(dialog?.className).toContain("min-[1001px]:[&>button]:size-[30px]");
+		expect(header?.className).toContain("items-center");
+		expect(icon?.className).toContain("size-14");
+		expect(container.querySelector("h2")?.className).toContain("text-[18px]");
+		expect(card?.className).toContain("rounded-[12px]");
+		expect(card?.className).toContain("bg-trading-panel-card");
+		expect(container.textContent).toContain("Perp");
+		expect(container.textContent).toContain("Underlying asset");
+		expect(container.textContent).toContain("Maximum leverage");
+		expect(container.textContent).toContain("10x");
+	});
+
 	it("provides a factual market fallback for native perps without local copy", async () => {
 		testState.conciseAnnotations = [];
 		testState.concisePending = false;
@@ -521,7 +566,14 @@ describe("MarketAssetInfo", () => {
 		expect(container.textContent).toContain("Circulating supply");
 		expect(container.textContent).toContain("298,690,514.637 HYPE");
 		expect(container.textContent).toContain("Maximum supply");
-		expect(container.querySelector(`a[href="/explorer/token/${HYPE_TOKEN_ID}"]`)).not.toBeNull();
+		const explorerLink = container.querySelector<HTMLAnchorElement>(`a[href="/explorer/token/${HYPE_TOKEN_ID}"]`);
+		expect(explorerLink).not.toBeNull();
+		expect(explorerLink?.closest('[data-testid="market-asset-info-links"]')).not.toBeNull();
+		expect(explorerLink?.textContent).toContain("Explorer");
+		expect(container.querySelector('[data-testid="market-asset-info-card"]')?.textContent).toContain(
+			"Underlying asset",
+		);
+		expect(container.querySelector('[data-testid="market-asset-info-card"]')?.textContent).toContain("Token ID");
 	});
 
 	it("uses a minimum mobile height so content-rich spot metadata can expand", async () => {
@@ -535,6 +587,9 @@ describe("MarketAssetInfo", () => {
 		expect(classes).toContain("min-h-[166px]");
 		expect(classes).not.toContain("h-[166px]");
 		expect(classes).toContain("min-[1001px]:min-h-0");
+		expect(dialog?.getAttribute("data-handle-class")).toContain("w-9");
+		expect(dialog?.getAttribute("data-handle-class")).toContain("bg-trading-panel-stroke-input");
+		expect(dialog?.getAttribute("data-overlay-class")).toContain("bg-trading-panel-scrim");
 	});
 
 	it("uses a mobile drawer and exposes the correct retry action for HIP-3 failures", async () => {

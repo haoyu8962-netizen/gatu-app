@@ -14,30 +14,34 @@ const MOBILE_MARKET_BAR_SOURCE = readFileSync(
 );
 
 describe("token selector visual contract", () => {
-	it("uses the market as the primary toolbar label", () => {
-		expect(TRIGGER_SOURCE).toContain('iconClassName="size-5"');
-		expect(TRIGGER_SOURCE).toContain("shrink-0 whitespace-nowrap text-lg font-normal");
-		expect(TRIGGER_SOURCE).toContain('kindBadge === "Perp" && leverageLabel');
+	it("uses the market and metadata pills as the primary toolbar label", () => {
+		expect(TRIGGER_SOURCE).toContain('iconClassName="size-7"');
+		expect(TRIGGER_SOURCE).toContain("whitespace-nowrap text-base leading-5 font-bold");
+		expect(TRIGGER_SOURCE).toContain("!isSpot && leverageLabel");
+		expect(TRIGGER_SOURCE).toContain("t`Spot`");
+		expect(TRIGGER_SOURCE).toContain("t`Perp`");
+		expect(TRIGGER_SOURCE).toContain("bg-trading-panel-success-soft text-trading-panel-success");
 		expect(TRIGGER_SOURCE).not.toContain("max-w-[34vw]");
 		expect(TRIGGER_SOURCE).not.toContain("min-w-[82px]");
 	});
 
 	it("keeps the complete market pair visible in narrow viewports", () => {
-		expect(TRIGGER_SOURCE).toContain("whitespace-nowrap text-lg leading-[30px] font-normal");
+		expect(TRIGGER_SOURCE).toContain("whitespace-nowrap text-base leading-5 font-bold");
+		expect(TRIGGER_SOURCE).toContain("max-[360px]:text-[13px]");
 		expect(TRIGGER_SOURCE).not.toContain("max-w-[42vw] truncate");
 		expect(TRIGGER_SOURCE).not.toContain("max-[340px]:text-sm");
-		expect(MOBILE_MARKET_BAR_SOURCE).toContain("grid-cols-[minmax(max-content,1fr)_minmax(0,1fr)]");
-		expect(MOBILE_MARKET_BAR_SOURCE).toContain("grid-cols-[minmax(0,1fr)_2rem]");
-		expect(MOBILE_MARKET_BAR_SOURCE).toContain("whitespace-normal font-sans text-xs leading-[15px]");
-		expect(MOBILE_MARKET_BAR_SOURCE).toContain("rounded-xs border border-stroke-weak/80");
+		expect(MOBILE_MARKET_BAR_SOURCE).toContain("grid-cols-2 items-center gap-x-4 px-4 py-2.5");
+		expect(MOBILE_MARKET_BAR_SOURCE).toContain("grid-cols-[minmax(0,1fr)_36px]");
+		expect(MOBILE_MARKET_BAR_SOURCE).toContain("whitespace-normal text-[11px] leading-[15px] font-semibold");
+		expect(MOBILE_MARKET_BAR_SOURCE).toContain("h-[30px] w-9");
 	});
 
 	it("keeps every trigger state visible without changing selector behavior", () => {
-		expect(TRIGGER_SOURCE).toContain("inline-flex h-10");
-		expect(TRIGGER_SOURCE).toContain("hover:bg-fill-hover");
+		expect(TRIGGER_SOURCE).toContain("inline-flex h-9");
+		expect(TRIGGER_SOURCE).toContain("hover:bg-trading-panel-hover");
 		expect(TRIGGER_SOURCE).toContain("active:bg-fill-press");
-		expect(TRIGGER_SOURCE).toContain("aria-expanded:bg-fill-hover");
+		expect(TRIGGER_SOURCE).toContain("aria-expanded:bg-trading-panel-hover");
 		expect(TRIGGER_SOURCE).toContain("focus-visible:ring-stroke-focus");
-		expect(TRIGGER_SOURCE).toContain('open ? "rotate-180" : ""');
+		expect(TRIGGER_SOURCE).toContain('open && "rotate-180"');
 	});
 });

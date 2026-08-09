@@ -128,6 +128,7 @@ msgid "24h Change"
 msgstr "24h Change"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
 msgctxt "Market overview"
 msgid "24h Change"
 msgstr "24h Change"
@@ -2273,6 +2274,7 @@ msgstr "Expand market details"
 msgid "Expires {expiresAtLabel}."
 msgstr "Expires {expiresAtLabel}."
 
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Explorer"
@@ -3351,7 +3353,6 @@ msgid "Margin Used"
 msgstr "Margin Used"
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Mark"
 msgstr "Mark"
 
@@ -3532,6 +3533,10 @@ msgstr "Max Drawdown"
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Max slippage allowed for market orders."
 #~ msgstr "Max slippage allowed for market orders."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Maximum leverage"
+msgstr "Maximum leverage"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Maximum slippage tolerance for market orders"
@@ -4371,6 +4376,8 @@ msgstr "pending"
 #~ msgstr "perp"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-trigger.tsx
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
@@ -4694,6 +4701,7 @@ msgstr "Press and hold for 4 seconds"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -5038,6 +5046,7 @@ msgstr "Reset"
 #~ msgid "Reset phone access"
 #~ msgstr "Reset phone access"
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
@@ -5798,6 +5807,8 @@ msgstr "Source"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
+#: src/components/trade/chart/token-selector-trigger.tsx
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -7236,6 +7247,10 @@ msgstr "Unavailable"
 msgid "unconfirmed"
 msgstr "unconfirmed"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Underlying asset"
+msgstr "Underlying asset"
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified"
 msgstr "Unified"
@@ -7540,6 +7555,7 @@ msgstr "Wallet returned a transaction hash, but it is not visible on Arbitrum ye
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
 msgstr "We could not verify the legal status for this wallet. Check your connection and try again."
 
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/spot-market-social-links.tsx
 #: src/lib/tests/spot-market-social-links.test.tsx
 msgid "Website"

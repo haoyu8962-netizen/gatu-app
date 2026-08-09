@@ -124,6 +124,7 @@ msgid "24h Change"
 msgstr "Cambio 24h"
 
 #: src/components/trade/market-overview.tsx
+#: src/components/trade/market-overview.tsx
 msgctxt "Market overview"
 msgid "24h Change"
 msgstr "Cambio en 24 h"
@@ -2260,6 +2261,7 @@ msgstr "Expandir detalles del mercado"
 msgid "Expires {expiresAtLabel}."
 msgstr "Caduca {expiresAtLabel}."
 
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-account-transfers-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 msgid "Explorer"
@@ -3334,7 +3336,6 @@ msgid "Margin Used"
 msgstr "Margen usado"
 
 #: src/components/trade/mobile/mobile-market-bar.tsx
-#: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Mark"
 msgstr "Marca"
 
@@ -3511,6 +3512,10 @@ msgstr "Caída máxima"
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Max slippage allowed for market orders."
 #~ msgstr "Deslizamiento máximo permitido para órdenes de mercado."
+
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Maximum leverage"
+msgstr "Apalancamiento máximo"
 
 #: src/components/trade/components/global-settings-modal.tsx
 #~ msgid "Maximum slippage tolerance for market orders"
@@ -4350,6 +4355,8 @@ msgstr "pendiente"
 #~ msgstr "perp"
 
 #: src/components/trade/chart/token-selector-content.tsx
+#: src/components/trade/chart/token-selector-trigger.tsx
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 #: src/components/trade/positions/transfer-modal.tsx
 msgid "Perp"
@@ -4673,6 +4680,7 @@ msgstr "Mantén pulsado 4 segundos"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
+#: src/components/trade/mobile/mobile-market-bar.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-tab.tsx
@@ -5017,6 +5025,7 @@ msgstr "Restablecer"
 #~ msgid "Reset phone access"
 #~ msgstr "Restablecer acceso del teléfono"
 
+#: src/components/trade/market-overview.tsx
 #: src/components/trade/market-overview.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
 msgid "Resets in"
@@ -5777,6 +5786,8 @@ msgstr "Origen"
 #: src/components/trade/chart/token-selector-content.tsx
 #: src/components/trade/chart/token-selector-row.tsx
 #: src/components/trade/chart/token-selector-row.tsx
+#: src/components/trade/chart/token-selector-trigger.tsx
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/components/trade/positions/transfer-modal.tsx
@@ -7211,6 +7222,10 @@ msgstr "No disponible"
 msgid "unconfirmed"
 msgstr "sin confirmar"
 
+#: src/components/trade/components/market-asset-info.tsx
+msgid "Underlying asset"
+msgstr "Activo subyacente"
+
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Unified"
 msgstr "Unificada"
@@ -7515,6 +7530,7 @@ msgstr "La billetera devolvió un hash de transacción, pero aún no es visible 
 msgid "We could not verify the legal status for this wallet. Check your connection and try again."
 msgstr "No pudimos verificar el estado legal de este monedero. Compruebe la conexión e inténtelo de nuevo."
 
+#: src/components/trade/components/market-asset-info.tsx
 #: src/components/trade/components/spot-market-social-links.tsx
 #: src/lib/tests/spot-market-social-links.test.tsx
 msgid "Website"

@@ -32,9 +32,9 @@ function SocialLink({ href, label, icon, showTooltip, targetSize }: SocialLinkPr
 			rel="noopener noreferrer"
 			aria-label={label}
 			className={cn(
-				"inline-flex items-center justify-center text-brand transition-colors duration-150 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none",
-				targetSize === "touch" && "size-6 shrink-0 rounded-xs hover:bg-fill-hover active:bg-fill-press",
-				targetSize === "compact" && "size-3",
+				"inline-flex items-center justify-center text-trading-panel-muted transition-colors duration-150 hover:text-trading-panel-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none",
+				targetSize === "touch" && "size-6 shrink-0 rounded-[7px] hover:bg-trading-panel-hover active:bg-fill-press",
+				targetSize === "compact" && "size-4",
 			)}
 		>
 			{icon}
@@ -65,7 +65,7 @@ export function SpotMarketSocialIconLinks({
 				<SocialLink
 					href={socials.x}
 					label="X"
-					icon={<XLogoIcon className="size-3" aria-hidden />}
+					icon={<XLogoIcon className="size-3.5" aria-hidden />}
 					showTooltip={showTooltips}
 					targetSize={targetSize}
 				/>
@@ -74,7 +74,7 @@ export function SpotMarketSocialIconLinks({
 				<SocialLink
 					href={socials.telegram}
 					label="Telegram"
-					icon={<TelegramLogoIcon className="size-3" aria-hidden />}
+					icon={<TelegramLogoIcon className="size-3.5" aria-hidden />}
 					showTooltip={showTooltips}
 					targetSize={targetSize}
 				/>
@@ -83,7 +83,7 @@ export function SpotMarketSocialIconLinks({
 				<SocialLink
 					href={socials.website}
 					label={t`Website`}
-					icon={<GlobeSimpleIcon className="size-3" aria-hidden />}
+					icon={<GlobeSimpleIcon className="size-3.5" aria-hidden />}
 					showTooltip={showTooltips}
 					targetSize={targetSize}
 				/>
@@ -96,11 +96,14 @@ export function SpotMarketSocialLinks({ socials }: SpotMarketSocialLinksProps) {
 	if (!socials) return null;
 
 	return (
-		<div className="hidden h-[34px] shrink-0 grid-rows-[15px_15px] gap-1 min-[1001px]:grid">
-			<span className="min-w-16 max-w-32 truncate text-xs leading-[15px] text-fg-muted" title={socials.displayName}>
+		<div className="hidden h-[34px] shrink-0 grid-rows-[12px_16px] gap-1.5 font-market-close min-[1001px]:grid">
+			<span
+				className="min-w-16 max-w-32 truncate text-[10px] leading-3 text-trading-panel-subtle"
+				title={socials.displayName}
+			>
 				{socials.displayName}
 			</span>
-			<SpotMarketSocialIconLinks socials={socials} className="h-[15px] gap-2" />
+			<SpotMarketSocialIconLinks socials={socials} className="h-4 gap-1" />
 		</div>
 	);
 }

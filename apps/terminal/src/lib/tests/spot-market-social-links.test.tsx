@@ -52,7 +52,7 @@ describe("SpotMarketSocialLinks", () => {
 		expect(links).toHaveLength(3);
 		expect(links.map((link) => link.getAttribute("aria-label"))).toEqual(["X", "Telegram", "Website"]);
 		for (const link of links) {
-			expect(link.className).toContain("size-3");
+			expect(link.className).toContain("size-4");
 			expect(link.getAttribute("target")).toBe("_blank");
 			expect(link.getAttribute("rel")).toBe("noopener noreferrer");
 		}

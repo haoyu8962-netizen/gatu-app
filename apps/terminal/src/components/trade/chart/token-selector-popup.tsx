@@ -5,7 +5,7 @@ import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import { TokenSelectorContent } from "./token-selector-content";
 import { useTokenSelector } from "./use-token-selector";
 
-const TOKEN_SELECTOR_POPOVER_WIDTH = "w-[min(52rem,calc(100vw-1rem))]";
+const TOKEN_SELECTOR_POPOVER_WIDTH = "w-[min(60rem,calc(100vw-1rem))]";
 
 interface Props {
 	selectedMarket: UnifiedMarketInfo | undefined;
@@ -89,7 +89,7 @@ export function TokenSelectorPopup({
 	if (mobile) {
 		return (
 			<DrawerContent
-				className="inset-0 z-[90] h-dvh max-h-none w-full overflow-hidden overscroll-none rounded-none border-0 p-0 shadow-none transition-[opacity,transform] duration-300 ease-out data-starting-style:-translate-y-[5px] data-starting-style:opacity-0 data-ending-style:-translate-y-[5px] data-ending-style:opacity-0 motion-reduce:transition-none"
+				className="inset-0 z-[90] h-dvh max-h-none w-full overflow-hidden overscroll-none rounded-none border-0 bg-surface p-0 shadow-none transition-[opacity,transform] duration-200 ease-out data-starting-style:-translate-y-[5px] data-starting-style:opacity-0 data-ending-style:-translate-y-[5px] data-ending-style:opacity-0 motion-reduce:transition-none"
 				overlayClassName="z-10 bg-transparent overscroll-none transition-none"
 				aria-labelledby={headingId}
 				onKeyDown={handleKeyDown}
@@ -101,7 +101,10 @@ export function TokenSelectorPopup({
 
 	return (
 		<PopoverContent
-			className={cn(TOKEN_SELECTOR_POPOVER_WIDTH, "p-0 border-stroke-weak bg-surface")}
+			className={cn(
+				TOKEN_SELECTOR_POPOVER_WIDTH,
+				"overflow-hidden rounded-[12px] border-trading-panel-stroke-card bg-surface p-0 data-starting-style:scale-100 data-ending-style:scale-100",
+			)}
 			align="start"
 			sideOffset={4}
 			alignOffset={-2}

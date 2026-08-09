@@ -99,23 +99,20 @@ export function MainWorkspace() {
 
 					<div
 						key="coinInfo"
-						className="desktop-grid-panel flex min-w-0 items-center overflow-hidden border-b border-stroke-weak bg-surface px-2"
+						className="desktop-grid-panel flex min-w-0 items-center overflow-hidden border-b border-trading-panel-stroke-row bg-surface px-4 font-market-close text-trading-panel-fg"
 					>
-						<div className="flex h-10 shrink-0 items-center">
-							<MarketAssetInfo key={selectedMarket?.name} market={selectedMarket} />
-							<TokenSelector
-								selectedMarket={selectedMarket}
-								onValueChange={handleMarketChange}
-								showAssetIcon={false}
-								showMetadataBadge={false}
-							/>
+						<div className="flex h-full shrink-0 items-center">
+							<div className="flex shrink-0 [&>span]:size-9 [&_button]:size-9 [&_.relative.inline-flex]:size-[26px]">
+								<MarketAssetInfo key={selectedMarket?.name} market={selectedMarket} />
+							</div>
+							<TokenSelector selectedMarket={selectedMarket} onValueChange={handleMarketChange} showAssetIcon={false} />
 						</div>
 						{spotSocials ? (
-							<div className="ml-8">
+							<div className="ml-6">
 								<SpotMarketSocialLinks socials={spotSocials} />
 							</div>
 						) : null}
-						<div className="ml-8 min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+						<div className="ml-6 min-w-0 overflow-x-auto overflow-y-hidden overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 							<MarketOverview />
 						</div>
 					</div>

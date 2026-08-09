@@ -130,6 +130,21 @@ describe("MarketOverview", () => {
 		expect(container.textContent).not.toContain("Price71.8");
 	});
 
+	it("keeps unavailable funding distinct from a real zero rate", () => {
+		delete mocks.selectedMarket.funding;
+
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<MarketOverview />
+				</I18nProvider>,
+			),
+		);
+
+		expect(container.textContent).toContain("FUNDING / Resets in—");
+		expect(container.textContent).not.toContain("0.0000%");
+	});
+
 	it("labels spot notionals with the selected market quote token", () => {
 		mocks.selectedMarket = {
 			kind: "spot",

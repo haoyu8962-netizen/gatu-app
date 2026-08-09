@@ -81,6 +81,9 @@ describe("TokenSelectorRow", () => {
 		expect(row.children[1]?.textContent).toContain("$129M");
 		expect(row.children[2]?.textContent).toContain("64.5");
 		expect(row.children[2]?.textContent).toContain("+7.50%");
+		const favoriteButton = row.querySelector<HTMLButtonElement>('button[aria-pressed="false"]');
+		expect(favoriteButton?.className).toContain("size-6");
+		expect(favoriteButton?.className).not.toContain("right-[-26px]");
 	});
 
 	it("uses market cap instead of open interest for spot markets", () => {
@@ -165,6 +168,6 @@ describe("TokenSelectorRow", () => {
 			{ isSelected: true },
 		);
 
-		expect(row.classList.contains("bg-fill-weak")).toBe(true);
+		expect(row.classList.contains("bg-trading-panel-hover")).toBe(true);
 	});
 });

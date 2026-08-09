@@ -12,7 +12,11 @@ import {
 	type LocalAssetDescriptionId,
 	type MarketAssetReference,
 } from "@/domain/market/asset-info";
-import { getSpotAssetSnapshotIdentity, loadSpotAssetDescription } from "@/domain/market/spot-asset-info";
+import {
+	getSpotAssetSnapshotIdentity,
+	getSpotAssetSocials,
+	loadSpotAssetDescription,
+} from "@/domain/market/spot-asset-info";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatNumber, shortenAddress } from "@/lib/format";
 import { getExplorerTokenUrl, type UnifiedMarketInfo, useInfo } from "@/lib/hyperliquid";
@@ -33,6 +37,12 @@ interface MetadataRow {
 	id: string;
 	label: ReactNode;
 	value: ReactNode;
+}
+
+interface ExternalLink {
+	href: string;
+	id: string;
+	label: ReactNode;
 }
 
 function createLocalDescription(descriptionId: LocalAssetDescriptionId | null): ReactNode {
@@ -175,23 +185,35 @@ export function MarketAssetInfo({ market }: Props) {
 		reference.kind === "spot" && tokenId !== null && tokenDetailsQuery.isPending && tokenDetails === undefined;
 	const tokenMetadataError =
 		reference.kind === "spot" && tokenId !== null && tokenDetailsQuery.isError && tokenDetails === undefined;
-	const metadataRows: MetadataRow[] = [];
+	const metadataRows: MetadataRow[] = [
+		{
+			id: "underlying-asset",
+			label: <Trans>Underlying asset</Trans>,
+			value: reference.kind === "spot" ? reference.baseName : market.shortName || reference.coin,
+		},
+	];
+	if (market.kind !== "spot" && typeof market.maxLeverage === "number") {
+		metadataRows.push({
+			id: "maximum-leverage",
+			label: <Trans>Maximum leverage</Trans>,
+			value: `${market.maxLeverage}x`,
+		});
+	}
+
+	const externalLinks: ExternalLink[] = [];
+	const spotSocials = getSpotAssetSocials(market);
 	if (reference.kind === "spot") {
 		if (tokenId) {
+			const explorerUrl = getExplorerTokenUrl(tokenId, isTestnet());
 			metadataRows.push({
 				id: "token-id",
 				label: <Trans>Token ID</Trans>,
-				value: (
-					<a
-						href={getExplorerTokenUrl(tokenId, isTestnet())}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="inline-flex items-center gap-1 text-brand transition-colors hover:text-brand/80"
-					>
-						{shortenAddress(tokenId, 6, 6)}
-						<ArrowSquareOutIcon className="size-3 shrink-0" aria-hidden />
-					</a>
-				),
+				value: shortenAddress(tokenId, 6, 6),
+			});
+			externalLinks.push({
+				href: explorerUrl,
+				id: "explorer",
+				label: <Trans>Explorer</Trans>,
 			});
 		}
 		if (tokenDetails) {
@@ -233,6 +255,18 @@ export function MarketAssetInfo({ market }: Props) {
 			}
 		}
 	}
+	if (spotSocials?.website) {
+		externalLinks.push({ href: spotSocials.website, id: "website", label: <Trans>Website</Trans> });
+	}
+	if (spotSocials?.x) {
+		externalLinks.push({ href: spotSocials.x, id: "x", label: "X" });
+	}
+	if (spotSocials?.telegram) {
+		externalLinks.push({ href: spotSocials.telegram, id: "telegram", label: "Telegram" });
+	}
+
+	const marketType =
+		market.kind === "spot" ? <Trans>Spot</Trans> : market.kind === "builderPerp" ? "HIP-3" : <Trans>Perp</Trans>;
 
 	const assetIcon = <AssetDisplay coin={market.name} iconUrl={market.iconUrl} hideName iconClassName="size-5" />;
 
@@ -268,16 +302,40 @@ export function MarketAssetInfo({ market }: Props) {
 				onOpenChange={setOpen}
 				size="lg"
 				presentation={isMobile ? "drawer" : "modal"}
-				overlayClassName="backdrop-blur-[2px] duration-100"
-				className="min-h-[166px] max-h-[calc(100dvh-1rem)] rounded-t-16 !shadow-none min-[1001px]:min-h-0 min-[1001px]:max-w-[32.5rem] min-[1001px]:rounded-16"
+				handleClassName="top-2.5 h-1 w-9 !rounded-[2px] bg-trading-panel-stroke-input"
+				overlayClassName="!bg-trading-panel-scrim backdrop-blur-[2px] duration-200"
+				className="min-h-[166px] max-h-[calc(100dvh-1rem)] rounded-t-16 border-trading-panel-stroke-card font-market-close min-[1001px]:min-h-0 min-[1001px]:max-w-[30rem] min-[1001px]:rounded-16 min-[1001px]:border min-[1001px]:[&>button]:top-[14px] min-[1001px]:[&>button]:right-[14px] min-[1001px]:[&>button]:size-[30px]"
 			>
-				<ModalHeader divider={false} className="px-6 pt-5 pb-3">
-					<div className="flex min-w-0 items-center gap-3 pr-8">
-						<AssetDisplay coin={market.name} iconUrl={market.iconUrl} hideName iconClassName="size-10" />
-						<div className="min-w-0">
-							<ModalTitle className="truncate text-lg font-normal">{market.pairName}</ModalTitle>
+				<ModalHeader divider={false} className="items-center px-12 pt-9 pb-0 min-[1001px]:px-6 min-[1001px]:pt-8">
+					<div
+						data-testid="market-asset-info-header"
+						className="flex min-w-0 max-w-full flex-col items-center gap-3 text-center"
+					>
+						<span data-testid="market-asset-info-icon" className="inline-flex size-14 items-center justify-center">
+							<AssetDisplay coin={market.name} iconUrl={market.iconUrl} hideName iconClassName="size-14" />
+						</span>
+						<div className="flex min-w-0 max-w-full flex-col items-center gap-1.5">
+							<div className="flex min-w-0 max-w-full items-center justify-center gap-2">
+								<ModalTitle className="truncate text-[18px] leading-6 font-bold text-trading-panel-fg">
+									{market.pairName}
+								</ModalTitle>
+								<span
+									className={
+										market.kind === "spot"
+											? "shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-1.5 py-0.5 text-[10px] leading-3 font-semibold text-trading-panel-success"
+											: "shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-hover px-1.5 py-0.5 text-[10px] leading-3 font-semibold text-trading-panel-muted"
+									}
+								>
+									{marketType}
+								</span>
+								{market.kind !== "spot" && typeof market.maxLeverage === "number" ? (
+									<span className="shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-hover px-1.5 py-0.5 text-[10px] leading-3 font-semibold text-trading-panel-muted tabular-nums">
+										{market.maxLeverage}x
+									</span>
+								) : null}
+							</div>
 							{reference.kind === "spot" && reference.fullName ? (
-								<p className="mt-1 truncate text-xs text-fg-muted">{reference.fullName}</p>
+								<p className="max-w-full truncate text-xs text-trading-panel-muted">{reference.fullName}</p>
 							) : null}
 						</div>
 					</div>
@@ -286,22 +344,22 @@ export function MarketAssetInfo({ market }: Props) {
 					</ModalDescription>
 				</ModalHeader>
 
-				<ModalContent className="space-y-4 px-6 pt-0 pb-6">
+				<ModalContent className="space-y-4 px-6 pt-4 pb-6">
 					{!spotDescriptionLoading && (description || providerDescription) ? (
-						<div className="space-y-3 text-xs leading-5 text-fg-muted">
+						<div className="space-y-3 text-[13px] leading-[1.65] text-trading-panel-muted text-pretty">
 							{description ? <p className="whitespace-pre-wrap">{description}</p> : null}
 							{providerDescription ? <p>{providerDescription}</p> : null}
 						</div>
 					) : null}
 
 					{spotDescriptionLoading || annotationLoading ? (
-						<p className="text-xs leading-5 text-fg-muted" aria-live="polite">
+						<p className="text-xs leading-5 text-trading-panel-muted" aria-live="polite">
 							<Trans>Loading asset information...</Trans>
 						</p>
 					) : null}
 
 					{annotationMissing ? (
-						<p className="text-xs leading-5 text-fg-muted">
+						<p className="text-xs leading-5 text-trading-panel-muted">
 							<Trans>No description has been provided for this market.</Trans>
 						</p>
 					) : null}
@@ -318,7 +376,7 @@ export function MarketAssetInfo({ market }: Props) {
 					) : null}
 
 					{annotationDescription && market.kind === "builderPerp" ? (
-						<p className="border-t border-stroke-weak pt-3 text-2xs leading-4 text-fg-muted">
+						<p className="border-t border-trading-panel-stroke-row pt-3 text-2xs leading-4 text-trading-panel-muted">
 							<Trans>
 								This description was supplied by the third-party market deployer. Treat it as unverified information.
 							</Trans>
@@ -326,18 +384,23 @@ export function MarketAssetInfo({ market }: Props) {
 					) : null}
 
 					{metadataRows.length > 0 ? (
-						<dl className="divide-y divide-stroke-weak rounded-xs border border-stroke-weak">
+						<dl
+							data-testid="market-asset-info-card"
+							className="flex flex-col gap-2 rounded-[12px] border border-trading-panel-stroke-card bg-trading-panel-card px-3.5 py-3"
+						>
 							{metadataRows.map((row) => (
-								<div key={row.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-4 px-3 py-2.5">
-									<dt className="text-xs text-fg-muted">{row.label}</dt>
-									<dd className="min-w-0 break-words text-right text-xs tabular-nums text-fg">{row.value}</dd>
+								<div key={row.id} className="flex items-center justify-between gap-4 text-xs">
+									<dt className="shrink-0 whitespace-nowrap text-trading-panel-muted">{row.label}</dt>
+									<dd className="min-w-0 truncate whitespace-nowrap text-right font-semibold text-trading-panel-fg tabular-nums">
+										{row.value}
+									</dd>
 								</div>
 							))}
 						</dl>
 					) : null}
 
 					{tokenMetadataLoading ? (
-						<p className="text-xs leading-5 text-fg-muted" aria-live="polite">
+						<p className="text-xs leading-5 text-trading-panel-muted" aria-live="polite">
 							<Trans>Loading token metadata...</Trans>
 						</p>
 					) : null}
@@ -356,6 +419,23 @@ export function MarketAssetInfo({ market }: Props) {
 							>
 								<Trans>Retry</Trans>
 							</Button>
+						</div>
+					) : null}
+
+					{externalLinks.length > 0 ? (
+						<div data-testid="market-asset-info-links" className="flex flex-wrap justify-center gap-x-3 gap-y-2">
+							{externalLinks.map((link) => (
+								<a
+									key={link.id}
+									href={link.href}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="inline-flex items-center gap-1 whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control text-xs font-semibold text-trading-panel-fg transition-colors duration-[120ms] hover:text-trading-panel-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-control motion-reduce:transition-none"
+								>
+									{link.label}
+									<ArrowSquareOutIcon className="size-3 shrink-0" aria-hidden />
+								</a>
+							))}
 						</div>
 					) : null}
 				</ModalContent>

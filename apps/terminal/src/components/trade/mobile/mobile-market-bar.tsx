@@ -1,5 +1,5 @@
 import { t } from "@lingui/core/macro";
-import { ArrowSquareOutIcon, CaretDownIcon, CaretUpIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CaretDownIcon, CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { type PointerEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -115,13 +115,6 @@ export function MobileMarketBar({ className }: Props) {
 		}));
 	}, [displayPriceNumber]);
 
-	useEffect(() => {
-		if (!expanded) return;
-		setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS));
-		const id = setInterval(() => setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS)), 1000);
-		return () => clearInterval(id);
-	}, [expanded]);
-
 	const prevDayPx = liveCtx?.prevDayPx ?? market?.prevDayPx;
 	const priceDecimals = getPriceDecimals(market);
 	const oraclePx = perpCtx?.oraclePx ?? market?.oraclePx;
@@ -132,7 +125,14 @@ export function MobileMarketBar({ className }: Props) {
 	const spotCirculatingSupply = isSpot
 		? (spotCtxEvent?.ctx?.circulatingSupply ?? getSpotCirculatingSupply(market))
 		: null;
-	const fundingNum = toBig(funding)?.toNumber() ?? 0;
+	const fundingNum = toBig(funding)?.toNumber() ?? null;
+	const shouldRunFundingCountdown = expanded && !isSpot && fundingNum !== null;
+	useEffect(() => {
+		if (!shouldRunFundingCountdown) return;
+		setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS));
+		const id = setInterval(() => setFundingRemaining(HOUR_MS - (Date.now() % HOUR_MS)), 1000);
+		return () => clearInterval(id);
+	}, [shouldRunFundingCountdown]);
 	const change24h = get24hChange(prevDayPx, displayPrice);
 	const changeAmount = getPriceChangeAmount(displayPrice, prevDayPx);
 	const changeColorClass = getPriceChangeColorClass(change24h);
@@ -157,25 +157,27 @@ export function MobileMarketBar({ className }: Props) {
 	return (
 		<div
 			className={cn(
-				"shrink-0 w-full max-w-full min-w-0 overflow-hidden bg-surface border-b border-stroke-weak/60",
+				"w-full max-w-full min-w-0 shrink-0 overflow-hidden border-b border-trading-panel-stroke-row bg-surface font-market-close text-trading-panel-fg",
 				className,
 			)}
 		>
-			<div className="min-w-0 px-3">
-				<div className="grid min-h-[61px] min-w-0 grid-cols-[minmax(max-content,1fr)_minmax(0,1fr)] items-center gap-2">
-					<div className="flex min-w-0 items-center">
-						<MarketAssetInfo key={market?.name} market={market} />
+			<div className="min-w-0">
+				<div className="grid min-h-[61px] min-w-0 grid-cols-2 items-center gap-x-4 px-4 py-2.5 max-[360px]:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] max-[360px]:gap-x-1 max-[360px]:px-2.5">
+					<div className="flex min-w-0 items-center gap-0">
+						<div className="flex shrink-0 [&>span]:size-11 [&_button]:size-11 [&_.relative.inline-flex]:size-7">
+							<MarketAssetInfo key={market?.name} market={market} />
+						</div>
 						<TokenSelector selectedMarket={market} onValueChange={handleMarketChange} showAssetIcon={false} />
 					</div>
 
-					<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_2rem] items-center gap-2 overflow-hidden">
+					<div className="grid min-w-0 grid-cols-[minmax(0,1fr)_36px] items-center gap-2 overflow-visible max-[360px]:gap-1">
 						<div data-boneyard="market-price" className="min-w-0 text-left">
 							<div className="flex min-w-0 flex-col items-start">
 								<span
 									key={priceFlash.sequence}
 									data-direction={priceFlash.direction ?? undefined}
 									className={cn(
-										"block max-w-full overflow-hidden text-ellipsis whitespace-nowrap font-sans text-lg leading-6 font-normal text-fg tabular-nums",
+										"block max-w-full overflow-hidden text-ellipsis whitespace-nowrap text-[18px] leading-[22px] font-bold text-trading-panel-fg tabular-nums max-[360px]:text-base max-[360px]:leading-5",
 										priceFlash.direction && "use-color-change",
 									)}
 									title={priceText}
@@ -184,9 +186,9 @@ export function MobileMarketBar({ className }: Props) {
 								</span>
 								<div
 									className={cn(
-										"max-w-full whitespace-normal font-sans text-xs leading-[15px] tabular-nums",
+										"max-w-full whitespace-normal text-[11px] leading-[15px] font-semibold tabular-nums",
 										changeAmountText === FALLBACK_VALUE_PLACEHOLDER || changePercentText === FALLBACK_VALUE_PLACEHOLDER
-											? "invisible text-fg-muted"
+											? "invisible text-trading-panel-subtle"
 											: changeColorClass,
 									)}
 									title={`${changeAmountText} / ${changePercentText}`}
@@ -201,67 +203,92 @@ export function MobileMarketBar({ className }: Props) {
 						<button
 							type="button"
 							onClick={() => setExpanded((value) => !value)}
-							className="flex size-8 shrink-0 items-center justify-center rounded-xs border border-stroke-weak/80 bg-transparent text-icon/90 hover:bg-fill-hover/60 active:bg-fill-press/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							className={cn(
+								"relative flex h-[30px] w-9 shrink-0 items-center justify-center rounded-[8px] border bg-transparent after:absolute after:-inset-y-[7px] after:-inset-x-1 hover:bg-trading-panel-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+								expanded
+									? "border-trading-panel-control text-trading-panel-fg"
+									: "border-trading-panel-stroke-input text-trading-panel-muted",
+							)}
 							aria-expanded={expanded}
 							aria-label={expanded ? t`Collapse market details` : t`Expand market details`}
 						>
-							{expanded ? <CaretUpIcon className="size-4" /> : <CaretDownIcon className="size-4" />}
+							<CaretDownIcon
+								className={cn(
+									"size-3.5 transition-transform duration-200 ease-out motion-reduce:transition-none",
+									expanded && "rotate-180",
+								)}
+							/>
 						</button>
 					</div>
 				</div>
 
 				{expanded && (
-					<div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2 pb-0.5 pl-8">
+					<div className="mx-4 border-t border-trading-panel-stroke-row">
 						{!isSpot && (
 							<>
-								<DetailCell
-									label={
-										<>
-											{t`Mark`}/{t`ORACLE`}
-										</>
-									}
-									tooltipContent={t`Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details.`}
-									value={`${formatDisplayPrice(marketMarkPx, priceDecimals)} / ${formatDisplayPrice(oraclePx, priceDecimals)}`}
-								/>
-								<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
-								<DetailCell
-									label={t`OPEN INT`}
-									tooltipContent={t`Two-sided open interest: the sum of long and short positions on this contract.`}
-									value={formatUSD(oiUsd, { compact: false })}
-								/>
-								<DetailCell
-									label={
-										<>
-											{t`FUNDING`}/{t`Resets in`}
-										</>
-									}
-									tooltipContent={t`Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details.`}
-									value={
-										<span className="inline-flex items-center gap-2">
-											<span className={getPriceChangeColorClass(fundingNum)}>
-												{formatPercent(fundingNum, { minimumFractionDigits: 4, signDisplay: "exceptZero" })}
-											</span>
-											<span>{formatClockDuration(fundingRemaining)}</span>
-										</span>
-									}
-								/>
+								<div className="grid grid-cols-2 gap-x-4 py-2.5">
+									<DetailCell
+										label={
+											<>
+												{t`Mark`}/{t`ORACLE`}
+											</>
+										}
+										tooltipContent={t`Mark price: used for margin calculations, unrealized PnL, liquidations, and triggering TP/SL orders. Oracle price: reference price for funding payments. See the HIP-3 deployer's documentation for details.`}
+										value={`${formatDisplayPrice(marketMarkPx, priceDecimals)} / ${formatDisplayPrice(oraclePx, priceDecimals)}`}
+									/>
+									<DetailCell label={t`24H VOL`} value={formatUSD(dayNtlVlm, { compact: false })} />
+								</div>
+								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
+									<DetailCell
+										label={t`OPEN INT`}
+										tooltipContent={t`Two-sided open interest: the sum of long and short positions on this contract.`}
+										value={formatUSD(oiUsd, { compact: false })}
+									/>
+									<DetailCell
+										label={
+											<>
+												{t`FUNDING`}/{t`Resets in`}
+											</>
+										}
+										tooltipContent={t`Hourly rate paid by longs to shorts (if negative, shorts pay longs). Funding has no associated fee; it is a peer-to-peer transfer between users to push the price toward the spot price. See the documentation for details.`}
+										value={
+											fundingNum === null ? (
+												FALLBACK_VALUE_PLACEHOLDER
+											) : (
+												<span className="inline-flex items-center gap-2">
+													<span className={getPriceChangeColorClass(fundingNum)}>
+														{formatPercent(fundingNum, {
+															minimumFractionDigits: 4,
+															signDisplay: "exceptZero",
+														})}
+													</span>
+													<span>{formatClockDuration(fundingRemaining)}</span>
+												</span>
+											)
+										}
+									/>
+								</div>
 							</>
 						)}
 						{isSpot && (
 							<>
-								<DetailCell label={t`Mark`} value={formatDisplayPrice(spotMarkPx, priceDecimals)} />
-								<DetailCell label={t`24H VOL`} value={spotVolumeText} />
-								<DetailCell label={t`Market Cap`} value={spotMarketCapText} />
-								<DetailCell
-									label={t`More Info`}
-									value={createSpotTokenInfo(
-										spotTokenAddress,
-										copiedSpotTokenAddress,
-										copySpotTokenAddress,
-										spotSocials,
-									)}
-									multiline
-								/>
+								<div className="grid grid-cols-2 gap-x-4 py-2.5">
+									<DetailCell label={t`Price`} value={formatDisplayPrice(displayPrice, priceDecimals)} />
+									<DetailCell label={t`24H VOL`} value={spotVolumeText} />
+								</div>
+								<div className="grid grid-cols-2 gap-x-4 border-t border-trading-panel-stroke-row pt-2.5 pb-3.5">
+									<DetailCell label={t`Market Cap`} value={spotMarketCapText} />
+									<DetailCell
+										label={t`More Info`}
+										value={createSpotTokenInfo(
+											spotTokenAddress,
+											copiedSpotTokenAddress,
+											copySpotTokenAddress,
+											spotSocials,
+										)}
+										multiline
+									/>
+								</div>
 							</>
 						)}
 					</div>
@@ -285,13 +312,13 @@ function createSpotTokenInfo(
 	}
 
 	return (
-		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full flex-col items-start">
+		<span data-slot="mobile-spot-token-info" className="flex min-w-0 max-w-full items-center gap-1">
 			{address ? (
-				<span className="block max-w-full truncate font-mono tabular-nums" title={address}>
+				<span className="block min-w-0 max-w-20 truncate text-[12px] font-semibold tabular-nums" title={address}>
 					{shortenAddress(address, 4, 4)}
 				</span>
 			) : null}
-			<span className="flex max-w-full flex-wrap items-center">
+			<span className="flex min-w-0 max-w-full items-center">
 				{address ? (
 					<>
 						<a
@@ -299,17 +326,17 @@ function createSpotTokenInfo(
 							target="_blank"
 							rel="noopener noreferrer"
 							aria-label={t`Open token in explorer`}
-							className="inline-flex size-6 shrink-0 items-center justify-center rounded-xs text-brand transition-colors duration-150 hover:bg-fill-hover hover:text-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+							className="inline-flex size-6 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
 						>
-							<ArrowSquareOutIcon className="size-3.5" aria-hidden="true" />
+							<ArrowSquareOutIcon className="size-3" aria-hidden="true" />
 						</a>
 						<button
 							type="button"
 							onClick={handleCopy}
 							aria-label={copied ? t`Copied` : t`Copy token address`}
-							className="inline-flex size-6 shrink-0 items-center justify-center rounded-xs text-brand transition-colors duration-150 hover:bg-fill-hover hover:text-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
+							className="inline-flex size-6 shrink-0 items-center justify-center rounded-[7px] text-trading-panel-muted transition-colors duration-150 hover:bg-trading-panel-hover hover:text-trading-panel-fg active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus motion-reduce:transition-none"
 						>
-							{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+							{copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
 						</button>
 					</>
 				) : null}
@@ -402,7 +429,7 @@ function DetailCell({ label, multiline = false, tooltipContent, value }: DetailC
 
 	return (
 		<div className="min-w-0">
-			<div className="truncate text-2xs font-medium leading-4 text-fg-muted">
+			<div className="truncate text-[10px] leading-4 text-trading-panel-subtle">
 				{tooltipContent ? (
 					<>
 						<button
@@ -413,7 +440,7 @@ function DetailCell({ label, multiline = false, tooltipContent, value }: DetailC
 							onBlur={closeTooltip}
 							onClick={handleTooltipClick}
 							aria-describedby={tooltipPosition ? tooltipId : undefined}
-							className="max-w-full cursor-help truncate border-0 bg-transparent p-0 text-left text-current underline decoration-dashed underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+							className="max-w-full cursor-help truncate border-0 border-b border-dashed border-trading-panel-stroke-control bg-transparent p-0 text-left text-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
 						>
 							{label}
 						</button>
@@ -425,7 +452,7 @@ function DetailCell({ label, multiline = false, tooltipContent, value }: DetailC
 			</div>
 			<div
 				className={cn(
-					"text-xs font-semibold leading-5 text-fg tabular-nums",
+					"text-[13px] leading-5 font-semibold text-trading-panel-fg tabular-nums",
 					multiline ? "whitespace-normal" : "truncate",
 				)}
 				title={typeof value === "string" ? value : undefined}
@@ -517,6 +544,6 @@ function formatSignedPercent(value: number | null): string {
 }
 
 function getPriceChangeColorClass(value: number | null): string {
-	if (typeof value !== "number" || !Number.isFinite(value) || value === 0) return "text-fg-muted";
-	return value < 0 ? "text-error" : "text-success";
+	if (typeof value !== "number" || !Number.isFinite(value) || value === 0) return "text-trading-panel-subtle";
+	return value < 0 ? "text-trading-panel-error" : "text-trading-panel-success";
 }

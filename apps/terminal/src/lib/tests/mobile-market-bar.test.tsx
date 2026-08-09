@@ -103,6 +103,17 @@ describe("MobileMarketBar", () => {
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
 		mocks.copy.mockReset();
+		Object.assign(mocks.selectedMarket, {
+			kind: "spot",
+			name: "@999",
+			pairName: "TOKEN-USDH",
+			markPx: "1.25",
+			prevDayPx: "1.0",
+			dayNtlVlm: "12345.67",
+			circulatingSupply: "1000",
+		});
+		delete (mocks.selectedMarket as Record<string, unknown>).funding;
+		delete (mocks.selectedMarket as Record<string, unknown>).maxLeverage;
 		mocks.selectedMarket.tokensInfo[0].tokenId = BASE_TOKEN_ID;
 		mocks.socials = null;
 		container = document.createElement("div");
@@ -123,7 +134,7 @@ describe("MobileMarketBar", () => {
 		expect(container.textContent).not.toContain("$12,345.67");
 	});
 
-	it("separates the address from touch-sized actions when both address and socials exist", () => {
+	it("keeps the address and compact actions in the mobile detail row", () => {
 		mocks.socials = {
 			displayName: "Token",
 			x: "https://x.com/example",
@@ -134,7 +145,8 @@ describe("MobileMarketBar", () => {
 		renderExpandedBar();
 
 		const tokenInfo = container.querySelector<HTMLElement>('[data-slot="mobile-spot-token-info"]');
-		expect(tokenInfo?.className).toContain("flex-col");
+		expect(tokenInfo?.className).toContain("items-center");
+		expect(tokenInfo?.className).not.toContain("flex-col");
 		expect(tokenInfo?.querySelector(`span[title="${BASE_TOKEN_ID}"]`)?.textContent).toBe("0x1111...1111");
 		expect(tokenInfo?.querySelector('a[aria-label="Open token in explorer"]')?.className).toContain("size-6");
 		expect(tokenInfo?.querySelector('button[aria-label="Copy token address"]')?.className).toContain("size-6");
@@ -170,5 +182,20 @@ describe("MobileMarketBar", () => {
 
 		expect(container.querySelector('[data-slot="mobile-spot-token-info"]')).toBeNull();
 		expect(container.textContent).toContain(`More Info${FALLBACK_VALUE_PLACEHOLDER}`);
+	});
+
+	it("does not append a countdown when perpetual funding is unavailable", () => {
+		Object.assign(mocks.selectedMarket, {
+			kind: "perp",
+			name: "HYPE",
+			pairName: "HYPE-USDC",
+			maxLeverage: 10,
+			funding: undefined,
+		});
+
+		renderExpandedBar();
+
+		expect(container.textContent).toContain(`FUNDING/Resets in${FALLBACK_VALUE_PLACEHOLDER}`);
+		expect(container.textContent).not.toMatch(/FUNDING\/Resets in—\d{2}:/);
 	});
 });
