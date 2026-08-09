@@ -11,6 +11,7 @@ import type { MarketKind } from "@/lib/hyperliquid";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { getTabsOrderType } from "@/lib/trade/order-types";
 import type { Side } from "@/lib/trade/types";
+import { tradingPanelDropdownPopupClass } from "@/lib/ui/trading-dropdown";
 import { SideToggle } from "./side-toggle";
 
 interface Props {
@@ -98,13 +99,15 @@ export function TradeHeader({
 	const handleMarginModeClick = onMarginModeClick ?? onMarginLeverageClick;
 	const handleLeverageClick = onLeverageClick ?? onMarginLeverageClick;
 	const controlButtonClass = cn(
-		"trade-control-button group min-w-0 cursor-pointer rounded-8 bg-fill-weak py-1.5 text-xs font-semibold text-fg transition-colors",
-		"hover:bg-fill-hover active:bg-fill-press focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+		"trade-control-button group flex min-w-0 cursor-pointer flex-col items-start gap-px rounded-[10px] border border-trading-panel-stroke-card bg-surface py-1.5 text-left transition-colors",
+		"hover:border-trading-panel-stroke-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
-		compact && "px-2 py-1 text-2xs",
+		compact && "py-1",
 	);
+	const controlLabelClass = "w-full min-w-0 truncate text-3xs leading-snug text-trading-panel-subtle";
+	const controlValueClass = "flex w-full min-w-0 items-center gap-0.5 text-2sm font-semibold text-trading-panel-fg";
 	const mobileControlClass = cn(
-		"relative flex h-[35px] min-w-0 items-center gap-1 whitespace-nowrap rounded-none bg-surface px-0 text-[13px] font-semibold text-trading-panel-fg",
+		"relative flex h-[35px] min-w-0 items-center gap-1 whitespace-nowrap rounded-none bg-surface px-0 text-2sm font-semibold text-trading-panel-fg",
 		"after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-['']",
 		"transition-opacity active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-trading-panel-control",
 		"disabled:cursor-not-allowed disabled:text-fg-disabled",
@@ -133,6 +136,7 @@ export function TradeHeader({
 						triggerVariant="minimal"
 						triggerAriaLabel={t`Order type`}
 						triggerClassName={cn(mobileControlClass, "w-full justify-start")}
+						popupClassName={tradingPanelDropdownPopupClass}
 						className="min-w-0"
 					/>
 					{isLeveraged && (
@@ -167,45 +171,54 @@ export function TradeHeader({
 	return (
 		<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-4"}>
 			{isLeveraged && (
-				<div
-					className={cn(
-						"trade-control-grid grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,1.35fr)]",
-						compact && "gap-1.5",
-					)}
-				>
+				<div className={cn("trade-control-grid grid min-w-0 grid-cols-3", compact && "gap-1.5")}>
 					<button
 						type="button"
-						onClick={onMarginLeverageClick}
+						onClick={handleMarginModeClick}
 						className={controlButtonClass}
 						aria-haspopup="dialog"
 						title={marginLabel}
 					>
-						<span className="block truncate">{marginLabel}</span>
+						<span className={cn(controlLabelClass, "trade-card-label-full")}>{t`Margin mode`}</span>
+						<span className={cn(controlLabelClass, "trade-card-label-compact")}>{t`Margin`}</span>
+						<span className={controlValueClass}>
+							<span className="min-w-0 truncate">{marginLabel}</span>
+							<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
+						</span>
 					</button>
 					<button
 						type="button"
-						onClick={onMarginLeverageClick}
+						onClick={handleLeverageClick}
 						className={controlButtonClass}
 						aria-haspopup="dialog"
 						title={`${leverage ?? 1}x`}
 					>
-						<span className="block truncate tabular-nums">{leverage ?? 1}x</span>
+						<span className={controlLabelClass}>{t`Leverage`}</span>
+						<span className={controlValueClass}>
+							<span className={cn("min-w-0 truncate tabular-nums", getLeverageToneClass(leverage ?? 1))}>
+								{leverage ?? 1}x
+							</span>
+							<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
+						</span>
 					</button>
 					<button
 						type="button"
 						onClick={onAccountModeClick}
 						disabled={isAccountModeLoading || isAccountModeUpdating}
-						className={cn(controlButtonClass, "w-full")}
+						className={controlButtonClass}
 						aria-label={t`Account mode`}
 						aria-haspopup="dialog"
 						title={accountModeLabel}
 					>
-						<span className="flex min-w-0 items-center justify-center gap-1">
+						<span className={cn(controlLabelClass, "trade-card-label-full")}>{t`Account mode`}</span>
+						<span className={cn(controlLabelClass, "trade-card-label-compact")}>{t`Account`}</span>
+						<span className={controlValueClass}>
 							{(isAccountModeLoading || isAccountModeUpdating) && (
 								<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
 							)}
-							<span className="trade-full-label truncate">{accountModeLabel}</span>
-							<span className="trade-compact-label truncate">{compactAccountModeLabel}</span>
+							<span className="trade-full-label min-w-0 truncate">{accountModeLabel}</span>
+							<span className="trade-compact-label min-w-0 truncate">{compactAccountModeLabel}</span>
+							<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
 						</span>
 					</button>
 				</div>
@@ -213,7 +226,7 @@ export function TradeHeader({
 
 			<div className="relative grid min-w-0 grid-cols-3">
 				<div
-					className="pointer-events-none absolute bottom-0 left-0 z-10 h-px w-1/3 bg-brand transition-transform duration-300 ease-out motion-reduce:transition-none"
+					className="pointer-events-none absolute bottom-0 left-0 z-10 h-0.5 w-1/3 bg-trading-panel-fg transition-transform duration-300 ease-out motion-reduce:transition-none"
 					style={{ transform: `translateX(${orderTypeIndex * 100}%)` }}
 				/>
 				<OrderTypeTabButton active={tabsOrderType === "market"} onClick={() => onOrderTypeChange("market")}>
@@ -242,22 +255,29 @@ export function TradeHeader({
 					triggerAriaLabel={t`Advanced order types`}
 					triggerClassName={cn(
 						orderTypeTabClass(tabsOrderType === "advanced"),
-						"w-full rounded-none hover:text-fg data-[popup-open]:text-fg",
+						"w-full rounded-none hover:text-trading-panel-fg data-[popup-open]:text-trading-panel-fg",
 					)}
+					popupClassName={tradingPanelDropdownPopupClass}
 					className="min-w-0"
 				/>
 			</div>
 
-			<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} />
+			<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel />
 		</div>
 	);
 }
 
+function getLeverageToneClass(leverage: number): string {
+	if (leverage >= 20) return "text-trading-panel-error";
+	if (leverage > 10) return "text-trading-panel-warning";
+	return "text-trading-panel-fg";
+}
+
 function orderTypeTabClass(active: boolean) {
 	return cn(
-		"trade-order-type-button min-w-0 border-b border-stroke-weak py-2 text-xs font-semibold transition-colors",
+		"trade-order-type-button min-w-0 border-b border-trading-panel-stroke-card pt-1.5 pb-2 text-sm transition-colors",
 		"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-		active ? "text-fg" : "text-fg-muted hover:text-fg",
+		active ? "font-bold text-trading-panel-fg" : "font-medium text-trading-panel-subtle hover:text-trading-panel-fg",
 	);
 }
 

@@ -1,6 +1,7 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, UploadSimpleIcon } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
@@ -16,9 +17,15 @@ import { useDepositModalActions, useTransferModalActions } from "@/stores/use-gl
 
 type SummaryRow = {
 	label: string;
-	value: string;
+	value: ReactNode;
 	valueClassName?: string;
 };
+
+function getMarginRatioTone(ratio: number): { text: string; bar: string } {
+	if (ratio >= 0.75) return { text: "text-trading-panel-error", bar: "bg-trading-panel-error" };
+	if (ratio >= 0.5) return { text: "text-trading-panel-warning", bar: "bg-trading-panel-warning" };
+	return { text: "text-trading-panel-success", bar: "bg-trading-panel-success" };
+}
 
 export function AccountPanel() {
 	const { t } = useLingui();
@@ -75,6 +82,7 @@ export function AccountPanel() {
 		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
 		: null;
 
+	const marginRatioTone = perpMetrics ? getMarginRatioTone(perpMetrics.marginRatio) : null;
 	const perpRows: SummaryRow[] = perpMetrics
 		? [
 				{
@@ -89,7 +97,19 @@ export function AccountPanel() {
 				},
 				{
 					label: t`Cross Margin Ratio`,
-					value: formatPercent(perpMetrics.marginRatio, { maximumFractionDigits: 2 }),
+					value: (
+						<span className="inline-flex items-center gap-1.5">
+							<span className="h-1 w-14 shrink-0 overflow-hidden rounded-full bg-trading-panel-stroke-card">
+								<span
+									className={cn("block h-full rounded-full", marginRatioTone?.bar)}
+									style={{ width: `${Math.min(100, Math.max(0, perpMetrics.marginRatio * 100))}%` }}
+								/>
+							</span>
+							<span className={cn("font-bold", marginRatioTone?.text)}>
+								{formatPercent(perpMetrics.marginRatio, { maximumFractionDigits: 2 })}
+							</span>
+						</span>
+					),
 					valueClassName: "tabular-nums",
 				},
 				{
@@ -107,8 +127,8 @@ export function AccountPanel() {
 
 	return (
 		<div className="h-full min-h-0 flex flex-col bg-surface border-t border-stroke-weak pb-6 overflow-hidden">
-			<div className="px-2 py-2 border-b border-stroke-weak">
-				<span className="text-xs font-medium text-fg-muted uppercase tracking-wide">{t`Account`}</span>
+			<div className="px-2 py-2 border-b border-trading-panel-stroke-card">
+				<span className="text-2sm font-bold text-trading-panel-fg">{t`Account`}</span>
 			</div>
 
 			{!isConnected ? (
@@ -117,10 +137,19 @@ export function AccountPanel() {
 				<div className="min-h-0 flex-1 p-2 overflow-y-auto">
 					{hasPerpData && (
 						<>
-							<p className="text-xs font-medium text-fg mb-1">{t`Perps Overview`}</p>
-							<InfoRowGroup className="divide-y-0">
+							<p className="text-2sm font-bold text-trading-panel-fg mb-1">{t`Perps Overview`}</p>
+							<InfoRowGroup className="divide-y-0 tracking-normal">
 								{perpRows.map((row) => (
-									<InfoRow key={row.label} label={row.label} value={row.value} valueClassName={row.valueClassName} />
+									<InfoRow
+										key={row.label}
+										label={row.label}
+										value={row.value}
+										labelClassName="min-w-0 truncate text-trading-panel-muted"
+										valueClassName={cn(
+											"shrink-0 whitespace-nowrap font-semibold text-trading-panel-fg",
+											row.valueClassName,
+										)}
+									/>
 								))}
 							</InfoRowGroup>
 						</>
@@ -129,22 +158,24 @@ export function AccountPanel() {
 					{tradeRestricted || !hasWalletAccess ? (
 						<p className="mt-4 text-center text-xs text-fg-muted">{t`Deposits and withdrawals are not allowed.`}</p>
 					) : (
-						<div className="grid grid-cols-2 gap-1 mt-4">
+						<div className="grid grid-cols-2 gap-2 mt-4">
 							<Button
 								variant="outline"
 								intent="neutral"
 								onClick={() => openDepositModal("withdraw")}
 								aria-label={t`Withdraw`}
 								iconLeft={<UploadSimpleIcon className="size-4" />}
+								className="rounded-[8px] border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
 							>
 								{t`Withdraw`}
 							</Button>
 							<Button
-								variant="outline"
+								variant="filled"
 								intent="neutral"
 								onClick={() => openDepositModal("deposit")}
 								aria-label={t`Deposit`}
 								iconLeft={<DownloadSimpleIcon className="size-4" />}
+								className="rounded-[8px] bg-trading-panel-control font-bold text-trading-panel-on-control shadow-none hover:bg-trading-panel-control/90"
 							>
 								{t`Deposit`}
 							</Button>
@@ -157,7 +188,7 @@ export function AccountPanel() {
 										aria-label={t`Transfer between Perps and Spot`}
 										iconLeft={<ArrowsLeftRightIcon className="size-4" />}
 										disabled={!!internalTransferDisabledReason}
-										className="w-full"
+										className="w-full rounded-[8px] border-trading-panel-stroke-row font-semibold text-trading-panel-subtle shadow-none hover:border-trading-panel-stroke-control"
 									>
 										{t`Perps / Spot`}
 									</Button>
@@ -170,6 +201,7 @@ export function AccountPanel() {
 									onClick={() => openDepositModal("bridge")}
 									aria-label={t`Bridge`}
 									iconLeft={<ArrowsLeftRightIcon className="size-4" />}
+									className="rounded-[8px] border-trading-panel-stroke-input font-semibold text-trading-panel-fg shadow-none hover:border-trading-panel-stroke-control"
 								>
 									{t`Bridge`}
 								</Button>

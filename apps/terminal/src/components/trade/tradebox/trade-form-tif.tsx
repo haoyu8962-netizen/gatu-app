@@ -1,8 +1,9 @@
 import { Select } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { DefinitionTooltip } from "@/components/ui/definition-tooltip";
-import { type LimitTif, TIF_OPTIONS } from "@/config/trade";
+import type { LimitTif } from "@/config/trade";
 import { cn } from "@/lib/cn";
+import { getAvailableTifOptions, getTifOptionLabel } from "@/lib/trade/tif";
 import { useOrderEntryActions, useTif } from "@/stores/use-order-entry-store";
 
 interface Props {
@@ -15,16 +16,16 @@ export function TradeFormTif({ orderType, disabled, tradingPanel }: Props) {
 	const tif = useTif();
 	const { setTif } = useOrderEntryActions();
 
-	const availableTifOptions = orderType === "limit" ? (["Gtc", "Ioc", "Alo"] as const) : (["Gtc", "Alo"] as const);
-	const selectedTifLabel = tif in TIF_OPTIONS ? TIF_OPTIONS[tif as keyof typeof TIF_OPTIONS].label : String(tif);
+	const availableTifOptions = getAvailableTifOptions(orderType);
+	const selectedTifLabel = getTifOptionLabel(tif);
 
 	return (
 		<div className={cn("ml-auto flex items-center gap-1.5", tradingPanel && "gap-0.5")}>
 			<DefinitionTooltip topic="tif" only={availableTifOptions}>
 				<span
 					className={cn(
-						"cursor-default text-3xs font-medium tracking-wide uppercase select-none",
-						tradingPanel ? "text-trading-panel-muted max-[339px]:hidden" : "text-fg-muted/60",
+						"cursor-default font-medium tracking-wide uppercase select-none",
+						tradingPanel ? "text-2xs text-trading-panel-muted max-[339px]:hidden" : "text-3xs text-fg-muted/60",
 					)}
 				>
 					{t`TIF`}
@@ -44,7 +45,7 @@ export function TradeFormTif({ orderType, disabled, tradingPanel }: Props) {
 				)}
 				options={availableTifOptions.map((opt) => ({
 					value: opt,
-					label: TIF_OPTIONS[opt].label,
+					label: getTifOptionLabel(opt),
 				}))}
 			/>
 		</div>

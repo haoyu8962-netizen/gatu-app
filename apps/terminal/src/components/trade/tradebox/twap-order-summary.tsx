@@ -3,6 +3,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { formatDuration, formatToken, formatUSD } from "@/lib/format";
+import { SummaryRow } from "../components/summary-row";
 
 interface Props {
 	twapMinutesNum: number | null;
@@ -12,15 +13,6 @@ interface Props {
 	feeRatePercent: string;
 	baseToken: string;
 	szDecimals: number | undefined;
-}
-
-function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
-	return (
-		<div className="flex min-w-0 items-center justify-between gap-2 py-1.5">
-			<span className="min-w-0 truncate text-xs tracking-[0.5px] text-fg-muted">{label}</span>
-			<span className="shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-fg">{children}</span>
-		</div>
-	);
 }
 
 export function TwapOrderSummary({
@@ -40,20 +32,20 @@ export function TwapOrderSummary({
 	return (
 		<div className="flex min-w-0 flex-col">
 			<SummaryRow label={t`Frequency`}>
-				<span className="whitespace-nowrap text-fg">{t`${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}</span>
+				<span className="whitespace-nowrap">{t`${TWAP_SUBORDER_INTERVAL_SECONDS} seconds`}</span>
 			</SummaryRow>
 			<SummaryRow label={t`Runtime`}>
-				<span className={cn("whitespace-nowrap", minutes > 0 ? "text-fg" : "text-fg-muted")}>
+				<span className={cn("whitespace-nowrap", minutes > 0 ? "" : "font-normal text-trading-panel-muted")}>
 					{minutes > 0 ? formatDuration(minutes) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			<SummaryRow label={t`Number of Orders`}>
-				<span className={cn("whitespace-nowrap", numberOfOrders > 0 ? "text-fg" : "text-fg-muted")}>
+				<span className={cn("whitespace-nowrap", numberOfOrders > 0 ? "" : "font-normal text-trading-panel-muted")}>
 					{numberOfOrders > 0 ? numberOfOrders : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			<SummaryRow label={t`Size per Suborder`}>
-				<span className={cn("whitespace-nowrap", sizePerSuborder > 0 ? "text-fg" : "text-fg-muted")}>
+				<span className={cn("whitespace-nowrap", sizePerSuborder > 0 ? "" : "font-normal text-trading-panel-muted")}>
 					{sizePerSuborder > 0
 						? formatToken(sizePerSuborder, { decimals: szDecimals, symbol: baseToken })
 						: FALLBACK_VALUE_PLACEHOLDER}

@@ -153,8 +153,8 @@ function TestSurface() {
 				liqWarning={false}
 				orderValue={150000}
 				marginRequired={12000}
-				estimatedFee={0.05}
-				feeRatePercent="0.0500%"
+				takerFeePercent="0.0500%"
+				makerFeePercent="0.0150%"
 				slippagePercent={2.5}
 				szDecimals={2}
 				onSlippageClick={() => {}}

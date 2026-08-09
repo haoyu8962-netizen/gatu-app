@@ -7,14 +7,15 @@ import { cn } from "@/lib/cn";
 import { bpsToPercentage, formatPrice, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
 import { isMarketExecutionOrderType } from "@/lib/trade/order-types";
+import { SummaryRow } from "../components/summary-row";
 
 interface Props {
 	liqPrice: number | null;
 	liqWarning: boolean;
 	orderValue: number;
 	marginRequired: number;
-	estimatedFee: number;
-	feeRatePercent: string;
+	takerFeePercent: string;
+	makerFeePercent: string;
 	slippagePercent: number;
 	szDecimals: number | undefined;
 	onSlippageClick: () => void;
@@ -22,22 +23,13 @@ interface Props {
 	marketKind?: MarketKind;
 }
 
-function SummaryRow({ label, children }: { label: string; children: React.ReactNode }) {
-	return (
-		<div className="flex min-w-0 items-center justify-between gap-2 py-1.5">
-			<span className="min-w-0 truncate text-xs tracking-[0.5px] text-fg-muted">{label}</span>
-			<span className="shrink-0 whitespace-nowrap text-right text-xs tabular-nums text-fg">{children}</span>
-		</div>
-	);
-}
-
 export function OrderSummary({
 	liqPrice,
 	liqWarning,
 	orderValue,
 	marginRequired,
-	estimatedFee,
-	feeRatePercent,
+	takerFeePercent,
+	makerFeePercent,
 	slippagePercent,
 	szDecimals,
 	onSlippageClick,
@@ -53,20 +45,23 @@ export function OrderSummary({
 			{isLeveraged && (
 				<SummaryRow label={t`Liq. Price`}>
 					<span
-						className={cn("whitespace-nowrap", liqPrice ? (liqWarning ? "text-error" : "text-fg") : "text-fg-muted")}
+						className={cn(
+							"whitespace-nowrap",
+							liqPrice ? liqWarning && "text-trading-panel-error" : "font-normal text-trading-panel-muted",
+						)}
 					>
 						{liqPrice ? formatPrice(liqPrice, { szDecimals }) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
 			)}
 			<SummaryRow label={t`Order Value`}>
-				<span className={cn("whitespace-nowrap", orderValue > 0 ? "text-fg" : "text-fg-muted")}>
+				<span className={cn("whitespace-nowrap", orderValue <= 0 && "font-normal text-trading-panel-muted")}>
 					{orderValue > 0 ? formatUSD(orderValue, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 				</span>
 			</SummaryRow>
 			{isLeveraged && (
 				<SummaryRow label={t`Margin Req.`}>
-					<span className={cn("whitespace-nowrap", marginRequired > 0 ? "text-fg" : "text-fg-muted")}>
+					<span className={cn("whitespace-nowrap", marginRequired <= 0 && "font-normal text-trading-panel-muted")}>
 						{marginRequired > 0 ? formatUSD(marginRequired, { compact: false }) : FALLBACK_VALUE_PLACEHOLDER}
 					</span>
 				</SummaryRow>
@@ -78,19 +73,22 @@ export function OrderSummary({
 						onClick={onSlippageClick}
 						className="inline-flex cursor-pointer items-center gap-1 whitespace-nowrap hover:opacity-80"
 					>
-						<span className="tabular-nums text-error">{slippagePercent}%</span>
-						<PencilIcon className="size-2.5 text-fg-muted" />
+						<span className="tabular-nums text-trading-panel-error">{slippagePercent}%</span>
+						<PencilIcon className="size-2.5 text-trading-panel-subtle" />
 					</button>
 				</SummaryRow>
 			)}
-			<SummaryRow label={t`Est. Fee`}>
-				<span className="whitespace-nowrap text-fg-muted">
-					{orderValue > 0 ? `${feeRatePercent} (${formatUSD(estimatedFee)})` : feeRatePercent}
+			<SummaryRow label={t`Fees`}>
+				<span
+					title={`${t`Taker`} / ${t`Maker`}`}
+					className="cursor-help whitespace-nowrap border-b border-dashed border-trading-panel-stroke-control font-normal text-trading-panel-muted"
+				>
+					{takerFeePercent} / {makerFeePercent}
 				</span>
 			</SummaryRow>
 			{DEFAULT_BUILDER_CONFIG?.f && (
 				<SummaryRow label={t`Builder Fee`}>
-					<span className="whitespace-nowrap text-fg-muted">{`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}</span>
+					<span className="whitespace-nowrap font-normal text-trading-panel-muted">{`${bpsToPercentage(DEFAULT_BUILDER_CONFIG?.f)}%`}</span>
 				</SummaryRow>
 			)}
 		</div>

@@ -4,10 +4,8 @@ import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
-import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
 import { getPositionDex } from "@/domain/market";
-import { getMarketQuoteToken } from "@/domain/trade/balances";
 import { getLiquidationInfo, getOrderMetrics } from "@/domain/trade/order/metrics";
 import { getOrderPrice } from "@/domain/trade/order/price";
 import {
@@ -17,6 +15,7 @@ import {
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
 import { useOrderSubmit } from "@/hooks/trade/use-order-submit";
+import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -37,11 +36,11 @@ import {
 import type { ActiveModal } from "@/lib/trade/types";
 import { useButtonContent } from "@/lib/trade/use-button-content";
 import { perpInput, spotInput, useOrderValidation } from "@/lib/trade/use-order-validation";
+import { getTradingCtaClass, getTradingCtaIntent } from "@/lib/ui/trading-cta";
 import {
 	useDepositModalActions,
 	useEstablishConnectionModalActions,
 	useSettingsDialogActions,
-	useSwapModalActions,
 } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBps, useMarketOrderSlippagePercent } from "@/stores/use-global-settings-store";
 import {
@@ -65,6 +64,7 @@ import {
 } from "@/stores/use-order-entry-store";
 import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
 import { AccountModeModal } from "./account-mode-modal";
+import { LeverageModal } from "./leverage-modal";
 import { MarginModeModal } from "./margin-mode-modal";
 import { OrderSummary } from "./order-summary";
 import { ScaleOrderSummary } from "./scale-order-summary";
@@ -73,6 +73,8 @@ import { TradeHeader } from "./trade-header";
 import { TwapOrderSummary } from "./twap-order-summary";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
+
+const ERROR_LINGER_MS = 1500;
 
 export function TradePanel() {
 	const { t } = useLingui();
@@ -161,9 +163,6 @@ export function TradePanel() {
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openEstablishConnectionModal } = useEstablishConnectionModalActions();
 	const { open: openSettingsDialog } = useSettingsDialogActions();
-	const { open: openSwapModal } = useSwapModalActions();
-
-	const swapTargetToken = getSwapTargetToken(market);
 
 	useEffect(() => {
 		if (selectedPrice !== null) {
@@ -200,6 +199,8 @@ export function TradePanel() {
 
 	const feeRate = isTakerOrderType(orderType) ? takerRate : makerRate;
 	const feeRatePercent = `${(feeRate * 100).toFixed(4)}%`;
+	const takerFeePercent = `${(takerRate * 100).toFixed(4)}%`;
+	const makerFeePercent = `${(makerRate * 100).toFixed(4)}%`;
 
 	const { marginRequired, estimatedFee } = getOrderMetrics({ sizeValue, price, leverage, feeRate });
 	const { liqPrice, liqWarning } = getLiquidationInfo({ price, sizeValue, leverage, side });
@@ -344,6 +345,10 @@ export function TradePanel() {
 		});
 	}
 
+	const validationErrorText =
+		validation.errors.length > 0 && isConnected && availableBalance > 0 ? validation.errors.join(" \u2022 ") : "";
+	const displayValidationError = useLingeringText(validationErrorText, ERROR_LINGER_MS);
+
 	const buttonContent = useButtonContent({
 		isConnected,
 		needsChainSwitch,
@@ -402,8 +407,8 @@ export function TradePanel() {
 				liqWarning={liqWarning}
 				orderValue={orderValue}
 				marginRequired={marginRequired}
-				estimatedFee={estimatedFee}
-				feeRatePercent={feeRatePercent}
+				takerFeePercent={takerFeePercent}
+				makerFeePercent={makerFeePercent}
 				slippagePercent={slippagePercent}
 				szDecimals={market?.szDecimals}
 				onSlippageClick={openSettingsDialog}
@@ -432,9 +437,23 @@ export function TradePanel() {
 				allowsIsolatedMarginRemoval={allowsIsolatedMarginRemoval}
 				isUpdating={isSwitchingMode}
 				updateError={switchModeError}
-				showLeverage={capabilities.isLeveraged}
+				showLeverage={false}
 				onApply={handleMarginApply}
 				marketIdentity={market?.name}
+			/>
+			<LeverageModal
+				open={activeModal === "leverage"}
+				onOpenChange={(open) => {
+					if (!open) resetPendingLeverage();
+					setActiveModal(open ? "leverage" : null);
+				}}
+				currentLeverage={currentLeverage}
+				pendingLeverage={pendingLeverage}
+				maxLeverage={maxLeverage}
+				onPendingLeverageChange={setPendingLeverage}
+				isUpdating={isSwitchingMode}
+				updateError={switchModeError}
+				onApply={(leverageValue) => applyMarginAndLeverage(marginMode, leverageValue)}
 			/>
 			<AccountModeModal
 				open={activeModal === "accountMode"}
@@ -458,7 +477,8 @@ export function TradePanel() {
 					onSideChange={setSide}
 					marginMode={marginMode}
 					leverage={leverage}
-					onMarginLeverageClick={() => setActiveModal("marginMode")}
+					onMarginModeClick={() => setActiveModal("marginMode")}
+					onLeverageClick={() => setActiveModal("leverage")}
 					isLeveraged={capabilities.isLeveraged}
 					accountMode={accountModeControl.accountAbstraction}
 					isAccountModeLoading={accountModeControl.isLoading}
@@ -469,18 +489,13 @@ export function TradePanel() {
 				<TradeFormFields
 					price={price}
 					positionSize={positionSize}
-					swapTargetToken={swapTargetToken}
 					onSizeModeToggle={handleSizeModeToggle}
 					onSizePercentApply={handleSizePercentApply}
-					onDepositClick={() => openDepositModal("deposit")}
-					onSwapClick={() => swapTargetToken && openSwapModal(DEFAULT_QUOTE_TOKEN, swapTargetToken)}
 				/>
 
 				<div className="flex flex-col gap-4 pt-5 pb-1">
 					<div className="flex flex-col gap-3">
-						{validation.errors.length > 0 && isConnected && availableBalance > 0 && (
-							<div className="text-xs text-error">{validation.errors.join(" • ")}</div>
-						)}
+						{displayValidationError && <div className="text-xs text-error">{displayValidationError}</div>}
 
 						{approvalError && <div className="text-xs text-error">{approvalError}</div>}
 
@@ -490,7 +505,7 @@ export function TradePanel() {
 								size="xs"
 								intent="neutral"
 								disabled
-								className="w-full px-3 py-2 text-sm font-semibold"
+								className="w-full rounded-[12px] px-3 py-3.5 text-sm font-bold whitespace-nowrap shadow-none data-disabled:bg-trading-panel-neutral-disabled-fill data-disabled:text-trading-panel-on-disabled"
 								aria-label={t`Trading is not available in your region`}
 							>
 								{t`Trading is not available in your region`}
@@ -499,15 +514,12 @@ export function TradePanel() {
 							<Button
 								variant="filled"
 								size="xs"
-								intent={
-									buttonContent.variant === "buy" ? "brand" : buttonContent.variant === "sell" ? "error" : "brand"
-								}
+								intent={getTradingCtaIntent(buttonContent.variant)}
 								onClick={buttonContent.action}
 								disabled={buttonContent.disabled}
 								className={cn(
-									"w-full px-3 py-2 text-sm font-semibold focus-visible:outline-offset-1",
-									buttonContent.variant === "buy" && "bg-success text-background hover:opacity-90",
-									buttonContent.variant === "sell" && "text-background",
+									"w-full rounded-[12px] px-3 py-3.5 text-sm font-bold whitespace-nowrap shadow-none focus-visible:outline-offset-1",
+									getTradingCtaClass(buttonContent.variant),
 								)}
 								aria-label={buttonContent.text}
 								iconLeft={
@@ -518,7 +530,7 @@ export function TradePanel() {
 							</Button>
 						)}
 					</div>
-					{renderSummary()}
+					<div className="border-t border-trading-panel-stroke-row pt-1">{renderSummary()}</div>
 				</div>
 			</div>
 
@@ -529,13 +541,4 @@ export function TradePanel() {
 			)}
 		</div>
 	);
-}
-
-function getSwapTargetToken(market: NonNullable<ReturnType<typeof useSelectedMarketInfo>["data"]> | undefined) {
-	if (!market || market.kind !== "builderPerp") return null;
-
-	const quoteToken = getMarketQuoteToken(market);
-	if (quoteToken === DEFAULT_QUOTE_TOKEN) return null;
-
-	return quoteToken;
 }

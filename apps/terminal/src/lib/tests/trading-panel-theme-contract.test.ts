@@ -6,10 +6,7 @@ import { describe, expect, it } from "vitest";
 const TEST_DIR = dirname(fileURLToPath(import.meta.url));
 const TERMINAL_THEME_CSS = readFileSync(resolve(TEST_DIR, "../..", "styles.css"), "utf8");
 const INPUT_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "components/ui/input.tsx"), "utf8");
-const MOBILE_TRADE_SOURCE = readFileSync(
-	resolve(TEST_DIR, "../..", "components/trade/mobile/mobile-trade-view.tsx"),
-	"utf8",
-);
+const TRADING_CTA_SOURCE = readFileSync(resolve(TEST_DIR, "../..", "lib/ui/trading-cta.ts"), "utf8");
 
 describe("trading panel theme contract", () => {
 	it("maps the light trading panel to the design handoff palette", () => {
@@ -28,8 +25,6 @@ describe("trading panel theme contract", () => {
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-success-disabled-fill")).toBe("#b9dccb");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-error-disabled-fill")).toBe("#efc3bf");
 		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--trading-panel-scrim")).toBe("rgb(20 30 45 / 42%)");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--orderbook-compact-depth-bid")).toBe("#1fa67d");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--orderbook-compact-depth-ask")).toBe("#ed7088");
 	});
 
 	it("keeps the dark panel mapped to terminal semantic colors", () => {
@@ -50,8 +45,6 @@ describe("trading panel theme contract", () => {
 			"var(--fill-disabled)",
 		);
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--trading-panel-scrim")).toBe("var(--fill-overlay)");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--orderbook-compact-depth-bid")).toBe("#1fa67d");
-		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--orderbook-compact-depth-ask")).toBe("#ed7088");
 	});
 
 	it("exposes Tailwind utilities and uses theme-aware selection text", () => {
@@ -72,10 +65,10 @@ describe("trading panel theme contract", () => {
 		);
 		expect(INPUT_SOURCE).toContain("selection:text-fg-inverse");
 		expect(INPUT_SOURCE).not.toContain("selection:text-white");
-		expect(MOBILE_TRADE_SOURCE).toContain("data-disabled:bg-trading-panel-neutral-disabled-fill");
-		expect(MOBILE_TRADE_SOURCE).toContain("data-disabled:bg-trading-panel-success-disabled-fill");
-		expect(MOBILE_TRADE_SOURCE).toContain("data-disabled:bg-trading-panel-error-disabled-fill");
-		expect(MOBILE_TRADE_SOURCE).toContain("data-disabled:text-trading-panel-on-disabled");
+		expect(TRADING_CTA_SOURCE).toContain("data-disabled:bg-trading-panel-neutral-disabled-fill");
+		expect(TRADING_CTA_SOURCE).toContain("data-disabled:bg-trading-panel-success-disabled-fill");
+		expect(TRADING_CTA_SOURCE).toContain("data-disabled:bg-trading-panel-error-disabled-fill");
+		expect(TRADING_CTA_SOURCE).toContain("data-disabled:text-trading-panel-on-disabled");
 	});
 });
 

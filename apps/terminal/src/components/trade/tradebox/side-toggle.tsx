@@ -46,8 +46,8 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel }
 				className={cn(
 					"flex-1 data-[active]:text-success",
 					tradingPanel &&
-						"relative rounded-[9px] text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] data-[active]:text-trading-panel-on-success",
-					compact ? "py-1.5 text-xs" : "py-2 text-sm",
+						"relative rounded-[9px] font-bold text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] data-[active]:text-trading-panel-on-success",
+					compact ? "py-1.5 text-2sm" : "py-[11px] text-sm",
 				)}
 			>
 				{labels.buy}
@@ -58,8 +58,8 @@ export function SideToggle({ side, onSideChange, labels, compact, tradingPanel }
 				className={cn(
 					"flex-1 data-[active]:text-error",
 					tradingPanel &&
-						"relative rounded-[9px] text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] data-[active]:text-trading-panel-on-error",
-					compact ? "py-1.5 text-xs" : "py-2 text-sm",
+						"relative rounded-[9px] font-bold text-trading-panel-muted after:absolute after:top-1/2 after:left-0 after:h-11 after:w-full after:-translate-y-1/2 after:content-[''] data-[active]:text-trading-panel-on-error",
+					compact ? "py-1.5 text-2sm" : "py-[11px] text-sm",
 				)}
 			>
 				{labels.sell}
