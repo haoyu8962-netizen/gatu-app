@@ -57,10 +57,10 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 			y: 0,
 			w: 3,
 			h: 20.4,
-			minH: 20.3,
+			minH: 5,
 			minW: 3,
 			isDraggable: false,
-			resizeHandles: ["w", "s", "sw"],
+			resizeHandles: ["w"],
 		},
 		{
 			i: "accountTable",
@@ -119,7 +119,7 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 			minH: 5,
 			minW: 4,
 			isDraggable: false,
-			resizeHandles: ["w", "s", "sw"],
+			resizeHandles: ["w"],
 		},
 		{
 			i: "accountTable",
@@ -146,6 +146,29 @@ export const DEFAULT_DESKTOP_GRID_LAYOUTS = {
 		},
 	],
 } satisfies ResponsiveLayouts<DesktopGridBreakpoint>;
+
+export function syncGridItemContentHeight(
+	layouts: ResponsiveLayouts<DesktopGridBreakpoint>,
+	itemId: string,
+	contentHeightPx: number,
+): ResponsiveLayouts<DesktopGridBreakpoint> {
+	const rowUnit = DESKTOP_GRID_ROW_HEIGHT_PX + DESKTOP_GRID_GAP_PX;
+	const rows = Math.ceil(((contentHeightPx + DESKTOP_GRID_GAP_PX) / rowUnit) * 100) / 100;
+	let changed = false;
+
+	const next = Object.fromEntries(
+		Object.entries(layouts).map(([breakpoint, items]) => [
+			breakpoint,
+			items.map((item) => {
+				if (item.i !== itemId || Math.abs(item.h - rows) < 0.03) return item;
+				changed = true;
+				return { ...item, h: rows };
+			}),
+		]),
+	) as ResponsiveLayouts<DesktopGridBreakpoint>;
+
+	return changed ? next : layouts;
+}
 
 export function readDesktopGridLayouts(): ResponsiveLayouts<DesktopGridBreakpoint> {
 	if (typeof window === "undefined") return DEFAULT_DESKTOP_GRID_LAYOUTS;

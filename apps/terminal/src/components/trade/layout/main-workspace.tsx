@@ -1,4 +1,4 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Responsive, useContainerWidth } from "react-grid-layout";
 import {
 	DESKTOP_GRID_BREAKPOINTS,
@@ -6,6 +6,7 @@ import {
 	DESKTOP_GRID_GAP_PX,
 	DESKTOP_GRID_ROW_HEIGHT_PX,
 	readDesktopGridLayouts,
+	syncGridItemContentHeight,
 	writeDesktopGridLayouts,
 } from "@/config/desktop-grid-layout";
 import { getSpotAssetSocials } from "@/domain/market/spot-asset-info";
@@ -27,11 +28,26 @@ const TradePanel = createLazyComponent(() => import("../tradebox/trade-panel"), 
 
 const gridSpacing = [DESKTOP_GRID_GAP_PX, DESKTOP_GRID_GAP_PX] as const;
 const panelFallback = <div className="h-full w-full animate-pulse bg-fill-weaker" />;
+const tradePanelFallback = <div className="h-[41rem] w-full animate-pulse bg-fill-weaker" />;
 const chartPanelFallback = <div className="h-full w-full bg-background" />;
 
 export function MainWorkspace() {
 	const { width, containerRef, mounted } = useContainerWidth({ measureBeforeMount: true });
-	const [initialLayouts] = useState(readDesktopGridLayouts);
+	const [layouts, setLayouts] = useState(readDesktopGridLayouts);
+	const tradeContentRef = useRef<HTMLDivElement | null>(null);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: ref target only exists after the grid mounts
+	useEffect(() => {
+		const node = tradeContentRef.current;
+		if (!node) return;
+		const observer = new ResizeObserver(() => {
+			const contentHeight = node.offsetHeight;
+			if (contentHeight === 0) return;
+			setLayouts((prev) => syncGridItemContentHeight(prev, "tradingInterface", contentHeight));
+		});
+		observer.observe(node);
+		return () => observer.disconnect();
+	}, [mounted]);
 	const { data: selectedMarket } = useSelectedMarketInfo();
 	const { routeMarketName } = useExchangeScope();
 	const navigateToMarket = useMarketNavigation();
@@ -48,7 +64,7 @@ export function MainWorkspace() {
 				<Responsive
 					className="desktop-terminal-grid"
 					width={width}
-					layouts={initialLayouts}
+					layouts={layouts}
 					breakpoints={DESKTOP_GRID_BREAKPOINTS}
 					cols={DESKTOP_GRID_COLS}
 					rowHeight={DESKTOP_GRID_ROW_HEIGHT_PX}
@@ -56,7 +72,10 @@ export function MainWorkspace() {
 					containerPadding={gridSpacing}
 					dragConfig={{ enabled: false }}
 					resizeConfig={{ enabled: true }}
-					onLayoutChange={(_, layouts) => writeDesktopGridLayouts(layouts)}
+					onLayoutChange={(_, nextLayouts) => {
+						setLayouts(nextLayouts);
+						writeDesktopGridLayouts(nextLayouts);
+					}}
 				>
 					<div
 						key="favoriteCoins"
@@ -100,10 +119,12 @@ export function MainWorkspace() {
 						</Suspense>
 					</div>
 
-					<div key="tradingInterface" className="desktop-grid-panel overflow-y-auto overscroll-contain bg-surface">
-						<Suspense fallback={panelFallback}>
-							<TradePanel key={marketKey} />
-						</Suspense>
+					<div key="tradingInterface" className="desktop-grid-panel overflow-hidden bg-surface">
+						<div ref={tradeContentRef}>
+							<Suspense fallback={tradePanelFallback}>
+								<TradePanel key={marketKey} />
+							</Suspense>
+						</div>
 					</div>
 
 					<div key="accountTable" className="desktop-grid-panel overflow-hidden bg-surface">

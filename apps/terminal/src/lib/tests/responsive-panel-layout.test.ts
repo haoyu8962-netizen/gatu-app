@@ -71,7 +71,8 @@ describe("responsive panel layout contract", () => {
 		}
 
 		expect(MAIN_WORKSPACE_SOURCE).toContain("<Responsive");
-		expect(MAIN_WORKSPACE_SOURCE).toContain("layouts={initialLayouts}");
+		expect(MAIN_WORKSPACE_SOURCE).toContain("layouts={layouts}");
+		expect(MAIN_WORKSPACE_SOURCE).toContain('syncGridItemContentHeight(prev, "tradingInterface", contentHeight)');
 		expect(MAIN_WORKSPACE_SOURCE).toContain("margin={gridSpacing}");
 		expect(MAIN_WORKSPACE_SOURCE).toContain("containerPadding={gridSpacing}");
 		expect(MAIN_WORKSPACE_SOURCE).toContain('data-panel-id="accountInfo"');
