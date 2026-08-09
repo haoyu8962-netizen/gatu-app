@@ -62,8 +62,16 @@ vi.mock("@/components/trade/mobile/mobile-balances-tab", () => ({
 }));
 
 vi.mock("@/components/trade/mobile/mobile-positions-view", () => ({
-	MobilePositionsView: ({ balancesContent }: { balancesContent?: ReactNode }) => (
-		<div data-mobile-positions>{balancesContent}</div>
+	MobilePositionsView: ({
+		balancesContent,
+		includeBottomNavSpacer,
+	}: {
+		balancesContent?: ReactNode;
+		includeBottomNavSpacer?: boolean;
+	}) => (
+		<div data-mobile-positions data-bottom-nav-spacer={String(includeBottomNavSpacer)}>
+			{balancesContent}
+		</div>
 	),
 }));
 
@@ -103,6 +111,7 @@ describe("MobileTradeLayout market identity", () => {
 
 		expect(container.querySelector("[data-mobile-positions]")).not.toBeNull();
 		expect(container.querySelector("[data-mobile-balances]")).not.toBeNull();
+		expect(container.querySelector("[data-mobile-positions]")?.getAttribute("data-bottom-nav-spacer")).toBe("false");
 	});
 
 	it("remounts the order form when the canonical route market changes", () => {

@@ -96,6 +96,19 @@ describe("MobileTerminal disclosure state", () => {
 		act(() => root.render(<MobileTerminal />));
 	}
 
+	it("pins the terminal shell without a duplicate bottom-navigation inset", () => {
+		render();
+
+		const terminal = container.querySelector<HTMLElement>(".mobile-terminal");
+		const main = terminal?.querySelector("main");
+		expect(terminal?.className).toContain("fixed");
+		expect(terminal?.className).toContain("inset-0");
+		expect(terminal?.className).toContain("overflow-hidden");
+		expect(terminal?.className).toContain("overscroll-none");
+		expect(terminal?.className).not.toContain("h-dvh");
+		expect(main?.style.paddingBottom).toBe("");
+	});
+
 	it("shares disclosure state across bottom navigation and resets it for a new identity", () => {
 		render();
 		const tradeSurface = container.querySelector<HTMLElement>('[data-testid="trade-surface"]');

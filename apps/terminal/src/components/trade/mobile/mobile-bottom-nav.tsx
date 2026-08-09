@@ -21,7 +21,8 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 	return (
 		<nav
 			className={cn(
-				"fixed inset-x-0 bottom-0 z-50 bg-surface border-t border-trading-panel-stroke-card",
+				"relative z-50 shrink-0 bg-surface border-t border-trading-panel-stroke-card",
+				"[touch-action:pan-x_pinch-zoom]",
 				"pb-[env(safe-area-inset-bottom)]",
 				className,
 			)}

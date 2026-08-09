@@ -1,7 +1,7 @@
 export function AppShellSkeleton() {
 	return (
 		<>
-			<div className="flex h-dvh w-full flex-col overflow-hidden bg-background min-[1001px]:hidden">
+			<div className="fixed inset-0 flex w-full flex-col overflow-hidden overscroll-none bg-background min-[1001px]:hidden">
 				<div className="pt-[env(safe-area-inset-top)] border-b border-stroke-weak/60">
 					<div className="h-12 px-3 flex items-center justify-between">
 						<div className="flex items-center gap-1.5">
@@ -25,7 +25,7 @@ export function AppShellSkeleton() {
 				</div>
 				<div className="border-t border-stroke-weak/60 pb-[env(safe-area-inset-bottom)]">
 					<div className="flex items-stretch">
-						{["chart", "trade", "book", "positions", "account"].map((tab) => (
+						{["markets", "trade", "account"].map((tab) => (
 							<div key={tab} className="flex-1 h-14 flex flex-col items-center justify-center gap-1 py-2">
 								<div className="size-5 rounded bg-surface animate-pulse" />
 								<div className="h-2 w-8 rounded bg-surface animate-pulse" />

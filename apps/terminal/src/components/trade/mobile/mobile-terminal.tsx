@@ -1,4 +1,3 @@
-import { MOBILE_BOTTOM_NAV_HEIGHT_PX } from "@/config/layout";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useHyperliquid } from "@/lib/hyperliquid";
@@ -25,18 +24,15 @@ export function MobileTerminal({ className }: Props) {
 	return (
 		<div
 			className={cn(
-				"mobile-terminal h-dvh w-full flex flex-col bg-background text-fg font-sans",
-				"overflow-hidden",
+				"mobile-terminal fixed inset-0 w-full flex flex-col bg-background text-fg font-sans",
+				"overflow-hidden overscroll-none",
 				className,
 			)}
 		>
 			<MobileHeader />
 			<GeoRestrictionBanner />
 			<OfflineBanner />
-			<main
-				className="flex-1 min-h-0 flex flex-col overflow-hidden"
-				style={{ paddingBottom: `calc(${MOBILE_BOTTOM_NAV_HEIGHT_PX}px + env(safe-area-inset-bottom))` }}
-			>
+			<main className="flex-1 min-h-0 flex flex-col overflow-hidden">
 				<div className="relative flex-1 min-h-0 overflow-hidden">
 					<div
 						aria-hidden={activeTab !== "markets"}

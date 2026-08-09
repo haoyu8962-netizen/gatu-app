@@ -74,6 +74,7 @@ function TradeOrderView({
 				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
 					<MobilePositionsView
 						scrollMode="page"
+						includeBottomNavSpacer={false}
 						balancesContent={<MobileBalancesTab />}
 						disclosureStates={disclosureStates}
 					/>
@@ -151,6 +152,7 @@ function MarketsDataView({
 				<div className="w-full min-w-0 min-h-0 flex flex-col border-t border-stroke-weak/60">
 					<MobilePositionsView
 						scrollMode="page"
+						includeBottomNavSpacer={false}
 						balancesContent={<MobileBalancesTab />}
 						disclosureStates={disclosureStates}
 					/>

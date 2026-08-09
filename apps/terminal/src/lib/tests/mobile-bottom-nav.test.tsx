@@ -25,7 +25,7 @@ describe("MobileBottomNav", () => {
 		container.remove();
 	});
 
-	it("preserves navigation behavior without a component-level tap highlight override", () => {
+	it("keeps navigation in the viewport shell without allowing vertical page panning", () => {
 		const onTabChange = vi.fn();
 		act(() =>
 			root.render(
@@ -37,6 +37,12 @@ describe("MobileBottomNav", () => {
 
 		const marketsButton = container.querySelector<HTMLButtonElement>('button[aria-label="Markets"]');
 		const tradeButton = container.querySelector<HTMLButtonElement>('button[aria-label="Trade"]');
+		const navigation = container.querySelector("nav");
+		expect(navigation?.className).toContain("relative");
+		expect(navigation?.className).toContain("shrink-0");
+		expect(navigation?.className).toContain("[touch-action:pan-x_pinch-zoom]");
+		expect(navigation?.className).not.toContain("fixed");
+		expect(navigation?.className).not.toContain("bottom-0");
 		expect(marketsButton?.getAttribute("aria-current")).toBe("page");
 		expect(tradeButton?.className).not.toContain("-webkit-tap-highlight-color");
 
