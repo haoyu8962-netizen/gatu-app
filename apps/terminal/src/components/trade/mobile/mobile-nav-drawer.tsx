@@ -44,7 +44,7 @@ export function MobileNavDrawer() {
 				aria-label={t`Open navigation`}
 				onClick={() => setOpen(true)}
 			>
-				<ListIcon className="size-4" />
+				<ListIcon className="size-4.5 text-trading-panel-fg" />
 			</ButtonIcon>
 
 			<Drawer side="left" open={open} onOpenChange={setOpen}>

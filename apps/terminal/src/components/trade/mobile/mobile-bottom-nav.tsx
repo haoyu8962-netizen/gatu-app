@@ -21,7 +21,7 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 	return (
 		<nav
 			className={cn(
-				"fixed inset-x-0 bottom-0 z-50 bg-surface/95 backdrop-blur-sm border-t border-stroke-weak/60",
+				"fixed inset-x-0 bottom-0 z-50 bg-surface border-t border-trading-panel-stroke-card",
 				"pb-[env(safe-area-inset-bottom)]",
 				className,
 			)}
@@ -41,18 +41,17 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 							onClick={() => onTabChange(item.id)}
 							style={{ minHeight: `${MOBILE_BOTTOM_NAV_HEIGHT_PX}px` }}
 							className={cn(
-								"flex-1 flex flex-col items-center justify-center gap-0.5 rounded-none",
-								"py-2 px-1",
+								"flex-1 flex flex-col items-center justify-center gap-[3px] rounded-none",
+								"px-1",
 								"transition-colors duration-150 ease-out",
 								"active:bg-fill-press active:scale-95",
-								isActive ? "text-brand" : "text-fg",
+								isActive ? "text-trading-panel-fg" : "text-trading-panel-subtle",
 							)}
 							aria-current={isActive ? "page" : undefined}
 							aria-label={_(item.label)}
 						>
 							<span className="relative">
 								<Icon className="size-5" />
-								{isActive && <span className="absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-brand" />}
 								{showBadge && (
 									<span
 										className={cn(
@@ -66,7 +65,9 @@ export function MobileBottomNav({ activeTab, onTabChange, badges, className }: P
 									</span>
 								)}
 							</span>
-							<span className="text-xs font-medium tracking-wide">{_(item.label)}</span>
+							<span className={cn("text-3xs tracking-wide", isActive ? "font-bold" : "font-medium")}>
+								{_(item.label)}
+							</span>
 						</button>
 					);
 				})}
