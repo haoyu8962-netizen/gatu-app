@@ -2,7 +2,7 @@ import { Button, Checkbox, Table, TableBody, TableCell, TableHead, TableHeader, 
 import { t } from "@lingui/core/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { SMALL_BALANCE_THRESHOLD_USD } from "@/config/trade";
 import { getTradingToolbarBalanceSummary, isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
@@ -316,7 +316,6 @@ export function BalancesTab() {
 								)}
 							</TableBody>
 						</Table>
-						<ScrollBar orientation="horizontal" />
 					</ScrollArea>
 				)}
 			</div>

@@ -1,7 +1,7 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAccountLedger } from "@/hooks/trade/use-account-ledger";
 import { useAccountLedgerCsv } from "@/hooks/trade/use-account-ledger-csv";
 import { useAccountLedgerLabels } from "@/hooks/trade/use-account-ledger-labels";
@@ -178,7 +178,6 @@ export function AccountTransfersTab() {
 								})}
 							</TableBody>
 						</Table>
-						<ScrollBar orientation="horizontal" />
 					</ScrollArea>
 				)}
 			</div>

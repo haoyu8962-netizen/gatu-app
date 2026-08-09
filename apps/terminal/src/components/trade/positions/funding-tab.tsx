@@ -1,6 +1,6 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { getToolbarAbsoluteSize, getToolbarFundingTotal } from "@/domain/trade/trading-toolbar-metrics";
 import { useFundingHistoryCsvExport } from "@/hooks/trade/use-history-csv-export";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
@@ -219,7 +219,6 @@ export function FundingTab({ toolbarTarget }: Props = {}) {
 								})}
 							</TableBody>
 						</Table>
-						<ScrollBar orientation="horizontal" />
 					</ScrollArea>
 				)}
 			</div>

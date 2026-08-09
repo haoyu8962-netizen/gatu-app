@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
@@ -142,7 +142,6 @@ export function TwapHistoryTable() {
 							})}
 						</tbody>
 					</table>
-					<ScrollBar orientation="horizontal" />
 				</ScrollArea>
 			)}
 		</div>

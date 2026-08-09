@@ -1,7 +1,7 @@
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { getToolbarNonZeroPnl } from "@/domain/trade/trading-toolbar-metrics";
 import { useUserFillsCsvExport } from "@/hooks/trade/use-history-csv-export";
@@ -261,7 +261,6 @@ export function HistoryTab() {
 								})}
 							</TableBody>
 						</Table>
-						<ScrollBar orientation="horizontal" />
 					</ScrollArea>
 				)}
 			</div>

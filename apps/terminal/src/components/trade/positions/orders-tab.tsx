@@ -15,7 +15,7 @@ import { ListIcon, PencilIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { DEFAULT_QUOTE_TOKEN, FALLBACK_VALUE_PLACEHOLDER, HL_ALL_DEXS } from "@/config/app";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
 import {
@@ -989,7 +989,6 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 								)}
 							</div>
 							{openOrders.length > 0 ? <OrdersTableFooter /> : null}
-							<ScrollBar orientation="horizontal" />
 						</ScrollArea>
 					) : (
 						<ScrollArea className="h-full w-full">
@@ -1041,7 +1040,6 @@ export function OrdersTab({ toolbarTarget }: Props = {}) {
 								</TableBody>
 							</Table>
 							<OrdersTableFooter />
-							<ScrollBar orientation="horizontal" />
 						</ScrollArea>
 					))}
 			</div>

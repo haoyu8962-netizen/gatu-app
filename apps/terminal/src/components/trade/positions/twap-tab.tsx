@@ -2,7 +2,7 @@ import { Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { type TwapSubview, TwapSubviewTabs } from "@/components/trade/twap/twap-subview-tabs";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { TimeTicker } from "@/components/ui/time-ticker";
 import { HL_ALL_DEXS } from "@/config/app";
 import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
@@ -278,7 +278,6 @@ export function TwapTab() {
 											})}
 										</tbody>
 									</table>
-									<ScrollBar orientation="horizontal" />
 								</ScrollArea>
 							)}
 						</div>

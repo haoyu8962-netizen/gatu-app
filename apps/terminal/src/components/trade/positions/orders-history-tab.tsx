@@ -1,7 +1,7 @@
 import { Button, Select, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@gatu/ui";
 import { Plural, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { useHistoricalOrders } from "@/hooks/trade/use-historical-orders";
 import { useHistoricalOrdersCsvExport } from "@/hooks/trade/use-history-csv-export";
@@ -365,7 +365,6 @@ export function OrdersHistoryTab({ toolbarTarget }: Props = {}) {
 								})}
 							</TableBody>
 						</Table>
-						<ScrollBar orientation="horizontal" />
 					</ScrollArea>
 				)}
 			</div>

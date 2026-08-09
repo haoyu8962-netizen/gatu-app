@@ -1,5 +1,5 @@
 import { useLingui } from "@lingui/react/macro";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { getMarketQuoteToken } from "@/domain/trade/balances";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useTwapSliceFills } from "@/hooks/trade/use-twap-slice-fills";
@@ -140,7 +140,6 @@ export function TwapFillHistoryTable() {
 							})}
 						</tbody>
 					</table>
-					<ScrollBar orientation="horizontal" />
 				</ScrollArea>
 			)}
 		</div>
