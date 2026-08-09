@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
-import type { UserFillsResponse, UserFillsWsEvent, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
+import type { UserFillsResponse, UserFillsWsEvent } from "@nktkas/hyperliquid";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MAX_HISTORY_ROWS } from "@/config/trade";
 import { useUserFills } from "@/hooks/trade/use-user-fills";
 
 type UserFill = UserFillsResponse[number];
@@ -16,24 +17,8 @@ const mocks = vi.hoisted(() => ({
 		error: null as unknown,
 		isError: false,
 	},
-	twapQuery: {
-		data: [] as UserTwapSliceFillsResponse | undefined,
-		error: null as unknown,
-		isError: false,
-	},
 	subscription: {
 		data: undefined as UserFillsWsEvent | undefined,
-		error: undefined as unknown,
-		status: "idle" as "idle" | "subscribing" | "active" | "error",
-	},
-	twapSubscription: {
-		data: undefined as
-			| {
-					isSnapshot?: true;
-					twapSliceFills: UserTwapSliceFillsResponse;
-					user: `0x${string}`;
-			  }
-			| undefined,
 		error: undefined as unknown,
 		status: "idle" as "idle" | "subscribing" | "active" | "error",
 	},
@@ -51,12 +36,10 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 vi.mock("@/lib/hyperliquid", () => ({
 	useInfo: (method: string, ...args: unknown[]) => {
 		mocks.useInfo(method, ...args);
-		if (method === "userTwapSliceFills") return mocks.twapQuery;
 		return mocks.query;
 	},
 	useSubscription: (method: string, ...args: unknown[]) => {
 		mocks.useSubscription(method, ...args);
-		if (method === "userTwapSliceFills") return mocks.twapSubscription;
 		return mocks.subscription;
 	},
 }));
@@ -105,15 +88,9 @@ describe("useUserFills", () => {
 		mocks.query.data = undefined;
 		mocks.query.error = null;
 		mocks.query.isError = false;
-		mocks.twapQuery.data = [];
-		mocks.twapQuery.error = null;
-		mocks.twapQuery.isError = false;
 		mocks.subscription.data = undefined;
 		mocks.subscription.error = undefined;
 		mocks.subscription.status = "idle";
-		mocks.twapSubscription.data = undefined;
-		mocks.twapSubscription.error = undefined;
-		mocks.twapSubscription.status = "idle";
 		mocks.useInfo.mockReset();
 		mocks.useSubscription.mockReset();
 	});
@@ -171,33 +148,37 @@ describe("useUserFills", () => {
 			{ aggregateByTime: true, user: mocks.address },
 			{ enabled: true },
 		);
-		expect(mocks.useInfo).toHaveBeenCalledWith(
-			"userTwapSliceFills",
-			{ user: mocks.address },
-			expect.objectContaining({ enabled: true }),
-		);
-		expect(mocks.useSubscription).toHaveBeenCalledWith(
-			"userTwapSliceFills",
-			{ user: mocks.address },
-			{ enabled: true },
-		);
+		expect(mocks.useInfo.mock.calls.some(([method]) => method === "userTwapSliceFills")).toBe(false);
+		expect(mocks.useSubscription.mock.calls.some(([method]) => method === "userTwapSliceFills")).toBe(false);
 	});
 
-	it("merges and deduplicates documented TWAP slice fills", () => {
-		const restFill = createFill({ fee: "0.01", oid: 84, tid: 200, time: 2000 });
-		const realtimeFill = createFill({ fee: "0.02", oid: 84, tid: 200, time: 2000 });
-		mocks.query.data = [];
-		mocks.twapQuery.data = [{ fill: restFill, twapId: 7 }];
-		mocks.twapSubscription.data = {
-			isSnapshot: true,
-			twapSliceFills: [{ fill: realtimeFill, twapId: 7 }],
+	it("excludes TWAP fills reported by the general fills stream", () => {
+		const ordinaryFill = createFill({ oid: 84, tid: 200, time: 1000 });
+		const zeroIdTwapFill = createFill({ oid: 85, tid: 201, time: 2000, twapId: 0 });
+		const twapFill = createFill({ oid: 86, tid: 202, time: 3000, twapId: 7 });
+		mocks.query.data = [ordinaryFill, zeroIdTwapFill];
+		mocks.subscription.data = {
+			fills: [twapFill],
 			user: mocks.address as `0x${string}`,
 		};
 
 		const result = renderHook();
 
 		expect(result.status).toBe("ready");
-		expect(result.fills).toEqual([{ ...realtimeFill, twapId: 7 }]);
+		expect(result.fills).toEqual([ordinaryFill]);
+	});
+
+	it("filters TWAP fills before applying the recent-history row limit", () => {
+		const ordinaryFill = createFill({ oid: 999, tid: 999, time: 1 });
+		const twapFills = Array.from({ length: MAX_HISTORY_ROWS }, (_, index) =>
+			createFill({ oid: index + 1, tid: index + 1, time: index + 2, twapId: index }),
+		);
+		mocks.query.data = [...twapFills, ordinaryFill];
+
+		const result = renderHook();
+
+		expect(result.status).toBe("ready");
+		expect(result.fills).toEqual([ordinaryFill]);
 	});
 
 	it("accepts an explicit empty REST response as an empty trade history", () => {
@@ -276,9 +257,8 @@ describe("useUserFills", () => {
 		expect(result.error).toMatchObject({ name: "MalformedHistoryPageError" });
 	});
 
-	it("fails closed when a TWAP slice fill has an invalid parent ID", () => {
-		mocks.query.data = [];
-		mocks.twapQuery.data = [{ fill: createFill(), twapId: Number.NaN }];
+	it("fails closed when a fill has a malformed TWAP ID", () => {
+		mocks.query.data = [createFill({ twapId: Number.NaN })];
 
 		const result = renderHook();
 

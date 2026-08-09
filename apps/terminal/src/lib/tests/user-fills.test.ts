@@ -1,8 +1,10 @@
 import type { UserFillsResponse, UserTwapSliceFillsResponse } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
 import {
+	filterNonTwapUserFills,
 	getUserFillNotional,
 	hasUserFillExplorerTransaction,
+	isValidUserFillHistoryItem,
 	isValidUserTwapSliceFillHistoryItem,
 	mergeUserFillSources,
 	normalizeUserTwapSliceFills,
@@ -48,6 +50,21 @@ describe("mergeUserFillSources", () => {
 
 	it("handles unavailable sources without fabricating fills", () => {
 		expect(mergeUserFillSources(undefined, undefined)).toEqual([]);
+	});
+
+	it("keeps only fills that are not associated with a TWAP", () => {
+		const ordinaryFill = createFill();
+		const zeroIdTwapFill = createFill({ oid: 43, tid: 101, twapId: 0 });
+		const twapFill = createFill({ oid: 44, tid: 102, twapId: 7 });
+
+		expect(filterNonTwapUserFills([ordinaryFill, zeroIdTwapFill, twapFill])).toEqual([ordinaryFill]);
+	});
+
+	it("validates the documented TWAP ID shape on user fills", () => {
+		expect(isValidUserFillHistoryItem(createFill())).toBe(true);
+		expect(isValidUserFillHistoryItem(createFill({ twapId: 0 }))).toBe(true);
+		expect(isValidUserFillHistoryItem(createFill({ twapId: Number.NaN }))).toBe(false);
+		expect(isValidUserFillHistoryItem({ ...createFill(), twapId: undefined })).toBe(false);
 	});
 
 	it("normalizes TWAP slice fills without losing their parent ID", () => {

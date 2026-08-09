@@ -225,19 +225,11 @@ describe("desktop history exports", () => {
 		);
 	});
 
-	it("labels TWAP fills without linking their documented zero transaction hash", () => {
-		mocks.fills = [
-			{
-				...mocks.fills[0],
-				hash: `0x${"0".repeat(64)}`,
-				oid: 5,
-				twapId: 42,
-			},
-		];
+	it("labels ordinary fills as trades", () => {
 		act(() => root.render(<HistoryTab />));
 
-		expect(container.textContent).toContain("TWAP");
-		expect(container.querySelector('tbody a[target="_blank"]')).toBeNull();
+		expect(container.textContent).toContain("Trade");
+		expect(container.textContent).not.toContain("TWAP");
 	});
 
 	it("keeps full trade export available when the recent display window is empty", () => {

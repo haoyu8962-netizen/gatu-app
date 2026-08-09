@@ -56,7 +56,7 @@ function createFills() {
 			sz: "0.1",
 			tid: 2,
 			time: 1_754_350_500_000,
-			twapId: 42,
+			twapId: null,
 		},
 	];
 }
@@ -632,16 +632,16 @@ describe("mobile history disclosure cards", () => {
 		expect(mocks.downloadCsv).toHaveBeenCalledOnce();
 	});
 
-	it("filters trade history by SDK-backed type, side, and maker/taker role without carrying state to another owner", async () => {
+	it("filters non-TWAP trade history by type, side, and maker/taker role without carrying state to another owner", async () => {
 		render(<MobileHistoryTab scrollMode="page" />);
 		act(() => getDisclosureButtons()[0]?.click());
 		mocks.fills = mocks.fills.map((fill, index) => (index === 0 ? { ...fill, hash: "0xupdated" } : fill));
 		render(<MobileHistoryTab scrollMode="page" />);
 		expect(getDisclosureButtons()[0]?.getAttribute("aria-expanded")).toBe("true");
 
-		await selectOption("Type", "TWAP");
-		expect(container.querySelectorAll("article")).toHaveLength(1);
-		expect(container.querySelector('[aria-label="Switch to ETH market"]')).not.toBeNull();
+		await selectOption("Type", "Trade");
+		expect(container.querySelectorAll("article")).toHaveLength(2);
+		expect(container.textContent).not.toContain("TWAP");
 		await selectOption("Type", "All types");
 		expect(container.querySelectorAll("article")).toHaveLength(2);
 

@@ -31,7 +31,7 @@ interface Props {
 	scrollMode?: MobileDataScrollMode;
 }
 
-type TradeHistoryTypeFilter = "all" | "trade" | "twap" | "liquidation";
+type TradeHistoryTypeFilter = "all" | "trade" | "liquidation";
 type TradeHistoryDirectionFilter = "all" | "buy" | "sell";
 type TradeHistoryRoleFilter = "all" | "maker" | "taker";
 type UserFill = UserFillsResponse[number];
@@ -45,12 +45,11 @@ const footerActionClassName =
 
 function getTradeHistoryType(fill: UserFill): Exclude<TradeHistoryTypeFilter, "all"> {
 	if (fill.liquidation) return "liquidation";
-	if (typeof fill.twapId === "number") return "twap";
 	return "trade";
 }
 
 function isTradeHistoryTypeFilter(value: string | null): value is TradeHistoryTypeFilter {
-	return value === "all" || value === "trade" || value === "twap" || value === "liquidation";
+	return value === "all" || value === "trade" || value === "liquidation";
 }
 
 function isTradeHistoryDirectionFilter(value: string | null): value is TradeHistoryDirectionFilter {
@@ -103,7 +102,7 @@ function MobileHistoryTabContent({
 	);
 	const typeOptions = [
 		{ value: "all", label: t`All types` },
-		...(["trade", "twap", "liquidation"] as const).map((value) => ({ value, label: getTypeFilterLabel(value) })),
+		...(["trade", "liquidation"] as const).map((value) => ({ value, label: getTypeFilterLabel(value) })),
 	];
 	const directionOptions = [
 		{ value: "all", label: t`All Directions` },
@@ -134,7 +133,6 @@ function MobileHistoryTabContent({
 	}
 
 	function getTypeFilterLabel(filter: Exclude<TradeHistoryTypeFilter, "all">) {
-		if (filter === "twap") return t`TWAP`;
 		if (filter === "liquidation") return t`Liquidated`;
 		return t`Trade`;
 	}
@@ -164,7 +162,7 @@ function MobileHistoryTabContent({
 						header: t`Direction`,
 						getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)),
 					},
-					{ header: t`Type`, getValue: (fill) => (typeof fill.twapId === "number" ? t`TWAP` : t`Trade`) },
+					{ header: t`Type`, getValue: () => t`Trade` },
 					{ header: t`Price`, getValue: (fill) => formatUSD(fill.px) },
 					{ header: t`Size`, getValue: (fill) => formatNumber(fill.sz, markets.getSzDecimals(fill.coin)) },
 					{ header: t`Fee`, getValue: (fill) => formatToken(fill.fee, { symbol: fill.feeToken }) },
@@ -312,7 +310,6 @@ function MobileHistoryTabContent({
 									const closedPnl = toNumber(fill.closedPnl);
 									const showPnl = closedPnl !== null && closedPnl !== 0;
 									const isLiquidation = !!fill.liquidation;
-									const isTwap = typeof fill.twapId === "number";
 									const isBuy = fill.side === "B";
 									const directionLabel = getDirectionLabel(fill.dir);
 									const explorerUrl = hasUserFillExplorerTransaction(fill)
@@ -347,16 +344,9 @@ function MobileHistoryTabContent({
 													className="pointer-events-auto relative z-10 flex min-h-11 min-w-0 flex-col justify-center text-left focus-visible:rounded-xs focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-market-close-control"
 												>
 													<span className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Market`}</span>
-													<div className="flex min-w-0 items-center gap-1">
-														<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">
-															{marketName}
-														</span>
-														{isTwap ? (
-															<span className="shrink-0 rounded-[3px] bg-market-close-hover px-1 text-[9px] font-semibold leading-[14px] text-market-close-muted">
-																{t`TWAP`}
-															</span>
-														) : null}
-													</div>
+													<span className="truncate text-xs font-bold leading-[17px] text-market-close-fg">
+														{marketName}
+													</span>
 												</button>
 												<div className="min-w-0">
 													<div className="truncate text-[10px] leading-[14px] text-market-close-subtle">{t`Time`}</div>

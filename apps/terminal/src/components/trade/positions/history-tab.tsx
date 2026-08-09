@@ -55,7 +55,7 @@ export function HistoryTab() {
 				{ header: t`Time`, getValue: (fill) => formatDateTimeShort(fill.time) },
 				{ header: t`Asset`, getValue: (fill) => fill.coin },
 				{ header: t`Direction`, getValue: (fill) => (fill.liquidation ? t`Liquidated` : getDirectionLabel(fill.dir)) },
-				{ header: t`Type`, getValue: (fill) => (typeof fill.twapId === "number" ? t`TWAP` : t`Trade`) },
+				{ header: t`Type`, getValue: () => t`Trade` },
 				{ header: t`Price`, getValue: (fill) => formatUSD(fill.px) },
 				{ header: t`Size`, getValue: (fill) => formatNumber(fill.sz, markets.getSzDecimals(fill.coin)) },
 				{ header: t`Fee`, getValue: (fill) => formatToken(fill.fee, { symbol: fill.feeToken }) },
@@ -144,7 +144,6 @@ export function HistoryTab() {
 								{fills.map((fill) => {
 									const closedPnl = getToolbarNonZeroPnl(fill.closedPnl);
 									const directionLabel = getDirectionLabel(fill.dir);
-									const isTwap = typeof fill.twapId === "number";
 									const hasExplorerTransaction = hasUserFillExplorerTransaction(fill);
 
 									return (
@@ -181,9 +180,7 @@ export function HistoryTab() {
 												</span>
 											</TableCell>
 											<TableCell size="dense" className={cn(positionsPanelTableCellClass, historyTableCellClass)}>
-												<span className="text-xs font-semibold text-market-close-muted">
-													{isTwap ? t`TWAP` : t`Trade`}
-												</span>
+												<span className="text-xs font-semibold text-market-close-muted">{t`Trade`}</span>
 											</TableCell>
 											<TableCell
 												size="dense"

@@ -16,8 +16,13 @@ export function isValidUserFillHistoryItem(item: unknown): item is UserFillsResp
 		typeof item.coin === "string" &&
 		item.coin.length > 0 &&
 		typeof item.hash === "string" &&
-		item.hash.length > 0
+		item.hash.length > 0 &&
+		(item.twapId === null || (typeof item.twapId === "number" && Number.isSafeInteger(item.twapId) && item.twapId >= 0))
 	);
+}
+
+export function filterNonTwapUserFills(fills: UserFillsResponse): UserFillsResponse {
+	return fills.filter((fill) => fill.twapId === null);
 }
 
 export function getUserFillKey(fill: UserFillsResponse[number]): string {

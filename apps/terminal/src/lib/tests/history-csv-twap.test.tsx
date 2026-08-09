@@ -135,11 +135,11 @@ describe("TWAP history CSV exports", () => {
 		vi.clearAllMocks();
 	});
 
-	it("exports ordinary and TWAP slice fills from their documented endpoints", async () => {
+	it("exports only non-TWAP fills from the general fills endpoint", async () => {
 		const ordinaryFill = createFill();
-		const twapFill = createFill({ hash: `0x${"0".repeat(64)}`, oid: 43, tid: 101, time: 2000 });
-		mocks.userFillsByTime.mockResolvedValueOnce([ordinaryFill]).mockResolvedValueOnce([]);
-		mocks.userTwapSliceFillsByTime.mockResolvedValueOnce([{ fill: twapFill, twapId: 7 }]).mockResolvedValueOnce([]);
+		const zeroIdTwapFill = createFill({ oid: 43, tid: 101, time: 2000, twapId: 0 });
+		const twapFill = createFill({ oid: 44, tid: 102, time: 3000, twapId: 7 });
+		mocks.userFillsByTime.mockResolvedValueOnce([ordinaryFill, zeroIdTwapFill, twapFill]).mockResolvedValueOnce([]);
 		let hookValue: ReturnType<typeof useUserFillsCsvExport> | null = null;
 		function Probe() {
 			hookValue = useUserFillsCsvExport({
@@ -154,11 +154,8 @@ describe("TWAP history CSV exports", () => {
 		await act(async () => hookValue?.exportCsv());
 
 		expect(mocks.userFillsByTime).toHaveBeenCalled();
-		expect(mocks.userTwapSliceFillsByTime).toHaveBeenCalled();
-		expect(mocks.downloadCsv).toHaveBeenCalledWith("fills.csv", [
-			["BTC", "null"],
-			["BTC", "7"],
-		]);
+		expect(mocks.userTwapSliceFillsByTime).not.toHaveBeenCalled();
+		expect(mocks.downloadCsv).toHaveBeenCalledWith("fills.csv", [["BTC", "null"]]);
 	});
 
 	it("exports ordinary orders and TWAP parent lifecycle records", async () => {

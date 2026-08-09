@@ -17,14 +17,7 @@ import {
 	MalformedHistoryPageError,
 } from "@/lib/trade/history-pagination";
 import { buildOrderHistoryEntries, isValidTwapHistoryItem, type OrderHistoryEntry } from "@/lib/trade/order-history";
-import {
-	getUserFillKey,
-	getUserTwapSliceFillKey,
-	isValidUserFillHistoryItem,
-	isValidUserTwapSliceFillHistoryItem,
-	mergeUserFillSources,
-	normalizeUserTwapSliceFills,
-} from "@/lib/trade/user-fills";
+import { filterNonTwapUserFills, getUserFillKey, isValidUserFillHistoryItem } from "@/lib/trade/user-fills";
 import {
 	getUserFundingKey,
 	isValidUserFunding,
@@ -157,44 +150,26 @@ export function useUserFillsCsvExport(options: CsvExportOptions<UserFillsRespons
 			const result = await run<HistoryLoadResult<UserFillsResponse[number]>>(async (address, signal) => {
 				const client = getInfoClient();
 				const endTime = Date.now();
-				const [fillsResult, twapFillsResult] = await Promise.all([
-					fetchTimeRangeHistory({
-						endTime,
-						fetchPage: (startTime, pageEndTime, pageSignal) =>
-							fetchHistoryPageWithRetry(
-								(requestSignal) =>
-									client.userFillsByTime(
-										{ aggregateByTime: true, endTime: pageEndTime, startTime, user: address },
-										requestSignal,
-									),
-								{ signal: pageSignal },
-							),
-						getKey: getUserFillKey,
-						getTime: (fill) => fill.time,
-						maxItems: USER_FILLS_API_LIMIT,
-						signal,
-						validateItem: isValidUserFillHistoryItem,
-					}),
-					fetchTimeRangeHistory({
-						endTime,
-						fetchPage: (startTime, pageEndTime, pageSignal) =>
-							fetchHistoryPageWithRetry(
-								(requestSignal) =>
-									client.userTwapSliceFillsByTime({ endTime: pageEndTime, startTime, user: address }, requestSignal),
-								{ signal: pageSignal },
-							),
-						getKey: getUserTwapSliceFillKey,
-						getTime: (entry) => entry.fill.time,
-						maxItems: USER_FILLS_API_LIMIT,
-						signal,
-						validateItem: isValidUserTwapSliceFillHistoryItem,
-					}),
-				]);
+				const fillsResult = await fetchTimeRangeHistory({
+					endTime,
+					fetchPage: (startTime, pageEndTime, pageSignal) =>
+						fetchHistoryPageWithRetry(
+							(requestSignal) =>
+								client.userFillsByTime(
+									{ aggregateByTime: true, endTime: pageEndTime, startTime, user: address },
+									requestSignal,
+								),
+							{ signal: pageSignal },
+						),
+					getKey: getUserFillKey,
+					getTime: (fill) => fill.time,
+					maxItems: USER_FILLS_API_LIMIT,
+					signal,
+					validateItem: isValidUserFillHistoryItem,
+				});
 				return {
-					items: mergeUserFillSources(fillsResult.items, normalizeUserTwapSliceFills(twapFillsResult.items)).sort(
-						(left, right) => left.time - right.time,
-					),
-					truncated: fillsResult.truncated || twapFillsResult.truncated,
+					items: filterNonTwapUserFills(fillsResult.items).sort((left, right) => left.time - right.time),
+					truncated: fillsResult.truncated,
 				};
 			});
 			if (!result) {
