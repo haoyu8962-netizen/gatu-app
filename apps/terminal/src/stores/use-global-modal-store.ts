@@ -202,6 +202,14 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 				set((state) => {
 					if (!isPositionMarketCloseModal(state.modal)) return state;
 					if (state.modal.session.sessionId !== sessionId || state.modal.session.phase !== "idle") return state;
+					const currentSizingIntent = state.modal.session.sizingIntent;
+					const isSameSizingIntent =
+						currentSizingIntent.kind === sizingIntent.kind &&
+						(currentSizingIntent.kind === "max" ||
+							(sizingIntent.kind !== "max" && currentSizingIntent.value === sizingIntent.value));
+					if (state.modal.session.error === null && isSameSizingIntent) {
+						return state;
+					}
 					return {
 						modal: {
 							...state.modal,
@@ -226,13 +234,15 @@ const useGlobalModalStore = create<GlobalModalState>((set) => {
 			setError: (sessionId, error) =>
 				set((state) => {
 					if (!isPositionMarketCloseModal(state.modal) || state.modal.session.sessionId !== sessionId) return state;
+					const presentation = error === null ? state.modal.session.presentation : "confirmation";
+					if (state.modal.session.error === error && state.modal.session.presentation === presentation) return state;
 					return {
 						modal: {
 							...state.modal,
 							session: {
 								...state.modal.session,
 								error,
-								presentation: error === null ? state.modal.session.presentation : "confirmation",
+								presentation,
 							},
 						},
 					};
@@ -315,6 +325,30 @@ export function useCommandMenuActions() {
 
 export function usePositionMarketCloseSession(): PositionMarketCloseSession | null {
 	return useGlobalModalStore((state) => (state.modal?.type === "positionMarketClose" ? state.modal.session : null));
+}
+
+export function usePositionMarketClosePhase(): PositionMarketClosePhase {
+	return useGlobalModalStore((state) =>
+		state.modal?.type === "positionMarketClose" ? state.modal.session.phase : "idle",
+	);
+}
+
+export function usePositionMarketCloseError(): string | null {
+	return useGlobalModalStore((state) =>
+		state.modal?.type === "positionMarketClose" ? state.modal.session.error : null,
+	);
+}
+
+/**
+ * The positions tables only need to know which asset currently has an in-flight
+ * close. Keeping this selector scalar prevents idle sizing edits from
+ * invalidating every rendered position row.
+ */
+export function usePendingPositionMarketCloseAssetId(): number | null {
+	return useGlobalModalStore((state) => {
+		if (state.modal?.type !== "positionMarketClose" || state.modal.session.phase === "idle") return null;
+		return state.modal.session.position.assetId;
+	});
 }
 
 export function usePositionMarketCloseActions(): PositionMarketCloseActions {

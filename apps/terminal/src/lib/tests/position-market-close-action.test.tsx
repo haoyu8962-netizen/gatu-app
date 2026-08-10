@@ -68,8 +68,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 let hookValue: ReturnType<typeof usePositionMarketCloseAction> | null = null;
+let hookRenderCount = 0;
 
 function Probe() {
+	hookRenderCount += 1;
 	hookValue = usePositionMarketCloseAction();
 	return null;
 }
@@ -110,6 +112,7 @@ describe("usePositionMarketCloseAction", () => {
 			szDecimals: POSITION.szDecimals,
 		};
 		mocks.submit.mockClear();
+		hookRenderCount = 0;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -131,6 +134,23 @@ describe("usePositionMarketCloseAction", () => {
 			sizingIntent: { kind: "max" },
 		});
 		expect(mocks.submit).not.toHaveBeenCalled();
+	});
+
+	it("does not invalidate the position action consumer for idle sizing edits", () => {
+		expect(hookRenderCount).toBe(1);
+		let sessionId = "";
+		act(() => {
+			sessionId = currentHook().open(POSITION) ?? "";
+			getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "percent", value: "25" });
+			getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "percent", value: "50" });
+		});
+
+		expect(currentHook().pendingAssetId).toBeNull();
+		expect(hookRenderCount).toBe(1);
+
+		act(() => getPositionMarketCloseActions().updatePhase(sessionId, "validating"));
+		expect(currentHook().pendingAssetId).toBe(POSITION.assetId);
+		expect(hookRenderCount).toBe(2);
 	});
 
 	it("submits Max directly from the same click only when every gate is ready", () => {

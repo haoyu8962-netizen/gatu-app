@@ -9,27 +9,102 @@ export interface LastMarkEntry {
 
 type Store = Record<string, LastMarkEntry>;
 
-function loadStore(): Store {
-	if (typeof window === "undefined") return {};
+interface StoreSnapshot {
+	storage: Storage;
+	store: Store;
+}
+
+let cachedStorage: Storage | null = null;
+let cachedStore: Store | null = null;
+let listeningWindow: Window | null = null;
+
+function handleStorageChange(event: StorageEvent) {
+	if (event.key !== null && event.key !== STORAGE_KEYS.LAST_MARK) return;
+	cachedStore = null;
+}
+
+function isLastMarkEntry(value: unknown): value is LastMarkEntry {
+	if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+	const entry = value as Partial<LastMarkEntry>;
+	return (
+		typeof entry.markPx === "string" &&
+		(entry.oraclePx === undefined || typeof entry.oraclePx === "string") &&
+		typeof entry.savedAt === "number" &&
+		Number.isFinite(entry.savedAt)
+	);
+}
+
+function isStore(value: unknown): value is Store {
+	return (
+		!!value &&
+		typeof value === "object" &&
+		!Array.isArray(value) &&
+		Object.values(value as Record<string, unknown>).every(isLastMarkEntry)
+	);
+}
+
+function getStorage(): Storage | null {
+	if (typeof window === "undefined") return null;
+
 	try {
-		return JSON.parse(localStorage.getItem(STORAGE_KEYS.LAST_MARK) ?? "{}") as Store;
+		const storage = window.localStorage;
+
+		if (listeningWindow !== window) {
+			listeningWindow?.removeEventListener("storage", handleStorageChange);
+			window.addEventListener("storage", handleStorageChange);
+			listeningWindow = window;
+		}
+
+		return storage;
 	} catch {
-		return {};
+		return null;
+	}
+}
+
+function loadStore(): StoreSnapshot | null {
+	const storage = getStorage();
+	if (!storage) return null;
+
+	if (cachedStorage !== storage) {
+		cachedStorage = storage;
+		cachedStore = null;
+	}
+
+	if (cachedStore) return { storage, store: cachedStore };
+
+	try {
+		const parsed = JSON.parse(storage.getItem(STORAGE_KEYS.LAST_MARK) ?? "{}") as unknown;
+		if (!isStore(parsed)) return null;
+		cachedStore = parsed;
+		return { storage, store: cachedStore };
+	} catch {
+		return null;
 	}
 }
 
 export function loadLastMark(coin: string): LastMarkEntry | null {
-	const entry = loadStore()[coin];
+	const entry = loadStore()?.store[coin];
 	if (!entry) return null;
 	if (Date.now() - entry.savedAt > LAST_MARK_TTL_MS) return null;
 	return entry;
 }
 
 export function saveLastMark(coin: string, markPx: string, oraclePx?: string) {
-	if (typeof window === "undefined") return;
+	const snapshot = loadStore();
+	if (!snapshot) return;
+
 	try {
-		const store = loadStore();
-		store[coin] = { markPx, oraclePx, savedAt: Date.now() };
-		localStorage.setItem(STORAGE_KEYS.LAST_MARK, JSON.stringify(store));
+		const current = snapshot.store[coin];
+		const now = Date.now();
+		if (current?.markPx === markPx && current.oraclePx === oraclePx && now - current.savedAt <= LAST_MARK_TTL_MS) {
+			return;
+		}
+
+		const nextStore = {
+			...snapshot.store,
+			[coin]: { markPx, oraclePx, savedAt: now },
+		};
+		snapshot.storage.setItem(STORAGE_KEYS.LAST_MARK, JSON.stringify(nextStore));
+		cachedStore = nextStore;
 	} catch {}
 }

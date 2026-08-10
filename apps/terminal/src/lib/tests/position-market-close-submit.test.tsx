@@ -177,8 +177,10 @@ const positionRef: PositionMarketCloseRef = {
 };
 
 let hookValue: ReturnType<typeof usePositionMarketCloseSubmit> | null = null;
+let hookRenderCount = 0;
 
 function Probe() {
+	hookRenderCount += 1;
 	hookValue = usePositionMarketCloseSubmit();
 	return null;
 }
@@ -320,6 +322,7 @@ describe("usePositionMarketCloseSubmit", () => {
 		mocks.toastSuccess.mockReset();
 		mocks.toastError.mockReset();
 		mocks.toastWarning.mockReset();
+		hookRenderCount = 0;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -368,6 +371,27 @@ describe("usePositionMarketCloseSubmit", () => {
 			"Close order submitted",
 			expect.objectContaining({ description: "2.500 CXMT" }),
 		);
+	});
+
+	it("does not rerender its status consumer for idle sizing intent updates", () => {
+		expect(hookRenderCount).toBe(1);
+		const sessionId = openSession();
+
+		act(() => {
+			getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "percent", value: "25" });
+			getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "percent", value: "50" });
+		});
+
+		expect(hookRenderCount).toBe(1);
+		expect(currentHook()).toMatchObject({ isPending: false, isReconciling: false, error: null });
+	});
+
+	it("does not reset idle error state when there is nothing to clear", () => {
+		openSession();
+
+		act(() => currentHook().resetError());
+
+		expect(mocks.resetMutation).not.toHaveBeenCalled();
 	});
 
 	it("ignores a rapid second click while fresh validation is still in flight", async () => {

@@ -164,8 +164,8 @@ export function PositionMarketCloseModal({ showPnl = true }: Props) {
 
 	function setSizingIntent(nextIntent: PositionMarketCloseSizingIntent) {
 		if (!canEdit) return;
-		resetError();
 		actions.setSizingIntent(sessionId, nextIntent);
+		resetError();
 	}
 
 	function handleOpenChange(open: boolean) {

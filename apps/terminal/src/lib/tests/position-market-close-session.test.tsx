@@ -188,6 +188,21 @@ describe("position market close session", () => {
 		expect(getPositionMarketCloseModal()?.sizingIntent).toEqual({ kind: "percent", value: "37.5" });
 	});
 
+	it("keeps the session reference stable for redundant idle updates", () => {
+		let sessionId = "";
+		act(() => {
+			sessionId = closeActions.open(POSITION) ?? "";
+		});
+		const initialSession = getPositionMarketCloseModal();
+
+		act(() => {
+			getPositionMarketCloseActions().setError(sessionId, null);
+			getPositionMarketCloseActions().setSizingIntent(sessionId, { kind: "max" });
+		});
+
+		expect(getPositionMarketCloseModal()).toBe(initialSession);
+	});
+
 	it("discards an in-flight session when its route-owned modal surface unmounts", () => {
 		let sessionId = "";
 		act(() => {

@@ -44,7 +44,9 @@ export function GlobalSettingsModal() {
 	const confirmationPreference = readPositionMarketCloseConfirmationPreference(confirmationIdentity);
 
 	const [localSlippageInput, setLocalSlippageInput] = useState<string | null>(null);
-	const slippageInputValue = localSlippageInput ?? String(slippagePercent);
+	const [localSlippageSlider, setLocalSlippageSlider] = useState<number | null>(null);
+	const slippageSliderValue = localSlippageSlider ?? slippagePercent;
+	const slippageInputValue = localSlippageInput ?? String(slippageSliderValue);
 
 	function handleSlippageInputChange(event: ChangeEvent<HTMLInputElement>) {
 		const nextValue = event.target.value;
@@ -60,9 +62,20 @@ export function GlobalSettingsModal() {
 
 	function handleSlippageSliderChange(value: number | readonly number[]) {
 		if (typeof value !== "number") return;
-		if (value !== slippagePercent) {
-			setMarketOrderSlippagePercent(value);
-		}
+		setLocalSlippageSlider(value);
+	}
+
+	function handleSlippageSliderCommit(value: number | readonly number[]) {
+		if (typeof value !== "number") return;
+		setLocalSlippageSlider(null);
+		if (value !== slippagePercent) setMarketOrderSlippagePercent(value);
+	}
+
+	function handleOpenChange(nextOpen: boolean) {
+		if (nextOpen) return;
+		setLocalSlippageInput(null);
+		setLocalSlippageSlider(null);
+		close();
 	}
 
 	function handleDesktopLayoutReset() {
@@ -78,7 +91,7 @@ export function GlobalSettingsModal() {
 	}
 
 	return (
-		<Modal open={open} onOpenChange={close}>
+		<Modal open={open} onOpenChange={handleOpenChange}>
 			<ModalPopup size="sm">
 				<ModalHeader>
 					<ModalTitle>{t`Settings`}</ModalTitle>
@@ -106,8 +119,10 @@ export function GlobalSettingsModal() {
 							<Slider
 								label={t`Slippage tolerance`}
 								labelHidden
-								value={slippagePercent}
+								value={slippageSliderValue}
 								onValueChange={handleSlippageSliderChange}
+								onValueCommitted={handleSlippageSliderCommit}
+								onPointerCancel={() => setLocalSlippageSlider(null)}
 								min={MARKET_ORDER_SLIPPAGE_MIN_PERCENT}
 								max={MARKET_ORDER_SLIPPAGE_MAX_PERCENT}
 								step={0.1}

@@ -209,13 +209,15 @@ export function useSelectedMarketInfo() {
 	const routeMarket = routeMarketName ? getMarketInfo(routeMarketName) : undefined;
 	const market = routeMarketName ? routeMarket : getMarketInfo(selectedMarketName);
 	const cacheMarketName = market?.name ?? selectedMarketName;
+	const marketName = market?.name;
+	const liveMark = market?.markPx;
+	const oraclePrice = market?.oraclePx;
 
 	useEffect(() => {
-		if (!cacheMarketName || !market || market.name !== cacheMarketName) return;
-		const liveMark = market.markPx;
+		if (!cacheMarketName || marketName !== cacheMarketName) return;
 		if (!liveMark) return;
-		saveLastMark(cacheMarketName, liveMark, market.oraclePx);
-	}, [cacheMarketName, market]);
+		saveLastMark(cacheMarketName, liveMark, oraclePrice);
+	}, [cacheMarketName, liveMark, marketName, oraclePrice]);
 
 	const data = useMemo(() => {
 		if (!market) return undefined;

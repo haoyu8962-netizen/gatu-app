@@ -356,11 +356,7 @@ export function MobilePositionsTab({ scrollMode = "contained", disclosureState }
 						) : null}
 						{filteredPositions.map((p) => {
 							const assetId = markets.getAssetId(p.coin);
-							const marketCloseSession = positionMarketClose.session;
-							const isMarketClosePending =
-								marketCloseSession !== null &&
-								marketCloseSession.position.assetId === assetId &&
-								marketCloseSession.phase !== "idle";
+							const isMarketClosePending = positionMarketClose.pendingAssetId === assetId;
 							const isRowClosing = isMarketClosePending;
 							const positionKey = `${ownerKey ?? "disconnected"}:${p.dex}:${p.coin}`;
 							return (

@@ -32,7 +32,8 @@ import {
 	getPositionMarketCloseActions,
 	getPositionMarketCloseModal,
 	type PositionMarketCloseSession,
-	usePositionMarketCloseSession,
+	usePositionMarketCloseError,
+	usePositionMarketClosePhase,
 } from "@/stores/use-global-modal-store";
 import { useMarketOrderSlippageBpsString } from "@/stores/use-global-settings-store";
 import { hasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
@@ -74,7 +75,8 @@ interface LiveContext {
 }
 
 export function usePositionMarketCloseSubmit() {
-	const session = usePositionMarketCloseSession();
+	const phase = usePositionMarketClosePhase();
+	const sessionError = usePositionMarketCloseError();
 	const { clientKey, env, info } = useHyperliquid();
 	const markets = useMarkets();
 	const userPositions = useUserPositions();
@@ -268,15 +270,16 @@ export function usePositionMarketCloseSubmit() {
 
 	function resetError(): void {
 		const currentSession = getPositionMarketCloseModal();
-		if (currentSession) getPositionMarketCloseActions().setError(currentSession.sessionId, null);
-		trackedOrder.reset();
+		if (!currentSession || currentSession.phase !== "idle") return;
+		if (currentSession.error !== null) getPositionMarketCloseActions().setError(currentSession.sessionId, null);
+		if (trackedOrder.error) trackedOrder.reset();
 	}
 
 	return {
 		submit,
-		isPending: session?.phase === "validating" || session?.phase === "submitting",
-		isReconciling: session?.phase === "reconciling",
-		error: session?.error ?? trackedOrder.error?.message ?? null,
+		isPending: phase === "validating" || phase === "submitting",
+		isReconciling: phase === "reconciling",
+		error: sessionError ?? trackedOrder.error?.message ?? null,
 		resetError,
 	};
 }

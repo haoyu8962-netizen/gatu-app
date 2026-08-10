@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/cn";
 import { compareOrderbookValues } from "@/lib/trade/orderbook";
 
@@ -9,35 +9,24 @@ interface Props {
 	value: string;
 }
 
-interface FlashState {
-	direction: "up" | "down" | null;
-	resetKey: string;
-	sequence: number;
-	value: string;
-}
-
 export function OrderbookSizeCell({ className, displayValue, resetKey, value }: Props) {
-	const [flash, setFlash] = useState<FlashState>({ direction: null, resetKey, sequence: 0, value });
+	const previousRef = useRef({ resetKey, value });
+	const previous = previousRef.current;
+	const comparison =
+		resetKey === previous.resetKey && value !== previous.value ? compareOrderbookValues(previous.value, value) : null;
+	const direction = comparison === null || comparison === 0 ? null : comparison > 0 ? "up" : "down";
 
-	if (resetKey !== flash.resetKey) {
-		setFlash({ direction: null, resetKey, sequence: flash.sequence + 1, value });
-	} else if (value !== flash.value) {
-		const comparison = compareOrderbookValues(flash.value, value);
-		setFlash({
-			direction: comparison === null || comparison === 0 ? null : comparison > 0 ? "up" : "down",
-			resetKey,
-			sequence: flash.sequence + 1,
-			value,
-		});
-	}
+	useEffect(() => {
+		previousRef.current = { resetKey, value };
+	}, [resetKey, value]);
 
 	return (
 		<span className={className} title={displayValue}>
 			<span
-				key={flash.sequence}
-				data-direction={flash.direction ?? undefined}
+				key={`${resetKey}:${value}`}
+				data-direction={direction ?? undefined}
 				data-slot="orderbook-size-value"
-				className={cn(flash.direction && "orderbook-color-change")}
+				className={cn(direction && "orderbook-color-change")}
 			>
 				{displayValue}
 			</span>

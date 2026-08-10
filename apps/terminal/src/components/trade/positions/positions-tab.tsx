@@ -400,11 +400,7 @@ export function PositionsTab({ directionFilter, marketFilter, currentMarket, acc
 							<TableBody className={cn(positionsPanelTableBodyClass, positionTableBodyClass)}>
 								{filteredPositions.map((p, i) => {
 									const assetId = markets.getAssetId(p.coin);
-									const marketCloseSession = positionMarketClose.session;
-									const isMarketClosePending =
-										marketCloseSession !== null &&
-										marketCloseSession.position.assetId === assetId &&
-										marketCloseSession.phase !== "idle";
+									const isMarketClosePending = positionMarketClose.pendingAssetId === assetId;
 									return (
 										<PositionRow
 											key={`${p.dex}:${p.coin}`}

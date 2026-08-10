@@ -4,7 +4,7 @@ import { useLegalGate } from "@/hooks/trade/use-legal-gate";
 import { usePositionMarketCloseSubmit } from "@/hooks/trade/use-position-market-close-submit";
 import { type UnifiedMarket, useAgentStatus, useHyperliquid, useMarkets } from "@/lib/hyperliquid";
 import { readPositionMarketCloseConfirmationPreference } from "@/lib/trade/position-market-close-confirmation-preference";
-import { usePositionMarketCloseActions, usePositionMarketCloseSession } from "@/stores/use-global-modal-store";
+import { usePendingPositionMarketCloseAssetId, usePositionMarketCloseActions } from "@/stores/use-global-modal-store";
 import { useHasAcceptedHip3Disclaimer } from "@/stores/use-hip3-disclaimer-store";
 
 const EVM_ADDRESS_PATTERN = /^0x[a-f0-9]{40}$/;
@@ -15,7 +15,7 @@ const EVM_ADDRESS_PATTERN = /^0x[a-f0-9]{40}$/;
  */
 export function usePositionMarketCloseAction() {
 	const actions = usePositionMarketCloseActions();
-	const session = usePositionMarketCloseSession();
+	const pendingAssetId = usePendingPositionMarketCloseAssetId();
 	const { submit } = usePositionMarketCloseSubmit();
 	const { clientKey, env } = useHyperliquid();
 	const markets = useMarkets();
@@ -43,7 +43,7 @@ export function usePositionMarketCloseAction() {
 		return sessionId;
 	}
 
-	return { open, session };
+	return { open, pendingAssetId };
 }
 
 function isSameTradableMarket(position: PositionMarketCloseRef, market: UnifiedMarket | undefined): boolean {
