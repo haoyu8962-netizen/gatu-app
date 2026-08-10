@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import { compareOrderbookValues } from "@/lib/trade/orderbook";
 
 interface Props {
 	className?: string;
 	displayValue: string;
 	resetKey: string;
-	value: number;
+	value: string;
 }
 
 interface FlashState {
 	direction: "up" | "down" | null;
 	resetKey: string;
 	sequence: number;
-	value: number;
+	value: string;
 }
 
 export function OrderbookSizeCell({ className, displayValue, resetKey, value }: Props) {
@@ -21,8 +22,9 @@ export function OrderbookSizeCell({ className, displayValue, resetKey, value }: 
 	if (resetKey !== flash.resetKey) {
 		setFlash({ direction: null, resetKey, sequence: flash.sequence + 1, value });
 	} else if (value !== flash.value) {
+		const comparison = compareOrderbookValues(flash.value, value);
 		setFlash({
-			direction: value > flash.value ? "up" : "down",
+			direction: comparison === null || comparison === 0 ? null : comparison > 0 ? "up" : "down",
 			resetKey,
 			sequence: flash.sequence + 1,
 			value,

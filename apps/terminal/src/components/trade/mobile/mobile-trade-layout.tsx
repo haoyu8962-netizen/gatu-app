@@ -60,13 +60,14 @@ function TradeOrderView({
 			<div className="w-full min-w-0 min-h-[370px] flex items-stretch">
 				<MobileTradeView
 					key={marketKey}
+					active={active}
 					embedded
 					sizeMode={sizeMode}
 					onSizeModeChange={setSizeMode}
 					className="flex-[1.53] min-w-0 border-r border-stroke-weak/60"
 				/>
 				<div className="relative flex-1 min-w-0 self-stretch">
-					<MobileBookView compact inTabLayout view="book" className="absolute inset-0" />
+					<MobileBookView active={active} compact inTabLayout view="book" className="absolute inset-0" />
 				</div>
 			</div>
 
@@ -141,11 +142,20 @@ function MarketsDataView({
 				>
 					<MobileChartView active={active && topView === "chart"} />
 				</div>
-				{topView !== "chart" && active && (
-					<div className="absolute inset-0 z-10 flex min-h-0 flex-col bg-background">
-						<MobileBookView inTabLayout view={bookView} className="flex-1 min-h-0" />
-					</div>
-				)}
+				<div
+					aria-hidden={topView === "chart"}
+					className={cn(
+						"absolute inset-0 flex min-h-0 flex-col bg-background",
+						topView === "chart" ? "z-0 invisible pointer-events-none" : "z-10 visible pointer-events-auto",
+					)}
+				>
+					<MobileBookView
+						active={active && topView !== "chart"}
+						inTabLayout
+						view={bookView}
+						className="flex-1 min-h-0"
+					/>
+				</div>
 			</div>
 
 			{active && (

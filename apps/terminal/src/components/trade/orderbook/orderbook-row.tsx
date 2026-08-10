@@ -2,51 +2,59 @@ import { t } from "@lingui/core/macro";
 import { memo } from "react";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
-import type { BookLevel } from "@/lib/trade/orderbook";
+import { type BookLevel, getDepthPercentage, getOrderbookQuoteDecimals } from "@/lib/trade/orderbook";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookSizeCell } from "./orderbook-size-cell";
 
 interface Props {
 	flashResetKey: string;
 	level: BookLevel;
+	marketName: string;
 	side: "ask" | "bid";
-	maxTotal: number;
+	maxTotal: string;
 	priceDecimals: number;
 	showInQuote?: boolean;
 	szDecimals: number;
 	compact?: boolean;
+	disabled?: boolean;
 }
 
 function OrderbookRowComponent({
 	flashResetKey,
 	level,
+	marketName,
 	side,
 	maxTotal,
 	priceDecimals,
 	showInQuote = false,
 	szDecimals,
 	compact = false,
+	disabled = false,
 }: Props) {
 	const { setSelectedPrice } = useOrderbookActions();
-	const depthPct = maxTotal > 0 ? (level.total / maxTotal) * 100 : 0;
+	const depthPct = getDepthPercentage(level.total, maxTotal);
 	const isAsk = side === "ask";
 
-	const sizeValue = showInQuote ? level.size * level.price : level.size;
-	const totalValue = showInQuote ? level.total * level.price : level.total;
+	const sizeValue = showInQuote ? level.quoteSize : level.size;
+	const totalValue = showInQuote ? level.quoteTotal : level.total;
 
-	const displayDecimals = showInQuote ? 2 : szDecimals;
+	const sizeDecimals = showInQuote ? getOrderbookQuoteDecimals(sizeValue) : szDecimals;
+	const totalDecimals = showInQuote ? getOrderbookQuoteDecimals(totalValue) : szDecimals;
 	const priceText = formatNumber(level.price, priceDecimals);
-	const sizeText = formatNumber(sizeValue, { decimals: displayDecimals, compact: true });
-	const totalText = formatNumber(totalValue, { decimals: displayDecimals, compact: true });
+	const sizeText = formatNumber(sizeValue, { decimals: sizeDecimals, compact: true });
+	const totalText = formatNumber(totalValue, { decimals: totalDecimals, compact: true });
+	const sideText = isAsk ? t`Ask` : t`Bid`;
+	const ariaLabel = `${sideText}, ${t`Price`} ${priceText}, ${t`Size`} ${sizeText}, ${t`Total`} ${totalText}. ${t`Use ${priceText} as limit price`}`;
 
 	return (
 		<button
 			type="button"
-			onClick={() => setSelectedPrice(level.price)}
+			disabled={disabled}
+			onClick={() => setSelectedPrice(marketName, level.price)}
 			title={priceText}
-			aria-label={t`Use ${priceText} as limit price`}
+			aria-label={ariaLabel}
 			className={cn(
-				"group relative block w-full shrink-0 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus",
+				"group relative block w-full shrink-0 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-stroke-focus disabled:cursor-default",
 				compact ? "hover:bg-trading-panel-card" : "hover:bg-fill-hover",
 				compact ? "h-[24px]" : "h-[23px]",
 			)}
@@ -55,8 +63,7 @@ function OrderbookRowComponent({
 				className={cn("absolute inset-y-0 pointer-events-none", isAsk ? "depth-bar-ask" : "depth-bar-bid")}
 				style={{
 					width: `${depthPct}%`,
-					...(compact ? { right: 0 } : { left: 0 }),
-					backgroundColor: compact ? `var(--trading-panel-${isAsk ? "error" : "success"})` : undefined,
+					left: 0,
 				}}
 			/>
 			<span
@@ -95,14 +102,18 @@ function OrderbookRowComponent({
 function areEqual(prev: Props, next: Props): boolean {
 	return (
 		prev.flashResetKey === next.flashResetKey &&
+		prev.marketName === next.marketName &&
 		prev.side === next.side &&
 		prev.maxTotal === next.maxTotal &&
 		prev.priceDecimals === next.priceDecimals &&
 		prev.showInQuote === next.showInQuote &&
 		prev.szDecimals === next.szDecimals &&
+		prev.disabled === next.disabled &&
 		prev.level.price === next.level.price &&
 		prev.level.size === next.level.size &&
 		prev.level.total === next.level.total &&
+		prev.level.quoteSize === next.level.quoteSize &&
+		prev.level.quoteTotal === next.level.quoteTotal &&
 		prev.compact === next.compact
 	);
 }

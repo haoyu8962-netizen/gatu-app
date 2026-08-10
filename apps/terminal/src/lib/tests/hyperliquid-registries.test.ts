@@ -1,5 +1,9 @@
 import { getExchangeMethodConfig } from "@gatu/hl-react/registries/exchange";
-import { getAccumulateConfig, getDefaultThrottle } from "@gatu/hl-react/registries/subscription";
+import {
+	getAccumulateConfig,
+	getDefaultThrottle,
+	shouldAcceptSubscriptionEvent,
+} from "@gatu/hl-react/registries/subscription";
 import { ExchangeClient, SubscriptionClient } from "@nktkas/hyperliquid";
 import { describe, expect, it } from "vitest";
 import type { ExchangeMethod, SubMethod } from "@/lib/hyperliquid";
@@ -141,11 +145,23 @@ describe("subscription registry", () => {
 		expect(withdrawalKey).not.toBe(commissionKey);
 	});
 
-	it("has default throttle only for l2Book", () => {
+	it("coalesces order-book streams to at most one store update per frame", () => {
+		expect(getDefaultThrottle("bbo")).toBe(16);
 		expect(getDefaultThrottle("l2Book")).toBe(16);
-		const others = SUB_METHODS.filter((m) => m !== "l2Book");
+		const others = SUB_METHODS.filter((m) => m !== "bbo" && m !== "l2Book");
 		for (const method of others) {
 			expect(getDefaultThrottle(method), `${method} should not have default throttle`).toBeUndefined();
 		}
+	});
+
+	it("rejects coin or fast-mode l2Book payloads routed to the wrong listener", () => {
+		const fastEvent = { coin: "ETH", fast: true, levels: [[], []], time: 1 };
+		const fullEvent = { coin: "ETH", levels: [[], []], time: 2 };
+
+		expect(shouldAcceptSubscriptionEvent("l2Book", { coin: "ETH", fast: true }, fastEvent)).toBe(true);
+		expect(shouldAcceptSubscriptionEvent("l2Book", { coin: "ETH", fast: true }, fullEvent)).toBe(false);
+		expect(shouldAcceptSubscriptionEvent("l2Book", { coin: "ETH" }, fastEvent)).toBe(false);
+		expect(shouldAcceptSubscriptionEvent("l2Book", { coin: "BTC" }, fullEvent)).toBe(false);
+		expect(shouldAcceptSubscriptionEvent("trades", { coin: "ETH" }, fastEvent)).toBe(true);
 	});
 });

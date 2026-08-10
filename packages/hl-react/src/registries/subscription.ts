@@ -118,6 +118,7 @@ const ACCUMULATING_SUBS: Partial<Record<SubMethod, AccumulateConfig>> = {
 };
 
 const DEFAULT_THROTTLE: Partial<Record<SubMethod, number>> = {
+	bbo: 16,
 	l2Book: 16,
 };
 
@@ -127,4 +128,21 @@ export function getAccumulateConfig(method: SubMethod): AccumulateConfig | null 
 
 export function getDefaultThrottle(method: SubMethod): number | undefined {
 	return DEFAULT_THROTTLE[method];
+}
+
+export function shouldAcceptSubscriptionEvent(method: SubMethod, params: unknown, event: unknown): boolean {
+	if (method !== "l2Book") return true;
+	if (!isRecord(params) || !isRecord(event)) return false;
+
+	const requestedCoin = params.coin;
+	if (typeof requestedCoin !== "string" || event.coin !== requestedCoin) return false;
+
+	// @nktkas/hyperliquid 0.33.3 routes l2Book listeners by coin only. When a
+	// fast and a full-depth subscription overlap, both callbacks can therefore
+	// receive both payloads. Filter before the shared store and stale watchdog.
+	return (params.fast === true) === (event.fast === true);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
 }

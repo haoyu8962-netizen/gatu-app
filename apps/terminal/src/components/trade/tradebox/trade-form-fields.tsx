@@ -9,6 +9,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { ORDER_MIN_NOTIONAL_USD, type OrderType, SIZE_PERCENT_OPTIONS } from "@/config/trade";
 import { getSizeInputMaxDecimals, getSliderValue } from "@/domain/trade/order/size";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -145,6 +146,7 @@ export function TradeFormFields({ price, positionSize, onSizeModeToggle, onSizeP
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
 	const canUseTpSl = canUseTpSlForOrder(orderType);
 	const marketType = isSpotMarket ? "spot" : "perp";
+	const { midPx } = useOrderbookMidPrice(usesLimitPrice || usesTriggerPrice || scaleOrder ? market?.name : undefined);
 
 	const triggerPriceNum = toNumber(triggerPriceInput);
 	const sizeHasError = (sizeValue > maxSize && maxSize > 0) || (orderValue > 0 && orderValue < ORDER_MIN_NOTIONAL_USD);
@@ -159,7 +161,8 @@ export function TradeFormFields({ price, positionSize, onSizeModeToggle, onSizeP
 		return t`Min order $${ORDER_MIN_NOTIONAL_USD}`;
 	}
 	const displaySizeError = useLingeringText(getSizeErrorText(), ERROR_LINGER_MS);
-	const formattedMid = getFormattedMidPrice(markPx, szDecimals, marketType);
+	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
+	const formattedMid = getFormattedMidPrice(midReferencePrice, szDecimals, marketType);
 
 	function handleSizePercentApply(pct: number) {
 		if (maxSize <= 0) return;
@@ -283,7 +286,12 @@ export function TradeFormFields({ price, positionSize, onSizeModeToggle, onSizeP
 
 				{scaleOrder && (
 					<>
-						<TradeFormScale markPx={markPx} szDecimals={szDecimals} marketType={marketType} disabled={isFormDisabled} />
+						<TradeFormScale
+							midPrice={midReferencePrice}
+							szDecimals={szDecimals}
+							marketType={marketType}
+							disabled={isFormDisabled}
+						/>
 						<TradeTifChips orderType={orderType} disabled={isFormDisabled} />
 					</>
 				)}

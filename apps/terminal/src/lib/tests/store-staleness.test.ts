@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createFakeSubscription } from "./harness/subscription";
 
 let createHyperliquidStore: typeof import("@gatu/hl-react/store").createHyperliquidStore;
+let getStoreInternals: typeof import("@gatu/hl-react/store").getStoreInternals;
 
 describe("store staleness integration", () => {
 	beforeEach(async () => {
@@ -11,6 +12,7 @@ describe("store staleness integration", () => {
 		Object.defineProperty(document, "hidden", { value: false, configurable: true });
 		const mod = await import("@gatu/hl-react/store");
 		createHyperliquidStore = mod.createHyperliquidStore;
+		getStoreInternals = mod.getStoreInternals;
 	});
 
 	afterEach(() => {
@@ -77,7 +79,6 @@ describe("store staleness integration", () => {
 			"userFundings",
 			"userHistoricalOrders",
 			"userNonFundingLedgerUpdates",
-			"l2Book",
 			"trades",
 		];
 		const keys = methods.map((method) => JSON.stringify(["hl", "subscription", method, {}]));
@@ -100,16 +101,112 @@ describe("store staleness integration", () => {
 		expect(triggerReconnect).not.toHaveBeenCalled();
 	});
 
-	it("does not stale a periodic stream before its first payload", async () => {
+	it.each([
+		{ label: "default", params: { coin: "ETH" }, elapsedMs: 20_000 },
+		{ label: "fast", params: { coin: "ETH", fast: true }, elapsedMs: 5_000 },
+	])("resubscribes a stale $label l2Book stream and clears staleness on recovery", async ({ params, elapsedMs }) => {
 		const triggerReconnect = vi.fn();
 		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
-		const { subscribe } = createFakeSubscription();
+		const unsubscribes: Array<ReturnType<typeof vi.fn>> = [];
+		const subscribe = vi.fn(async () => {
+			const unsubscribe = vi.fn(async () => {});
+			unsubscribes.push(unsubscribe);
+			return { unsubscribe };
+		});
+		const key = JSON.stringify(["hl", "subscription", "l2Book", params]);
+
+		store.getState().acquireSubscription(key, subscribe);
+		await vi.advanceTimersByTimeAsync(0);
+		store.getState().setSubscriptionData(key, { coin: "ETH", levels: [[], []] });
+
+		await vi.advanceTimersByTimeAsync(elapsedMs);
+
+		expect(store.getState().subscriptions[key]?.isStale).toBe(true);
+		expect(subscribe).toHaveBeenCalledTimes(2);
+		expect(unsubscribes[0]).toHaveBeenCalledTimes(1);
+		expect(triggerReconnect).not.toHaveBeenCalled();
+
+		store.getState().setSubscriptionData(key, { coin: "ETH", levels: [[{ px: "1" }], []] });
+		expect(store.getState().subscriptions[key]?.isStale).toBe(false);
+
+		store.getState().releaseSubscription(key);
+	});
+
+	it.each(["l2Book", "bbo"])("does not reactivate retained %s data after reconnect acknowledgement", async (method) => {
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		let reportError: ((error: unknown) => void) | undefined;
+		const subscribe = vi.fn(async (options?: { onError?: (error: unknown) => void }) => {
+			reportError = options?.onError;
+			return { unsubscribe: vi.fn(async () => {}) };
+		});
+		const key = JSON.stringify(["hl", "subscription", method, { coin: "ETH" }]);
+
+		store.getState().acquireSubscription(key, subscribe);
+		await vi.advanceTimersByTimeAsync(0);
+		store.getState().setSubscriptionData(key, { coin: "ETH", levels: [[{ px: "1" }], []] });
+		reportError?.(new Error("socket failed"));
+
+		expect(store.getState().subscriptions[key]).toMatchObject({ data: undefined, status: "error" });
+		await vi.advanceTimersByTimeAsync(1_000);
+		expect(subscribe).toHaveBeenCalledTimes(2);
+		expect(store.getState().subscriptions[key]).toMatchObject({ data: undefined, status: "active" });
+		store.getState().releaseSubscription(key);
+	});
+
+	it.each(["l2Book", "bbo"])("drops hidden buffered %s data when the confirmed subscription fails", async (method) => {
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect: vi.fn() });
+		let reportError: ((error: unknown) => void) | undefined;
+		const subscribe = vi.fn(async (options?: { onError?: (error: unknown) => void }) => {
+			reportError = options?.onError;
+			return { unsubscribe: vi.fn(async () => {}) };
+		});
+		const key = JSON.stringify(["hl", "subscription", method, { coin: "ETH" }]);
+
+		store.getState().acquireSubscription(key, subscribe);
+		await vi.advanceTimersByTimeAsync(0);
+		Object.defineProperty(document, "hidden", { value: true, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+		store.getState().setSubscriptionData(key, { coin: "ETH", sequence: 1 });
+
+		expect(getStoreInternals(store).visibilityBuffer.has(key)).toBe(true);
+		reportError?.(new Error("socket failed"));
+		expect(getStoreInternals(store).visibilityBuffer.has(key)).toBe(false);
+
+		Object.defineProperty(document, "hidden", { value: false, configurable: true });
+		document.dispatchEvent(new Event("visibilitychange"));
+		expect(store.getState().subscriptions[key]).toMatchObject({ data: undefined, status: "error" });
+		store.getState().releaseSubscription(key);
+	});
+
+	it("does not stale a non-book stream before its first payload", async () => {
+		const triggerReconnect = vi.fn();
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
+		const subscribe = vi.fn(createFakeSubscription().subscribe);
 		const key = JSON.stringify(["hl", "subscription", "allMids", { dex: "" }]);
 
 		store.getState().acquireSubscription(key, subscribe);
 		await vi.advanceTimersByTimeAsync(2 * 60_000);
 
 		expect(store.getState().subscriptions[key]?.isStale).toBeFalsy();
+		expect(triggerReconnect).not.toHaveBeenCalled();
+		store.getState().releaseSubscription(key);
+	});
+
+	it.each([
+		{ label: "default", params: { coin: "ETH" }, elapsedMs: 20_000 },
+		{ label: "fast", params: { coin: "ETH", fast: true }, elapsedMs: 5_000 },
+	])("resubscribes a confirmed $label l2Book that never delivers its first frame", async ({ params, elapsedMs }) => {
+		const triggerReconnect = vi.fn();
+		const store = createHyperliquidStore({ ssr: false, triggerReconnect });
+		const subscribe = vi.fn(createFakeSubscription().subscribe);
+		const key = JSON.stringify(["hl", "subscription", "l2Book", params]);
+
+		store.getState().acquireSubscription(key, subscribe);
+		await vi.advanceTimersByTimeAsync(0);
+		await vi.advanceTimersByTimeAsync(elapsedMs);
+
+		expect(store.getState().subscriptions[key]?.isStale).toBe(true);
+		expect(subscribe).toHaveBeenCalledTimes(2);
 		expect(triggerReconnect).not.toHaveBeenCalled();
 		store.getState().releaseSubscription(key);
 	});

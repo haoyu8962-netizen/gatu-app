@@ -556,6 +556,11 @@ msgstr "Arbitrum (قديم)"
 msgid "Arbitrum network switch was rejected."
 msgstr "تم رفض التبديل إلى شبكة Arbitrum."
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
+msgid "Ask"
+msgstr "بيع"
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -678,6 +683,11 @@ msgstr "الرصيد المتاح للتداول"
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "الأرصدة"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
+msgid "Bid"
+msgstr "شراء"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
@@ -3875,6 +3885,11 @@ msgstr "لا توجد أوامر مفتوحة."
 msgid "No order history found."
 msgstr "لم يُعثر على سجل أوامر."
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-panel.tsx
+msgid "No orders"
+msgstr "لا توجد أوامر"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "No orders match the filters."
 msgstr "لا توجد أوامر تطابق عوامل التصفية."
@@ -4699,6 +4714,7 @@ msgstr "اضغط مع الاستمرار لمدة 4 ثوانٍ"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -4708,6 +4724,7 @@ msgstr "اضغط مع الاستمرار لمدة 4 ثوانٍ"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5646,6 +5663,7 @@ msgstr "جاري التوقيع..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -5660,6 +5678,7 @@ msgstr "جاري التوقيع..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -6770,7 +6789,9 @@ msgstr "هناك عدد كبير جدًا من موافقات الهاتف با�
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
 msgid "Total"
@@ -7465,6 +7486,7 @@ msgstr "في انتظار التأكيد..."
 #~ msgstr "بانتظار وصول USDC الأصلي على Arbitrum."
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts

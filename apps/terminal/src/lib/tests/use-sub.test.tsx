@@ -5,7 +5,7 @@ import { useSubscription } from "@gatu/hl-react/hooks/useSubscription";
 import { useSub } from "@gatu/hl-react/hooks/utils/useSub";
 import { HyperliquidContext, type HyperliquidContextValue, HyperliquidStoreContext } from "@gatu/hl-react/provider";
 import { createHyperliquidStore, getStoreInternals, type HyperliquidStore } from "@gatu/hl-react/store";
-import type { SubscriptionClient, TradesWsEvent } from "@nktkas/hyperliquid";
+import type { L2BookWsEvent, SubscriptionClient, TradesWsEvent } from "@nktkas/hyperliquid";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -241,6 +241,83 @@ describe("useSub hook surface", () => {
 		expect(captured.error).toBeInstanceOf(OversizedWebSocketPayloadError);
 	});
 
+	it.each(["l2Book", "bbo"])("does not apply queued %s data after the SDK reports an error", async (method) => {
+		const key = JSON.stringify(["hl", "subscription", method, { coin: "ETH" }]);
+		let emit: ((data: { sequence: number }) => void) | undefined;
+		let reportError: ((error: unknown) => void) | undefined;
+		let captured: { data: { sequence: number } | undefined; status: string } = {
+			data: undefined,
+			status: "idle",
+		};
+
+		function Consumer() {
+			const result = useSub<{ sequence: number }>(
+				key,
+				async (listener, failureOptions) => {
+					emit = listener;
+					reportError = failureOptions?.onError;
+					return { unsubscribe: async () => {} };
+				},
+				{ throttleMs: 16 },
+			);
+			captured = { data: result.data, status: result.status };
+			return null;
+		}
+
+		act(() => {
+			root.render(createElement(Wrapper, null, createElement(Consumer)));
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		act(() => emit?.({ sequence: 1 }));
+		expect(captured.data).toEqual({ sequence: 1 });
+		act(() => emit?.({ sequence: 2 }));
+		act(() => reportError?.(new Error("socket failed")));
+
+		expect(captured).toEqual({ data: undefined, status: "error" });
+		await act(() => vi.advanceTimersByTimeAsync(16));
+		expect(captured).toEqual({ data: undefined, status: "error" });
+	});
+
+	it.each(["l2Book", "bbo"])("does not apply queued %s data after the subscribe promise rejects", async (method) => {
+		const key = JSON.stringify(["hl", "subscription", method, { coin: "ETH" }]);
+		let emit: ((data: { sequence: number }) => void) | undefined;
+		let rejectSubscription: ((error: unknown) => void) | undefined;
+		let captured: { data: { sequence: number } | undefined; status: string } = {
+			data: undefined,
+			status: "idle",
+		};
+
+		function Consumer() {
+			const result = useSub<{ sequence: number }>(
+				key,
+				(listener) => {
+					emit = listener;
+					return new Promise((_, reject) => {
+						rejectSubscription = reject;
+					});
+				},
+				{ throttleMs: 16 },
+			);
+			captured = { data: result.data, status: result.status };
+			return null;
+		}
+
+		act(() => {
+			root.render(createElement(Wrapper, null, createElement(Consumer)));
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		act(() => emit?.({ sequence: 1 }));
+		expect(captured.data).toEqual({ sequence: 1 });
+		act(() => emit?.({ sequence: 2 }));
+		await act(async () => rejectSubscription?.(new Error("subscribe failed")));
+
+		expect(captured).toEqual({ data: undefined, status: "error" });
+		await act(() => vi.advanceTimersByTimeAsync(16));
+		expect(captured).toEqual({ data: undefined, status: "error" });
+	});
+
 	it("uses refreshKey to resubscribe without changing SDK params", async () => {
 		const unsubscribes: Array<ReturnType<typeof vi.fn>> = [];
 		const l2Book = vi.fn(async (..._args: unknown[]) => {
@@ -285,6 +362,38 @@ describe("useSub hook surface", () => {
 			root.render(<FullWrapper subscription={subscription}>{null}</FullWrapper>);
 		});
 		await act(() => vi.advanceTimersByTimeAsync(0));
+	});
+
+	it("filters SDK l2Book channel cross-talk before it reaches the shared store", async () => {
+		let emit: ((event: L2BookWsEvent) => void) | undefined;
+		let captured: L2BookWsEvent | undefined;
+		const l2Book = vi.fn(async (_params: unknown, listener: (event: L2BookWsEvent) => void) => {
+			emit = listener;
+			return { unsubscribe: vi.fn(async () => {}) };
+		});
+		const subscription = { l2Book } as unknown as SubscriptionClient;
+
+		function Consumer() {
+			captured = useSubscription("l2Book", { coin: "ETH", fast: true }).data;
+			return null;
+		}
+
+		act(() => {
+			root.render(
+				<FullWrapper subscription={subscription}>
+					<Consumer />
+				</FullWrapper>,
+			);
+		});
+		await act(() => vi.advanceTimersByTimeAsync(0));
+
+		act(() => emit?.({ coin: "ETH", levels: [[], []], time: 1 }));
+		await act(() => vi.advanceTimersByTimeAsync(16));
+		expect(captured).toBeUndefined();
+
+		act(() => emit?.({ coin: "ETH", fast: true, levels: [[], []], time: 2 }));
+		await act(() => vi.advanceTimersByTimeAsync(16));
+		expect(captured).toMatchObject({ coin: "ETH", fast: true, time: 2 });
 	});
 
 	it("resets accumulating data when subscription params change", async () => {

@@ -556,6 +556,11 @@ msgstr "Arbitrum (heredado)"
 msgid "Arbitrum network switch was rejected."
 msgstr "Se rechazó el cambio a la red Arbitrum."
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
+msgid "Ask"
+msgstr "Venta"
+
 #: src/components/trade/mobile/mobile-funding-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -678,6 +683,11 @@ msgstr "Saldo disponible para operar"
 #: src/config/trade.ts
 msgid "Balances"
 msgstr "Saldos"
+
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
+msgid "Bid"
+msgstr "Compra"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Bitcoin is a decentralized digital asset secured by a proof-of-work network."
@@ -3875,6 +3885,11 @@ msgstr "Sin órdenes abiertas."
 msgid "No order history found."
 msgstr "No se encontró historial de órdenes."
 
+#: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/orderbook/orderbook-panel.tsx
+msgid "No orders"
+msgstr "Sin órdenes"
+
 #: src/components/trade/mobile/mobile-orders-tab.tsx
 msgid "No orders match the filters."
 msgstr "Ninguna orden coincide con los filtros."
@@ -4699,6 +4714,7 @@ msgstr "Mantén pulsado 4 segundos"
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-market-bar.tsx
@@ -4708,6 +4724,7 @@ msgstr "Mantén pulsado 4 segundos"
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -5646,6 +5663,7 @@ msgstr "Firmando..."
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
 #: src/components/trade/mobile/mobile-history-tab.tsx
@@ -5660,6 +5678,7 @@ msgstr "Firmando..."
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/mobile/mobile-twap-fill-history-list.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/orderbook/trades-panel.tsx
 #: src/components/trade/positions/history-tab.tsx
 #: src/components/trade/positions/history-tab.tsx
@@ -6770,7 +6789,9 @@ msgstr "Demasiadas aprobaciones móviles esperan recuperación en esta pestaña.
 
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
+#: src/components/trade/orderbook/orderbook-row.tsx
 #: src/components/trade/positions/balances-tab.tsx
 #: src/config/ui-text.ts
 msgid "Total"
@@ -7465,6 +7486,7 @@ msgstr "Esperando confirmación..."
 #~ msgstr "Esperando a que llegue USDC nativo en Arbitrum."
 
 #: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/mobile/mobile-book-view.tsx
 #: src/components/trade/orderbook/orderbook-panel.tsx
 #: src/config/ui-text.ts

@@ -129,10 +129,10 @@ function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string
 
 export function MarketOverview() {
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
-	const { midPx } = useOrderbookMidPrice(selectedMarketInfo?.name);
+	const isSpot = selectedMarketInfo?.kind === "spot";
+	const { midPx } = useOrderbookMidPrice(isSpot ? selectedMarketInfo?.name : undefined);
 	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);
 
-	const isSpot = selectedMarketInfo?.kind === "spot";
 	const perpCoin = getMarketApiCoin(selectedMarketInfo);
 	const spotCoin = getSpotMarketApiCoin(selectedMarketInfo);
 

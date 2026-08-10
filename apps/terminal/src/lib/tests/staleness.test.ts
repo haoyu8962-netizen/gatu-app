@@ -84,6 +84,22 @@ describe("staleness watchdog", () => {
 		expect(listener).toHaveBeenCalledWith(false);
 	});
 
+	it("re-arms a first-frame deadline without publishing a false fresh signal", () => {
+		watchdog.register("key:a", 5_000);
+		const listener = vi.fn();
+		watchdog.subscribe("key:a", listener);
+		watchdog.markFresh("key:a");
+		vi.advanceTimersByTime(6_000);
+		expect(listener).toHaveBeenLastCalledWith(true);
+		listener.mockClear();
+
+		watchdog.arm("key:a");
+		expect(listener).not.toHaveBeenCalled();
+		vi.advanceTimersByTime(6_000);
+
+		expect(listener).toHaveBeenCalledWith(true);
+	});
+
 	it("stops notifying after unsubscribe", () => {
 		watchdog.register("key:a", 5_000);
 		const listener = vi.fn();

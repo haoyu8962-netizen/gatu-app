@@ -1,11 +1,16 @@
 import { create } from "zustand";
 
+export interface SelectedOrderbookPrice {
+	marketName: string;
+	price: string;
+}
+
 interface OrderbookActionsState {
-	selectedPrice: number | null;
+	selectedPrice: SelectedOrderbookPrice | null;
 }
 
 interface OrderbookActions {
-	setSelectedPrice: (price: number) => void;
+	setSelectedPrice: (marketName: string, price: string) => void;
 	clearSelectedPrice: () => void;
 }
 
@@ -16,7 +21,7 @@ interface OrderbookActionsStore extends OrderbookActionsState {
 const useOrderbookActionsStore = create<OrderbookActionsStore>((set) => ({
 	selectedPrice: null,
 	actions: {
-		setSelectedPrice: (price) => set({ selectedPrice: price }),
+		setSelectedPrice: (marketName, price) => set({ selectedPrice: { marketName, price } }),
 		clearSelectedPrice: () => set({ selectedPrice: null }),
 	},
 }));
@@ -26,6 +31,13 @@ export function useSelectedPrice() {
 }
 export function useOrderbookActions() {
 	return useOrderbookActionsStore((s) => s.actions);
+}
+
+export function getSelectedPriceForMarket(
+	selection: SelectedOrderbookPrice | null,
+	marketName: string | undefined,
+): string | null {
+	return selection && marketName === selection.marketName ? selection.price : null;
 }
 export function getOrderbookActionsStore() {
 	return useOrderbookActionsStore.getState();

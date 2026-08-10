@@ -1,25 +1,41 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import {
-	aggregateLevels,
+	compareOrderbookValues,
+	getDepthPercentage,
 	getL2BookSubscriptionParams,
-	getMaxTotal,
+	getOrderbookQuoteDecimals,
 	getPriceGroupingKey,
 	getPriceGroupingOptions,
 	getRawSpreadInfo,
-	getTickSizes,
+	getSideMaxTotal,
+	getSnapshotPriceDecimals,
+	type L2BookPriceGroupSelection,
 	processLevels,
 } from "@/lib/trade/orderbook";
 
 describe("processLevels", () => {
-	it("builds levels and accumulates totals", () => {
+	it("preserves source decimals and builds exact base and quote totals", () => {
 		const levels = processLevels([
-			{ px: "101", sz: "1", n: 1 },
-			{ px: "100", sz: "2", n: 2 },
+			{ px: "100", sz: "1", n: 1 },
+			{ px: "99", sz: "2", n: 2 },
 		]);
 
-		expect(levels).toHaveLength(2);
-		expect(levels[0]).toEqual({ price: 101, size: 1, total: 1 });
-		expect(levels[1]).toEqual({ price: 100, size: 2, total: 3 });
+		expect(levels).toEqual([
+			{ price: "100", size: "1", total: "1", quoteSize: "100", quoteTotal: "100" },
+			{ price: "99", size: "2", total: "3", quoteSize: "198", quoteTotal: "298" },
+		]);
+	});
+
+	it("does not round API price and size strings through JavaScript numbers", () => {
+		const [level] = processLevels([{ px: "999.9500", sz: "0.100000000000000001", n: 1 }]);
+
+		expect(level).toEqual({
+			price: "999.9500",
+			size: "0.100000000000000001",
+			total: "0.100000000000000001",
+			quoteSize: "99.99500000000000099995",
+			quoteTotal: "99.99500000000000099995",
+		});
 	});
 
 	it("returns empty array for undefined/empty input", () => {
@@ -42,59 +58,53 @@ describe("getRawSpreadInfo", () => {
 		expect(getRawSpreadInfo([[], []])).toBeNull();
 		expect(getRawSpreadInfo([[{ px: "102", sz: "1", n: 1 }], [{ px: "101", sz: "1", n: 1 }]])).toBeNull();
 	});
-});
 
-describe("getTickSizes", () => {
-	it("generates tick sizes based on price magnitude", () => {
-		const ticks = getTickSizes(95000);
-		expect(ticks[0]).toBe(1);
-		expect(ticks[1]).toBe(2);
-		expect(ticks[2]).toBe(5);
-		expect(ticks[3]).toBe(10);
-	});
+	it("prefers the event spread and accepts a BBO midpoint for aggregated books", () => {
+		const info = getRawSpreadInfo([[{ px: "65245", sz: "1", n: 1 }], [{ px: "65250", sz: "1", n: 1 }]], {
+			eventSpread: "1",
+			bboMid: "65247.5",
+		});
 
-	it("returns empty array for invalid price", () => {
-		expect(getTickSizes(undefined)).toEqual([]);
-		expect(getTickSizes(0)).toEqual([]);
-		expect(getTickSizes(-100)).toEqual([]);
+		expect(info).toEqual({ mid: "65247.5", spread: "1", spreadPct: "0.001532625771102341" });
 	});
 });
 
-describe("aggregateLevels", () => {
-	it("aggregates bids by tick size", () => {
-		const levels = [
-			{ price: 101, size: 1, total: 1 },
-			{ price: 100.5, size: 2, total: 3 },
-			{ price: 100, size: 3, total: 6 },
-		];
-		const aggregated = aggregateLevels(levels, 1, "bid");
+describe("order book display derivations", () => {
+	it("normalizes depth against each side independently", () => {
+		const bids = processLevels([
+			{ px: "100", sz: "1", n: 1 },
+			{ px: "99", sz: "2", n: 1 },
+		]);
+		const asks = processLevels([
+			{ px: "101", sz: "0.25", n: 1 },
+			{ px: "102", sz: "0.75", n: 1 },
+		]);
 
-		expect(aggregated).toHaveLength(2);
-		expect(aggregated[0]).toEqual({ price: 101, size: 1, total: 1 });
-		expect(aggregated[1]).toEqual({ price: 100, size: 5, total: 6 });
+		const bidMax = getSideMaxTotal(bids);
+		const askMax = getSideMaxTotal(asks);
+		expect(bidMax).toBe("3");
+		expect(askMax).toBe("1");
+		expect(getDepthPercentage(bids[0].total, bidMax)).toBeCloseTo(100 / 3);
+		expect(getDepthPercentage(bids[1].total, bidMax)).toBe(100);
+		expect(getDepthPercentage(asks[1].total, askMax)).toBe(100);
 	});
 
-	it("returns original levels when tickSize is 0", () => {
-		const levels = [{ price: 100, size: 1, total: 1 }];
-		expect(aggregateLevels(levels, 0, "bid")).toEqual(levels);
-	});
-});
-
-describe("getMaxTotal", () => {
-	it("returns max total from bids and asks", () => {
-		const bids = [
-			{ price: 100, size: 1, total: 1 },
-			{ price: 99, size: 2, total: 3 },
-		];
-		const asks = [
-			{ price: 101, size: 1, total: 1 },
-			{ price: 102, size: 4, total: 5 },
-		];
-		expect(getMaxTotal(bids, asks)).toBe(5);
+	it("keeps non-zero sub-cent quote values visible", () => {
+		expect(getOrderbookQuoteDecimals("0")).toBe(2);
+		expect(getOrderbookQuoteDecimals("0.0042")).toBe(4);
+		expect(getOrderbookQuoteDecimals("0.00000001")).toBe(8);
 	});
 
-	it("returns 0 for empty arrays", () => {
-		expect(getMaxTotal([], [])).toBe(0);
+	it("compares size updates without number precision loss", () => {
+		expect(compareOrderbookValues("9007199254740992", "9007199254740993")).toBe(1);
+		expect(compareOrderbookValues("1.00", "1")).toBe(0);
+		expect(compareOrderbookValues("invalid", "1")).toBeNull();
+	});
+
+	it("derives decimals from the snapshot when the reference price crosses a power of ten", () => {
+		const levels = [[{ px: "999.95", sz: "1", n: 1 }], [{ px: "1000", sz: "1", n: 1 }]] as const;
+
+		expect(getSnapshotPriceDecimals(levels, 0)).toBe(2);
 	});
 });
 
@@ -148,5 +158,16 @@ describe("getPriceGroupingOptions", () => {
 			nSigFigs: 5,
 			mantissa: 2,
 		});
+		expect(getL2BookSubscriptionParams("BTC", { nSigFigs: 5, mantissa: 5 }, { fast: true })).toEqual({
+			coin: "BTC",
+			fast: true,
+			mantissa: 5,
+			nSigFigs: 5,
+		});
+	});
+
+	it("only permits mantissa grouping with five significant figures", () => {
+		expectTypeOf<{ nSigFigs: 5; mantissa: 2 }>().toMatchTypeOf<L2BookPriceGroupSelection>();
+		expectTypeOf<{ nSigFigs: 4; mantissa: 2 }>().not.toMatchTypeOf<L2BookPriceGroupSelection>();
 	});
 });

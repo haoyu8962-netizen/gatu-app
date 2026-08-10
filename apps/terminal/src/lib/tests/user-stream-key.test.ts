@@ -58,6 +58,9 @@ describe("isUserStreamKey", () => {
 
 describe("getStalenessThresholdForKey", () => {
 	it("monitors streams with a periodic snapshot cadence", () => {
+		expect(getStalenessThresholdForKey(key("l2Book", { coin: "ETH" }))).toBe(15_000);
+		expect(getStalenessThresholdForKey(key("l2Book", { coin: "ETH", fast: false }))).toBe(15_000);
+		expect(getStalenessThresholdForKey(key("l2Book", { coin: "ETH", fast: true }))).toBe(3_000);
 		expect(getStalenessThresholdForKey(key("allMids"))).toBe(20_000);
 		expect(getStalenessThresholdForKey(key("webData3"))).toBe(60_000);
 		expect(getStalenessThresholdForKey(key("spotState"))).toBe(60_000);
@@ -72,7 +75,6 @@ describe("getStalenessThresholdForKey", () => {
 			"userFundings",
 			"userHistoricalOrders",
 			"userNonFundingLedgerUpdates",
-			"l2Book",
 			"trades",
 			"candle",
 		]) {

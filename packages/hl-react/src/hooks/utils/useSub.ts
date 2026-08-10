@@ -7,6 +7,7 @@ import { isPayloadOversized } from "../../internal/websocket/payload-guard";
 import {
 	getPayloadLimitBytesForSubscriptionKey,
 	getStalenessThresholdForKey,
+	getSubscriptionMethodForKey,
 	shouldDropOversizedPayloadForSubscriptionKey,
 } from "../../internal/websocket/reliability";
 import { useHyperliquidStoreApi } from "../../provider";
@@ -61,13 +62,43 @@ export function useSub<TData>(
 
 		if (throttleMs) {
 			const updater = createThrottledUpdater<TData>((data) => state.setSubscriptionData(key, data), throttleMs);
+			const method = getSubscriptionMethodForKey(key);
+			const shouldDiscardQueuedDataOnError = method === "l2Book" || method === "bbo";
+			let subscriptionGeneration = 0;
+
 			state.acquireSubscription(
 				key,
-				(failureOptions) =>
-					subscribeRef.current((data) => {
-						if (shouldDropPayload(data)) return;
+				(failureOptions) => {
+					const generation = shouldDiscardQueuedDataOnError ? ++subscriptionGeneration : 0;
+					const invalidateGeneration = () => {
+						if (!shouldDiscardQueuedDataOnError || generation !== subscriptionGeneration) return;
+						subscriptionGeneration += 1;
+						updater.destroy();
+					};
+					const guardedFailureOptions = shouldDiscardQueuedDataOnError
+						? {
+								...failureOptions,
+								onError: (error: unknown) => {
+									invalidateGeneration();
+									failureOptions?.onError?.(error);
+								},
+							}
+						: failureOptions;
+					const promise = subscribeRef.current((data) => {
+						if (shouldDiscardQueuedDataOnError && generation !== subscriptionGeneration) return;
+						if (shouldDropPayload(data)) {
+							if (shouldDiscardQueuedDataOnError) updater.destroy();
+							return;
+						}
 						updater.add(data);
-					}, failureOptions),
+					}, guardedFailureOptions);
+
+					if (!shouldDiscardQueuedDataOnError) return promise;
+					return promise.catch((error) => {
+						invalidateGeneration();
+						throw error;
+					});
+				},
 				stalenessThresholdMs,
 				pauseWhenHidden,
 			);

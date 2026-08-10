@@ -7,34 +7,37 @@ import { CompactOrderbook, type CompactOrderbookMode } from "@/components/trade/
 import { createI18nRoot } from "./harness/react";
 
 const ASKS = [
-	{ price: 101, size: 1, total: 1 },
-	{ price: 102, size: 2, total: 3 },
+	{ price: "101", quoteSize: "101", quoteTotal: "101", size: "1", total: "1" },
+	{ price: "102", quoteSize: "204", quoteTotal: "305", size: "2", total: "3" },
 ];
 const BIDS = [
-	{ price: 99, size: 1.5, total: 1.5 },
-	{ price: 98, size: 2.5, total: 4 },
+	{ price: "99", quoteSize: "148.5", quoteTotal: "148.5", size: "1.5", total: "1.5" },
+	{ price: "98", quoteSize: "245", quoteTotal: "393.5", size: "2.5", total: "4" },
 ];
 
-function CompactOrderbookHarness() {
+function CompactOrderbookHarness({ asks = ASKS }: { asks?: typeof ASKS }) {
 	const [mode, setMode] = useState<CompactOrderbookMode>("both");
 	const askLadderRef = useRef<HTMLDivElement>(null);
 	const bidLadderRef = useRef<HTMLDivElement>(null);
 
 	return (
 		<CompactOrderbook
-			asks={ASKS}
+			asks={asks}
 			bids={BIDS}
 			askLevelCount={2}
 			bidLevelCount={2}
 			askLadderRef={askLadderRef}
 			bidLadderRef={bidLadderRef}
-			bookStatus="open"
+			bookStatus="active"
 			flashResetKey="HYPE:0.1"
+			hasSnapshot
+			isInteractive
 			isTransitioning={false}
+			marketName="HYPE"
 			priceDecimals={1}
 			showOrderbookInQuote={false}
 			szDecimals={2}
-			mid={100}
+			mid="100"
 			midDirection="up"
 			spreadText="2.0 (2.000%)"
 			selectedOptionLabel="0.1"
@@ -67,29 +70,30 @@ describe("compact mobile orderbook modes", () => {
 	it("switches between both, asks-only, and bids-only without remounting a subscription surface", () => {
 		const asks = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-asks"]');
 		const bids = container.querySelector<HTMLElement>('[data-slot="compact-orderbook-bids"]');
-		const bothButton = container.querySelector<HTMLButtonElement>('[aria-label="Show both sides"]');
-		const asksButton = container.querySelector<HTMLButtonElement>('[aria-label="Show asks only"]');
-		const bidsButton = container.querySelector<HTMLButtonElement>('[aria-label="Show bids only"]');
+		const modeButton = container.querySelector<HTMLButtonElement>('[aria-label="Order book view"]');
 
 		expect(asks?.classList.contains("hidden")).toBe(false);
 		expect(bids?.classList.contains("hidden")).toBe(false);
-		expect(bothButton?.getAttribute("aria-pressed")).toBe("true");
 		expect(container.querySelector('[data-slot="compact-orderbook-mid"]')).not.toBeNull();
 
-		act(() => asksButton?.click());
+		act(() => modeButton?.click());
+		const asksItem = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
+			(item) => item.textContent === "Show asks only",
+		);
+		act(() => asksItem?.click());
 		expect(asks?.classList.contains("hidden")).toBe(false);
 		expect(bids?.classList.contains("hidden")).toBe(true);
-		expect(asksButton?.getAttribute("aria-pressed")).toBe("true");
 		expect(container.querySelector('[data-slot="compact-orderbook-mid"]')).toBeNull();
 		expect(asks?.querySelector<HTMLElement>(".depth-bar-ask")?.style.width).toBe("100%");
-		expect(asks?.querySelector<HTMLElement>(".depth-bar-ask")?.style.backgroundColor).toBe(
-			"var(--trading-panel-error)",
-		);
+		expect(asks?.querySelector<HTMLElement>(".depth-bar-ask")?.style.backgroundColor).toBe("");
 
-		act(() => bidsButton?.click());
+		act(() => modeButton?.click());
+		const bidsItem = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
+			(item) => item.textContent === "Show bids only",
+		);
+		act(() => bidsItem?.click());
 		expect(asks?.classList.contains("hidden")).toBe(true);
 		expect(bids?.classList.contains("hidden")).toBe(false);
-		expect(bidsButton?.getAttribute("aria-pressed")).toBe("true");
 	});
 
 	it("uses directional mid-price color and a neutral spread treatment", () => {
@@ -113,6 +117,28 @@ describe("compact mobile orderbook modes", () => {
 			"max-[339px]:hidden",
 		);
 		expect(container.querySelector('[aria-label="Price precision"]')?.className).toContain("min-h-6");
-		expect(container.querySelector('[aria-label="Show both sides"]')?.className).toContain("size-[17px]");
+		expect(container.querySelector('[aria-label="Order book view"]')?.className).toContain("size-11");
+	});
+
+	it("preserves a row DOM node when a neighboring price level is inserted", () => {
+		const row = container.querySelector<HTMLButtonElement>('button[title="101.0"]');
+		expect(row).not.toBeNull();
+
+		act(() => {
+			root.render(
+				<CompactOrderbookHarness
+					asks={[ASKS[0], { price: "101.5", quoteSize: "101.5", quoteTotal: "202.5", size: "1", total: "2" }, ASKS[1]]}
+				/>,
+			);
+		});
+
+		expect(container.querySelector<HTMLButtonElement>('button[title="101.0"]')).toBe(row);
+	});
+
+	it("renders an explicit empty state for one empty side", () => {
+		act(() => root.render(<CompactOrderbookHarness asks={[]} />));
+
+		expect(container.querySelector('[data-slot="compact-orderbook-asks"]')?.textContent).toContain("No orders");
+		expect(container.querySelector('[data-slot="compact-orderbook-bids"]')?.textContent).not.toContain("No orders");
 	});
 });

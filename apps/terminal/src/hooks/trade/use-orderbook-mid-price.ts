@@ -1,21 +1,50 @@
+import type { SubscriptionStatus } from "@/lib/hyperliquid";
 import { useSubscription } from "@/lib/hyperliquid";
-import { processLevels } from "@/lib/trade/orderbook";
+import { type Numeric, toBig } from "@/lib/trade/numbers";
 
-const ORDERBOOK_MID_N_SIG_FIGS = 5;
+interface BboPrices {
+	bestAsk: string | undefined;
+	bestBid: string | undefined;
+	midPx: string | undefined;
+}
 
-export function useOrderbookMidPrice(coin: string | undefined) {
-	const { data: book, status } = useSubscription(
-		"l2Book",
-		{ coin: coin ?? "", nSigFigs: ORDERBOOK_MID_N_SIG_FIGS },
-		{ enabled: !!coin },
-	);
+interface OrderbookMidPriceResult extends BboPrices {
+	isStale: boolean;
+	status: SubscriptionStatus;
+}
 
-	const bestBid = processLevels(book?.levels[0], 1)[0]?.price;
-	const bestAsk = processLevels(book?.levels[1], 1)[0]?.price;
-	const midPx =
-		typeof bestBid === "number" && typeof bestAsk === "number" && Number.isFinite(bestBid) && Number.isFinite(bestAsk)
-			? (bestBid + bestAsk) / 2
-			: undefined;
+type BboSides = readonly [{ px: string } | null | undefined, { px: string } | null | undefined];
+const BBO_UI_THROTTLE_MS = 50;
 
-	return { bestAsk, bestBid, midPx, status };
+function getPositivePrice(value: string | undefined): string | undefined {
+	const price = toBig(value);
+	return price?.gt(0) ? value : undefined;
+}
+
+export function getBboPrices(bbo: BboSides | undefined): BboPrices {
+	const bestBid = getPositivePrice(bbo?.[0]?.px);
+	const bestAsk = getPositivePrice(bbo?.[1]?.px);
+	const bid = toBig(bestBid);
+	const ask = toBig(bestAsk);
+	if (bid && ask && ask.lt(bid)) {
+		return { bestAsk: undefined, bestBid: undefined, midPx: undefined };
+	}
+	const midPx = bid && ask ? bid.plus(ask).div(2).toString() : undefined;
+
+	return { bestAsk, bestBid, midPx };
+}
+
+export function getMidReferencePrice(midPx: string | undefined, markPx: Numeric): Numeric {
+	return midPx ?? markPx;
+}
+
+export function useOrderbookMidPrice(coin: string | undefined): OrderbookMidPriceResult {
+	const {
+		data: event,
+		isStale,
+		status,
+	} = useSubscription("bbo", { coin: coin ?? "" }, { enabled: !!coin, throttleMs: BBO_UI_THROTTLE_MS });
+	const prices = getBboPrices(status === "active" && !isStale && event && event.coin === coin ? event.bbo : undefined);
+
+	return { ...prices, isStale, status };
 }

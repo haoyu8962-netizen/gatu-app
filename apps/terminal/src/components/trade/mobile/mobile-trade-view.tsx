@@ -21,6 +21,7 @@ import {
 import { useMarketFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { useOrderEntryData } from "@/hooks/trade/use-order-entry-data";
+import { getMidReferencePrice, useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useLingeringText } from "@/hooks/ui/use-lingering-text";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
@@ -67,7 +68,11 @@ import {
 	useTriggerPrice,
 } from "@/stores/use-order-entry-store";
 import { useOrderQueueActions } from "@/stores/use-order-queue-store";
-import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
+import {
+	getOrderbookActionsStore,
+	getSelectedPriceForMarket,
+	useSelectedPrice,
+} from "@/stores/use-orderbook-actions-store";
 import { TokenSelector } from "../chart/token-selector";
 import { MarginModeModal, type MobileTradeSettingsTab } from "../tradebox/margin-mode-modal";
 import { TradeFormTif } from "../tradebox/trade-form-tif";
@@ -83,13 +88,14 @@ const WalletModal = createLazyComponent(() => import("../components/wallet-modal
 const ERROR_LINGER_MS = 1500;
 
 interface Props {
+	active?: boolean;
 	className?: string;
 	embedded?: boolean;
 	sizeMode: SizeMode;
 	onSizeModeChange: (sizeMode: SizeMode) => void;
 }
 
-export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChange }: Props) {
+export function MobileTradeView({ active = true, className, embedded, sizeMode, onSizeModeChange }: Props) {
 	const { t } = useLingui();
 	const { address, isConnected, sessionMode } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();
@@ -150,6 +156,8 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 	const usesTriggerPrice = usesTriggerPriceForOrder(orderType);
 	const isMarketExecution = orderType === "market" || isTakerOrderType(orderType);
 	const markPx = toNumberOrZero(market?.markPx);
+	const { midPx } = useOrderbookMidPrice(active && (usesLimitPrice || usesTriggerPrice) ? market?.name : undefined);
+	const midReferencePrice = getMidReferencePrice(midPx, market?.markPx);
 
 	const {
 		isSpotMarket,
@@ -186,12 +194,15 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 	} = useOrderEntryData({ market, side, markPx, sizeMode, sizeInput });
 
 	useEffect(() => {
-		if (selectedPrice !== null) {
-			setOrderType("limit");
-			setLimitPriceInput(String(selectedPrice));
-			getOrderbookActionsStore().actions.clearSelectedPrice();
-		}
-	}, [selectedPrice, setOrderType]);
+		if (selectedPrice === null) return;
+
+		const price = getSelectedPriceForMarket(selectedPrice, market?.name);
+		getOrderbookActionsStore().actions.clearSelectedPrice();
+		if (price === null) return;
+
+		setOrderType("limit");
+		setLimitPriceInput(price);
+	}, [market?.name, selectedPrice, setOrderType]);
 	const price = isMarketExecution ? markPx : toNumberOrZero(limitPriceInput);
 	const position = market?.name ? userPositions.getPosition(market.name, getPositionDex(market)) : null;
 	const positionSize = toNumberOrZero(position?.szi);
@@ -603,7 +614,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 							value={triggerPrice}
 							onChange={(e: ChangeEvent<HTMLInputElement>) => setTriggerPrice(e.target.value)}
 							onMidClick={setTriggerPrice}
-							midPrice={markPx}
+							midPrice={midReferencePrice}
 							szDecimals={market?.szDecimals}
 							marketType={market?.kind === "spot" ? "spot" : "perp"}
 							disabled={isFormDisabled}
@@ -620,7 +631,7 @@ export function MobileTradeView({ className, embedded, sizeMode, onSizeModeChang
 								value={limitPriceInput}
 								onChange={(e: ChangeEvent<HTMLInputElement>) => setLimitPriceInput(e.target.value)}
 								onMidClick={setLimitPriceInput}
-								midPrice={markPx}
+								midPrice={midReferencePrice}
 								szDecimals={market?.szDecimals}
 								marketType={market?.kind === "spot" ? "spot" : "perp"}
 								disabled={isFormDisabled}

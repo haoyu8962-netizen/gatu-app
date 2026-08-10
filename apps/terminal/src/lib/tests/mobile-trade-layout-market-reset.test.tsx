@@ -23,16 +23,18 @@ vi.mock("@/components/trade/mobile/mobile-trade-view", async () => {
 	const React = await import("react");
 	return {
 		MobileTradeView: ({
+			active,
 			sizeMode,
 			onSizeModeChange,
 		}: {
+			active?: boolean;
 			sizeMode: "base" | "quote";
 			onSizeModeChange: (sizeMode: "base" | "quote") => void;
 		}) => {
 			const [mountId] = React.useState(() => ++marketState.mountCount);
 			return (
 				<>
-					<input aria-label="Mobile order size" data-mount-id={mountId} />
+					<input aria-label="Mobile order size" data-active={String(active)} data-mount-id={mountId} />
 					<button
 						type="button"
 						aria-label="Toggle mobile size mode"
@@ -112,6 +114,14 @@ describe("MobileTradeLayout market identity", () => {
 		expect(container.querySelector("[data-mobile-positions]")).not.toBeNull();
 		expect(container.querySelector("[data-mobile-balances]")).not.toBeNull();
 		expect(container.querySelector("[data-mobile-positions]")?.getAttribute("data-bottom-nav-spacer")).toBe("false");
+	});
+
+	it("forwards surface visibility so the hidden order form can pause live BBO updates", () => {
+		render(false);
+		expect(container.querySelector('[aria-label="Mobile order size"]')?.getAttribute("data-active")).toBe("false");
+
+		render(true);
+		expect(container.querySelector('[aria-label="Mobile order size"]')?.getAttribute("data-active")).toBe("true");
 	});
 
 	it("remounts the order form when the canonical route market changes", () => {

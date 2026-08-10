@@ -1,18 +1,20 @@
 import { Dropdown, Tabs, TabsContent, TabsList, TabsTrigger } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { BookBookmarkIcon, ListDashesIcon } from "@phosphor-icons/react";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { getBaseQuoteFromPairName } from "@/domain/market";
+import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumber } from "@/lib/trade/numbers";
 import {
 	getL2BookSubscriptionParams,
-	getMaxTotal,
 	getPriceGroupingKey,
 	getPriceGroupingOptions,
 	getRawSpreadInfo,
+	getSideMaxTotal,
+	getSnapshotPriceDecimals,
 	processLevels,
 } from "@/lib/trade/orderbook";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
@@ -47,11 +49,17 @@ export function OrderbookPanel() {
 		[selectedMarket?.name, selectedOption],
 	);
 
-	const { data: orderbook, status: orderbookStatus } = useSubscription("l2Book", subscriptionParams, {
+	const {
+		data: orderbook,
+		isStale: orderbookIsStale,
+		status: orderbookStatus,
+	} = useSubscription("l2Book", subscriptionParams, {
 		enabled: !!selectedMarket?.name,
 	});
-
-	const deferredOrderbook = useDeferredValue(orderbook);
+	const { midPx: bboMidPx } = useOrderbookMidPrice(selectedMarket?.name);
+	const hasCurrentSnapshot =
+		orderbookStatus === "active" && !orderbookIsStale && !!orderbook && orderbook.coin === subscriptionParams.coin;
+	const currentOrderbook = hasCurrentSnapshot ? orderbook : undefined;
 
 	const { baseToken, quoteToken } = useMemo(() => {
 		if (!selectedMarket) return { baseToken: "", quoteToken: "" };
@@ -59,12 +67,12 @@ export function OrderbookPanel() {
 	}, [selectedMarket]);
 
 	const bids = useMemo(
-		() => processLevels(deferredOrderbook?.levels[0], visibleRows),
-		[deferredOrderbook?.levels, visibleRows],
+		() => processLevels(currentOrderbook?.levels[0], visibleRows),
+		[currentOrderbook?.levels, visibleRows],
 	);
 	const asks = useMemo(
-		() => processLevels(deferredOrderbook?.levels[1], visibleRows),
-		[deferredOrderbook?.levels, visibleRows],
+		() => processLevels(currentOrderbook?.levels[1], visibleRows),
+		[currentOrderbook?.levels, visibleRows],
 	);
 	const asksReversed = useMemo(() => {
 		const reversed = new Array(asks.length);
@@ -73,9 +81,21 @@ export function OrderbookPanel() {
 		}
 		return reversed;
 	}, [asks]);
-	const maxTotal = useMemo(() => getMaxTotal(bids, asks), [asks, bids]);
-	const priceDecimals = selectedOption?.decimals ?? maxPriceDecimals;
-	const spreadInfo = useMemo(() => getRawSpreadInfo(deferredOrderbook?.levels), [deferredOrderbook?.levels]);
+	const bidMaxTotal = useMemo(() => getSideMaxTotal(bids), [bids]);
+	const askMaxTotal = useMemo(() => getSideMaxTotal(asks), [asks]);
+	const fallbackPriceDecimals = selectedOption?.decimals ?? maxPriceDecimals;
+	const priceDecimals = useMemo(
+		() => getSnapshotPriceDecimals(currentOrderbook?.levels, fallbackPriceDecimals),
+		[currentOrderbook?.levels, fallbackPriceDecimals],
+	);
+	const spreadInfo = useMemo(
+		() =>
+			getRawSpreadInfo(currentOrderbook?.levels, {
+				bboMid: bboMidPx,
+				eventSpread: currentOrderbook?.spread,
+			}),
+		[bboMidPx, currentOrderbook?.levels, currentOrderbook?.spread],
+	);
 	const spreadText = spreadInfo
 		? `${formatNumber(spreadInfo.spread, priceDecimals)} (${formatNumber(spreadInfo.spreadPct, 3)}%)`
 		: "—";
@@ -84,7 +104,7 @@ export function OrderbookPanel() {
 	const displayAsset = showOrderbookInQuote ? quoteToken : baseToken;
 	const toggleAssetDisplay = () => setShowOrderbookInQuote(!showOrderbookInQuote);
 
-	const hasData = !!deferredOrderbook;
+	const hasFailure = orderbookStatus === "error" || orderbookIsStale;
 
 	const dropdownItems = priceGroupingOptions.map((option) => ({
 		label: option.label,
@@ -122,7 +142,11 @@ export function OrderbookPanel() {
 				</TabsList>
 			</div>
 
-			<TabsContent value="book" className="flex-1 min-h-0 mt-0 pt-0 flex flex-col">
+			<TabsContent
+				value="book"
+				aria-busy={!hasCurrentSnapshot && !hasFailure}
+				className="flex-1 min-h-0 mt-0 pt-0 flex flex-col"
+			>
 				<div className="orderbook-grid grid gap-1 px-2 py-1.5 items-center text-xs text-fg-muted border-b border-stroke-weak shrink-0">
 					<div className="min-w-0 flex items-center gap-1 overflow-hidden">
 						<span className="orderbook-price-heading shrink-0">{t`Price`}</span>
@@ -158,22 +182,25 @@ export function OrderbookPanel() {
 
 				<div ref={orderbookContainerRef} className="flex-1 min-h-0 flex flex-col overflow-hidden">
 					<div className="flex-1 min-h-0 flex flex-col justify-end gap-[2px]">
-						{hasData && asks.length > 0 ? (
+						{hasCurrentSnapshot && asks.length > 0 ? (
 							asksReversed.map((level) => (
 								<OrderbookRow
 									key={`ask-${level.price}`}
 									flashResetKey={flashResetKey}
 									level={level}
+									marketName={subscriptionParams.coin}
 									side="ask"
-									maxTotal={maxTotal}
+									maxTotal={askMaxTotal}
 									priceDecimals={priceDecimals}
 									showInQuote={showOrderbookInQuote}
 									szDecimals={szDecimals}
 								/>
 							))
+						) : hasCurrentSnapshot ? (
+							<OrderbookSideEmpty />
 						) : (
 							<div className="flex items-center justify-center px-2 py-6 text-xs text-fg">
-								{orderbookStatus === "error" ? t`Failed to load order book.` : t`Waiting for order book...`}
+								{hasFailure ? t`Failed to load order book.` : t`Waiting for order book...`}
 							</div>
 						)}
 					</div>
@@ -187,19 +214,23 @@ export function OrderbookPanel() {
 					</div>
 
 					<div className="flex-1 min-h-0 flex flex-col gap-[2px]">
-						{hasData &&
+						{hasCurrentSnapshot && bids.length > 0 ? (
 							bids.map((level) => (
 								<OrderbookRow
 									key={`bid-${level.price}`}
 									flashResetKey={flashResetKey}
 									level={level}
+									marketName={subscriptionParams.coin}
 									side="bid"
-									maxTotal={maxTotal}
+									maxTotal={bidMaxTotal}
 									priceDecimals={priceDecimals}
 									showInQuote={showOrderbookInQuote}
 									szDecimals={szDecimals}
 								/>
-							))}
+							))
+						) : hasCurrentSnapshot ? (
+							<OrderbookSideEmpty />
+						) : null}
 					</div>
 				</div>
 			</TabsContent>
@@ -209,4 +240,9 @@ export function OrderbookPanel() {
 			</TabsContent>
 		</Tabs>
 	);
+}
+
+function OrderbookSideEmpty() {
+	const { t } = useLingui();
+	return <div className="flex flex-1 items-center justify-center px-2 py-3 text-xs text-fg-muted">{t`No orders`}</div>;
 }

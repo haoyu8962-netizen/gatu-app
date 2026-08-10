@@ -36,7 +36,11 @@ export const WS_RELIABILITY_LIMITS = {
 	},
 	staleness: {
 		checkIntervalMs: 5_000,
+		// SDK l2Book snapshots arrive around every 5s by default and every
+		// 0.5s in fast mode. Allow several missed snapshots before recovery.
+		l2BookFastThresholdMs: 3_000,
 		perMethodThresholdMs: {
+			l2Book: 15_000,
 			allMids: 20_000,
 			activeAssetCtx: 20_000,
 			activeSpotAssetCtx: 20_000,
@@ -73,7 +77,6 @@ const USER_STREAM_METHODS = new Set([
 const NON_PERIODIC_METHODS = new Set([
 	"notification",
 	"bbo",
-	"l2Book",
 	"trades",
 	"candle",
 	"orderUpdates",
@@ -169,8 +172,19 @@ export function getSubscriptionMethodForKey(key: string): string | undefined {
 }
 
 export function getStalenessThresholdForKey(key: string): number | null {
-	const method = getSubscriptionMethodForKey(key);
+	const parsed = parseKey(key);
+	const method = parsed?.method;
 	if (!method) return null;
+	if (
+		method === "l2Book" &&
+		parsed.params !== null &&
+		typeof parsed.params === "object" &&
+		!Array.isArray(parsed.params) &&
+		"fast" in parsed.params &&
+		parsed.params.fast === true
+	) {
+		return WS_RELIABILITY_LIMITS.staleness.l2BookFastThresholdMs;
+	}
 	const table = WS_RELIABILITY_LIMITS.staleness.perMethodThresholdMs;
 	return table[method as keyof typeof table] ?? null;
 }

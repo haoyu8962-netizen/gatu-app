@@ -56,6 +56,9 @@ This file contains durable project instructions for Codex. Read `agent.md` for t
 - Size-change feedback is a one-shot `1.8s ease` color fade: increases start at `#0A9981`, decreases start at `#ED7088`, then return to the normal text color. It must restart for every qualifying value update and must not loop.
 - Reset size-change comparison state when the market or grouping identity changes so stale values cannot flash after switching context.
 - In the mobile split layout, cumulative `Total` is static data; do not animate or color it from the individual level `size`.
+- Preserve WebSocket `px` and `sz` values as decimal strings. Use Big.js outside React components for cumulative base size and cumulative quote notional; quote `Total` is the running sum of each level's `size * price`, not cumulative base size multiplied by the current row price.
+- Compact order books use Hyperliquid's five-level `fast` feed; full books use the default twenty-level feed. Filter same-coin fast/full cross-talk before writing subscription state, because the pinned SDK does not distinguish those callbacks itself.
+- Error, stale, cached, or market/grouping-mismatched snapshots must never be interactive. Cache identity includes network, market, grouping, and fast/full mode, and cache expiry uses local receipt time rather than comparing the user's wall clock with exchange timestamps.
 - Full-width order-book rows use a `23px` row height and a `2px` gap. The compact split mobile book uses a `24px` row height and a `4px` gap. If any value changes, update every real, skeleton, placeholder, visible-row, and panel-height formula that depends on it in the same change.
 - Desktop resizing uses react-grid-layout grid units. Preserve panel min/max constraints and container-aware compact order-book behavior so manual resizing cannot reintroduce overlap.
 

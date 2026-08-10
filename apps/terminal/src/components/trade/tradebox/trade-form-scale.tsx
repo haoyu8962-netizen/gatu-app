@@ -2,16 +2,17 @@ import { t } from "@lingui/core/macro";
 import { NumberInput } from "@/components/ui/number-input";
 import { PriceInput } from "@/components/ui/price-input";
 import { SCALE_LEVELS_MAX, SCALE_LEVELS_MIN } from "@/config/trade";
+import type { Numeric } from "@/lib/trade/numbers";
 import { useOrderEntryActions, useScaleEnd, useScaleLevels, useScaleStart } from "@/stores/use-order-entry-store";
 
 interface Props {
-	markPx: number;
+	midPrice: Numeric;
 	szDecimals: number;
 	marketType: "perp" | "spot";
 	disabled: boolean;
 }
 
-export function TradeFormScale({ markPx, szDecimals, marketType, disabled }: Props) {
+export function TradeFormScale({ midPrice, szDecimals, marketType, disabled }: Props) {
 	const scaleStartPriceInput = useScaleStart();
 	const scaleEndPriceInput = useScaleEnd();
 	const scaleLevelsNum = useScaleLevels();
@@ -25,7 +26,7 @@ export function TradeFormScale({ markPx, szDecimals, marketType, disabled }: Pro
 				value={scaleStartPriceInput}
 				onChange={(e) => setScaleStart(e.target.value)}
 				onMidClick={setScaleStart}
-				midPrice={markPx}
+				midPrice={midPrice}
 				szDecimals={szDecimals}
 				marketType={marketType}
 				className="w-full text-xs tabular-nums"
@@ -37,7 +38,7 @@ export function TradeFormScale({ markPx, szDecimals, marketType, disabled }: Pro
 				value={scaleEndPriceInput}
 				onChange={(e) => setScaleEnd(e.target.value)}
 				onMidClick={setScaleEnd}
-				midPrice={markPx}
+				midPrice={midPrice}
 				szDecimals={szDecimals}
 				marketType={marketType}
 				className="w-full text-xs tabular-nums"

@@ -99,6 +99,11 @@ function clearCooldownTimer(runtime: SubscriptionRuntime): void {
 	}
 }
 
+function shouldDiscardRetainedDataOnError(key: string): boolean {
+	const method = getSubscriptionMethodForKey(key);
+	return method === "l2Book" || method === "bbo";
+}
+
 export type ChaosState = {
 	messageFrozenUntil: number;
 	reconnectDropCount: number;
@@ -441,11 +446,14 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 					runtime.subscription = undefined;
 
 					const reason = error ?? new Error("Subscription failed");
+					const discardRetainedData = shouldDiscardRetainedDataOnError(key);
+					if (discardRetainedData) visibilityBuffer.delete(key);
 					set((state) => {
 						const current = state.subscriptions[key];
 						if (!current) return state;
 						const nextEntry: SubscriptionEntry = {
 							...current,
+							data: discardRetainedData ? undefined : current.data,
 							status: "error",
 							error: reason,
 						};
@@ -473,6 +481,12 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 						runtime.subscription = subscription;
 						activeSubscription = subscription;
 						runtime.reconnectAttempts = 0;
+						// l2Book is a confirmed periodic stream. Start its first-frame
+						// deadline once the server accepts the subscription so an ack with
+						// no subsequent snapshot cannot remain active forever.
+						if (getSubscriptionMethodForKey(key) === "l2Book") {
+							watchdog.arm(key);
+						}
 
 						set((state) => {
 							const current = state.subscriptions[key];
@@ -499,11 +513,14 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 						runtime.promise = undefined;
 						runtime.subscription = undefined;
 
+						const discardRetainedData = shouldDiscardRetainedDataOnError(key);
+						if (discardRetainedData) visibilityBuffer.delete(key);
 						set((state) => {
 							const current = state.subscriptions[key];
 							if (!current) return state;
 							const nextEntry: SubscriptionEntry = {
 								...current,
+								data: discardRetainedData ? undefined : current.data,
 								status: "error",
 								error,
 							};
@@ -626,10 +643,17 @@ export function createHyperliquidStore(initialConfig: HyperliquidConfig): Hyperl
 			});
 		},
 		setSubscriptionError: (key, error) => {
+			const discardRetainedData = shouldDiscardRetainedDataOnError(key);
+			if (discardRetainedData) visibilityBuffer.delete(key);
 			set((state) => {
 				const current = state.subscriptions[key];
 				if (!current) return state;
-				const nextEntry: SubscriptionEntry = { ...current, error, status: "error" };
+				const nextEntry: SubscriptionEntry = {
+					...current,
+					data: discardRetainedData ? undefined : current.data,
+					error,
+					status: "error",
+				};
 				return setSubscriptionEntry(state, key, nextEntry);
 			});
 		},

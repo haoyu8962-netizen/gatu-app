@@ -62,7 +62,11 @@ import {
 	useTwapMinutes,
 	useTwapRandomize,
 } from "@/stores/use-order-entry-store";
-import { getOrderbookActionsStore, useSelectedPrice } from "@/stores/use-orderbook-actions-store";
+import {
+	getOrderbookActionsStore,
+	getSelectedPriceForMarket,
+	useSelectedPrice,
+} from "@/stores/use-orderbook-actions-store";
 import { AccountModeModal } from "./account-mode-modal";
 import { LeverageModal } from "./leverage-modal";
 import { MarginModeModal } from "./margin-mode-modal";
@@ -165,12 +169,15 @@ export function TradePanel() {
 	const { open: openSettingsDialog } = useSettingsDialogActions();
 
 	useEffect(() => {
-		if (selectedPrice !== null) {
-			setOrderType("limit");
-			setLimitPrice(String(selectedPrice));
-			getOrderbookActionsStore().actions.clearSelectedPrice();
-		}
-	}, [selectedPrice, setOrderType, setLimitPrice]);
+		if (selectedPrice === null) return;
+
+		const price = getSelectedPriceForMarket(selectedPrice, market?.name);
+		getOrderbookActionsStore().actions.clearSelectedPrice();
+		if (price === null) return;
+
+		setOrderType("limit");
+		setLimitPrice(price);
+	}, [market?.name, selectedPrice, setOrderType, setLimitPrice]);
 
 	useEffect(() => {
 		if (isSpotMarket && triggerOrder) {
