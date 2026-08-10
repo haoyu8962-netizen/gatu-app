@@ -73,6 +73,105 @@ describe("TokenSelectorRow", () => {
 		return { marketButton, row };
 	}
 
+	function getSpanByText(row: HTMLElement, text: string): HTMLSpanElement {
+		const span = Array.from(row.querySelectorAll<HTMLSpanElement>("span")).find(
+			(candidate) => candidate.childElementCount === 0 && candidate.textContent === text,
+		);
+		if (!span) throw new Error(`Missing span with text: ${text}`);
+		return span;
+	}
+
+	it.each([
+		["mobile", true],
+		["desktop", false],
+	] as const)("renders the market max leverage in the %s metadata slot", (_surface, mobile) => {
+		const { row } = renderRow(
+			{
+				name: "SOL",
+				kind: "perp",
+				shortName: "SOL",
+				pairName: "SOL-USDC",
+				szDecimals: 2,
+				maxLeverage: 20,
+				markPx: "180",
+				prevDayPx: "175",
+				dayNtlVlm: "125000000",
+				openInterest: "2000000",
+				funding: "0.00001",
+			} as MarketRow,
+			{ mobile },
+		);
+
+		const leverage = getSpanByText(row, "20x");
+		const metadataRow = leverage.parentElement;
+		expect(metadataRow?.previousElementSibling?.textContent).toContain("SOL-USDC");
+		expect(leverage.className).toContain("whitespace-nowrap");
+		expect(leverage.className).toContain("tabular-nums");
+
+		if (mobile) {
+			expect(metadataRow?.className).toContain("text-[10px]");
+			expect(leverage.className).toContain("rounded-[4px]");
+			expect(leverage.className).toContain("bg-trading-panel-stroke-row");
+			expect(leverage.className).toContain("px-[5px]");
+			expect(leverage.className).toContain("py-px");
+			expect(leverage.className).toContain("font-semibold");
+			expect(leverage.className).toContain("text-trading-panel-muted");
+		} else {
+			expect(metadataRow?.className).toContain("text-[11px]");
+			expect(metadataRow?.className).toContain("text-trading-panel-subtle");
+			expect(leverage.className).not.toContain("rounded-");
+			expect(leverage.className).not.toContain("bg-");
+			expect(leverage.className).not.toContain("px-");
+			expect(leverage.className).not.toContain("py-");
+			expect(leverage.className).not.toContain("font-semibold");
+		}
+	});
+
+	it.each([
+		["mobile", true],
+		["desktop", false],
+	] as const)("replaces leverage with a Spot pill in the %s metadata slot", (_surface, mobile) => {
+		const { row } = renderRow(
+			{
+				name: "@107",
+				kind: "spot",
+				shortName: "HYPE",
+				pairName: "HYPE/USDC",
+				maxLeverage: 20,
+				markPx: "64.5",
+				prevDayPx: "60",
+				dayNtlVlm: "125000000",
+				circulatingSupply: "100000000",
+				tokensInfo: [
+					{ name: "HYPE", displayName: "HYPE", szDecimals: 2 },
+					{ name: "USDC", displayName: "USDC", szDecimals: 6 },
+				],
+			} as unknown as MarketRow,
+			{ mobile, showSpotMarketCap: true },
+		);
+
+		const spot = getSpanByText(row, "Spot");
+		const metadataRow = spot.parentElement;
+		expect(row.textContent).not.toContain("20x");
+		expect(metadataRow?.previousElementSibling?.textContent).toContain("HYPE/USDC");
+		expect(spot.className).toContain("whitespace-nowrap");
+		expect(spot.className).toContain("rounded-[4px]");
+		expect(spot.className).toContain("bg-trading-panel-success-soft");
+		expect(spot.className).toContain("px-[5px]");
+		expect(spot.className).toContain("py-px");
+		expect(spot.className).toContain("font-semibold");
+		expect(spot.className).toContain("text-trading-panel-success");
+		if (mobile) {
+			expect(metadataRow?.className).toContain("text-[10px]");
+			expect(metadataRow?.className).toContain("leading-none");
+		} else {
+			expect(metadataRow?.className).toContain("text-[11px]");
+			expect(metadataRow?.className).toContain("text-trading-panel-subtle");
+			expect(spot.className).toContain("text-[10px]");
+			expect(spot.className).toContain("leading-none");
+		}
+	});
+
 	it("stacks volume and open interest beside price and 24h change for perpetuals", () => {
 		const { row } = renderRow({
 			name: "HYPE",
@@ -96,8 +195,13 @@ describe("TokenSelectorRow", () => {
 		expect(row.children[3]?.textContent).toContain("+7.50%");
 		const favoriteButton = row.querySelector<HTMLButtonElement>('button[aria-pressed="false"]');
 		expect(favoriteButton?.className).toContain("size-11");
+		expect(favoriteButton?.className).toContain("absolute");
+		expect(favoriteButton?.className).toContain("top-1/2");
+		expect(favoriteButton?.className).toContain("right-0");
+		expect(favoriteButton?.className).toContain("-translate-y-1/2");
 		expect(favoriteButton?.className).not.toContain("after:inset-x-0");
 		expect(favoriteButton?.className).not.toContain("right-[-26px]");
+		expect(favoriteButton?.parentElement?.parentElement?.className).toContain("pr-11");
 		expect(row.className).toContain("grid-cols-[minmax(0,1fr)_74px_72px]");
 		expect(row.className).toContain("min-[390px]:grid-cols-[minmax(0,1fr)_102px_84px]");
 	});

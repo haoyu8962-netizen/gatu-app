@@ -58,6 +58,7 @@ export function TokenSelectorRow({
 	const { t } = useLingui();
 	const szDecimals = getSzDecimals(market);
 	const isSpot = market.kind === "spot";
+	const maxLeverage = getMaxLeverage(market);
 	const priceDecimals = szDecimalsToPriceDecimals(szDecimals, isSpot ? "spot" : "perp");
 	const spotBaseToken = isSpot ? market.tokensInfo[0] : undefined;
 	const spotQuoteToken = isSpot ? market.tokensInfo[1] : undefined;
@@ -136,8 +137,10 @@ export function TokenSelectorRow({
 				onToggleFavorite(market.name);
 			}}
 			className={cn(
-				"pointer-events-auto relative z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
-				mobile ? "size-11" : "size-6 after:absolute after:inset-x-0 after:inset-y-[-10px] after:content-['']",
+				"pointer-events-auto z-10 flex shrink-0 cursor-pointer items-center justify-center rounded-[4px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+				mobile
+					? "absolute top-1/2 right-0 size-11 -translate-y-1/2"
+					: "relative size-6 after:absolute after:inset-x-0 after:inset-y-[-10px] after:content-['']",
 			)}
 			aria-label={isFav ? t`Remove ${displayPairName} from favorites` : t`Add ${displayPairName} to favorites`}
 			aria-pressed={isFav}
@@ -181,7 +184,7 @@ export function TokenSelectorRow({
 				{marketButton}
 				<div className="pointer-events-none relative z-[1] flex min-w-0 items-center gap-[9px]">
 					<AssetDisplay coin={market.name} iconUrl={market.iconUrl} hideName iconClassName="size-[26px] shrink-0" />
-					<div className="min-w-0 flex-1">
+					<div className="min-w-0 flex-1 pr-11">
 						<div className="flex min-w-0 items-center gap-1">
 							<span
 								title={displayPairName}
@@ -192,13 +195,13 @@ export function TokenSelectorRow({
 							{favoriteButton}
 						</div>
 						<div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[10px] leading-none">
-							{getMaxLeverage(market) ? (
-								<span className="whitespace-nowrap rounded-[4px] bg-trading-panel-stroke-row px-1.5 py-0.5 font-semibold text-trading-panel-muted tabular-nums">
-									{getMaxLeverage(market)}x
+							{maxLeverage !== null ? (
+								<span className="whitespace-nowrap rounded-[4px] bg-trading-panel-stroke-row px-[5px] py-px font-semibold text-trading-panel-muted tabular-nums">
+									{maxLeverage}x
 								</span>
 							) : null}
 							{isSpot ? (
-								<span className="whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-1.5 py-0.5 font-semibold text-trading-panel-success">
+								<span className="whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-[5px] py-px font-semibold text-trading-panel-success">
 									{t`Spot`}
 								</span>
 							) : null}
@@ -262,16 +265,14 @@ export function TokenSelectorRow({
 						>
 							{displayPairName}
 						</span>
+					</div>
+					<div className="flex items-center gap-1.5 text-[11px] text-trading-panel-subtle">
+						{maxLeverage !== null && <span className="whitespace-nowrap tabular-nums">{maxLeverage}x</span>}
 						{isSpot ? (
-							<span className="shrink-0 whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-1 py-px text-[10px] font-semibold text-trading-panel-success">
+							<span className="whitespace-nowrap rounded-[4px] bg-trading-panel-success-soft px-[5px] py-px text-[10px] font-semibold leading-none text-trading-panel-success">
 								{t`Spot`}
 							</span>
 						) : null}
-					</div>
-					<div className="flex items-center gap-1.5 text-[11px] text-trading-panel-subtle">
-						{getMaxLeverage(market) && (
-							<span className="whitespace-nowrap tabular-nums">{getMaxLeverage(market)}x</span>
-						)}
 						{spotApiToken && spotApiToken !== market.shortName && (
 							<span className="truncate font-mono">{spotApiToken}</span>
 						)}
