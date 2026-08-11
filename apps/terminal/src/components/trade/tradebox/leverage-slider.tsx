@@ -151,15 +151,16 @@ export function LeverageSlider({
 		if (dragRef.current || disabled || max <= 1 || (event.pointerType === "mouse" && event.button !== 0)) return;
 		const rect = event.currentTarget.getBoundingClientRect();
 		if (rect.width <= 0) return;
+		const pointerId = event.pointerId;
 		dragRef.current = {
-			pointerId: event.pointerId,
+			pointerId,
 			left: rect.left,
 			width: rect.width,
 			rtl: direction === "rtl",
 			startValue: clampLeverage(Math.round(value), max),
 		};
 		lastDraftRef.current = dragRef.current.startValue;
-		event.currentTarget.setPointerCapture?.(event.pointerId);
+		event.currentTarget.setPointerCapture?.(pointerId);
 		inputRef.current?.focus({ preventScroll: true });
 		if (indicatorRef.current) {
 			indicatorRef.current.style.transformOrigin = direction === "rtl" ? "right center" : "left center";
@@ -172,11 +173,22 @@ export function LeverageSlider({
 		function handlePointerCancel(nativeEvent: globalThis.PointerEvent) {
 			finishPointer(nativeEvent.pointerId, false);
 		}
+		function handleVisibilityChange() {
+			if (ownerDocument.visibilityState === "hidden") finishPointer(pointerId, false);
+		}
+		function handleWindowBlur() {
+			finishPointer(pointerId, false);
+		}
+		const ownerWindow = ownerDocument.defaultView;
 		ownerDocument.addEventListener("pointerup", handlePointerUp);
 		ownerDocument.addEventListener("pointercancel", handlePointerCancel);
+		ownerDocument.addEventListener("visibilitychange", handleVisibilityChange);
+		ownerWindow?.addEventListener("blur", handleWindowBlur);
 		pointerListenerCleanupRef.current = () => {
 			ownerDocument.removeEventListener("pointerup", handlePointerUp);
 			ownerDocument.removeEventListener("pointercancel", handlePointerCancel);
+			ownerDocument.removeEventListener("visibilitychange", handleVisibilityChange);
+			ownerWindow?.removeEventListener("blur", handleWindowBlur);
 			pointerListenerCleanupRef.current = null;
 		};
 		scheduleProgress(getPointerProgress(event.clientX, dragRef.current));
@@ -344,6 +356,7 @@ export function LeverageSlider({
 				onPointerMove={handlePointerMove}
 				onPointerUp={(event) => finishPointer(event.pointerId, true, event.clientX)}
 				onPointerCancel={(event) => finishPointer(event.pointerId, false)}
+				onLostPointerCapture={(event) => finishPointer(event.pointerId, false)}
 			>
 				<div
 					className={cn(

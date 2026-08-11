@@ -464,6 +464,7 @@ msgid "Amount must be greater than zero and no more than the current position."
 msgstr "يجب أن يكون المبلغ أكبر من صفر وألا يتجاوز المركز الحالي."
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/hooks/trade/use-asset-leverage.ts
 msgid "Another action for this market is already in progress."
 msgstr "هناك إجراء آخر لهذا السوق قيد التنفيذ بالفعل."
 

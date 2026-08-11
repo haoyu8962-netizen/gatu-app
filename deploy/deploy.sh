@@ -16,6 +16,7 @@ KEEP_RELEASES="${KEEP_RELEASES:-5}"
 BRANCH="${1:-main}"
 SOCIAL_IMAGE_PATH="/gatu-terminal-og-v1.png"
 CHART_LIBRARY_PATH="/charting_library"
+CHART_THEME_PATH="/tradingview-theme.css"
 CHART_CACHE_POLICY="public, max-age=0, must-revalidate"
 CURL_CONNECT_TIMEOUT_SECONDS=5
 CURL_MAX_TIME_SECONDS=15
@@ -104,7 +105,7 @@ publish_release() {
 		echo "ERROR: build output is missing social image: ${SOCIAL_IMAGE_PATH}" >&2
 		exit 1
 	}
-	verify_chart_build_output "apps/terminal/.output/public" || exit 1
+	verify_chart_build_output "apps/terminal/public" "apps/terminal/.output/public" || exit 1
 	mkdir -p "$RELEASES"
 	rm -rf "$release_tmp"
 	mkdir -p "$release_tmp"
@@ -302,24 +303,10 @@ NODE
 }
 
 verify_chart_build_output() {
-	local public_root="$1"
-	local chart_entry="${public_root}${CHART_LIBRARY_PATH}/charting_library.js"
-	local chart_assets asset
+	local source_public_root="$1"
+	local output_public_root="$2"
 
-	for asset in "$chart_entry" "${public_root}${CHART_LIBRARY_PATH}/sameorigin.html"; do
-		if [ ! -f "$asset" ]; then
-			echo "ERROR: build output is missing TradingView asset: ${asset}" >&2
-			return 1
-		fi
-	done
-
-	chart_assets="$(extract_initial_chart_assets "$chart_entry")" || return 1
-	while IFS= read -r asset; do
-		if [ ! -f "${public_root}${CHART_LIBRARY_PATH}/${asset}" ]; then
-			echo "ERROR: TradingView entry references a missing initial bundle: ${asset}" >&2
-			return 1
-		fi
-	done <<< "$chart_assets"
+	node deploy/verify-chart-build.mjs "$source_public_root" "$output_public_root"
 }
 
 verify_missing_chart_asset() {
@@ -353,6 +340,9 @@ verify_chart_delivery() {
 	fi
 	cp "${tmpdir}/body" "$chart_entry"
 	if ! fetch_revalidated_asset "$base_url" "${CHART_LIBRARY_PATH}/sameorigin.html" "$tmpdir" "text/html" "TradingView same-origin document"; then
+		return 1
+	fi
+	if ! fetch_revalidated_asset "$base_url" "$CHART_THEME_PATH" "$tmpdir" "text/css" "TradingView theme stylesheet"; then
 		return 1
 	fi
 

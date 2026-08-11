@@ -9,6 +9,7 @@ import { loadTradingViewScript } from "@/lib/chart/load-tradingview";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 
 const testState = vi.hoisted(() => ({
+	datafeedDestroys: [] as ReturnType<typeof vi.fn>[],
 	datafeedOptions: [] as unknown[],
 	datafeedResets: [] as ReturnType<typeof vi.fn>[],
 	reconnectListener: undefined as ((generation: number) => void) | undefined,
@@ -47,9 +48,11 @@ vi.mock("@/components/trade/chart/datafeed", () => ({
 		getSymbolInfo?: (symbolName: string, coin: string) => { ticker: string } | undefined;
 	}) => {
 		testState.datafeedOptions.push(options);
+		const destroy = vi.fn();
 		const resetRealtimeCache = vi.fn(() => options.onRealtimeReset?.());
+		testState.datafeedDestroys.push(destroy);
 		testState.datafeedResets.push(resetRealtimeCache);
-		return { resetRealtimeCache };
+		return { destroy, resetRealtimeCache };
 	},
 }));
 
@@ -143,6 +146,7 @@ describe("TradingViewChart", () => {
 		Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
 		Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
 		vi.mocked(loadTradingViewScript).mockReset().mockResolvedValue(undefined);
+		testState.datafeedDestroys = [];
 		testState.datafeedOptions = [];
 		testState.datafeedResets = [];
 		testState.reconnectListener = undefined;
@@ -189,6 +193,25 @@ describe("TradingViewChart", () => {
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledTimes(1);
 		expect(widgets[0]?.setSymbol).toHaveBeenCalledWith("ETH", "60", expect.any(Function));
+	});
+
+	it("destroys the datafeed even when widget removal throws", async () => {
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		expect(testState.datafeedDestroys).toHaveLength(1);
+		widgets[0]?.remove.mockImplementationOnce(() => {
+			throw new Error("remove failed");
+		});
+
+		act(() => {
+			root.render(createElement("div"));
+		});
+
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+		expect(testState.datafeedDestroys[0]).toHaveBeenCalledOnce();
 	});
 
 	it("resolves TradingView HIP-3 display variants to the canonical market ticker", async () => {

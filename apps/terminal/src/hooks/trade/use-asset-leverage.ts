@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_MAX_LEVERAGE } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
@@ -110,6 +111,10 @@ interface UseAssetLeverageReturn {
 
 function getDefaultLeverage(maxLeverage: number): number {
 	return Math.min(10, maxLeverage);
+}
+
+function leverageUpdateInProgressError(): Error {
+	return new Error(t`Another action for this market is already in progress.`);
 }
 
 export function useAssetLeverage(): UseAssetLeverageReturn {
@@ -265,7 +270,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		if (!isPerpMarket || pendingLeverage === null || typeof assetId !== "number") {
 			return;
 		}
-		if (requestInFlightRef.current) throw new Error("Leverage update already in progress");
+		if (requestInFlightRef.current) throw leverageUpdateInProgressError();
 
 		operationTypeRef.current = "leverage";
 		requestInFlightRef.current = true;
@@ -284,7 +289,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 
 	async function switchMarginMode(mode: MarginMode) {
 		if (!isPerpMarket || typeof assetId !== "number") return;
-		if (requestInFlightRef.current) throw new Error("Leverage update already in progress");
+		if (requestInFlightRef.current) throw leverageUpdateInProgressError();
 
 		if (isOnlyIsolated && mode === "cross") {
 			throw new Error("This market only supports isolated margin mode");
@@ -319,7 +324,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		async (mode: MarginMode, leverageValue: number) => {
 			if (!isPerpMarket || typeof assetId !== "number") return;
 			if (!Number.isFinite(leverageValue)) throw new Error("Invalid leverage");
-			if (requestInFlightRef.current) throw new Error("Leverage update already in progress");
+			if (requestInFlightRef.current) throw leverageUpdateInProgressError();
 
 			const clamped = Math.max(1, Math.min(Math.round(leverageValue), maxLeverage));
 

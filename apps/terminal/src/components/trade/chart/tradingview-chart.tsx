@@ -382,13 +382,15 @@ export function TradingViewChart({
 			clearPendingSymbolSwitch();
 			overlayControllerRef.current?.clear();
 			const widget = widgetRef.current;
+			const datafeed = datafeedRef.current;
 			widgetRef.current = null;
-			if (widget) {
-				try {
-					widget.remove();
-				} catch {}
-			}
 			datafeedRef.current = null;
+			try {
+				widget?.remove();
+			} catch {
+			} finally {
+				datafeed?.destroy();
+			}
 			chartReadyRef.current = false;
 			pendingDataResetRef.current = false;
 			scheduledDataResetWidgetRef.current = null;

@@ -423,7 +423,7 @@ describe("useAssetLeverage", () => {
 		});
 
 		await expect(currentHook().applyMarginAndLeverage("cross", 5)).rejects.toThrow(
-			"Leverage update already in progress",
+			"Another action for this market is already in progress.",
 		);
 		act(() => currentHook().resetPending());
 		expect(mocks.resetMutation).toHaveBeenCalledTimes(resetCallsBeforeRequest);

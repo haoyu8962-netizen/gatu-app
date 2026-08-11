@@ -93,15 +93,18 @@ describe("LeverageSlider", () => {
 			toJSON: vi.fn(),
 		}));
 		Object.defineProperty(control, "getBoundingClientRect", { value: getBoundingClientRect });
+		const setPointerCapture = vi.fn();
+		const hasPointerCapture = vi.fn(() => true);
 		const releasePointerCapture = vi.fn();
 		Object.defineProperties(control, {
-			setPointerCapture: { value: vi.fn() },
-			hasPointerCapture: { value: vi.fn(() => true) },
+			setPointerCapture: { value: setPointerCapture },
+			hasPointerCapture: { value: hasPointerCapture },
 			releasePointerCapture: { value: releasePointerCapture },
 		});
 		return {
 			control,
 			getBoundingClientRect,
+			hasPointerCapture,
 			indicator,
 			input,
 			releasePointerCapture,
@@ -109,6 +112,7 @@ describe("LeverageSlider", () => {
 				props = { ...props, ...next };
 				render();
 			},
+			setPointerCapture,
 			thumb,
 		};
 	}
@@ -181,6 +185,94 @@ describe("LeverageSlider", () => {
 		expect(onCancel).toHaveBeenCalledTimes(1);
 		expect(input.value).toBe("4");
 	});
+
+	it.each(["lostpointercapture", "window blur", "hidden document"])(
+		"cancels an active drag on %s and removes all active-drag listeners",
+		(boundary) => {
+			const onChange = vi.fn();
+			const onCommit = vi.fn();
+			const onCancel = vi.fn();
+			const { control, hasPointerCapture, input, releasePointerCapture } = renderSlider({
+				onCancel,
+				onChange,
+				onCommit,
+				value: 4,
+			});
+
+			act(() => {
+				control.dispatchEvent(createPointerEvent("pointerdown", { clientX: 43 }));
+				control.dispatchEvent(createPointerEvent("pointermove", { clientX: 98 }));
+				animationFrames.shift()?.(16);
+				control.dispatchEvent(createPointerEvent("pointermove", { clientX: 110 }));
+			});
+			expect(onChange).toHaveBeenCalledWith(9);
+
+			if (boundary === "lostpointercapture") {
+				hasPointerCapture.mockReturnValue(false);
+				act(() => control.dispatchEvent(createPointerEvent("lostpointercapture", { clientX: 110 })));
+			} else if (boundary === "window blur") {
+				act(() => window.dispatchEvent(new Event("blur")));
+			} else {
+				vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+				act(() => document.dispatchEvent(new Event("visibilitychange")));
+			}
+
+			expect(window.cancelAnimationFrame).toHaveBeenCalledTimes(1);
+			expect(onCancel).toHaveBeenCalledTimes(1);
+			expect(onCommit).not.toHaveBeenCalled();
+			expect(input.value).toBe("4");
+			if (boundary === "lostpointercapture") expect(releasePointerCapture).not.toHaveBeenCalled();
+			else expect(releasePointerCapture).toHaveBeenCalledWith(1);
+
+			act(() => {
+				animationFrames.shift()?.(32);
+				document.dispatchEvent(createPointerEvent("pointerup", { clientX: 110 }));
+				document.dispatchEvent(createPointerEvent("pointercancel", { clientX: 110 }));
+				window.dispatchEvent(new Event("blur"));
+			});
+
+			expect(onChange).toHaveBeenCalledTimes(1);
+			expect(onCancel).toHaveBeenCalledTimes(1);
+			expect(onCommit).not.toHaveBeenCalled();
+		},
+	);
+
+	it("ignores visibility changes while the document remains visible", () => {
+		const onCancel = vi.fn();
+		const { control } = renderSlider({ onCancel });
+		vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+
+		act(() => {
+			control.dispatchEvent(createPointerEvent("pointerdown", { clientX: 10 }));
+			document.dispatchEvent(new Event("visibilitychange"));
+		});
+
+		expect(onCancel).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{ eventType: "pointercancel", shouldCommit: false },
+		{ eventType: "pointerup", shouldCommit: true },
+	])(
+		"does not repeat callbacks when releasePointerCapture emits lostpointercapture after $eventType",
+		({ eventType, shouldCommit }) => {
+			const onCancel = vi.fn();
+			const onCommit = vi.fn();
+			const { control, releasePointerCapture } = renderSlider({ onCancel, onCommit, value: 4 });
+			releasePointerCapture.mockImplementation((pointerId: number) => {
+				control.dispatchEvent(createPointerEvent("lostpointercapture", { clientX: 98, pointerId }));
+			});
+
+			act(() => {
+				control.dispatchEvent(createPointerEvent("pointerdown", { clientX: 43 }));
+				control.dispatchEvent(createPointerEvent(eventType, { clientX: 98 }));
+			});
+
+			expect(onCancel).toHaveBeenCalledTimes(shouldCommit ? 0 : 1);
+			expect(onCommit).toHaveBeenCalledTimes(shouldCommit ? 1 : 0);
+			expect(releasePointerCapture).toHaveBeenCalledTimes(1);
+		},
+	);
 
 	it("does not rerender React state while pointer frames remain within one integer step", () => {
 		const onChange = vi.fn();

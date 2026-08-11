@@ -464,6 +464,7 @@ msgid "Amount must be greater than zero and no more than the current position."
 msgstr "राशि शून्य से अधिक होनी चाहिए और वर्तमान पोज़िशन से अधिक नहीं होनी चाहिए।"
 
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
+#: src/hooks/trade/use-asset-leverage.ts
 msgid "Another action for this market is already in progress."
 msgstr "इस बाज़ार के लिए एक अन्य कार्रवाई पहले से जारी है।"
 

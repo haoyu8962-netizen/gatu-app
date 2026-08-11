@@ -77,7 +77,8 @@ describe("TradingView asset cache policy", () => {
 		expect(deployScript).toContain("verify_caddy_config");
 		expect(deployScript).not.toMatch(/^\s*sudo \/usr\/bin\/install/m);
 		expect(deployScript).toContain("verify_single_header_value");
-		expect(deployScript).toContain("extract_initial_chart_assets");
+		expect(deployScript).toContain('node deploy/verify-chart-build.mjs "$source_public_root" "$output_public_root"');
+		expect(deployScript).toContain('fetch_revalidated_asset "$base_url" "$CHART_THEME_PATH"');
 		expect(deployScript).toContain("verify_missing_chart_asset");
 		expect(deployScript).toContain("edge_health_check");
 		expect(deployScript).toMatch(/GATU_PUBLIC_BASE_URL="\$\{GATU_PUBLIC_BASE_URL:-https:\/\/app\.gatu\.ai\}"/);
