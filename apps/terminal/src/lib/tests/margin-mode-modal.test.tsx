@@ -7,7 +7,9 @@ import { MarginModeModal } from "@/components/trade/tradebox/margin-mode-modal";
 import { createI18nRoot } from "./harness/react";
 
 const modalHarness = vi.hoisted(() => ({
+	adaptiveModalRenders: 0,
 	dismissible: true,
+	leverageSliderProps: null as Record<string, unknown> | null,
 	presentation: "modal" as "modal" | "drawer",
 	tabChange: undefined as ((value: string) => void) | undefined,
 	tabsDisabled: false,
@@ -26,6 +28,7 @@ vi.mock("@gatu/ui", () => ({
 		open: boolean;
 		presentation: "modal" | "drawer";
 	}) => {
+		modalHarness.adaptiveModalRenders += 1;
 		modalHarness.dismissible = dismissible;
 		modalHarness.presentation = presentation;
 		return open ? createElement("section", { "data-presentation": presentation }, children) : null;
@@ -91,7 +94,10 @@ vi.mock("@/components/trade/components/trading-action-button", () => ({
 }));
 
 vi.mock("@/components/trade/tradebox/leverage-slider", () => ({
-	LeverageSlider: () => createElement("div", { "data-testid": "leverage-slider" }),
+	LeverageSlider: (props: Record<string, unknown>) => {
+		modalHarness.leverageSliderProps = props;
+		return createElement("div", { "data-testid": "leverage-slider" });
+	},
 }));
 
 vi.mock("@/hooks/ui/use-auto-close-success", () => ({
@@ -110,6 +116,8 @@ describe("MarginModeModal", () => {
 	let onApply: ReturnType<typeof vi.fn<(mode: "cross" | "isolated", leverage: number) => Promise<void>>>;
 
 	beforeEach(() => {
+		modalHarness.adaptiveModalRenders = 0;
+		modalHarness.leverageSliderProps = null;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -329,6 +337,64 @@ describe("MarginModeModal", () => {
 		await act(async () => getButton(container, "Confirm").click());
 
 		expect(onApply).toHaveBeenCalledWith("cross", 7);
+	});
+
+	it("submits mobile leverage at most once before the pending state can rerender", async () => {
+		let resolveApply: (() => void) | undefined;
+		onApply.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveApply = resolve;
+				}),
+		);
+		renderModal({
+			presentation: "drawer",
+			pendingLeverage: 7,
+			mobileView: "leverage",
+		});
+
+		const confirm = getButton(container, "Confirm");
+		act(() => {
+			confirm.click();
+			confirm.click();
+		});
+
+		expect(onApply).toHaveBeenCalledTimes(1);
+		expect(onApply).toHaveBeenCalledWith("cross", 7);
+
+		await act(async () => resolveApply?.());
+	});
+
+	it("keeps leverage drag renders below the adaptive drawer shell", () => {
+		const onPendingLeverageChange = vi.fn();
+		renderModal({
+			presentation: "drawer",
+			mobileView: "leverage",
+			pendingLeverage: null,
+			onPendingLeverageChange,
+		});
+
+		const initialDrawerRenders = modalHarness.adaptiveModalRenders;
+		const onChange = modalHarness.leverageSliderProps?.onChange as ((value: number) => void) | undefined;
+		const onCommit = modalHarness.leverageSliderProps?.onCommit as ((value: number) => void) | undefined;
+
+		act(() => {
+			onChange?.(11);
+			onChange?.(12);
+			onChange?.(13);
+		});
+
+		expect(container.querySelector("h2")?.textContent).toBe("Adjust leverage13x");
+		expect(modalHarness.adaptiveModalRenders).toBe(initialDrawerRenders);
+		expect(onPendingLeverageChange).not.toHaveBeenCalled();
+		expect(onApply).not.toHaveBeenCalled();
+
+		act(() => onCommit?.(13));
+
+		expect(modalHarness.adaptiveModalRenders).toBe(initialDrawerRenders);
+		expect(onPendingLeverageChange).toHaveBeenCalledTimes(1);
+		expect(onPendingLeverageChange).toHaveBeenCalledWith(13);
+		expect(onApply).not.toHaveBeenCalled();
 	});
 
 	it("locks the complete settings drawer while either action is pending", () => {

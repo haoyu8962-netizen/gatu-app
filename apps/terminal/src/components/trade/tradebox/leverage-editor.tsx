@@ -41,6 +41,7 @@ export function LeverageEditor({
 	const isSheet = variant === "sheet";
 	const [draftText, setDraftText] = useState<string | null>(null);
 	const stops = getLeverageStops(max);
+	const controlInsetClassName = isSheet ? "mx-3" : "mx-2.5";
 
 	function handlePick(next: number) {
 		setDraftText(null);
@@ -74,12 +75,9 @@ export function LeverageEditor({
 					onCommit={handlePick}
 					max={max}
 					disabled={disabled}
-					thumbAlignment="edge"
-					controlClassName={isSheet ? "h-9" : "h-8"}
-					trackClassName={cn(
-						"h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none",
-						isSheet ? "mx-3" : "mx-2.5",
-					)}
+					thumbAlignment="center"
+					controlClassName={cn("w-auto", controlInsetClassName, isSheet ? "h-9" : "h-8")}
+					trackClassName="h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none"
 					indicatorClassName="min-w-0 rounded-xs bg-trading-panel-control shadow-none inset-shadow-none"
 					thumbClassName={cn(
 						"border-[3px] border-trading-panel-control bg-trading-panel-slider-thumb shadow-trading-panel-slider",

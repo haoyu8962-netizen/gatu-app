@@ -30,6 +30,7 @@ export function LeverageSlider({
 }: Props) {
 	return (
 		<Slider
+			data-base-ui-swipe-ignore=""
 			className={className}
 			label={t`Leverage`}
 			labelHidden

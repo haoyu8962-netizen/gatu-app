@@ -15,7 +15,7 @@ import {
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, SpinnerGapIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MARGIN_MODE_SUCCESS_DURATION_MS } from "@/config/time";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
@@ -183,22 +183,11 @@ export function MarginModeModal({
 	...formProps
 }: Props) {
 	const formKey = `${open}:${marketIdentity ?? "market"}`;
-	const [leverageDraft, setLeverageDraft] = useState<number | null>(null);
-
-	if (!open && leverageDraft !== null) setLeverageDraft(null);
 
 	if (presentation === "drawer") {
 		const actionPending = formProps.isUpdating || !!accountModeForm?.isUpdating;
-		const draftLeverage = leverageDraft ?? formProps.pendingLeverage ?? formProps.currentLeverage;
 		const title =
-			mobileView === "leverage" ? (
-				<span className="flex w-full min-w-0 items-baseline justify-between gap-2">
-					<span className="min-w-0 truncate">
-						<Trans>Adjust leverage</Trans>
-					</span>
-					<span className="shrink-0 text-sm font-bold tabular-nums text-trading-panel-fg">{draftLeverage}x</span>
-				</span>
-			) : settingsTab === "account" ? (
+			settingsTab === "account" ? (
 				<Trans>Account type</Trans>
 			) : (
 				<>
@@ -225,76 +214,75 @@ export function MarginModeModal({
 				overlayClassName="bg-trading-panel-scrim"
 				className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] border-trading-panel-stroke-card"
 			>
-				<ModalHeader divider={false} className={cn("px-4 pt-7 pb-2", mobileView === "leverage" ? "pr-4" : "pr-14")}>
-					<ModalTitle className="text-trading-panel-fg">{title}</ModalTitle>
-				</ModalHeader>
-
 				{mobileView === "leverage" ? (
-					<MarginModeForm
+					<MobileLeverageDrawerContent
 						key={`${formKey}:leverage`}
 						{...formProps}
 						isUpdating={actionPending}
 						onClose={() => onOpenChange(false)}
-						mobileLayout
-						mobileView="leverage"
-						leverageDraft={leverageDraft}
-						onLeverageDraftChange={setLeverageDraft}
 					/>
-				) : accountModeForm ? (
-					<Tabs value={settingsTab} onValueChange={handleTabChange} size="md" fullWidth disabled={actionPending}>
-						<div className="px-4">
-							<TabsList
-								className="w-full border-trading-panel-stroke-card"
-								indicatorClassName="bg-trading-panel-control"
-							>
-								<TabsTrigger
-									value="margin"
-									className="min-h-10 text-2sm text-trading-panel-subtle data-active:font-semibold data-active:text-trading-panel-fg"
-								>
-									<Trans>Position margin</Trans>
-								</TabsTrigger>
-								<TabsTrigger
-									value="account"
-									className="min-h-10 text-2sm text-trading-panel-subtle data-active:font-semibold data-active:text-trading-panel-fg"
-								>
-									<Trans>Account type</Trans>
-								</TabsTrigger>
-							</TabsList>
-						</div>
-
-						<TabsContent value="margin" className="pt-0">
-							{settingsTab === "margin" ? (
-								<MarginModeForm
-									key={formKey}
-									{...formProps}
-									isUpdating={actionPending}
-									onClose={() => onOpenChange(false)}
-									mobileLayout
-									mobileView="margin"
-								/>
-							) : null}
-						</TabsContent>
-						<TabsContent value="account" className="pt-0">
-							{settingsTab === "account" ? (
-								<AccountModeForm
-									key={`${open}:${accountModeForm.currentMode ?? "unavailable"}`}
-									{...accountModeForm}
-									isUpdating={actionPending}
-									onClose={() => onOpenChange(false)}
-									mobileLayout
-								/>
-							) : null}
-						</TabsContent>
-					</Tabs>
 				) : (
-					<MarginModeForm
-						key={formKey}
-						{...formProps}
-						isUpdating={actionPending}
-						onClose={() => onOpenChange(false)}
-						mobileLayout
-						mobileView="margin"
-					/>
+					<>
+						<ModalHeader divider={false} className="px-4 pt-7 pr-14 pb-2">
+							<ModalTitle className="text-trading-panel-fg">{title}</ModalTitle>
+						</ModalHeader>
+						{accountModeForm ? (
+							<Tabs value={settingsTab} onValueChange={handleTabChange} size="md" fullWidth disabled={actionPending}>
+								<div className="px-4">
+									<TabsList
+										className="w-full border-trading-panel-stroke-card"
+										indicatorClassName="bg-trading-panel-control"
+									>
+										<TabsTrigger
+											value="margin"
+											className="min-h-10 text-2sm text-trading-panel-subtle data-active:font-semibold data-active:text-trading-panel-fg"
+										>
+											<Trans>Position margin</Trans>
+										</TabsTrigger>
+										<TabsTrigger
+											value="account"
+											className="min-h-10 text-2sm text-trading-panel-subtle data-active:font-semibold data-active:text-trading-panel-fg"
+										>
+											<Trans>Account type</Trans>
+										</TabsTrigger>
+									</TabsList>
+								</div>
+
+								<TabsContent value="margin" className="pt-0">
+									{settingsTab === "margin" ? (
+										<MarginModeForm
+											key={formKey}
+											{...formProps}
+											isUpdating={actionPending}
+											onClose={() => onOpenChange(false)}
+											mobileLayout
+											mobileView="margin"
+										/>
+									) : null}
+								</TabsContent>
+								<TabsContent value="account" className="pt-0">
+									{settingsTab === "account" ? (
+										<AccountModeForm
+											key={`${open}:${accountModeForm.currentMode ?? "unavailable"}`}
+											{...accountModeForm}
+											isUpdating={actionPending}
+											onClose={() => onOpenChange(false)}
+											mobileLayout
+										/>
+									) : null}
+								</TabsContent>
+							</Tabs>
+						) : (
+							<MarginModeForm
+								key={formKey}
+								{...formProps}
+								isUpdating={actionPending}
+								onClose={() => onOpenChange(false)}
+								mobileLayout
+								mobileView="margin"
+							/>
+						)}
+					</>
 				)}
 			</AdaptiveModal>
 		);
@@ -311,6 +299,33 @@ export function MarginModeModal({
 				<MarginModeForm key={formKey} {...formProps} onClose={() => onOpenChange(false)} />
 			</ModalPopup>
 		</Modal>
+	);
+}
+
+function MobileLeverageDrawerContent(props: FormProps) {
+	const [leverageDraft, setLeverageDraft] = useState<number | null>(null);
+	const displayLeverage = leverageDraft ?? props.pendingLeverage ?? props.currentLeverage;
+
+	return (
+		<>
+			<ModalHeader divider={false} className="px-4 pt-7 pb-2 pr-4">
+				<ModalTitle className="text-trading-panel-fg">
+					<span className="flex w-full min-w-0 items-baseline justify-between gap-2">
+						<span className="min-w-0 truncate">
+							<Trans>Adjust leverage</Trans>
+						</span>
+						<span className="shrink-0 text-sm font-bold tabular-nums text-trading-panel-fg">{displayLeverage}x</span>
+					</span>
+				</ModalTitle>
+			</ModalHeader>
+			<MarginModeForm
+				{...props}
+				mobileLayout
+				mobileView="leverage"
+				leverageDraft={leverageDraft}
+				onLeverageDraftChange={setLeverageDraft}
+			/>
+		</>
 	);
 }
 
@@ -335,6 +350,7 @@ function MarginModeForm({
 	onLeverageDraftChange,
 }: FormProps) {
 	const [selectedMode, setSelectedMode] = useState<MarginMode>(currentMode);
+	const applyInFlightRef = useRef(false);
 	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(onClose, MARGIN_MODE_SUCCESS_DURATION_MS);
 
 	const displayLeverage = leverageDraft ?? pendingLeverage ?? currentLeverage;
@@ -353,13 +369,16 @@ function MarginModeForm({
 	const positionStateUnavailable = !positionStateReady && selectedMode === "isolated" && currentMode === "cross";
 
 	async function handleConfirm(): Promise<void> {
-		if (!isDirty || cannotSwitch || positionStateUnavailable) return;
+		if (!isDirty || isUpdating || cannotSwitch || positionStateUnavailable || applyInFlightRef.current) return;
+		applyInFlightRef.current = true;
 		const mode = showMarginControls ? selectedMode : currentMode;
 		const lev = showLeverageControls ? (pendingLeverage ?? currentLeverage) : currentLeverage;
 		try {
 			await onApply(mode, lev);
 			triggerAutoClose();
-		} catch {}
+		} catch {
+			applyInFlightRef.current = false;
+		}
 	}
 
 	function handleCancel() {
