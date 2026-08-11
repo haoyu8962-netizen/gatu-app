@@ -238,11 +238,18 @@ msgstr "खाता इक्विटी"
 msgid "Account Margin Ratio"
 msgstr "खाता मार्जिन अनुपात"
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "खाता मोड"
 
+#: src/hooks/trade/use-account-abstraction-guard.ts
+msgid "Account mode changed before the request was submitted. Review balances and try again."
+msgstr "अनुरोध भेजे जाने से पहले खाता मोड बदल गया। शेष राशि की समीक्षा करें और फिर से प्रयास करें।"
+
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Account mode updated"
@@ -596,6 +603,10 @@ msgstr "परिसंपत्ति की जानकारी लोड �
 #~ msgstr ""
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Automatic deposits are paused because Hyperliquid currently requires CCTP deposits."
+msgstr "Hyperliquid पर फ़िलहाल CCTP जमा आवश्यक होने के कारण स्वचालित जमा रोक दिए गए हैं।"
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "USDC का स्वचालित जमा विफल रहा"
 
@@ -928,6 +939,15 @@ msgstr "चार्ट इतिहास अनुरोध का समय �
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking account..."
 msgstr "खाता जाँचा जा रहा है..."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Checking the current Hyperliquid deposit route..."
+msgstr "Hyperliquid के मौजूदा जमा रूट की जाँच की जा रही है..."
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Checking the current Hyperliquid withdrawal route..."
+msgstr "Hyperliquid के मौजूदा निकासी रूट की जाँच की जा रही है..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking..."
@@ -2797,6 +2817,14 @@ msgstr "Hyperliquid स्वीकृति जांची नहीं जा
 msgid "Hyperliquid calculates and adds the margin required to reach the target leverage."
 msgstr "Hyperliquid लक्ष्य लीवरेज तक पहुँचने के लिए आवश्यक मार्जिन की गणना करके उसे जोड़ता है।"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
+msgstr "Hyperliquid पर फ़िलहाल CCTP जमा आवश्यक हैं। इस ऐप में Bridge जमा रोक दिए गए हैं।"
+
+#: src/hooks/trade/use-usdc-routing.ts
+msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
+msgstr "Hyperliquid पर फ़िलहाल CCTP जमा आवश्यक हैं। Bridge जमा उपलब्ध नहीं हैं।"
+
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Hyperliquid does not support pausing active TWAP orders."
@@ -2989,6 +3017,10 @@ msgstr "लीडरबोर्ड"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Learn more"
 #~ msgstr ""
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Legacy DEX"
+msgstr "लीगेसी DEX"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -5098,6 +5130,8 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/twap-history-feedback.tsx
@@ -5365,6 +5399,25 @@ msgstr "सुरक्षित डिस्कनेक्ट के लिए
 msgid "Select {displayName} market"
 msgstr "{displayName} मार्केट चुनें"
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Select a supported account mode before moving funds."
+msgstr "धनराशि स्थानांतरित करने से पहले कोई समर्थित खाता मोड चुनें।"
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Select a supported account mode before using balances or moving funds."
+msgstr "शेष राशि का उपयोग करने या धनराशि स्थानांतरित करने से पहले कोई समर्थित खाता मोड चुनें।"
+
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Select a supported account mode to view balances."
+msgstr "शेष राशि देखने के लिए कोई समर्थित खाता मोड चुनें।"
+
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Select all orders"
 msgstr "सभी ऑर्डर चुनें"
@@ -5388,6 +5441,11 @@ msgstr "पसंदीदा बाज़ार चुनें"
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Select market"
 msgstr "मार्केट चुनें"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Select mode"
+msgstr "मोड चुनें"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Select order"
@@ -6334,6 +6392,11 @@ msgstr "एक्सचेंज ने TWAP की अंतिम स्थि
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "बनाई गई कुंजी केवल इसी टैब में रहती है। कोई अन्य कुंजी स्वीकृत न करें और न ही पेज रीलोड करें।"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
+msgstr "Hyperliquid का निकासी रूट बदल गया है। अपडेट किए गए रूट और शुल्क की समीक्षा करें, फिर दोबारा सबमिट करें।"
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "मार्जिन अपडेट लागू हो चुका हो सकता है। फिर से प्रयास करने से पहले पोज़िशन डेटा रीफ़्रेश करें।"
@@ -7255,6 +7318,28 @@ msgstr "पहुँच सत्यापित नहीं हो सकी"
 #: src/lib/trade/withdrawal.ts
 msgid "Unable to verify available balance"
 msgstr "उपलब्ध शेष राशि सत्यापित नहीं की जा सकी"
+
+#: src/hooks/trade/use-account-abstraction-guard.ts
+msgid "Unable to verify the current account mode. Request was not submitted."
+msgstr "मौजूदा खाता मोड सत्यापित नहीं किया जा सका। अनुरोध नहीं भेजा गया।"
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused."
+msgstr "Hyperliquid के मौजूदा जमा रूट को सत्यापित नहीं किया जा सका। स्वचालित जमा रोक दिए गए हैं।"
+
+#: src/hooks/trade/use-usdc-routing.ts
+msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted."
+msgstr "Hyperliquid के मौजूदा जमा रूट को सत्यापित नहीं किया जा सका। जमा सबमिट नहीं किया गया।"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
+msgstr "Hyperliquid के मौजूदा जमा रूट को सत्यापित नहीं किया जा सका। जमा रोक दिए गए हैं।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Unable to verify the current Hyperliquid withdrawal route."
+msgstr "Hyperliquid के मौजूदा निकासी रूट को सत्यापित नहीं किया जा सका।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Unable to verify withdrawal eligibility."

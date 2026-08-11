@@ -29,6 +29,12 @@ describe("portfolio surface contract", () => {
 		expect(PORTFOLIO_PAGE).toContain("<Trans>Send</Trans>");
 	});
 
+	it("keeps the existing account-mode dialog reachable from the portfolio toolbar", () => {
+		expect(PORTFOLIO_PAGE).toContain("<Trans>Account mode</Trans>");
+		expect(PORTFOLIO_PAGE).toContain("<AccountModeModal");
+		expect(PORTFOLIO_PAGE).toContain("canChange={accountModeControl.canSet}");
+	});
+
 	it("uses the default withdrawal account instead of the last selected HIP-3 market", () => {
 		expect(DEPOSIT_MODAL).toContain("useDefaultDexBalances");
 		expect(DEPOSIT_MODAL).not.toContain("useSelectedDexBalances");

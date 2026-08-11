@@ -1,6 +1,15 @@
 # HyperCore USDC withdrawals
 
-The terminal supports two explicit USDC withdrawal routes to Arbitrum. CCTP is the default. Legacy remains available as a user-selected fallback and is never selected automatically after a failed or ambiguous CCTP request.
+The terminal supports the CCTP and legacy withdrawal protocols, but they are
+not user-selectable alternatives. Hyperliquid's SDK `usdcRouting` response is
+the sole source of truth: `cctp` selects the CCTP action and `bridge` selects
+the legacy action.
+
+The route is queried when the withdrawal surface opens and refetched
+immediately before signing. Loading, failed, malformed, or unknown responses
+fail closed. If the fresh route differs from the route the user reviewed, the
+request is aborted and must be reviewed again; the terminal never changes
+routes or falls back after an error without renewed user intent.
 
 ## CCTP route
 
@@ -41,7 +50,10 @@ The maximum withdrawable gross amount is therefore `withdrawable - activationFee
 
 ## Legacy route
 
-The explicit `Arbitrum (Legacy)` option uses the SDK's user-signed `withdraw3` method. Its current fee and minimum are 1 USDC. Legacy is preserved for operational fallback, but the application does not silently switch routes because that would change the signed action and fee without renewed user intent.
+When `usdcRouting.withdrawalRoute` is `bridge`, the terminal uses the SDK's
+user-signed `withdraw3` method. Its current fee and minimum are 1 USDC. Legacy
+is not exposed as a manual fallback: using it when Hyperliquid reports `cctp`
+would change the signed action and fee outside the protocol-selected route.
 
 ## Request and completion semantics
 
@@ -57,5 +69,6 @@ The application does not depend on Hyperliquid's private frontend transfer-statu
 - [Circle: CCTP-enabled HyperCore transfers](https://developers.circle.com/cctp/concepts/cctp-on-hypercore)
 - [Circle: HyperCore contract addresses](https://developers.circle.com/cctp/references/hypercore-contract-addresses)
 - [Hyperliquid exchange endpoint](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/exchange-endpoint)
+- [nktkas SDK: `usdcRouting`](https://github.com/nktkas/hyperliquid/blob/v0.33.3/src/api/info/_methods/usdcRouting.ts)
 - [nktkas SDK: preTransferCheck](https://nktkas.gitbook.io/hyperliquid/api-reference/info-methods/pretransfercheck)
 - [nktkas SDK: signing](https://nktkas.gitbook.io/hyperliquid/utilities/signing)

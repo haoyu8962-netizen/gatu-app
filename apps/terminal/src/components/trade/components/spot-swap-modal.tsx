@@ -20,7 +20,7 @@ import {
 	getStablecoinSwapToTokens,
 	getSwapSide,
 } from "@/domain/trade/swap";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useFeeRates } from "@/hooks/trade/use-fee-rates";
 import { useTrackedOrder } from "@/hooks/trade/use-tracked-order";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
@@ -71,7 +71,8 @@ interface Props {
 
 function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose }: Props) {
 	const { spotMarkets } = useMarketsInfo();
-	const { spotBalances } = useDefaultDexBalances();
+	const { accountAbstraction, spotBalances } = useDefaultDexBalances();
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const { builderConfig } = useHyperliquid();
 	const { submitOrder, isPending: isSubmitting } = useTrackedOrder();
 	const { takerRate } = useFeeRates("spot");
@@ -98,10 +99,11 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 
 	const getTokenBalance = useCallback(
 		(token: string) => {
+			if (!accountModeReady) return 0;
 			const balance = getSpotBalance(spotBalances, token);
 			return getAvailableFromTotals(balance?.total, balance?.hold);
 		},
-		[spotBalances],
+		[accountModeReady, spotBalances],
 	);
 
 	const fromBalance = getTokenBalance(fromToken);
@@ -196,7 +198,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	);
 
 	const handleSubmit = useCallback(async () => {
-		if (!spotMarket || !quote || isSubmitting) return;
+		if (!accountModeReady || !spotMarket || !quote || isSubmitting) return;
 
 		setError(null);
 
@@ -232,7 +234,7 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 				: rawMessage;
 			setError(message);
 		}
-	}, [spotMarket, quote, isSubmitting, isBuying, szDecimals, submitOrder, triggerAutoClose]);
+	}, [accountModeReady, spotMarket, quote, isSubmitting, isBuying, szDecimals, submitOrder, triggerAutoClose]);
 
 	const requiredInput = quote?.maxInput ?? amount;
 	const insufficientBalance = toBig(requiredInput)?.gt(fromBalance) ?? false;
@@ -244,13 +246,14 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 	const belowMinimumNotional = Boolean(quote?.isBelowMinimumNotional);
 	const partialFill = Boolean(quote?.isPartial);
 	const canSubmit =
+		accountModeReady &&
 		hasPositiveAmount &&
 		!insufficientBalance &&
 		!belowMinimumNotional &&
 		!showSuccess &&
 		Boolean(spotMarket) &&
 		Boolean(quote);
-	const isDisabled = isSubmitting || showSuccess;
+	const isDisabled = !accountModeReady || isSubmitting || showSuccess;
 
 	return (
 		<Modal open onOpenChange={handleOpenChange}>
@@ -272,6 +275,14 @@ function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose 
 				</ModalHeader>
 
 				<ModalContent className="space-y-3">
+					{!accountModeReady ? (
+						<div className="flex items-start gap-2 rounded-8 border border-stroke-warning-strong/20 bg-warning-soft p-2.5">
+							<WarningIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
+							<p className="text-xs text-warning">
+								<Trans>Select a supported account mode before using balances or moving funds.</Trans>
+							</p>
+						</div>
+					) : null}
 					<div className="relative">
 						<div className="space-y-1">
 							<TokenPanel

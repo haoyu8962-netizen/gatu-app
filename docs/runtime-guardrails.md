@@ -131,6 +131,23 @@ implementation.
   configured and the transaction path uses the smart wallet client.
 - Bridge2 deposits must follow the Hyperliquid Bridge2 path and the correct
   chain/USDC contract for the active environment.
+- Hyperliquid SDK `usdcRouting` is the sole runtime source for deposit and
+  withdrawal protocol selection. Validate the response as unknown data and
+  accept only exact `bridge` or `cctp` values for both fields.
+- Routing queries and cache keys must remain isolated by environment. Loading,
+  failed, missing, and malformed responses fail closed and must not reuse a
+  route observed on another environment.
+- Refetch and validate `usdcRouting` immediately before requesting a signature
+  or submitting a transaction. If the route changed after the user reviewed
+  the action, abort and require renewed review; never silently switch protocol
+  or fall back after an error.
+- Both manual and automatic Bridge2 execution paths require a fresh
+  `depositRoute === "bridge"` hard guard at the execution boundary. A reported
+  `cctp` route remains blocked until the complete Circle CCTP deposit executor
+  is implemented; it must never enter Bridge2 as a compatibility fallback.
+- Map `withdrawalRoute === "cctp"` to `sendToEvmWithData` and `bridge` to
+  `withdraw3`. The user does not independently override the protocol-selected
+  withdrawal route.
 - Deposit UI must distinguish:
   - transaction not submitted,
   - submitted but not confirmed,
@@ -143,9 +160,22 @@ implementation.
 ### Important Files
 
 - `apps/terminal/src/lib/hyperliquid/use-deposit.ts`
-- `apps/terminal/src/components/trade/account/deposit-modal.tsx`
-- `apps/terminal/src/components/trade/account/withdraw-modal.tsx`
+- `apps/terminal/src/domain/trade/usdc-routing.ts`
+- `apps/terminal/src/hooks/trade/use-usdc-routing.ts`
+- `apps/terminal/src/components/trade/tradebox/deposit-modal.tsx`
+- `apps/terminal/src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx`
 - `docs/hyperliquid-signing.md`
+- `docs/withdrawals.md`
+
+### Regression Coverage
+
+- Route normalization rejects missing, malformed, and unknown values.
+- Mainnet and testnet routing state cannot cross-contaminate each other.
+- Manual and automatic deposits remain blocked during loading/error states and
+  for `cctp`; Bridge2 may execute only after a fresh `bridge` result.
+- Withdrawals use only the protocol-selected route. A pre-submit route change
+  aborts before signing and requires the user to review the updated fees and
+  action.
 
 ## 3. Market, Symbol, And Perp Dex Mapping
 

@@ -73,7 +73,7 @@ describe("trade balances", () => {
 	});
 
 	it("uses maintenance-adjusted available values in balance rows", () => {
-		const rows = getSpotBalanceRows([usdcBalance], maintenanceAvailable);
+		const rows = getSpotBalanceRows([usdcBalance], maintenanceAvailable, "disabled");
 
 		expect(rows).toEqual([
 			expect.objectContaining({
@@ -85,11 +85,16 @@ describe("trade balances", () => {
 	});
 
 	it("keeps perps account equity and spot token balances in separate row groups", () => {
-		const perpRows = getPerpBalanceRows({
-			accountValue: "1620.34",
-			totalMarginUsed: "1564.34",
-		});
-		const spotRows = getSpotBalanceRows([usdcBalance], maintenanceAvailable);
+		const perpRows = getPerpBalanceRows(
+			{
+				accountValue: "1620.34",
+				totalMarginUsed: "1564.34",
+			},
+			undefined,
+			undefined,
+			"disabled",
+		);
+		const spotRows = getSpotBalanceRows([usdcBalance], maintenanceAvailable, "disabled");
 
 		expect(perpRows).toEqual([
 			expect.objectContaining({
@@ -204,7 +209,7 @@ describe("trade balances", () => {
 		expect(summary.available).toBeCloseTo(363.646903);
 	});
 
-	it("keeps standard or unknown accounts separated and flags funds sitting in spot", () => {
+	it("keeps standard accounts separate and fails closed for unresolved modes", () => {
 		const standard = getAccountBalanceSummary({
 			accountAbstraction: "disabled",
 			marginSummary: { accountValue: "0", totalMarginUsed: "0", totalRawUsd: "0" } as never,
@@ -213,7 +218,7 @@ describe("trade balances", () => {
 			spotBalances: [settledSpotUsdcBalance],
 		});
 		const unknown = getAccountBalanceSummary({
-			accountAbstraction: null,
+			accountAbstraction: "default",
 			marginSummary: { accountValue: "0", totalMarginUsed: "0", totalRawUsd: "0" } as never,
 			perpSummary: { accountValue: "0", totalMarginUsed: "0" },
 			withdrawable: "0",
@@ -221,12 +226,22 @@ describe("trade balances", () => {
 		});
 
 		expect(standard.usesSpotStateForPerps).toBe(false);
+		expect(standard.isAvailable).toBe(true);
+		expect(standard.mode).toBe("separate");
 		expect(standard.accountEquity).toBe(0);
 		expect(standard.available).toBe(0);
 		expect(standard.spotUsdcAvailable).toBeCloseTo(567.680532);
 		expect(standard.hasSpotFundsWhenPerpWithdrawableZero).toBe(true);
 		expect(unknown.usesSpotStateForPerps).toBe(false);
-		expect(unknown.hasSpotFundsWhenPerpWithdrawableZero).toBe(true);
+		expect(unknown.isAvailable).toBe(false);
+		expect(unknown.mode).toBe("unavailable");
+		expect(unknown.accountEquity).toBe(0);
+		expect(unknown.available).toBe(0);
+		expect(unknown.withdrawable).toBe(0);
+		expect(unknown.spotUsdcAvailable).toBe(0);
+		expect(unknown.hasSpotFundsWhenPerpWithdrawableZero).toBe(false);
+		expect(getPerpBalanceRows({ accountValue: "10" }, undefined, undefined, "dexAbstraction")).toEqual([]);
+		expect(getSpotBalanceRows([settledSpotUsdcBalance], undefined, "unknown")).toEqual([]);
 	});
 
 	it("uses the API withdrawable for perp available and derives the open-order hold", () => {
@@ -234,7 +249,7 @@ describe("trade balances", () => {
 			{ accountValue: "1620.34", totalMarginUsed: "1564.34", totalNtlPos: "7821.7" },
 			undefined,
 			undefined,
-			undefined,
+			"disabled",
 			"40",
 		);
 
@@ -254,7 +269,7 @@ describe("trade balances", () => {
 			{ accountValue: "60", totalMarginUsed: "50", totalNtlPos: "1000" },
 			undefined,
 			undefined,
-			undefined,
+			"disabled",
 			"0",
 		);
 
@@ -264,7 +279,7 @@ describe("trade balances", () => {
 			{ accountValue: "200", totalMarginUsed: "50", totalNtlPos: "1000" },
 			undefined,
 			undefined,
-			undefined,
+			"disabled",
 			"70",
 		);
 
@@ -274,10 +289,10 @@ describe("trade balances", () => {
 	it("values non-USDC spot balances at current mid price with entryNtl fallback", () => {
 		const hypeBalance: SpotBalance = { coin: "HYPE", token: 150, total: "10", hold: "0", entryNtl: "200" };
 
-		const pricedRows = getSpotBalanceRows([hypeBalance], undefined, undefined, { HYPE: "30" });
+		const pricedRows = getSpotBalanceRows([hypeBalance], undefined, "disabled", { HYPE: "30" });
 		expect(pricedRows[0]).toMatchObject({ asset: "HYPE", usdValue: "300", entryNtl: "200" });
 
-		const unpricedRows = getSpotBalanceRows([hypeBalance]);
+		const unpricedRows = getSpotBalanceRows([hypeBalance], undefined, "disabled");
 		expect(unpricedRows[0]).toMatchObject({ asset: "HYPE", usdValue: "200" });
 
 		const summary = getAccountBalanceSummary({
@@ -385,7 +400,7 @@ describe("trade balances", () => {
 				{ coin: "HYPE", token: 150, total: "10", hold: "0", entryNtl: "200" },
 			],
 			undefined,
-			undefined,
+			"disabled",
 			prices,
 		);
 
@@ -464,7 +479,7 @@ describe("trade balances", () => {
 		const rows = getSpotBalanceRows(
 			[{ coin: "AXL", token: 301, total: "10", hold: "0", entryNtl: "0.5" }],
 			undefined,
-			undefined,
+			"disabled",
 			prices,
 		);
 
@@ -473,7 +488,7 @@ describe("trade balances", () => {
 	});
 
 	it("keeps outcome-market balances in account value and display rows", () => {
-		const rows = getSpotBalanceRows([outcomeBalance]);
+		const rows = getSpotBalanceRows([outcomeBalance], undefined, "disabled");
 
 		expect(rows).toEqual([
 			expect.objectContaining({

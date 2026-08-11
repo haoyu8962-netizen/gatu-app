@@ -2,11 +2,15 @@ import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, Moda
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import type { SelectableAccountAbstraction } from "@/hooks/trade/use-account-abstraction-control";
+import {
+	type SelectableAccountAbstraction,
+	toSelectableAccountAbstraction,
+} from "@/hooks/trade/use-account-abstraction-control";
+import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
 import { cn } from "@/lib/cn";
 
 export interface AccountModeFormProps {
-	currentMode: SelectableAccountAbstraction | null;
+	currentMode: AccountAbstraction;
 	isLoading?: boolean;
 	isUpdating?: boolean;
 	canChange?: boolean;
@@ -60,7 +64,9 @@ export function AccountModeForm({
 	onApply,
 }: AccountModeFormProps) {
 	const { t } = useLingui();
-	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(currentMode);
+	const [selectedMode, setSelectedMode] = useState<SelectableAccountAbstraction | null>(() =>
+		toSelectableAccountAbstraction(currentMode),
+	);
 	const [submitError, setSubmitError] = useState<string | null>(null);
 	const accountModeOptions: AccountModeOption[] = [
 		{
@@ -83,6 +89,8 @@ export function AccountModeForm({
 	const isDirty = selectedMode !== null && selectedMode !== currentMode;
 	const isBusy = !!isLoading || !!isUpdating;
 	const isModeUnavailable = !!canChange && !isLoading && currentMode === null;
+	const requiresExplicitSelection =
+		currentMode === "default" || currentMode === "dexAbstraction" || currentMode === "unknown";
 	const portfolioGuidance = (
 		<>
 			<p className="text-2xs leading-relaxed text-trading-panel-muted">
@@ -182,6 +190,11 @@ export function AccountModeForm({
 				{isModeUnavailable ? (
 					<p className="text-xs text-error">
 						<Trans>Unable to load the current account mode. Reconnect your wallet and try again.</Trans>
+					</p>
+				) : null}
+				{requiresExplicitSelection ? (
+					<p className="text-xs text-warning">
+						<Trans>Select a supported account mode before using balances or moving funds.</Trans>
 					</p>
 				) : null}
 

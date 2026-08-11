@@ -20,7 +20,11 @@ import {
 	type PositionMarketIdentity,
 } from "@/domain/trade/position-toolbar";
 import { getToolbarAccountMarginRatio } from "@/domain/trade/trading-toolbar-metrics";
-import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import {
+	isSupportedAccountAbstraction,
+	useDefaultDexBalances,
+	useSelectedDexBalances,
+} from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -110,6 +114,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 				],
 	);
 	const accountAbstraction = selectedBalances.accountAbstraction;
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const defaultCollateralToken = markets.getToken(DEFAULT_QUOTE_TOKEN);
 	const maintenanceMarginRatio =
 		accountAbstraction === "unifiedAccount"
@@ -131,7 +136,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 					});
 	const accountSummaryReady =
 		isConnected &&
-		accountAbstraction !== null &&
+		accountModeReady &&
 		!summaryBalances.hasError &&
 		summaryBalances.hasAllDexsSnapshot &&
 		(!usesSharedQuoteBalance || summaryBalances.hasSpotStateSnapshot);
@@ -307,6 +312,7 @@ export function PositionsPanel({ includeTransfers = false, autoHeight = false }:
 									variant="outline"
 									intent="neutral"
 									size="xxs"
+									disabled={!accountModeReady}
 									onClick={() => openDepositModal("withdraw")}
 									className="h-[27px] rounded-[7px] border-market-close-stroke-input bg-modal px-3 text-xs font-semibold text-market-close-fg shadow-none transition-colors duration-[120ms] hover:border-market-close-control active:scale-100"
 								>

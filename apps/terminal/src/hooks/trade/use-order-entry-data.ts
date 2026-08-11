@@ -6,7 +6,7 @@ import { getSizeForPercent as getSizeForPercentCalc, getSizeValueForModeToggle }
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 import type { Side, SizeMode } from "@/lib/trade/types";
-import { useDefaultDexBalances } from "./use-account-balances";
+import { isSupportedAccountAbstraction, useDefaultDexBalances } from "./use-account-balances";
 import { useAssetLeverage } from "./use-asset-leverage";
 
 interface OrderEntryData extends OrderEntryDerived {
@@ -56,7 +56,13 @@ export function useOrderEntryData({
 }: UseOrderEntryDataOptions): OrderEntryData {
 	const { t } = useLingui();
 	const { isConnected } = useWalletSession();
-	const { spotBalances, spotAvailableAfterMaintenance, spotStateStatus } = useDefaultDexBalances();
+	const {
+		accountAbstraction,
+		isLoading: areBalancesLoading,
+		spotBalances,
+		spotAvailableAfterMaintenance,
+		spotStateStatus,
+	} = useDefaultDexBalances();
 	const {
 		displayLeverage: leverage,
 		currentLeverage,
@@ -81,12 +87,18 @@ export function useOrderEntryData({
 
 	const conversionPrice = markPx > 0 ? markPx : 0;
 	const isSpotMarket = market?.kind === "spot";
-	const availabilityStatus = getOrderAvailabilityStatus({
+	const streamAvailabilityStatus = getOrderAvailabilityStatus({
 		isConnected,
 		marketKind: market?.kind,
 		spotStatus: spotStateStatus,
 		perpStatus: subscriptionStatus,
 	});
+	const availabilityStatus =
+		isConnected && !isSupportedAccountAbstraction(accountAbstraction)
+			? areBalancesLoading
+				? "loading"
+				: "error"
+			: streamAvailabilityStatus;
 	const {
 		isLoading: isAvailabilityLoading,
 		isStale: isAvailabilityStale,

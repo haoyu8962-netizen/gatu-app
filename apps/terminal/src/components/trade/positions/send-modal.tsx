@@ -13,7 +13,12 @@ import {
 	getSpotTransferableValue,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
-import { isTokenSpotBalance, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
+import {
+	isSupportedAccountAbstraction,
+	isTokenSpotBalance,
+	useDefaultDexBalances,
+} from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError } from "@/lib/errors/format";
@@ -64,13 +69,19 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const [error, setError] = useState<string | null>(null);
 
 	const { getToken } = useSpotTokens();
-	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset");
-	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend");
 	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable } =
 		useDefaultDexBalances();
-	const { hasWalletAccess } = useWalletSession();
+	const { address, hasWalletAccess } = useWalletSession();
+	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, address);
+	const { mutateAsync: sendAsset, isPending: isSendAssetPending } = useExchange("sendAsset", {
+		preExecutionGuard: (_params, signal) => assertAccountAbstraction(signal),
+	});
+	const { mutateAsync: spotSend, isPending: isSpotSendPending } = useExchange("spotSend", {
+		preExecutionGuard: (_params, signal) => assertAccountAbstraction(signal),
+	});
 
 	const isPending = isSendAssetPending || isSpotSendPending;
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const accountSummary = getAccountBalanceSummary({
 		accountAbstraction,
 		marginSummary,
@@ -83,7 +94,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const activeAccountType = usesTradingAccount ? "spot" : accountType;
 
 	const availableSpotTokens = useMemo((): BalanceRow[] => {
-		if (!spotBalances?.length) return [];
+		if (!accountModeReady || !spotBalances?.length) return [];
 		return spotBalances
 			.filter(isTokenSpotBalance)
 			.filter((b) => {
@@ -99,7 +110,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 				usdValue: b.coin === DEFAULT_QUOTE_TOKEN ? b.total : b.entryNtl,
 				entryNtl: b.entryNtl,
 			}));
-	}, [spotBalances]);
+	}, [accountModeReady, spotBalances]);
 
 	const tokenOptions = useMemo(() => {
 		if (activeAccountType === "perp") {
@@ -114,12 +125,15 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 	const decimals = getTokenTransferDecimals(tokenInfo);
 
 	const selectedSpotBalance = spotBalances?.find((balance) => balance.coin === selectedToken);
-	const availableBalance =
-		activeAccountType === "perp" ? accountSummary.withdrawable : getSpotTransferable(selectedSpotBalance);
+	const availableBalance = !accountModeReady
+		? 0
+		: activeAccountType === "perp"
+			? accountSummary.withdrawable
+			: getSpotTransferable(selectedSpotBalance);
 
 	const isValidDestination = isAddress(destination);
 	const isValidAmount = isAmountWithinBalance(amount, availableBalance);
-	const canSend = hasWalletAccess && isValidDestination && isValidAmount && !!tokenId && !isPending;
+	const canSend = accountModeReady && hasWalletAccess && isValidDestination && isValidAmount && !!tokenId && !isPending;
 
 	function handleAccountTypeChange(value: string | null) {
 		if (!value || usesTradingAccount || isPending) return;
@@ -185,12 +199,14 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 		}
 	}
 
-	const accountTypeOptions = usesTradingAccount
-		? [{ value: "spot", label: t`Trading Account` }]
-		: [
-				{ value: "perp", label: t`Perps Account` },
-				{ value: "spot", label: t`Spot Account` },
-			];
+	const accountTypeOptions = !accountModeReady
+		? []
+		: usesTradingAccount
+			? [{ value: "spot", label: t`Trading Account` }]
+			: [
+					{ value: "perp", label: t`Perps Account` },
+					{ value: "spot", label: t`Spot Account` },
+				];
 
 	const tokenSelectOptions = tokenOptions.map((tokenName) => ({
 		value: tokenName,
@@ -212,6 +228,12 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							<span className="flex-1">{t`Connect your wallet to send funds.`}</span>
 						</div>
 					)}
+					{!accountModeReady && (
+						<div className="flex items-center gap-2 rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+							<WarningCircleIcon className="size-3.5 shrink-0" />
+							<span className="flex-1">{t`Select a supported account mode before moving funds.`}</span>
+						</div>
+					)}
 
 					<TextInput
 						placeholder={t`Destination address`}
@@ -219,7 +241,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 						onChange={(e: ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
 						autoComplete="off"
 						spellCheck={false}
-						disabled={isPending}
+						disabled={isPending || !accountModeReady}
 						className={cn(
 							destination &&
 								!isValidDestination &&
@@ -229,18 +251,18 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 
 					<div className="flex gap-2">
 						<Select
-							value={activeAccountType}
+							value={accountModeReady ? activeAccountType : ""}
 							onValueChange={handleAccountTypeChange}
 							options={accountTypeOptions}
-							disabled={usesTradingAccount || isPending}
+							disabled={!accountModeReady || usesTradingAccount || isPending}
 							className="flex-1"
 						/>
 
 						<Select
-							value={selectedToken}
+							value={accountModeReady ? selectedToken : ""}
 							onValueChange={handleTokenChange}
 							options={tokenSelectOptions}
-							disabled={isPending}
+							disabled={isPending || !accountModeReady}
 							className="flex-1"
 						/>
 					</div>
@@ -251,7 +273,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 							<>
 								{t`Available`}:{" "}
 								<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-									{floorToString(availableBalance, decimals)} {selectedToken}
+									{accountModeReady ? `${floorToString(availableBalance, decimals)} ${selectedToken}` : "—"}
 								</span>
 							</>
 						}
@@ -259,7 +281,7 @@ function SendModalBody({ onOpenChange, initialAsset, initialAccountType, open }:
 						placeholder="0.00"
 						value={amount}
 						onChange={(e: ChangeEvent<HTMLInputElement>) => handleAmountChange(e.target.value)}
-						disabled={isPending}
+						disabled={isPending || !accountModeReady}
 						className={cn(
 							"w-full tabular-nums",
 							exceedsBalance(amount, availableBalance) && "border-stroke-error-strong focus:border-stroke-error-strong",

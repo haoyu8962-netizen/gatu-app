@@ -1,10 +1,10 @@
 import type { AllDexsClearinghouseStateWsEvent, SpotStateWsEvent, WebData3WsEvent } from "@nktkas/hyperliquid";
-import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { getPositionDex } from "@/domain/market";
+import { isSupportedAccountAbstraction, type SupportedAccountAbstraction } from "@/domain/trade/account-abstraction";
 import { type AssetAvailabilityStatus, getStreamAvailabilityStatus } from "@/domain/trade/order/availability";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { getAccountLedgerRefreshKey, useHyperliquid, useInfo, useSubscription } from "@/lib/hyperliquid";
+import { getAccountLedgerRefreshKey, useInfo, useSubscription } from "@/lib/hyperliquid";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
 
 type RawClearinghouseState = AllDexsClearinghouseStateWsEvent["clearinghouseStates"][number][1];
@@ -21,8 +21,12 @@ export type AccountAbstraction =
 	| "unifiedAccount"
 	| "portfolioMargin"
 	| "disabled"
+	| "default"
 	| "dexAbstraction"
+	| "unknown"
 	| null;
+
+export { isSupportedAccountAbstraction, type SupportedAccountAbstraction };
 
 export interface AccountBalances {
 	dex: string;
@@ -46,8 +50,6 @@ export interface AccountBalances {
 const EMPTY_SPOT_BALANCES: SpotBalance[] = [];
 const EMPTY_PERP_POSITIONS: PerpPosition[] = [];
 const EMPTY_SPOT_AVAILABLE_AFTER_MAINTENANCE: SpotAvailableAfterMaintenance = [];
-const MAINNET_INFO_URL = "https://api.hyperliquid.xyz/info";
-const TESTNET_INFO_URL = "https://api.hyperliquid-testnet.xyz/info";
 
 export function isTokenSpotBalance(balance: SpotBalance): balance is TokenSpotBalance {
 	return "token" in balance && typeof balance.token === "number";
@@ -57,47 +59,44 @@ function normalizeDex(dex: string | null | undefined): string {
 	return dex ?? "";
 }
 
-function normalizeAccountAbstraction(value: unknown): AccountAbstraction {
-	if (value && typeof value === "object" && "abstraction" in value) {
-		return normalizeAccountAbstraction((value as { abstraction?: unknown }).abstraction);
+export function normalizeAccountAbstraction(value: unknown): AccountAbstraction {
+	if (value && typeof value === "object") {
+		if (!("abstraction" in value)) return "unknown";
+		const abstraction = (value as { abstraction?: unknown }).abstraction;
+		return abstraction === undefined ? "unknown" : normalizeAccountAbstraction(abstraction);
 	}
 
 	if (value === "unifiedAccount" || value === "u") return "unifiedAccount";
 	if (value === "portfolioMargin" || value === "p") return "portfolioMargin";
-	if (value === "disabled" || value === "default" || value === "i") return "disabled";
+	if (value === "disabled" || value === "i") return "disabled";
+	if (value === "default") return "default";
 	if (value === "dexAbstraction") return "dexAbstraction";
-	return null;
+	return value === undefined || value === null ? null : "unknown";
 }
 
-async function fetchUserAbstraction(
-	user: string,
-	isTestnet: boolean,
-	signal: AbortSignal,
-): Promise<AccountAbstraction> {
-	const response = await fetch(isTestnet ? TESTNET_INFO_URL : MAINNET_INFO_URL, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ type: "userAbstraction", user }),
-		signal,
-	});
-
-	if (!response.ok) {
-		throw new Error(`Failed to load user abstraction: ${response.status}`);
+export function resolveAccountAbstraction(infoValue: unknown, webDataValue: unknown): AccountAbstraction {
+	const infoAbstraction = normalizeAccountAbstraction(infoValue);
+	const webDataAbstraction = normalizeAccountAbstraction(webDataValue);
+	if (infoAbstraction !== null && webDataAbstraction !== null && infoAbstraction !== webDataAbstraction) {
+		return "unknown";
 	}
-
-	return normalizeAccountAbstraction(await response.json());
+	return infoAbstraction ?? webDataAbstraction;
 }
 
 export function useUserAbstraction(user: string | undefined, enabled: boolean) {
-	const { isTestnet } = useHyperliquid();
-
-	return useQuery({
-		queryKey: ["hl", "userAbstraction", isTestnet, user],
-		queryFn: ({ signal }) => fetchUserAbstraction(user as string, isTestnet, signal),
-		enabled: enabled && !!user,
-		staleTime: 30_000,
-		retry: 1,
-	});
+	return useInfo(
+		"userAbstraction",
+		{ user: user ?? "" },
+		{
+			enabled: enabled && !!user,
+			refetchInterval: enabled && user ? 30_000 : false,
+			refetchIntervalInBackground: false,
+			refetchOnWindowFocus: true,
+			staleTime: 30_000,
+			retry: 1,
+			select: normalizeAccountAbstraction,
+		},
+	);
 }
 
 export interface AllDexsAccountState {
@@ -127,8 +126,7 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	);
 	const { data: infoAccountAbstraction, status: accountAbstractionStatus } = useUserAbstraction(address, enabled);
 
-	const accountAbstraction =
-		infoAccountAbstraction ?? normalizeAccountAbstraction(webData3Event?.userState.abstraction) ?? null;
+	const accountAbstraction = resolveAccountAbstraction(infoAccountAbstraction, webData3Event?.userState.abstraction);
 	const accountRefreshKey = [ledgerRefreshKey, accountAbstraction].filter(Boolean).join(":") || undefined;
 	const { data: clearinghouseEvent, status: perpStatus } = useSubscription(
 		"allDexsClearinghouseState",
@@ -183,7 +181,10 @@ export function useAllDexsAccountState(): AllDexsAccountState {
 	const isSpotStateLoading = spotStateStatus === "loading";
 	const isLoading =
 		perpStatus === "subscribing" || perpStatus === "idle" || accountAbstractionLoading || isSpotStateLoading;
-	const hasError = perpStatus === "error" || spotStateStatus === "error";
+	const hasAccountAbstractionError =
+		accountAbstractionStatus === "error" &&
+		!isSupportedAccountAbstraction(normalizeAccountAbstraction(webData3Event?.userState.abstraction));
+	const hasError = perpStatus === "error" || spotStateStatus === "error" || hasAccountAbstractionError;
 
 	return {
 		clearinghouseStates,

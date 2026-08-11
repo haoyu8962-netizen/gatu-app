@@ -15,6 +15,7 @@ const clients = vi.hoisted(() => {
 	const updateLeverage = vi.fn(async () => response);
 	const userPortfolioMargin = vi.fn(async () => response);
 	const userSetAbstraction = vi.fn(async () => response);
+	const withdraw3 = vi.fn(async () => response);
 	return {
 		agentPublicKey: "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf" as const,
 		agentSetAbstraction,
@@ -29,9 +30,11 @@ const clients = vi.hoisted(() => {
 		user: {
 			userPortfolioMargin,
 			userSetAbstraction,
+			withdraw3,
 		},
 		userPortfolioMargin,
 		userSetAbstraction,
+		withdraw3,
 	};
 });
 
@@ -66,6 +69,7 @@ interface CapturedMutations {
 	updateLeverage: (params: ExchangeParams<"updateLeverage">) => Promise<unknown>;
 	userPortfolioMargin: (params: ExchangeParams<"userPortfolioMargin">) => Promise<unknown>;
 	userSetAbstraction: (params: ExchangeParams<"userSetAbstraction">) => Promise<unknown>;
+	withdraw3: (params: ExchangeParams<"withdraw3">) => Promise<unknown>;
 }
 
 const USER = "0x1234567890abcdef1234567890abcdef12345678";
@@ -80,6 +84,10 @@ const updateIsolatedMarginExecutionGuard = vi.fn((_params: ExchangeParams<"updat
 });
 const updateLeverageExecutionGuard = vi.fn((_params: ExchangeParams<"updateLeverage">) => {
 	if (!isolatedExecutionAllowedRef.current) throw new Error(EXECUTION_BLOCKED_MESSAGE);
+});
+const withdrawalRouteAllowedRef = { current: true };
+const withdrawalPreExecutionGuard = vi.fn(async (_params: ExchangeParams<"withdraw3">) => {
+	if (!withdrawalRouteAllowedRef.current) throw new Error("The withdrawal route changed before signing");
 });
 
 function installExclusiveLockManager() {
@@ -126,6 +134,7 @@ describe("useExchange portfolio margin policy", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		isolatedExecutionAllowedRef.current = true;
+		withdrawalRouteAllowedRef.current = true;
 		window.localStorage.clear();
 		installExclusiveLockManager();
 		providerState.exchangeLifecycle.active = true;
@@ -177,6 +186,7 @@ describe("useExchange portfolio margin policy", () => {
 		});
 		const userPortfolioMargin = useExchange("userPortfolioMargin");
 		const userSetAbstraction = useExchange("userSetAbstraction");
+		const withdraw3 = useExchange("withdraw3", { preExecutionGuard: withdrawalPreExecutionGuard });
 
 		capturedMutations = {
 			agentSetAbstraction: agentSetAbstraction.mutateAsync,
@@ -184,6 +194,7 @@ describe("useExchange portfolio margin policy", () => {
 			updateLeverage: updateLeverage.mutateAsync,
 			userPortfolioMargin: userPortfolioMargin.mutateAsync,
 			userSetAbstraction: userSetAbstraction.mutateAsync,
+			withdraw3: withdraw3.mutateAsync,
 		};
 		return null;
 	}
@@ -374,6 +385,52 @@ describe("useExchange portfolio margin policy", () => {
 		expect(clients.updateLeverage).toHaveBeenCalledTimes(1);
 	});
 
+	it("runs async pre-execution guards after queueing and before the SDK signing boundary", async () => {
+		renderPolicy(false);
+		let releaseFirstRequest = () => {};
+		let markFirstRequestStarted = () => {};
+		const firstRequestStarted = new Promise<void>((resolve) => {
+			markFirstRequestStarted = resolve;
+		});
+		const firstRequestResponse = new Promise<typeof clients.response>((resolve) => {
+			releaseFirstRequest = () => resolve(clients.response);
+		});
+		clients.userSetAbstraction.mockImplementationOnce(async () => {
+			markFirstRequestStarted();
+			return firstRequestResponse;
+		});
+
+		const mutations = capturedMutations;
+		if (!mutations) throw new Error("Mutation hooks were not captured");
+		let firstRequest: Promise<unknown> | undefined;
+		await act(async () => {
+			firstRequest = mutations.userSetAbstraction({ user: USER, abstraction: "unifiedAccount" });
+			await firstRequestStarted;
+		});
+		let queuedWithdrawal: Promise<unknown> | undefined;
+		await act(async () => {
+			queuedWithdrawal = mutations.withdraw3({ destination: USER, amount: "10" });
+			await Promise.resolve();
+		});
+		expect(withdrawalPreExecutionGuard).not.toHaveBeenCalled();
+
+		withdrawalRouteAllowedRef.current = false;
+		await act(async () => {
+			releaseFirstRequest();
+			await expect(firstRequest).resolves.toEqual(clients.response);
+			await expect(queuedWithdrawal).rejects.toThrow("The withdrawal route changed before signing");
+		});
+		expect(withdrawalPreExecutionGuard).toHaveBeenCalledTimes(1);
+		expect(clients.withdraw3).not.toHaveBeenCalled();
+
+		withdrawalRouteAllowedRef.current = true;
+		await act(async () => {
+			await expect(mutations.withdraw3({ destination: USER, amount: "10" })).resolves.toEqual(clients.response);
+		});
+		expect(withdrawalPreExecutionGuard).toHaveBeenCalledTimes(2);
+		expect(clients.withdraw3).toHaveBeenCalledTimes(1);
+	});
+
 	it("fails closed at runtime when guarded methods bypass their required TypeScript option", async () => {
 		let mutationsWithoutGuards: {
 			topUpIsolatedOnlyMargin: (params: ExchangeParams<"topUpIsolatedOnlyMargin">) => Promise<unknown>;
@@ -414,6 +471,34 @@ describe("useExchange portfolio margin policy", () => {
 		});
 		expect(clients.updateLeverage).not.toHaveBeenCalled();
 		expect(clients.updateIsolatedMargin).not.toHaveBeenCalled();
+	});
+
+	it("rejects asynchronous pre-execution guards on trading-client methods", async () => {
+		let mutateWithPreExecutionGuard: CapturedMutations["agentSetAbstraction"] | null = null;
+		const preExecutionGuard = vi.fn(async () => {});
+		function TradingGuardProbe() {
+			const mutation = useExchange("agentSetAbstraction", { preExecutionGuard });
+			mutateWithPreExecutionGuard = mutation.mutateAsync;
+			return null;
+		}
+
+		act(() => {
+			root.render(
+				<QueryClientProvider client={queryClient}>
+					<HyperliquidExchangePolicyProvider portfolioMarginActivationEnabled>
+						<TradingGuardProbe />
+					</HyperliquidExchangePolicyProvider>
+				</QueryClientProvider>,
+			);
+		});
+
+		await act(async () => {
+			await expect(mutateWithPreExecutionGuard?.({ abstraction: "u" })).rejects.toThrow(
+				"Pre-execution guards are supported only for user-signed methods",
+			);
+		});
+		expect(preExecutionGuard).not.toHaveBeenCalled();
+		expect(clients.agentSetAbstraction).not.toHaveBeenCalled();
 	});
 
 	it("rejects asynchronous execution guards before scheduling an SDK request", async () => {

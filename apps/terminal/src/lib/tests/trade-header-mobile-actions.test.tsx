@@ -25,6 +25,11 @@ describe("TradeHeader mobile margin actions", () => {
 	});
 
 	function renderHeader(callbacks: {
+		accountMode?: "disabled" | "unifiedAccount" | "portfolioMargin" | "default";
+		isLeveraged?: boolean;
+		layout?: "desktop" | "mobile";
+		marketKind?: "perp" | "spot";
+		onAccountModeClick?: () => void;
 		onLeverageClick?: () => void;
 		onMarginLeverageClick?: () => void;
 		onMarginModeClick?: () => void;
@@ -32,13 +37,14 @@ describe("TradeHeader mobile margin actions", () => {
 		act(() => {
 			root.render(
 				<TradeHeader
-					accountMode="unifiedAccount"
-					isLeveraged
-					layout="mobile"
+					accountMode={callbacks.accountMode ?? "unifiedAccount"}
+					isLeveraged={callbacks.isLeveraged ?? true}
+					layout={callbacks.layout ?? "mobile"}
 					leverage={10}
 					marginMode="cross"
-					marketKind="perp"
+					marketKind={callbacks.marketKind ?? "perp"}
 					onOrderTypeChange={vi.fn()}
+					onAccountModeClick={callbacks.onAccountModeClick ?? vi.fn()}
 					onSideChange={vi.fn()}
 					orderType="market"
 					side="buy"
@@ -76,6 +82,35 @@ describe("TradeHeader mobile margin actions", () => {
 		act(() => getButton(container, "10x").click());
 
 		expect(onMarginLeverageClick).toHaveBeenCalledTimes(2);
+	});
+
+	it("keeps account mode reachable on mobile spot markets", () => {
+		const onAccountModeClick = vi.fn();
+		renderHeader({
+			accountMode: "default",
+			isLeveraged: false,
+			marketKind: "spot",
+			onAccountModeClick,
+		});
+
+		act(() => getButton(container, "Select mode").click());
+		expect(onAccountModeClick).toHaveBeenCalledOnce();
+	});
+
+	it("keeps account mode reachable on desktop spot markets", () => {
+		const onAccountModeClick = vi.fn();
+		renderHeader({
+			accountMode: "default",
+			isLeveraged: false,
+			layout: "desktop",
+			marketKind: "spot",
+			onAccountModeClick,
+		});
+
+		const accountModeButton = container.querySelector<HTMLButtonElement>('button[aria-label="Account mode"]');
+		if (!accountModeButton) throw new Error("Expected desktop account mode button");
+		act(() => accountModeButton.click());
+		expect(onAccountModeClick).toHaveBeenCalledOnce();
 	});
 });
 

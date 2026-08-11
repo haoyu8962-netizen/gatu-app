@@ -69,6 +69,8 @@ const modalActions = vi.hoisted(() => ({
 }));
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
+	isSupportedAccountAbstraction: (value: unknown) =>
+		value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin",
 	useDefaultDexBalances: () => ({
 		...balanceSnapshot,
 		accountAbstraction: testState.accountAbstraction,

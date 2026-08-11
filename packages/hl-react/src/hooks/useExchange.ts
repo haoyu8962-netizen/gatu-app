@@ -23,11 +23,21 @@ export type IsolatedManagementExchangeMethod = "topUpIsolatedOnlyMargin" | "upda
 /** Runs before enqueue and again at the SDK boundary; keep it synchronous and read volatile state from refs. */
 export type ExchangeExecutionGuard<M extends ExchangeMethod> = (params: ExchangeParams<M>) => void;
 
+/**
+ * Runs for user-signed methods under the signing-session lock after queueing and immediately before the SDK call.
+ * Honor the signal and do not call another Exchange mutation or signing-session API from this guard.
+ */
+export type ExchangePreExecutionGuard<M extends ExchangeMethod> = (
+	params: ExchangeParams<M>,
+	signal: AbortSignal,
+) => Promise<void>;
+
 export type ExchangeMutationOptions<M extends ExchangeMethod> = MutationParameter<
 	ExchangeResponse<M>,
 	ExchangeParams<M>
 > & {
 	executionGuard?: ExchangeExecutionGuard<M>;
+	preExecutionGuard?: ExchangePreExecutionGuard<M>;
 };
 
 export type GuardedExchangeMutationOptions<M extends IsolatedManagementExchangeMethod> = Omit<
@@ -39,6 +49,7 @@ export type GuardedExchangeMutationOptions<M extends IsolatedManagementExchangeM
 
 const EXECUTION_GUARD_REQUIRED_MESSAGE = "An execution guard is required for isolated margin management";
 const ASYNC_EXECUTION_GUARD_MESSAGE = "Execution guards must complete synchronously";
+const PRE_EXECUTION_GUARD_USER_CLIENT_MESSAGE = "Pre-execution guards are supported only for user-signed methods";
 
 function requiresExecutionGuard(method: ExchangeMethod): method is IsolatedManagementExchangeMethod {
 	return method === "topUpIsolatedOnlyMargin" || method === "updateIsolatedMargin" || method === "updateLeverage";
@@ -75,7 +86,7 @@ export function useExchange<M extends ExchangeMethod>(
 	const { agentPublicKey, trading, user, userWalletMismatch } = useHyperliquidClients();
 	const { builderConfig, clientKey, env, exchangeLifecycle, sessionMode } = useHyperliquid();
 	const portfolioMarginActivationEnabled = usePortfolioMarginActivationPolicy();
-	const { executionGuard, ...mutationOptions } = options;
+	const { executionGuard, preExecutionGuard, ...mutationOptions } = options;
 
 	const config = getExchangeMethodConfig(method);
 	const exchange = config.client === "user" ? user : trading;
@@ -83,6 +94,7 @@ export function useExchange<M extends ExchangeMethod>(
 	const mutationKey = config.useClientKey ? ["hl", method, clientKey] : ["hl", method];
 
 	const mutationFn = (params: ExchangeParams<M>): Promise<ExchangeResponse<M>> => {
+		if (preExecutionGuard && config.client !== "user") throw new Error(PRE_EXECUTION_GUARD_USER_CLIENT_MESSAGE);
 		assertExchangeMutationAllowed(method, params, portfolioMarginActivationEnabled);
 		const requestParams =
 			params != null && typeof params === "object" && !Array.isArray(params)
@@ -126,6 +138,7 @@ export function useExchange<M extends ExchangeMethod>(
 					registrationLease,
 					() => exchangeLifecycle.active,
 					() => Promise.resolve(start()),
+					preExecutionGuard ? (signal) => preExecutionGuard(requestParams as ExchangeParams<M>, signal) : undefined,
 				);
 				return guarded.status === "started" ? await guarded.execution : { status: "invalidated" };
 			},

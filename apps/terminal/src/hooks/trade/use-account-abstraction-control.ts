@@ -2,45 +2,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
-import { useExchange, useHyperliquid, useHyperliquidClients } from "@/lib/hyperliquid";
-import { type AccountAbstraction, useUserAbstraction } from "./use-account-balances";
+import { infoKey, useExchange, useHyperliquid, useHyperliquidClients } from "@/lib/hyperliquid";
+import {
+	type AccountAbstraction,
+	isSupportedAccountAbstraction,
+	type SupportedAccountAbstraction,
+	useUserAbstraction,
+} from "./use-account-balances";
 
-export type SelectableAccountAbstraction = "disabled" | "unifiedAccount" | "portfolioMargin";
-
-const USER_PREFERENCE_STORAGE_PREFIX = "gatu:account-mode:user-preference";
-
-function getPreferenceStorageKey(isTestnet: boolean, address: string): string {
-	return `${USER_PREFERENCE_STORAGE_PREFIX}:${isTestnet ? "testnet" : "mainnet"}:${address.toLowerCase()}`;
-}
-
-export function readAccountModePreference(
-	isTestnet: boolean,
-	address: string | null | undefined,
-): SelectableAccountAbstraction | null {
-	if (typeof window === "undefined" || !address) return null;
-	try {
-		const value = window.localStorage.getItem(getPreferenceStorageKey(isTestnet, address));
-		return isSelectableAccountAbstraction(value) ? value : null;
-	} catch {
-		return null;
-	}
-}
-
-function writeAccountModePreference(isTestnet: boolean, address: string, value: SelectableAccountAbstraction): void {
-	if (typeof window === "undefined") return;
-	try {
-		window.localStorage.setItem(getPreferenceStorageKey(isTestnet, address), value);
-	} catch {
-		// A blocked preference write should not block the account mode action.
-	}
-}
-
-function isSelectableAccountAbstraction(value: unknown): value is SelectableAccountAbstraction {
-	return value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin";
-}
+export type SelectableAccountAbstraction = SupportedAccountAbstraction;
 
 export function toSelectableAccountAbstraction(value: AccountAbstraction): SelectableAccountAbstraction | null {
-	return isSelectableAccountAbstraction(value) ? value : null;
+	return isSupportedAccountAbstraction(value) ? value : null;
 }
 
 export function assertPortfolioMarginActivationAllowed(
@@ -55,40 +28,48 @@ export function assertPortfolioMarginActivationAllowed(
 
 export function useAccountAbstractionControl() {
 	const queryClient = useQueryClient();
-	const { isTestnet } = useHyperliquid();
+	const { env } = useHyperliquid();
 	const { user: userExchangeClient } = useHyperliquidClients();
 	const { address, hasWalletAccess } = useWalletSession();
-	const { data: accountAbstraction, fetchStatus } = useUserAbstraction(address, hasWalletAccess);
+	const { data: accountAbstraction, isLoading: isAccountAbstractionLoading } = useUserAbstraction(
+		address,
+		hasWalletAccess,
+	);
 	const { mutateAsync: setAbstraction, isPending } = useExchange("userSetAbstraction");
 
 	const canSet = hasWalletAccess && !!address && !!userExchangeClient;
-	const selectedAccountAbstraction = toSelectableAccountAbstraction(accountAbstraction ?? null);
+	const currentAccountAbstraction = accountAbstraction ?? null;
+	const selectableAccountAbstraction = toSelectableAccountAbstraction(currentAccountAbstraction);
 
 	const setAccountAbstraction = useCallback(
 		async (nextAccountAbstraction: SelectableAccountAbstraction) => {
 			if (!address || !canSet) {
 				throw new Error("Wallet is not ready to update account mode");
 			}
-			assertPortfolioMarginActivationAllowed(selectedAccountAbstraction, nextAccountAbstraction);
+			if (currentAccountAbstraction === nextAccountAbstraction) return false;
+			assertPortfolioMarginActivationAllowed(selectableAccountAbstraction, nextAccountAbstraction);
 
 			await setAbstraction({
 				user: address,
 				abstraction: nextAccountAbstraction,
 			});
 
-			writeAccountModePreference(isTestnet, address, nextAccountAbstraction);
 			await Promise.all([
-				queryClient.invalidateQueries({ queryKey: ["hl", "userAbstraction"] }),
+				queryClient.invalidateQueries({
+					queryKey: infoKey("userAbstraction", { user: address }, env),
+					exact: true,
+				}),
 				queryClient.invalidateQueries({ queryKey: ["hl", "info", "clearinghouseState"] }),
 				queryClient.invalidateQueries({ queryKey: ["hl", "info", "spotClearinghouseState"] }),
 			]);
+			return true;
 		},
-		[address, canSet, isTestnet, queryClient, selectedAccountAbstraction, setAbstraction],
+		[address, canSet, currentAccountAbstraction, env, queryClient, selectableAccountAbstraction, setAbstraction],
 	);
 
 	return {
-		accountAbstraction: selectedAccountAbstraction,
-		isLoading: fetchStatus === "fetching",
+		accountAbstraction: currentAccountAbstraction,
+		isLoading: isAccountAbstractionLoading,
 		isUpdating: isPending,
 		canSet,
 		portfolioMarginActivationEnabled: PORTFOLIO_MARGIN_FEATURES.activationEnabled,

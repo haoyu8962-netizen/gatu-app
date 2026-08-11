@@ -36,6 +36,8 @@ const testState = vi.hoisted(() => ({
 		spotSend: vi.fn(),
 		usdClassTransfer: vi.fn(),
 	},
+	exchangeGuards: new Map<string, (_params: unknown, signal: AbortSignal) => Promise<void>>(),
+	assertAccountAbstraction: vi.fn(),
 }));
 
 function renderChildren(children: ReactNode) {
@@ -94,22 +96,35 @@ vi.mock("@/components/ui/number-input", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
+	isSupportedAccountAbstraction: (value: unknown) =>
+		value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin",
 	isTokenSpotBalance: (balance: object) => "token" in balance,
 	useDefaultDexBalances: () => testState.balances,
 }));
 
+vi.mock("@/hooks/trade/use-account-abstraction-guard", () => ({
+	useAccountAbstractionPreExecutionGuard: () => testState.assertAccountAbstraction,
+}));
+
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
+		address: "0x1111111111111111111111111111111111111111",
 		hasWalletAccess: true,
 		walletAddress: "0x1111111111111111111111111111111111111111",
 	}),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
-	useExchange: (method: keyof typeof testState.exchangeMutations) => ({
-		isPending: false,
-		mutateAsync: testState.exchangeMutations[method],
-	}),
+	useExchange: (
+		method: keyof typeof testState.exchangeMutations,
+		options?: { preExecutionGuard?: (_params: unknown, signal: AbortSignal) => Promise<void> },
+	) => {
+		if (options?.preExecutionGuard) testState.exchangeGuards.set(method, options.preExecutionGuard);
+		return {
+			isPending: false,
+			mutateAsync: testState.exchangeMutations[method],
+		};
+	},
 }));
 
 vi.mock("@/lib/hyperliquid/markets/use-spot-tokens", () => ({
@@ -149,6 +164,9 @@ describe("funds action balance wiring", () => {
 
 	beforeEach(() => {
 		testState.balances.accountAbstraction = "disabled";
+		testState.exchangeGuards.clear();
+		testState.assertAccountAbstraction.mockReset();
+		testState.assertAccountAbstraction.mockResolvedValue(undefined);
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -224,5 +242,37 @@ describe("funds action balance wiring", () => {
 			token: "USDC:0",
 		});
 		expect(testState.exchangeMutations.spotSend).not.toHaveBeenCalled();
+	});
+
+	it("blocks mode-dependent fund actions until the account mode is supported", () => {
+		testState.balances.accountAbstraction = "default";
+		act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+
+		expect(container.textContent).toContain("Select a supported account mode before moving funds.");
+		expect(container.textContent).not.toContain("40.00 USDC");
+		expect(container.textContent).not.toContain("4964.51 USDC");
+		expect(container.querySelector('input[aria-label="Amount"]')).toBeNull();
+		expect(getButton(container, "Transfer").disabled).toBe(true);
+
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		expect(container.textContent).toContain("Select a supported account mode before moving funds.");
+		expect(container.textContent).not.toContain("40.00 USDC");
+		expect(container.textContent).not.toContain("4964.51 USDC");
+		expect(getButton(container, "Send").disabled).toBe(true);
+	});
+
+	it("wires the fresh mode check into each mode-dependent SDK boundary", async () => {
+		act(() => root.render(createElement(SendModal, { onOpenChange: vi.fn(), open: true })));
+		const signal = new AbortController().signal;
+
+		await testState.exchangeGuards.get("sendAsset")?.({}, signal);
+		await testState.exchangeGuards.get("spotSend")?.({}, signal);
+		expect(testState.assertAccountAbstraction).toHaveBeenCalledTimes(2);
+		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(1, signal);
+		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(2, signal);
+
+		act(() => root.render(createElement(TransferModal, { onOpenChange: vi.fn(), open: true })));
+		await testState.exchangeGuards.get("usdClassTransfer")?.({}, signal);
+		expect(testState.assertAccountAbstraction).toHaveBeenNthCalledWith(3, signal);
 	});
 });

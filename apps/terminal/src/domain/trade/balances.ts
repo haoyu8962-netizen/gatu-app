@@ -1,6 +1,7 @@
 import type { SpotMarket } from "@gatu/hl-react";
 import Big from "big.js";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import { isSupportedAccountAbstraction } from "@/domain/trade/account-abstraction";
 import type {
 	AccountAbstraction,
 	MarginSummary,
@@ -126,10 +127,11 @@ export function isQuoteBalanceSharedWithPerps(accountAbstraction: AccountAbstrac
 	return accountAbstraction === "unifiedAccount" || accountAbstraction === "portfolioMargin";
 }
 
-export type BalanceAccountMode = "unified" | "portfolioMargin" | "separate";
+export type BalanceAccountMode = "unified" | "portfolioMargin" | "separate" | "unavailable";
 
 export interface AccountBalanceSummary {
 	mode: BalanceAccountMode;
+	isAvailable: boolean;
 	usesSpotStateForPerps: boolean;
 	accountEquity: number;
 	balance: number;
@@ -179,7 +181,8 @@ interface PerpDexCollateralToken {
 function getBalanceMode(accountAbstraction: AccountAbstraction | null | undefined): BalanceAccountMode {
 	if (accountAbstraction === "unifiedAccount") return "unified";
 	if (accountAbstraction === "portfolioMargin") return "portfolioMargin";
-	return "separate";
+	if (accountAbstraction === "disabled") return "separate";
+	return "unavailable";
 }
 
 export function getPerpRiskSummaryValue(states: PerpRiskState[]): PerpRiskSummaryValue {
@@ -297,6 +300,7 @@ export function getAccountEquityValue({
 	spotBalances: SpotBalance[] | null | undefined;
 	tokenUsdPrices?: TokenUsdPrices;
 }): string {
+	if (!isSupportedAccountAbstraction(accountAbstraction)) return "0";
 	if (isQuoteBalanceSharedWithPerps(accountAbstraction)) {
 		return getSpotAccountValueValue(spotBalances, tokenUsdPrices);
 	}
@@ -339,9 +343,31 @@ export function getAccountBalanceSummary({
 	const perpWithdrawable = toSafeBig(withdrawable).toNumber();
 	const perpMarginUsed = toSafeBig(marginSummary?.totalMarginUsed ?? perpSummary?.totalMarginUsed).toNumber();
 	const perpTotalRawUsd = toSafeBig(marginSummary?.totalRawUsd).toNumber();
+	if (mode === "unavailable") {
+		return {
+			mode,
+			isAvailable: false,
+			usesSpotStateForPerps: false,
+			accountEquity: 0,
+			balance: 0,
+			available: 0,
+			withdrawable: 0,
+			spotUsdcWithdrawable: 0,
+			spotUsdcTotal: 0,
+			spotUsdcAvailable: 0,
+			spotUsdcHold: 0,
+			spotAccountValue: 0,
+			perpAccountValue: 0,
+			perpWithdrawable: 0,
+			perpMarginUsed: 0,
+			perpTotalRawUsd: 0,
+			hasSpotFundsWhenPerpWithdrawableZero: false,
+		};
+	}
 
 	return {
 		mode,
+		isAvailable: true,
 		usesSpotStateForPerps,
 		accountEquity: usesSpotStateForPerps ? spotAccountValue : perpAccountValue,
 		balance: usesSpotStateForPerps ? spotAccountValue : perpTotalRawUsd,
@@ -475,11 +501,12 @@ export function getAvailableBalanceToken(market: UnifiedMarketInfo | undefined, 
 
 export function getPerpBalanceRows(
 	perpSummary: PerpSummary | null | undefined,
-	spotBalances?: SpotBalance[] | null,
-	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null,
-	accountAbstraction?: AccountAbstraction | null,
+	spotBalances: SpotBalance[] | null | undefined,
+	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance | null | undefined,
+	accountAbstraction: AccountAbstraction | null,
 	withdrawable?: string | number | null,
 ): BalanceRow[] {
+	if (!isSupportedAccountAbstraction(accountAbstraction)) return [];
 	if (isQuoteBalanceSharedWithPerps(accountAbstraction)) {
 		const quoteBalance = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
 		const quoteTotal = toBig(quoteBalance?.total);
@@ -532,10 +559,11 @@ export function getPerpBalanceRows(
 
 export function getSpotBalanceRows(
 	spotBalances: SpotBalance[] | null | undefined,
-	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null,
-	accountAbstraction?: AccountAbstraction | null,
+	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance | null | undefined,
+	accountAbstraction: AccountAbstraction | null,
 	tokenUsdPrices?: TokenUsdPrices,
 ): BalanceRow[] {
+	if (!isSupportedAccountAbstraction(accountAbstraction)) return [];
 	const rows: BalanceRow[] = [];
 	const shouldHideSharedQuote = isQuoteBalanceSharedWithPerps(accountAbstraction);
 
@@ -563,8 +591,8 @@ export function getSpotBalanceRows(
 export function getBalanceRows(
 	perpSummary: PerpSummary | null | undefined,
 	spotBalances: SpotBalance[] | null | undefined,
-	spotAvailableAfterMaintenance?: SpotAvailableAfterMaintenance | null,
-	accountAbstraction?: AccountAbstraction | null,
+	spotAvailableAfterMaintenance: SpotAvailableAfterMaintenance | null | undefined,
+	accountAbstraction: AccountAbstraction | null,
 	withdrawable?: string | number | null,
 	tokenUsdPrices?: TokenUsdPrices,
 ): BalanceRow[] {

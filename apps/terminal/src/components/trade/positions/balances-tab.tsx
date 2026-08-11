@@ -13,7 +13,7 @@ import {
 	getSpotBalanceRows,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -79,6 +79,7 @@ export function BalancesTab() {
 		hasError,
 	} = useDefaultDexBalances();
 	const mids = useSpotTokenUsdPrices(isConnected);
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 
 	const perpBalances = useMemo(
 		() =>
@@ -90,7 +91,7 @@ export function BalancesTab() {
 		[accountAbstraction, spotBalances, spotAvailableAfterMaintenance, mids],
 	);
 	const balances = useMemo(() => [...perpBalances, ...spotBalanceRows], [perpBalances, spotBalanceRows]);
-	const internalTransfersEnabled = !isQuoteBalanceSharedWithPerps(accountAbstraction);
+	const internalTransfersEnabled = accountModeReady && !isQuoteBalanceSharedWithPerps(accountAbstraction);
 	const summary = useMemo(
 		() =>
 			getTradingToolbarBalanceSummary({
@@ -136,8 +137,8 @@ export function BalancesTab() {
 		const decimals = row.type === "perp" ? 2 : (token?.szDecimals ?? 2);
 		const hasAvailableBalance = isTradingToolbarBalancePositive(row.available);
 		const canTransfer = internalTransfersEnabled && row.asset === DEFAULT_QUOTE_TOKEN && hasAvailableBalance;
-		const canSwap = row.type === "spot" && hasAvailableBalance;
-		const canWithdraw = row.asset === DEFAULT_QUOTE_TOKEN && hasAvailableBalance;
+		const canSwap = accountModeReady && row.type === "spot" && hasAvailableBalance;
+		const canWithdraw = accountModeReady && row.asset === DEFAULT_QUOTE_TOKEN && hasAvailableBalance;
 		const transferLabel = row.type === "perp" ? t`To Spot` : t`To Perp`;
 		return (
 			<TableRow key={`${row.type}-${row.asset}`} className={positionsPanelRowHoverClass}>
@@ -181,7 +182,7 @@ export function BalancesTab() {
 								{t`Swap`}
 							</Button>
 						)}
-						{hasAvailableBalance && (
+						{accountModeReady && hasAvailableBalance && (
 							<Button
 								variant="outline"
 								intent="neutral"
@@ -213,6 +214,9 @@ export function BalancesTab() {
 		if (!isConnected) return <Placeholder>{t`Connect your wallet to view balances.`}</Placeholder>;
 		if (hasError) return <Placeholder variant="error">{t`Failed to load balances.`}</Placeholder>;
 		if (isLoading) return <Placeholder>{t`Loading balances...`}</Placeholder>;
+		if (!accountModeReady) {
+			return <Placeholder variant="error">{t`Select a supported account mode to view balances.`}</Placeholder>;
+		}
 		if (balances.length === 0) {
 			return (
 				<Placeholder>
@@ -249,13 +253,17 @@ export function BalancesTab() {
 							{isSpotStateStale && isConnected && !isLoading && !hasError ? (
 								<SpinnerGapIcon className="size-3 animate-spin text-warning" aria-label={t`Loading...`} />
 							) : null}
-							{formatUSD(isConnected && !isLoading && !hasError ? summary.totalAssets : null, { compact: false })}
+							{formatUSD(isConnected && accountModeReady && !isLoading && !hasError ? summary.totalAssets : null, {
+								compact: false,
+							})}
 						</dd>
 					</div>
 					<div className="flex min-w-[7rem] flex-col gap-[3px]">
 						<dt className="text-[10px] leading-[14px] font-medium text-market-close-subtle">{t`Withdrawable`}</dt>
 						<dd className="m-0 text-sm leading-[17px] font-semibold text-market-close-fg tabular-nums">
-							{formatUSD(isConnected && !isLoading && !hasError ? summary.withdrawable : null, { compact: false })}
+							{formatUSD(isConnected && accountModeReady && !isLoading && !hasError ? summary.withdrawable : null, {
+								compact: false,
+							})}
 						</dd>
 					</div>
 				</dl>

@@ -75,7 +75,10 @@ vi.mock("@/lib/hyperliquid", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
+	isSupportedAccountAbstraction: (value: unknown) =>
+		value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin",
 	useDefaultDexBalances: () => ({
+		accountAbstraction: "disabled",
 		perpSummary: { accountValue: "0" },
 		spotBalances: [],
 		hasAllDexsSnapshot: storeState.snapshotsReady,

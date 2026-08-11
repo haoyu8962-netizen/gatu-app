@@ -19,6 +19,9 @@ import type { HyperliquidEnv } from "./types";
 
 const SESSION_STORAGE_PREFIX = "hyperliquid_agent_registration_session";
 const SESSION_RECORD_VERSION = 1;
+const PRE_EXECUTION_GUARD_TIMEOUT_MS = 10_000;
+const PRE_EXECUTION_GUARD_ACTIVE_OWNER_MESSAGE =
+	"Pre-execution guards cannot run with an active Agent-owner execution lease.";
 type AgentStorageRemovalFailureReason = Extract<AgentStorageRemovalResult, { status: "failed" }>["reason"];
 
 interface AgentRegistrationSessionRecord {
@@ -47,6 +50,15 @@ export interface AgentRegistrationExecutionLeaseOptions {
 export type AgentRegistrationExecutionStartResult<T> =
 	| { status: "started"; execution: Promise<T> }
 	| { status: "invalidated" };
+
+export type AgentRegistrationPreExecutionGuard = (signal: AbortSignal) => Promise<void>;
+
+export class AgentRegistrationPreExecutionGuardTimeoutError extends Error {
+	constructor() {
+		super("The pre-execution guard timed out before the signing request could start.");
+		this.name = "AgentRegistrationPreExecutionGuardTimeoutError";
+	}
+}
 
 export type AgentRegistrationSessionFailureReason =
 	| "lock_unavailable"
@@ -231,6 +243,26 @@ function matchesExecutionLease(lease: AgentRegistrationExecutionLease): boolean 
 	);
 }
 
+async function runPreExecutionGuard(guard: AgentRegistrationPreExecutionGuard): Promise<void> {
+	const controller = new AbortController();
+	let timeout: ReturnType<typeof setTimeout> | undefined;
+	try {
+		await Promise.race([
+			guard(controller.signal),
+			new Promise<never>((_, reject) => {
+				timeout = setTimeout(() => {
+					const error = new AgentRegistrationPreExecutionGuardTimeoutError();
+					reject(error);
+					controller.abort(error);
+				}, PRE_EXECUTION_GUARD_TIMEOUT_MS);
+			}),
+		]);
+	} finally {
+		if (timeout !== undefined) clearTimeout(timeout);
+		controller.abort();
+	}
+}
+
 async function clearMatchingActiveOwner(env: HyperliquidEnv, owner: Address): Promise<boolean> {
 	return clearActiveAgentOwnerForRegistration(env, owner);
 }
@@ -293,8 +325,11 @@ export async function startAgentRegistrationExecution<T>(
 	lease: AgentRegistrationExecutionLease,
 	canStart: () => boolean,
 	execute: () => Promise<T>,
+	preExecutionGuard?: AgentRegistrationPreExecutionGuard,
 ): Promise<AgentRegistrationExecutionStartResult<T>> {
+	if (preExecutionGuard && lease.activeOwner) throw new Error(PRE_EXECUTION_GUARD_ACTIVE_OWNER_MESSAGE);
 	const invalidated = { status: "invalidated" } as const;
+	const guardFailure: { error: unknown; failed: boolean } = { error: undefined, failed: false };
 	const start = (): AgentRegistrationExecutionStartResult<T> => {
 		let allowed = false;
 		try {
@@ -318,10 +353,21 @@ export async function startAgentRegistrationExecution<T>(
 		lease.epoch.owner,
 		async () => {
 			if (!matchesExecutionLease(lease)) return invalidated;
+			if (preExecutionGuard) {
+				try {
+					await runPreExecutionGuard(preExecutionGuard);
+				} catch (error) {
+					guardFailure.error = error;
+					guardFailure.failed = true;
+					return invalidated;
+				}
+				if (!matchesExecutionLease(lease)) return invalidated;
+			}
 			if (!lease.activeOwner) return start();
 			return (await runWithActiveAgentOwnerExecutionLease(lease.activeOwner, start)) ?? invalidated;
 		},
 	);
+	if (guardFailure.failed) throw guardFailure.error;
 	return result ?? invalidated;
 }
 

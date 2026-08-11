@@ -290,11 +290,10 @@ export function TradePanel() {
 
 	const handleAccountModeChange = useCallback(
 		async (nextAccountMode: SelectableAccountAbstraction) => {
-			if (nextAccountMode === accountModeControl.accountAbstraction) return;
-			await accountModeControl.setAccountAbstraction(nextAccountMode);
-			toast.success(t`Account mode updated`);
+			const didUpdate = await accountModeControl.setAccountAbstraction(nextAccountMode);
+			if (didUpdate) toast.success(t`Account mode updated`);
 		},
-		[accountModeControl.accountAbstraction, accountModeControl.setAccountAbstraction, t],
+		[accountModeControl.setAccountAbstraction, t],
 	);
 
 	const handleMarginModalOpenChange = useCallback(
@@ -490,7 +489,7 @@ export function TradePanel() {
 				currentMode={accountModeControl.accountAbstraction}
 				isLoading={accountModeControl.isLoading}
 				isUpdating={accountModeControl.isUpdating}
-				canChange={capabilities.isLeveraged && accountModeControl.canSet}
+				canChange={accountModeControl.canSet}
 				portfolioMarginActivationEnabled={accountModeControl.portfolioMarginActivationEnabled}
 				onConnect={() => setActiveModal("wallet")}
 				onApply={handleAccountModeChange}

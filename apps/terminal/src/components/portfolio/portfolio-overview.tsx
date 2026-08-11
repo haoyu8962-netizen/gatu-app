@@ -16,7 +16,7 @@ import {
 } from "@/domain/portfolio";
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
 import { applyReferralDiscountToFeeRate } from "@/domain/trade/fees";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
@@ -78,8 +78,9 @@ export function PortfolioOverview() {
 	const perpsSnapshot = getPortfolioSnapshot(portfolioQuery.data, "perps", period);
 	const earnBalance = calculateEarnBalance(borrowLendQuery.data, reserveStatesQuery.data);
 	const vaultEquity = calculateVaultEquity(vaultsQuery.data);
+	const accountModeReady = isSupportedAccountAbstraction(balances.accountAbstraction);
 	let perpAccountEquity: string | null = null;
-	if (!accountSummary.usesSpotStateForPerps && balances.accountAbstraction !== null && balances.hasAllDexsSnapshot) {
+	if (!accountSummary.usesSpotStateForPerps && accountModeReady && balances.hasAllDexsSnapshot) {
 		perpAccountEquity =
 			balances.accountAbstraction === "disabled"
 				? calculateAllDexPerpEquityUsd({
@@ -102,7 +103,7 @@ export function PortfolioOverview() {
 	});
 	const hasResolvedBalanceSources =
 		isConnected &&
-		balances.accountAbstraction !== null &&
+		accountModeReady &&
 		balances.hasSpotStateSnapshot &&
 		(accountSummary.usesSpotStateForPerps || (balances.hasAllDexsSnapshot && perpAccountEquity !== null));
 	const currentEquitySourcesAvailable =
@@ -119,7 +120,8 @@ export function PortfolioOverview() {
 				currentSourcesAvailable: currentEquitySourcesAvailable,
 			})
 		: null;
-	const spotAccountEquity = isConnected && balances.hasSpotStateSnapshot ? accountSummary.spotAccountValue : null;
+	const spotAccountEquity =
+		isConnected && accountModeReady && balances.hasSpotStateSnapshot ? accountSummary.spotAccountValue : null;
 	const displayedEarnBalance =
 		isConnected && borrowLendQuery.data !== undefined && reserveStatesQuery.data !== undefined ? earnBalance : null;
 	const fourteenDayVolume = calculateFourteenDayVolume(feesQuery.data?.dailyUserVlm);

@@ -53,6 +53,8 @@ vi.mock("@/domain/trade/balances", () => ({
 }));
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
+	isSupportedAccountAbstraction: (value: unknown) =>
+		value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin",
 	useDefaultDexBalances: () => mocks.balances,
 }));
 
@@ -231,6 +233,19 @@ describe("PortfolioOverview", () => {
 		expect(summaryValue(container, "Total Equity")).toBe("$500.00");
 		expect(summaryValue(container, "Perps Account Equity")).toBeUndefined();
 		expect(summaryValue(container, "Spot Account Equity")).toBe("$500.00");
+	});
+
+	it("does not present raw spot equity while the account mode is unresolved", () => {
+		mocks.balances.accountAbstraction = "default";
+		mocks.balances.hasSpotStateSnapshot = true;
+		mocks.accountSummary = {
+			...mocks.accountSummary,
+			spotAccountValue: 42,
+			usesSpotStateForPerps: false,
+		};
+		renderOverview(root);
+
+		expect(summaryValue(container, "Spot Account Equity")).toBe("—");
 	});
 
 	it("keeps valid zero values visible even after a background refresh error", () => {

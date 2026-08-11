@@ -5,7 +5,11 @@ import type { ReactNode } from "react";
 import { InfoRow, InfoRowGroup } from "@/components/ui/info-row";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { getAccountBalanceSummary, getPerpRiskSummary, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
-import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import {
+	isSupportedAccountAbstraction,
+	useDefaultDexBalances,
+	useSelectedDexBalances,
+} from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -36,6 +40,7 @@ export function AccountPanel() {
 	const selectedBalances = useSelectedDexBalances();
 	const defaultBalances = useDefaultDexBalances();
 	const accountAbstraction = selectedBalances.accountAbstraction;
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(accountAbstraction);
 	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
 	const tokenUsdPrices = useSpotTokenUsdPrices(isConnected);
@@ -70,7 +75,7 @@ export function AccountPanel() {
 		};
 	}
 
-	const hasPerpData = isConnected && perpMetrics !== null;
+	const hasPerpData = isConnected && accountModeReady && perpMetrics !== null;
 	const hasWalletAccess = sessionMode === "wallet";
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
 	const showBridgeEntry = shouldShowLiFiBridgeTab({
@@ -78,9 +83,11 @@ export function AccountPanel() {
 		hasExistingExecution: hasExistingBridgeExecution,
 		createNewRoute: LIFI_BRIDGE_FEATURES.createNewRoute,
 	});
-	const internalTransferDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
-		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-		: null;
+	const internalTransferDisabledReason = !accountModeReady
+		? t`Select a supported account mode before moving funds.`
+		: isQuoteBalanceSharedWithPerps(accountAbstraction)
+			? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+			: null;
 
 	const marginRatioTone = perpMetrics ? getMarginRatioTone(perpMetrics.marginRatio) : null;
 	const perpRows: SummaryRow[] = perpMetrics
@@ -162,6 +169,7 @@ export function AccountPanel() {
 							<Button
 								variant="outline"
 								intent="neutral"
+								disabled={!accountModeReady}
 								onClick={() => openDepositModal("withdraw")}
 								aria-label={t`Withdraw`}
 								iconLeft={<UploadSimpleIcon className="size-4" />}

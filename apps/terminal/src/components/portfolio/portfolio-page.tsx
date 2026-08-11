@@ -1,13 +1,18 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowsLeftRightIcon, DownloadSimpleIcon, PaperPlaneTiltIcon, UploadSimpleIcon } from "@phosphor-icons/react";
-import { Suspense } from "react";
+import { Suspense, useCallback, useState } from "react";
+import { toast } from "sonner";
 import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
 import { isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import {
+	type SelectableAccountAbstraction,
+	useAccountAbstractionControl,
+} from "@/hooks/trade/use-account-abstraction-control";
+import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
+import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
 import {
@@ -23,6 +28,7 @@ import { MobileBalancesTab } from "../trade/mobile/mobile-balances-tab";
 import { MobileHeader } from "../trade/mobile/mobile-header";
 import { MobilePositionsView } from "../trade/mobile/mobile-positions-view";
 import { TestnetBanner } from "../trade/testnet-banner";
+import { AccountModeModal } from "../trade/tradebox/account-mode-modal";
 import { PortfolioOverview } from "./portfolio-overview";
 
 const FooterBar = createLazyComponent(() => import("../trade/footer/footer-bar"), "FooterBar");
@@ -34,17 +40,31 @@ export function PortfolioPage() {
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
 	const { hasWalletAccess, isConnected } = useWalletSession();
+	const { reconnectWallet } = useReconnectWallet();
 	const { tradeRestricted } = useGeoRestriction();
 	const { accountAbstraction } = useDefaultDexBalances();
+	const accountModeControl = useAccountAbstractionControl();
+	const [accountModeModalOpen, setAccountModeModalOpen] = useState(false);
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();
 	const { open: openSendModal } = useSendModalActions();
 	const { openStablecoins: openStablecoinSwapModal } = useSwapModalActions();
 	const fundsActionsDisabled = !hasWalletAccess || tradeRestricted;
-	const internalTransferDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
-		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-		: null;
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
+	const modeDependentFundsActionsDisabled = fundsActionsDisabled || !accountModeReady;
+	const internalTransferDisabledReason = !accountModeReady
+		? t`Select a supported account mode before moving funds.`
+		: isQuoteBalanceSharedWithPerps(accountAbstraction)
+			? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+			: null;
 	const transferDisabled = fundsActionsDisabled || !!internalTransferDisabledReason;
+	const handleAccountModeChange = useCallback(
+		async (nextMode: SelectableAccountAbstraction) => {
+			const didUpdate = await accountModeControl.setAccountAbstraction(nextMode);
+			if (didUpdate) toast.success(t`Account mode updated`);
+		},
+		[accountModeControl.setAccountAbstraction, t],
+	);
 
 	return (
 		<>
@@ -71,11 +91,14 @@ export function PortfolioPage() {
 							<Trans>Portfolio</Trans>
 						</h1>
 						<div className="flex flex-wrap items-center gap-2">
+							<Button variant="outline" intent="neutral" size="sm" onClick={() => setAccountModeModalOpen(true)}>
+								<Trans>Account mode</Trans>
+							</Button>
 							<Button
 								variant="outline"
 								intent="brand"
 								size="sm"
-								disabled={fundsActionsDisabled}
+								disabled={modeDependentFundsActionsDisabled}
 								onClick={openStablecoinSwapModal}
 								iconLeft={<ArrowsLeftRightIcon className="size-3.5" />}
 							>
@@ -99,7 +122,7 @@ export function PortfolioPage() {
 								variant="outline"
 								intent="brand"
 								size="sm"
-								disabled={fundsActionsDisabled}
+								disabled={modeDependentFundsActionsDisabled}
 								onClick={() => openSendModal()}
 								iconLeft={<PaperPlaneTiltIcon className="size-3.5" />}
 							>
@@ -109,7 +132,7 @@ export function PortfolioPage() {
 								variant="outline"
 								intent="brand"
 								size="sm"
-								disabled={fundsActionsDisabled}
+								disabled={modeDependentFundsActionsDisabled}
 								onClick={() => openDepositModal("withdraw")}
 								iconLeft={<UploadSimpleIcon className="size-3.5" />}
 							>
@@ -156,6 +179,17 @@ export function PortfolioPage() {
 					</Suspense>
 				)}
 			</div>
+			<AccountModeModal
+				open={accountModeModalOpen}
+				onOpenChange={setAccountModeModalOpen}
+				currentMode={accountAbstraction}
+				isLoading={accountModeControl.isLoading}
+				isUpdating={accountModeControl.isUpdating}
+				canChange={accountModeControl.canSet}
+				portfolioMarginActivationEnabled={accountModeControl.portfolioMarginActivationEnabled}
+				onConnect={() => void reconnectWallet()}
+				onApply={handleAccountModeChange}
+			/>
 			<Suspense fallback={null}>
 				<GlobalModals
 					enableHip3Disclaimer

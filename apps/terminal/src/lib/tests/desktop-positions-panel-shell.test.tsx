@@ -29,6 +29,8 @@ const accountBalances = {
 };
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
+	isSupportedAccountAbstraction: (value: unknown) =>
+		value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin",
 	useDefaultDexBalances: () => accountBalances,
 	useSelectedDexBalances: () => accountBalances,
 }));

@@ -21,6 +21,7 @@ import {
 	DEPOSIT_POLL_INTERVAL_MS,
 	DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
 } from "@/config/time";
+import { useAssertFreshBridgeDepositRoute } from "@/hooks/trade/use-usdc-routing";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import {
 	finishDepositExecution,
@@ -1024,6 +1025,7 @@ export function useDeposit({
 	const executionKey = `${network}:${executionScope}:${mode}:${walletAddress?.toLowerCase() ?? "unavailable"}`;
 	const executionLockKey = `${network}:${mode}:${walletAddress?.toLowerCase() ?? "unavailable"}`;
 	const state = useDepositExecutionState(executionKey);
+	const assertFreshBridgeDepositRoute = useAssertFreshBridgeDepositRoute();
 
 	const validate = useCallback((amount: string) => validateAmount(amount, maxDepositRaw), [maxDepositRaw]);
 
@@ -1041,6 +1043,7 @@ export function useDeposit({
 			}
 
 			try {
+				await assertFreshBridgeDepositRoute();
 				const amountRaw = parseUnits(amount, USDC_DECIMALS);
 				let hash: Hash;
 				let provider: Eip1193Provider | undefined;
@@ -1063,6 +1066,7 @@ export function useDeposit({
 						wallet: depositWallet,
 					});
 					smartDepositUser = ready.address;
+					await assertFreshBridgeDepositRoute();
 					const data = await createBridge2PermitCall({
 						amountRaw,
 						config: depositConfig,
@@ -1070,6 +1074,7 @@ export function useDeposit({
 					});
 					const smartClient = await getClientForChain({ id: depositConfig.chainId });
 					if (!smartClient) throw new Error(t`Smart wallet client not ready`);
+					await assertFreshBridgeDepositRoute();
 
 					hash = (await waitForWalletTransactionHash(
 						smartClient.sendTransaction(
@@ -1097,6 +1102,7 @@ export function useDeposit({
 						address: ready.address,
 						blockTag: "pending",
 					});
+					await assertFreshBridgeDepositRoute();
 					hash = await waitForWalletTransactionHash(
 						ready.walletClient.writeContract({
 							account: ready.address,
@@ -1163,6 +1169,7 @@ export function useDeposit({
 			}
 		},
 		[
+			assertFreshBridgeDepositRoute,
 			depositChain,
 			depositConfig,
 			depositWallet,

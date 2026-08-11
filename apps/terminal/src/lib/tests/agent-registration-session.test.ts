@@ -7,6 +7,7 @@ import {
 	type ExchangeRequestStartGate,
 } from "@gatu/hl-react/internal/exchange/request-scheduler";
 import {
+	AgentRegistrationPreExecutionGuardTimeoutError,
 	activateAgentOwnerForRegistration,
 	activateAgentRegistrationSession,
 	cancelAgentRegistrationEpochAndRemove,
@@ -94,6 +95,14 @@ async function prepareAgentExecutionLease() {
 	expect(lease).not.toBeNull();
 	if (!lease) throw new Error("Expected execution lease");
 	return { lease, privateKey, publicKey };
+}
+
+async function prepareUserExecutionLease() {
+	await prepareAgentExecutionLease();
+	const lease = captureAgentRegistrationExecutionLease("Mainnet", OWNER);
+	expect(lease).not.toBeNull();
+	if (!lease) throw new Error("Expected user execution lease");
+	return lease;
 }
 
 function createExecutionGate(
@@ -596,6 +605,115 @@ describe("Agent registration session coordination", () => {
 		expect(await startAgentRegistrationExecution(lease, () => true, execute)).toEqual({
 			status: "invalidated",
 		});
+		expect(execute).not.toHaveBeenCalled();
+	});
+
+	it("runs the pre-execution guard only after acquiring the signing-session lock", async () => {
+		const lease = await prepareUserExecutionLease();
+		let markLockAcquired = () => {};
+		let releaseLock = () => {};
+		const lockAcquired = new Promise<void>((resolve) => {
+			markLockAcquired = resolve;
+		});
+		const lockRelease = new Promise<void>((resolve) => {
+			releaseLock = resolve;
+		});
+		const heldLock = window.navigator.locks.request(SESSION_LOCK_NAME, { mode: "exclusive" }, async () => {
+			markLockAcquired();
+			await lockRelease;
+		});
+		await lockAcquired;
+
+		let routeAllowed = true;
+		const guard = vi.fn(async () => {
+			if (!routeAllowed) throw new Error("The withdrawal route changed before signing");
+		});
+		const execute = vi.fn(async () => "unexpected");
+		const execution = startAgentRegistrationExecution(lease, () => true, execute, guard);
+		await Promise.resolve();
+		expect(guard).not.toHaveBeenCalled();
+
+		routeAllowed = false;
+		releaseLock();
+		await heldLock;
+		await expect(execution).rejects.toThrow("The withdrawal route changed before signing");
+		expect(guard).toHaveBeenCalledOnce();
+		expect(execute).not.toHaveBeenCalled();
+	});
+
+	it("aborts a stalled pre-execution guard and releases the signing-session lock", async () => {
+		const lease = await prepareUserExecutionLease();
+		vi.useFakeTimers();
+		try {
+			let guardSignal: AbortSignal | undefined;
+			const guard = vi.fn(
+				(signal: AbortSignal) =>
+					new Promise<void>((_resolve, reject) => {
+						guardSignal = signal;
+						signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+					}),
+			);
+			const execute = vi.fn(async () => "unexpected");
+			const execution = startAgentRegistrationExecution(lease, () => true, execute, guard);
+			await vi.advanceTimersByTimeAsync(0);
+			expect(guard).toHaveBeenCalledOnce();
+
+			const rejection = expect(execution).rejects.toBeInstanceOf(AgentRegistrationPreExecutionGuardTimeoutError);
+			await vi.advanceTimersByTimeAsync(10_000);
+			await rejection;
+			expect(guardSignal?.aborted).toBe(true);
+			expect(execute).not.toHaveBeenCalled();
+
+			await expect(window.navigator.locks.request(SESSION_LOCK_NAME, { mode: "exclusive" }, () => true)).resolves.toBe(
+				true,
+			);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("revalidates the execution lease after an asynchronous pre-execution guard", async () => {
+		const lease = await prepareUserExecutionLease();
+		let markGuardStarted = () => {};
+		let releaseGuard = () => {};
+		const guardStarted = new Promise<void>((resolve) => {
+			markGuardStarted = resolve;
+		});
+		const guardRelease = new Promise<void>((resolve) => {
+			releaseGuard = resolve;
+		});
+		const guard = vi.fn(async () => {
+			markGuardStarted();
+			await guardRelease;
+		});
+		const execute = vi.fn(async () => "unexpected");
+		const execution = startAgentRegistrationExecution(lease, () => true, execute, guard);
+		await guardStarted;
+
+		window.localStorage.setItem(
+			SESSION_STORAGE_KEY,
+			JSON.stringify({
+				version: 1,
+				epoch: "55555555-5555-4555-8555-555555555555",
+				state: "active",
+			}),
+		);
+		releaseGuard();
+
+		await expect(execution).resolves.toEqual({ status: "invalidated" });
+		expect(guard).toHaveBeenCalledOnce();
+		expect(execute).not.toHaveBeenCalled();
+	});
+
+	it("rejects pre-execution guards for active Agent-owner leases", async () => {
+		const { lease } = await prepareAgentExecutionLease();
+		const guard = vi.fn(async () => {});
+		const execute = vi.fn(async () => "unexpected");
+
+		await expect(startAgentRegistrationExecution(lease, () => true, execute, guard)).rejects.toThrow(
+			"Pre-execution guards cannot run with an active Agent-owner execution lease",
+		);
+		expect(guard).not.toHaveBeenCalled();
 		expect(execute).not.toHaveBeenCalled();
 	});
 

@@ -16,6 +16,12 @@ const testState = vi.hoisted(() => ({
 	maxDepositRaw: 9_000_000n as bigint | undefined,
 	refreshBalance: vi.fn(),
 	resetDeposit: vi.fn(),
+	routingData: { depositRoute: "bridge", withdrawalRoute: "cctp" } as {
+		depositRoute: "bridge" | "cctp";
+		withdrawalRoute: "bridge" | "cctp";
+	} | null,
+	routingIsError: false,
+	routingIsFetching: false,
 	toastDismiss: vi.fn(),
 	toastError: vi.fn(),
 	toastLoading: vi.fn(),
@@ -47,6 +53,14 @@ vi.mock("@/hooks/wallet/use-email-embedded-wallet", () => ({
 		isCreatingEmbeddedWallet: false,
 		embeddedWalletError: null,
 		ensureEmailEmbeddedWallet: vi.fn(),
+	}),
+}));
+
+vi.mock("@/hooks/trade/use-usdc-routing", () => ({
+	useUsdcRouting: () => ({
+		data: testState.routingData,
+		isError: testState.routingIsError,
+		isFetching: testState.routingIsFetching,
 	}),
 }));
 
@@ -98,6 +112,9 @@ describe("EmbeddedDepositAutoBridge", () => {
 		testState.depositHash = undefined;
 		testState.depositStatus = "idle";
 		testState.maxDepositRaw = 9_000_000n;
+		testState.routingData = { depositRoute: "bridge", withdrawalRoute: "cctp" };
+		testState.routingIsError = false;
+		testState.routingIsFetching = false;
 		Object.defineProperty(navigator, "locks", { configurable: true, value: undefined });
 	});
 
@@ -125,6 +142,36 @@ describe("EmbeddedDepositAutoBridge", () => {
 
 		expect(testState.deposit).toHaveBeenCalledTimes(1);
 		expect(testState.resetDeposit).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		{ name: "the route query is pending", data: null, isError: false, isFetching: true },
+		{ name: "the route query fails", data: null, isError: true, isFetching: false },
+		{ name: "the route response is unknown", data: null, isError: false, isFetching: false },
+		{
+			name: "CCTP deposits are required",
+			data: { depositRoute: "cctp" as const, withdrawalRoute: "cctp" as const },
+			isError: false,
+			isFetching: false,
+		},
+	])("does not submit when $name", async ({ data, isError, isFetching }) => {
+		testState.routingData = data;
+		testState.routingIsError = isError;
+		testState.routingIsFetching = isFetching;
+
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.deposit).not.toHaveBeenCalled();
+	});
+
+	it("submits only when the current deposit route is Bridge2", async () => {
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		expect(testState.deposit).toHaveBeenCalledWith("9");
 	});
 
 	it("uses the balance refreshed inside the exclusive section", async () => {
@@ -159,6 +206,27 @@ describe("EmbeddedDepositAutoBridge", () => {
 		expect(testState.deposit).not.toHaveBeenCalled();
 		expect(testState.resetDeposit).not.toHaveBeenCalled();
 
+		await act(() => vi.advanceTimersByTimeAsync(30_000));
+
+		expect(testState.resetDeposit).toHaveBeenCalledTimes(1);
+	});
+
+	it("preserves an automatic-deposit retry while a cached bridge route refreshes", async () => {
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+		expect(testState.deposit).toHaveBeenCalledTimes(1);
+
+		testState.depositStatus = "error";
+		testState.depositError = new Error("provider unavailable");
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
+
+		testState.routingIsFetching = true;
+		await act(async () => {
+			root.render(createElement(EmbeddedDepositAutoBridge));
+		});
 		await act(() => vi.advanceTimersByTimeAsync(30_000));
 
 		expect(testState.resetDeposit).toHaveBeenCalledTimes(1);

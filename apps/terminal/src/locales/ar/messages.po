@@ -238,11 +238,18 @@ msgstr "حقوق ملكية الحساب"
 msgid "Account Margin Ratio"
 msgstr "نسبة هامش الحساب"
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "وضع الحساب"
 
+#: src/hooks/trade/use-account-abstraction-guard.ts
+msgid "Account mode changed before the request was submitted. Review balances and try again."
+msgstr "تغيّر وضع الحساب قبل إرسال الطلب. راجع الأرصدة وحاول مرة أخرى."
+
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Account mode updated"
@@ -596,6 +603,10 @@ msgstr "تعذر تحميل معلومات الأصل."
 #~ msgstr ""
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Automatic deposits are paused because Hyperliquid currently requires CCTP deposits."
+msgstr "تم إيقاف الإيداعات التلقائية مؤقتًا لأن Hyperliquid يتطلب حاليًا الإيداع عبر CCTP."
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "فشل الإيداع التلقائي لـ USDC"
 
@@ -928,6 +939,15 @@ msgstr "انتهت مهلة طلب سجل الرسم البياني"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking account..."
 msgstr "جارٍ التحقق من الحساب..."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Checking the current Hyperliquid deposit route..."
+msgstr "جارٍ التحقق من مسار الإيداع الحالي في Hyperliquid..."
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Checking the current Hyperliquid withdrawal route..."
+msgstr "جارٍ التحقق من مسار السحب الحالي في Hyperliquid..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking..."
@@ -2797,6 +2817,14 @@ msgstr "تعذر التحقق من الموافقة لدى Hyperliquid. تحقق
 msgid "Hyperliquid calculates and adds the margin required to reach the target leverage."
 msgstr "يحسب Hyperliquid الهامش المطلوب للوصول إلى الرافعة المالية المستهدفة ويضيفه."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
+msgstr "يتطلب Hyperliquid حاليًا الإيداع عبر CCTP. تم إيقاف الإيداعات عبر Bridge مؤقتًا في هذا التطبيق."
+
+#: src/hooks/trade/use-usdc-routing.ts
+msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
+msgstr "يتطلب Hyperliquid حاليًا الإيداع عبر CCTP. إيداعات Bridge غير متاحة."
+
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Hyperliquid does not support pausing active TWAP orders."
@@ -2989,6 +3017,10 @@ msgstr "لوحة المتصدرين"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Learn more"
 #~ msgstr ""
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Legacy DEX"
+msgstr "DEX القديم"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -5098,6 +5130,8 @@ msgstr "استئناف التتبع"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/twap-history-feedback.tsx
@@ -5365,6 +5399,25 @@ msgstr "يتطلب قطع الاتصال الآمن دعم Web Locks. حدّث �
 msgid "Select {displayName} market"
 msgstr "اختر سوق {displayName}"
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Select a supported account mode before moving funds."
+msgstr "اختر وضع حساب مدعومًا قبل نقل الأموال."
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Select a supported account mode before using balances or moving funds."
+msgstr "اختر وضع حساب مدعومًا قبل استخدام الأرصدة أو نقل الأموال."
+
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Select a supported account mode to view balances."
+msgstr "اختر وضع حساب مدعومًا لعرض الأرصدة."
+
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Select all orders"
 msgstr "تحديد جميع الأوامر"
@@ -5388,6 +5441,11 @@ msgstr "اختر الأسواق المفضلة"
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Select market"
 msgstr "اختر السوق"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Select mode"
+msgstr "اختيار الوضع"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Select order"
@@ -6334,6 +6392,11 @@ msgstr "لم تُرجع المنصة الحالة النهائية لأمر TWAP
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "يبقى المفتاح المُنشأ في علامة التبويب هذه فقط. لا توافق على مفتاح آخر ولا تُعِد تحميل الصفحة."
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
+msgstr "تغيّر مسار السحب في Hyperliquid. راجع المسار المحدّث والرسوم المحدّثة، ثم أرسل الطلب مرة أخرى."
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "قد يكون تحديث الهامش قد تم تطبيقه. حدّث بيانات المركز قبل المحاولة مرة أخرى."
@@ -7255,6 +7318,28 @@ msgstr "تعذر التحقق من الوصول"
 #: src/lib/trade/withdrawal.ts
 msgid "Unable to verify available balance"
 msgstr "تعذر التحقق من الرصيد المتاح"
+
+#: src/hooks/trade/use-account-abstraction-guard.ts
+msgid "Unable to verify the current account mode. Request was not submitted."
+msgstr "تعذّر التحقق من وضع الحساب الحالي. لم يتم إرسال الطلب."
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused."
+msgstr "تعذّر التحقق من مسار الإيداع الحالي في Hyperliquid. تم إيقاف الإيداعات التلقائية مؤقتًا."
+
+#: src/hooks/trade/use-usdc-routing.ts
+msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted."
+msgstr "تعذّر التحقق من مسار الإيداع الحالي في Hyperliquid. لم يُرسل الإيداع."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
+msgstr "تعذّر التحقق من مسار الإيداع الحالي في Hyperliquid. تم إيقاف الإيداعات مؤقتًا."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Unable to verify the current Hyperliquid withdrawal route."
+msgstr "تعذّر التحقق من مسار السحب الحالي في Hyperliquid."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Unable to verify withdrawal eligibility."

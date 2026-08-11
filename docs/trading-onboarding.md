@@ -12,6 +12,10 @@ loading, or deposit behavior changes.
 - [Nonces and API wallets](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/nonces-and-api-wallets)
 - [Builder codes](https://hyperliquid.gitbook.io/hyperliquid-docs/trading/builder-codes)
 - [Bridge2](https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/bridge2)
+- [nktkas SDK `usdcRouting`](https://github.com/nktkas/hyperliquid/blob/v0.33.3/src/api/info/_methods/usdcRouting.ts)
+- [Circle: Transfer USDC from Arbitrum to HyperCore](https://developers.circle.com/cctp/howtos/transfer-usdc-from-arbitrum-to-hypercore)
+- [Circle: CCTP-enabled HyperCore transfers](https://developers.circle.com/cctp/concepts/cctp-on-hypercore)
+- [Circle: USDC contract addresses](https://developers.circle.com/stablecoins/usdc-contract-addresses)
 - [Privy React setup](https://docs.privy.io/basics/react/setup)
 - [Privy connected-wallet lifecycle](https://docs.privy.io/wallets/wallets/get-a-wallet/get-connected-wallet)
 
@@ -39,7 +43,13 @@ The terminal must preserve this ordering:
    snapshot and the spot-state snapshot. Any positive perpetual account value
    or spot balance means funded. Missing or failed snapshots never mean empty.
 7. **Guide an empty account to deposit.** Open the deposit dialog only after
-   both snapshots definitively establish that the account is empty.
+   both snapshots definitively establish that the account is empty. Enabling
+   a deposit also requires a successful, runtime-validated `usdcRouting`
+   response for the active environment. The existing Bridge2 executor may run
+   only when `depositRoute` is `bridge`, including the automatic embedded-wallet
+   path. A `cctp` route fails closed until the complete Circle CCTP deposit
+   flow is implemented; loading, failed, or malformed routing data must never
+   be interpreted as permission to use Bridge2.
 8. **Approve the builder fee when needed for an action.** Do not add this
    signature to first-time Agent setup. `useTradingAuthorization` requests it
    before the first action that needs the configured builder code.
@@ -113,6 +123,15 @@ an explicit security reset.
   for the current SPA session. A verified ready state clears that dismissal;
   an explicit user request always remains available.
 - Builder-fee approval must not be coupled back into `useAgentRegistration`.
+- `usdcRouting` is the sole source of truth for deposit and withdrawal routes.
+  Route cache and requests remain isolated by environment, and the route must
+  be fetched again immediately before a signature or submission.
+- A route change between review and submission aborts the action and requires
+  renewed review. A routing error never falls back to another protocol.
+- The manual and automatic Bridge2 paths share the same hard route guard. A
+  known `cctp` deposit route must remain unavailable until the native Circle
+  USDC, authorization, forwarder, fee, and recovery flow is implemented and
+  tested for that environment.
 
 ## Implementation Map
 
@@ -129,7 +148,11 @@ an explicit security reset.
 | Builder-fee approval | `packages/hl-react/src/signing/use-builder-fee-approval.ts` |
 | Action authorization | `packages/hl-react/src/signing/use-trading-authorization.ts` |
 | Funding-state derivation | `apps/terminal/src/domain/trade/onboarding.ts` |
+| USDC routing validation | `apps/terminal/src/domain/trade/usdc-routing.ts` |
+| USDC routing query and pre-submit guard | `apps/terminal/src/hooks/trade/use-usdc-routing.ts` |
 | Runtime flow orchestration | `apps/terminal/src/components/trade/components/trading-onboarding-gate.tsx` |
+| Manual deposit and withdrawal surface | `apps/terminal/src/components/trade/tradebox/deposit-modal.tsx` |
+| Automatic embedded-wallet deposit | `apps/terminal/src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx` |
 | Session-scoped prompt dismissal | `apps/terminal/src/stores/use-trading-onboarding-store.ts` |
 | Modal precedence | `apps/terminal/src/components/trade/components/global-modals.tsx` |
 
@@ -147,5 +170,11 @@ At minimum, changes to this flow must cover:
 - temporary signer loss and restoration, confirmed wallet changes, explicit
   logout, duplicate registration, timeout, and background/foreground transitions;
 - funded, empty, loading, and failed account snapshots;
+- `usdcRouting` loading, error, malformed, `cctp`, and `bridge` responses in
+  both mainnet and testnet query scopes;
+- a route change immediately before deposit or withdrawal aborting without a
+  signature or submission and requiring renewed review;
+- manual and automatic Bridge2 paths remaining blocked unless a fresh route is
+  exactly `bridge`, with no CCTP-to-Bridge2 or withdrawal fallback;
 - builder-fee approval remaining separate from Agent registration;
 - desktop and mobile modal presentation.

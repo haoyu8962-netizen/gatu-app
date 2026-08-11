@@ -14,10 +14,11 @@ import { NumberInput } from "@/components/ui/number-input";
 import { USDC_TRANSFER_DECIMALS } from "@/config/app";
 import { USDC_ICON_URL } from "@/config/bridge";
 import { NETWORKS } from "@/config/networks";
+import type { UsdcRoutingQueryStatus } from "@/domain/trade/usdc-routing";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { floorToString, limitDecimalInput, toNumberOrZero } from "@/lib/trade/numbers";
-import { getWithdrawalNetReceived, isWithdrawalRoute, type WithdrawalRoute } from "@/lib/trade/withdrawal";
+import { getWithdrawalNetReceived, type WithdrawalRoute } from "@/lib/trade/withdrawal";
 import { AssetSelect } from "./asset-select";
 
 const ARBITRUM_NETWORK = NETWORKS[0];
@@ -32,7 +33,8 @@ interface Props {
 	available: string;
 	maxAmount: string;
 	route: WithdrawalRoute;
-	onRouteChange: (route: WithdrawalRoute) => void;
+	routingStatus: UsdcRoutingQueryStatus;
+	routeChanged: boolean;
 	routeFee: string | null;
 	activationFee: string;
 	showActivationFee: boolean;
@@ -59,7 +61,8 @@ export function WithdrawForm({
 	available,
 	maxAmount,
 	route,
-	onRouteChange,
+	routingStatus,
+	routeChanged,
 	routeFee,
 	activationFee,
 	showActivationFee,
@@ -80,9 +83,50 @@ export function WithdrawForm({
 	const maxAmountNum = toNumberOrZero(maxAmount);
 	const netReceived = getWithdrawalNetReceived(amount, routeFee);
 	const routeOptions = [
-		{ value: "arbitrum-cctp", label: translate`Arbitrum (CCTP)` },
-		{ value: "arbitrum-legacy", label: translate`Arbitrum (Legacy)` },
+		{
+			value: route,
+			label: route === "arbitrum-cctp" ? translate`Arbitrum (CCTP)` : translate`Arbitrum (Legacy)`,
+		},
 	];
+	const routingNotice = (() => {
+		if (routingStatus === "loading") {
+			return (
+				<div className="rounded-8 border border-stroke-weak/40 bg-fill-weaker p-2.5 text-xs text-fg-muted">
+					<Trans>Checking the current Hyperliquid withdrawal route...</Trans>
+				</div>
+			);
+		}
+		if (routingStatus === "error" || routingStatus === "unknown") {
+			return (
+				<div role="alert" className="rounded-8 border border-stroke-error-weak bg-error-soft p-2.5 text-xs text-error">
+					<p>
+						<Trans>Unable to verify the current Hyperliquid withdrawal route.</Trans>
+					</p>
+					<Button
+						variant="link"
+						intent="brand"
+						size="xxs"
+						className="mt-1 h-auto p-0"
+						onClick={onRetryPrerequisites}
+						disabled={isPending}
+					>
+						<Trans>Retry</Trans>
+					</Button>
+				</div>
+			);
+		}
+		if (routeChanged) {
+			return (
+				<div
+					role="alert"
+					className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning"
+				>
+					<Trans>The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again.</Trans>
+				</div>
+			);
+		}
+		return null;
+	})();
 
 	return (
 		<div className="flex flex-1 flex-col gap-4">
@@ -102,16 +146,10 @@ export function WithdrawForm({
 
 			<div className="grid grid-cols-2 gap-2">
 				<AssetSelect />
-				<Select
-					label={translate`Withdrawal route`}
-					value={route}
-					onValueChange={(value) => {
-						if (isWithdrawalRoute(value)) onRouteChange(value);
-					}}
-					options={routeOptions}
-					disabled={isPending}
-				/>
+				<Select label={translate`Withdrawal route`} value={route} options={routeOptions} disabled />
 			</div>
+
+			{routingNotice}
 
 			<div>
 				<NumberInput

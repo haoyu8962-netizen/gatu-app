@@ -59,6 +59,7 @@ export { type HyperliquidClients, useHyperliquidClients } from "./hooks/useClien
 export {
 	type ExchangeExecutionGuard,
 	type ExchangeMutationOptions,
+	type ExchangePreExecutionGuard,
 	type GuardedExchangeMutationOptions,
 	type IsolatedManagementExchangeMethod,
 	useExchange,
@@ -109,6 +110,8 @@ export {
 	type AgentRegistrationExecutionLeaseOptions,
 	type AgentRegistrationExecutionStartResult,
 	type AgentRegistrationPersistResult,
+	type AgentRegistrationPreExecutionGuard,
+	AgentRegistrationPreExecutionGuardTimeoutError,
 	type AgentRegistrationSessionFailureReason,
 	type AgentRegistrationSessionResult,
 	type AgentRegistrationShutdownOptions,

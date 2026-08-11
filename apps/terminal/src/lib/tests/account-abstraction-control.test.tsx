@@ -7,7 +7,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const USER_ADDRESS = "0x1111111111111111111111111111111111111111";
 
 const testState = vi.hoisted(() => ({
-	accountAbstraction: "unifiedAccount" as "disabled" | "unifiedAccount" | "portfolioMargin" | null,
+	accountAbstraction: "unifiedAccount" as "default" | "disabled" | "unifiedAccount" | "portfolioMargin" | null,
+	address: "0x1111111111111111111111111111111111111111" as string | undefined,
+	hasWalletAccess: true,
+	isAccountAbstractionLoading: false,
 	invalidateQueries: vi.fn(),
 	mutateAsync: vi.fn(),
 }));
@@ -18,24 +21,27 @@ vi.mock("@tanstack/react-query", () => ({
 
 vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 	useWalletSession: () => ({
-		address: "0x1111111111111111111111111111111111111111",
-		hasWalletAccess: true,
+		address: testState.address,
+		hasWalletAccess: testState.hasWalletAccess,
 	}),
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	infoKey: (method: string, params: unknown, env: string) => ["hl", "info", method, params, env],
 	useExchange: () => ({
 		isPending: false,
 		mutateAsync: testState.mutateAsync,
 	}),
-	useHyperliquid: () => ({ isTestnet: false }),
+	useHyperliquid: () => ({ env: "Mainnet", isTestnet: false }),
 	useHyperliquidClients: () => ({ user: {} }),
 }));
 
 vi.mock("@/hooks/trade/use-account-balances", () => ({
+	isSupportedAccountAbstraction: (value: unknown) =>
+		value === "disabled" || value === "unifiedAccount" || value === "portfolioMargin",
 	useUserAbstraction: () => ({
 		data: testState.accountAbstraction,
-		fetchStatus: "idle",
+		isLoading: testState.isAccountAbstractionLoading,
 	}),
 }));
 
@@ -57,6 +63,9 @@ describe("useAccountAbstractionControl portfolio margin boundary", () => {
 		root = createRoot(container);
 		control = undefined;
 		testState.accountAbstraction = "unifiedAccount";
+		testState.address = USER_ADDRESS;
+		testState.hasWalletAccess = true;
+		testState.isAccountAbstractionLoading = false;
 		testState.invalidateQueries.mockReset();
 		testState.invalidateQueries.mockResolvedValue(undefined);
 		testState.mutateAsync.mockReset();
@@ -81,6 +90,26 @@ describe("useAccountAbstractionControl portfolio margin boundary", () => {
 		expect(testState.invalidateQueries).not.toHaveBeenCalled();
 	});
 
+	it("preserves the protocol default until the user explicitly selects a supported mode", async () => {
+		testState.accountAbstraction = "default";
+		await act(async () => {
+			root.render(<Probe />);
+		});
+
+		expect(control?.accountAbstraction).toBe("default");
+	});
+
+	it("does not report a disabled account query as loading", async () => {
+		testState.address = undefined;
+		testState.hasWalletAccess = false;
+		testState.accountAbstraction = null;
+		await act(async () => {
+			root.render(<Probe />);
+		});
+
+		expect(control?.isLoading).toBe(false);
+	});
+
 	it("allows an existing portfolio margin account to switch away", async () => {
 		testState.accountAbstraction = "portfolioMargin";
 		await act(async () => {
@@ -96,5 +125,9 @@ describe("useAccountAbstractionControl portfolio margin boundary", () => {
 			abstraction: "unifiedAccount",
 		});
 		expect(testState.invalidateQueries).toHaveBeenCalledTimes(3);
+		expect(testState.invalidateQueries).toHaveBeenCalledWith({
+			queryKey: ["hl", "info", "userAbstraction", { user: USER_ADDRESS }, "Mainnet"],
+			exact: true,
+		});
 	});
 });

@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { formatUnits } from "viem";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
+import { getUsdcRoutingQueryStatus } from "@/domain/trade/usdc-routing";
+import { useUsdcRouting } from "@/hooks/trade/use-usdc-routing";
 import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatTransferError, isSmartWalletNonceConflict } from "@/lib/errors/format";
@@ -29,6 +31,13 @@ export function EmbeddedDepositAutoBridge() {
 	const emailAddress = getPrivyEmailAddress(user) ?? emailWalletAddress;
 	const depositEmbeddedWalletAddress = embeddedWalletAddress ?? ensuredEmbeddedWalletAddress;
 	const isEmbeddedDeposit = !!emailAddress && (shouldUsePrivyEmbeddedWallet(user) || shouldUseEmailEmbeddedWallet);
+	const usdcRoutingQuery = useUsdcRouting(isEmbeddedDeposit && !!depositEmbeddedWalletAddress);
+	const usdcRoutingStatus = getUsdcRoutingQueryStatus({
+		data: usdcRoutingQuery.data,
+		isError: usdcRoutingQuery.isError,
+		isFetching: usdcRoutingQuery.isFetching,
+	});
+	const autoBridgeRouteAvailable = !usdcRoutingQuery.isError && usdcRoutingQuery.data?.depositRoute === "bridge";
 	const attemptKeyRef = useRef<string | null>(null);
 	const lastEligibleKeyRef = useRef<string | null>(null);
 	const retryKeyRef = useRef<string | null>(null);
@@ -62,7 +71,7 @@ export function EmbeddedDepositAutoBridge() {
 		void ensureEmailEmbeddedWallet().catch(() => {});
 	}, [ensureEmailEmbeddedWallet, isCreatingEmbeddedWallet, isEmbeddedDeposit, needsEmbeddedWallet]);
 
-	const eligibleDepositKey =
+	const balanceEligibleKey =
 		isEmbeddedDeposit &&
 		smartDepositEnabled &&
 		!needsEmbeddedWallet &&
@@ -73,6 +82,7 @@ export function EmbeddedDepositAutoBridge() {
 		maxDepositRaw >= MIN_DEPOSIT_USDC
 			? `${networkName}:${depositEmbeddedWalletAddress.toLowerCase()}:${maxDepositRaw.toString()}`
 			: null;
+	const eligibleDepositKey = balanceEligibleKey && autoBridgeRouteAvailable ? balanceEligibleKey : null;
 	const depositIdentityKey = depositEmbeddedWalletAddress
 		? `${networkName}:${depositEmbeddedWalletAddress.toLowerCase()}`
 		: null;
@@ -231,6 +241,27 @@ export function EmbeddedDepositAutoBridge() {
 	]);
 
 	useEffect(() => {
+		if (isEmbeddedDeposit && balanceEligibleKey && usdcRoutingQuery.data?.depositRoute === "cctp") {
+			loadingToastActiveRef.current = false;
+			toast.error(t`Automatic deposits are paused because Hyperliquid currently requires CCTP deposits.`, {
+				id: AUTO_BRIDGE_TOAST_ID,
+			});
+			return;
+		}
+
+		if (isEmbeddedDeposit && balanceEligibleKey && !autoBridgeRouteAvailable) {
+			if (usdcRoutingStatus === "loading") {
+				loadingToastActiveRef.current = true;
+				toast.loading(t`Checking the current Hyperliquid deposit route...`, { id: AUTO_BRIDGE_TOAST_ID });
+			} else {
+				loadingToastActiveRef.current = false;
+				toast.error(t`Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused.`, {
+					id: AUTO_BRIDGE_TOAST_ID,
+				});
+			}
+			return;
+		}
+
 		if (!isEmbeddedDeposit || depositStatus === "idle") {
 			if (loadingToastActiveRef.current) {
 				toast.dismiss(AUTO_BRIDGE_TOAST_ID);
@@ -263,7 +294,15 @@ export function EmbeddedDepositAutoBridge() {
 				id: AUTO_BRIDGE_TOAST_ID,
 			});
 		}
-	}, [depositError, depositStatus, isEmbeddedDeposit]);
+	}, [
+		balanceEligibleKey,
+		autoBridgeRouteAvailable,
+		depositError,
+		depositStatus,
+		isEmbeddedDeposit,
+		usdcRoutingQuery.data?.depositRoute,
+		usdcRoutingStatus,
+	]);
 
 	return null;
 }

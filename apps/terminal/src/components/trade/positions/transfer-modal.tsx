@@ -11,7 +11,8 @@ import {
 	getSpotTransferable,
 	isQuoteBalanceSharedWithPerps,
 } from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
+import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatExchangeActionError } from "@/lib/errors/format";
@@ -50,9 +51,12 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 	const [error, setError] = useState<string | null>(null);
 
 	const { hasWalletAccess, walletAddress } = useWalletSession();
-	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer");
 	const { marginSummary, perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable } =
 		useDefaultDexBalances();
+	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, walletAddress);
+	const { mutateAsync: usdClassTransfer, isPending } = useExchange("usdClassTransfer", {
+		preExecutionGuard: (_params, signal) => assertAccountAbstraction(signal),
+	});
 
 	const spotUsdcBal = getSpotBalance(spotBalances, DEFAULT_QUOTE_TOKEN);
 	const accountSummary = getAccountBalanceSummary({
@@ -63,10 +67,17 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 		spotBalances,
 		spotAvailableAfterMaintenance,
 	});
-	const internalTransfersDisabledReason = isQuoteBalanceSharedWithPerps(accountAbstraction)
-		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-		: null;
-	const availableBalanceValue = direction === "toSpot" ? accountSummary.withdrawable : getSpotTransferable(spotUsdcBal);
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
+	const internalTransfersDisabledReason = !accountModeReady
+		? t`Select a supported account mode before moving funds.`
+		: isQuoteBalanceSharedWithPerps(accountAbstraction)
+			? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+			: null;
+	const availableBalanceValue = accountModeReady
+		? direction === "toSpot"
+			? accountSummary.withdrawable
+			: getSpotTransferable(spotUsdcBal)
+		: 0;
 
 	const isValidAmount =
 		!internalTransfersDisabledReason &&
@@ -126,59 +137,63 @@ function TransferModalBody({ onOpenChange, initialDirection, open }: BodyProps) 
 						</div>
 					)}
 
-					<div className="flex items-center justify-center gap-3 py-2">
-						<div className="flex flex-col items-center">
-							<span
-								className={cn(
-									"text-xs px-2 py-1 uppercase font-medium",
-									direction === "toSpot" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
-								)}
-							>
-								{fromLabel}
-							</span>
-						</div>
-						<button
-							type="button"
-							onClick={handleFlip}
-							aria-label={t`Flip transfer direction`}
-							disabled={!!internalTransfersDisabledReason || isPending}
-							className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-brand"
-						>
-							<ArrowsLeftRightIcon className="size-4" />
-						</button>
-						<div className="flex flex-col items-center">
-							<span
-								className={cn(
-									"text-xs px-2 py-1 uppercase font-medium",
-									direction === "toPerp" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
-								)}
-							>
-								{toLabel}
-							</span>
-						</div>
-					</div>
+					{accountModeReady ? (
+						<>
+							<div className="flex items-center justify-center gap-3 py-2">
+								<div className="flex flex-col items-center">
+									<span
+										className={cn(
+											"text-xs px-2 py-1 uppercase font-medium",
+											direction === "toSpot" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
+										)}
+									>
+										{fromLabel}
+									</span>
+								</div>
+								<button
+									type="button"
+									onClick={handleFlip}
+									aria-label={t`Flip transfer direction`}
+									disabled={!!internalTransfersDisabledReason || isPending}
+									className="p-1.5 rounded-8 hover:bg-fill-hover transition-colors text-fg-muted hover:text-brand"
+								>
+									<ArrowsLeftRightIcon className="size-4" />
+								</button>
+								<div className="flex flex-col items-center">
+									<span
+										className={cn(
+											"text-xs px-2 py-1 uppercase font-medium",
+											direction === "toPerp" ? "bg-brand-soft text-brand" : "bg-warning-soft text-warning",
+										)}
+									>
+										{toLabel}
+									</span>
+								</div>
+							</div>
 
-					<NumberInput
-						label={t`Amount`}
-						labelValue={
-							<>
-								{t`Available`}:{" "}
-								<span className="underline decoration-dashed underline-offset-2 decoration-stroke-weak">
-									{floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS)} USDC
-								</span>
-							</>
-						}
-						onLabelValueClick={handleMaxClick}
-						placeholder="0.00"
-						value={amount}
-						onChange={(e) => handleAmountChange(e.target.value)}
-						disabled={!!internalTransfersDisabledReason || isPending}
-						className={cn(
-							"w-full tabular-nums",
-							exceedsBalance(amount, availableBalanceValue) &&
-								"border-stroke-error-strong focus:border-stroke-error-strong",
-						)}
-					/>
+							<NumberInput
+								label={t`Amount`}
+								labelValue={
+									<>
+										{t`Available`}:{" "}
+										<span className="underline decoration-dashed underline-offset-2 decoration-stroke-weak">
+											{floorToString(availableBalanceValue, USDC_TRANSFER_DECIMALS)} USDC
+										</span>
+									</>
+								}
+								onLabelValueClick={handleMaxClick}
+								placeholder="0.00"
+								value={amount}
+								onChange={(e) => handleAmountChange(e.target.value)}
+								disabled={!!internalTransfersDisabledReason || isPending}
+								className={cn(
+									"w-full tabular-nums",
+									exceedsBalance(amount, availableBalanceValue) &&
+										"border-stroke-error-strong focus:border-stroke-error-strong",
+								)}
+							/>
+						</>
+					) : null}
 
 					{error && (
 						<div className="flex items-center gap-2 p-2.5 rounded-8 bg-error-soft border border-stroke-error-weak text-xs text-error">

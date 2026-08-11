@@ -3,7 +3,6 @@ import { Suspense, useEffect } from "react";
 import { NotFoundPage } from "@/components/pages/not-found-page";
 import { AppShellSkeleton } from "@/components/trade/layout/app-shell-skeleton";
 import { APP_HEADER_OFFSET_CLASS, APP_HEADER_PLUS_BANNER_OFFSET_CLASS } from "@/config/layout";
-import { useDefaultUnifiedAccount } from "@/hooks/trade/use-default-unified-account";
 import { TabTitleSync } from "@/hooks/use-document-title";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
@@ -56,7 +55,6 @@ export function TradeTerminalPage() {
 function TradeTerminalContent() {
 	const isMobile = useIsMobile();
 	const isTestnet = useIsTestnet();
-	useDefaultUnifiedAccount();
 
 	return (
 		<>

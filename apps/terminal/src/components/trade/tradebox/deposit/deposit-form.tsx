@@ -5,6 +5,7 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 import { formatUnits } from "viem";
 import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
+import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
 import { AmountInput } from "./amount-input";
 import { AssetSelect } from "./asset-select";
 import { FundingAddressCard } from "./funding-address-card";
@@ -22,6 +23,9 @@ interface Props {
 	validation: { valid: boolean; error: string | null };
 	isPending: boolean;
 	onSubmit: () => void;
+	routingStatus: UsdcRoutingQueryStatus;
+	depositRoute: UsdcTransferRoute | null;
+	onRetryRouting: () => void;
 	networkName: string;
 	smartDepositEnabled: boolean;
 	fundingAddress?: `0x${string}`;
@@ -39,12 +43,46 @@ export function DepositForm({
 	validation,
 	isPending,
 	onSubmit,
+	routingStatus,
+	depositRoute,
+	onRetryRouting,
 	networkName,
 	smartDepositEnabled,
 	fundingAddress,
 	onDone,
 }: Props) {
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
+	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
+	const routingNotice = (() => {
+		if (bridgeRoutingReady) return null;
+		if (routingStatus === "loading") {
+			return (
+				<div className="rounded-xs border border-stroke-weak/50 bg-fill-weaker px-3 py-2 text-center text-xs leading-relaxed text-fg-muted">
+					<Trans>Checking the current Hyperliquid deposit route...</Trans>
+				</div>
+			);
+		}
+		const isCctp = routingStatus === "ready" && depositRoute === "cctp";
+		return (
+			<div
+				role="alert"
+				className="rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error"
+			>
+				<p>
+					{isCctp ? (
+						<Trans>Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app.</Trans>
+					) : (
+						<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
+					)}
+				</p>
+				{!isCctp ? (
+					<Button variant="link" intent="brand" size="xxs" className="mt-1 h-auto p-0" onClick={onRetryRouting}>
+						<Trans>Retry</Trans>
+					</Button>
+				) : null}
+			</div>
+		);
+	})();
 	const embeddedDepositStatus = (() => {
 		if (!smartDepositEnabled) {
 			return {
@@ -100,35 +138,43 @@ export function DepositForm({
 					/>
 				</div>
 
-				<FundingAddressCard address={fundingAddress} />
+				{routingNotice}
 
-				{embeddedDepositStatus ? (
-					<div
-						className={
-							embeddedDepositStatus.tone === "error"
-								? "rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error"
-								: embeddedDepositStatus.tone === "success"
-									? "rounded-xs border border-stroke-success-strong/50 bg-success-soft px-3 py-2 text-center text-xs leading-relaxed text-success"
-									: "rounded-xs border border-stroke-weak/50 bg-fill-weaker px-3 py-2 text-center text-xs leading-relaxed text-fg-muted"
-						}
-					>
-						{embeddedDepositStatus.text}
-					</div>
+				{bridgeRoutingReady ? (
+					<>
+						<FundingAddressCard address={fundingAddress} />
+
+						{embeddedDepositStatus ? (
+							<div
+								className={
+									embeddedDepositStatus.tone === "error"
+										? "rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error"
+										: embeddedDepositStatus.tone === "success"
+											? "rounded-xs border border-stroke-success-strong/50 bg-success-soft px-3 py-2 text-center text-xs leading-relaxed text-success"
+											: "rounded-xs border border-stroke-weak/50 bg-fill-weaker px-3 py-2 text-center text-xs leading-relaxed text-fg-muted"
+								}
+							>
+								{embeddedDepositStatus.text}
+							</div>
+						) : null}
+
+						<UnitDepositInfo networkName={networkName} />
+					</>
 				) : null}
-
-				<UnitDepositInfo networkName={networkName} />
 
 				<Button variant="filled" intent="brand" onClick={onDone} className="w-full">
 					<Trans>Done</Trans>
 				</Button>
 
-				<div className="rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error">
-					<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
-					<Trans>
-						Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
-						networks. Minimum deposit is {minimumDeposit}.
-					</Trans>
-				</div>
+				{bridgeRoutingReady ? (
+					<div className="rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error">
+						<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
+						<Trans>
+							Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
+							networks. Minimum deposit is {minimumDeposit}.
+						</Trans>
+					</div>
+				) : null}
 			</div>
 		);
 	}
@@ -146,7 +192,9 @@ export function DepositForm({
 				/>
 			</div>
 
-			<UnitDepositInfo networkName={networkName} />
+			{routingNotice}
+
+			{bridgeRoutingReady ? <UnitDepositInfo networkName={networkName} /> : null}
 
 			<AmountInput
 				amount={amount}

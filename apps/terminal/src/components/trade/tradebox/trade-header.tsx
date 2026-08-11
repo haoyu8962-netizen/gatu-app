@@ -4,7 +4,7 @@ import { CaretDownIcon, SpinnerGapIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { ADVANCED_ORDER_TYPES, type OrderType, SPOT_ALLOWED_TYPES } from "@/config/trade";
 import type { SideLabels } from "@/config/ui-text";
-import type { SelectableAccountAbstraction } from "@/hooks/trade/use-account-abstraction-control";
+import type { AccountAbstraction } from "@/hooks/trade/use-account-balances";
 import { useOrderDisplayLabels } from "@/hooks/trade/use-order-display-labels";
 import { cn } from "@/lib/cn";
 import type { MarketKind } from "@/lib/hyperliquid";
@@ -27,10 +27,10 @@ interface Props {
 	onMarginModeClick?: () => void;
 	onLeverageClick?: () => void;
 	isLeveraged?: boolean;
-	accountMode?: SelectableAccountAbstraction | null;
+	accountMode?: AccountAbstraction;
 	isAccountModeLoading?: boolean;
 	isAccountModeUpdating?: boolean;
-	onAccountModeClick?: () => void;
+	onAccountModeClick: () => void;
 	hideAlgoOrders?: boolean;
 	compact?: boolean;
 	layout?: "desktop" | "mobile";
@@ -94,7 +94,11 @@ export function TradeHeader({
 					? t`Separate`
 					: isAccountModeLoading
 						? t`Loading...`
-						: t`Unavailable`;
+						: accountMode === "default"
+							? t`Select mode`
+							: accountMode === "dexAbstraction"
+								? t`Legacy DEX`
+								: t`Unavailable`;
 	const compactAccountModeLabel = accountMode === null ? t`Account` : accountModeLabel;
 	const handleMarginModeClick = onMarginModeClick ?? onMarginLeverageClick;
 	const handleLeverageClick = onLeverageClick ?? onMarginLeverageClick;
@@ -119,7 +123,9 @@ export function TradeHeader({
 				<div
 					className={cn(
 						"grid min-w-0 overflow-hidden bg-surface",
-						isLeveraged ? "grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)]" : "grid-cols-1",
+						isLeveraged
+							? "grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)]"
+							: "grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]",
 					)}
 				>
 					<Dropdown
@@ -161,6 +167,20 @@ export function TradeHeader({
 							</button>
 						</>
 					)}
+					<button
+						type="button"
+						onClick={onAccountModeClick}
+						disabled={isAccountModeLoading || isAccountModeUpdating}
+						className={cn(mobileControlClass, "justify-end")}
+						aria-label={t`Account mode`}
+						aria-haspopup="dialog"
+					>
+						{(isAccountModeLoading || isAccountModeUpdating) && (
+							<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
+						)}
+						<span className="truncate">{accountModeLabel}</span>
+						<CaretDownIcon className="size-3 shrink-0 text-trading-panel-subtle" />
+					</button>
 				</div>
 
 				<SideToggle side={side} onSideChange={onSideChange} labels={sideLabels} compact={compact} tradingPanel />
@@ -170,59 +190,61 @@ export function TradeHeader({
 
 	return (
 		<div className={compact ? "min-w-0 space-y-2" : "min-w-0 space-y-4"}>
-			{isLeveraged && (
-				<div className={cn("trade-control-grid grid min-w-0 grid-cols-3", compact && "gap-1.5")}>
-					<button
-						type="button"
-						onClick={handleMarginModeClick}
-						className={controlButtonClass}
-						aria-haspopup="dialog"
-						title={marginLabel}
-					>
-						<span className={cn(controlLabelClass, "trade-card-label-full")}>{t`Margin mode`}</span>
-						<span className={cn(controlLabelClass, "trade-card-label-compact")}>{t`Margin`}</span>
-						<span className={controlValueClass}>
-							<span className="min-w-0 truncate">{marginLabel}</span>
-							<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
-						</span>
-					</button>
-					<button
-						type="button"
-						onClick={handleLeverageClick}
-						className={controlButtonClass}
-						aria-haspopup="dialog"
-						title={`${leverage ?? 1}x`}
-					>
-						<span className={controlLabelClass}>{t`Leverage`}</span>
-						<span className={controlValueClass}>
-							<span className={cn("min-w-0 truncate tabular-nums", getLeverageToneClass(leverage ?? 1))}>
-								{leverage ?? 1}x
+			<div className={cn("trade-control-grid grid min-w-0 grid-cols-3", compact && "gap-1.5")}>
+				{isLeveraged && (
+					<>
+						<button
+							type="button"
+							onClick={handleMarginModeClick}
+							className={controlButtonClass}
+							aria-haspopup="dialog"
+							title={marginLabel}
+						>
+							<span className={cn(controlLabelClass, "trade-card-label-full")}>{t`Margin mode`}</span>
+							<span className={cn(controlLabelClass, "trade-card-label-compact")}>{t`Margin`}</span>
+							<span className={controlValueClass}>
+								<span className="min-w-0 truncate">{marginLabel}</span>
+								<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
 							</span>
-							<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
-						</span>
-					</button>
-					<button
-						type="button"
-						onClick={onAccountModeClick}
-						disabled={isAccountModeLoading || isAccountModeUpdating}
-						className={controlButtonClass}
-						aria-label={t`Account mode`}
-						aria-haspopup="dialog"
-						title={accountModeLabel}
-					>
-						<span className={cn(controlLabelClass, "trade-card-label-full")}>{t`Account mode`}</span>
-						<span className={cn(controlLabelClass, "trade-card-label-compact")}>{t`Account`}</span>
-						<span className={controlValueClass}>
-							{(isAccountModeLoading || isAccountModeUpdating) && (
-								<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
-							)}
-							<span className="trade-full-label min-w-0 truncate">{accountModeLabel}</span>
-							<span className="trade-compact-label min-w-0 truncate">{compactAccountModeLabel}</span>
-							<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
-						</span>
-					</button>
-				</div>
-			)}
+						</button>
+						<button
+							type="button"
+							onClick={handleLeverageClick}
+							className={controlButtonClass}
+							aria-haspopup="dialog"
+							title={`${leverage ?? 1}x`}
+						>
+							<span className={controlLabelClass}>{t`Leverage`}</span>
+							<span className={controlValueClass}>
+								<span className={cn("min-w-0 truncate tabular-nums", getLeverageToneClass(leverage ?? 1))}>
+									{leverage ?? 1}x
+								</span>
+								<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
+							</span>
+						</button>
+					</>
+				)}
+				<button
+					type="button"
+					onClick={onAccountModeClick}
+					disabled={isAccountModeLoading || isAccountModeUpdating}
+					className={cn(controlButtonClass, !isLeveraged && "col-span-3")}
+					aria-label={t`Account mode`}
+					aria-haspopup="dialog"
+					title={accountModeLabel}
+				>
+					<span className={cn(controlLabelClass, "trade-card-label-full")}>{t`Account mode`}</span>
+					<span className={cn(controlLabelClass, "trade-card-label-compact")}>{t`Account`}</span>
+					<span className={controlValueClass}>
+						{(isAccountModeLoading || isAccountModeUpdating) && (
+							<SpinnerGapIcon className="size-3 shrink-0 animate-spin" />
+						)}
+						<span className="trade-full-label min-w-0 truncate">{accountModeLabel}</span>
+						<span className="trade-compact-label min-w-0 truncate">{compactAccountModeLabel}</span>
+						<CaretDownIcon className="size-2.5 shrink-0 text-trading-panel-subtle" />
+					</span>
+				</button>
+			</div>
 
 			<div className="relative grid min-w-0 grid-cols-3">
 				<div

@@ -242,11 +242,18 @@ msgstr "Account Equity"
 msgid "Account Margin Ratio"
 msgstr "Account Margin Ratio"
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 #: src/components/trade/tradebox/trade-header.tsx
 msgid "Account mode"
 msgstr "Account mode"
 
+#: src/hooks/trade/use-account-abstraction-guard.ts
+msgid "Account mode changed before the request was submitted. Review balances and try again."
+msgstr "Account mode changed before the request was submitted. Review balances and try again."
+
+#: src/components/portfolio/portfolio-page.tsx
 #: src/components/trade/mobile/mobile-trade-view.tsx
 #: src/components/trade/tradebox/trade-panel.tsx
 msgid "Account mode updated"
@@ -600,6 +607,10 @@ msgstr "Asset information could not be loaded."
 #~ msgstr "Assets"
 
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Automatic deposits are paused because Hyperliquid currently requires CCTP deposits."
+msgstr "Automatic deposits are paused because Hyperliquid currently requires CCTP deposits."
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Automatic USDC deposit failed"
 msgstr "Automatic USDC deposit failed"
 
@@ -932,6 +943,15 @@ msgstr "Chart history request timed out"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking account..."
 msgstr "Checking account..."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Checking the current Hyperliquid deposit route..."
+msgstr "Checking the current Hyperliquid deposit route..."
+
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Checking the current Hyperliquid withdrawal route..."
+msgstr "Checking the current Hyperliquid withdrawal route..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking..."
@@ -2814,6 +2834,14 @@ msgstr "Hyperliquid approval could not be checked. Check your connection and ret
 msgid "Hyperliquid calculates and adds the margin required to reach the target leverage."
 msgstr "Hyperliquid calculates and adds the margin required to reach the target leverage."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
+msgstr "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
+
+#: src/hooks/trade/use-usdc-routing.ts
+msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
+msgstr "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
+
 #: src/components/trade/mobile/mobile-twap-tab.tsx
 #: src/components/trade/positions/twap-tab.tsx
 msgid "Hyperliquid does not support pausing active TWAP orders."
@@ -3006,6 +3034,10 @@ msgstr "Leaderboard"
 #: src/components/trade/components/wallet-modal.tsx
 #~ msgid "Learn more"
 #~ msgstr "Learn more"
+
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Legacy DEX"
+msgstr "Legacy DEX"
 
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
@@ -5119,6 +5151,8 @@ msgstr "Resume tracking"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/leverage-control.tsx
 #: src/components/trade/twap-history-feedback.tsx
@@ -5386,6 +5420,25 @@ msgstr "Secure disconnect requires Web Locks support. Update your browser and tr
 msgid "Select {displayName} market"
 msgstr "Select {displayName} market"
 
+#: src/components/portfolio/portfolio-page.tsx
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/positions/send-modal.tsx
+#: src/components/trade/positions/transfer-modal.tsx
+#: src/components/trade/tradebox/account-panel.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Select a supported account mode before moving funds."
+msgstr "Select a supported account mode before moving funds."
+
+#: src/components/trade/components/spot-swap-modal.tsx
+#: src/components/trade/tradebox/account-mode-modal.tsx
+msgid "Select a supported account mode before using balances or moving funds."
+msgstr "Select a supported account mode before using balances or moving funds."
+
+#: src/components/trade/mobile/mobile-balances-tab.tsx
+#: src/components/trade/positions/balances-tab.tsx
+msgid "Select a supported account mode to view balances."
+msgstr "Select a supported account mode to view balances."
+
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Select all orders"
 msgstr "Select all orders"
@@ -5409,6 +5462,11 @@ msgstr "Select favorite markets"
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "Select market"
 msgstr "Select market"
+
+#: src/components/trade/mobile/mobile-account-view.tsx
+#: src/components/trade/tradebox/trade-header.tsx
+msgid "Select mode"
+msgstr "Select mode"
 
 #: src/components/trade/positions/orders-tab.tsx
 msgid "Select order"
@@ -6355,6 +6413,11 @@ msgstr "The exchange did not return a final TWAP status. Review active TWAP orde
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "The generated key remains only in this tab. Do not approve another key or reload the page."
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
+msgstr "The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again."
+
 #: src/components/trade/positions/position-isolated-margin-modal.tsx
 msgid "The margin update may have been applied. Refresh position data before trying again."
 msgstr "The margin update may have been applied. Refresh position data before trying again."
@@ -7280,6 +7343,28 @@ msgstr "Unable to verify access"
 #: src/lib/trade/withdrawal.ts
 msgid "Unable to verify available balance"
 msgstr "Unable to verify available balance"
+
+#: src/hooks/trade/use-account-abstraction-guard.ts
+msgid "Unable to verify the current account mode. Request was not submitted."
+msgstr "Unable to verify the current account mode. Request was not submitted."
+
+#: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
+msgid "Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused."
+msgstr "Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused."
+
+#: src/hooks/trade/use-usdc-routing.ts
+msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted."
+msgstr "Unable to verify the current Hyperliquid deposit route. Deposit was not submitted."
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
+msgstr "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/withdraw-form.tsx
+msgid "Unable to verify the current Hyperliquid withdrawal route."
+msgstr "Unable to verify the current Hyperliquid withdrawal route."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Unable to verify withdrawal eligibility."

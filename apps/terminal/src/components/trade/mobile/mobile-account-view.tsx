@@ -25,7 +25,11 @@ import {
 	getToolbarAccountRiskPresentation,
 	getToolbarSignedValueTone,
 } from "@/domain/trade/trading-toolbar-metrics";
-import { useDefaultDexBalances, useSelectedDexBalances } from "@/hooks/trade/use-account-balances";
+import {
+	isSupportedAccountAbstraction,
+	useDefaultDexBalances,
+	useSelectedDexBalances,
+} from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
@@ -50,6 +54,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 	const selectedBalances = useSelectedDexBalances();
 	const defaultBalances = useDefaultDexBalances();
 	const accountAbstraction = selectedBalances.accountAbstraction;
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const usesSharedQuoteBalance = isQuoteBalanceSharedWithPerps(accountAbstraction);
 	const summaryBalances = usesSharedQuoteBalance ? defaultBalances : selectedBalances;
 	const {
@@ -111,7 +116,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 					});
 	const accountSummaryReady =
 		isConnected &&
-		accountAbstraction !== null &&
+		accountModeReady &&
 		!summaryBalances.hasError &&
 		summaryBalances.hasAllDexsSnapshot &&
 		(!usesSharedQuoteBalance || summaryBalances.hasSpotStateSnapshot);
@@ -141,14 +146,18 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 			? t`Unified Account`
 			: accountSummary.mode === "portfolioMargin"
 				? t`Portfolio Margin`
-				: t`Separate Accounts`;
+				: accountSummary.mode === "separate"
+					? t`Separate Accounts`
+					: t`Select mode`;
 	const showSpotFundsNotice =
 		!accountSummary.usesSpotStateForPerps &&
 		selectedBalances.dex === "" &&
 		accountSummary.hasSpotFundsWhenPerpWithdrawableZero;
-	const internalTransferDisabledReason = usesSharedQuoteBalance
-		? t`Transfers between Spot and Perps are unavailable in unified account mode.`
-		: null;
+	const internalTransferDisabledReason = !accountModeReady
+		? t`Select a supported account mode before moving funds.`
+		: usesSharedQuoteBalance
+			? t`Transfers between Spot and Perps are unavailable in unified account mode.`
+			: null;
 
 	if (!isConnected) {
 		return (
@@ -317,6 +326,7 @@ export function MobileAccountView({ className }: MobileAccountViewProps) {
 									variant="outline"
 									intent="neutral"
 									size="md"
+									disabled={!accountModeReady}
 									onClick={() => openDepositModal("withdraw")}
 									iconLeft={<UploadSimpleIcon className="size-4" />}
 									className="min-h-11"

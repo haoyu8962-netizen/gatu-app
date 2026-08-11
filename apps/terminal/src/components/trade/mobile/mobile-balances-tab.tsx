@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
 import { getTradingToolbarBalanceSummary, isTradingToolbarBalancePositive } from "@/domain/trade/balance-toolbar";
 import { getPerpBalanceRows, getSpotBalanceRows, isQuoteBalanceSharedWithPerps } from "@/domain/trade/balances";
-import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { isSupportedAccountAbstraction, useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
 import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatToken, formatUSD } from "@/lib/format";
@@ -37,6 +37,7 @@ export function MobileBalancesTab() {
 		hasError,
 	} = useDefaultDexBalances();
 	const mids = useSpotTokenUsdPrices(isConnected);
+	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
 	const balances = useMemo(
 		() => [
 			...getPerpBalanceRows(perpSummary, spotBalances, spotAvailableAfterMaintenance, accountAbstraction, withdrawable),
@@ -56,7 +57,7 @@ export function MobileBalancesTab() {
 			}),
 		[accountAbstraction, marginSummary, mids, perpSummary, spotBalances, withdrawable],
 	);
-	const internalTransfersEnabled = !isQuoteBalanceSharedWithPerps(accountAbstraction);
+	const internalTransfersEnabled = accountModeReady && !isQuoteBalanceSharedWithPerps(accountAbstraction);
 
 	function handleTransfer(rowType: "perp" | "spot") {
 		setTransferState({
@@ -68,6 +69,9 @@ export function MobileBalancesTab() {
 	if (!isConnected) return <MobileBalancesState label={t`Connect your wallet to view balances.`} />;
 	if (hasError) return <MobileBalancesState variant="error" label={t`Failed to load balances.`} />;
 	if (isLoading) return <MobileBalancesState loading label={t`Loading balances...`} />;
+	if (!accountModeReady) {
+		return <MobileBalancesState variant="error" label={t`Select a supported account mode to view balances.`} />;
+	}
 	return (
 		<div className="flex min-h-0 flex-col font-market-close">
 			<dl

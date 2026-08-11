@@ -73,6 +73,33 @@ describe("AccountModeModal", () => {
 		expect(applyButton?.disabled).toBe(true);
 	});
 
+	it("requires an explicit supported selection for the protocol default", async () => {
+		const onApply = vi.fn().mockResolvedValue(undefined);
+		act(() =>
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<AccountModeModal open onOpenChange={() => {}} currentMode="default" canChange onApply={onApply} />
+				</I18nProvider>,
+			),
+		);
+
+		const options = [...document.body.querySelectorAll<HTMLButtonElement>("button[aria-pressed]")];
+		expect(options.every((option) => !option.disabled)).toBe(false);
+		const unifiedOption = options.find((button) => button.textContent?.includes("Unified account"));
+		expect(unifiedOption?.disabled).toBe(false);
+		expect(options.some((option) => option.getAttribute("aria-pressed") === "true")).toBe(false);
+		expect(document.body.textContent).toContain(
+			"Select a supported account mode before using balances or moving funds.",
+		);
+
+		act(() => unifiedOption?.click());
+		const confirmButton = [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+			(button) => button.textContent?.trim() === "Confirm",
+		);
+		await act(async () => confirmButton?.click());
+		expect(onApply).toHaveBeenCalledWith("unifiedAccount");
+	});
+
 	it("updates translated action text without losing the selected mode", () => {
 		act(() =>
 			root.render(

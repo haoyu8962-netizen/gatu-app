@@ -59,6 +59,21 @@ describe("trading toolbar balance metrics", () => {
 		});
 	});
 
+	it.each(["default", "dexAbstraction", "unknown", null] as const)(
+		"does not infer a balance source for unresolved mode %s",
+		(accountAbstraction) => {
+			expect(
+				getTradingToolbarBalanceSummary({
+					accountAbstraction,
+					marginSummary: { accountValue: "123" } as never,
+					perpSummary: { accountValue: "123" },
+					spotBalances: [usdcBalance],
+					withdrawable: "99",
+				}),
+			).toEqual({ totalAssets: "0", withdrawable: "0" });
+		},
+	);
+
 	it("derives Spot PNL and ratio with decimal arithmetic", () => {
 		const row: BalanceRow = {
 			asset: "HYPE",

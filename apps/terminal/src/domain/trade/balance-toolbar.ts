@@ -1,4 +1,5 @@
 import { DEFAULT_QUOTE_TOKEN } from "@/config/app";
+import { isSupportedAccountAbstraction } from "@/domain/trade/account-abstraction";
 import type { AccountAbstraction, MarginSummary, SpotBalance } from "@/hooks/trade/use-account-balances";
 import { toBig } from "@/lib/trade/numbers";
 import {
@@ -36,6 +37,9 @@ export function getTradingToolbarBalanceSummary({
 	tokenUsdPrices?: TokenUsdPrices;
 	withdrawable: string | number | null | undefined;
 }): TradingToolbarBalanceSummary {
+	if (!isSupportedAccountAbstraction(accountAbstraction)) {
+		return { totalAssets: "0", withdrawable: "0" };
+	}
 	const totalAssets = getAccountEquityValue({
 		accountAbstraction,
 		marginSummary,

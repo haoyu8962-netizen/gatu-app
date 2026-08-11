@@ -303,13 +303,18 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setShowMarginDialog(true);
 	}
 
+	function handleAccountModeSettingsOpen() {
+		setMarginDialogView("margin");
+		setSettingsTab("account");
+		setShowMarginDialog(true);
+	}
+
 	const handleAccountModeChange = useCallback(
 		async (nextAccountMode: SelectableAccountAbstraction) => {
-			if (nextAccountMode === accountModeControl.accountAbstraction) return;
-			await accountModeControl.setAccountAbstraction(nextAccountMode);
-			toast.success(t`Account mode updated`);
+			const didUpdate = await accountModeControl.setAccountAbstraction(nextAccountMode);
+			if (didUpdate) toast.success(t`Account mode updated`);
 		},
-		[accountModeControl.accountAbstraction, accountModeControl.setAccountAbstraction, t],
+		[accountModeControl.setAccountAbstraction, t],
 	);
 
 	const handleMarginDialogOpenChange = useCallback(
@@ -332,7 +337,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			currentMode: accountModeControl.accountAbstraction,
 			isLoading: accountModeControl.isLoading,
 			isUpdating: accountModeControl.isUpdating,
-			canChange: capabilities.isLeveraged && accountModeControl.canSet,
+			canChange: accountModeControl.canSet,
 			portfolioMarginActivationEnabled: accountModeControl.portfolioMarginActivationEnabled,
 			onConnect: handleWalletOpen,
 			onApply: handleAccountModeChange,
@@ -343,7 +348,6 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 			accountModeControl.isLoading,
 			accountModeControl.isUpdating,
 			accountModeControl.portfolioMarginActivationEnabled,
-			capabilities.isLeveraged,
 			handleAccountModeChange,
 			handleWalletOpen,
 		],
@@ -598,6 +602,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 						accountMode={accountModeControl.accountAbstraction}
 						isAccountModeLoading={accountModeControl.isLoading}
 						isAccountModeUpdating={accountModeControl.isUpdating}
+						onAccountModeClick={handleAccountModeSettingsOpen}
 						hideAlgoOrders
 						compact={embedded}
 						layout="mobile"
