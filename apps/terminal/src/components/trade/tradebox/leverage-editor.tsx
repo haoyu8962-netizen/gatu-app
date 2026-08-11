@@ -1,6 +1,7 @@
+import { useDirection } from "@base-ui/react/direction-provider";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NumberInput } from "@/components/ui/number-input";
 import { cn } from "@/lib/cn";
 import { tradingInputFrameClass } from "@/lib/ui/trading-input";
@@ -23,6 +24,7 @@ type LeverageEditorVariant = "sheet" | "modal";
 
 interface LeverageEditorProps {
 	value: number;
+	riskValue?: number;
 	max: number;
 	disabled: boolean;
 	onChange: (value: number) => void;
@@ -32,16 +34,27 @@ interface LeverageEditorProps {
 
 export function LeverageEditor({
 	value,
+	riskValue = value,
 	max,
 	disabled,
 	onChange,
 	onDraftChange,
 	variant = "sheet",
 }: LeverageEditorProps) {
+	const direction = useDirection();
 	const isSheet = variant === "sheet";
 	const [draftText, setDraftText] = useState<string | null>(null);
 	const stops = getLeverageStops(max);
 	const controlInsetClassName = isSheet ? "mx-3" : "mx-2.5";
+
+	useEffect(() => {
+		if (disabled) setDraftText(null);
+	}, [disabled]);
+
+	function getPhysicalStopFraction(stop: number): number {
+		const fraction = getLeverageStopFraction(stop, max);
+		return direction === "rtl" ? 100 - fraction : fraction;
+	}
 
 	function handlePick(next: number) {
 		setDraftText(null);
@@ -56,6 +69,11 @@ export function LeverageEditor({
 		}
 		setDraftText(null);
 		onDraftChange(next);
+	}
+
+	function handleSliderCancel() {
+		setDraftText(null);
+		onDraftChange?.(null);
 	}
 
 	function handleInputChange(text: string) {
@@ -73,9 +91,9 @@ export function LeverageEditor({
 					value={value}
 					onChange={handleSliderDrag}
 					onCommit={handlePick}
+					onCancel={onDraftChange ? handleSliderCancel : undefined}
 					max={max}
 					disabled={disabled}
-					thumbAlignment="center"
 					controlClassName={cn("w-auto", controlInsetClassName, isSheet ? "h-9" : "h-8")}
 					trackClassName="h-1 rounded-xs bg-trading-panel-stroke-card ring-0 shadow-none inset-shadow-none"
 					indicatorClassName="min-w-0 rounded-xs bg-trading-panel-control shadow-none inset-shadow-none"
@@ -89,7 +107,7 @@ export function LeverageEditor({
 					activeClassName="border-trading-panel-control bg-trading-panel-control"
 					positions={stops.map((stop) => ({
 						key: stop,
-						leftPercent: getLeverageStopFraction(stop, max),
+						leftPercent: getPhysicalStopFraction(stop),
 						active: value >= stop,
 					}))}
 				/>
@@ -98,17 +116,19 @@ export function LeverageEditor({
 				{stops.map((stop, index) => {
 					const isFirst = index === 0;
 					const isLast = index === stops.length - 1;
+					const isLeftEdge = direction === "rtl" ? isLast : isFirst;
+					const isRightEdge = direction === "rtl" ? isFirst : isLast;
 					return (
 						<button
 							key={stop}
 							type="button"
 							disabled={disabled}
 							onClick={() => handlePick(stop)}
-							style={isFirst || isLast ? undefined : { left: `${getLeverageStopFraction(stop, max)}%` }}
+							style={isFirst || isLast ? undefined : { left: `${getPhysicalStopFraction(stop)}%` }}
 							className={cn(
 								"absolute top-0 cursor-pointer whitespace-nowrap px-1 py-1 -my-1 disabled:cursor-not-allowed",
-								isFirst && "left-0 -ml-1",
-								isLast && "right-0 -mr-1",
+								isLeftEdge && "left-0 -ml-1",
+								isRightEdge && "right-0 -mr-1",
 								!isFirst && !isLast && "-translate-x-1/2",
 								value === stop
 									? "font-bold text-trading-panel-fg"
@@ -135,7 +155,7 @@ export function LeverageEditor({
 				/>
 				<span className="ml-2 shrink-0 text-xs text-trading-panel-muted">x</span>
 			</div>
-			{value > 10 && (
+			{riskValue > 10 && (
 				<p className="rounded-[10px] border border-trading-panel-error-disabled-fill bg-trading-panel-error-soft px-2.5 py-2 text-xs leading-relaxed text-trading-panel-error">
 					<Trans>High leverage significantly increases liquidation risk. Use with caution.</Trans>
 				</p>

@@ -2,7 +2,7 @@ import { Button, Modal, ModalContent, ModalFooter, ModalHeader, ModalPopup, Moda
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
-import { useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MARGIN_MODE_SUCCESS_DURATION_MS } from "@/config/time";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { TradingActionButton } from "../components/trading-action-button";
@@ -18,21 +18,45 @@ interface Props {
 	isUpdating: boolean;
 	updateError: Error | null;
 	onApply: (leverage: number) => Promise<void>;
+	marketIdentity?: string;
 }
 
-export function LeverageModal({ open, onOpenChange, ...contentProps }: Props) {
+function LeverageModalComponent({ open, onOpenChange, marketIdentity, ...contentProps }: Props) {
+	const [submissionLocked, setSubmissionLocked] = useState(false);
+	const actionPending = contentProps.isUpdating || submissionLocked;
+
+	function handleOpenChange(nextOpen: boolean, eventDetails?: { cancel: () => void }) {
+		if (!nextOpen && actionPending) {
+			eventDetails?.cancel();
+			return;
+		}
+		onOpenChange(nextOpen);
+	}
+
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm">
-				<LeverageModalContent key={open ? "open" : "closed"} {...contentProps} onOpenChange={onOpenChange} />
+		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={actionPending}>
+			<ModalPopup size="sm" showClose={!actionPending}>
+				<LeverageModalContent
+					key={marketIdentity ?? "market"}
+					{...contentProps}
+					open={open}
+					onOpenChange={handleOpenChange}
+					isUpdating={actionPending}
+					onSubmissionLockChange={setSubmissionLocked}
+				/>
 			</ModalPopup>
 		</Modal>
 	);
 }
 
-type LeverageModalContentProps = Omit<Props, "open">;
+export const LeverageModal = memo(LeverageModalComponent);
+
+type LeverageModalContentProps = Omit<Props, "marketIdentity"> & {
+	onSubmissionLockChange: (locked: boolean) => void;
+};
 
 function LeverageModalContent({
+	open,
 	onOpenChange,
 	currentLeverage,
 	pendingLeverage,
@@ -41,15 +65,34 @@ function LeverageModalContent({
 	isUpdating,
 	updateError,
 	onApply,
+	onSubmissionLockChange,
 }: LeverageModalContentProps) {
-	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(
-		() => onOpenChange(false),
-		MARGIN_MODE_SUCCESS_DURATION_MS,
-	);
+	const {
+		showSuccess,
+		trigger: triggerAutoClose,
+		reset: resetAutoClose,
+	} = useAutoCloseSuccess(() => onOpenChange(false), MARGIN_MODE_SUCCESS_DURATION_MS);
 	const [dragLeverage, setDragLeverage] = useState<number | null>(null);
+	const [submittedLeverage, setSubmittedLeverage] = useState<number | null>(null);
 	const applyInFlightRef = useRef(false);
+	const mountedRef = useRef(false);
 
-	const displayLeverage = dragLeverage ?? pendingLeverage ?? currentLeverage;
+	useLayoutEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
+
+	useEffect(() => {
+		if (open) return;
+		resetAutoClose();
+		setDragLeverage(null);
+		setSubmittedLeverage(null);
+	}, [open, resetAutoClose]);
+
+	const committedLeverage = pendingLeverage ?? currentLeverage;
+	const displayLeverage = submittedLeverage ?? dragLeverage ?? committedLeverage;
 	const isDirty = pendingLeverage !== null && pendingLeverage !== currentLeverage;
 
 	function handleLeverageChange(value: number) {
@@ -60,11 +103,18 @@ function LeverageModalContent({
 	async function handleConfirm(): Promise<void> {
 		if (!isDirty || isUpdating || applyInFlightRef.current) return;
 		applyInFlightRef.current = true;
+		onSubmissionLockChange(true);
+		const leverageToSubmit = displayLeverage;
+		setSubmittedLeverage(leverageToSubmit);
 		try {
-			await onApply(displayLeverage);
-			triggerAutoClose();
+			await onApply(leverageToSubmit);
+			applyInFlightRef.current = false;
+			onSubmissionLockChange(false);
+			if (mountedRef.current) triggerAutoClose();
 		} catch {
 			applyInFlightRef.current = false;
+			onSubmissionLockChange(false);
+			if (mountedRef.current) setSubmittedLeverage(null);
 		}
 	}
 
@@ -83,8 +133,9 @@ function LeverageModalContent({
 			<ModalContent className="space-y-4">
 				<LeverageEditor
 					value={displayLeverage}
+					riskValue={submittedLeverage ?? committedLeverage}
 					max={maxLeverage}
-					disabled={isUpdating}
+					disabled={isUpdating || !open}
 					onChange={handleLeverageChange}
 					onDraftChange={setDragLeverage}
 					variant="modal"

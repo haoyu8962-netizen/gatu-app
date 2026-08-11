@@ -392,4 +392,46 @@ describe("useAssetLeverage", () => {
 		});
 		expect(mocks.updateLeverage).not.toHaveBeenCalled();
 	});
+
+	it("keeps modal action references stable across unrelated subscription renders", () => {
+		const first = renderHook();
+		const firstSetPending = first.setPendingLeverage;
+		const firstReset = first.resetPending;
+		const firstApply = first.applyMarginAndLeverage;
+
+		mocks.activeAssetData = {
+			coin: "ETH",
+			user: USER,
+			leverage: { type: "cross", value: 10, rawUsd: "125" },
+		};
+		const second = renderHook();
+
+		expect(second.setPendingLeverage).toBe(firstSetPending);
+		expect(second.resetPending).toBe(firstReset);
+		expect(second.applyMarginAndLeverage).toBe(firstApply);
+	});
+
+	it("keeps an in-flight leverage request observable and rejects duplicate execution", async () => {
+		const deferred = createDeferred();
+		mocks.executeLeverage.mockReturnValue(deferred.promise);
+		renderHook();
+		const resetCallsBeforeRequest = mocks.resetMutation.mock.calls.length;
+
+		let firstRequest!: Promise<void>;
+		act(() => {
+			firstRequest = currentHook().applyMarginAndLeverage("cross", 5);
+		});
+
+		await expect(currentHook().applyMarginAndLeverage("cross", 5)).rejects.toThrow(
+			"Leverage update already in progress",
+		);
+		act(() => currentHook().resetPending());
+		expect(mocks.resetMutation).toHaveBeenCalledTimes(resetCallsBeforeRequest);
+
+		deferred.resolve();
+		await act(async () => firstRequest);
+
+		act(() => currentHook().resetPending());
+		expect(mocks.resetMutation).toHaveBeenCalledTimes(resetCallsBeforeRequest + 1);
+	});
 });

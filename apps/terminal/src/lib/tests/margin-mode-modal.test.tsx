@@ -8,8 +8,15 @@ import { createI18nRoot } from "./harness/react";
 
 const modalHarness = vi.hoisted(() => ({
 	adaptiveModalRenders: 0,
+	adaptiveOpenChange: undefined as ((open: boolean) => void) | undefined,
+	autoCloseResets: 0,
+	autoCloseTriggers: 0,
 	dismissible: true,
+	keepAdaptiveMounted: false,
 	leverageSliderProps: null as Record<string, unknown> | null,
+	modalDisablePointerDismissal: false,
+	modalOpenChange: undefined as ((open: boolean, eventDetails?: { cancel: () => void }) => void) | undefined,
+	popupShowClose: true,
 	presentation: "modal" as "modal" | "drawer",
 	tabChange: undefined as ((value: string) => void) | undefined,
 	tabsDisabled: false,
@@ -20,28 +27,58 @@ vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
 		children,
 		dismissible,
+		onOpenChange,
 		open,
 		presentation,
 	}: {
 		children: ReactNode;
 		dismissible: boolean;
+		onOpenChange: (open: boolean) => void;
 		open: boolean;
 		presentation: "modal" | "drawer";
 	}) => {
 		modalHarness.adaptiveModalRenders += 1;
+		modalHarness.adaptiveOpenChange = onOpenChange;
 		modalHarness.dismissible = dismissible;
 		modalHarness.presentation = presentation;
-		return open ? createElement("section", { "data-presentation": presentation }, children) : null;
+		return open || modalHarness.keepAdaptiveMounted
+			? createElement("section", { "data-presentation": presentation }, children)
+			: null;
 	},
 	Button: ({ children, iconLeft: _iconLeft, iconRight: _iconRight, ...props }: Record<string, unknown>) =>
 		createElement("button", { ...props, type: "button" }, children as ReactNode),
-	Modal: ({ children, open }: { children: ReactNode; open: boolean }) => (open ? children : null),
+	Modal: ({
+		children,
+		disablePointerDismissal,
+		onOpenChange,
+		open,
+	}: {
+		children: ReactNode;
+		disablePointerDismissal?: boolean;
+		onOpenChange?: (open: boolean, eventDetails?: { cancel: () => void }) => void;
+		open: boolean;
+	}) => {
+		modalHarness.modalDisablePointerDismissal = !!disablePointerDismissal;
+		modalHarness.modalOpenChange = onOpenChange;
+		return open ? children : null;
+	},
 	ModalContent: ({ children, ...props }: { children: ReactNode; [key: string]: unknown }) =>
 		createElement("div", props, children),
 	ModalFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
 	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
-	ModalPopup: ({ children, size: _size, ...props }: { children: ReactNode; [key: string]: unknown }) =>
-		createElement("section", props, children),
+	ModalPopup: ({
+		children,
+		showClose,
+		size: _size,
+		...props
+	}: {
+		children: ReactNode;
+		showClose?: boolean;
+		[key: string]: unknown;
+	}) => {
+		modalHarness.popupShowClose = showClose ?? true;
+		return createElement("section", props, children);
+	},
 	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
 	Tabs: ({
 		children,
@@ -101,7 +138,15 @@ vi.mock("@/components/trade/tradebox/leverage-slider", () => ({
 }));
 
 vi.mock("@/hooks/ui/use-auto-close-success", () => ({
-	useAutoCloseSuccess: () => ({ showSuccess: false, trigger: vi.fn() }),
+	useAutoCloseSuccess: () => ({
+		showSuccess: false,
+		trigger: () => {
+			modalHarness.autoCloseTriggers += 1;
+		},
+		reset: () => {
+			modalHarness.autoCloseResets += 1;
+		},
+	}),
 }));
 
 function getButton(container: HTMLElement, label: string): HTMLButtonElement {
@@ -117,7 +162,14 @@ describe("MarginModeModal", () => {
 
 	beforeEach(() => {
 		modalHarness.adaptiveModalRenders = 0;
+		modalHarness.adaptiveOpenChange = undefined;
+		modalHarness.autoCloseResets = 0;
+		modalHarness.autoCloseTriggers = 0;
+		modalHarness.keepAdaptiveMounted = false;
 		modalHarness.leverageSliderProps = null;
+		modalHarness.modalDisablePointerDismissal = false;
+		modalHarness.modalOpenChange = undefined;
+		modalHarness.popupShowClose = true;
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createI18nRoot(container);
@@ -365,6 +417,30 @@ describe("MarginModeModal", () => {
 		await act(async () => resolveApply?.());
 	});
 
+	it("blocks desktop dismissal while a margin or leverage request is in flight", async () => {
+		let resolveApply: (() => void) | undefined;
+		onApply.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveApply = resolve;
+				}),
+		);
+		const onOpenChange = vi.fn();
+		renderModal({ onOpenChange, pendingLeverage: 7 });
+
+		act(() => getButton(container, "Confirm").click());
+
+		expect(modalHarness.modalDisablePointerDismissal).toBe(true);
+		expect(modalHarness.popupShowClose).toBe(false);
+		const cancel = vi.fn();
+		act(() => modalHarness.modalOpenChange?.(false, { cancel }));
+		expect(cancel).toHaveBeenCalledTimes(1);
+		expect(onOpenChange).not.toHaveBeenCalled();
+
+		await act(async () => resolveApply?.());
+		expect(modalHarness.modalDisablePointerDismissal).toBe(false);
+	});
+
 	it("keeps leverage drag renders below the adaptive drawer shell", () => {
 		const onPendingLeverageChange = vi.fn();
 		renderModal({
@@ -397,6 +473,23 @@ describe("MarginModeModal", () => {
 		expect(onApply).not.toHaveBeenCalled();
 	});
 
+	it("does not rerender the mobile drawer when parent props remain referentially stable", () => {
+		const onOpenChange = vi.fn();
+		const onPendingLeverageChange = vi.fn();
+		const overrides = {
+			presentation: "drawer" as const,
+			mobileView: "leverage" as const,
+			onOpenChange,
+			onPendingLeverageChange,
+		};
+		renderModal(overrides);
+		const initialRenders = modalHarness.adaptiveModalRenders;
+
+		renderModal(overrides);
+
+		expect(modalHarness.adaptiveModalRenders).toBe(initialRenders);
+	});
+
 	it("locks the complete settings drawer while either action is pending", () => {
 		renderModal({
 			presentation: "drawer",
@@ -415,5 +508,92 @@ describe("MarginModeModal", () => {
 		expect(getButton(container, "Account type").disabled).toBe(true);
 		expect(getButton(container, "Switching...").disabled).toBe(true);
 		expect(container.querySelector('[role="tabpanel"]:not([hidden])')).not.toBeNull();
+	});
+
+	it("keeps submitted mobile leverage visible while awaiting automatic close", async () => {
+		renderModal({
+			presentation: "drawer",
+			marketIdentity: "HYPE",
+			pendingLeverage: 7,
+			mobileView: "leverage",
+		});
+
+		await act(async () => getButton(container, "Confirm").click());
+		renderModal({
+			presentation: "drawer",
+			marketIdentity: "HYPE",
+			currentLeverage: 10,
+			pendingLeverage: null,
+			mobileView: "leverage",
+		});
+
+		expect(modalHarness.autoCloseTriggers).toBe(1);
+		expect(container.querySelector("h2")?.textContent).toBe("Adjust leverage7x");
+	});
+
+	it("does not auto-close a new mobile market after the old request resolves", async () => {
+		let resolveApply: (() => void) | undefined;
+		onApply.mockImplementation(
+			() =>
+				new Promise<void>((resolve) => {
+					resolveApply = resolve;
+				}),
+		);
+		const onOpenChange = vi.fn();
+		renderModal({
+			open: true,
+			onOpenChange,
+			presentation: "drawer",
+			marketIdentity: "HYPE",
+			pendingLeverage: 7,
+			mobileView: "leverage",
+		});
+		act(() => getButton(container, "Confirm").click());
+
+		renderModal({
+			open: true,
+			onOpenChange,
+			presentation: "drawer",
+			marketIdentity: "BTC",
+			pendingLeverage: 5,
+			mobileView: "leverage",
+		});
+		await act(async () => resolveApply?.());
+
+		expect(modalHarness.autoCloseTriggers).toBe(0);
+		expect(container.querySelector("h2")?.textContent).toBe("Adjust leverage5x");
+		expect(onOpenChange).not.toHaveBeenCalled();
+	});
+
+	it("resets a keep-mounted mobile success session before reopening", async () => {
+		modalHarness.keepAdaptiveMounted = true;
+		renderModal({
+			presentation: "drawer",
+			marketIdentity: "HYPE",
+			pendingLeverage: 7,
+			mobileView: "leverage",
+		});
+		await act(async () => getButton(container, "Confirm").click());
+		expect(container.querySelector("h2")?.textContent).toBe("Adjust leverage7x");
+
+		renderModal({
+			open: false,
+			presentation: "drawer",
+			marketIdentity: "HYPE",
+			currentLeverage: 10,
+			pendingLeverage: null,
+			mobileView: "leverage",
+		});
+		renderModal({
+			open: true,
+			presentation: "drawer",
+			marketIdentity: "HYPE",
+			currentLeverage: 10,
+			pendingLeverage: null,
+			mobileView: "leverage",
+		});
+
+		expect(modalHarness.autoCloseResets).toBeGreaterThan(0);
+		expect(container.querySelector("h2")?.textContent).toBe("Adjust leverage10x");
 	});
 });

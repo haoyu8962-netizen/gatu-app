@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_MAX_LEVERAGE } from "@/config/trade";
 import { getPositionDex } from "@/domain/market";
 import {
@@ -153,6 +153,7 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 	const userPositions = useUserPositions();
 
 	const operationTypeRef = useRef<OperationType>(null);
+	const requestInFlightRef = useRef(false);
 	const [pendingLeverage, setPendingLeverageState] = useState<number | null>(null);
 	const [disconnectedLeverage, setDisconnectedLeverage] = useState<number | null>(null);
 
@@ -235,44 +236,55 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		resetMutation();
 	}, [baseToken, resetMutation]);
 
-	function setPendingLeverage(value: number) {
-		if (!Number.isFinite(value)) return;
-		const clamped = Math.max(1, Math.min(Math.round(value), maxLeverage));
-		if (!isConnected) {
-			setDisconnectedLeverage(clamped);
-			setPendingLeverageState(null);
-			return;
-		}
-		if (clamped === currentLeverage) {
-			setPendingLeverageState(null);
-		} else {
-			setPendingLeverageState(clamped);
-		}
-	}
+	const setPendingLeverage = useCallback(
+		(value: number) => {
+			if (!Number.isFinite(value)) return;
+			const clamped = Math.max(1, Math.min(Math.round(value), maxLeverage));
+			if (!isConnected) {
+				setDisconnectedLeverage(clamped);
+				setPendingLeverageState(null);
+				return;
+			}
+			if (clamped === currentLeverage) {
+				setPendingLeverageState(null);
+			} else {
+				setPendingLeverageState(clamped);
+			}
+		},
+		[currentLeverage, isConnected, maxLeverage],
+	);
 
-	function resetPending() {
+	const resetPending = useCallback(() => {
+		if (requestInFlightRef.current) return;
 		setPendingLeverageState(null);
 		operationTypeRef.current = null;
 		resetMutation();
-	}
+	}, [resetMutation]);
 
 	async function confirmLeverage() {
 		if (!isPerpMarket || pendingLeverage === null || typeof assetId !== "number") {
 			return;
 		}
+		if (requestInFlightRef.current) throw new Error("Leverage update already in progress");
 
 		operationTypeRef.current = "leverage";
-		await updateLeverage({
-			asset: assetId,
-			isCross: marginMode === "cross",
-			leverage: pendingLeverage,
-		});
+		requestInFlightRef.current = true;
+		try {
+			await updateLeverage({
+				asset: assetId,
+				isCross: marginMode === "cross",
+				leverage: pendingLeverage,
+			});
 
-		setPendingLeverageState(null);
+			setPendingLeverageState(null);
+		} finally {
+			requestInFlightRef.current = false;
+		}
 	}
 
 	async function switchMarginMode(mode: MarginMode) {
 		if (!isPerpMarket || typeof assetId !== "number") return;
+		if (requestInFlightRef.current) throw new Error("Leverage update already in progress");
 
 		if (isOnlyIsolated && mode === "cross") {
 			throw new Error("This market only supports isolated margin mode");
@@ -289,47 +301,72 @@ export function useAssetLeverage(): UseAssetLeverageReturn {
 		}
 
 		operationTypeRef.current = "mode";
-		await updateLeverage({
-			asset: assetId,
-			isCross: mode === "cross",
-			leverage: currentLeverage,
-		});
+		requestInFlightRef.current = true;
+		try {
+			await updateLeverage({
+				asset: assetId,
+				isCross: mode === "cross",
+				leverage: currentLeverage,
+			});
 
-		setStoredMarginMode(mode);
-	}
-
-	async function applyMarginAndLeverage(mode: MarginMode, leverageValue: number) {
-		if (!isPerpMarket || typeof assetId !== "number") return;
-		if (!Number.isFinite(leverageValue)) throw new Error("Invalid leverage");
-
-		const clamped = Math.max(1, Math.min(Math.round(leverageValue), maxLeverage));
-
-		if (isOnlyIsolated && mode === "cross") {
-			throw new Error("This market only supports isolated margin mode");
-		}
-
-		if (!isConnected) {
 			setStoredMarginMode(mode);
-			setDisconnectedLeverage(clamped);
-			setPendingLeverageState(null);
-			return;
+		} finally {
+			requestInFlightRef.current = false;
 		}
-
-		if (mode === "isolated" && marginMode === "cross") {
-			if (!positionStateReady) throw new Error("Position data is unavailable");
-			if (hasPosition) throw new Error("Cannot switch to isolated mode with an open position");
-		}
-
-		operationTypeRef.current = "mode";
-		await updateLeverage({
-			asset: assetId,
-			isCross: mode === "cross",
-			leverage: clamped,
-		});
-
-		setStoredMarginMode(mode);
-		setPendingLeverageState(null);
 	}
+
+	const applyMarginAndLeverage = useCallback(
+		async (mode: MarginMode, leverageValue: number) => {
+			if (!isPerpMarket || typeof assetId !== "number") return;
+			if (!Number.isFinite(leverageValue)) throw new Error("Invalid leverage");
+			if (requestInFlightRef.current) throw new Error("Leverage update already in progress");
+
+			const clamped = Math.max(1, Math.min(Math.round(leverageValue), maxLeverage));
+
+			if (isOnlyIsolated && mode === "cross") {
+				throw new Error("This market only supports isolated margin mode");
+			}
+
+			if (!isConnected) {
+				setStoredMarginMode(mode);
+				setDisconnectedLeverage(clamped);
+				setPendingLeverageState(null);
+				return;
+			}
+
+			if (mode === "isolated" && marginMode === "cross") {
+				if (!positionStateReady) throw new Error("Position data is unavailable");
+				if (hasPosition) throw new Error("Cannot switch to isolated mode with an open position");
+			}
+
+			operationTypeRef.current = "mode";
+			requestInFlightRef.current = true;
+			try {
+				await updateLeverage({
+					asset: assetId,
+					isCross: mode === "cross",
+					leverage: clamped,
+				});
+
+				setStoredMarginMode(mode);
+				setPendingLeverageState(null);
+			} finally {
+				requestInFlightRef.current = false;
+			}
+		},
+		[
+			assetId,
+			hasPosition,
+			isConnected,
+			isOnlyIsolated,
+			isPerpMarket,
+			marginMode,
+			maxLeverage,
+			positionStateReady,
+			setStoredMarginMode,
+			updateLeverage,
+		],
+	);
 
 	function computeMaxTradeSzs(): [number, number] | null {
 		const raw = currentActiveAssetData?.maxTradeSzs;

@@ -1,7 +1,7 @@
 import { Button, Tooltip } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { PencilIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { type ChangeEvent, Suspense, useEffect, useState } from "react";
+import { type ChangeEvent, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
@@ -303,11 +303,51 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		setShowMarginDialog(true);
 	}
 
-	async function handleAccountModeChange(nextAccountMode: SelectableAccountAbstraction) {
-		if (nextAccountMode === accountModeControl.accountAbstraction) return;
-		await accountModeControl.setAccountAbstraction(nextAccountMode);
-		toast.success(t`Account mode updated`);
-	}
+	const handleAccountModeChange = useCallback(
+		async (nextAccountMode: SelectableAccountAbstraction) => {
+			if (nextAccountMode === accountModeControl.accountAbstraction) return;
+			await accountModeControl.setAccountAbstraction(nextAccountMode);
+			toast.success(t`Account mode updated`);
+		},
+		[accountModeControl.accountAbstraction, accountModeControl.setAccountAbstraction, t],
+	);
+
+	const handleMarginDialogOpenChange = useCallback(
+		(open: boolean) => {
+			if (!open) resetPendingLeverage();
+			setShowMarginDialog(open);
+		},
+		[resetPendingLeverage],
+	);
+
+	const handleLeverageApply = useCallback(
+		(mode: MarginMode, leverageValue: number) => applyMarginAndLeverage(mode, leverageValue),
+		[applyMarginAndLeverage],
+	);
+
+	const handleWalletOpen = useCallback(() => setWalletModalOpen(true), []);
+
+	const accountModeForm = useMemo(
+		() => ({
+			currentMode: accountModeControl.accountAbstraction,
+			isLoading: accountModeControl.isLoading,
+			isUpdating: accountModeControl.isUpdating,
+			canChange: capabilities.isLeveraged && accountModeControl.canSet,
+			portfolioMarginActivationEnabled: accountModeControl.portfolioMarginActivationEnabled,
+			onConnect: handleWalletOpen,
+			onApply: handleAccountModeChange,
+		}),
+		[
+			accountModeControl.accountAbstraction,
+			accountModeControl.canSet,
+			accountModeControl.isLoading,
+			accountModeControl.isUpdating,
+			accountModeControl.portfolioMarginActivationEnabled,
+			capabilities.isLeveraged,
+			handleAccountModeChange,
+			handleWalletOpen,
+		],
+	);
 
 	async function handleApprove() {
 		if (tradeRestricted) return;
@@ -488,10 +528,7 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 		<div className={cn("flex flex-col self-stretch", !embedded && "h-full min-h-0 bg-background", className)}>
 			<MarginModeModal
 				open={showMarginDialog}
-				onOpenChange={(open) => {
-					if (!open) resetPendingLeverage();
-					setShowMarginDialog(open);
-				}}
+				onOpenChange={handleMarginDialogOpenChange}
 				currentMode={marginMode}
 				currentLeverage={currentLeverage}
 				pendingLeverage={pendingLeverage}
@@ -504,22 +541,14 @@ export function MobileTradeView({ active = true, className, embedded, sizeMode, 
 				isUpdating={isSwitchingMode}
 				updateError={switchModeError}
 				showLeverage={capabilities.isLeveraged}
-				onApply={async (mode: MarginMode, lev: number) => applyMarginAndLeverage(mode, lev)}
+				onApply={handleLeverageApply}
 				presentation="drawer"
 				mobileView={marginDialogView}
 				marketIdentity={market?.name}
 				marketLabel={market?.pairName ?? market?.name}
 				settingsTab={settingsTab}
 				onSettingsTabChange={setSettingsTab}
-				accountModeForm={{
-					currentMode: accountModeControl.accountAbstraction,
-					isLoading: accountModeControl.isLoading,
-					isUpdating: accountModeControl.isUpdating,
-					canChange: capabilities.isLeveraged && accountModeControl.canSet,
-					portfolioMarginActivationEnabled: accountModeControl.portfolioMarginActivationEnabled,
-					onConnect: () => setWalletModalOpen(true),
-					onApply: handleAccountModeChange,
-				}}
+				accountModeForm={accountModeForm}
 			/>
 			<div className={cn("shrink-0 border-b border-stroke-weak/60 bg-surface px-4 py-2", embedded && "hidden")}>
 				<div className="flex min-w-0 items-center justify-between gap-2">

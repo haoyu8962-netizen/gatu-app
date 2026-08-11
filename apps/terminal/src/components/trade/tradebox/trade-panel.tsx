@@ -1,7 +1,7 @@
 import { Button } from "@gatu/ui";
 import { useLingui } from "@lingui/react/macro";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSwitchChain, useWalletClient } from "wagmi";
 import { APPROVAL_ERROR_DISMISS_MS } from "@/config/time";
@@ -281,15 +281,42 @@ export function TradePanel() {
 	const isRegistering =
 		registerStatus === "approving_fee" || registerStatus === "approving_agent" || registerStatus === "verifying";
 
-	async function handleMarginApply(mode: MarginMode, leverageValue: number) {
-		await applyMarginAndLeverage(mode, leverageValue);
-	}
+	const handleMarginApply = useCallback(
+		async (mode: MarginMode, leverageValue: number) => {
+			await applyMarginAndLeverage(mode, leverageValue);
+		},
+		[applyMarginAndLeverage],
+	);
 
-	async function handleAccountModeChange(nextAccountMode: SelectableAccountAbstraction) {
-		if (nextAccountMode === accountModeControl.accountAbstraction) return;
-		await accountModeControl.setAccountAbstraction(nextAccountMode);
-		toast.success(t`Account mode updated`);
-	}
+	const handleAccountModeChange = useCallback(
+		async (nextAccountMode: SelectableAccountAbstraction) => {
+			if (nextAccountMode === accountModeControl.accountAbstraction) return;
+			await accountModeControl.setAccountAbstraction(nextAccountMode);
+			toast.success(t`Account mode updated`);
+		},
+		[accountModeControl.accountAbstraction, accountModeControl.setAccountAbstraction, t],
+	);
+
+	const handleMarginModalOpenChange = useCallback(
+		(open: boolean) => {
+			if (!open) resetPendingLeverage();
+			setActiveModal(open ? "marginMode" : null);
+		},
+		[resetPendingLeverage],
+	);
+
+	const handleLeverageModalOpenChange = useCallback(
+		(open: boolean) => {
+			if (!open) resetPendingLeverage();
+			setActiveModal(open ? "leverage" : null);
+		},
+		[resetPendingLeverage],
+	);
+
+	const handleLeverageApply = useCallback(
+		(leverageValue: number) => applyMarginAndLeverage(marginMode, leverageValue),
+		[applyMarginAndLeverage, marginMode],
+	);
 
 	function handleRegister() {
 		if (tradeRestricted) return;
@@ -429,10 +456,7 @@ export function TradePanel() {
 		<div className="trade-panel-container flex flex-col bg-surface">
 			<MarginModeModal
 				open={activeModal === "marginMode"}
-				onOpenChange={(open) => {
-					if (!open) resetPendingLeverage();
-					setActiveModal(open ? "marginMode" : null);
-				}}
+				onOpenChange={handleMarginModalOpenChange}
 				currentMode={marginMode}
 				currentLeverage={currentLeverage}
 				pendingLeverage={pendingLeverage}
@@ -450,17 +474,15 @@ export function TradePanel() {
 			/>
 			<LeverageModal
 				open={activeModal === "leverage"}
-				onOpenChange={(open) => {
-					if (!open) resetPendingLeverage();
-					setActiveModal(open ? "leverage" : null);
-				}}
+				onOpenChange={handleLeverageModalOpenChange}
 				currentLeverage={currentLeverage}
 				pendingLeverage={pendingLeverage}
 				maxLeverage={maxLeverage}
 				onPendingLeverageChange={setPendingLeverage}
 				isUpdating={isSwitchingMode}
 				updateError={switchModeError}
-				onApply={(leverageValue) => applyMarginAndLeverage(marginMode, leverageValue)}
+				onApply={handleLeverageApply}
+				marketIdentity={market?.name}
 			/>
 			<AccountModeModal
 				open={activeModal === "accountMode"}

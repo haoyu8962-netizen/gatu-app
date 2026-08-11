@@ -15,7 +15,7 @@ import {
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { CaretDownIcon, CheckIcon, ShieldIcon, SpinnerGapIcon, StackIcon, WarningIcon } from "@phosphor-icons/react";
-import { useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MARGIN_MODE_SUCCESS_DURATION_MS } from "@/config/time";
 import { useAutoCloseSuccess } from "@/hooks/ui/use-auto-close-success";
 import { cn } from "@/lib/cn";
@@ -93,10 +93,12 @@ type FormProps = Omit<
 	| "mobileView"
 > & {
 	onClose: () => void;
+	sessionOpen: boolean;
 	mobileLayout?: boolean;
 	mobileView?: MobileTradeSettingsView;
 	leverageDraft?: number | null;
 	onLeverageDraftChange?: (value: number | null) => void;
+	onSubmissionLockChange?: (locked: boolean) => void;
 };
 
 const MODE_OPTIONS: Array<{
@@ -170,7 +172,7 @@ function ModeOption({ option, description, isSelected, isCurrent, isDisabled, is
 		</button>
 	);
 }
-export function MarginModeModal({
+function MarginModeModalComponent({
 	open,
 	onOpenChange,
 	presentation = "modal",
@@ -182,10 +184,21 @@ export function MarginModeModal({
 	mobileView = "margin",
 	...formProps
 }: Props) {
-	const formKey = `${open}:${marketIdentity ?? "market"}`;
+	const [submissionLocked, setSubmissionLocked] = useState(false);
+	const marketFormKey = marketIdentity ?? "market";
+	const formKey = `${open}:${marketFormKey}`;
+	const actionPending = formProps.isUpdating || !!accountModeForm?.isUpdating;
+	const dismissBlocked = actionPending || submissionLocked;
+
+	function handleOpenChange(nextOpen: boolean, eventDetails?: { cancel: () => void }) {
+		if (!nextOpen && dismissBlocked) {
+			eventDetails?.cancel();
+			return;
+		}
+		onOpenChange(nextOpen);
+	}
 
 	if (presentation === "drawer") {
-		const actionPending = formProps.isUpdating || !!accountModeForm?.isUpdating;
 		const title =
 			settingsTab === "account" ? (
 				<Trans>Account type</Trans>
@@ -197,29 +210,31 @@ export function MarginModeModal({
 			);
 
 		function handleTabChange(value: string) {
-			if (actionPending) return;
+			if (dismissBlocked) return;
 			if (value === "margin" || value === "account") onSettingsTabChange?.(value);
 		}
 
 		return (
 			<AdaptiveModal
 				open={open}
-				onOpenChange={onOpenChange}
+				onOpenChange={handleOpenChange}
 				presentation="drawer"
 				size="sm"
-				dismissible={!actionPending}
-				showClose={!actionPending && mobileView !== "leverage"}
-				showHandle={!actionPending}
+				dismissible={!dismissBlocked}
+				showClose={!dismissBlocked && mobileView !== "leverage"}
+				showHandle={!dismissBlocked}
 				handleClassName="top-2 h-1 w-9 bg-trading-panel-stroke-input"
 				overlayClassName="bg-trading-panel-scrim"
 				className="max-h-[calc(100dvh-1rem)] !rounded-t-[18px] border-trading-panel-stroke-card"
 			>
 				{mobileView === "leverage" ? (
 					<MobileLeverageDrawerContent
-						key={`${formKey}:leverage`}
+						key={`${marketFormKey}:leverage`}
 						{...formProps}
-						isUpdating={actionPending}
-						onClose={() => onOpenChange(false)}
+						isUpdating={dismissBlocked || !open}
+						onClose={() => handleOpenChange(false)}
+						sessionOpen={open}
+						onSubmissionLockChange={setSubmissionLocked}
 					/>
 				) : (
 					<>
@@ -227,7 +242,7 @@ export function MarginModeModal({
 							<ModalTitle className="text-trading-panel-fg">{title}</ModalTitle>
 						</ModalHeader>
 						{accountModeForm ? (
-							<Tabs value={settingsTab} onValueChange={handleTabChange} size="md" fullWidth disabled={actionPending}>
+							<Tabs value={settingsTab} onValueChange={handleTabChange} size="md" fullWidth disabled={dismissBlocked}>
 								<div className="px-4">
 									<TabsList
 										className="w-full border-trading-panel-stroke-card"
@@ -253,8 +268,10 @@ export function MarginModeModal({
 										<MarginModeForm
 											key={formKey}
 											{...formProps}
-											isUpdating={actionPending}
-											onClose={() => onOpenChange(false)}
+											isUpdating={dismissBlocked}
+											onClose={() => handleOpenChange(false)}
+											sessionOpen={open}
+											onSubmissionLockChange={setSubmissionLocked}
 											mobileLayout
 											mobileView="margin"
 										/>
@@ -265,8 +282,8 @@ export function MarginModeModal({
 										<AccountModeForm
 											key={`${open}:${accountModeForm.currentMode ?? "unavailable"}`}
 											{...accountModeForm}
-											isUpdating={actionPending}
-											onClose={() => onOpenChange(false)}
+											isUpdating={dismissBlocked}
+											onClose={() => handleOpenChange(false)}
 											mobileLayout
 										/>
 									) : null}
@@ -276,8 +293,10 @@ export function MarginModeModal({
 							<MarginModeForm
 								key={formKey}
 								{...formProps}
-								isUpdating={actionPending}
-								onClose={() => onOpenChange(false)}
+								isUpdating={dismissBlocked}
+								onClose={() => handleOpenChange(false)}
+								sessionOpen={open}
+								onSubmissionLockChange={setSubmissionLocked}
 								mobileLayout
 								mobileView="margin"
 							/>
@@ -289,18 +308,27 @@ export function MarginModeModal({
 	}
 
 	return (
-		<Modal open={open} onOpenChange={onOpenChange}>
-			<ModalPopup size="sm">
+		<Modal open={open} onOpenChange={handleOpenChange} disablePointerDismissal={dismissBlocked}>
+			<ModalPopup size="sm" showClose={!dismissBlocked}>
 				<ModalHeader>
 					<ModalTitle>
 						<Trans>Margin mode</Trans>
 					</ModalTitle>
 				</ModalHeader>
-				<MarginModeForm key={formKey} {...formProps} onClose={() => onOpenChange(false)} />
+				<MarginModeForm
+					key={formKey}
+					{...formProps}
+					isUpdating={dismissBlocked}
+					onClose={() => handleOpenChange(false)}
+					sessionOpen={open}
+					onSubmissionLockChange={setSubmissionLocked}
+				/>
 			</ModalPopup>
 		</Modal>
 	);
 }
+
+export const MarginModeModal = memo(MarginModeModalComponent);
 
 function MobileLeverageDrawerContent(props: FormProps) {
 	const [leverageDraft, setLeverageDraft] = useState<number | null>(null);
@@ -331,6 +359,7 @@ function MobileLeverageDrawerContent(props: FormProps) {
 
 function MarginModeForm({
 	onClose,
+	sessionOpen,
 	currentMode,
 	currentLeverage,
 	pendingLeverage,
@@ -348,12 +377,34 @@ function MarginModeForm({
 	mobileView = "margin",
 	leverageDraft = null,
 	onLeverageDraftChange,
+	onSubmissionLockChange,
 }: FormProps) {
 	const [selectedMode, setSelectedMode] = useState<MarginMode>(currentMode);
+	const [submittedLeverage, setSubmittedLeverage] = useState<number | null>(null);
 	const applyInFlightRef = useRef(false);
-	const { showSuccess, trigger: triggerAutoClose } = useAutoCloseSuccess(onClose, MARGIN_MODE_SUCCESS_DURATION_MS);
+	const mountedRef = useRef(false);
+	const {
+		showSuccess,
+		trigger: triggerAutoClose,
+		reset: resetAutoClose,
+	} = useAutoCloseSuccess(onClose, MARGIN_MODE_SUCCESS_DURATION_MS);
 
-	const displayLeverage = leverageDraft ?? pendingLeverage ?? currentLeverage;
+	useLayoutEffect(() => {
+		mountedRef.current = true;
+		return () => {
+			mountedRef.current = false;
+		};
+	}, []);
+
+	useEffect(() => {
+		if (sessionOpen) return;
+		resetAutoClose();
+		setSubmittedLeverage(null);
+		onLeverageDraftChange?.(null);
+	}, [onLeverageDraftChange, resetAutoClose, sessionOpen]);
+
+	const displayLeverage = submittedLeverage ?? leverageDraft ?? pendingLeverage ?? currentLeverage;
+	const committedLeverage = pendingLeverage ?? currentLeverage;
 
 	function handleLeverageChange(value: number) {
 		onLeverageDraftChange?.(null);
@@ -371,13 +422,25 @@ function MarginModeForm({
 	async function handleConfirm(): Promise<void> {
 		if (!isDirty || isUpdating || cannotSwitch || positionStateUnavailable || applyInFlightRef.current) return;
 		applyInFlightRef.current = true;
+		onSubmissionLockChange?.(true);
 		const mode = showMarginControls ? selectedMode : currentMode;
 		const lev = showLeverageControls ? (pendingLeverage ?? currentLeverage) : currentLeverage;
+		if (showLeverageControls) {
+			setSubmittedLeverage(lev);
+			onLeverageDraftChange?.(lev);
+		}
 		try {
 			await onApply(mode, lev);
-			triggerAutoClose();
+			applyInFlightRef.current = false;
+			onSubmissionLockChange?.(false);
+			if (mountedRef.current) triggerAutoClose();
 		} catch {
 			applyInFlightRef.current = false;
+			onSubmissionLockChange?.(false);
+			if (mountedRef.current && showLeverageControls) {
+				setSubmittedLeverage(null);
+				onLeverageDraftChange?.(null);
+			}
 		}
 	}
 
@@ -416,6 +479,7 @@ function MarginModeForm({
 				{showLeverageControls && (
 					<LeverageEditor
 						value={displayLeverage}
+						riskValue={submittedLeverage ?? committedLeverage}
 						max={maxLeverage}
 						disabled={isUpdating}
 						onChange={handleLeverageChange}

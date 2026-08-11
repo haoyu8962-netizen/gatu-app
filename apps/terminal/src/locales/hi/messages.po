@@ -920,6 +920,10 @@ msgstr "लेवरेज बदलें"
 msgid "Chart"
 msgstr "चार्ट"
 
+#: src/components/trade/chart/datafeed.ts
+msgid "Chart history request timed out"
+msgstr ""
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking account..."
 msgstr "खाता जाँचा जा रहा है..."
@@ -3200,6 +3204,7 @@ msgid "Loading wallet..."
 msgstr "वॉलेट लोड हो रहा है..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx

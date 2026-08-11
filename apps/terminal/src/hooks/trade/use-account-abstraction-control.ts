@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { PORTFOLIO_MARGIN_FEATURES } from "@/config/portfolio-margin";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { useExchange, useHyperliquid, useHyperliquidClients } from "@/lib/hyperliquid";
@@ -58,34 +59,37 @@ export function useAccountAbstractionControl() {
 	const { user: userExchangeClient } = useHyperliquidClients();
 	const { address, hasWalletAccess } = useWalletSession();
 	const { data: accountAbstraction, fetchStatus } = useUserAbstraction(address, hasWalletAccess);
-	const setAbstraction = useExchange("userSetAbstraction");
+	const { mutateAsync: setAbstraction, isPending } = useExchange("userSetAbstraction");
 
 	const canSet = hasWalletAccess && !!address && !!userExchangeClient;
 	const selectedAccountAbstraction = toSelectableAccountAbstraction(accountAbstraction ?? null);
 
-	async function setAccountAbstraction(nextAccountAbstraction: SelectableAccountAbstraction) {
-		if (!address || !canSet) {
-			throw new Error("Wallet is not ready to update account mode");
-		}
-		assertPortfolioMarginActivationAllowed(selectedAccountAbstraction, nextAccountAbstraction);
+	const setAccountAbstraction = useCallback(
+		async (nextAccountAbstraction: SelectableAccountAbstraction) => {
+			if (!address || !canSet) {
+				throw new Error("Wallet is not ready to update account mode");
+			}
+			assertPortfolioMarginActivationAllowed(selectedAccountAbstraction, nextAccountAbstraction);
 
-		await setAbstraction.mutateAsync({
-			user: address,
-			abstraction: nextAccountAbstraction,
-		});
+			await setAbstraction({
+				user: address,
+				abstraction: nextAccountAbstraction,
+			});
 
-		writeAccountModePreference(isTestnet, address, nextAccountAbstraction);
-		await Promise.all([
-			queryClient.invalidateQueries({ queryKey: ["hl", "userAbstraction"] }),
-			queryClient.invalidateQueries({ queryKey: ["hl", "info", "clearinghouseState"] }),
-			queryClient.invalidateQueries({ queryKey: ["hl", "info", "spotClearinghouseState"] }),
-		]);
-	}
+			writeAccountModePreference(isTestnet, address, nextAccountAbstraction);
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: ["hl", "userAbstraction"] }),
+				queryClient.invalidateQueries({ queryKey: ["hl", "info", "clearinghouseState"] }),
+				queryClient.invalidateQueries({ queryKey: ["hl", "info", "spotClearinghouseState"] }),
+			]);
+		},
+		[address, canSet, isTestnet, queryClient, selectedAccountAbstraction, setAbstraction],
+	);
 
 	return {
 		accountAbstraction: selectedAccountAbstraction,
 		isLoading: fetchStatus === "fetching",
-		isUpdating: setAbstraction.isPending,
+		isUpdating: isPending,
 		canSet,
 		portfolioMarginActivationEnabled: PORTFOLIO_MARGIN_FEATURES.activationEnabled,
 		setAccountAbstraction,
