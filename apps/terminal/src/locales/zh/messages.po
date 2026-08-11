@@ -924,10 +924,6 @@ msgstr "调整杠杆"
 msgid "Chart"
 msgstr "图表"
 
-#: src/components/trade/chart/datafeed.ts
-msgid "Chart history request timed out"
-msgstr ""
-
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking account..."
 msgstr "正在检查账户…"
@@ -3221,7 +3217,6 @@ msgid "Loading wallet..."
 msgstr "加载钱包中..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
-#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx
