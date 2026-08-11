@@ -77,6 +77,14 @@ const config = defineConfig({
   plugins: [
     nitro({
       compressPublicAssets: true,
+      publicAssets: [
+        {
+          dir: './public/charting_library',
+          baseURL: '/charting_library',
+          maxAge: 0,
+          fallthrough: false,
+        },
+      ],
       routeRules: {
         '/**': {
           headers: securityHeaders,
@@ -89,6 +97,9 @@ const config = defineConfig({
         },
         '/tradingview-theme.css': {
           headers: { ...securityHeaders, 'cache-control': 'public, max-age=0, must-revalidate' },
+        },
+        '/sw.js': {
+          headers: { ...securityHeaders, 'cache-control': 'no-store' },
         },
         '/build-meta.json': {
           headers: { ...securityHeaders, 'cache-control': 'no-store' },

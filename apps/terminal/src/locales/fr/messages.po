@@ -920,6 +920,10 @@ msgstr "Modifier le levier"
 msgid "Chart"
 msgstr "Graphique"
 
+#: src/components/trade/chart/datafeed.ts
+msgid "Chart history request timed out"
+msgstr "La requête d’historique du graphique a expiré"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking account..."
 msgstr "Vérification du compte..."
@@ -3200,6 +3204,7 @@ msgid "Loading wallet..."
 msgstr "Chargement du portefeuille..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx

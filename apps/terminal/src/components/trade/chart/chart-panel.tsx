@@ -1,3 +1,4 @@
+import { t } from "@lingui/core/macro";
 import { ClientOnly } from "@tanstack/react-router";
 import { Suspense, useEffect, useRef } from "react";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
@@ -46,5 +47,16 @@ export function ChartPanel({ active = true, yAxisInside = false }: Props) {
 }
 
 function ChartLoadingFallback() {
-	return <div className="h-full w-full bg-background" />;
+	return (
+		<output
+			aria-live="polite"
+			className="flex h-full w-full flex-col items-center justify-center gap-2 bg-background px-4 text-center"
+		>
+			<span
+				aria-hidden="true"
+				className="size-5 animate-spin rounded-full border-2 border-stroke-weak border-t-fg motion-reduce:animate-none"
+			/>
+			<p className="text-xs font-medium text-fg-muted">{t`Loading...`}</p>
+		</output>
+	);
 }

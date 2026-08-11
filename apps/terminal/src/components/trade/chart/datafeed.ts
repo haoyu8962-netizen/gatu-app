@@ -1,5 +1,6 @@
 import { t } from "@lingui/core/macro";
 import type { AllMidsResponse, MetaResponse } from "@nktkas/hyperliquid";
+import { CHART_HISTORY_REQUEST_TIMEOUT_MS } from "@/config/time";
 import { candleSnapshotToBar, filterAndSortBars } from "@/lib/chart/candle";
 import { type CandleInterval, resolutionToInterval } from "@/lib/chart/resolution";
 import { getCandleStore, streamKey } from "@/lib/chart/store";
@@ -22,6 +23,7 @@ import type {
 	PeriodParams,
 	ResolutionString,
 	ResolveCallback,
+	SearchSymbolsCallback,
 	ServerTimeCallback,
 	SubscribeBarsCallback,
 } from "@/types/charting_library";
@@ -131,23 +133,55 @@ function cacheKey(symbol: LibrarySymbolInfo, resolution: ResolutionString): stri
 	return `${symbol.ticker ?? symbol.name}:${resolution as string}`;
 }
 
-async function fetchBars(coin: string, interval: CandleInterval, fromMs: number, toMs: number) {
-	const candles = await getInfoClient().candleSnapshot({
+async function fetchBars(
+	coin: string,
+	interval: CandleInterval,
+	fromMs: number,
+	toMs: number,
+	timeoutMs = CHART_HISTORY_REQUEST_TIMEOUT_MS,
+) {
+	const request = getInfoClient().candleSnapshot({
 		coin,
 		interval,
 		startTime: fromMs,
 		endTime: toMs,
 	});
+	const candles = await new Promise<Awaited<typeof request>>((resolve, reject) => {
+		let settled = false;
+		const timeoutId = setTimeout(
+			() => {
+				if (settled) return;
+				settled = true;
+				reject(new Error(t`Chart history request timed out`));
+			},
+			Math.max(1, timeoutMs),
+		);
+
+		request.then(
+			(value) => {
+				if (settled) return;
+				settled = true;
+				clearTimeout(timeoutId);
+				resolve(value);
+			},
+			(error) => {
+				if (settled) return;
+				settled = true;
+				clearTimeout(timeoutId);
+				reject(error);
+			},
+		);
+	});
 	return filterAndSortBars(candles.map(candleSnapshotToBar), fromMs, toMs);
 }
 
-async function fetchPreviousBars(coin: string, interval: CandleInterval, beforeMs: number) {
+async function fetchPreviousBars(coin: string, interval: CandleInterval, beforeMs: number, timeoutMs: number) {
 	if (beforeMs <= 0) return null;
 	const lookbackMs = HISTORY_FALLBACK_LOOKBACK_MS_BY_INTERVAL[interval] ?? 180 * DAY_MS;
 	const fromMs = Math.max(0, beforeMs - lookbackMs);
 	if (fromMs >= beforeMs) return null;
 
-	const bars = await fetchBars(coin, interval, fromMs, beforeMs);
+	const bars = await fetchBars(coin, interval, fromMs, beforeMs, timeoutMs);
 	return bars.length > 0 ? bars : null;
 }
 
@@ -241,10 +275,12 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 		},
 
 		onReady: (callback: OnReadyCallback) => {
-			setTimeout(() => callback(configuration), 0);
+			resolveAsync(() => callback(configuration));
 		},
 
-		searchSymbols: () => {},
+		searchSymbols: (_userInput: string, _exchange: string, _symbolType: string, onResult: SearchSymbolsCallback) => {
+			resolveAsync(() => onResult([]));
+		},
 
 		resolveSymbol: (symbolName: string, onResolve: ResolveCallback, onError: DatafeedErrorCallback, extension) => {
 			void extension;
@@ -305,46 +341,47 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 			void (async () => {
 				const interval = resolutionToInterval(resolution);
 				if (!interval) {
-					onError(t`Unsupported resolution: ${String(resolution)}`);
+					resolveAsync(() => onError(t`Unsupported resolution: ${String(resolution)}`));
 					return;
 				}
 
 				const coin = coinFromLibrarySymbol(symbolInfo);
 				if (!coin) {
-					onError(t`Unknown symbol: ${symbolInfo.ticker ?? symbolInfo.name}`);
+					resolveAsync(() => onError(t`Unknown symbol: ${symbolInfo.ticker ?? symbolInfo.name}`));
 					return;
 				}
 				const fromMs = Math.max(0, Math.floor(periodParams.from * 1000));
 				const toMs = Math.max(0, Math.floor(periodParams.to * 1000));
 
 				if (toMs <= fromMs) {
-					onResult([], { noData: true });
+					resolveAsync(() => onResult([], { noData: true }));
 					return;
 				}
 
+				const historyDeadline = Date.now() + CHART_HISTORY_REQUEST_TIMEOUT_MS;
 				const bars = await fetchBars(coin, interval, fromMs, toMs);
 				const key = cacheKey(symbolInfo, resolution);
 
 				if (bars.length === 0) {
 					const fallbackBars = shouldFetchPreviousBars(periodParams, toMs)
-						? await fetchPreviousBars(coin, interval, fromMs)
+						? await fetchPreviousBars(coin, interval, fromMs, Math.max(1, historyDeadline - Date.now()))
 						: null;
 					const limitedFallbackBars = fallbackBars ? limitBarsToCountBack(fallbackBars, periodParams.countBack) : null;
 					const fallbackLastBar = limitedFallbackBars?.at(-1);
 					if (limitedFallbackBars && fallbackLastBar) {
-						onResult(limitedFallbackBars, { noData: false });
+						resolveAsync(() => onResult(limitedFallbackBars, { noData: false }));
 						return;
 					}
-					onResult([], { noData: true });
+					resolveAsync(() => onResult([], { noData: true }));
 					return;
 				}
 
 				const lastBar = bars[bars.length - 1];
 				store.getState().setLastBar(key, lastBar);
 
-				onResult(bars, { noData: false });
+				resolveAsync(() => onResult(bars, { noData: false }));
 			})().catch((error) => {
-				onError(error instanceof Error ? error.message : String(error));
+				resolveAsync(() => onError(error instanceof Error ? error.message : String(error)));
 			});
 		},
 
@@ -399,7 +436,7 @@ export function createDatafeed(options: DatafeedOptions = {}): ChartDatafeed {
 		},
 
 		getServerTime: (callback: ServerTimeCallback) => {
-			callback(Math.floor(Date.now() / 1000));
+			resolveAsync(() => callback(Math.floor(Date.now() / 1000)));
 		},
 	};
 }

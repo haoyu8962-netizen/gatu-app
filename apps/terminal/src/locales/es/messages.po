@@ -920,6 +920,10 @@ msgstr "Cambiar apalancamiento"
 msgid "Chart"
 msgstr "Gráfico"
 
+#: src/components/trade/chart/datafeed.ts
+msgid "Chart history request timed out"
+msgstr "Se agotó el tiempo de espera de la solicitud del historial del gráfico"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking account..."
 msgstr "Comprobando la cuenta..."
@@ -3200,6 +3204,7 @@ msgid "Loading wallet..."
 msgstr "Cargando billetera..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx

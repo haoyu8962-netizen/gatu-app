@@ -39,7 +39,8 @@ import {
 import { type ChartDatafeed, createDatafeed } from "./datafeed";
 import { useTradingViewOverlayLines } from "./use-tradingview-overlay-lines";
 
-const CHART_READY_SOFT_TIMEOUT_MS = 45_000;
+const CHART_READY_TIMEOUT_MS = 15_000;
+const CHART_READY_MAX_AUTO_RETRIES = 1;
 const SYMBOL_SWITCH_RETRY_TIMEOUT_MS = 8_000;
 const SYMBOL_SWITCH_MAX_RETRIES = 1;
 
@@ -99,6 +100,8 @@ export function TradingViewChart({
 	const symbolSwitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const symbolSwitchCleanupRef = useRef<(() => void) | null>(null);
 	const cancelSymbolSwitchRef = useRef<() => void>(() => {});
+	const pauseReadyWatchdogRef = useRef<() => void>(() => {});
+	const resumeReadyWatchdogRef = useRef<() => void>(() => {});
 	const themeSwitchSequenceRef = useRef(0);
 	const marketBySymbolRef = useRef(new Map<string, UnifiedMarketInfo>());
 	const overlayLinesRef = useRef(overlayLines);
@@ -109,7 +112,6 @@ export function TradingViewChart({
 	const syncOverlaysRef = useRef<() => void>(() => {});
 	const [initError, setInitError] = useState<string | null>(null);
 	const [isInitializing, setIsInitializing] = useState(true);
-	const [showReadyPrompt, setShowReadyPrompt] = useState(false);
 	const [retryNonce, setRetryNonce] = useState(0);
 	if (!overlayControllerRef.current) overlayControllerRef.current = new TradingViewOverlayController();
 	targetSymbolRef.current = widgetSymbol;
@@ -332,22 +334,23 @@ export function TradingViewChart({
 		void retryNonce;
 		if (!containerRef.current) return;
 		let disposed = false;
-		let readyPromptTimeout: ReturnType<typeof setTimeout> | null = null;
+		let readyWatchdog:
+			| {
+					widget: IChartingLibraryWidget;
+					automaticRetryCount: number;
+					remainingMs: number;
+					startedAt: number;
+					timeout: ReturnType<typeof setTimeout> | null;
+			  }
+			| undefined;
+		let deferredInitializationFailure: { reason: string; automaticRetryCount: number } | undefined;
 		chartReadyRef.current = false;
 
-		const clearReadyPromptTimeout = () => {
-			if (readyPromptTimeout) {
-				clearTimeout(readyPromptTimeout);
-				readyPromptTimeout = null;
+		const clearReadyWatchdog = () => {
+			if (readyWatchdog?.timeout) {
+				clearTimeout(readyWatchdog.timeout);
 			}
-		};
-
-		const scheduleReadyPrompt = (widget: IChartingLibraryWidget) => {
-			clearReadyPromptTimeout();
-			readyPromptTimeout = setTimeout(() => {
-				if (disposed || chartReadyRef.current || widgetRef.current !== widget) return;
-				setShowReadyPrompt(true);
-			}, CHART_READY_SOFT_TIMEOUT_MS);
+			readyWatchdog = undefined;
 		};
 
 		function getMarketForChartSymbol(symbolName: string, coin: string): UnifiedMarketInfo | undefined {
@@ -375,12 +378,15 @@ export function TradingViewChart({
 		}
 
 		const removeWidget = () => {
-			clearReadyPromptTimeout();
+			clearReadyWatchdog();
 			clearPendingSymbolSwitch();
 			overlayControllerRef.current?.clear();
-			if (widgetRef.current) {
-				widgetRef.current.remove();
-				widgetRef.current = null;
+			const widget = widgetRef.current;
+			widgetRef.current = null;
+			if (widget) {
+				try {
+					widget.remove();
+				} catch {}
 			}
 			datafeedRef.current = null;
 			chartReadyRef.current = false;
@@ -398,11 +404,93 @@ export function TradingViewChart({
 			setInitError(reason);
 		};
 
-		const initWidget = async () => {
+		const shouldPauseReadyWatchdog = () =>
+			!activeRef.current || document.visibilityState === "hidden" || !navigator.onLine;
+
+		const retryOrFail = (reason: string, automaticRetryCount: number) => {
+			removeWidget();
+			if (shouldPauseReadyWatchdog()) {
+				deferredInitializationFailure = { reason, automaticRetryCount };
+				return;
+			}
+			if (automaticRetryCount < CHART_READY_MAX_AUTO_RETRIES) {
+				void initWidget(automaticRetryCount + 1);
+				return;
+			}
+			handleFinalFailure(reason);
+		};
+
+		const handleReadyDeadline = (watchdog: NonNullable<typeof readyWatchdog>) => {
+			if (
+				disposed ||
+				readyWatchdog !== watchdog ||
+				chartReadyRef.current ||
+				widgetRef.current !== watchdog.widget ||
+				shouldPauseReadyWatchdog()
+			) {
+				return;
+			}
+			retryOrFail("ready-timeout", watchdog.automaticRetryCount);
+		};
+
+		const armReadyWatchdog = (watchdog: NonNullable<typeof readyWatchdog>) => {
+			if (disposed || readyWatchdog !== watchdog || watchdog.timeout || shouldPauseReadyWatchdog()) return;
+			if (watchdog.remainingMs <= 0) {
+				handleReadyDeadline(watchdog);
+				return;
+			}
+
+			watchdog.startedAt = Date.now();
+			watchdog.timeout = setTimeout(() => {
+				watchdog.timeout = null;
+				watchdog.remainingMs = 0;
+				handleReadyDeadline(watchdog);
+			}, watchdog.remainingMs);
+		};
+
+		const pauseReadyWatchdog = () => {
+			const watchdog = readyWatchdog;
+			if (!watchdog?.timeout) return;
+			clearTimeout(watchdog.timeout);
+			watchdog.timeout = null;
+			watchdog.remainingMs = Math.max(0, watchdog.remainingMs - (Date.now() - watchdog.startedAt));
+		};
+
+		const resumeReadyWatchdog = () => {
+			if (shouldPauseReadyWatchdog()) return;
+			if (deferredInitializationFailure) {
+				const { automaticRetryCount } = deferredInitializationFailure;
+				deferredInitializationFailure = undefined;
+				void initWidget(automaticRetryCount);
+				return;
+			}
+			if (readyWatchdog) armReadyWatchdog(readyWatchdog);
+		};
+		pauseReadyWatchdogRef.current = pauseReadyWatchdog;
+		resumeReadyWatchdogRef.current = resumeReadyWatchdog;
+
+		const handlePageLifecycleChange = () => {
+			if (shouldPauseReadyWatchdog()) {
+				pauseReadyWatchdog();
+				return;
+			}
+			resumeReadyWatchdog();
+		};
+
+		document.addEventListener("visibilitychange", handlePageLifecycleChange);
+		window.addEventListener("online", handlePageLifecycleChange);
+		window.addEventListener("offline", handlePageLifecycleChange);
+		window.addEventListener("pageshow", handlePageLifecycleChange);
+
+		async function initWidget(automaticRetryCount: number): Promise<void> {
+			setIsInitializing(true);
+			setInitError(null);
 			try {
 				await loadTradingViewScript();
 
-				if (disposed || !containerRef.current || !window.TradingView) return;
+				if (disposed || !containerRef.current) return;
+				const tradingView = window.TradingView;
+				if (!tradingView) throw new Error("tradingview-unavailable");
 
 				removeWidget();
 
@@ -414,7 +502,6 @@ export function TradingViewChart({
 				const initialSymbol = targetSymbolRef.current;
 				const initialInterval = targetIntervalRef.current;
 				setInitError(null);
-				setShowReadyPrompt(false);
 
 				const datafeed = createDatafeed({
 					getPriceScale: getSelectedMarketPriceScale,
@@ -424,7 +511,7 @@ export function TradingViewChart({
 				});
 				datafeedRef.current = datafeed;
 
-				const widget = new window.TradingView.widget({
+				const widget = new tradingView.widget({
 					container: containerRef.current,
 					library_path: CHART_LIBRARY_PATH,
 					datafeed,
@@ -452,15 +539,23 @@ export function TradingViewChart({
 				appliedSymbolRef.current = initialSymbol;
 				appliedIntervalRef.current = initialInterval;
 				appliedThemeRef.current = initialTheme;
-				scheduleReadyPrompt(widget);
+
+				const watchdog = {
+					widget,
+					automaticRetryCount,
+					remainingMs: CHART_READY_TIMEOUT_MS,
+					startedAt: 0,
+					timeout: null,
+				};
+				readyWatchdog = watchdog;
+				armReadyWatchdog(watchdog);
 
 				widget.onChartReady(() => {
 					if (disposed || widgetRef.current !== widget) return;
-					clearReadyPromptTimeout();
+					clearReadyWatchdog();
 					chartReadyRef.current = true;
 					setIsInitializing(false);
 					setInitError(null);
-					setShowReadyPrompt(false);
 					if (pendingDataResetRef.current) requestDataResetRef.current();
 					applyThemeRef.current(targetThemeRef.current);
 					applySymbolRef.current();
@@ -468,16 +563,22 @@ export function TradingViewChart({
 				});
 			} catch {
 				if (disposed) return;
-				removeWidget();
-				handleFinalFailure("exception");
+				retryOrFail("exception", automaticRetryCount);
 			}
-		};
+		}
 
-		initWidget();
+		void initWidget(0);
 
 		return () => {
 			disposed = true;
-			clearReadyPromptTimeout();
+			pauseReadyWatchdogRef.current = () => {};
+			resumeReadyWatchdogRef.current = () => {};
+			deferredInitializationFailure = undefined;
+			document.removeEventListener("visibilitychange", handlePageLifecycleChange);
+			window.removeEventListener("online", handlePageLifecycleChange);
+			window.removeEventListener("offline", handlePageLifecycleChange);
+			window.removeEventListener("pageshow", handlePageLifecycleChange);
+			clearReadyWatchdog();
 			removeWidget();
 		};
 	}, [retryNonce]);
@@ -486,6 +587,7 @@ export function TradingViewChart({
 		targetSymbolRef.current = widgetSymbol;
 		targetIntervalRef.current = interval;
 		if (!active) {
+			pauseReadyWatchdogRef.current();
 			// A cancelled in-flight setSymbol may still land inside the hidden iframe, so the
 			// applied bookkeeping can no longer be trusted; drop it to force a verified re-apply
 			// (with watchdog) on the next activation even when the target loops back.
@@ -496,6 +598,7 @@ export function TradingViewChart({
 			cancelSymbolSwitchRef.current();
 			return;
 		}
+		resumeReadyWatchdogRef.current();
 		applySymbolRef.current();
 		syncOverlaysRef.current();
 	}, [widgetSymbol, interval, active]);
@@ -524,16 +627,28 @@ export function TradingViewChart({
 					isInitializing ? "opacity-100" : "opacity-0",
 				)}
 			/>
-			{(initError || showReadyPrompt) && (
+			{isInitializing && !initError && (
+				<output
+					data-chart-loading
+					aria-live="polite"
+					className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-background px-4 text-center"
+				>
+					<span
+						aria-hidden="true"
+						className="size-5 animate-spin rounded-full border-2 border-stroke-weak border-t-fg motion-reduce:animate-none"
+					/>
+					<p className="text-xs font-medium text-fg-muted">{t`Loading...`}</p>
+				</output>
+			)}
+			{initError && (
 				<div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-surface px-4 text-center">
-					<p className="text-sm font-medium text-fg">{initError ? t`Something went wrong` : t`Loading...`}</p>
+					<p className="text-sm font-medium text-fg">{t`Something went wrong`}</p>
 					<button
 						type="button"
 						className="rounded-xs border border-stroke-weak px-3 py-1.5 text-xs font-medium text-fg hover:bg-fill-hover"
 						onClick={() => {
 							setIsInitializing(true);
 							setInitError(null);
-							setShowReadyPrompt(false);
 							setRetryNonce((value) => value + 1);
 						}}
 					>

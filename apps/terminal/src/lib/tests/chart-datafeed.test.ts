@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDatafeed } from "@/components/trade/chart/datafeed";
+import { CHART_HISTORY_REQUEST_TIMEOUT_MS } from "@/config/time";
 import { getChartMarketKeys, getChartMarketLookupKey, getChartSymbolInfo } from "@/lib/chart/market-symbol";
 import type { UnifiedMarketInfo } from "@/lib/hyperliquid";
 import type { LibrarySymbolInfo, ResolutionString } from "@/types/charting_library";
@@ -314,7 +315,7 @@ describe("TradingView datafeed", () => {
 		});
 		const symbol = await resolveDatafeedSymbol(datafeed, "@235");
 		vi.useFakeTimers({ now: Date.UTC(2026, 5, 28) });
-		const result = await new Promise<{
+		const resultPromise = new Promise<{
 			bars: { close: number; time: number }[];
 			meta: { noData?: boolean } | undefined;
 		}>((resolve, reject) => {
@@ -326,6 +327,8 @@ describe("TradingView datafeed", () => {
 				reject,
 			);
 		});
+		await vi.advanceTimersByTimeAsync(1);
+		const result = await resultPromise;
 
 		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
 		expect(infoClient.candleSnapshot).toHaveBeenNthCalledWith(
@@ -363,7 +366,7 @@ describe("TradingView datafeed", () => {
 		});
 		const symbol = await resolveDatafeedSymbol(datafeed, "@235");
 		vi.useFakeTimers({ now: Date.UTC(2026, 5, 28) });
-		const result = await new Promise<{
+		const resultPromise = new Promise<{
 			bars: { close: number; time: number }[];
 			meta: { noData?: boolean } | undefined;
 		}>((resolve, reject) => {
@@ -375,12 +378,174 @@ describe("TradingView datafeed", () => {
 				reject,
 			);
 		});
+		await vi.advanceTimersByTimeAsync(1);
+		const result = await resultPromise;
 
 		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(1);
 		expect(result.bars).toEqual([]);
 		expect(result.meta).toEqual({ noData: true });
 
 		vi.useRealTimers();
+	});
+
+	it("times out a stalled history request and ignores a late response", async () => {
+		let resolveSnapshot: ((value: []) => void) | undefined;
+		infoClient.candleSnapshot.mockReturnValueOnce(
+			new Promise<[]>((resolve) => {
+				resolveSnapshot = resolve;
+			}),
+		);
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "HYPE" ? { name: "HYPE-USDC", ticker: "HYPE", description: "HYPE-USDC", pricescale: 100 } : undefined,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "HYPE");
+		vi.useFakeTimers();
+		const onResult = vi.fn();
+		const onError = vi.fn();
+
+		datafeed.getBars(
+			symbol,
+			"60" as ResolutionString,
+			{ countBack: 100, firstDataRequest: true, from: 1, to: 2 },
+			onResult,
+			onError,
+		);
+
+		await vi.advanceTimersByTimeAsync(CHART_HISTORY_REQUEST_TIMEOUT_MS - 1);
+		expect(onResult).not.toHaveBeenCalled();
+		expect(onError).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(1);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(onError).toHaveBeenCalledTimes(1);
+		expect(onError).toHaveBeenCalledWith("Chart history request timed out");
+		expect(onResult).not.toHaveBeenCalled();
+
+		resolveSnapshot?.([]);
+		await Promise.resolve();
+		await vi.advanceTimersByTimeAsync(1);
+		expect(onError).toHaveBeenCalledTimes(1);
+		expect(onResult).not.toHaveBeenCalled();
+	});
+
+	it("consumes a late history rejection without reporting a second error", async () => {
+		let rejectSnapshot: ((reason: Error) => void) | undefined;
+		infoClient.candleSnapshot.mockReturnValueOnce(
+			new Promise<[]>((_resolve, reject) => {
+				rejectSnapshot = reject;
+			}),
+		);
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "HYPE" ? { name: "HYPE-USDC", ticker: "HYPE", description: "HYPE-USDC", pricescale: 100 } : undefined,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "HYPE");
+		vi.useFakeTimers();
+		const onError = vi.fn();
+
+		datafeed.getBars(
+			symbol,
+			"60" as ResolutionString,
+			{ countBack: 100, firstDataRequest: true, from: 1, to: 2 },
+			vi.fn(),
+			onError,
+		);
+		await vi.advanceTimersByTimeAsync(CHART_HISTORY_REQUEST_TIMEOUT_MS + 1);
+		expect(onError).toHaveBeenCalledTimes(1);
+
+		rejectSnapshot?.(new Error("late transport failure"));
+		await Promise.resolve();
+		await vi.advanceTimersByTimeAsync(1);
+		expect(onError).toHaveBeenCalledTimes(1);
+		expect(onError).toHaveBeenCalledWith("Chart history request timed out");
+	});
+
+	it("shares one timeout budget with the previous-bars fallback", async () => {
+		const datafeed = createDatafeed({
+			getSymbolInfo: (_symbolName, coin) =>
+				coin === "HYPE" ? { name: "HYPE-USDC", ticker: "HYPE", description: "HYPE-USDC", pricescale: 100 } : undefined,
+		});
+		const symbol = await resolveDatafeedSymbol(datafeed, "HYPE");
+		vi.useFakeTimers({ now: Date.UTC(2026, 5, 28) });
+		infoClient.candleSnapshot
+			.mockImplementationOnce(
+				() => new Promise<[]>((resolve) => setTimeout(() => resolve([]), CHART_HISTORY_REQUEST_TIMEOUT_MS - 2_000)),
+			)
+			.mockReturnValueOnce(new Promise<[]>(() => {}));
+		const onResult = vi.fn();
+		const onError = vi.fn();
+
+		datafeed.getBars(
+			symbol,
+			"60" as ResolutionString,
+			{
+				countBack: 100,
+				firstDataRequest: true,
+				from: Date.UTC(2026, 5, 27) / 1_000,
+				to: Date.UTC(2026, 5, 28) / 1_000,
+			},
+			onResult,
+			onError,
+		);
+
+		await vi.advanceTimersByTimeAsync(CHART_HISTORY_REQUEST_TIMEOUT_MS - 2_000);
+		expect(infoClient.candleSnapshot).toHaveBeenCalledTimes(2);
+		expect(onError).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(1_999);
+		expect(onError).not.toHaveBeenCalled();
+
+		await vi.advanceTimersByTimeAsync(1);
+		await vi.advanceTimersByTimeAsync(1);
+		expect(onError).toHaveBeenCalledWith("Chart history request timed out");
+		expect(onResult).not.toHaveBeenCalled();
+	});
+
+	it("reports synchronous validation failures asynchronously", async () => {
+		const datafeed = createDatafeed();
+		const onError = vi.fn();
+		vi.useFakeTimers();
+
+		datafeed.getBars(
+			{ name: "UNKNOWN", ticker: "UNKNOWN" } as LibrarySymbolInfo,
+			"2S" as ResolutionString,
+			{ countBack: 100, firstDataRequest: true, from: 1, to: 2 },
+			vi.fn(),
+			onError,
+		);
+
+		expect(onError).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(onError).toHaveBeenCalledWith("Unsupported resolution: 2S");
+	});
+
+	it("completes disabled symbol searches asynchronously", async () => {
+		const datafeed = createDatafeed();
+		const onResult = vi.fn();
+		vi.useFakeTimers();
+
+		datafeed.searchSymbols("HYPE", "HYPERLIQUID", "crypto", onResult);
+
+		expect(onResult).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(onResult).toHaveBeenCalledWith([]);
+	});
+
+	it("returns configuration and server time asynchronously", async () => {
+		const datafeed = createDatafeed();
+		const onReady = vi.fn();
+		const onServerTime = vi.fn();
+		vi.useFakeTimers();
+
+		datafeed.onReady(onReady);
+		datafeed.getServerTime?.(onServerTime);
+
+		expect(onReady).not.toHaveBeenCalled();
+		expect(onServerTime).not.toHaveBeenCalled();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(onReady).toHaveBeenCalledTimes(1);
+		expect(onServerTime).toHaveBeenCalledTimes(1);
 	});
 
 	it("invalidates realtime caches before requesting a TradingView data reset", async () => {

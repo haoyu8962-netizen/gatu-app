@@ -83,9 +83,11 @@ sudo useradd --system --create-home --shell /usr/sbin/nologin gatu
 sudo mkdir -p /opt/gatu/repo /opt/gatu/shared /opt/gatu/releases
 sudo chown -R gatu:gatu /opt/gatu
 
-# 允许 gatu 免密重启/查看自己的服务（deploy.sh 需要）
-echo 'gatu ALL=(root) NOPASSWD: /usr/bin/systemctl restart gatu, /usr/bin/systemctl status gatu' | sudo tee /etc/sudoers.d/gatu
+# 只允许 deploy.sh 重启/查看应用服务。Caddy 配置由管理员手工验证和安装；
+# 不要让可写仓库文件获得持久的 root install/reload 权限。
+echo 'gatu ALL=(root) NOPASSWD: /usr/bin/systemctl restart gatu, /usr/bin/systemctl status gatu --no-pager' | sudo tee /etc/sudoers.d/gatu
 sudo chmod 440 /etc/sudoers.d/gatu
+sudo visudo -cf /etc/sudoers.d/gatu
 ```
 
 ## 4. 拉取私有仓库(Deploy Key)
@@ -116,6 +118,8 @@ sudo chmod 600 /opt/gatu/shared/.env.local /opt/gatu/shared/.env.runtime
 # 编辑这两个文件填入真实值：
 #   .env.local   → VITE_PRIVY_APP_ID；移动配对放量时再把对应 gate 设为精确的 "true"
 #   .env.runtime → IPDATA_API_KEY（PORT/HOST 默认即可）
+#                  非 app.gatu.ai 部署时，所部署分支还必须同步修改 deploy/Caddyfile
+#                  的站点地址，并设 GATU_PUBLIC_BASE_URL=https://<终端域名>
 sudo -u gatu nano /opt/gatu/shared/.env.local
 sudo -u gatu nano /opt/gatu/shared/.env.runtime
 ```
@@ -143,7 +147,8 @@ sudo systemctl enable gatu          # 开机自启（先不 start，等首次 de
 ## 8. 安装 Caddy 配置
 
 ```bash
-sudo cp /opt/gatu/repo/deploy/Caddyfile /etc/caddy/Caddyfile
+sudo /usr/bin/caddy validate --config /opt/gatu/repo/deploy/Caddyfile --adapter caddyfile
+sudo /usr/bin/install -m 0644 /opt/gatu/repo/deploy/Caddyfile /etc/caddy/Caddyfile
 sudo mkdir -p /var/log/caddy && sudo chown caddy:caddy /var/log/caddy
 sudo systemctl reload caddy         # Caddy 自动签发 app.gatu.ai 的证书
 ```
@@ -154,10 +159,10 @@ sudo systemctl reload caddy         # Caddy 自动签发 app.gatu.ai 的证书
 sudo -u gatu bash /opt/gatu/repo/deploy/deploy.sh main
 ```
 
-脚本会:同步代码 → 注入 `.env.local` → `pnpm install` → 构建 → 复制 `.output` 到
+脚本会:同步代码 → 验证仓库与已安装 `Caddyfile` 完全一致 → 注入 `.env.local` → `pnpm install` → 构建 → 复制 `.output` 到
 `/opt/gatu/releases/<timestamp>-<commit>` → 合并上一版 `public/assets` 中的 hashed chunks →
-原子切换 `/opt/gatu/current` → `systemctl restart gatu` → 健康检查。
-末行打印 `OK — gatu serving on 127.0.0.1:3000 (commit …)` 即成功。
+原子切换 `/opt/gatu/current` → `systemctl restart gatu` → Node 直连和 Caddy 公网入口双重健康检查。
+末行打印 `OK — gatu serving on 127.0.0.1:3000 and https://app.gatu.ai (commit …)` 即成功。
 
 构建时脚本会注入完整 Git commit 和 release ID。产物根目录的 `/build-meta.json` 会公开
 `version`、`commit`、`release`、`builtAt`;健康检查会核对它们与本次部署完全一致,避免服务
@@ -179,6 +184,10 @@ curl -I https://app.gatu.ai          # 期望 200，且证书有效
 curl -fsS https://app.gatu.ai/build-meta.json # 期望 commit/release 与部署日志一致
 asset="$(curl -fsS https://app.gatu.ai/builders-perp | grep -o '/assets/[^"]*\.js' | head -1)"
 curl -I "https://app.gatu.ai${asset}" # 期望 200 且 content-type 为 JavaScript
+curl -sSI https://app.gatu.ai/charting_library/charting_library.js | grep -iE '^(HTTP/|cache-control:|content-type:)'
+# 期望只有一个 Cache-Control: public, max-age=0, must-revalidate，MIME 为 JavaScript
+curl -sS -o /dev/null -w '%{http_code}\n' https://app.gatu.ai/charting_library/bundles/__missing__.js
+# 期望 404，不能是 200 HTML/SSR fallback
 sudo systemctl status gatu --no-pager
 ```
 
@@ -247,12 +256,28 @@ sudo systemctl restart gatu
 > 所以刚发布后旧客户端仍能拉到上一版动态 chunk。只有 `restart` 那几秒短暂中断。
 > `deploy.sh` 的健康检查不仅访问 SSR HTML,还会拉取 HTML 实际引用的入口 JS、`trade-terminal-page-*.js`,
 > 以及交易页动态引用的 `mobile-terminal-*.js`;任何一个 hashed asset 返回 HTML/500/非 JavaScript
-> 都会失败并尝试回滚到上一个 release。它还会读取 `/build-meta.json`,确认线上 commit 与 release
-> 就是刚发布的版本。
+> 都会失败并尝试回滚到上一个 release。它还会在 Node 直连和 `GATU_PUBLIC_BASE_URL`
+> 指向的 Caddy 最终入口核对 TradingView 入口、`sameorigin.html`、入口引用的初始 JS/CSS bundles、
+> MIME、唯一的重验证 Cache-Control，以及缺失 bundle 必须返回非 HTML 的 404。最后读取
+> `/build-meta.json`,确认线上 commit 与 release 就是刚发布的版本；自动回滚后也会精确
+> 核对上一个 release，不会把仍在响应的失败新版本误报为回滚成功。所有健康检查 HTTP
+> 请求都有连接和总时限，网络异常不会让部署无限挂起。
 
 ### 已有服务器从旧部署模式迁移
 
-如果服务器之前的 `gatu.service` 仍使用 `/opt/gatu/repo/apps/terminal/.output`,先更新 systemd 单元:
+旧服务器第一次运行新版 `deploy.sh` 时，如果已安装 Caddy 配置与仓库不一致，
+脚本会在构建前 fail closed。用管理员账号执行:
+
+```bash
+sudo /usr/bin/caddy validate --config /opt/gatu/repo/deploy/Caddyfile --adapter caddyfile
+sudo /usr/bin/install -m 0644 /opt/gatu/repo/deploy/Caddyfile /etc/caddy/Caddyfile
+sudo /usr/bin/systemctl reload caddy
+```
+
+然后重新运行 `deploy.sh`。脚本故意不自动覆盖/reload Caddy：仓库归 `gatu` 可写，为它授予
+root install/reload 会让被入侵的应用用户获得修改公网代理的能力，也无法与应用 release 做可靠的原子回滚。
+
+如果服务器之前的 `gatu.service` 仍使用 `/opt/gatu/repo/apps/terminal/.output`,再更新 systemd 单元:
 
 ```bash
 sudo cp /opt/gatu/repo/deploy/gatu.service /etc/systemd/system/gatu.service
@@ -272,6 +297,14 @@ Caddy 已直接对外可用。若要全球加速/抗量,在 Caddy 前再挂一�
 源站指向 `app.gatu.ai`,转发 `Host` 头,仅对 `/assets/*` 走长缓存。当前 Charting Library v28
 在 iPad WebKit 热缓存下可能无法完成初始化,因此 `/charting_library/*` 和
 `/tradingview-theme.css` 必须每次重新验证,其余 SSR 路径不缓存(或极短 TTL)。
+
+### TradingView vendor 升级约束
+
+当前修复不升级 Charting Library v28 vendor。以后升级 vendor 时，不能直接用新文件覆盖
+`/charting_library/`。发布前必须先改为带版本的 `library_path`(例如 `/charting_library/v32/`)，
+原子发布新版完整目录，并至少保留当前线上旧版的完整目录，直到旧标签页排空。
+不能只保留 `charting_library.js` 或少量初始 bundles；运行中的图表会按功能继续懒加载同版本其他
+hashed bundles。完成版本化、双目录保留和移动端热缓存回归前，不得上线 vendor 升级。
 
 ### CSP(应用层已启用)
 

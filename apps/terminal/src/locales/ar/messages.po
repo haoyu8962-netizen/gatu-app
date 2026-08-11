@@ -920,6 +920,10 @@ msgstr "تغيير الرافعة المالية"
 msgid "Chart"
 msgstr "الرسم البياني"
 
+#: src/components/trade/chart/datafeed.ts
+msgid "Chart history request timed out"
+msgstr "انتهت مهلة طلب سجل الرسم البياني"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Checking account..."
 msgstr "جارٍ التحقق من الحساب..."
@@ -3200,6 +3204,7 @@ msgid "Loading wallet..."
 msgstr "جاري تحميل المحفظة..."
 
 #: src/components/portfolio/portfolio-performance-chart.tsx
+#: src/components/trade/chart/chart-panel.tsx
 #: src/components/trade/chart/tradingview-chart.tsx
 #: src/components/trade/mobile/mobile-account-view.tsx
 #: src/components/trade/mobile/mobile-balances-tab.tsx

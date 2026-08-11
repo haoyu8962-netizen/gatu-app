@@ -140,6 +140,8 @@ describe("TradingViewChart", () => {
 
 	beforeEach(() => {
 		i18n.loadAndActivate({ locale: "en", messages: {} });
+		Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+		Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
 		vi.mocked(loadTradingViewScript).mockReset().mockResolvedValue(undefined);
 		testState.datafeedOptions = [];
 		testState.datafeedResets = [];
@@ -289,7 +291,7 @@ describe("TradingViewChart", () => {
 		expect(container.textContent).not.toContain("Something went wrong");
 	});
 
-	it("does not destroy the widget when TradingView readiness is delayed", async () => {
+	it("recreates a widget once when TradingView readiness stalls, then shows an explicit retry", async () => {
 		vi.useFakeTimers();
 		widgetConstructor.mockImplementation(function Widget(this: unknown, options: unknown) {
 			void this;
@@ -305,13 +307,28 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 
 		await act(async () => {
-			vi.advanceTimersByTime(60_000);
+			vi.advanceTimersByTime(15_000);
 			await Promise.resolve();
 		});
+		await flushChartEffects();
 
-		expect(widgetConstructor).toHaveBeenCalledTimes(1);
-		expect(widgets[0]?.remove).not.toHaveBeenCalled();
-		expect(container.textContent).not.toContain("Something went wrong");
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+		expect(widgets[1]?.remove).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Loading...");
+		expect(container.textContent).not.toContain("Retry");
+
+		await act(async () => {
+			vi.advanceTimersByTime(15_000);
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[1]?.remove).toHaveBeenCalledOnce();
+		expect(container.textContent).toContain("Something went wrong");
+		expect(container.textContent).toContain("Retry");
+		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("false");
 	});
 
 	it("keeps a stable background mask until TradingView is ready", async () => {
@@ -332,6 +349,8 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 
 		const mask = container.querySelector("[data-chart-initializing]");
+		expect(container.querySelector("[data-chart-loading]")).not.toBeNull();
+		expect(container.textContent).toContain("Loading...");
 		expect(mask?.className).toContain("bg-background");
 		expect(mask?.className).toContain("opacity-100");
 		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");
@@ -340,6 +359,7 @@ describe("TradingViewChart", () => {
 		await flushChartEffects();
 
 		expect(mask?.className).toContain("opacity-0");
+		expect(container.querySelector("[data-chart-loading]")).toBeNull();
 		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("false");
 		expect(widgets[0]?.remove).not.toHaveBeenCalled();
 	});
@@ -348,6 +368,7 @@ describe("TradingViewChart", () => {
 		let keepRetryPending: (() => void) | undefined;
 		vi.mocked(loadTradingViewScript)
 			.mockRejectedValueOnce(new Error("script load failed"))
+			.mockRejectedValueOnce(new Error("script load failed again"))
 			.mockImplementationOnce(
 				() =>
 					new Promise<void>((resolve) => {
@@ -369,12 +390,170 @@ describe("TradingViewChart", () => {
 		act(() => retry?.click());
 		await act(async () => Promise.resolve());
 
-		expect(loadTradingViewScript).toHaveBeenCalledTimes(2);
+		expect(loadTradingViewScript).toHaveBeenCalledTimes(3);
 		expect(mask?.className).toContain("opacity-100");
 		expect(chart?.getAttribute("aria-busy")).toBe("true");
 
 		act(() => keepRetryPending?.());
 		await flushChartEffects();
+	});
+
+	it("automatically retries a script-loader failure once and recovers", async () => {
+		vi.mocked(loadTradingViewScript)
+			.mockRejectedValueOnce(new Error("script load failed"))
+			.mockResolvedValue(undefined);
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		await flushChartEffects();
+
+		expect(loadTradingViewScript).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+		expect(container.textContent).not.toContain("Something went wrong");
+	});
+
+	it("automatically retries a widget-constructor exception once and recovers", async () => {
+		widgetConstructor.mockImplementationOnce(function FailedWidget(this: unknown) {
+			void this;
+			throw new Error("constructor failed");
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets).toHaveLength(1);
+		expect(container.textContent).not.toContain("Something went wrong");
+	});
+
+	it("does not silently hang when the loader resolves without exposing TradingView", async () => {
+		delete (window as { TradingView?: unknown }).TradingView;
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+		await flushChartEffects();
+
+		expect(loadTradingViewScript).toHaveBeenCalledTimes(2);
+		expect(widgetConstructor).not.toHaveBeenCalled();
+		expect(container.textContent).toContain("Something went wrong");
+		expect(container.textContent).toContain("Retry");
+	});
+
+	it("pauses the readiness deadline while the page is hidden", async () => {
+		vi.useFakeTimers();
+		widgetConstructor.mockImplementation(function Widget(this: unknown, options: unknown) {
+			void this;
+			const widget = createMockWidget(options as { theme?: "light" | "dark" });
+			widget.onChartReady.mockImplementation(() => {});
+			widgets.push(widget);
+			return widget;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		await act(async () => {
+			vi.advanceTimersByTime(5_000);
+			Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+			document.dispatchEvent(new Event("visibilitychange"));
+			vi.advanceTimersByTime(60_000);
+			await Promise.resolve();
+		});
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+
+		await act(async () => {
+			Object.defineProperty(document, "visibilityState", { configurable: true, value: "visible" });
+			document.dispatchEvent(new Event("visibilitychange"));
+			vi.advanceTimersByTime(10_000);
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+	});
+
+	it("pauses the readiness deadline while the browser is offline", async () => {
+		vi.useFakeTimers();
+		widgetConstructor.mockImplementation(function Widget(this: unknown, options: unknown) {
+			void this;
+			const widget = createMockWidget(options as { theme?: "light" | "dark" });
+			widget.onChartReady.mockImplementation(() => {});
+			widgets.push(widget);
+			return widget;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		await act(async () => {
+			vi.advanceTimersByTime(3_000);
+			Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
+			window.dispatchEvent(new Event("offline"));
+			vi.advanceTimersByTime(60_000);
+			await Promise.resolve();
+		});
+		expect(widgetConstructor).toHaveBeenCalledOnce();
+		expect(widgets[0]?.remove).not.toHaveBeenCalled();
+
+		await act(async () => {
+			Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
+			window.dispatchEvent(new Event("online"));
+			vi.advanceTimersByTime(12_000);
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+		expect(widgets[0]?.remove).toHaveBeenCalledOnce();
+	});
+
+	it("ignores a late ready callback from a widget that the watchdog replaced", async () => {
+		vi.useFakeTimers();
+		const readyCallbacks: Array<() => void> = [];
+		widgetConstructor.mockImplementation(function Widget(this: unknown, options: unknown) {
+			void this;
+			const widget = createMockWidget(options as { theme?: "light" | "dark" });
+			widget.onChartReady.mockImplementation((callback: () => void) => {
+				readyCallbacks.push(callback);
+			});
+			widgets.push(widget);
+			return widget;
+		});
+
+		act(() => {
+			root.render(createElement(TradingViewChart, { symbol: "BTC", interval: "60", theme: "dark" }));
+		});
+		await flushChartEffects();
+
+		await act(async () => {
+			vi.advanceTimersByTime(15_000);
+			await Promise.resolve();
+		});
+		await flushChartEffects();
+		expect(widgetConstructor).toHaveBeenCalledTimes(2);
+
+		act(() => readyCallbacks[0]?.());
+		await flushChartEffects();
+		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("true");
+		expect(container.querySelector("[data-chart-loading]")).not.toBeNull();
+
+		act(() => readyCallbacks[1]?.());
+		await flushChartEffects();
+		expect(container.firstElementChild?.getAttribute("aria-busy")).toBe("false");
+		expect(container.querySelector("[data-chart-loading]")).toBeNull();
 	});
 
 	it("changes the TradingView theme without rebuilding the iframe", async () => {
