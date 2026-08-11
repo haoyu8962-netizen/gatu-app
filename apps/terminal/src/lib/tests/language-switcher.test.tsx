@@ -120,6 +120,22 @@ describe("LanguageSwitcher", () => {
 		expect(dynamicActivate).not.toHaveBeenCalled();
 	});
 
+	it("uses the available viewport height before scrolling", async () => {
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<LanguageSwitcher />
+				</I18nProvider>,
+			);
+		});
+
+		const trigger = container.querySelector<HTMLElement>('[aria-label="Language and number format"]');
+		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+
+		const menu = document.body.querySelector<HTMLElement>('[role="menu"]');
+		expect(menu?.classList.contains("max-h-[calc(100dvh-3rem)]")).toBe(true);
+	});
+
 	it("updates the mounted mobile navigation when the locale changes", async () => {
 		await act(async () => {
 			root.render(

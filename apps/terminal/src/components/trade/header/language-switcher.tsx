@@ -45,7 +45,7 @@ export function LanguageSwitcher() {
 			hideCaret
 			triggerClassName="size-8 shrink-0 justify-center !px-0 !py-0 !gap-0 rounded-8 text-fg hover:bg-fill-hover active:bg-fill-press"
 			trigger={<GlobeIcon className="size-4" />}
-			popupClassName="min-w-64"
+			popupClassName="min-w-64 max-h-[calc(100dvh-3rem)]"
 			groups={[
 				{
 					label: t`Number format`,
