@@ -61,6 +61,7 @@ const config = defineConfig({
     include: ['@lifi/sdk', '@tanstack/react-table', '@tanstack/react-virtual', '@privy-io/react-auth', '@privy-io/wagmi'],
   },
   build: {
+    minify: 'terser',
     sourcemap: isAnalyze,
   },
   environments: {

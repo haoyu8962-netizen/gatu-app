@@ -79,7 +79,7 @@ export function StatusScreen({
 				<ModalTitle>{title}</ModalTitle>
 			</ModalHeader>
 			<ModalContent>
-				<div className="flex flex-col items-center gap-4 py-6">
+				<output className="flex flex-col items-center gap-4 py-6" aria-live="polite">
 					{icon === "loading" ? (
 						<div className="relative">
 							<div className="absolute inset-0 animate-ping rounded-full bg-brand-soft/20" />
@@ -119,7 +119,7 @@ export function StatusScreen({
 						</a>
 					)}
 					{children && <div className="w-full pt-2">{children}</div>}
-				</div>
+				</output>
 			</ModalContent>
 		</AdaptiveModal>
 	);

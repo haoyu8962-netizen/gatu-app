@@ -34,9 +34,9 @@ export function getUsdcRoutingQueryStatus({
 	isError,
 	isFetching,
 }: UsdcRoutingQueryState): UsdcRoutingQueryStatus {
-	if (isFetching) return "loading";
 	if (isError) return "error";
-	return data ? "ready" : "unknown";
+	if (data) return "ready";
+	return isFetching ? "loading" : "unknown";
 }
 
 export function getWithdrawalRoute(routing: UsdcRouting | null | undefined): WithdrawalRoute | null {

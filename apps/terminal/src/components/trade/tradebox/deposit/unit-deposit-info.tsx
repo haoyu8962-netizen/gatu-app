@@ -1,5 +1,5 @@
 import { Trans } from "@lingui/react/macro";
-import { ClockIcon, GlobeHemisphereWestIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { ClockIcon, CoinsIcon, GlobeHemisphereWestIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { formatUnits } from "viem";
 import { InfoRow } from "@/components/ui/info-row";
 import { USDC_ICON_URL } from "@/config/bridge";
@@ -10,9 +10,19 @@ const ARBITRUM_NETWORK = NETWORKS[0];
 
 interface Props {
 	networkName: string;
+	route?: "bridge" | "cctp";
+	cctpFee?: string | null;
+	cctpNetAmount?: string | null;
+	cctpFeeLoading?: boolean;
 }
 
-export function UnitDepositInfo({ networkName }: Props) {
+export function UnitDepositInfo({
+	networkName,
+	route = "bridge",
+	cctpFee,
+	cctpNetAmount,
+	cctpFeeLoading = false,
+}: Props) {
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
 
 	return (
@@ -65,6 +75,29 @@ export function UnitDepositInfo({ networkName }: Props) {
 				value={ARBITRUM_NETWORK.estimatedDepositTime}
 				valueClassName="font-medium"
 			/>
+			{route === "cctp" ? (
+				<>
+					<InfoRow
+						className="p-0"
+						labelClassName="flex items-center gap-1.5 text-fg"
+						label={
+							<>
+								<CoinsIcon className="size-3" />
+								<Trans>Maximum CCTP fee</Trans>
+							</>
+						}
+						value={cctpFeeLoading ? <Trans>Checking...</Trans> : cctpFee ? `${cctpFee} USDC` : "—"}
+						valueClassName="font-medium tabular-nums"
+					/>
+					<InfoRow
+						className="p-0"
+						labelClassName="flex items-center gap-1.5 text-fg"
+						label={<Trans>Estimated net credit</Trans>}
+						value={cctpNetAmount ? `${cctpNetAmount} USDC` : "—"}
+						valueClassName="font-medium tabular-nums"
+					/>
+				</>
+			) : null}
 		</div>
 	);
 }

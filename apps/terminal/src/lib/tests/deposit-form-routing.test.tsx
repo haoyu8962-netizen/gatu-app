@@ -47,6 +47,10 @@ function createProps(routingStatus: UsdcRoutingQueryStatus, depositRoute: UsdcTr
 		onRetryRouting: vi.fn(),
 		networkName: "Arbitrum",
 		smartDepositEnabled: true,
+		cctpFee: null,
+		cctpNetAmount: null,
+		cctpFeeLoading: false,
+		pendingCctpRecovery: false,
 		fundingAddress: FUNDING_ADDRESS,
 		onDone: vi.fn(),
 	};

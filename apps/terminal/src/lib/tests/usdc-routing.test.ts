@@ -22,14 +22,14 @@ describe("USDC routing", () => {
 
 	it.each([
 		{ expected: "loading", data: null, isError: false, isFetching: true },
-		{ expected: "loading", data: null, isError: true, isFetching: true },
+		{ expected: "error", data: null, isError: true, isFetching: true },
 		{ expected: "error", data: null, isError: true, isFetching: false },
 		{ expected: "unknown", data: null, isError: false, isFetching: false },
 		{
 			expected: "ready",
 			data: { depositRoute: "bridge" as const, withdrawalRoute: "cctp" as const },
 			isError: false,
-			isFetching: false,
+			isFetching: true,
 		},
 	])("derives $expected for a query snapshot", ({ data, expected, isError, isFetching }) => {
 		expect(getUsdcRoutingQueryStatus({ data, isError, isFetching })).toBe(expected);

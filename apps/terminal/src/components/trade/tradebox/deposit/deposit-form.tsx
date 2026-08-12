@@ -28,6 +28,10 @@ interface Props {
 	onRetryRouting: () => void;
 	networkName: string;
 	smartDepositEnabled: boolean;
+	cctpFee: string | null;
+	cctpNetAmount: string | null;
+	cctpFeeLoading: boolean;
+	pendingCctpRecovery: boolean;
 	fundingAddress?: `0x${string}`;
 	onDone?: () => void;
 }
@@ -48,11 +52,17 @@ export function DepositForm({
 	onRetryRouting,
 	networkName,
 	smartDepositEnabled,
+	cctpFee,
+	cctpNetAmount,
+	cctpFeeLoading,
+	pendingCctpRecovery,
 	fundingAddress,
 	onDone,
 }: Props) {
 	const minimumDeposit = `${formatUnits(MIN_DEPOSIT_USDC, USDC_DECIMALS)} USDC`;
 	const bridgeRoutingReady = routingStatus === "ready" && depositRoute === "bridge";
+	const cctpRoutingReady = routingStatus === "ready" && depositRoute === "cctp";
+	const depositRoutingReady = bridgeRoutingReady || (cctpRoutingReady && !fundingAddress);
 	const routingNotice = (() => {
 		if (bridgeRoutingReady) return null;
 		if (routingStatus === "loading") {
@@ -62,7 +72,14 @@ export function DepositForm({
 				</div>
 			);
 		}
-		const isCctp = routingStatus === "ready" && depositRoute === "cctp";
+		const isCctp = cctpRoutingReady;
+		if (isCctp && !fundingAddress) {
+			return (
+				<div className="rounded-xs border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2 text-center text-xs leading-relaxed text-fg-muted">
+					<Trans>Hyperliquid currently requires a Circle CCTP deposit from Arbitrum.</Trans>
+				</div>
+			);
+		}
 		return (
 			<div
 				role="alert"
@@ -70,7 +87,7 @@ export function DepositForm({
 			>
 				<p>
 					{isCctp ? (
-						<Trans>Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app.</Trans>
+						<Trans>Gas-sponsored CCTP deposits require a configured and verified relayer.</Trans>
 					) : (
 						<Trans>Unable to verify the current Hyperliquid deposit route. Deposits are paused.</Trans>
 					)}
@@ -193,8 +210,21 @@ export function DepositForm({
 			</div>
 
 			{routingNotice}
+			{pendingCctpRecovery ? (
+				<div className="rounded-xs border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2 text-center text-xs leading-relaxed text-fg-muted">
+					<Trans>A previous CCTP deposit is still being tracked. Do not resubmit the same transfer.</Trans>
+				</div>
+			) : null}
 
-			{bridgeRoutingReady ? <UnitDepositInfo networkName={networkName} /> : null}
+			{depositRoutingReady ? (
+				<UnitDepositInfo
+					networkName={networkName}
+					route={depositRoute ?? "bridge"}
+					cctpFee={cctpFee}
+					cctpNetAmount={cctpNetAmount}
+					cctpFeeLoading={cctpFeeLoading}
+				/>
+			) : null}
 
 			<AmountInput
 				amount={amount}

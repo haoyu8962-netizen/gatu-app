@@ -229,6 +229,13 @@ Mobile Agent 和已有 Agent 的远端对账都保持可用。
 流量并留出在途 route 排空窗口，再发布关闭版本；发布后用同一标签页刷新验证 committed route 的恢复入口，
 并确认新标签页、桌面账户入口和移动账户入口均不再显示新 Bridge 入口。
 
+Circle CCTP 外部钱包入金使用两个互相独立的环境门禁：
+
+- `VITE_CCTP_EXTERNAL_DEPOSIT_TESTNET_ENABLED=true`：仅在 Arbitrum Sepolia 筹资 E2E 已验证授权、烧毁事件、Circle attestation/forward 和 HyperCore 到账恢复后开启。
+- `VITE_CCTP_EXTERNAL_DEPOSIT_MAINNET_ENABLED=true`：仅在上述测试网验收通过，并完成小额主网实际到账与恢复演练后开启。
+
+两个开关默认都关闭，不得因 `usdcRouting` 返回 `cctp` 就自动视为发布授权。嵌入式/邮箱钱包还需要经验证的 `CctpExtensionV2` relayer，不受这两个外部钱包开关放行。
+
 ---
 
 ## 日常运维

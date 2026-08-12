@@ -184,6 +184,10 @@ msgstr "每次市价平仓前都会显示确认。"
 msgid "A position may be liquidated when the mark price reaches its liquidation price."
 msgstr "当标记价格达到强平价格时，仓位可能被强制平仓。"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
+msgstr "先前的 CCTP 充值仍在跟踪中。请勿重复提交同一笔转账。"
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "A reliable pre-trade liquidation price is not available for a reverse order. Review the resulting position after execution."
 msgstr "反向委托无法提供可靠的交易前预估强平价。成交后请检查新仓位。"
@@ -329,6 +333,7 @@ msgstr "将 {displayPairName} 加入自选"
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
 msgstr "向此钱包存入少量 Arbitrum ETH 以支付网络手续费，然后重试。"
 
@@ -397,6 +402,10 @@ msgstr "专业委托类型"
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Agent verification failed"
 #~ msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Agent/API wallet addresses cannot receive CCTP deposits. Connect the owner account instead."
+msgstr "Agent/API 钱包地址无法接收 CCTP 充值。请改为连接所有者账户。"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "AI"
@@ -478,6 +487,14 @@ msgstr "数量必须大于零且不得超过当前仓位。"
 #: src/hooks/trade/use-asset-leverage.ts
 msgid "Another action for this market is already in progress."
 msgstr "该市场的另一项操作正在进行中。"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
+msgstr "此账户仍有另一笔 Circle CCTP 存款待处理。请等待其完成后再提交新的存款。"
+
+#: src/lib/errors/format.ts
+msgid "Another funds operation is still in progress for this account. Try again after it finishes."
+msgstr "此账户还有一项资金操作正在进行中。请等待其完成后重试。"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Another mobile approval is already in progress for this wallet."
@@ -923,6 +940,11 @@ msgstr "取消中..."
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "持有仓位时无法切换到逐仓模式。请先平仓。"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "CCTP deposits are awaiting funded end-to-end verification for this network."
+msgstr "此网络的 CCTP 充值仍待完成有真实资金的端到端验证。"
+
 #. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "CCTP forwarding to Arbitrum usually completes in {0}."
@@ -954,12 +976,52 @@ msgid "Checking the current Hyperliquid withdrawal route..."
 msgstr "正在检查 Hyperliquid 当前的提现路由..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "检查中..."
 
 #: src/components/trade/positions/position-market-close-modal.tsx
 #~ msgid "Choose how much of this position to close with a reduce-only market order."
 #~ msgstr "选择要通过只减仓市价单平掉的仓位数量。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Circle CCTP deposits are limited to 10,000,000 USDC per transfer."
+msgstr "每笔 Circle CCTP 充值上限为 10,000,000 USDC。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Circle Fast Transfer capacity is temporarily unavailable. Try again later."
+msgstr "Circle Fast Transfer 当前容量暂不可用。请稍后重试。"
+
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Circle fees changed before submission. Review the updated fee and retry."
+msgstr "提交前 Circle 费用已变化。请检查更新后的费用并重试。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Circle fees changed. Review the updated fee, then submit again."
+msgstr "Circle 费用已变化。请检查更新后的费用，然后再次提交。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
+msgstr "Circle 正在铸造 USDC 并将其转发至 Hyperliquid。请勿重复提交同一笔转账。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
+msgstr "Circle 已提交 HyperEVM 转发交易。HyperCore 入账可能还需要一些时间。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Circle testnet deposits are limited to 1,000 USDC per transfer."
+msgstr "Circle 测试网每笔充值上限为 1,000 USDC。"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Circle testnet deposits require this address to already exist on Hyperliquid mainnet."
+msgstr "Circle 测试网充值要求此地址已存在于 Hyperliquid 主网。"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Circulating supply"
@@ -992,6 +1054,7 @@ msgstr "点击提交 · 成交后不可撤销"
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1786,6 +1849,8 @@ msgstr "部署者"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/account-ledger.ts
@@ -1835,6 +1900,10 @@ msgstr "充值失败"
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Deposit on Hyperliquid"
 #~ msgstr "在 Hyperliquid 存款"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Deposit status unknown"
+msgstr "充值状态未知"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit submitted"
@@ -2012,6 +2081,7 @@ msgstr "文档"
 msgid "Don't show this confirmation again"
 msgstr "以后不再提示"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -2214,6 +2284,10 @@ msgstr "预估费用"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "Estimated Liquidation Price"
 msgstr "预估强平价格"
+
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "Estimated net credit"
+msgstr "预计净入账"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
@@ -2653,6 +2727,16 @@ msgstr "适合希望获得更高灵活性和资金效率的高级用户。现货
 #~ msgid "Format for numbers and dates"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Forward transaction submitted"
+msgstr "转发交易已提交"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Forwarding deposit"
+msgstr "正在转发充值"
+
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
 msgstr "频率"
@@ -2721,6 +2805,15 @@ msgstr "Gaming"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Gas ({0})"
 msgstr "Gas（{0}）"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Gas-sponsored CCTP deposits require a configured and verified relayer."
+msgstr "Gas 代付的 CCTP 充值需要已配置且验证通过的中继器。"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Gas-sponsored CCTP deposits require a configured and verified relayer. This deposit was not submitted."
+msgstr "Gas 代付的 CCTP 充值需要已配置且验证通过的中继器。本次充值未提交。"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
@@ -2835,8 +2928,12 @@ msgid "Hyperliquid calculates and adds the margin required to reach the target l
 msgstr "Hyperliquid 会计算并补充达到目标杠杆所需的保证金。"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
-msgstr "Hyperliquid 当前要求使用 CCTP 充值。本应用已暂停 Bridge 充值。"
+msgid "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
+msgstr "Hyperliquid 当前要求从 Arbitrum 通过 Circle CCTP 充值。"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
+#~ msgstr "Hyperliquid 当前要求使用 CCTP 充值。本应用已暂停 Bridge 充值。"
 
 #: src/hooks/trade/use-usdc-routing.ts
 msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
@@ -3602,6 +3699,10 @@ msgstr "最大回撤"
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Max slippage allowed for market orders."
 #~ msgstr "市价单允许的最大滑点。"
+
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "Maximum CCTP fee"
+msgstr "CCTP 最高费用"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"
@@ -5001,6 +5102,10 @@ msgstr "重新连接钱包"
 msgid "Recovered in this tab. Expires {expiresAtLabel}."
 msgstr "已在此标签页中恢复。将于 {expiresAtLabel} 过期。"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
+msgstr "无法在此浏览器中保存恢复记录。关闭前请记下 Arbitrum 交易哈希。"
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Reduce"
 #~ msgstr ""
@@ -5411,6 +5516,10 @@ msgstr "安全断开失败：无法清除本地交易会话。请重试。"
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
 msgstr "安全断开需要浏览器支持 Web Locks。请升级浏览器后重试。"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Secure randomness is unavailable. Deposit was not submitted."
+msgstr "安全随机数不可用。充值未提交。"
 
 #: src/components/trade/header/favorites-strip.tsx
 #~ msgid "Select {coin} market"
@@ -6366,6 +6475,10 @@ msgstr "测试网"
 msgid "Testnet preview; market link disabled"
 msgstr "测试网预览；市场链接已禁用"
 
+#: src/domain/trade/pre-transfer-check.ts
+msgid "The account activation fee changed before signing. Review the updated fee and try again."
+msgstr "账户激活费用在签名前已变化。请检查更新后的费用并重试。"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval could not be rechecked. The QR remains hidden until read-only verification succeeds."
 msgstr "无法重新检查授权。在只读验证成功前，二维码将保持隐藏。"
@@ -6374,6 +6487,22 @@ msgstr "无法重新检查授权。在只读验证成功前，二维码将保持
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "授权结果尚未确认。请先重试只读验证，再进行其他操作。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
+msgstr "Arbitrum 交易已确认，但暂时无法获取 Circle 状态。你可以关闭此窗口；返回时将继续跟踪。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
+msgstr "Arbitrum 交易已确认。Circle 正在铸造 USDC 并将其转发至 Hyperliquid。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume when you return."
+msgstr "Arbitrum 交易已提交，但暂时无法获取 Circle 状态。返回时将继续跟踪。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying."
+msgstr "Arbitrum 交易已提交，但无法验证其最终状态。重试前请检查该交易。"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
@@ -6412,6 +6541,10 @@ msgstr "交易所未返回最终 TWAP 状态。重试前请检查当前 TWAP 委
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "生成的密钥仅保留在此标签页中。请勿授权其他密钥或重新加载页面。"
+
+#: src/hooks/trade/use-usdc-routing.ts
+msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
+msgstr "Hyperliquid 充值路由在签名前已变化。请检查更新后的路由并重试。"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -6569,6 +6702,10 @@ msgstr "此授权恢复已不可用。"
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "This bridge can only be resumed by the wallet that started it."
 msgstr "此跨链桥交易只能由发起它的钱包继续。"
+
+#: src/lib/errors/format.ts
+msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
+msgstr "此浏览器无法安全协调不同标签页之间的资金操作。请使用受支持的浏览器。"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -7348,6 +7485,15 @@ msgstr "无法验证可用余额"
 msgid "Unable to verify the current account mode. Request was not submitted."
 msgstr "无法验证当前账户模式。请求未提交。"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
+msgstr "无法验证当前 Circle CCTP 费用和 Fast Transfer 容量。"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Unable to verify the current HyperCore USDC destination."
+msgstr "无法验证当前 HyperCore USDC 目标地址。"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused."
 msgstr "无法验证 Hyperliquid 当前的充值路由。自动充值已暂停。"
@@ -7369,6 +7515,10 @@ msgstr "无法验证 Hyperliquid 当前的提现路由。"
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Unable to verify withdrawal eligibility."
 msgstr "无法验证提款资格。"
+
+#: src/domain/trade/pre-transfer-check.ts
+msgid "Unable to verify withdrawal eligibility. Request was not submitted."
+msgstr "无法验证提现资格。请求未提交。"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
@@ -7665,6 +7815,8 @@ msgstr "钱包未连接到 {0}。请在钱包中切换网络后重试。"
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "钱包未连接"
 
@@ -7782,6 +7934,7 @@ msgid "Withdrawal submitted"
 msgstr "提现已提交"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/domain/trade/pre-transfer-check.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "此地址暂不支持提款。"
 

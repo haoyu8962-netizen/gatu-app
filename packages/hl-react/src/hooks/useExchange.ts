@@ -2,9 +2,11 @@ import type { ExchangeClient } from "@nktkas/hyperliquid";
 import { type UseMutationResult, useMutation } from "@tanstack/react-query";
 import { assertExchange, WalletAccountMismatchError } from "../errors";
 import { assertExchangeMutationAllowed, usePortfolioMarginActivationPolicy } from "../exchange-policy";
+import { requiresFundsActionLock, runWithFundsActionLock } from "../internal/exchange/funds-action-lock";
 import {
 	captureExchangeRequestGeneration,
 	ExchangeRequestInvalidatedError,
+	type ExchangeRequestStartGate,
 	getExchangeRequestPriority,
 	scheduleExchangeRequest,
 } from "../internal/exchange/request-scheduler";
@@ -90,6 +92,7 @@ export function useExchange<M extends ExchangeMethod>(
 
 	const config = getExchangeMethodConfig(method);
 	const exchange = config.client === "user" ? user : trading;
+	const fundsAction = requiresFundsActionLock(method);
 
 	const mutationKey = config.useClientKey ? ["hl", method, clientKey] : ["hl", method];
 
@@ -124,6 +127,15 @@ export function useExchange<M extends ExchangeMethod>(
 		});
 		const fn = (exchange as ExchangeClient)[method] as (...args: unknown[]) => Promise<ExchangeResponse<M>>;
 		const priority = getExchangeRequestPriority(method, requestParams);
+		const startWithSessionLease: ExchangeRequestStartGate = async (start) => {
+			const guarded = await startAgentRegistrationExecution(
+				registrationLease,
+				() => exchangeLifecycle.active,
+				() => Promise.resolve(start()),
+				preExecutionGuard ? (signal) => preExecutionGuard(requestParams as ExchangeParams<M>, signal) : undefined,
+			);
+			return guarded.status === "started" ? await guarded.execution : { status: "invalidated" as const };
+		};
 		return scheduleExchangeRequest(
 			exchange,
 			priority,
@@ -133,20 +145,23 @@ export function useExchange<M extends ExchangeMethod>(
 				return requestParams !== undefined ? fn.call(exchange, requestParams) : fn.call(exchange);
 			},
 			requestGeneration,
-			async (start) => {
-				const guarded = await startAgentRegistrationExecution(
-					registrationLease,
-					() => exchangeLifecycle.active,
-					() => Promise.resolve(start()),
-					preExecutionGuard ? (signal) => preExecutionGuard(requestParams as ExchangeParams<M>, signal) : undefined,
-				);
-				return guarded.status === "started" ? await guarded.execution : { status: "invalidated" };
-			},
+			fundsAction
+				? (start) =>
+						runWithFundsActionLock(env, clientKey, async () => {
+							const started = await startWithSessionLease(start);
+							if (started.status === "invalidated") return started;
+							const response = await started.execution;
+							return { status: "started", execution: Promise.resolve(response) };
+						})
+				: startWithSessionLease,
 		);
 	};
 
 	return useMutation({
 		...mutationOptions,
+		// A user may retry explicitly after reconciling balances/history, but a
+		// post-signing transport failure must never be replayed automatically.
+		...(fundsAction ? { retry: false } : {}),
 		mutationKey,
 		mutationFn,
 	});

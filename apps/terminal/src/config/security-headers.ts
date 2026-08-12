@@ -27,6 +27,8 @@ const walletConnectConnectSources = [
 
 const smartWalletConnectSources = ["https://rpc.zerodev.app"] as const;
 
+const circleCctpConnectSources = ["https://iris-api.circle.com", "https://iris-api-sandbox.circle.com"] as const;
+
 const bridgeConnectSources = [
 	"https://li.quest",
 	"https://api.tenderly.co",
@@ -77,6 +79,7 @@ export const cspDirectives: Record<string, string> = {
 		...privyConnectSources,
 		...walletConnectConnectSources,
 		...smartWalletConnectSources,
+		...circleCctpConnectSources,
 		...bridgeConnectSources,
 	].join(" "),
 	"worker-src": "'self' blob:",

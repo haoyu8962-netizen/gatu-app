@@ -8,6 +8,8 @@ export interface DepositExecutionState {
 	error: Error | null;
 	hash: Hash | undefined;
 	amount: string | null;
+	route: "bridge" | "cctp" | null;
+	cctpRecoveryUnavailable: boolean;
 	walletResponseDelayed: boolean;
 }
 
@@ -33,13 +35,26 @@ export function getDepositExecutionState(executionKey: string): DepositExecution
 	return getDepositExecutionEntry(executionKey)?.state ?? IDLE_DEPOSIT_STATE;
 }
 
-export function startDepositExecution(executionKey: string, lockKey: string, amount: string): number | null {
+export function startDepositExecution(
+	executionKey: string,
+	lockKey: string,
+	amount: string,
+	route: "bridge" | "cctp" = "bridge",
+): number | null {
 	const current = getDepositExecutionEntry(executionKey);
 	if (current?.inFlight || activeDepositLocks.has(lockKey)) return null;
 
 	const operationId = (current?.operationId ?? 0) + 1;
 	setDepositExecutionEntry(executionKey, {
-		state: { status: "pending", error: null, hash: undefined, amount, walletResponseDelayed: false },
+		state: {
+			status: "pending",
+			error: null,
+			hash: undefined,
+			amount,
+			route,
+			cctpRecoveryUnavailable: false,
+			walletResponseDelayed: false,
+		},
 		operationId,
 		inFlight: true,
 	});
@@ -51,7 +66,15 @@ export function setBlockedDepositExecution(executionKey: string, error: Error): 
 	const current = getDepositExecutionEntry(executionKey);
 	if (current?.inFlight) return;
 	setDepositExecutionEntry(executionKey, {
-		state: { status: "error", error, hash: undefined, amount: null, walletResponseDelayed: false },
+		state: {
+			status: "error",
+			error,
+			hash: undefined,
+			amount: null,
+			route: null,
+			cctpRecoveryUnavailable: false,
+			walletResponseDelayed: false,
+		},
 		operationId: (current?.operationId ?? 0) + 1,
 		inFlight: false,
 	});
@@ -99,7 +122,15 @@ export function resetDepositExecution(executionKey: string): boolean {
 }
 
 function createIdleDepositExecutionState(): DepositExecutionState {
-	return { status: "idle", error: null, hash: undefined, amount: null, walletResponseDelayed: false };
+	return {
+		status: "idle",
+		error: null,
+		hash: undefined,
+		amount: null,
+		route: null,
+		cctpRecoveryUnavailable: false,
+		walletResponseDelayed: false,
+	};
 }
 
 function getDepositExecutionEntry(key: string): DepositExecutionEntry | undefined {

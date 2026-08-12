@@ -51,6 +51,11 @@ Do not collapse these states into one boolean.
   trading client backed by the local agent.
 - User-signed actions (`approveAgent`, `withdraw3`, `usdSend`, `spotSend`,
   `usdClassTransfer`, etc.) must use the connected owner wallet.
+- Account-mode changes and mode-dependent funds actions share an exclusive
+  Web Lock scoped by environment and owner. The lock is acquired before the
+  registration-session lock and remains held until the SDK request settles.
+  A ten-second limit applies only while waiting to acquire it; never time out
+  or replay an action that has already started.
 - Mobile wallet approval timeouts pause while the document is hidden. Late
   approvals must revalidate the owner and registration epoch before storage.
 
@@ -142,9 +147,26 @@ implementation.
   the action, abort and require renewed review; never silently switch protocol
   or fall back after an error.
 - Both manual and automatic Bridge2 execution paths require a fresh
-  `depositRoute === "bridge"` hard guard at the execution boundary. A reported
-  `cctp` route remains blocked until the complete Circle CCTP deposit executor
-  is implemented; it must never enter Bridge2 as a compatibility fallback.
+  `depositRoute === "bridge"` hard guard at the execution boundary. They must
+  never run as a compatibility fallback for a reported `cctp` route.
+- An external wallet may use the self-submitted Circle `CctpExtension` flow
+  only for a fresh `depositRoute === "cctp"`: use the route-specific native
+  USDC contract, current fee and Fast Transfer allowance, EIP-3009
+  `ReceiveWithAuthorization`, destination domain `19`, the official forwarder
+  for both recipient fields, exact hook data, and strict source-receipt event
+  validation. Reject Agent/API-wallet recipient addresses.
+- Keep external CCTP disabled by default and gated independently for mainnet
+  and testnet until funded end-to-end evidence for that environment is
+  reviewed. A route value alone is not a release authorization.
+- Embedded/email CCTP deposits remain unavailable until an independently
+  operated `CctpExtensionV2` relayer and production sponsorship policy have
+  passed funded testnet and mainnet end-to-end verification. Do not treat the
+  existing browser smart-wallet client as a verified relayer.
+- Persist the source transaction hash for CCTP recovery. A confirmed source
+  revert or invalid burn event is a terminal failure and must remove that
+  recovery item; an RPC timeout or unknown receipt must preserve it. A Circle
+  `forwardTxHash` proves forwarding was submitted, not that HyperCore credit is
+  complete.
 - Map `withdrawalRoute === "cctp"` to `sendToEvmWithData` and `bridge` to
   `withdraw3`. The user does not independently override the protocol-selected
   withdrawal route.
@@ -162,6 +184,9 @@ implementation.
 - `apps/terminal/src/lib/hyperliquid/use-deposit.ts`
 - `apps/terminal/src/domain/trade/usdc-routing.ts`
 - `apps/terminal/src/hooks/trade/use-usdc-routing.ts`
+- `apps/terminal/src/config/cctp-deposit.ts`
+- `apps/terminal/src/lib/trade/cctp-deposit.ts`
+- `apps/terminal/src/lib/trade/cctp-deposit-tracking.ts`
 - `apps/terminal/src/components/trade/tradebox/deposit-modal.tsx`
 - `apps/terminal/src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx`
 - `docs/hyperliquid-signing.md`
@@ -171,8 +196,13 @@ implementation.
 
 - Route normalization rejects missing, malformed, and unknown values.
 - Mainnet and testnet routing state cannot cross-contaminate each other.
-- Manual and automatic deposits remain blocked during loading/error states and
-  for `cctp`; Bridge2 may execute only after a fresh `bridge` result.
+- Manual and automatic Bridge2 deposits remain blocked during loading/error
+  states and for `cctp`; Bridge2 may execute only after a fresh `bridge`
+  result. External CCTP may execute only after a fresh `cctp` result, while
+  embedded CCTP remains blocked without the verified relayer.
+- CCTP tests cover fee/allowance changes, official addresses and domains,
+  testnet recipient eligibility, Agent-address rejection, amount caps, receipt
+  mismatch, refresh recovery, and terminal source failure cleanup.
 - Withdrawals use only the protocol-selected route. A pre-submit route change
   aborts before signing and requires the user to review the updated fees and
   action.

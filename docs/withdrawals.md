@@ -34,11 +34,17 @@ The contract only requires the gross amount to exceed the forwarding fee. To mat
 
 ## Account activation
 
-Before either withdrawal route is enabled, the terminal calls:
+For the CCTP route, the terminal derives HyperCore's canonical USDC system
+address from the latest `spotMeta` token index and calls:
 
 ```ts
-preTransferCheck({ user: walletAddress, source: walletAddress })
+preTransferCheck({ user: usdcSystemAddress, source: ownerWalletAddress })
 ```
+
+The metadata lookup and pre-transfer check both fail closed. They are repeated
+before submission, and the pre-transfer check runs once more at the SDK signing
+boundary while the account's cross-tab funds lock is held. A sanction result or
+fee change aborts the request so the user can review the current state.
 
 The response fields are handled independently:
 
@@ -47,6 +53,9 @@ The response fields are handled independently:
 - `userExists` and `userHasSentTx` are informational; the protocol-provided `fee` remains the source of truth for balance validation.
 
 The maximum withdrawable gross amount is therefore `withdrawable - activationFee`. A request is rejected locally when `amount + activationFee > withdrawable`.
+
+The legacy route does not use this CCTP account-activation check and treats the
+activation fee as zero.
 
 ## Legacy route
 

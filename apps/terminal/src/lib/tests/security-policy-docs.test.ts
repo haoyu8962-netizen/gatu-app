@@ -37,4 +37,9 @@ describe("security policy documentation", () => {
 		expect(cspDirectives["connect-src"]).toContain("https://rpc.hyperliquid.xyz");
 		expect(cspDirectives["connect-src"]).toContain("https://rpc.hyperliquid-testnet.xyz");
 	});
+
+	it("allows only Circle production and sandbox APIs used for CCTP deposit fees and recovery", () => {
+		expect(cspDirectives["connect-src"]).toContain("https://iris-api.circle.com");
+		expect(cspDirectives["connect-src"]).toContain("https://iris-api-sandbox.circle.com");
+	});
 });

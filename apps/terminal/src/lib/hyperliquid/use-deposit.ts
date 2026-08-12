@@ -1,19 +1,39 @@
+import { getInfoClient as getSdkInfoClient } from "@gatu/hl-react";
+import { runWithFundsActionLock } from "@gatu/hl-react/internal/exchange/funds-action-lock";
 import { t } from "@lingui/core/macro";
 import { type ConnectedWallet, useWallets } from "@privy-io/react-auth";
 import { useSmartWallets } from "@privy-io/react-auth/smart-wallets";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Account, Chain, Hash, Hex, PublicClient, TransactionReceipt, Transport, WalletClient } from "viem";
+import type {
+	Account,
+	Address,
+	Chain,
+	Hash,
+	Hex,
+	PublicClient,
+	TransactionReceipt,
+	Transport,
+	WalletClient,
+} from "viem";
 import {
+	bytesToHex,
 	createWalletClient,
 	custom,
 	decodeEventLog,
 	encodeFunctionData,
 	erc20Abi,
 	formatUnits,
+	isAddress,
 	parseUnits,
 } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
 import { useChainId, usePublicClient } from "wagmi";
+import {
+	CCTP_MAX_DEPOSIT_USDC,
+	CCTP_TESTNET_MAX_DEPOSIT_USDC,
+	getCctpDepositConfig,
+	isCctpExternalDepositEnabled,
+} from "@/config/cctp-deposit";
 import { BRIDGE2_ABI, DEPOSIT_NETWORKS, MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import {
 	DEPOSIT_BROADCAST_TIMEOUT_MS,
@@ -21,7 +41,7 @@ import {
 	DEPOSIT_POLL_INTERVAL_MS,
 	DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
 } from "@/config/time";
-import { useAssertFreshBridgeDepositRoute } from "@/hooks/trade/use-usdc-routing";
+import { useAssertFreshDepositRoute } from "@/hooks/trade/use-usdc-routing";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import {
 	finishDepositExecution,
@@ -32,12 +52,32 @@ import {
 	updateDepositExecutionState,
 	useDepositExecutionState,
 } from "@/lib/hyperliquid/deposit-execution-state";
+import {
+	DefinitiveDepositSourceFailureError,
+	isDefinitiveDepositSourceFailure,
+} from "@/lib/hyperliquid/deposit-source-error";
+import {
+	assertCctpDepositReceipt,
+	buildCctpDepositContractArgs,
+	CCTP_EXTENSION_ABI,
+	createCctpDepositParameters,
+	fetchCctpDepositFees,
+	fetchCctpFastAllowance,
+	getHyperCoreRecipientState,
+} from "@/lib/trade/cctp-deposit";
+import {
+	assertCctpDepositTrackingStorageWritable,
+	readCctpDepositTrackingRecords,
+	removeCctpDepositTrackingRecord,
+	saveCctpDepositTrackingRecord,
+} from "@/lib/trade/cctp-deposit-tracking";
 import { hasSameWalletAddress } from "@/lib/wallet/privy-wagmi";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
 
 export type DepositStatus = "idle" | "pending" | "confirming" | "success" | "error";
 type BalanceStatus = "idle" | "loading" | "success" | "error";
 type DepositMode = "wallet" | "smart";
+export type DepositRoute = "bridge" | "cctp";
 type DepositExecutionScope = "manual" | "automatic";
 type DepositNetwork = keyof typeof DEPOSIT_NETWORKS;
 type DepositNetworkConfig = (typeof DEPOSIT_NETWORKS)[DepositNetwork];
@@ -57,6 +97,7 @@ export interface UseDepositResult {
 	walletProviderError: Error | null;
 	networkName: string;
 	smartDepositEnabled: boolean;
+	depositRoute: DepositRoute;
 	balance: string;
 	balanceRaw: bigint | undefined;
 	maxAmount: string;
@@ -67,6 +108,8 @@ export interface UseDepositResult {
 	error: Error | null;
 	hash: Hash | undefined;
 	executionAmount: string | null;
+	executionRoute: DepositRoute | null;
+	cctpRecoveryUnavailable: boolean;
 	walletResponseDelayed: boolean;
 	deposit: (amount: string) => Promise<void>;
 	refreshBalance: () => Promise<bigint | undefined>;
@@ -80,9 +123,12 @@ interface UseDepositOptions {
 	mode?: DepositMode;
 	executionScope?: DepositExecutionScope;
 	walletAddress?: `0x${string}`;
+	depositRoute?: DepositRoute;
+	expectedCctpMaxFeeRaw?: bigint;
 }
 
 interface UsdcBalanceState {
+	key: string;
 	status: BalanceStatus;
 	raw: bigint | undefined;
 	error: Error | null;
@@ -148,6 +194,14 @@ const USDC_PERMIT_ABI = [
 	},
 ] as const;
 
+function createAuthorizationNonce(): Hex {
+	if (!globalThis.crypto?.getRandomValues)
+		throw new Error(t`Secure randomness is unavailable. Deposit was not submitted.`);
+	const bytes = new Uint8Array(32);
+	globalThis.crypto.getRandomValues(bytes);
+	return bytesToHex(bytes);
+}
+
 function getDepositNetwork(isTestnet: boolean): DepositNetwork {
 	return isTestnet ? "testnet" : "mainnet";
 }
@@ -188,8 +242,8 @@ function createProviderChainState(
 	return { key, chainId: null, status, error };
 }
 
-function createIdleBalanceState(): UsdcBalanceState {
-	return { status: "idle", raw: undefined, error: null };
+function createIdleBalanceState(key = ""): UsdcBalanceState {
+	return { key, status: "idle", raw: undefined, error: null };
 }
 
 function toError(error: unknown): Error {
@@ -254,7 +308,7 @@ function createWalletConnectionError(error: unknown): Error {
 	return new Error(message || t`Wallet connection failed. Unlock your wallet, approve the connection, then retry.`);
 }
 
-function createChainSwitchError(config: DepositNetworkConfig, error: unknown): Error {
+function createChainSwitchError(config: DepositChainConfig, error: unknown): Error {
 	if (isUserRejectedRequest(error)) return new Error(t`Arbitrum network switch was rejected.`);
 	return new Error(t`Unable to switch wallet to ${config.chainName}. Switch networks in your wallet and retry.`);
 }
@@ -279,7 +333,7 @@ function encodeBalanceOf(address: `0x${string}`): `0x${string}` {
 }
 
 async function readDepositUsdcBalance(
-	config: DepositNetworkConfig,
+	config: DepositChainConfig,
 	address: `0x${string}`,
 	signal?: AbortSignal,
 ): Promise<bigint> {
@@ -375,7 +429,7 @@ async function getProviderChainId(provider: Eip1193Provider): Promise<string> {
 	}
 }
 
-function getAddChainParams(config: DepositNetworkConfig) {
+function getAddChainParams(config: DepositChainConfig) {
 	return {
 		chainId: toChainHex(config.chainId),
 		chainName: config.chainName,
@@ -389,7 +443,7 @@ function getAddChainParams(config: DepositNetworkConfig) {
 	} as const;
 }
 
-async function requestDepositChainSwitch(provider: Eip1193Provider, config: DepositNetworkConfig) {
+async function requestDepositChainSwitch(provider: Eip1193Provider, config: DepositChainConfig) {
 	const chainId = toChainHex(config.chainId);
 	try {
 		await provider.request({
@@ -419,7 +473,7 @@ async function requestDepositChainSwitch(provider: Eip1193Provider, config: Depo
 	}
 }
 
-async function ensureDepositChain(provider: Eip1193Provider, config: DepositNetworkConfig) {
+async function ensureDepositChain(provider: Eip1193Provider, config: DepositChainConfig) {
 	const chainId = toChainHex(config.chainId);
 	const currentChainId = await getProviderChainId(provider);
 	if (currentChainId !== chainId) {
@@ -435,7 +489,7 @@ async function ensureDepositChain(provider: Eip1193Provider, config: DepositNetw
 async function switchDepositWalletChain(
 	wallet: ConnectedWallet,
 	provider: Eip1193Provider,
-	config: DepositNetworkConfig,
+	config: DepositChainConfig,
 ) {
 	try {
 		await wallet.switchChain(config.chainId);
@@ -447,7 +501,7 @@ async function switchDepositWalletChain(
 	await requestDepositChainSwitch(provider, config);
 }
 
-async function getDepositProviderForChain(wallet: ConnectedWallet, config: DepositNetworkConfig) {
+async function getDepositProviderForChain(wallet: ConnectedWallet, config: DepositChainConfig) {
 	const provider = await getDepositProvider(wallet);
 	const providerChainId = await getProviderChainId(provider);
 	if (providerChainId === toChainHex(config.chainId)) return provider;
@@ -506,7 +560,7 @@ async function getReadyWalletDepositContext({
 }: {
 	address: `0x${string}` | undefined;
 	chain: Chain;
-	config: DepositNetworkConfig;
+	config: DepositChainConfig;
 	publicClient: PublicClient | undefined;
 	wallet: ConnectedWallet | undefined;
 }): Promise<ReadyDepositContext> {
@@ -754,7 +808,12 @@ export async function waitForConfirmedReceipt(
 		}
 
 		if (publicReceipt) {
-			if (isRevertedReceipt(publicReceipt)) throw new Error(t`Transaction reverted on Arbitrum`);
+			if (isRevertedReceipt(publicReceipt)) {
+				throw new DefinitiveDepositSourceFailureError(
+					"source-transaction-reverted",
+					t`Transaction reverted on Arbitrum`,
+				);
+			}
 			return publicReceipt;
 		}
 
@@ -769,7 +828,9 @@ export async function waitForConfirmedReceipt(
 	} catch (error) {
 		lastError = toError(error);
 	}
-	if (providerReceipt && isRevertedReceipt(providerReceipt)) throw new Error(t`Transaction reverted on Arbitrum`);
+	if (providerReceipt && isRevertedReceipt(providerReceipt)) {
+		throw new DefinitiveDepositSourceFailureError("source-transaction-reverted", t`Transaction reverted on Arbitrum`);
+	}
 
 	let transaction: RpcTransactionLike | null = null;
 	try {
@@ -801,10 +862,19 @@ export async function waitForConfirmedReceipt(
 	throw new Error(t`Deposit transaction was broadcast but confirmation timed out. Check Arbiscan before retrying.`);
 }
 
+interface DepositChainConfig {
+	chainId: number;
+	chainName: string;
+	displayName: string;
+	rpcUrl: string;
+	blockExplorerUrl: string;
+	usdc: Address;
+}
+
 function useDepositChain(
 	wallet: ConnectedWallet | undefined,
 	address: `0x${string}` | undefined,
-	config: DepositNetworkConfig,
+	config: DepositChainConfig,
 	enabled: boolean,
 ) {
 	const chainId = useChainId();
@@ -908,17 +978,19 @@ function useDepositChain(
 }
 
 function useDepositUsdcBalance(
-	config: DepositNetworkConfig,
+	config: DepositChainConfig,
 	address: `0x${string}` | undefined,
 	enabled: boolean,
 	pollIntervalMs?: number,
 ) {
 	const [state, setState] = useState<UsdcBalanceState>(createIdleBalanceState);
 	const requestIdRef = useRef(0);
+	const balanceKey = `${config.chainId}:${config.usdc.toLowerCase()}:${address?.toLowerCase() ?? ""}`;
+	const currentState = state.key === balanceKey ? state : createIdleBalanceState(balanceKey);
 
 	const refetch = useCallback(async (): Promise<bigint | undefined> => {
 		if (!enabled || !address) {
-			setState(createIdleBalanceState());
+			setState(createIdleBalanceState(balanceKey));
 			return undefined;
 		}
 
@@ -926,24 +998,34 @@ function useDepositUsdcBalance(
 		requestIdRef.current = requestId;
 		const abortController = new AbortController();
 
-		setState((previous) => ({ status: "loading", raw: previous.raw, error: null }));
+		setState((previous) => ({
+			key: balanceKey,
+			status: "loading",
+			raw: previous.key === balanceKey ? previous.raw : undefined,
+			error: null,
+		}));
 
 		try {
 			const raw = await readDepositUsdcBalance(config, address, abortController.signal);
 			if (requestIdRef.current !== requestId) return undefined;
-			setState({ status: "success", raw, error: null });
+			setState({ key: balanceKey, status: "success", raw, error: null });
 			return raw;
 		} catch (error) {
 			if (abortController.signal.aborted || requestIdRef.current !== requestId) return undefined;
-			setState((previous) => ({ status: "error", raw: previous.raw, error: toError(error) }));
+			setState((previous) => ({
+				key: balanceKey,
+				status: "error",
+				raw: previous.key === balanceKey ? previous.raw : undefined,
+				error: toError(error),
+			}));
 			return undefined;
 		}
-	}, [address, config, enabled]);
+	}, [address, balanceKey, config, enabled]);
 
 	useEffect(() => {
 		if (!enabled || !address) {
 			requestIdRef.current += 1;
-			setState(createIdleBalanceState());
+			setState(createIdleBalanceState(balanceKey));
 			return;
 		}
 
@@ -951,22 +1033,22 @@ function useDepositUsdcBalance(
 		requestIdRef.current = requestId;
 		const abortController = new AbortController();
 
-		setState({ status: "loading", raw: undefined, error: null });
+		setState({ key: balanceKey, status: "loading", raw: undefined, error: null });
 
 		void readDepositUsdcBalance(config, address, abortController.signal)
 			.then((raw) => {
 				if (requestIdRef.current !== requestId) return;
-				setState({ status: "success", raw, error: null });
+				setState({ key: balanceKey, status: "success", raw, error: null });
 			})
 			.catch((error) => {
 				if (abortController.signal.aborted || requestIdRef.current !== requestId) return;
-				setState({ status: "error", raw: undefined, error: toError(error) });
+				setState({ key: balanceKey, status: "error", raw: undefined, error: toError(error) });
 			});
 
 		return () => {
 			abortController.abort();
 		};
-	}, [address, config, enabled]);
+	}, [address, balanceKey, config, enabled]);
 
 	useEffect(() => {
 		if (!enabled || !address || !pollIntervalMs) return;
@@ -978,20 +1060,23 @@ function useDepositUsdcBalance(
 		return () => window.clearInterval(interval);
 	}, [address, enabled, pollIntervalMs, refetch]);
 
-	const balance = useMemo(() => (state.raw !== undefined ? formatUnits(state.raw, USDC_DECIMALS) : "0"), [state.raw]);
-	const maxDepositRaw = state.raw;
+	const balance = useMemo(
+		() => (currentState.raw !== undefined ? formatUnits(currentState.raw, USDC_DECIMALS) : "0"),
+		[currentState.raw],
+	);
+	const maxDepositRaw = currentState.raw;
 	const maxAmount = useMemo(
 		() => (maxDepositRaw !== undefined ? formatUnits(maxDepositRaw, USDC_DECIMALS) : "0"),
 		[maxDepositRaw],
 	);
 
 	return {
-		balanceRaw: state.raw,
+		balanceRaw: currentState.raw,
 		maxDepositRaw,
 		balance,
 		maxAmount,
-		status: state.status,
-		error: state.error,
+		status: currentState.status,
+		error: currentState.error,
 		refetch,
 	};
 }
@@ -1002,9 +1087,13 @@ export function useDeposit({
 	mode = "wallet",
 	executionScope = "manual",
 	walletAddress: walletAddressOverride,
+	depositRoute = "bridge",
+	expectedCctpMaxFeeRaw,
 }: UseDepositOptions = {}): UseDepositResult {
 	const network = getDepositNetwork(useIsTestnet());
-	const depositConfig = getDepositConfig(network);
+	const bridgeDepositConfig = getDepositConfig(network);
+	const cctpDepositConfig = getCctpDepositConfig(network === "testnet");
+	const depositConfig = depositRoute === "cctp" ? cctpDepositConfig : bridgeDepositConfig;
 	const depositChain = getDepositChain(network);
 	const { walletAddress: sessionWalletAddress } = useWalletSession();
 	const walletAddress = walletAddressOverride ?? sessionWalletAddress;
@@ -1025,13 +1114,15 @@ export function useDeposit({
 	const executionKey = `${network}:${executionScope}:${mode}:${walletAddress?.toLowerCase() ?? "unavailable"}`;
 	const executionLockKey = `${network}:${mode}:${walletAddress?.toLowerCase() ?? "unavailable"}`;
 	const state = useDepositExecutionState(executionKey);
-	const assertFreshBridgeDepositRoute = useAssertFreshBridgeDepositRoute();
+	const assertFreshSelectedDepositRoute = useAssertFreshDepositRoute(depositRoute);
 
 	const validate = useCallback((amount: string) => validateAmount(amount, maxDepositRaw), [maxDepositRaw]);
 
 	const deposit = useCallback(
 		async (amount: string) => {
-			const operationId = startDepositExecution(executionKey, executionLockKey, amount);
+			let cctpTrackingRecord: { env: "Mainnet" | "Testnet"; owner: `0x${string}`; sourceHash: Hash } | undefined;
+			let cctpRecoveryUnavailable = false;
+			const operationId = startDepositExecution(executionKey, executionLockKey, amount, depositRoute);
 			if (operationId === null) {
 				setBlockedDepositExecution(
 					executionKey,
@@ -1043,7 +1134,7 @@ export function useDeposit({
 			}
 
 			try {
-				await assertFreshBridgeDepositRoute();
+				await assertFreshSelectedDepositRoute();
 				const amountRaw = parseUnits(amount, USDC_DECIMALS);
 				let hash: Hash;
 				let provider: Eip1193Provider | undefined;
@@ -1055,7 +1146,12 @@ export function useDeposit({
 				};
 
 				if (mode === "smart") {
-					if (!depositConfig.smartDepositEnabled) {
+					if (depositRoute === "cctp") {
+						throw new Error(
+							t`Gas-sponsored CCTP deposits require a configured and verified relayer. This deposit was not submitted.`,
+						);
+					}
+					if (!bridgeDepositConfig.smartDepositEnabled) {
 						throw new Error(t`Smart wallet deposits are not enabled for this network.`);
 					}
 
@@ -1066,20 +1162,20 @@ export function useDeposit({
 						wallet: depositWallet,
 					});
 					smartDepositUser = ready.address;
-					await assertFreshBridgeDepositRoute();
+					await assertFreshSelectedDepositRoute();
 					const data = await createBridge2PermitCall({
 						amountRaw,
-						config: depositConfig,
+						config: bridgeDepositConfig,
 						context: ready,
 					});
-					const smartClient = await getClientForChain({ id: depositConfig.chainId });
+					const smartClient = await getClientForChain({ id: bridgeDepositConfig.chainId });
 					if (!smartClient) throw new Error(t`Smart wallet client not ready`);
-					await assertFreshBridgeDepositRoute();
+					await assertFreshSelectedDepositRoute();
 
 					hash = (await waitForWalletTransactionHash(
 						smartClient.sendTransaction(
 							{
-								to: depositConfig.bridge2,
+								to: bridgeDepositConfig.bridge2,
 								data,
 								value: 0n,
 							},
@@ -1097,25 +1193,152 @@ export function useDeposit({
 						wallet: depositWallet,
 					});
 					provider = ready.provider;
-					await assertWalletCanPayDepositGas(ready, depositConfig, amountRaw);
-					const nonce = await ready.publicClient.getTransactionCount({
-						address: ready.address,
-						blockTag: "pending",
-					});
-					await assertFreshBridgeDepositRoute();
-					hash = await waitForWalletTransactionHash(
-						ready.walletClient.writeContract({
-							account: ready.address,
-							chain: depositChain,
-							address: depositConfig.usdc,
-							abi: erc20Abi,
-							functionName: "transfer",
-							args: [depositConfig.bridge2, amountRaw],
-							nonce,
-						}),
-						DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
-						markWalletResponseDelayed,
-					);
+					if (depositRoute === "cctp") {
+						const cctpTrackingEnv = network === "testnet" ? "Testnet" : "Mainnet";
+						hash = await runWithFundsActionLock(cctpTrackingEnv, ready.address, async () => {
+							if (!isCctpExternalDepositEnabled(network === "testnet")) {
+								throw new Error(t`CCTP deposits are awaiting funded end-to-end verification for this network.`);
+							}
+							if (!isAddress(ready.address)) throw new Error(t`Wallet not connected`);
+							if (amountRaw > CCTP_MAX_DEPOSIT_USDC) {
+								throw new Error(t`Circle CCTP deposits are limited to 10,000,000 USDC per transfer.`);
+							}
+							if (network === "testnet" && amountRaw > CCTP_TESTNET_MAX_DEPOSIT_USDC) {
+								throw new Error(t`Circle testnet deposits are limited to 1,000 USDC per transfer.`);
+							}
+							if (readCctpDepositTrackingRecords(cctpTrackingEnv, ready.address).length > 0) {
+								throw new Error(
+									t`Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit.`,
+								);
+							}
+							assertCctpDepositTrackingStorageWritable(cctpTrackingEnv, ready.address);
+							await assertFreshSelectedDepositRoute();
+							const mainnetRoleRequest = getSdkInfoClient(false).userRole({ user: ready.address });
+							const recipientRoles =
+								network === "testnet"
+									? await Promise.all([mainnetRoleRequest, getSdkInfoClient(true).userRole({ user: ready.address })])
+									: [await mainnetRoleRequest];
+							const mainnetRecipientState = getHyperCoreRecipientState(recipientRoles[0]);
+							const destinationRecipientState =
+								network === "testnet" ? getHyperCoreRecipientState(recipientRoles[1]) : mainnetRecipientState;
+							if (mainnetRecipientState === "agent" || destinationRecipientState === "agent") {
+								throw new Error(
+									t`Agent/API wallet addresses cannot receive CCTP deposits. Connect the owner account instead.`,
+								);
+							}
+							if (network === "testnet" && mainnetRecipientState === "missing") {
+								throw new Error(
+									t`Circle testnet deposits require this address to already exist on Hyperliquid mainnet.`,
+								);
+							}
+							const [feeQuote, fastAllowanceRaw] = await Promise.all([
+								fetchCctpDepositFees(cctpDepositConfig),
+								fetchCctpFastAllowance(cctpDepositConfig),
+							]);
+							if (fastAllowanceRaw < amountRaw) {
+								throw new Error(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
+							}
+							const parameters = createCctpDepositParameters({
+								amountRaw,
+								config: cctpDepositConfig,
+								feeQuote,
+								nonce: createAuthorizationNonce(),
+								nowSeconds: Math.floor(Date.now() / 1000),
+								user: ready.address as Address,
+							});
+							if (expectedCctpMaxFeeRaw === undefined || parameters.depositForBurn.maxFee !== expectedCctpMaxFeeRaw) {
+								throw new Error(t`Circle fees changed before submission. Review the updated fee and retry.`);
+							}
+							await assertFreshSelectedDepositRoute();
+							const authorizationSignature = await ready.walletClient.signTypedData({
+								account: ready.address,
+								...parameters.typedData,
+							});
+							await assertFreshSelectedDepositRoute();
+							const [freshFeeQuote, freshFastAllowanceRaw] = await Promise.all([
+								fetchCctpDepositFees(cctpDepositConfig),
+								fetchCctpFastAllowance(cctpDepositConfig),
+							]);
+							if (freshFastAllowanceRaw < amountRaw) {
+								throw new Error(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
+							}
+							const freshParameters = createCctpDepositParameters({
+								amountRaw,
+								config: cctpDepositConfig,
+								feeQuote: freshFeeQuote,
+								nonce: parameters.authorization.authNonce,
+								nowSeconds: parameters.authorization.authValidAfter + BigInt(60 * 60),
+								user: ready.address as Address,
+							});
+							if (freshParameters.depositForBurn.maxFee !== parameters.depositForBurn.maxFee) {
+								throw new Error(t`Circle fees changed before submission. Review the updated fee and retry.`);
+							}
+							await assertFreshSelectedDepositRoute();
+							const contractArgs = buildCctpDepositContractArgs(parameters, authorizationSignature);
+							const gas = await ready.publicClient.estimateContractGas({
+								account: ready.address,
+								address: cctpDepositConfig.cctpExtension,
+								abi: CCTP_EXTENSION_ABI,
+								functionName: "batchDepositForBurnWithAuth",
+								args: contractArgs,
+							});
+							const [gasPrice, gasBalance] = await Promise.all([
+								ready.publicClient.getGasPrice(),
+								ready.publicClient.getBalance({ address: ready.address }),
+							]);
+							const bufferedGas = (gas * GAS_BUFFER_NUMERATOR + GAS_BUFFER_DENOMINATOR - 1n) / GAS_BUFFER_DENOMINATOR;
+							if (gasBalance < bufferedGas * gasPrice) {
+								throw new Error(t`Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry.`);
+							}
+							await assertFreshSelectedDepositRoute();
+							const sourceHash = await waitForWalletTransactionHash(
+								ready.walletClient.writeContract({
+									account: ready.address,
+									chain: depositChain,
+									address: cctpDepositConfig.cctpExtension,
+									abi: CCTP_EXTENSION_ABI,
+									functionName: "batchDepositForBurnWithAuth",
+									args: contractArgs,
+								}),
+								DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
+								markWalletResponseDelayed,
+							);
+							cctpTrackingRecord = {
+								env: cctpTrackingEnv,
+								owner: ready.address,
+								sourceHash,
+							};
+							try {
+								saveCctpDepositTrackingRecord({
+									...cctpTrackingRecord,
+									amount: formatUnits(amountRaw, USDC_DECIMALS),
+								});
+							} catch {
+								cctpRecoveryUnavailable = true;
+							}
+							return sourceHash;
+						});
+					} else {
+						const transactionNonce = await ready.publicClient.getTransactionCount({
+							address: ready.address,
+							blockTag: "pending",
+						});
+						await assertWalletCanPayDepositGas(ready, bridgeDepositConfig, amountRaw);
+						await assertFreshSelectedDepositRoute();
+						hash = await waitForWalletTransactionHash(
+							ready.walletClient.writeContract({
+								account: ready.address,
+								chain: depositChain,
+								address: bridgeDepositConfig.usdc,
+								abi: erc20Abi,
+								functionName: "transfer",
+								args: [bridgeDepositConfig.bridge2, amountRaw],
+								nonce: transactionNonce,
+							}),
+							DEPOSIT_WALLET_RESPONSE_TIMEOUT_MS,
+							markWalletResponseDelayed,
+						);
+					}
 				}
 
 				if (
@@ -1124,6 +1347,8 @@ export function useDeposit({
 						error: null,
 						hash,
 						amount,
+						route: depositRoute,
+						cctpRecoveryUnavailable,
 						walletResponseDelayed: false,
 					})
 				) {
@@ -1138,30 +1363,54 @@ export function useDeposit({
 					if (!smartDepositUser) throw new Error(t`Wallet not connected`);
 					assertSmartBridge2DepositReceipt({
 						amountRaw,
-						config: depositConfig,
+						config: bridgeDepositConfig,
 						receipt,
 						user: smartDepositUser,
 					});
+				} else if (depositRoute === "cctp") {
+					if (!walletAddress || !isAddress(walletAddress)) throw new Error(t`Wallet not connected`);
+					try {
+						assertCctpDepositReceipt({
+							amountRaw,
+							config: cctpDepositConfig,
+							receipt,
+							user: walletAddress,
+						});
+					} catch (cause) {
+						throw new DefinitiveDepositSourceFailureError("source-receipt-mismatch", toError(cause).message, { cause });
+					}
 				}
 
 				if (
-					!updateDepositExecutionState(executionKey, operationId, {
+					!updateDepositExecutionState(executionKey, operationId, (previous) => ({
+						...previous,
 						status: "success",
 						error: null,
 						hash,
 						amount,
+						route: depositRoute,
 						walletResponseDelayed: false,
-					})
+					}))
 				) {
 					return;
 				}
 				refetch();
 			} catch (error) {
+				if (cctpTrackingRecord && isDefinitiveDepositSourceFailure(error)) {
+					try {
+						removeCctpDepositTrackingRecord(
+							cctpTrackingRecord.env,
+							cctpTrackingRecord.owner,
+							cctpTrackingRecord.sourceHash,
+						);
+					} catch {
+						// The modal retries cleanup when the user acknowledges the definitive source-chain failure.
+					}
+				}
 				updateDepositExecutionState(executionKey, operationId, (previous) => ({
+					...previous,
 					status: "error",
 					error: toError(error),
-					hash: previous.hash,
-					amount: previous.amount,
 					walletResponseDelayed: false,
 				}));
 			} finally {
@@ -1169,14 +1418,19 @@ export function useDeposit({
 			}
 		},
 		[
-			assertFreshBridgeDepositRoute,
+			assertFreshSelectedDepositRoute,
+			bridgeDepositConfig,
+			cctpDepositConfig,
 			depositChain,
 			depositConfig,
+			depositRoute,
 			depositWallet,
 			executionKey,
 			executionLockKey,
 			getClientForChain,
+			expectedCctpMaxFeeRaw,
 			mode,
+			network,
 			publicClient,
 			refetch,
 			walletAddress,
@@ -1190,7 +1444,8 @@ export function useDeposit({
 	return {
 		...chain,
 		networkName: depositConfig.displayName,
-		smartDepositEnabled: depositConfig.smartDepositEnabled,
+		smartDepositEnabled: depositRoute === "bridge" && bridgeDepositConfig.smartDepositEnabled,
+		depositRoute,
 		balance,
 		balanceRaw,
 		maxAmount,
@@ -1201,6 +1456,8 @@ export function useDeposit({
 		error: state.error,
 		hash: state.hash,
 		executionAmount: state.amount,
+		executionRoute: state.route,
+		cctpRecoveryUnavailable: state.cctpRecoveryUnavailable,
 		walletResponseDelayed: state.walletResponseDelayed,
 		deposit,
 		refreshBalance: refetch,

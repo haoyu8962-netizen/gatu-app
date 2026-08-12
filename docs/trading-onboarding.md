@@ -45,11 +45,14 @@ The terminal must preserve this ordering:
 7. **Guide an empty account to deposit.** Open the deposit dialog only after
    both snapshots definitively establish that the account is empty. Enabling
    a deposit also requires a successful, runtime-validated `usdcRouting`
-   response for the active environment. The existing Bridge2 executor may run
-   only when `depositRoute` is `bridge`, including the automatic embedded-wallet
-   path. A `cctp` route fails closed until the complete Circle CCTP deposit
-   flow is implemented; loading, failed, or malformed routing data must never
-   be interpreted as permission to use Bridge2.
+   response for the active environment. Bridge2 may run only when
+   `depositRoute` is `bridge`. When it is `cctp`, a connected external wallet
+   may use Circle's self-submitted `CctpExtension` flow after dynamic fee and
+   Fast Transfer allowance checks only when that environment's fail-closed
+   release flag is enabled after funded end-to-end review. Embedded/email
+   wallets remain fail-closed until a production relayer for
+   `CctpExtensionV2` is configured and verified.
+   Loading, failed, or malformed routing data never permits either protocol.
 8. **Approve the builder fee when needed for an action.** Do not add this
    signature to first-time Agent setup. `useTradingAuthorization` requests it
    before the first action that needs the configured builder code.
@@ -128,10 +131,15 @@ an explicit security reset.
   be fetched again immediately before a signature or submission.
 - A route change between review and submission aborts the action and requires
   renewed review. A routing error never falls back to another protocol.
-- The manual and automatic Bridge2 paths share the same hard route guard. A
-  known `cctp` deposit route must remain unavailable until the native Circle
-  USDC, authorization, forwarder, fee, and recovery flow is implemented and
-  tested for that environment.
+- The manual and automatic Bridge2 paths share the same hard route guard.
+  External CCTP deposits use route-specific Circle native USDC, EIP-3009,
+  current fees and allowance, the official forwarder hook, strict receipt
+  validation, and source-hash recovery. Embedded CCTP deposits require a
+  separately operated relayer and remain unavailable without one.
+- Account-mode changes and mode-dependent funds actions acquire one Web Lock
+  scoped by Hyperliquid environment and owner. The lock is held until the SDK
+  request settles. Lock acquisition times out after ten seconds; an acquired
+  action is never aborted by that waiting timeout.
 
 ## Implementation Map
 
@@ -152,6 +160,8 @@ an explicit security reset.
 | USDC routing query and pre-submit guard | `apps/terminal/src/hooks/trade/use-usdc-routing.ts` |
 | Runtime flow orchestration | `apps/terminal/src/components/trade/components/trading-onboarding-gate.tsx` |
 | Manual deposit and withdrawal surface | `apps/terminal/src/components/trade/tradebox/deposit-modal.tsx` |
+| Circle CCTP construction and recovery | `apps/terminal/src/lib/trade/cctp-deposit.ts`, `cctp-deposit-tracking.ts` |
+| Cross-tab funds serialization | `packages/hl-react/src/internal/exchange/funds-action-lock.ts` |
 | Automatic embedded-wallet deposit | `apps/terminal/src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx` |
 | Session-scoped prompt dismissal | `apps/terminal/src/stores/use-trading-onboarding-store.ts` |
 | Modal precedence | `apps/terminal/src/components/trade/components/global-modals.tsx` |
@@ -176,5 +186,11 @@ At minimum, changes to this flow must cover:
   signature or submission and requiring renewed review;
 - manual and automatic Bridge2 paths remaining blocked unless a fresh route is
   exactly `bridge`, with no CCTP-to-Bridge2 or withdrawal fallback;
+- external CCTP fee/allowance changes, testnet mainnet-state and 1,000-USDC
+  gates, receipt mismatch, recovery after refresh, and embedded-relayer
+  unavailability;
+- same-owner funds actions serializing across tabs until the first SDK promise
+  settles, with unavailable Web Locks and bounded acquisition waits failing
+  closed;
 - builder-fee approval remaining separate from Agent registration;
 - desktop and mobile modal presentation.

@@ -3,6 +3,10 @@ import { encodeAbiParameters, encodeEventTopics, erc20Abi } from "viem";
 import { describe, expect, it, vi } from "vitest";
 import { BRIDGE2_ABI, DEPOSIT_NETWORKS } from "@/config/contracts";
 import {
+	DefinitiveDepositSourceFailureError,
+	isDefinitiveDepositSourceFailure,
+} from "@/lib/hyperliquid/deposit-source-error";
+import {
 	assertSmartBridge2DepositReceipt,
 	waitForBroadcastedTransaction,
 	waitForConfirmedReceipt,
@@ -54,6 +58,17 @@ function createPublicClientMock(overrides: Partial<PublicClient>): PublicClient 
 }
 
 describe("deposit broadcast confirmation", () => {
+	it("classifies definitive failures by structured code instead of localized wording", () => {
+		expect(
+			isDefinitiveDepositSourceFailure(
+				new DefinitiveDepositSourceFailureError("source-transaction-reverted", "交易已在 Arbitrum 上回滚"),
+			),
+		).toBe(true);
+		expect(isDefinitiveDepositSourceFailure(new Error("交易已在 Arbitrum 上回滚"))).toBe(false);
+		expect(isDefinitiveDepositSourceFailure(new Error("Transaction reverted on Arbitrum"))).toBe(false);
+		expect(isDefinitiveDepositSourceFailure(new Error("HTTP request failed"))).toBe(false);
+	});
+
 	it("accepts a visible transaction receipt", async () => {
 		const publicClient = createPublicClientMock({
 			getTransactionReceipt: vi.fn().mockResolvedValue({ status: "success" }),
@@ -171,9 +186,14 @@ describe("deposit broadcast confirmation", () => {
 			request: vi.fn().mockResolvedValue({ status: "0x0", blockNumber: "0x1", logs: [] }),
 		};
 
-		await expect(waitForConfirmedReceipt(publicClient, HASH, { provider, timeoutMs: 0 })).rejects.toThrow(
-			"Transaction reverted on Arbitrum",
+		const failure = await waitForConfirmedReceipt(publicClient, HASH, { provider, timeoutMs: 0 }).catch(
+			(error: unknown) => error,
 		);
+		expect(failure).toBeInstanceOf(DefinitiveDepositSourceFailureError);
+		expect(failure).toMatchObject({
+			code: "source-transaction-reverted",
+			message: "Transaction reverted on Arbitrum",
+		});
 		expect(publicClient.getTransactionReceipt).toHaveBeenCalledWith({ hash: HASH });
 	});
 });

@@ -16,6 +16,7 @@ describe("deposit execution state", () => {
 
 		expect(getDepositExecutionState(executionKey).status).toBe("pending");
 		expect(getDepositExecutionState(executionKey).amount).toBe("12.5");
+		expect(getDepositExecutionState(executionKey).route).toBe("bridge");
 		expect(resetDepositExecution(executionKey)).toBe(false);
 		expect(getDepositExecutionState(executionKey).status).toBe("pending");
 
@@ -41,6 +42,8 @@ describe("deposit execution state", () => {
 				error: null,
 				hash: undefined,
 				amount: "20",
+				route: "bridge",
+				cctpRecoveryUnavailable: false,
 				walletResponseDelayed: false,
 			}),
 		).toBe(true);
@@ -65,6 +68,8 @@ describe("deposit execution state", () => {
 				error: null,
 				hash: undefined,
 				amount: "5",
+				route: "bridge",
+				cctpRecoveryUnavailable: false,
 				walletResponseDelayed: false,
 			}),
 		).toBe(false);

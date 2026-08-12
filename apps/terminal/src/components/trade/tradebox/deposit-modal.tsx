@@ -1,16 +1,30 @@
 import { Button, ModalContent, ModalHeader, ModalTitle } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
+import { useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { isAddress, zeroAddress } from "viem";
+import { type Address, formatUnits, isAddress, parseUnits, zeroAddress } from "viem";
 import { arbitrum, arbitrumSepolia } from "viem/chains";
+import {
+	CCTP_MAX_DEPOSIT_USDC,
+	CCTP_TESTNET_MAX_DEPOSIT_USDC,
+	isCctpExternalDepositEnabled,
+} from "@/config/cctp-deposit";
 import { LIFI_BRIDGE_FEATURES, shouldShowLiFiBridgeTab } from "@/config/lifi-bridge";
 import { NETWORKS } from "@/config/networks";
 import { DEPOSIT_BALANCE_REFRESH_MS } from "@/config/time";
 import { getAccountBalanceSummary } from "@/domain/trade/balances";
+import {
+	assertPreTransferCheckMatchesReview,
+	getCanonicalSpotSystemAddress,
+	normalizePreTransferCheck,
+	PreTransferCheckExecutionError,
+} from "@/domain/trade/pre-transfer-check";
 import { getUsdcRoutingQueryStatus, getWithdrawalRoute } from "@/domain/trade/usdc-routing";
 import { useAccountAbstractionPreExecutionGuard } from "@/hooks/trade/use-account-abstraction-guard";
 import { useDefaultDexBalances } from "@/hooks/trade/use-account-balances";
+import { useCctpDepositFee } from "@/hooks/trade/use-cctp-deposit-fee";
+import { useCctpDepositTracking } from "@/hooks/trade/use-cctp-deposit-tracking";
 import { useCctpWithdrawalFee } from "@/hooks/trade/use-cctp-withdrawal-fee";
 import { executeWithFreshWithdrawalRoute, useFreshUsdcRouting, useUsdcRouting } from "@/hooks/trade/use-usdc-routing";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -18,10 +32,13 @@ import { useEmailEmbeddedWallet } from "@/hooks/wallet/use-email-embedded-wallet
 import { useReconnectWallet, useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatExchangeActionError, formatTransferError, isAmbiguousExchangeActionError } from "@/lib/errors/format";
 import { formatNumber } from "@/lib/format";
-import { useExchange, useInfo } from "@/lib/hyperliquid";
+import { infoQueryOptions, useExchange, useHyperliquid, useInfo } from "@/lib/hyperliquid";
+import { isDefinitiveDepositSourceFailure } from "@/lib/hyperliquid/deposit-source-error";
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
+import { calculateCctpDepositFee } from "@/lib/trade/cctp-deposit";
+import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
 import {
 	buildCctpWithdrawalParameters,
 	getMaximumWithdrawal,
@@ -59,6 +76,14 @@ interface WithdrawalAttempt {
 	routeFee: string;
 }
 
+interface CctpPreTransferReview {
+	fee: string;
+	params: {
+		source: Address;
+		user: Address;
+	};
+}
+
 function normalizeError(error: unknown): Error {
 	if (error instanceof Error) return error;
 	return new Error(typeof error === "string" ? error : t`Unknown error`);
@@ -78,11 +103,15 @@ export function DepositModal() {
 	const [withdrawalAttempt, setWithdrawalAttempt] = useState<WithdrawalAttempt | null>(null);
 	const [withdrawalRouteChanged, setWithdrawalRouteChanged] = useState(false);
 	const [depositRoutingPreflightFailed, setDepositRoutingPreflightFailed] = useState(false);
+	const [depositCctpPreflightError, setDepositCctpPreflightError] = useState<string | null>(null);
 	const [withdrawalRoutingPreflightFailed, setWithdrawalRoutingPreflightFailed] = useState(false);
 	const [isDepositPreflighting, setIsDepositPreflighting] = useState(false);
 	const [isWithdrawalPreflighting, setIsWithdrawalPreflighting] = useState(false);
 	const depositPreflightIdRef = useRef(0);
+	const cctpPreTransferReviewRef = useRef<CctpPreTransferReview | null>(null);
 	const observedWithdrawalRouteRef = useRef<WithdrawalRoute | null>(null);
+	const queryClient = useQueryClient();
+	const { env, info } = useHyperliquid();
 	const isTestnet = useIsTestnet();
 	const depositTxChain = isTestnet ? arbitrumSepolia : arbitrum;
 	const usdcRoutingQuery = useUsdcRouting(open);
@@ -96,7 +125,9 @@ export function DepositModal() {
 	const withdrawalRoutingStatus = withdrawalRoutingPreflightFailed ? "error" : usdcRoutingStatus;
 	const routedWithdrawalRoute = getWithdrawalRoute(usdcRoutingQuery.data);
 	const withdrawalRoute = routedWithdrawalRoute ?? "arbitrum-cctp";
-	const bridgeDepositRouteReady = depositRoutingStatus === "ready" && usdcRoutingQuery.data?.depositRoute === "bridge";
+	const selectedDepositRoute = usdcRoutingQuery.data?.depositRoute ?? "bridge";
+	const depositRouteReady = depositRoutingStatus === "ready" && !!usdcRoutingQuery.data?.depositRoute;
+	const cctpExternalDepositEnabled = isCctpExternalDepositEnabled(isTestnet);
 
 	const { walletAddress, hasWalletAccess, user, embeddedWalletAddress } = useWalletSession();
 	const { reconnectWallet, walletsReady, isReconnecting } = useReconnectWallet();
@@ -113,6 +144,18 @@ export function DepositModal() {
 	const depositEmbeddedWalletAddress = embeddedWalletAddress ?? ensuredEmbeddedWalletAddress;
 	const isEmbeddedDeposit = !!emailAddress && (shouldUsePrivyEmbeddedWallet(user) || shouldUseEmailEmbeddedWallet);
 	const depositMode = isEmbeddedDeposit ? "smart" : "wallet";
+	let depositAmountRaw: bigint | undefined;
+	try {
+		depositAmountRaw = depositAmount.trim() ? parseUnits(depositAmount.trim(), 6) : undefined;
+	} catch {
+		depositAmountRaw = undefined;
+	}
+	const cctpDepositFeeQuery = useCctpDepositFee({
+		amountRaw: depositAmountRaw,
+		enabled:
+			open && depositRouteReady && selectedDepositRoute === "cctp" && !isEmbeddedDeposit && cctpExternalDepositEnabled,
+		isTestnet,
+	});
 
 	const {
 		balance: depositBalance,
@@ -124,6 +167,8 @@ export function DepositModal() {
 		error: depositError,
 		hash: depositHash,
 		executionAmount: depositExecutionAmount,
+		executionRoute: depositExecutionRoute,
+		cctpRecoveryUnavailable,
 		walletResponseDelayed,
 		isArbitrum,
 		isSwitching,
@@ -140,9 +185,19 @@ export function DepositModal() {
 		balanceEnabled: open,
 		balancePollIntervalMs: isEmbeddedDeposit ? DEPOSIT_BALANCE_REFRESH_MS : undefined,
 		mode: depositMode,
+		depositRoute: selectedDepositRoute,
+		expectedCctpMaxFeeRaw: cctpDepositFeeQuery.calculation?.maxFeeRaw,
 		walletAddress: isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined,
 	});
-
+	const cctpDepositTracking = useCctpDepositTracking({
+		enabled: open && !isEmbeddedDeposit && !!walletAddress,
+		env: isTestnet ? "Testnet" : "Mainnet",
+		owner: walletAddress,
+		sourceHash: depositExecutionRoute === "cctp" ? depositHash : undefined,
+	});
+	const isCurrentCctpDeposit =
+		!!depositHash &&
+		(depositExecutionRoute === "cctp" || cctpDepositTracking.recoveryRecord?.sourceHash === depositHash.toLowerCase());
 	const defaultBalances = useDefaultDexBalances();
 	const accountAbstraction = defaultBalances.accountAbstraction;
 	const assertAccountAbstraction = useAccountAbstractionPreExecutionGuard(accountAbstraction, walletAddress);
@@ -172,13 +227,56 @@ export function DepositModal() {
 			: isEmbeddedDeposit && (needsEmbeddedWallet || isCreatingEmbeddedWallet || !depositEmbeddedWalletAddress)
 				? t`Creating your wallet. Please wait...`
 				: null;
-	const depositValidation = !bridgeDepositRouteReady
+	const cctpDepositFeeUnavailable =
+		selectedDepositRoute === "cctp" &&
+		!isEmbeddedDeposit &&
+		(cctpDepositFeeQuery.isLoading ||
+			cctpDepositFeeQuery.isError ||
+			!cctpDepositFeeQuery.calculation ||
+			cctpDepositFeeQuery.hasSufficientFastAllowance === false);
+	const cctpDepositFee = cctpDepositFeeQuery.calculation
+		? formatUnits(cctpDepositFeeQuery.calculation.maxFeeRaw, 6)
+		: null;
+	const cctpDepositNetAmount = cctpDepositFeeQuery.calculation
+		? formatUnits(cctpDepositFeeQuery.calculation.netAmountRaw, 6)
+		: null;
+	const cctpDepositAmountLimitError =
+		selectedDepositRoute === "cctp" && depositAmountRaw !== undefined && depositAmountRaw > CCTP_MAX_DEPOSIT_USDC
+			? t`Circle CCTP deposits are limited to 10,000,000 USDC per transfer.`
+			: selectedDepositRoute === "cctp" &&
+					isTestnet &&
+					depositAmountRaw !== undefined &&
+					depositAmountRaw > CCTP_TESTNET_MAX_DEPOSIT_USDC
+				? t`Circle testnet deposits are limited to 1,000 USDC per transfer.`
+				: null;
+	const depositValidation = !depositRouteReady
 		? { valid: false, error: null }
 		: embeddedWalletValidationError
 			? { valid: false, error: embeddedWalletValidationError }
-			: isEmbeddedDeposit && !smartDepositEnabled
-				? { valid: false, error: t`Smart wallet deposits are not enabled for this network.` }
-				: baseDepositValidation;
+			: selectedDepositRoute === "cctp" && !isEmbeddedDeposit && !cctpExternalDepositEnabled
+				? {
+						valid: false,
+						error: t`CCTP deposits are awaiting funded end-to-end verification for this network.`,
+					}
+				: isEmbeddedDeposit && selectedDepositRoute === "cctp"
+					? {
+							valid: false,
+							error: t`Gas-sponsored CCTP deposits require a configured and verified relayer.`,
+						}
+					: isEmbeddedDeposit && !smartDepositEnabled
+						? { valid: false, error: t`Smart wallet deposits are not enabled for this network.` }
+						: cctpDepositAmountLimitError
+							? { valid: false, error: cctpDepositAmountLimitError }
+							: cctpDepositFeeUnavailable
+								? {
+										valid: false,
+										error: cctpDepositFeeQuery.isError
+											? t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`
+											: cctpDepositFeeQuery.hasSufficientFastAllowance === false
+												? t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`
+												: null,
+									}
+								: { ...baseDepositValidation, error: depositCctpPreflightError ?? baseDepositValidation.error };
 	const canUseFundsActions = hasWalletAccess && !!walletAddress;
 	const canUseDeposit = canUseFundsActions || isEmbeddedDeposit;
 	const hasExistingBridgeExecution = useHasExistingBridgeExecution(walletAddress);
@@ -195,12 +293,30 @@ export function DepositModal() {
 		accountSummary.isAvailable &&
 		withdrawalRoutingStatus === "ready" &&
 		!!routedWithdrawalRoute;
-	const preTransferAddress = walletAddress ?? zeroAddress;
-	const preTransferCheckQuery = useInfo(
-		"preTransferCheck",
-		{ user: preTransferAddress, source: preTransferAddress },
-		{ enabled: withdrawalQueriesEnabled, staleTime: 30_000, refetchOnWindowFocus: true },
-	);
+	const cctpWithdrawalQueriesEnabled = withdrawalQueriesEnabled && withdrawalRoute === "arbitrum-cctp";
+	const spotMetaQuery = useInfo("spotMeta", undefined, {
+		enabled: cctpWithdrawalQueriesEnabled,
+		refetchOnWindowFocus: true,
+		staleTime: 30_000,
+	});
+	let cctpUsdcSystemAddress: Address | undefined;
+	if (spotMetaQuery.data) {
+		try {
+			cctpUsdcSystemAddress = getCanonicalSpotSystemAddress(spotMetaQuery.data, "USDC");
+		} catch {
+			cctpUsdcSystemAddress = undefined;
+		}
+	}
+	const preTransferParams = {
+		user: cctpUsdcSystemAddress ?? zeroAddress,
+		source: walletAddress ?? zeroAddress,
+	};
+	const preTransferCheckQuery = useInfo("preTransferCheck", preTransferParams, {
+		enabled: cctpWithdrawalQueriesEnabled && !!cctpUsdcSystemAddress,
+		refetchOnWindowFocus: true,
+		select: normalizePreTransferCheck,
+		staleTime: 30_000,
+	});
 	const cctpFeeQuery = useCctpWithdrawalFee({
 		enabled: withdrawalQueriesEnabled && withdrawalRoute === "arbitrum-cctp",
 		isTestnet,
@@ -216,10 +332,11 @@ export function DepositModal() {
 	const withdrawError = cctpWithdrawal.error ?? legacyWithdrawal.error;
 	const cctpFee = cctpFeeQuery.data ?? null;
 	const withdrawalRouteFee = getWithdrawalRouteFee(withdrawalRoute, cctpFee);
-	const withdrawalActivationFee = preTransferCheckQuery.data?.fee ?? "0";
-	const withdrawalMaxAmount = preTransferCheckQuery.isSuccess
-		? getMaximumWithdrawal(withdrawable, withdrawalActivationFee)
-		: "0";
+	const withdrawalActivationFee = withdrawalRoute === "arbitrum-cctp" ? (preTransferCheckQuery.data?.fee ?? "0") : "0";
+	const withdrawalMaxAmount =
+		withdrawalRoute === "arbitrum-legacy" || preTransferCheckQuery.isSuccess
+			? getMaximumWithdrawal(withdrawable, withdrawalActivationFee)
+			: "0";
 	const withdrawValidation = validateWithdrawal({
 		amount: withdrawAmount,
 		available: withdrawable,
@@ -242,14 +359,29 @@ export function DepositModal() {
 	const withdrawalPrerequisitesPending =
 		isWithdrawalPreflighting ||
 		withdrawalRoutingStatus === "loading" ||
-		preTransferCheckQuery.isFetching ||
-		(withdrawalRoute === "arbitrum-cctp" && cctpFeeQuery.isFetching);
+		(withdrawalRoute === "arbitrum-cctp" &&
+			(spotMetaQuery.isFetching || preTransferCheckQuery.isFetching || cctpFeeQuery.isFetching));
+	const cctpSpotMetaInvalid = spotMetaQuery.isSuccess && !cctpUsdcSystemAddress;
 	let withdrawalPrerequisiteError: string | null = null;
 	if (!accountSummary.isAvailable) {
 		withdrawalPrerequisiteError = t`Select a supported account mode before moving funds.`;
-	} else if (withdrawalRoutingStatus === "ready" && preTransferCheckQuery.data?.isSanctioned) {
+	} else if (
+		withdrawalRoutingStatus === "ready" &&
+		withdrawalRoute === "arbitrum-cctp" &&
+		(spotMetaQuery.isError || cctpSpotMetaInvalid)
+	) {
+		withdrawalPrerequisiteError = t`Unable to verify the current HyperCore USDC destination.`;
+	} else if (
+		withdrawalRoutingStatus === "ready" &&
+		withdrawalRoute === "arbitrum-cctp" &&
+		preTransferCheckQuery.data?.isSanctioned
+	) {
 		withdrawalPrerequisiteError = t`Withdrawals are unavailable for this address.`;
-	} else if (withdrawalRoutingStatus === "ready" && preTransferCheckQuery.isError) {
+	} else if (
+		withdrawalRoutingStatus === "ready" &&
+		withdrawalRoute === "arbitrum-cctp" &&
+		preTransferCheckQuery.isError
+	) {
 		withdrawalPrerequisiteError = t`Unable to verify withdrawal eligibility.`;
 	} else if (withdrawalRoutingStatus === "ready" && withdrawalRoute === "arbitrum-cctp" && cctpFeeQuery.isError) {
 		withdrawalPrerequisiteError = t`Unable to load the current CCTP withdrawal fee.`;
@@ -258,13 +390,17 @@ export function DepositModal() {
 		accountSummary.isAvailable &&
 		withdrawalRoutingStatus === "ready" &&
 		!!routedWithdrawalRoute &&
-		preTransferCheckQuery.isSuccess &&
-		!preTransferCheckQuery.data.isSanctioned &&
-		(withdrawalRoute === "arbitrum-legacy" || cctpFeeQuery.isSuccess);
+		(withdrawalRoute === "arbitrum-legacy" ||
+			(spotMetaQuery.isSuccess &&
+				!!cctpUsdcSystemAddress &&
+				preTransferCheckQuery.isSuccess &&
+				!preTransferCheckQuery.data.isSanctioned &&
+				cctpFeeQuery.isSuccess));
 	const canRetryWithdrawalPrerequisites =
-		!preTransferCheckQuery.data?.isSanctioned &&
 		withdrawalRoutingStatus === "ready" &&
-		(preTransferCheckQuery.isError || (withdrawalRoute === "arbitrum-cctp" && cctpFeeQuery.isError));
+		withdrawalRoute === "arbitrum-cctp" &&
+		!preTransferCheckQuery.data?.isSanctioned &&
+		(spotMetaQuery.isError || cctpSpotMetaInvalid || preTransferCheckQuery.isError || cctpFeeQuery.isError);
 	const canSubmitWithdraw = withdrawValidation.valid && isWithdrawDestinationValid && withdrawalPrerequisitesReady;
 
 	useEffect(() => {
@@ -302,11 +438,53 @@ export function DepositModal() {
 		}
 	}
 
+	async function fetchFreshPreTransferCheck(review: CctpPreTransferReview, signal: AbortSignal) {
+		const options = infoQueryOptions(info, "preTransferCheck", review.params, env);
+		try {
+			signal.throwIfAborted();
+			await queryClient.cancelQueries({ exact: true, queryKey: options.queryKey });
+			signal.throwIfAborted();
+			const response = await info.preTransferCheck(review.params, signal);
+			signal.throwIfAborted();
+			const normalized = normalizePreTransferCheck(response);
+			await queryClient.cancelQueries({ exact: true, queryKey: options.queryKey });
+			signal.throwIfAborted();
+			queryClient.setQueryData(options.queryKey, response);
+			return normalized;
+		} catch (error) {
+			if (signal.aborted) throw signal.reason ?? error;
+			throw new PreTransferCheckExecutionError("unavailable");
+		}
+	}
+
+	async function assertFreshCctpPreTransferCheck(signal: AbortSignal) {
+		const review = cctpPreTransferReviewRef.current;
+		if (!review) throw new PreTransferCheckExecutionError("unavailable");
+		const current = await fetchFreshPreTransferCheck(review, signal);
+		assertPreTransferCheckMatchesReview(review.fee, current);
+	}
+
 	async function assertFreshWithdrawalExecution(expectedRoute: WithdrawalRoute, signal: AbortSignal) {
-		await Promise.all([assertFreshWithdrawalRoute(expectedRoute, signal), assertAccountAbstraction(signal)]);
+		const guards = [assertFreshWithdrawalRoute(expectedRoute, signal), assertAccountAbstraction(signal)];
+		if (expectedRoute === "arbitrum-cctp") guards.push(assertFreshCctpPreTransferCheck(signal));
+		await Promise.all(guards);
 	}
 
 	function handleClose() {
+		const completedTrackingHash =
+			cctpDepositTracking.data?.status === "forward-submitted" ? cctpDepositTracking.trackedSourceHash : undefined;
+		const definitivelyFailedTrackingHash =
+			depositExecutionRoute === "cctp" && depositHash && isDefinitiveDepositSourceFailure(depositError)
+				? depositHash
+				: undefined;
+		const removableTrackingHash = completedTrackingHash ?? definitivelyFailedTrackingHash;
+		if (removableTrackingHash && walletAddress) {
+			try {
+				removeCctpDepositTrackingRecord(isTestnet ? "Testnet" : "Mainnet", walletAddress, removableTrackingHash);
+			} catch {
+				// The source transaction hash remains available in the explorer link.
+			}
+		}
 		depositPreflightIdRef.current += 1;
 		resetDeposit();
 		cctpWithdrawal.reset();
@@ -317,9 +495,11 @@ export function DepositModal() {
 		setWithdrawalAttempt(null);
 		setWithdrawalRouteChanged(false);
 		setDepositRoutingPreflightFailed(false);
+		setDepositCctpPreflightError(null);
 		setWithdrawalRoutingPreflightFailed(false);
 		setIsDepositPreflighting(false);
 		setIsWithdrawalPreflighting(false);
+		cctpPreTransferReviewRef.current = null;
 		observedWithdrawalRouteRef.current = null;
 		close();
 	}
@@ -338,8 +518,9 @@ export function DepositModal() {
 	}
 
 	async function handleDepositSubmit() {
-		if (!depositValidation.valid || !canUseDeposit || isDepositPending || !bridgeDepositRouteReady) return;
+		if (!depositValidation.valid || !canUseDeposit || isDepositPending || !depositRouteReady) return;
 
+		setDepositCctpPreflightError(null);
 		const preflightId = depositPreflightIdRef.current + 1;
 		depositPreflightIdRef.current = preflightId;
 		setIsDepositPreflighting(true);
@@ -351,7 +532,26 @@ export function DepositModal() {
 				return;
 			}
 			setDepositRoutingPreflightFailed(false);
-			if (freshRouting.depositRoute !== "bridge") return;
+			if (freshRouting.depositRoute !== selectedDepositRoute) return;
+			if (selectedDepositRoute === "cctp") {
+				const reviewedCalculation = cctpDepositFeeQuery.calculation;
+				if (!reviewedCalculation || depositAmountRaw === undefined) return;
+				const freshFeeResult = await cctpDepositFeeQuery.refetch();
+				if (depositPreflightIdRef.current !== preflightId) return;
+				if (!freshFeeResult.data || freshFeeResult.isError) {
+					setDepositCctpPreflightError(t`Unable to verify the current Circle CCTP fee and Fast Transfer capacity.`);
+					return;
+				}
+				if (freshFeeResult.data.fastAllowanceRaw < depositAmountRaw) {
+					setDepositCctpPreflightError(t`Circle Fast Transfer capacity is temporarily unavailable. Try again later.`);
+					return;
+				}
+				const freshCalculation = calculateCctpDepositFee(depositAmountRaw, freshFeeResult.data.feeQuote);
+				if (freshCalculation.maxFeeRaw !== reviewedCalculation.maxFeeRaw) {
+					setDepositCctpPreflightError(t`Circle fees changed. Review the updated fee, then submit again.`);
+					return;
+				}
+			}
 			await deposit(depositAmount);
 		} catch {
 			if (depositPreflightIdRef.current === preflightId) setDepositRoutingPreflightFailed(true);
@@ -359,6 +559,11 @@ export function DepositModal() {
 		} finally {
 			if (depositPreflightIdRef.current === preflightId) setIsDepositPreflighting(false);
 		}
+	}
+
+	function handleDepositAmountChange(value: string) {
+		setDepositCctpPreflightError(null);
+		setDepositAmount(value);
 	}
 
 	async function handleWithdrawSubmit() {
@@ -371,8 +576,33 @@ export function DepositModal() {
 			const expectedWithdrawalRoute = routedWithdrawalRoute;
 			if (!expectedWithdrawalRoute) return;
 
-			const preTransferResult = await preTransferCheckQuery.refetch();
-			if (!preTransferResult.data || preTransferResult.isError || preTransferResult.data.isSanctioned) return;
+			let cctpPreTransferReview: CctpPreTransferReview | null = null;
+			if (expectedWithdrawalRoute === "arbitrum-cctp") {
+				const reviewedPreTransferCheck = preTransferCheckQuery.data;
+				if (!reviewedPreTransferCheck || reviewedPreTransferCheck.isSanctioned || !cctpUsdcSystemAddress) return;
+
+				const spotMetaResult = await spotMetaQuery.refetch();
+				if (!spotMetaResult.data || spotMetaResult.isError) return;
+				let freshUsdcSystemAddress: Address;
+				try {
+					freshUsdcSystemAddress = getCanonicalSpotSystemAddress(spotMetaResult.data, "USDC");
+				} catch {
+					return;
+				}
+				if (freshUsdcSystemAddress.toLowerCase() !== cctpUsdcSystemAddress.toLowerCase()) return;
+
+				const preTransferResult = await preTransferCheckQuery.refetch();
+				if (!preTransferResult.data || preTransferResult.isError) return;
+				try {
+					assertPreTransferCheckMatchesReview(reviewedPreTransferCheck.fee, preTransferResult.data);
+				} catch {
+					return;
+				}
+				cctpPreTransferReview = {
+					fee: preTransferResult.data.fee,
+					params: { user: freshUsdcSystemAddress, source: walletAddress },
+				};
+			}
 
 			let freshRouteFee = getWithdrawalRouteFee(expectedWithdrawalRoute, cctpFee);
 			if (expectedWithdrawalRoute === "arbitrum-cctp") {
@@ -387,7 +617,7 @@ export function DepositModal() {
 				available: withdrawable,
 				route: expectedWithdrawalRoute,
 				routeFee: freshRouteFee,
-				activationFee: preTransferResult.data.fee,
+				activationFee: cctpPreTransferReview?.fee ?? "0",
 			});
 			if (!freshValidation.valid) return;
 
@@ -397,12 +627,14 @@ export function DepositModal() {
 				async () => {
 					setWithdrawalRouteChanged(false);
 					setWithdrawalAttempt({
-						activationFee: preTransferResult.data.fee,
+						activationFee: cctpPreTransferReview?.fee ?? "0",
 						amount: withdrawAmount,
 						route: expectedWithdrawalRoute,
 						routeFee: freshRouteFee,
 					});
 					if (expectedWithdrawalRoute === "arbitrum-cctp") {
+						if (!cctpPreTransferReview) throw new PreTransferCheckExecutionError("unavailable");
+						cctpPreTransferReviewRef.current = cctpPreTransferReview;
 						await cctpWithdrawal.mutateAsync(
 							buildCctpWithdrawalParameters({
 								amount: withdrawAmount,
@@ -426,6 +658,7 @@ export function DepositModal() {
 		} catch {
 			// Query and mutation state render the actionable error without duplicating the request.
 		} finally {
+			cctpPreTransferReviewRef.current = null;
 			setIsWithdrawalPreflighting(false);
 		}
 	}
@@ -438,8 +671,18 @@ export function DepositModal() {
 			return;
 		}
 		setWithdrawalRoutingPreflightFailed(false);
-		await preTransferCheckQuery.refetch();
-		if (freshWithdrawalRoute === "arbitrum-cctp") await cctpFeeQuery.refetch();
+		if (freshWithdrawalRoute === "arbitrum-cctp") {
+			const spotMetaResult = await spotMetaQuery.refetch();
+			if (spotMetaResult.isError || !spotMetaResult.data) return;
+			let freshUsdcSystemAddress: Address;
+			try {
+				freshUsdcSystemAddress = getCanonicalSpotSystemAddress(spotMetaResult.data, "USDC");
+			} catch {
+				return;
+			}
+			if (freshUsdcSystemAddress.toLowerCase() !== cctpUsdcSystemAddress?.toLowerCase()) return;
+			await Promise.all([preTransferCheckQuery.refetch(), cctpFeeQuery.refetch()]);
+		}
 	}
 
 	async function handleDepositRoutingRetry() {
@@ -459,8 +702,82 @@ export function DepositModal() {
 	let depositPendingHeading = <Trans>Confirm in wallet</Trans>;
 	if (walletResponseDelayed) depositPendingHeading = <Trans>Taking longer than expected</Trans>;
 	if (depositStatus === "confirming") depositPendingHeading = <Trans>Waiting for chain confirmation</Trans>;
+	const recoveredCctpDeposit = visibleTab === "deposit" && !depositHash ? cctpDepositTracking.recoveryRecord : null;
+
+	if (recoveredCctpDeposit) {
+		const forwardSubmitted = cctpDepositTracking.data?.status === "forward-submitted";
+		return (
+			<StatusScreen
+				open={open}
+				presentation={presentation}
+				title={<Trans>Deposit</Trans>}
+				icon={forwardSubmitted ? "success" : "loading"}
+				heading={forwardSubmitted ? <Trans>Forward transaction submitted</Trans> : <Trans>Forwarding deposit</Trans>}
+				description={
+					forwardSubmitted ? (
+						<Trans>
+							Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time.
+						</Trans>
+					) : cctpDepositTracking.isError ? (
+						<Trans>
+							The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume
+							when you return.
+						</Trans>
+					) : (
+						<Trans>Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer.</Trans>
+					)
+				}
+				txHash={recoveredCctpDeposit.sourceHash}
+				txChain={depositTxChain}
+				onClose={handleClose}
+			>
+				<Button onClick={handleClose} className="w-full">
+					<Trans>Close</Trans>
+				</Button>
+			</StatusScreen>
+		);
+	}
 
 	if (depositStatus === "success") {
+		if (isCurrentCctpDeposit) {
+			const forwardSubmitted = cctpDepositTracking.data?.status === "forward-submitted";
+			return (
+				<StatusScreen
+					open={open}
+					presentation={presentation}
+					title={<Trans>Deposit</Trans>}
+					icon={forwardSubmitted ? "success" : "loading"}
+					heading={forwardSubmitted ? <Trans>Forward transaction submitted</Trans> : <Trans>Forwarding deposit</Trans>}
+					description={
+						cctpRecoveryUnavailable ? (
+							<Trans>
+								Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing.
+							</Trans>
+						) : forwardSubmitted ? (
+							<Trans>
+								Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time.
+							</Trans>
+						) : cctpDepositTracking.isError ? (
+							<Trans>
+								The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this
+								window; tracking will resume when you return.
+							</Trans>
+						) : (
+							<Trans>
+								The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid.
+							</Trans>
+						)
+					}
+					txHash={depositHash}
+					txChain={depositTxChain}
+					onClose={handleClose}
+				>
+					<Button onClick={handleClose} className="w-full">
+						<Trans>Done</Trans>
+					</Button>
+				</StatusScreen>
+			);
+		}
 		return (
 			<StatusScreen
 				open={open}
@@ -487,6 +804,7 @@ export function DepositModal() {
 
 	if (depositStatus === "error") {
 		const hasSubmittedDeposit = !!depositHash;
+		const depositStatusUnknown = hasSubmittedDeposit && !isDefinitiveDepositSourceFailure(depositError);
 
 		return (
 			<StatusScreen
@@ -494,8 +812,17 @@ export function DepositModal() {
 				presentation={presentation}
 				title={<Trans>Deposit</Trans>}
 				icon="error"
-				heading={<Trans>Deposit failed</Trans>}
-				description={formatTransferError(depositError)}
+				heading={depositStatusUnknown ? <Trans>Deposit status unknown</Trans> : <Trans>Deposit failed</Trans>}
+				description={
+					depositStatusUnknown ? (
+						<Trans>
+							The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction
+							before retrying.
+						</Trans>
+					) : (
+						formatTransferError(depositError)
+					)
+				}
 				txHash={depositHash}
 				txChain={depositTxChain}
 				onClose={handleClose}
@@ -698,7 +1025,7 @@ export function DepositModal() {
 						(canUseDeposit ? (
 							<DepositForm
 								amount={depositAmount}
-								onAmountChange={setDepositAmount}
+								onAmountChange={handleDepositAmountChange}
 								balance={depositBalance}
 								maxAmount={maxDepositAmount}
 								maxDepositRaw={maxDepositRaw}
@@ -712,6 +1039,14 @@ export function DepositModal() {
 								onRetryRouting={handleDepositRoutingRetry}
 								networkName={depositNetworkName}
 								smartDepositEnabled={smartDepositEnabled}
+								cctpFee={cctpDepositFee}
+								cctpNetAmount={cctpDepositNetAmount}
+								cctpFeeLoading={selectedDepositRoute === "cctp" && cctpDepositFeeQuery.isLoading}
+								pendingCctpRecovery={
+									!depositHash &&
+									!!cctpDepositTracking.recoveryRecord &&
+									cctpDepositTracking.data?.status !== "forward-submitted"
+								}
 								fundingAddress={isEmbeddedDeposit ? depositEmbeddedWalletAddress : undefined}
 								onDone={handleClose}
 							/>

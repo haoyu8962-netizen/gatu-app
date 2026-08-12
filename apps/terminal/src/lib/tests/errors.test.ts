@@ -16,6 +16,14 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 describe("errors", () => {
+	it("maps cross-tab funds lock failures to actionable product messages", () => {
+		expect(formatTransferError(new Error("Another funds operation is still in progress for this account."))).toContain(
+			"Another funds operation",
+		);
+		expect(formatTransferError(new Error("Secure cross-tab funds coordination requires Web Locks support."))).toContain(
+			"supported browser",
+		);
+	});
 	it("formats nested error details for display", () => {
 		const error = new Error("Base error");
 		(error as { shortMessage?: string }).shortMessage = "Short";

@@ -180,6 +180,10 @@ msgstr "हर मार्केट क्लोज़ से पहले ए�
 msgid "A position may be liquidated when the mark price reaches its liquidation price."
 msgstr "जब मार्क मूल्य पोज़िशन के लिक्विडेशन मूल्य तक पहुँचता है, तो पोज़िशन लिक्विडेट हो सकती है।"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "A previous CCTP deposit is still being tracked. Do not resubmit the same transfer."
+msgstr "पिछले CCTP जमा को अभी भी ट्रैक किया जा रहा है। उसी ट्रांसफ़र को दोबारा सबमिट न करें।"
+
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "A reliable pre-trade liquidation price is not available for a reverse order. Review the resulting position after execution."
 msgstr "रिवर्स ऑर्डर के लिए ट्रेड से पहले का विश्वसनीय लिक्विडेशन मूल्य उपलब्ध नहीं है। निष्पादन के बाद बनने वाली पोज़िशन जाँचें।"
@@ -325,6 +329,7 @@ msgstr "{displayPairName} को पसंदीदा में जोड़े
 
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Add a small amount of Arbitrum ETH to this wallet to pay network fees, then retry."
 msgstr "नेटवर्क शुल्क का भुगतान करने के लिए इस वॉलेट में थोड़ी मात्रा में Arbitrum ETH जमा करें, फिर दोबारा प्रयास करें।"
 
@@ -393,6 +398,10 @@ msgstr "उन्नत ऑर्डर प्रकार"
 #: src/hooks/hyperliquid/use-trading-agent.ts
 #~ msgid "Agent verification failed"
 #~ msgstr ""
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Agent/API wallet addresses cannot receive CCTP deposits. Connect the owner account instead."
+msgstr "Agent/API वॉलेट पतों पर CCTP जमा प्राप्त नहीं किए जा सकते। इसके बजाय मालिक खाता कनेक्ट करें।"
 
 #: src/components/trade/chart/token-selector-content.tsx
 msgid "AI"
@@ -474,6 +483,14 @@ msgstr "राशि शून्य से अधिक होनी चाह�
 #: src/hooks/trade/use-asset-leverage.ts
 msgid "Another action for this market is already in progress."
 msgstr "इस बाज़ार के लिए एक अन्य कार्रवाई पहले से जारी है।"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Another Circle CCTP deposit is still pending for this account. Wait for it to finish before submitting another deposit."
+msgstr "इस खाते के लिए एक अन्य Circle CCTP जमा अभी भी लंबित है। दूसरा जमा सबमिट करने से पहले उसके पूरा होने की प्रतीक्षा करें।"
+
+#: src/lib/errors/format.ts
+msgid "Another funds operation is still in progress for this account. Try again after it finishes."
+msgstr "इस खाते के लिए धनराशि से जुड़ा एक और ऑपरेशन अभी जारी है। उसके पूरा होने के बाद फिर से कोशिश करें।"
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Another mobile approval is already in progress for this wallet."
@@ -919,6 +936,11 @@ msgstr "रद्द हो रहा है..."
 msgid "Cannot switch to Isolated mode with an open position. Close your position first."
 msgstr "खुली पोज़िशन के साथ आइसोलेटेड मोड पर स्विच नहीं कर सकते। पहले अपनी पोज़िशन बंद करें।"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "CCTP deposits are awaiting funded end-to-end verification for this network."
+msgstr "इस नेटवर्क पर CCTP जमा का वास्तविक धनराशि के साथ शुरू से अंत तक सत्यापन बाकी है।"
+
 #. placeholder {0}: ARBITRUM_NETWORK.estimatedWithdrawTime
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "CCTP forwarding to Arbitrum usually completes in {0}."
@@ -950,8 +972,48 @@ msgid "Checking the current Hyperliquid withdrawal route..."
 msgstr "Hyperliquid के मौजूदा निकासी रूट की जाँच की जा रही है..."
 
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
 msgid "Checking..."
 msgstr "जांच हो रही है..."
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Circle CCTP deposits are limited to 10,000,000 USDC per transfer."
+msgstr "Circle CCTP जमा प्रति ट्रांसफ़र 10,000,000 USDC तक सीमित हैं।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Circle Fast Transfer capacity is temporarily unavailable. Try again later."
+msgstr "Circle Fast Transfer क्षमता अस्थायी रूप से उपलब्ध नहीं है। बाद में फिर से कोशिश करें।"
+
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Circle fees changed before submission. Review the updated fee and retry."
+msgstr "सबमिशन से पहले Circle शुल्क बदल गए। अपडेट किए गए शुल्क की समीक्षा करके फिर से कोशिश करें।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Circle fees changed. Review the updated fee, then submit again."
+msgstr "Circle शुल्क बदल गए हैं। अपडेट किए गए शुल्क की समीक्षा करें और फिर दोबारा सबमिट करें।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Circle is minting and forwarding USDC to Hyperliquid. Do not resubmit the same transfer."
+msgstr "Circle USDC मिंट करके Hyperliquid को फ़ॉरवर्ड कर रहा है। उसी ट्रांसफ़र को दोबारा सबमिट न करें।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Circle submitted the HyperEVM forwarding transaction. HyperCore credit may take additional time."
+msgstr "Circle ने HyperEVM फ़ॉरवर्डिंग ट्रांज़ैक्शन सबमिट कर दिया है। HyperCore में क्रेडिट होने में अतिरिक्त समय लग सकता है।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Circle testnet deposits are limited to 1,000 USDC per transfer."
+msgstr "Circle testnet जमा प्रति ट्रांसफ़र 1,000 USDC तक सीमित हैं।"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Circle testnet deposits require this address to already exist on Hyperliquid mainnet."
+msgstr "Circle testnet जमा के लिए यह पता Hyperliquid mainnet पर पहले से मौजूद होना चाहिए।"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Circulating supply"
@@ -984,6 +1046,7 @@ msgstr "सबमिट करने के लिए क्लिक करे�
 #: src/components/trade/positions/position-tpsl-modal.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/success-screen.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
@@ -1773,6 +1836,8 @@ msgstr "डिप्लॉयर"
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/amount-input.tsx
 #: src/components/trade/tradebox/deposit/wrong-network-screen.tsx
 #: src/config/account-ledger.ts
@@ -1822,6 +1887,10 @@ msgstr "डिपॉज़िट विफल"
 #: src/components/trade/order-entry/deposit-modal.tsx
 #~ msgid "Deposit on Hyperliquid"
 #~ msgstr "Hyperliquid पर जमा करें"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Deposit status unknown"
+msgstr "जमा की स्थिति अज्ञात है"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Deposit submitted"
@@ -1999,6 +2068,7 @@ msgstr "दस्तावेज़"
 msgid "Don't show this confirmation again"
 msgstr "यह पुष्टि दोबारा न दिखाएं"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
@@ -2201,6 +2271,10 @@ msgstr "अनुमानित शुल्क"
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 msgid "Estimated Liquidation Price"
 msgstr "अनुमानित लिक्विडेशन मूल्य"
+
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "Estimated net credit"
+msgstr "अनुमानित नेट क्रेडिट"
 
 #: src/components/trade/positions/position-close-all-modal.tsx
 #: src/components/trade/positions/position-limit-close-modal.tsx
@@ -2640,6 +2714,16 @@ msgstr "उन उन्नत उपयोगकर्ताओं के ल�
 #~ msgid "Format for numbers and dates"
 #~ msgstr ""
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Forward transaction submitted"
+msgstr "फ़ॉरवर्ड ट्रांज़ैक्शन सबमिट किया गया"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Forwarding deposit"
+msgstr "जमा फ़ॉरवर्ड किया जा रहा है"
+
 #: src/components/trade/tradebox/twap-order-summary.tsx
 msgid "Frequency"
 msgstr "आवृत्ति"
@@ -2704,6 +2788,15 @@ msgstr "Gaming"
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Gas ({0})"
 msgstr "गैस ({0})"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+msgid "Gas-sponsored CCTP deposits require a configured and verified relayer."
+msgstr "Gas-sponsored CCTP जमा के लिए कॉन्फ़िगर और सत्यापित relayer आवश्यक है।"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Gas-sponsored CCTP deposits require a configured and verified relayer. This deposit was not submitted."
+msgstr "Gas-sponsored CCTP जमा के लिए कॉन्फ़िगर और सत्यापित relayer आवश्यक है। यह जमा सबमिट नहीं किया गया।"
 
 #: src/components/trade/footer/footer-bar.tsx
 #~ msgid "Gas:"
@@ -2818,8 +2911,12 @@ msgid "Hyperliquid calculates and adds the margin required to reach the target l
 msgstr "Hyperliquid लक्ष्य लीवरेज तक पहुँचने के लिए आवश्यक मार्जिन की गणना करके उसे जोड़ता है।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
-msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
-msgstr "Hyperliquid पर फ़िलहाल CCTP जमा आवश्यक हैं। इस ऐप में Bridge जमा रोक दिए गए हैं।"
+msgid "Hyperliquid currently requires a Circle CCTP deposit from Arbitrum."
+msgstr "Hyperliquid को फ़िलहाल Arbitrum से Circle CCTP जमा आवश्यक है।"
+
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
+#~ msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are paused in this app."
+#~ msgstr "Hyperliquid पर फ़िलहाल CCTP जमा आवश्यक हैं। इस ऐप में Bridge जमा रोक दिए गए हैं।"
 
 #: src/hooks/trade/use-usdc-routing.ts
 msgid "Hyperliquid currently requires CCTP deposits. Bridge deposits are unavailable."
@@ -3581,6 +3678,10 @@ msgstr "अधिकतम गिरावट"
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Max slippage allowed for market orders."
 #~ msgstr "मार्केट ऑर्डर के लिए अधिकतम स्लिपेज।"
+
+#: src/components/trade/tradebox/deposit/unit-deposit-info.tsx
+msgid "Maximum CCTP fee"
+msgstr "अधिकतम CCTP शुल्क"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "Maximum leverage"
@@ -4980,6 +5081,10 @@ msgstr "वॉलेट फिर से कनेक्ट करें"
 msgid "Recovered in this tab. Expires {expiresAtLabel}."
 msgstr "इस टैब में रिकवर हुआ। {expiresAtLabel} को समाप्त होगा।"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Recovery could not be saved in this browser. Record the Arbitrum transaction hash before closing."
+msgstr "इस ब्राउज़र में रिकवरी सहेजी नहीं जा सकी। बंद करने से पहले Arbitrum ट्रांज़ैक्शन हैश नोट कर लें।"
+
 #: src/components/trade/positions/orders-tab.tsx
 #~ msgid "Reduce"
 #~ msgstr ""
@@ -5390,6 +5495,10 @@ msgstr "सुरक्षित डिस्कनेक्ट विफल र
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Secure disconnect requires Web Locks support. Update your browser and try again."
 msgstr "सुरक्षित डिस्कनेक्ट के लिए Web Locks समर्थन आवश्यक है। अपना ब्राउज़र अपडेट करें और फिर से प्रयास करें।"
+
+#: src/lib/hyperliquid/use-deposit.ts
+msgid "Secure randomness is unavailable. Deposit was not submitted."
+msgstr "सुरक्षित रैंडमनेस उपलब्ध नहीं है। जमा सबमिट नहीं किया गया।"
 
 #: src/components/trade/header/favorites-strip.tsx
 #~ msgid "Select {coin} market"
@@ -6345,6 +6454,10 @@ msgstr "Testnet"
 msgid "Testnet preview; market link disabled"
 msgstr "Testnet पूर्वावलोकन; बाज़ार लिंक अक्षम"
 
+#: src/domain/trade/pre-transfer-check.ts
+msgid "The account activation fee changed before signing. Review the updated fee and try again."
+msgstr "साइन करने से पहले खाता सक्रियण शुल्क बदल गया। अपडेट किए गए शुल्क की समीक्षा करके फिर से कोशिश करें।"
+
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval could not be rechecked. The QR remains hidden until read-only verification succeeds."
 msgstr "स्वीकृति की दोबारा जाँच नहीं हो सकी। रीड-ओनली सत्यापन सफल होने तक QR छिपा रहेगा।"
@@ -6353,6 +6466,22 @@ msgstr "स्वीकृति की दोबारा जाँच नह�
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The approval result is not confirmed. Retry the read-only verification before doing anything else."
 msgstr "स्वीकृति परिणाम की पुष्टि नहीं हुई है। कुछ और करने से पहले रीड-ओनली सत्यापन फिर से करें।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The Arbitrum transaction is confirmed, but Circle status is temporarily unavailable. You can close this window; tracking will resume when you return."
+msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आप यह विंडो बंद कर सकते हैं; आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The Arbitrum transaction is confirmed. Circle is minting and forwarding USDC to Hyperliquid."
+msgstr "Arbitrum ट्रांज़ैक्शन की पुष्टि हो गई है। Circle USDC मिंट करके Hyperliquid को फ़ॉरवर्ड कर रहा है।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The Arbitrum transaction was submitted, but Circle status is temporarily unavailable. Tracking will resume when you return."
+msgstr "Arbitrum ट्रांज़ैक्शन सबमिट हो गया है, लेकिन Circle की स्थिति अस्थायी रूप से उपलब्ध नहीं है। आपके लौटने पर ट्रैकिंग फिर शुरू हो जाएगी।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "The Arbitrum transaction was submitted, but its final status could not be verified. Check the transaction before retrying."
+msgstr "Arbitrum ट्रांज़ैक्शन सबमिट हो गया है, लेकिन उसकी अंतिम स्थिति सत्यापित नहीं की जा सकी। फिर से कोशिश करने से पहले ट्रांज़ैक्शन जाँचें।"
 
 #: src/components/pages/builder-page.tsx
 #~ msgid "The builder at {0}...{1} can now charge up to {maxFeeRate}% fee on orders placed on your behalf."
@@ -6391,6 +6520,10 @@ msgstr "एक्सचेंज ने TWAP की अंतिम स्थि
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "The generated key remains only in this tab. Do not approve another key or reload the page."
 msgstr "बनाई गई कुंजी केवल इसी टैब में रहती है। कोई अन्य कुंजी स्वीकृत न करें और न ही पेज रीलोड करें।"
+
+#: src/hooks/trade/use-usdc-routing.ts
+msgid "The Hyperliquid deposit route changed before signing. Review the updated route and retry."
+msgstr "साइन करने से पहले Hyperliquid जमा रूट बदल गया। अपडेट किए गए रूट की समीक्षा करके फिर से कोशिश करें।"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -6548,6 +6681,10 @@ msgstr "यह स्वीकृति पुनर्प्राप्ति 
 #: src/components/trade/tradebox/bridge/shared-ui.tsx
 msgid "This bridge can only be resumed by the wallet that started it."
 msgstr "यह ब्रिज केवल उसी वॉलेट से फिर से शुरू किया जा सकता है जिसने इसे शुरू किया था।"
+
+#: src/lib/errors/format.ts
+msgid "This browser cannot safely coordinate funds operations across tabs. Use a supported browser."
+msgstr "यह ब्राउज़र सभी टैब में धनराशि के ऑपरेशन सुरक्षित रूप से समन्वित नहीं कर सकता। समर्थित ब्राउज़र इस्तेमाल करें।"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "This close-all preview expired. Close and reopen it to review current values."
@@ -7323,6 +7460,15 @@ msgstr "उपलब्ध शेष राशि सत्यापित न�
 msgid "Unable to verify the current account mode. Request was not submitted."
 msgstr "मौजूदा खाता मोड सत्यापित नहीं किया जा सका। अनुरोध नहीं भेजा गया।"
 
+#: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Unable to verify the current Circle CCTP fee and Fast Transfer capacity."
+msgstr "मौजूदा Circle CCTP शुल्क और Fast Transfer क्षमता सत्यापित नहीं की जा सकी।"
+
+#: src/components/trade/tradebox/deposit-modal.tsx
+msgid "Unable to verify the current HyperCore USDC destination."
+msgstr "मौजूदा HyperCore USDC गंतव्य सत्यापित नहीं किया जा सका।"
+
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Unable to verify the current Hyperliquid deposit route. Automatic deposits are paused."
 msgstr "Hyperliquid के मौजूदा जमा रूट को सत्यापित नहीं किया जा सका। स्वचालित जमा रोक दिए गए हैं।"
@@ -7344,6 +7490,10 @@ msgstr "Hyperliquid के मौजूदा निकासी रूट क�
 #: src/components/trade/tradebox/deposit-modal.tsx
 msgid "Unable to verify withdrawal eligibility."
 msgstr "निकासी पात्रता सत्यापित नहीं की जा सकी।"
+
+#: src/domain/trade/pre-transfer-check.ts
+msgid "Unable to verify withdrawal eligibility. Request was not submitted."
+msgstr "निकासी पात्रता सत्यापित नहीं की जा सकी। अनुरोध सबमिट नहीं किया गया।"
 
 #: src/components/trade/positions/position-reverse-confirmation-modal.tsx
 #: src/components/trade/tradebox/account-mode-modal.tsx
@@ -7640,6 +7790,8 @@ msgstr "वॉलेट {0} से कनेक्ट नहीं है। अ
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
 #: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
+#: src/lib/hyperliquid/use-deposit.ts
 msgid "Wallet not connected"
 msgstr "वॉलेट कनेक्ट नहीं है"
 
@@ -7757,6 +7909,7 @@ msgid "Withdrawal submitted"
 msgstr "निकासी सबमिट की गई"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/domain/trade/pre-transfer-check.ts
 msgid "Withdrawals are unavailable for this address."
 msgstr "इस पते के लिए निकासी उपलब्ध नहीं है।"
 

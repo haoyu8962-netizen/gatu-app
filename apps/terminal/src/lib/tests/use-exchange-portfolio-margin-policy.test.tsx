@@ -89,6 +89,7 @@ const withdrawalRouteAllowedRef = { current: true };
 const withdrawalPreExecutionGuard = vi.fn(async (_params: ExchangeParams<"withdraw3">) => {
 	if (!withdrawalRouteAllowedRef.current) throw new Error("The withdrawal route changed before signing");
 });
+const requestedLockNames: string[] = [];
 
 function installExclusiveLockManager() {
 	const queues = new Map<string, Promise<void>>();
@@ -100,6 +101,7 @@ function installExclusiveLockManager() {
 		): Promise<T> {
 			const callback = typeof optionsOrCallback === "function" ? optionsOrCallback : maybeCallback;
 			if (!callback) throw new Error("Missing lock callback");
+			requestedLockNames.push(name);
 
 			const previous = queues.get(name) ?? Promise.resolve();
 			let release = () => {};
@@ -135,6 +137,7 @@ describe("useExchange portfolio margin policy", () => {
 		vi.clearAllMocks();
 		isolatedExecutionAllowedRef.current = true;
 		withdrawalRouteAllowedRef.current = true;
+		requestedLockNames.length = 0;
 		window.localStorage.clear();
 		installExclusiveLockManager();
 		providerState.exchangeLifecycle.active = true;
@@ -186,7 +189,10 @@ describe("useExchange portfolio margin policy", () => {
 		});
 		const userPortfolioMargin = useExchange("userPortfolioMargin");
 		const userSetAbstraction = useExchange("userSetAbstraction");
-		const withdraw3 = useExchange("withdraw3", { preExecutionGuard: withdrawalPreExecutionGuard });
+		const withdraw3 = useExchange("withdraw3", {
+			preExecutionGuard: withdrawalPreExecutionGuard,
+			retry: 3,
+		});
 
 		capturedMutations = {
 			agentSetAbstraction: agentSetAbstraction.mutateAsync,
@@ -346,6 +352,67 @@ describe("useExchange portfolio margin policy", () => {
 		});
 	});
 
+	it("acquires funds before session locks while ordinary trading methods stay outside the funds lock", async () => {
+		renderPolicy(false);
+		const mutations = capturedMutations;
+		if (!mutations) throw new Error("Mutation hooks were not captured");
+
+		await act(async () => {
+			await mutations.userSetAbstraction({ user: USER, abstraction: "unifiedAccount" });
+		});
+		expect(requestedLockNames).toEqual([
+			`hyperliquid_funds_action:Mainnet:${USER}`,
+			`hyperliquid_agent_registration_session:Mainnet:${USER}`,
+		]);
+
+		requestedLockNames.length = 0;
+		await act(async () => {
+			await mutations.updateLeverage({ asset: 1, isCross: false, leverage: 5 });
+		});
+		expect(requestedLockNames).toEqual([`hyperliquid_agent_registration_session:Mainnet:${USER}`]);
+	});
+
+	it("holds the cross-tab funds lock until the SDK response settles", async () => {
+		renderPolicy(false);
+		const mutations = capturedMutations;
+		if (!mutations) throw new Error("Mutation hooks were not captured");
+		let markSdkStarted = () => {};
+		let releaseSdk = () => {};
+		const sdkStarted = new Promise<void>((resolve) => {
+			markSdkStarted = resolve;
+		});
+		const sdkResponse = new Promise<typeof clients.response>((resolve) => {
+			releaseSdk = () => resolve(clients.response);
+		});
+		clients.userSetAbstraction.mockImplementationOnce(async () => {
+			markSdkStarted();
+			return sdkResponse;
+		});
+
+		let firstRequest: Promise<unknown> | undefined;
+		await act(async () => {
+			firstRequest = mutations.userSetAbstraction({ user: USER, abstraction: "unifiedAccount" });
+			await sdkStarted;
+		});
+		let competingTabEntered = false;
+		const competingTab = navigator.locks.request(
+			`hyperliquid_funds_action:Mainnet:${USER}`,
+			{ mode: "exclusive" },
+			async () => {
+				competingTabEntered = true;
+			},
+		);
+		await Promise.resolve();
+		expect(competingTabEntered).toBe(false);
+
+		await act(async () => {
+			releaseSdk();
+			await expect(firstRequest).resolves.toEqual(clients.response);
+			await competingTab;
+		});
+		expect(competingTabEntered).toBe(true);
+	});
+
 	it("rechecks the latest isolated-management state when a queued request reaches the SDK boundary", async () => {
 		renderPolicy(false);
 		let releaseFirstRequest = () => {};
@@ -428,6 +495,20 @@ describe("useExchange portfolio margin policy", () => {
 			await expect(mutations.withdraw3({ destination: USER, amount: "10" })).resolves.toEqual(clients.response);
 		});
 		expect(withdrawalPreExecutionGuard).toHaveBeenCalledTimes(2);
+		expect(clients.withdraw3).toHaveBeenCalledTimes(1);
+	});
+
+	it("never automatically retries a funds action after the SDK request starts", async () => {
+		renderPolicy(false);
+		const mutations = capturedMutations;
+		if (!mutations) throw new Error("Mutation hooks were not captured");
+		clients.withdraw3.mockRejectedValueOnce(new Error("request status is unknown"));
+
+		await act(async () => {
+			await expect(mutations.withdraw3({ destination: USER, amount: "10" })).rejects.toThrow(
+				"request status is unknown",
+			);
+		});
 		expect(clients.withdraw3).toHaveBeenCalledTimes(1);
 	});
 

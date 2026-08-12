@@ -5,6 +5,14 @@ const ERROR_MESSAGE_TRUNCATE_LIMIT = 100;
 const SMART_WALLET_NONCE_CONFLICT_PATTERN = /\bAA25\b(?: invalid account nonce)?/i;
 
 const ERROR_PATTERNS = [
+	{
+		pattern: /another funds operation is still in progress/i,
+		message: () => t`Another funds operation is still in progress for this account. Try again after it finishes.`,
+	},
+	{
+		pattern: /secure cross-tab funds coordination requires web locks support/i,
+		message: () => t`This browser cannot safely coordinate funds operations across tabs. Use a supported browser.`,
+	},
 	{ pattern: /user rejected/i, message: () => t`Transaction was rejected` },
 	{ pattern: /wallet connection request was rejected/i, message: () => t`Wallet connection request was rejected.` },
 	{

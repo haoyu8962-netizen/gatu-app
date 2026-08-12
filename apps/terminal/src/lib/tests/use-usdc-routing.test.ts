@@ -6,6 +6,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import {
 	assertFreshBridgeDepositRoute,
+	assertFreshDepositRoute,
 	executeWithFreshWithdrawalRoute,
 	fetchFreshUsdcRouting,
 	getUsdcRoutingQueryOptions,
@@ -59,21 +60,41 @@ describe("fresh USDC routing", () => {
 		});
 	});
 
-	it("keeps the fresh route guard inside deposit execution and before every wallet operation", () => {
+	it("keeps fresh route guards at every wallet boundary and inside the locked CCTP critical section", () => {
 		const depositExecution = USE_DEPOSIT_SOURCE.slice(USE_DEPOSIT_SOURCE.indexOf("const deposit = useCallback"));
-		const guardIndexes = [...depositExecution.matchAll(/await assertFreshBridgeDepositRoute\(\)/g)].map(
+		const guardIndexes = [...depositExecution.matchAll(/await assertFreshSelectedDepositRoute\(\)/g)].map(
 			(match) => match.index,
 		);
 		const amountParsingIndex = depositExecution.indexOf("parseUnits(amount, USDC_DECIMALS)");
 		const permitSigningIndex = depositExecution.indexOf("createBridge2PermitCall");
 		const smartWalletSendIndex = depositExecution.indexOf("smartClient.sendTransaction");
-		const browserWalletSendIndex = depositExecution.indexOf("ready.walletClient.writeContract");
+		const cctpLockIndex = depositExecution.indexOf("runWithFundsActionLock(");
+		const bridgeNonceIndex = depositExecution.indexOf("const transactionNonce", cctpLockIndex);
+		const cctpCriticalSection = depositExecution.slice(cctpLockIndex, bridgeNonceIndex);
+		const cctpGuardIndexes = [...cctpCriticalSection.matchAll(/await assertFreshSelectedDepositRoute\(\)/g)].map(
+			(match) => match.index ?? -1,
+		);
+		const pendingDepositCheckIndex = cctpCriticalSection.indexOf("readCctpDepositTrackingRecords");
+		const cctpRoleIndex = cctpCriticalSection.indexOf("getSdkInfoClient(false).userRole");
+		const cctpSigningIndex = cctpCriticalSection.indexOf("ready.walletClient.signTypedData");
+		const cctpSendIndex = cctpCriticalSection.indexOf("ready.walletClient.writeContract");
+		const cctpTrackingSaveIndex = cctpCriticalSection.indexOf("saveCctpDepositTrackingRecord");
+		const bridgeWalletSendIndex = depositExecution.indexOf("ready.walletClient.writeContract", bridgeNonceIndex);
+		const finalGuardIndex = guardIndexes.at(-1) ?? -1;
 
-		expect(guardIndexes).toHaveLength(4);
 		expect(guardIndexes[0]).toBeLessThan(amountParsingIndex);
 		expect(guardIndexes[1]).toBeLessThan(permitSigningIndex);
 		expect(guardIndexes[2]).toBeLessThan(smartWalletSendIndex);
-		expect(guardIndexes[3]).toBeLessThan(browserWalletSendIndex);
+		expect(cctpLockIndex).toBeGreaterThan(smartWalletSendIndex);
+		expect(cctpGuardIndexes).toHaveLength(5);
+		expect(pendingDepositCheckIndex).toBeGreaterThan(0);
+		expect(pendingDepositCheckIndex).toBeLessThan(cctpRoleIndex);
+		expect(cctpGuardIndexes[0]).toBeLessThan(cctpRoleIndex);
+		expect(cctpGuardIndexes.some((index) => index < cctpSigningIndex)).toBe(true);
+		expect(cctpGuardIndexes.at(-1)).toBeLessThan(cctpSendIndex);
+		expect(cctpTrackingSaveIndex).toBeGreaterThan(cctpSendIndex);
+		expect(finalGuardIndex).toBeGreaterThan(bridgeNonceIndex);
+		expect(finalGuardIndex).toBeLessThan(bridgeWalletSendIndex);
 	});
 
 	it("keeps Mainnet and Testnet routing caches isolated", async () => {
@@ -124,6 +145,15 @@ describe("fresh USDC routing", () => {
 		await expect(
 			assertFreshBridgeDepositRoute(async () => ({ depositRoute: "bridge", withdrawalRoute: "cctp" })),
 		).resolves.toBeUndefined();
+	});
+
+	it("allows CCTP only after a fresh CCTP response and rejects a route flip", async () => {
+		await expect(
+			assertFreshDepositRoute("cctp", async () => ({ depositRoute: "cctp", withdrawalRoute: "cctp" })),
+		).resolves.toBeUndefined();
+		await expect(
+			assertFreshDepositRoute("cctp", async () => ({ depositRoute: "bridge", withdrawalRoute: "cctp" })),
+		).rejects.toMatchObject({ reason: "changed" });
 	});
 
 	it.each([

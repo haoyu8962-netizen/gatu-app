@@ -2,22 +2,51 @@
 
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DepositModal } from "@/components/trade/tradebox/deposit-modal";
+import { DefinitiveDepositSourceFailureError } from "@/lib/hyperliquid/deposit-source-error";
 
 const testState = vi.hoisted(() => ({
 	accountGuard: vi.fn(),
 	activeTab: "deposit" as "deposit" | "withdraw",
 	deposit: vi.fn(),
+	depositError: null as Error | null,
+	depositExecutionRoute: null as "bridge" | "cctp" | null,
+	depositHash: undefined as `0x${string}` | undefined,
+	depositStatus: "idle" as "idle" | "pending" | "confirming" | "success" | "error",
+	exchangeSignal: undefined as AbortSignal | undefined,
 	exchangeGuards: new Map<string, ((params?: unknown, signal?: AbortSignal) => Promise<void>) | undefined>(),
 	exchangeMutations: new Map<string, ReturnType<typeof vi.fn>>(),
+	exchangeSdkCalls: new Map<string, ReturnType<typeof vi.fn>>(),
 	fetchFreshRouting: vi.fn(),
 	freshRoutingError: null as Error | null,
 	freshRoutingResponse: { depositRoute: "bridge", withdrawalRoute: "cctp" } as unknown,
+	infoQueryCalls: [] as Array<{ enabled: boolean; method: string; params: unknown }>,
 	modalOpen: false,
+	preTransferFresh: {
+		fee: "0",
+		isSanctioned: false,
+		userExists: true,
+		userHasSentTx: true,
+	},
+	preTransferInfo: vi.fn(),
+	preTransferRefetch: vi.fn(),
+	preTransferReview: {
+		fee: "0",
+		isSanctioned: false,
+		userExists: true,
+		userHasSentTx: true,
+	},
+	routingResponse: { depositRoute: "bridge", withdrawalRoute: "cctp" } as unknown,
 	routingRefetch: vi.fn(),
+	spotMeta: {
+		tokens: [{ index: 37, isCanonical: true, name: "USDC" }],
+		universe: [],
+	},
+	spotMetaRefetch: vi.fn(),
 }));
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -64,13 +93,21 @@ vi.mock("@/hooks/trade/use-cctp-withdrawal-fee", () => ({
 	}),
 }));
 
+vi.mock("@/hooks/trade/use-cctp-deposit-fee", () => ({
+	useCctpDepositFee: () => ({ calculation: null, isError: false, isLoading: false }),
+}));
+
+vi.mock("@/hooks/trade/use-cctp-deposit-tracking", () => ({
+	useCctpDepositTracking: () => ({ data: undefined, isError: false, recoveryRecord: null }),
+}));
+
 vi.mock("@/hooks/trade/use-usdc-routing", async (importOriginal) => {
 	const original = await importOriginal<typeof import("@/hooks/trade/use-usdc-routing")>();
 	return {
 		...original,
 		useFreshUsdcRouting: () => testState.fetchFreshRouting,
 		useUsdcRouting: () => ({
-			data: { depositRoute: "bridge", withdrawalRoute: "cctp" },
+			data: testState.routingResponse,
 			isError: false,
 			isFetching: false,
 			refetch: testState.routingRefetch,
@@ -109,12 +146,28 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 }));
 
 vi.mock("@/lib/hyperliquid", () => ({
+	infoQueryOptions: (_info: unknown, method: string, params: unknown, env: string) => ({
+		queryKey: ["hl", env, method, params],
+	}),
 	useExchange: (
 		method: string,
 		options?: { preExecutionGuard?: (params?: unknown, signal?: AbortSignal) => Promise<void> },
 	) => {
 		testState.exchangeGuards.set(method, options?.preExecutionGuard);
-		const mutateAsync = testState.exchangeMutations.get(method) ?? vi.fn();
+		let sdkCall = testState.exchangeSdkCalls.get(method);
+		if (!sdkCall) {
+			sdkCall = vi.fn().mockResolvedValue(undefined);
+			testState.exchangeSdkCalls.set(method, sdkCall);
+		}
+		let mutateAsync = testState.exchangeMutations.get(method);
+		if (!mutateAsync) {
+			const callSdk = sdkCall as (params: unknown) => unknown;
+			mutateAsync = vi.fn(async (params: unknown) => {
+				const signal = testState.exchangeSignal ?? new AbortController().signal;
+				await options?.preExecutionGuard?.(params, signal);
+				return callSdk(params);
+			});
+		}
 		testState.exchangeMutations.set(method, mutateAsync);
 		return {
 			error: null,
@@ -124,13 +177,32 @@ vi.mock("@/lib/hyperliquid", () => ({
 			reset: vi.fn(),
 		};
 	},
-	useInfo: () => ({
-		data: { fee: "0", isSanctioned: false },
-		isError: false,
-		isFetching: false,
-		isSuccess: true,
-		refetch: vi.fn().mockResolvedValue({ data: { fee: "0", isSanctioned: false }, isError: false }),
+	useHyperliquid: () => ({
+		env: "Mainnet",
+		info: { preTransferCheck: testState.preTransferInfo },
 	}),
+	useInfo: (method: string, params: unknown, options?: { enabled?: boolean }) => {
+		testState.infoQueryCalls.push({ enabled: options?.enabled !== false, method, params });
+		if (method === "spotMeta") {
+			return {
+				data: testState.spotMeta,
+				isError: false,
+				isFetching: false,
+				isSuccess: options?.enabled !== false,
+				refetch: testState.spotMetaRefetch,
+			};
+		}
+		if (method === "preTransferCheck") {
+			return {
+				data: testState.preTransferReview,
+				isError: false,
+				isFetching: false,
+				isSuccess: options?.enabled !== false,
+				refetch: testState.preTransferRefetch,
+			};
+		}
+		throw new Error(`Unexpected info method: ${method}`);
+	},
 }));
 
 vi.mock("@/lib/hyperliquid/use-deposit", () => ({
@@ -139,9 +211,10 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 		balanceError: null,
 		balanceStatus: "idle",
 		deposit: testState.deposit,
-		error: null,
+		error: testState.depositError,
 		executionAmount: null,
-		hash: undefined,
+		executionRoute: testState.depositExecutionRoute,
+		hash: testState.depositHash,
 		isArbitrum: true,
 		isSwitching: false,
 		maxAmount: "10",
@@ -149,13 +222,14 @@ vi.mock("@/lib/hyperliquid/use-deposit", () => ({
 		networkName: "Arbitrum",
 		reset: vi.fn(),
 		smartDepositEnabled: true,
-		status: "idle",
+		status: testState.depositStatus,
 		switchError: null,
 		switchToArbitrum: vi.fn(),
 		validate: () => ({ error: null, valid: true }),
 		walletProviderError: null,
 		walletProviderStatus: "idle",
 		walletResponseDelayed: false,
+		cctpRecoveryUnavailable: false,
 	}),
 }));
 
@@ -206,17 +280,36 @@ vi.mock("@/components/trade/tradebox/deposit/deposit-form", () => ({
 }));
 
 vi.mock("@/components/trade/tradebox/deposit/shared-ui", () => ({
-	StatusScreen: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
+	StatusScreen: ({
+		children,
+		description,
+		heading,
+	}: {
+		children?: ReactNode;
+		description?: ReactNode;
+		heading?: ReactNode;
+	}) =>
+		createElement(
+			"div",
+			{ "data-testid": "status-screen" },
+			createElement("p", { "data-testid": "status-heading" }, heading),
+			createElement("p", { "data-testid": "status-description" }, description),
+			children,
+		),
 	WalletNotConnected: () => null,
 }));
 
 vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 	WithdrawForm: ({
+		activationFee,
+		maxAmount,
 		onAmountChange,
 		onRetryPrerequisites,
 		onSubmit,
 		routingStatus,
 	}: {
+		activationFee: string;
+		maxAmount: string;
 		onAmountChange: (amount: string) => void;
 		onRetryPrerequisites: () => void;
 		onSubmit: () => void;
@@ -224,7 +317,12 @@ vi.mock("@/components/trade/tradebox/deposit/withdraw-form", () => ({
 	}) =>
 		createElement(
 			"div",
-			{ "data-testid": "withdraw-routing-status", "data-status": routingStatus },
+			{
+				"data-activation-fee": activationFee,
+				"data-max-amount": maxAmount,
+				"data-testid": "withdraw-routing-status",
+				"data-status": routingStatus,
+			},
 			createElement("button", { onClick: () => onAmountChange("2"), type: "button" }, "Set amount"),
 			createElement("button", { onClick: onSubmit, type: "button" }, "Submit withdrawal"),
 			createElement("button", { onClick: onRetryPrerequisites, type: "button" }, "Retry withdrawal route"),
@@ -237,24 +335,58 @@ vi.mock("@/components/trade/tradebox/deposit/wrong-network-screen", () => ({
 
 describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 	let container: HTMLDivElement;
+	let queryClient: QueryClient;
 	let root: Root;
 
 	beforeEach(async () => {
 		vi.clearAllMocks();
 		testState.exchangeGuards.clear();
 		testState.exchangeMutations.clear();
+		testState.exchangeSdkCalls.clear();
+		testState.exchangeSignal = new AbortController().signal;
 		testState.accountGuard.mockReset();
 		testState.accountGuard.mockResolvedValue(undefined);
 		testState.freshRoutingError = null;
 		testState.freshRoutingResponse = { depositRoute: "bridge", withdrawalRoute: "cctp" };
+		testState.infoQueryCalls.length = 0;
 		testState.activeTab = "deposit";
 		testState.modalOpen = false;
 		testState.deposit.mockReset();
+		testState.depositError = null;
+		testState.depositExecutionRoute = null;
+		testState.depositHash = undefined;
+		testState.depositStatus = "idle";
+		testState.preTransferFresh = {
+			fee: "0",
+			isSanctioned: false,
+			userExists: true,
+			userHasSentTx: true,
+		};
+		testState.preTransferReview = {
+			fee: "0",
+			isSanctioned: false,
+			userExists: true,
+			userHasSentTx: true,
+		};
+		testState.preTransferInfo.mockReset();
+		testState.preTransferInfo.mockImplementation(async () => testState.preTransferFresh);
+		testState.preTransferRefetch.mockReset();
+		testState.preTransferRefetch.mockImplementation(async () => ({
+			data: testState.preTransferReview,
+			isError: false,
+		}));
+		testState.routingResponse = { depositRoute: "bridge", withdrawalRoute: "cctp" };
 		testState.routingRefetch.mockReset();
 		testState.routingRefetch.mockResolvedValue({
 			data: { depositRoute: "bridge", withdrawalRoute: "cctp" },
 			isError: false,
 		});
+		testState.spotMeta = {
+			tokens: [{ index: 37, isCanonical: true, name: "USDC" }],
+			universe: [],
+		};
+		testState.spotMetaRefetch.mockReset();
+		testState.spotMetaRefetch.mockImplementation(async () => ({ data: testState.spotMeta, isError: false }));
 		testState.fetchFreshRouting.mockImplementation(async () => {
 			if (testState.freshRoutingError) throw testState.freshRoutingError;
 			return testState.freshRoutingResponse;
@@ -262,8 +394,15 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
+		queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 		await act(async () => {
-			root.render(createElement(I18nProvider, { i18n }, createElement(DepositModal)));
+			root.render(
+				createElement(
+					QueryClientProvider,
+					{ client: queryClient },
+					createElement(I18nProvider, { i18n }, createElement(DepositModal)),
+				),
+			);
 		});
 	});
 
@@ -280,7 +419,13 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 
 	async function rerender() {
 		await act(async () => {
-			root.render(createElement(I18nProvider, { i18n }, createElement(DepositModal)));
+			root.render(
+				createElement(
+					QueryClientProvider,
+					{ client: queryClient },
+					createElement(I18nProvider, { i18n }, createElement(DepositModal)),
+				),
+			);
 		});
 	}
 
@@ -290,41 +435,96 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		return button;
 	}
 
-	it("binds sendToEvmWithData only to the official CCTP withdrawal route", async () => {
-		const cctpGuard = getGuard("sendToEvmWithData");
-		const legacyGuard = getGuard("withdraw3");
+	async function submitWithdrawal() {
+		await rerender();
+		act(() => getButton("Set amount").click());
+		await act(async () => getButton("Submit withdrawal").click());
+	}
 
-		testState.freshRoutingResponse = { depositRoute: "bridge", withdrawalRoute: "cctp" };
-		await expect(cctpGuard()).resolves.toBeUndefined();
-		await expect(legacyGuard()).rejects.toThrow("withdrawal route changed");
-	});
-
-	it("binds withdraw3 only to the official legacy bridge withdrawal route", async () => {
-		const cctpGuard = getGuard("sendToEvmWithData");
-		const legacyGuard = getGuard("withdraw3");
-
-		testState.freshRoutingResponse = { depositRoute: "bridge", withdrawalRoute: "bridge" };
-		await expect(legacyGuard()).resolves.toBeUndefined();
-		await expect(cctpGuard()).rejects.toThrow("withdrawal route changed");
-	});
-
-	it("passes the same scheduler AbortSignal to the route and account guards", async () => {
+	it("derives the CCTP pre-transfer target from spotMeta and checks it at the SDK boundary", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
 		const signal = new AbortController().signal;
-		await expect(getGuard("sendToEvmWithData")({}, signal)).resolves.toBeUndefined();
+		testState.exchangeSignal = signal;
 
+		await submitWithdrawal();
+
+		const expectedParams = {
+			source: "0x1111111111111111111111111111111111111111",
+			user: "0x2000000000000000000000000000000000000025",
+		};
+		const preTransferQueryCall = testState.infoQueryCalls.find(
+			(call) => call.method === "preTransferCheck" && call.enabled,
+		);
+		expect(preTransferQueryCall?.params).toEqual(expectedParams);
+		expect(testState.preTransferInfo).toHaveBeenCalledWith(expectedParams, signal);
 		expect(testState.fetchFreshRouting).toHaveBeenCalledWith(signal);
 		expect(testState.accountGuard).toHaveBeenCalledWith(signal);
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).toHaveBeenCalledOnce();
+		expect(testState.exchangeSdkCalls.get("withdraw3")).not.toHaveBeenCalled();
+	});
+
+	it("keeps activation fees and pre-transfer checks out of the legacy withdrawal route", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.routingResponse = { depositRoute: "bridge", withdrawalRoute: "bridge" };
+		testState.freshRoutingResponse = { depositRoute: "bridge", withdrawalRoute: "bridge" };
+		testState.preTransferReview = { ...testState.preTransferReview, fee: "4" };
+
+		await submitWithdrawal();
+
+		const form = container.querySelector('[data-testid="withdraw-routing-status"]');
+		expect(form?.getAttribute("data-activation-fee")).toBe("0");
+		expect(form?.getAttribute("data-max-amount")).toBe("10");
+		expect(testState.preTransferRefetch).not.toHaveBeenCalled();
+		expect(testState.preTransferInfo).not.toHaveBeenCalled();
+		expect(testState.exchangeSdkCalls.get("withdraw3")).toHaveBeenCalledOnce();
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+	});
+
+	it("rejects a queue-boundary activation fee change before calling the exchange SDK", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.preTransferFresh = { ...testState.preTransferFresh, fee: "0.5" };
+
+		await submitWithdrawal();
+
+		expect(testState.exchangeMutations.get("sendToEvmWithData")).toHaveBeenCalledOnce();
+		expect(testState.preTransferInfo).toHaveBeenCalledOnce();
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
+		expect(
+			queryClient.getQueryData([
+				"hl",
+				"Mainnet",
+				"preTransferCheck",
+				{
+					user: "0x2000000000000000000000000000000000000025",
+					source: "0x1111111111111111111111111111111111111111",
+				},
+			]),
+		).toEqual(testState.preTransferFresh);
+	});
+
+	it("rejects a queue-boundary sanctions flip before calling the exchange SDK", async () => {
+		testState.modalOpen = true;
+		testState.activeTab = "withdraw";
+		testState.preTransferFresh = { ...testState.preTransferFresh, isSanctioned: true };
+
+		await submitWithdrawal();
+
+		expect(testState.exchangeMutations.get("sendToEvmWithData")).toHaveBeenCalledOnce();
+		expect(testState.preTransferInfo).toHaveBeenCalledOnce();
+		expect(testState.exchangeSdkCalls.get("sendToEvmWithData")).not.toHaveBeenCalled();
 	});
 
 	it.each([
 		{ name: "the fresh request fails", response: null, error: new Error("routing unavailable") },
 		{ name: "the normalized fresh response is unavailable", response: null, error: null },
-	])("fails both SDK-boundary guards closed when $name", async ({ error, response }) => {
+	])("fails the legacy SDK-boundary guard closed when $name", async ({ error, response }) => {
 		testState.freshRoutingError = error;
 		testState.freshRoutingResponse = response;
 
-		await expect(getGuard("sendToEvmWithData")()).rejects.toThrow("Unable to verify");
-		await expect(getGuard("withdraw3")()).rejects.toThrow("Unable to verify");
+		await expect(getGuard("withdraw3")({}, new AbortController().signal)).rejects.toThrow("Unable to verify");
 	});
 
 	it("surfaces a final deposit-route request failure instead of leaving a ready button silently active", async () => {
@@ -365,5 +565,33 @@ describe("DepositModal withdrawal route pre-execution guard wiring", () => {
 		expect(container.querySelector('[data-testid="withdraw-routing-status"]')?.getAttribute("data-status")).toBe(
 			"ready",
 		);
+	});
+
+	it("renders a localized definitive source failure as failed without parsing its wording", async () => {
+		testState.modalOpen = true;
+		testState.depositStatus = "error";
+		testState.depositHash = `0x${"1".repeat(64)}`;
+		testState.depositExecutionRoute = "cctp";
+		testState.depositError = new DefinitiveDepositSourceFailureError(
+			"source-transaction-reverted",
+			"交易已在 Arbitrum 上回滚",
+		);
+
+		await rerender();
+
+		expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Deposit failed");
+		expect(container.querySelector('[data-testid="status-description"]')?.textContent).toBe("交易已在 Arbitrum 上回滚");
+	});
+
+	it("does not infer a definitive outcome from an unstructured error message", async () => {
+		testState.modalOpen = true;
+		testState.depositStatus = "error";
+		testState.depositHash = `0x${"2".repeat(64)}`;
+		testState.depositExecutionRoute = "cctp";
+		testState.depositError = new Error("Transaction reverted on Arbitrum");
+
+		await rerender();
+
+		expect(container.querySelector('[data-testid="status-heading"]')?.textContent).toBe("Deposit status unknown");
 	});
 });
