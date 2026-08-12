@@ -1,7 +1,7 @@
 import { Button } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ArrowClockwiseIcon, GiftIcon, SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
-import { useState } from "react";
+import { type ReactNode, useId, useState } from "react";
 import { toast } from "sonner";
 import { EstablishConnectionModal } from "@/components/trade/components/establish-connection-modal";
 import { LegalAcceptanceModal } from "@/components/trade/components/legal-acceptance-modal";
@@ -26,8 +26,29 @@ function getActionIdentityKey(identity: { clientKey: string; env: string; wallet
 	return `${identity.env}:${identity.clientKey}:${identity.walletAddress ?? "disconnected"}`;
 }
 
+function ReferralSurface({
+	busy = false,
+	children,
+	titleId,
+}: {
+	busy?: boolean;
+	children: ReactNode;
+	titleId: string;
+}) {
+	return (
+		<section
+			aria-busy={busy || undefined}
+			aria-labelledby={titleId}
+			className="overflow-hidden rounded-[20px] bg-surface shadow-[0_8px_32px_rgba(20,30,45,0.08)] min-[1001px]:rounded-[14px]"
+		>
+			{children}
+		</section>
+	);
+}
+
 export function ReferralDashboard() {
 	const { t } = useLingui();
+	const titleId = useId();
 	const referrals = useReferrals();
 	const referralActions = useReferralActions(referrals);
 	const legalGate = useReferralLegalGate();
@@ -71,34 +92,41 @@ export function ReferralDashboard() {
 	const actionBusy = referralActions.isPending || isPreparingAction || isReconnecting;
 	const actionIdentityKey = getActionIdentityKey(referralActions.identity);
 	const visibleAction = activeAction?.identityKey === actionIdentityKey ? activeAction.action : null;
+	const readyData =
+		referrals.status === "ready" && referrals.data && referrals.usdcRewardsEarned ? referrals.data : null;
 	const header = (
 		<div className="flex flex-wrap items-start justify-between gap-3">
 			<div>
-				<h1 className="text-lg font-semibold tracking-tight text-fg min-[1001px]:text-xl">
+				<h1
+					id={titleId}
+					className="text-[18px] leading-6 font-bold text-fg min-[1001px]:text-lg min-[1001px]:leading-7"
+				>
 					<Trans>Referrals & rewards</Trans>
 				</h1>
-				<p className="mt-1 max-w-2xl text-xs leading-5 text-fg-muted">
+				<p className="mt-1 max-w-2xl text-xs leading-4 text-fg-muted">
 					<Trans>Invite traders, review fee benefits, and claim rewards reported by Hyperliquid.</Trans>
 				</p>
 			</div>
-			{referrals.status === "ready" && referrals.data ? (
+			{readyData ? (
 				<div className="hidden flex-wrap gap-2 min-[1001px]:flex">
-					{canApplyReferralCode(referrals.data) ? (
+					{canApplyReferralCode(readyData) ? (
 						<Button
 							variant="outline"
 							intent="neutral"
 							size="sm"
+							className="rounded-[10px] text-2sm"
 							disabled={actionBusy}
 							onClick={() => void requestAction("apply")}
 						>
 							<Trans>Enter code</Trans>
 						</Button>
 					) : null}
-					{referrals.data.referrerState.stage === "needToCreateCode" ? (
+					{readyData.referrerState.stage === "needToCreateCode" ? (
 						<Button
 							variant="outline"
 							intent="brand"
 							size="sm"
+							className="rounded-[10px] text-2sm"
 							disabled={actionBusy}
 							onClick={() => void requestAction("create")}
 						>
@@ -107,6 +135,7 @@ export function ReferralDashboard() {
 					) : null}
 					<Button
 						size="sm"
+						className="rounded-[10px] text-2sm"
 						disabled={actionBusy || !referrals.hasClaimableRewards}
 						onClick={() => void requestAction("claim")}
 					>
@@ -117,96 +146,94 @@ export function ReferralDashboard() {
 		</div>
 	);
 
+	let content: ReactNode;
 	if (referrals.status === "idle") {
-		return (
-			<>
-				<div className="mb-4">{header}</div>
-				<section className="rounded-12 bg-surface px-5 py-16 text-center">
-					<GiftIcon className="mx-auto size-10 text-brand" />
-					<h2 className="mt-4 text-lg font-semibold text-fg">
-						<Trans>Connect to view referrals</Trans>
-					</h2>
-					<p className="mx-auto mt-2 max-w-md text-sm leading-5 text-fg-muted">
-						<Trans>Referral stages, rewards, discount, and claim history are scoped to your Hyperliquid account.</Trans>
-					</p>
-					<Button className="mt-5" disabled={isReconnecting} onClick={() => void reconnectWallet()}>
-						<Trans>Connect wallet</Trans>
-					</Button>
-				</section>
-			</>
+		content = (
+			<div className="border-t border-stroke-weak px-4 py-14 text-center min-[1001px]:px-5 min-[1001px]:py-16">
+				<GiftIcon aria-hidden="true" className="mx-auto size-10 text-brand" />
+				<h2 className="mt-4 text-lg font-bold text-fg">
+					<Trans>Connect to view referrals</Trans>
+				</h2>
+				<p className="mx-auto mt-2 max-w-md text-sm leading-5 text-fg-muted">
+					<Trans>Referral stages, rewards, discount, and claim history are scoped to your Hyperliquid account.</Trans>
+				</p>
+				<Button
+					aria-busy={isReconnecting || undefined}
+					className="mt-5 rounded-[10px]"
+					disabled={isReconnecting}
+					onClick={() => void reconnectWallet()}
+				>
+					<Trans>Connect wallet</Trans>
+				</Button>
+			</div>
 		);
-	}
-
-	if (referrals.status === "loading") {
-		return (
-			<>
-				<div className="mb-4">{header}</div>
-				<output aria-live="polite" aria-label={t`Loading referrals`} className="block space-y-2">
+	} else if (referrals.status === "loading") {
+		content = (
+			<output aria-live="polite" aria-label={t`Loading referrals`} className="block px-4 pb-4 min-[1001px]:px-5">
+				<span className="sr-only">
+					<Trans>Loading referrals</Trans>
+				</span>
+				<div aria-hidden="true" className="space-y-3 min-[1001px]:space-y-4">
 					<div className="grid grid-cols-2 gap-2 min-[1001px]:grid-cols-4">
 						{[0, 1, 2, 3].map((item) => (
-							<div key={item} className="h-28 animate-pulse rounded-12 bg-surface" />
+							<div
+								key={item}
+								className="h-[62px] animate-pulse rounded-[10px] bg-fill-weak motion-reduce:animate-none min-[1001px]:h-[74px] min-[1001px]:rounded-[12px]"
+							/>
 						))}
 					</div>
-					<div className="grid gap-2 min-[1001px]:grid-cols-2">
-						<div className="h-96 animate-pulse rounded-12 bg-surface" />
-						<div className="h-96 animate-pulse rounded-12 bg-surface" />
+					<div className="grid gap-3 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4">
+						<div className="h-72 animate-pulse rounded-[10px] bg-fill-weak motion-reduce:animate-none min-[1001px]:rounded-[12px]" />
+						<div className="h-72 animate-pulse rounded-[10px] bg-fill-weak motion-reduce:animate-none min-[1001px]:rounded-[12px]" />
+						<div className="h-36 animate-pulse bg-fill-weak motion-reduce:animate-none min-[1001px]:col-span-2" />
 					</div>
-				</output>
-			</>
+				</div>
+			</output>
 		);
-	}
-
-	if (referrals.status === "error" || !referrals.data || !referrals.usdcRewardsEarned) {
-		return (
+	} else if (!readyData) {
+		content = (
+			<div role="alert" className="border-t border-stroke-weak px-4 py-14 text-center min-[1001px]:px-5">
+				<WarningCircleIcon aria-hidden="true" className="mx-auto size-10 text-error" weight="fill" />
+				<h2 className="mt-4 text-lg font-bold text-fg">
+					<Trans>Referral data unavailable</Trans>
+				</h2>
+				<p className="mx-auto mt-2 max-w-md text-sm leading-5 text-fg-muted">
+					<Trans>The response could not be verified. No referral action is available until fresh data loads.</Trans>
+				</p>
+				<Button
+					variant="outline"
+					intent="neutral"
+					className="mt-5 rounded-[10px]"
+					iconLeft={<ArrowClockwiseIcon />}
+					onClick={referrals.retry}
+				>
+					<Trans>Retry</Trans>
+				</Button>
+			</div>
+		);
+	} else {
+		content = (
 			<>
-				<div className="mb-4">{header}</div>
-				<section className="rounded-12 bg-surface px-5 py-14 text-center">
-					<WarningCircleIcon className="mx-auto size-10 text-error" weight="fill" />
-					<h2 className="mt-4 text-lg font-semibold text-fg">
-						<Trans>Referral data unavailable</Trans>
-					</h2>
-					<p className="mx-auto mt-2 max-w-md text-sm leading-5 text-fg-muted">
-						<Trans>The response could not be verified. No referral action is available until fresh data loads.</Trans>
-					</p>
-					<Button
-						variant="outline"
-						intent="neutral"
-						className="mt-5"
-						iconLeft={<ArrowClockwiseIcon />}
-						onClick={referrals.retry}
-					>
-						<Trans>Retry</Trans>
-					</Button>
-				</section>
-			</>
-		);
-	}
-
-	const data = referrals.data;
-	return (
-		<>
-			<section className="overflow-hidden rounded-14 bg-surface shadow-sm">
-				<div className="px-4 pt-4 pb-3 min-[1001px]:px-5">{header}</div>
 				{referrals.isRefreshing ? (
 					<output
 						aria-live="polite"
 						className="flex items-center gap-1.5 px-4 pb-2 text-2xs text-fg-muted min-[1001px]:px-5"
 					>
-						<SpinnerGapIcon className="size-3 animate-spin" />
+						<SpinnerGapIcon className="size-3 animate-spin motion-reduce:animate-none" />
 						<Trans>Refreshing referral data…</Trans>
 					</output>
 				) : null}
-				<div className="px-4 pb-3 min-[1001px]:px-5">
+				<div className="px-4 pb-3 min-[1001px]:px-5 min-[1001px]:pb-3.5">
 					<ReferralSummaryCards
-						data={data}
+						data={readyData}
 						discountPercent={referrals.discountPercent}
-						usdcRewardsEarned={referrals.usdcRewardsEarned}
+						usdcRewardsEarned={referrals.usdcRewardsEarned ?? "0"}
 					/>
 				</div>
-				<div className="grid items-start gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5">
+				<div className="grid gap-3 px-4 pb-4 min-[1001px]:grid-cols-[minmax(0,560px)_minmax(0,1fr)] min-[1001px]:gap-4 min-[1001px]:px-5 min-[1001px]:pb-0">
 					<div className="order-1">
 						<ReferralCodeCard
-							data={data}
+							data={readyData}
 							onApplyCode={() => void requestAction("apply")}
 							onCreateCode={() => void requestAction("create")}
 						/>
@@ -218,27 +245,40 @@ export function ReferralDashboard() {
 							rewards={referrals.rewardRows}
 						/>
 					</div>
-					<div className="order-2 min-[1001px]:order-3 min-[1001px]:col-span-2">
+					<div className="order-2 -mx-4 min-[1001px]:order-3 min-[1001px]:col-span-2 min-[1001px]:-mx-5">
 						<ReferralActivity
 							claimHistory={referrals.claimHistory}
 							claimHistoryStatus={referrals.claimHistoryStatus}
-							data={data}
+							data={readyData}
 							onRetryClaimHistory={referrals.retryClaimHistory}
 							tokenMetadata={referrals.tokenMetadata}
 						/>
 					</div>
 				</div>
-			</section>
+			</>
+		);
+	}
 
-			{referrals.hasClaimableRewards ? (
-				<div className="sticky bottom-0 z-20 -mx-4 mt-2 border-t border-stroke-weak bg-portfolio-canvas/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur min-[1001px]:hidden">
-					<Button className="w-full" disabled={actionBusy} onClick={() => void requestAction("claim")}>
+	return (
+		<>
+			<ReferralSurface busy={referrals.status === "loading"} titleId={titleId}>
+				<div className="px-4 pt-3 pb-2.5 min-[1001px]:px-5 min-[1001px]:pt-4 min-[1001px]:pb-3.5">{header}</div>
+				{content}
+			</ReferralSurface>
+
+			{readyData && referrals.hasClaimableRewards ? (
+				<div className="sticky bottom-0 z-20 mt-2 border-t border-stroke-weak bg-portfolio-canvas/95 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] backdrop-blur min-[1001px]:hidden">
+					<Button
+						className="w-full rounded-[12px] text-sm font-bold"
+						disabled={actionBusy}
+						onClick={() => void requestAction("claim")}
+					>
 						<Trans>Claim all available rewards</Trans>
 					</Button>
 				</div>
 			) : null}
 
-			{visibleAction ? (
+			{readyData && visibleAction ? (
 				<ReferralActionModal
 					key={`${visibleAction}:${actionIdentityKey}`}
 					action={visibleAction}
@@ -247,7 +287,7 @@ export function ReferralDashboard() {
 					onSubmit={referralActions.submit}
 				/>
 			) : null}
-			{connectionModalOpen ? (
+			{readyData && connectionModalOpen ? (
 				<EstablishConnectionModal
 					onClose={() => setConnectionModalOpen(false)}
 					onConnected={() => {
@@ -256,7 +296,8 @@ export function ReferralDashboard() {
 					}}
 				/>
 			) : null}
-			{legalModalOpen &&
+			{readyData &&
+			legalModalOpen &&
 			legalGate.state !== "inactive" &&
 			legalGate.state !== "checking" &&
 			legalGate.state !== "accepted" ? (

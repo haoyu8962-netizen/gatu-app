@@ -26,44 +26,46 @@ export function ReferredTraders({ traders, tokenMetadata }: Props) {
 		<>
 			<Table className="hidden min-[1001px]:table" containerClassName="hidden min-[1001px]:block">
 				<TableHeader>
-					<TableRow>
-						<TableHead size="dense">
+					<TableRow className="h-[30px]">
+						<TableHead size="dense" className="text-xs">
 							<Trans>Trader</Trans>
 						</TableHead>
-						<TableHead size="dense">
+						<TableHead size="dense" className="text-xs">
 							<Trans>Joined</Trans>
 						</TableHead>
-						<TableHead size="dense" className="text-right">
+						<TableHead size="dense" className="text-right text-xs">
 							<Trans>USDC volume</Trans>
 						</TableHead>
-						<TableHead size="dense" className="text-right">
+						<TableHead size="dense" className="text-right text-xs">
 							<Trans>Trader fee benefit</Trans>
 						</TableHead>
-						<TableHead size="dense" className="text-right">
+						<TableHead size="dense" className="text-right text-xs">
 							<Trans>Your rewards</Trans>
 						</TableHead>
-						<TableHead size="dense" className="text-right">
+						<TableHead size="dense" className="text-right text-xs">
 							<Trans>Reward assets</Trans>
 						</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
 					{desktopTraders.map((trader) => (
-						<TableRow key={trader.user}>
-							<TableCell size="dense" className="font-medium text-fg">
+						<TableRow key={trader.user} className="h-[42px]">
+							<TableCell size="dense" className="text-2sm font-medium text-fg">
 								{shortenAddress(trader.user, 6, 4)}
 							</TableCell>
-							<TableCell size="dense">{formatDateTime(trader.timeJoined)}</TableCell>
-							<TableCell size="dense" className="text-right tabular-nums">
+							<TableCell size="dense" className="text-2sm">
+								{formatDateTime(trader.timeJoined)}
+							</TableCell>
+							<TableCell size="dense" className="text-right text-2sm tabular-nums">
 								{formatUSD(trader.cumVlm)}
 							</TableCell>
-							<TableCell size="dense" className="text-right tabular-nums">
+							<TableCell size="dense" className="text-right text-2sm tabular-nums">
 								{formatUSD(trader.cumRewardedFeesSinceReferred)}
 							</TableCell>
-							<TableCell size="dense" className="text-right tabular-nums">
+							<TableCell size="dense" className="text-right text-2sm tabular-nums">
 								{formatUSD(trader.cumFeesRewardedToReferrer)}
 							</TableCell>
-							<TableCell size="dense" className="text-right tabular-nums">
+							<TableCell size="dense" className="text-right text-2sm tabular-nums">
 								<span
 									className="line-clamp-1"
 									title={trader.tokenToState.map(([tokenId]) => getTokenName(tokenId)).join(", ")}
@@ -114,12 +116,12 @@ export function ReferredTraders({ traders, tokenMetadata }: Props) {
 							<article key={trader.user} className="px-4 py-3">
 								<div className="flex items-start justify-between gap-3">
 									<div>
-										<p className="text-xs font-medium text-fg">{shortenAddress(trader.user, 6, 4)}</p>
+										<p className="text-2sm font-medium text-fg">{shortenAddress(trader.user, 6, 4)}</p>
 										<p className="mt-0.5 text-2xs tabular-nums text-fg-muted">
 											{formatDateTime(trader.timeJoined)} · <Trans>Volume</Trans> {formatUSD(trader.cumVlm)}
 										</p>
 									</div>
-									<p className="text-xs font-semibold tabular-nums text-success">
+									<p className="text-2sm font-semibold tabular-nums text-success">
 										+{formatUSD(trader.cumFeesRewardedToReferrer)}
 									</p>
 								</div>
@@ -130,7 +132,7 @@ export function ReferredTraders({ traders, tokenMetadata }: Props) {
 									<span className="tabular-nums text-fg">{formatUSD(trader.cumRewardedFeesSinceReferred)}</span>
 								</div>
 								{trader.tokenToState.length ? (
-									<details className="mt-2 rounded-8 bg-fill-weak px-2.5 py-2">
+									<details className="mt-2 rounded-[8px] bg-fill-weak px-2.5 py-2">
 										<summary className="cursor-pointer text-2xs font-medium text-fg-muted">
 											<Trans>Reward assets</Trans>
 										</summary>

@@ -65,11 +65,12 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 			dismissible={!isSubmitting}
 			showClose={!isMobile && !isSubmitting}
 			showHandle={isMobile && !isSubmitting}
+			handleClassName="top-2 h-1 w-9 !rounded-[2px] bg-fill/30"
 			layer="blocking"
-			className="max-h-[calc(100dvh-1rem)] rounded-t-20 min-[1001px]:max-w-[25rem] min-[1001px]:rounded-16"
+			className="max-h-[calc(100dvh-1rem)] rounded-t-[18px] min-[1001px]:max-w-[25rem] min-[1001px]:rounded-[16px]"
 		>
-			<ModalHeader divider={false} className="px-5 pt-6 pb-2 min-[1001px]:px-6">
-				<ModalTitle>{title}</ModalTitle>
+			<ModalHeader divider={false} className="px-4 pt-6 pb-2 min-[1001px]:px-6">
+				<ModalTitle className="text-base font-bold min-[1001px]:text-[17px]">{title}</ModalTitle>
 				<ModalDescription>
 					{action === "apply" ? (
 						<Trans>A referral code can only be applied once and cannot be changed from this page.</Trans>
@@ -83,7 +84,7 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 				</ModalDescription>
 			</ModalHeader>
 
-			<ModalContent className="space-y-4 px-5 py-4 min-[1001px]:px-6">
+			<ModalContent className="space-y-4 px-4 py-4 min-[1001px]:px-6">
 				{step === "form" ? (
 					<TextInput
 						label={t`Referral code`}
@@ -102,7 +103,7 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 				{step === "review" ? (
 					<div className="space-y-3">
 						{action === "claim" ? (
-							<div className="divide-y divide-stroke-weak overflow-hidden rounded-12 border border-stroke-weak">
+							<div className="divide-y divide-stroke-weak overflow-hidden rounded-[12px] border border-stroke-weak">
 								{claimableRewards.map((reward) => (
 									<div key={reward.tokenId} className="flex items-center justify-between gap-4 px-4 py-3">
 										<span className="text-sm text-fg-muted">{reward.name}</span>
@@ -116,14 +117,14 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 								))}
 							</div>
 						) : (
-							<div className="rounded-12 border border-stroke-weak bg-fill-weak p-4">
+							<div className="rounded-[12px] border border-stroke-weak bg-fill-weak p-4">
 								<p className="text-xs text-fg-muted">
 									{action === "apply" ? <Trans>Code to apply</Trans> : <Trans>Code to create</Trans>}
 								</p>
 								<p className="mt-1 break-all text-lg font-semibold text-fg">{code}</p>
 							</div>
 						)}
-						<p className="flex items-start gap-2 rounded-10 bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning">
+						<p className="flex items-start gap-2 rounded-[10px] bg-warning-soft px-3 py-2.5 text-xs leading-5 text-warning">
 							<WarningCircleIcon className="mt-0.5 size-4 shrink-0" />
 							<span>
 								<Trans>
@@ -136,7 +137,7 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 
 				{step === "submitting" ? (
 					<output aria-live="polite" className="flex flex-col items-center gap-3 py-8 text-center">
-						<SpinnerGapIcon className="size-8 animate-spin text-brand" />
+						<SpinnerGapIcon className="size-8 animate-spin text-brand motion-reduce:animate-none" />
 						<p className="text-sm font-semibold text-fg">
 							<Trans>Waiting for confirmation</Trans>
 						</p>
@@ -178,13 +179,13 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 				) : null}
 			</ModalContent>
 
-			<ModalFooter className="gap-2 px-5 pt-0 pb-5 min-[1001px]:px-6">
+			<ModalFooter className="gap-2 px-4 pt-0 pb-5 min-[1001px]:px-6">
 				{step === "form" ? (
 					<>
-						<Button variant="outline" intent="neutral" className="flex-1" onClick={close}>
+						<Button variant="outline" intent="neutral" className="flex-1 rounded-[10px]" onClick={close}>
 							<Trans>Cancel</Trans>
 						</Button>
-						<Button className="flex-1" disabled={!codeValid} onClick={() => setStep("review")}>
+						<Button className="flex-1 rounded-[10px]" disabled={!codeValid} onClick={() => setStep("review")}>
 							<Trans>Review</Trans>
 						</Button>
 					</>
@@ -193,17 +194,17 @@ export function ReferralActionModal({ action, claimableRewards, onClose, onSubmi
 						<Button
 							variant="outline"
 							intent="neutral"
-							className="flex-1"
+							className="flex-1 rounded-[10px]"
 							onClick={() => (action === "claim" ? close() : setStep("form"))}
 						>
 							<Trans>Back</Trans>
 						</Button>
-						<Button className="flex-1" onClick={() => void submit()}>
+						<Button className="flex-1 rounded-[10px]" onClick={() => void submit()}>
 							{action === "claim" ? <Trans>Claim all</Trans> : <Trans>Confirm</Trans>}
 						</Button>
 					</>
 				) : step === "success" || step === "error" ? (
-					<Button className="w-full" onClick={close}>
+					<Button className="w-full rounded-[10px]" onClick={close}>
 						<Trans>Close</Trans>
 					</Button>
 				) : null}

@@ -27,13 +27,13 @@ export function ReferralActivity({
 	const referredTraders = data.referrerState.stage === "ready" ? data.referrerState.data.referralStates : [];
 
 	return (
-		<section
-			className="overflow-hidden rounded-12 border border-stroke-weak bg-surface"
-			aria-label={t`Referral activity`}
-		>
+		<section className="overflow-hidden border-y border-stroke-weak bg-surface" aria-label={t`Referral activity`}>
 			<Tabs defaultValue="traders">
-				<TabsList className="w-full overflow-x-auto px-4 pt-1 min-[1001px]:px-5">
-					<TabsTrigger value="traders" className="whitespace-nowrap max-[1000px]:px-2">
+				<TabsList className="w-full gap-3 overflow-x-auto px-4 min-[1001px]:gap-[18px] min-[1001px]:px-5">
+					<TabsTrigger
+						value="traders"
+						className="whitespace-nowrap px-1 py-2.5 text-xs data-[state=active]:font-bold min-[1001px]:py-[11px] min-[1001px]:text-2sm"
+					>
 						<span className="min-[1001px]:hidden">
 							<Trans>Traders</Trans>
 						</span>
@@ -41,7 +41,10 @@ export function ReferralActivity({
 							<Trans>Referred traders</Trans>
 						</span>
 					</TabsTrigger>
-					<TabsTrigger value="claims" className="whitespace-nowrap max-[1000px]:px-2">
+					<TabsTrigger
+						value="claims"
+						className="whitespace-nowrap px-1 py-2.5 text-xs data-[state=active]:font-bold min-[1001px]:py-[11px] min-[1001px]:text-2sm"
+					>
 						<span className="min-[1001px]:hidden">
 							<Trans>Claims</Trans>
 						</span>
@@ -49,7 +52,10 @@ export function ReferralActivity({
 							<Trans>Recent reward claims</Trans>
 						</span>
 					</TabsTrigger>
-					<TabsTrigger value="legacy" className="whitespace-nowrap max-[1000px]:px-2">
+					<TabsTrigger
+						value="legacy"
+						className="whitespace-nowrap px-1 py-2.5 text-xs data-[state=active]:font-bold min-[1001px]:py-[11px] min-[1001px]:text-2sm"
+					>
 						<span className="min-[1001px]:hidden">
 							<Trans>Legacy</Trans>
 						</span>
@@ -81,7 +87,13 @@ export function ReferralActivity({
 							<p className="text-xs text-fg-muted">
 								<Trans>Recent reward claims could not be verified.</Trans>
 							</p>
-							<Button variant="outline" intent="neutral" size="sm" className="mt-3" onClick={onRetryClaimHistory}>
+							<Button
+								variant="outline"
+								intent="neutral"
+								size="sm"
+								className="mt-3 rounded-[10px]"
+								onClick={onRetryClaimHistory}
+							>
 								<Trans>Retry</Trans>
 							</Button>
 						</div>

@@ -14,14 +14,14 @@ export function ReferralClaimHistory({ rows }: Props) {
 			{rows.map((row) => (
 				<div key={row.id} className="flex items-center justify-between gap-4 px-4 py-3 min-[1001px]:px-6">
 					<div>
-						<p className="text-xs font-medium text-fg">
+						<p className="text-xs font-medium text-fg min-[1001px]:text-2sm">
 							<Trans>Rewards claimed</Trans>
 						</p>
 						<p className="mt-0.5 text-2xs text-fg-muted">
 							{formatDateTime(row.time)} · {shortenAddress(row.hash, 6, 6)}
 						</p>
 					</div>
-					<p className="text-xs font-semibold tabular-nums text-success">
+					<p className="text-xs font-semibold tabular-nums text-success min-[1001px]:text-2sm">
 						{formatToken(row.amount, {
 							symbol: row.token,
 							maximumFractionDigits: row.weiDecimals ?? 8,
