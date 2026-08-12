@@ -136,6 +136,24 @@ describe("LanguageSwitcher", () => {
 		expect(menu?.classList.contains("max-h-[calc(100dvh-3rem)]")).toBe(true);
 	});
 
+	it("optionally shows the active language in the desktop trigger", async () => {
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<LanguageSwitcher showLabel />
+				</I18nProvider>,
+			);
+		});
+
+		const trigger = container.querySelector<HTMLElement>('[aria-label="Language and number format"]');
+		expect(trigger?.textContent).toBe("English");
+
+		await act(async () => activateLocale("zh"));
+
+		expect(trigger?.getAttribute("aria-label")).toBe("语言和数字格式");
+		expect(trigger?.textContent).toBe("中文");
+	});
+
 	it("updates the mounted mobile navigation when the locale changes", async () => {
 		await act(async () => {
 			root.render(

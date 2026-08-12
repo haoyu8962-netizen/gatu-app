@@ -1,6 +1,6 @@
-import { Button, ButtonIcon, Divider, Dropdown } from "@gatu/ui";
+import { Button, ButtonIcon, Dropdown } from "@gatu/ui";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { DownloadSimpleIcon, GearIcon } from "@phosphor-icons/react";
+import { DownloadSimpleIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { APP_BAR_BUTTON_HEIGHT_CLASS, APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/cn";
 import { createLazyComponent } from "@/lib/lazy";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
 import { useIsTestnet } from "@/stores/use-global-settings-store";
+import { DesktopUtilitiesMenu } from "./desktop-utilities-menu";
 import { LanguageSwitcher } from "./language-switcher";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -63,33 +64,50 @@ export function TopNav() {
 		<header
 			className={cn(
 				APP_HEADER_HEIGHT_CLASS,
-				"fixed left-0 right-0 z-40 border-b border-stroke-weak px-3 flex items-center justify-between bg-background",
+				"fixed right-0 left-0 z-40 flex items-center justify-between border-b border-market-close-stroke-card bg-surface px-5 font-market-close shadow-[0_1px_0_rgba(20,30,45,0.02)]",
 				isTestnet ? "top-8" : "top-0",
 			)}
 		>
-			<div className="flex min-w-0 items-center gap-3">
+			<div className="flex min-w-0 items-center">
 				<Link
 					to={tradeHomePath}
 					search={{ scope: "all" }}
 					aria-label="gatu"
-					className="flex shrink-0 items-center gap-1.5 rounded-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus"
+					className={cn(
+						"mr-6 flex shrink-0 items-center gap-2 rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-focus",
+						hasWalletAccess ? "max-[1181px]:mr-7" : "max-[1181px]:mr-8",
+					)}
 				>
-					<img src="/icon.svg" alt="" aria-hidden className="size-5 rounded-8" />
-					<span className="text-xs font-bold tracking-tight">
-						<span className="text-brand">ga</span>
-						<span className="text-fg">tu</span>
+					<span className="grid size-[26px] shrink-0 place-items-center rounded-[7px] bg-market-close-control text-market-close-on-control">
+						<svg aria-hidden viewBox="0 0 120 120" fill="none" className="size-[18px]">
+							<title>Gatu</title>
+							<path
+								d="M66 60 H100 A40 40 0 1 0 76.9 96.25"
+								stroke="currentColor"
+								strokeWidth="16"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							/>
+						</svg>
+					</span>
+					<span
+						className={cn(
+							"text-base leading-6 font-bold tracking-[-0.2px] whitespace-nowrap text-market-close-fg",
+							hasWalletAccess && "max-[1181px]:hidden",
+						)}
+					>
+						gatu
 					</span>
 				</Link>
-				<Divider orientation="vertical" className="my-2 hidden min-[1001px]:block" />
 				<div className="hidden min-[1001px]:flex min-w-0 items-center">
-					<nav className="flex items-center text-xs tracking-wide" aria-label={t`Primary navigation`}>
+					<nav className="flex items-center gap-0.5 text-[13px] leading-[18px]" aria-label={t`Primary navigation`}>
 						<Link
 							to={tradeHomePath}
 							search={{ scope: "all" }}
 							aria-current={tradeActive ? "page" : undefined}
 							className={cn(
-								"rounded-8 px-2.5 py-1 transition-colors",
-								tradeActive ? "font-medium text-brand" : "text-fg-muted hover:text-fg",
+								"rounded-[8px] px-2.5 py-2 font-medium whitespace-nowrap transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg",
+								tradeActive ? "font-bold text-market-close-fg" : "text-market-close-muted",
 							)}
 						>
 							<Trans>Trade</Trans>
@@ -98,22 +116,22 @@ export function TopNav() {
 							to="/portfolio"
 							aria-current={portfolioActive ? "page" : undefined}
 							className={cn(
-								"rounded-8 px-2.5 py-1 transition-colors",
-								portfolioActive ? "font-medium text-brand" : "text-fg-muted hover:text-fg",
+								"rounded-[8px] px-2.5 py-2 font-medium whitespace-nowrap transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg",
+								portfolioActive ? "font-bold text-market-close-fg" : "text-market-close-muted",
 							)}
 						>
 							<Trans>Portfolio</Trans>
 						</Link>
 						<Dropdown
 							align="start"
-							size="sm"
+							size="md"
 							triggerVariant="minimal"
 							triggerAriaLabel={t`More`}
 							triggerClassName={cn(
-								"h-8 px-2.5 text-xs tracking-wide hover:bg-fill-hover",
-								moreActive ? "font-medium text-brand" : "text-fg-muted",
+								"h-[34px] rounded-[8px] px-2.5 py-2 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-muted transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg data-[popup-open]:bg-market-close-hover data-[popup-open]:text-market-close-fg [&>svg]:size-[10px]",
+								moreActive && "font-bold text-market-close-fg",
 							)}
-							popupClassName="min-w-44"
+							popupClassName="min-w-[148px] rounded-[10px] border-market-close-stroke-card bg-surface p-1 font-market-close shadow-[0_12px_32px_rgba(20,30,45,0.16)] [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px] [&_[role=menuitem]]:font-medium"
 							trigger={<Trans>More</Trans>}
 							items={moreItems}
 						/>
@@ -121,38 +139,62 @@ export function TopNav() {
 				</div>
 			</div>
 
-			<div className="flex items-center gap-2 min-h-8">
+			<div className="ml-auto flex min-h-[34px] items-center gap-2">
 				{hasWalletAccess && !tradeRestricted && (
 					<Button
 						variant="filled"
 						intent="brand"
 						size="sm"
 						onClick={() => openDepositModal("deposit")}
-						iconLeft={<DownloadSimpleIcon className="size-3.5" />}
-						className={cn(APP_BAR_BUTTON_HEIGHT_CLASS, "shrink-0 px-3")}
+						iconLeft={<DownloadSimpleIcon className="size-[18px]" />}
+						className={cn(
+							APP_BAR_BUTTON_HEIGHT_CLASS,
+							"h-[34px] min-h-[34px] shrink-0 gap-[7px] rounded-[10px] bg-market-close-control px-3.5 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control max-[1181px]:size-[34px] max-[1181px]:px-0",
+						)}
 					>
-						<Trans>Deposit</Trans>
+						<span className="max-[1181px]:sr-only">
+							<Trans>Deposit</Trans>
+						</span>
 					</Button>
 				)}
 				<Suspense fallback={<UserMenuSkeleton />}>
-					<UserMenu />
+					<UserMenu variant="desktop-nav" />
 				</Suspense>
-				<ThemeToggle />
-				<LanguageSwitcher />
-				<ButtonIcon
-					variant="ghost"
-					intent="neutral"
-					className="size-8 shrink-0"
-					onClick={openSettingsDialog}
-					aria-label={t`Settings`}
-				>
-					<GearIcon className="size-4" />
-				</ButtonIcon>
+				<div className={cn("contents", hasWalletAccess && "max-[1181px]:hidden")}>
+					<ThemeToggle
+						className="size-[34px] rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg"
+						iconClassName="size-[18px]"
+					/>
+					<LanguageSwitcher
+						showLabel
+						className="h-[34px] min-h-[34px] rounded-[10px] px-[9px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg"
+						labelClassName="max-[1181px]:hidden"
+					/>
+					<ButtonIcon
+						variant="ghost"
+						intent="neutral"
+						className="size-[34px] shrink-0 rounded-[10px] text-market-close-muted hover:bg-market-close-hover hover:text-market-close-fg"
+						onClick={openSettingsDialog}
+						aria-label={t`Settings`}
+					>
+						<SlidersHorizontalIcon className="size-[18px]" />
+					</ButtonIcon>
+				</div>
+				{hasWalletAccess && (
+					<DesktopUtilitiesMenu className="hidden max-[1181px]:inline-flex" onOpenSettings={openSettingsDialog} />
+				)}
 			</div>
 		</header>
 	);
 }
 
 function UserMenuSkeleton() {
-	return <div className={cn(APP_BAR_BUTTON_HEIGHT_CLASS, "h-8 w-32 shrink-0 rounded-8 bg-surface animate-pulse")} />;
+	return (
+		<div
+			className={cn(
+				APP_BAR_BUTTON_HEIGHT_CLASS,
+				"h-[34px] w-36 shrink-0 animate-pulse rounded-[10px] bg-market-close-hover max-[1181px]:w-32",
+			)}
+		/>
+	);
 }

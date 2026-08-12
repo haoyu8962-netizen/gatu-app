@@ -15,7 +15,11 @@ import { WalletModal } from "../components/wallet-modal";
 const USER_MENU_BUTTON_MIN_WIDTH = "min-w-[9rem]";
 const USER_MENU_LABEL_MAX_WIDTH = "max-w-[11rem]";
 
-export function UserMenu() {
+interface Props {
+	variant?: "default" | "desktop-nav";
+}
+
+export function UserMenu({ variant = "default" }: Props) {
 	const { t } = useLingui();
 	const { ready, authenticated, isConnected, isConnecting, displayAddress, sessionMode, hasWalletAccess, user } =
 		useWalletSession();
@@ -27,6 +31,7 @@ export function UserMenu() {
 	const [walletModalOpen, setWalletModalOpen] = useState(false);
 	const [mounted, setMounted] = useState(false);
 	const { copied, copy } = useCopyToClipboard();
+	const isDesktopNav = variant === "desktop-nav";
 
 	useEffect(() => {
 		setMounted(true);
@@ -38,13 +43,15 @@ export function UserMenu() {
 	if (!mounted || walletSessionLoading) {
 		return (
 			<Button
-				variant="outline"
+				variant={isDesktopNav ? "filled" : "outline"}
 				intent="neutral"
 				size="sm"
 				className={cn(
 					APP_BAR_BUTTON_HEIGHT_CLASS,
 					USER_MENU_BUTTON_MIN_WIDTH,
 					"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+					isDesktopNav &&
+						"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none",
 				)}
 				disabled
 			>
@@ -58,14 +65,16 @@ export function UserMenu() {
 		return (
 			<>
 				<Button
-					variant="outline"
+					variant={isDesktopNav ? "filled" : "outline"}
 					intent="neutral"
 					size="sm"
 					onClick={() => setWalletModalOpen(true)}
-					iconLeft={<WalletIcon className="size-3.5" />}
+					iconLeft={isDesktopNav ? undefined : <WalletIcon className="size-3.5" />}
 					className={cn(
 						APP_BAR_BUTTON_HEIGHT_CLASS,
 						"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+						isDesktopNav &&
+							"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control",
 					)}
 				>
 					<Trans>Connect Wallet</Trans>
@@ -79,7 +88,7 @@ export function UserMenu() {
 		return (
 			<div className="flex shrink-0 items-center gap-1">
 				<Button
-					variant="outline"
+					variant={isDesktopNav ? "filled" : "outline"}
 					intent="neutral"
 					size="sm"
 					onClick={() => void reconnectWallet()}
@@ -87,6 +96,8 @@ export function UserMenu() {
 					className={cn(
 						APP_BAR_BUTTON_HEIGHT_CLASS,
 						"shrink-0 px-3 transition-[color,background-color,border-color] duration-150 ease-out",
+						isDesktopNav &&
+							"h-[34px] min-h-[34px] rounded-[10px] border-market-close-control bg-market-close-control px-4 font-market-close text-[13px] leading-[18px] font-bold text-market-close-on-control shadow-none hover:bg-market-close-control hover:opacity-90 active:bg-market-close-control",
 					)}
 				>
 					<Trans>Reconnect wallet</Trans>
@@ -97,7 +108,10 @@ export function UserMenu() {
 					size="sm"
 					onClick={() => void disconnectWallet()}
 					aria-label={t`Disconnect`}
-					className={APP_BAR_BUTTON_HEIGHT_CLASS}
+					className={cn(
+						APP_BAR_BUTTON_HEIGHT_CLASS,
+						isDesktopNav && "size-[34px] min-h-[34px] rounded-[10px] text-market-close-danger",
+					)}
 				>
 					<SignOutIcon className="size-3.5" />
 				</ButtonIcon>
@@ -106,6 +120,7 @@ export function UserMenu() {
 	}
 
 	const displayLabel = emailAddress ?? ensName ?? (displayAddress ? shortenAddress(displayAddress) : "");
+	const compactDisplayLabel = displayAddress ? shortenAddress(displayAddress) : displayLabel;
 
 	const actionItems = [
 		...(displayAddress
@@ -147,14 +162,37 @@ export function UserMenu() {
 					"hover:bg-fill-hover active:bg-fill-press",
 					"data-[popup-open]:border-stroke-brand-strong/40 data-[popup-open]:bg-fill-hover",
 					"transition-[color,background-color,border-color] duration-150 ease-out",
+					isDesktopNav &&
+						"h-[34px] min-h-[34px] max-h-[34px] !rounded-[10px] border-market-close-stroke-input px-3 font-market-close text-[13px] leading-[18px] shadow-none hover:border-market-close-fg hover:bg-market-close-hover data-[popup-open]:border-market-close-fg data-[popup-open]:bg-transparent [&>svg]:size-[10px]",
+				)}
+				popupClassName={cn(
+					isDesktopNav &&
+						"min-w-[268px] rounded-[12px] border-market-close-stroke-card bg-surface p-1 font-market-close shadow-[0_16px_40px_rgba(20,30,45,0.18)] [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px]",
 				)}
 				triggerAriaLabel={t`Account and wallet`}
 				trigger={
 					<>
-						<span className="size-1.5 shrink-0 rounded-full bg-success" aria-hidden />
-						<span className={cn("min-w-0 truncate font-mono text-xs text-fg", USER_MENU_LABEL_MAX_WIDTH)}>
+						<span
+							className={cn(
+								"size-1.5 shrink-0 rounded-full bg-success",
+								isDesktopNav && "size-[7px] bg-market-close-success",
+							)}
+							aria-hidden
+						/>
+						<span
+							className={cn(
+								"min-w-0 truncate font-mono text-xs text-fg",
+								USER_MENU_LABEL_MAX_WIDTH,
+								isDesktopNav && "font-market-close text-[13px] leading-[18px] font-semibold max-[1181px]:hidden",
+							)}
+						>
 							{displayLabel}
 						</span>
+						{isDesktopNav && (
+							<span className="hidden min-w-0 max-w-[8rem] truncate font-mono text-[13px] leading-[18px] font-semibold text-market-close-fg max-[1181px]:block">
+								{compactDisplayLabel}
+							</span>
+						)}
 					</>
 				}
 				groups={[

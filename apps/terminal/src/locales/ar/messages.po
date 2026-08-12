@@ -197,8 +197,8 @@ msgstr "يوجد أمر TWAP نشط لأحد هذه الأسواق."
 #~ msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Accept"
-msgstr "قبول"
+#~ msgid "Accept"
+#~ msgstr "قبول"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "Accept the HIP-3 deployer disclaimer before trading these markets."
@@ -1304,6 +1304,10 @@ msgstr "أكّد الإبطال في المحفظة"
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Confirm the approval only in the selected master wallet."
 msgstr "أكّد الموافقة فقط في المحفظة الرئيسية المحددة."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Confirm the gas-free request in your selected wallet."
+msgstr "أكّد الطلب المعفى من رسوم الغاز في محفظتك المحددة."
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -5544,6 +5548,10 @@ msgstr "تحديد جميع الأوامر"
 #~ msgid "Select asset to bridge"
 #~ msgstr ""
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Select both items to continue."
+msgstr "حدّد كلا الخيارين للمتابعة."
+
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select favorite markets"
 msgstr "اختر الأسواق المفضلة"
@@ -6451,6 +6459,10 @@ msgid "Terms"
 msgstr "الشروط"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Terms acceptance is linked to the selected wallet."
+msgstr "يرتبط قبول الشروط بالمحفظة المحددة."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Terms of Use, Privacy Policy, and Cookie Policy"
 msgstr "شروط الاستخدام وسياسة الخصوصية وسياسة ملفات تعريف الارتباط"
 
@@ -6877,6 +6889,10 @@ msgstr "أُنشئ رمز QR هذا لشبكة مختلفة."
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR was created for a different site."
 msgstr "أُنشئ رمز QR هذا لموقع مختلف."
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "This signature is gas-free."
+msgstr "هذا التوقيع لا يتطلب رسوم غاز."
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This spot asset is enabled independently by Unit, a third-party provider."

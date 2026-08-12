@@ -43,7 +43,7 @@ function LegalNavigation() {
 		<>
 			<TestnetBanner />
 			<TopNav />
-			<div className={cn(isTestnet ? "h-[4.75rem]" : APP_HEADER_HEIGHT_CLASS)} aria-hidden />
+			<div className={cn(isTestnet ? "h-[5.5rem]" : APP_HEADER_HEIGHT_CLASS)} aria-hidden />
 		</>
 	);
 }

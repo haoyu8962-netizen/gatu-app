@@ -3,12 +3,20 @@ import { useLingui } from "@lingui/react/macro";
 import { GlobeIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { defaultLocale, localeList, numberFormatLocaleList } from "@/config/i18n";
+import { cn } from "@/lib/cn";
 import { dynamicActivate } from "@/lib/i18n";
 import { useGlobalSettings, useGlobalSettingsActions } from "@/stores/use-global-settings-store";
 
-export function LanguageSwitcher() {
+interface Props {
+	showLabel?: boolean;
+	className?: string;
+	labelClassName?: string;
+}
+
+export function LanguageSwitcher({ showLabel = false, className, labelClassName }: Props) {
 	const { i18n, t } = useLingui();
 	const activeLocale = i18n.locale;
+	const activeLanguageName = localeList.find(({ code }) => code === activeLocale)?.name ?? activeLocale;
 	const { numberFormatLocale } = useGlobalSettings();
 	const { setNumberFormatLocale } = useGlobalSettingsActions();
 
@@ -43,8 +51,19 @@ export function LanguageSwitcher() {
 			triggerVariant="minimal"
 			triggerAriaLabel={t`Language and number format`}
 			hideCaret
-			triggerClassName="size-8 shrink-0 justify-center !px-0 !py-0 !gap-0 rounded-8 text-fg hover:bg-fill-hover active:bg-fill-press"
-			trigger={<GlobeIcon className="size-4" />}
+			triggerClassName={cn(
+				"h-8 min-h-8 shrink-0 justify-center !py-0 rounded-8 text-fg hover:bg-fill-hover active:bg-fill-press",
+				showLabel ? "gap-1.5 px-2" : "w-8 !px-0 !gap-0",
+				className,
+			)}
+			trigger={
+				<>
+					<GlobeIcon className="size-4 shrink-0" />
+					{showLabel && (
+						<span className={cn("text-xs font-semibold whitespace-nowrap", labelClassName)}>{activeLanguageName}</span>
+					)}
+				</>
+			}
 			popupClassName="min-w-64 max-h-[calc(100dvh-3rem)]"
 			groups={[
 				{

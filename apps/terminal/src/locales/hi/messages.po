@@ -197,8 +197,8 @@ msgstr "इनमें से एक बाज़ार के लिए TWAP �
 #~ msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Accept"
-msgstr "स्वीकार करें"
+#~ msgid "Accept"
+#~ msgstr "स्वीकार करें"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "Accept the HIP-3 deployer disclaimer before trading these markets."
@@ -1304,6 +1304,10 @@ msgstr "वॉलेट में निरस्तीकरण की पु�
 #: src/components/trade/components/mobile-agent-sync-modal.tsx
 msgid "Confirm the approval only in the selected master wallet."
 msgstr "स्वीकृति की पुष्टि केवल चयनित मास्टर वॉलेट में करें।"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Confirm the gas-free request in your selected wallet."
+msgstr "अपने चुने हुए वॉलेट में गैस-मुक्त अनुरोध की पुष्टि करें।"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -5544,6 +5548,10 @@ msgstr "सभी ऑर्डर चुनें"
 #~ msgid "Select asset to bridge"
 #~ msgstr ""
 
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Select both items to continue."
+msgstr "जारी रखने के लिए दोनों विकल्प चुनें।"
+
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select favorite markets"
 msgstr "पसंदीदा बाज़ार चुनें"
@@ -6451,6 +6459,10 @@ msgid "Terms"
 msgstr "शर्तें"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "Terms acceptance is linked to the selected wallet."
+msgstr "शर्तों की स्वीकृति चुने हुए वॉलेट से जुड़ी है।"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Terms of Use, Privacy Policy, and Cookie Policy"
 msgstr "उपयोग की शर्तें, गोपनीयता नीति और कुकी नीति"
 
@@ -6877,6 +6889,10 @@ msgstr "यह QR किसी अन्य नेटवर्क के लि�
 #: src/routes/mobile-agent-sync.tsx
 msgid "This QR was created for a different site."
 msgstr "यह QR किसी अन्य साइट के लिए बनाया गया था।"
+
+#: src/components/trade/components/legal-acceptance-modal.tsx
+msgid "This signature is gas-free."
+msgstr "इस हस्ताक्षर के लिए गैस शुल्क नहीं लगता है।"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This spot asset is enabled independently by Unit, a third-party provider."

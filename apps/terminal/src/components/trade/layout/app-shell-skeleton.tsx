@@ -1,3 +1,6 @@
+import { APP_HEADER_HEIGHT_CLASS } from "@/config/layout";
+import { cn } from "@/lib/cn";
+
 export function AppShellSkeleton() {
 	return (
 		<>
@@ -35,9 +38,15 @@ export function AppShellSkeleton() {
 				</div>
 			</div>
 			<div className="hidden h-screen w-full flex-col bg-background min-[1001px]:flex">
-				<div className="h-11 border-b border-stroke-weak/60 px-3 flex items-center gap-3 shrink-0">
-					<div className="h-4 w-32 rounded bg-surface animate-pulse" />
-					<div className="h-4 w-24 rounded bg-surface animate-pulse ml-auto" />
+				<div
+					className={cn(
+						APP_HEADER_HEIGHT_CLASS,
+						"flex shrink-0 items-center gap-2 border-b border-market-close-stroke-card px-5",
+					)}
+				>
+					<div className="size-[26px] animate-pulse rounded-[7px] bg-market-close-control" />
+					<div className="h-4 w-12 animate-pulse rounded bg-market-close-hover" />
+					<div className="ml-auto h-[34px] w-28 animate-pulse rounded-[10px] bg-market-close-hover" />
 				</div>
 				<div className="flex-1 min-h-0 animate-pulse bg-surface/20" />
 			</div>
