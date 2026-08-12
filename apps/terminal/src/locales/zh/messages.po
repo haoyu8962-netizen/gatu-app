@@ -201,8 +201,8 @@ msgstr "其中一个市场存在正在执行的 TWAP 委托。"
 #~ msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#~ msgid "Accept"
-#~ msgstr "接受"
+msgid "Accept"
+msgstr "接受"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "Accept the HIP-3 deployer disclaimer before trading these markets."
@@ -1319,8 +1319,8 @@ msgid "Confirm the approval only in the selected master wallet."
 msgstr "仅在所选主钱包中确认授权。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Confirm the gas-free request in your selected wallet."
-msgstr "请在所选钱包中确认免 Gas 请求。"
+#~ msgid "Confirm the gas-free request in your selected wallet."
+#~ msgstr "请在所选钱包中确认免 Gas 请求。"
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -5570,8 +5570,8 @@ msgstr "选择所有订单"
 #~ msgstr ""
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Select both items to continue."
-msgstr "请先勾选以上两项。"
+#~ msgid "Select both items to continue."
+#~ msgstr "请先勾选以上两项。"
 
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select favorite markets"
@@ -6480,8 +6480,8 @@ msgid "Terms"
 msgstr "条款"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Terms acceptance is linked to the selected wallet."
-msgstr "条款接受记录与所选钱包关联。"
+#~ msgid "Terms acceptance is linked to the selected wallet."
+#~ msgstr "条款接受记录与所选钱包关联。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Terms of Use, Privacy Policy, and Cookie Policy"
@@ -6916,8 +6916,8 @@ msgid "This QR was created for a different site."
 msgstr "此二维码是为其他站点创建的。"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "This signature is gas-free."
-msgstr "此签名无需支付 Gas 费。"
+#~ msgid "This signature is gas-free."
+#~ msgstr "此签名无需支付 Gas 费。"
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This spot asset is enabled independently by Unit, a third-party provider."

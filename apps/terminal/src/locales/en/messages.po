@@ -201,8 +201,8 @@ msgstr "A TWAP is active for one of these markets."
 #~ msgstr "About Builder Codes"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-#~ msgid "Accept"
-#~ msgstr "Accept"
+msgid "Accept"
+msgstr "Accept"
 
 #: src/hooks/trade/use-position-close-all-submit.ts
 msgid "Accept the HIP-3 deployer disclaimer before trading these markets."
@@ -1319,8 +1319,8 @@ msgid "Confirm the approval only in the selected master wallet."
 msgstr "Confirm the approval only in the selected master wallet."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Confirm the gas-free request in your selected wallet."
-msgstr "Confirm the gas-free request in your selected wallet."
+#~ msgid "Confirm the gas-free request in your selected wallet."
+#~ msgstr "Confirm the gas-free request in your selected wallet."
 
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
 #: src/components/trade/tradebox/bridge/executing-screen.tsx
@@ -5570,8 +5570,8 @@ msgstr "Select all orders"
 #~ msgstr "Select asset to bridge"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Select both items to continue."
-msgstr "Select both items to continue."
+#~ msgid "Select both items to continue."
+#~ msgstr "Select both items to continue."
 
 #: src/components/trade/header/favorites-strip.tsx
 msgid "Select favorite markets"
@@ -6480,8 +6480,8 @@ msgid "Terms"
 msgstr "Terms"
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "Terms acceptance is linked to the selected wallet."
-msgstr "Terms acceptance is linked to the selected wallet."
+#~ msgid "Terms acceptance is linked to the selected wallet."
+#~ msgstr "Terms acceptance is linked to the selected wallet."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
 msgid "Terms of Use, Privacy Policy, and Cookie Policy"
@@ -6916,8 +6916,8 @@ msgid "This QR was created for a different site."
 msgstr "This QR was created for a different site."
 
 #: src/components/trade/components/legal-acceptance-modal.tsx
-msgid "This signature is gas-free."
-msgstr "This signature is gas-free."
+#~ msgid "This signature is gas-free."
+#~ msgstr "This signature is gas-free."
 
 #: src/components/trade/components/market-asset-info.tsx
 msgid "This spot asset is enabled independently by Unit, a third-party provider."
