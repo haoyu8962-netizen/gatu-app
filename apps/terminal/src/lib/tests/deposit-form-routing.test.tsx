@@ -78,6 +78,10 @@ describe("DepositForm routing gate", () => {
 
 		expect(container.querySelector('[data-testid="funding-address"]')).not.toBeNull();
 		expect(container.querySelector('[data-testid="deposit-instructions"]')).not.toBeNull();
+		expect(container.firstElementChild?.className).toContain("font-market-close");
+		expect(container.textContent).toContain("Deposit USDC from Arbitrum");
+		expect(container.textContent).toContain("You send");
+		expect(container.textContent).toContain("Minimum 5 USDC");
 	});
 
 	it.each([

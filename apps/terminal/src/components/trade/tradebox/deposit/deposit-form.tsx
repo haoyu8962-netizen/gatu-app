@@ -3,7 +3,6 @@ import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import { formatUnits } from "viem";
-import { USDC_ICON_URL } from "@/config/bridge";
 import { MIN_DEPOSIT_USDC, USDC_DECIMALS } from "@/config/contracts";
 import type { UsdcRoutingQueryStatus, UsdcTransferRoute } from "@/domain/trade/usdc-routing";
 import { AmountInput } from "./amount-input";
@@ -67,7 +66,7 @@ export function DepositForm({
 		if (bridgeRoutingReady) return null;
 		if (routingStatus === "loading") {
 			return (
-				<div className="rounded-xs border border-stroke-weak/50 bg-fill-weaker px-3 py-2 text-center text-xs leading-relaxed text-fg-muted">
+				<div className="rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
 					<Trans>Checking the current Hyperliquid deposit route...</Trans>
 				</div>
 			);
@@ -75,7 +74,7 @@ export function DepositForm({
 		const isCctp = cctpRoutingReady;
 		if (isCctp && !fundingAddress) {
 			return (
-				<div className="rounded-xs border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2 text-center text-xs leading-relaxed text-fg-muted">
+				<div className="rounded-[10px] border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
 					<Trans>Hyperliquid currently requires a Circle CCTP deposit from Arbitrum.</Trans>
 				</div>
 			);
@@ -83,7 +82,7 @@ export function DepositForm({
 		return (
 			<div
 				role="alert"
-				className="rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error"
+				className="rounded-[10px] border border-market-close-danger-disabled bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 			>
 				<p>
 					{isCctp ? (
@@ -93,7 +92,13 @@ export function DepositForm({
 					)}
 				</p>
 				{!isCctp ? (
-					<Button variant="link" intent="brand" size="xxs" className="mt-1 h-auto p-0" onClick={onRetryRouting}>
+					<Button
+						variant="link"
+						intent="neutral"
+						size="xxs"
+						className="mt-1 h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
+						onClick={onRetryRouting}
+					>
 						<Trans>Retry</Trans>
 					</Button>
 				) : null}
@@ -131,29 +136,43 @@ export function DepositForm({
 		}
 		return null;
 	})();
+	const transferSelectors = (
+		<div className="space-y-1.5">
+			<div className="flex items-baseline justify-between gap-3 text-[11px] leading-4 text-market-close-subtle">
+				<span className="whitespace-nowrap">
+					<Trans>You send</Trans>
+				</span>
+				<span className="whitespace-nowrap tabular-nums">
+					<Trans>Minimum</Trans> {minimumDeposit}
+				</span>
+			</div>
+			<div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+				<AssetSelect presentation="funding" />
+				<span className="text-[13px] text-market-close-stroke-control" aria-hidden="true">
+					·
+				</span>
+				<NetworkSelect
+					label={fundingAddress ? t`Funding chain` : t`Network`}
+					value="arbitrum"
+					onChange={() => {}}
+					disabled
+					displayName={networkName}
+					presentation="funding"
+				/>
+			</div>
+		</div>
+	);
 
 	if (fundingAddress) {
 		return (
-			<div className="flex flex-1 flex-col gap-4">
-				<div className="flex flex-col items-center gap-3 pt-1">
-					<div className="flex size-12 items-center justify-center rounded-full border border-stroke-brand-strong/40 bg-brand-soft">
-						<img src={USDC_ICON_URL} alt="USDC" className="size-8 rounded-full" />
-					</div>
-					<h3 className="text-base font-semibold text-fg">
+			<div className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg">
+				<div className="pt-0.5 text-center">
+					<h3 className="text-[15px] leading-5 font-bold">
 						<Trans>Deposit USDC from Arbitrum</Trans>
 					</h3>
 				</div>
 
-				<div className="grid grid-cols-2 gap-2">
-					<AssetSelect />
-					<NetworkSelect
-						label={<Trans>Funding chain</Trans>}
-						value="arbitrum"
-						onChange={() => {}}
-						disabled
-						displayName={networkName}
-					/>
-				</div>
+				{transferSelectors}
 
 				{routingNotice}
 
@@ -165,10 +184,10 @@ export function DepositForm({
 							<div
 								className={
 									embeddedDepositStatus.tone === "error"
-										? "rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error"
+										? "rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger"
 										: embeddedDepositStatus.tone === "success"
-											? "rounded-xs border border-stroke-success-strong/50 bg-success-soft px-3 py-2 text-center text-xs leading-relaxed text-success"
-											: "rounded-xs border border-stroke-weak/50 bg-fill-weaker px-3 py-2 text-center text-xs leading-relaxed text-fg-muted"
+											? "rounded-[10px] border border-stroke-success-weak bg-success-soft px-3 py-2.5 text-center text-xs leading-relaxed text-success"
+											: "rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted"
 								}
 							>
 								{embeddedDepositStatus.text}
@@ -179,12 +198,8 @@ export function DepositForm({
 					</>
 				) : null}
 
-				<Button variant="filled" intent="brand" onClick={onDone} className="w-full">
-					<Trans>Done</Trans>
-				</Button>
-
 				{bridgeRoutingReady ? (
-					<div className="rounded-xs border border-stroke-error-strong/60 bg-error-soft px-3 py-2 text-center text-xs leading-relaxed text-error">
+					<div className="rounded-[10px] border border-stroke-error-weak bg-error-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-danger">
 						<WarningCircleIcon className="mr-1 inline size-3.5 align-[-2px]" />
 						<Trans>
 							Important: this address can only receive native USDC on Arbitrum. Do not send USDC.e or assets from other
@@ -192,26 +207,32 @@ export function DepositForm({
 						</Trans>
 					</div>
 				) : null}
+
+				<Button
+					variant="filled"
+					intent="neutral"
+					onClick={onDone}
+					className="min-h-11 w-full rounded-[12px] bg-market-close-control text-[13px] font-bold text-market-close-on-control shadow-none hover:opacity-90"
+				>
+					<Trans>Done</Trans>
+				</Button>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-1 flex-col gap-2">
-			<div className="grid grid-cols-2 gap-2">
-				<AssetSelect />
-				<NetworkSelect
-					label={<Trans>Network</Trans>}
-					value="arbitrum"
-					onChange={() => {}}
-					disabled
-					displayName={networkName}
-				/>
+		<div className="flex flex-1 flex-col gap-3.5 font-market-close text-market-close-fg">
+			<div className="pt-0.5 text-center">
+				<h3 className="text-[15px] leading-5 font-bold">
+					<Trans>Deposit USDC from Arbitrum</Trans>
+				</h3>
 			</div>
+
+			{transferSelectors}
 
 			{routingNotice}
 			{pendingCctpRecovery ? (
-				<div className="rounded-xs border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2 text-center text-xs leading-relaxed text-fg-muted">
+				<div className="rounded-[10px] border border-stroke-brand-strong/40 bg-brand-soft px-3 py-2.5 text-center text-xs leading-relaxed text-market-close-muted">
 					<Trans>A previous CCTP deposit is still being tracked. Do not resubmit the same transfer.</Trans>
 				</div>
 			) : null}

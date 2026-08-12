@@ -1,7 +1,6 @@
 import { Button } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { CheckIcon, CopyIcon } from "@phosphor-icons/react";
 import { useEffect, useRef } from "react";
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 
@@ -38,29 +37,37 @@ export function FundingAddressCard({ address }: Props) {
 	}, [address]);
 
 	return (
-		<div className="flex flex-col items-center gap-3 rounded-12 border border-stroke-weak/50 bg-fill-weaker p-3">
-			<div className="rounded-8 bg-white p-2 shadow-sm">
-				<canvas ref={canvasRef} className="block size-[132px]" role="img" aria-label={t`Deposit address QR code`} />
+		<div className="flex flex-col items-center gap-4">
+			<div className="flex size-[140px] items-center justify-center rounded-[12px] border border-market-close-stroke-card bg-market-close-card p-[3px]">
+				<canvas
+					ref={canvasRef}
+					className="block size-[132px] rounded-[8px] bg-white"
+					role="img"
+					aria-label={t`Deposit address QR code`}
+				/>
 			</div>
 
 			<div className="w-full space-y-1.5">
-				<p className="text-2xs font-medium uppercase tracking-wide text-fg-muted">
+				<p className="text-[11px] leading-4 text-market-close-subtle">
 					<Trans>Deposit address</Trans>
 				</p>
-				<div className="flex min-h-11 items-center gap-2 rounded-8 border border-stroke-weak bg-surface px-3 py-2">
-					<span className="min-w-0 flex-1 break-all font-mono text-xs leading-relaxed tabular-nums text-fg">
+				<div className="flex min-h-12 items-center gap-2.5 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2">
+					<span
+						className="min-w-0 flex-1 break-all text-center font-mono text-xs leading-[18px] tabular-nums text-market-close-fg"
+						title={address}
+					>
 						{address}
 					</span>
 					<Button
 						type="button"
-						variant="ghost"
+						variant="outline"
 						intent="neutral"
 						size="xs"
 						onClick={() => copy(address)}
 						aria-label={copied ? t`Copied` : t`Copy deposit address`}
-						className="shrink-0"
+						className="min-h-11 shrink-0 rounded-[7px] border-market-close-stroke-input bg-modal px-2.5 text-[11px] font-semibold text-market-close-fg shadow-none hover:border-market-close-control min-[1001px]:min-h-7"
 					>
-						{copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+						{copied ? <Trans>Copied</Trans> : <Trans>Copy Address</Trans>}
 					</Button>
 				</div>
 			</div>

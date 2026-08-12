@@ -18,17 +18,35 @@ interface NetworkSelectProps {
 	onChange: (value: NetworkId) => void;
 	disabled?: boolean;
 	displayName?: string;
+	presentation?: "default" | "funding";
 }
 
-export function NetworkSelect({ label, value, onChange, disabled, displayName }: NetworkSelectProps) {
+export function NetworkSelect({
+	label,
+	value,
+	onChange,
+	disabled,
+	displayName,
+	presentation = "default",
+}: NetworkSelectProps) {
+	const fundingPresentation = presentation === "funding";
+
 	return (
 		<Select
-			label={label as string}
+			label={fundingPresentation ? undefined : (label as string)}
+			triggerAriaLabel={fundingPresentation ? (label as string) : undefined}
 			value={value}
 			onValueChange={(v) => {
 				if (v) onChange(v as NetworkId);
 			}}
 			disabled={disabled}
+			size={fundingPresentation ? "lg" : undefined}
+			className={fundingPresentation ? "min-w-0" : undefined}
+			triggerClassName={
+				fundingPresentation
+					? "min-h-10 rounded-[10px] border-market-close-stroke-input bg-modal !px-3 !py-2 text-market-close-fg data-disabled:!cursor-default data-disabled:!border-market-close-stroke-input data-disabled:!text-market-close-fg [&_svg]:size-3"
+					: undefined
+			}
 			options={NETWORKS.map((n) => ({ value: n.id, label: displayName && n.id === value ? displayName : n.name }))}
 		/>
 	);

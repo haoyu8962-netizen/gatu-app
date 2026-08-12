@@ -50,6 +50,10 @@ describe("FundingAddressCard", () => {
 			expect.objectContaining({ errorCorrectionLevel: "M", margin: 1 }),
 		);
 		expect(container.textContent).toContain(address);
-		expect(container.querySelector('button[aria-label="Copy deposit address"]')).not.toBeNull();
+		const qrCanvas = container.querySelector('canvas[aria-label="Deposit address QR code"]');
+		expect(qrCanvas?.parentElement?.className).toContain("size-[140px]");
+		const copyButton = container.querySelector<HTMLButtonElement>('button[aria-label="Copy deposit address"]');
+		expect(copyButton?.className).toContain("min-h-11");
+		expect(copyButton?.textContent).toBe("Copy Address");
 	});
 });

@@ -1,5 +1,6 @@
 import { AdaptiveModal } from "@gatu/ui";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/cn";
 
 interface Props {
 	children: ReactNode;
@@ -7,9 +8,21 @@ interface Props {
 	onOpenChange: (open: boolean) => void;
 	open: boolean;
 	presentation?: "modal" | "drawer";
+	className?: string;
+	handleClassName?: string;
+	overlayClassName?: string;
 }
 
-export function PendingActionModal({ children, isPending, onOpenChange, open, presentation = "modal" }: Props) {
+export function PendingActionModal({
+	children,
+	isPending,
+	onOpenChange,
+	open,
+	presentation = "modal",
+	className,
+	handleClassName,
+	overlayClassName,
+}: Props) {
 	return (
 		<AdaptiveModal
 			open={open}
@@ -19,8 +32,12 @@ export function PendingActionModal({ children, isPending, onOpenChange, open, pr
 			dismissible={!isPending}
 			showClose={!isPending}
 			showHandle={presentation === "drawer"}
-			handleClassName="top-2 h-1 w-9 bg-fill/30"
-			className={presentation === "drawer" ? "max-h-[calc(100dvh-1rem)] overflow-y-auto !rounded-t-[18px]" : undefined}
+			handleClassName={cn("top-2 h-1 w-9 bg-fill/30", handleClassName)}
+			overlayClassName={overlayClassName}
+			className={cn(
+				presentation === "drawer" && "max-h-[calc(100dvh-1rem)] overflow-y-auto !rounded-t-[18px]",
+				className,
+			)}
 		>
 			{children}
 		</AdaptiveModal>

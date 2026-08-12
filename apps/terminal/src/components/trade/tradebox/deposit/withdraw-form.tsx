@@ -1,18 +1,11 @@
 import { Button, Select, TextInput } from "@gatu/ui";
 import { t } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-	ArrowLineDownIcon,
-	ArrowLineUpIcon,
-	ClockIcon,
-	SpinnerGapIcon,
-	WalletIcon,
-	WarningCircleIcon,
-} from "@phosphor-icons/react";
+import { SpinnerGapIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { useId } from "react";
 import { InfoRow } from "@/components/ui/info-row";
 import { NumberInput } from "@/components/ui/number-input";
 import { USDC_TRANSFER_DECIMALS } from "@/config/app";
-import { USDC_ICON_URL } from "@/config/bridge";
 import { NETWORKS } from "@/config/networks";
 import type { UsdcRoutingQueryStatus } from "@/domain/trade/usdc-routing";
 import { cn } from "@/lib/cn";
@@ -58,7 +51,6 @@ export function WithdrawForm({
 	onDestinationChange,
 	destinationRequired,
 	destinationError,
-	available,
 	maxAmount,
 	route,
 	routingStatus,
@@ -79,7 +71,9 @@ export function WithdrawForm({
 	onTransferClick,
 }: Props) {
 	const { t: translate } = useLingui();
-	const availableNum = toNumberOrZero(available);
+	const amountInputId = useId();
+	const amountErrorId = useId();
+	const destinationErrorId = useId();
 	const maxAmountNum = toNumberOrZero(maxAmount);
 	const netReceived = getWithdrawalNetReceived(amount, routeFee);
 	const routeOptions = [
@@ -91,22 +85,25 @@ export function WithdrawForm({
 	const routingNotice = (() => {
 		if (routingStatus === "loading") {
 			return (
-				<div className="rounded-8 border border-stroke-weak/40 bg-fill-weaker p-2.5 text-xs text-fg-muted">
+				<div className="rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3 py-2.5 text-xs leading-[17px] text-market-close-muted">
 					<Trans>Checking the current Hyperliquid withdrawal route...</Trans>
 				</div>
 			);
 		}
 		if (routingStatus === "error" || routingStatus === "unknown") {
 			return (
-				<div role="alert" className="rounded-8 border border-stroke-error-weak bg-error-soft p-2.5 text-xs text-error">
+				<div
+					role="alert"
+					className="rounded-[10px] border border-market-close-danger-disabled bg-error-soft px-3 py-2.5 text-xs leading-[17px] text-market-close-danger"
+				>
 					<p>
 						<Trans>Unable to verify the current Hyperliquid withdrawal route.</Trans>
 					</p>
 					<Button
 						variant="link"
-						intent="brand"
+						intent="neutral"
 						size="xxs"
-						className="mt-1 h-auto p-0"
+						className="mt-1 h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
 						onClick={onRetryPrerequisites}
 						disabled={isPending}
 					>
@@ -119,7 +116,7 @@ export function WithdrawForm({
 			return (
 				<div
 					role="alert"
-					className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning"
+					className="rounded-[10px] border border-market-close-warning/30 bg-warning-soft px-3 py-2.5 text-xs leading-[17px] text-market-close-warning"
 				>
 					<Trans>The Hyperliquid withdrawal route changed. Review the updated route and fee, then submit again.</Trans>
 				</div>
@@ -129,52 +126,79 @@ export function WithdrawForm({
 	})();
 
 	return (
-		<div className="flex flex-1 flex-col gap-4">
-			<div className="flex flex-col items-center gap-3 pt-1 text-center">
-				<div className="flex size-12 items-center justify-center rounded-full border border-stroke-brand-strong/40 bg-brand-soft">
-					<img src={USDC_ICON_URL} alt="USDC" className="size-8 rounded-full" />
+		<div className="flex flex-1 flex-col gap-3.5 font-market-close">
+			<div className="flex flex-col items-center gap-2 text-center">
+				<div
+					className="grid size-10 place-items-center rounded-full bg-market-close-control text-sm font-bold text-market-close-on-control"
+					aria-hidden="true"
+				>
+					$
 				</div>
-				<div className="space-y-1">
-					<h3 className="text-base font-semibold text-fg">
+				<div className="space-y-0.5">
+					<h3 className="text-[15px] leading-[21px] font-bold text-market-close-fg">
 						<Trans>Withdraw USDC</Trans>
 					</h3>
-					<p className="text-xs text-fg-muted">
+					<p className="text-[11px] leading-[18px] text-market-close-subtle">
 						<Trans>Send funds from Hyperliquid to an Arbitrum address.</Trans>
 					</p>
 				</div>
 			</div>
 
-			<div className="grid grid-cols-2 gap-2">
-				<AssetSelect />
-				<Select label={translate`Withdrawal route`} value={route} options={routeOptions} disabled />
+			<div className="flex flex-col gap-2">
+				<div className="[&>div]:!grid [&>div]:min-h-11 [&>div]:grid-cols-[auto_minmax(0,1fr)] [&>div]:items-center [&>div]:gap-3 [&>div]:rounded-[10px] [&>div]:border [&>div]:border-market-close-stroke-input [&>div]:bg-modal [&>div]:px-3 [&>div>label]:text-[13px] [&>div>label]:font-normal [&>div>label]:!text-market-close-muted [&_[role=combobox]]:min-h-0 [&_[role=combobox]]:justify-end [&_[role=combobox]]:border-0 [&_[role=combobox]]:bg-transparent [&_[role=combobox]]:p-0 [&_[role=combobox]]:shadow-none [&_[role=combobox]]:focus-visible:outline-none [&_[role=combobox]>span]:text-right [&_[role=combobox]>span]:text-[13px] [&_[role=combobox]>span]:font-semibold [&_[role=combobox]>span]:text-market-close-fg">
+					<AssetSelect />
+				</div>
+				<Select
+					label={translate`Withdrawal route`}
+					value={route}
+					options={routeOptions}
+					disabled
+					className="!grid min-h-11 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-[10px] border border-market-close-stroke-input bg-modal px-3 [&>label]:text-[13px] [&>label]:font-normal [&>label]:!text-market-close-muted"
+					triggerClassName="min-h-0 justify-end !rounded-none !border-0 !bg-transparent !p-0 !shadow-none focus-visible:!outline-none data-disabled:!text-market-close-fg [&>span]:text-right [&>span]:!text-[13px] [&>span]:font-semibold [&>span]:!text-market-close-fg"
+				/>
 			</div>
 
 			{routingNotice}
 
 			<div>
-				<NumberInput
-					label={t`Amount`}
-					labelValue={
-						<>
-							{t`Available`}:{" "}
-							<span className="underline decoration-dashed underline-offset-2 decoration-fg-muted/50">
-								{formatNumber(availableNum, 2)} USDC
-							</span>
-						</>
-					}
-					onLabelValueClick={() => !isPending && onAmountChange(floorToString(maxAmountNum, USDC_TRANSFER_DECIMALS))}
-					placeholder="0.00"
-					value={amount}
-					onChange={(e) => onAmountChange(limitDecimalInput(e.target.value, USDC_TRANSFER_DECIMALS))}
-					disabled={isPending}
-					mobileSafe
+				<div
 					className={cn(
-						"w-full tabular-nums",
-						validation.error && "border-stroke-error-strong focus:border-stroke-error-strong",
+						"grid min-h-11 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-[10px] border border-market-close-stroke-input bg-modal pl-3",
+						validation.error && "border-market-close-danger",
 					)}
-				/>
-				<p className={cn("h-4 text-xs flex items-center gap-1", validation.error ? "text-error" : "invisible")}>
-					<WarningCircleIcon className="size-3" />
+				>
+					<label htmlFor={amountInputId} className="shrink-0 whitespace-nowrap text-[13px] text-market-close-muted">
+						<Trans>Amount</Trans>
+					</label>
+					<div className="min-w-0 [&_button]:right-3 [&_button]:min-h-11 [&_button]:text-market-close-success [&_button]:active:scale-100">
+						<NumberInput
+							id={amountInputId}
+							aria-describedby={validation.error ? amountErrorId : undefined}
+							aria-invalid={validation.error ? true : undefined}
+							placeholder="0.00"
+							value={amount}
+							onChange={(e) => onAmountChange(limitDecimalInput(e.target.value, USDC_TRANSFER_DECIMALS))}
+							disabled={isPending}
+							mobileSafe
+							maxLabel={
+								<span className="font-semibold tabular-nums">
+									<Trans>Max</Trans>: {formatNumber(maxAmountNum, 2)}
+								</span>
+							}
+							onMaxClick={() => onAmountChange(floorToString(maxAmountNum, USDC_TRANSFER_DECIMALS))}
+							className="h-11 rounded-none border-0 bg-transparent px-2 pr-[7.75rem] text-right text-base leading-5 font-semibold text-market-close-fg tabular-nums shadow-none focus-visible:border-transparent focus-visible:ring-0 min-[1001px]:text-[13px] min-[1001px]:leading-[18px]"
+						/>
+					</div>
+				</div>
+				<p
+					id={amountErrorId}
+					role={validation.error ? "alert" : undefined}
+					className={cn(
+						"flex h-4 items-center gap-1 text-xs",
+						validation.error ? "text-market-close-danger" : "invisible",
+					)}
+				>
+					<WarningCircleIcon className="size-3 shrink-0" />
 					{validation.error || " "}
 				</p>
 			</div>
@@ -182,6 +206,9 @@ export function WithdrawForm({
 			{destinationRequired && (
 				<div>
 					<TextInput
+						aria-label={t`Destination address`}
+						aria-describedby={destinationError ? destinationErrorId : undefined}
+						aria-invalid={destinationError ? true : undefined}
 						placeholder={t`Destination address`}
 						value={destination}
 						onChange={(e) => onDestinationChange(e.target.value)}
@@ -189,32 +216,39 @@ export function WithdrawForm({
 						spellCheck={false}
 						disabled={isPending}
 						className={cn(
-							"font-mono text-xs tabular-nums",
-							destinationError && "border-stroke-error-strong focus-visible:border-stroke-error-strong",
+							"min-h-11 !rounded-[10px] !border-market-close-stroke-input !bg-modal px-3 py-0 font-mono tabular-nums focus-within:!outline-market-close-control",
+							destinationError && "!border-market-close-danger focus-within:!outline-market-close-danger",
 						)}
-						inputClassName="max-[1000px]:text-base max-[1000px]:leading-5"
+						inputClassName="text-base leading-5 font-semibold text-market-close-fg placeholder:text-market-close-muted min-[1001px]:text-[13px] min-[1001px]:leading-[18px]"
 					/>
-					<p className={cn("h-4 text-xs flex items-center gap-1", destinationError ? "text-error" : "invisible")}>
-						<WarningCircleIcon className="size-3" />
+					<p
+						id={destinationErrorId}
+						role={destinationError ? "alert" : undefined}
+						className={cn(
+							"flex h-4 items-center gap-1 text-xs",
+							destinationError ? "text-market-close-danger" : "invisible",
+						)}
+					>
+						<WarningCircleIcon className="size-3 shrink-0" />
 						{destinationError || " "}
 					</p>
-					<p className="text-2xs text-fg-muted">
+					<p className="text-[11px] leading-[17px] text-market-close-subtle">
 						<Trans>USDC will be sent to this Arbitrum address.</Trans>
 					</p>
 				</div>
 			)}
 
 			{showSpotFundsNotice && (
-				<div className="rounded-8 border border-stroke-warning-weak bg-warning-soft p-2.5 text-xs text-warning">
+				<div className="rounded-[10px] border border-market-close-warning/30 bg-warning-soft px-3 py-2.5 text-xs leading-[17px] text-market-close-warning">
 					<div className="tabular-nums">
 						<Trans>Funds are in Spot account</Trans>: {formatNumber(spotAvailable, 2)} USDC
 					</div>
 					{onTransferClick ? (
 						<Button
 							variant="link"
-							intent="brand"
+							intent="neutral"
 							size="xxs"
-							className="mt-1 h-auto p-0"
+							className="mt-1 h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
 							onClick={onTransferClick}
 							disabled={isPending}
 						>
@@ -225,14 +259,17 @@ export function WithdrawForm({
 			)}
 
 			{prerequisiteError ? (
-				<div role="alert" className="rounded-8 border border-stroke-error-weak bg-error-soft p-2.5 text-xs text-error">
+				<div
+					role="alert"
+					className="rounded-[10px] border border-market-close-danger-disabled bg-error-soft px-3 py-2.5 text-xs leading-[17px] text-market-close-danger"
+				>
 					<p>{prerequisiteError}</p>
 					{canRetryPrerequisites ? (
 						<Button
 							variant="link"
-							intent="brand"
+							intent="neutral"
 							size="xxs"
-							className="mt-1 h-auto p-0"
+							className="mt-1 h-auto p-0 text-market-close-fg active:not-data-disabled:scale-100"
 							onClick={onRetryPrerequisites}
 							disabled={isPending}
 						>
@@ -242,48 +279,36 @@ export function WithdrawForm({
 				</div>
 			) : null}
 
-			<div className="space-y-2 rounded-8 border border-stroke-weak/40 bg-fill-weaker p-3 text-xs">
+			<div className="space-y-2 rounded-[10px] border border-market-close-stroke-card bg-market-close-card px-3.5 py-3 text-xs">
 				<InfoRow
 					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<WalletIcon className="size-3" />
-							<Trans>Withdrawal fee</Trans>
-						</>
-					}
+					labelClassName="min-w-0 pr-3 leading-[17px] text-market-close-muted"
+					label={<Trans>Withdrawal fee</Trans>}
 					value={routeFee === null ? "--" : `$${formatNumber(toNumberOrZero(routeFee), 2)}`}
+					valueClassName="whitespace-nowrap font-semibold text-market-close-fg"
 				/>
 				{showActivationFee ? (
 					<InfoRow
 						className="p-0"
-						labelClassName="flex items-center gap-1.5 text-fg"
+						labelClassName="min-w-0 pr-3 leading-[17px] text-market-close-muted"
 						label={<Trans>One-time account activation fee</Trans>}
 						value={`$${formatNumber(toNumberOrZero(activationFee), 2)}`}
+						valueClassName="whitespace-nowrap font-semibold text-market-close-fg"
 					/>
 				) : null}
 				<InfoRow
 					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<ArrowLineDownIcon className="size-3" />
-							<Trans>Net received</Trans>
-						</>
-					}
+					labelClassName="min-w-0 pr-3 leading-[17px] text-market-close-muted"
+					label={<Trans>Net received</Trans>}
 					value={netReceived === null ? "--" : `$${formatNumber(toNumberOrZero(netReceived), 2)}`}
+					valueClassName="whitespace-nowrap font-semibold text-market-close-fg"
 				/>
 				<InfoRow
 					className="p-0"
-					labelClassName="flex items-center gap-1.5 text-fg"
-					label={
-						<>
-							<ClockIcon className="size-3" />
-							<Trans>Estimated time</Trans>
-						</>
-					}
+					labelClassName="min-w-0 pr-3 leading-[17px] text-market-close-muted"
+					label={<Trans>Estimated time</Trans>}
 					value={ARBITRUM_NETWORK.estimatedWithdrawTime}
-					valueClassName="font-medium"
+					valueClassName="whitespace-nowrap font-semibold text-market-close-fg"
 				/>
 			</div>
 
@@ -292,18 +317,17 @@ export function WithdrawForm({
 				intent="neutral"
 				onClick={onSubmit}
 				disabled={!canSubmit || isPending || prerequisitesPending}
-				className="mt-auto w-full"
+				className="mt-auto min-h-11 w-full !rounded-[10px] !bg-market-close-control text-[13px] font-bold !text-market-close-on-control !shadow-none active:not-data-disabled:!scale-100 data-disabled:!bg-market-close-stroke-control data-disabled:!text-market-close-on-control"
 			>
 				{isPending || prerequisitesPending ? (
 					<>
-						<SpinnerGapIcon className="size-4 animate-spin" />
+						<SpinnerGapIcon className="size-4 animate-spin motion-reduce:animate-none" />
 						<Trans>Processing...</Trans>
 					</>
+				) : destinationRequired ? (
+					<Trans>Withdraw to Arbitrum</Trans>
 				) : (
-					<>
-						<ArrowLineUpIcon className="size-4" />
-						{destinationRequired ? <Trans>Withdraw to Arbitrum</Trans> : <Trans>Withdraw</Trans>}
-					</>
+					<Trans>Withdraw</Trans>
 				)}
 			</Button>
 		</div>
