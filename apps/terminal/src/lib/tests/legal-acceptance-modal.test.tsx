@@ -38,61 +38,99 @@ vi.mock("@/hooks/wallet/use-wallet-session", () => ({
 vi.mock("@gatu/ui", () => ({
 	AdaptiveModal: ({
 		children,
+		className,
 		dismissible,
 		layer,
 		open,
+		overlayClassName,
 		presentation,
 		showClose,
+		showHandle,
 	}: {
 		children: ReactNode;
+		className?: string;
 		dismissible: boolean;
 		layer: string;
 		open: boolean;
+		overlayClassName?: string;
 		presentation: string;
 		showClose: boolean;
+		showHandle: boolean;
 	}) =>
 		open
 			? createElement(
 					"div",
 					{
+						className,
 						"data-dismissible": String(dismissible),
 						"data-layer": layer,
+						"data-overlay-class": overlayClassName,
 						"data-presentation": presentation,
 						"data-show-close": String(showClose),
+						"data-show-handle": String(showHandle),
 						role: "dialog",
 					},
 					children,
 				)
 			: null,
-	Button: ({ children, disabled, onClick }: { children: ReactNode; disabled?: boolean; onClick?: () => void }) =>
-		createElement("button", { disabled, onClick, type: "button" }, children),
+	Button: ({
+		"aria-busy": ariaBusy,
+		children,
+		className,
+		disabled,
+		onClick,
+	}: {
+		"aria-busy"?: boolean;
+		children: ReactNode;
+		className?: string;
+		disabled?: boolean;
+		onClick?: () => void;
+	}) => createElement("button", { "aria-busy": ariaBusy, className, disabled, onClick, type: "button" }, children),
 	Checkbox: ({
 		checked,
+		className,
+		controlClassName,
 		disabled,
+		indicatorClassName,
 		label,
+		labelClassName,
 		onCheckedChange,
+		size,
 	}: {
 		checked: boolean;
+		className?: string;
+		controlClassName?: string;
 		disabled?: boolean;
+		indicatorClassName?: string;
 		label: ReactNode;
+		labelClassName?: string;
 		onCheckedChange: (checked: boolean) => void;
+		size: string;
 	}) =>
 		createElement(
 			"label",
-			null,
+			{ className },
 			createElement("input", {
 				checked,
+				"data-control-class": controlClassName,
+				"data-indicator-class": indicatorClassName,
+				"data-size": size,
 				disabled,
 				onChange: (event: { currentTarget: { checked: boolean } }) => onCheckedChange(event.currentTarget.checked),
 				type: "checkbox",
 			}),
-			label,
+			createElement("span", { className: labelClassName }, label),
 		),
-	ModalContent: ({ children }: { children: ReactNode }) => createElement("div", null, children),
-	ModalDescription: ({ children }: { children: ReactNode }) => createElement("p", null, children),
-	ModalFooter: ({ children }: { children: ReactNode }) => createElement("footer", null, children),
-	ModalHeader: ({ children }: { children: ReactNode }) => createElement("header", null, children),
-	ModalTitle: ({ children }: { children: ReactNode }) => createElement("h2", null, children),
+	ModalContent: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("div", { className }, children),
+	ModalDescription: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("p", { className }, children),
+	ModalFooter: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("footer", { className }, children),
+	ModalHeader: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("header", { className }, children),
+	ModalTitle: ({ children, className }: { children: ReactNode; className?: string }) =>
+		createElement("h2", { className }, children),
 }));
 
 function findButton(container: HTMLElement, label: string): HTMLButtonElement {
@@ -146,19 +184,42 @@ describe("LegalAcceptanceModal", () => {
 		expect(dialog?.getAttribute("data-dismissible")).toBe("false");
 		expect(dialog?.getAttribute("data-layer")).toBe("blocking");
 		expect(dialog?.getAttribute("data-show-close")).toBe("false");
+		expect(dialog?.getAttribute("data-show-handle")).toBe("false");
 		expect(dialog?.getAttribute("data-presentation")).toBe("modal");
+		expect(dialog?.getAttribute("data-overlay-class")).toContain("!bg-trading-panel-scrim");
+		expect(dialog?.className).toContain("min-[1001px]:!max-w-[30rem]");
+		expect(dialog?.className).toContain("min-[1001px]:!shadow-legal-acceptance");
+
+		const content = container.querySelector('[data-slot="legal-acceptance-content"]');
+		expect(content?.className).toContain("min-[1001px]:gap-[18px]");
+		expect(content?.className).toContain("min-[1001px]:p-6");
+		expect(container.querySelector('[data-slot="legal-acceptance-drawer-handle"]')?.className).toContain(
+			"min-[1001px]:hidden",
+		);
 
 		const checkboxes = container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
 		expect(checkboxes).toHaveLength(2);
-		expect(findButton(container, "Accept").disabled).toBe(true);
+		expect(checkboxes[0]?.getAttribute("data-control-class")).toContain("size-[17px]");
+		expect(checkboxes[0]?.getAttribute("data-control-class")).toContain("rounded-[5px]");
+		const confirmButton = findButton(container, "Confirm in wallet");
+		const declineButton = findButton(container, "Decline");
+		expect(declineButton.compareDocumentPosition(confirmButton) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+		expect(confirmButton.disabled).toBe(true);
+		expect(container.textContent).toContain("Select both items to continue.");
 
 		act(() => checkboxes[0]?.click());
-		expect(findButton(container, "Accept").disabled).toBe(true);
+		expect(findButton(container, "Confirm in wallet").disabled).toBe(true);
 		act(() => checkboxes[1]?.click());
-		expect(findButton(container, "Accept").disabled).toBe(false);
+		expect(findButton(container, "Confirm in wallet").disabled).toBe(false);
+		expect(container.textContent).toContain("This signature is gas-free.");
 
-		act(() => findButton(container, "Accept").click());
+		act(() => findButton(container, "Confirm in wallet").click());
 		expect(onAccept).toHaveBeenCalledOnce();
+
+		for (const link of container.querySelectorAll<HTMLAnchorElement>('a[target="_blank"]')) {
+			expect(link.rel).toBe("noopener noreferrer");
+			expect(link.className).toContain("underline");
+		}
 	});
 
 	it("uses the mobile drawer and disconnects when the user declines", async () => {
@@ -178,8 +239,67 @@ describe("LegalAcceptanceModal", () => {
 		});
 
 		expect(container.querySelector('[role="dialog"]')?.getAttribute("data-presentation")).toBe("drawer");
+		const handle = container.querySelector('[data-slot="legal-acceptance-drawer-handle"]');
+		expect(handle?.className).toContain("h-1");
+		expect(handle?.className).toContain("w-9");
+
+		const confirmButton = findButton(container, "Confirm in wallet");
+		const declineButton = findButton(container, "Decline");
+		expect(confirmButton.compareDocumentPosition(declineButton) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+		expect(confirmButton.className).toContain("h-[46px]");
+		expect(declineButton.className).toContain("!border-transparent");
 		act(() => findButton(container, "Decline").click());
 		expect(testState.disconnectWallet).toHaveBeenCalledOnce();
+	});
+
+	it("keeps acknowledgements visible and locks every action while the wallet request is pending", async () => {
+		const { LegalAcceptanceModal } = await import("@/components/trade/components/legal-acceptance-modal");
+		const props = {
+			acceptanceError: null,
+			onAccept,
+			onRetryStatus,
+			onResetAcceptance,
+		};
+
+		act(() => root.render(createElement(LegalAcceptanceModal, { ...props, state: "required" })));
+		const checkboxes = container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+		act(() => checkboxes[0]?.click());
+		act(() => checkboxes[1]?.click());
+
+		act(() => root.render(createElement(LegalAcceptanceModal, { ...props, state: "submitting" })));
+
+		for (const checkbox of container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')) {
+			expect(checkbox.checked).toBe(true);
+			expect(checkbox.disabled).toBe(true);
+			expect(checkbox.parentElement?.className).toContain("opacity-100");
+			expect(checkbox.parentElement?.className).not.toContain("hover:bg-market-close-card");
+		}
+
+		const confirmButton = findButton(container, "Confirm in wallet…");
+		expect(confirmButton.disabled).toBe(true);
+		expect(confirmButton.getAttribute("aria-busy")).toBe("true");
+		expect(confirmButton.className).toContain("data-disabled:!bg-legal-acceptance-pending");
+		expect(findButton(container, "Decline").disabled).toBe(true);
+		expect(container.textContent).toContain("Confirm the gas-free request in your selected wallet.");
+	});
+
+	it("keeps an acceptance failure visible without changing the acknowledgement gate", async () => {
+		const { LegalAcceptanceModal } = await import("@/components/trade/components/legal-acceptance-modal");
+
+		act(() => {
+			root.render(
+				createElement(LegalAcceptanceModal, {
+					state: "required",
+					acceptanceError: new Error("failed"),
+					onAccept,
+					onRetryStatus,
+					onResetAcceptance,
+				}),
+			);
+		});
+
+		expect(container.querySelector('[role="alert"]')?.textContent).toContain("The terms could not be accepted");
+		expect(findButton(container, "Confirm in wallet").disabled).toBe(true);
 	});
 
 	it("resets the failed acceptance before retrying legal status", async () => {

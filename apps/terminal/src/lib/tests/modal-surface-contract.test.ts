@@ -45,6 +45,21 @@ describe("modal surface contract", () => {
 		);
 		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--market-close-warning")).toBe("var(--text-warning)");
 	});
+
+	it("keeps legal acceptance states theme-aware", () => {
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--legal-acceptance-disabled-fill")).toBe("#edf1f5");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--legal-acceptance-pending-fill")).toBe("#33505e");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--legal-acceptance-disabled-fill")).toBe(
+			"var(--fill-disabled)",
+		);
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--legal-acceptance-pending-fill")).toBe("var(--bg-overlay)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--color-legal-acceptance-disabled")).toBe(
+			"var(--legal-acceptance-disabled-fill)",
+		);
+		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--shadow-legal-acceptance")).toBe(
+			"var(--legal-acceptance-shadow)",
+		);
+	});
 });
 
 function readCssVariable(source: string, selector: string, variable: string): string | undefined {

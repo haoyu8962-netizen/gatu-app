@@ -236,6 +236,9 @@
     --market-close-success: #1f8a5a;
     --market-close-warning: #d98e1f;
     --market-close-inline-edit-shadow: 0 4px 16px rgba(20, 30, 45, 0.16);
+    --legal-acceptance-disabled-fill: #edf1f5;
+    --legal-acceptance-pending-fill: #33505e;
+    --legal-acceptance-shadow: 0 24px 64px rgba(20, 30, 45, 0.2);
 
     /* Trading panel surfaces and controls — mobile redesign semantic colors. */
     --trading-panel-text-strong: #1a2330;
@@ -400,6 +403,9 @@
     --market-close-success: var(--fill-success-strong);
     --market-close-warning: var(--text-warning);
     --market-close-inline-edit-shadow: 0 4px 16px rgba(0, 0, 0, 0.36);
+    --legal-acceptance-disabled-fill: var(--fill-disabled);
+    --legal-acceptance-pending-fill: var(--bg-overlay);
+    --legal-acceptance-shadow: 0 24px 64px rgba(0, 0, 0, 0.48);
 
     --trading-panel-text-strong: var(--text-strong);
     --trading-panel-text-muted: var(--text-weak);
@@ -502,6 +508,9 @@
   --color-market-close-success: var(--market-close-success);
   --color-market-close-warning: var(--market-close-warning);
   --shadow-market-close-inline-edit: var(--market-close-inline-edit-shadow);
+  --color-legal-acceptance-disabled: var(--legal-acceptance-disabled-fill);
+  --color-legal-acceptance-pending: var(--legal-acceptance-pending-fill);
+  --shadow-legal-acceptance: var(--legal-acceptance-shadow);
 
   /* Trading panel surfaces and controls */
   --color-trading-panel-fg: var(--trading-panel-text-strong);
