@@ -2,6 +2,7 @@ import { Button } from "@gatu/ui";
 import { Trans } from "@lingui/react/macro";
 import { ArrowSquareOutIcon, CaretDownIcon, InfoIcon } from "@phosphor-icons/react";
 import { formatToken } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { ReferralRewardRow } from "@/lib/trade/referral";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ReferralRewardsCard({ claimDisabled, onClaim, rewards }: Props) {
+	useNumberFormatRevision();
 	return (
 		<article className="rounded-12 border border-stroke-weak bg-surface p-3 min-[1001px]:p-4">
 			<div className="flex items-start justify-between gap-3">

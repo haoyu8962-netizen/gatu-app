@@ -7,6 +7,7 @@ import { usePositionCloseAllSubmit } from "@/hooks/trade/use-position-close-all-
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { formatQuoteAmount } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { TradingActionButton } from "../components/trading-action-button";
 import {
@@ -40,6 +41,7 @@ interface ContentProps {
 }
 
 function PositionCloseAllContent({ snapshot, onOpenChange }: ContentProps) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const submission = usePositionCloseAllSubmit(snapshot);

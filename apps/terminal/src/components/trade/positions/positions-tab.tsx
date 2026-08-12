@@ -24,6 +24,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { useHyperliquid, useMarkets, useMarketsInfo, useSubscription, useUserPositions } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { buildTpSlOrdersByCoin } from "@/lib/trade/open-orders";
 import type { Side } from "@/lib/trade/types";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
@@ -78,6 +79,7 @@ interface OwnedPositionPnlShare {
 }
 
 export function PositionsTab({ directionFilter, marketFilter, currentMarket, accountSummary }: Props) {
+	useNumberFormatRevision();
 	const closeAllUnavailableId = useId();
 	const { address, isConnected } = useWalletSession();
 	const { clientKey, env } = useHyperliquid();

@@ -1,4 +1,12 @@
+import { i18n } from "@lingui/core";
 import { FALLBACK_VALUE_PLACEHOLDER, FORMAT_COMPACT_DEFAULT, FORMAT_COMPACT_THRESHOLD } from "@/config/app";
+import {
+	defaultLocale,
+	defaultNumberFormatLocale,
+	type LocaleCode,
+	languageToIntlLocale,
+	type NumberFormatLocale,
+} from "@/config/i18n";
 import { HL_PERP_PRICE_MAX_DECIMALS, HL_PRICE_MAX_DECIMALS } from "@/config/trade";
 import { toNumber } from "@/lib/trade/numbers";
 import { getResolvedFormatLocale } from "@/stores/use-global-settings-store";
@@ -7,6 +15,13 @@ type Formatter = Intl.NumberFormat | Intl.DateTimeFormat;
 type DateInput = Date | number | string | null | undefined;
 
 const formatterCache = new Map<string, Formatter>();
+const BASE_NUMBER_FORMAT_LOCALE = "en-US";
+
+const NUMBER_SEPARATORS_BY_FORMAT_LOCALE = {
+	"en-US": { group: ",", decimal: "." },
+	"de-DE": { group: ".", decimal: "," },
+	"fr-FR": { group: " ", decimal: "," },
+} as const satisfies Record<NumberFormatLocale, { group: string; decimal: string }>;
 
 export interface FormatOptions extends Intl.NumberFormatOptions {
 	decimals?: number;
@@ -57,6 +72,26 @@ function getFormatter(
 		throw new Error("Formatter not found in cache");
 	}
 	return formatter;
+}
+
+function formatNumberParts(value: number, opts: Intl.NumberFormatOptions): string {
+	const formatter = getFormatter("number", BASE_NUMBER_FORMAT_LOCALE, opts);
+	const separators =
+		NUMBER_SEPARATORS_BY_FORMAT_LOCALE[getResolvedFormatLocale() as NumberFormatLocale] ??
+		NUMBER_SEPARATORS_BY_FORMAT_LOCALE[defaultNumberFormatLocale];
+
+	return formatter
+		.formatToParts(value)
+		.map((part) => {
+			if (part.type === "group") return separators.group;
+			if (part.type === "decimal") return separators.decimal;
+			return part.value;
+		})
+		.join("");
+}
+
+function getActiveLanguageIntlLocale(): string {
+	return languageToIntlLocale[i18n.locale as LocaleCode] ?? languageToIntlLocale[defaultLocale];
 }
 
 // Helper to normalize options
@@ -131,7 +166,7 @@ export function formatUSD(value: string | number | null | undefined, opts?: numb
 		maximumFractionDigits: decimals ?? 2,
 	};
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, FORMAT_COMPACT_DEFAULT);
-	return getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
+	return formatNumberParts(parsed.value, formatOptions);
 }
 
 /**
@@ -181,7 +216,7 @@ export function formatPrice(value: string | number | null | undefined, opts?: Fo
 	};
 
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, false);
-	return getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
+	return formatNumberParts(parsed.value, formatOptions);
 }
 
 export function formatLiquidationPrice(
@@ -230,7 +265,7 @@ export function formatToken(value: string | number | null | undefined, opts?: nu
 	};
 
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, false);
-	const number = getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
+	const number = formatNumberParts(parsed.value, formatOptions);
 	return symbol ? `${number} ${symbol}` : number;
 }
 
@@ -261,7 +296,7 @@ export function formatPercent(value: string | number | null | undefined, opts?: 
 		signDisplay: "exceptZero",
 	};
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, false);
-	return getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
+	return formatNumberParts(parsed.value, formatOptions);
 }
 
 /**
@@ -289,7 +324,7 @@ export function formatNumber(value: string | number | null | undefined, opts?: n
 		maximumFractionDigits: resolvedDecimals ?? 3,
 	};
 	const formatOptions = buildNumberFormatOptions(parsed.value, { compact, ...rest }, defaults, false);
-	return getFormatter("number", getResolvedFormatLocale(), formatOptions).format(parsed.value);
+	return formatNumberParts(parsed.value, formatOptions);
 }
 
 /**
@@ -342,7 +377,7 @@ export function formatTime(value: DateInput, opts?: FormatDateOptions): string {
 	const { locale, ...rest } = opts ?? {};
 	const formatOpts: Intl.DateTimeFormatOptions = hasDateComponentOptions(rest) ? rest : { timeStyle: "short", ...rest };
 
-	return getFormatter("date", locale ?? getResolvedFormatLocale(), formatOpts).format(toDate(value));
+	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), formatOpts).format(toDate(value));
 }
 
 /**
@@ -358,7 +393,7 @@ export function formatDateTime(value: DateInput, opts?: FormatDateOptions): stri
 		? rest
 		: { dateStyle: "medium", timeStyle: "short", ...rest };
 
-	return getFormatter("date", locale ?? getResolvedFormatLocale(), formatOpts).format(toDate(value));
+	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), formatOpts).format(toDate(value));
 }
 
 export function formatDateTimeShort(value: DateInput, opts?: FormatDateOptions): string {
@@ -376,7 +411,7 @@ export function formatDateTimeShort(value: DateInput, opts?: FormatDateOptions):
 		...rest,
 	};
 
-	return getFormatter("date", locale ?? getResolvedFormatLocale(), defaults).format(toDate(value));
+	return getFormatter("date", locale ?? getActiveLanguageIntlLocale(), defaults).format(toDate(value));
 }
 
 /**

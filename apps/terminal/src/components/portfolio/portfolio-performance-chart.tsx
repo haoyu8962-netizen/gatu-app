@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { PortfolioSnapshot } from "@/domain/portfolio";
 import { cn } from "@/lib/cn";
 import { formatUSD } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 
 type ChartMetric = "accountValue" | "pnl" | "perpsPnl";
 type History = PortfolioSnapshot["pnlHistory"];
@@ -30,6 +31,7 @@ export function PortfolioPerformanceChart({
 	isUnavailable,
 	onRetry,
 }: Props) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const [metric, setMetric] = useState<ChartMetric>("pnl");
 	const history = selectHistory(metric, accountValueHistory, pnlHistory, perpsPnlHistory);

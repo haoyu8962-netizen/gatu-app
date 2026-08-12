@@ -20,6 +20,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/cn";
 import { formatPrice, formatToken, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useHyperliquid, useMarketsInfo, useUserPositions } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import { getPositionMarketCloseErrorMessage } from "@/lib/trade/position-market-close-errors";
 import { getValueColorClass } from "@/lib/ui/value-color";
@@ -91,6 +92,7 @@ interface ModalBodyProps extends BodyProps {
 }
 
 function PositionLimitCloseModalBody({ position, openingTarget, onOpenChange }: ModalBodyProps) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const userPositions = useUserPositions();

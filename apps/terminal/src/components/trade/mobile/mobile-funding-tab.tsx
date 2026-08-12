@@ -12,6 +12,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isIncompleteHistorySnapshotError, isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toBig } from "@/lib/trade/numbers";
 import { getUserFundingKey } from "@/lib/trade/user-funding";
@@ -74,6 +75,7 @@ function MobileFundingTabContent({
 	isConnected,
 	scrollMode = "contained",
 }: MobileFundingTabContentProps) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const navigateToMarket = useMarketNavigation();
 	const { setActiveTab } = useMobileTerminalTab();

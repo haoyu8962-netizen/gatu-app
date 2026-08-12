@@ -28,11 +28,11 @@ const zhMessages: Messages = Object.fromEntries(
 );
 
 vi.mock("@/lib/i18n", () => ({
-	dynamicActivate: vi.fn(async () => {}),
+	dynamicActivate: vi.fn(async () => true),
 }));
 
 const settingsState = vi.hoisted(() => ({
-	numberFormatLocale: "auto",
+	numberFormatLocale: "en-US",
 	setNumberFormatLocale: vi.fn((locale: string) => {
 		settingsState.numberFormatLocale = locale;
 	}),
@@ -48,6 +48,7 @@ function activateLocale(locale: "en" | "zh") {
 }
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+const MENU_ITEM_SELECTOR = '[role="menuitem"], [role="menuitemradio"]';
 
 describe("LanguageSwitcher", () => {
 	let container: HTMLDivElement;
@@ -56,7 +57,7 @@ describe("LanguageSwitcher", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		activateLocale("en");
-		settingsState.numberFormatLocale = "auto";
+		settingsState.numberFormatLocale = "en-US";
 		container = document.createElement("div");
 		document.body.appendChild(container);
 		root = createRoot(container);
@@ -82,17 +83,17 @@ describe("LanguageSwitcher", () => {
 
 		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 
-		const menuItems = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+		const menuItems = [...document.body.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR)];
 		const englishItem = menuItems.find((item) => item.textContent?.trim() === "English");
-		const chineseItem = menuItems.find((item) => item.textContent?.trim() === "中文");
-		expect(englishItem?.getAttribute("aria-current")).toBeNull();
-		expect(chineseItem?.getAttribute("aria-current")).toBe("true");
+		const chineseItem = menuItems.find((item) => item.textContent?.trim() === "简体中文");
+		expect(englishItem?.getAttribute("aria-checked")).toBe("false");
+		expect(chineseItem?.getAttribute("aria-checked")).toBe("true");
 
 		await act(async () => chineseItem?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 		expect(dynamicActivate).not.toHaveBeenCalled();
 
 		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		const reopenedEnglishItem = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(
+		const reopenedEnglishItem = [...document.body.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR)].find(
 			(item) => item.textContent?.trim() === "English",
 		);
 		await act(async () => reopenedEnglishItem?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
@@ -110,8 +111,8 @@ describe("LanguageSwitcher", () => {
 
 		const trigger = container.querySelector<HTMLElement>('[aria-label="Language and number format"]');
 		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
-		const germanFormat = [...document.body.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((item) =>
-			item.textContent?.includes("German - 1.234,56"),
+		const germanFormat = [...document.body.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR)].find(
+			(item) => item.textContent?.trim() === "1.234,56",
 		);
 
 		await act(async () => germanFormat?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
@@ -133,7 +134,41 @@ describe("LanguageSwitcher", () => {
 		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
 
 		const menu = document.body.querySelector<HTMLElement>('[role="menu"]');
-		expect(menu?.classList.contains("max-h-[calc(100dvh-3rem)]")).toBe(true);
+		expect(menu?.classList.contains("max-h-[calc(100dvh-4rem)]")).toBe(true);
+	});
+
+	it("matches the responsive language-settings surface and concise format list", async () => {
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<LanguageSwitcher />
+				</I18nProvider>,
+			);
+		});
+
+		const trigger = container.querySelector<HTMLElement>('[aria-label="Language and number format"]');
+		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+
+		const menu = document.body.querySelector<HTMLElement>('[role="menu"]');
+		expect(menu?.classList).toContain("w-[232px]");
+		expect(menu?.classList).toContain("min-[1001px]:w-[224px]");
+		expect(menu?.classList).toContain("!rounded-[12px]");
+		expect(menu?.classList).toContain("!shadow-language-settings");
+		expect(menu?.classList).toContain("data-starting-style:!scale-100");
+		expect(menu?.classList).toContain("max-[1000px]:[&_[role^=menuitem]]:min-h-11");
+		expect(menu?.classList).toContain("[&>[role=group]:first-child_[role^=menuitem]>span]:[direction:ltr]");
+
+		const menuLabels = [...document.body.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR)].map((item) =>
+			item.textContent?.trim(),
+		);
+		expect(menuLabels.slice(0, 3)).toEqual(["1,234.56", "1.234,56", "1 234,56"]);
+		expect(menuLabels).not.toContain("Auto (Follow Language)");
+		expect(menuLabels).toContain("简体中文");
+		expect(menuLabels).toContain("العربية");
+		const resetItem = [...document.body.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR)].find(
+			(item) => item.textContent?.trim() === "Reset",
+		);
+		expect(resetItem?.getAttribute("aria-disabled")).toBe("true");
 	});
 
 	it("optionally shows the active language in the desktop trigger", async () => {
@@ -151,7 +186,75 @@ describe("LanguageSwitcher", () => {
 		await act(async () => activateLocale("zh"));
 
 		expect(trigger?.getAttribute("aria-label")).toBe("语言和数字格式");
-		expect(trigger?.textContent).toBe("中文");
+		expect(trigger?.textContent).toBe("简体中文");
+	});
+
+	it("does not change the number format when the interface language changes", async () => {
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<LanguageSwitcher />
+				</I18nProvider>,
+			);
+		});
+
+		const trigger = container.querySelector<HTMLElement>('[aria-label="Language and number format"]');
+		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const frenchItem = [...document.body.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR)].find(
+			(item) => item.textContent?.trim() === "Français",
+		);
+
+		await act(async () => frenchItem?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+
+		expect(dynamicActivate).toHaveBeenCalledWith("fr");
+		expect(settingsState.setNumberFormatLocale).not.toHaveBeenCalled();
+	});
+
+	it("resets language and number format together after language activation succeeds", async () => {
+		activateLocale("zh");
+		settingsState.numberFormatLocale = "de-DE";
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<LanguageSwitcher />
+				</I18nProvider>,
+			);
+		});
+
+		const trigger = container.querySelector<HTMLElement>('[aria-label="语言和数字格式"]');
+		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const resetItem = [...document.body.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR)].find(
+			(item) => item.textContent?.trim() === "重置",
+		);
+
+		await act(async () => resetItem?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+
+		expect(dynamicActivate).toHaveBeenCalledWith("en");
+		expect(settingsState.setNumberFormatLocale).toHaveBeenCalledWith("en-US");
+	});
+
+	it("keeps the number format when a superseded reset cannot restore English", async () => {
+		activateLocale("zh");
+		settingsState.numberFormatLocale = "de-DE";
+		vi.mocked(dynamicActivate).mockResolvedValueOnce(false);
+		await act(async () => {
+			root.render(
+				<I18nProvider i18n={i18n}>
+					<LanguageSwitcher />
+				</I18nProvider>,
+			);
+		});
+
+		const trigger = container.querySelector<HTMLElement>('[aria-label="语言和数字格式"]');
+		await act(async () => trigger?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+		const resetItem = [...document.body.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR)].find(
+			(item) => item.textContent?.trim() === "重置",
+		);
+
+		await act(async () => resetItem?.dispatchEvent(new MouseEvent("click", { bubbles: true })));
+
+		expect(dynamicActivate).toHaveBeenCalledWith("en");
+		expect(settingsState.setNumberFormatLocale).not.toHaveBeenCalled();
 	});
 
 	it("updates the mounted mobile navigation when the locale changes", async () => {

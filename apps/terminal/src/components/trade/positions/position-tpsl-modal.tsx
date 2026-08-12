@@ -42,6 +42,7 @@ import {
 	useSubscription,
 	useUserPositions,
 } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import {
 	areTpSlOrderInfosEqual,
@@ -447,6 +448,7 @@ function PositionTpSlForm({
 	liveDataMessage,
 	onOpenChange,
 }: FormProps) {
+	useNumberFormatRevision();
 	const decimals = szDecimalsToPriceDecimals(positionRef.szDecimals);
 	const liveSignedSize = toBig(position.szi);
 	const [signedSize] = useState(() => toBig(position.szi));

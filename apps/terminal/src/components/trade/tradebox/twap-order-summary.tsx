@@ -3,6 +3,7 @@ import { FALLBACK_VALUE_PLACEHOLDER } from "@/config/app";
 import { TWAP_SUBORDER_INTERVAL_SECONDS } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { formatDuration, formatToken, formatUSD } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { SummaryRow } from "../components/summary-row";
 
 interface Props {
@@ -24,6 +25,7 @@ export function TwapOrderSummary({
 	baseToken,
 	szDecimals,
 }: Props) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const minutes = Math.max(0, Math.round(twapMinutesNum ?? 0));
 	const numberOfOrders = minutes > 0 ? Math.floor((minutes * 60) / TWAP_SUBORDER_INTERVAL_SECONDS) + 1 : 0;

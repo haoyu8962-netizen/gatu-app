@@ -5,6 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { useTradeHomePath } from "@/hooks/trade/use-trade-home-path";
 import { cn } from "@/lib/cn";
 import { useSettingsDialogActions } from "@/stores/use-global-modal-store";
+import { LanguageSwitcher } from "../header/language-switcher";
 import { ThemeToggle } from "../header/theme-toggle";
 import { UserMenu } from "../header/user-menu";
 import { MobileNavDrawer } from "./mobile-nav-drawer";
@@ -26,7 +27,7 @@ export function MobileHeader({ className }: Props) {
 				className,
 			)}
 		>
-			<div className="flex h-12 items-center justify-between px-2.5">
+			<div className="flex h-14 items-center justify-between px-2.5">
 				<div className="flex items-center gap-1.5">
 					<MobileNavDrawer />
 					<Link
@@ -44,6 +45,11 @@ export function MobileHeader({ className }: Props) {
 						<UserMenu />
 					</div>
 					<ThemeToggle className="text-trading-panel-muted hover:text-trading-panel-fg" iconClassName="size-4.5" />
+					<LanguageSwitcher
+						sideOffset={14}
+						alignOffset={-36}
+						className="size-11 min-h-11 text-market-close-muted hover:text-market-close-fg"
+					/>
 					<ButtonIcon
 						variant="ghost"
 						intent="neutral"

@@ -3,6 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { MobileProgressiveList } from "@/components/trade/mobile/mobile-progressive-list";
 import { formatDateTime, formatToken, formatUSD, shortenAddress } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { ReferralTokenMetadata, ReferredTrader } from "@/lib/trade/referral";
 
 interface Props {
@@ -13,6 +14,7 @@ interface Props {
 const DESKTOP_PAGE_SIZE = 25;
 
 export function ReferredTraders({ traders, tokenMetadata }: Props) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const [currentPage, setCurrentPage] = useState(1);
 	const totalPages = Math.max(1, Math.ceil(traders.length / DESKTOP_PAGE_SIZE));

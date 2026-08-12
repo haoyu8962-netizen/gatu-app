@@ -4,6 +4,7 @@ import { ArrowSquareOutIcon, CheckIcon, CopyIcon, LinkSimpleIcon, ShareNetworkIc
 import { useCopyToClipboard } from "@/hooks/ui/use-copy-to-clipboard";
 import { formatNumber, formatUSD, shortenAddress } from "@/lib/format";
 import { useHyperliquid } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import {
 	canApplyReferralCode,
 	getOfficialReferralUrl,
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function ReferralCodeCard({ data, onApplyCode, onCreateCode }: Props) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { env } = useHyperliquid();
 	const codeCopy = useCopyToClipboard();

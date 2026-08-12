@@ -13,6 +13,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useHyperliquid, useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import {
 	getOrderHistoryStatusCategory,
@@ -90,6 +91,7 @@ function MobileOrdersHistoryTabContent({
 	disclosureState,
 	scrollMode = "contained",
 }: MobileOrdersHistoryTabContentProps) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel, getTwapHistoryStatusLabel } =
 		useOrderDisplayLabels();

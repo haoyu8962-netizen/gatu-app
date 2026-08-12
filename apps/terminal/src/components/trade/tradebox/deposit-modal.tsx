@@ -37,6 +37,7 @@ import { isDefinitiveDepositSourceFailure } from "@/lib/hyperliquid/deposit-sour
 import { useDeposit } from "@/lib/hyperliquid/use-deposit";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { calculateCctpDepositFee } from "@/lib/trade/cctp-deposit";
 import { removeCctpDepositTrackingRecord } from "@/lib/trade/cctp-deposit-tracking";
 import {
@@ -88,6 +89,7 @@ function normalizeError(error: unknown): Error {
 }
 
 export function DepositModal() {
+	useNumberFormatRevision();
 	const open = useDepositModalOpen();
 	const activeTab = useDepositModalTab();
 	const { close } = useDepositModalActions();

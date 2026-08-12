@@ -22,6 +22,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { useInfo, useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { PortfolioPerformanceChart } from "./portfolio-performance-chart";
 
 type FeeMarket = "perps" | "spot";
@@ -29,6 +30,7 @@ type FeeMarket = "perps" | "spot";
 const EMPTY_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
 
 export function PortfolioOverview() {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { address, isConnected } = useWalletSession();
 	const [scope, setScope] = useState<PortfolioScope>("combined");

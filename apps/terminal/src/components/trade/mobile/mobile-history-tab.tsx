@@ -14,6 +14,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatNumber, formatToken, formatUSD } from "@/lib/format";
 import { getExplorerTxUrl, useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toNumber } from "@/lib/trade/numbers";
 import { getUserFillKey, hasUserFillExplorerTransaction } from "@/lib/trade/user-fills";
@@ -77,6 +78,7 @@ function MobileHistoryTabContent({
 	ownerKey,
 	scrollMode = "contained",
 }: MobileHistoryTabContentProps) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { error, fills, isConnected, status } = useUserFills();
 	const navigateToMarket = useMarketNavigation();

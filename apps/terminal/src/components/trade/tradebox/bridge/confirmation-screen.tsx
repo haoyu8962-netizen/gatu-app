@@ -23,6 +23,7 @@ import {
 	isBridgeQuoteWorse,
 	useBridgeQuote,
 } from "@/lib/lifi/use-quote";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { HyperCoreUsdcIcon, QuoteCountdown, TokenIcon } from "./shared-ui";
 
 interface Props {
@@ -36,6 +37,7 @@ interface Props {
 type QuoteFeedback = "expired" | "refresh-error" | "updated" | "amount-too-low" | "fees-exceed-amount" | "unavailable";
 
 export function ConfirmationScreen({ token, tokenAmount, address, onBack, onConfirm }: Props) {
+	useNumberFormatRevision();
 	const [currentTime, setCurrentTime] = useState(Date.now);
 	const [isConfirming, setIsConfirming] = useState(false);
 	const [feedback, setFeedback] = useState<{ kind: QuoteFeedback; dataUpdatedAt: number } | null>(null);

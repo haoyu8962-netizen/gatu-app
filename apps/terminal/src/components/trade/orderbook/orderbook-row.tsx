@@ -2,6 +2,7 @@ import { t } from "@lingui/core/macro";
 import { memo } from "react";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { type BookLevel, getDepthPercentage, getOrderbookQuoteDecimals } from "@/lib/trade/orderbook";
 import { useOrderbookActions } from "@/stores/use-orderbook-actions-store";
 import { OrderbookSizeCell } from "./orderbook-size-cell";
@@ -31,6 +32,7 @@ function OrderbookRowComponent({
 	compact = false,
 	disabled = false,
 }: Props) {
+	useNumberFormatRevision();
 	const { setSelectedPrice } = useOrderbookActions();
 	const depthPct = getDepthPercentage(level.total, maxTotal);
 	const isAsk = side === "ask";

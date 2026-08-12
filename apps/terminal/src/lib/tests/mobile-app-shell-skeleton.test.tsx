@@ -29,7 +29,8 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(mobileShell?.className).toContain("inset-0");
 		expect(mobileShell?.className).toContain("overscroll-none");
 		expect(mobileShell?.className).not.toContain("h-dvh");
-		expect(mobileShell?.querySelectorAll(".h-14")).toHaveLength(3);
+		expect(mobileShell?.firstElementChild?.firstElementChild?.className).toContain("h-14");
+		expect(mobileShell?.lastElementChild?.querySelectorAll(".h-14")).toHaveLength(3);
 	});
 
 	it("keeps the lazy-loading shell pinned with the current three-item navigation shape", () => {
@@ -40,6 +41,7 @@ describe("AppShellSkeleton mobile viewport", () => {
 		expect(mobileShell?.className).toContain("inset-0");
 		expect(mobileShell?.className).toContain("overscroll-none");
 		expect(mobileShell?.className).not.toContain("h-dvh");
+		expect(mobileShell?.firstElementChild?.firstElementChild?.className).toContain("h-14");
 		expect(mobileShell?.querySelectorAll(`[style="min-height: 56px;"]`)).toHaveLength(3);
 	});
 });

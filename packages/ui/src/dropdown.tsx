@@ -83,6 +83,7 @@ const dropdownItemVariants = cva(
 );
 
 interface DropdownItem {
+	value?: string;
 	label: string;
 	icon?: React.ReactNode;
 	disabled?: boolean;
@@ -94,6 +95,7 @@ interface DropdownItem {
 interface DropdownGroup {
 	label?: string;
 	items: DropdownItem[];
+	selectionMode?: "none" | "single";
 }
 
 interface DropdownBaseProps extends VariantProps<typeof dropdownTriggerVariants> {
@@ -103,6 +105,8 @@ interface DropdownBaseProps extends VariantProps<typeof dropdownTriggerVariants>
 	disabled?: boolean;
 	className?: string;
 	align?: "start" | "center" | "end";
+	sideOffset?: number;
+	alignOffset?: number;
 	triggerClassName?: string;
 	popupClassName?: string;
 	hideCaret?: boolean;
@@ -122,6 +126,8 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 			groups,
 			disabled = false,
 			align = "start",
+			sideOffset = 4,
+			alignOffset,
 			triggerVariant = "default",
 			triggerAriaLabel,
 			triggerClassName,
@@ -135,21 +141,8 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 		const isMinimalTrigger = triggerVariant === "minimal";
 		const caretSize = isMinimalTrigger ? 12 : itemSize === "sm" ? 14 : 16;
 
-		const renderItem = (item: DropdownItem, index: number) => (
-			<Menu.Item
-				key={index}
-				disabled={item.disabled}
-				onClick={item.onSelect}
-				aria-current={item.active ? "true" : undefined}
-				className={cn(
-					dropdownItemVariants({
-						size: itemSize,
-						intent: item.danger ? "danger" : "neutral",
-					}),
-					"justify-between",
-					item.active && !item.danger && "font-semibold text-fg",
-				)}
-			>
+		const getItemContent = (item: DropdownItem) => (
+			<>
 				<span className="flex items-center gap-2">
 					{item.icon && (
 						<span
@@ -165,7 +158,42 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 					{item.label}
 				</span>
 				{item.active && <CheckIcon size={12} weight="bold" className="ml-2 shrink-0 text-icon-brand" />}
+			</>
+		);
+
+		const getItemClassName = (item: DropdownItem) =>
+			cn(
+				dropdownItemVariants({
+					size: itemSize,
+					intent: item.danger ? "danger" : "neutral",
+				}),
+				"justify-between",
+				item.active && !item.danger && "font-semibold text-fg",
+			);
+
+		const renderItem = (item: DropdownItem, index: number) => (
+			<Menu.Item
+				key={index}
+				disabled={item.disabled}
+				onClick={item.onSelect}
+				aria-current={item.active ? "true" : undefined}
+				className={getItemClassName(item)}
+			>
+				{getItemContent(item)}
 			</Menu.Item>
+		);
+
+		const renderRadioItem = (item: DropdownItem, index: number) => (
+			<Menu.RadioItem
+				key={index}
+				value={item.value ?? item.label}
+				closeOnClick
+				disabled={item.disabled}
+				onClick={item.onSelect}
+				className={getItemClassName(item)}
+			>
+				{getItemContent(item)}
+			</Menu.RadioItem>
 		);
 
 		return (
@@ -193,7 +221,12 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 					</Menu.Trigger>
 
 					<Menu.Portal>
-						<Menu.Positioner sideOffset={4} align={align} className="z-[var(--z-dropdown)]">
+						<Menu.Positioner
+							sideOffset={sideOffset}
+							align={align}
+							alignOffset={alignOffset}
+							className="z-[var(--z-dropdown)]"
+						>
 							<Menu.Popup
 								className={cn(
 									"max-h-64 min-w-40 overflow-y-auto bg-surface p-1 shadow-overlay rounded-12 border border-stroke-weak transition-[opacity,transform] duration-150 ease-out motion-reduce:transition-none origin-(--transform-origin) data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95",
@@ -205,14 +238,27 @@ const Dropdown = React.forwardRef<HTMLDivElement, DropdownProps>(
 								{groups?.map((group, groupIndex) => (
 									<React.Fragment key={groupIndex}>
 										{groupIndex > 0 && <Menu.Separator className="my-1 h-px bg-stroke-weak" />}
-										<Menu.Group>
-											{group.label && (
-												<Menu.GroupLabel className="px-3 py-1.5 text-xs font-semibold text-fg-muted select-none">
-													{group.label}
-												</Menu.GroupLabel>
-											)}
-											{group.items.map((item, i) => renderItem(item, i))}
-										</Menu.Group>
+										{group.selectionMode === "single" ? (
+											<Menu.Group>
+												{group.label && (
+													<Menu.GroupLabel className="px-3 py-1.5 text-xs font-semibold text-fg-muted select-none">
+														{group.label}
+													</Menu.GroupLabel>
+												)}
+												<Menu.RadioGroup value={group.items.find((item) => item.active)?.value}>
+													{group.items.map((item, i) => renderRadioItem(item, i))}
+												</Menu.RadioGroup>
+											</Menu.Group>
+										) : (
+											<Menu.Group>
+												{group.label && (
+													<Menu.GroupLabel className="px-3 py-1.5 text-xs font-semibold text-fg-muted select-none">
+														{group.label}
+													</Menu.GroupLabel>
+												)}
+												{group.items.map((item, i) => renderItem(item, i))}
+											</Menu.Group>
+										)}
 									</React.Fragment>
 								))}
 							</Menu.Popup>

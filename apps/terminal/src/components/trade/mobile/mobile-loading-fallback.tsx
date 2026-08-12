@@ -6,7 +6,7 @@ export function MobileLoadingFallback() {
 	return (
 		<div className="fixed inset-0 w-full flex flex-col bg-background text-fg font-sans overflow-hidden overscroll-none">
 			<div className="pt-[env(safe-area-inset-top)] border-b border-stroke-weak/60">
-				<div className="h-12 px-3 flex items-center justify-between">
+				<div className="h-14 px-3 flex items-center justify-between">
 					<div className="flex items-center gap-1.5">
 						<div className="size-6 rounded bg-surface animate-pulse" />
 						<div className="h-3 w-20 rounded bg-surface animate-pulse" />

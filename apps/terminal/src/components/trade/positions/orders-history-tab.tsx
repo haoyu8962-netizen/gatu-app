@@ -11,6 +11,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTime, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import {
 	getOrderHistoryStatusCategory,
@@ -64,6 +65,7 @@ interface Props {
 }
 
 export function OrdersHistoryTab({ toolbarTarget }: Props = {}) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { getHistoricalOrderStatusLabel, getOrderSideLabel, getOrderTypeLabel, getTwapHistoryStatusLabel } =
 		useOrderDisplayLabels();

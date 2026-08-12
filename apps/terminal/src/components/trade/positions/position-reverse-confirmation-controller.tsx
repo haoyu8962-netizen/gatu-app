@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { type PositionReverseTarget, usePositionReverseSubmit } from "@/hooks/trade/use-position-reverse-submit";
 import { formatToken } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import { PositionReverseConfirmationModal } from "./position-reverse-confirmation-modal";
 
@@ -22,6 +23,7 @@ interface ContentProps {
 }
 
 function PositionReverseConfirmationContent({ target, onOpenChange }: ContentProps) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const markets = useMarkets();
 	const submission = usePositionReverseSubmit(target);

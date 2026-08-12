@@ -5,6 +5,7 @@ import { FieldLabel } from "@/components/ui/field-label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import { formatUSD } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isPositive } from "@/lib/trade/numbers";
 import { getValueColorClass } from "@/lib/ui/value-color";
 
@@ -55,6 +56,7 @@ export function PriceInputWithPercent({
 	linkedReturnInput,
 	formatPnlValue = (pnl) => formatUSD(pnl, { signDisplay: "exceptZero" }),
 }: Props) {
+	useNumberFormatRevision();
 	const priceInputId = useId();
 	const errorId = `${priceInputId}-error`;
 	const inputFrameClassName = cn(

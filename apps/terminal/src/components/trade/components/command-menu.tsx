@@ -5,6 +5,7 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { cn } from "@/lib/cn";
 import { formatPrice } from "@/lib/format";
 import { type UnifiedMarketInfo, useMarketsInfo } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { createSearcher } from "@/lib/search";
 import { useCommandMenuActions, useCommandMenuOpen } from "@/stores/use-global-modal-store";
 import { AssetDisplay } from "./asset-display";
@@ -13,6 +14,7 @@ const COMMAND_DIALOG_MAX_WIDTH_CLASS = "sm:max-w-[30rem]";
 const COMMAND_LIST_HEIGHT_CLASS = "h-[22.5rem] max-h-[22.5rem]";
 
 export function CommandMenu() {
+	useNumberFormatRevision();
 	const open = useCommandMenuOpen();
 	const { close } = useCommandMenuActions();
 	const { markets } = useMarketsInfo();

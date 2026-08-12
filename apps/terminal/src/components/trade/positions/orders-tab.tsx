@@ -66,6 +66,7 @@ import {
 	useMarketsInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import {
 	isClosePositionOrder,
@@ -1209,6 +1210,7 @@ function OrderRow({
 	onCancelEdit,
 	onConfirmEdit,
 }: OrderRowProps) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { getOrderSideLabel, getOrderTypeLabel, getTriggerConditionLabel } = useOrderDisplayLabels();
 	const orderTypeLabel = getOrderTypeLabel(order.orderType);

@@ -83,7 +83,7 @@ vi.mock("@/components/trade/orderbook/use-orderbook-rows", () => ({
 
 vi.mock("@/stores/use-global-settings-store", () => ({
 	getResolvedFormatLocale: () => "en-US",
-	useGlobalSettings: () => ({ numberFormatLocale: "auto", showOrderbookInQuote: false }),
+	useGlobalSettings: () => ({ numberFormatLocale: "en-US", showOrderbookInQuote: false }),
 	useGlobalSettingsActions: () => ({ setNumberFormatLocale: vi.fn(), setShowOrderbookInQuote: vi.fn() }),
 	useIsTestnet: () => false,
 }));

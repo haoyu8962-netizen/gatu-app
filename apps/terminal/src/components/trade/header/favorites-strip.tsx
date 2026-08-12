@@ -6,6 +6,7 @@ import { useMarketNavigation } from "@/hooks/trade/use-market-navigation";
 import { cn } from "@/lib/cn";
 import { formatPercent } from "@/lib/format";
 import { useMarketsInfo, useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useFavoriteMarkets, useMarketActions, useSelectedMarket } from "@/stores/use-market-store";
 
@@ -39,6 +40,7 @@ interface FavoriteChipProps {
 }
 
 function FavoriteChip({ name, isActive }: FavoriteChipProps) {
+	useNumberFormatRevision();
 	const { toggleFavoriteMarket } = useMarketActions();
 	const { getMarketInfo } = useMarketsInfo();
 	const navigateToMarket = useMarketNavigation();

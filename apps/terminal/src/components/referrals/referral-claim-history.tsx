@@ -1,12 +1,14 @@
 import { Trans } from "@lingui/react/macro";
 import type { ReferralClaimHistoryRow } from "@/hooks/trade/use-referrals";
 import { formatDateTime, formatToken, shortenAddress } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 
 interface Props {
 	rows: ReferralClaimHistoryRow[];
 }
 
 export function ReferralClaimHistory({ rows }: Props) {
+	useNumberFormatRevision();
 	return (
 		<div className="divide-y divide-stroke-weak">
 			{rows.map((row) => (

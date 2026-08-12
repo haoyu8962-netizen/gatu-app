@@ -6,6 +6,7 @@ import type { OrderType } from "@/config/trade";
 import { cn } from "@/lib/cn";
 import { bpsToPercentage, formatPrice, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isMarketExecutionOrderType } from "@/lib/trade/order-types";
 import { SummaryRow } from "../components/summary-row";
 
@@ -36,6 +37,7 @@ export function OrderSummary({
 	orderType,
 	marketKind = "perp",
 }: Props) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const isLeveraged = marketKind !== "spot";
 	const showSlippage = isMarketExecutionOrderType(orderType);

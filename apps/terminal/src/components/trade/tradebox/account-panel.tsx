@@ -16,6 +16,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatPercent, formatUSD } from "@/lib/format";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getValueColorClass } from "@/lib/ui/value-color";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 
@@ -32,6 +33,7 @@ function getMarginRatioTone(ratio: number): { text: string; bar: string } {
 }
 
 export function AccountPanel() {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { open: openDepositModal } = useDepositModalActions();
 	const { open: openTransferModal } = useTransferModalActions();

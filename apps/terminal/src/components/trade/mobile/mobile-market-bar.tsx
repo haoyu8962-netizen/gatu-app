@@ -28,6 +28,7 @@ import {
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import { TokenSelector } from "../chart/token-selector";
 import { MarketAssetInfo } from "../components/market-asset-info";
@@ -66,6 +67,7 @@ interface TooltipPosition {
 type AllMidsParams = SubParams<"allMids">;
 
 export function MobileMarketBar({ className }: Props) {
+	useNumberFormatRevision();
 	const { data: market } = useSelectedMarketInfo();
 	const navigateToMarket = useMarketNavigation();
 	const { copied: copiedSpotTokenAddress, copy: copySpotTokenAddress } = useCopyToClipboard(1500);

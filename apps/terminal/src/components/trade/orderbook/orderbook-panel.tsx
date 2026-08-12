@@ -6,6 +6,7 @@ import { getBaseQuoteFromPairName } from "@/domain/market";
 import { useOrderbookMidPrice } from "@/hooks/trade/use-orderbook-mid-price";
 import { formatNumber, szDecimalsToPriceDecimals } from "@/lib/format";
 import { useSelectedMarketInfo, useSubscription } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useRenderCommitTrack } from "@/lib/performance/render-profile";
 import { toNumber } from "@/lib/trade/numbers";
 import {
@@ -23,6 +24,7 @@ import { TradesPanel } from "./trades-panel";
 import { useOrderbookRows } from "./use-orderbook-rows";
 
 export function OrderbookPanel() {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	useRenderCommitTrack("orderbook");
 	const [selectedOptionKey, setSelectedOptionKey] = useState<string | null>(null);

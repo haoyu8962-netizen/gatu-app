@@ -1,5 +1,6 @@
 import { Trans } from "@lingui/react/macro";
 import { formatDateTime, formatUSD } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { ReferralRewardHistoryItem } from "@/lib/trade/referral";
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function ReferralLegacyHistory({ rows }: Props) {
+	useNumberFormatRevision();
 	return (
 		<div className="divide-y divide-stroke-weak">
 			{rows.map((row) => (

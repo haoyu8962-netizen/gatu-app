@@ -28,6 +28,7 @@ import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import { useHyperliquid, useSubscription } from "@/lib/hyperliquid";
 import { useMarketsInfo } from "@/lib/hyperliquid/hooks/useMarketsInfo";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig } from "@/lib/trade/numbers";
 import {
 	type SwapMode,
@@ -70,6 +71,7 @@ interface Props {
 }
 
 function SpotSwapModalContent({ initialFromToken, initialToToken, mode, onClose }: Props) {
+	useNumberFormatRevision();
 	const { spotMarkets } = useMarketsInfo();
 	const { accountAbstraction, spotBalances } = useDefaultDexBalances();
 	const accountModeReady = isSupportedAccountAbstraction(accountAbstraction);
@@ -595,6 +597,7 @@ function TokenBalance({
 	onMaxClick?: () => void;
 	disabled?: boolean;
 }) {
+	useNumberFormatRevision();
 	if (!show) return null;
 
 	const formattedBalance = formatToken(balance, { decimals: 4, symbol: balanceToken });

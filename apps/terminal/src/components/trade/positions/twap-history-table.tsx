@@ -8,6 +8,7 @@ import { useTwapHistory } from "@/hooks/trade/use-twap-history";
 import { cn } from "@/lib/cn";
 import { formatClockDuration, formatDateTimeShort, formatNumber, formatPrice } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getTwapAverageFillPrice, getTwapHistoryDurationMs, getTwapHistoryTimeMs } from "@/lib/trade/order-history";
 import { Placeholder } from "./placeholder";
 import { positionsPanelTableShellClass } from "./positions-panel-table-styles";
@@ -16,6 +17,7 @@ const twapHistoryGridClass =
 	"grid min-w-[1570px] grid-cols-[150px_120px_140px_140px_130px_120px_130px_150px_90px_90px_110px] gap-x-4 px-5";
 
 export function TwapHistoryTable() {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { error, hasMore, history, isConnected, isRealtimeDegraded, loadMore, realtimeError, retryRealtime, status } =
 		useTwapHistory();

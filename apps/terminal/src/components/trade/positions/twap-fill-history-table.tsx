@@ -7,6 +7,7 @@ import { useTwapSliceFills } from "@/hooks/trade/use-twap-slice-fills";
 import { cn } from "@/lib/cn";
 import { formatDateTimeShort, formatNumber, formatPrice, formatToken } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getUserFillNotional } from "@/lib/trade/user-fills";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
 import { Placeholder } from "./placeholder";
@@ -16,6 +17,7 @@ const twapFillGridClass =
 	"grid min-w-[1230px] grid-cols-[150px_120px_130px_130px_150px_170px_150px_150px] gap-x-4 px-5";
 
 export function TwapFillHistoryTable() {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { error, fills, hasMore, isConnected, isRealtimeDegraded, loadMore, realtimeError, retryRealtime, status } =
 		useTwapSliceFills();

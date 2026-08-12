@@ -60,6 +60,19 @@ describe("modal surface contract", () => {
 			"var(--legal-acceptance-shadow)",
 		);
 	});
+
+	it("keeps the language settings surface exact in light mode and theme-aware in dark mode", () => {
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--language-settings-disabled")).toBe("#c6cfd9");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--language-settings-divider")).toBe("#eef1f5");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ":root", "--language-settings-shadow")).toBe(
+			"0 16px 40px rgba(20, 30, 45, 0.18)",
+		);
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--language-settings-disabled")).toBe("var(--text-disabled)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, ".dark", "--language-settings-divider")).toBe("var(--stroke-weak)");
+		expect(readCssVariable(TERMINAL_THEME_CSS, "@theme inline", "--shadow-language-settings")).toBe(
+			"var(--language-settings-shadow)",
+		);
+	});
 });
 
 function readCssVariable(source: string, selector: string, variable: string): string | undefined {

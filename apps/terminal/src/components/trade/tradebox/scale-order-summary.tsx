@@ -4,6 +4,7 @@ import { DEFAULT_BUILDER_CONFIG } from "@/config/hyperliquid";
 import { cn } from "@/lib/cn";
 import { bpsToPercentage, formatPrice, formatUSD } from "@/lib/format";
 import type { MarketKind } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { SummaryRow } from "../components/summary-row";
 
 interface Props {
@@ -29,6 +30,7 @@ export function ScaleOrderSummary({
 	szDecimals,
 	marketKind = "perp",
 }: Props) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const isLeveraged = marketKind !== "spot";
 

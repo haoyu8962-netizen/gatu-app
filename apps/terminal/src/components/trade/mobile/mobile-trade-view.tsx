@@ -36,6 +36,7 @@ import {
 	useUserPositions,
 } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { deriveOrderOutcome, extractStatusErrors } from "@/lib/trade/extract-order-status";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 import { toNumber, toNumberOrZero } from "@/lib/trade/numbers";
@@ -96,6 +97,7 @@ interface Props {
 }
 
 export function MobileTradeView({ active = true, className, embedded, sizeMode, onSizeModeChange }: Props) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { address, isConnected, sessionMode } = useWalletSession();
 	const { data: walletClient, isLoading: isWalletLoading, error: walletClientError } = useWalletClient();

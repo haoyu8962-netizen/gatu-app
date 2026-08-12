@@ -11,6 +11,7 @@ import { NETWORKS } from "@/config/networks";
 import type { UsdcRoutingQueryStatus } from "@/domain/trade/usdc-routing";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { floorToString, limitDecimalInput, toNumberOrZero } from "@/lib/trade/numbers";
 import { getWithdrawalNetReceived, type WithdrawalRoute } from "@/lib/trade/withdrawal";
 import { AssetSelect } from "./asset-select";
@@ -71,6 +72,7 @@ export function WithdrawForm({
 	showSpotFundsNotice = false,
 	onTransferClick,
 }: Props) {
+	useNumberFormatRevision();
 	const { t: translate } = useLingui();
 	const amountInputId = useId();
 	const amountErrorId = useId();

@@ -14,6 +14,7 @@ import {
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { toBig, toNumber } from "@/lib/trade/numbers";
 import {
 	type BookLevel,
@@ -146,6 +147,7 @@ export function MobileBookView({
 	inTabLayout,
 	view: viewProp,
 }: MobileBookViewProps) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { env } = useHyperliquid();
 	const [internalView, setView] = useState<View>("book");
@@ -461,6 +463,7 @@ export function CompactOrderbook({
 	priceToken,
 	sizeToken,
 }: CompactOrderbookProps) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const hasAsks = asks.length > 0;
 	const hasBids = bids.length > 0;
@@ -918,6 +921,7 @@ export function SplitOrderbookRow({
 	showInQuote,
 	szDecimals,
 }: SplitOrderbookRowProps) {
+	useNumberFormatRevision();
 	const { setSelectedPrice } = useOrderbookActions();
 	const isAsk = side === "ask";
 	const depthPct = getDepthPercentage(level.total, maxTotal);

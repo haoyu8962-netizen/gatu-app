@@ -3,6 +3,7 @@ import { memo } from "react";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { getExplorerTxUrl } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { getTradeQuoteSize, type ProcessedTrade } from "@/lib/trade/trades";
 
 interface Props {
@@ -15,6 +16,7 @@ interface Props {
 }
 
 function TradeRowComponent({ trade, priceDecimals, szDecimals, showInQuote, isTestnet, compact = false }: Props) {
+	useNumberFormatRevision();
 	const priceDisplay = formatNumber(trade.price, priceDecimals);
 	const sizeDisplay = showInQuote
 		? formatNumber(getTradeQuoteSize(trade.price, trade.size), 2)

@@ -5,6 +5,7 @@ import { formatTokenBalance } from "@/lib/bridge/format";
 import { cn } from "@/lib/cn";
 import { formatUSD } from "@/lib/format";
 import { type BridgeToken, useBridgeBalances } from "@/lib/lifi/use-balances";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { PoweredByLiFi, TokenIcon } from "./shared-ui";
 
 const BRIDGE_ASSET_LIST_MAX_HEIGHT = "max-h-72";
@@ -20,6 +21,7 @@ function tokenRowStyle(isDust: boolean): string {
 }
 
 function TokenRow({ token, onSelect }: TokenRowProps) {
+	useNumberFormatRevision();
 	return (
 		<button
 			type="button"

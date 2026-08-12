@@ -1,17 +1,22 @@
-import { i18n } from "@lingui/core";
 import Big from "big.js";
 import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useShallow } from "zustand/react/shallow";
 import { STORAGE_KEYS } from "@/config/app";
-import { type LocaleCode, type NumberFormatLocale, resolveNumberFormatLocale } from "@/config/i18n";
+import {
+	defaultNumberFormatLocale,
+	type NumberFormatLocale,
+	normalizeNumberFormatLocale,
+	resolveNumberFormatLocale,
+} from "@/config/i18n";
 import {
 	DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	MARKET_ORDER_SLIPPAGE_MAX_PERCENT,
 	MARKET_ORDER_SLIPPAGE_MIN_PERCENT,
 } from "@/config/trade";
 import { getNetwork, type Network, persistNetwork, subscribeNetworkStorage } from "@/lib/network";
+import { notifyNumberFormatChange } from "@/lib/number-format-reactivity";
 import { createValidatedStorage } from "@/lib/storage/validated-storage";
 import type { MarginMode } from "@/lib/trade/margin-mode";
 
@@ -38,7 +43,7 @@ const DEFAULT_GLOBAL_SETTINGS = {
 	hideSmallBalances: true,
 	showOrderbookInQuote: false,
 	showChartScanlines: false,
-	numberFormatLocale: "auto" as NumberFormatLocale,
+	numberFormatLocale: defaultNumberFormatLocale,
 	marketOrderSlippagePercent: DEFAULT_MARKET_ORDER_SLIPPAGE_PERCENT,
 	marginMode: "cross" as MarginMode,
 	positionsActiveTab: "positions",
@@ -103,19 +108,28 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 		}),
 		{
 			name: STORAGE_KEYS.GLOBAL_SETTINGS,
-			version: 2,
+			version: 3,
 			storage: createJSONStorage(() => validatedStorage),
 			partialize: (state) => ({
 				hideSmallBalances: state.hideSmallBalances,
 				showOrderbookInQuote: state.showOrderbookInQuote,
 				showChartScanlines: state.showChartScanlines,
-				numberFormatLocale: state.numberFormatLocale,
+				...(state.numberFormatLocale === defaultNumberFormatLocale
+					? {}
+					: { numberFormatLocale: state.numberFormatLocale }),
 				marketOrderSlippagePercent: state.marketOrderSlippagePercent,
 				marginMode: state.marginMode,
 				positionsActiveTab: state.positionsActiveTab,
 				mobileActiveTab: state.mobileActiveTab,
 				theme: state.theme,
 			}),
+			migrate: (persisted) => {
+				const state = persisted as Partial<GlobalSettingsStore>;
+				return {
+					...state,
+					numberFormatLocale: normalizeNumberFormatLocale(state.numberFormatLocale),
+				};
+			},
 			merge: (persisted, current) => {
 				const p = persisted as Partial<GlobalSettingsStore>;
 				const showOrderbookInQuote =
@@ -133,6 +147,7 @@ const useGlobalSettingsStore = create<GlobalSettingsStore>()(
 					...current,
 					...DEFAULT_GLOBAL_SETTINGS,
 					...p,
+					numberFormatLocale: normalizeNumberFormatLocale(p.numberFormatLocale),
 					showOrderbookInQuote,
 					marketOrderSlippagePercent: slippagePercent,
 					marginMode: p?.marginMode === "isolated" ? "isolated" : "cross",
@@ -154,6 +169,7 @@ function applyThemeClass(theme: Theme) {
 applyThemeClass(useGlobalSettingsStore.getState().theme);
 useGlobalSettingsStore.subscribe((state, prev) => {
 	if (state.theme !== prev.theme) applyThemeClass(state.theme);
+	if (state.numberFormatLocale !== prev.numberFormatLocale) notifyNumberFormatChange();
 });
 
 subscribeNetworkStorage((network) => {
@@ -206,7 +222,11 @@ export function useMarginMode() {
 }
 
 export function getResolvedFormatLocale(): string {
-	return resolveNumberFormatLocale(useGlobalSettingsStore.getState().numberFormatLocale, i18n.locale as LocaleCode);
+	return resolveNumberFormatLocale(useGlobalSettingsStore.getState().numberFormatLocale);
+}
+
+export function getNumberFormatLocale(): NumberFormatLocale {
+	return useGlobalSettingsStore.getState().numberFormatLocale;
 }
 
 export function useHideSmallBalances() {

@@ -14,6 +14,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatClockDuration, formatNumber, formatPercent, formatPrice } from "@/lib/format";
 import { useMarkets, useSubscription } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useOrderEntryActions } from "@/stores/use-order-entry-store";
 import { Placeholder } from "./placeholder";
 import { positionsPanelTableShellClass, positionsPanelTabRootClass } from "./positions-panel-table-styles";
@@ -24,6 +25,7 @@ const twapGridClass =
 	"grid min-w-[1280px] grid-cols-[110px_90px_minmax(18rem,1fr)_130px_130px_110px_150px] gap-x-4 px-5";
 
 export function TwapTab() {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const [subview, setSubview] = useState<TwapSubview>("current");
 	const { address, isConnected } = useWalletSession();

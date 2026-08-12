@@ -1,15 +1,27 @@
-import { describe, expect, it, vi } from "vitest";
+import { i18n } from "@lingui/core";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	formatDateTime,
+	formatDateTimeShort,
 	formatLiquidationPrice,
 	formatNumber,
 	formatPercent,
 	formatPrice,
 	formatQuoteAmount,
+	formatTime,
 	formatToken,
 	formatUSD,
 	shortenAddress,
 	szDecimalsToPriceDecimals,
 } from "@/lib/format";
+
+const formatSettings = vi.hoisted(() => ({
+	numberFormatLocale: "en-US" as "en-US" | "de-DE" | "fr-FR",
+}));
+
+vi.mock("@/stores/use-global-settings-store", () => ({
+	getResolvedFormatLocale: () => formatSettings.numberFormatLocale,
+}));
 
 vi.mock("@lingui/core/macro", () => ({
 	msg: (strings: TemplateStringsArray | string, ...values: unknown[]) => {
@@ -23,6 +35,11 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 
 describe("format", () => {
+	beforeEach(() => {
+		formatSettings.numberFormatLocale = "en-US";
+		i18n.loadAndActivate({ locale: "en", messages: {} });
+	});
+
 	it("formats USD values with fixed digits", () => {
 		expect(formatUSD(1234.56)).toBe("$1,234.56");
 		expect(formatUSD(1234.56, 0)).toBe("$1,235");
@@ -49,5 +66,37 @@ describe("format", () => {
 	it("formats numbers and shortens addresses", () => {
 		expect(formatNumber(1234.56, 1)).toBe("1,234.6");
 		expect(shortenAddress("0x1234567890123456789012345678901234567890")).toBe("0x1234...7890");
+	});
+
+	it.each([
+		["en-US", "1,234.56", "$1,234.56", "+12.50%", "$12.5K"],
+		["de-DE", "1.234,56", "$1.234,56", "+12,50%", "$12,5K"],
+		["fr-FR", "1 234,56", "$1 234,56", "+12,50%", "$12,5K"],
+	] as const)("changes only number separators for the %s preset", (locale, number, usd, percent, compactUsd) => {
+		formatSettings.numberFormatLocale = locale;
+
+		expect(formatNumber(1234.56, 2)).toBe(number);
+		expect(formatUSD(1234.56, { compact: false })).toBe(usd);
+		expect(formatPercent(0.125, 2)).toBe(percent);
+		expect(formatUSD(12500, { decimals: 1 })).toBe(compactUsd);
+	});
+
+	it("formats dates from the active interface language independently of number separators", () => {
+		const value = new Date("2026-08-12T14:35:00Z");
+		const options = { timeZone: "UTC" } as const;
+
+		formatSettings.numberFormatLocale = "fr-FR";
+		expect(formatDateTimeShort(value, options)).toBe("08/12, 14:35");
+		expect(formatDateTime(value, { ...options, dateStyle: "short", timeStyle: "short" })).toBe("8/12/26, 2:35 PM");
+		expect(formatTime(value, options)).toBe("2:35 PM");
+
+		i18n.loadAndActivate({ locale: "fr", messages: {} });
+		expect(formatDateTimeShort(value, options)).toBe("12/08 14:35");
+		expect(formatDateTime(value, { ...options, dateStyle: "short", timeStyle: "short" })).toBe("12/08/2026 14:35");
+		expect(formatTime(value, options)).toBe("14:35");
+
+		formatSettings.numberFormatLocale = "de-DE";
+		expect(formatDateTimeShort(value, options)).toBe("12/08 14:35");
+		expect(formatDateTimeShort(value, { ...options, locale: "en-US" })).toBe("08/12, 14:35");
 	});
 });

@@ -10,6 +10,7 @@ import { useSpotTokenUsdPrices } from "@/hooks/trade/use-spot-token-usd-prices";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useDepositModalActions } from "@/stores/use-global-modal-store";
 import { AssetDisplay } from "../components/asset-display";
 import { TransferModal } from "../positions/transfer-modal";
@@ -17,6 +18,7 @@ import { TransferModal } from "../positions/transfer-modal";
 type TransferDirection = "toSpot" | "toPerp";
 
 export function MobileBalancesTab() {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const { isConnected } = useWalletSession();
 	const { getToken } = useSpotTokens();

@@ -15,6 +15,7 @@ import type { ReferralAction } from "@/hooks/trade/use-referral-actions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatExchangeActionError } from "@/lib/errors/format";
 import { formatToken } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import type { ReferralRewardRow } from "@/lib/trade/referral";
 
 type Step = "error" | "form" | "review" | "submitting" | "success";
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export function ReferralActionModal({ action, claimableRewards, onClose, onSubmit }: Props) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const isMobile = useIsMobile();
 	const [code, setCode] = useState("");

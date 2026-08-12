@@ -9,7 +9,6 @@ import { useGeoRestriction } from "@/hooks/use-geo-restriction";
 import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { useDepositModalActions, useSettingsDialogActions } from "@/stores/use-global-modal-store";
-import { LanguageSwitcher } from "../header/language-switcher";
 import { ThemeToggle } from "../header/theme-toggle";
 
 export function MobileNavDrawer() {
@@ -174,10 +173,7 @@ export function MobileNavDrawer() {
 							</Button>
 						)}
 						<div className="flex items-center justify-between pt-1">
-							<div className="flex items-center gap-1">
-								<LanguageSwitcher />
-								<ThemeToggle />
-							</div>
+							<ThemeToggle />
 							<ButtonIcon
 								variant="ghost"
 								intent="neutral"

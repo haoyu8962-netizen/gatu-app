@@ -19,6 +19,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken, formatUSD } from "@/lib/format";
 import { useSpotTokens } from "@/lib/hyperliquid/markets/use-spot-tokens";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useDepositModalActions, useSwapModalActions } from "@/stores/use-global-modal-store";
 import { useGlobalSettingsActions, useHideSmallBalances } from "@/stores/use-global-settings-store";
 import { AssetDisplay } from "../components/asset-display";
@@ -44,6 +45,7 @@ import { TransferModal } from "./transfer-modal";
 type TransferDirection = "toSpot" | "toPerp";
 
 export function BalancesTab() {
+	useNumberFormatRevision();
 	const { isConnected } = useWalletSession();
 	const { getToken } = useSpotTokens();
 	const hideSmallBalances = useHideSmallBalances();

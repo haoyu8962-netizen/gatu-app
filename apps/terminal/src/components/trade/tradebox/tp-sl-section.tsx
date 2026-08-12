@@ -6,6 +6,7 @@ import { SL_QUICK_PERCENT_OPTIONS, TP_QUICK_PERCENT_OPTIONS } from "@/config/tra
 import { getRiskRewardRatio } from "@/domain/market";
 import { cn } from "@/lib/cn";
 import { formatQuoteAmount, formatUSD, szDecimalsToPriceDecimals } from "@/lib/format";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isPositive, toBig, toNumber } from "@/lib/trade/numbers";
 import {
 	calculateEstimatedPnl,
@@ -82,6 +83,7 @@ export function TpSlSection({
 	quoteSymbol = DEFAULT_QUOTE_TOKEN,
 	linkedReturnInputs,
 }: Props) {
+	useNumberFormatRevision();
 	function formatPnlValue(value: string | number): string {
 		return quoteSymbol === DEFAULT_QUOTE_TOKEN
 			? formatUSD(value, { signDisplay: "exceptZero" })

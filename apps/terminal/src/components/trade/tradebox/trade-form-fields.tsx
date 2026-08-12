@@ -15,6 +15,7 @@ import { useWalletSession } from "@/hooks/wallet/use-wallet-session";
 import { cn } from "@/lib/cn";
 import { formatToken } from "@/lib/format";
 import { useSelectedMarketInfo } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { formatDecimalFloor, isPositive, toNumber, toNumberOrZero } from "@/lib/trade/numbers";
 import {
 	canUseTpSl as canUseTpSlForOrder,
@@ -96,6 +97,7 @@ function TradeTifChips({ orderType, disabled }: { orderType: OrderType; disabled
 }
 
 export function TradeFormFields({ price, positionSize, onSizeModeToggle, onSizePercentApply }: Props) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const sizeFieldId = useId();
 	const limitFieldId = useId();

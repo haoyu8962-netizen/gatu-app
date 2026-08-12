@@ -31,12 +31,14 @@ import {
 	useSelectedMarketInfo,
 	useSubscription,
 } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { type Numeric, toBig } from "@/lib/trade/numbers";
 import { StatBlock } from "./chart/stat-block";
 
 const HOUR_MS = 3_600_000;
 
 function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates; remaining: number }) {
+	useNumberFormatRevision();
 	const rows = [
 		{ label: t`7 days`, rate: rates.sevenDays },
 		{ label: t`30 days`, rate: rates.thirtyDays },
@@ -64,6 +66,7 @@ function FundingTooltipContent({ rates, remaining }: { rates: FundingPeriodRates
 }
 
 function FundingStatBlock({ fundingRate }: { fundingRate: string | null }) {
+	useNumberFormatRevision();
 	const [remaining, setRemaining] = useState(() => HOUR_MS - (Date.now() % HOUR_MS));
 	const periodRates = getFundingPeriodRates(fundingRate);
 	const hasFunding = periodRates !== null;
@@ -128,6 +131,7 @@ function getSpotCirculatingSupply(market: UnifiedMarketInfo | undefined): string
 }
 
 export function MarketOverview() {
+	useNumberFormatRevision();
 	const { data: selectedMarketInfo } = useSelectedMarketInfo();
 	const isSpot = selectedMarketInfo?.kind === "spot";
 	const { midPx } = useOrderbookMidPrice(isSpot ? selectedMarketInfo?.name : undefined);

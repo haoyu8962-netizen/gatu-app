@@ -21,6 +21,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { formatNumber, shortenAddress } from "@/lib/format";
 import { getExplorerTokenUrl, type UnifiedMarketInfo, useInfo } from "@/lib/hyperliquid";
 import { isTestnet } from "@/lib/network";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { AssetDisplay } from "./asset-display";
 
 const ANNOTATION_STALE_TIME_MS = 30 * 60 * 1_000;
@@ -98,6 +99,7 @@ function createProviderDescription(reference: MarketAssetReference | null): Reac
 }
 
 export function MarketAssetInfo({ market }: Props) {
+	useNumberFormatRevision();
 	const { i18n } = useLingui();
 	const isMobile = useIsMobile();
 	const [open, setOpen] = useState(false);

@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import { buildCsvRows } from "@/lib/csv";
 import { formatDateTimeShort, formatPercent, formatToken, formatUSD } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { isIncompleteHistorySnapshotError, isMalformedHistoryPageError } from "@/lib/trade/history-pagination";
 import { toBig } from "@/lib/trade/numbers";
 import { getMarketCloseValueColorClass } from "@/lib/ui/value-color";
@@ -36,6 +37,7 @@ interface Props {
 }
 
 export function FundingTab({ toolbarTarget }: Props = {}) {
+	useNumberFormatRevision();
 	const navigateToMarket = useMarketNavigation();
 	const { error, fundings: updates, isConnected, status } = useUserFunding();
 	const markets = useMarkets();

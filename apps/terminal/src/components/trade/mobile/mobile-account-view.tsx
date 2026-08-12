@@ -38,6 +38,7 @@ import { formatNumber, formatPercent, formatUSD } from "@/lib/format";
 import { useMarkets } from "@/lib/hyperliquid";
 import { createLazyComponent } from "@/lib/lazy";
 import { useHasExistingBridgeExecution } from "@/lib/lifi/bridge-execution-state";
+import { useNumberFormatRevision } from "@/lib/number-format-reactivity";
 import { useDepositModalActions, useTransferModalActions } from "@/stores/use-global-modal-store";
 
 const WalletModal = createLazyComponent(() => import("../components/wallet-modal"), "WalletModal");
@@ -47,6 +48,7 @@ interface MobileAccountViewProps {
 }
 
 export function MobileAccountView({ className }: MobileAccountViewProps) {
+	useNumberFormatRevision();
 	const { t } = useLingui();
 	const overviewTitleId = useId();
 	const { isConnected, sessionMode, walletAddress } = useWalletSession();
