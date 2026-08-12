@@ -32,7 +32,7 @@ export function TopNav() {
 	const tradeActive = isTradeRoutePath(pathname);
 	const portfolioActive = pathname === "/portfolio";
 	const moreActive = ["/docs", "/support", "/terms", "/privacy", "/risk"].includes(pathname);
-	const moreItems = [
+	const moreDestinationItems = [
 		{
 			label: t`Docs`,
 			active: pathname === "/docs",
@@ -58,6 +58,18 @@ export function TopNav() {
 			active: pathname === "/risk",
 			onSelect: () => void navigate({ to: "/risk" }),
 		},
+	];
+	const futureMoreItems = [
+		{ label: t`Statistics`, disabled: true },
+		{ label: t`API & Subaccounts`, disabled: true },
+	];
+	const compactMoreItems = [
+		...(hasWalletAccess ? [{ label: t`Vaults`, disabled: true }] : []),
+		{ label: t`Staking`, disabled: true },
+		{ label: t`Referrals`, disabled: true },
+		...(hasWalletAccess ? [{ label: t`Leaderboard`, disabled: true }] : []),
+		...futureMoreItems,
+		...moreDestinationItems,
 	];
 
 	return (
@@ -122,7 +134,21 @@ export function TopNav() {
 						>
 							<Trans>Portfolio</Trans>
 						</Link>
+						<UpcomingNavItem label={t`Earn`} soonLabel={t`Soon`} />
+						<UpcomingNavItem
+							label={t`Vaults`}
+							soonLabel={t`Soon`}
+							className={hasWalletAccess ? "max-[1181px]:hidden" : undefined}
+						/>
+						<UpcomingNavItem label={t`Staking`} soonLabel={t`Soon`} className="max-[1181px]:hidden" />
+						<UpcomingNavItem label={t`Referrals`} soonLabel={t`Soon`} className="max-[1181px]:hidden" />
+						<UpcomingNavItem
+							label={t`Leaderboard`}
+							soonLabel={t`Soon`}
+							className={hasWalletAccess ? "max-[1181px]:hidden" : undefined}
+						/>
 						<Dropdown
+							className="max-[1181px]:hidden"
 							align="start"
 							size="md"
 							triggerVariant="minimal"
@@ -131,9 +157,23 @@ export function TopNav() {
 								"h-[34px] rounded-[8px] px-2.5 py-2 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-muted transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg data-[popup-open]:bg-market-close-hover data-[popup-open]:text-market-close-fg [&>svg]:size-[10px]",
 								moreActive && "font-bold text-market-close-fg",
 							)}
-							popupClassName="min-w-[148px] rounded-[10px] border-market-close-stroke-card bg-surface p-1 font-market-close shadow-[0_12px_32px_rgba(20,30,45,0.16)] [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px] [&_[role=menuitem]]:font-medium"
+							popupClassName="max-h-[calc(100vh-4.5rem)] min-w-[148px] rounded-[10px] border-market-close-stroke-card bg-surface p-1 font-market-close shadow-[0_12px_32px_rgba(20,30,45,0.16)] [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px] [&_[role=menuitem]]:font-medium"
 							trigger={<Trans>More</Trans>}
-							items={moreItems}
+							items={[...futureMoreItems, ...moreDestinationItems]}
+						/>
+						<Dropdown
+							className="hidden max-[1181px]:block"
+							align="start"
+							size="md"
+							triggerVariant="minimal"
+							triggerAriaLabel={t`More`}
+							triggerClassName={cn(
+								"h-[34px] rounded-[8px] px-2.5 py-2 text-[13px] leading-[18px] font-medium whitespace-nowrap text-market-close-muted transition-colors duration-[120ms] hover:bg-market-close-hover hover:text-market-close-fg data-[popup-open]:bg-market-close-hover data-[popup-open]:text-market-close-fg [&>svg]:size-[10px]",
+								moreActive && "font-bold text-market-close-fg",
+							)}
+							popupClassName="max-h-[calc(100vh-4.5rem)] min-w-[148px] rounded-[10px] border-market-close-stroke-card bg-surface p-1 font-market-close shadow-[0_12px_32px_rgba(20,30,45,0.16)] [&_[role=menuitem]]:rounded-[7px] [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-[9px] [&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:leading-[18px] [&_[role=menuitem]]:font-medium"
+							trigger={<Trans>More</Trans>}
+							items={compactMoreItems}
 						/>
 					</nav>
 				</div>
@@ -185,6 +225,29 @@ export function TopNav() {
 				)}
 			</div>
 		</header>
+	);
+}
+
+interface UpcomingNavItemProps {
+	label: string;
+	soonLabel: string;
+	className?: string;
+}
+
+function UpcomingNavItem({ label, soonLabel, className }: UpcomingNavItemProps) {
+	return (
+		<button
+			type="button"
+			disabled
+			title={soonLabel}
+			className={cn(
+				"cursor-default rounded-[8px] px-2.5 py-2 font-medium whitespace-nowrap text-market-close-muted disabled:hover:bg-transparent disabled:hover:text-market-close-muted",
+				className,
+			)}
+		>
+			{label}
+			<span className="sr-only"> — {soonLabel}</span>
+		</button>
 	);
 }
 

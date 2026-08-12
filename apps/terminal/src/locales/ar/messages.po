@@ -540,6 +540,10 @@ msgstr "يمكن لأي شخص يمسح رمز QR أو يلتقطه أن يتد�
 #~ msgid "API"
 #~ msgstr "API"
 
+#: src/components/trade/header/top-nav.tsx
+msgid "API & Subaccounts"
+msgstr ""
+
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Appearance"
 #~ msgstr ""
@@ -962,6 +966,7 @@ msgstr "انتهت مهلة طلب سجل الرسم البياني"
 msgid "Checking account..."
 msgstr "جارٍ التحقق من الحساب..."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -1695,6 +1700,7 @@ msgstr "إنشاء خزنة"
 #~ msgstr "جارٍ إنشاء الرابط..."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Creating your wallet. Please wait..."
 msgstr "جارٍ إنشاء محفظتك. يرجى الانتظار..."
 
@@ -1858,6 +1864,7 @@ msgctxt "Trading toolbar action"
 msgid "Deposit"
 msgstr "إيداع"
 
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Deposit address"
 msgstr "عنوان الإيداع"
@@ -2096,6 +2103,7 @@ msgstr "يستخدم كل مركز الهامش المخصص له فقط. إذا
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
 msgstr "يستخدم كل مركز الهامش المخصص له فقط. إذا وصلت نسبة الهامش إلى 100٪، تتم تصفية المركز. يمكن إضافة الهامش، ولكن لا يمكن سحبه ما دام المركز مفتوحًا."
 
+#: src/components/trade/header/top-nav.tsx
 #: src/config/account-ledger.ts
 msgid "Earn"
 msgstr "العوائد"
@@ -2800,6 +2808,7 @@ msgstr "الغاز ({0})"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Gas-sponsored CCTP deposits require a configured and verified relayer."
 msgstr "تتطلب إيداعات CCTP المدعومة برسوم الغاز مُرحِّلًا مُهيّأً ومتحققًا منه."
 
@@ -3117,6 +3126,8 @@ msgstr "Layer 1"
 msgid "Layer 2"
 msgstr "Layer 2"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/nav.tsx
 msgid "Leaderboard"
 msgstr "لوحة المتصدرين"
@@ -3815,6 +3826,8 @@ msgid "Modifying..."
 msgstr "جارٍ التعديل..."
 
 #: src/components/trade/header/desktop-utilities-menu.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 msgid "More"
@@ -5122,6 +5135,11 @@ msgstr "قلّل هذا المركز بسعر السوق الحالي. لا يم
 #~ msgid "Reduce-only orders only"
 #~ msgstr ""
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+msgid "Referrals"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
 msgstr "تحديث عرض السعر"
@@ -5248,6 +5266,7 @@ msgstr "استئناف التتبع"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -5978,6 +5997,11 @@ msgstr "تم قبول بعض الأوامر. راجع الأوامر المفت�
 msgid "Something went wrong"
 msgstr "حدث خطأ ما"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
 msgstr "قريبًا"
@@ -6059,6 +6083,8 @@ msgstr "الفارق"
 msgid "Stake"
 msgstr "رهن"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/account-ledger.ts
 #: src/config/nav.tsx
 msgid "Staking"
@@ -6085,6 +6111,10 @@ msgstr "سعر البداية"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
 msgstr "جارٍ تشغيل الكاميرا..."
+
+#: src/components/trade/header/top-nav.tsx
+msgid "Statistics"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -7504,6 +7534,7 @@ msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not s
 msgstr "تعذّر التحقق من مسار الإيداع الحالي في Hyperliquid. لم يُرسل الإيداع."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
 msgstr "تعذّر التحقق من مسار الإيداع الحالي في Hyperliquid. تم إيقاف الإيداعات مؤقتًا."
 
@@ -7697,6 +7728,8 @@ msgstr "توزيع الخزنة"
 msgid "Vault Withdrawal"
 msgstr "سحب من الخزنة"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/nav.tsx
 msgid "Vaults"
 msgstr "الخزائن"
@@ -8009,6 +8042,7 @@ msgstr "لا يزال الجسر قيد المعالجة. أموالك آمنة.
 msgid "Your current open position on this market"
 msgstr "مركزك المفتوح الحالي في هذا السوق"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "محفظة البريد الإلكتروني غير متاحة. سجّل الخروج ثم سجّل الدخول مجددًا باستخدام البريد الإلكتروني نفسه وأعد المحاولة."

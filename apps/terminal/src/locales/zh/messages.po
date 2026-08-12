@@ -544,6 +544,10 @@ msgstr "任何扫描或截取此二维码的人都能使用该交易密钥进行
 #~ msgid "API"
 #~ msgstr "API"
 
+#: src/components/trade/header/top-nav.tsx
+msgid "API & Subaccounts"
+msgstr "API 与子账户"
+
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Appearance"
 #~ msgstr ""
@@ -966,6 +970,7 @@ msgstr "图表历史数据请求超时"
 msgid "Checking account..."
 msgstr "正在检查账户…"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -1708,6 +1713,7 @@ msgstr "创建金库"
 #~ msgstr "创建链接中…"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Creating your wallet. Please wait..."
 msgstr "正在创建你的钱包，请稍候..."
 
@@ -1871,6 +1877,7 @@ msgctxt "Trading toolbar action"
 msgid "Deposit"
 msgstr "存入"
 
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Deposit address"
 msgstr "充值地址"
@@ -2109,6 +2116,7 @@ msgstr "每个仓位仅使用其分配的保证金。若保证金率达到 100%�
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
 msgstr "每个仓位仅使用分配给它的保证金。如果保证金率达到 100%，仓位将被强平。可以追加保证金，但在仓位未平仓时无法移除保证金。"
 
+#: src/components/trade/header/top-nav.tsx
 #: src/config/account-ledger.ts
 msgid "Earn"
 msgstr "收益"
@@ -2817,6 +2825,7 @@ msgstr "Gas（{0}）"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Gas-sponsored CCTP deposits require a configured and verified relayer."
 msgstr "Gas 代付的 CCTP 充值需要已配置且验证通过的中继器。"
 
@@ -3134,6 +3143,8 @@ msgstr "Layer 1"
 msgid "Layer 2"
 msgstr "Layer 2"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/nav.tsx
 msgid "Leaderboard"
 msgstr "排行榜"
@@ -3836,6 +3847,8 @@ msgid "Modifying..."
 msgstr "正在修改..."
 
 #: src/components/trade/header/desktop-utilities-menu.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 msgid "More"
@@ -5143,6 +5156,11 @@ msgstr "以当前市场价格减仓，成交后不可撤销。"
 #~ msgid "Reduce-only orders only"
 #~ msgstr ""
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+msgid "Referrals"
+msgstr "推荐"
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
 msgstr "刷新报价"
@@ -5269,6 +5287,7 @@ msgstr "继续跟踪"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -5999,6 +6018,11 @@ msgstr "部分订单已被接受。重试前请检查当前委托。"
 msgid "Something went wrong"
 msgstr "出错了"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
 msgstr "即将推出"
@@ -6080,6 +6104,8 @@ msgstr "价差"
 msgid "Stake"
 msgstr "质押"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/account-ledger.ts
 #: src/config/nav.tsx
 msgid "Staking"
@@ -6106,6 +6132,10 @@ msgstr "起始价"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
 msgstr "正在启动相机…"
+
+#: src/components/trade/header/top-nav.tsx
+msgid "Statistics"
+msgstr "统计数据"
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -7529,6 +7559,7 @@ msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not s
 msgstr "无法验证 Hyperliquid 当前的充值路由。充值未提交。"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
 msgstr "无法验证 Hyperliquid 当前的充值路由。充值已暂停。"
 
@@ -7722,6 +7753,8 @@ msgstr "金库分配"
 msgid "Vault Withdrawal"
 msgstr "金库提款"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/nav.tsx
 msgid "Vaults"
 msgstr "金库"
@@ -8034,6 +8067,7 @@ msgstr "您的跨链转账仍在处理中。资金安全。"
 msgid "Your current open position on this market"
 msgstr "您在此市场的当前持仓"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "邮箱钱包不可用。请退出登录并使用同一邮箱重新登录，然后重试。"

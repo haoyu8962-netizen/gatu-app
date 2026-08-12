@@ -540,6 +540,10 @@ msgstr "जो भी QR को स्कैन या कैप्चर कर
 #~ msgid "API"
 #~ msgstr "API"
 
+#: src/components/trade/header/top-nav.tsx
+msgid "API & Subaccounts"
+msgstr ""
+
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Appearance"
 #~ msgstr ""
@@ -962,6 +966,7 @@ msgstr "चार्ट इतिहास अनुरोध का समय �
 msgid "Checking account..."
 msgstr "खाता जाँचा जा रहा है..."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -1695,6 +1700,7 @@ msgstr "वॉल्ट बनाएँ"
 #~ msgstr "लिंक बनाया जा रहा है..."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Creating your wallet. Please wait..."
 msgstr "आपका वॉलेट बनाया जा रहा है। कृपया प्रतीक्षा करें..."
 
@@ -1858,6 +1864,7 @@ msgctxt "Trading toolbar action"
 msgid "Deposit"
 msgstr "जमा करें"
 
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Deposit address"
 msgstr "जमा पता"
@@ -2096,6 +2103,7 @@ msgstr "प्रत्येक पोज़िशन केवल अपने
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
 msgstr "प्रत्येक पोज़िशन केवल उसे आवंटित मार्जिन का उपयोग करती है। यदि मार्जिन अनुपात 100% तक पहुँच जाता है, तो पोज़िशन लिक्विडेट हो जाती है। मार्जिन जोड़ा जा सकता है, लेकिन पोज़िशन खुली रहने तक इसे निकाला नहीं जा सकता।"
 
+#: src/components/trade/header/top-nav.tsx
 #: src/config/account-ledger.ts
 msgid "Earn"
 msgstr "अर्न"
@@ -2800,6 +2808,7 @@ msgstr "गैस ({0})"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Gas-sponsored CCTP deposits require a configured and verified relayer."
 msgstr "Gas-sponsored CCTP जमा के लिए कॉन्फ़िगर और सत्यापित relayer आवश्यक है।"
 
@@ -3117,6 +3126,8 @@ msgstr "Layer 1"
 msgid "Layer 2"
 msgstr "Layer 2"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/nav.tsx
 msgid "Leaderboard"
 msgstr "लीडरबोर्ड"
@@ -3815,6 +3826,8 @@ msgid "Modifying..."
 msgstr "संशोधित किया जा रहा है..."
 
 #: src/components/trade/header/desktop-utilities-menu.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 msgid "More"
@@ -5122,6 +5135,11 @@ msgstr "मौजूदा बाज़ार मूल्य पर यह प�
 #~ msgid "Reduce-only orders only"
 #~ msgstr ""
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+msgid "Referrals"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
 msgstr "कोट रीफ़्रेश करें"
@@ -5248,6 +5266,7 @@ msgstr "ट्रैकिंग फिर से शुरू करें"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -5978,6 +5997,11 @@ msgstr "कुछ ऑर्डर स्वीकार किए गए। प�
 msgid "Something went wrong"
 msgstr "कुछ गलत हो गया"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
 msgstr "जल्द ही"
@@ -6059,6 +6083,8 @@ msgstr "स्प्रेड"
 msgid "Stake"
 msgstr "स्टेक करें"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/account-ledger.ts
 #: src/config/nav.tsx
 msgid "Staking"
@@ -6085,6 +6111,10 @@ msgstr "प्रारंभ मूल्य"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
 msgstr "कैमरा शुरू हो रहा है..."
+
+#: src/components/trade/header/top-nav.tsx
+msgid "Statistics"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -7504,6 +7534,7 @@ msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not s
 msgstr "Hyperliquid के मौजूदा जमा रूट को सत्यापित नहीं किया जा सका। जमा सबमिट नहीं किया गया।"
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
 msgstr "Hyperliquid के मौजूदा जमा रूट को सत्यापित नहीं किया जा सका। जमा रोक दिए गए हैं।"
 
@@ -7697,6 +7728,8 @@ msgstr "वॉल्ट वितरण"
 msgid "Vault Withdrawal"
 msgstr "वॉल्ट निकासी"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/nav.tsx
 msgid "Vaults"
 msgstr "वॉल्ट"
@@ -8009,6 +8042,7 @@ msgstr "आपका ब्रिज अभी भी प्रोसेस ह�
 msgid "Your current open position on this market"
 msgstr "इस मार्केट पर आपकी वर्तमान खुली पोज़िशन"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "आपका ईमेल वॉलेट उपलब्ध नहीं है। साइन आउट करें, उसी ईमेल से फिर लॉग इन करें और दोबारा प्रयास करें।"

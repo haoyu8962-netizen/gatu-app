@@ -32,17 +32,22 @@ vi.mock("@gatu/ui", () => ({
 	}) => createElement("button", { "aria-label": ariaLabel, onClick, type: "button" }, children),
 	Divider: () => createElement("hr"),
 	Dropdown: ({
+		className,
 		items = [],
 		trigger,
 		triggerAriaLabel,
 	}: {
-		items?: Array<{ active?: boolean; label: string; onSelect?: () => void }>;
+		className?: string;
+		items?: Array<{ active?: boolean; disabled?: boolean; label: string; onSelect?: () => void }>;
 		trigger?: ReactNode;
 		triggerAriaLabel?: string;
 	}) =>
 		createElement(
 			"div",
-			{ "data-testid": "more-dropdown" },
+			{
+				"data-layout": className?.includes("max-[1181px]:hidden") ? "wide" : "compact",
+				"data-testid": "more-dropdown",
+			},
 			createElement("button", { "aria-label": triggerAriaLabel, type: "button" }, trigger),
 			createElement(
 				"div",
@@ -52,6 +57,7 @@ vi.mock("@gatu/ui", () => ({
 						"button",
 						{
 							"aria-current": item.active ? "true" : undefined,
+							disabled: item.disabled,
 							key: item.label,
 							onClick: item.onSelect,
 							role: "menuitem",
@@ -69,12 +75,14 @@ vi.mock("@tanstack/react-router", () => ({
 		"aria-current": ariaCurrent,
 		"aria-label": ariaLabel,
 		children,
+		className,
 		search,
 		to,
 	}: {
 		"aria-current"?: string;
 		"aria-label"?: string;
 		children: ReactNode;
+		className?: string;
 		search?: unknown;
 		to: string;
 	}) =>
@@ -83,6 +91,7 @@ vi.mock("@tanstack/react-router", () => ({
 			{
 				"aria-current": ariaCurrent,
 				"aria-label": ariaLabel,
+				className,
 				"data-search": search === undefined ? undefined : JSON.stringify(search),
 				"data-to": to,
 				href: to,
@@ -179,7 +188,9 @@ describe("TopNav", () => {
 
 		const currentLinks = [...container.querySelectorAll<HTMLElement>('a[aria-current="page"]')];
 		const currentMoreItems = [...container.querySelectorAll<HTMLElement>('[role="menuitem"][aria-current="true"]')];
-		const currentDestinations = [...currentLinks, ...currentMoreItems].map((item) => item.textContent?.trim());
+		const currentDestinations = [
+			...new Set([...currentLinks, ...currentMoreItems].map((item) => item.textContent?.trim())),
+		];
 
 		expect(currentDestinations).toEqual(currentLabel === null ? [] : [currentLabel]);
 	});
@@ -193,13 +204,89 @@ describe("TopNav", () => {
 			["Privacy Policy", "/privacy"],
 			["Risk Disclosure", "/risk"],
 		] as const;
-		const menuItems = [...container.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')];
+		const wideMenu = container.querySelector<HTMLElement>('[data-layout="wide"]');
+		const menuItems = [...(wideMenu?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [])].filter(
+			(item) => !item.disabled,
+		);
 
 		expect(menuItems.map((item) => item.textContent?.trim())).toEqual(destinations.map(([label]) => label));
 		for (const [label, to] of destinations) {
-			act(() => findButton(label)?.click());
+			act(() => menuItems.find((item) => item.textContent?.trim() === label)?.click());
 			expect(testState.navigate).toHaveBeenLastCalledWith({ to });
 		}
+	});
+
+	it("includes all seven designed primary entries without inventing unavailable routes", () => {
+		renderNav();
+		const primaryNavigation = container.querySelector<HTMLElement>('nav[aria-label="Primary navigation"]');
+		const primaryEntries = [...(primaryNavigation?.querySelectorAll<HTMLElement>(":scope > a, :scope > button") ?? [])];
+
+		expect(primaryEntries.map((item) => item.textContent?.replace(/\s+/g, " ").trim())).toEqual([
+			"Trade",
+			"Portfolio",
+			"Earn — Soon",
+			"Vaults — Soon",
+			"Staking — Soon",
+			"Referrals — Soon",
+			"Leaderboard — Soon",
+		]);
+
+		for (const label of ["Earn", "Vaults", "Staking", "Referrals", "Leaderboard"]) {
+			const button = primaryEntries.find((item) => item.textContent?.startsWith(label));
+			expect(button).toBeInstanceOf(HTMLButtonElement);
+			expect((button as HTMLButtonElement).disabled).toBe(true);
+			expect(button?.title).toBe("Soon");
+			expect(findLink(label)).toBeUndefined();
+		}
+	});
+
+	it("adds future More entries with disabled semantics and no navigation side effects", () => {
+		renderNav();
+		const wideMenuItems = [
+			...(container.querySelector('[data-layout="wide"]')?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ??
+				[]),
+		];
+		const futureItems = wideMenuItems.filter((item) => item.disabled);
+
+		expect(futureItems.map((item) => item.textContent?.trim())).toEqual(["Statistics", "API & Subaccounts"]);
+		for (const item of futureItems) act(() => item.click());
+		expect(testState.navigate).not.toHaveBeenCalled();
+	});
+
+	it("moves lower-priority entries into More for each compact wallet state", () => {
+		renderNav();
+
+		function compactMenuItems() {
+			return [
+				...(container
+					.querySelector('[data-layout="compact"]')
+					?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []),
+			];
+		}
+
+		expect(
+			compactMenuItems()
+				.slice(0, 6)
+				.map((item) => item.textContent?.trim()),
+		).toEqual(["Vaults", "Staking", "Referrals", "Leaderboard", "Statistics", "API & Subaccounts"]);
+		expect(
+			compactMenuItems()
+				.slice(0, 4)
+				.every((item) => item.disabled),
+		).toBe(true);
+
+		testState.hasWalletAccess = false;
+		renderNav();
+		expect(
+			compactMenuItems()
+				.slice(0, 4)
+				.map((item) => item.textContent?.trim()),
+		).toEqual(["Staking", "Referrals", "Statistics", "API & Subaccounts"]);
+		expect(
+			compactMenuItems()
+				.slice(0, 4)
+				.every((item) => item.disabled),
+		).toBe(true);
 	});
 
 	it("uses the selected all-scope market for both logo and Trade links", () => {

@@ -540,6 +540,10 @@ msgstr "Quiconque scanne ou capture le QR peut trader en tant que cet Agent."
 #~ msgid "API"
 #~ msgstr "API"
 
+#: src/components/trade/header/top-nav.tsx
+msgid "API & Subaccounts"
+msgstr ""
+
 #: src/components/trade/components/global-settings-dialog.tsx
 #~ msgid "Appearance"
 #~ msgstr ""
@@ -962,6 +966,7 @@ msgstr "La requête d’historique du graphique a expiré"
 msgid "Checking account..."
 msgstr "Vérification du compte..."
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/embedded-deposit-auto-bridge.tsx
 msgid "Checking the current Hyperliquid deposit route..."
@@ -1695,6 +1700,7 @@ msgstr "Créer un coffre"
 #~ msgstr "Création du lien..."
 
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Creating your wallet. Please wait..."
 msgstr "Création de votre portefeuille. Veuillez patienter..."
 
@@ -1858,6 +1864,7 @@ msgctxt "Trading toolbar action"
 msgid "Deposit"
 msgstr "Déposer"
 
+#: src/components/trade/tradebox/deposit/funding-address-card.tsx
 #: src/components/trade/tradebox/deposit/funding-address-card.tsx
 msgid "Deposit address"
 msgstr "Adresse de dépôt"
@@ -2096,6 +2103,7 @@ msgstr "Chaque position utilise uniquement sa marge allouée. Si le ratio de mar
 msgid "Each position uses only its allocated margin. If the margin ratio reaches 100%, the position is liquidated. Margin can be added, but cannot be removed while the position is open."
 msgstr "Chaque position utilise uniquement la marge qui lui est allouée. Si le ratio de marge atteint 100 %, la position est liquidée. De la marge peut être ajoutée, mais elle ne peut pas être retirée tant que la position est ouverte."
 
+#: src/components/trade/header/top-nav.tsx
 #: src/config/account-ledger.ts
 msgid "Earn"
 msgstr "Rendement"
@@ -2800,6 +2808,7 @@ msgstr "Gas ({0})"
 
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Gas-sponsored CCTP deposits require a configured and verified relayer."
 msgstr "Les dépôts CCTP avec frais de gas sponsorisés nécessitent un relais configuré et vérifié."
 
@@ -3117,6 +3126,8 @@ msgstr "Layer 1"
 msgid "Layer 2"
 msgstr "Layer 2"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/nav.tsx
 msgid "Leaderboard"
 msgstr "Classement"
@@ -3815,6 +3826,8 @@ msgid "Modifying..."
 msgstr "Modification..."
 
 #: src/components/trade/header/desktop-utilities-menu.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 #: src/components/trade/header/top-nav.tsx
 msgid "More"
@@ -5122,6 +5135,11 @@ msgstr "Réduisez cette position au prix actuel du marché. Les transactions ex�
 #~ msgid "Reduce-only orders only"
 #~ msgstr ""
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+msgid "Referrals"
+msgstr ""
+
 #: src/components/trade/tradebox/bridge/confirmation-screen.tsx
 msgid "Refresh quote"
 msgstr "Actualiser le devis"
@@ -5248,6 +5266,7 @@ msgstr "Reprendre le suivi"
 #: src/components/trade/positions/account-transfers-tab.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
 #: src/components/trade/tradebox/deposit-modal.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
 #: src/components/trade/tradebox/deposit/withdraw-form.tsx
@@ -5978,6 +5997,11 @@ msgstr "Certains ordres ont été acceptés. Vérifiez les ordres ouverts avant 
 msgid "Something went wrong"
 msgstr "Une erreur s'est produite"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/components/trade/mobile/mobile-nav-drawer.tsx
 msgid "Soon"
 msgstr "Bientôt"
@@ -6059,6 +6083,8 @@ msgstr "Écart"
 msgid "Stake"
 msgstr "Staker"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/account-ledger.ts
 #: src/config/nav.tsx
 msgid "Staking"
@@ -6085,6 +6111,10 @@ msgstr "Prix de départ"
 #: src/components/trade/components/mobile-agent-qr-scanner.tsx
 msgid "Starting camera..."
 msgstr "Démarrage de la caméra..."
+
+#: src/components/trade/header/top-nav.tsx
+msgid "Statistics"
+msgstr ""
 
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
 #: src/components/trade/mobile/mobile-orders-history-tab.tsx
@@ -7504,6 +7534,7 @@ msgid "Unable to verify the current Hyperliquid deposit route. Deposit was not s
 msgstr "Impossible de vérifier la route de dépôt actuelle d’Hyperliquid. Le dépôt n’a pas été soumis."
 
 #: src/components/trade/tradebox/deposit/deposit-form.tsx
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 msgid "Unable to verify the current Hyperliquid deposit route. Deposits are paused."
 msgstr "Impossible de vérifier la route de dépôt actuelle d’Hyperliquid. Les dépôts sont suspendus."
 
@@ -7697,6 +7728,8 @@ msgstr "Distribution du coffre"
 msgid "Vault Withdrawal"
 msgstr "Retrait du coffre"
 
+#: src/components/trade/header/top-nav.tsx
+#: src/components/trade/header/top-nav.tsx
 #: src/config/nav.tsx
 msgid "Vaults"
 msgstr "Coffres"
@@ -8009,6 +8042,7 @@ msgstr "Votre transfert via le bridge est toujours en cours. Vos fonds sont en s
 msgid "Your current open position on this market"
 msgstr "Votre position actuellement ouverte sur ce marché"
 
+#: src/components/trade/tradebox/deposit/deposit-form.tsx
 #: src/hooks/wallet/use-wallet-session.ts
 msgid "Your email wallet is unavailable. Sign out and log in again with the same email, then retry."
 msgstr "Votre portefeuille lié à l’e-mail est indisponible. Déconnectez-vous, reconnectez-vous avec la même adresse e-mail, puis réessayez."
